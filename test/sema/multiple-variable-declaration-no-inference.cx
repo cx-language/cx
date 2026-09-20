@@ -1,0 +1,11 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+// CHECK-NOT: multiple-variable-declaration-no-inference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    // CHECK: [[@LINE+3]]:9: warning: missing initializer
+    // CHECK: [[@LINE+2]]:12: warning: missing initializer
+    // CHECK: [[@LINE+1]]:9: error: couldn't infer type of 'x', add a type annotation or initializer
+    var x, y;
+}
+
+// CHECK-NOT: multiple-variable-declaration-no-inference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

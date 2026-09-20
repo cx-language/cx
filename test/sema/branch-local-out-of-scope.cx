@@ -1,0 +1,16 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: error
+// CHECK-NOT: warning
+
+void main() {
+    var c = true;
+    if c {
+        var y = 10;
+    }
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'y'
+    println(y);
+}
+
+// CHECK-NOT: error
+// CHECK-NOT: warning

@@ -1,0 +1,6 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: integer literal is too large
+    var x = 99999999999999999999999999;
+}

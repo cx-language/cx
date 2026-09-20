@@ -23,8 +23,11 @@ define i32 @main() {
 }
 
 define void @_EN3std4ListI3intE4initE8capacity3int(ptr %this, i32 %capacity) {
+  %capacity1 = alloca i32, align 4
+  store i32 %capacity, ptr %capacity1, align 4
   call void @_EN3std4ListI3intE4initE(ptr %this)
-  call void @_EN3std4ListI3intE7reserveE3int(ptr %this, i32 %capacity)
+  %capacity.load = load i32, ptr %capacity1, align 4
+  call void @_EN3std4ListI3intE7reserveE3int(ptr %this, i32 %capacity.load)
   ret void
 }
 
@@ -109,24 +112,31 @@ define void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %this) {
 }
 
 define void @_EN3std10deallocateIAU_3intEEAU_3int(ptr %allocation) {
-  call void @free(ptr %allocation)
+  %allocation1 = alloca ptr, align 8
+  store ptr %allocation, ptr %allocation1, align 8
+  %allocation.load = load ptr, ptr %allocation1, align 8
+  call void @free(ptr %allocation.load)
   ret void
 }
 
 define void @_EN3std4ListI3intE7reserveE3int(ptr %this, i32 %minimumCapacity) {
+  %minimumCapacity1 = alloca i32, align 4
   %newBuffer = alloca ptr, align 8
   %__iterator = alloca %"RangeIterator<int>", align 8
   %1 = alloca %"Range<int>", align 8
   %index = alloca i32, align 4
   %source = alloca ptr, align 8
   %target = alloca ptr, align 8
+  store i32 %minimumCapacity, ptr %minimumCapacity1, align 4
+  %minimumCapacity.load = load i32, ptr %minimumCapacity1, align 4
   %capacity = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 2
   %capacity.load = load i32, ptr %capacity, align 4
-  %2 = icmp sgt i32 %minimumCapacity, %capacity.load
+  %2 = icmp sgt i32 %minimumCapacity.load, %capacity.load
   br i1 %2, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
-  %3 = call ptr @_EN3std13allocateArrayI3intEE3int(i32 %minimumCapacity)
+  %minimumCapacity.load2 = load i32, ptr %minimumCapacity1, align 4
+  %3 = call ptr @_EN3std13allocateArrayI3intEE3int(i32 %minimumCapacity.load2)
   store ptr %3, ptr %newBuffer, align 8
   %size = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 1
   %size.load = load i32, ptr %size, align 4
@@ -138,7 +148,7 @@ if.then:                                          ; preds = %0
 if.else:                                          ; preds = %0
   br label %if.end
 
-if.end:                                           ; preds = %if.end8, %if.else
+if.end:                                           ; preds = %if.end10, %if.else
   ret void
 
 loop.condition:                                   ; preds = %loop.increment, %if.then
@@ -154,8 +164,8 @@ loop.body:                                        ; preds = %loop.condition
   %7 = getelementptr inbounds i32, ptr %buffer.load, i32 %index.load
   store ptr %7, ptr %source, align 8
   %newBuffer.load = load ptr, ptr %newBuffer, align 8
-  %index.load1 = load i32, ptr %index, align 4
-  %8 = getelementptr inbounds i32, ptr %newBuffer.load, i32 %index.load1
+  %index.load3 = load i32, ptr %index, align 4
+  %8 = getelementptr inbounds i32, ptr %newBuffer.load, i32 %index.load3
   store ptr %8, ptr %target, align 8
   %target.load = load ptr, ptr %target, align 8
   %source.load = load ptr, ptr %source, align 8
@@ -168,62 +178,66 @@ loop.increment:                                   ; preds = %loop.body
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
-  %capacity2 = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 2
-  %capacity.load3 = load i32, ptr %capacity2, align 4
-  %9 = icmp ne i32 %capacity.load3, 0
-  br i1 %9, label %if.then4, label %if.else7
+  %capacity4 = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 2
+  %capacity.load5 = load i32, ptr %capacity4, align 4
+  %9 = icmp ne i32 %capacity.load5, 0
+  br i1 %9, label %if.then6, label %if.else9
 
-if.then4:                                         ; preds = %loop.end
-  %buffer5 = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 0
-  %buffer.load6 = load ptr, ptr %buffer5, align 8
-  call void @_EN3std10deallocateIAU_3intEEAU_3int(ptr %buffer.load6)
-  br label %if.end8
+if.then6:                                         ; preds = %loop.end
+  %buffer7 = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 0
+  %buffer.load8 = load ptr, ptr %buffer7, align 8
+  call void @_EN3std10deallocateIAU_3intEEAU_3int(ptr %buffer.load8)
+  br label %if.end10
 
-if.else7:                                         ; preds = %loop.end
-  br label %if.end8
+if.else9:                                         ; preds = %loop.end
+  br label %if.end10
 
-if.end8:                                          ; preds = %if.else7, %if.then4
-  %buffer9 = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 0
-  %newBuffer.load10 = load ptr, ptr %newBuffer, align 8
-  store ptr %newBuffer.load10, ptr %buffer9, align 8
-  %capacity11 = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 2
-  store i32 %minimumCapacity, ptr %capacity11, align 4
+if.end10:                                         ; preds = %if.else9, %if.then6
+  %buffer11 = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 0
+  %newBuffer.load12 = load ptr, ptr %newBuffer, align 8
+  store ptr %newBuffer.load12, ptr %buffer11, align 8
+  %capacity13 = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 2
+  %minimumCapacity.load14 = load i32, ptr %minimumCapacity1, align 4
+  store i32 %minimumCapacity.load14, ptr %capacity13, align 4
   br label %if.end
 }
 
 define void @_EN3std8ArrayRefI3intE4initEP4ListI3intE(ptr %this, ptr %list) {
+  %list1 = alloca ptr, align 8
+  store ptr %list, ptr %list1, align 8
   %data = getelementptr inbounds %"ArrayRef<int>", ptr %this, i32 0, i32 0
-  %1 = call ptr @_EN3std4ListI3intE4dataE(ptr %list)
+  %list.load = load ptr, ptr %list1, align 8
+  %1 = call ptr @_EN3std4ListI3intE4dataE(ptr %list.load)
   store ptr %1, ptr %data, align 8
   %size = getelementptr inbounds %"ArrayRef<int>", ptr %this, i32 0, i32 1
-  %2 = call i32 @_EN3std4ListI3intE4sizeE(ptr %list)
+  %list.load2 = load ptr, ptr %list1, align 8
+  %2 = call i32 @_EN3std4ListI3intE4sizeE(ptr %list.load2)
   store i32 %2, ptr %size, align 4
   ret void
 }
 
 define void @_EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ptr %this, %"ArrayRef<int>" %array) {
-  %1 = alloca %"ArrayRef<int>", align 8
-  %2 = alloca %"ArrayRef<int>", align 8
-  %3 = alloca %"ArrayRef<int>", align 8
+  %array1 = alloca %"ArrayRef<int>", align 8
+  store %"ArrayRef<int>" %array, ptr %array1, align 8
   %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
-  store %"ArrayRef<int>" %array, ptr %1, align 8
-  %4 = call ptr @_EN3std8ArrayRefI3intE4dataE(ptr %1)
-  store ptr %4, ptr %current, align 8
+  %1 = call ptr @_EN3std8ArrayRefI3intE4dataE(ptr %array1)
+  store ptr %1, ptr %current, align 8
   %end = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 1
-  store %"ArrayRef<int>" %array, ptr %2, align 8
-  %5 = call ptr @_EN3std8ArrayRefI3intE4dataE(ptr %2)
-  store %"ArrayRef<int>" %array, ptr %3, align 8
-  %6 = call i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %3)
-  %7 = getelementptr inbounds i32, ptr %5, i32 %6
-  store ptr %7, ptr %end, align 8
+  %2 = call ptr @_EN3std8ArrayRefI3intE4dataE(ptr %array1)
+  %3 = call i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %array1)
+  %4 = getelementptr inbounds i32, ptr %2, i32 %3
+  store ptr %4, ptr %end, align 8
   ret void
 }
 
 declare void @free(ptr)
 
 define ptr @_EN3std13allocateArrayI3intEE3int(i32 %size) {
-  %1 = sext i32 %size to i64
-  %2 = mul i64 ptrtoint (ptr getelementptr (i32, ptr null, i32 1) to i64), %1
+  %size1 = alloca i32, align 4
+  store i32 %size, ptr %size1, align 4
+  %size.load = load i32, ptr %size1, align 4
+  %1 = sext i32 %size.load to i64
+  %2 = mul i64 4, %1
   %3 = call ptr @malloc(i64 %2)
   %assert.condition = icmp eq ptr %3, null
   br i1 %assert.condition, label %assert.fail, label %assert.success

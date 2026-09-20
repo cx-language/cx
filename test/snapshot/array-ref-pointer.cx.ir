@@ -1,4 +1,6 @@
 
 void _EN4main3fooEP8ArrayRefI3intE(ArrayRef<int>* a) {
+    ArrayRef<int>** a_0 = alloca ArrayRef<int>*
+    store a to a_0
     return void
 }

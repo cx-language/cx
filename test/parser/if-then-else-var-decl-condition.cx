@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    int? c = 5;
+    // CHECK: [[@LINE+1]]:12: error: variable declaration conditions are not supported in if expressions
+    if var x = c then println(x) else println("none");
+}

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -80,6 +82,7 @@ struct Type {
     bool isUInt32() const;
     bool isUInt64() const;
     bool isUInt128() const;
+    bool isByte() const;
     bool isFloat() const;
     bool isFloat16() const;
     bool isFloat32() const;
@@ -97,6 +100,8 @@ struct Type {
     bool isSignedInteger() const { return isInteger() && isSigned(); }
     bool isUnsignedInteger() const { return isInteger() && isUnsigned(); }
     int getIntegerBitWidth() const;
+    // Size in bytes for types with target-independent layout, null otherwise.
+    std::optional<uint64_t> getSizeInBytes() const;
     bool isMutable() const { return mutability == Mutability::Mutable; }
     Type withMutability(Mutability m) const { return Type(typeBase, m, location); }
     Type getPointerTo() const;
@@ -138,6 +143,7 @@ struct Type {
     static Type getUInt32(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt128(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getByte(Mutability mutability = Mutability::Mutable, Location location = Location());
     // TODO: Return correct uintptr type by checking target platform pointer size.
     static Type getUIntPtr(Mutability mutability = Mutability::Mutable, Location location = Location()) { return getUInt64(mutability, location); }
     static Type getFloat(Mutability mutability = Mutability::Mutable, Location location = Location());

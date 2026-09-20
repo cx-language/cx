@@ -1,11 +1,21 @@
 // RUN: %not %cx -typecheck %s | %FileCheck %s
 
+void rvalue() {
+    var a = 1;
+    var b = 2;
+
+    // CHECK: [[@LINE+1]]:7: error: cannot assign to expression of type 'int'
+    a + b = 3;
+}
+
 void main() {
     var a = 1;
 
+    // A parenthesized `id = value` is a tuple, not an assignment.
     // CHECK: [[@LINE+1]]:7: error: cannot assign '(int a)' to 'int'
     a = (a = 2);
 
-    // CHECK: [[@LINE+1]]:10: error: type 'void' is not convertible to boolean
+    // Assignments evaluate to the left-hand side, so this fails bool conversion, not void conversion.
+    // CHECK: [[@LINE+1]]:10: error: type 'int' is not convertible to boolean
     if a = 2 {}
 }

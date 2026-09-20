@@ -8,6 +8,7 @@ using namespace cx;
 bool Stmt::isBreakable() const {
     switch (kind) {
     case StmtKind::WhileStmt:
+    case StmtKind::DoWhileStmt:
     case StmtKind::ForStmt:
     case StmtKind::ForEachStmt:
     case StmtKind::SwitchStmt:
@@ -20,6 +21,7 @@ bool Stmt::isBreakable() const {
 bool Stmt::isContinuable() const {
     switch (kind) {
     case StmtKind::WhileStmt:
+    case StmtKind::DoWhileStmt:
     case StmtKind::ForStmt:
     case StmtKind::ForEachStmt:
         return true;
@@ -37,12 +39,15 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
     }
     case StmtKind::VarStmt: {
         auto* varStmt = llvm::cast<VarStmt>(this);
-        auto instantiation = varStmt->decl->instantiate(genericArgs, {});
-        return makeAST<VarStmt>(llvm::cast<VarDecl>(instantiation));
+        std::vector<VarDecl*> decls;
+        for (auto* decl : varStmt->decls) {
+            decls.push_back(llvm::cast<VarDecl>(decl->instantiate(genericArgs, {})));
+        }
+        return makeAST<VarStmt>(std::move(decls));
     }
     case StmtKind::ExprStmt: {
         auto* exprStmt = llvm::cast<ExprStmt>(this);
-        return makeAST<ExprStmt>(exprStmt->expr->instantiate(genericArgs));
+        return makeAST<ExprStmt>(exprStmt->expr->instantiate(genericArgs), exprStmt->discardsResult);
     }
     case StmtKind::DeferStmt: {
         auto* deferStmt = llvm::cast<DeferStmt>(this);
@@ -72,6 +77,12 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto condition = whileStmt->condition->instantiate(genericArgs);
         auto body = ::instantiate(whileStmt->body, genericArgs);
         return makeAST<WhileStmt>(condition, std::move(body), whileStmt->location);
+    }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhileStmt = llvm::cast<DoWhileStmt>(this);
+        auto condition = doWhileStmt->condition->instantiate(genericArgs);
+        auto body = ::instantiate(doWhileStmt->body, genericArgs);
+        return makeAST<DoWhileStmt>(condition, std::move(body), doWhileStmt->location);
     }
     case StmtKind::ForStmt: {
         auto* forStmt = llvm::cast<ForStmt>(this);
@@ -110,17 +121,50 @@ Stmt* WhileStmt::lower() {
     return makeAST<ForStmt>(nullptr, condition, nullptr, std::move(body), location);
 }
 
+static Type getMethodReturnType(TypeDecl* typeDecl, llvm::StringRef name) {
+    FunctionDecl* match = nullptr;
+    for (auto* method : typeDecl->methods) {
+        auto* function = llvm::dyn_cast<FunctionDecl>(method);
+        if (!function || function->getName() != name) continue;
+        if (match) return Type();
+        match = function;
+    }
+    return match ? match->getReturnType() : Type();
+}
+
 // Lowers 'for id in range { ... }' into:
 // for (var __iterator = range.iterator(); __iterator.hasValue(); __iterator.increment()) {
 //     var id = __iterator.value();
 //     ...
 // }
+// When the iterator yields pointers to implicitly copyable elements, the value
+// is dereferenced so the loop variable is a copy; other element types keep the
+// pointer so non-copyable elements can still be mutated in place.
 Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVariableName = "__iterator" + (nestLevel > 0 ? std::to_string(nestLevel) : "");
 
     Expr* iteratorValue;
-    auto* rangeTypeDecl = range->type.removePointer().getDecl();
+    Type rangeBaseType = range->type.removePointer();
+    auto* rangeTypeDecl = rangeBaseType.getDecl();
     bool isIterator = rangeTypeDecl && llvm::any_of(rangeTypeDecl->interfaces, [](Type interface) { return interface.getName() == "Iterator"; });
+
+    bool byValue = false;
+    if (rangeBaseType.isArrayType()) {
+        // Arrays iterate via the hardcoded ArrayIterator, whose value() always
+        // yields a pointer to the element type.
+        byValue = rangeBaseType.getElementType().isImplicitlyCopyable();
+    } else if (rangeTypeDecl) {
+        TypeDecl* iteratorDecl = nullptr;
+        if (isIterator) {
+            iteratorDecl = rangeTypeDecl;
+        } else if (Type iteratorType = getMethodReturnType(rangeTypeDecl, "iterator")) {
+            iteratorDecl = iteratorType.getDecl();
+        }
+        if (iteratorDecl) {
+            Type valueType = getMethodReturnType(iteratorDecl, "value");
+            byValue = valueType && valueType.isPointerType() && valueType.getPointee().isImplicitlyCopyable();
+        }
+    }
 
     if (isIterator) {
         iteratorValue = range;
@@ -131,7 +175,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
 
     auto iteratorVarDecl = makeAST<VarDecl>(Type(nullptr, Mutability::Mutable, location), std::string(iteratorVariableName), iteratorValue, variable->parent,
                                             AccessLevel::None, *variable->getModule(), location);
-    auto iteratorVarStmt = makeAST<VarStmt>(iteratorVarDecl);
+    auto iteratorVarStmt = makeAST<VarStmt>(std::vector<VarDecl*>{iteratorVarDecl});
 
     auto iteratorVarExpr = makeAST<VarExpr>(std::string(iteratorVariableName), location);
     auto hasValueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr, "hasValue", location);
@@ -140,9 +184,10 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVarExpr2 = makeAST<VarExpr>(std::string(iteratorVariableName), location);
     auto valueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr2, "value", location);
     auto valueCallExpr = makeAST<CallExpr>(valueMemberExpr, std::vector<NamedValue>(), std::vector<Type>(), location);
-    auto loopVariableVarDecl = makeAST<VarDecl>(variable->type, variable->getName().str(), valueCallExpr, variable->parent, AccessLevel::None,
+    Expr* loopInit = byValue ? makeAST<UnaryExpr>(Token::Star, valueCallExpr, location) : valueCallExpr;
+    auto loopVariableVarDecl = makeAST<VarDecl>(variable->type, variable->getName().str(), loopInit, variable->parent, AccessLevel::None,
                                                 *variable->getModule(), variable->getLocation());
-    auto loopVariableVarStmt = makeAST<VarStmt>(loopVariableVarDecl);
+    auto loopVariableVarStmt = makeAST<VarStmt>(std::vector<VarDecl*>{loopVariableVarDecl});
 
     std::vector<Stmt*> forBody;
     forBody.push_back(loopVariableVarStmt);

@@ -29,9 +29,13 @@ int main() {
 }
 
 void _EN4main3barEP4void(void* p) {
+    void** p_0 = alloca void*
+    store p to p_0
     return void
 }
 
 void _EN4main3bazEOP4void(void* p) {
+    void** p_0 = alloca void*
+    store p to p_0
     return void
 }

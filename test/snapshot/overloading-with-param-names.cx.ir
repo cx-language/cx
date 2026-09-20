@@ -1,30 +1,46 @@
 
 void _EN4main3fooE1i3int(int i) {
+    int* i_0 = alloca int
     Foo* _0 = alloca Foo
     Foo* _1 = alloca Foo
-    void _2 = call _EN4main3Foo4initE1i3int(Foo* _0, int i)
-    void _3 = call _EN4main3Foo3fooE1i3int(Foo* _0, int i)
-    void _4 = call _EN4main3Foo4initE3qux3int(Foo* _1, int i)
-    void _5 = call _EN4main3Foo3fooE3qux3int(Foo* _1, int i)
+    store i to i_0
+    int i.load = load i_0
+    void _2 = call _EN4main3Foo4initE1i3int(Foo* _0, int i.load)
+    int i.load_0 = load i_0
+    void _3 = call _EN4main3Foo3fooE1i3int(Foo* _0, int i.load_0)
+    int i.load_1 = load i_0
+    void _4 = call _EN4main3Foo4initE3qux3int(Foo* _1, int i.load_1)
+    int i.load_2 = load i_0
+    void _5 = call _EN4main3Foo3fooE3qux3int(Foo* _1, int i.load_2)
     return void
 }
 
 void _EN4main3Foo3fooE1i3int(Foo* this, int i) {
+    int* i_0 = alloca int
+    store i to i_0
     return void
 }
 
 void _EN4main3Foo4initE1i3int(Foo* this, int i) {
+    int* i_0 = alloca int
+    store i to i_0
     return void
 }
 
 void _EN4main3Foo3fooE3qux3int(Foo* this, int qux) {
+    int* qux_0 = alloca int
+    store qux to qux_0
     return void
 }
 
 void _EN4main3Foo4initE3qux3int(Foo* this, int qux) {
+    int* qux_0 = alloca int
+    store qux to qux_0
     return void
 }
 
 void _EN4main3fooE3qux3int(int qux) {
+    int* qux_0 = alloca int
+    store qux to qux_0
     return void
 }

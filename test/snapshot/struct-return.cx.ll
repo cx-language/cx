@@ -11,14 +11,26 @@ define void @_EN4main19returnsLargeStruct2E(ptr sret(%S2) %sret.arg) {
 }
 
 define void @_EN4main2S24initE7float647float647float647float64(ptr %this, double %x, double %y, double %z, double %w) {
-  %x1 = getelementptr inbounds %S2, ptr %this, i32 0, i32 0
+  %x1 = alloca double, align 8
+  %y2 = alloca double, align 8
+  %z3 = alloca double, align 8
+  %w4 = alloca double, align 8
   store double %x, ptr %x1, align 8
-  %y2 = getelementptr inbounds %S2, ptr %this, i32 0, i32 1
   store double %y, ptr %y2, align 8
-  %z3 = getelementptr inbounds %S2, ptr %this, i32 0, i32 2
   store double %z, ptr %z3, align 8
-  %w4 = getelementptr inbounds %S2, ptr %this, i32 0, i32 3
   store double %w, ptr %w4, align 8
+  %x5 = getelementptr inbounds %S2, ptr %this, i32 0, i32 0
+  %x.load = load double, ptr %x1, align 8
+  store double %x.load, ptr %x5, align 8
+  %y6 = getelementptr inbounds %S2, ptr %this, i32 0, i32 1
+  %y.load = load double, ptr %y2, align 8
+  store double %y.load, ptr %y6, align 8
+  %z7 = getelementptr inbounds %S2, ptr %this, i32 0, i32 2
+  %z.load = load double, ptr %z3, align 8
+  store double %z.load, ptr %z7, align 8
+  %w8 = getelementptr inbounds %S2, ptr %this, i32 0, i32 3
+  %w.load = load double, ptr %w4, align 8
+  store double %w.load, ptr %w8, align 8
   ret void
 }
 

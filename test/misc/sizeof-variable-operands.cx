@@ -1,0 +1,28 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+
+struct S {
+    int x;
+    int y;
+}
+
+int g = 42;
+
+void checkParam(int p) {
+    println(sizeof(p) == sizeof(int));
+}
+
+void main() {
+    var x = 42;
+    println(sizeof(x) == sizeof(int));
+    println(sizeof(g) == sizeof(int));
+    var s = S(x = 1, y = 2);
+    println(sizeof(s) == sizeof(S));
+    var px = &x;
+    println(sizeof(px) == sizeof(int*));
+    checkParam(7);
+}

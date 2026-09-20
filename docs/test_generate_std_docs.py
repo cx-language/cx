@@ -311,8 +311,8 @@ class StdlibTest(unittest.TestCase):
             f'## [struct List\\<Element\\>]({base}#L2){{target="_blank"}} {{#type-List}}',
             f'### [push]({base}#L105){{target="_blank"}} {{#List-push}}',
             f'### [operator\\[\\]]({base}#L74){{target="_blank"}} {{#List-operator-index}}',
-            fenced("void push(Element element)"),
-            "Adds the given element to the end of the list.",
+            fenced("Element* push(Element element)"),
+            "Adds the given element to the end of the list, returning a pointer to it.",
         ]:
             self.assertIn(snippet, page)
 

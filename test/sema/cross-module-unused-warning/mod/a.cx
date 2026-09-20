@@ -1,0 +1,8 @@
+// RUN: true
+
+void helper() {
+    println("help");
+}
+
+void leftover() {
+}

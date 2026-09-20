@@ -1,0 +1,42 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:dtor
+// CHECK-NEXT:reassigned
+// CHECK-NEXT:take
+// CHECK-NEXT:dtor
+// CHECK-NEXT:moved and reassigned
+// CHECK-NEXT:dtor
+// CHECK-NEXT:deinit
+// CHECK-NEXT:deinited and reassigned
+// CHECK-NEXT:dtor
+// CHECK-NEXT:dtor
+
+struct C {
+    int i;
+    ~C() {
+        println("dtor");
+    }
+}
+
+void take(C c) {
+    println("take");
+}
+
+void main() {
+    // Reassigning a live value destroys the old one.
+    var a = C(i = 1);
+    a = C(i = 2);
+    println("reassigned");
+
+    // Reassigning a moved-from value must not destroy it again.
+    take(a);
+    a = C(i = 3);
+    println("moved and reassigned");
+
+    // Same for explicitly deinited values.
+    var b = C(i = 4);
+    b.deinit();
+    println("deinit");
+    b = C(i = 5);
+    println("deinited and reassigned");
+}

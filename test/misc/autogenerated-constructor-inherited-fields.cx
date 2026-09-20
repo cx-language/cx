@@ -1,0 +1,23 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:bob
+// CHECK-NEXT:3
+
+interface HasName {
+    string name;
+}
+
+struct Person: HasName {
+    int age;
+}
+
+struct Point: HasName {
+    int x;
+    int y;
+}
+
+void main() {
+    var p = Person(name = "bob", age = 3);
+    println(p.name);
+    var q = Point(name = "o", x = 1, y = 2);
+    println(q.x + q.y);
+}

@@ -68,8 +68,10 @@ struct IRGenerator {
     Value* emitConstantIncrement(const UnaryExpr& expr, int value);
     Value* emitLogicalAnd(const Expr& left, const Expr& right);
     Value* emitLogicalOr(const Expr& left, const Expr& right);
+    Value* emitNullCoalescingExpr(const BinaryExpr& expr);
+    Value* emitBoolConvertibleOperand(const Expr& expr);
     Value* emitBinaryExpr(const BinaryExpr& expr);
-    void emitAssignment(const BinaryExpr& expr);
+    Value* emitAssignment(const BinaryExpr& expr);
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);
     Value* emitOptionalConstruction(Type wrappedType, Expr* arg);
     Value* emitOptionalUnwrap(Expr& operand, const Expr& expr, const llvm::Twine& name);
@@ -99,10 +101,13 @@ struct IRGenerator {
     void emitIfStmt(const IfStmt& ifStmt);
     void emitSwitchStmt(const SwitchStmt& switchStmt);
     bool emitEnumSwitchCheck(const Expr& condition, llvm::ArrayRef<Expr*> caseValues, SwitchInst& switchInst, BasicBlock* end);
+    void emitStringSwitchStmt(const SwitchStmt& switchStmt);
     void emitForStmt(const ForStmt& forStmt);
+    void emitDoWhileStmt(const DoWhileStmt& doWhileStmt);
+    Value* emitLoopConditionValue(const Expr& condition);
     void emitBreakStmt(const BreakStmt&);
     void emitContinueStmt(const ContinueStmt&);
-    Value* emitAssignmentLHS(const Expr& lhs);
+    Value* emitAssignmentLHS(const Expr& lhs, bool skipDestructor);
     void emitCompoundStmt(const CompoundStmt& stmt);
     void emitStmt(const Stmt& stmt);
     void emitStmts(llvm::ArrayRef<Stmt*> stmts);

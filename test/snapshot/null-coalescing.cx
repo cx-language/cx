@@ -1,0 +1,14 @@
+// RUN: check-snapshots
+
+extern int? a();
+extern int? b();
+extern int c();
+extern int*? p();
+extern int* q();
+
+void main() {
+    var x = a() ?? 0;
+    var y = a() ?? b();
+    var z = a() ?? b() ?? c();
+    var w = p() ?? q();
+}

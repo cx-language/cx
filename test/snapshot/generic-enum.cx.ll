@@ -1,5 +1,6 @@
 
-%"Opt<int>" = type { i32, <{ { i32 } }> }
+%0 = type <{ { i32 } }>
+%"Opt<int>" = type { i32, %0 }
 
 @0 = private unnamed_addr constant [66 x i8] c"invalid value in switch over enum 'Opt' at generic-enum.cx:12:13\0A\00", align 1
 @1 = private unnamed_addr constant [66 x i8] c"invalid value in switch over enum 'Opt' at generic-enum.cx:19:13\0A\00", align 1

@@ -23,8 +23,11 @@ define i32 @main() {
 }
 
 define void @_EN4main1C4initE8ArrayRefI3intE(ptr %this, %"ArrayRef<int>" %a) {
-  %a1 = getelementptr inbounds %C, ptr %this, i32 0, i32 0
+  %a1 = alloca %"ArrayRef<int>", align 8
   store %"ArrayRef<int>" %a, ptr %a1, align 8
+  %a2 = getelementptr inbounds %C, ptr %this, i32 0, i32 0
+  %a.load = load %"ArrayRef<int>", ptr %a1, align 8
+  store %"ArrayRef<int>" %a.load, ptr %a2, align 8
   ret void
 }
 
@@ -35,13 +38,17 @@ define void @_EN4main1C3fooE(ptr %this) {
 }
 
 define ptr @_EN3std8ArrayRefI3intEixE3int(ptr %this, i32 %index) {
+  %index1 = alloca i32, align 4
   %__str = alloca %string, align 8
-  %1 = icmp slt i32 %index, 0
+  store i32 %index, ptr %index1, align 4
+  %index.load = load i32, ptr %index1, align 4
+  %1 = icmp slt i32 %index.load, 0
   br i1 %1, label %or.end, label %or.rhs
 
 or.rhs:                                           ; preds = %0
+  %index.load2 = load i32, ptr %index1, align 4
   %2 = call i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %this)
-  %3 = icmp sge i32 %index, %2
+  %3 = icmp sge i32 %index.load2, %2
   br label %or.end
 
 or.end:                                           ; preds = %or.rhs, %0
@@ -51,7 +58,8 @@ or.end:                                           ; preds = %or.rhs, %0
 if.then:                                          ; preds = %or.end
   call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @0, i32 10)
   %__str.load = load %string, ptr %__str, align 8
-  call void @_EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ptr %this, %string %__str.load, i32 %index)
+  %index.load3 = load i32, ptr %index1, align 4
+  call void @_EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ptr %this, %string %__str.load, i32 %index.load3)
   br label %if.end
 
 if.else:                                          ; preds = %or.end
@@ -60,7 +68,8 @@ if.else:                                          ; preds = %or.end
 if.end:                                           ; preds = %if.else, %if.then
   %data = getelementptr inbounds %"ArrayRef<int>", ptr %this, i32 0, i32 0
   %data.load = load ptr, ptr %data, align 8
-  %4 = getelementptr inbounds i32, ptr %data.load, i32 %index
+  %index.load4 = load i32, ptr %index1, align 4
+  %4 = getelementptr inbounds i32, ptr %data.load, i32 %index.load4
   ret ptr %4
 }
 
@@ -73,20 +82,20 @@ define i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %this) {
 declare void @_EN3std6string4initEP4char3int(ptr, ptr, i32)
 
 define void @_EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ptr %this, %string %function, i32 %index) {
+  %function1 = alloca %string, align 8
+  %index2 = alloca i32, align 4
   %__str = alloca %string, align 8
-  %1 = alloca %string, align 8
-  %__str1 = alloca %string, align 8
-  %2 = alloca i32, align 4
-  %__str2 = alloca %string, align 8
-  %3 = alloca i32, align 4
+  %__str3 = alloca %string, align 8
+  %__str4 = alloca %string, align 8
+  %1 = alloca i32, align 4
+  store %string %function, ptr %function1, align 8
+  store i32 %index, ptr %index2, align 4
   call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @1, i32 9)
-  store %string %function, ptr %1, align 8
-  call void @_EN3std6string4initEP4char3int(ptr %__str1, ptr @2, i32 8)
-  store i32 %index, ptr %2, align 4
-  call void @_EN3std6string4initEP4char3int(ptr %__str2, ptr @3, i32 27)
-  %4 = call i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %this)
-  store i32 %4, ptr %3, align 4
-  %5 = call %never @_EN3std5abortI6string6string6string3int6string3intEVEP6stringP6stringP6stringP3intP6stringP3int(ptr %__str, ptr %1, ptr %__str1, ptr %2, ptr %__str2, ptr %3)
+  call void @_EN3std6string4initEP4char3int(ptr %__str3, ptr @2, i32 8)
+  call void @_EN3std6string4initEP4char3int(ptr %__str4, ptr @3, i32 27)
+  %2 = call i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %this)
+  store i32 %2, ptr %1, align 4
+  %3 = call %never @_EN3std5abortI6string6string6string3int6string3intEVEP6stringP6stringP6stringP3intP6stringP3int(ptr %__str, ptr %function1, ptr %__str3, ptr %index2, ptr %__str4, ptr %1)
   ret void
 }
 

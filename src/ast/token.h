@@ -30,6 +30,7 @@ struct Token {
         Continue,
         Default,
         Defer,
+        Do,
         Else,
         Enum,
         Extern,
@@ -46,6 +47,7 @@ struct Token {
         Sizeof,
         Struct,
         Switch,
+        Then,
         This,
         True,
         Undefined,
@@ -70,6 +72,7 @@ struct Token {
         SlashEqual,
         Modulo,
         ModuloEqual,
+        PositiveModulo,
         Increment,
         Decrement,
         Not,
@@ -103,6 +106,7 @@ struct Token {
         Semicolon,
         FatArrow,
         QuestionMark,
+        QuestionQuestion,
         TokenCount
     };
 

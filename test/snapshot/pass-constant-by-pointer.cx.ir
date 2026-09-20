@@ -16,5 +16,7 @@ void _EN4main1SI3intE4initE(S<int>* this) {
 }
 
 void _EN4main1SI3intE1fEP3int(S<int>* this, int* t) {
+    int** t_0 = alloca int*
+    store t to t_0
     return void
 }

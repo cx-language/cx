@@ -23,6 +23,16 @@ std::string getFieldName(IRType* type, int index) {
     return fieldName.empty() ? "_" + std::to_string(index) : fieldName;
 }
 
+// Extern C functions with asm labels mangle to '\01' + label for LLVM, where
+// the marker suppresses mangling. C has no such marker, so emit the declared
+// name instead; the declaration comes from the included header.
+llvm::StringRef getCFunctionName(const Function* function) {
+    if (!function->mangledName.empty() && function->mangledName[0] == '\01') {
+        return function->name;
+    }
+    return function->mangledName;
+}
+
 } // namespace
 
 void CGenerator::codegenModule(const IRModule& module) {
@@ -169,6 +179,18 @@ void CGenerator::codegenSwitch(const SwitchInst* inst) {
 void CGenerator::codegenLoad(const LoadInst* inst) {
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_load");
+    if (inst->getType()->isArrayType()) {
+        // C arrays are not assignable; declare the temp and copy into it like codegenStore.
+        if (!dispatchMode) {
+            codegenTempDeclaration(inst, name);
+            stream << ";\n";
+            stream.indent(4);
+        }
+        stream << "memcpy(" << name << ", ";
+        codegenInst(inst->value);
+        stream << ", sizeof(" << name << "));\n";
+        return;
+    }
     // Emit an explicit type instead of the '__auto_type' GNU extension,
     // so that the generated code can also be compiled with small,
     // strictly conforming C compilers (e.g. the one used by the web playground).
@@ -589,7 +611,7 @@ void CGenerator::codegenInstImpl(const Value* value) {
     case ValueKind::BasicBlock:
         return codegenBasicBlock(llvm::cast<BasicBlock>(value));
     case ValueKind::Function:
-        stream << llvm::cast<Function>(value)->mangledName;
+        stream << getCFunctionName(llvm::cast<Function>(value));
         break;
     case ValueKind::Parameter: {
         auto* param = llvm::cast<Parameter>(value);
@@ -619,14 +641,17 @@ void CGenerator::codegenInstImpl(const Value* value) {
 
 void CGenerator::codegenFunctionPrototype(const Function* function) {
     codegenType(stream, function->returnType, !function->isExtern);
-    stream << ' ' << function->mangledName << '(';
+    stream << ' ' << getCFunctionName(function) << '(';
     if (function->params.empty() && !function->isVariadic) {
         // An empty parameter list means "unspecified arguments" in C, so spell out 'void' instead.
         stream << "void";
     }
     for (auto& param : function->params) {
         codegenType(stream, param.type, !function->isExtern);
-        stream << ' ' << param.name;
+        // Unnamed parameters need a placeholder: omitting the name in a
+        // definition makes C compilers warn.
+        std::string name = param.name.empty() ? "_param" + std::to_string(valueSuffixCounter++) : param.name;
+        stream << ' ' << name;
         codegenTypeSuffix(stream, param.type, !function->isExtern);
         if (&param != &function->params.back()) stream << ", ";
     }
@@ -832,6 +857,7 @@ void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, boo
                                     .Case("int128", "__int128")
                                     .Case("uint", "unsigned")
                                     .Case("uint8", "uint8_t")
+                                    .Case("byte", "uint8_t")
                                     .Case("uint16", "uint16_t")
                                     .Case("uint32", "uint32_t")
                                     .Case("uint64", "uint64_t")

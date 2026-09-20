@@ -36,17 +36,19 @@ struct ArgumentValidation {
     Error error;
     int index;
     bool didConvertArguments;
+    bool didUnwrapOptional;
 
-    static ArgumentValidation success(bool didConvertArguments) { return {None, -1, didConvertArguments}; }
-    static ArgumentValidation tooFew() { return {TooFew, -1, false}; }
-    static ArgumentValidation tooMany() { return {TooMany, -1, false}; }
-    static ArgumentValidation invalidName(size_t index) { return {InvalidName, int(index), false}; }
-    static ArgumentValidation invalidType(size_t index) { return {InvalidType, int(index), false}; }
+    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional) { return {None, -1, didConvertArguments, didUnwrapOptional}; }
+    static ArgumentValidation tooFew() { return {TooFew, -1, false, false}; }
+    static ArgumentValidation tooMany() { return {TooMany, -1, false, false}; }
+    static ArgumentValidation invalidName(size_t index) { return {InvalidName, int(index), false, false}; }
+    static ArgumentValidation invalidType(size_t index) { return {InvalidType, int(index), false, false}; }
 };
 
 struct Match {
     Decl* decl;
     bool didConvertArguments;
+    bool didUnwrapOptional;
 };
 
 struct VariadicGenericArgs {
@@ -63,6 +65,7 @@ struct Typechecker {
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
       isPostProcessing(false), options(options) {}
     void typecheckModule(Module& module, const BuildConfig* config);
+    void checkUnusedDecls(const Module& mainModule);
 
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
     void typecheckVarDecl(VarDecl& decl);
@@ -84,6 +87,7 @@ struct Typechecker {
     void typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase* enumCase);
     void warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const;
     void typecheckForStmt(ForStmt& forStmt);
+    void typecheckDoWhileStmt(DoWhileStmt& doWhileStmt);
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
     void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true);
@@ -100,6 +104,7 @@ struct Typechecker {
     Type typecheckTupleExpr(TupleExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
+    Type typecheckNullCoalescingExpr(BinaryExpr& expr);
     void typecheckAssignment(BinaryExpr& expr, Location location);
     Type typecheckCallExpr(CallExpr& expr, Type expectedType = Type());
     Type typecheckBuiltinConversion(CallExpr& expr);
@@ -116,10 +121,14 @@ struct Typechecker {
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
     /// Returns the converted expression if the conversion succeeds, or null otherwise.
-    Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false) const;
+    /// Probing conversions (where failure falls back to another attempt) pass diagnoseOutOfRange=false
+    /// so an out-of-range literal doesn't abort the still-untried alternatives.
+    Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false, bool diagnoseOutOfRange = true) const;
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
     Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false,
-                                 std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr) const;
+                                 std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr, bool diagnoseOutOfRange = true) const;
+    /// Inner conversions for pointer reinterpretation must preserve the value representation.
+    bool isReinterpretible(const Expr* expr, Type source, Type target, bool diagnoseOutOfRange = true) const;
     void typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, bool positive = true);
     Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam);
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
@@ -127,7 +136,7 @@ struct Typechecker {
     Decl* findDecl(llvm::StringRef name, Location location) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false) const;
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
-    Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType);
+    Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry = true);
     std::vector<Type> inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                    bool returnOnError);
     std::optional<VariadicGenericArgs> inferVariadicGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
@@ -136,12 +145,13 @@ struct Typechecker {
     std::optional<Match> matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params = {});
     void validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", Location location = Location());
     void validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee = "",
-                                     Location location = Location());
+                                     Location location = Location(), const Decl* calleeDecl = nullptr);
     TypeDecl* getTypeDecl(const BasicType& type);
     EnumCase* getEnumCase(const Expr& expr, Type expectedType = Type(), CallExpr* call = nullptr);
     EnumCase* getExpectedEnumCase(llvm::StringRef name, Type expectedType);
     EnumCase* instantiateEnumCase(TypeTemplate& typeTemplate, llvm::StringRef caseName, const MemberExpr& memberExpr, CallExpr* call, Type expectedType);
     void checkReturnPointerToLocal(const Expr* returnValue) const;
+    void warnIfUnusedResult(const Expr& expr, Type type) const;
     static void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);
     void maybeCaptureVariable(VariableDecl& variableDecl);
     llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const BuildConfig* config, llvm::StringRef moduleName);
@@ -162,6 +172,7 @@ struct Typechecker {
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     llvm::SmallPtrSet<Decl*, 32> movedDecls;
+    std::vector<VarDecl*> localVarDecls;
     NarrowMap narrowedTypes;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;

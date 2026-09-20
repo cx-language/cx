@@ -1,5 +1,6 @@
 
-%E = type { i32, <{ { [12 x i32] } }> }
+%0 = type <{ { [12 x i32] } }>
+%E = type { i32, %0 }
 %"S<E>" = type { ptr }
 
 define i32 @main() {
@@ -28,7 +29,10 @@ define i32 @main() {
 }
 
 define void @_EN4main1SI1EE4initEOP1E(ptr %this, ptr %e) {
-  %e1 = getelementptr inbounds %"S<E>", ptr %this, i32 0, i32 0
+  %e1 = alloca ptr, align 8
   store ptr %e, ptr %e1, align 8
+  %e2 = getelementptr inbounds %"S<E>", ptr %this, i32 0, i32 0
+  %e.load = load ptr, ptr %e1, align 8
+  store ptr %e.load, ptr %e2, align 8
   ret void
 }

@@ -30,7 +30,7 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
 
     auto returnType = getIRType(decl.isMain() ? Type::getInt() : decl.getReturnType());
     auto function = new Function{
-        ValueKind::Function, mangledName, returnType, std::move(params), {}, decl.isExtern(), decl.isVariadic(), decl.getLocation(),
+        ValueKind::Function, mangledName, decl.getName().str(), returnType, std::move(params), {}, decl.isExtern(), decl.isVariadic(), decl.getLocation(),
     };
     module->functions.push_back(function);
 
@@ -76,7 +76,13 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     }
 
     for (auto& param : decl.getParams()) {
-        setLocalValue(&*arg++, &param);
+        if (param.getName().empty()) {
+            setLocalValue(&*arg++, &param);
+            continue;
+        }
+        auto* spill = createEntryBlockAlloca(param.type, param.getName());
+        createStore(&*arg++, spill);
+        setLocalValue(spill, &param);
     }
 
     if (decl.isDestructorDecl()) {

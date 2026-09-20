@@ -1,0 +1,55 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+void check(string s) {
+    switch (s) {
+    case "hi": println("greeting"); break;
+    case "bye": println("farewell"); break;
+    default: println("other"); break;
+    }
+}
+
+int calls = 0;
+string next() {
+    calls++;
+    return "b";
+}
+
+void main() {
+    // CHECK:greeting
+    check("hi");
+    // CHECK-NEXT:farewell
+    check("bye");
+    // CHECK-NEXT:other
+    check("zzz");
+    string empty = "";
+    switch (empty) {
+    // CHECK-NEXT:empty
+    case "": println("empty"); break;
+    default: println("nonempty"); break;
+    }
+    // The condition is evaluated once.
+    switch (next()) {
+    case "a": println("A"); break;
+    // CHECK-NEXT:B
+    case "b": println("B"); break;
+    default: println("D"); break;
+    }
+    // CHECK-NEXT:1
+    println(calls);
+    // Continue passes through to the enclosing loop.
+    for i in 0..3 {
+        switch ("x") {
+        case "x":
+            if (i == 1) { continue; }
+            // CHECK-NEXT:0
+            // CHECK-NEXT:2
+            println(i);
+            break;
+        default: println("d"); break;
+        }
+    }
+    switch ("y") {
+    // CHECK-NEXT:only-default
+    default: println("only-default"); break;
+    }
+}

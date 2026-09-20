@@ -56,12 +56,12 @@ void testSwitch() {
     switch (ok) {
         case Ok value:
             assert(value.value == 7);
-        case Err error:
+        case Err:
             assert(false);
     }
 
     switch (err) {
-        case Result.Ok value:
+        case Result.Ok:
             assert(false);
         case Result.Err error:
             assert(error.error == "not a digit");

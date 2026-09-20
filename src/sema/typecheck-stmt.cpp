@@ -25,7 +25,7 @@ static bool allPathsDiverge(llvm::ArrayRef<Stmt*> block, int nestLevel = 0) {
         auto call = llvm::dyn_cast<CallExpr>(exprStmt.expr);
         if (!call) return false;
         if (call->type && call->type.isNeverType()) return true;
-        if (!call->isMethodCall() && call->getFunctionName() == "assert" && call->args.size() == 1) {
+        if (!call->isMethodCall() && call->getFunctionName() == "assert" && !call->args.empty()) {
             if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->args[0].value)) {
                 return !condition->value;
             }
@@ -152,7 +152,8 @@ static void collectAssignedNames(const Stmt* stmt, llvm::StringSet<>& names) {
         if (auto* value = llvm::cast<ReturnStmt>(stmt)->value) collectAssignedNames(*value, names);
         return;
     case StmtKind::VarStmt:
-        if (auto* initializer = llvm::cast<VarStmt>(stmt)->decl->initializer) collectAssignedNames(*initializer, names);
+        for (auto* decl : llvm::cast<VarStmt>(stmt)->decls)
+            if (auto* initializer = decl->initializer) collectAssignedNames(*initializer, names);
         return;
     case StmtKind::ExprStmt:
         collectAssignedNames(*llvm::cast<ExprStmt>(stmt)->expr, names);
@@ -185,6 +186,13 @@ static void collectAssignedNames(const Stmt* stmt, llvm::StringSet<>& names) {
         auto& whileStmt = llvm::cast<WhileStmt>(*stmt);
         collectAssignedNames(*whileStmt.condition, names);
         for (auto& bodyStmt : whileStmt.body)
+            collectAssignedNames(bodyStmt, names);
+        return;
+    }
+    case StmtKind::DoWhileStmt: {
+        auto& doWhileStmt = llvm::cast<DoWhileStmt>(*stmt);
+        collectAssignedNames(*doWhileStmt.condition, names);
+        for (auto& bodyStmt : doWhileStmt.body)
             collectAssignedNames(bodyStmt, names);
         return;
     }
@@ -254,6 +262,15 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     }
 }
 
+void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
+    // Anchor on the enclosing function so generic stdlib code instantiated from
+    // user code stays exempt; currentModule is the instantiation site there.
+    Module* module = currentFunction ? currentFunction->getModule() : currentModule;
+    if (!options.warnUnusedResult || module->name == "std") return;
+    if (!type || type.isVoid() || type.isNeverType() || expr.isAssignment() || expr.kind == ExprKind::IndexAssignmentExpr) return;
+    WARN(expr.location, "unused result of type '" << type << "'");
+}
+
 void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     Type returnValueType = stmt.value ? typecheckExpr(*stmt.value, false, currentFunction->getReturnType()) : Type::getVoid();
 
@@ -281,7 +298,9 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
 }
 
 void Typechecker::typecheckVarStmt(VarStmt& stmt) {
-    typecheckVarDecl(*stmt.decl);
+    for (auto* decl : stmt.decls) {
+        typecheckVarDecl(*decl);
+    }
 }
 
 void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
@@ -297,6 +316,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     NarrowMap thenNarrowings, elseNarrowings;
 
     {
+        Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         applyNarrowings(*ifStmt.condition, true);
         for (auto& stmt : ifStmt.thenBody) {
@@ -308,6 +328,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     }
 
     {
+        Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         applyNarrowings(*ifStmt.condition, false);
         for (auto& stmt : ifStmt.elseBody) {
@@ -413,6 +434,8 @@ void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase*
     typecheckVarDecl(*associatedValue);
 }
 
+// Switch expressions lower directly to a switch instruction, so unlike switch statements
+// they accept neither string conditions nor `case null` on optional pointers.
 Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
     Type conditionType = typecheckExpr(*condition);
 
@@ -438,7 +461,48 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
 }
 
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
-    Type conditionType = typecheckSwitchCondition(stmt.condition);
+    Type conditionType = typecheckExpr(*stmt.condition);
+    bool hasNullCase = llvm::any_of(stmt.cases, [](const SwitchCase& switchCase) { return switchCase.value->isNullLiteralExpr(); });
+
+    Type pointerType = conditionType;
+    if (pointerType.isOptionalType() && pointerType.getWrappedType().isPointerType()) {
+        pointerType = pointerType.getWrappedType();
+    }
+
+    // A `case null` on an optional pointer keeps the condition optional; codegen branches
+    // on null first and switches on the dereferenced value, instead of trapping on null.
+    bool nullRoutedOptional = false;
+
+    if (pointerType.isPointerType()) {
+        Type pointeeType = pointerType.getPointee();
+        // Automatically dereference pointers to switchable values. Enums with associated values are excluded;
+        // they need the address for tag/associated-value access, so dereference those explicitly (e.g. `switch (*p)`).
+        bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
+        if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
+            if (conditionType.isOptionalType() && hasNullCase) {
+                nullRoutedOptional = true;
+            } else {
+                // Like other implicit unwraps, switching on an optional pointer unwraps it, trapping on null.
+                if (conditionType.isOptionalType()) {
+                    if (auto unwrapped = convert(stmt.condition, pointerType)) {
+                        stmt.condition = unwrapped;
+                        conditionType = pointerType;
+                    }
+                }
+                if (auto dereferenced = convert(stmt.condition, pointeeType)) {
+                    stmt.condition = dereferenced;
+                    conditionType = pointeeType;
+                }
+            }
+        }
+    }
+
+    // Pointer-implemented optionals have no tag to switch on.
+    bool isSwitchableEnum = conditionType.isEnumType() && !(conditionType.isOptionalType() && conditionType.isImplementedAsPointer());
+    bool isString = conditionType.isBasicType() && conditionType.getName() == "string";
+    if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum && !nullRoutedOptional && !isString) {
+        ERROR(stmt.condition->location, "switch condition must have integer, char, string, or enum type, got '" << conditionType << "'");
+    }
 
     // Case values run before every case body, so variables assigned in any value
     // are un-narrowed for the bodies. Bodies may or may not run, so variables
@@ -457,8 +521,58 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
     currentControlStmts.push_back(&stmt);
 
+    // Cases of a null-routed optional switch match the dereferenced value; codegen unwraps before switching.
+    Type caseTargetType = nullRoutedOptional ? conditionType.getWrappedType().getPointee() : conditionType;
+    bool seenNullCase = false;
+
     for (auto& switchCase : stmt.cases) {
-        auto* enumCase = typecheckSwitchCaseValue(switchCase.value, conditionType);
+        // Null-routed switches match against the dereferenced type and accept `case null`,
+        // so statements inline this instead of sharing typecheckSwitchCaseValue with expressions.
+        if (conditionType.isEnumType()) {
+            if (auto* varExpr = llvm::dyn_cast<VarExpr>(switchCase.value)) {
+                auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
+                if (enumDecl->getCaseByName(varExpr->identifier)) {
+                    // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
+                    switchCase.value = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumDecl->getName()), varExpr->location),
+                                                           std::string(varExpr->identifier), varExpr->location);
+                }
+            }
+        }
+
+        Type caseType = typecheckExpr(*switchCase.value, false, caseTargetType);
+
+        auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
+        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+
+        if (switchCase.value->isNullLiteralExpr()) {
+            // Only optional-pointer conditions route null; anything else can't match it.
+            // (The null literal adopts an optional condition type, so compare before converting.)
+            if (!nullRoutedOptional) {
+                ERROR(switchCase.value->location, "case value type 'null' doesn't match switch condition type '" << conditionType << "'");
+            }
+            if (seenNullCase) {
+                ERROR(switchCase.value->location, "duplicate 'case null'");
+            }
+            seenNullCase = true;
+        } else if (auto converted = convert(switchCase.value, caseTargetType)) {
+            switchCase.value = converted;
+            // Conversions can wrap the value, hiding the enum case from the checks below.
+            memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
+            enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+        } else {
+            ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << caseTargetType << "'");
+        }
+
+        if (!nullRoutedOptional && conditionType.isOptionalType() && !conditionType.getWrappedType().isPointerType() && !enumCase
+            && caseType != conditionType) {
+            // Value-optional conditions (e.g. int?) only match enum cases (Some/None); a wrapped
+            // value has no case representation, so don't silently wrap to the optional type.
+            ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
+        }
+
+        if (!enumCase && !switchCase.value->isConstant()) {
+            ERROR(switchCase.value->location, "case value must be constant");
+        }
 
         Scope scope(nullptr, &currentModule->symbolTable);
         NarrowMap outerNarrowings = narrowedTypes;
@@ -472,6 +586,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     }
 
     {
+        Scope scope(nullptr, &currentModule->symbolTable);
         NarrowMap outerNarrowings = narrowedTypes;
         for (auto& defaultStmt : stmt.defaultStmts) {
             typecheckStmt(defaultStmt);
@@ -659,15 +774,42 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
     dropNarrowingsForNames(assignedNames);
 }
 
+void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
+    // Like for statements, assignments in the condition or body execute on later
+    // iterations, so narrowings for variables assigned there don't hold after the loop.
+    // Unlike while, the body runs before the first check, so the condition's
+    // narrowings don't apply to the body.
+    llvm::StringSet<> assignedNames;
+    collectAssignedNames(*doWhileStmt.condition, assignedNames);
+    for (auto& stmt : doWhileStmt.body)
+        collectAssignedNames(stmt, assignedNames);
+    NarrowMap outerNarrowings = narrowedTypes;
+    dropNarrowingsForNames(assignedNames);
+
+    Type conditionType = typecheckExpr(*doWhileStmt.condition);
+    typecheckImplicitlyBoolConvertibleExpr(conditionType, doWhileStmt.condition->location);
+
+    currentControlStmts.push_back(&doWhileStmt);
+
+    for (auto& stmt : doWhileStmt.body) {
+        typecheckStmt(stmt);
+    }
+
+    currentControlStmts.pop_back();
+
+    narrowedTypes = outerNarrowings;
+    dropNarrowingsForNames(assignedNames);
+}
+
 void Typechecker::typecheckBreakStmt(BreakStmt& breakStmt) {
     if (llvm::none_of(currentControlStmts, [](const Stmt* stmt) { return stmt->isBreakable(); })) {
-        ERROR(breakStmt.location, "'break' is only allowed inside 'while', 'for', and 'switch' statements");
+        ERROR(breakStmt.location, "'break' is only allowed inside 'while', 'do-while', 'for', and 'switch' statements");
     }
 }
 
 void Typechecker::typecheckContinueStmt(ContinueStmt& continueStmt) {
     if (llvm::none_of(currentControlStmts, [](const Stmt* stmt) { return stmt->isContinuable(); })) {
-        ERROR(continueStmt.location, "'continue' is only allowed inside 'while' and 'for' statements");
+        ERROR(continueStmt.location, "'continue' is only allowed inside 'while', 'do-while', and 'for' statements");
     }
 }
 
@@ -688,13 +830,17 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
         case StmtKind::VarStmt:
             typecheckVarStmt(llvm::cast<VarStmt>(*stmt));
             break;
-        case StmtKind::ExprStmt:
-            typecheckExpr(*llvm::cast<ExprStmt>(stmt)->expr);
+        case StmtKind::ExprStmt: {
+            auto& exprStmt = *llvm::cast<ExprStmt>(stmt);
+            Type type = typecheckExpr(*exprStmt.expr);
+            if (!exprStmt.discardsResult) warnIfUnusedResult(*exprStmt.expr, type);
             break;
+        }
         case StmtKind::DeferStmt: {
             // Deferred expressions run at scope exit, when narrowings established here may no longer hold.
             llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
-            typecheckExpr(*llvm::cast<DeferStmt>(stmt)->expr);
+            auto& expr = *llvm::cast<DeferStmt>(stmt)->expr;
+            warnIfUnusedResult(expr, typecheckExpr(expr));
             break;
         }
         case StmtKind::IfStmt:
@@ -709,6 +855,9 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
             typecheckStmt(stmt);
             break;
         }
+        case StmtKind::DoWhileStmt:
+            typecheckDoWhileStmt(llvm::cast<DoWhileStmt>(*stmt));
+            break;
         case StmtKind::ForStmt:
             typecheckForStmt(llvm::cast<ForStmt>(*stmt));
             break;

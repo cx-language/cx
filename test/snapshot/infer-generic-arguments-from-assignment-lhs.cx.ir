@@ -54,8 +54,11 @@ loop.end:
 }
 
 void _EN3std4ListI3intE4initE8capacity3int(List<int>* this, int capacity) {
+    int* capacity_0 = alloca int
+    store capacity to capacity_0
     void _0 = call _EN3std4ListI3intE4initE(List<int>* this)
-    void _1 = call _EN3std4ListI3intE7reserveE3int(List<int>* this, int capacity)
+    int capacity.load = load capacity_0
+    void _1 = call _EN3std4ListI3intE7reserveE3int(List<int>* this, int capacity.load)
     return void
 }
 
@@ -101,25 +104,32 @@ void _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* this) {
 }
 
 void _EN3std10deallocateIAU_3intEEAU_3int(int* allocation) {
-    void* _0 = cast allocation to void*
+    int** allocation_0 = alloca int*
+    store allocation to allocation_0
+    int* allocation.load = load allocation_0
+    void* _0 = cast allocation.load to void*
     void _1 = call free(void* _0)
     return void
 }
 
 void _EN3std4ListI3intE7reserveE3int(List<int>* this, int minimumCapacity) {
+    int* minimumCapacity_0 = alloca int
     int** newBuffer = alloca int*
     RangeIterator<int>* __iterator = alloca RangeIterator<int>
     Range<int>* _0 = alloca Range<int>
     int* index = alloca int
     int** source = alloca int*
     int** target = alloca int*
+    store minimumCapacity to minimumCapacity_0
+    int minimumCapacity.load = load minimumCapacity_0
     int* capacity = getelementptr this, 2
     int capacity.load = load capacity
-    bool _1 = minimumCapacity > capacity.load
+    bool _1 = minimumCapacity.load > capacity.load
     br _1, if.then, if.else
 
 if.then:
-    int* _2 = call _EN3std13allocateArrayI3intEE3int(int minimumCapacity)
+    int minimumCapacity.load_0 = load minimumCapacity_0
+    int* _2 = call _EN3std13allocateArrayI3intEE3int(int minimumCapacity.load_0)
     store _2 to newBuffer
     int* size = getelementptr this, 1
     int size.load = load size
@@ -180,34 +190,35 @@ if.end_0:
     int* newBuffer.load_0 = load newBuffer
     store newBuffer.load_0 to buffer_1
     int* capacity_1 = getelementptr this, 2
-    store minimumCapacity to capacity_1
+    int minimumCapacity.load_1 = load minimumCapacity_0
+    store minimumCapacity.load_1 to capacity_1
     br if.end
 }
 
 void _EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ArrayIterator<int>* this, ArrayRef<int> array) {
-    ArrayRef<int>* _0 = alloca ArrayRef<int>
-    ArrayRef<int>* _1 = alloca ArrayRef<int>
-    ArrayRef<int>* _2 = alloca ArrayRef<int>
+    ArrayRef<int>* array_0 = alloca ArrayRef<int>
+    store array to array_0
     int** current = getelementptr this, 0
-    store array to _0
-    int* _3 = call _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* _0)
-    store _3 to current
+    int* _0 = call _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* array_0)
+    store _0 to current
     int** end = getelementptr this, 1
-    store array to _1
-    int* _4 = call _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* _1)
-    store array to _2
-    int _5 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* _2)
-    int* _6 = getelementptr _4, _5
-    store _6 to end
+    int* _1 = call _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* array_0)
+    int _2 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* array_0)
+    int* _3 = getelementptr _1, _2
+    store _3 to end
     return void
 }
 
 void _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* this, List<int>* list) {
+    List<int>** list_0 = alloca List<int>*
+    store list to list_0
     int** data = getelementptr this, 0
-    int* _0 = call _EN3std4ListI3intE4dataE(List<int>* list)
+    List<int>* list.load = load list_0
+    int* _0 = call _EN3std4ListI3intE4dataE(List<int>* list.load)
     store _0 to data
     int* size = getelementptr this, 1
-    int _1 = call _EN3std4ListI3intE4sizeE(List<int>* list)
+    List<int>* list.load_0 = load list_0
+    int _1 = call _EN3std4ListI3intE4sizeE(List<int>* list.load_0)
     store _1 to size
     return void
 }
@@ -215,8 +226,11 @@ void _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* this, List<int>* li
 extern void free(void*)
 
 int* _EN3std13allocateArrayI3intEE3int(int size) {
-    uint64 _0 = cast size to uint64
-    uint64 _1 = sizeof(int) * _0
+    int* size_0 = alloca int
+    store size to size_0
+    int size.load = load size_0
+    uint64 _0 = cast size.load to uint64
+    uint64 _1 = uint64 4 * _0
     void* _2 = call malloc(uint64 _1)
     bool assert.condition = _2 == void* null
     br assert.condition, assert.fail, assert.success

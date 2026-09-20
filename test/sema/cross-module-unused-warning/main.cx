@@ -1,0 +1,11 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: unused declaration 'helper'
+// CHECK: {{.*}}a.cx:7:6: warning: unused declaration 'leftover'
+// CHECK-NOT: unused declaration 'helper'
+
+import mod;
+
+void main() {
+    helper();
+}

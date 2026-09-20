@@ -1,0 +1,23 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    int64 a = 5;
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'int64' to 'int'
+    int b = a;
+
+    uint32 c = 5;
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'uint32' to 'int'
+    int d = c;
+
+    int e = 5;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int' to 'uint'
+    uint f = e;
+
+    float g = 1.5;
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'float' to 'int'
+    int h = g;
+
+    int8 i = 1;
+    // CHECK: [[@LINE+1]]:16: error: cannot assign 'int8' to 'int64*'
+    int64* p = i;
+}

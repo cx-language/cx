@@ -1,0 +1,23 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:2
+// CHECK-NEXT:1
+// CHECK-NEXT:-2
+// CHECK-NEXT:-1
+// CHECK-NEXT:0
+// CHECK-NEXT:1
+// CHECK-NEXT:2
+
+// %% is the positive remainder: the result takes the sign of the divisor.
+
+void main() {
+    println(-7 %% 3);
+    println(7 %% 3);
+    println(7 %% -3);
+    println(-7 %% -3);
+    println(6 %% 3);
+    println(uint(7) %% uint(3));
+    int a = -7;
+    int b = 3;
+    println(a %% b);
+}

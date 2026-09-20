@@ -1,0 +1,23 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:3
+// CHECK-NEXT:30
+// CHECK-NEXT:3
+// CHECK-NEXT:10
+// CHECK-NEXT:11
+// CHECK-NEXT:12
+
+// Multiple variables can share one declaration, each with its own
+// initializer. Works in C-style for loop initializers too.
+
+void main() {
+    float x = 1, y = 2;
+    println(x + y);
+    var a = 10, b = 20;
+    println(a + b);
+    const c = 1, d = 2;
+    println(c + d);
+    for (int i = 0, j = 10; i < 3; i += 1) {
+        println(i + j);
+    }
+}

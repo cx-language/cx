@@ -8,6 +8,14 @@ struct C: Comparable {
     }
 }
 
+struct E: Equatable {
+    int a;
+
+    bool equals(E* other) {
+        return this.a == other.a;
+    }
+}
+
 void main() {
     var a = C(6);
     var b = C(99);
@@ -18,4 +26,13 @@ void main() {
     assert(a < b);
     assert(!(a == b));
     assert(a != b);
+
+    var x = E(6);
+    var y = E(99);
+    var z = E(6);
+
+    assert(!(x == y));
+    assert(x != y);
+    assert(x == z);
+    assert(!(x != z));
 }

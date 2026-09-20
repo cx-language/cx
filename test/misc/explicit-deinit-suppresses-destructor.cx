@@ -1,0 +1,22 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:dtor
+// CHECK-NEXT:after
+// CHECK-NEXT:done
+// CHECK-NEXT:dtor
+
+struct C {
+    int i;
+    ~C() {
+        println("dtor");
+    }
+}
+
+void main() {
+    var c = C(i = 1);
+    c.deinit();
+    println("after");
+
+    var d = C(i = 2);
+    println("done");
+}

@@ -1,5 +1,6 @@
 
-%"Optional<int>" = type { i32, <{ { i32 } }> }
+%0 = type <{ { i32 } }>
+%"Optional<int>" = type { i32, %0 }
 
 @0 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:33:18\0A\00", align 1
 
@@ -228,6 +229,8 @@ if.end31:                                         ; preds = %if.else30, %if.then
 declare void @_EN3std10assertFailEP4char(ptr)
 
 define void @_EN4main12takesNonNullE3int(i32 %i) {
+  %i1 = alloca i32, align 4
+  store i32 %i, ptr %i1, align 4
   ret void
 }
 

@@ -1,0 +1,39 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct CopyablePoint: Copyable { int x; }
+struct PlainPoint { int x; }
+
+void main() {
+    var copies = [CopyablePoint(x = 1), CopyablePoint(x = 2)];
+    for p in copies {
+        p.x = 99;
+    }
+    // CHECK:1
+    println(copies[0].x);
+    // CHECK-NEXT:2
+    println(copies[1].x);
+
+    var refs = [PlainPoint(x = 1), PlainPoint(x = 2)];
+    for p in refs {
+        p.x = 99;
+    }
+    // CHECK-NEXT:99
+    println(refs[0].x);
+    // CHECK-NEXT:99
+    println(refs[1].x);
+
+    var list = List<CopyablePoint>();
+    list.push(CopyablePoint(x = 3));
+    for p in list {
+        p.x = 99;
+    }
+    // CHECK-NEXT:3
+    println(list[0].x);
+
+    var found = list.find(predicate = (p) => p.x == 3);
+    if (found != null) {
+        found.x = 7;
+    }
+    // CHECK-NEXT:7
+    println(list[0].x);
+}

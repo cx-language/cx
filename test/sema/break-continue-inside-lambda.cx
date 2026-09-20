@@ -24,14 +24,14 @@ void main() {
     while true {
         var f = () => {
             if true {
-                // CHECK: [[@LINE+1]]:17: error: 'break' is only allowed inside 'while', 'for', and 'switch' statements
+                // CHECK: [[@LINE+1]]:17: error: 'break' is only allowed inside 'while', 'do-while', 'for', and 'switch' statements
                 break;
             }
             return 1;
         };
         var g = () => {
             if true {
-                // CHECK: [[@LINE+1]]:17: error: 'continue' is only allowed inside 'while' and 'for' statements
+                // CHECK: [[@LINE+1]]:17: error: 'continue' is only allowed inside 'while', 'do-while', and 'for' statements
                 continue;
             }
             return 1;

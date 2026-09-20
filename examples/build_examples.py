@@ -20,7 +20,7 @@ for file in os.listdir("."):
 
     if file.endswith(".cx"):
         output = os.path.splitext(file)[0] + (".exe" if platform.system() == "Windows" else "")
-        exit_status = subprocess.call([args.cx, file, "-o", output, "-Werror"])
+        exit_status = subprocess.call([args.cx, file, "-o", output, "-Werror"] + cx_args)
         os.remove(output)
     elif file not in ignored_dirs and os.path.isdir(file):
         exit_status = subprocess.call([args.cx, "build"] + cx_args, cwd=file)

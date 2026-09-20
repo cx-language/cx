@@ -20,13 +20,19 @@ define i32 @main() {
 }
 
 define void @_EN4main3Foo4initE3int4bool(ptr %this, i32 %a, i1 %b) {
-  %a1 = getelementptr inbounds %Foo, ptr %this, i32 0, i32 0
+  %a1 = alloca i32, align 4
+  %b2 = alloca i1, align 1
   store i32 %a, ptr %a1, align 4
-  %b2 = getelementptr inbounds %Foo, ptr %this, i32 0, i32 1
   store i1 %b, ptr %b2, align 1
   %a3 = getelementptr inbounds %Foo, ptr %this, i32 0, i32 0
-  %a.load = load i32, ptr %a3, align 4
-  %1 = add i32 %a.load, 1
-  store i32 %1, ptr %a3, align 4
+  %a.load = load i32, ptr %a1, align 4
+  store i32 %a.load, ptr %a3, align 4
+  %b4 = getelementptr inbounds %Foo, ptr %this, i32 0, i32 1
+  %b.load = load i1, ptr %b2, align 1
+  store i1 %b.load, ptr %b4, align 1
+  %a5 = getelementptr inbounds %Foo, ptr %this, i32 0, i32 0
+  %a.load6 = load i32, ptr %a5, align 4
+  %1 = add i32 %a.load6, 1
+  store i32 %1, ptr %a5, align 4
   ret void
 }

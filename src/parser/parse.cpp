@@ -437,6 +437,11 @@ Type Parser::parseType() {
             type = OptionalType::get(type, Mutability::Mutable, location);
             consumeToken();
             break;
+        case Token::QuestionQuestion:
+            // A lexed `??` in type position is two nested optionals (e.g. `int??`).
+            type = OptionalType::get(OptionalType::get(type, Mutability::Mutable, location), Mutability::Mutable, location);
+            consumeToken();
+            break;
         case Token::LeftParen:
             type = parseFunctionType(type);
             break;
@@ -451,7 +456,7 @@ Type Parser::parseType() {
     }
 }
 
-/// sizeof-expr ::= 'sizeof' '(' type ')'
+/// sizeof-expr ::= 'sizeof' '(' (type | variable) ')'
 SizeofExpr* Parser::parseSizeofExpr() {
     ASSERT(currentToken() == Token::Sizeof);
     auto location = getCurrentLocation();
@@ -517,6 +522,11 @@ LambdaExpr* Parser::parseLambdaExpr() {
         params.push_back(ParamDecl(Type(), paramName.getString().str(), false, paramName.location));
     } else {
         params = parseParamList(nullptr, false);
+        for (auto& param : params) {
+            if (param.defaultValue) {
+                ERROR(param.getLocation(), "lambda parameters cannot have default values");
+            }
+        }
     }
 
     auto lambda = makeAST<LambdaExpr>(std::move(params), currentModule, location);
@@ -548,6 +558,22 @@ IfExpr* Parser::parseIfExpr(Expr* condition) {
     return makeAST<IfExpr>(condition, thenExpr, elseExpr, location);
 }
 
+/// if-then-else-expr ::= 'if' expr 'then' expr 'else' expr
+IfExpr* Parser::parseIfThenElseExpr() {
+    ASSERT(currentToken() == Token::If);
+    auto location = consumeToken().location;
+    Expr* condition;
+    {
+        llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
+        condition = parseExpr();
+    }
+    parse(Token::Then);
+    auto thenExpr = parseExpr();
+    parse(Token::Else);
+    auto elseExpr = parseExpr();
+    return makeAST<IfExpr>(condition, thenExpr, elseExpr, location);
+}
+
 bool Parser::shouldParseVarStmt() {
     if (currentToken().is({Token::Var, Token::Const})) return true;
     if (!currentToken().is({Token::Identifier, Token::LeftParen})) return false;
@@ -557,11 +583,16 @@ bool Parser::shouldParseVarStmt() {
     while (true) {
         if (lookAhead(offset).is(Token::Assignment)) {
             if (lookAhead(offset - 1).is(Token::Identifier)) {
-                if (lookAhead(offset - 2).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater})) {
+                // Walk back over any ', name' pairs of a multi-variable declaration.
+                int back = offset - 2;
+                while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
+                    back -= 2;
+                }
+                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater})) {
                     return true;
                 }
-                if (lookAhead(offset - 2).is(Token::Star)) {
-                    if (lookAhead(offset - 3).is(Token::Semicolon) || lookAhead(offset - 2).location.line != lookAhead(offset - 3).location.line) {
+                if (lookAhead(back).is(Token::Star)) {
+                    if (lookAhead(back - 1).is(Token::Semicolon) || lookAhead(back).location.line != lookAhead(back - 1).location.line) {
                         return false;
                     }
                     return true;
@@ -570,7 +601,12 @@ bool Parser::shouldParseVarStmt() {
             return false;
         } else if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).location.line != lookAhead(offset - 1).location.line) {
             if (lookAhead(offset - 1).is(Token::Identifier)) {
-                if (lookAhead(offset - 2).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater, Token::Star})) {
+                // Walk back over any ', name' pairs of a multi-variable declaration.
+                int back = offset - 2;
+                while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
+                    back -= 2;
+                }
+                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater, Token::Star})) {
                     return true;
                 }
             }
@@ -615,6 +651,7 @@ bool Parser::shouldParseGenericArgumentListAfterMember() {
         case Token::Comma:
         case Token::Star:
         case Token::QuestionMark:
+        case Token::QuestionQuestion:
         case Token::LeftBracket:
         case Token::RightBracket:
         case Token::IntegerLiteral:
@@ -720,6 +757,9 @@ Expr* Parser::parsePostfixExpr() {
     case Token::Switch:
         expr = parseSwitchExpr();
         break;
+    case Token::If:
+        expr = parseIfThenElseExpr();
+        break;
     default:
         unexpectedToken(currentToken());
         break;
@@ -781,11 +821,16 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
             continue;
         }
 
+        auto lhsEndLine = lookAhead(-1).location.line;
         auto backtrackLocation = currentTokenIndex;
         auto op = consumeToken();
-        auto rhs = parseBinaryExpr(getPrecedence(op) + 1);
+        // Assignments associate to the right so `a = b = 1` parses as `a = (b = 1)`.
+        // `??` does too so `a ?? b ?? c` parses as `a ?? (b ?? c)`.
+        auto rhs = parseBinaryExpr(isAssignmentOperator(op) || op == Token::QuestionQuestion ? getPrecedence(op) : getPrecedence(op) + 1);
 
-        if (isAssignmentOperator(currentToken())) {
+        if (isAssignmentOperator(currentToken()) && op.location.line != lhsEndLine) {
+            // The operator continues on a later line only to hit an assignment (e.g. a
+            // dereference statement after another statement); backtrack so it starts a new statement.
             currentTokenIndex = backtrackLocation;
             break;
         }
@@ -871,7 +916,7 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     if (currentToken() == Token::Assignment) {
         consumeToken();
         initializer = parseExpr();
-    } else if (currentToken() == Token::Semicolon || currentToken().location.line != lookAhead(-1).location.line) {
+    } else if (currentToken() == Token::Semicolon || currentToken() == Token::Comma || currentToken().location.line != lookAhead(-1).location.line) {
         WARN(nameLocation, "missing initializer");
     }
 
@@ -879,9 +924,17 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     return makeAST<VarDecl>(type, name.str(), initializer, parent, accessLevel, *currentModule, nameLocation);
 }
 
-/// var-stmt ::= var-decl
+/// var-stmt ::= var-decl (',' id ('=' initializer)?)*
 VarStmt* Parser::parseVarStmt(Decl* parent) {
-    return makeAST<VarStmt>(parseVarDecl(parent, AccessLevel::None));
+    std::vector<VarDecl*> decls;
+    decls.push_back(parseVarDecl(parent, AccessLevel::None, false));
+    while (currentToken() == Token::Comma) {
+        consumeToken();
+        auto name = parse(Token::Identifier);
+        decls.push_back(parseVarDeclAfterName(parent, AccessLevel::None, decls.front()->type, name.getString(), name.location, false));
+    }
+    parseStmtTerminator();
+    return makeAST<VarStmt>(std::move(decls));
 }
 
 /// expr-stmt ::= expr ('\n' | ';')
@@ -921,9 +974,9 @@ DeferStmt* Parser::parseDeferStmt() {
 }
 
 /// if-stmt ::= 'if' (expr | var-decl) block-or-stmt ('else' block-or-stmt)?
-IfStmt* Parser::parseIfStmt(Decl* parent) {
+Stmt* Parser::parseIfStmt(Decl* parent) {
     ASSERT(currentToken() == Token::If);
-    consumeToken();
+    auto location = consumeToken().location;
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
     Expr* condition;
@@ -931,6 +984,18 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExprOrVarDecl(parent);
         if (parens) parse(Token::RightParen);
+    }
+    if (currentToken() == Token::Then) {
+        if (condition->isVarDeclExpr()) {
+            ERROR(condition->location, "variable declaration conditions are not supported in if expressions");
+        }
+        consumeToken();
+        auto thenExpr = parseExpr();
+        parse(Token::Else);
+        auto elseExpr = parseExpr();
+        auto stmt = makeAST<ExprStmt>(makeAST<IfExpr>(condition, thenExpr, elseExpr, location));
+        parseStmtTerminator();
+        return stmt;
     }
     auto thenStmts = parseBlockOrStmt(parent);
     std::vector<Stmt*> elseStmts;
@@ -955,6 +1020,24 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     }
     auto body = parseBlockOrStmt(parent);
     return makeAST<WhileStmt>(condition, std::move(body), location);
+}
+
+/// do-while-stmt ::= 'do' block-or-stmt 'while' expr ('\n' | ';')
+DoWhileStmt* Parser::parseDoWhileStmt(Decl* parent) {
+    ASSERT(currentToken() == Token::Do);
+    auto location = consumeToken().location;
+    auto body = parseBlockOrStmt(parent);
+    parse(Token::While);
+    bool parens = currentToken() == Token::LeftParen;
+    if (parens) consumeToken();
+    Expr* condition;
+    {
+        llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
+        condition = parseExpr();
+        if (parens) parse(Token::RightParen);
+    }
+    parseStmtTerminator();
+    return makeAST<DoWhileStmt>(condition, std::move(body), location);
 }
 
 /// for-stmt ::= 'for' for-header block-or-stmt
@@ -987,7 +1070,7 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
 
     auto varStmt = currentToken() == Token::Semicolon ? (consumeToken(), nullptr) : parseVarStmt(parent);
 
-    if (!varStmt || varStmt->decl->initializer) {
+    if (!varStmt || varStmt->decls.front()->initializer) {
         // C-style for loop. The condition and increment expressions may be omitted.
         Expr* condition = nullptr;
         if (currentToken() == Token::Semicolon) {
@@ -1006,7 +1089,8 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         auto body = parseBlockOrStmt(parent);
         return makeAST<ForStmt>(varStmt, condition, increment, std::move(body), location);
     } else if (currentToken() == Token::In) {
-        ERROR(varStmt->decl->getLocation(), "for-each loop variable must be a bare identifier, write 'for " << varStmt->decl->getName() << " in ...'");
+        ERROR(varStmt->decls.front()->getLocation(),
+              "for-each loop variable must be a bare identifier, write 'for " << varStmt->decls.front()->getName() << " in ...'");
     } else {
         parse(Token::In);
         llvm_unreachable("parse() throws on mismatch");
@@ -1138,9 +1222,11 @@ ContinueStmt* Parser::parseContinueStmt() {
 }
 
 /// stmt ::= var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
-///          while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt
+///          while-stmt | do-while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt | block
 Stmt* Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
+    case Token::LeftBrace:
+        return makeAST<CompoundStmt>(parseBlock(parent));
     case Token::Return:
         return parseReturnStmt();
     case Token::Defer:
@@ -1149,6 +1235,8 @@ Stmt* Parser::parseStmt(Decl* parent) {
         return parseIfStmt(parent);
     case Token::While:
         return parseWhileStmt(parent);
+    case Token::Do:
+        return parseDoWhileStmt(parent);
     case Token::For:
         return parseForOrForEachStmt(parent);
     case Token::Switch:
@@ -1161,7 +1249,9 @@ Stmt* Parser::parseStmt(Decl* parent) {
         if (currentToken().getString() == "_") {
             consumeToken();
             parse(Token::Assignment);
-            return parseExprStmt();
+            auto* stmt = parseExprStmt();
+            stmt->discardsResult = true;
+            return stmt;
         } else if (lookAhead(1).is(Token::Assignment)) {
             return parseExprStmt();
         }
@@ -1182,7 +1272,7 @@ std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind en
     return stmts;
 }
 
-/// param-decl ::= 'public'? type? id | 'public'? type '...' id
+/// param-decl ::= 'public'? type? id | 'public'? type '...' id | 'public'? type
 ParamDecl Parser::parseParam(bool requireType) {
     bool isPublic = currentToken() == Token::Public;
     if (isPublic) consumeToken();
@@ -1198,9 +1288,23 @@ ParamDecl Parser::parseParam(bool requireType) {
         isPack = true;
     }
 
+    // A typed parameter may omit its name, e.g. `void f(int)`.
+    if (type && currentToken().is({Token::Comma, Token::RightParen})) {
+        ParamDecl param(type, "", isPublic, getCurrentLocation());
+        param.isPack = isPack;
+        return param;
+    }
+
     auto name = parse(Token::Identifier);
     ParamDecl param(type, name.getString().str(), isPublic, name.location);
     param.isPack = isPack;
+    if (currentToken() == Token::Assignment) {
+        if (isPack) {
+            ERROR(name.location, "variadic parameter cannot have a default value");
+        }
+        consumeToken();
+        param.defaultValue = parseExpr();
+    }
     return param;
 }
 
@@ -1223,6 +1327,14 @@ std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireType
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
     parse(Token::RightParen);
+    for (size_t i = 1; i < params.size(); ++i) {
+        if (params[i - 1].defaultValue && !params[i].defaultValue && !params[i].isPack) {
+            if (params[i].getName().empty()) {
+                ERROR(params[i].getLocation(), "unnamed parameter follows a parameter with a default value");
+            }
+            ERROR(params[i].getLocation(), "parameter '" << params[i].getName() << "' without a default value follows a parameter with a default value");
+        }
+    }
     return params;
 }
 
@@ -1573,6 +1685,9 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
         }
     } else {
         condition = llvm::is_contained(options.defines, identifier.getString());
+        if (options.warnUndefinedMacros && !condition && currentModule->name != "std") {
+            WARN(identifier.location, "undefined macro '" << identifier.getString() << "', assuming false");
+        }
     }
 
     if (negate) condition = !condition;
@@ -1649,6 +1764,14 @@ start:
 
 Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel) {
     Decl* decl;
+    // A call-shaped `name(...)` here is a misplaced statement, not a function
+    // type; report that instead of a confusing type error from inside the
+    // parentheses. Tokens that can start or end a function-type parameter
+    // list keep the normal path.
+    if (currentToken() == Token::Identifier && lookAhead(1) == Token::LeftParen
+        && !lookAhead(2).is({Token::Identifier, Token::Const, Token::LeftParen, Token::RightParen, Token::DotDotDot})) {
+        ERROR(getCurrentLocation(), "statements are not allowed in global scope");
+    }
     auto type = parseType();
     auto location = getCurrentLocation();
     auto name = parseFunctionName(nullptr);

@@ -1,0 +1,39 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:3
+// CHECK-NEXT:1
+// CHECK-NEXT:4
+// CHECK-NEXT:2
+
+// do-while runs its body before the first condition check, so the body
+// always runs at least once. break and continue work as in other loops.
+
+void main() {
+    int i = 0;
+    do {
+        i += 1;
+    } while (i < 3);
+    println(i);
+
+    int j = 0;
+    do {
+        j += 1;
+    } while (false);
+    println(j);
+
+    int k = 0;
+    do {
+        k += 1;
+        if (k == 2) {
+            continue;
+        }
+        if (k == 4) {
+            break;
+        }
+    } while (k < 10);
+    println(k);
+
+    int m = 0;
+    do m += 1; while (m < 2);
+    println(m);
+}

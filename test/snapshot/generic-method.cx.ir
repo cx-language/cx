@@ -20,11 +20,17 @@ void _EN4main1X4initE(X* this) {
 }
 
 int _EN4main1X1fI3intEEF_3int(X* this, int()* t) {
-    int _0 = call t()
+    int()** t_0 = alloca int()*
+    store t to t_0
+    int()* t.load = load t_0
+    int _0 = call t.load()
     return _0
 }
 
 bool _EN4main1X1fI4boolEEF_4bool(X* this, bool()* t) {
-    bool _0 = call t()
+    bool()** t_0 = alloca bool()*
+    store t to t_0
+    bool()* t.load = load t_0
+    bool _0 = call t.load()
     return _0
 }

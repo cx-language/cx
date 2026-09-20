@@ -18,15 +18,21 @@ define i32 @main() {
 }
 
 define void @_EN4main3FooI3intE4initE3int(ptr %this, i32 %t) {
-  %t1 = getelementptr inbounds %"Foo<int>", ptr %this, i32 0, i32 0
+  %t1 = alloca i32, align 4
   store i32 %t, ptr %t1, align 4
+  %t2 = getelementptr inbounds %"Foo<int>", ptr %this, i32 0, i32 0
+  %t.load = load i32, ptr %t1, align 4
+  store i32 %t.load, ptr %t2, align 4
   ret void
 }
 
 declare void @_EN3std6string4initEP4char3int(ptr, ptr, i32)
 
 define void @_EN4main3FooI6stringE4initE6string(ptr %this, %string %t) {
-  %t1 = getelementptr inbounds %"Foo<string>", ptr %this, i32 0, i32 0
+  %t1 = alloca %string, align 8
   store %string %t, ptr %t1, align 8
+  %t2 = getelementptr inbounds %"Foo<string>", ptr %this, i32 0, i32 0
+  %t.load = load %string, ptr %t1, align 8
+  store %string %t.load, ptr %t2, align 8
   ret void
 }

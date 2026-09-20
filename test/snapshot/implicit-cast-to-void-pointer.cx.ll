@@ -23,9 +23,13 @@ define i32 @main() {
 }
 
 define void @_EN4main3barEP4void(ptr %p) {
+  %p1 = alloca ptr, align 8
+  store ptr %p, ptr %p1, align 8
   ret void
 }
 
 define void @_EN4main3bazEOP4void(ptr %p) {
+  %p1 = alloca ptr, align 8
+  store ptr %p, ptr %p1, align 8
   ret void
 }

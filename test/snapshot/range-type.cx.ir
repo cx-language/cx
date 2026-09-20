@@ -1,30 +1,30 @@
 
 int _EN4main3fooE5RangeI3intE(Range<int> r) {
+    Range<int>* r_0 = alloca Range<int>
     int* sum = alloca int
     RangeIterator<int>* __iterator = alloca RangeIterator<int>
-    Range<int>* _0 = alloca Range<int>
     int* i = alloca int
+    store r to r_0
     store int 0 to sum
-    store r to _0
-    RangeIterator<int> _1 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
-    store _1 to __iterator
+    RangeIterator<int> _0 = call _EN3std5RangeI3intE8iteratorE(Range<int>* r_0)
+    store _0 to __iterator
     br loop.condition
 
 loop.condition:
-    bool _2 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
-    br _2, loop.body, loop.end
+    bool _1 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _1, loop.body, loop.end
 
 loop.body:
-    int _3 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
-    store _3 to i
+    int _2 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _2 to i
     int sum.load = load sum
     int i.load = load i
-    int _4 = sum.load + i.load
-    store _4 to sum
+    int _3 = sum.load + i.load
+    store _3 to sum
     br loop.increment
 
 loop.increment:
-    void _5 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    void _4 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
     br loop.condition
 
 loop.end:

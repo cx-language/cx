@@ -24,6 +24,7 @@ llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
         .Case("int128", llvm::Type::getInt128Ty(ctx))
         .Case("uint", llvm::Type::getInt32Ty(ctx))
         .Case("uint8", llvm::Type::getInt8Ty(ctx))
+        .Case("byte", llvm::Type::getInt8Ty(ctx))
         .Case("uint16", llvm::Type::getInt16Ty(ctx))
         .Case("uint32", llvm::Type::getInt32Ty(ctx))
         .Case("uint64", llvm::Type::getInt64Ty(ctx))
@@ -88,7 +89,10 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
         if (it != structs.end()) return it->second;
 
         auto unionType = llvm::cast<IRUnionType>(type);
-        auto structType = unionType->name.empty() ? llvm::StructType::get(ctx) : llvm::StructType::create(ctx, unionType->name);
+        // Anonymous unions still need distinct opaque types: the uniqued empty struct from
+        // StructType::get is shared while it has no body, so a nested union lowered during
+        // field lowering would alias it and the outer setBody would not take effect.
+        auto structType = unionType->name.empty() ? llvm::StructType::create(ctx) : llvm::StructType::create(ctx, unionType->name);
         structs.try_emplace(unionType, structType);
 
         llvm::Type* largestFieldType;
@@ -396,7 +400,8 @@ llvm::Value* LLVMGenerator::codegenCast(const CastInst* inst) {
 
     if (type->isFloatingPoint()) {
         if (sourceType->isSignedInteger()) return builder.CreateSIToFP(value, getLLVMType(type));
-        if (sourceType->isUnsignedInteger()) return builder.CreateUIToFP(value, getLLVMType(type));
+        // char zero-extends like an unsigned integer.
+        if (sourceType->isUnsignedInteger() || sourceType->isChar()) return builder.CreateUIToFP(value, getLLVMType(type));
     }
 
     return builder.CreateBitOrPointerCast(value, getLLVMType(type), inst->name);

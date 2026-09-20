@@ -11,8 +11,11 @@ void _EN4main1S4initE(S* this) {
 }
 
 void _EN4main1S3fooE3int(S* this, int bar) {
+    int* bar_0 = alloca int
     int* a = alloca int
-    store bar to a
+    store bar to bar_0
+    int bar.load = load bar_0
+    store bar.load to a
     void _0 = call _EN4main1S3barE(S* this)
     return void
 }

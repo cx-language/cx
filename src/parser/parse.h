@@ -45,6 +45,7 @@ struct ExprStmt;
 struct DeferStmt;
 struct IfStmt;
 struct WhileStmt;
+struct DoWhileStmt;
 struct ForStmt;
 struct ForEachStmt;
 struct SwitchStmt;
@@ -110,6 +111,7 @@ private:
     LambdaExpr* parseLambdaExpr();
     IfExpr* parseIfExpr(Expr* condition);
     SwitchExpr* parseSwitchExpr();
+    IfExpr* parseIfThenElseExpr();
     bool shouldParseVarStmt();
     bool shouldParseGenericArgumentList();
     bool shouldParseGenericArgumentListAfterMember();
@@ -129,8 +131,9 @@ private:
     VarStmt* parseVarStmt(Decl* parent);
     ExprStmt* parseExprStmt();
     DeferStmt* parseDeferStmt();
-    IfStmt* parseIfStmt(Decl* parent);
+    Stmt* parseIfStmt(Decl* parent);
     WhileStmt* parseWhileStmt(Decl* parent);
+    DoWhileStmt* parseDoWhileStmt(Decl* parent);
     Stmt* parseForOrForEachStmt(Decl* parent);
     SwitchStmt* parseSwitchStmt(Decl* parent);
     std::pair<Expr*, VarDecl*> parseSwitchCaseHeader(Decl* parent);

@@ -70,11 +70,15 @@ bool Expr::isConstant() const {
     }
     case ExprKind::BinaryExpr: {
         auto binaryExpr = llvm::cast<BinaryExpr>(this);
+        // Like IfExpr, `??` always emits branches and is never folded.
+        if (binaryExpr->op == Token::QuestionQuestion) return false;
         return binaryExpr->op != Token::Assignment && binaryExpr->getLHS().isConstant() && binaryExpr->getRHS().isConstant();
     }
 
+    case ExprKind::SizeofExpr:
+        return llvm::cast<SizeofExpr>(this)->operandType.getSizeInBytes().has_value();
+
     case ExprKind::CallExpr:
-    case ExprKind::SizeofExpr: // TODO: sizeof should be a constant expression.
     case ExprKind::MemberExpr:
     case ExprKind::IndexExpr:
     case ExprKind::IndexAssignmentExpr:
@@ -88,14 +92,9 @@ bool Expr::isConstant() const {
         return llvm::cast<ImplicitCastExpr>(this)->operand->isConstant();
 
     case ExprKind::IfExpr:
-        return llvm::cast<IfExpr>(this)->condition->isConstant() && llvm::cast<IfExpr>(this)->thenExpr->isConstant()
-            && llvm::cast<IfExpr>(this)->elseExpr->isConstant();
-    case ExprKind::SwitchExpr: {
-        auto* switchExpr = llvm::cast<SwitchExpr>(this);
-        if (!switchExpr->condition->isConstant()) return false;
-        if (switchExpr->defaultExpr && !switchExpr->defaultExpr->isConstant()) return false;
-        return llvm::all_of(switchExpr->arms, [](auto& arm) { return arm.value->isConstant() && arm.expr->isConstant(); });
-    }
+    case ExprKind::SwitchExpr:
+        // Not folded even when constant; codegen always emits branches.
+        return false;
     }
 
     llvm_unreachable("all cases handled");
@@ -118,7 +117,20 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         return llvm::cast<UnaryExpr>(this)->getConstantIntegerValue();
     case ExprKind::BinaryExpr:
         return llvm::cast<BinaryExpr>(this)->getConstantIntegerValue();
-    case ExprKind::SizeofExpr:
+    case ExprKind::ImplicitCastExpr: {
+        // Only widening casts reach here; they preserve the value.
+        auto value = llvm::cast<ImplicitCastExpr>(this)->operand->getConstantIntegerValue();
+        value = value.extOrTrunc(type.getIntegerBitWidth());
+        value.setIsSigned(type.isSigned());
+        return value;
+    }
+    case ExprKind::SizeofExpr: {
+        // Same shape as lexer-produced integer literals (unsigned 64-bit) so
+        // mixed constant folding never sees mismatched APSInt widths.
+        llvm::APSInt value(64, false);
+        value = *llvm::cast<SizeofExpr>(this)->operandType.getSizeInBytes();
+        return value;
+    }
     case ExprKind::IfExpr:
     case ExprKind::SwitchExpr:
         llvm_unreachable("unimplemented");
@@ -384,6 +396,8 @@ llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
         return lhs / rhs;
     case Token::Modulo:
         return lhs % rhs;
+    case Token::PositiveModulo:
+        return (lhs % rhs + rhs) % rhs;
     case Token::And:
         return lhs & rhs;
     case Token::Or:

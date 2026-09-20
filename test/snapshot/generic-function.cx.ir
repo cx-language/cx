@@ -16,31 +16,43 @@ int main() {
 }
 
 void _EN4main3fooI3intEE3int(int t) {
+    int* t_0 = alloca int
+    store t to t_0
     return void
 }
 
 void _EN4main3fooI4boolEE4bool(bool t) {
+    bool* t_0 = alloca bool
+    store t to t_0
     return void
 }
 
 string _EN4main3barI6stringEE6string(string t) {
-    return t
+    string* t_0 = alloca string
+    store t to t_0
+    string t.load = load t_0
+    return t.load
 }
 
 void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
 }
 
 int _EN4main3quxI3intEE3int(int t) {
-    bool _0 = t < int 0
+    int* t_0 = alloca int
+    store t to t_0
+    int t.load = load t_0
+    bool _0 = t.load < int 0
     br _0, if.then, if.else
 
 if.then:
-    int _1 = -t
+    int t.load_0 = load t_0
+    int _1 = -t.load_0
     return _1
 
 if.else:
     br if.end
 
 if.end:
-    return t
+    int t.load_1 = load t_0
+    return t.load_1
 }

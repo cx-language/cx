@@ -2,6 +2,8 @@
 %"ArrayRef<int>" = type { ptr, i32 }
 
 define void @_EN4main3fooE8ArrayRefI3intE(%"ArrayRef<int>" %a) {
+  %a1 = alloca %"ArrayRef<int>", align 8
+  store %"ArrayRef<int>" %a, ptr %a1, align 8
   ret void
 }
 
@@ -17,5 +19,7 @@ define i32 @main() {
 }
 
 define void @_EN4main3bazEPA3_3int(ptr %b) {
+  %b1 = alloca ptr, align 8
+  store ptr %b, ptr %b1, align 8
   ret void
 }

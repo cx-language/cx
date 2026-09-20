@@ -1,0 +1,26 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// A parenthesized condition followed by '{' is a condition plus body, never
+// a block-bodied lambda parsed as part of the condition.
+void main() {
+    bool x = true;
+    // CHECK:if-then
+    if (x) { println("if-then"); } else { println("if-else"); }
+    // CHECK-NEXT:if-nested
+    if ((x)) { println("if-nested"); }
+    // CHECK-NEXT:if-braceless
+    if (x) println("if-braceless");
+    int i = 0;
+    // CHECK-NEXT:while
+    // CHECK-NEXT:while
+    while ((i < 2)) { println("while"); i = i + 1; }
+    // CHECK-NEXT:for
+    // CHECK-NEXT:for
+    for (int j = 0; (j < 2); j++) { println("for"); }
+    // CHECK-NEXT:0
+    // CHECK-NEXT:1
+    for k in (0..2) { println(k); }
+    int n = 1;
+    // CHECK-NEXT:one
+    switch ((n)) { case 1: println("one"); break; default: println("other"); break; }
+}

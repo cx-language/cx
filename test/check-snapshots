@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import shlex
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -55,6 +56,7 @@ for check in checks_to_run:
         print("FAIL: snapshot file not found\n", file=sys.stderr)
         print("Output:", file=sys.stderr)
         print(output, file=sys.stderr)
+        print("To update: UPDATE_SNAPSHOTS=1 python3 " + shlex.join(sys.argv), file=sys.stderr)
         sys.exit(1)
 
     if output != snapshot:
@@ -66,4 +68,5 @@ for check in checks_to_run:
         print("- Snapshot", file=sys.stderr)
         print("+ Received\n", file=sys.stderr)
         print("".join(diff), file=sys.stderr)
+        print("To update: UPDATE_SNAPSHOTS=1 python3 " + shlex.join(sys.argv), file=sys.stderr)
         sys.exit(1)

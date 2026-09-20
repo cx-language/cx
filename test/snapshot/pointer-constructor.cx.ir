@@ -1,9 +1,15 @@
 
 void _EN4main3fooEPP4charP4char(char** p, char* x) {
+    char*** p_0 = alloca char**
+    char** x_0 = alloca char*
     char*** pp = alloca char**
-    store p to pp
+    store p to p_0
+    store x to x_0
+    char** p.load = load p_0
+    store p.load to pp
     char** pp.load = load pp
-    store x to pp.load
+    char* x.load = load x_0
+    store x.load to pp.load
     char** pp.load_0 = load pp
     char* pp.load.load = load pp.load_0
     store char 120 to pp.load.load

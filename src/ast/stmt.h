@@ -14,6 +14,7 @@ enum class StmtKind {
     IfStmt,
     SwitchStmt,
     WhileStmt,
+    DoWhileStmt,
     ForStmt,
     ForEachStmt,
     BreakStmt,
@@ -56,18 +57,20 @@ struct ReturnStmt : Stmt {
 };
 
 struct VarStmt : Stmt {
-    VarStmt(VarDecl* decl) : Stmt(StmtKind::VarStmt), decl(decl) {}
+    VarStmt(std::vector<VarDecl*>&& decls) : Stmt(StmtKind::VarStmt), decls(std::move(decls)) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::VarStmt; }
 
-    VarDecl* decl;
+    std::vector<VarDecl*> decls;
 };
 
 /// A statement that consists of the evaluation of a single expression.
 struct ExprStmt : Stmt {
-    ExprStmt(Expr* expr) : Stmt(StmtKind::ExprStmt), expr(expr) {}
+    ExprStmt(Expr* expr, bool discardsResult = false) : Stmt(StmtKind::ExprStmt), expr(expr), discardsResult(discardsResult) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::ExprStmt; }
 
     Expr* expr;
+    // True for the explicit '_ = expr' discard form.
+    bool discardsResult;
 };
 
 struct DeferStmt : Stmt {
@@ -109,6 +112,16 @@ struct WhileStmt : Stmt {
     : Stmt(StmtKind::WhileStmt), condition(condition), body(std::move(body)), location(location) {}
     Stmt* lower();
     static bool classof(const Stmt* s) { return s->kind == StmtKind::WhileStmt; }
+
+    Expr* condition;
+    std::vector<Stmt*> body;
+    Location location;
+};
+
+struct DoWhileStmt : Stmt {
+    DoWhileStmt(Expr* condition, std::vector<Stmt*>&& body, Location location)
+    : Stmt(StmtKind::DoWhileStmt), condition(condition), body(std::move(body)), location(location) {}
+    static bool classof(const Stmt* s) { return s->kind == StmtKind::DoWhileStmt; }
 
     Expr* condition;
     std::vector<Stmt*> body;

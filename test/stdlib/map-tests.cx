@@ -42,7 +42,7 @@ void testResize() {
     for i in 0..255 {
         var lol = StringBuffer();
 
-        for j in 0..(i+1) {
+        for _ in 0..(i+1) {
             lol.push('a');
         }
 
@@ -121,7 +121,7 @@ void testEmptyMapIterator() {
     map.insert("foo", "foo");
     map.remove("foo");
 
-    for e in map {
+    for _ in map {
         assert(false);
     }
 }

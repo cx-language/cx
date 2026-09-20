@@ -11,12 +11,14 @@ void main() {
     testListInitWithRepeatedValue();
     testArrayIterator();
     testListMutatingIteration();
+    testListValueIteration();
     testListEnumeratedIterator();
     testEmpty();
     testFind();
     testMap();
     testFilter();
     testRemoveFirstByPredicate();
+    testRemovalReturnValues();
     testElementDestruction();
 }
 
@@ -77,6 +79,21 @@ void testArrayIterator() {
 }
 
 void testListMutatingIteration() {
+    var a = List<C>();
+    a.push(C(i = 1));
+    a.push(C(i = 2));
+    a.push(C(i = 3));
+
+    for e in a {
+        e.i++;
+    }
+
+    assert(a[0].i == 2);
+    assert(a[1].i == 3);
+    assert(a[2].i == 4);
+}
+
+void testListValueIteration() {
     var a = List<int>();
     a.push(1);
     a.push(2);
@@ -86,9 +103,9 @@ void testListMutatingIteration() {
         e++;
     }
 
-    assert(a[0] == 2);
-    assert(a[1] == 3);
-    assert(a[2] == 4);
+    assert(a[0] == 1);
+    assert(a[1] == 2);
+    assert(a[2] == 3);
 }
 
 void testListEnumeratedIterator() {
@@ -185,6 +202,27 @@ void testRemoveFirstByPredicate() {
     assert(a.empty());
 }
 
+void testRemovalReturnValues() {
+    var a = List([10, 20, 30]);
+
+    var pushed = a.push(40);
+    assert(*pushed == 40 && a.size() == 4);
+
+    assert(a.removeAt(0) == 10);
+    assert(a == List([20, 30, 40]));
+
+    assert(a.removeFirst() == 20);
+    assert(a == List([30, 40]));
+
+    var found = a.removeFirst(value => value > 30);
+    assert(found == 40);
+    assert(a == List([30]));
+
+    var missing = a.removeFirst(value => value > 30);
+    assert(missing == null);
+    assert(a == List([30]));
+}
+
 var destroyed = 0;
 
 struct DestructionTester {
@@ -193,18 +231,20 @@ struct DestructionTester {
     }
 }
 
+void sink(DestructionTester t) {}
+
 void testElementDestruction() {
     var a = List<DestructionTester>();
 
-    for i in 0..50 {
+    for _ in 0..50 {
         a.push(DestructionTester());
     }
 
-    a.removeAt(25);
-    a.removeAt(25);
-    a.removeAt(25);
+    sink(a.removeAt(25));
+    sink(a.removeAt(25));
+    sink(a.removeAt(25));
     a.removeLast();
-    a.removeFirst();
+    sink(a.removeFirst());
 
     assert(destroyed == 5);
 }

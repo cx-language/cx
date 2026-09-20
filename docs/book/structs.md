@@ -90,7 +90,7 @@ struct Logger {
 }
 
 void main() {
-    var log = Logger(prefix = "app");
+    var _log = Logger(prefix = "app");
     println("working"); // prints "working", then "app closed" at scope exit
 }
 ```

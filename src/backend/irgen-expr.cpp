@@ -175,9 +175,8 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
     }
     case Token::And: {
         auto* value = emitExprAsPointer(expr.getOperand());
-        // Function parameters are SSA values, not memory, so spill them to a temporary to form a real address.
-        // FIXME: This is a point-in-time copy; stores through the address don't update the parameter.
-        // Remove once parameters get entry-block allocas ("Codegen allocas for parameters").
+        // 'this' and unnamed parameters are SSA values, not memory, so spill them to a temporary to form a real address.
+        // FIXME: This is a point-in-time copy; stores through the address don't update the original.
         if (llvm::isa<Parameter>(value)) {
             value = createTempAlloca(value);
         }
@@ -228,11 +227,11 @@ Value* IRGenerator::emitLogicalAnd(const Expr& left, const Expr& right) {
     auto* rhsBlock = new BasicBlock("and.rhs", insertBlock->parent);
     auto* endBlock = new BasicBlock("and.end");
 
-    Value* lhs = emitExpr(left);
+    Value* lhs = emitBoolConvertibleOperand(left);
     createCondBr(lhs, rhsBlock, endBlock, lhs);
 
     setInsertPoint(rhsBlock);
-    Value* rhs = emitExpr(right);
+    Value* rhs = emitBoolConvertibleOperand(right);
     createBr(endBlock, rhs);
 
     setInsertPoint(endBlock);
@@ -244,11 +243,11 @@ Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
     auto* rhsBlock = new BasicBlock("or.rhs", insertBlock->parent);
     auto* endBlock = new BasicBlock("or.end");
 
-    Value* lhs = emitExpr(left);
+    Value* lhs = emitBoolConvertibleOperand(left);
     createCondBr(lhs, endBlock, rhsBlock, lhs);
 
     setInsertPoint(rhsBlock);
-    Value* rhs = emitExpr(right);
+    Value* rhs = emitBoolConvertibleOperand(right);
     createBr(endBlock, rhs);
 
     setInsertPoint(endBlock);
@@ -256,14 +255,65 @@ Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
     return endBlock->parameter;
 }
 
+Value* IRGenerator::emitBoolConvertibleOperand(const Expr& expr) {
+    auto* value = emitExpr(expr);
+    if (value->getType()->isPointerType()) {
+        return emitImplicitNullComparison(value);
+    } else if (expr.type.isOptionalType() && !expr.type.getWrappedType().isPointerType()) {
+        return emitOptionalHasValueTest(value);
+    }
+    return value;
+}
+
+Value* IRGenerator::emitNullCoalescingExpr(const BinaryExpr& expr) {
+    // The left side is evaluated once up front; both the null test and the value branch reuse it.
+    auto* lhsValue = emitExpr(expr.getLHS());
+    Value* hasValue;
+    if (expr.getLHS().type.isImplementedAsPointer()) {
+        hasValue = emitImplicitNullComparison(lhsValue);
+    } else {
+        hasValue = emitOptionalHasValueTest(lhsValue);
+    }
+
+    auto* function = insertBlock->parent;
+    auto* valueBlock = new BasicBlock("coalesce.value", function);
+    auto* defaultBlock = new BasicBlock("coalesce.default");
+    auto* endBlock = new BasicBlock("coalesce.end");
+    createCondBr(hasValue, valueBlock, defaultBlock);
+
+    setInsertPoint(valueBlock);
+    Value* thenValue;
+    if (expr.type == expr.getLHS().type) {
+        // The result is the optional itself (e.g. `int? ?? int?`); the tested value is already it.
+        thenValue = lhsValue;
+    } else {
+        // Unwrap without asserting; the branch proves the value is non-null.
+        Value* unwrapped = lhsValue;
+        if (!expr.getLHS().type.isImplementedAsPointer()) {
+            if (!unwrapped->getType()->isPointerType()) unwrapped = createTempAlloca(unwrapped);
+            unwrapped = createLoad(emitOptionalPayloadPtr(unwrapped, expr.getLHS().type.getWrappedType()));
+        }
+        thenValue = createCastIfNeeded(unwrapped, expr.type);
+    }
+    createBr(endBlock, thenValue);
+
+    setInsertPoint(defaultBlock);
+    createBr(endBlock, emitExpr(expr.getRHS()));
+
+    setInsertPoint(endBlock);
+    endBlock->parameter = new Parameter{ValueKind::Parameter, thenValue->getType(), "coalesce"};
+    return endBlock->parameter;
+}
+
 Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     if (expr.isAssignment()) {
-        emitAssignment(expr);
-        return nullptr;
+        return emitAssignment(expr);
     }
 
     if (expr.calleeDecl != nullptr) {
-        return emitCallExpr(expr);
+        auto* value = emitCallExpr(expr);
+        if (expr.negateResult) value = createNot(value);
+        return value;
     }
 
     if (expr.op == Token::Equal || expr.op == Token::NotEqual) {
@@ -288,6 +338,19 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     case Token::OrOr:
         return emitLogicalOr(expr.getLHS(), expr.getRHS());
 
+    case Token::QuestionQuestion:
+        return emitNullCoalescingExpr(expr);
+
+    case Token::PositiveModulo: {
+        auto left = emitExprOrEnumTag(expr.getLHS(), nullptr);
+        auto right = emitExprOrEnumTag(expr.getRHS(), nullptr);
+        if (left->getType()->isUnsignedInteger()) return createBinaryOp(Token::Modulo, left, right, &expr);
+        // Positive remainder ((a % b) + b) % b. The operands are already evaluated values, so this doesn't re-evaluate them.
+        auto* rem = createBinaryOp(Token::Modulo, left, right, &expr);
+        auto* shifted = createBinaryOp(Token::Plus, rem, right, &expr);
+        return createBinaryOp(Token::Modulo, shifted, right, &expr);
+    }
+
     default:
         auto left = emitExprOrEnumTag(expr.getLHS(), nullptr);
         auto right = emitExprOrEnumTag(expr.getRHS(), nullptr);
@@ -302,16 +365,25 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     }
 }
 
-void IRGenerator::emitAssignment(const BinaryExpr& expr) {
-    if (expr.getRHS().isUndefinedLiteralExpr()) return;
+Value* IRGenerator::emitAssignment(const BinaryExpr& expr) {
+    if (expr.getRHS().isUndefinedLiteralExpr()) return createUndefined(getIRType(expr.type));
 
-    auto lvalue = emitAssignmentLHS(expr.getLHS());
+    auto lvalue = emitAssignmentLHS(expr.getLHS(), expr.lhsIsMoved);
     auto rvalue = emitExprForPassing(expr.getRHS(), lvalue->getType()->getPointee());
     createStore(rvalue, lvalue);
+    return rvalue;
 }
 
 static bool isBuiltinArrayToArrayRefConversion(Type sourceType, IRType* targetType) {
     return sourceType.removePointer().isConstantArray() && targetType->isStruct() && targetType->getName().starts_with("ArrayRef<");
+}
+
+static bool isListToArrayRefConversion(Type sourceType, IRType* targetType) {
+    return sourceType.isBasicType() && sourceType.getName() == "List" && targetType->isStruct() && targetType->getName().starts_with("ArrayRef<");
+}
+
+static bool isStringBufferToStringConversion(Type sourceType, IRType* targetType) {
+    return sourceType.isBasicType() && sourceType.getName() == "StringBuffer" && targetType->isStruct() && targetType->getName() == "string";
 }
 
 Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
@@ -329,11 +401,32 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
 
     if (isBuiltinArrayToArrayRefConversion(expr.type, targetType)) {
         ASSERT(expr.type.removePointer().isConstantArray());
-        auto* value = emitExprAsPointer(expr);
+        // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
+        auto* value = expr.type.isPointerType() ? emitExpr(expr) : emitExprAsPointer(expr);
         auto* elementPtr = createGEP(value, 0);
         auto* arrayRef = createInsertValue(createUndefined(targetType), elementPtr, 0);
         auto size = createConstantInt(Type::getInt(), expr.type.removePointer().getArraySize());
         return createInsertValue(arrayRef, size, 1);
+    }
+
+    if (isListToArrayRefConversion(expr.type, targetType)) {
+        auto* listPtr = emitExprAsPointer(expr);
+        auto* buffer = createLoad(createGEP(listPtr, 0));
+        auto* size = createLoad(createGEP(listPtr, 1));
+        auto* arrayRef = createInsertValue(createUndefined(targetType), buffer, 0);
+        return createInsertValue(arrayRef, size, 1);
+    }
+
+    if (isStringBufferToStringConversion(expr.type, targetType)) {
+        auto* listPtr = createGEP(emitExprAsPointer(expr), 0);
+        auto* buffer = createLoad(createGEP(listPtr, 0));
+        auto* listSize = createLoad(createGEP(listPtr, 1));
+        // StringBuffer stores a trailing null that the string view excludes.
+        auto* size = createBinaryOp(Token::Minus, listSize, createConstantInt(listSize->getType(), 1), nullptr);
+        auto* arrayRefType = targetType->getFields()[0].type;
+        auto* arrayRef = createInsertValue(createUndefined(arrayRefType), buffer, 0);
+        arrayRef = createInsertValue(arrayRef, size, 1);
+        return createInsertValue(createUndefined(targetType), arrayRef, 0);
     }
 
     // Handle implicit conversions to type 'T[*]'.
@@ -441,7 +534,8 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     if (expr.getFunctionName() == "assert") {
-        emitAssert(emitExpr(*expr.args.front().value), &expr, expr.callee->location);
+        auto& message = llvm::cast<StringLiteralExpr>(*expr.args[1].value).value;
+        emitAssert(emitExpr(*expr.args.front().value), &expr, expr.callee->location, message);
         return nullptr;
     }
 
@@ -554,7 +648,8 @@ Value* IRGenerator::getArrayLength(const Expr&, Type objectType) {
 
 Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
     auto type = BasicType::get("ArrayIterator", objectType.getElementType());
-    auto* value = emitExprAsPointer(object);
+    // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
+    auto* value = object.type.isPointerType() ? emitExpr(object) : emitExprAsPointer(object);
     auto* elementPtr = createGEP(value, 0);
     auto* size = getArrayLength(object, objectType);
     auto* end = createGEP(elementPtr, {size});
@@ -621,8 +716,9 @@ Value* IRGenerator::emitIndexAssignmentExpr(const IndexAssignmentExpr& expr) {
     }
 
     auto gep = emitIndexedAccess(*expr.getBase(), *expr.getIndex());
-    createStore(emitExpr(*expr.getValue()), gep);
-    return nullptr;
+    auto* value = emitExpr(*expr.getValue());
+    createStore(value, gep);
+    return value;
 }
 
 Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
@@ -671,6 +767,8 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
     auto* condition = emitExpr(*expr.condition);
     if (condition->getType()->isPointerType()) {
         condition = emitImplicitNullComparison(condition);
+    } else if (expr.condition->type.isOptionalType() && !expr.condition->type.getWrappedType().isPointerType()) {
+        condition = emitOptionalHasValueTest(condition);
     }
     auto* function = currentFunction;
     auto* thenBlock = new BasicBlock("if.then", function);
@@ -680,13 +778,16 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
 
     setInsertPoint(thenBlock);
     auto* thenValue = emitExpr(*expr.thenExpr);
-    createBr(endIfBlock, thenValue);
+    // Void branches produce no value to join; like void calls, the result is only usable in discard positions.
+    bool isVoid = thenValue->getType()->isVoid();
+    createBr(endIfBlock, isVoid ? nullptr : thenValue);
 
     setInsertPoint(elseBlock);
     auto* elseValue = emitExpr(*expr.elseExpr);
-    createBr(endIfBlock, elseValue);
+    createBr(endIfBlock, isVoid ? nullptr : elseValue);
 
     setInsertPoint(endIfBlock);
+    if (isVoid) return thenValue;
     endIfBlock->parameter = new Parameter{ValueKind::Parameter, thenValue->getType(), "if.result"};
     return endIfBlock->parameter;
 }
@@ -772,6 +873,8 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
         return emitPlainExpr(*expr.operand);
     case ImplicitCastExpr::AutoDereference:
         return createLoad(emitPlainExpr(*expr.operand));
+    case ImplicitCastExpr::NumericWiden:
+        return createCastIfNeeded(emitExpr(*expr.operand), expr.type);
     }
 
     llvm_unreachable("all implicit cast kinds handled");
@@ -863,7 +966,7 @@ Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
         if (enumDecl->hasAssociatedValues() && !expr.type.isImplementedAsPointer()) {
             auto* value = emitLvalueExpr(expr);
             if (!value->getType()->isPointerType()) {
-                // Aggregate-typed parameters have no address; spill to a temp so the tag load and associated-value access work.
+                // Temporaries have no address; spill to a temp so the tag load and associated-value access work.
                 value = createTempAlloca(value);
             }
             if (enumValue) *enumValue = value;
@@ -881,7 +984,7 @@ Value* IRGenerator::emitLvalueExpr(const Expr& expr) {
     // Pointer-implemented optionals need no access adjustment: the narrowed type is a compile-time view of the same value.
     if (expr.hasAssignableType() && expr.assignableType.isOptionalType() && !expr.assignableType.getWrappedType().isImplementedAsPointer()
         && expr.type == expr.assignableType.getWrappedType()) {
-        // Function parameters are SSA values, not memory; spill to a temp so the payload access works.
+        // Temporaries are SSA values, not memory; spill to a temp so the payload access works.
         if (!value->getType()->isPointerType()) value = createTempAlloca(value);
         return emitOptionalPayloadPtr(value, expr.assignableType.getWrappedType());
     }

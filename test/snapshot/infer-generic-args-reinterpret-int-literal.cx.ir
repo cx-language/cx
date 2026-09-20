@@ -7,5 +7,9 @@ int main() {
 }
 
 void _EN4main1fI4uintEE4uint4uint(uint a, uint b) {
+    uint* a_0 = alloca uint
+    uint* b_0 = alloca uint
+    store a to a_0
+    store b to b_0
     return void
 }

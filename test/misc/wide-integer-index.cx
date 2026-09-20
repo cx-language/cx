@@ -1,0 +1,18 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:20
+// CHECK-NEXT:30
+// CHECK-NEXT:10
+// CHECK-NEXT:99
+
+void main() {
+    int[3] a = [10, 20, 30];
+    int64 i = 1;
+    uint64 u = 2;
+    int16 s = 0;
+    println(a[i]);
+    println(a[u]);
+    println(a[s]);
+    a[i] = 99;
+    println(a[1]);
+}

@@ -1,5 +1,7 @@
 
 void _EN4main1fE5RangeI3intE(Range<int> r) {
+    Range<int>* r_0 = alloca Range<int>
+    store r to r_0
     return void
 }
 

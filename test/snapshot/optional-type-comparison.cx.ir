@@ -13,9 +13,14 @@ int main() {
 }
 
 bool _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* b) {
+    Optional<int>** a_0 = alloca Optional<int>*
+    int** b_0 = alloca int*
     Optional<int>* _0 = alloca Optional<int>
-    Optional<int> a.load = load a
-    int _1 = extractvalue a.load, 0
+    store a to a_0
+    store b to b_0
+    Optional<int>* a.load = load a_0
+    Optional<int> a.load.load = load a.load
+    int _1 = extractvalue a.load.load, 0
     bool _2 = _1 == int 1
     bool _3 = !_2
     br _3, if.then, if.else
@@ -27,8 +32,9 @@ if.else:
     br if.end
 
 if.end:
-    Optional<int> a.load_0 = load a
-    int _4 = extractvalue a.load_0, 0
+    Optional<int>* a.load_0 = load a_0
+    Optional<int> a.load.load_0 = load a.load_0
+    int _4 = extractvalue a.load.load_0, 0
     bool _5 = _4 == int 1
     bool assert.condition = _5 == bool false
     br assert.condition, assert.fail, assert.success
@@ -39,12 +45,13 @@ assert.fail:
     unreachable
 
 assert.success:
-    store a.load_0 to _0
+    store a.load.load_0 to _0
     union { void, struct { int } }* _7 = getelementptr _0, 1
     int* _8 = cast _7 to int*
     int .load = load _8
-    int b.load = load b
-    bool _9 = .load == b.load
+    int* b.load = load b_0
+    int b.load.load = load b.load
+    bool _9 = .load == b.load.load
     return _9
 }
 

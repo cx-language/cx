@@ -6,7 +6,7 @@ void main() {
         break;
     }
     if (false) {
-        // CHECK: [[@LINE+1]]:9: error: 'break' is only allowed inside 'while', 'for', and 'switch' statements
+        // CHECK: [[@LINE+1]]:9: error: 'break' is only allowed inside 'while', 'do-while', 'for', and 'switch' statements
         break;
     }
 }

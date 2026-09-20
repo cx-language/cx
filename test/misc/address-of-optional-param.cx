@@ -1,0 +1,26 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+void bar(int*?* p) {
+    if (*p == null) {
+        println("deref-null");
+    } else {
+        println("deref-nonnull");
+    }
+}
+
+void foo(int*? p) {
+    bar(p);
+    bar(&p);
+}
+
+void main() {
+    int x = 42;
+    int* px = &x;
+    foo(px);
+    int*? n = null;
+    foo(n);
+    // CHECK:deref-nonnull
+    // CHECK-NEXT:deref-nonnull
+    // CHECK-NEXT:deref-null
+    // CHECK-NEXT:deref-null
+}

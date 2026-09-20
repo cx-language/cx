@@ -1,0 +1,37 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK-NOT: warning:
+// CHECK:42
+// CHECK-NEXT:7
+// CHECK-NEXT:1
+// CHECK-NEXT:99
+// CHECK-NOT: warning:
+
+// Parameters live in entry-block allocas like locals: they can be reassigned,
+// and taking their address yields a real address, not a point-in-time copy.
+
+void increment(int x) {
+    x += 1;
+    println(x);
+}
+
+void rebinding(int* p) {
+    int y = 7;
+    p = &y;
+    println(*p);
+}
+
+void addressOf(int x) {
+    var addr = &x;
+    *addr = 99;
+    println(x);
+}
+
+void main() {
+    increment(41);
+    int z = 1;
+    rebinding(&z);
+    println(z);
+    addressOf(0);
+}

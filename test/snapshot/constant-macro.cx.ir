@@ -1,6 +1,9 @@
 
 void _EN4main3fooE3int(int i) {
-    switch i {
+    int* i_0 = alloca int
+    store i to i_0
+    int i.load = load i_0
+    switch i.load {
         int 42 -> switch.case.0
     }
 

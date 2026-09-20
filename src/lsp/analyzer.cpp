@@ -474,7 +474,9 @@ void Finder::visitStmt(Stmt* stmt, int depth) {
         return;
     case StmtKind::VarStmt: {
         auto* varStmt = llvm::cast<VarStmt>(stmt);
-        visitDecl(varStmt->decl, depth + 1);
+        for (auto* decl : varStmt->decls) {
+            visitDecl(decl, depth + 1);
+        }
         return;
     }
     case StmtKind::ExprStmt:
@@ -509,6 +511,13 @@ void Finder::visitStmt(Stmt* stmt, int depth) {
         auto* whileStmt = llvm::cast<WhileStmt>(stmt);
         visitExpr(whileStmt->condition, depth + 1);
         for (auto* s : whileStmt->body)
+            visitStmt(s, depth + 1);
+        return;
+    }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+        visitExpr(doWhileStmt->condition, depth + 1);
+        for (auto* s : doWhileStmt->body)
             visitStmt(s, depth + 1);
         return;
     }
@@ -734,7 +743,9 @@ void ReferenceCollector::visitStmt(Stmt* stmt) {
         visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
         return;
     case StmtKind::VarStmt:
-        visitDecl(llvm::cast<VarStmt>(stmt)->decl);
+        for (auto* decl : llvm::cast<VarStmt>(stmt)->decls) {
+            visitDecl(decl);
+        }
         return;
     case StmtKind::ExprStmt:
         visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
@@ -768,6 +779,13 @@ void ReferenceCollector::visitStmt(Stmt* stmt) {
         auto* whileStmt = llvm::cast<WhileStmt>(stmt);
         visitExpr(whileStmt->condition);
         for (auto* s : whileStmt->body)
+            visitStmt(s);
+        return;
+    }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+        visitExpr(doWhileStmt->condition);
+        for (auto* s : doWhileStmt->body)
             visitStmt(s);
         return;
     }
@@ -1233,7 +1251,9 @@ void SemanticCollector::visitStmt(Stmt* stmt) {
         visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
         return;
     case StmtKind::VarStmt:
-        visitDecl(llvm::cast<VarStmt>(stmt)->decl);
+        for (auto* decl : llvm::cast<VarStmt>(stmt)->decls) {
+            visitDecl(decl);
+        }
         return;
     case StmtKind::ExprStmt:
         visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
@@ -1267,6 +1287,13 @@ void SemanticCollector::visitStmt(Stmt* stmt) {
         auto* whileStmt = llvm::cast<WhileStmt>(stmt);
         visitExpr(whileStmt->condition);
         for (auto* s : whileStmt->body)
+            visitStmt(s);
+        return;
+    }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+        visitExpr(doWhileStmt->condition);
+        for (auto* s : doWhileStmt->body)
             visitStmt(s);
         return;
     }
@@ -1500,6 +1527,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             typechecker.typecheckModule(*imported, nullptr);
         }
         typechecker.typecheckModule(*module, nullptr);
+        typechecker.checkUnusedDecls(*module);
 
         result.mainModule = module;
     } catch (const CompileError& error) {
@@ -1729,7 +1757,9 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                 visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
                 return;
             case StmtKind::VarStmt:
-                visitDecl(llvm::cast<VarStmt>(stmt)->decl);
+                for (auto* decl : llvm::cast<VarStmt>(stmt)->decls) {
+                    visitDecl(decl);
+                }
                 return;
             case StmtKind::ExprStmt:
                 visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
@@ -1763,6 +1793,13 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                 auto* whileStmt = llvm::cast<WhileStmt>(stmt);
                 visitExpr(whileStmt->condition);
                 for (auto* s : whileStmt->body)
+                    visitStmt(s);
+                return;
+            }
+            case StmtKind::DoWhileStmt: {
+                auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+                visitExpr(doWhileStmt->condition);
+                for (auto* s : doWhileStmt->body)
                     visitStmt(s);
                 return;
             }

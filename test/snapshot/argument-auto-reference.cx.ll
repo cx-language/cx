@@ -2,6 +2,8 @@
 %Foo = type { i32 }
 
 define void @_EN4main3ptrEP3Foo(ptr %p) {
+  %p1 = alloca ptr, align 8
+  store ptr %p, ptr %p1, align 8
   ret void
 }
 

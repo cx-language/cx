@@ -1,8 +1,8 @@
 
 void _EN4main3fooE1AI3intE(A<int> a) {
-    A<int>* _0 = alloca A<int>
-    store a to _0
-    void _1 = call _EN4main1AI3intE6deinitE(A<int>* _0)
+    A<int>* a_0 = alloca A<int>
+    store a to a_0
+    void _0 = call _EN4main1AI3intE6deinitE(A<int>* a_0)
     return void
 }
 

@@ -14,8 +14,11 @@ define i32 @main() {
 }
 
 define void @_EN4main1S4initET3int_(ptr %this, { i32 } %t) {
-  %t1 = getelementptr inbounds %S, ptr %this, i32 0, i32 0
+  %t1 = alloca { i32 }, align 8
   store { i32 } %t, ptr %t1, align 4
+  %t2 = getelementptr inbounds %S, ptr %this, i32 0, i32 0
+  %t.load = load { i32 }, ptr %t1, align 4
+  store { i32 } %t.load, ptr %t2, align 4
   ret void
 }
 

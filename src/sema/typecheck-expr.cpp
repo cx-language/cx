@@ -270,7 +270,12 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
 }
 
 Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
-    auto elements = map(expr.elements, [&](const NamedValue& namedValue) { return TupleElement{namedValue.name, typecheckExpr(*namedValue.value)}; });
+    auto elements = map(expr.elements, [&](const NamedValue& namedValue) {
+        if (namedValue.name.empty()) {
+            ERROR(namedValue.location, "anonymous tuple members are not supported yet; name each element (e.g. `(x = 1, y = 2)`)");
+        }
+        return TupleElement{namedValue.name, typecheckExpr(*namedValue.value)};
+    });
     return TupleType::get(std::move(elements));
 }
 
@@ -379,13 +384,17 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (op == Token::Assignment) {
         typecheckAssignment(expr, expr.location);
-        return Type::getVoid();
+        return expr.getLHS().type;
     }
 
     if (isCompoundAssignmentOperator(op)) {
         auto rhs = makeAST<BinaryExpr>(withoutCompoundEqSuffix(op), &expr.getLHS(), &expr.getRHS(), expr.location);
         expr = BinaryExpr(Token::Assignment, &expr.getLHS(), rhs, expr.location);
         return typecheckBinaryExpr(expr);
+    }
+
+    if (op == Token::QuestionQuestion) {
+        return typecheckNullCoalescingExpr(expr);
     }
 
     if (op == Token::AndAnd || op == Token::OrOr) {
@@ -395,11 +404,12 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
         // The right side may not execute (short-circuit), so only narrowings valid on both paths survive.
         intersectNarrowings(outerNarrowings);
+        // Like if conditions, operands may be optionals, testing for non-null.
+        if ((leftType.isBool() || leftType.isOptionalType()) && (rightType.isBool() || rightType.isOptionalType())) {
+            return Type::getBool();
+        }
         if (!isBuiltinOp(op, leftType, rightType)) {
             return typecheckCallExpr(expr);
-        }
-        if (leftType.isBool() && rightType.isBool()) {
-            return Type::getBool();
         }
         throwInvalidOperandsToBinaryExpr(expr, op);
     }
@@ -474,9 +484,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         throwInvalidOperandsToBinaryExpr(expr, op);
     } else if (leftType.isVoid() || rightType.isVoid()) {
         throwInvalidOperandsToBinaryExpr(expr, op);
-    } else if (auto convertedRHS = convert(&expr.getRHS(), leftType, true)) {
+    } else if (auto convertedRHS = convert(&expr.getRHS(), leftType, true, false)) {
         expr.setRHS(convertedRHS);
-    } else if (auto convertedLHS = convert(&expr.getLHS(), rightType, true)) {
+    } else if (auto convertedLHS = convert(&expr.getLHS(), rightType, true, false)) {
         expr.setLHS(convertedLHS);
     } else if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
         throwInvalidOperandsToBinaryExpr(expr, op);
@@ -490,6 +500,9 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     auto* rhs = &expr.getRHS();
 
     typecheckExpr(*lhs, true);
+    if (!lhs->isLvalue()) {
+        ERROR(lhs->location, "cannot assign to expression of type '" << lhs->type << "'");
+    }
     Type lhsType = lhs->assignableType;
     Type rhsType = typecheckExpr(*rhs, false, lhsType);
 
@@ -528,6 +541,10 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
         }
     }
 
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
+        expr.lhsIsMoved = movedDecls.count(varExpr->decl);
+    }
+
     if (!rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
         setMoved(rhs, true);
         setMoved(lhs, false);
@@ -540,11 +557,13 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     }
 }
 
-static void checkRange(const Expr& expr, const llvm::APSInt& value, Type type) {
+static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange) {
     if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(type.getIntegerBitWidth(), type.isUnsigned())) < 0
         || llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(type.getIntegerBitWidth(), type.isUnsigned())) > 0) {
+        if (!diagnoseOutOfRange) return false;
         ERROR(expr.location, value << " is out of range for type '" << type << "'");
     }
+    return true;
 }
 
 static bool hasField(TypeDecl& type, const FieldDecl& field) {
@@ -600,10 +619,17 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     return true;
 }
 
-Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
+Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange) const {
     std::optional<ImplicitCastExpr::Kind> implicitCastKind;
-    if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind)) {
+    if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind, diagnoseOutOfRange)) {
         if (implicitCastKind) {
+            if (*implicitCastKind == ImplicitCastExpr::OptionalWrap && expr->type != convertedType.getWrappedType()) {
+                // One wrap node constructs a single level, so convert the operand to the wrapped
+                // type first (e.g. `int` to `int?` when wrapping to `int??`). Each recursion
+                // strips one optional level, so this terminates.
+                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange);
+                if (!expr) return nullptr;
+            }
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
             if (*implicitCastKind == ImplicitCastExpr::AutoReference && expr->hasAssignableType() && expr->assignableType.isOptionalType()
                 && !expr->assignableType.getWrappedType().isImplementedAsPointer() && expr->type == expr->assignableType.getWrappedType()) {
@@ -624,8 +650,46 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
     return nullptr;
 }
 
+static int getFloatBitWidth(Type type) {
+    if (type.isFloat16()) return 16;
+    if (type.isFloat64()) return 64;
+    if (type.isFloat80()) return 80;
+    return 32; // float and float32
+}
+
+// True when every value of the source numeric type is exactly representable in the target.
+static bool isSafeNumericWidening(Type source, Type target) {
+    auto width = [](Type type) { return type.isChar() ? 8 : type.getIntegerBitWidth(); };
+    auto isSigned = [](Type type) { return type.isInteger() && type.isSigned(); }; // char zero-extends
+
+    if ((source.isInteger() || source.isChar()) && target.isInteger()) {
+        if (width(target) < width(source)) return false;
+        if (isSigned(source) && !isSigned(target)) return false;
+        if (width(target) == width(source) && isSigned(source) != isSigned(target)) return false;
+        return true;
+    }
+
+    if ((source.isInteger() || source.isChar()) && target.isFloatingPoint()) {
+        // Largest integer width exactly representable in the mantissa.
+        int maxWidth = target.isFloat16() ? 8 : target.isFloat64() ? 32 : target.isFloat80() ? 64 : 16;
+        return width(source) <= maxWidth;
+    }
+
+    if (source.isFloatingPoint() && target.isFloatingPoint()) {
+        return getFloatBitWidth(target) >= getFloatBitWidth(source);
+    }
+
+    return false;
+}
+
+bool Typechecker::isReinterpretible(const Expr* expr, Type source, Type target, bool diagnoseOutOfRange) const {
+    std::optional<ImplicitCastExpr::Kind> innerKind;
+    // Widening changes the value representation, so pointers to it can't be reinterpreted.
+    return isImplicitlyConvertible(expr, source, target, false, &innerKind, diagnoseOutOfRange) && innerKind != ImplicitCastExpr::NumericWiden;
+}
+
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
-                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind) const {
+                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
@@ -633,6 +697,14 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     if (source.isArrayType() && (target.isArrayType() || target.isArrayRef()) && source.getElementType() == target.getElementType()) {
         if (target.isArrayType() && source.getArraySize() == target.getArraySize()) return source;
         if (source.isConstantArray() && (target.isUnsizedArrayPointer() || target.isArrayRef())) return source;
+    }
+
+    if (source.isBasicType() && target.isArrayRef() && source.getName() == "List" && source.getGenericArgs() == target.getGenericArgs()) {
+        return source;
+    }
+
+    if (source.isBasicType() && source.getName() == "StringBuffer" && target.isBasicType() && target.getName() == "string") {
+        return source;
     }
 
     if (source.isTupleType() && target.isTupleType() && source.getTupleElements() == target.getTupleElements()) {
@@ -645,7 +717,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && target.isPointerType() && (source.getPointee().isMutable() || !target.getPointee().isMutable())
-        && (isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee()) || target.getPointee().isVoid())) {
+        && (isReinterpretible(nullptr, source.getPointee(), target.getPointee(), diagnoseOutOfRange) || target.getPointee().isVoid())) {
         return source;
     }
 
@@ -653,7 +725,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // Only a no-op when the wrapped conversion needs no cast; nesting changes (e.g. `int?` to `int??`)
         // fall through to the wrap rule below.
         std::optional<ImplicitCastExpr::Kind> wrappedCastKind;
-        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind) && !wrappedCastKind) {
+        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind, diagnoseOutOfRange)
+            && !wrappedCastKind) {
             return source;
         }
     }
@@ -666,8 +739,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target)
-                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target)) {
+            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange)
+                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange)) {
                 return target;
             }
         }
@@ -679,7 +752,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             auto adjustedTarget = allowPointerToTemporary ? target.removePointer() : target; // Convert e.g. int literal to uint when comparing to uint*.
 
             if (adjustedTarget.isInteger()) {
-                checkRange(*expr, value, adjustedTarget);
+                if (!checkRange(*expr, value, adjustedTarget, diagnoseOutOfRange)) return Type();
                 return adjustedTarget;
             }
 
@@ -708,8 +781,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
         if (expr->isArrayLiteralExpr() && target.isConstantArray()) {
             auto arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(expr);
-            bool isConvertible = llvm::all_of(
-                arrayLiteralExpr->elements, [&](Expr* element) { return isImplicitlyConvertible(element, source.getElementType(), target.getElementType()); });
+            bool isConvertible = llvm::all_of(arrayLiteralExpr->elements, [&](Expr* element) {
+                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), false, nullptr, diagnoseOutOfRange);
+            });
 
             if (isConvertible) {
                 for (auto& element : arrayLiteralExpr->elements) {
@@ -721,10 +795,16 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
     }
 
+    // Safe numeric widening applies to values; constants are folded by the rule above.
+    if (isSafeNumericWidening(source, target)) {
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::NumericWiden;
+        return target;
+    }
+
     if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.removeOptional().isPointerType() &&
         // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
         (source.isMutable() || (expr && expr->isConstant()) || !target.removeOptional().getPointee().isMutable())
-        && isImplicitlyConvertible(expr, source, target.removeOptional().getPointee())) {
+        && isReinterpretible(expr, source, target.removeOptional().getPointee(), diagnoseOutOfRange)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return source;
     }
@@ -734,7 +814,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr()) && isImplicitlyConvertible(expr, source, target.getWrappedType())) {
+    if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr())
+        && isImplicitlyConvertible(expr, source, target.getWrappedType(), false, nullptr, diagnoseOutOfRange)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalWrap;
         return target;
     }
@@ -747,7 +828,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isArrayType() && target.removeOptional().isPointerType()
-        && isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee())) {
+        && isReinterpretible(nullptr, source.getElementType(), target.removeOptional().getPointee(), diagnoseOutOfRange)) {
         return source;
     }
 
@@ -757,7 +838,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && source.getPointee().isArrayType() && target.removeOptional().isPointerType()
-        && isImplicitlyConvertible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee())) {
+        && isReinterpretible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee(), diagnoseOutOfRange)) {
         return source;
     }
 
@@ -783,7 +864,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
             auto* elementValue = tupleExpr ? tupleExpr->elements[i].value : nullptr;
 
-            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type)) {
+            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange)) {
                 return Type();
             }
         }
@@ -1014,9 +1095,9 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
                     Type paramTypeWithGenericArg = paramType.resolve({{genericParam.getName(), genericArg}});
                     Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam.getName(), maybeGenericArg}});
 
-                    if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true)) {
+                    if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true, nullptr, false)) {
                         continue;
-                    } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true)) {
+                    } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true, nullptr, false)) {
                         genericArg = maybeGenericArg;
                         genericArgValue = argValue;
                     } else {
@@ -1119,9 +1200,9 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
                 Type paramTypeWithGenericArg = paramType.resolve({{genericParam->getName(), genericArg}});
                 Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam->getName(), maybeGenericArg}});
 
-                if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true)) {
+                if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true, nullptr, false)) {
                     continue;
-                } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true)) {
+                } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true, nullptr, false)) {
                     genericArg = maybeGenericArg;
                     genericArgValue = argValue;
                 } else {
@@ -1276,18 +1357,21 @@ static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> unfilteredCandi
     });
 }
 
+static std::vector<ParamDecl> getMatchParams(const Match& match) {
+    if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(match.decl)) {
+        return functionDecl->getParams();
+    } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(match.decl)) {
+        return llvm::cast<FunctionType>(variableDecl->type.typeBase)->getParamDecls();
+    } else {
+        llvm_unreachable("unhandled callee decl");
+    }
+}
+
 static const Match* findMatchByPredicate(llvm::ArrayRef<Match> matches, const CallExpr& call, llvm::function_ref<bool(Type param, Type arg)> predicate) {
     const Match* result = nullptr;
 
     for (auto& match : matches) {
-        std::vector<ParamDecl> params;
-        if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(match.decl)) {
-            params = functionDecl->getParams();
-        } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(match.decl)) {
-            params = llvm::cast<FunctionType>(variableDecl->type.typeBase)->getParamDecls();
-        } else {
-            llvm_unreachable("unhandled callee decl");
-        }
+        auto params = getMatchParams(match);
 
         if (params.size() == call.args.size()) {
             if (llvm::all_of(llvm::zip_first(params, call.args), [&](auto&& pair) {
@@ -1297,6 +1381,32 @@ static const Match* findMatchByPredicate(llvm::ArrayRef<Match> matches, const Ca
                 if (result) return nullptr;
                 result = &match;
             }
+        }
+    }
+
+    return result;
+}
+
+// Returns the only candidate with the most exactly matching arguments, or null
+// when tied. Subsumes the all-exact rule: a unique all-exact candidate is also
+// the unique most-exact one.
+static const Match* findMatchWithMostExactArgs(llvm::ArrayRef<Match> matches, const CallExpr& call) {
+    const Match* result = nullptr;
+    auto bestCount = -1;
+
+    for (auto& match : matches) {
+        auto params = getMatchParams(match);
+        if (params.size() != call.args.size()) continue;
+
+        auto count = llvm::count_if(llvm::zip_first(params, call.args), [](auto&& pair) {
+            auto&& [param, arg] = pair;
+            return param.type == arg.value->type;
+        });
+        if (count > bestCount) {
+            bestCount = count;
+            result = &match;
+        } else if (count == bestCount) {
+            result = nullptr;
         }
     }
 
@@ -1319,7 +1429,10 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
         return &matches[0];
     } else if (llvm::count_if(matches, [](auto& match) { return match.didConvertArguments == false; }) == 1) {
         return llvm::find_if(matches, [](auto& match) { return match.didConvertArguments == false; });
-    } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg; })) {
+    } else if (llvm::count_if(matches, [](auto& match) { return match.didUnwrapOptional == false; }) == 1) {
+        // Implicit unwrapping discards nullability; prefer the overload that preserves it.
+        return llvm::find_if(matches, [](auto& match) { return match.didUnwrapOptional == false; });
+    } else if (auto match = findMatchWithMostExactArgs(matches, call)) {
         return match;
     } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) {
         return match;
@@ -1346,7 +1459,7 @@ static std::vector<ParamDecl> getVariableCalleeParams(const VariableDecl& callee
     return llvm::cast<FunctionType>(calleeDecl.type.typeBase)->getParamDecls(calleeDecl.getLocation());
 }
 
-Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
+Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry) {
     std::vector<Match> matches;
     std::vector<Match> templateMatches;
     llvm::ArrayRef<Decl*> candidates = decls;
@@ -1390,7 +1503,15 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 continue;
             }
 
-            auto genericArgs = getGenericArgsForCall(genericParams, expr, functionTemplate->functionDecl, decls.size() != 1, expectedType);
+            llvm::StringMap<Type> genericArgs;
+            try {
+                genericArgs = getGenericArgsForCall(genericParams, expr, functionTemplate->functionDecl, decls.size() != 1, expectedType);
+            } catch (const CompileError&) {
+                // Derivable comparison operators (e.g. > from <) fall back below; don't fail hard on inference errors.
+                Token::Kind op = Token::None;
+                if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) op = binaryExpr->op;
+                if (op != Token::NotEqual && op != Token::Greater && op != Token::GreaterOrEqual && op != Token::LessOrEqual) throw;
+            }
             if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
             auto* functionDecl = functionTemplate->instantiate(genericArgs);
@@ -1518,7 +1639,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 auto paramDecls = getVariableCalleeParams(*variableDecl);
 
                 if (decls.size() == 1) {
-                    validateAndConvertArguments(expr, paramDecls, false, callee, expr.callee->location);
+                    validateAndConvertArguments(expr, paramDecls, false, callee, expr.callee->location, variableDecl);
                     return variableDecl;
                 }
                 if (auto match = matchArguments(expr, variableDecl, paramDecls)) {
@@ -1528,7 +1649,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             break;
         }
         case DeclKind::DestructorDecl:
-            matches.push_back({decl, false});
+            matches.push_back({decl, false, false});
             break;
 
         default:
@@ -1549,6 +1670,76 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         }
     }
     matches = std::move(uniqueMatches);
+
+    if (matches.empty() && allowCommutativeRetry) {
+        if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+            if ((binaryExpr->op == Token::Equal || binaryExpr->op == Token::NotEqual) && expr.args.size() == 2) {
+                // == and != commute: retry with swapped operands so only one parameter order needs an overload.
+                // The matched overload runs with its declared parameter order.
+                std::swap(expr.args[0], expr.args[1]);
+                try {
+                    return resolveOverload(decls, expr, callee, expectedType, false);
+                } catch (const CompileError&) {
+                    // Restore the written order and fall through to the error
+                    // below so the diagnostic shows the user's operand order.
+                    std::swap(expr.args[0], expr.args[1]);
+                }
+            }
+        }
+    }
+
+    if (matches.empty()) {
+        if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+            // Derive missing comparison operators from their counterparts so only == and < need overloads.
+            Token::Kind derivedOp = Token::None;
+            bool swapOperands = false;
+            bool negateResult = false;
+            switch (binaryExpr->op) {
+            case Token::NotEqual:
+                derivedOp = Token::Equal;
+                negateResult = true;
+                break;
+            case Token::Greater:
+                derivedOp = Token::Less;
+                swapOperands = true;
+                break;
+            case Token::GreaterOrEqual:
+                derivedOp = Token::Less;
+                negateResult = true;
+                break;
+            case Token::LessOrEqual:
+                derivedOp = Token::Less;
+                swapOperands = true;
+                negateResult = true;
+                break;
+            default:
+                break;
+            }
+            if (derivedOp != Token::None && expr.args.size() == 2) {
+                if (auto* calleeVar = llvm::dyn_cast<VarExpr>(expr.callee)) {
+                    auto savedOp = binaryExpr->op;
+                    auto savedCallee = calleeVar->identifier;
+                    binaryExpr->op = derivedOp;
+                    calleeVar->identifier = getFunctionName(derivedOp);
+                    if (swapOperands) std::swap(expr.args[0], expr.args[1]);
+                    try {
+                        auto derivedCallee = std::string(expr.getFunctionName());
+                        auto derivedDecls = findCalleeCandidates(expr, derivedCallee);
+                        auto* decl = resolveOverload(derivedDecls, expr, derivedCallee, expectedType, allowCommutativeRetry);
+                        binaryExpr->op = savedOp;
+                        calleeVar->identifier = savedCallee;
+                        binaryExpr->negateResult = negateResult;
+                        return decl;
+                    } catch (const CompileError&) {
+                        // Restore the written form and fall through to the error below.
+                        binaryExpr->op = savedOp;
+                        calleeVar->identifier = savedCallee;
+                        if (swapOperands) std::swap(expr.args[0], expr.args[1]);
+                    }
+                }
+            }
+        }
+    }
 
     if (matches.size() > 1) {
         bool hasNonPack = llvm::any_of(matches, [](const Match& match) {
@@ -1637,9 +1828,15 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     if (expr.getFunctionName() == "assert") {
-        ParamDecl assertParam(Type::getBool(), "", false, Location());
-        validateAndConvertArguments(expr, assertParam, false, expr.getFunctionName(), expr.location);
+        llvm::SmallVector<ParamDecl, 2> assertParams;
+        assertParams.emplace_back(Type::getBool(), "", false, Location());
+        assertParams.emplace_back(BasicType::get("string", {}), "message", false, Location());
+        assertParams.back().defaultValue = makeAST<StringLiteralExpr>(std::string("Assertion failed"), expr.location);
+        validateAndConvertArguments(expr, assertParams, false, expr.getFunctionName(), expr.location);
         validateGenericArgCount(0, expr.genericArgs, expr.getFunctionName(), expr.location);
+        if (!llvm::isa<StringLiteralExpr>(expr.args[1].value)) {
+            ERROR(expr.args[1].location, "assert message must be a string literal");
+        }
         return Type::getVoid();
     }
 
@@ -1694,6 +1891,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         decl = resolveOverload(decls, expr, callee, expectedType);
+
+        // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
+        if (llvm::isa<DestructorDecl>(decl)) {
+            setMoved(expr.getReceiver(), true);
+        }
     } else {
         auto callee = expr.getFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
@@ -1790,6 +1992,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
     }
 
     bool didConvertArguments = false;
+    bool didUnwrapOptional = false;
 
     for (size_t i = 0; i < expr.args.size(); ++i) {
         auto& arg = expr.args[i];
@@ -1808,8 +2011,10 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
 
             bool invalidType = false;
             std::optional<ImplicitCastExpr::Kind> implicitCastKind;
-            if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param->type, true, &implicitCastKind)) {
+            // Probing: other overload candidates are still untried, so don't diagnose yet.
+            if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param->type, true, &implicitCastKind, false)) {
                 didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
+                didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
             } else {
                 invalidType = true;
             }
@@ -1819,7 +2024,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         }
     }
 
-    return ArgumentValidation::success(didConvertArguments);
+    return ArgumentValidation::success(didConvertArguments, didUnwrapOptional);
 }
 
 std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params) {
@@ -1830,19 +2035,20 @@ std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDec
     }
     auto result = getArgumentValidationResult(expr, params, isVariadic);
     if (result.error) return std::nullopt;
-    return Match{calleeDecl, result.didConvertArguments};
+    return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional};
 }
 
 void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, Location location) {
     if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(&calleeDecl)) {
-        validateAndConvertArguments(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, location);
+        validateAndConvertArguments(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, location, functionDecl);
     } else {
         auto paramDecls = getVariableCalleeParams(llvm::cast<VariableDecl>(calleeDecl));
-        validateAndConvertArguments(expr, paramDecls, false, functionName, location);
+        validateAndConvertArguments(expr, paramDecls, false, functionName, location, &calleeDecl);
     }
 }
 
-void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, Location location) {
+void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, Location location,
+                                              const Decl* calleeDecl) {
     auto result = getArgumentValidationResult(expr, params, isVariadic);
 
     // Arguments are type-checked here for error messages, but type-converted only in the success case below
@@ -1852,6 +2058,12 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         auto* param = i < params.size() ? &params[i] : nullptr;
         if (!arg) continue;
         if (!arg->value->hasType()) typecheckExpr(*arg->value, false, param ? param->type : Type());
+    }
+
+    // Point arity errors at the declaration so the source excerpt shows the expected prototype.
+    std::vector<Note> declNote;
+    if (calleeDecl && calleeDecl->getLocation().isValid()) {
+        declNote.push_back(Note{calleeDecl->getLocation(), ("'" + callee + "' declared here").str()});
     }
 
     switch (result.error) {
@@ -1881,25 +2093,35 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             if (!param.defaultValue) ++requiredParamCount;
         }
         bool hasOptionalParams = requiredParamCount != params.size();
-        REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << ((isVariadic || hasOptionalParams) ? "at least " : "")
-                                                        << (hasOptionalParams ? requiredParamCount : params.size()));
+        REPORT_ERROR_WITH_NOTES(location, declNote,
+                                "too few arguments to '" << callee << "', expected " << ((isVariadic || hasOptionalParams) ? "at least " : "")
+                                                         << (hasOptionalParams ? requiredParamCount : params.size()));
         break;
     }
     case ArgumentValidation::TooMany:
-        REPORT_ERROR(location, "too many arguments to '" << callee << "', expected " << params.size());
+        REPORT_ERROR_WITH_NOTES(location, declNote, "too many arguments to '" << callee << "', expected " << params.size());
         break;
     case ArgumentValidation::InvalidName: {
         auto& arg = expr.args[result.index];
         auto* param = &params[result.index];
-        ERROR(arg.location, "invalid argument name '" << arg.name << "' for parameter '" << param->getName() << "'");
+        if (param->getName().empty()) {
+            ERROR_WITH_NOTES(arg.location, std::move(declNote),
+                             "invalid argument name '" << arg.name << "', parameter #" << (result.index + 1) << " is unnamed");
+        }
+        ERROR_WITH_NOTES(arg.location, std::move(declNote), "invalid argument name '" << arg.name << "' for parameter '" << param->getName() << "'");
         break;
     }
     case ArgumentValidation::InvalidType: {
         auto& arg = expr.args[result.index];
         auto* param = &params[result.index];
         diagnoseClosureConversion(arg.value->type, param->type, arg.location);
-        ERROR(arg.location,
-              "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param->type << "'");
+        // Validation probed without diagnosing; re-run once so an out-of-range literal still
+        // reports the range instead of a generic mismatch. This either throws or returns null,
+        // since probing already failed, so discarding the result is safe.
+        (void)convert(arg.value, param->type, true);
+        ERROR_WITH_NOTES(arg.location, std::move(declNote),
+                         "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param->type
+                                              << "'");
         break;
     }
     }
@@ -1987,6 +2209,46 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
 }
 
 Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
+    // `sizeof` accepts a variable as well as a type, e.g. `sizeof(x)`. A type
+    // with the same name takes precedence, so previously valid `sizeof(T)`
+    // expressions are unaffected even if a variable shadows the type name.
+    // Name lookup failures and non-value declarations fall through to the
+    // normal type path below.
+    if (expr.operandType.isBasicType() && !expr.operandType.isBuiltinType()) {
+        auto* basicType = llvm::cast<BasicType>(expr.operandType.typeBase);
+        if (basicType->genericArgs.empty()) {
+            auto decls = findDecls(basicType->name);
+            bool namesType = llvm::any_of(decls, [](Decl* decl) { return decl->isTypeDecl() || decl->isTypeTemplate(); });
+            bool varHadError = false;
+            if (!namesType) {
+                try {
+                    Decl* decl = findDecl(basicType->name, expr.location);
+                    Type varType;
+                    if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+                        varType = varDecl->type;
+                    } else if (auto* paramDecl = llvm::dyn_cast<ParamDecl>(decl)) {
+                        varType = paramDecl->type;
+                    } else if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(decl)) {
+                        varType = fieldDecl->type;
+                    } else {
+                        decl = nullptr;
+                    }
+                    if (decl && !varType) {
+                        varHadError = true;
+                    } else if (varType) {
+                        checkHasAccess(*decl, expr.location, AccessLevel::None);
+                        decl->referenced = true;
+                        expr.operandType = varType;
+                    }
+                } catch (const CompileError&) {
+                    // Fall through to report the type error below.
+                }
+            }
+            if (varHadError) {
+                throw CompileError::dependentError(); // Declaration had an error, don't cascade.
+            }
+        }
+    }
     typecheckType(expr.operandType, AccessLevel::None);
     return Type::getUInt64();
 }
@@ -2045,9 +2307,10 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
     if (auto converted = convert(indexExpr, ArrayType::getIndexType())) {
         expr.setIndex(converted);
         indexExpr = converted;
-    } else {
+    } else if (!indexType.isInteger()) {
         ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
     }
+    // Wider integer indexes pass through unconverted; both backends accept any integer index type.
 
     if (arrayType.isConstantArray()) {
         if (indexExpr->isConstant()) {
@@ -2077,7 +2340,7 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
         ERROR(expr.getValue()->location, "cannot assign '" << expr.getValue()->type << "' to '" << elementType << "'");
     }
 
-    return Type::getVoid();
+    return elementType;
 }
 
 Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
@@ -2158,6 +2421,48 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
     return createClosureType(*expr.functionDecl, expr.location);
 }
 
+Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
+    Type leftType = typecheckExpr(expr.getLHS());
+    if (!leftType.isOptionalType()) {
+        ERROR(expr.getLHS().location, "left operand of '" << toString(Token::QuestionQuestion) << "' must be an optional, got '" << leftType << "'");
+    }
+    auto wrappedType = leftType.getWrappedType();
+
+    // The right side only executes when the left side is null, so only narrowings valid on both paths survive.
+    auto outerNarrowings = narrowedTypes;
+    applyNarrowings(expr.getLHS(), false);
+    Type rightType = typecheckExpr(expr.getRHS());
+    intersectNarrowings(outerNarrowings);
+
+    // Prefer the unwrapped left type, but never implicitly unwrap the right side: `o1 ?? o2`
+    // must stay null when both are null, not trap unwrapping `o2`.
+    if (auto* convertedRHS = convert(&expr.getRHS(), wrappedType, false, false)) {
+        auto* current = convertedRHS;
+        bool unwrapsRHS = false;
+        while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(current)) {
+            unwrapsRHS |= cast->castKind == ImplicitCastExpr::OptionalUnwrap;
+            current = cast->operand;
+        }
+        if (!unwrapsRHS) {
+            expr.setRHS(convertedRHS);
+            return wrappedType;
+        }
+    }
+
+    // Otherwise the unwrapped value widens to the right side's type (e.g. `char? ?? 0.5` is a float).
+    if (!rightType.isOptionalType() && isSafeNumericWidening(wrappedType, rightType)) {
+        return rightType;
+    }
+
+    // Otherwise both sides stay optional (e.g. `int? ?? int?` is an `int?`).
+    if (auto* convertedRHS = convert(&expr.getRHS(), leftType, false, false)) {
+        expr.setRHS(convertedRHS);
+        return leftType;
+    }
+
+    ERROR(expr.location, "incompatible operand types ('" << leftType << "' and '" << rightType << "')");
+}
+
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto conditionType = typecheckExpr(*expr.condition);
     typecheckImplicitlyBoolConvertibleExpr(conditionType, expr.condition->location);
@@ -2170,10 +2475,10 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto elseType = typecheckExpr(*expr.elseExpr);
     intersectNarrowings(thenNarrowings);
 
-    if (auto convertedElse = convert(expr.elseExpr, thenType)) {
+    if (auto convertedElse = convert(expr.elseExpr, thenType, false, false)) {
         expr.elseExpr = convertedElse;
         return thenType;
-    } else if (auto convertedThen = convert(expr.thenExpr, elseType)) {
+    } else if (auto convertedThen = convert(expr.thenExpr, elseType, false, false)) {
         expr.thenExpr = convertedThen;
         return elseType;
     } else {
@@ -2421,6 +2726,13 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
 }
 
 void Typechecker::setMoved(Expr* expr, bool isMoved) {
+    // An assignment evaluates to its left-hand side, so moving the result moves from there.
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(expr)) {
+        if (binaryExpr->op == Token::Assignment) {
+            setMoved(&binaryExpr->getLHS(), isMoved);
+            return;
+        }
+    }
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr)) {
         ASSERT(varExpr->decl);
 

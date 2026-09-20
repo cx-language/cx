@@ -20,8 +20,17 @@ define i32 @main() {
   call void @_EN3std6string4initEP4char3int(ptr %__str1, ptr @1, i32 1)
   %__str.load2 = load %string, ptr %__str1, align 8
   call void @_EN3std12StringBuffer4initE6string(ptr %1, %string %__str.load2)
-  %a3 = getelementptr inbounds %S, ptr %s, i32 0, i32 0
-  %3 = call i1 @_EN3stdneEP12StringBufferAU_4char(ptr %1, ptr %a3)
+  %3 = getelementptr inbounds %StringBuffer, ptr %1, i32 0, i32 0
+  %4 = getelementptr inbounds %"List<char>", ptr %3, i32 0, i32 0
+  %.load = load ptr, ptr %4, align 8
+  %5 = getelementptr inbounds %"List<char>", ptr %3, i32 0, i32 1
+  %.load3 = load i32, ptr %5, align 4
+  %6 = sub i32 %.load3, 1
+  %7 = insertvalue %"ArrayRef<char>" undef, ptr %.load, 0
+  %8 = insertvalue %"ArrayRef<char>" %7, i32 %6, 1
+  %9 = insertvalue %string undef, %"ArrayRef<char>" %8, 0
+  %a4 = getelementptr inbounds %S, ptr %s, i32 0, i32 0
+  %10 = call i1 @_EN3stdneE6stringP4char(%string %9, ptr %a4)
   ret i32 0
 }
 
@@ -31,4 +40,4 @@ declare i1 @_EN3stdeqEP4char6string(ptr, %string)
 
 declare void @_EN3std12StringBuffer4initE6string(ptr, %string)
 
-declare i1 @_EN3stdneEP12StringBufferAU_4char(ptr, ptr)
+declare i1 @_EN3stdneE6stringP4char(%string, ptr)

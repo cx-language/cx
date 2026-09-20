@@ -1,5 +1,7 @@
 
 void _EN4main3fooEOP3int(int* p) {
+    int** p_0 = alloca int*
+    store p to p_0
     return void
 }
 

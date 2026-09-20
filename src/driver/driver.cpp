@@ -102,6 +102,10 @@ cl::opt<bool> disableWarnings("w", cl::desc("Disable all warnings"), cl::sub(cl:
 cl::opt<bool> warningsAsErrors("Werror", cl::desc("Treat warnings as errors"), cl::sub(cl::SubCommand::getAll()), cl::cat(diagnosticCategory));
 cl::opt<bool> noUnusedWarnings("Wno-unused", cl::desc("Disable warnings about unused entities"), cl::sub(cl::SubCommand::getAll()),
                                cl::cat(diagnosticCategory));
+cl::opt<bool> warnUndefinedMacros("Wundef", cl::desc("Warn about undefined macros in #if conditions"), cl::sub(cl::SubCommand::getAll()),
+                                  cl::cat(diagnosticCategory));
+cl::opt<bool> warnUnusedResult("Wunused-result", cl::desc("Warn about unused expression results"), cl::sub(cl::SubCommand::getAll()),
+                               cl::cat(diagnosticCategory));
 cl::opt<int> errorLimit("error-limit", cl::desc("Limit the number of reported errors (10 by default, 0 removes limit)"), cl::init(10),
                         cl::sub(cl::SubCommand::getAll()), cl::cat(diagnosticCategory));
 
@@ -236,7 +240,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     addPredefinedImportSearchPaths(buildParams.filePaths);
 
-    CompileOptions options = {buildMode, noUnusedWarnings, importSearchPaths, frameworkSearchPaths, defines, cflags};
+    CompileOptions options = {buildMode, noUnusedWarnings, warnUndefinedMacros, warnUnusedResult, importSearchPaths, frameworkSearchPaths, defines, cflags};
     auto remainingPrintOpts = std::popcount(printOpts.getBits());
     bool printSectionDividers = remainingPrintOpts > 1;
 
@@ -270,6 +274,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         typechecker.typecheckModule(*importedModule, nullptr);
     }
     typechecker.typecheckModule(mainModule, buildParams.config);
+    typechecker.checkUnusedDecls(mainModule);
 
     if (errors) return 1;
 
@@ -666,11 +671,9 @@ int cx::driverMain(int argc, const char** argv) {
             .outputFileName = "",
         });
     } else if (build || run) {
-        llvm::SmallString<128> currentPath;
-        if (auto error = llvm::sys::fs::current_path(currentPath)) {
-            ABORT(error.message());
-        }
-        return buildDirectory(currentPath, argv[0]);
+        // Build the current directory by relative path so diagnostics show
+        // relative paths.
+        return buildDirectory(".", argv[0]);
     } else if (lspSubcommand) {
         // The server lives in the cx-lsp binary so that every compilation it
         // triggers runs in a fresh process (see src/lsp/). Forward stdio.

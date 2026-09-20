@@ -1,0 +1,26 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:3
+// CHECK-NEXT:ptrue
+// CHECK-NEXT:2
+// CHECK-NEXT:forloop
+
+void main() {
+    int? o = 3;
+    while o {
+        println(o);
+        o = null;
+    }
+    var x = 42;
+    int*? p = &x;
+    while p {
+        println("ptrue");
+        p = null;
+    }
+    println(p ? 1 : 2);
+    int? c = 2;
+    for (; c; c = null) {
+        println("forloop");
+    }
+}

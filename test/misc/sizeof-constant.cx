@@ -1,0 +1,43 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+void takesInt8(int8 x) { println(x); }
+
+void main() {
+    // CHECK:4
+    takesInt8(sizeof(int));
+    // CHECK-NEXT:2
+    int8 a = sizeof(int16);
+    println(a);
+    // CHECK-NEXT:5
+    println(sizeof(int) + 1);
+    // CHECK-NEXT:1
+    println(sizeof(char));
+    // CHECK-NEXT:1
+    println(sizeof(bool));
+    // CHECK-NEXT:8
+    println(sizeof(int64));
+    // CHECK-NEXT:16
+    println(sizeof(int128));
+    // CHECK-NEXT:16
+    println(sizeof(uint128));
+    // CHECK-NEXT:4
+    println(sizeof(float));
+    // CHECK-NEXT:2
+    println(sizeof(float16));
+    // CHECK-NEXT:4
+    println(sizeof(float32));
+    // CHECK-NEXT:8
+    println(sizeof(float64));
+    // Layout-dependent types still evaluate at runtime.
+    // CHECK-NEXT:8
+    println(sizeof(int*));
+    int x = 4;
+    switch (x) {
+    // CHECK-NEXT:four
+    case sizeof(int): println("four"); break;
+    default: println("other"); break;
+    }
+    int[5] arr = [1, 2, 3, 4, 5];
+    // CHECK-NEXT:5
+    println(arr[sizeof(int)]);
+}

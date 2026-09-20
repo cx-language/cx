@@ -19,6 +19,7 @@ void main() {
     // Type arguments can usually be inferred from the call arguments,
     // so they don't have to be specified explicitly.
     var b = bar("bar"); // b has type 'string'
+    println(b); // prints bar
 }
 ```
 
@@ -28,9 +29,9 @@ or inferred when possible.
 
 ```cs
 void main() {
-    var list = List<int>();
-    var boolList = List([true, false]);
-    var map = Map<int, int>();
+    var _list = List<int>();
+    var _boolList = List([true, false]);
+    var _map = Map<int, int>();
 }
 ```
 
@@ -44,8 +45,8 @@ enum Opt<T> {
 }
 
 void main() {
-    var present = Opt.Some(1);
-    Opt<int> absent = None;
+    var _present = Opt.Some(1);
+    Opt<int> _absent = None;
 }
 ```
 

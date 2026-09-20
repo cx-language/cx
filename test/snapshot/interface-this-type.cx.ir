@@ -16,12 +16,18 @@ void _EN4main1S4initE(S* this) {
 }
 
 void _EN4main1fI1SEEP1S(S* a) {
-    S* _0 = call _EN4main1S3barE(S* a)
-    S* _1 = call _EN4main1S3fooEP1S(S* a, S* _0)
+    S** a_0 = alloca S*
+    store a to a_0
+    S* a.load = load a_0
+    S* a.load_0 = load a_0
+    S* _0 = call _EN4main1S3barE(S* a.load_0)
+    S* _1 = call _EN4main1S3fooEP1S(S* a.load, S* _0)
     return void
 }
 
 S* _EN4main1S3fooEP1S(S* this, S* a) {
+    S** a_0 = alloca S*
+    store a to a_0
     return this
 }
 

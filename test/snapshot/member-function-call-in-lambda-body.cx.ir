@@ -6,7 +6,10 @@ int main() {
 }
 
 int _EN4main9__lambda0EP1X(X* x) {
-    int _0 = call _EN4main1X3fooE(X* x)
+    X** x_0 = alloca X*
+    store x to x_0
+    X* x.load = load x_0
+    int _0 = call _EN4main1X3fooE(X* x.load)
     return _0
 }
 

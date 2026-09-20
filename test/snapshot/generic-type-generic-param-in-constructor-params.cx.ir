@@ -14,5 +14,7 @@ int main() {
 }
 
 void _EN4main1MI3intE4initE8ArrayRefI3intE(M<int>* this, ArrayRef<int> a) {
+    ArrayRef<int>* a_0 = alloca ArrayRef<int>
+    store a to a_0
     return void
 }

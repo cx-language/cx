@@ -15,6 +15,7 @@ namespace {
 enum class PrecedenceGroup {
     Assignment,
     IfExpr,
+    NullCoalescing,
     LogicalOr,
     LogicalAnd,
     Bitwise,
@@ -44,6 +45,7 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     case Token::Star:
     case Token::Slash:
     case Token::Modulo:
+    case Token::PositiveModulo:
         return PrecedenceGroup::MulDiv;
     case Token::AndAnd:
         return PrecedenceGroup::LogicalAnd;
@@ -58,6 +60,8 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
         return PrecedenceGroup::Bitwise;
     case Token::QuestionMark:
         return PrecedenceGroup::IfExpr;
+    case Token::QuestionQuestion:
+        return PrecedenceGroup::NullCoalescing;
     default:
         if (isAssignmentOperator(tokenKind)) return PrecedenceGroup::Assignment;
         llvm_unreachable("invalid binary operator");
@@ -87,6 +91,7 @@ bool cx::isBinaryOperator(Token::Kind tokenKind) {
     case Token::Star:
     case Token::Slash:
     case Token::Modulo:
+    case Token::PositiveModulo:
     case Token::And:
     case Token::AndAnd:
     case Token::Or:
@@ -96,6 +101,7 @@ bool cx::isBinaryOperator(Token::Kind tokenKind) {
     case Token::RightShift:
     case Token::DotDot:
     case Token::DotDotDot:
+    case Token::QuestionQuestion:
         return true;
     default:
         return isAssignmentOperator(tokenKind);
@@ -250,6 +256,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "continue",
         "default",
         "defer",
+        "do",
         "else",
         "enum",
         "extern",
@@ -266,6 +273,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "sizeof",
         "struct",
         "switch",
+        "then",
         "this",
         "true",
         "undefined",
@@ -290,6 +298,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "/=",
         "%",
         "%=",
+        "%%",
         "++",
         "--",
         "!",
@@ -323,6 +332,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         ";",
         "=>",
         "?",
+        "??",
     };
     static_assert(std::size(tokenStrings) == Token::TokenCount, "tokenStrings array not up-to-date");
     return tokenStrings[tokenKind];

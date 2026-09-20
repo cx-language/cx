@@ -125,7 +125,10 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Stmt& stmt) {
     }
     case StmtKind::VarStmt: {
         auto& varStmt = llvm::cast<VarStmt>(stmt);
-        stream << "VarStmt " << *varStmt.decl;
+        stream << "VarStmt";
+        for (auto* decl : varStmt.decls) {
+            stream << " " << *decl;
+        }
         break;
     }
     case StmtKind::ExprStmt: {
@@ -151,6 +154,10 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Stmt& stmt) {
     case StmtKind::WhileStmt: {
         //            auto& whileStmt = llvm::cast<WhileStmt>(stmt);
         stream << "WhileStmt";
+        break;
+    }
+    case StmtKind::DoWhileStmt: {
+        stream << "DoWhileStmt";
         break;
     }
     case StmtKind::ForStmt: {

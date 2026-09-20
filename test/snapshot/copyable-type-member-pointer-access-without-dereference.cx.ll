@@ -11,8 +11,11 @@ define i32 @main() {
 }
 
 define void @_EN4main1S4initEP3int(ptr %this, ptr %a) {
-  %a1 = getelementptr inbounds %S, ptr %this, i32 0, i32 0
+  %a1 = alloca ptr, align 8
   store ptr %a, ptr %a1, align 8
+  %a2 = getelementptr inbounds %S, ptr %this, i32 0, i32 0
+  %a.load = load ptr, ptr %a1, align 8
+  store ptr %a.load, ptr %a2, align 8
   ret void
 }
 

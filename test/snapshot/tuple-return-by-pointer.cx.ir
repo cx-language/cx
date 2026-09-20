@@ -13,8 +13,11 @@ int main() {
 }
 
 void _EN4main1S4initET3int_(S* this, struct { int } t) {
-    struct { int }* t_0 = getelementptr this, 0
+    struct { int }* t_0 = alloca struct { int }
     store t to t_0
+    struct { int }* t_1 = getelementptr this, 0
+    struct { int } t.load = load t_0
+    store t.load to t_1
     return void
 }
 

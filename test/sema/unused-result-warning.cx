@@ -1,0 +1,27 @@
+// RUN: %cx -typecheck %s -Wunused-result | %FileCheck %s
+// RUN: %cx -typecheck %s -Werror
+// CHECK-NOT: unused-result-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+int compute() { return 42; }
+void doWork() {}
+
+void main() {
+    // CHECK: [[@LINE+1]]:12: warning: unused result of type 'int'
+    compute();
+    doWork();
+    int x = 1;
+    x = 5;
+    x++;
+    x += 2;
+    int[2] a = [1, 2];
+    a[0] = 9;
+    // CHECK: [[@LINE+1]]:7: warning: unused result of type 'int'
+    x + 1;
+    _ = compute();
+    // CHECK: [[@LINE+1]]:18: warning: unused result of type 'int'
+    defer compute();
+    todo();
+    println(x);
+}
+
+// CHECK-NOT: unused-result-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

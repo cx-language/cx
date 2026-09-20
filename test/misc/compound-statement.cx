@@ -1,0 +1,33 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:2
+// CHECK-NEXT:1
+// CHECK-NEXT:inner
+// CHECK-NEXT:1
+// CHECK-NEXT:dtor
+// CHECK-NEXT:outer
+
+// Bare blocks introduce a scope: names can be shadowed and locals are
+// destroyed at the end of the block.
+
+struct C {
+    int i;
+    ~C() {
+        println("dtor");
+    }
+}
+
+void main() {
+    int x = 1;
+    {
+        int x = 2;
+        println(x);
+    }
+    println(x);
+    {
+        var c = C(i = 1);
+        println("inner");
+        println(c.i);
+    }
+    println("outer");
+}

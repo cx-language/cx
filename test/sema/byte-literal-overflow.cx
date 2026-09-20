@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+// CHECK-NOT: byte-literal-overflow.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    // CHECK: [[@LINE+1]]:14: error: 300 is out of range for type 'byte'
+    byte b = 300;
+}
+
+// CHECK-NOT: byte-literal-overflow.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

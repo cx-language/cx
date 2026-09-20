@@ -1,0 +1,22 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+5]]:9: warning: missing initializer
+void main() {
+    // CHECK: [[@LINE+1]]:9: warning: unused variable 'x'
+    var x = 1;
+    // CHECK: [[@LINE+1]]:9: warning: unused variable 'y'
+    int y;
+    var _ignored = 2;
+    var z = 3;
+    println(z);
+    for _ in 0..3 {
+    }
+    // CHECK: [[@LINE+1]]:9: warning: unused variable 'i'
+    for i in 0..3 {
+    }
+    // CHECK: [[@LINE+1]]:9: warning: unused variable 'w'
+    var w = 1 + 1;
+}
+
+// CHECK-NOT: unused variable '_ignored'
+// CHECK-NOT: unused variable 'z'

@@ -3,18 +3,30 @@
 %T = type { i32 }
 
 define void @_EN4main1fE1S(%S %a) {
+  %a1 = alloca %S, align 8
+  store %S %a, ptr %a1, align 4
   ret void
 }
 
 define void @_EN4main1fE1T(%T %a) {
+  %a1 = alloca %T, align 8
+  store %T %a, ptr %a1, align 4
   ret void
 }
 
 define void @_EN4mainplE1S1S(%S %a, %S %b) {
+  %a1 = alloca %S, align 8
+  %b2 = alloca %S, align 8
+  store %S %a, ptr %a1, align 4
+  store %S %b, ptr %b2, align 4
   ret void
 }
 
 define void @_EN4mainplE1T1T(%T %a, %T %b) {
+  %a1 = alloca %T, align 8
+  %b2 = alloca %T, align 8
+  store %T %a, ptr %a1, align 4
+  store %T %b, ptr %b2, align 4
   ret void
 }
 

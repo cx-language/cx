@@ -6,7 +6,7 @@ struct A<T> {}
 
 void main() {
     f<int>();
-    var a = A<int>();
+    var _ = A<int>();
 }
 
 // CHECK-NOT: unused

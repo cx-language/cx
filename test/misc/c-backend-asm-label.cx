@@ -1,0 +1,14 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+// CHECK-NOT: c_backend_asm_label_impl
+// CHECK: FOO();
+// CHECK-NOT: c_backend_asm_label_impl
+
+// Extern C functions with asm labels mangle to '\01' + label for LLVM. The C
+// backend must emit the declared name instead: the raw marker is not valid C,
+// and the declaration comes from the included header.
+
+import "./c-backend-asm-label.h";
+
+void main() {
+    FOO();
+}

@@ -551,7 +551,9 @@ void Value::print(llvm::raw_ostream& stream) const {
 bool Value::loads(Value* value, int gepIndex) {
     if (auto load = llvm::dyn_cast<LoadInst>(this)) {
         if (gepIndex == -1) {
-            return load->value == value;
+            // Dereferencing through memory (e.g. `*p` where p is a spilled parameter or local)
+            // lowers to a chain of loads; a null check on the end of the chain covers the base.
+            return load->value == value || load->value->loads(value, gepIndex);
         } else {
             if (auto gep = llvm::dyn_cast<ConstGEPInst>(load->value)) {
                 if (gep->pointer == value && gep->index == gepIndex) return true;
@@ -582,7 +584,7 @@ void IRModule::print(llvm::raw_ostream& stream) const {
 bool IRType::isInteger() {
     if (!isBasicType()) return false;
     return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name)
-        .Cases({"int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64"}, true)
+        .Cases({"int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "byte"}, true)
         .Default(false);
 }
 
@@ -593,7 +595,7 @@ bool IRType::isSignedInteger() {
 
 bool IRType::isUnsignedInteger() {
     if (!isBasicType()) return false;
-    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"uint", "uint8", "uint16", "uint32", "uint64"}, true).Default(false);
+    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"uint", "uint8", "uint16", "uint32", "uint64", "byte"}, true).Default(false);
 }
 
 bool IRType::isFloatingPoint() {

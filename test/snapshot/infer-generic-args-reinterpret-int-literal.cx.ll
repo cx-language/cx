@@ -7,5 +7,9 @@ define i32 @main() {
 }
 
 define void @_EN4main1fI4uintEE4uint4uint(i32 %a, i32 %b) {
+  %a1 = alloca i32, align 4
+  %b2 = alloca i32, align 4
+  store i32 %a, ptr %a1, align 4
+  store i32 %b, ptr %b2, align 4
   ret void
 }

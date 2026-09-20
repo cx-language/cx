@@ -6,7 +6,10 @@ define i32 @main() {
 }
 
 define i32 @_EN4main9__lambda0EP1X(ptr %x) {
-  %1 = call i32 @_EN4main1X3fooE(ptr %x)
+  %x1 = alloca ptr, align 8
+  store ptr %x, ptr %x1, align 8
+  %x.load = load ptr, ptr %x1, align 8
+  %1 = call i32 @_EN4main1X3fooE(ptr %x.load)
   ret i32 %1
 }
 

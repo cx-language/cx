@@ -1,0 +1,37 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:5
+// CHECK-NEXT:-8
+// CHECK-NEXT:200
+// CHECK-NEXT:5
+// CHECK-NEXT:9999999992
+// CHECK-NEXT:3.5
+// CHECK-NEXT:65
+
+void main() {
+    int x = 5;
+    int64 y = x;
+    println(y);
+
+    int8 s = -8;
+    int t = s;
+    println(t);
+
+    uint8 u = 200;
+    int64 v = u;
+    println(v);
+
+    float64 d = x;
+    println(d);
+
+    int64 big = 10000000000;
+    println(s + big);
+
+    float f = 1.5;
+    float64 g = f + 2;
+    println(g);
+
+    char c = 'A';
+    float h = c;
+    println(h);
+}

@@ -13,5 +13,7 @@ define void @_EN4main1AI3intE4initE(ptr %this) {
 }
 
 define void @_EN4main1AI3intE1aE3int(ptr %this, i32 %n) {
+  %n1 = alloca i32, align 4
+  store i32 %n, ptr %n1, align 4
   ret void
 }

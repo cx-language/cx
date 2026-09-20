@@ -1,20 +1,40 @@
 
 void _EN4main1fE1SI3intE1SI3intE(S<int> c, S<int> d) {
-    bool _0 = call _EN4maineqI3intEE1SI3intE1SI3intE(S<int> c, S<int> d)
+    S<int>* c_0 = alloca S<int>
+    S<int>* d_0 = alloca S<int>
+    store c to c_0
+    store d to d_0
+    S<int> c.load = load c_0
+    S<int> d.load = load d_0
+    bool _0 = call _EN4maineqI3intEE1SI3intE1SI3intE(S<int> c.load, S<int> d.load)
     return void
 }
 
 bool _EN4maineqI3intEE1SI3intE1SI3intE(S<int> a, S<int> b) {
+    S<int>* a_0 = alloca S<int>
+    S<int>* b_0 = alloca S<int>
+    store a to a_0
+    store b to b_0
     return bool true
 }
 
 void _EN4main1fEP1SI4boolEP1SI4boolE(S<bool>* c, S<bool>* d) {
-    S<bool> c.load = load c
-    S<bool> d.load = load d
-    bool _0 = call _EN4maineqI4boolEE1SI4boolE1SI4boolE(S<bool> c.load, S<bool> d.load)
+    S<bool>** c_0 = alloca S<bool>*
+    S<bool>** d_0 = alloca S<bool>*
+    store c to c_0
+    store d to d_0
+    S<bool>* c.load = load c_0
+    S<bool> c.load.load = load c.load
+    S<bool>* d.load = load d_0
+    S<bool> d.load.load = load d.load
+    bool _0 = call _EN4maineqI4boolEE1SI4boolE1SI4boolE(S<bool> c.load.load, S<bool> d.load.load)
     return void
 }
 
 bool _EN4maineqI4boolEE1SI4boolE1SI4boolE(S<bool> a, S<bool> b) {
+    S<bool>* a_0 = alloca S<bool>
+    S<bool>* b_0 = alloca S<bool>
+    store a to a_0
+    store b to b_0
     return bool true
 }

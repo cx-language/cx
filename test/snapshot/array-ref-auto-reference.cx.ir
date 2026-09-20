@@ -1,5 +1,7 @@
 
 void _EN4main3fooE8ArrayRefI3intE(ArrayRef<int> a) {
+    ArrayRef<int>* a_0 = alloca ArrayRef<int>
+    store a to a_0
     return void
 }
 
@@ -18,5 +20,7 @@ int main() {
 }
 
 void _EN4main3bazEPA3_3int(int[3]* b) {
+    int[3]** b_0 = alloca int[3]*
+    store b to b_0
     return void
 }

@@ -9,6 +9,7 @@ Type      | Meaning
 `int64`   | 64-bit signed integer
 `uint`    | 32-bit unsigned integer
 `uint8`   | 8-bit unsigned integer
+`byte`    | 8-bit unsigned integer
 `uint16`  | 16-bit unsigned integer
 `uint32`  | 32-bit unsigned integer
 `uint64`  | 64-bit unsigned integer

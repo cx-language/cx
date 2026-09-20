@@ -1,0 +1,58 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:explicit
+// CHECK-NEXT:true
+
+// !=, >, >=, and <= derive from == and < so only those need overloads.
+// An explicit overload still wins over a derived one.
+
+struct V {
+    int x;
+}
+
+bool operator==(V* a, V* b) {
+    return a.x == b.x;
+}
+
+bool operator<(V* a, V* b) {
+    return a.x < b.x;
+}
+
+struct W {
+    int x;
+}
+
+bool operator==(W* a, W* b) {
+    return a.x == b.x;
+}
+
+bool operator!=(W* a, W* b) {
+    println("explicit");
+    return a.x != b.x;
+}
+
+void main() {
+    var v = V(1);
+    var w = V(2);
+    println(v != w);
+    println(v > w);
+    println(w > v);
+    println(v >= w);
+    println(w >= v);
+    println(v <= w);
+    println(w <= v);
+    println(v >= v);
+    println(v <= v);
+    var a = W(1);
+    var b = W(2);
+    println(a != b);
+}
