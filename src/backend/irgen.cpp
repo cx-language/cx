@@ -4,13 +4,14 @@
 
 using namespace cx;
 
-void IRGenScope::onScopeEnd() {
+void IRGenScope::onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls) {
     for (const Expr* expr : reverse(deferredExprs)) {
         irGenerator->emitExpr(*expr);
     }
 
     for (auto& p : reverse(destructorsToCall)) {
         if (p.decl && p.decl->hasBeenMoved()) continue;
+        if (p.decl && returnMovedDecls && returnMovedDecls->contains(p.decl)) continue;
         irGenerator->createDestructorCall(p.function, p.value);
     }
 }
@@ -118,9 +119,9 @@ void IRGenerator::deferDestructorCall(Value* receiver, const VariableDecl* decl)
     }
 }
 
-void IRGenerator::emitDeferredExprsAndDestructorCallsForReturn() {
+void IRGenerator::emitDeferredExprsAndDestructorCallsForReturn(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls) {
     for (auto& scope : llvm::reverse(scopes)) {
-        scope.onScopeEnd();
+        scope.onScopeEnd(returnMovedDecls);
     }
     scopes.back().clear();
 }

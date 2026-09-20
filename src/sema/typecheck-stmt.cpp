@@ -296,6 +296,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
 
     checkReturnPointerToLocal(stmt.value);
     setMoved(stmt.value, true);
+    stmt.movedDecls.insert(movedDecls.begin(), movedDecls.end());
 }
 
 void Typechecker::typecheckVarStmt(VarStmt& stmt) {

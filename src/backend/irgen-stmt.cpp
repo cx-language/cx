@@ -12,7 +12,7 @@ void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
         returnValue = emitExprForPassing(*stmt.value, insertBlock->parent->returnType);
     }
 
-    emitDeferredExprsAndDestructorCallsForReturn();
+    emitDeferredExprsAndDestructorCallsForReturn(&stmt.movedDecls);
 
     if (stmt.value) {
         createReturn(returnValue);

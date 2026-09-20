@@ -1,9 +1,13 @@
 #pragma once
 #include "expr.h"
 #include <vector>
+#pragma warning(push, 0)
+#include <llvm/ADT/SmallPtrSet.h>
+#pragma warning(pop)
 
 namespace cx {
 
+struct Decl;
 struct VarDecl;
 
 enum class StmtKind {
@@ -54,6 +58,9 @@ struct ReturnStmt : Stmt {
 
     Expr* value;
     Location location;
+    /// Decls moved-from on the path reaching this return. Branch merging may forget
+    /// these moves for later code, but this path must still skip their destructors.
+    llvm::SmallPtrSet<const Decl*, 8> movedDecls;
 };
 
 struct VarStmt : Stmt {

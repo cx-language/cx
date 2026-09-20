@@ -3,6 +3,7 @@
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/Twine.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
@@ -19,7 +20,7 @@ struct IRGenerator;
 
 struct IRGenScope {
     IRGenScope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
-    void onScopeEnd();
+    void onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls = nullptr);
     void clear();
 
     struct DeferredDestructor {
@@ -98,7 +99,7 @@ struct IRGenerator {
     Value* emitIfExpr(const IfExpr& expr);
     Value* emitSwitchExpr(const SwitchExpr& expr);
     Value* emitImplicitCastExpr(const ImplicitCastExpr& expr);
-    void emitDeferredExprsAndDestructorCallsForReturn();
+    void emitDeferredExprsAndDestructorCallsForReturn(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls);
     void emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuation);
     void emitReturnStmt(const ReturnStmt& stmt);
     void emitIfStmt(const IfStmt& ifStmt);
