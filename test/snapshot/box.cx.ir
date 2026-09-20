@@ -96,7 +96,7 @@ int* _EN3std8allocateI3intEE3int(int value) {
     int* value_0 = alloca int
     int** allocation = alloca int*
     store value to value_0
-    void* _0 = call malloc(uint64 sizeof(int))
+    void* _0 = call malloc(uint64 4)
     bool assert.condition = _0 == void* null
     br assert.condition, assert.fail, assert.success
 

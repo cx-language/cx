@@ -230,7 +230,7 @@ int* _EN3std13allocateArrayI3intEE3int(int size) {
     store size to size_0
     int size.load = load size_0
     uint64 _0 = cast size.load to uint64
-    uint64 _1 = sizeof(int) * _0
+    uint64 _1 = uint64 4 * _0
     void* _2 = call malloc(uint64 _1)
     bool assert.condition = _2 == void* null
     br assert.condition, assert.fail, assert.success

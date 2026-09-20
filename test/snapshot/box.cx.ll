@@ -99,7 +99,7 @@ define ptr @_EN3std8allocateI3intEE3int(i32 %value) {
   %value1 = alloca i32, align 4
   %allocation = alloca ptr, align 8
   store i32 %value, ptr %value1, align 4
-  %1 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (i32, ptr null, i32 1) to i64))
+  %1 = call ptr @malloc(i64 4)
   %assert.condition = icmp eq ptr %1, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 

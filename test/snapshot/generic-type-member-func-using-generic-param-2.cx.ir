@@ -17,6 +17,6 @@ void _EN4main1CI4boolE1fE(C<bool>* this) {
 
 void _EN4main1CI4boolE1gE(C<bool>* this) {
     uint64* a = alloca uint64
-    store sizeof(bool) to a
+    store uint64 1 to a
     return void
 }

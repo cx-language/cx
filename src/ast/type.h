@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -97,6 +99,8 @@ struct Type {
     bool isSignedInteger() const { return isInteger() && isSigned(); }
     bool isUnsignedInteger() const { return isInteger() && isUnsigned(); }
     int getIntegerBitWidth() const;
+    // Size in bytes for types with target-independent layout, null otherwise.
+    std::optional<uint64_t> getSizeInBytes() const;
     bool isMutable() const { return mutability == Mutability::Mutable; }
     Type withMutability(Mutability m) const { return Type(typeBase, m, location); }
     Type getPointerTo() const;

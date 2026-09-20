@@ -237,7 +237,7 @@ define ptr @_EN3std13allocateArrayI3intEE3int(i32 %size) {
   store i32 %size, ptr %size1, align 4
   %size.load = load i32, ptr %size1, align 4
   %1 = sext i32 %size.load to i64
-  %2 = mul i64 ptrtoint (ptr getelementptr (i32, ptr null, i32 1) to i64), %1
+  %2 = mul i64 4, %1
   %3 = call ptr @malloc(i64 %2)
   %assert.condition = icmp eq ptr %3, null
   br i1 %assert.condition, label %assert.fail, label %assert.success

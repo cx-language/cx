@@ -75,8 +75,10 @@ bool Expr::isConstant() const {
         return binaryExpr->op != Token::Assignment && binaryExpr->getLHS().isConstant() && binaryExpr->getRHS().isConstant();
     }
 
+    case ExprKind::SizeofExpr:
+        return llvm::cast<SizeofExpr>(this)->operandType.getSizeInBytes().has_value();
+
     case ExprKind::CallExpr:
-    case ExprKind::SizeofExpr: // TODO: sizeof should be a constant expression.
     case ExprKind::MemberExpr:
     case ExprKind::IndexExpr:
     case ExprKind::IndexAssignmentExpr:
@@ -121,7 +123,13 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         value.setIsSigned(type.isSigned());
         return value;
     }
-    case ExprKind::SizeofExpr:
+    case ExprKind::SizeofExpr: {
+        // Same shape as lexer-produced integer literals (unsigned 64-bit) so
+        // mixed constant folding never sees mismatched APSInt widths.
+        llvm::APSInt value(64, false);
+        value = *llvm::cast<SizeofExpr>(this)->operandType.getSizeInBytes();
+        return value;
+    }
     case ExprKind::IfExpr:
         llvm_unreachable("unimplemented");
     default:

@@ -220,6 +220,18 @@ int Type::getIntegerBitWidth() const {
         .Cases({"int64", "uint64"}, 64);
 }
 
+std::optional<uint64_t> Type::getSizeInBytes() const {
+    // Only types whose lowering is fixed across targets. Pointers, aggregates,
+    // and float80 depend on the target data layout, which sema cannot see.
+    if (isInteger()) return getIntegerBitWidth() / 8;
+    if (isInt128() || isUInt128()) return 16;
+    if (isChar() || isBool()) return 1;
+    if (isFloat16()) return 2;
+    if (isFloat() || isFloat32()) return 4;
+    if (isFloat64()) return 8;
+    return std::nullopt;
+}
+
 Type Type::getPointerTo() const {
     return PointerType::get(*this);
 }
