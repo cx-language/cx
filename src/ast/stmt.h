@@ -78,13 +78,14 @@ struct DeferStmt : Stmt {
 };
 
 struct IfStmt : Stmt {
-    IfStmt(Expr* condition, std::vector<Stmt*>&& thenBody, std::vector<Stmt*>&& elseBody)
-    : Stmt(StmtKind::IfStmt), condition(condition), thenBody(std::move(thenBody)), elseBody(std::move(elseBody)) {}
+    IfStmt(Expr* condition, std::vector<Stmt*>&& thenBody, std::vector<Stmt*>&& elseBody, Location elseLocation = Location())
+    : Stmt(StmtKind::IfStmt), condition(condition), thenBody(std::move(thenBody)), elseBody(std::move(elseBody)), elseLocation(elseLocation) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::IfStmt; }
 
     Expr* condition;
     std::vector<Stmt*> thenBody;
     std::vector<Stmt*> elseBody;
+    Location elseLocation;
 };
 
 struct SwitchCase {

@@ -1,0 +1,28 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+int main() {
+    // CHECK-NOT: dangling-else-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+    if (true)
+        if (false)
+            return 1;
+        // CHECK: [[@LINE+1]]:9: warning: add explicit braces to avoid dangling else
+        else
+            return 0;
+
+    if (true) {
+        if (false)
+            return 1;
+        else
+            return 0;
+    }
+
+    if (true)
+        return 1;
+    else if (false)
+        return 0;
+    else
+        return 2;
+
+    return 3;
+    // CHECK-NOT: dangling-else-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+}

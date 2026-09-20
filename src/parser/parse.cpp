@@ -929,13 +929,19 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
         condition = parseExprOrVarDecl(parent);
         if (parens) parse(Token::RightParen);
     }
+    bool thenIsBlock = currentToken() == Token::LeftBrace;
     auto thenStmts = parseBlockOrStmt(parent);
     std::vector<Stmt*> elseStmts;
+    Location elseLocation;
     if (currentToken() == Token::Else) {
-        consumeToken();
+        elseLocation = consumeToken().location;
         elseStmts = parseBlockOrStmt(parent);
+    } else if (!thenIsBlock && thenStmts.size() == 1) {
+        if (auto* innerIf = llvm::dyn_cast<IfStmt>(thenStmts.front()); innerIf && !innerIf->elseBody.empty()) {
+            WARN(innerIf->elseLocation, "add explicit braces to avoid dangling else");
+        }
     }
-    return makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts));
+    return makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts), elseLocation);
 }
 
 /// while-stmt ::= 'while' (expr | var-decl) block-or-stmt

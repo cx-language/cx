@@ -1,7 +1,6 @@
 // RUN: check-snapshots
 
 int main() {
-    // TODO: Emit warning for dangling else.
     if (true)
         if (false)
             return 1;
