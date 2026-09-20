@@ -335,11 +335,16 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
 
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(*stmt.condition);
+    bool hasNullCase = llvm::any_of(stmt.cases, [](const SwitchCase& switchCase) { return switchCase.value->isNullLiteralExpr(); });
 
     Type pointerType = conditionType;
     if (pointerType.isOptionalType() && pointerType.getWrappedType().isPointerType()) {
         pointerType = pointerType.getWrappedType();
     }
+
+    // A `case null` on an optional pointer keeps the condition optional; codegen branches
+    // on null first and switches on the dereferenced value, instead of trapping on null.
+    bool nullRoutedOptional = false;
 
     if (pointerType.isPointerType()) {
         Type pointeeType = pointerType.getPointee();
@@ -347,23 +352,27 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         // they need the address for tag/associated-value access, so dereference those explicitly (e.g. `switch (*p)`).
         bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
         if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
-            // Like other implicit unwraps, switching on an optional pointer unwraps it, trapping on null.
-            if (conditionType.isOptionalType()) {
-                if (auto unwrapped = convert(stmt.condition, pointerType)) {
-                    stmt.condition = unwrapped;
-                    conditionType = pointerType;
+            if (conditionType.isOptionalType() && hasNullCase) {
+                nullRoutedOptional = true;
+            } else {
+                // Like other implicit unwraps, switching on an optional pointer unwraps it, trapping on null.
+                if (conditionType.isOptionalType()) {
+                    if (auto unwrapped = convert(stmt.condition, pointerType)) {
+                        stmt.condition = unwrapped;
+                        conditionType = pointerType;
+                    }
                 }
-            }
-            if (auto dereferenced = convert(stmt.condition, pointeeType)) {
-                stmt.condition = dereferenced;
-                conditionType = pointeeType;
+                if (auto dereferenced = convert(stmt.condition, pointeeType)) {
+                    stmt.condition = dereferenced;
+                    conditionType = pointeeType;
+                }
             }
         }
     }
 
     // Pointer-implemented optionals have no tag to switch on.
     bool isSwitchableEnum = conditionType.isEnumType() && !(conditionType.isOptionalType() && conditionType.isImplementedAsPointer());
-    if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum) {
+    if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum && !nullRoutedOptional) {
         ERROR(stmt.condition->location, "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
     }
 
@@ -384,6 +393,10 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
     currentControlStmts.push_back(&stmt);
 
+    // Cases of a null-routed optional switch match the dereferenced value; codegen unwraps before switching.
+    Type caseTargetType = nullRoutedOptional ? conditionType.getWrappedType().getPointee() : conditionType;
+    bool seenNullCase = false;
+
     for (auto& switchCase : stmt.cases) {
         if (conditionType.isEnumType()) {
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(switchCase.value)) {
@@ -396,16 +409,37 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             }
         }
 
-        Type caseType = typecheckExpr(*switchCase.value, false, conditionType);
-
-        if (auto converted = convert(switchCase.value, conditionType)) {
-            switchCase.value = converted;
-        } else {
-            ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
-        }
+        Type caseType = typecheckExpr(*switchCase.value, false, caseTargetType);
 
         auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
         auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+
+        if (switchCase.value->isNullLiteralExpr()) {
+            // Only optional-pointer conditions route null; anything else can't match it.
+            // (The null literal adopts an optional condition type, so compare before converting.)
+            if (!nullRoutedOptional) {
+                ERROR(switchCase.value->location, "case value type 'null' doesn't match switch condition type '" << conditionType << "'");
+            }
+            if (seenNullCase) {
+                ERROR(switchCase.value->location, "duplicate 'case null'");
+            }
+            seenNullCase = true;
+        } else if (auto converted = convert(switchCase.value, caseTargetType)) {
+            switchCase.value = converted;
+            // Conversions can wrap the value, hiding the enum case from the checks below.
+            memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
+            enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+        } else {
+            ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << caseTargetType << "'");
+        }
+
+        if (!nullRoutedOptional && conditionType.isOptionalType() && !conditionType.getWrappedType().isPointerType() && !enumCase
+            && caseType != conditionType) {
+            // Value-optional conditions (e.g. int?) only match enum cases (Some/None); a wrapped
+            // value has no case representation, so don't silently wrap to the optional type.
+            ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
+        }
+
         if (!enumCase && !switchCase.value->isConstant()) {
             ERROR(switchCase.value->location, "case value must be constant");
         }
@@ -447,7 +481,8 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 }
 
 void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const {
-    if (!conditionType.isEnumType() || !stmt.defaultStmts.empty()) return;
+    // Optional pointers switch on the dereferenced value (or route null), not on Some/None.
+    if (!conditionType.isEnumType() || conditionType.isImplementedAsPointer() || !stmt.defaultStmts.empty()) return;
 
     auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
     llvm::StringSet<> handledCases;
