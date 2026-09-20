@@ -636,7 +636,10 @@ void CGenerator::codegenFunctionPrototype(const Function* function) {
     }
     for (auto& param : function->params) {
         codegenType(stream, param.type, !function->isExtern);
-        stream << ' ' << param.name;
+        // Unnamed parameters need a placeholder: omitting the name in a
+        // definition makes C compilers warn.
+        std::string name = param.name.empty() ? "_param" + std::to_string(valueSuffixCounter++) : param.name;
+        stream << ' ' << name;
         codegenTypeSuffix(stream, param.type, !function->isExtern);
         if (&param != &function->params.back()) stream << ", ";
     }

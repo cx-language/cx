@@ -1843,6 +1843,9 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
     case ArgumentValidation::InvalidName: {
         auto& arg = expr.args[result.index];
         auto* param = &params[result.index];
+        if (param->getName().empty()) {
+            ERROR(arg.location, "invalid argument name '" << arg.name << "', parameter #" << (result.index + 1) << " is unnamed");
+        }
         ERROR(arg.location, "invalid argument name '" << arg.name << "' for parameter '" << param->getName() << "'");
         break;
     }

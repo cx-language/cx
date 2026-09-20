@@ -1123,7 +1123,7 @@ std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind en
     return stmts;
 }
 
-/// param-decl ::= 'public'? type? id | 'public'? type '...' id
+/// param-decl ::= 'public'? type? id | 'public'? type '...' id | 'public'? type
 ParamDecl Parser::parseParam(bool requireType) {
     bool isPublic = currentToken() == Token::Public;
     if (isPublic) consumeToken();
@@ -1137,6 +1137,13 @@ ParamDecl Parser::parseParam(bool requireType) {
     if (type && currentToken() == Token::DotDotDot) {
         consumeToken();
         isPack = true;
+    }
+
+    // A typed parameter may omit its name, e.g. `void f(int)`.
+    if (type && currentToken().is({Token::Comma, Token::RightParen})) {
+        ParamDecl param(type, "", isPublic, getCurrentLocation());
+        param.isPack = isPack;
+        return param;
     }
 
     auto name = parse(Token::Identifier);
