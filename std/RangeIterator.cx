@@ -11,7 +11,9 @@ struct RangeIterator<T>: Copyable, Iterator<T> {
 
     /// Returns true if there are more values.
     bool hasValue() {
-        return current != end;
+        // Compare with `<` rather than `!=` so reversed ranges like `3..0`
+        // are empty instead of iterating until the value wraps around.
+        return current < end;
     }
 
     /// Returns the current value.

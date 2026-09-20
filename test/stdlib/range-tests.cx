@@ -9,4 +9,23 @@ void main() {
 
     assert(a.end() == 5);
     assert(b.end() == 5);
+
+    var forwardSum = 0;
+    for i in 0..3 {
+        forwardSum += i;
+    }
+    assert(forwardSum == 3);
+
+    // Reversed ranges are empty.
+    for _ in 3..0 {
+        assert(false);
+    }
+    for _ in 3...0 {
+        assert(false);
+    }
+    var emptySum = 0;
+    for i in 2..2 {
+        emptySum += i;
+    }
+    assert(emptySum == 0);
 }
