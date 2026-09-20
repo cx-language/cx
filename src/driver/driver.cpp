@@ -662,11 +662,9 @@ int cx::driverMain(int argc, const char** argv) {
             .outputFileName = "",
         });
     } else if (build || run) {
-        llvm::SmallString<128> currentPath;
-        if (auto error = llvm::sys::fs::current_path(currentPath)) {
-            ABORT(error.message());
-        }
-        return buildDirectory(currentPath, argv[0]);
+        // Build the current directory by relative path so diagnostics show
+        // relative paths.
+        return buildDirectory(".", argv[0]);
     } else if (lspSubcommand) {
         // The server lives in the cx-lsp binary so that every compilation it
         // triggers runs in a fresh process (see src/lsp/). Forward stdio.

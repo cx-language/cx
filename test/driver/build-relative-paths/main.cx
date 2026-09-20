@@ -1,0 +1,12 @@
+// RUN: cd %S && %not %cx build 2>&1 | %FileCheck %s
+
+// CHECK-NOT: warning
+// CHECK-NOT: error
+
+void main() {
+    // CHECK: .{{[/\\]}}main.cx:[[@LINE+1]]:13: error: unknown identifier 'x'
+    println(x);
+}
+
+// CHECK-NOT: warning
+// CHECK-NOT: error
