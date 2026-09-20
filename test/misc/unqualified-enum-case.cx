@@ -20,7 +20,6 @@ int unwrapOr(Outcome<int>* outcome, int defaultValue) {
         case Err:
             return defaultValue;
     }
-    assert(false);
 }
 
 void main() {

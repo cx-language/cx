@@ -38,8 +38,9 @@ static bool allPathsDiverge(llvm::ArrayRef<Stmt*> block, int nestLevel = 0) {
     }
     case StmtKind::SwitchStmt: {
         auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
-        return llvm::all_of(switchStmt.cases, [&](SwitchCase& c) { return allPathsDiverge(c.stmts, nestLevel + 1); })
-            && allPathsDiverge(switchStmt.defaultStmts, nestLevel + 1);
+        if (!llvm::all_of(switchStmt.cases, [&](SwitchCase& c) { return allPathsDiverge(c.stmts, nestLevel + 1); })) return false;
+        if (switchStmt.defaultStmts.empty()) return switchStmt.coversAllEnumCases;
+        return allPathsDiverge(switchStmt.defaultStmts, nestLevel + 1);
     }
     case StmtKind::CompoundStmt:
         return allPathsDiverge(llvm::cast<CompoundStmt>(*block.back()).body, nestLevel);
@@ -331,6 +332,27 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     currentControlStmts.pop_back();
 }
 
+// Collects the enum cases handled by the switch, or nullopt when the condition
+// isn't an enum or a case doesn't resolve to one of its cases.
+static std::optional<llvm::SmallPtrSet<EnumCase*, 8>> getHandledEnumCases(const SwitchStmt& stmt, Type conditionType) {
+    if (!conditionType.isEnumType()) return std::nullopt;
+    auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
+    llvm::SmallPtrSet<EnumCase*, 8> handledCases;
+    for (auto& switchCase : stmt.cases) {
+        auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
+        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+        if (!enumCase || enumCase->getEnumDecl() != enumDecl) return std::nullopt;
+        handledCases.insert(enumCase);
+    }
+    return handledCases;
+}
+
+static bool coversAllEnumCases(const SwitchStmt& stmt, Type conditionType) {
+    auto handledCases = getHandledEnumCases(stmt, conditionType);
+    if (!handledCases) return false;
+    return handledCases->size() == llvm::cast<EnumDecl>(conditionType.getDecl())->cases.size();
+}
+
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(*stmt.condition);
 
@@ -428,28 +450,24 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
     currentControlStmts.pop_back();
 
+    stmt.coversAllEnumCases = coversAllEnumCases(stmt, conditionType);
     warnAboutUnhandledEnumCases(stmt, conditionType);
 }
 
 void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const {
-    if (!conditionType.isEnumType() || !stmt.defaultStmts.empty()) return;
+    if (!stmt.defaultStmts.empty()) return;
 
-    auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
-    llvm::StringSet<> handledCases;
-    for (auto& switchCase : stmt.cases) {
-        auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
-        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
-        if (!enumCase || enumCase->getEnumDecl() != enumDecl) return;
-        handledCases.insert(enumCase->getName());
-    }
+    auto handledCases = getHandledEnumCases(stmt, conditionType);
+    if (!handledCases) return;
 
     // Don't warn when over half of the cases are missing; partial matching is then assumed intentional.
+    auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
     size_t totalCases = enumDecl->cases.size();
-    size_t missingCases = totalCases - handledCases.size();
+    size_t missingCases = totalCases - handledCases->size();
     if (missingCases == 0 || missingCases * 2 > totalCases) return;
 
     for (auto& enumCase : enumDecl->cases) {
-        if (!handledCases.contains(enumCase.getName())) {
+        if (!handledCases->contains(&enumCase)) {
             WARN(stmt.condition->location, "enumeration value '" << enumCase.getName() << "' not handled in switch");
         }
     }

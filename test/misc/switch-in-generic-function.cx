@@ -13,7 +13,6 @@ bool isOk<T>(Outcome<T>* outcome) {
         case Err:
             return false;
     }
-    assert(false);
 }
 
 T unwrapOr<T>(Outcome<T>* outcome, T defaultValue) {
@@ -23,7 +22,6 @@ T unwrapOr<T>(Outcome<T>* outcome, T defaultValue) {
         case Err:
             return defaultValue;
     }
-    assert(false);
 }
 
 void main() {

@@ -13,7 +13,6 @@ T unwrap<T, E: Printable>(Result<T, E>* result) {
         case Err error:
             abort("called unwrap() on Err: ", error.error);
     }
-    assert(false);
 }
 
 /// Prints the given result.

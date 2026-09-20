@@ -95,6 +95,23 @@ void switchTest(int? v) {
     }
 }
 
+enum Outcome {
+    Ok(int value),
+    Err(int code),
+}
+
+void exhaustiveSwitchDivergeTest(Outcome o, int? v) {
+    if (v == null) {
+        switch (o) {
+            case Ok:
+                return;
+            case Err:
+                return;
+        }
+    }
+    takesInt(v);
+}
+
 void addrTest() {
     int? z = 0;
     if z {
@@ -179,6 +196,8 @@ void main() {
     structTest();
     // CHECK: thirtysix
     switchTest(findAge("ada"));
+    exhaustiveSwitchDivergeTest(Outcome.Ok(value = 1), findAge("ada"));
+    exhaustiveSwitchDivergeTest(Outcome.Ok(value = 1), findAge("nobody"));
     addrTest();
     takesIntParam(findAge("ada"));
 }
