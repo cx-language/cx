@@ -35,6 +35,7 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt16, uint16)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt32, uint32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt64, uint64)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt128, uint128)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(Byte, byte)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float, float)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float16, float16)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float32, float32)
@@ -77,7 +78,7 @@ bool Type::isUnsizedArrayPointer() const {
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
     return llvm::StringSwitch<bool>(typeName)
         .Cases({"int", "int8", "int16", "int32", "int64", "int128"}, true)
-        .Cases({"uint", "uint8", "uint16", "uint32", "uint64", "uint128"}, true)
+        .Cases({"uint", "uint8", "uint16", "uint32", "uint64", "uint128", "byte"}, true)
         .Cases({"float", "float16", "float32", "float64", "float80", "bool", "char"}, true)
         .Default(false);
 }
@@ -193,7 +194,7 @@ std::vector<ParamDecl> FunctionType::getParamDecls(Location location) const {
 }
 
 constexpr auto signedInts = {"int", "int8", "int16", "int32", "int64"};
-constexpr auto unsignedInts = {"uint", "uint8", "uint16", "uint32", "uint64"};
+constexpr auto unsignedInts = {"uint", "uint8", "uint16", "uint32", "uint64", "byte"};
 
 bool Type::isInteger() const {
     if (!isBasicType()) return false;
@@ -214,7 +215,7 @@ int Type::getIntegerBitWidth() const {
     ASSERT(isInteger());
     return llvm::StringSwitch<int>(getName())
         .Cases({"int", "uint"}, 32)
-        .Cases({"int8", "uint8"}, 8)
+        .Cases({"int8", "uint8", "byte"}, 8)
         .Cases({"int16", "uint16"}, 16)
         .Cases({"int32", "uint32"}, 32)
         .Cases({"int64", "uint64"}, 64);

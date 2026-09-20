@@ -857,6 +857,7 @@ void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, boo
                                     .Case("int128", "__int128")
                                     .Case("uint", "unsigned")
                                     .Case("uint8", "uint8_t")
+                                    .Case("byte", "uint8_t")
                                     .Case("uint16", "uint16_t")
                                     .Case("uint32", "uint32_t")
                                     .Case("uint64", "uint64_t")

@@ -24,7 +24,7 @@
             "sizeof": true, "static": true, "struct": true, "switch": true, "this": true, "throw": true, "throws": true, "try": true, "typealias": true,
             "undefined": true, "var": true, "while": true, "bool": true, "float": true, "float32": true, "float64": true,
             "float80": true, "int8": true, "int16": true, "int32": true, "int64": true, "uint8": true, "uint16": true, "uint32": true,
-            "uint64": true, "int": true, "uint": true, "uintptr": true, "char": true, "void": true
+            "uint64": true, "int": true, "uint": true, "uintptr": true, "char": true, "void": true, "byte": true
         };
 
         var atoms = {

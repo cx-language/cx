@@ -24,6 +24,7 @@ llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
         .Case("int128", llvm::Type::getInt128Ty(ctx))
         .Case("uint", llvm::Type::getInt32Ty(ctx))
         .Case("uint8", llvm::Type::getInt8Ty(ctx))
+        .Case("byte", llvm::Type::getInt8Ty(ctx))
         .Case("uint16", llvm::Type::getInt16Ty(ctx))
         .Case("uint32", llvm::Type::getInt32Ty(ctx))
         .Case("uint64", llvm::Type::getInt64Ty(ctx))

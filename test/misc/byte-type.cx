@@ -1,0 +1,30 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+byte doubleIt(byte b) { return b * 2; }
+
+void main() {
+    // CHECK:5
+    byte b = 5;
+    println(b);
+    // CHECK-NEXT:1
+    println(sizeof(byte));
+    // CHECK-NEXT:42
+    println(doubleIt(21));
+    // CHECK-NEXT:44
+    println(byte(300 % 256));
+    // CHECK-NEXT:5
+    int wide = b;
+    println(wide);
+    // CHECK-NEXT:7
+    uint8 u = 7;
+    byte d = u;
+    println(d);
+    // CHECK-NEXT:255
+    println(byte(200) + byte(55));
+    // CHECK-NEXT:255
+    println(byte_max);
+    // CHECK-NEXT:0
+    println(byte_min);
+    // CHECK-NEXT:true
+    println(byte(1) < byte(2));
+}
