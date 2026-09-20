@@ -1,0 +1,36 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK-NOT:return-value-before-dtors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK:compute
+// CHECK-NEXT:deferred
+// CHECK-NEXT:dtor
+// CHECK-NEXT:dtor
+// CHECK-NOT:return-value-before-dtors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct S {
+    int x;
+    ~S() {
+        println("dtor");
+    }
+}
+
+int compute() {
+    println("compute");
+    return 42;
+}
+
+int f() {
+    var s = S(x = 1);
+    defer println("deferred");
+    return compute();
+}
+
+int g() {
+    var s = S(x = 41);
+    return s.x + 1;
+}
+
+void main() {
+    assert(f() == 42);
+    assert(g() == 42);
+}
