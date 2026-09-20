@@ -1,0 +1,7 @@
+// RUN: check-snapshots
+
+import "inputs/c-global.h";
+
+void main() {
+    print(my_global);
+}

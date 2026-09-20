@@ -57,7 +57,7 @@ IRType* cx::getIRType(Type astType) {
                 unionType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name}; });
                 return unionType;
             } else {
-                bool isImportedFromC = decl->module.name.ends_with("_h");
+                bool isImportedFromC = decl->module.isCImport;
                 auto structType = new IRStructType{IRTypeKind::IRStructType,
                                                    {},
                                                    astType.getQualifiedTypeName(),
@@ -528,7 +528,11 @@ void Value::print(llvm::raw_ostream& stream) const {
         break;
     case ValueKind::GlobalVariable: {
         auto globalVariable = llvm::cast<GlobalVariable>(this);
-        stream << "global " << formatName(globalVariable) << " = " << formatTypeAndName(globalVariable->value);
+        if (globalVariable->value) {
+            stream << "global " << formatName(globalVariable) << " = " << formatTypeAndName(globalVariable->value);
+        } else {
+            stream << "extern global " << globalVariable->type << " " << formatName(globalVariable);
+        }
         break;
     }
     case ValueKind::ConstantString:

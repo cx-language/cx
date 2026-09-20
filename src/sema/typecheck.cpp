@@ -270,7 +270,7 @@ static Decl* findDeclInModules(llvm::StringRef name, Location location, llvm::Ar
         return decls[0];
     } else if (decls.empty()) {
         return nullptr;
-    } else if (llvm::all_of(decls, [](Decl* decl) { return decl->getModule() && decl->getModule()->name.ends_with("_h"); })
+    } else if (llvm::all_of(decls, [](Decl* decl) { return decl->getModule() && decl->getModule()->isCImport; })
                && llvm::all_of(decls, [&](Decl* decl) { return decl->kind == decls[0]->kind; })) {
         // Duplicate declarations of the same thing from C headers resolve to the last one.
         return decls.back();

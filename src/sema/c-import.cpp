@@ -254,11 +254,9 @@ struct CToCxConverter final : clang::ASTConsumer {
         return it->second;
     }
 
-    /*
-    static VarDecl* toCx(const clang::VarDecl& decl) {
-        return new VarDecl(toCx(decl.getType()), decl.getName().str(), nullptr, nullptr, AccessLevel::Default, module, Location());
+    VarDecl* toCx(const clang::VarDecl& decl) {
+        return makeAST<VarDecl>(toCx(decl.getType()), decl.getNameAsString(), nullptr, nullptr, AccessLevel::Default, module, toCx(decl.getLocation()));
     }
-    */
 
     void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType) {
         auto initializer = makeAST<IntLiteralExpr>(std::move(value), Location());
@@ -319,10 +317,11 @@ struct CToCxConverter final : clang::ASTConsumer {
                     break;
                 }
                 case clang::Decl::Var: {
-                    // TODO: C global variable importing temporarily disabled.
-                    // auto* varDecl = ::toCx(llvm::cast<clang::VarDecl>(*decl), &module);
-                    // module.addToSymbolTable(varDecl);
-                    // module.sourceFiles.front().topLevelDecls.push_back(varDecl);
+                    auto& varDecl = llvm::cast<clang::VarDecl>(*decl);
+                    if (varDecl.getLinkageInternal() != clang::Linkage::External) break;
+                    auto* cxVarDecl = toCx(varDecl);
+                    module.addToSymbolTable(*cxVarDecl);
+                    module.sourceFiles.front().topLevelDecls.push_back(cxVarDecl);
                     break;
                 }
                 case clang::Decl::Typedef: {
@@ -501,6 +500,7 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     std::string headerModuleName = headerName.str();
     llvm::replace(headerModuleName, '.', '_');
     auto module = new Module(std::move(headerModuleName));
+    module->isCImport = true;
     module->addSourceFile(SourceFile(headerPath.str(), module));
 
     auto cToCxConverter = new CToCxConverter(*module, typechecker, targetInfo, ci.getSourceManager());

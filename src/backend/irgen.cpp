@@ -233,6 +233,9 @@ IRModule& IRGenerator::emitModule(const Module& sourceModule) {
 
     for (auto& sourceFile : sourceModule.sourceFiles) {
         for (auto& decl : sourceFile.topLevelDecls) {
+            // C globals are always extern references; emitting them here would define them in
+            // the wrong module. They materialize on demand in using modules instead.
+            if (sourceModule.isCImport && decl->kind == DeclKind::VarDecl) continue;
             emitDecl(*decl);
         }
     }

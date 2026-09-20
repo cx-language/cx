@@ -167,6 +167,7 @@ private:
 
 public:
     std::string name;
+    bool isCImport = false;
     std::vector<SourceFile> sourceFiles;
     SymbolTable symbolTable;
     std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;

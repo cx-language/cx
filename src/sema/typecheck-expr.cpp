@@ -1245,7 +1245,7 @@ static bool isStdlibDecl(const Match& match) {
 }
 
 static bool isCHeaderDecl(const Match& match) {
-    return match.decl->getModule() && match.decl->getModule()->name.ends_with("_h");
+    return match.decl->getModule() && match.decl->getModule()->isCImport;
 }
 
 static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, const CallExpr& call) {
