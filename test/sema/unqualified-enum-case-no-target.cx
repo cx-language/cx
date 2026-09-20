@@ -1,0 +1,17 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: unqualified-enum-case-no-target.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+enum Outcome<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'Ok'
+    var a = Ok(1);
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'None'
+    var b = None;
+}
+
+// CHECK-NOT: unqualified-enum-case-no-target.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -35,9 +35,9 @@ or the error (`Err`):
 ```cs
 Result<int, string> parseDigit(char c) {
     if c >= '0' && c <= '9' {
-        return Result.Ok(int(c) - int('0'));
+        return Ok(int(c) - int('0'));
     }
-    return Result.Err("not a digit");
+    return Err("not a digit");
 }
 
 void main() {
@@ -56,9 +56,9 @@ Use `== Result.Ok` and `== Result.Err` to test which case a result holds.
 ```cs
 Result<int, string> parseDigit(char c) {
     if c >= '0' && c <= '9' {
-        return Result.Ok(int(c) - int('0'));
+        return Ok(int(c) - int('0'));
     }
-    return Result.Err("not a digit");
+    return Err("not a digit");
 }
 
 void main() {

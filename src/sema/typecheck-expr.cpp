@@ -143,7 +143,21 @@ static void unnarrow(Expr& expr) {
     }
 }
 
-Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
+Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType) {
+    if (findDecls(expr.identifier).empty()) {
+        if (auto* enumCase = getExpectedEnumCase(expr.identifier, expectedType)) {
+            if (!enumCase->associatedType) {
+                MemberExpr qualified(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), expr.location), std::string(expr.identifier),
+                                     expr.location);
+                if (auto* resolvedCase = getEnumCase(qualified, expectedType)) {
+                    checkHasAccess(*resolvedCase->getEnumDecl(), expr.location, AccessLevel::None);
+                    expr.decl = resolvedCase;
+                    return resolvedCase->type;
+                }
+            }
+        }
+    }
+
     auto* decl = findDecl(expr.identifier, expr.location);
     checkHasAccess(*decl, expr.location, AccessLevel::None);
     decl->referenced = true;
@@ -1686,6 +1700,18 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     } else {
         auto callee = expr.getFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
+
+        if (decls.empty()) {
+            if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.callee)) {
+                if (auto* enumCase = getExpectedEnumCase(varExpr->identifier, expectedType)) {
+                    // An unqualified `Ok(...)` mirrors the qualified `Result.Ok(...)`, so desugar to it.
+                    expr.callee = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), varExpr->location),
+                                                      std::string(varExpr->identifier), varExpr->location);
+                    return typecheckCallExpr(expr, expectedType);
+                }
+            }
+        }
+
         decl = resolveOverload(decls, expr, callee, expectedType);
 
         if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
@@ -2163,7 +2189,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
 
     switch (expr.kind) {
     case ExprKind::VarExpr:
-        type = typecheckVarExpr(llvm::cast<VarExpr>(expr), useIsWriteOnly);
+        type = typecheckVarExpr(llvm::cast<VarExpr>(expr), useIsWriteOnly, expectedType);
         if (!type) throw CompileError::dependentError(); // Variable initializer had an error, don't report uses of that variable as errors.
         break;
     case ExprKind::StringLiteralExpr:
@@ -2272,6 +2298,20 @@ static Type matchEnumTemplateExpectedType(TypeTemplate& typeTemplate, Type expec
         }
     }
     return Type();
+}
+
+// If the expected type names an enum with a case called `name`, returns that case.
+EnumCase* Typechecker::getExpectedEnumCase(llvm::StringRef name, Type expectedType) {
+    if (!expectedType) return nullptr;
+    Type candidates[] = {expectedType, expectedType.removeOptional()};
+    for (Type candidate : candidates) {
+        if (candidate.isEnumType()) {
+            if (auto* enumCase = llvm::cast<EnumDecl>(candidate.getDecl())->getCaseByName(name)) {
+                return enumCase;
+            }
+        }
+    }
+    return nullptr;
 }
 
 EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr* call) {

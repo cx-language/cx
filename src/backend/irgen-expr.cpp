@@ -9,6 +9,9 @@
 using namespace cx;
 
 Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
+    if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(expr.decl)) {
+        return emitEnumCase(*enumCase, {});
+    }
     return getValue(expr.decl);
 }
 

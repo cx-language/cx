@@ -44,9 +44,31 @@ enum Outcome<T> {
 void main() {
     var a = Outcome.Ok(1); // Outcome<int>, inferred
     var b = Outcome.Ok<bool>(true); // explicit type arguments
-    Outcome<int> c = Outcome.Err(404); // from the declared type
+    Outcome<int> c = Err(404); // from the declared type
 }
 ```
 
 The standard library provides a general `Result<T, E>` enum for error handling;
 see [Error handling](error-handling).
+
+The enum name can be omitted when the expected type determines which enum
+is meant, such as in a return statement or an initializer with a declared type:
+
+```cs
+enum Outcome<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+Outcome<int> check(bool ok) {
+    if ok {
+        return Ok(1);
+    }
+    return Err(404);
+}
+
+void main() {
+    Outcome<int> a = check(true);
+    Outcome<int> b = Err(500);
+}
+```
