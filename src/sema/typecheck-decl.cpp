@@ -505,8 +505,6 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
 }
 
 void Typechecker::typecheckImportDecl(ImportDecl& decl, const BuildConfig* config) {
-    // TODO: Print import search paths as part of the below error messages.
-
     if (decl.target.ends_with(".h")) {
         const int errorsBefore = errors;
         if (!importCHeader(*currentSourceFile, decl, *this) && errors == errorsBefore) {
@@ -515,7 +513,12 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const BuildConfig* confi
     } else {
         auto module = importModule(currentSourceFile, config, decl.target);
         if (!module) {
-            REPORT_ERROR(decl.getLocation(), "couldn't import module '" << decl.target << "': " << module.getError().message());
+            if (module.getError() == std::make_error_code(std::errc::no_such_file_or_directory)) {
+                REPORT_ERROR(decl.getLocation(), "couldn't find module '" << decl.target << "' in the following locations:\n"
+                                                                                << llvm::join(options.importSearchPaths, "\n"));
+            } else {
+                REPORT_ERROR(decl.getLocation(), "couldn't import module '" << decl.target << "': " << module.getError().message());
+            }
         }
     }
 }

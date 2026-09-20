@@ -1,4 +1,5 @@
 #include "typecheck.h"
+#include <system_error>
 #pragma warning(push, 0)
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
@@ -67,7 +68,7 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
     }
 
     auto module = new Module(moduleName.str());
-    std::error_code error;
+    std::error_code error = std::make_error_code(std::errc::no_such_file_or_directory);
 
     if (config) {
         for (auto& dependency : config->declaredDependencies) {
