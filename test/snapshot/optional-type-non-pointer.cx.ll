@@ -2,7 +2,9 @@
 %0 = type <{ { i32 } }>
 %"Optional<int>" = type { i32, %0 }
 
-@0 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:33:18\0A\00", align 1
+@0 = private unnamed_addr constant [56 x i8] c"integer overflow at optional-type-non-pointer.cx:26:19\0A\00", align 1
+@1 = private unnamed_addr constant [56 x i8] c"integer overflow at optional-type-non-pointer.cx:27:15\0A\00", align 1
+@2 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:33:18\0A\00", align 1
 
 define i32 @main() {
   %a = alloca %"Optional<int>", align 8
@@ -156,73 +158,99 @@ define void @_EN4main1fE() {
 if.then:                                          ; preds = %0
   %4 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
   %.load = load i32, ptr %4, align 4
-  %5 = add i32 %.load, 1
-  store i32 %5, ptr %x, align 4
-  %6 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
-  %.load15 = load i32, ptr %6, align 4
-  %7 = add i32 1, %.load15
-  %tag16 = getelementptr inbounds %"Optional<int>", ptr %enum5, i32 0, i32 0
-  store i32 1, ptr %tag16, align 4
-  %8 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
-  %.load17 = load i32, ptr %8, align 4
-  %9 = sub i32 0, %.load17
-  %10 = insertvalue { i32 } undef, i32 %9, 0
-  %associatedValue18 = getelementptr inbounds %"Optional<int>", ptr %enum5, i32 0, i32 1
-  store { i32 } %10, ptr %associatedValue18, align 4
-  %enum.load19 = load %"Optional<int>", ptr %enum5, align 4
-  store %"Optional<int>" %enum.load19, ptr %c, align 4
-  br label %if.end
+  %5 = sext i32 %.load to i128
+  %6 = add i128 %5, 1
+  %7 = trunc i128 %6 to i32
+  %8 = sext i32 %7 to i128
+  %9 = icmp ne i128 %6, %8
+  %10 = xor i1 %9, true
+  %overflow.condition = icmp eq i1 %10, false
+  br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 if.else:                                          ; preds = %0
   br label %if.end
 
-if.end:                                           ; preds = %if.else, %if.then
-  %c.load20 = load %"Optional<int>", ptr %c, align 4
-  %11 = extractvalue %"Optional<int>" %c.load20, 0
+if.end:                                           ; preds = %overflow.success19, %if.else
+  %c.load15 = load %"Optional<int>", ptr %c, align 4
+  %11 = extractvalue %"Optional<int>" %c.load15, 0
   %12 = icmp eq i32 %11, 1
-  br i1 %12, label %if.then21, label %if.else23
+  br i1 %12, label %if.then24, label %if.else26
 
-if.then21:                                        ; preds = %if.end
-  %13 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
-  %.load22 = load i32, ptr %13, align 4
-  %14 = add i32 %.load22, 1
-  store i32 %14, ptr %13, align 4
-  br label %if.end24
-
-if.else23:                                        ; preds = %if.end
-  br label %if.end24
-
-if.end24:                                         ; preds = %if.else23, %if.then21
-  %c.load25 = load %"Optional<int>", ptr %c, align 4
-  %15 = extractvalue %"Optional<int>" %c.load25, 0
-  %16 = icmp eq i32 %15, 1
-  %__implicit_unwrap.condition = icmp eq i1 %16, false
-  br i1 %__implicit_unwrap.condition, label %__implicit_unwrap.fail, label %__implicit_unwrap.success
-
-__implicit_unwrap.fail:                           ; preds = %if.end24
+overflow.fail:                                    ; preds = %if.then
   call void @_EN3std10assertFailEP4char(ptr @0)
   unreachable
 
-__implicit_unwrap.success:                        ; preds = %if.end24
-  store %"Optional<int>" %c.load25, ptr %1, align 4
-  %17 = getelementptr inbounds %"Optional<int>", ptr %1, i32 0, i32 1
-  %.load26 = load i32, ptr %17, align 4
-  call void @_EN4main12takesNonNullE3int(i32 %.load26)
-  %c.load27 = load %"Optional<int>", ptr %c, align 4
-  %18 = extractvalue %"Optional<int>" %c.load27, 0
-  %19 = icmp eq i32 %18, 1
-  br i1 %19, label %if.then28, label %if.else30
+overflow.success:                                 ; preds = %if.then
+  store i32 %7, ptr %x, align 4
+  %13 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
+  %.load16 = load i32, ptr %13, align 4
+  %14 = sext i32 %.load16 to i128
+  %15 = add i128 1, %14
+  %16 = trunc i128 %15 to i32
+  %17 = sext i32 %16 to i128
+  %18 = icmp ne i128 %15, %17
+  %19 = xor i1 %18, true
+  %overflow.condition17 = icmp eq i1 %19, false
+  br i1 %overflow.condition17, label %overflow.fail18, label %overflow.success19
 
-if.then28:                                        ; preds = %__implicit_unwrap.success
+overflow.fail18:                                  ; preds = %overflow.success
+  call void @_EN3std10assertFailEP4char(ptr @1)
+  unreachable
+
+overflow.success19:                               ; preds = %overflow.success
+  %tag20 = getelementptr inbounds %"Optional<int>", ptr %enum5, i32 0, i32 0
+  store i32 1, ptr %tag20, align 4
   %20 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
-  %.load29 = load i32, ptr %20, align 4
+  %.load21 = load i32, ptr %20, align 4
+  %21 = sub i32 0, %.load21
+  %22 = insertvalue { i32 } undef, i32 %21, 0
+  %associatedValue22 = getelementptr inbounds %"Optional<int>", ptr %enum5, i32 0, i32 1
+  store { i32 } %22, ptr %associatedValue22, align 4
+  %enum.load23 = load %"Optional<int>", ptr %enum5, align 4
+  store %"Optional<int>" %enum.load23, ptr %c, align 4
+  br label %if.end
+
+if.then24:                                        ; preds = %if.end
+  %23 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
+  %.load25 = load i32, ptr %23, align 4
+  %24 = add i32 %.load25, 1
+  store i32 %24, ptr %23, align 4
+  br label %if.end27
+
+if.else26:                                        ; preds = %if.end
+  br label %if.end27
+
+if.end27:                                         ; preds = %if.else26, %if.then24
+  %c.load28 = load %"Optional<int>", ptr %c, align 4
+  %25 = extractvalue %"Optional<int>" %c.load28, 0
+  %26 = icmp eq i32 %25, 1
+  %__implicit_unwrap.condition = icmp eq i1 %26, false
+  br i1 %__implicit_unwrap.condition, label %__implicit_unwrap.fail, label %__implicit_unwrap.success
+
+__implicit_unwrap.fail:                           ; preds = %if.end27
+  call void @_EN3std10assertFailEP4char(ptr @2)
+  unreachable
+
+__implicit_unwrap.success:                        ; preds = %if.end27
+  store %"Optional<int>" %c.load28, ptr %1, align 4
+  %27 = getelementptr inbounds %"Optional<int>", ptr %1, i32 0, i32 1
+  %.load29 = load i32, ptr %27, align 4
   call void @_EN4main12takesNonNullE3int(i32 %.load29)
-  br label %if.end31
+  %c.load30 = load %"Optional<int>", ptr %c, align 4
+  %28 = extractvalue %"Optional<int>" %c.load30, 0
+  %29 = icmp eq i32 %28, 1
+  br i1 %29, label %if.then31, label %if.else33
 
-if.else30:                                        ; preds = %__implicit_unwrap.success
-  br label %if.end31
+if.then31:                                        ; preds = %__implicit_unwrap.success
+  %30 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
+  %.load32 = load i32, ptr %30, align 4
+  call void @_EN4main12takesNonNullE3int(i32 %.load32)
+  br label %if.end34
 
-if.end31:                                         ; preds = %if.else30, %if.then28
+if.else33:                                        ; preds = %__implicit_unwrap.success
+  br label %if.end34
+
+if.end34:                                         ; preds = %if.else33, %if.then31
   ret void
 }
 

@@ -14,16 +14,34 @@ loop.condition:
 loop.body:
     int sum.load = load sum
     int i.load_0 = load i
-    int _1 = sum.load + i.load_0
-    store _1 to sum
-    br loop.increment
+    int128 _1 = cast sum.load to int128
+    int128 _2 = cast i.load_0 to int128
+    int128 _3 = _1 + _2
+    int _4 = cast _3 to int
+    int128 _5 = cast _4 to int128
+    bool _6 = _3 != _5
+    bool _7 = !_6
+    bool overflow.condition = _7 == bool false
+    br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
     int i.load_1 = load i
-    int _2 = i.load_1 + int 1
-    store _2 to i
+    int _8 = i.load_1 + int 1
+    store _8 to i
     br loop.condition
 
 loop.end:
     return int 0
+
+overflow.fail:
+    void _9 = call _EN3std10assertFailEP4char(char* "integer overflow at for-loop-c-style.cx:6:13
+")
+    unreachable
+
+overflow.success:
+    store _4 to sum
+    br loop.increment
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

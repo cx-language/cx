@@ -1,0 +1,67 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK-NOT: integer-overflow-bounds.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK:2147483647
+// CHECK-NEXT:2147483647
+// CHECK-NEXT:2147483647
+// CHECK-NEXT:0
+// CHECK-NEXT:-2147483647
+// CHECK-NEXT:-2147483648
+// CHECK-NEXT:-2147483647
+// CHECK-NEXT:4294967295
+// CHECK-NEXT:4294967295
+// CHECK-NEXT:0
+// CHECK-NEXT:9223372036854775807
+// CHECK-NEXT:9223372036854775807
+// CHECK-NEXT:18446744073709551615
+// CHECK-NEXT:127
+// CHECK-NEXT:255
+// CHECK-NEXT:98
+// CHECK-NEXT:5
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NOT: integer-overflow-bounds.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    int max = 2147483647;
+    println(max + 0);
+    println(max - 0);
+    println(max * 1);
+    println(max * 0);
+    int min = -2147483648;
+    println(min + 1);
+    println(min * 1);
+    println(min - -1);
+    uint umax = 4294967295;
+    println(umax + uint(0));
+    println(umax * uint(1));
+    println(uint(0) - uint(0));
+    int64 big = 9223372036854775807;
+    println(big + 0);
+    println(big * 1);
+    uint64 ubig = 18446744073709551615;
+    println(ubig);
+    int8 s8 = 127;
+    println(s8 + int8(0));
+    println(byte(200) + byte(55));
+    println(int(char(65) + char(33)));
+    int n = 0;
+    n += 5;
+    println(n);
+
+    int128 a = int128(1) << int128(64);
+    int128 b = int128(1) << int128(62);
+    println(a * int128(2) == b * int128(8));
+    println(a + a == b * int128(8));
+    int128 max128 = int128(-1) - (int128(1) << int128(127));
+    println(max128 + int128(0) == max128);
+    println(max128 * int128(0) == int128(0));
+    uint128 half = uint128(1) << uint128(127);
+    uint128 umax128 = half | (half - uint128(1));
+    println(umax128 - umax128 == uint128(0));
+    println(umax128 * uint128(0) == uint128(0));
+}

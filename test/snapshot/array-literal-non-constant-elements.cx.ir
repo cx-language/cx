@@ -6,13 +6,46 @@ int[2] _EN4main1fE3int3int(int foo, int bar) {
     store bar to bar_0
     int foo.load = load foo_0
     int bar.load = load bar_0
-    int _0 = foo.load + bar.load
-    int[2] _1 = insertvalue int[2] undefined, 0, _0
+    int128 _0 = cast foo.load to int128
+    int128 _1 = cast bar.load to int128
+    int128 _2 = _0 + _1
+    int _3 = cast _2 to int
+    int128 _4 = cast _3 to int128
+    bool _5 = _2 != _4
+    bool _6 = !_5
+    bool overflow.condition = _6 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:17
+")
+    unreachable
+
+overflow.success:
+    int[2] _8 = insertvalue int[2] undefined, 0, _3
     int foo.load_0 = load foo_0
     int bar.load_0 = load bar_0
-    int _2 = foo.load_0 - bar.load_0
-    int[2] _3 = insertvalue _1, 1, _2
-    return _3
+    int128 _9 = cast foo.load_0 to int128
+    int128 _10 = cast bar.load_0 to int128
+    int128 _11 = _9 - _10
+    int _12 = cast _11 to int
+    int128 _13 = cast _12 to int128
+    bool _14 = _11 != _13
+    bool _15 = !_14
+    bool overflow.condition_0 = _15 == bool false
+    br overflow.condition_0, overflow.fail, overflow.success
+
+overflow.fail_0:
+    void _16 = call _EN3std10assertFailEP4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:28
+")
+    unreachable
+
+overflow.success_0:
+    int[2] _17 = insertvalue _8, 1, _12
+    return _17
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }
 
 int[2] _EN4main1gE3int3int(int foo, int bar) {
@@ -23,13 +56,43 @@ int[2] _EN4main1gE3int3int(int foo, int bar) {
     store bar to bar_0
     int foo.load = load foo_0
     int bar.load = load bar_0
-    int _0 = foo.load + bar.load
-    int[2] _1 = insertvalue int[2] undefined, 0, _0
+    int128 _0 = cast foo.load to int128
+    int128 _1 = cast bar.load to int128
+    int128 _2 = _0 + _1
+    int _3 = cast _2 to int
+    int128 _4 = cast _3 to int128
+    bool _5 = _2 != _4
+    bool _6 = !_5
+    bool overflow.condition = _6 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:18
+")
+    unreachable
+
+overflow.success:
+    int[2] _8 = insertvalue int[2] undefined, 0, _3
     int foo.load_0 = load foo_0
     int bar.load_0 = load bar_0
-    int _2 = foo.load_0 - bar.load_0
-    int[2] _3 = insertvalue _1, 1, _2
-    store _3 to c
+    int128 _9 = cast foo.load_0 to int128
+    int128 _10 = cast bar.load_0 to int128
+    int128 _11 = _9 - _10
+    int _12 = cast _11 to int
+    int128 _13 = cast _12 to int128
+    bool _14 = _11 != _13
+    bool _15 = !_14
+    bool overflow.condition_0 = _15 == bool false
+    br overflow.condition_0, overflow.fail, overflow.success
+
+overflow.fail_0:
+    void _16 = call _EN3std10assertFailEP4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:29
+")
+    unreachable
+
+overflow.success_0:
+    int[2] _17 = insertvalue _8, 1, _12
+    store _17 to c
     int[2] c.load = load c
     return c.load
 }

@@ -9,13 +9,43 @@ vec2 _EN4mainmlE4vec24vec2(vec2 a, vec2 b) {
     int x.load = load x
     int* x_0 = getelementptr b_0, 0
     int x.load_0 = load x_0
-    int _1 = x.load * x.load_0
+    int128 _1 = cast x.load to int128
+    int128 _2 = cast x.load_0 to int128
+    int128 _3 = _1 * _2
+    int _4 = cast _3 to int
+    int128 _5 = cast _4 to int128
+    bool _6 = _3 != _5
+    bool _7 = !_6
+    bool overflow.condition = _7 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _8 = call _EN3std10assertFailEP4char(char* "integer overflow at operator-overloading.cx:13:21
+")
+    unreachable
+
+overflow.success:
     int* y = getelementptr a_0, 1
     int y.load = load y
     int* y_0 = getelementptr b_0, 1
     int y.load_0 = load y_0
-    int _2 = y.load * y.load_0
-    void _3 = call _EN4main4vec24initE3int3int(vec2* _0, int _1, int _2)
+    int128 _9 = cast y.load to int128
+    int128 _10 = cast y.load_0 to int128
+    int128 _11 = _9 * _10
+    int _12 = cast _11 to int
+    int128 _13 = cast _12 to int128
+    bool _14 = _11 != _13
+    bool _15 = !_14
+    bool overflow.condition_0 = _15 == bool false
+    br overflow.condition_0, overflow.fail, overflow.success
+
+overflow.fail_0:
+    void _16 = call _EN3std10assertFailEP4char(char* "integer overflow at operator-overloading.cx:13:32
+")
+    unreachable
+
+overflow.success_0:
+    void _17 = call _EN4main4vec24initE3int3int(vec2* _0, int _4, int _12)
     vec2 .load = load _0
     return .load
 }
@@ -32,6 +62,9 @@ void _EN4main4vec24initE3int3int(vec2* this, int x, int y) {
     int y.load = load y_0
     store y.load to y_1
     return void
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }
 
 int main() {

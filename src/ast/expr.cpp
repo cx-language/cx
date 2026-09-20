@@ -445,10 +445,13 @@ bool cx::isBuiltinOp(Token::Kind op, Type left, Type right) {
 }
 
 llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
-    // TODO: Add overflow checks.
-
-    auto lhs = getLHS().getConstantIntegerValue();
-    auto rhs = getRHS().getConstantIntegerValue();
+    // Evaluate exactly: folds mix 64/65-bit literals and (via casts) signed/unsigned values,
+    // so normalize to a common wide representation instead of wrapping or asserting.
+    // Overflow is diagnosed against the result type by the callers that need it.
+    auto lhs = getLHS().getConstantIntegerValue().extend(256);
+    auto rhs = getRHS().getConstantIntegerValue().extend(256);
+    lhs.setIsSigned(true);
+    rhs.setIsSigned(true);
 
     switch (op) {
     case Token::Plus:

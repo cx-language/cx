@@ -17,7 +17,25 @@ void _EN4main1fEP3int3int(int* a, int b) {
     store b.load to a.load
     int _1 = call _EN4main1gE()
     int b.load_0 = load b_0
-    int _2 = _1 * b.load_0
-    store _2 to n
+    int128 _2 = cast _1 to int128
+    int128 _3 = cast b.load_0 to int128
+    int128 _4 = _2 * _3
+    int _5 = cast _4 to int
+    int128 _6 = cast _5 to int128
+    bool _7 = _4 != _6
+    bool _8 = !_7
+    bool overflow.condition = _8 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _9 = call _EN3std10assertFailEP4char(char* "integer overflow at dereference-vs-multiplication.cx:11:5
+")
+    unreachable
+
+overflow.success:
+    store _5 to n
     return void
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

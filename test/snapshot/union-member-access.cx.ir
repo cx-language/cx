@@ -15,6 +15,24 @@ int main() {
     int _0 = call _EN4main3fooE1U(U u.load)
     int* b = cast u to int*
     int b.load = load b
-    int _1 = _0 + b.load
-    return _1
+    int128 _1 = cast _0 to int128
+    int128 _2 = cast b.load to int128
+    int128 _3 = _1 + _2
+    int _4 = cast _3 to int
+    int128 _5 = cast _4 to int128
+    bool _6 = _3 != _5
+    bool _7 = !_6
+    bool overflow.condition = _7 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _8 = call _EN3std10assertFailEP4char(char* "integer overflow at union-member-access.cx:13:19
+")
+    unreachable
+
+overflow.success:
+    return _4
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

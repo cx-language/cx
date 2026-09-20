@@ -1,4 +1,6 @@
 
+@0 = private unnamed_addr constant [62 x i8] c"integer overflow at function-pointer-local-variable.cx:14:27\0A\00", align 1
+
 define void @_EN4main3fooE() {
   ret void
 }
@@ -32,10 +34,25 @@ define void @_EN4main2g2EF3int4bool_3int(ptr %p) {
   store ptr %p.load, ptr %p2, align 8
   %p2.load = load ptr, ptr %p2, align 8
   %1 = call i32 %p2.load(i32 42, i1 false)
-  %2 = add i32 %1, 1
-  store i32 %2, ptr %a, align 4
+  %2 = sext i32 %1 to i128
+  %3 = add i128 %2, 1
+  %4 = trunc i128 %3 to i32
+  %5 = sext i32 %4 to i128
+  %6 = icmp ne i128 %3, %5
+  %7 = xor i1 %6, true
+  %overflow.condition = icmp eq i1 %7, false
+  br i1 %overflow.condition, label %overflow.fail, label %overflow.success
+
+overflow.fail:                                    ; preds = %0
+  call void @_EN3std10assertFailEP4char(ptr @0)
+  unreachable
+
+overflow.success:                                 ; preds = %0
+  store i32 %4, ptr %a, align 4
   ret void
 }
+
+declare void @_EN3std10assertFailEP4char(ptr)
 
 define i32 @main() {
   %lf = alloca ptr, align 8

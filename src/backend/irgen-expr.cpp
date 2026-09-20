@@ -1,9 +1,11 @@
 #include "irgen.h"
 #pragma warning(push, 0)
 #include <llvm/ADT/StringExtras.h>
+#include <llvm/ADT/StringSwitch.h>
 #include <llvm/Support/Path.h>
 #pragma warning(pop)
 #include "../ast/module.h"
+#include "../driver/driver.h"
 #include "../support/utility.h"
 
 using namespace cx;
@@ -309,6 +311,116 @@ Value* IRGenerator::emitNullCoalescingExpr(const BinaryExpr& expr) {
     return endBlock->parameter;
 }
 
+static int getIntegerBitWidth(IRType* type) {
+    return llvm::StringSwitch<int>(llvm::cast<IRBasicType>(type)->name)
+        .Cases({"int8", "uint8", "byte"}, 8)
+        .Cases({"int16", "uint16"}, 16)
+        .Cases({"int", "int32", "uint", "uint32"}, 32)
+        .Cases({"int64", "uint64"}, 64)
+        .Cases({"int128", "uint128"}, 128)
+        .Default(0);
+}
+
+static Type getUnsignedIntegerType(int width) {
+    switch (width) {
+    case 8:
+        return Type::getUInt8();
+    case 16:
+        return Type::getUInt16();
+    case 32:
+        return Type::getUInt();
+    case 64:
+        return Type::getUInt64();
+    case 128:
+        return Type::getUInt128();
+    default:
+        llvm_unreachable("invalid integer width");
+    }
+}
+
+Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const BinaryExpr& expr) {
+    auto* type = left->getType();
+    bool resultIsChar = type->isChar();
+    if (resultIsChar) {
+        // Chars compare as unsigned, so check them as 8-bit unsigned integers.
+        auto* uint8Type = getIRType(Type::getUInt8());
+        left = createCast(left, uint8Type);
+        right = createCast(right, uint8Type);
+        type = uint8Type;
+    }
+
+    int width = getIntegerBitWidth(type);
+    ASSERT(width != 0);
+    bool isSigned = type->isSignedInteger();
+
+    Value* result;
+    Value* overflowed;
+
+    if (width < 128) {
+        // The operation is exact in 128 bits, so any loss in the round trip is an overflow.
+        auto* wideType = getIRType(isSigned ? Type::getInt128() : Type::getUInt128());
+        auto* wideResult = createBinaryOp(op, createCast(left, wideType), createCast(right, wideType), &expr);
+        result = createCast(wideResult, type);
+        overflowed = createBinaryOp(Token::NotEqual, wideResult, createCast(result, wideType), &expr);
+    } else if (op != Token::Star) {
+        // Compute in the unsigned domain so the wrapping step isn't signed overflow in the C backend.
+        auto* unsignedType = getIRType(getUnsignedIntegerType(width));
+        auto* a = createCastIfNeeded(left, unsignedType);
+        auto* b = createCastIfNeeded(right, unsignedType);
+        auto* r = createBinaryOp(op, a, b, &expr);
+        result = createCastIfNeeded(r, type);
+        if (!isSigned) {
+            overflowed = createBinaryOp(Token::Less, op == Token::Plus ? r : a, op == Token::Plus ? a : b, &expr);
+        } else {
+            // Add and subtract set the sign bit of (a^r)&(b^r) and (a^b)&(a^r) respectively on overflow.
+            auto* x = createBinaryOp(Token::Xor, a, op == Token::Plus ? r : b, &expr);
+            auto* y = createBinaryOp(Token::Xor, op == Token::Plus ? b : a, r, &expr);
+            // Cast the 1 up from 32 bits: the C backend prints integer constants without a type,
+            // so a bare 128-bit 1 would shift as a C int.
+            auto* one = createCast(createConstantInt(Type::getUInt(), 1), unsignedType);
+            auto* signBit = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
+            auto* signBitSet = createBinaryOp(Token::And, createBinaryOp(Token::And, x, y, &expr), signBit, &expr);
+            overflowed = createBinaryOp(Token::NotEqual, signBitSet, createConstantInt(unsignedType, 0), &expr);
+        }
+    } else {
+        // 128-bit multiply has no wider type; check the wrapped result against division instead:
+        // with b != 0, result / b != a exactly when the multiply overflowed. Operands are
+        // nonzero below, and the MIN / -1 division trap is guarded, so the division is safe.
+        auto* unsignedType = getIRType(getUnsignedIntegerType(width));
+        result = createCastIfNeeded(createBinaryOp(Token::Star, createCastIfNeeded(left, unsignedType), createCastIfNeeded(right, unsignedType), &expr), type);
+
+        auto* function = insertBlock->parent;
+        auto* checkBlock = new BasicBlock("overflow.check", function);
+        auto* endBlock = new BasicBlock("overflow.end");
+        auto* divisorIsZero = createBinaryOp(Token::Equal, right, createConstantInt(type, 0), &expr);
+        createCondBr(divisorIsZero, endBlock, checkBlock, createConstantBool(false));
+
+        setInsertPoint(checkBlock);
+        if (isSigned) {
+            auto* minusOne = createConstantInt(type, -1);
+            auto* one = createCast(createConstantInt(Type::getUInt(), 1), unsignedType);
+            auto* minValue = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
+            auto* min = createCast(minValue, type);
+            auto* minCase1 =
+                createBinaryOp(Token::And, createBinaryOp(Token::Equal, left, minusOne, &expr), createBinaryOp(Token::Equal, right, min, &expr), &expr);
+            auto* minCase2 =
+                createBinaryOp(Token::And, createBinaryOp(Token::Equal, left, min, &expr), createBinaryOp(Token::Equal, right, minusOne, &expr), &expr);
+            auto* divBlock = new BasicBlock("overflow.div", function);
+            createCondBr(createBinaryOp(Token::Or, minCase1, minCase2, &expr), endBlock, divBlock, createConstantBool(true));
+            setInsertPoint(divBlock);
+        }
+        createBr(endBlock, createBinaryOp(Token::NotEqual, createBinaryOp(Token::Slash, result, right, &expr), left, &expr));
+
+        setInsertPoint(endBlock);
+        endBlock->parameter = new Parameter{ValueKind::Parameter, getIRType(Type::getBool()), "overflowed"};
+        overflowed = endBlock->parameter;
+    }
+
+    emitAssert(createNot(overflowed), &expr, expr.location, "integer overflow", "overflow");
+    if (resultIsChar) result = createCast(result, getIRType(Type::getChar()));
+    return result;
+}
+
 Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     if (expr.isAssignment()) {
         return emitAssignment(expr);
@@ -365,6 +477,10 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
             right = createLoad(right);
         }
 
+        if ((expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star) && options.mode != BuildMode::ReleaseFast
+            && (left->getType()->isInteger() || left->getType()->isChar())) {
+            return emitCheckedArithmetic(expr.op, left, right, expr);
+        }
         return createBinaryOp(expr.op, left, right, &expr);
     }
 }

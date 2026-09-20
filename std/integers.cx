@@ -53,8 +53,8 @@ const uint64 uint64_min = 0;
 private void printSigned(int64 value, StringBuffer* stream) {
     if value < 0 {
         stream.write('-');
-        // Negate in unsigned arithmetic so that int64_min doesn't overflow.
-        printUnsigned(uint64(0) - uint64(value), stream);
+        // Negate via value + 1 so that int64_min doesn't overflow.
+        printUnsigned(uint64(-(value + 1)) + uint64(1), stream);
     } else {
         printUnsigned(uint64(value), stream);
     }

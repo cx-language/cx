@@ -379,6 +379,8 @@ static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* curr
     return false;
 }
 
+static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange);
+
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.op;
 
@@ -492,7 +494,15 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         throwInvalidOperandsToBinaryExpr(expr, op);
     }
 
-    return isComparisonOperator(op) ? Type::getBool() : expr.getLHS().type.removeOptional().removePointer();
+    Type resultType = isComparisonOperator(op) ? Type::getBool() : expr.getLHS().type.removeOptional().removePointer();
+
+    if ((op == Token::Plus || op == Token::Minus || op == Token::Star) && (resultType.isInteger() || resultType.isInt128() || resultType.isUInt128())
+        && expr.isConstant()) {
+        // Like the runtime overflow check, diagnose overflowing constant arithmetic at compile time.
+        checkRange(expr, expr.getConstantIntegerValue(), resultType, /* diagnoseOutOfRange: */ true);
+    }
+
+    return resultType;
 }
 
 void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
@@ -558,8 +568,19 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
 }
 
 static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange) {
-    if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(type.getIntegerBitWidth(), type.isUnsigned())) < 0
-        || llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(type.getIntegerBitWidth(), type.isUnsigned())) > 0) {
+    int width;
+    bool isUnsigned;
+    if (type.isInteger()) {
+        width = type.getIntegerBitWidth();
+        isUnsigned = type.isUnsigned();
+    } else if (type.isInt128() || type.isUInt128()) {
+        width = 128;
+        isUnsigned = type.isUInt128();
+    } else {
+        llvm_unreachable("checkRange only supports integer types");
+    }
+    if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(width, isUnsigned)) < 0
+        || llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(width, isUnsigned)) > 0) {
         if (!diagnoseOutOfRange) return false;
         ERROR(expr.location, value << " is out of range for type '" << type << "'");
     }

@@ -7,12 +7,45 @@ int main() {
     int a.load = load a
     int* p.load = load p
     int p.load.load = load p.load
-    int _0 = a.load + p.load.load
-    store _0 to a
+    int128 _0 = cast a.load to int128
+    int128 _1 = cast p.load.load to int128
+    int128 _2 = _0 + _1
+    int _3 = cast _2 to int
+    int128 _4 = cast _3 to int128
+    bool _5 = _2 != _4
+    bool _6 = !_5
+    bool overflow.condition = _6 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at auto-deref-arithmetic.cx:6:7
+")
+    unreachable
+
+overflow.success:
+    store _3 to a
     int a.load_0 = load a
     int* p.load_0 = load p
     int p.load.load_0 = load p.load_0
-    int _1 = a.load_0 * p.load.load_0
-    store _1 to a
+    int128 _8 = cast a.load_0 to int128
+    int128 _9 = cast p.load.load_0 to int128
+    int128 _10 = _8 * _9
+    int _11 = cast _10 to int
+    int128 _12 = cast _11 to int128
+    bool _13 = _10 != _12
+    bool _14 = !_13
+    bool overflow.condition_0 = _14 == bool false
+    br overflow.condition_0, overflow.fail, overflow.success
+
+overflow.fail_0:
+    void _15 = call _EN3std10assertFailEP4char(char* "integer overflow at auto-deref-arithmetic.cx:7:11
+")
+    unreachable
+
+overflow.success_0:
+    store _11 to a
     return int 0
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

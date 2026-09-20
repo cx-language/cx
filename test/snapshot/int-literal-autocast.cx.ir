@@ -8,7 +8,25 @@ int main() {
     store uint64 42 to b
     store int8 -42 to c
     uint64 b.load = load b
-    uint64 _1 = b.load + uint64 1
-    store _1 to b
+    uint128 _1 = cast b.load to uint128
+    uint128 _2 = cast uint64 1 to uint128
+    uint128 _3 = _1 + _2
+    uint64 _4 = cast _3 to uint64
+    uint128 _5 = cast _4 to uint128
+    bool _6 = _3 != _5
+    bool _7 = !_6
+    bool overflow.condition = _7 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _8 = call _EN3std10assertFailEP4char(char* "integer overflow at int-literal-autocast.cx:9:11
+")
+    unreachable
+
+overflow.success:
+    store _4 to b
     return int 0
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

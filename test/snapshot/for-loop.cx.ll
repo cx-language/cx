@@ -2,6 +2,8 @@
 %"ClosedRangeIterator<int>" = type { i32, i32 }
 %"ClosedRange<int>" = type { i32, i32 }
 
+@0 = private unnamed_addr constant [38 x i8] c"integer overflow at for-loop.cx:6:13\0A\00", align 1
+
 define i32 @main() {
   %sum = alloca i32, align 4
   %__iterator = alloca %"ClosedRangeIterator<int>", align 8
@@ -22,16 +24,30 @@ loop.body:                                        ; preds = %loop.condition
   store i32 %4, ptr %i, align 4
   %sum.load = load i32, ptr %sum, align 4
   %i.load = load i32, ptr %i, align 4
-  %5 = add i32 %sum.load, %i.load
-  store i32 %5, ptr %sum, align 4
-  br label %loop.increment
+  %5 = sext i32 %sum.load to i128
+  %6 = sext i32 %i.load to i128
+  %7 = add i128 %5, %6
+  %8 = trunc i128 %7 to i32
+  %9 = sext i32 %8 to i128
+  %10 = icmp ne i128 %7, %9
+  %11 = xor i1 %10, true
+  %overflow.condition = icmp eq i1 %11, false
+  br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
-loop.increment:                                   ; preds = %loop.body
+loop.increment:                                   ; preds = %overflow.success
   call void @_EN3std19ClosedRangeIteratorI3intE9incrementE(ptr %__iterator)
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
   ret i32 0
+
+overflow.fail:                                    ; preds = %loop.body
+  call void @_EN3std10assertFailEP4char(ptr @0)
+  unreachable
+
+overflow.success:                                 ; preds = %loop.body
+  store i32 %8, ptr %sum, align 4
+  br label %loop.increment
 }
 
 define void @_EN3std11ClosedRangeI3intE4initE3int3int(ptr %this, i32 %start, i32 %end) {
@@ -78,6 +94,8 @@ define void @_EN3std19ClosedRangeIteratorI3intE9incrementE(ptr %this) {
   store i32 %1, ptr %current, align 4
   ret void
 }
+
+declare void @_EN3std10assertFailEP4char(ptr)
 
 define void @_EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ptr %this, %"ClosedRange<int>" %range) {
   %range1 = alloca %"ClosedRange<int>", align 8

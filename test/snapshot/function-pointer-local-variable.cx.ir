@@ -33,9 +33,27 @@ void _EN4main2g2EF3int4bool_3int(int(int, bool)* p) {
     int(int, bool)* p2.load = load p2
     bool _0 = !bool true
     int _1 = call p2.load(int 42, bool _0)
-    int _2 = _1 + int 1
-    store _2 to a
+    int128 _2 = cast _1 to int128
+    int128 _3 = cast int 1 to int128
+    int128 _4 = _2 + _3
+    int _5 = cast _4 to int
+    int128 _6 = cast _5 to int128
+    bool _7 = _4 != _6
+    bool _8 = !_7
+    bool overflow.condition = _8 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _9 = call _EN3std10assertFailEP4char(char* "integer overflow at function-pointer-local-variable.cx:14:27
+")
+    unreachable
+
+overflow.success:
+    store _5 to a
     return void
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }
 
 int main() {

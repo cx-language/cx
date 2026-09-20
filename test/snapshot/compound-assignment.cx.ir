@@ -3,31 +3,79 @@ int main() {
     int* i = alloca int
     store int 0 to i
     int i.load = load i
-    int _0 = i.load + int 1
-    store _0 to i
-    int i.load_0 = load i
-    int _1 = i.load_0 - int 1
-    store _1 to i
-    int i.load_1 = load i
-    int _2 = i.load_1 * int 1
-    store _2 to i
-    int i.load_2 = load i
-    int _3 = i.load_2 / int 1
+    int128 _0 = cast i.load to int128
+    int128 _1 = cast int 1 to int128
+    int128 _2 = _0 + _1
+    int _3 = cast _2 to int
+    int128 _4 = cast _3 to int128
+    bool _5 = _2 != _4
+    bool _6 = !_5
+    bool overflow.condition = _6 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at compound-assignment.cx:5:7
+")
+    unreachable
+
+overflow.success:
     store _3 to i
+    int i.load_0 = load i
+    int128 _8 = cast i.load_0 to int128
+    int128 _9 = cast int 1 to int128
+    int128 _10 = _8 - _9
+    int _11 = cast _10 to int
+    int128 _12 = cast _11 to int128
+    bool _13 = _10 != _12
+    bool _14 = !_13
+    bool overflow.condition_0 = _14 == bool false
+    br overflow.condition_0, overflow.fail, overflow.success
+
+overflow.fail_0:
+    void _15 = call _EN3std10assertFailEP4char(char* "integer overflow at compound-assignment.cx:6:7
+")
+    unreachable
+
+overflow.success_0:
+    store _11 to i
+    int i.load_1 = load i
+    int128 _16 = cast i.load_1 to int128
+    int128 _17 = cast int 1 to int128
+    int128 _18 = _16 * _17
+    int _19 = cast _18 to int
+    int128 _20 = cast _19 to int128
+    bool _21 = _18 != _20
+    bool _22 = !_21
+    bool overflow.condition_1 = _22 == bool false
+    br overflow.condition_1, overflow.fail, overflow.success
+
+overflow.fail_1:
+    void _23 = call _EN3std10assertFailEP4char(char* "integer overflow at compound-assignment.cx:7:7
+")
+    unreachable
+
+overflow.success_1:
+    store _19 to i
+    int i.load_2 = load i
+    int _24 = i.load_2 / int 1
+    store _24 to i
     int i.load_3 = load i
-    int _4 = i.load_3 & int 1
-    store _4 to i
+    int _25 = i.load_3 & int 1
+    store _25 to i
     int i.load_4 = load i
-    int _5 = i.load_4 | int 1
-    store _5 to i
+    int _26 = i.load_4 | int 1
+    store _26 to i
     int i.load_5 = load i
-    int _6 = i.load_5 ^ int 1
-    store _6 to i
+    int _27 = i.load_5 ^ int 1
+    store _27 to i
     int i.load_6 = load i
-    int _7 = i.load_6 << int 1
-    store _7 to i
+    int _28 = i.load_6 << int 1
+    store _28 to i
     int i.load_7 = load i
-    int _8 = i.load_7 >> int 1
-    store _8 to i
+    int _29 = i.load_7 >> int 1
+    store _29 to i
     return int 0
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

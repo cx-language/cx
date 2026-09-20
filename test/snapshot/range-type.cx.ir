@@ -19,17 +19,32 @@ loop.body:
     store _2 to i
     int sum.load = load sum
     int i.load = load i
-    int _3 = sum.load + i.load
-    store _3 to sum
-    br loop.increment
+    int128 _3 = cast sum.load to int128
+    int128 _4 = cast i.load to int128
+    int128 _5 = _3 + _4
+    int _6 = cast _5 to int
+    int128 _7 = cast _6 to int128
+    bool _8 = _5 != _7
+    bool _9 = !_8
+    bool overflow.condition = _9 == bool false
+    br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
-    void _4 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    void _10 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
     br loop.condition
 
 loop.end:
     int sum.load_0 = load sum
     return sum.load_0
+
+overflow.fail:
+    void _11 = call _EN3std10assertFailEP4char(char* "integer overflow at range-type.cx:6:13
+")
+    unreachable
+
+overflow.success:
+    store _6 to sum
+    br loop.increment
 }
 
 RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
@@ -39,6 +54,9 @@ bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* this) {
 }
 
 int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* this) {
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }
 
 void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* this) {

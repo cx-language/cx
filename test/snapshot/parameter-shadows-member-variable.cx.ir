@@ -10,10 +10,28 @@ void _EN4main1S3fooE3int(S* this, int bar) {
     int* bar_0 = alloca int
     store bar to bar_0
     int bar.load = load bar_0
-    int _0 = bar.load + int 42
+    int128 _0 = cast bar.load to int128
+    int128 _1 = cast int 42 to int128
+    int128 _2 = _0 + _1
+    int _3 = cast _2 to int
+    int128 _4 = cast _3 to int128
+    bool _5 = _2 != _4
+    bool _6 = !_5
+    bool overflow.condition = _6 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at parameter-shadows-member-variable.cx:7:17
+")
+    unreachable
+
+overflow.success:
     return void
 }
 
 void _EN4main1S4initE(S* this) {
     return void
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

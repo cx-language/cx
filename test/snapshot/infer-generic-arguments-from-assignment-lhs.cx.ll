@@ -5,7 +5,8 @@
 %"RangeIterator<int>" = type { i32, i32 }
 %"Range<int>" = type { i32, i32 }
 
-@0 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
+@0 = private unnamed_addr constant [39 x i8] c"integer overflow at allocate.cx:36:46\0A\00", align 1
+@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
 
 define i32 @main() {
   %i = alloca %"List<int>", align 8
@@ -237,17 +238,30 @@ define ptr @_EN3std13allocateArrayI3intEE3int(i32 %size) {
   store i32 %size, ptr %size1, align 4
   %size.load = load i32, ptr %size1, align 4
   %1 = sext i32 %size.load to i64
-  %2 = mul i64 4, %1
-  %3 = call ptr @malloc(i64 %2)
-  %assert.condition = icmp eq ptr %3, null
-  br i1 %assert.condition, label %assert.fail, label %assert.success
+  %2 = zext i64 %1 to i128
+  %3 = mul i128 4, %2
+  %4 = trunc i128 %3 to i64
+  %5 = zext i64 %4 to i128
+  %6 = icmp ne i128 %3, %5
+  %7 = xor i1 %6, true
+  %overflow.condition = icmp eq i1 %7, false
+  br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
-assert.fail:                                      ; preds = %0
+overflow.fail:                                    ; preds = %0
   call void @_EN3std10assertFailEP4char(ptr @0)
   unreachable
 
-assert.success:                                   ; preds = %0
-  ret ptr %3
+overflow.success:                                 ; preds = %0
+  %8 = call ptr @malloc(i64 %4)
+  %assert.condition = icmp eq ptr %8, null
+  br i1 %assert.condition, label %assert.fail, label %assert.success
+
+assert.fail:                                      ; preds = %overflow.success
+  call void @_EN3std10assertFailEP4char(ptr @1)
+  unreachable
+
+assert.success:                                   ; preds = %overflow.success
+  ret ptr %8
 }
 
 declare void @_EN3std5RangeI3intE4initE3int3int(ptr, i32, i32)
@@ -284,6 +298,6 @@ define i32 @_EN3std4ListI3intE4sizeE(ptr %this) {
   ret i32 %size.load
 }
 
-declare ptr @malloc(i64)
-
 declare void @_EN3std10assertFailEP4char(ptr)
+
+declare ptr @malloc(i64)

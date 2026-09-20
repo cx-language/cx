@@ -28,10 +28,43 @@ int _EN4main9__lambda0E3int(int __capture_p, int __capture_d, int c) {
     store c to c_0
     int c.load = load c_0
     int __capture_p.load = load __capture_p_0
-    int _0 = c.load + __capture_p.load
+    int128 _0 = cast c.load to int128
+    int128 _1 = cast __capture_p.load to int128
+    int128 _2 = _0 + _1
+    int _3 = cast _2 to int
+    int128 _4 = cast _3 to int128
+    bool _5 = _2 != _4
+    bool _6 = !_5
+    bool overflow.condition = _6 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-capturing.cx:5:26
+")
+    unreachable
+
+overflow.success:
     int __capture_d.load = load __capture_d_0
-    int _1 = _0 + __capture_d.load
-    return _1
+    int128 _8 = cast _3 to int128
+    int128 _9 = cast __capture_d.load to int128
+    int128 _10 = _8 + _9
+    int _11 = cast _10 to int
+    int128 _12 = cast _11 to int128
+    bool _13 = _10 != _12
+    bool _14 = !_13
+    bool overflow.condition_0 = _14 == bool false
+    br overflow.condition_0, overflow.fail, overflow.success
+
+overflow.fail_0:
+    void _15 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-capturing.cx:5:30
+")
+    unreachable
+
+overflow.success_0:
+    return _11
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }
 
 int main() {
@@ -86,8 +119,23 @@ int _EN4main9__lambda2E3int(int __capture_a, int c) {
     store c to c_0
     int c.load = load c_0
     int __capture_a.load = load __capture_a_0
-    int _0 = c.load + __capture_a.load
-    return _0
+    int128 _0 = cast c.load to int128
+    int128 _1 = cast __capture_a.load to int128
+    int128 _2 = _0 + _1
+    int _3 = cast _2 to int
+    int128 _4 = cast _3 to int128
+    bool _5 = _2 != _4
+    bool _6 = !_5
+    bool overflow.condition = _6 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-capturing.cx:23:26
+")
+    unreachable
+
+overflow.success:
+    return _3
 }
 
 int _EN4main9__lambda1E3int(int __capture_c, S* __capture_this, int x) {
@@ -97,9 +145,39 @@ int _EN4main9__lambda1E3int(int __capture_c, S* __capture_this, int x) {
     store x to x_0
     int x.load = load x_0
     int __capture_c.load = load __capture_c_0
-    int _0 = x.load + __capture_c.load
+    int128 _0 = cast x.load to int128
+    int128 _1 = cast __capture_c.load to int128
+    int128 _2 = _0 + _1
+    int _3 = cast _2 to int
+    int128 _4 = cast _3 to int128
+    bool _5 = _2 != _4
+    bool _6 = !_5
+    bool overflow.condition = _6 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-capturing.cx:13:30
+")
+    unreachable
+
+overflow.success:
     int* d = getelementptr __capture_this, 0
     int d.load = load d
-    int _1 = _0 + d.load
-    return _1
+    int128 _8 = cast _3 to int128
+    int128 _9 = cast d.load to int128
+    int128 _10 = _8 + _9
+    int _11 = cast _10 to int
+    int128 _12 = cast _11 to int128
+    bool _13 = _10 != _12
+    bool _14 = !_13
+    bool overflow.condition_0 = _14 == bool false
+    br overflow.condition_0, overflow.fail, overflow.success
+
+overflow.fail_0:
+    void _15 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-capturing.cx:13:34
+")
+    unreachable
+
+overflow.success_0:
+    return _11
 }

@@ -157,7 +157,8 @@ struct string: Copyable, Comparable, Hashable, Printable {
         uint64 hashValue = 5381;
 
         for index in 0..characters.size() {
-            hashValue = ((hashValue << 5) + hashValue) + uint64(this[index]);
+            // djb2 wraps on overflow; compute in 128 bits and truncate instead.
+            hashValue = uint64(uint128(hashValue << 5) + uint128(hashValue) + uint128(uint64(this[index])));
         }
 
         return hashValue;

@@ -32,24 +32,25 @@ switch.case.0:
     store int 0 to tag_1
     int* value = getelementptr some, 0
     int value.load = load value
-    int _3 = value.load + int 1
-    struct { int } _4 = insertvalue struct { int } undefined, 0, _3
-    union { struct { int } }* associatedValue_0 = getelementptr enum_1, 1
-    struct { int }* _5 = cast associatedValue_0 to struct { int }*
-    store _4 to _5
-    Opt<int> enum.load_1 = load enum_1
-    store enum.load_1 to b
-    br switch.end
+    int128 _3 = cast value.load to int128
+    int128 _4 = cast int 1 to int128
+    int128 _5 = _3 + _4
+    int _6 = cast _5 to int
+    int128 _7 = cast _6 to int128
+    bool _8 = _5 != _7
+    bool _9 = !_8
+    bool overflow.condition = _9 == bool false
+    br overflow.condition, overflow.fail, overflow.success
 
 switch.case.1:
     int* tag_2 = getelementptr enum_2, 0
     store int 1 to tag_2
-    Opt<int> enum.load_2 = load enum_2
-    store enum.load_2 to b
+    Opt<int> enum.load_1 = load enum_2
+    store enum.load_1 to b
     br switch.end
 
 switch.default:
-    void _6 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:12:13
+    void _10 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:12:13
 ")
     unreachable
 
@@ -61,9 +62,23 @@ switch.end:
         int 1 -> switch.case.1
     }
 
+overflow.fail:
+    void _11 = call _EN3std10assertFailEP4char(char* "integer overflow at generic-enum.cx:14:45
+")
+    unreachable
+
+overflow.success:
+    struct { int } _12 = insertvalue struct { int } undefined, 0, _6
+    union { struct { int } }* associatedValue_0 = getelementptr enum_1, 1
+    struct { int }* _13 = cast associatedValue_0 to struct { int }*
+    store _12 to _13
+    Opt<int> enum.load_2 = load enum_1
+    store enum.load_2 to b
+    br switch.end
+
 switch.case.0_0:
-    union { struct { int } }* _7 = getelementptr b, 1
-    struct { int }* some_0 = cast _7 to struct { int }*
+    union { struct { int } }* _14 = getelementptr b, 1
+    struct { int }* some_0 = cast _14 to struct { int }*
     int* value_0 = getelementptr some_0, 0
     int value.load_0 = load value_0
     return value.load_0
@@ -72,7 +87,7 @@ switch.case.1_0:
     return int 0
 
 switch.default_0:
-    void _8 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
+    void _15 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
 ")
     unreachable
 

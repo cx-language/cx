@@ -1,0 +1,9 @@
+// RUN: %not %cx run -Werror %s 2>&1 | %FileCheck -match-full-lines %s
+// RUN: %not %cx run -Werror --backend=c %s 2>&1 | %FileCheck -match-full-lines %s
+
+void main() {
+    int128 min = int128(1) << int128(127);
+    // CHECK: integer overflow at integer-overflow-int128-mul.cx:[[@LINE+1]]:20
+    int128 r = min * int128(-1);
+    println(r == r);
+}

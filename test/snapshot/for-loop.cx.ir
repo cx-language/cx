@@ -19,16 +19,31 @@ loop.body:
     store _4 to i
     int sum.load = load sum
     int i.load = load i
-    int _5 = sum.load + i.load
-    store _5 to sum
-    br loop.increment
+    int128 _5 = cast sum.load to int128
+    int128 _6 = cast i.load to int128
+    int128 _7 = _5 + _6
+    int _8 = cast _7 to int
+    int128 _9 = cast _8 to int128
+    bool _10 = _7 != _9
+    bool _11 = !_10
+    bool overflow.condition = _11 == bool false
+    br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
-    void _6 = call _EN3std19ClosedRangeIteratorI3intE9incrementE(ClosedRangeIterator<int>* __iterator)
+    void _12 = call _EN3std19ClosedRangeIteratorI3intE9incrementE(ClosedRangeIterator<int>* __iterator)
     br loop.condition
 
 loop.end:
     return int 0
+
+overflow.fail:
+    void _13 = call _EN3std10assertFailEP4char(char* "integer overflow at for-loop.cx:6:13
+")
+    unreachable
+
+overflow.success:
+    store _8 to sum
+    br loop.increment
 }
 
 ClosedRangeIterator<int> _EN3std11ClosedRangeI3intE8iteratorE(ClosedRange<int>* this) {
@@ -66,6 +81,9 @@ int _EN3std19ClosedRangeIteratorI3intE5valueE(ClosedRangeIterator<int>* this) {
     int* current = getelementptr this, 0
     int current.load = load current
     return current.load
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }
 
 void _EN3std19ClosedRangeIteratorI3intE9incrementE(ClosedRangeIterator<int>* this) {

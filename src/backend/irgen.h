@@ -75,6 +75,7 @@ struct IRGenerator {
     Value* emitNullCoalescingExpr(const BinaryExpr& expr);
     Value* emitBoolConvertibleOperand(const Expr& expr);
     Value* emitBinaryExpr(const BinaryExpr& expr);
+    Value* emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const BinaryExpr& expr);
     Value* emitAssignment(const BinaryExpr& expr);
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);
     Value* emitOptionalConstruction(Type wrappedType, Expr* arg);
