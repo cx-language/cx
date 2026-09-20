@@ -236,6 +236,8 @@ struct BinaryExpr : CallExpr {
     static bool classof(const Expr* e) { return e->kind == ExprKind::BinaryExpr; }
 
     BinaryOperator op;
+    // True when the LHS was already consumed (moved or deinited) at this assignment; its destructor must not run.
+    bool lhsIsMoved = false;
 };
 
 bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);

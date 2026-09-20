@@ -523,6 +523,10 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
         }
     }
 
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
+        expr.lhsIsMoved = movedDecls.count(varExpr->decl);
+    }
+
     if (!rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
         setMoved(rhs, true);
         setMoved(lhs, false);

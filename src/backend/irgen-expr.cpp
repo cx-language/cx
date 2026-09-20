@@ -312,7 +312,7 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
 void IRGenerator::emitAssignment(const BinaryExpr& expr) {
     if (expr.getRHS().isUndefinedLiteralExpr()) return;
 
-    auto lvalue = emitAssignmentLHS(expr.getLHS());
+    auto lvalue = emitAssignmentLHS(expr.getLHS(), expr.lhsIsMoved);
     auto rvalue = emitExprForPassing(expr.getRHS(), lvalue->getType()->getPointee());
     createStore(rvalue, lvalue);
 }

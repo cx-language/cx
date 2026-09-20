@@ -99,7 +99,7 @@ struct IRGenerator {
     void emitForStmt(const ForStmt& forStmt);
     void emitBreakStmt(const BreakStmt&);
     void emitContinueStmt(const ContinueStmt&);
-    Value* emitAssignmentLHS(const Expr& lhs);
+    Value* emitAssignmentLHS(const Expr& lhs, bool skipDestructor);
     void emitCompoundStmt(const CompoundStmt& stmt);
     void emitStmt(const Stmt& stmt);
     void emitStmts(llvm::ArrayRef<Stmt*> stmts);

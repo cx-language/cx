@@ -162,8 +162,10 @@ Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args, con
     return insertBlock->add(new CallInst{ValueKind::CallInst, function, args, expr, ""});
 }
 
-Value* IRGenerator::emitAssignmentLHS(const Expr& lhs) {
+Value* IRGenerator::emitAssignmentLHS(const Expr& lhs, bool skipDestructor) {
     Value* value = emitLvalueExpr(lhs);
+
+    if (skipDestructor) return value;
 
     // Don't call destructor for LHS when assigning to fields in constructor.
     if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(currentDecl)) {
