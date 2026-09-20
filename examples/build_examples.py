@@ -12,7 +12,7 @@ arg_parser.add_argument("--cx", help="path to cx compiler executable", default="
 args, cx_args = arg_parser.parse_known_args()
 
 os.chdir(os.path.dirname(__file__))
-ignored_dirs = ["inputs", "embedding"]  # TODO: Enable 'embedding' example once it works.
+ignored_dirs = ["inputs"]
 
 for file in os.listdir("."):
     if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl"]:
