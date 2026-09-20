@@ -179,7 +179,7 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
     }
     case Token::And: {
         auto* value = emitExprAsPointer(expr.getOperand());
-        // 'this' and unnamed parameters are SSA values, not memory, so spill them to a temporary to form a real address.
+        // 'this' is an SSA value, not memory, so spill it to a temporary to form a real address.
         // FIXME: This is a point-in-time copy; stores through the address don't update the original.
         if (llvm::isa<Parameter>(value)) {
             value = createTempAlloca(value);

@@ -1276,7 +1276,7 @@ std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind en
     return stmts;
 }
 
-/// param-decl ::= 'public'? type? id | 'public'? type '...' id | 'public'? type
+/// param-decl ::= 'public'? type? id | 'public'? type '...' id
 ParamDecl Parser::parseParam(bool requireType) {
     bool isPublic = currentToken() == Token::Public;
     if (isPublic) consumeToken();
@@ -1290,13 +1290,6 @@ ParamDecl Parser::parseParam(bool requireType) {
     if (type && currentToken() == Token::DotDotDot) {
         consumeToken();
         isPack = true;
-    }
-
-    // A typed parameter may omit its name, e.g. `void f(int)`.
-    if (type && currentToken().is({Token::Comma, Token::RightParen})) {
-        ParamDecl param(type, "", isPublic, getCurrentLocation());
-        param.isPack = isPack;
-        return param;
     }
 
     auto name = parse(Token::Identifier);
@@ -1333,9 +1326,6 @@ std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireType
     parse(Token::RightParen);
     for (size_t i = 1; i < params.size(); ++i) {
         if (params[i - 1].defaultValue && !params[i].defaultValue && !params[i].isPack) {
-            if (params[i].getName().empty()) {
-                ERROR(params[i].getLocation(), "unnamed parameter follows a parameter with a default value");
-            }
             ERROR(params[i].getLocation(), "parameter '" << params[i].getName() << "' without a default value follows a parameter with a default value");
         }
     }
