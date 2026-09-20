@@ -42,9 +42,9 @@ enum Outcome<T> {
 }
 
 void main() {
-    var a = Outcome.Ok(value = 1); // Outcome<int>, inferred
-    var b = Outcome.Ok<bool>(value = true); // explicit type arguments
-    Outcome<int> c = Outcome.Err(code = 404); // from the declared type
+    var a = Outcome.Ok(1); // Outcome<int>, inferred
+    var b = Outcome.Ok<bool>(true); // explicit type arguments
+    Outcome<int> c = Outcome.Err(404); // from the declared type
 }
 ```
 
