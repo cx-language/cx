@@ -1,0 +1,16 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    int?[2] x = [1, 2];
+    assert(x[0] != null);
+    assert(x[0]! == 1);
+    assert(x[1]! == 2);
+
+    int8[3] n = [10, 20, 30];
+    assert(n[0] == 10);
+    assert(n[2] == 30);
+
+    float[2] f = [1, 2];
+    assert(f[0] == 1.0);
+    assert(f[1] == 2.0);
+}

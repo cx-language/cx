@@ -607,6 +607,14 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
                 ifExpr->thenExpr->type = convertedType;
                 ifExpr->elseExpr->type = convertedType;
             }
+
+            if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(expr); arrayLiteral && convertedType.isConstantArray()) {
+                for (auto& element : arrayLiteral->elements) {
+                    if (Expr* convertedElement = convert(element, convertedType.getElementType(), allowPointerToTemporary)) {
+                        element = convertedElement;
+                    }
+                }
+            }
         }
         return expr;
     }
@@ -701,10 +709,6 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                 arrayLiteralExpr->elements, [&](Expr* element) { return isImplicitlyConvertible(element, source.getElementType(), target.getElementType()); });
 
             if (isConvertible) {
-                for (auto& element : arrayLiteralExpr->elements) {
-                    // FIXME: Don't set type here.
-                    element->type = target.getElementType();
-                }
                 return target;
             }
         }
