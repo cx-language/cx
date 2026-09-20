@@ -1966,9 +1966,10 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
     if (auto converted = convert(indexExpr, ArrayType::getIndexType())) {
         expr.setIndex(converted);
         indexExpr = converted;
-    } else {
+    } else if (!indexType.isInteger()) {
         ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
     }
+    // Wider integer indexes pass through unconverted; both backends accept any integer index type.
 
     if (arrayType.isConstantArray()) {
         if (indexExpr->isConstant()) {
