@@ -11,10 +11,10 @@ void testReadWriteFile() {
     assert(success);
     var content = readFile("test.txt");
     remove("test.txt");
-    assert(string(content) == text);
+    assert(string(content!) == text);
 }
 
 void testReadNonExistentFile() {
     var content = readFile("dog.txt");
-    assert(content.empty());
+    assert(content == null);
 }

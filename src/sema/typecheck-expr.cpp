@@ -2332,6 +2332,13 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
 }
 
 void Typechecker::setMoved(Expr* expr, bool isMoved) {
+    if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
+        if (cast->castKind == ImplicitCastExpr::OptionalWrap) {
+            setMoved(cast->operand, isMoved);
+        }
+        return;
+    }
+
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr)) {
         ASSERT(varExpr->decl);
 
