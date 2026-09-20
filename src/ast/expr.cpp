@@ -112,11 +112,75 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         return llvm::cast<UnaryExpr>(this)->getConstantIntegerValue();
     case ExprKind::BinaryExpr:
         return llvm::cast<BinaryExpr>(this)->getConstantIntegerValue();
+    case ExprKind::IfExpr: {
+        auto* ifExpr = llvm::cast<IfExpr>(this);
+        if (ifExpr->condition->getConstantBoolValue()) {
+            return ifExpr->thenExpr->getConstantIntegerValue();
+        }
+        return ifExpr->elseExpr->getConstantIntegerValue();
+    }
     case ExprKind::SizeofExpr:
-    case ExprKind::IfExpr:
         llvm_unreachable("unimplemented");
     default:
         llvm_unreachable("not a constant integer");
+    }
+}
+
+bool Expr::getConstantBoolValue() const {
+    switch (kind) {
+    case ExprKind::VarExpr:
+        if (auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl)) {
+            if (!varDecl->type.isMutable() && varDecl->initializer) {
+                return varDecl->initializer->getConstantBoolValue();
+            }
+        }
+        llvm_unreachable("not a constant bool");
+    case ExprKind::BoolLiteralExpr:
+        return llvm::cast<BoolLiteralExpr>(this)->value;
+    case ExprKind::ImplicitCastExpr:
+        return llvm::cast<ImplicitCastExpr>(this)->operand->getConstantBoolValue();
+    case ExprKind::BinaryExpr: {
+        auto& binaryExpr = llvm::cast<BinaryExpr>(*this);
+        switch (binaryExpr.op) {
+        case Token::AndAnd:
+            return binaryExpr.getLHS().getConstantBoolValue() && binaryExpr.getRHS().getConstantBoolValue();
+        case Token::OrOr:
+            return binaryExpr.getLHS().getConstantBoolValue() || binaryExpr.getRHS().getConstantBoolValue();
+        case Token::Equal:
+        case Token::NotEqual:
+        case Token::Less:
+        case Token::LessOrEqual:
+        case Token::Greater:
+        case Token::GreaterOrEqual: {
+            auto comparison = llvm::APSInt::compareValues(binaryExpr.getLHS().getConstantIntegerValue(), binaryExpr.getRHS().getConstantIntegerValue());
+            switch (binaryExpr.op) {
+            case Token::Equal:
+                return comparison == 0;
+            case Token::NotEqual:
+                return comparison != 0;
+            case Token::Less:
+                return comparison < 0;
+            case Token::LessOrEqual:
+                return comparison <= 0;
+            case Token::Greater:
+                return comparison > 0;
+            default:
+                return comparison >= 0;
+            }
+        }
+        default:
+            llvm_unreachable("not a constant bool");
+        }
+    }
+    case ExprKind::IfExpr: {
+        auto* ifExpr = llvm::cast<IfExpr>(this);
+        if (ifExpr->condition->getConstantBoolValue()) {
+            return ifExpr->thenExpr->getConstantBoolValue();
+        }
+        return ifExpr->elseExpr->getConstantBoolValue();
+    }
+    default:
+        llvm_unreachable("not a constant bool");
     }
 }
 

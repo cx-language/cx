@@ -81,6 +81,7 @@ struct Expr {
     bool isReferenceExpr() const;
     bool isConstant() const;
     llvm::APSInt getConstantIntegerValue() const;
+    bool getConstantBoolValue() const;
     bool isLvalue() const;
     Expr* instantiate(const llvm::StringMap<Type>& genericArgs) const;
     FieldDecl* getFieldDecl() const;
