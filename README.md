@@ -32,20 +32,49 @@ To ask a question or open a discussion, create an issue or join the [C* Discord 
 Compiling C* requires a C++20 compiler, [CMake](https://cmake.org) 3.16 or newer,
 and [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 23.
 
-### Unix / macOS
+### Linux
 
-Download and extract LLVM/Clang 23 pre-built binaries for your platform from
-https://github.com/llvm/llvm-project/releases, or using a package manager, e.g. `brew install llvm@23`.
-Then run the following commands:
+On Ubuntu/Debian, install the prerequisites with:
 
 ```sh
-mkdir build
-cd build
-cmake .. -DCMAKE_PREFIX_PATH="/path/to/llvm"
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 23 all
+sudo apt-get install -y cmake g++ python3-pip
+```
+
+On other distributions, install CMake and a C++ compiler with your package manager,
+then download and extract the pre-built LLVM/Clang 23 binaries (replace `X64` with `ARM64` on ARM):
+
+```sh
+curl -L -O https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.1/LLVM-23.1.1-Linux-X64.tar.xz
+tar -xf LLVM-23.1.1-Linux-X64.tar.xz
+```
+
+Then run the following commands, with `<llvm dir>` set to `/usr/lib/llvm-23`
+for apt installs or the extracted directory for tarball installs:
+
+```sh
+mkdir build && cd build
+cmake .. -DCMAKE_PREFIX_PATH="<llvm dir>"
 cmake --build .
 ```
 
-### Windows with Visual Studio
+### macOS
+
+```sh
+brew install llvm@23 cmake
+```
+
+Then run the following commands:
+
+```sh
+mkdir build && cd build
+cmake .. -DCMAKE_PREFIX_PATH="$(brew --prefix llvm@23)"
+cmake --build .
+```
+
+### Windows
 
 Download and extract LLVM/Clang 23 pre-built binaries from https://github.com/llvm/llvm-project/releases.
 Then run the following commands:
@@ -78,6 +107,8 @@ Install [lit](https://llvm.org/docs/CommandGuide/lit.html) and its optional depe
 ```sh
 python3 -m pip install lit psutil
 ```
+
+Some examples have extra prerequisites; see the README in each example directory for details.
 
 Then invoke the following from the `build` directory:
 
