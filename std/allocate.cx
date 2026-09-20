@@ -52,27 +52,3 @@ Type[*]? safeAllocateArray<Type>(int size) {
 void deallocate<Type>(Type allocation) {
     free(allocation);
 }
-
-// TODO: Add 'deallocate' overloads back?
-
-/// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate` or `safeAllocate`.
-//void deallocate<Type>(Type* allocation) {
-//    free(allocation);
-//}
-
-/// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate` or `safeAllocate`.
-/// If the argument is null, no operation is performed.
-//void deallocate<Type>(Type*? allocation) {
-//    free(allocation);
-//}
-
-/// Deallocates a block of dynamic memory that was previously allocated by a call to `allocateArray` or `safeAllocateArray`.
-//void deallocate<Type>(Type[*] allocation) {
-//    free(allocation);
-//}
-
-/// Deallocates a block of dynamic memory that was previously allocated by a call to `allocateArray` or `safeAllocateArray`.
-/// If the argument is null, no operation is performed.
-//void deallocate<Type>(Type[*]? allocation) {
-//    free(allocation);
-//}
