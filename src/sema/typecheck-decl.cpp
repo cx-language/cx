@@ -185,7 +185,7 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
         // the function body instead of bailing out).
         if (call->type && call->type.isNeverType()) return true;
         // Builtin `assert(false)` branches to `assertFail`, which aborts, so it terminates all paths.
-        if (!call->isMethodCall() && call->getFunctionName() == "assert" && call->args.size() == 1) {
+        if (!call->isMethodCall() && call->getFunctionName() == "assert" && !call->args.empty()) {
             if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->args[0].value)) {
                 return !condition->value;
             }

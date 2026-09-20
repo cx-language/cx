@@ -1,0 +1,6 @@
+// RUN: %not %cx run %s 2>&1 | %FileCheck -match-full-lines %s
+
+void main() {
+    // CHECK: boom at assert-message.cx:[[@LINE+1]]:5
+    assert(false, "boom");
+}

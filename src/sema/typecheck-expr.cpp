@@ -1570,9 +1570,15 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     if (expr.getFunctionName() == "assert") {
-        ParamDecl assertParam(Type::getBool(), "", false, Location());
-        validateAndConvertArguments(expr, assertParam, false, expr.getFunctionName(), expr.location);
+        llvm::SmallVector<ParamDecl, 2> assertParams;
+        assertParams.emplace_back(Type::getBool(), "", false, Location());
+        assertParams.emplace_back(BasicType::get("string", {}), "message", false, Location());
+        assertParams.back().defaultValue = makeAST<StringLiteralExpr>(std::string("Assertion failed"), expr.location);
+        validateAndConvertArguments(expr, assertParams, false, expr.getFunctionName(), expr.location);
         validateGenericArgCount(0, expr.genericArgs, expr.getFunctionName(), expr.location);
+        if (!llvm::isa<StringLiteralExpr>(expr.args[1].value)) {
+            ERROR(expr.args[1].location, "assert message must be a string literal");
+        }
         return Type::getVoid();
     }
 

@@ -444,7 +444,8 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     if (expr.getFunctionName() == "assert") {
-        emitAssert(emitExpr(*expr.args.front().value), &expr, expr.callee->location);
+        auto& message = llvm::cast<StringLiteralExpr>(*expr.args[1].value).value;
+        emitAssert(emitExpr(*expr.args.front().value), &expr, expr.callee->location, message);
         return nullptr;
     }
 

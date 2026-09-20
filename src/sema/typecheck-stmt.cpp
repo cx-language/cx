@@ -25,7 +25,7 @@ static bool allPathsDiverge(llvm::ArrayRef<Stmt*> block, int nestLevel = 0) {
         auto call = llvm::dyn_cast<CallExpr>(exprStmt.expr);
         if (!call) return false;
         if (call->type && call->type.isNeverType()) return true;
-        if (!call->isMethodCall() && call->getFunctionName() == "assert" && call->args.size() == 1) {
+        if (!call->isMethodCall() && call->getFunctionName() == "assert" && !call->args.empty()) {
             if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->args[0].value)) {
                 return !condition->value;
             }
