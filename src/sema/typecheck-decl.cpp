@@ -2,6 +2,7 @@
 #include <algorithm>
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/arena.h"
