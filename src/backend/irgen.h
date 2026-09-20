@@ -91,13 +91,14 @@ struct IRGenerator {
     Value* emitUnwrapExpr(const UnwrapExpr& expr);
     Value* emitLambdaExpr(const LambdaExpr& expr);
     Value* emitIfExpr(const IfExpr& expr);
+    Value* emitSwitchExpr(const SwitchExpr& expr);
     Value* emitImplicitCastExpr(const ImplicitCastExpr& expr);
     void emitDeferredExprsAndDestructorCallsForReturn();
     void emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuation);
     void emitReturnStmt(const ReturnStmt& stmt);
     void emitIfStmt(const IfStmt& ifStmt);
     void emitSwitchStmt(const SwitchStmt& switchStmt);
-    bool emitEnumSwitchCheck(const SwitchStmt& switchStmt, SwitchInst& switchInst, BasicBlock* end);
+    bool emitEnumSwitchCheck(const Expr& condition, llvm::ArrayRef<Expr*> caseValues, SwitchInst& switchInst, BasicBlock* end);
     void emitForStmt(const ForStmt& forStmt);
     void emitBreakStmt(const BreakStmt&);
     void emitContinueStmt(const ContinueStmt&);

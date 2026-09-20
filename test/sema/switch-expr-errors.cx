@@ -1,0 +1,41 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+enum Outcome {
+    Ok(int value),
+    Err(int code),
+    Pending,
+}
+
+// CHECK: [[@LINE+3]]:12: error: switch expression must handle all cases of enum 'Outcome' (missing: Pending)
+// CHECK-NOT: error:
+int nonExhaustive(Outcome* o) {
+    return switch *o {
+        case Ok value: value.value
+        case Err: -1
+    };
+}
+
+// CHECK: [[@LINE+3]]:12: error: switch expression on 'int' must have a default case
+// CHECK-NOT: error:
+int intWithoutDefault(int n) {
+    return switch n {
+        case 0: 1
+    };
+}
+
+// CHECK: [[@LINE+3]]:13: error: switch expression arms must produce a value; use a switch statement for side effects
+// CHECK-NOT: error:
+void voidArms(int n) {
+    var x = switch n {
+        case 0: println("zero")
+        default: println("many")
+    };
+}
+
+// CHECK: [[@LINE+2]]:12: error: incompatible arm types ('int' and 'string')
+int incompatibleArms(int n) {
+    return switch n {
+        case 0: 1
+        default: "many"
+    };
+}

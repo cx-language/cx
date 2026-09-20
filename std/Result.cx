@@ -7,12 +7,10 @@ enum Result<T, E> {
 
 /// Returns the success value, aborting with the error if the result is `Err`.
 T unwrap<T, E: Printable>(Result<T, E>* result) {
-    switch *result {
-        case Ok value:
-            return value.value;
-        case Err error:
-            abort("called unwrap() on Err: ", error.error);
-    }
+    return switch *result {
+        case Ok value: value.value,
+        case Err error: abort("called unwrap() on Err: ", error.error),
+    };
 }
 
 /// Prints the given result.

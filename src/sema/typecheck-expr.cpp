@@ -2249,6 +2249,9 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
     case ExprKind::IfExpr:
         type = typecheckIfExpr(llvm::cast<IfExpr>(expr));
         break;
+    case ExprKind::SwitchExpr:
+        type = typecheckSwitchExpr(llvm::cast<SwitchExpr>(expr), expectedType);
+        break;
     case ExprKind::ImplicitCastExpr:
         typecheckExpr(*llvm::cast<ImplicitCastExpr>(expr).operand, useIsWriteOnly, expectedType);
         type = expr.type;

@@ -1,0 +1,9 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+// CHECK: [[@LINE+4]]:9: error: switch expression case must have a value
+int f(int n) {
+    return switch n {
+        case 0:
+        default: 1
+    };
+}

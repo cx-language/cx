@@ -42,6 +42,7 @@ enum class ExprKind {
     UnwrapExpr,
     LambdaExpr,
     IfExpr,
+    SwitchExpr,
     ImplicitCastExpr,
     VarDeclExpr,
 };
@@ -308,6 +309,22 @@ struct IfExpr : Expr {
     Expr* condition;
     Expr* thenExpr;
     Expr* elseExpr;
+};
+
+struct SwitchExprArm {
+    Expr* value;
+    VarDecl* associatedValue;
+    Expr* expr;
+};
+
+struct SwitchExpr : Expr {
+    SwitchExpr(Expr* condition, std::vector<SwitchExprArm>&& arms, Expr* defaultExpr, Location location)
+    : Expr(ExprKind::SwitchExpr, location), condition(condition), arms(std::move(arms)), defaultExpr(defaultExpr) {}
+    static bool classof(const Expr* e) { return e->kind == ExprKind::SwitchExpr; }
+
+    Expr* condition;
+    std::vector<SwitchExprArm> arms;
+    Expr* defaultExpr;
 };
 
 struct ImplicitCastExpr : Expr {

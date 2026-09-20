@@ -83,6 +83,30 @@ fall through to the code after the switch. The check is emitted in every build m
 release-fast (`--mode=release-fast`), where the compiler instead assumes the value is always
 a valid case.
 
+A `switch` can also be used as an expression, in which case each arm is a single expression
+and the whole `switch` evaluates to the matched arm's value.
+Unlike statements, switch expressions must handle every case (or have a `default`),
+and the arms must produce a value:
+
+```cs
+enum Outcome {
+    Ok(int value),
+    Err(string error),
+}
+
+string describe(Outcome* outcome) {
+    return switch *outcome {
+        case Ok: "ok",
+        case Err error: error.error,
+    };
+}
+
+void main() {
+    var ok = Outcome.Ok(value = 1);
+    println(describe(ok)); // prints "ok"
+}
+```
+
 ## defer
 
 `defer` defers the execution of a statement to the exits of the current scope.
