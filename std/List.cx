@@ -107,8 +107,7 @@ struct List<Element> {
             grow();
         }
 
-        // TODO: Shouldn't need '&' here.
-        (&buffer[size]).init(element);
+        buffer[size].init(element);
         size++;
     }
 

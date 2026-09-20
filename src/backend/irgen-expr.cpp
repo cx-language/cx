@@ -448,7 +448,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     if (expr.isMoveInit()) {
-        auto* receiverValue = emitExpr(*expr.getReceiver());
+        auto* receiverValue = loadThroughStorageAddress(emitExprAsPointer(*expr.getReceiver()), expr.getReceiver()->type);
         auto* argumentValue = emitExpr(*expr.args[0].value);
         createStore(argumentValue, receiverValue);
         return nullptr;
