@@ -253,13 +253,12 @@ bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceive
     if (getName() != other.getName()) return false;
     if (matchReceiver && getTypeDecl() != other.getTypeDecl()) return false;
     if (getReturnType() != other.getReturnType()) return false;
-    // Parameter names only matter when they're public (used as argument labels); mirror paramsMatch in module.h.
+    // Parameter names don't matter: argument labels are resolved against the static type at the call site.
     auto params = getParams(), otherParams = other.getParams();
     if (params.size() != otherParams.size()) return false;
     return std::equal(params.begin(), params.end(), otherParams.begin(), [](const ParamDecl& a, const ParamDecl& b) {
         if (a.type != b.type) return false;
         if (a.isPack != b.isPack) return false;
-        if (a.isPublic && b.isPublic && a.getName() != b.getName()) return false;
         return true;
     });
 }

@@ -1,0 +1,25 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:3
+// CHECK-NEXT:7
+// CHECK-NEXT:11
+
+interface Adder {
+    int add(public int x, public int y);
+}
+
+struct Calc: Adder {
+    int add(public int a, public int b) {
+        return a + b;
+    }
+}
+
+void use<T: Adder>(T* v) {
+    println(v.add(a = 1, b = 2));
+    println(v.add(3, 4));
+}
+
+void main() {
+    var c = Calc();
+    use(c);
+    println(c.add(a = 5, b = 6));
+}
