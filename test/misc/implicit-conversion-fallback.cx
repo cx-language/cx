@@ -1,0 +1,33 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:2000000000
+// CHECK-NEXT:200
+// CHECK-NEXT:201
+// CHECK-NEXT:false
+// CHECK-NEXT:200
+// CHECK-NEXT:u8
+// CHECK-NEXT:int
+// CHECK-NEXT:int
+
+// Probing conversions must not diagnose: an out-of-range literal in one
+// alternative falls back to the others instead of aborting them.
+
+void pick(uint8 x) { println("u8"); }
+void pick(int x) { println("int"); }
+
+void main() {
+    int8 s = 1;
+    int64 x = false ? s : 2000000000;
+    println(x);
+    println(false ? s : 200);
+    println(s + 200);
+    println(s == 200);
+
+    int8? o = null;
+    println(o ?? 200);
+
+    uint8 u = 100;
+    pick(u);
+    pick(100);
+    pick(1000);
+}

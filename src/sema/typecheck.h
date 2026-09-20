@@ -117,12 +117,14 @@ struct Typechecker {
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
     /// Returns the converted expression if the conversion succeeds, or null otherwise.
-    Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false) const;
+    /// Probing conversions (where failure falls back to another attempt) pass diagnoseOutOfRange=false
+    /// so an out-of-range literal doesn't abort the still-untried alternatives.
+    Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false, bool diagnoseOutOfRange = true) const;
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
     Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false,
-                                 std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr) const;
+                                 std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr, bool diagnoseOutOfRange = true) const;
     /// Inner conversions for pointer reinterpretation must preserve the value representation.
-    bool isReinterpretible(const Expr* expr, Type source, Type target) const;
+    bool isReinterpretible(const Expr* expr, Type source, Type target, bool diagnoseOutOfRange = true) const;
     void typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, bool positive = true);
     Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam);
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,

@@ -473,9 +473,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         throwInvalidOperandsToBinaryExpr(expr, op);
     } else if (leftType.isVoid() || rightType.isVoid()) {
         throwInvalidOperandsToBinaryExpr(expr, op);
-    } else if (auto convertedRHS = convert(&expr.getRHS(), leftType, true)) {
+    } else if (auto convertedRHS = convert(&expr.getRHS(), leftType, true, false)) {
         expr.setRHS(convertedRHS);
-    } else if (auto convertedLHS = convert(&expr.getLHS(), rightType, true)) {
+    } else if (auto convertedLHS = convert(&expr.getLHS(), rightType, true, false)) {
         expr.setLHS(convertedLHS);
     } else if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
         throwInvalidOperandsToBinaryExpr(expr, op);
@@ -546,11 +546,13 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     }
 }
 
-static void checkRange(const Expr& expr, const llvm::APSInt& value, Type type) {
+static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange) {
     if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(type.getIntegerBitWidth(), type.isUnsigned())) < 0
         || llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(type.getIntegerBitWidth(), type.isUnsigned())) > 0) {
+        if (!diagnoseOutOfRange) return false;
         ERROR(expr.location, value << " is out of range for type '" << type << "'");
     }
+    return true;
 }
 
 static bool hasField(TypeDecl& type, const FieldDecl& field) {
@@ -606,15 +608,15 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     return true;
 }
 
-Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
+Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange) const {
     std::optional<ImplicitCastExpr::Kind> implicitCastKind;
-    if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind)) {
+    if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind, diagnoseOutOfRange)) {
         if (implicitCastKind) {
             if (*implicitCastKind == ImplicitCastExpr::OptionalWrap && expr->type != convertedType.getWrappedType()) {
                 // One wrap node constructs a single level, so convert the operand to the wrapped
                 // type first (e.g. `int` to `int?` when wrapping to `int??`). Each recursion
                 // strips one optional level, so this terminates.
-                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary);
+                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange);
                 if (!expr) return nullptr;
             }
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
@@ -669,14 +671,14 @@ static bool isSafeNumericWidening(Type source, Type target) {
     return false;
 }
 
-bool Typechecker::isReinterpretible(const Expr* expr, Type source, Type target) const {
+bool Typechecker::isReinterpretible(const Expr* expr, Type source, Type target, bool diagnoseOutOfRange) const {
     std::optional<ImplicitCastExpr::Kind> innerKind;
     // Widening changes the value representation, so pointers to it can't be reinterpreted.
-    return isImplicitlyConvertible(expr, source, target, false, &innerKind) && innerKind != ImplicitCastExpr::NumericWiden;
+    return isImplicitlyConvertible(expr, source, target, false, &innerKind, diagnoseOutOfRange) && innerKind != ImplicitCastExpr::NumericWiden;
 }
 
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
-                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind) const {
+                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
@@ -696,7 +698,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && target.isPointerType() && (source.getPointee().isMutable() || !target.getPointee().isMutable())
-        && (isReinterpretible(nullptr, source.getPointee(), target.getPointee()) || target.getPointee().isVoid())) {
+        && (isReinterpretible(nullptr, source.getPointee(), target.getPointee(), diagnoseOutOfRange) || target.getPointee().isVoid())) {
         return source;
     }
 
@@ -704,7 +706,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // Only a no-op when the wrapped conversion needs no cast; nesting changes (e.g. `int?` to `int??`)
         // fall through to the wrap rule below.
         std::optional<ImplicitCastExpr::Kind> wrappedCastKind;
-        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind) && !wrappedCastKind) {
+        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind, diagnoseOutOfRange)
+            && !wrappedCastKind) {
             return source;
         }
     }
@@ -717,8 +720,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target)
-                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target)) {
+            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange)
+                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange)) {
                 return target;
             }
         }
@@ -730,7 +733,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             auto adjustedTarget = allowPointerToTemporary ? target.removePointer() : target; // Convert e.g. int literal to uint when comparing to uint*.
 
             if (adjustedTarget.isInteger()) {
-                checkRange(*expr, value, adjustedTarget);
+                if (!checkRange(*expr, value, adjustedTarget, diagnoseOutOfRange)) return Type();
                 return adjustedTarget;
             }
 
@@ -759,8 +762,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
         if (expr->isArrayLiteralExpr() && target.isConstantArray()) {
             auto arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(expr);
-            bool isConvertible = llvm::all_of(
-                arrayLiteralExpr->elements, [&](Expr* element) { return isImplicitlyConvertible(element, source.getElementType(), target.getElementType()); });
+            bool isConvertible = llvm::all_of(arrayLiteralExpr->elements, [&](Expr* element) {
+                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), false, nullptr, diagnoseOutOfRange);
+            });
 
             if (isConvertible) {
                 for (auto& element : arrayLiteralExpr->elements) {
@@ -781,7 +785,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.removeOptional().isPointerType() &&
         // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
         (source.isMutable() || (expr && expr->isConstant()) || !target.removeOptional().getPointee().isMutable())
-        && isReinterpretible(expr, source, target.removeOptional().getPointee())) {
+        && isReinterpretible(expr, source, target.removeOptional().getPointee(), diagnoseOutOfRange)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return source;
     }
@@ -791,7 +795,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr()) && isImplicitlyConvertible(expr, source, target.getWrappedType())) {
+    if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr())
+        && isImplicitlyConvertible(expr, source, target.getWrappedType(), false, nullptr, diagnoseOutOfRange)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalWrap;
         return target;
     }
@@ -804,7 +809,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isArrayType() && target.removeOptional().isPointerType()
-        && isReinterpretible(nullptr, source.getElementType(), target.removeOptional().getPointee())) {
+        && isReinterpretible(nullptr, source.getElementType(), target.removeOptional().getPointee(), diagnoseOutOfRange)) {
         return source;
     }
 
@@ -814,7 +819,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && source.getPointee().isArrayType() && target.removeOptional().isPointerType()
-        && isReinterpretible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee())) {
+        && isReinterpretible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee(), diagnoseOutOfRange)) {
         return source;
     }
 
@@ -840,7 +845,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
             auto* elementValue = tupleExpr ? tupleExpr->elements[i].value : nullptr;
 
-            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type)) {
+            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange)) {
                 return Type();
             }
         }
@@ -1003,9 +1008,9 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
                     Type paramTypeWithGenericArg = paramType.resolve({{genericParam.getName(), genericArg}});
                     Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam.getName(), maybeGenericArg}});
 
-                    if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true)) {
+                    if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true, nullptr, false)) {
                         continue;
-                    } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true)) {
+                    } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true, nullptr, false)) {
                         genericArg = maybeGenericArg;
                         genericArgValue = argValue;
                     } else {
@@ -1107,9 +1112,9 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
                 Type paramTypeWithGenericArg = paramType.resolve({{genericParam->getName(), genericArg}});
                 Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam->getName(), maybeGenericArg}});
 
-                if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true)) {
+                if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true, nullptr, false)) {
                     continue;
-                } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true)) {
+                } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true, nullptr, false)) {
                     genericArg = maybeGenericArg;
                     genericArgValue = argValue;
                 } else {
@@ -1877,7 +1882,8 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
 
             bool invalidType = false;
             std::optional<ImplicitCastExpr::Kind> implicitCastKind;
-            if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param->type, true, &implicitCastKind)) {
+            // Probing: other overload candidates are still untried, so don't diagnose yet.
+            if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param->type, true, &implicitCastKind, false)) {
                 didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
                 didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
             } else {
@@ -1979,6 +1985,10 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         auto& arg = expr.args[result.index];
         auto* param = &params[result.index];
         diagnoseClosureConversion(arg.value->type, param->type, arg.location);
+        // Validation probed without diagnosing; re-run once so an out-of-range literal still
+        // reports the range instead of a generic mismatch. This either throws or returns null,
+        // since probing already failed, so discarding the result is safe.
+        (void)convert(arg.value, param->type, true);
         ERROR(arg.location,
               "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param->type << "'");
         break;
@@ -2295,7 +2305,7 @@ Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
 
     // Prefer the unwrapped left type, but never implicitly unwrap the right side: `o1 ?? o2`
     // must stay null when both are null, not trap unwrapping `o2`.
-    if (auto* convertedRHS = convert(&expr.getRHS(), wrappedType)) {
+    if (auto* convertedRHS = convert(&expr.getRHS(), wrappedType, false, false)) {
         auto* current = convertedRHS;
         bool unwrapsRHS = false;
         while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(current)) {
@@ -2314,7 +2324,7 @@ Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
     }
 
     // Otherwise both sides stay optional (e.g. `int? ?? int?` is an `int?`).
-    if (auto* convertedRHS = convert(&expr.getRHS(), leftType)) {
+    if (auto* convertedRHS = convert(&expr.getRHS(), leftType, false, false)) {
         expr.setRHS(convertedRHS);
         return leftType;
     }
@@ -2334,10 +2344,10 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto elseType = typecheckExpr(*expr.elseExpr);
     intersectNarrowings(thenNarrowings);
 
-    if (auto convertedElse = convert(expr.elseExpr, thenType)) {
+    if (auto convertedElse = convert(expr.elseExpr, thenType, false, false)) {
         expr.elseExpr = convertedElse;
         return thenType;
-    } else if (auto convertedThen = convert(expr.thenExpr, elseType)) {
+    } else if (auto convertedThen = convert(expr.thenExpr, elseType, false, false)) {
         expr.thenExpr = convertedThen;
         return elseType;
     } else {
