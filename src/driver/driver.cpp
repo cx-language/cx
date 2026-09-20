@@ -97,6 +97,8 @@ cl::opt<bool> disableWarnings("w", cl::desc("Disable all warnings"), cl::sub(cl:
 cl::opt<bool> warningsAsErrors("Werror", cl::desc("Treat warnings as errors"), cl::sub(cl::SubCommand::getAll()), cl::cat(diagnosticCategory));
 cl::opt<bool> noUnusedWarnings("Wno-unused", cl::desc("Disable warnings about unused entities"), cl::sub(cl::SubCommand::getAll()),
                                cl::cat(diagnosticCategory));
+cl::opt<bool> warnUndefinedMacros("Wundef", cl::desc("Warn about undefined macros in #if conditions"), cl::sub(cl::SubCommand::getAll()),
+                                  cl::cat(diagnosticCategory));
 cl::opt<int> errorLimit("error-limit", cl::desc("Limit the number of reported errors (10 by default, 0 removes limit)"), cl::init(10),
                         cl::sub(cl::SubCommand::getAll()), cl::cat(diagnosticCategory));
 
@@ -231,7 +233,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     addPredefinedImportSearchPaths(buildParams.filePaths);
 
-    CompileOptions options = {noUnusedWarnings, importSearchPaths, frameworkSearchPaths, defines, cflags};
+    CompileOptions options = {noUnusedWarnings, warnUndefinedMacros, importSearchPaths, frameworkSearchPaths, defines, cflags};
     auto remainingPrintOpts = std::popcount(printOpts.getBits());
     bool printSectionDividers = remainingPrintOpts > 1;
 

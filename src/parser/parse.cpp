@@ -1624,6 +1624,9 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
         }
     } else {
         condition = llvm::is_contained(options.defines, identifier.getString());
+        if (options.warnUndefinedMacros && !condition && currentModule->name != "std") {
+            WARN(identifier.location, "undefined macro '" << identifier.getString() << "', assuming false");
+        }
     }
 
     if (negate) condition = !condition;

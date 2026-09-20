@@ -18,6 +18,7 @@ struct BuildConfig;
 
 struct CompileOptions {
     bool noUnusedWarnings = false;
+    bool warnUndefinedMacros = false;
     std::vector<std::string> importSearchPaths = {};
     std::vector<std::string> frameworkSearchPaths = {};
     std::vector<std::string> defines = {};
