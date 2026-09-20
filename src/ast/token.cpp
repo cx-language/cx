@@ -321,7 +321,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         ",",
         ":",
         ";",
-        "->",
+        "=>",
         "?",
     };
     static_assert(std::size(tokenStrings) == Token::TokenCount, "tokenStrings array not up-to-date");

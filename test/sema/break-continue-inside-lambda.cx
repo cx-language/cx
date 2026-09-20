@@ -3,7 +3,7 @@
 // CHECK-NOT: warning
 
 int loopsInsideLambdasAreFine() {
-    var f = () -> {
+    var f = () => {
         var sum = 0;
         for i in 0..10 {
             if i == 5 {
@@ -22,14 +22,14 @@ int loopsInsideLambdasAreFine() {
 void main() {
     _ = loopsInsideLambdasAreFine();
     while true {
-        var f = () -> {
+        var f = () => {
             if true {
                 // CHECK: [[@LINE+1]]:17: error: 'break' is only allowed inside 'while', 'for', and 'switch' statements
                 break;
             }
             return 1;
         };
-        var g = () -> {
+        var g = () => {
             if true {
                 // CHECK: [[@LINE+1]]:17: error: 'continue' is only allowed inside 'while' and 'for' statements
                 continue;

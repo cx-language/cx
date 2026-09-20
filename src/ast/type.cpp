@@ -387,7 +387,7 @@ void Type::printTo(std::ostream& stream) const {
                 stream << paramType;
                 if (&paramType != &getClosureParamTypes().back()) stream << ", ";
             }
-            stream << ") -> ";
+            stream << ") => ";
             getClosureReturnType().printTo(stream);
             break;
         }

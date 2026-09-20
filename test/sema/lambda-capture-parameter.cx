@@ -4,7 +4,7 @@
 
 void foo(int a) {
     var d = 3;
-    var b = (int c) -> c + a + d;
+    var b = (int c) => c + a + d;
     _ = b(1);
 }
 

@@ -1,0 +1,10 @@
+// RUN: %cx -parse %s
+
+void main() {
+    var f = (int x) => {
+        return x;
+    };
+    var g = (int x) {
+        return x;
+    };
+}

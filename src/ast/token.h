@@ -101,7 +101,7 @@ struct Token {
         Comma,
         Colon,
         Semicolon,
-        RightArrow,
+        FatArrow,
         QuestionMark,
         TokenCount
     };

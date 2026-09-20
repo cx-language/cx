@@ -11,7 +11,7 @@ void main() {
     // CHECK: [0, 2, 4]
     println(even);
 
-    var doubled = even.map(n -> n * 2);
+    var doubled = even.map(n => n * 2);
     // CHECK-NEXT: [0, 4, 8]
     println(doubled);
 }
