@@ -1590,6 +1590,14 @@ start:
 
 Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel) {
     Decl* decl;
+    // A call-shaped `name(...)` here is a misplaced statement, not a function
+    // type; report that instead of a confusing type error from inside the
+    // parentheses. Tokens that can start or end a function-type parameter
+    // list keep the normal path.
+    if (currentToken() == Token::Identifier && lookAhead(1) == Token::LeftParen
+        && !lookAhead(2).is({Token::Identifier, Token::Const, Token::LeftParen, Token::RightParen, Token::DotDotDot})) {
+        ERROR(getCurrentLocation(), "statements are not allowed in global scope");
+    }
     auto type = parseType();
     auto location = getCurrentLocation();
     auto name = parseFunctionName(nullptr);

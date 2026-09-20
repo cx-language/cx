@@ -1,0 +1,13 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+// CHECK-NOT: error
+// CHECK-NOT: warning
+
+// CHECK: [[@LINE+1]]:1: error: statements are not allowed in global scope
+println("hi");
+
+void main() {
+}
+
+// CHECK-NOT: error
+// CHECK-NOT: warning
