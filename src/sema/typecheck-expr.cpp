@@ -146,14 +146,11 @@ static void unnarrow(Expr& expr) {
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType) {
     if (findDecls(expr.identifier).empty()) {
         if (auto* enumCase = getExpectedEnumCase(expr.identifier, expectedType)) {
-            if (!enumCase->associatedType) {
-                MemberExpr qualified(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), expr.location), std::string(expr.identifier),
-                                     expr.location);
-                if (auto* resolvedCase = getEnumCase(qualified, expectedType)) {
-                    checkHasAccess(*resolvedCase->getEnumDecl(), expr.location, AccessLevel::None);
-                    expr.decl = resolvedCase;
-                    return resolvedCase->type;
-                }
+            MemberExpr qualified(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), expr.location), std::string(expr.identifier), expr.location);
+            if (auto* resolvedCase = getEnumCase(qualified, expectedType)) {
+                checkHasAccess(*resolvedCase->getEnumDecl(), expr.location, AccessLevel::None);
+                expr.decl = resolvedCase;
+                return resolvedCase->type;
             }
         }
     }

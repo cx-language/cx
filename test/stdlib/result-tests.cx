@@ -18,28 +18,30 @@ void main() {
 
 void testConstruction() {
     Result<int, string> inferred = Result.Ok(value = 1);
-    assert(inferred == Result.Ok);
+    assert(inferred == Ok);
 
     var explicit = Result.Ok<int, string>(value = 2);
     assert(unwrap(explicit) == 2);
 
     Result<int, string> fromDeclaredType = Result.Err(error = "boom");
-    assert(fromDeclaredType == Result.Err);
+    assert(fromDeclaredType == Err);
 
     var explicitErr = Result.Err<int, string>(error = "bang");
-    assert(explicitErr == Result.Err);
+    assert(explicitErr == Err);
 }
 
 void testCaseComparison() {
     var ok = parseDigit('7');
     var err = parseDigit('x');
 
+    assert(ok == Ok);
+    assert(ok != Err);
+    assert(err == Err);
+    assert(err != Ok);
+    assert(!(ok == Err));
+    assert(!(err == Ok));
     assert(ok == Result.Ok);
-    assert(ok != Result.Err);
     assert(err == Result.Err);
-    assert(err != Result.Ok);
-    assert(!(ok == Result.Err));
-    assert(!(err == Result.Ok));
 }
 
 void testUnwrap() {

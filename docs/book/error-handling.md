@@ -50,7 +50,7 @@ void main() {
 }
 ```
 
-Use `== Result.Ok` and `== Result.Err` to test which case a result holds.
+Use `== Ok` and `== Err` to test which case a result holds.
 `unwrap` returns the success value, or aborts with the error:
 
 ```cs
@@ -63,12 +63,12 @@ Result<int, string> parseDigit(char c) {
 
 void main() {
     var digit = parseDigit('7');
-    if digit == Result.Ok {
+    if digit == Ok {
         println(unwrap(digit)); // prints 7
     }
 
     var notDigit = parseDigit('x');
-    if notDigit == Result.Err {
+    if notDigit == Err {
         println("not a digit");
     }
 }

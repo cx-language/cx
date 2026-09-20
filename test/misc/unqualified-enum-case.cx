@@ -27,6 +27,10 @@ void main() {
     Outcome<int> b = Err(404);
     assert(unwrapOr(a, -1) == 7);
     assert(unwrapOr(b, -1) == -1);
+    assert(a == Ok);
+    assert(a != Err);
+    assert(b == Err);
+    assert(b != Ok);
 
     var c = parseDigit('3');
     assert(unwrapOr(c, -1) == 3);
