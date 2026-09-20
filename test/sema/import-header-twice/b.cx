@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck ./a.cx ./b.cx | %FileCheck -allow-empty %s
+// RUN: %cx -typecheck %S/a.cx %S/b.cx | %FileCheck -allow-empty %s
 
 import "header.h"
 

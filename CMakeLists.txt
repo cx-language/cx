@@ -112,10 +112,23 @@ target_link_libraries(libcx ${LLVM_LIBS})
 # Tests. Note: tests are run with CTest rather than custom build targets so
 # that expected compiler error output isn't misinterpreted as build errors
 # (MSBuild fails custom build steps whose output matches its error pattern).
-add_test(NAME lit COMMAND lit --verbose --succinct ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
-    -Dcx_path=$<TARGET_FILE:cx>
-    -Dfilecheck_path=$<TARGET_FILE:FileCheck>
-    -Dtest_dir=${PROJECT_SOURCE_DIR}/test)
+# One CTest test per compiler test file so CTest reports progress as tests
+# complete. A single aggregate lit invocation only reports when the whole
+# suite finishes, since CTest captures each test's output until it completes
+# (which also hides lit's own progress bar).
+file(GLOB_RECURSE LIT_TEST_FILES CONFIGURE_DEPENDS
+    RELATIVE ${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/test/*.cx)
+foreach(lit_test IN LISTS LIT_TEST_FILES)
+    # Mirror lit's `excludes`: helper sources under inputs/ aren't tests.
+    if(lit_test MATCHES "(^|/)inputs/")
+        continue()
+    endif()
+    add_test(NAME lit/${lit_test}
+        COMMAND lit --verbose --succinct ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test/${lit_test}
+        -Dcx_path=$<TARGET_FILE:cx>
+        -Dfilecheck_path=$<TARGET_FILE:FileCheck>
+        -Dtest_dir=${PROJECT_SOURCE_DIR}/test)
+endforeach()
 add_executable(example_embedding examples/embedding/embedding.cpp)
 target_include_directories(example_embedding PRIVATE src)
 target_link_libraries(example_embedding libcx)
@@ -130,7 +143,18 @@ add_test(NAME lsp COMMAND python3 "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "
 # pipe read forever instead of failing (takes ~2s locally; 600s is ample
 # even for Windows Debug).
 set_tests_properties(lsp PROPERTIES TIMEOUT 600)
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>)
+# The two example suites write the same output files into examples/, so they
+# must not run concurrently with each other now that check runs tests in
+# parallel.
+set_tests_properties(examples examples-c-backend PROPERTIES RESOURCE_LOCK examples-workdir)
+include(ProcessorCount)
+ProcessorCount(CHECK_PARALLEL_JOBS)
+if(CHECK_PARALLEL_JOBS EQUAL 0)
+    set(CHECK_PARALLEL_JOBS 4)
+endif()
+add_custom_target(check
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --parallel ${CHECK_PARALLEL_JOBS} -C $<CONFIG>
+    USES_TERMINAL)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
 add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config)
 

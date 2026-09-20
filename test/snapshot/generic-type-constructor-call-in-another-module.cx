@@ -1,4 +1,4 @@
-// RUN: check-snapshots -Iinputs
+// RUN: check-snapshots -I%S/inputs
 
 import imported_generic_type_constructor
 
