@@ -101,8 +101,8 @@ struct List<Element> {
         return buffer;
     }
 
-    /// Adds the given element to the end of the list.
-    void push(Element element) {
+    /// Adds the given element to the end of the list, returning a pointer to it.
+    Element* push(Element element) {
         if size == capacity {
             grow();
         }
@@ -110,6 +110,7 @@ struct List<Element> {
         // TODO: Shouldn't need '&' here.
         (&buffer[size]).init(element);
         size++;
+        return &buffer[size - 1];
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
@@ -132,21 +133,22 @@ struct List<Element> {
         }
     }
 
-    /// Removes the first element from the list.
+    /// Removes the first element from the list and returns it.
     /// Other elements are moved towards the beginning of the list by one index.
-    void removeFirst() {
+    Element removeFirst() {
         if size == 0 abort("Called removeFirst() on empty List\n");
-        unsafeRemoveAt(0);
+        return unsafeRemoveAt(0);
     }
 
-    /// Removes the first element satisfying the given condition.
-    void removeFirst(bool(Element*) shouldRemove) {
+    /// Removes the first element satisfying the given condition and returns it, or null if none matches.
+    Element? removeFirst(bool(Element*) shouldRemove) {
         for index in 0..size {
             if shouldRemove(this[index]) {
-                unsafeRemoveAt(index);
-                break;
+                return unsafeRemoveAt(index);
             }
         }
+
+        return null;
     }
 
     /// Removes the last element from the list.
@@ -163,18 +165,18 @@ struct List<Element> {
         return buffer[size];
     }
 
-    /// Removes the element at the given index from the list.
+    /// Removes the element at the given index from the list and returns it.
     /// Elements following the removed element are moved towards the beginning of the list by one index.
-    void removeAt(int index) {
+    Element removeAt(int index) {
         if index >= size {
             indexOutOfBounds(index);
         }
 
-        unsafeRemoveAt(index);
+        return unsafeRemoveAt(index);
     }
 
-    private void unsafeRemoveAt(int index) {
-        buffer[index].deinit();
+    private Element unsafeRemoveAt(int index) {
+        var removed = buffer[index];
 
         for i in (index + 1)..size {
             var source = &buffer[i];
@@ -183,6 +185,7 @@ struct List<Element> {
         }
 
         size--;
+        return removed;
     }
 
     /// Returns an iterator over the elements.

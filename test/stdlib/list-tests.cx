@@ -17,6 +17,7 @@ void main() {
     testMap();
     testFilter();
     testRemoveFirstByPredicate();
+    testRemovalReturnValues();
     testElementDestruction();
 }
 
@@ -185,6 +186,27 @@ void testRemoveFirstByPredicate() {
     assert(a.empty());
 }
 
+void testRemovalReturnValues() {
+    var a = List([10, 20, 30]);
+
+    var pushed = a.push(40);
+    assert(*pushed == 40 && a.size() == 4);
+
+    assert(a.removeAt(0) == 10);
+    assert(a == List([20, 30, 40]));
+
+    assert(a.removeFirst() == 20);
+    assert(a == List([30, 40]));
+
+    var found = a.removeFirst(value => value > 30);
+    assert(found == 40);
+    assert(a == List([30]));
+
+    var missing = a.removeFirst(value => value > 30);
+    assert(missing == null);
+    assert(a == List([30]));
+}
+
 var destroyed = 0;
 
 struct DestructionTester {
@@ -193,6 +215,8 @@ struct DestructionTester {
     }
 }
 
+void sink(DestructionTester t) {}
+
 void testElementDestruction() {
     var a = List<DestructionTester>();
 
@@ -200,11 +224,11 @@ void testElementDestruction() {
         a.push(DestructionTester());
     }
 
-    a.removeAt(25);
-    a.removeAt(25);
-    a.removeAt(25);
+    sink(a.removeAt(25));
+    sink(a.removeAt(25));
+    sink(a.removeAt(25));
     a.removeLast();
-    a.removeFirst();
+    sink(a.removeFirst());
 
     assert(destroyed == 5);
 }
