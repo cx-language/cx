@@ -1,0 +1,24 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+
+struct S {
+    int x;
+}
+
+bool operator==(S a, int b) {
+    return a.x == b;
+}
+
+bool operator!=(S a, int b) {
+    return a.x != b;
+}
+
+void main() {
+    println(S(x = 1) == 1);
+    println(1 == S(x = 1));
+    println(S(x = 1) != 2);
+    println(2 != S(x = 1));
+}

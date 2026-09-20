@@ -1279,7 +1279,7 @@ static std::vector<ParamDecl> getVariableCalleeParams(const VariableDecl& callee
     return llvm::cast<FunctionType>(calleeDecl.type.typeBase)->getParamDecls(calleeDecl.getLocation());
 }
 
-Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
+Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry) {
     std::vector<Match> matches;
     std::vector<Match> templateMatches;
     llvm::ArrayRef<Decl*> candidates = decls;
@@ -1482,6 +1482,23 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         }
     }
     matches = std::move(uniqueMatches);
+
+    if (matches.empty() && allowCommutativeRetry) {
+        if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+            if ((binaryExpr->op == Token::Equal || binaryExpr->op == Token::NotEqual) && expr.args.size() == 2) {
+                // == and != commute: retry with swapped operands so only one parameter order needs an overload.
+                // The matched overload runs with its declared parameter order.
+                std::swap(expr.args[0], expr.args[1]);
+                try {
+                    return resolveOverload(decls, expr, callee, expectedType, false);
+                } catch (const CompileError&) {
+                    // Restore the written order and fall through to the error
+                    // below so the diagnostic shows the user's operand order.
+                    std::swap(expr.args[0], expr.args[1]);
+                }
+            }
+        }
+    }
 
     if (matches.size() > 1) {
         bool hasNonPack = llvm::any_of(matches, [](const Match& match) {
