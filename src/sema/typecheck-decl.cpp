@@ -10,6 +10,15 @@
 
 using namespace cx;
 
+static std::vector<Note> getTypeCandidateNotes(llvm::ArrayRef<Decl*> candidates) {
+    bool multipleModules = candidates.size() > 1 && llvm::any_of(candidates, [&](Decl* c) { return c->getModule() != candidates[0]->getModule(); });
+
+    return map(candidates, [&](Decl* c) {
+        auto message = "candidate type" + (multipleModules && c->getModule() ? " in module '" + c->getModule()->name + "'" : "") + ":";
+        return Note{c->getLocation(), std::move(message)};
+    });
+}
+
 // Finds the type template to instantiate for a generic type name. A same-named function
 // doesn't prevent using the type in type position.
 static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*> decls) {
@@ -24,7 +33,7 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
     }
 
     if (decls.size() > 1) {
-        ERROR(type.location, "ambiguous reference to '" << type.getName() << "'"); // TODO: add candidate notes
+        ERROR_WITH_NOTES(type.location, getTypeCandidateNotes(decls), "ambiguous reference to '" << type.getName() << "'");
     }
 
     return llvm::cast<TypeTemplate>(decls[0]);
@@ -119,7 +128,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 checkHasAccess(*decl, type.location, userAccessLevel);
                 break;
             } else if (decls.size() > 1) {
-                ERROR(type.location, "ambiguous reference to '" << type.getName() << "'"); // TODO: add candidate notes
+                ERROR_WITH_NOTES(type.location, getTypeCandidateNotes(decls), "ambiguous reference to '" << type.getName() << "'");
             } else {
                 decl = decls.front();
             }
