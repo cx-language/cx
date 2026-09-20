@@ -13,3 +13,13 @@ never abort<T: Printable>(T*... args) {
     stderr().write('\n');
     abortWrapper();
 }
+
+/// Aborts the program, marking the code as not implemented yet.
+never todo() {
+    abort("Not implemented");
+}
+
+/// Aborts the program with the given message, marking the code as not implemented yet.
+never todo(string reason) {
+    abort("Not implemented: ", reason);
+}
