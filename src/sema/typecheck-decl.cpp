@@ -515,7 +515,7 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const BuildConfig* confi
         if (!module) {
             if (module.getError() == std::make_error_code(std::errc::no_such_file_or_directory)) {
                 REPORT_ERROR(decl.getLocation(), "couldn't find module '" << decl.target << "' in the following locations:\n"
-                                                                                << llvm::join(options.importSearchPaths, "\n"));
+                                                                          << llvm::join(options.importSearchPaths, "\n"));
             } else {
                 REPORT_ERROR(decl.getLocation(), "couldn't import module '" << decl.target << "': " << module.getError().message());
             }
