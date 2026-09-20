@@ -46,18 +46,34 @@ const uint64 uint64_min = 0;
 // TODO: Remove code duplication by declaring an 'Integer' interface that implements the 'compare'
 // function for all integer types.
 
-// TODO: Improve print() implementations: optimize + don't depend on libc.
-
 private void printSigned(int64 value, StringBuffer* stream) {
-    char[22] result = undefined;
-    sprintf(result, "%lld", value);
-    stream.write(string(result));
+    if value < 0 {
+        stream.write('-');
+        // Negate in unsigned arithmetic so that int64_min doesn't overflow.
+        printUnsigned(uint64(0) - uint64(value), stream);
+    } else {
+        printUnsigned(uint64(value), stream);
+    }
 }
 
 private void printUnsigned(uint64 value, StringBuffer* stream) {
-    char[22] result = undefined;
-    sprintf(result, "%llu", value);
-    stream.write(string(result));
+    char[20] digits = undefined;
+    var count = 0;
+
+    while true {
+        digits[count] = char(uint64('0') + value % 10);
+        value /= 10;
+        count++;
+
+        if value == 0 {
+            break;
+        }
+    }
+
+    while count > 0 {
+        count--;
+        stream.write(digits[count]);
+    }
 }
 
 /// A signed integer.
