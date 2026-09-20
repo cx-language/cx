@@ -30,7 +30,7 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
 
     auto returnType = getIRType(decl.isMain() ? Type::getInt() : decl.getReturnType());
     auto function = new Function{
-        ValueKind::Function, mangledName, returnType, std::move(params), {}, decl.isExtern(), decl.isVariadic(), decl.getLocation(),
+        ValueKind::Function, mangledName, decl.getName().str(), returnType, std::move(params), {}, decl.isExtern(), decl.isVariadic(), decl.getLocation(),
     };
     module->functions.push_back(function);
 

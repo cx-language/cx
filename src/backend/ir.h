@@ -324,6 +324,7 @@ struct Parameter : Value {
 
 struct Function : Value {
     std::string mangledName;
+    std::string name;
     IRType* returnType;
     std::vector<Parameter> params;
     std::vector<BasicBlock*> body;

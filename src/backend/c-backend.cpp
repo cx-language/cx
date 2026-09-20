@@ -23,6 +23,16 @@ std::string getFieldName(IRType* type, int index) {
     return fieldName.empty() ? "_" + std::to_string(index) : fieldName;
 }
 
+// Extern C functions with asm labels mangle to '\01' + label for LLVM, where
+// the marker suppresses mangling. C has no such marker, so emit the declared
+// name instead; the declaration comes from the included header.
+llvm::StringRef getCFunctionName(const Function* function) {
+    if (!function->mangledName.empty() && function->mangledName[0] == '\01') {
+        return function->name;
+    }
+    return function->mangledName;
+}
+
 } // namespace
 
 void CGenerator::codegenModule(const IRModule& module) {
@@ -589,7 +599,7 @@ void CGenerator::codegenInstImpl(const Value* value) {
     case ValueKind::BasicBlock:
         return codegenBasicBlock(llvm::cast<BasicBlock>(value));
     case ValueKind::Function:
-        stream << llvm::cast<Function>(value)->mangledName;
+        stream << getCFunctionName(llvm::cast<Function>(value));
         break;
     case ValueKind::Parameter: {
         auto* param = llvm::cast<Parameter>(value);
@@ -619,7 +629,7 @@ void CGenerator::codegenInstImpl(const Value* value) {
 
 void CGenerator::codegenFunctionPrototype(const Function* function) {
     codegenType(stream, function->returnType, !function->isExtern);
-    stream << ' ' << function->mangledName << '(';
+    stream << ' ' << getCFunctionName(function) << '(';
     if (function->params.empty() && !function->isVariadic) {
         // An empty parameter list means "unspecified arguments" in C, so spell out 'void' instead.
         stream << "void";
