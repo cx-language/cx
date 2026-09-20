@@ -115,6 +115,8 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
         auto* conditionValue = emitExpr(*forStmt.condition);
         if (conditionValue->getType()->isPointerType()) {
             conditionValue = emitImplicitNullComparison(conditionValue);
+        } else if (forStmt.condition->type.isOptionalType() && !forStmt.condition->type.getWrappedType().isPointerType()) {
+            conditionValue = emitOptionalHasValueTest(conditionValue);
         }
         createCondBr(conditionValue, body, end);
     } else {

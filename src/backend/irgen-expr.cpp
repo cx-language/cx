@@ -675,6 +675,8 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
     auto* condition = emitExpr(*expr.condition);
     if (condition->getType()->isPointerType()) {
         condition = emitImplicitNullComparison(condition);
+    } else if (expr.condition->type.isOptionalType() && !expr.condition->type.getWrappedType().isPointerType()) {
+        condition = emitOptionalHasValueTest(condition);
     }
     auto* function = currentFunction;
     auto* thenBlock = new BasicBlock("if.then", function);
