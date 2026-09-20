@@ -14,5 +14,7 @@ define i32 @main() {
 }
 
 define void @_EN4main1MI3intE4initE8ArrayRefI3intE(ptr %this, %"ArrayRef<int>" %a) {
+  %a1 = alloca %"ArrayRef<int>", align 8
+  store %"ArrayRef<int>" %a, ptr %a1, align 8
   ret void
 }

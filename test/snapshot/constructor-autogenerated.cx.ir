@@ -18,10 +18,16 @@ int main() {
 }
 
 void _EN4main1X4initE3intP3int(X* this, int a, int* b) {
-    int* a_0 = getelementptr this, 0
+    int* a_0 = alloca int
+    int** b_0 = alloca int*
     store a to a_0
-    int** b_0 = getelementptr this, 1
     store b to b_0
+    int* a_1 = getelementptr this, 0
+    int a.load = load a_0
+    store a.load to a_1
+    int** b_1 = getelementptr this, 1
+    int* b.load = load b_0
+    store b.load to b_1
     return void
 }
 
@@ -34,8 +40,11 @@ void _EN4main5Empty4initE(Empty* this) {
 }
 
 void _EN4main7GenericI5floatE4initE5float(Generic<float>* this, float i) {
-    float* i_0 = getelementptr this, 0
+    float* i_0 = alloca float
     store i to i_0
+    float* i_1 = getelementptr this, 0
+    float i.load = load i_0
+    store i.load to i_1
     return void
 }
 
@@ -46,7 +55,10 @@ void _EN4main7GenericI5EmptyE6deinitE(Generic<Empty>* this) {
 }
 
 void _EN4main7GenericI5EmptyE4initE5Empty(Generic<Empty>* this, Empty i) {
-    Empty* i_0 = getelementptr this, 0
+    Empty* i_0 = alloca Empty
     store i to i_0
+    Empty* i_1 = getelementptr this, 0
+    Empty i.load = load i_0
+    store i.load to i_1
     return void
 }

@@ -1,17 +1,29 @@
 
 void _EN4main1fE1S(S a) {
+    S* a_0 = alloca S
+    store a to a_0
     return void
 }
 
 void _EN4main1fE1T(T a) {
+    T* a_0 = alloca T
+    store a to a_0
     return void
 }
 
 void _EN4mainplE1S1S(S a, S b) {
+    S* a_0 = alloca S
+    S* b_0 = alloca S
+    store a to a_0
+    store b to b_0
     return void
 }
 
 void _EN4mainplE1T1T(T a, T b) {
+    T* a_0 = alloca T
+    T* b_0 = alloca T
+    store a to a_0
+    store b to b_0
     return void
 }
 

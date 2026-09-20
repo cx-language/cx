@@ -76,7 +76,11 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     }
 
     for (auto& param : decl.getParams()) {
-        setLocalValue(&*arg++, &param);
+        // Spill parameters to allocas so they have stable addresses: method receivers and
+        // address-of must alias the parameter across uses, not a fresh temporary per use.
+        auto* spill = createEntryBlockAlloca(param.type, param.getName());
+        createStore(&*arg++, spill);
+        setLocalValue(spill, &param);
     }
 
     if (decl.isDestructorDecl()) {

@@ -1,5 +1,7 @@
 
 void _EN4main3fooEP3Foo(Foo* ref_f) {
+    Foo** ref_f_0 = alloca Foo*
+    store ref_f to ref_f_0
     return void
 }
 

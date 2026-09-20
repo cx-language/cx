@@ -7,14 +7,26 @@ S2 _EN4main19returnsLargeStruct2E() {
 }
 
 void _EN4main2S24initE7float647float647float647float64(S2* this, float64 x, float64 y, float64 z, float64 w) {
-    float64* x_0 = getelementptr this, 0
+    float64* x_0 = alloca float64
+    float64* y_0 = alloca float64
+    float64* z_0 = alloca float64
+    float64* w_0 = alloca float64
     store x to x_0
-    float64* y_0 = getelementptr this, 1
     store y to y_0
-    float64* z_0 = getelementptr this, 2
     store z to z_0
-    float64* w_0 = getelementptr this, 3
     store w to w_0
+    float64* x_1 = getelementptr this, 0
+    float64 x.load = load x_0
+    store x.load to x_1
+    float64* y_1 = getelementptr this, 1
+    float64 y.load = load y_0
+    store y.load to y_1
+    float64* z_1 = getelementptr this, 2
+    float64 z.load = load z_0
+    store z.load to z_1
+    float64* w_1 = getelementptr this, 3
+    float64 w.load = load w_0
+    store w.load to w_1
     return void
 }
 

@@ -7,5 +7,7 @@ define i32 @main() {
 }
 
 define void @_EN4main1fI3intEEP3int(ptr %p) {
+  %p1 = alloca ptr, align 8
+  store ptr %p, ptr %p1, align 8
   ret void
 }

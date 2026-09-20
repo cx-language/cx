@@ -1,27 +1,51 @@
 
 void _EN4main3fooE3int4uint(int i, uint u) {
+    int* i_0 = alloca int
+    uint* u_0 = alloca uint
     bool* a = alloca bool
     int* b = alloca int
     uint* c = alloca uint
-    bool _0 = i < i
+    store i to i_0
+    store u to u_0
+    int i.load = load i_0
+    int i.load_0 = load i_0
+    bool _0 = i.load < i.load_0
     store _0 to a
-    bool _1 = u < u
+    uint u.load = load u_0
+    uint u.load_0 = load u_0
+    bool _1 = u.load < u.load_0
     store _1 to a
-    bool _2 = i > i
+    int i.load_1 = load i_0
+    int i.load_2 = load i_0
+    bool _2 = i.load_1 > i.load_2
     store _2 to a
-    bool _3 = u > u
+    uint u.load_1 = load u_0
+    uint u.load_2 = load u_0
+    bool _3 = u.load_1 > u.load_2
     store _3 to a
-    bool _4 = i <= i
+    int i.load_3 = load i_0
+    int i.load_4 = load i_0
+    bool _4 = i.load_3 <= i.load_4
     store _4 to a
-    bool _5 = u <= u
+    uint u.load_3 = load u_0
+    uint u.load_4 = load u_0
+    bool _5 = u.load_3 <= u.load_4
     store _5 to a
-    bool _6 = i >= i
+    int i.load_5 = load i_0
+    int i.load_6 = load i_0
+    bool _6 = i.load_5 >= i.load_6
     store _6 to a
-    bool _7 = u >= u
+    uint u.load_5 = load u_0
+    uint u.load_6 = load u_0
+    bool _7 = u.load_5 >= u.load_6
     store _7 to a
-    int _8 = i / i
+    int i.load_7 = load i_0
+    int i.load_8 = load i_0
+    int _8 = i.load_7 / i.load_8
     store _8 to b
-    uint _9 = u / u
+    uint u.load_7 = load u_0
+    uint u.load_8 = load u_0
+    uint _9 = u.load_7 / u.load_8
     store _9 to c
     return void
 }

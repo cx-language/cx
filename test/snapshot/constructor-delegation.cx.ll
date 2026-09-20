@@ -8,11 +8,18 @@ define i32 @main() {
 }
 
 define void @_EN4main1X4initE3int3int(ptr %this, i32 %a, i32 %b) {
-  call void @_EN4main1X4initE3int(ptr %this, i32 %a)
+  %a1 = alloca i32, align 4
+  %b2 = alloca i32, align 4
+  store i32 %a, ptr %a1, align 4
+  store i32 %b, ptr %b2, align 4
+  %a.load = load i32, ptr %a1, align 4
+  call void @_EN4main1X4initE3int(ptr %this, i32 %a.load)
   ret void
 }
 
 define void @_EN4main1X4initE3int(ptr %this, i32 %a) {
+  %a1 = alloca i32, align 4
+  store i32 %a, ptr %a1, align 4
   call void @_EN4main1X4initE(ptr %this)
   ret void
 }

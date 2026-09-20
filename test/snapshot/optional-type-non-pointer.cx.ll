@@ -228,6 +228,8 @@ if.end31:                                         ; preds = %if.else30, %if.then
 declare void @_EN3std10assertFailEP4char(ptr)
 
 define void @_EN4main12takesNonNullE3int(i32 %i) {
+  %i1 = alloca i32, align 4
+  store i32 %i, ptr %i1, align 4
   ret void
 }
 

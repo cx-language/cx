@@ -17,7 +17,10 @@ void _EN4main1S3fooE(S* this) {
 }
 
 void _EN4main1S4initEP3int(S* this, int* a) {
-    int** a_0 = getelementptr this, 0
+    int** a_0 = alloca int*
     store a to a_0
+    int** a_1 = getelementptr this, 0
+    int* a.load = load a_0
+    store a.load to a_1
     return void
 }

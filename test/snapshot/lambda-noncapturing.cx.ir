@@ -9,30 +9,55 @@ int main() {
 }
 
 void _EN4main3fooI3intEEF3int3int_3int(int(int, int)* a) {
-    int _0 = call a(int 1, int 2)
+    int(int, int)** a_0 = alloca int(int, int)*
+    store a to a_0
+    int(int, int)* a.load = load a_0
+    int _0 = call a.load(int 1, int 2)
     return void
 }
 
 int _EN4main9__lambda0E3int3int(int a, int b) {
-    int _0 = a + b
+    int* a_0 = alloca int
+    int* b_0 = alloca int
+    store a to a_0
+    store b to b_0
+    int a.load = load a_0
+    int b.load = load b_0
+    int _0 = a.load + b.load
     return _0
 }
 
 int _EN4main9__lambda1E3int3int(int a, int b) {
-    int _0 = a + b
+    int* a_0 = alloca int
+    int* b_0 = alloca int
+    store a to a_0
+    store b to b_0
+    int a.load = load a_0
+    int b.load = load b_0
+    int _0 = a.load + b.load
     return _0
 }
 
 int _EN4main9__lambda2E3int3int(int a, int b) {
-    bool _0 = a > b
+    int* a_0 = alloca int
+    int* b_0 = alloca int
+    store a to a_0
+    store b to b_0
+    int a.load = load a_0
+    int b.load = load b_0
+    bool _0 = a.load > b.load
     br _0, if.then, if.else
 
 if.then:
-    int _1 = a + b
+    int a.load_0 = load a_0
+    int b.load_0 = load b_0
+    int _1 = a.load_0 + b.load_0
     return _1
 
 if.else:
-    int _2 = a - b
+    int a.load_1 = load a_0
+    int b.load_1 = load b_0
+    int _2 = a.load_1 - b.load_1
     return _2
 
 if.end:
@@ -40,20 +65,35 @@ if.end:
 }
 
 int _EN4main9__lambda3E3int3int(int a, int b) {
+    int* a_0 = alloca int
+    int* b_0 = alloca int
     int* x = alloca int
-    int _0 = a + b
+    store a to a_0
+    store b to b_0
+    int a.load = load a_0
+    int b.load = load b_0
+    int _0 = a.load + b.load
     store _0 to x
     int x.load = load x
     return x.load
 }
 
 void _EN4main3fooI4voidEEF3int3int_4void(void(int, int)* a) {
-    void _0 = call a(int 1, int 2)
+    void(int, int)** a_0 = alloca void(int, int)*
+    store a to a_0
+    void(int, int)* a.load = load a_0
+    void _0 = call a.load(int 1, int 2)
     return void
 }
 
 void _EN4main9__lambda4E3int3int(int a, int b) {
-    bool _0 = a == b
+    int* a_0 = alloca int
+    int* b_0 = alloca int
+    store a to a_0
+    store b to b_0
+    int a.load = load a_0
+    int b.load = load b_0
+    bool _0 = a.load == b.load
     br _0, if.then, if.else
 
 if.then:

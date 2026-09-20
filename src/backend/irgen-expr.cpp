@@ -171,14 +171,8 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
         return operand;
     }
     case Token::And: {
-        auto* value = emitExprAsPointer(expr.getOperand());
-        // Function parameters are SSA values, not memory, so spill them to a temporary to form a real address.
-        // FIXME: This is a point-in-time copy; stores through the address don't update the parameter.
-        // Remove once parameters get entry-block allocas ("Codegen allocas for parameters").
-        if (llvm::isa<Parameter>(value)) {
-            value = createTempAlloca(value);
-        }
-        return value;
+        // Parameters are spilled to entry-block allocas, so this aliases the parameter.
+        return emitExprAsPointer(expr.getOperand());
     }
     case Token::Not:
         // FIXME: Temporary hack. Lower implicit null checks such as `if (ptr)` and `if (!ptr)` when expression lowering is implemented.
@@ -327,6 +321,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     if (isBuiltinArrayToArrayRefConversion(expr.type, targetType)) {
         ASSERT(expr.type.removePointer().isConstantArray());
         auto* value = emitExprAsPointer(expr);
+        value = loadThroughStorageAddress(value, expr.type);
         auto* elementPtr = createGEP(value, 0);
         auto* arrayRef = createInsertValue(createUndefined(targetType), elementPtr, 0);
         auto size = createConstantInt(Type::getInt(), expr.type.removePointer().getArraySize());
@@ -335,7 +330,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
 
     // Handle implicit conversions to type 'T[*]'.
     if (expr.type.removePointer().isConstantArray() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
-        return createCast(emitLvalueExpr(expr), targetType);
+        return createCast(loadThroughStorageAddress(emitLvalueExpr(expr), expr.type), targetType);
     }
 
     // Handle implicit conversions to void pointer, and to base type pointer.
@@ -548,6 +543,7 @@ Value* IRGenerator::getArrayLength(const Expr&, Type objectType) {
 Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
     auto type = BasicType::get("ArrayIterator", objectType.getElementType());
     auto* value = emitExprAsPointer(object);
+    value = loadThroughStorageAddress(value, object.type);
     auto* elementPtr = createGEP(value, 0);
     auto* size = getArrayLength(object, objectType);
     auto* end = createGEP(elementPtr, {size});
@@ -775,6 +771,15 @@ Value* IRGenerator::emitExprAsPointer(const Expr& expr) {
     return value;
 }
 
+Value* IRGenerator::loadThroughStorageAddress(Value* value, Type exprType) {
+    // Spilled params and locals add an indirection: when value points to the expr's own
+    // pointer type instead of into the data, load once to get the data pointer.
+    if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() && value->getType()->getPointee()->equals(getIRType(exprType))) {
+        return createLoad(value);
+    }
+    return value;
+}
+
 Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
     if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) {
         if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(memberExpr->decl)) {
@@ -787,7 +792,7 @@ Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
         if (enumDecl->hasAssociatedValues() && !expr.type.isImplementedAsPointer()) {
             auto* value = emitLvalueExpr(expr);
             if (!value->getType()->isPointerType()) {
-                // Aggregate-typed parameters have no address; spill to a temp so the tag load and associated-value access work.
+                // Rvalues have no address; spill to a temp so the tag load and associated-value access work.
                 value = createTempAlloca(value);
             }
             if (enumValue) *enumValue = value;
@@ -805,7 +810,7 @@ Value* IRGenerator::emitLvalueExpr(const Expr& expr) {
     // Pointer-implemented optionals need no access adjustment: the narrowed type is a compile-time view of the same value.
     if (expr.hasAssignableType() && expr.assignableType.isOptionalType() && !expr.assignableType.getWrappedType().isImplementedAsPointer()
         && expr.type == expr.assignableType.getWrappedType()) {
-        // Function parameters are SSA values, not memory; spill to a temp so the payload access works.
+        // Rvalues are not in memory; spill to a temp so the payload access works.
         if (!value->getType()->isPointerType()) value = createTempAlloca(value);
         return emitOptionalPayloadPtr(value, expr.assignableType.getWrappedType());
     }

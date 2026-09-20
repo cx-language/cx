@@ -27,7 +27,10 @@ int main() {
 }
 
 void _EN4main1SI1EE4initEOP1E(S<E>* this, E* e) {
-    E** e_0 = getelementptr this, 0
+    E** e_0 = alloca E*
     store e to e_0
+    E** e_1 = getelementptr this, 0
+    E* e.load = load e_0
+    store e.load to e_1
     return void
 }

@@ -1,7 +1,13 @@
 
 void _EN4main3quxEP3FooP3Bar(Foo* f, Bar* b) {
-    void _0 = call _EN4main3Foo3fooE(Foo* f)
-    void _1 = call _EN4main3Bar3barE(Bar* b)
+    Foo** f_0 = alloca Foo*
+    Bar** b_0 = alloca Bar*
+    store f to f_0
+    store b to b_0
+    Foo* f.load = load f_0
+    void _0 = call _EN4main3Foo3fooE(Foo* f.load)
+    Bar* b.load = load b_0
+    void _1 = call _EN4main3Bar3barE(Bar* b.load)
     return void
 }
 

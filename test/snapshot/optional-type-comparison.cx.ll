@@ -17,9 +17,14 @@ define i32 @main() {
 }
 
 define i1 @_EN3stdeqI3intEEPO3intP3int(ptr %a, ptr %b) {
+  %a1 = alloca ptr, align 8
+  %b2 = alloca ptr, align 8
   %1 = alloca %"Optional<int>", align 8
-  %a.load = load %"Optional<int>", ptr %a, align 4
-  %2 = extractvalue %"Optional<int>" %a.load, 0
+  store ptr %a, ptr %a1, align 8
+  store ptr %b, ptr %b2, align 8
+  %a.load = load ptr, ptr %a1, align 8
+  %a.load.load = load %"Optional<int>", ptr %a.load, align 4
+  %2 = extractvalue %"Optional<int>" %a.load.load, 0
   %3 = icmp eq i32 %2, 1
   %4 = xor i1 %3, true
   br i1 %4, label %if.then, label %if.else
@@ -31,8 +36,9 @@ if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else
-  %a.load1 = load %"Optional<int>", ptr %a, align 4
-  %5 = extractvalue %"Optional<int>" %a.load1, 0
+  %a.load3 = load ptr, ptr %a1, align 8
+  %a.load.load4 = load %"Optional<int>", ptr %a.load3, align 4
+  %5 = extractvalue %"Optional<int>" %a.load.load4, 0
   %6 = icmp eq i32 %5, 1
   %assert.condition = icmp eq i1 %6, false
   br i1 %assert.condition, label %assert.fail, label %assert.success
@@ -42,11 +48,12 @@ assert.fail:                                      ; preds = %if.end
   unreachable
 
 assert.success:                                   ; preds = %if.end
-  store %"Optional<int>" %a.load1, ptr %1, align 4
+  store %"Optional<int>" %a.load.load4, ptr %1, align 4
   %7 = getelementptr inbounds %"Optional<int>", ptr %1, i32 0, i32 1
   %.load = load i32, ptr %7, align 4
-  %b.load = load i32, ptr %b, align 4
-  %8 = icmp eq i32 %.load, %b.load
+  %b.load = load ptr, ptr %b2, align 8
+  %b.load.load = load i32, ptr %b.load, align 4
+  %8 = icmp eq i32 %.load, %b.load.load
   ret i1 %8
 }
 

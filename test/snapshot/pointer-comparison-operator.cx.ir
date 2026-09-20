@@ -1,6 +1,14 @@
 
 void _EN4main3fooEOP3intP3int(int* a, int* b) {
-    bool _0 = a == b
-    bool _1 = a != b
+    int** a_0 = alloca int*
+    int** b_0 = alloca int*
+    store a to a_0
+    store b to b_0
+    int* a.load = load a_0
+    int* b.load = load b_0
+    bool _0 = a.load == b.load
+    int* a.load_0 = load a_0
+    int* b.load_0 = load b_0
+    bool _1 = a.load_0 != b.load_0
     return void
 }

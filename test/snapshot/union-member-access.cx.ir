@@ -1,7 +1,10 @@
 
 int _EN4main3fooE1U(U u) {
-    int b = extractvalue u, 0
-    return b
+    U* u_0 = alloca U
+    store u to u_0
+    int* b = cast u_0 to int*
+    int b.load = load b
+    return b.load
 }
 
 int main() {

@@ -49,6 +49,8 @@ struct IRGenerator {
     Value* emitLvalueExpr(const Expr& expr);
     /// Emits value as a pointer, storing it in a temporary alloca if needed.
     Value* emitExprAsPointer(const Expr& expr);
+    /// Loads through the storage address when value points to the expr's own pointer type.
+    Value* loadThroughStorageAddress(Value* value, Type exprType);
     Value* emitExprOrEnumTag(const Expr& expr, Value** enumValue);
     Value* emitPlainExpr(const Expr& expr);
     Value* emitVarExpr(const VarExpr& expr);

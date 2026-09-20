@@ -1,6 +1,9 @@
 
 define void @_EN4main3fooE3int(i32 %i) {
-  switch i32 %i, label %switch.default [
+  %i1 = alloca i32, align 4
+  store i32 %i, ptr %i1, align 4
+  %i.load = load i32, ptr %i1, align 4
+  switch i32 %i.load, label %switch.default [
     i32 42, label %switch.case.0
   ]
 

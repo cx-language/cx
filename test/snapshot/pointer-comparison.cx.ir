@@ -1,13 +1,35 @@
 
 bool _EN4mainltEP1XP1X(X* a, X* b) {
+    X** a_0 = alloca X*
+    X** b_0 = alloca X*
+    store a to a_0
+    store b to b_0
     return bool true
 }
 
 void _EN4main2fxEP1XP1XP4voidP4void(X* a, X* b, void* v1, void* v2) {
-    bool _0 = a == b
-    bool _1 = a < b
-    bool _2 = call _EN4mainltEP1XP1X(X* a, X* b)
-    bool _3 = v1 != v2
-    bool _4 = v1 >= v2
+    X** a_0 = alloca X*
+    X** b_0 = alloca X*
+    void** v1_0 = alloca void*
+    void** v2_0 = alloca void*
+    store a to a_0
+    store b to b_0
+    store v1 to v1_0
+    store v2 to v2_0
+    X* a.load = load a_0
+    X* b.load = load b_0
+    bool _0 = a.load == b.load
+    X* a.load_0 = load a_0
+    X* b.load_0 = load b_0
+    bool _1 = a.load_0 < b.load_0
+    X* a.load_1 = load a_0
+    X* b.load_1 = load b_0
+    bool _2 = call _EN4mainltEP1XP1X(X* a.load_1, X* b.load_1)
+    void* v1.load = load v1_0
+    void* v2.load = load v2_0
+    bool _3 = v1.load != v2.load
+    void* v1.load_0 = load v1_0
+    void* v2.load_0 = load v2_0
+    bool _4 = v1.load_0 >= v2.load_0
     return void
 }

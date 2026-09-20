@@ -75,7 +75,10 @@ define ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %this) {
 }
 
 define void @_EN3std7printlnI3intEEP3int(ptr %value) {
-  call void @_EN3std5printI3intEEP3int(ptr %value)
+  %value1 = alloca ptr, align 8
+  store ptr %value, ptr %value1, align 8
+  %value.load = load ptr, ptr %value1, align 8
+  call void @_EN3std5printI3intEEP3int(ptr %value.load)
   call void @_EN3std5printI4charEE4char(i8 10)
   ret void
 }

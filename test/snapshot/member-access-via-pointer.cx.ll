@@ -2,8 +2,11 @@
 %Foo = type { i32 }
 
 define void @_EN4main3getEP3Foo(ptr %f) {
+  %f1 = alloca ptr, align 8
   %m = alloca i32, align 4
-  %i = getelementptr inbounds %Foo, ptr %f, i32 0, i32 0
+  store ptr %f, ptr %f1, align 8
+  %f.load = load ptr, ptr %f1, align 8
+  %i = getelementptr inbounds %Foo, ptr %f.load, i32 0, i32 0
   %i.load = load i32, ptr %i, align 4
   store i32 %i.load, ptr %m, align 4
   ret void

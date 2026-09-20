@@ -11,15 +11,24 @@ define i32 @main() {
 }
 
 define void @_EN4main3Foo4initE3int(ptr %this, i32 %i) {
-  %i1 = getelementptr inbounds %Foo, ptr %this, i32 0, i32 0
+  %i1 = alloca i32, align 4
   store i32 %i, ptr %i1, align 4
+  %i2 = getelementptr inbounds %Foo, ptr %this, i32 0, i32 0
+  %i.load = load i32, ptr %i1, align 4
+  store i32 %i.load, ptr %i2, align 4
   ret void
 }
 
 define void @_EN4main3Bar4initE3int3int(ptr %this, i32 %j, i32 %i) {
-  %i1 = getelementptr inbounds %Bar, ptr %this, i32 0, i32 0
-  store i32 %i, ptr %i1, align 4
-  %j2 = getelementptr inbounds %Bar, ptr %this, i32 0, i32 1
-  store i32 %j, ptr %j2, align 4
+  %j1 = alloca i32, align 4
+  %i2 = alloca i32, align 4
+  store i32 %j, ptr %j1, align 4
+  store i32 %i, ptr %i2, align 4
+  %i3 = getelementptr inbounds %Bar, ptr %this, i32 0, i32 0
+  %i.load = load i32, ptr %i2, align 4
+  store i32 %i.load, ptr %i3, align 4
+  %j4 = getelementptr inbounds %Bar, ptr %this, i32 0, i32 1
+  %j.load = load i32, ptr %j1, align 4
+  store i32 %j.load, ptr %j4, align 4
   ret void
 }

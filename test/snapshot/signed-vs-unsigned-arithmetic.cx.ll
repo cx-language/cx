@@ -1,27 +1,51 @@
 
 define void @_EN4main3fooE3int4uint(i32 %i, i32 %u) {
+  %i1 = alloca i32, align 4
+  %u2 = alloca i32, align 4
   %a = alloca i1, align 1
   %b = alloca i32, align 4
   %c = alloca i32, align 4
-  %1 = icmp slt i32 %i, %i
+  store i32 %i, ptr %i1, align 4
+  store i32 %u, ptr %u2, align 4
+  %i.load = load i32, ptr %i1, align 4
+  %i.load3 = load i32, ptr %i1, align 4
+  %1 = icmp slt i32 %i.load, %i.load3
   store i1 %1, ptr %a, align 1
-  %2 = icmp ult i32 %u, %u
+  %u.load = load i32, ptr %u2, align 4
+  %u.load4 = load i32, ptr %u2, align 4
+  %2 = icmp ult i32 %u.load, %u.load4
   store i1 %2, ptr %a, align 1
-  %3 = icmp sgt i32 %i, %i
+  %i.load5 = load i32, ptr %i1, align 4
+  %i.load6 = load i32, ptr %i1, align 4
+  %3 = icmp sgt i32 %i.load5, %i.load6
   store i1 %3, ptr %a, align 1
-  %4 = icmp ugt i32 %u, %u
+  %u.load7 = load i32, ptr %u2, align 4
+  %u.load8 = load i32, ptr %u2, align 4
+  %4 = icmp ugt i32 %u.load7, %u.load8
   store i1 %4, ptr %a, align 1
-  %5 = icmp sle i32 %i, %i
+  %i.load9 = load i32, ptr %i1, align 4
+  %i.load10 = load i32, ptr %i1, align 4
+  %5 = icmp sle i32 %i.load9, %i.load10
   store i1 %5, ptr %a, align 1
-  %6 = icmp ule i32 %u, %u
+  %u.load11 = load i32, ptr %u2, align 4
+  %u.load12 = load i32, ptr %u2, align 4
+  %6 = icmp ule i32 %u.load11, %u.load12
   store i1 %6, ptr %a, align 1
-  %7 = icmp sge i32 %i, %i
+  %i.load13 = load i32, ptr %i1, align 4
+  %i.load14 = load i32, ptr %i1, align 4
+  %7 = icmp sge i32 %i.load13, %i.load14
   store i1 %7, ptr %a, align 1
-  %8 = icmp uge i32 %u, %u
+  %u.load15 = load i32, ptr %u2, align 4
+  %u.load16 = load i32, ptr %u2, align 4
+  %8 = icmp uge i32 %u.load15, %u.load16
   store i1 %8, ptr %a, align 1
-  %9 = sdiv i32 %i, %i
+  %i.load17 = load i32, ptr %i1, align 4
+  %i.load18 = load i32, ptr %i1, align 4
+  %9 = sdiv i32 %i.load17, %i.load18
   store i32 %9, ptr %b, align 4
-  %10 = udiv i32 %u, %u
+  %u.load19 = load i32, ptr %u2, align 4
+  %u.load20 = load i32, ptr %u2, align 4
+  %10 = udiv i32 %u.load19, %u.load20
   store i32 %10, ptr %c, align 4
   ret void
 }

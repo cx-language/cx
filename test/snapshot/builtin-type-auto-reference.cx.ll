@@ -1,5 +1,7 @@
 
 define void @_EN4main3fooEP3int(ptr %ref_i) {
+  %ref_i1 = alloca ptr, align 8
+  store ptr %ref_i, ptr %ref_i1, align 8
   ret void
 }
 

@@ -18,11 +18,11 @@ define i32 @main() {
 }
 
 define void @_EN4main1fI3intEE8ArrayRefI3intE(%"ArrayRef<int>" %a) {
+  %a1 = alloca %"ArrayRef<int>", align 8
   %s = alloca i32, align 4
-  %1 = alloca %"ArrayRef<int>", align 8
-  store %"ArrayRef<int>" %a, ptr %1, align 8
-  %2 = call i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %1)
-  store i32 %2, ptr %s, align 4
+  store %"ArrayRef<int>" %a, ptr %a1, align 8
+  %1 = call i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %a1)
+  store i32 %1, ptr %s, align 4
   ret void
 }
 

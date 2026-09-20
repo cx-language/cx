@@ -27,15 +27,21 @@ define i32 @main() {
 }
 
 define void @_EN3std3BoxI3intE4initE3int(ptr %this, i32 %value) {
+  %value1 = alloca i32, align 4
+  store i32 %value, ptr %value1, align 4
   %pointer = getelementptr inbounds %"Box<int>", ptr %this, i32 0, i32 0
-  %1 = call ptr @_EN3std8allocateI3intEE3int(i32 %value)
+  %value.load = load i32, ptr %value1, align 4
+  %1 = call ptr @_EN3std8allocateI3intEE3int(i32 %value.load)
   store ptr %1, ptr %pointer, align 8
   ret void
 }
 
 define void @_EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(ptr %this, %"Box<int>" %value) {
+  %value1 = alloca %"Box<int>", align 8
+  store %"Box<int>" %value, ptr %value1, align 8
   %pointer = getelementptr inbounds %"Box<Box<int>>", ptr %this, i32 0, i32 0
-  %1 = call ptr @_EN3std8allocateI3BoxI3intEEE3BoxI3intE(%"Box<int>" %value)
+  %value.load = load %"Box<int>", ptr %value1, align 8
+  %1 = call ptr @_EN3std8allocateI3BoxI3intEEE3BoxI3intE(%"Box<int>" %value.load)
   store ptr %1, ptr %pointer, align 8
   ret void
 }
@@ -61,12 +67,17 @@ define void @_EN3std3BoxI3BoxI3intEE6deinitE(ptr %this) {
 }
 
 define void @_EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(ptr %allocation) {
-  call void @free(ptr %allocation)
+  %allocation1 = alloca ptr, align 8
+  store ptr %allocation, ptr %allocation1, align 8
+  %allocation.load = load ptr, ptr %allocation1, align 8
+  call void @free(ptr %allocation.load)
   ret void
 }
 
 define ptr @_EN3std8allocateI3BoxI3intEEE3BoxI3intE(%"Box<int>" %value) {
+  %value1 = alloca %"Box<int>", align 8
   %allocation = alloca ptr, align 8
+  store %"Box<int>" %value, ptr %value1, align 8
   %1 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (%"Box<int>", ptr null, i32 1) to i64))
   %assert.condition = icmp eq ptr %1, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
@@ -78,13 +89,16 @@ assert.fail:                                      ; preds = %0
 assert.success:                                   ; preds = %0
   store ptr %1, ptr %allocation, align 8
   %allocation.load = load ptr, ptr %allocation, align 8
-  store %"Box<int>" %value, ptr %allocation.load, align 8
-  %allocation.load1 = load ptr, ptr %allocation, align 8
-  ret ptr %allocation.load1
+  %value.load = load %"Box<int>", ptr %value1, align 8
+  store %"Box<int>" %value.load, ptr %allocation.load, align 8
+  %allocation.load2 = load ptr, ptr %allocation, align 8
+  ret ptr %allocation.load2
 }
 
 define ptr @_EN3std8allocateI3intEE3int(i32 %value) {
+  %value1 = alloca i32, align 4
   %allocation = alloca ptr, align 8
+  store i32 %value, ptr %value1, align 4
   %1 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (i32, ptr null, i32 1) to i64))
   %assert.condition = icmp eq ptr %1, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
@@ -96,13 +110,17 @@ assert.fail:                                      ; preds = %0
 assert.success:                                   ; preds = %0
   store ptr %1, ptr %allocation, align 8
   %allocation.load = load ptr, ptr %allocation, align 8
-  store i32 %value, ptr %allocation.load, align 4
-  %allocation.load1 = load ptr, ptr %allocation, align 8
-  ret ptr %allocation.load1
+  %value.load = load i32, ptr %value1, align 4
+  store i32 %value.load, ptr %allocation.load, align 4
+  %allocation.load2 = load ptr, ptr %allocation, align 8
+  ret ptr %allocation.load2
 }
 
 define void @_EN3std10deallocateIP3intEEP3int(ptr %allocation) {
-  call void @free(ptr %allocation)
+  %allocation1 = alloca ptr, align 8
+  store ptr %allocation, ptr %allocation1, align 8
+  %allocation.load = load ptr, ptr %allocation1, align 8
+  call void @free(ptr %allocation.load)
   ret void
 }
 

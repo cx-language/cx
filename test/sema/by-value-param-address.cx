@@ -1,0 +1,32 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+// Parameters are spilled to entry-block allocas so method receivers and
+// address-of alias the parameter instead of a fresh temporary per use.
+
+bool allByValue<T, I>(I it, bool(T) predicate) {
+    for ; it.hasValue(); it.increment() {
+        if !predicate(it.value()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool lessThan10(int x) { return x < 10; }
+
+int first(int[3] a) {
+    return a[0] + a[1] + a[2];
+}
+
+int bump(int x) {
+    int* p = &x;
+    *p = *p + 1;
+    return x;
+}
+
+void main() {
+    var r = Range(0, 3);
+    assert(allByValue(r.iterator(), lessThan10));
+    assert(first([1, 2, 3]) == 6);
+    assert(bump(41) == 42);
+}

@@ -6,11 +6,18 @@ int main() {
 }
 
 void _EN4main1X4initE3int3int(X* this, int a, int b) {
-    void _0 = call _EN4main1X4initE3int(X* this, int a)
+    int* a_0 = alloca int
+    int* b_0 = alloca int
+    store a to a_0
+    store b to b_0
+    int a.load = load a_0
+    void _0 = call _EN4main1X4initE3int(X* this, int a.load)
     return void
 }
 
 void _EN4main1X4initE3int(X* this, int a) {
+    int* a_0 = alloca int
+    store a to a_0
     void _0 = call _EN4main1X4initE(X* this)
     return void
 }

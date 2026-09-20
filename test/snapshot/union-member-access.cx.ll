@@ -2,8 +2,10 @@
 %U = type <{ i32 }>
 
 define i32 @_EN4main3fooE1U(%U %u) {
-  %b = extractvalue %U %u, 0
-  ret i32 %b
+  %u1 = alloca %U, align 8
+  store %U %u, ptr %u1, align 1
+  %b.load = load i32, ptr %u1, align 4
+  ret i32 %b.load
 }
 
 define i32 @main() {

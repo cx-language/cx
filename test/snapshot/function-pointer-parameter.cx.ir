@@ -4,18 +4,29 @@ void _EN4main1fE() {
 }
 
 int _EN4main2f2E3int4bool(int a, bool b) {
-    return a
+    int* a_0 = alloca int
+    bool* b_0 = alloca bool
+    store a to a_0
+    store b to b_0
+    int a.load = load a_0
+    return a.load
 }
 
 void _EN4main1gEF_4void(void()* p) {
-    void _0 = call p()
+    void()** p_0 = alloca void()*
+    store p to p_0
+    void()* p.load = load p_0
+    void _0 = call p.load()
     return void
 }
 
 void _EN4main2g2EF3int4bool_3int(int(int, bool)* p) {
+    int(int, bool)** p_0 = alloca int(int, bool)*
     int* a = alloca int
+    store p to p_0
+    int(int, bool)* p.load = load p_0
     bool _0 = !bool true
-    int _1 = call p(int 42, bool _0)
+    int _1 = call p.load(int 42, bool _0)
     int _2 = _1 + int 1
     store _2 to a
     return void

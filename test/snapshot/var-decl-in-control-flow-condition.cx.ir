@@ -58,6 +58,8 @@ int* _EN4main1hE() {
 }
 
 void _EN4main1jEP3int(int* i) {
+    int** i_0 = alloca int*
+    store i to i_0
     return void
 }
 

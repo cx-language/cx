@@ -169,6 +169,18 @@ void CGenerator::codegenSwitch(const SwitchInst* inst) {
 void CGenerator::codegenLoad(const LoadInst* inst) {
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_load");
+    if (inst->getType()->isArrayType()) {
+        // Arrays can't be assigned; copy like stores do.
+        if (!dispatchMode) {
+            codegenTempDeclaration(inst, name);
+            stream << ";\n";
+            stream.indent(4);
+        }
+        stream << "memcpy(" << name << ", ";
+        codegenInst(inst->value);
+        stream << ", sizeof(" << name << "));\n";
+        return;
+    }
     // Emit an explicit type instead of the '__auto_type' GNU extension,
     // so that the generated code can also be compiled with small,
     // strictly conforming C compilers (e.g. the one used by the web playground).

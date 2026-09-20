@@ -1,16 +1,18 @@
 
 int main(X<int> x) {
+    X<int>* x_0 = alloca X<int>
     X<bool>* a = alloca X<bool>
-    X<int>* _0 = alloca X<int>
-    store x to _0
-    X<bool> _1 = call _EN4main1XI3intE1fI4boolEE4bool(X<int>* _0, bool false)
-    store _1 to a
-    void _2 = call _EN4main1XI4boolE1gE(X<bool>* a)
+    store x to x_0
+    X<bool> _0 = call _EN4main1XI3intE1fI4boolEE4bool(X<int>* x_0, bool false)
+    store _0 to a
+    void _1 = call _EN4main1XI4boolE1gE(X<bool>* a)
     return int 0
 }
 
 X<bool> _EN4main1XI3intE1fI4boolEE4bool(X<int>* this, bool u) {
+    bool* u_0 = alloca bool
     X<bool>* x = alloca X<bool>
+    store u to u_0
     X<bool> x.load = load x
     return x.load
 }

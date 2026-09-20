@@ -6,19 +6,29 @@ int main() {
 }
 
 void _EN4main1gI3intEE3int(int t) {
-    void _0 = call _EN4main1fI3intEE3int(int t)
+    int* t_0 = alloca int
+    store t to t_0
+    int t.load = load t_0
+    void _0 = call _EN4main1fI3intEE3int(int t.load)
     return void
 }
 
 void _EN4main1gI4boolEE4bool(bool t) {
-    void _0 = call _EN4main1fI4boolEE4bool(bool t)
+    bool* t_0 = alloca bool
+    store t to t_0
+    bool t.load = load t_0
+    void _0 = call _EN4main1fI4boolEE4bool(bool t.load)
     return void
 }
 
 void _EN4main1fI3intEE3int(int t) {
+    int* t_0 = alloca int
+    store t to t_0
     return void
 }
 
 void _EN4main1fI4boolEE4bool(bool t) {
+    bool* t_0 = alloca bool
+    store t to t_0
     return void
 }

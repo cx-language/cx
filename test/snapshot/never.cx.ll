@@ -23,7 +23,10 @@ define void @_EN4main1iE() {
 }
 
 define i32 @_EN4main1iE3int(i32 %x) {
-  switch i32 %x, label %switch.default [
+  %x1 = alloca i32, align 4
+  store i32 %x, ptr %x1, align 4
+  %x.load = load i32, ptr %x1, align 4
+  switch i32 %x.load, label %switch.default [
     i32 0, label %switch.case.0
   ]
 

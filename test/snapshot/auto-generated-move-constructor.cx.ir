@@ -1,6 +1,12 @@
 
 void _EN4main3fooEP1X1X(X* p, X x) {
-    store x to p
+    X** p_0 = alloca X*
+    X* x_0 = alloca X
+    store p to p_0
+    store x to x_0
+    X* p.load = load p_0
+    X x.load = load x_0
+    store x.load to p.load
     return void
 }
 

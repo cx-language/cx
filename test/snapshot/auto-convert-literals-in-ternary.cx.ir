@@ -1,6 +1,9 @@
 
 uint8 _EN4main3fooE4bool(bool b) {
-    br b, if.then, if.else
+    bool* b_0 = alloca bool
+    store b to b_0
+    bool b.load = load b_0
+    br b.load, if.then, if.else
 
 if.then:
     br if.end(uint8 255)
