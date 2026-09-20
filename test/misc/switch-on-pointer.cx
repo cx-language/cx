@@ -2,6 +2,8 @@
 // CHECK:red
 // CHECK-NEXT:1
 // CHECK-NEXT:a
+// CHECK-NEXT:one
+// CHECK-NEXT:b
 
 enum Color {
     Red,
@@ -38,6 +40,28 @@ void baz(char* c) {
     }
 }
 
+void qux(int*? i) {
+    switch (i) {
+    case 1:
+        println("one");
+    default:
+        println("other");
+    }
+}
+
+void quux(char*? c) {
+    if (c == null) {
+        println("null");
+        return;
+    }
+    switch (c) {
+    case 'b':
+        println("b");
+    default:
+        println("other");
+    }
+}
+
 void main() {
     Color c = Color.Red;
     foo(&c);
@@ -45,4 +69,9 @@ void main() {
     bar(&i);
     char ch = 'a';
     baz(&ch);
+    int*? o = &i;
+    qux(o);
+    char ch2 = 'b';
+    char*? oc = &ch2;
+    quux(oc);
 }

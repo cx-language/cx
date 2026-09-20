@@ -1,9 +1,5 @@
 // RUN: %not %cx -typecheck %s | %FileCheck %s
 
-enum Color {
-    Red
-}
-
 enum E {
     A,
     B(int i)
@@ -12,14 +8,6 @@ enum E {
 void doublePointer(int** p) {
     // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, or enum type, got 'int**'
     switch (p) {
-    default:
-        break;
-    }
-}
-
-void optionalPointer(Color*? c) {
-    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, or enum type, got 'Color*?'
-    switch (c) {
     default:
         break;
     }

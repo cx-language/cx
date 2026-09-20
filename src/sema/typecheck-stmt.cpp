@@ -334,12 +334,24 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(*stmt.condition);
 
-    if (conditionType.isPointerType()) {
-        Type pointeeType = conditionType.getPointee();
+    Type pointerType = conditionType;
+    if (pointerType.isOptionalType() && pointerType.getWrappedType().isPointerType()) {
+        pointerType = pointerType.getWrappedType();
+    }
+
+    if (pointerType.isPointerType()) {
+        Type pointeeType = pointerType.getPointee();
         // Automatically dereference pointers to switchable values. Enums with associated values are excluded;
         // they need the address for tag/associated-value access, so dereference those explicitly (e.g. `switch (*p)`).
         bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
         if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
+            // Like other implicit unwraps, switching on an optional pointer unwraps it, trapping on null.
+            if (conditionType.isOptionalType()) {
+                if (auto unwrapped = convert(stmt.condition, pointerType)) {
+                    stmt.condition = unwrapped;
+                    conditionType = pointerType;
+                }
+            }
             if (auto dereferenced = convert(stmt.condition, pointeeType)) {
                 stmt.condition = dereferenced;
                 conditionType = pointeeType;
