@@ -1,0 +1,31 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:19: error: global variable initializer must be a constant expression
+string greeting = "hello";
+// CHECK: [[@LINE+1]]:15: error: global variable initializer must be a constant expression
+int? answer = 42;
+int x = 1;
+// CHECK: [[@LINE+1]]:9: error: global variable initializer must be a constant expression
+int y = x;
+// CHECK: [[@LINE+1]]:18: error: global variable initializer must be a constant expression
+bool both = true && false;
+// CHECK: [[@LINE+1]]:15: error: global variable initializer must be a constant expression
+int t = 1 < 2 ? 3 : 4;
+
+// These are supported: literals, constant arithmetic, sizeof, enum cases,
+// function references, addresses of mutable globals, and immutable aliases.
+int ok = 1 + 2 * 3;
+var size = sizeof(int);
+const threshold = 10;
+int limit = threshold + 1;
+int* ptr = &x;
+
+enum Color { red, green }
+var favorite = Color.red;
+
+int addOne(int n) {
+    return n + 1;
+}
+var alias = addOne;
+
+void main() {}

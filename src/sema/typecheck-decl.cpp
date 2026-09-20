@@ -445,6 +445,92 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     checkForInfiniteSize(decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
 }
 
+// Global initializers are emitted as constant expressions; anything needing runtime
+// evaluation would emit instructions outside any function and corrupt codegen.
+static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl<const VarDecl*>& seen) {
+    switch (expr.kind) {
+    case ExprKind::IntLiteralExpr:
+    case ExprKind::FloatLiteralExpr:
+    case ExprKind::BoolLiteralExpr:
+    case ExprKind::CharacterLiteralExpr:
+    case ExprKind::NullLiteralExpr:
+    case ExprKind::UndefinedLiteralExpr:
+    case ExprKind::SizeofExpr:
+        return true;
+    case ExprKind::VarExpr: {
+        auto* decl = llvm::cast<VarExpr>(expr).decl;
+        if (!decl) return true; // Unresolved references are diagnosed elsewhere, don't cascade.
+        if (llvm::isa<FunctionDecl>(decl)) return true;
+        auto* varDecl = llvm::dyn_cast<VarDecl>(decl);
+        // Immutable globals inline their initializer; mutable ones need a runtime load.
+        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && seen.insert(varDecl).second
+            && isSupportedGlobalInitializer(*varDecl->initializer, seen);
+    }
+    case ExprKind::MemberExpr:
+        return llvm::isa_and_nonnull<EnumCase>(llvm::cast<MemberExpr>(expr).decl);
+    case ExprKind::UnaryExpr: {
+        auto& unary = llvm::cast<UnaryExpr>(expr);
+        switch (unary.op) {
+        case Token::Plus:
+        case Token::Minus:
+        case Token::Tilde:
+            return isSupportedGlobalInitializer(unary.getOperand(), seen);
+        case Token::Not:
+            return unary.getOperand().type.isBool() && isSupportedGlobalInitializer(unary.getOperand(), seen);
+        case Token::And: {
+            // Addresses of globals and functions are constants, but const globals have no storage.
+            auto* varExpr = llvm::dyn_cast<VarExpr>(&unary.getOperand());
+            if (!varExpr) return false;
+            if (!varExpr->decl) return true;
+            if (auto* varDecl = llvm::dyn_cast<VarDecl>(varExpr->decl)) {
+                return varDecl->isGlobal() && varDecl->type.isMutable();
+            }
+            return llvm::isa<FunctionDecl>(varExpr->decl);
+        }
+        default:
+            return false;
+        }
+    }
+    case ExprKind::BinaryExpr: {
+        auto& binary = llvm::cast<BinaryExpr>(expr);
+        if (!isSupportedGlobalInitializer(binary.getLHS(), seen) || !isSupportedGlobalInitializer(binary.getRHS(), seen)) {
+            return false;
+        }
+        switch (binary.op) {
+        case Token::Plus:
+        case Token::Minus:
+        case Token::Star:
+        case Token::Slash:
+        case Token::Modulo:
+        case Token::And:
+        case Token::Or:
+        case Token::Xor:
+        case Token::LeftShift:
+        case Token::RightShift:
+            return expr.type.isInteger() || expr.type.isFloatingPoint() || expr.type.isChar();
+        case Token::Equal:
+        case Token::NotEqual:
+        case Token::Less:
+        case Token::LessOrEqual:
+        case Token::Greater:
+        case Token::GreaterOrEqual:
+            return expr.type.isBool();
+        default:
+            // Assignments, &&, ||, ranges, and overloaded operators need runtime code.
+            return false;
+        }
+    }
+    case ExprKind::ImplicitCastExpr: {
+        auto& cast = llvm::cast<ImplicitCastExpr>(expr);
+        // Pointer-implemented optionals need no construction, other casts need loads or branches.
+        return cast.castKind == ImplicitCastExpr::OptionalWrap && expr.type.isOptionalType() && expr.type.getWrappedType().isImplementedAsPointer()
+            && isSupportedGlobalInitializer(*cast.operand, seen);
+    }
+    default:
+        return false;
+    }
+}
+
 void Typechecker::typecheckVarDecl(VarDecl& decl) {
     if (!decl.isGlobal()) {
         localVarDecls.push_back(&decl);
@@ -493,6 +579,13 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 
     if (!decl.type.isImplicitlyCopyable()) {
         setMoved(decl.initializer, true);
+    }
+
+    if (decl.isGlobal() && decl.initializer) {
+        llvm::SmallPtrSet<const VarDecl*, 8> seen;
+        if (!isSupportedGlobalInitializer(*decl.initializer, seen)) {
+            ERROR(decl.initializer->location, "global variable initializer must be a constant expression");
+        }
     }
 }
 
