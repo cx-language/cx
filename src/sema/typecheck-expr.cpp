@@ -259,7 +259,12 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
 }
 
 Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
-    auto elements = map(expr.elements, [&](const NamedValue& namedValue) { return TupleElement{namedValue.name, typecheckExpr(*namedValue.value)}; });
+    auto elements = map(expr.elements, [&](const NamedValue& namedValue) {
+        if (namedValue.name.empty()) {
+            ERROR(namedValue.location, "anonymous tuple members are not supported yet; name each element (e.g. `(x = 1, y = 2)`)");
+        }
+        return TupleElement{namedValue.name, typecheckExpr(*namedValue.value)};
+    });
     return TupleType::get(std::move(elements));
 }
 

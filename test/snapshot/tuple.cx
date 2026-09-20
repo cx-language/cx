@@ -12,6 +12,6 @@
     return b;
 }
 
-(bool, float) g() {
-    return (true, 1);
+(bool c, float f) g() {
+    return (c = true, f = 1);
 }
