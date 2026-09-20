@@ -343,7 +343,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
         }
 
         for (auto& field : receiverTypeDecl->fields) {
-            // TODO: Only one comparison should be needed.
+            // Unqualified for implicit-receiver lookup, qualified for explicit member access.
             if (field.getName() == name || field.getQualifiedName() == name) {
                 decls.emplace_back(&field);
             }
