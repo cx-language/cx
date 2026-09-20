@@ -15,6 +15,7 @@ void main() {
     testParseInt();
     testEscape();
     testRepeat();
+    testStartsEndsWith();
 }
 
 void testStringIterator() {
@@ -157,4 +158,22 @@ void testRepeat() {
     assert("".repeat(3) == "");
     assert("abc".repeat(0) == "");
     assert("abc".repeat(1) == "abc");
+}
+
+void testStartsEndsWith() {
+    assert("abc".startsWith("a"));
+    assert("abc".startsWith("abc"));
+    assert("abc".startsWith(""));
+    assert(!("abc".startsWith("b")));
+    assert(!("abc".startsWith("abcd")));
+    assert(!("".startsWith("a")));
+    assert("".startsWith(""));
+
+    assert("abc".endsWith("c"));
+    assert("abc".endsWith("abc"));
+    assert("abc".endsWith(""));
+    assert(!("abc".endsWith("b")));
+    assert(!("abc".endsWith("zabc")));
+    assert(!("".endsWith("c")));
+    assert("".endsWith(""));
 }

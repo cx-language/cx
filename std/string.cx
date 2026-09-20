@@ -68,6 +68,32 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return size();
     }
 
+    /// Returns true if the string starts with the given prefix.
+    bool startsWith(string prefix) {
+        if prefix.size() > size() {
+            return false;
+        }
+        for index in 0..prefix.size() {
+            if this[index] != prefix[index] {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// Returns true if the string ends with the given suffix.
+    bool endsWith(string suffix) {
+        if suffix.size() > size() {
+            return false;
+        }
+        for index in 0..suffix.size() {
+            if this[size() - suffix.size() + index] != suffix[index] {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /// Returns the substring of the string starting from the given index, until the end of the string.
     string substr(int start) {
         if start < 0 || start > size() {
