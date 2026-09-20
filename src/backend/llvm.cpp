@@ -397,7 +397,8 @@ llvm::Value* LLVMGenerator::codegenCast(const CastInst* inst) {
 
     if (type->isFloatingPoint()) {
         if (sourceType->isSignedInteger()) return builder.CreateSIToFP(value, getLLVMType(type));
-        if (sourceType->isUnsignedInteger()) return builder.CreateUIToFP(value, getLLVMType(type));
+        // char zero-extends like an unsigned integer.
+        if (sourceType->isUnsignedInteger() || sourceType->isChar()) return builder.CreateUIToFP(value, getLLVMType(type));
     }
 
     return builder.CreateBitOrPointerCast(value, getLLVMType(type), inst->name);

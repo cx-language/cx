@@ -6,6 +6,7 @@
 // CHECK-NEXT:5
 // CHECK-NEXT:9999999992
 // CHECK-NEXT:3.5
+// CHECK-NEXT:65
 
 void main() {
     int x = 5;
@@ -29,4 +30,8 @@ void main() {
     float f = 1.5;
     float64 g = f + 2;
     println(g);
+
+    char c = 'A';
+    float h = c;
+    println(h);
 }
