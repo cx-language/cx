@@ -1451,7 +1451,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 auto paramDecls = getVariableCalleeParams(*variableDecl);
 
                 if (decls.size() == 1) {
-                    validateAndConvertArguments(expr, paramDecls, false, callee, expr.callee->location);
+                    validateAndConvertArguments(expr, paramDecls, false, callee, expr.callee->location, variableDecl);
                     return variableDecl;
                 }
                 if (auto match = matchArguments(expr, variableDecl, paramDecls)) {
@@ -1756,14 +1756,15 @@ std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDec
 
 void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, Location location) {
     if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(&calleeDecl)) {
-        validateAndConvertArguments(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, location);
+        validateAndConvertArguments(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, location, functionDecl);
     } else {
         auto paramDecls = getVariableCalleeParams(llvm::cast<VariableDecl>(calleeDecl));
-        validateAndConvertArguments(expr, paramDecls, false, functionName, location);
+        validateAndConvertArguments(expr, paramDecls, false, functionName, location, &calleeDecl);
     }
 }
 
-void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, Location location) {
+void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, Location location,
+                                              const Decl* calleeDecl) {
     auto result = getArgumentValidationResult(expr, params, isVariadic);
 
     // Arguments are type-checked here for error messages, but type-converted only in the success case below
@@ -1773,6 +1774,12 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         auto* param = i < params.size() ? &params[i] : nullptr;
         if (!arg) continue;
         if (!arg->value->hasType()) typecheckExpr(*arg->value, false, param ? param->type : Type());
+    }
+
+    // Point arity errors at the declaration so the source excerpt shows the expected prototype.
+    std::vector<Note> declNote;
+    if (calleeDecl && calleeDecl->getLocation().isValid()) {
+        declNote.push_back(Note{calleeDecl->getLocation(), ("'" + callee + "' declared here").str()});
     }
 
     switch (result.error) {
@@ -1802,12 +1809,13 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             if (!param.defaultValue) ++requiredParamCount;
         }
         bool hasOptionalParams = requiredParamCount != params.size();
-        REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << ((isVariadic || hasOptionalParams) ? "at least " : "")
-                                                        << (hasOptionalParams ? requiredParamCount : params.size()));
+        REPORT_ERROR_WITH_NOTES(location, declNote,
+                                "too few arguments to '" << callee << "', expected " << ((isVariadic || hasOptionalParams) ? "at least " : "")
+                                                         << (hasOptionalParams ? requiredParamCount : params.size()));
         break;
     }
     case ArgumentValidation::TooMany:
-        REPORT_ERROR(location, "too many arguments to '" << callee << "', expected " << params.size());
+        REPORT_ERROR_WITH_NOTES(location, declNote, "too many arguments to '" << callee << "', expected " << params.size());
         break;
     case ArgumentValidation::InvalidName: {
         auto& arg = expr.args[result.index];
