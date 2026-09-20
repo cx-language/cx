@@ -67,6 +67,7 @@ struct IRGenerator {
     Value* emitConstantIncrement(const UnaryExpr& expr, int value);
     Value* emitLogicalAnd(const Expr& left, const Expr& right);
     Value* emitLogicalOr(const Expr& left, const Expr& right);
+    Value* emitBoolConvertibleOperand(const Expr& expr);
     Value* emitBinaryExpr(const BinaryExpr& expr);
     void emitAssignment(const BinaryExpr& expr);
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);

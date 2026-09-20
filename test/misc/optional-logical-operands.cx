@@ -1,0 +1,54 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:narrowed
+// CHECK-NEXT:false
+// CHECK-NEXT:0
+
+// Like if conditions, && and || operands may be optionals, testing for
+// non-null. A null-checked operand is narrowed on the right side.
+
+int calls = 0;
+
+bool tick(bool v) {
+    calls++;
+    return v;
+}
+
+bool bothPresent(int? a, int? b) {
+    return a && b && a == b;
+}
+
+void main() {
+    int? o = 5;
+    int? n = null;
+    println(o && true);
+    println(n && true);
+    println(o || false);
+    println(n || false);
+    println(o && n);
+    println(o || n);
+    println(bothPresent(3, 3));
+    println(bothPresent(3, 4));
+    println(bothPresent(null, 3));
+    int x = 5;
+    int*? p = &x;
+    int*? q = null;
+    println(p && q || p);
+    println(q && p);
+    if (o && o == 5) {
+        println("narrowed");
+    }
+    println(false && tick(true));
+    println(calls);
+}

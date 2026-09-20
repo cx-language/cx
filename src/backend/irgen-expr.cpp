@@ -225,11 +225,11 @@ Value* IRGenerator::emitLogicalAnd(const Expr& left, const Expr& right) {
     auto* rhsBlock = new BasicBlock("and.rhs", insertBlock->parent);
     auto* endBlock = new BasicBlock("and.end");
 
-    Value* lhs = emitExpr(left);
+    Value* lhs = emitBoolConvertibleOperand(left);
     createCondBr(lhs, rhsBlock, endBlock, lhs);
 
     setInsertPoint(rhsBlock);
-    Value* rhs = emitExpr(right);
+    Value* rhs = emitBoolConvertibleOperand(right);
     createBr(endBlock, rhs);
 
     setInsertPoint(endBlock);
@@ -241,16 +241,26 @@ Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
     auto* rhsBlock = new BasicBlock("or.rhs", insertBlock->parent);
     auto* endBlock = new BasicBlock("or.end");
 
-    Value* lhs = emitExpr(left);
+    Value* lhs = emitBoolConvertibleOperand(left);
     createCondBr(lhs, endBlock, rhsBlock, lhs);
 
     setInsertPoint(rhsBlock);
-    Value* rhs = emitExpr(right);
+    Value* rhs = emitBoolConvertibleOperand(right);
     createBr(endBlock, rhs);
 
     setInsertPoint(endBlock);
     endBlock->parameter = new Parameter{ValueKind::Parameter, lhs->getType(), "or"};
     return endBlock->parameter;
+}
+
+Value* IRGenerator::emitBoolConvertibleOperand(const Expr& expr) {
+    auto* value = emitExpr(expr);
+    if (value->getType()->isPointerType()) {
+        return emitImplicitNullComparison(value);
+    } else if (expr.type.isOptionalType() && !expr.type.getWrappedType().isPointerType()) {
+        return emitOptionalHasValueTest(value);
+    }
+    return value;
 }
 
 Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {

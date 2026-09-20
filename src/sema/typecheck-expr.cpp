@@ -384,11 +384,12 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
         // The right side may not execute (short-circuit), so only narrowings valid on both paths survive.
         intersectNarrowings(outerNarrowings);
+        // Like if conditions, operands may be optionals, testing for non-null.
+        if ((leftType.isBool() || leftType.isOptionalType()) && (rightType.isBool() || rightType.isOptionalType())) {
+            return Type::getBool();
+        }
         if (!isBuiltinOp(op, leftType, rightType)) {
             return typecheckCallExpr(expr);
-        }
-        if (leftType.isBool() && rightType.isBool()) {
-            return Type::getBool();
         }
         throwInvalidOperandsToBinaryExpr(expr, op);
     }
