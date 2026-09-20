@@ -86,6 +86,15 @@ So in summary, cx is intended to be used over Rust for non-safety-critical
 applications where programmer productivity, ergonomics, and performance are more
 important than Rust's safety and explicitness.
 
+## Not to be confused with
+
+cx shares its name with several unrelated languages:
+
+- [CX](https://github.com/skycoin/cx), Skycoin's general-purpose language with Go-like syntax.
+- [Cx](https://github.com/fernandothedev/cx), a language that transpiles to C99.
+- [Cx](https://github.com/COMMENTERTHE9/Cx_lang), a GC-free systems language for game engines.
+- [C++/CX](https://learn.microsoft.com/en-us/cpp/cppcx/type-system-c-cx?view=msvc-170&redirectedfrom=MSDN), Microsoft's C++ extensions for the Windows Runtime.
+
 ## Further reading
 
 - [Language overview](./language-overview)

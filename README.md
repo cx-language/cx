@@ -17,6 +17,15 @@ It compiles to efficient native code via LLVM, with no garbage collection or hid
 The project is still in early stages of development: some planned features have not yet been implemented,
 existing ones are subject to change, and the documentation is scarce.
 
+## Not to be confused with
+
+cx shares its name with several unrelated languages:
+
+- [CX](https://github.com/skycoin/cx), Skycoin's general-purpose language with Go-like syntax.
+- [Cx](https://github.com/fernandothedev/cx), a language that transpiles to C99.
+- [Cx](https://github.com/COMMENTERTHE9/Cx_lang), a GC-free systems language for game engines.
+- [C++/CX](https://learn.microsoft.com/en-us/cpp/cppcx/type-system-c-cx?view=msvc-170&redirectedfrom=MSDN), Microsoft's C++ extensions for the Windows Runtime.
+
 To learn more about the language, visit the website:
 
 > [emillaine.github.io/cx](https://emillaine.github.io/cx/)
