@@ -84,6 +84,7 @@ struct Typechecker {
     void typecheckSwitchStmt(SwitchStmt& stmt);
     void warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const;
     void typecheckForStmt(ForStmt& forStmt);
+    void typecheckDoWhileStmt(DoWhileStmt& doWhileStmt);
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
     void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true);

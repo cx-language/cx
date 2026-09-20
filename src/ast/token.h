@@ -30,6 +30,7 @@ struct Token {
         Continue,
         Default,
         Defer,
+        Do,
         Else,
         Enum,
         Extern,

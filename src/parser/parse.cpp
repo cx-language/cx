@@ -1008,6 +1008,24 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     return makeAST<WhileStmt>(condition, std::move(body), location);
 }
 
+/// do-while-stmt ::= 'do' block-or-stmt 'while' expr ('\n' | ';')
+DoWhileStmt* Parser::parseDoWhileStmt(Decl* parent) {
+    ASSERT(currentToken() == Token::Do);
+    auto location = consumeToken().location;
+    auto body = parseBlockOrStmt(parent);
+    parse(Token::While);
+    bool parens = currentToken() == Token::LeftParen;
+    if (parens) consumeToken();
+    Expr* condition;
+    {
+        llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
+        condition = parseExpr();
+        if (parens) parse(Token::RightParen);
+    }
+    parseStmtTerminator();
+    return makeAST<DoWhileStmt>(condition, std::move(body), location);
+}
+
 /// for-stmt ::= 'for' for-header block-or-stmt
 /// for-header ::= var-decl ';' expr? ';' expr? |
 ///            '(' var-decl ';' expr? ';' expr? ')'
@@ -1134,7 +1152,7 @@ ContinueStmt* Parser::parseContinueStmt() {
 }
 
 /// stmt ::= var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
-///          while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt | block
+///          while-stmt | do-while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt | block
 Stmt* Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
     case Token::LeftBrace:
@@ -1147,6 +1165,8 @@ Stmt* Parser::parseStmt(Decl* parent) {
         return parseIfStmt(parent);
     case Token::While:
         return parseWhileStmt(parent);
+    case Token::Do:
+        return parseDoWhileStmt(parent);
     case Token::For:
         return parseForOrForEachStmt(parent);
     case Token::Switch:

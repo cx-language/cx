@@ -148,6 +148,12 @@ static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Str
             result.push_back(whileStmt);
             break;
         }
+        case StmtKind::DoWhileStmt: {
+            auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+            doWhileStmt->body = unrollPackLoops(doWhileStmt->body, packName, expandedNames, parentFunc, module, shadowedHere);
+            result.push_back(doWhileStmt);
+            break;
+        }
         case StmtKind::ForStmt: {
             auto* forStmt = llvm::cast<ForStmt>(stmt);
             bool nestedShadowed =

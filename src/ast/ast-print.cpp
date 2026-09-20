@@ -156,6 +156,10 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Stmt& stmt) {
         stream << "WhileStmt";
         break;
     }
+    case StmtKind::DoWhileStmt: {
+        stream << "DoWhileStmt";
+        break;
+    }
     case StmtKind::ForStmt: {
         //            auto& forStmt = llvm::cast<ForStmt>(stmt);
         stream << "ForStmt";

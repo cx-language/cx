@@ -503,6 +503,13 @@ void Finder::visitStmt(Stmt* stmt, int depth) {
             visitStmt(s, depth + 1);
         return;
     }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+        visitExpr(doWhileStmt->condition, depth + 1);
+        for (auto* s : doWhileStmt->body)
+            visitStmt(s, depth + 1);
+        return;
+    }
     case StmtKind::ForStmt: {
         auto* forStmt = llvm::cast<ForStmt>(stmt);
         if (forStmt->variable) visitStmt(forStmt->variable, depth + 1);
@@ -750,6 +757,13 @@ void ReferenceCollector::visitStmt(Stmt* stmt) {
         auto* whileStmt = llvm::cast<WhileStmt>(stmt);
         visitExpr(whileStmt->condition);
         for (auto* s : whileStmt->body)
+            visitStmt(s);
+        return;
+    }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+        visitExpr(doWhileStmt->condition);
+        for (auto* s : doWhileStmt->body)
             visitStmt(s);
         return;
     }
@@ -1243,6 +1257,13 @@ void SemanticCollector::visitStmt(Stmt* stmt) {
             visitStmt(s);
         return;
     }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+        visitExpr(doWhileStmt->condition);
+        for (auto* s : doWhileStmt->body)
+            visitStmt(s);
+        return;
+    }
     case StmtKind::ForStmt: {
         auto* forStmt = llvm::cast<ForStmt>(stmt);
         if (forStmt->variable) visitStmt(forStmt->variable);
@@ -1728,6 +1749,13 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                 auto* whileStmt = llvm::cast<WhileStmt>(stmt);
                 visitExpr(whileStmt->condition);
                 for (auto* s : whileStmt->body)
+                    visitStmt(s);
+                return;
+            }
+            case StmtKind::DoWhileStmt: {
+                auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+                visitExpr(doWhileStmt->condition);
+                for (auto* s : doWhileStmt->body)
                     visitStmt(s);
                 return;
             }

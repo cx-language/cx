@@ -14,6 +14,7 @@ enum class StmtKind {
     IfStmt,
     SwitchStmt,
     WhileStmt,
+    DoWhileStmt,
     ForStmt,
     ForEachStmt,
     BreakStmt,
@@ -108,6 +109,16 @@ struct WhileStmt : Stmt {
     : Stmt(StmtKind::WhileStmt), condition(condition), body(std::move(body)), location(location) {}
     Stmt* lower();
     static bool classof(const Stmt* s) { return s->kind == StmtKind::WhileStmt; }
+
+    Expr* condition;
+    std::vector<Stmt*> body;
+    Location location;
+};
+
+struct DoWhileStmt : Stmt {
+    DoWhileStmt(Expr* condition, std::vector<Stmt*>&& body, Location location)
+    : Stmt(StmtKind::DoWhileStmt), condition(condition), body(std::move(body)), location(location) {}
+    static bool classof(const Stmt* s) { return s->kind == StmtKind::DoWhileStmt; }
 
     Expr* condition;
     std::vector<Stmt*> body;

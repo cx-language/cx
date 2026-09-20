@@ -252,6 +252,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "continue",
         "default",
         "defer",
+        "do",
         "else",
         "enum",
         "extern",

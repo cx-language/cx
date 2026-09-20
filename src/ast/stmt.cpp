@@ -8,6 +8,7 @@ using namespace cx;
 bool Stmt::isBreakable() const {
     switch (kind) {
     case StmtKind::WhileStmt:
+    case StmtKind::DoWhileStmt:
     case StmtKind::ForStmt:
     case StmtKind::ForEachStmt:
     case StmtKind::SwitchStmt:
@@ -20,6 +21,7 @@ bool Stmt::isBreakable() const {
 bool Stmt::isContinuable() const {
     switch (kind) {
     case StmtKind::WhileStmt:
+    case StmtKind::DoWhileStmt:
     case StmtKind::ForStmt:
     case StmtKind::ForEachStmt:
         return true;
@@ -75,6 +77,12 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto condition = whileStmt->condition->instantiate(genericArgs);
         auto body = ::instantiate(whileStmt->body, genericArgs);
         return makeAST<WhileStmt>(condition, std::move(body), whileStmt->location);
+    }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhileStmt = llvm::cast<DoWhileStmt>(this);
+        auto condition = doWhileStmt->condition->instantiate(genericArgs);
+        auto body = ::instantiate(doWhileStmt->body, genericArgs);
+        return makeAST<DoWhileStmt>(condition, std::move(body), doWhileStmt->location);
     }
     case StmtKind::ForStmt: {
         auto* forStmt = llvm::cast<ForStmt>(this);

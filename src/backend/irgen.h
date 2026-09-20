@@ -97,6 +97,8 @@ struct IRGenerator {
     void emitIfStmt(const IfStmt& ifStmt);
     void emitSwitchStmt(const SwitchStmt& switchStmt);
     void emitForStmt(const ForStmt& forStmt);
+    void emitDoWhileStmt(const DoWhileStmt& doWhileStmt);
+    Value* emitLoopConditionValue(const Expr& condition);
     void emitBreakStmt(const BreakStmt&);
     void emitContinueStmt(const ContinueStmt&);
     Value* emitAssignmentLHS(const Expr& lhs, bool skipDestructor);

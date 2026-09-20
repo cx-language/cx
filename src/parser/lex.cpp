@@ -244,6 +244,7 @@ static const llvm::StringMap<Token::Kind> keywords = {
     {"continue", Token::Continue},
     {"default", Token::Default},
     {"defer", Token::Defer},
+    {"do", Token::Do},
     {"else", Token::Else},
     {"enum", Token::Enum},
     {"extern", Token::Extern},

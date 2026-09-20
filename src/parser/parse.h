@@ -43,6 +43,7 @@ struct ExprStmt;
 struct DeferStmt;
 struct IfStmt;
 struct WhileStmt;
+struct DoWhileStmt;
 struct ForStmt;
 struct ForEachStmt;
 struct SwitchStmt;
@@ -129,6 +130,7 @@ private:
     DeferStmt* parseDeferStmt();
     Stmt* parseIfStmt(Decl* parent);
     WhileStmt* parseWhileStmt(Decl* parent);
+    DoWhileStmt* parseDoWhileStmt(Decl* parent);
     Stmt* parseForOrForEachStmt(Decl* parent);
     SwitchStmt* parseSwitchStmt(Decl* parent);
     BreakStmt* parseBreakStmt();

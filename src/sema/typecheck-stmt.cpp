@@ -178,6 +178,13 @@ static void collectAssignedNames(const Stmt* stmt, llvm::StringSet<>& names) {
             collectAssignedNames(bodyStmt, names);
         return;
     }
+    case StmtKind::DoWhileStmt: {
+        auto& doWhileStmt = llvm::cast<DoWhileStmt>(*stmt);
+        collectAssignedNames(*doWhileStmt.condition, names);
+        for (auto& bodyStmt : doWhileStmt.body)
+            collectAssignedNames(bodyStmt, names);
+        return;
+    }
     case StmtKind::ForStmt: {
         auto& forStmt = llvm::cast<ForStmt>(*stmt);
         if (forStmt.variable) collectAssignedNames(forStmt.variable, names);
@@ -548,15 +555,42 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
     dropNarrowingsForNames(assignedNames);
 }
 
+void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
+    // Like for statements, assignments in the condition or body execute on later
+    // iterations, so narrowings for variables assigned there don't hold after the loop.
+    // Unlike while, the body runs before the first check, so the condition's
+    // narrowings don't apply to the body.
+    llvm::StringSet<> assignedNames;
+    collectAssignedNames(*doWhileStmt.condition, assignedNames);
+    for (auto& stmt : doWhileStmt.body)
+        collectAssignedNames(stmt, assignedNames);
+    NarrowMap outerNarrowings = narrowedTypes;
+    dropNarrowingsForNames(assignedNames);
+
+    Type conditionType = typecheckExpr(*doWhileStmt.condition);
+    typecheckImplicitlyBoolConvertibleExpr(conditionType, doWhileStmt.condition->location);
+
+    currentControlStmts.push_back(&doWhileStmt);
+
+    for (auto& stmt : doWhileStmt.body) {
+        typecheckStmt(stmt);
+    }
+
+    currentControlStmts.pop_back();
+
+    narrowedTypes = outerNarrowings;
+    dropNarrowingsForNames(assignedNames);
+}
+
 void Typechecker::typecheckBreakStmt(BreakStmt& breakStmt) {
     if (llvm::none_of(currentControlStmts, [](const Stmt* stmt) { return stmt->isBreakable(); })) {
-        ERROR(breakStmt.location, "'break' is only allowed inside 'while', 'for', and 'switch' statements");
+        ERROR(breakStmt.location, "'break' is only allowed inside 'while', 'do-while', 'for', and 'switch' statements");
     }
 }
 
 void Typechecker::typecheckContinueStmt(ContinueStmt& continueStmt) {
     if (llvm::none_of(currentControlStmts, [](const Stmt* stmt) { return stmt->isContinuable(); })) {
-        ERROR(continueStmt.location, "'continue' is only allowed inside 'while' and 'for' statements");
+        ERROR(continueStmt.location, "'continue' is only allowed inside 'while', 'do-while', and 'for' statements");
     }
 }
 
@@ -598,6 +632,9 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
             typecheckStmt(stmt);
             break;
         }
+        case StmtKind::DoWhileStmt:
+            typecheckDoWhileStmt(llvm::cast<DoWhileStmt>(*stmt));
+            break;
         case StmtKind::ForStmt:
             typecheckForStmt(llvm::cast<ForStmt>(*stmt));
             break;

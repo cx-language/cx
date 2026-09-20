@@ -112,6 +112,38 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
     setInsertPoint(end);
 }
 
+Value* IRGenerator::emitLoopConditionValue(const Expr& condition) {
+    auto* conditionValue = emitExpr(condition);
+    if (conditionValue->getType()->isPointerType()) {
+        conditionValue = emitImplicitNullComparison(conditionValue);
+    } else if (condition.type.isOptionalType() && !condition.type.getWrappedType().isPointerType()) {
+        conditionValue = emitOptionalHasValueTest(conditionValue);
+    }
+    return conditionValue;
+}
+
+void IRGenerator::emitDoWhileStmt(const DoWhileStmt& doWhileStmt) {
+    ASSERT(doWhileStmt.condition);
+    auto* function = insertBlock->parent;
+    auto* body = new BasicBlock("loop.body", function);
+    auto* condition = new BasicBlock("loop.condition");
+    auto* end = new BasicBlock("loop.end", function);
+
+    breakTargets.push_back(end);
+    continueTargets.push_back(condition);
+    createBr(body);
+
+    setInsertPoint(body);
+    emitBlock(doWhileStmt.body, condition);
+
+    setInsertPoint(condition);
+    createCondBr(emitLoopConditionValue(*doWhileStmt.condition), body, end);
+
+    breakTargets.pop_back();
+    continueTargets.pop_back();
+    setInsertPoint(end);
+}
+
 void IRGenerator::emitForStmt(const ForStmt& forStmt) {
     if (forStmt.variable) {
         for (auto* decl : forStmt.variable->decls) {
@@ -132,13 +164,7 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
 
     setInsertPoint(condition);
     if (forStmt.condition) {
-        auto* conditionValue = emitExpr(*forStmt.condition);
-        if (conditionValue->getType()->isPointerType()) {
-            conditionValue = emitImplicitNullComparison(conditionValue);
-        } else if (forStmt.condition->type.isOptionalType() && !forStmt.condition->type.getWrappedType().isPointerType()) {
-            conditionValue = emitOptionalHasValueTest(conditionValue);
-        }
-        createCondBr(conditionValue, body, end);
+        createCondBr(emitLoopConditionValue(*forStmt.condition), body, end);
     } else {
         createBr(body);
     }
@@ -197,6 +223,9 @@ void IRGenerator::emitStmt(const Stmt& stmt) {
         break;
     case StmtKind::WhileStmt:
         llvm_unreachable("WhileStmt should be lowered into a ForStmt");
+        break;
+    case StmtKind::DoWhileStmt:
+        emitDoWhileStmt(llvm::cast<DoWhileStmt>(stmt));
         break;
     case StmtKind::ForStmt:
         emitForStmt(llvm::cast<ForStmt>(stmt));
