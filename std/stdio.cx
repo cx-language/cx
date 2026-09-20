@@ -72,6 +72,18 @@ void print(char[*]? cString) {
 }
 
 /// Prints the given values followed by a newline.
+///
+/// Copyable arguments pass by value so that a char prints as a single character
+/// instead of decaying to a C string in print(). Calls with non-Copyable
+/// arguments use the pointer overload below.
+void println<T: Copyable>(T... args) {
+    for arg in args {
+        print(arg);
+    }
+    print('\n');
+}
+
+/// Prints the given values followed by a newline.
 void println<T: Printable>(T*... args) {
     for arg in args {
         print(arg);

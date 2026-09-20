@@ -7,28 +7,4 @@ int main() {
 }
 
 void _EN3std5printI3intEE3int(int value) {
-    int* value_0 = alloca int
-    StringBuffer* s = alloca StringBuffer
-    store value to value_0
-    StringBuffer _0 = call _EN3std3int8toStringE(int* value_0)
-    store _0 to s
-    int _1 = call _EN3std12StringBuffer4sizeE(StringBuffer* s)
-    char* _2 = call _EN3std12StringBuffer4dataE(StringBuffer* s)
-    int _3 = call printf(char* "%.*s", int _1, char* _2)
-    void _4 = call _EN3std12StringBuffer6deinitE(StringBuffer* s)
-    return void
-}
-
-void _EN3std12StringBuffer6deinitE(StringBuffer* this) {
-}
-
-StringBuffer _EN3std3int8toStringE(int* this) {
-}
-
-extern int printf(char*)
-
-int _EN3std12StringBuffer4sizeE(StringBuffer* this) {
-}
-
-char* _EN3std12StringBuffer4dataE(StringBuffer* this) {
 }
