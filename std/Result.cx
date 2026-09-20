@@ -1,0 +1,28 @@
+/// The result of an operation that can fail: either success (`Ok`) holding the produced value,
+/// or failure (`Err`) holding the error.
+enum Result<T, E> {
+    Ok(T value),
+    Err(E error),
+}
+
+/// Returns the success value, aborting with the error if the result is `Err`.
+T unwrap<T, E: Printable>(Result<T, E>* result) {
+    return switch *result {
+        case Ok value: value.value,
+        case Err error: abort("called unwrap() on Err: ", error.error),
+    };
+}
+
+/// Prints the given result.
+void print<T: Printable, E: Printable>(Result<T, E>* result) {
+    switch *result {
+        case Ok value:
+            print("Ok(");
+            print(value.value);
+            print(")");
+        case Err error:
+            print("Err(");
+            print(error.error);
+            print(")");
+    }
+}

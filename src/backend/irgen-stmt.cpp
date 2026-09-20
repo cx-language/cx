@@ -1,4 +1,5 @@
 #include "irgen.h"
+#include "../driver/driver.h"
 
 using namespace cx;
 
@@ -88,10 +89,56 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
     }
 
     setInsertPoint(defaultBlock);
-    emitBlock(switchStmt.defaultStmts, end);
+    bool checkEmitted = false;
+    if (switchStmt.defaultStmts.empty()) {
+        llvm::SmallVector<Expr*, 8> caseValues;
+        for (auto& switchCase : switchStmt.cases) {
+            caseValues.push_back(switchCase.value);
+        }
+        checkEmitted = emitEnumSwitchCheck(*switchStmt.condition, caseValues, *switchInst, end);
+    }
+    if (!checkEmitted) {
+        emitBlock(switchStmt.defaultStmts, end);
+    }
 
     breakTargets.pop_back();
     setInsertPoint(end);
+}
+
+// Emits the safety check for an enum switch without a default: values that are not a tag
+// of the enum trap with an error in safe modes, and are assumed impossible in release-fast
+// mode. Returns false when the check doesn't apply, in which case the caller falls through
+// to the end block as before.
+bool IRGenerator::emitEnumSwitchCheck(const Expr& condition, llvm::ArrayRef<Expr*> caseValues, SwitchInst& switchInst, BasicBlock* end) {
+    auto* enumDecl = llvm::dyn_cast_or_null<EnumDecl>(condition.type.getDecl());
+    if (!enumDecl) return false;
+
+    llvm::SmallVector<llvm::APSInt, 8> handledTags;
+    for (auto* value : caseValues) {
+        auto* memberExpr = llvm::dyn_cast<MemberExpr>(value);
+        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+        if (!enumCase || enumCase->getEnumDecl() != enumDecl) return false;
+        auto* tag = llvm::dyn_cast<IntLiteralExpr>(enumCase->value);
+        if (!tag) return false;
+        handledTags.push_back(tag->value);
+    }
+
+    // Unhandled but valid values fall through to the end block; only values that are
+    // not a tag of the enum reach the default block.
+    for (auto& enumCase : enumDecl->cases) {
+        auto* tag = llvm::cast<IntLiteralExpr>(enumCase.value);
+        if (llvm::none_of(handledTags, [&](auto& handled) { return handled == tag->value; })) {
+            switchInst.cases.emplace_back(emitExpr(*enumCase.value), end);
+        }
+    }
+
+    if (options.mode == BuildMode::ReleaseFast) {
+        createUnreachable();
+    } else {
+        std::string message = "invalid value in switch over enum '" + enumDecl->getName().str() + "'";
+        emitAbortWithMessage(message, condition.location);
+    }
+    return true;
 }
 
 void IRGenerator::emitForStmt(const ForStmt& forStmt) {

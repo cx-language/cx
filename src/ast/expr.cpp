@@ -90,6 +90,12 @@ bool Expr::isConstant() const {
     case ExprKind::IfExpr:
         return llvm::cast<IfExpr>(this)->condition->isConstant() && llvm::cast<IfExpr>(this)->thenExpr->isConstant()
             && llvm::cast<IfExpr>(this)->elseExpr->isConstant();
+    case ExprKind::SwitchExpr: {
+        auto* switchExpr = llvm::cast<SwitchExpr>(this);
+        if (!switchExpr->condition->isConstant()) return false;
+        if (switchExpr->defaultExpr && !switchExpr->defaultExpr->isConstant()) return false;
+        return llvm::all_of(switchExpr->arms, [](auto& arm) { return arm.value->isConstant() && arm.expr->isConstant(); });
+    }
     }
 
     llvm_unreachable("all cases handled");
@@ -114,6 +120,7 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         return llvm::cast<BinaryExpr>(this)->getConstantIntegerValue();
     case ExprKind::SizeofExpr:
     case ExprKind::IfExpr:
+    case ExprKind::SwitchExpr:
         llvm_unreachable("unimplemented");
     default:
         llvm_unreachable("not a constant integer");
@@ -240,6 +247,19 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto thenExpr = ifExpr->thenExpr->instantiate(genericArgs);
         auto elseExpr = ifExpr->elseExpr->instantiate(genericArgs);
         return makeAST<IfExpr>(condition, thenExpr, elseExpr, ifExpr->location);
+    }
+    case ExprKind::SwitchExpr: {
+        auto* switchExpr = llvm::cast<SwitchExpr>(this);
+        auto condition = switchExpr->condition->instantiate(genericArgs);
+        std::vector<SwitchExprArm> arms;
+        for (auto& arm : switchExpr->arms) {
+            auto value = arm.value->instantiate(genericArgs);
+            auto associatedValue = arm.associatedValue ? llvm::cast<VarDecl>(arm.associatedValue->instantiate(genericArgs, {})) : nullptr;
+            auto armExpr = arm.expr->instantiate(genericArgs);
+            arms.push_back(SwitchExprArm(value, associatedValue, armExpr));
+        }
+        auto defaultExpr = switchExpr->defaultExpr ? switchExpr->defaultExpr->instantiate(genericArgs) : nullptr;
+        return makeAST<SwitchExpr>(condition, std::move(arms), defaultExpr, switchExpr->location);
     }
     case ExprKind::ImplicitCastExpr: {
         auto implicitCastExpr = llvm::cast<ImplicitCastExpr>(this);

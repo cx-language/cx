@@ -198,7 +198,9 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
     }
     case StmtKind::SwitchStmt: {
         auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
-        return llvm::all_of(switchStmt.cases, [](SwitchCase& c) { return allPathsReturn(c.stmts); }) && allPathsReturn(switchStmt.defaultStmts);
+        if (!llvm::all_of(switchStmt.cases, [](SwitchCase& c) { return allPathsReturn(c.stmts); })) return false;
+        if (switchStmt.defaultStmts.empty()) return switchStmt.coversAllEnumCases;
+        return allPathsReturn(switchStmt.defaultStmts);
     }
     default:
         return false;

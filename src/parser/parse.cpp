@@ -717,6 +717,9 @@ Expr* Parser::parsePostfixExpr() {
     case Token::Undefined:
         expr = parseUndefinedLiteral();
         break;
+    case Token::Switch:
+        expr = parseSwitchExpr();
+        break;
     default:
         unexpectedToken(currentToken());
         break;
@@ -1010,10 +1013,28 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
     }
 }
 
+/// case-header ::= 'case' expr identifier? ':'
+std::pair<Expr*, VarDecl*> Parser::parseSwitchCaseHeader(Decl* parent) {
+    ASSERT(currentToken() == Token::Case);
+    consumeToken();
+    auto value = parseExpr();
+
+    VarDecl* associatedValue = nullptr;
+    if (currentToken() == Token::Identifier) {
+        auto name = parse(Token::Identifier);
+        // TODO: UndefinedLiteralExpr as initializer is a hack, should be nullptr.
+        associatedValue = makeAST<VarDecl>(Type(), name.getString().str(), makeAST<UndefinedLiteralExpr>(name.location), parent, AccessLevel::None,
+                                           *currentModule, name.location);
+    }
+
+    parse(Token::Colon);
+    return {value, associatedValue};
+}
+
 /// switch-stmt ::= 'switch' expr '{' cases default-case? '}'
 /// cases ::= case | case cases
-/// case ::= 'case' expr identifier? ':' stmt+
-/// default-case ::= 'default' ':' stmt+
+/// case ::= case-header stmt*
+/// default-case ::= 'default' ':' stmt*
 SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
     ASSERT(currentToken() == Token::Switch);
     consumeToken();
@@ -1029,18 +1050,7 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
 
     while (true) {
         if (currentToken() == Token::Case) {
-            consumeToken();
-            auto value = parseExpr();
-
-            VarDecl* associatedValue = nullptr;
-            if (currentToken() == Token::Identifier) {
-                auto name = parse(Token::Identifier);
-                // TODO: UndefinedLiteralExpr as initializer is a hack, should be nullptr.
-                associatedValue = makeAST<VarDecl>(Type(), name.getString().str(), makeAST<UndefinedLiteralExpr>(name.location), parent, AccessLevel::None,
-                                                   *currentModule, name.location);
-            }
-
-            parse(Token::Colon);
+            auto [value, associatedValue] = parseSwitchCaseHeader(parent);
             auto stmts = parseStmtsUntilOneOf(Token::Case, Token::Default, Token::RightBrace, parent);
             cases.push_back(SwitchCase(value, associatedValue, std::move(stmts)));
         } else if (currentToken() == Token::Default) {
@@ -1060,6 +1070,55 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
 
     consumeToken();
     return makeAST<SwitchStmt>(condition, std::move(cases), std::move(defaultStmts));
+}
+
+/// switch-expr ::= 'switch' expr '{' arms default-arm? '}'
+/// arms ::= arm | arm arms
+/// arm ::= case-header expr ','?
+/// default-arm ::= 'default' ':' expr ','?
+SwitchExpr* Parser::parseSwitchExpr() {
+    ASSERT(currentToken() == Token::Switch);
+    auto location = getCurrentLocation();
+    consumeToken();
+    auto condition = parseExpr();
+    parse(Token::LeftBrace);
+    std::vector<SwitchExprArm> arms;
+    Expr* defaultExpr = nullptr;
+    bool defaultSeen = false;
+
+    while (true) {
+        if (currentToken() == Token::Case) {
+            // Expression parsing has no enclosing declaration; the binding's parent is set during typechecking.
+            auto [value, associatedValue] = parseSwitchCaseHeader(nullptr);
+            if (currentToken().is({Token::Case, Token::Default, Token::RightBrace})) {
+                ERROR(getCurrentLocation(), "switch expression case must have a value");
+            }
+            auto armExpr = parseExpr();
+            if (currentToken() == Token::Comma) consumeToken();
+            parseStmtTerminator("in switch expression case");
+            arms.push_back(SwitchExprArm(value, associatedValue, armExpr));
+        } else if (currentToken() == Token::Default) {
+            if (defaultSeen) {
+                ERROR(getCurrentLocation(), "switch-expression may only contain one 'default' case");
+            }
+            consumeToken();
+            parse(Token::Colon);
+            if (currentToken().is({Token::Case, Token::Default, Token::RightBrace})) {
+                ERROR(getCurrentLocation(), "switch expression default case must have a value");
+            }
+            defaultExpr = parseExpr();
+            if (currentToken() == Token::Comma) consumeToken();
+            parseStmtTerminator("in switch expression default case");
+            defaultSeen = true;
+        } else {
+            ERROR(getCurrentLocation(), "expected 'case' or 'default'");
+        }
+
+        if (currentToken() == Token::RightBrace) break;
+    }
+
+    consumeToken();
+    return makeAST<SwitchExpr>(condition, std::move(arms), defaultExpr, location);
 }
 
 /// break-stmt ::= 'break' ('\n' | ';')

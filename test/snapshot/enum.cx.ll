@@ -1,5 +1,6 @@
 
 @x = private global i32 0
+@0 = private unnamed_addr constant [56 x i8] c"invalid value in switch over enum 'A' at enum.cx:11:13\0A\00", align 1
 
 define i32 @main() {
   %foo = alloca i32, align 4
@@ -43,8 +44,8 @@ switch.case.2:                                    ; preds = %if.end4
   ret i32 0
 
 switch.default:                                   ; preds = %if.end4
-  br label %switch.end
-
-switch.end:                                       ; preds = %switch.default
-  ret i32 0
+  call void @_EN3std10assertFailEP4char(ptr @0)
+  unreachable
 }
+
+declare void @_EN3std10assertFailEP4char(ptr)

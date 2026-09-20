@@ -5,8 +5,8 @@ enum Shape {
 }
 
 void main() {
-    Shape s = Shape.Circle(radius = 2);
-    switch (s) {
+    Shape s = Circle(2);
+    switch s {
         case Circle c:
             println("circle: ", 3.14 * c.radius * c.radius);
         case Rect r:

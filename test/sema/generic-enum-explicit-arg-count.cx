@@ -2,14 +2,14 @@
 
 // CHECK-NOT: generic-enum-explicit-arg-count.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
-enum Result<T> {
+enum Outcome<T> {
     Ok(T value),
     Err(int code),
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:33: error: too many generic arguments to 'Result', expected 1
-    var x = Result.Ok<int, bool>(value = 1);
+    // CHECK: [[@LINE+1]]:34: error: too many generic arguments to 'Outcome', expected 1
+    var x = Outcome.Ok<int, bool>(value = 1);
 }
 
 // CHECK-NOT: generic-enum-explicit-arg-count.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

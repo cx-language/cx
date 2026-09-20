@@ -9,6 +9,9 @@
 using namespace cx;
 
 Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
+    if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(expr.decl)) {
+        return emitEnumCase(*enumCase, {});
+    }
     return getValue(expr.decl);
 }
 
@@ -366,14 +369,18 @@ void IRGenerator::emitAssert(Value* condition, const Expr* expr, Location locati
     auto* function = insertBlock->parent;
     auto* failBlock = new BasicBlock((name + ".fail").str(), function);
     auto* successBlock = new BasicBlock((name + ".success").str(), function);
-    auto* assertFail = getFunction(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("assertFail")));
     createCondBr(condition, failBlock, successBlock);
     setInsertPoint(failBlock);
+    emitAbortWithMessage(message, location);
+    setInsertPoint(successBlock);
+}
+
+void IRGenerator::emitAbortWithMessage(llvm::StringRef message, Location location) {
+    auto* assertFail = getFunction(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("assertFail")));
     auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":", std::to_string(location.line), ":",
                                                std::to_string(location.column), "\n");
     createCall(assertFail, createGlobalStringPtr(messageAndLocation), nullptr);
     createUnreachable();
-    setInsertPoint(successBlock);
 }
 
 Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements) {
@@ -684,6 +691,73 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
     return endIfBlock->parameter;
 }
 
+Value* IRGenerator::emitSwitchExpr(const SwitchExpr& expr) {
+    Value* enumValue = nullptr;
+    Value* condition = emitExprOrEnumTag(*expr.condition, &enumValue);
+
+    // Like emitIfExpr, leave blocks unparented so setInsertPoint adopts them in emission
+    // order; nested switch expressions then lay out before the outer end block, which the
+    // block-parameter lowering requires.
+    auto* insertBlockBackup = insertBlock;
+    auto caseIndex = 0;
+
+    auto cases = map(expr.arms, [&](const SwitchExprArm& arm) {
+        auto* value = emitExprOrEnumTag(*arm.value, nullptr);
+        auto* block = new BasicBlock("switch.case." + std::to_string(caseIndex++));
+        return std::make_pair(value, block);
+    });
+
+    setInsertPoint(insertBlockBackup);
+    auto* defaultBlock = new BasicBlock("switch.default");
+    auto* end = new BasicBlock("switch.end");
+    auto* switchInst = createSwitch(condition, defaultBlock);
+
+    auto casesIterator = cases.begin();
+    for (auto& arm : expr.arms) {
+        auto* value = casesIterator->first;
+        auto* block = casesIterator->second;
+        setInsertPoint(block);
+
+        if (auto* associatedValue = arm.associatedValue) {
+            auto type = associatedValue->type.getPointerTo();
+            auto* associatedValuePtr = createCast(createGEP(enumValue, 1), type, associatedValue->getName());
+            setLocalValue(associatedValuePtr, associatedValue);
+        }
+
+        // Never arms diverge, so they terminate the block instead of branching out with a value.
+        if (arm.expr->type.isNeverType()) {
+            emitExpr(*arm.expr);
+            createUnreachable();
+        } else {
+            createBr(end, emitExpr(*arm.expr));
+        }
+        switchInst->cases.emplace_back(value, block);
+        ++casesIterator;
+    }
+
+    setInsertPoint(defaultBlock);
+    if (expr.defaultExpr) {
+        if (expr.defaultExpr->type.isNeverType()) {
+            emitExpr(*expr.defaultExpr);
+            createUnreachable();
+        } else {
+            createBr(end, emitExpr(*expr.defaultExpr));
+        }
+    } else {
+        llvm::SmallVector<Expr*, 8> caseValues;
+        for (auto& arm : expr.arms) {
+            caseValues.push_back(arm.value);
+        }
+        // The typechecker guarantees an exhaustive enum switch here, so the check always applies.
+        bool checkEmitted = emitEnumSwitchCheck(*expr.condition, caseValues, *switchInst, end);
+        ASSERT(checkEmitted);
+    }
+
+    setInsertPoint(end);
+    end->parameter = new Parameter{ValueKind::Parameter, getIRType(expr.type), "switch.result"};
+    return end->parameter;
+}
+
 Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
     switch (expr.castKind) {
     case ImplicitCastExpr::OptionalWrap:
@@ -749,6 +823,8 @@ Value* IRGenerator::emitPlainExpr(const Expr& expr) {
         return emitLambdaExpr(llvm::cast<LambdaExpr>(expr));
     case ExprKind::IfExpr:
         return emitIfExpr(llvm::cast<IfExpr>(expr));
+    case ExprKind::SwitchExpr:
+        return emitSwitchExpr(llvm::cast<SwitchExpr>(expr));
     case ExprKind::ImplicitCastExpr:
         return emitImplicitCastExpr(llvm::cast<ImplicitCastExpr>(expr));
     case ExprKind::VarDeclExpr:

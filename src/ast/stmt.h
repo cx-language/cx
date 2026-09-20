@@ -101,6 +101,7 @@ struct SwitchStmt : Stmt {
     Expr* condition;
     std::vector<SwitchCase> cases;
     std::vector<Stmt*> defaultStmts;
+    bool coversAllEnumCases = false;
 };
 
 struct WhileStmt : Stmt {

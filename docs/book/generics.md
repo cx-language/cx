@@ -44,8 +44,8 @@ enum Opt<T> {
 }
 
 void main() {
-    var present = Opt.Some(value = 1);
-    Opt<int> absent = Opt.None;
+    var present = Opt.Some(1);
+    Opt<int> absent = None;
 }
 ```
 

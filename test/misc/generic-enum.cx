@@ -6,7 +6,7 @@ enum Opt<T> {
     None,
 }
 
-enum Result<T> {
+enum Outcome<T> {
     Ok(T value),
     Err(int code),
 }
@@ -24,7 +24,7 @@ int main() {
     // Generic arguments inferred from associated values.
     var inferred = Opt.Some(value = 1);
     // Explicit generic arguments.
-    var ok = Result.Ok<int>(value = 2);
+    var ok = Outcome.Ok<int>(value = 2);
     // Generic arguments from the declared type. Unit cases and cases whose
     // associated values don't mention the parameter can't be inferred.
     Opt<int> none = Opt.None;
@@ -32,7 +32,7 @@ int main() {
     var explicitNone = Opt.None<int>();
     // A unit case resolves through an outer optional.
     Opt<int>? maybeNone = Opt.None;
-    Result<int> err = Result.Err(code = 5);
+    Outcome<int> err = Outcome.Err(code = 5);
     Either<int, bool> either = Either.Right(value = true);
     // Distinct instantiations of the same enum coexist.
     var flag = Opt.Some(value = false);
@@ -56,9 +56,9 @@ int main() {
     }
 
     switch (err) {
-        case Result.Ok success:
+        case Outcome.Ok success:
             return 7;
-        case Result.Err failure:
+        case Outcome.Err failure:
             if (failure.code != 5) { return 8; }
     }
 

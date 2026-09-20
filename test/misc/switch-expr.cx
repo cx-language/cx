@@ -1,0 +1,111 @@
+// RUN: check_exit_status 0 %cx run %s
+// RUN: check_exit_status 0 %cx run --backend=c %s
+
+enum Outcome {
+    Ok(int value),
+    Err(int code),
+    Pending,
+}
+
+int exhaustive(Outcome* o) {
+    return switch *o {
+        case Ok value: value.value,
+        case Err: -1,
+        case Pending: 0,
+    };
+}
+
+int withNever(Outcome* o) {
+    return switch *o {
+        case Ok value: value.value,
+        case Err error: abort("code ", error.code),
+        case Pending: 0,
+    };
+}
+
+int withNeverDefault(int n) {
+    return switch n {
+        case 0: 1,
+        default: abort("nope"),
+    };
+}
+
+string classify(int n) {
+    return switch n {
+        case 0: "zero",
+        default: "many",
+    };
+}
+
+int nested(Outcome* o) {
+    return switch *o {
+        case Ok value: switch value.value {
+            case 0: 100,
+            default: 200,
+        },
+        case Err: -1,
+        case Pending: 0,
+    };
+}
+
+// The commas after the arm expressions are optional.
+int? orNull(Outcome* o) {
+    return switch *o {
+        case Ok value: value.value
+        case Err: null
+        case Pending: null
+    };
+}
+
+T pick<T>(Outcome* o, T a, T b) {
+    return switch *o {
+        case Ok: a,
+        case Err: b,
+        case Pending: a,
+    };
+}
+
+int takesInt(int x) {
+    return x * 2;
+}
+
+void main() {
+    var a = Outcome.Ok(value = 7);
+    var b = Outcome.Err(code = 1);
+    var c = Outcome.Pending;
+    assert(exhaustive(a) == 7);
+    assert(exhaustive(b) == -1);
+    assert(exhaustive(c) == 0);
+    assert(withNever(a) == 7);
+    assert(withNeverDefault(0) == 1);
+    assert(classify(0) == "zero");
+    assert(classify(5) == "many");
+    assert(nested(a) == 200);
+    var z = Outcome.Ok(value = 0);
+    assert(nested(z) == 100);
+    assert(pick(a, 10, 20) == 10);
+    assert(pick(b, 10, 20) == 20);
+    assert(pick(c, 10, 20) == 10);
+
+    var u = switch b {
+        case Ok: null,
+        case Err: -1,
+        case Pending: null,
+    };
+    assert(u == -1);
+
+    var v = switch a {
+        case Ok value: value.value,
+        case Err: null,
+        case Pending: null,
+    };
+    assert(v == 7);
+    assert(orNull(a) == 7);
+    assert(orNull(b) == null);
+
+    assert(takesInt(switch c {
+        case Ok: 1,
+        case Err: 2,
+        case Pending: 3,
+    }) == 6);
+}

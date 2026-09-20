@@ -285,6 +285,11 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Expr& expr) {
         stream << "IfExpr";
         break;
     }
+    case ExprKind::SwitchExpr: {
+        //            auto& switchExpr = llvm::cast<SwitchExpr>(expr);
+        stream << "SwitchExpr";
+        break;
+    }
     case ExprKind::ImplicitCastExpr: {
         auto& implicitCastExpr = llvm::cast<ImplicitCastExpr>(expr);
         stream << "ImplicitCastExpr " << implicitCastExpr.castKind << " " << *implicitCastExpr.operand;

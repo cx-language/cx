@@ -79,6 +79,9 @@ struct Typechecker {
     void typecheckVarStmt(VarStmt& stmt);
     void typecheckIfStmt(IfStmt& ifStmt);
     void typecheckSwitchStmt(SwitchStmt& stmt);
+    Type typecheckSwitchCondition(Expr*& condition);
+    EnumCase* typecheckSwitchCaseValue(Expr*& value, Type conditionType);
+    void typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase* enumCase);
     void warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const;
     void typecheckForStmt(ForStmt& forStmt);
     void typecheckBreakStmt(BreakStmt& breakStmt);
@@ -91,7 +94,7 @@ struct Typechecker {
     void typecheckEnumDecl(EnumDecl& decl);
     void typecheckImportDecl(ImportDecl& decl, const BuildConfig* config);
 
-    Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly);
+    Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType);
     Type typecheckNullLiteralExpr(NullLiteralExpr& expr, Type expectedType);
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr, Type expectedType = Type());
     Type typecheckTupleExpr(TupleExpr& expr);
@@ -108,6 +111,7 @@ struct Typechecker {
     Type typecheckUnwrapExpr(UnwrapExpr& expr);
     Type typecheckLambdaExpr(LambdaExpr& expr, Type expectedType);
     Type typecheckIfExpr(IfExpr& expr);
+    Type typecheckSwitchExpr(SwitchExpr& expr, Type expectedType);
 
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
@@ -135,6 +139,7 @@ struct Typechecker {
                                      Location location = Location());
     TypeDecl* getTypeDecl(const BasicType& type);
     EnumCase* getEnumCase(const Expr& expr, Type expectedType = Type(), CallExpr* call = nullptr);
+    EnumCase* getExpectedEnumCase(llvm::StringRef name, Type expectedType);
     EnumCase* instantiateEnumCase(TypeTemplate& typeTemplate, llvm::StringRef caseName, const MemberExpr& memberExpr, CallExpr* call, Type expectedType);
     void checkReturnPointerToLocal(const Expr* returnValue) const;
     static void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);

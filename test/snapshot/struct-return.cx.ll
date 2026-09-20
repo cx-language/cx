@@ -26,11 +26,11 @@ define i32 @main() {
   %s = alloca %S, align 8
   %s2 = alloca %S2, align 8
   %sret.alloca = alloca %S, align 8
-  call void @returnsLargeStruct(ptr %sret.alloca)
+  call void @returnsLargeStruct(ptr sret(%S) %sret.alloca)
   %sret.load = load %S, ptr %sret.alloca, align 8
   store %S %sret.load, ptr %s, align 8
   %sret.alloca1 = alloca %S2, align 8
-  call void @_EN4main19returnsLargeStruct2E(ptr %sret.alloca1)
+  call void @_EN4main19returnsLargeStruct2E(ptr sret(%S2) %sret.alloca1)
   %sret.load2 = load %S2, ptr %sret.alloca1, align 8
   store %S2 %sret.load2, ptr %s2, align 8
   ret i32 0

@@ -1,6 +1,8 @@
 
 %E = type { i32, <{ { i1, i32 } }> }
 
+@0 = private unnamed_addr constant [74 x i8] c"invalid value in switch over enum 'E' at enum-associated-values.cx:14:13\0A\00", align 1
+
 define i32 @main() {
   %e = alloca %E, align 8
   %enum = alloca %E, align 8
@@ -56,9 +58,10 @@ switch.case.2:                                    ; preds = %0
   ret i32 %j.load
 
 switch.default:                                   ; preds = %0
-  br label %switch.end
+  call void @_EN3std10assertFailEP4char(ptr @0)
+  unreachable
 
-switch.end:                                       ; preds = %switch.default, %switch.case.0
+switch.end:                                       ; preds = %switch.case.0
   %e.tag14 = getelementptr inbounds %E, ptr %e, i32 0, i32 0
   %e.tag.load15 = load i32, ptr %e.tag14, align 4
   %4 = icmp eq i32 %e.tag.load15, 0
@@ -67,3 +70,5 @@ switch.end:                                       ; preds = %switch.default, %sw
   %5 = icmp eq i32 %e.tag.load17, 1
   ret i32 0
 }
+
+declare void @_EN3std10assertFailEP4char(ptr)

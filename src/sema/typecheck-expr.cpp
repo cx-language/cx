@@ -143,7 +143,18 @@ static void unnarrow(Expr& expr) {
     }
 }
 
-Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
+Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType) {
+    if (findDecls(expr.identifier).empty()) {
+        if (auto* enumCase = getExpectedEnumCase(expr.identifier, expectedType)) {
+            MemberExpr qualified(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), expr.location), std::string(expr.identifier), expr.location);
+            if (auto* resolvedCase = getEnumCase(qualified, expectedType)) {
+                checkHasAccess(*resolvedCase->getEnumDecl(), expr.location, AccessLevel::None);
+                expr.decl = resolvedCase;
+                return resolvedCase->type;
+            }
+        }
+    }
+
     auto* decl = findDecl(expr.identifier, expr.location);
     checkHasAccess(*decl, expr.location, AccessLevel::None);
     decl->referenced = true;
@@ -902,6 +913,64 @@ static Type replaceUnresolvedGenericParamsWithPlaceholders(Type type, llvm::Arra
     return type.resolve(placeholders);
 }
 
+static bool containsUnresolvedType(Type type) {
+    switch (type.getKind()) {
+    case TypeKind::BasicType:
+        for (Type genericArg : type.getGenericArgs()) {
+            if (containsUnresolvedType(genericArg)) {
+                return true;
+            }
+        }
+        return false;
+
+    case TypeKind::ArrayType:
+        return containsUnresolvedType(type.getElementType());
+
+    case TypeKind::TupleType:
+        for (auto& element : type.getTupleElements()) {
+            if (containsUnresolvedType(element.type)) {
+                return true;
+            }
+        }
+        return false;
+
+    case TypeKind::FunctionType:
+        for (Type paramType : type.getParamTypes()) {
+            if (containsUnresolvedType(paramType)) {
+                return true;
+            }
+        }
+        return containsUnresolvedType(type.getReturnType());
+
+    case TypeKind::PointerType:
+        return containsUnresolvedType(type.getPointee());
+
+    case TypeKind::UnresolvedType:
+        return true;
+    }
+
+    llvm_unreachable("all cases handled");
+}
+
+// True when the argument is a lambda with an uninferred parameter type that the expected type
+// can't provide yet. Typechecking it now would pass unresolved placeholder types to the lambda's
+// parameters; the argument is skipped until more generic arguments are known.
+static bool isLambdaAwaitingInference(const Expr& arg, Type expectedType) {
+    auto* lambda = llvm::dyn_cast<LambdaExpr>(&arg);
+    if (!lambda || arg.hasType() || !expectedType.isFunctionType()) return false;
+
+    auto params = lambda->functionDecl->getParams();
+    auto expectedParamTypes = expectedType.getParamTypes();
+
+    for (size_t i = 0; i < params.size() && i < expectedParamTypes.size(); ++i) {
+        if (!params[i].type && containsUnresolvedType(expectedParamTypes[i])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                             bool returnOnError) {
     if (call.args.size() > params.size()) return {};
@@ -911,6 +980,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
     }
 
     std::vector<Type> inferredGenericArgs;
+    llvm::StringMap<Type> inferredArgsByName;
 
     for (auto& genericParam : genericParams) {
         Type genericArg;
@@ -922,7 +992,11 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
             if (containsGenericParam(paramType, genericParam.getName())) {
                 // FIXME: The args will also be typechecked by validateAndConvertArguments() after this function. Get rid of this duplicated typechecking.
                 auto* argValue = arg.value;
-                auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(paramType, genericParams);
+                // Substitute arguments inferred so far so lambdas get concrete expected parameter types when possible.
+                auto knownArgs = inferredArgsByName;
+                if (genericArg) knownArgs[genericParam.getName()] = genericArg;
+                auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(paramType.resolve(knownArgs), genericParams);
+                if (isLambdaAwaitingInference(*argValue, expectedType)) continue;
                 // TODO: Should probably not typecheck here because it might change the expression's type?
                 Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
                 Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
@@ -932,6 +1006,11 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
                     genericArg = maybeGenericArg;
                     genericArgValue = argValue;
                 } else {
+                    // Agreeing arguments need no convertibility check, which can't handle parameter types
+                    // that still mention other uninferred generic parameters. Convertibility is rechecked
+                    // with concrete types after inference.
+                    if (maybeGenericArg == genericArg) continue;
+
                     Type paramTypeWithGenericArg = paramType.resolve({{genericParam.getName(), genericArg}});
                     Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam.getName(), maybeGenericArg}});
 
@@ -949,6 +1028,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
 
         if (genericArg) {
             inferredGenericArgs.push_back(genericArg);
+            inferredArgsByName[genericParam.getName()] = genericArg;
         } else {
             return {};
         }
@@ -1617,6 +1697,18 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     } else {
         auto callee = expr.getFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
+
+        if (decls.empty()) {
+            if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.callee)) {
+                if (auto* enumCase = getExpectedEnumCase(varExpr->identifier, expectedType)) {
+                    // An unqualified `Ok(...)` mirrors the qualified `Result.Ok(...)`, so desugar to it.
+                    expr.callee = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), varExpr->location),
+                                                      std::string(varExpr->identifier), varExpr->location);
+                    return typecheckCallExpr(expr, expectedType);
+                }
+            }
+        }
+
         decl = resolveOverload(decls, expr, callee, expectedType);
 
         if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
@@ -2094,7 +2186,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
 
     switch (expr.kind) {
     case ExprKind::VarExpr:
-        type = typecheckVarExpr(llvm::cast<VarExpr>(expr), useIsWriteOnly);
+        type = typecheckVarExpr(llvm::cast<VarExpr>(expr), useIsWriteOnly, expectedType);
         if (!type) throw CompileError::dependentError(); // Variable initializer had an error, don't report uses of that variable as errors.
         break;
     case ExprKind::StringLiteralExpr:
@@ -2154,6 +2246,9 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
     case ExprKind::IfExpr:
         type = typecheckIfExpr(llvm::cast<IfExpr>(expr));
         break;
+    case ExprKind::SwitchExpr:
+        type = typecheckSwitchExpr(llvm::cast<SwitchExpr>(expr), expectedType);
+        break;
     case ExprKind::ImplicitCastExpr:
         typecheckExpr(*llvm::cast<ImplicitCastExpr>(expr).operand, useIsWriteOnly, expectedType);
         type = expr.type;
@@ -2203,6 +2298,20 @@ static Type matchEnumTemplateExpectedType(TypeTemplate& typeTemplate, Type expec
         }
     }
     return Type();
+}
+
+// If the expected type names an enum with a case called `name`, returns that case.
+EnumCase* Typechecker::getExpectedEnumCase(llvm::StringRef name, Type expectedType) {
+    if (!expectedType) return nullptr;
+    Type candidates[] = {expectedType, expectedType.removeOptional()};
+    for (Type candidate : candidates) {
+        if (candidate.isEnumType()) {
+            if (auto* enumCase = llvm::cast<EnumDecl>(candidate.getDecl())->getCaseByName(name)) {
+                return enumCase;
+            }
+        }
+    }
+    return nullptr;
 }
 
 EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr* call) {

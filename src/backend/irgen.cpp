@@ -20,7 +20,7 @@ void IRGenScope::clear() {
     destructorsToCall.clear();
 }
 
-IRGenerator::IRGenerator() {
+IRGenerator::IRGenerator(const CompileOptions& options) : options(options) {
     scopes.push_back(IRGenScope(*this));
 }
 

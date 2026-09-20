@@ -26,6 +26,54 @@ void main() {
 See [Nullable types](nullable-types) for how the compiler checks
 that nullable values aren't used without a null check.
 
+## Result type
+
+When a failure carries information about what went wrong,
+return a `Result<T, E>` holding either the success value (`Ok`)
+or the error (`Err`):
+
+```cs
+Result<int, string> parseDigit(char c) {
+    if c >= '0' && c <= '9' {
+        return Ok(int(c) - int('0'));
+    }
+    return Err("not a digit");
+}
+
+void main() {
+    switch (parseDigit('7')) {
+        case Ok value:
+            println(value.value); // prints 7
+        case Err error:
+            println(error.error);
+    }
+}
+```
+
+Use `== Ok` and `== Err` to test which case a result holds.
+`unwrap` returns the success value, or aborts with the error:
+
+```cs
+Result<int, string> parseDigit(char c) {
+    if c >= '0' && c <= '9' {
+        return Ok(int(c) - int('0'));
+    }
+    return Err("not a digit");
+}
+
+void main() {
+    var digit = parseDigit('7');
+    if digit == Ok {
+        println(unwrap(digit)); // prints 7
+    }
+
+    var notDigit = parseDigit('x');
+    if notDigit == Err {
+        println("not a digit");
+    }
+}
+```
+
 ## Assertions
 
 Use `assert` to check conditions that must hold if the program is correct.
@@ -62,5 +110,4 @@ void main() {
 
 ## Planned features
 
-- A `Result` type or similar for propagating errors with values.
 - Custom messages in `assert`.

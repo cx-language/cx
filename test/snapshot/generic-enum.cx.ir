@@ -49,7 +49,9 @@ switch.case.1:
     br switch.end
 
 switch.default:
-    br switch.end
+    void _6 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:12:13
+")
+    unreachable
 
 switch.end:
     int* b.tag = getelementptr b, 0
@@ -60,8 +62,8 @@ switch.end:
     }
 
 switch.case.0_0:
-    union { struct { int }, void }* _6 = getelementptr b, 1
-    struct { int }* some_0 = cast _6 to struct { int }*
+    union { struct { int }, void }* _7 = getelementptr b, 1
+    struct { int }* some_0 = cast _7 to struct { int }*
     int* value_0 = getelementptr some_0, 0
     int value.load_0 = load value_0
     return value.load_0
@@ -70,8 +72,13 @@ switch.case.1_0:
     return int 0
 
 switch.default_0:
-    br switch.end_0
+    void _8 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
+")
+    unreachable
 
 switch.end_0:
     return int 0
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

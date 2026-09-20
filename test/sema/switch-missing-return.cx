@@ -1,0 +1,31 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+enum Outcome {
+    Ok(int value),
+    Err(int code),
+    Pending,
+}
+
+// CHECK: [[@LINE+3]]:13: warning: enumeration value 'Pending' not handled in switch
+// CHECK: [[@LINE+1]]:5: error: 'missingCase' is missing a return statement
+int missingCase(Outcome* outcome) {
+    switch (*outcome) {
+        case Ok value:
+            return value.value;
+        case Err:
+            return -1;
+    }
+}
+
+// CHECK-NOT: not handled in switch
+// CHECK: [[@LINE+1]]:5: error: 'fallingCase' is missing a return statement
+int fallingCase(Outcome* outcome) {
+    switch (*outcome) {
+        case Ok value:
+            return value.value;
+        case Err:
+            println("oops");
+        case Pending:
+            return 0;
+    }
+}

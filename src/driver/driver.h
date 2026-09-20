@@ -16,7 +16,10 @@ namespace cx {
 struct Module;
 struct BuildConfig;
 
+enum class BuildMode { Debug, ReleaseSafe, ReleaseFast };
+
 struct CompileOptions {
+    BuildMode mode = BuildMode::Debug;
     bool noUnusedWarnings = false;
     std::vector<std::string> importSearchPaths = {};
     std::vector<std::string> frameworkSearchPaths = {};

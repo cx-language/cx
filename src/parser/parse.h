@@ -1,5 +1,6 @@
 #pragma once
 
+#include <utility>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/Support/MemoryBuffer.h>
@@ -36,6 +37,7 @@ struct CallExpr;
 struct UnaryExpr;
 struct LambdaExpr;
 struct IfExpr;
+struct SwitchExpr;
 struct Stmt;
 struct ReturnStmt;
 struct VarStmt;
@@ -107,6 +109,7 @@ private:
     CallExpr* parseCallExpr(Expr* callee);
     LambdaExpr* parseLambdaExpr();
     IfExpr* parseIfExpr(Expr* condition);
+    SwitchExpr* parseSwitchExpr();
     bool shouldParseVarStmt();
     bool shouldParseGenericArgumentList();
     bool shouldParseGenericArgumentListAfterMember();
@@ -130,6 +133,7 @@ private:
     WhileStmt* parseWhileStmt(Decl* parent);
     Stmt* parseForOrForEachStmt(Decl* parent);
     SwitchStmt* parseSwitchStmt(Decl* parent);
+    std::pair<Expr*, VarDecl*> parseSwitchCaseHeader(Decl* parent);
     BreakStmt* parseBreakStmt();
     ContinueStmt* parseContinueStmt();
     Stmt* parseStmt(Decl* parent);

@@ -1,0 +1,35 @@
+// RUN: check_exit_status 0 %cx run %s
+// RUN: check_exit_status 0 %cx run --backend=c %s
+
+enum Outcome<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+bool isOk<T>(Outcome<T>* outcome) {
+    switch (*outcome) {
+        case Ok:
+            return true;
+        case Err:
+            return false;
+    }
+}
+
+T unwrapOr<T>(Outcome<T>* outcome, T defaultValue) {
+    switch (*outcome) {
+        case Ok value:
+            return value.value;
+        case Err:
+            return defaultValue;
+    }
+}
+
+void main() {
+    var ok = Outcome.Ok(value = 1);
+    Outcome<int> err = Outcome.Err(code = 404);
+
+    assert(isOk(ok));
+    assert(!isOk(err));
+    assert(unwrapOr(ok, 42) == 1);
+    assert(unwrapOr(err, 42) == 42);
+}

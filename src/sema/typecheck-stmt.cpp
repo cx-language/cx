@@ -38,8 +38,9 @@ static bool allPathsDiverge(llvm::ArrayRef<Stmt*> block, int nestLevel = 0) {
     }
     case StmtKind::SwitchStmt: {
         auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
-        return llvm::all_of(switchStmt.cases, [&](SwitchCase& c) { return allPathsDiverge(c.stmts, nestLevel + 1); })
-            && allPathsDiverge(switchStmt.defaultStmts, nestLevel + 1);
+        if (!llvm::all_of(switchStmt.cases, [&](SwitchCase& c) { return allPathsDiverge(c.stmts, nestLevel + 1); })) return false;
+        if (switchStmt.defaultStmts.empty()) return switchStmt.coversAllEnumCases;
+        return allPathsDiverge(switchStmt.defaultStmts, nestLevel + 1);
     }
     case StmtKind::CompoundStmt:
         return allPathsDiverge(llvm::cast<CompoundStmt>(*block.back()).body, nestLevel);
@@ -123,6 +124,16 @@ static void collectAssignedNames(const Expr& expr, llvm::StringSet<>& names) {
         collectAssignedNames(*ifExpr.condition, names);
         collectAssignedNames(*ifExpr.thenExpr, names);
         collectAssignedNames(*ifExpr.elseExpr, names);
+        return;
+    }
+    case ExprKind::SwitchExpr: {
+        auto& switchExpr = llvm::cast<SwitchExpr>(expr);
+        collectAssignedNames(*switchExpr.condition, names);
+        for (auto& arm : switchExpr.arms) {
+            collectAssignedNames(*arm.value, names);
+            collectAssignedNames(*arm.expr, names);
+        }
+        if (auto* defaultExpr = switchExpr.defaultExpr) collectAssignedNames(*defaultExpr, names);
         return;
     }
     case ExprKind::ImplicitCastExpr:
@@ -331,8 +342,79 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     currentControlStmts.pop_back();
 }
 
-void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
-    Type conditionType = typecheckExpr(*stmt.condition);
+// Collects the enum cases handled by the given case values, or nullopt when the condition
+// isn't an enum or a case doesn't resolve to one of its cases.
+static std::optional<llvm::SmallPtrSet<EnumCase*, 8>> getHandledEnumCases(llvm::ArrayRef<Expr*> caseValues, Type conditionType) {
+    if (!conditionType.isEnumType()) return std::nullopt;
+    auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
+    llvm::SmallPtrSet<EnumCase*, 8> handledCases;
+    for (auto* value : caseValues) {
+        auto* memberExpr = llvm::dyn_cast<MemberExpr>(value);
+        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+        if (!enumCase || enumCase->getEnumDecl() != enumDecl) return std::nullopt;
+        handledCases.insert(enumCase);
+    }
+    return handledCases;
+}
+
+static std::optional<llvm::SmallPtrSet<EnumCase*, 8>> getHandledEnumCases(const SwitchStmt& stmt, Type conditionType) {
+    std::vector<Expr*> caseValues;
+    for (auto& switchCase : stmt.cases) {
+        caseValues.push_back(switchCase.value);
+    }
+    return getHandledEnumCases(caseValues, conditionType);
+}
+
+static bool coversAllEnumCases(const SwitchStmt& stmt, Type conditionType) {
+    auto handledCases = getHandledEnumCases(stmt, conditionType);
+    if (!handledCases) return false;
+    return handledCases->size() == llvm::cast<EnumDecl>(conditionType.getDecl())->cases.size();
+}
+
+EnumCase* Typechecker::typecheckSwitchCaseValue(Expr*& value, Type conditionType) {
+    if (conditionType.isEnumType()) {
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(value)) {
+            auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
+            if (enumDecl->getCaseByName(varExpr->identifier)) {
+                // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
+                value = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumDecl->getName()), varExpr->location), std::string(varExpr->identifier),
+                                            varExpr->location);
+            }
+        }
+    }
+
+    Type caseType = typecheckExpr(*value, false, conditionType);
+
+    if (auto converted = convert(value, conditionType)) {
+        value = converted;
+    } else {
+        ERROR(value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
+    }
+
+    auto* memberExpr = llvm::dyn_cast<MemberExpr>(value);
+    auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+    if (!enumCase && !value->isConstant()) {
+        ERROR(value->location, "case value must be constant");
+    }
+    return enumCase;
+}
+
+void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase* enumCase) {
+    if (!associatedValue) return;
+    // The parser has no enclosing declaration for bindings in switch expressions; adopt them here.
+    associatedValue->parent = currentFunction;
+    if (!enumCase) {
+        ERROR(associatedValue->location, "only enum cases can bind associated values");
+    }
+    if (!enumCase->associatedType) {
+        ERROR(associatedValue->location, "enum case '" << enumCase->getName() << "' has no associated values to bind");
+    }
+    associatedValue->type = NOTNULL(enumCase->associatedType);
+    typecheckVarDecl(*associatedValue);
+}
+
+Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
+    Type conditionType = typecheckExpr(*condition);
 
     if (conditionType.isPointerType()) {
         Type pointeeType = conditionType.getPointee();
@@ -340,8 +422,8 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         // they need the address for tag/associated-value access, so dereference those explicitly (e.g. `switch (*p)`).
         bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
         if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
-            if (auto dereferenced = convert(stmt.condition, pointeeType)) {
-                stmt.condition = dereferenced;
+            if (auto dereferenced = convert(condition, pointeeType)) {
+                condition = dereferenced;
                 conditionType = pointeeType;
             }
         }
@@ -350,8 +432,13 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     // Pointer-implemented optionals have no tag to switch on.
     bool isSwitchableEnum = conditionType.isEnumType() && !(conditionType.isOptionalType() && conditionType.isImplementedAsPointer());
     if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum) {
-        ERROR(stmt.condition->location, "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
+        ERROR(condition->location, "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
     }
+    return conditionType;
+}
+
+void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
+    Type conditionType = typecheckSwitchCondition(stmt.condition);
 
     // Case values run before every case body, so variables assigned in any value
     // are un-narrowed for the bodies. Bodies may or may not run, so variables
@@ -371,44 +458,12 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     currentControlStmts.push_back(&stmt);
 
     for (auto& switchCase : stmt.cases) {
-        if (conditionType.isEnumType()) {
-            if (auto* varExpr = llvm::dyn_cast<VarExpr>(switchCase.value)) {
-                auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
-                if (enumDecl->getCaseByName(varExpr->identifier)) {
-                    // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
-                    switchCase.value = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumDecl->getName()), varExpr->location),
-                                                           std::string(varExpr->identifier), varExpr->location);
-                }
-            }
-        }
-
-        Type caseType = typecheckExpr(*switchCase.value, false, conditionType);
-
-        if (auto converted = convert(switchCase.value, conditionType)) {
-            switchCase.value = converted;
-        } else {
-            ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
-        }
-
-        auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
-        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
-        if (!enumCase && !switchCase.value->isConstant()) {
-            ERROR(switchCase.value->location, "case value must be constant");
-        }
+        auto* enumCase = typecheckSwitchCaseValue(switchCase.value, conditionType);
 
         Scope scope(nullptr, &currentModule->symbolTable);
         NarrowMap outerNarrowings = narrowedTypes;
 
-        if (auto* associatedValue = switchCase.associatedValue) {
-            if (!enumCase) {
-                ERROR(associatedValue->location, "only enum cases can bind associated values");
-            }
-            if (!enumCase->associatedType) {
-                ERROR(associatedValue->location, "enum case '" << enumCase->getName() << "' has no associated values to bind");
-            }
-            associatedValue->type = NOTNULL(enumCase->associatedType);
-            typecheckVarDecl(*associatedValue);
-        }
+        typecheckSwitchCaseBinding(switchCase.associatedValue, enumCase);
 
         for (auto& caseStmt : switchCase.stmts) {
             typecheckStmt(caseStmt);
@@ -428,28 +483,137 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
     currentControlStmts.pop_back();
 
+    stmt.coversAllEnumCases = coversAllEnumCases(stmt, conditionType);
     warnAboutUnhandledEnumCases(stmt, conditionType);
 }
 
-void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const {
-    if (!conditionType.isEnumType() || !stmt.defaultStmts.empty()) return;
+Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
+    Type conditionType = typecheckSwitchCondition(expr.condition);
 
-    auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
-    llvm::StringSet<> handledCases;
-    for (auto& switchCase : stmt.cases) {
-        auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
-        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
-        if (!enumCase || enumCase->getEnumDecl() != enumDecl) return;
-        handledCases.insert(enumCase->getName());
+    // As in switch statements, variables assigned in any value or arm are un-narrowed,
+    // since values run before every arm and arms may or may not run.
+    llvm::StringSet<> assignedNames;
+    for (auto& arm : expr.arms) {
+        collectAssignedNames(*arm.value, assignedNames);
+        collectAssignedNames(*arm.expr, assignedNames);
+    }
+    if (expr.defaultExpr) collectAssignedNames(*expr.defaultExpr, assignedNames);
+    dropNarrowingsForNames(assignedNames);
+
+    for (auto& arm : expr.arms) {
+        auto* enumCase = typecheckSwitchCaseValue(arm.value, conditionType);
+
+        Scope scope(nullptr, &currentModule->symbolTable);
+        NarrowMap outerNarrowings = narrowedTypes;
+
+        typecheckSwitchCaseBinding(arm.associatedValue, enumCase);
+        typecheckExpr(*arm.expr, false, expectedType);
+        narrowedTypes = outerNarrowings;
     }
 
+    if (expr.defaultExpr) {
+        NarrowMap outerNarrowings = narrowedTypes;
+        typecheckExpr(*expr.defaultExpr, false, expectedType);
+        narrowedTypes = outerNarrowings;
+    }
+
+    if (!expr.defaultExpr) {
+        if (!conditionType.isEnumType()) {
+            ERROR(expr.location, "switch expression on '" << conditionType << "' must have a default case");
+        }
+        std::vector<Expr*> caseValues;
+        for (auto& arm : expr.arms) {
+            caseValues.push_back(arm.value);
+        }
+        auto handledCases = getHandledEnumCases(caseValues, conditionType);
+        auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
+        if (!handledCases || handledCases->size() != enumDecl->cases.size()) {
+            std::string missing;
+            for (auto& enumCase : enumDecl->cases) {
+                if (!handledCases || !handledCases->contains(&enumCase)) {
+                    if (!missing.empty()) missing += ", ";
+                    missing += enumCase.getName().str();
+                }
+            }
+            ERROR(expr.location, "switch expression must handle all cases of enum '" << enumDecl->getName() << "' (missing: " << missing << ")");
+        }
+    }
+
+    std::vector<Expr**> armExprs;
+    for (auto& arm : expr.arms) {
+        armExprs.push_back(&arm.expr);
+    }
+    if (expr.defaultExpr) armExprs.push_back(&expr.defaultExpr);
+
+    // Never arms diverge, so they contribute no value to the join.
+    // Null joins upward to the optional of the other side; unwrapping it would be nonsense.
+    Type resultType;
+    std::vector<Expr**> joinedArms;
+    for (Expr** armExpr : armExprs) {
+        Type armType = (*armExpr)->type;
+        if (armType.isNeverType()) {
+            if (!resultType) resultType = armType;
+            continue;
+        }
+        bool armIsNull = armType.isNull() || (*armExpr)->isNullLiteralExpr();
+        if (!resultType || resultType.isNeverType()) {
+            resultType = armType;
+        } else if (!armType.isVoid() && !resultType.isVoid() && (armIsNull != resultType.isNull())) {
+            Type other = armIsNull ? resultType : armType;
+            Type target = other.isOptionalType() ? other : OptionalType::get(other);
+            if (auto convertedArm = convert(*armExpr, target)) {
+                *armExpr = convertedArm;
+                bool upgraded = true;
+                for (Expr** joined : joinedArms) {
+                    if (auto upgradedArm = convert(*joined, target)) {
+                        *joined = upgradedArm;
+                    } else {
+                        upgraded = false;
+                        break;
+                    }
+                }
+                if (upgraded) {
+                    resultType = target;
+                    joinedArms.push_back(armExpr);
+                    continue;
+                }
+            }
+            ERROR(expr.location, "incompatible arm types ('" << resultType << "' and '" << armType << "')");
+        } else if (auto converted = convert(*armExpr, resultType)) {
+            *armExpr = converted;
+        } else {
+            for (Expr** joined : joinedArms) {
+                if (auto upgraded = convert(*joined, armType)) {
+                    *joined = upgraded;
+                } else {
+                    ERROR(expr.location, "incompatible arm types ('" << resultType << "' and '" << armType << "')");
+                }
+            }
+            resultType = armType;
+        }
+        joinedArms.push_back(armExpr);
+    }
+
+    if (resultType.isVoid()) {
+        ERROR(expr.location, "switch expression arms must produce a value; use a switch statement for side effects");
+    }
+    return resultType;
+}
+
+void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const {
+    if (!stmt.defaultStmts.empty()) return;
+
+    auto handledCases = getHandledEnumCases(stmt, conditionType);
+    if (!handledCases) return;
+
     // Don't warn when over half of the cases are missing; partial matching is then assumed intentional.
+    auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
     size_t totalCases = enumDecl->cases.size();
-    size_t missingCases = totalCases - handledCases.size();
+    size_t missingCases = totalCases - handledCases->size();
     if (missingCases == 0 || missingCases * 2 > totalCases) return;
 
     for (auto& enumCase : enumDecl->cases) {
-        if (!handledCases.contains(enumCase.getName())) {
+        if (!handledCases->contains(&enumCase)) {
             WARN(stmt.condition->location, "enumeration value '" << enumCase.getName() << "' not handled in switch");
         }
     }

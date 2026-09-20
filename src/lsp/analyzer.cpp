@@ -433,6 +433,17 @@ void Finder::visitExpr(Expr* expr, int depth) {
         visitExpr(ifExpr->elseExpr, depth + 1);
         return;
     }
+    case ExprKind::SwitchExpr: {
+        auto* switchExpr = llvm::cast<SwitchExpr>(expr);
+        visitExpr(switchExpr->condition, depth + 1);
+        for (auto& arm : switchExpr->arms) {
+            visitExpr(arm.value, depth + 1);
+            if (arm.associatedValue) visitDecl(arm.associatedValue, depth + 1);
+            visitExpr(arm.expr, depth + 1);
+        }
+        if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr, depth + 1);
+        return;
+    }
     case ExprKind::ImplicitCastExpr:
         visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand, depth + 1);
         return;
@@ -689,6 +700,17 @@ void ReferenceCollector::visitExpr(Expr* expr) {
         visitExpr(ifExpr->condition);
         visitExpr(ifExpr->thenExpr);
         visitExpr(ifExpr->elseExpr);
+        return;
+    }
+    case ExprKind::SwitchExpr: {
+        auto* switchExpr = llvm::cast<SwitchExpr>(expr);
+        visitExpr(switchExpr->condition);
+        for (auto& arm : switchExpr->arms) {
+            visitExpr(arm.value);
+            if (arm.associatedValue) visitDecl(arm.associatedValue);
+            visitExpr(arm.expr);
+        }
+        if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr);
         return;
     }
     case ExprKind::ImplicitCastExpr:
@@ -1179,6 +1201,17 @@ void SemanticCollector::visitExpr(Expr* expr) {
         visitExpr(ifExpr->elseExpr);
         return;
     }
+    case ExprKind::SwitchExpr: {
+        auto* switchExpr = llvm::cast<SwitchExpr>(expr);
+        visitExpr(switchExpr->condition);
+        for (auto& arm : switchExpr->arms) {
+            visitExpr(arm.value);
+            if (arm.associatedValue) visitDecl(arm.associatedValue);
+            visitExpr(arm.expr);
+        }
+        if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr);
+        return;
+    }
     case ExprKind::ImplicitCastExpr:
         visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand);
         return;
@@ -1663,6 +1696,17 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                 visitExpr(ifExpr->condition);
                 visitExpr(ifExpr->thenExpr);
                 visitExpr(ifExpr->elseExpr);
+                return;
+            }
+            case ExprKind::SwitchExpr: {
+                auto* switchExpr = llvm::cast<SwitchExpr>(expr);
+                visitExpr(switchExpr->condition);
+                for (auto& arm : switchExpr->arms) {
+                    visitExpr(arm.value);
+                    if (arm.associatedValue) visitDecl(arm.associatedValue);
+                    visitExpr(arm.expr);
+                }
+                if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr);
                 return;
             }
             case ExprKind::ImplicitCastExpr:
