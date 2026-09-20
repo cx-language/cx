@@ -1,0 +1,16 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Rect { int x; int y; }
+struct Rectangle { int x; int y; }
+Rectangle Rectangle(Rect rect) {
+    return Rectangle(x = rect.x, y = rect.y);
+}
+
+void main() {
+    Rect r = Rect(x = 3, y = 4);
+    Rectangle q = Rectangle(r);
+    // CHECK:3
+    println(q.x);
+    // CHECK-NEXT:4
+    println(q.y);
+}
