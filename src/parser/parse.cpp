@@ -582,6 +582,44 @@ bool Parser::shouldParseGenericArgumentList() {
         || lookAhead(1).location.column + 1 == lookAhead(2).location.column;
 }
 
+bool Parser::shouldParseGenericArgumentListAfterMember() {
+    ASSERT(currentToken() == Token::Less);
+    if (!(lookAhead(-1).location.column + int(lookAhead(-1).getString().size()) == lookAhead(0).location.column
+          || lookAhead(0).location.column + 1 == lookAhead(1).location.column)) {
+        return false;
+    }
+    // A generic argument list is always followed by a call, so only treat '<' as one if the
+    // matching '>' is followed by '('; otherwise it's a less-than comparison (e.g. 'box.value<2').
+    int depth = 0;
+    for (int offset = 0;; ++offset) {
+        switch (lookAhead(offset)) {
+        case Token::Less:
+            ++depth;
+            break;
+        case Token::Greater:
+            if (--depth == 0) return lookAhead(offset + 1) == Token::LeftParen;
+            break;
+        case Token::RightShift: // Closes two levels, mirroring the '>>' split in parseNonEmptyTypeList.
+            depth -= 2;
+            if (depth <= 0) return lookAhead(offset + 1) == Token::LeftParen;
+            break;
+        case Token::Identifier:
+        case Token::Const:
+        case Token::Comma:
+        case Token::Star:
+        case Token::QuestionMark:
+        case Token::LeftBracket:
+        case Token::RightBracket:
+        case Token::IntegerLiteral:
+        case Token::LeftParen:
+        case Token::RightParen:
+            break;
+        default:
+            return false;
+        }
+    }
+}
+
 /// Returns true if a right-arrow token immediately follows the current set of parentheses.
 bool Parser::arrowAfterParentheses() {
     ASSERT(currentToken() == Token::LeftParen);
@@ -684,6 +722,9 @@ Expr* Parser::parsePostfixExpr() {
         case Token::Dot:
             consumeToken();
             expr = parseMemberExpr(expr);
+            if (currentToken() == Token::Less && shouldParseGenericArgumentListAfterMember()) {
+                expr = parseCallExpr(expr);
+            }
             break;
         case Token::Increment:
         case Token::Decrement:
@@ -1346,19 +1387,21 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
     return typeDecl;
 }
 
+/// enum-template-decl ::= 'enum' id generic-param-list? '{' enum-case-decl* '}' ';'?
+TypeTemplate* Parser::parseEnumTemplate(AccessLevel accessLevel) {
+    std::vector<GenericParamDecl> genericParams;
+    auto enumDecl = parseEnumDecl(&genericParams, accessLevel);
+    return makeAST<TypeTemplate>(std::move(genericParams), enumDecl, accessLevel);
+}
+
 /// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' enum-case-decl* '}' ';'?
 /// enum-case-decl ::= id tuple-type? (',' | '\n' | ';')
-EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
+EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     ASSERT(currentToken() == Token::Enum);
     consumeToken();
 
-    if (lookAhead(1) == Token::Less) {
-        ERROR(getCurrentLocation(), "generic enums not implemented yet");
-    }
-
-    std::vector<GenericParamDecl> genericParams;
     std::vector<Type> interfaces;
-    auto name = parseTypeHeader(interfaces, &genericParams);
+    auto name = parseTypeHeader(interfaces, genericParams);
 
     parse(Token::LeftBrace);
     std::vector<EnumCase> cases;
@@ -1486,8 +1529,13 @@ start:
         }
         break;
     case Token::Enum:
-        decl = parseEnumDecl(accessLevel);
-        if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
+        if (lookAhead(2) == Token::Less) {
+            decl = parseEnumTemplate(accessLevel);
+            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
+        } else {
+            decl = parseEnumDecl(nullptr, accessLevel);
+            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
+        }
         break;
     case Token::Var:
     case Token::Const:

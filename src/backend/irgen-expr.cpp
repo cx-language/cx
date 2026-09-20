@@ -67,26 +67,43 @@ Value* IRGenerator::emitNullLiteralExpr(const NullLiteralExpr& expr) {
     }
 }
 
+static EnumDecl& getOptionalEnumDecl() {
+    auto* typeTemplate = llvm::cast<TypeTemplate>(Module::getStdlibModule()->symbolTable.findOne("Optional"));
+    auto* enumDecl = llvm::cast<EnumDecl>(typeTemplate->typeDecl);
+    auto* someCase = enumDecl->getCaseByName("Some");
+    ASSERT(someCase && someCase->associatedType && someCase->associatedType.getTupleElements().size() == 1);
+    ASSERT(enumDecl->getCaseByName("None"));
+    return *enumDecl;
+}
+
+int64_t IRGenerator::getOptionalSomeTag() {
+    return getOptionalEnumDecl().getCaseByName("Some")->value->getConstantIntegerValue().getSExtValue();
+}
+
+int64_t IRGenerator::getOptionalNoneTag() {
+    return getOptionalEnumDecl().getCaseByName("None")->value->getConstantIntegerValue().getSExtValue();
+}
+
 Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Expr* arg) {
     auto* decl = Module::getStdlibModule()->symbolTable.findOne("Optional");
-    auto typeTemplate = llvm::cast<TypeTemplate>(decl);
-    auto typeDecl = typeTemplate->instantiate(wrappedType);
-    Function* optionalConstructor = nullptr;
-
-    for (auto* constructor : typeDecl->getConstructors()) {
-        if (constructor->getParams().size() == (arg ? 1 : 0)) {
-            optionalConstructor = getFunction(*constructor);
-            break;
-        }
+    auto* enumDecl = llvm::cast<EnumDecl>(llvm::cast<TypeTemplate>(decl)->instantiate(wrappedType));
+    auto* enumCase = enumDecl->getCaseByName(arg ? "Some" : "None");
+    ASSERT(enumCase);
+    if (arg) {
+        NamedValue argValue(arg);
+        return emitEnumCase(*enumCase, llvm::ArrayRef<NamedValue>(&argValue, 1));
     }
+    return emitEnumCase(*enumCase, {});
+}
 
-    ASSERT(optionalConstructor);
-    auto* alloca = createEntryBlockAlloca(typeDecl->getType());
-    llvm::SmallVector<Value*, 2> args;
-    args.push_back(alloca);
-    if (arg) args.push_back(emitExprForPassing(*arg, optionalConstructor->params[1].getType()));
-    createCall(optionalConstructor, args, nullptr);
-    return alloca;
+Value* IRGenerator::emitOptionalHasValueTest(Value* enumValue) {
+    auto* tag = createExtractValue(enumValue, optionalTagFieldIndex);
+    return createBinaryOp(Token::Equal, tag, createConstantInt(Type::getInt(), getOptionalSomeTag()), nullptr);
+}
+
+Value* IRGenerator::emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType) {
+    // The Some payload is a single-element tuple, so the wrapped value sits at offset zero of the payload union.
+    return createCast(createGEP(enumPtr, optionalPayloadFieldIndex), wrappedType.getPointerTo());
 }
 
 Value* IRGenerator::emitOptionalUnwrap(Expr& operand, const Expr& expr, const llvm::Twine& name) {
@@ -97,8 +114,9 @@ Value* IRGenerator::emitOptionalUnwrap(Expr& operand, const Expr& expr, const ll
         emitAssert(value, &expr, expr.location, message, name);
         return value;
     } else {
-        emitAssert(createExtractValue(value, optionalHasValueFieldIndex), &expr, expr.location, message, name);
-        return createExtractValue(value, optionalValueFieldIndex);
+        emitAssert(emitOptionalHasValueTest(value), &expr, expr.location, message, name);
+        if (!value->getType()->isPointerType()) value = createTempAlloca(value);
+        return createLoad(emitOptionalPayloadPtr(value, operand.type.getWrappedType()));
     }
 }
 
@@ -165,9 +183,7 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
     case Token::Not:
         // FIXME: Temporary hack. Lower implicit null checks such as `if (ptr)` and `if (!ptr)` when expression lowering is implemented.
         if (expr.getOperand().type.isOptionalType() && !expr.getOperand().type.getWrappedType().isPointerType()) {
-            auto operand = emitExpr(expr.getOperand());
-            auto hasValue = createExtractValue(operand, optionalHasValueFieldIndex);
-            return createNot(hasValue);
+            return createNot(emitOptionalHasValueTest(emitExpr(expr.getOperand())));
         }
         LLVM_FALLTHROUGH;
     case Token::Tilde:
@@ -248,7 +264,7 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     }
 
     if (expr.op == Token::Equal || expr.op == Token::NotEqual) {
-        // Lower null checks on value-implemented optionals to a hasValue test, matching `if (opt)` and `if (!opt)`.
+        // Lower null checks on value-implemented optionals to a tag test, matching `if (opt)` and `if (!opt)`.
         // Pointer-implemented optionals take the generic path below (pointer compared against null).
         const Expr* optOperand = nullptr;
         if (expr.getLHS().isNullLiteralExpr() && expr.getRHS().type.isOptionalType()) {
@@ -257,7 +273,7 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
             optOperand = &expr.getLHS();
         }
         if (optOperand && !optOperand->type.isImplementedAsPointer()) {
-            auto* hasValue = createExtractValue(emitExpr(*optOperand), optionalHasValueFieldIndex);
+            auto* hasValue = emitOptionalHasValueTest(emitExpr(*optOperand));
             return expr.op == Token::NotEqual ? hasValue : createNot(hasValue);
         }
     }
@@ -727,7 +743,8 @@ Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
     }
 
     if (auto* enumDecl = llvm::dyn_cast_or_null<EnumDecl>(expr.type.getDecl())) {
-        if (enumDecl->hasAssociatedValues()) {
+        // Pointer-implemented optionals are bare pointers with no tag; compare them directly.
+        if (enumDecl->hasAssociatedValues() && !expr.type.isImplementedAsPointer()) {
             auto* value = emitLvalueExpr(expr);
             if (!value->getType()->isPointerType()) {
                 // Aggregate-typed parameters have no address; spill to a temp so the tag load and associated-value access work.
@@ -748,11 +765,9 @@ Value* IRGenerator::emitLvalueExpr(const Expr& expr) {
     // Pointer-implemented optionals need no access adjustment: the narrowed type is a compile-time view of the same value.
     if (expr.hasAssignableType() && expr.assignableType.isOptionalType() && !expr.assignableType.getWrappedType().isImplementedAsPointer()
         && expr.type == expr.assignableType.getWrappedType()) {
-        if (value->getType()->isPointerType()) {
-            return createGEP(value, optionalValueFieldIndex);
-        }
-        // Function parameters are SSA values, not memory.
-        return createExtractValue(value, optionalValueFieldIndex);
+        // Function parameters are SSA values, not memory; spill to a temp so the payload access works.
+        if (!value->getType()->isPointerType()) value = createTempAlloca(value);
+        return emitOptionalPayloadPtr(value, expr.assignableType.getWrappedType());
     }
 
     if (value && expr.hasType()) {

@@ -1,0 +1,77 @@
+
+int main() {
+    Opt<int>* a = alloca Opt<int>
+    Opt<int>* enum = alloca Opt<int>
+    Opt<int>* b = alloca Opt<int>
+    Opt<int>* enum_0 = alloca Opt<int>
+    Opt<int>* enum_1 = alloca Opt<int>
+    Opt<int>* enum_2 = alloca Opt<int>
+    int* tag = getelementptr enum, 0
+    store int 0 to tag
+    struct { int } _0 = insertvalue struct { int } undefined, 0, int 1
+    union { struct { int }, void }* associatedValue = getelementptr enum, 1
+    struct { int }* _1 = cast associatedValue to struct { int }*
+    store _0 to _1
+    Opt<int> enum.load = load enum
+    store enum.load to a
+    int* tag_0 = getelementptr enum_0, 0
+    store int 1 to tag_0
+    Opt<int> enum.load_0 = load enum_0
+    store enum.load_0 to b
+    int* a.tag = getelementptr a, 0
+    int a.tag.load = load a.tag
+    switch a.tag.load {
+        int 0 -> switch.case.0
+        int 1 -> switch.case.1
+    }
+
+switch.case.0:
+    union { struct { int }, void }* _2 = getelementptr a, 1
+    struct { int }* some = cast _2 to struct { int }*
+    int* tag_1 = getelementptr enum_1, 0
+    store int 0 to tag_1
+    int* value = getelementptr some, 0
+    int value.load = load value
+    int _3 = value.load + int 1
+    struct { int } _4 = insertvalue struct { int } undefined, 0, _3
+    union { struct { int }, void }* associatedValue_0 = getelementptr enum_1, 1
+    struct { int }* _5 = cast associatedValue_0 to struct { int }*
+    store _4 to _5
+    Opt<int> enum.load_1 = load enum_1
+    store enum.load_1 to b
+    br switch.end
+
+switch.case.1:
+    int* tag_2 = getelementptr enum_2, 0
+    store int 1 to tag_2
+    Opt<int> enum.load_2 = load enum_2
+    store enum.load_2 to b
+    br switch.end
+
+switch.default:
+    br switch.end
+
+switch.end:
+    int* b.tag = getelementptr b, 0
+    int b.tag.load = load b.tag
+    switch b.tag.load {
+        int 0 -> switch.case.0
+        int 1 -> switch.case.1
+    }
+
+switch.case.0_0:
+    union { struct { int }, void }* _6 = getelementptr b, 1
+    struct { int }* some_0 = cast _6 to struct { int }*
+    int* value_0 = getelementptr some_0, 0
+    int value.load_0 = load value_0
+    return value.load_0
+
+switch.case.1_0:
+    return int 0
+
+switch.default_0:
+    br switch.end_0
+
+switch.end_0:
+    return int 0
+}

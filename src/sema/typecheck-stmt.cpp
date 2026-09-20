@@ -346,7 +346,9 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         }
     }
 
-    if (!conditionType.isInteger() && !conditionType.isChar() && !conditionType.isEnumType()) {
+    // Pointer-implemented optionals have no tag to switch on.
+    bool isSwitchableEnum = conditionType.isEnumType() && !(conditionType.isOptionalType() && conditionType.isImplementedAsPointer());
+    if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum) {
         ERROR(stmt.condition->location, "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
     }
 
@@ -379,7 +381,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             }
         }
 
-        Type caseType = typecheckExpr(*switchCase.value);
+        Type caseType = typecheckExpr(*switchCase.value, false, conditionType);
 
         if (auto converted = convert(switchCase.value, conditionType)) {
             switchCase.value = converted;

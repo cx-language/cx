@@ -102,7 +102,7 @@ struct Typechecker {
     Type typecheckBuiltinConversion(CallExpr& expr);
     Type typecheckBuiltinCast(CallExpr& expr);
     Type typecheckSizeofExpr(SizeofExpr& expr);
-    Type typecheckMemberExpr(MemberExpr& expr);
+    Type typecheckMemberExpr(MemberExpr& expr, Type expectedType = Type());
     Type typecheckIndexExpr(IndexExpr& expr);
     Type typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr);
     Type typecheckUnwrapExpr(UnwrapExpr& expr);
@@ -134,7 +134,8 @@ struct Typechecker {
     void validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee = "",
                                      Location location = Location());
     TypeDecl* getTypeDecl(const BasicType& type);
-    EnumCase* getEnumCase(const Expr& expr);
+    EnumCase* getEnumCase(const Expr& expr, Type expectedType = Type(), CallExpr* call = nullptr);
+    EnumCase* instantiateEnumCase(TypeTemplate& typeTemplate, llvm::StringRef caseName, const MemberExpr& memberExpr, CallExpr* call, Type expectedType);
     void checkReturnPointerToLocal(const Expr* returnValue) const;
     static void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);
     void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;

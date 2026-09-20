@@ -1,0 +1,106 @@
+// RUN: check_exit_status 42 %cx run %s
+// RUN: check_exit_status 42 %cx run --backend=c %s
+
+enum Opt<T> {
+    Some(T value),
+    None,
+}
+
+enum Result<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+enum Either<L, R> {
+    Left(L value),
+    Right(R value),
+}
+
+Opt<T> wrap<T>(T x) {
+    return Opt.Some(value = x);
+}
+
+int main() {
+    // Generic arguments inferred from associated values.
+    var inferred = Opt.Some(value = 1);
+    // Explicit generic arguments.
+    var ok = Result.Ok<int>(value = 2);
+    // Generic arguments from the declared type. Unit cases and cases whose
+    // associated values don't mention the parameter can't be inferred.
+    Opt<int> none = Opt.None;
+    // Explicit generic arguments on a unit case.
+    var explicitNone = Opt.None<int>();
+    // A unit case resolves through an outer optional.
+    Opt<int>? maybeNone = Opt.None;
+    Result<int> err = Result.Err(code = 5);
+    Either<int, bool> either = Either.Right(value = true);
+    // Distinct instantiations of the same enum coexist.
+    var flag = Opt.Some(value = false);
+    var wrapped = wrap(3);
+
+    if (!(inferred == Opt.Some(value = 9))) { return 1; }
+    if (inferred == none) { return 2; }
+
+    switch (inferred) {
+        case Opt.Some some:
+            if (some.value != 1) { return 3; }
+        case None:
+            return 4;
+    }
+
+    switch (ok) {
+        case Ok success:
+            if (success.value != 2) { return 5; }
+        case Err failure:
+            return 6;
+    }
+
+    switch (err) {
+        case Result.Ok success:
+            return 7;
+        case Result.Err failure:
+            if (failure.code != 5) { return 8; }
+    }
+
+    switch (either) {
+        case Either.Left left:
+            return 9;
+        case Either.Right right:
+            if (!right.value) { return 10; }
+    }
+
+    switch (flag) {
+        case Opt.Some some:
+            if (some.value) { return 11; }
+        case Opt.None:
+            return 12;
+    }
+
+    switch (wrapped) {
+        case Opt.Some some:
+            if (some.value != 3) { return 13; }
+        case Opt.None:
+            return 14;
+    }
+
+    switch (explicitNone) {
+        case Opt.Some some:
+            return 15;
+        case Opt.None:
+            break;
+    }
+
+    switch (maybeNone) {
+        case Some inner:
+            switch (inner.value) {
+                case Opt.Some some:
+                    return 16;
+                case Opt.None:
+                    break;
+            }
+        case None:
+            return 17;
+    }
+
+    return 42;
+}

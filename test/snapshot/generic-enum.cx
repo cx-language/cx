@@ -1,0 +1,27 @@
+// RUN: check-snapshots
+
+enum Opt<T> {
+    Some(T value),
+    None,
+}
+
+int main() {
+    var a = Opt.Some(value = 1);
+    Opt<int> b = Opt.None;
+
+    switch (a) {
+        case Opt.Some some:
+            b = Opt.Some(value = some.value + 1);
+        case Opt.None:
+            b = Opt.None;
+    }
+
+    switch (b) {
+        case Opt.Some some:
+            return some.value;
+        case Opt.None:
+            return 0;
+    }
+
+    return 0;
+}

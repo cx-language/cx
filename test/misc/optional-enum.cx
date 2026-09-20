@@ -1,0 +1,59 @@
+// RUN: check_exit_status 42 %cx run %s
+// RUN: check_exit_status 42 %cx run --backend=c %s
+
+int main() {
+    // Optional is a generic enum; cases construct and match like any other.
+    var inferred = Optional.Some(value = 1);
+    var explicit = Optional.Some<bool>(value = true);
+    Optional<int> none = Optional.None;
+    Optional<int> some = Optional.Some(value = 2);
+
+    switch (inferred) {
+        case Optional.Some v:
+            if (v.value != 1) { return 1; }
+        case Optional.None:
+            return 2;
+    }
+
+    switch (none) {
+        case Some:
+            return 3;
+        case None:
+            break;
+    }
+
+    if (some! != 2) { return 4; }
+
+    // Nested optionals wrap one level at a time.
+    int? inner = 5;
+    int?? outer = inner;
+    int?? empty = null;
+    if (outer!! != 5) { return 5; }
+    if (outer == null) { return 6; }
+    if (empty == null) {}
+    else { return 7; }
+    switch (outer) {
+        case Some v:
+            if (v.value! != 5) { return 8; }
+        case None:
+            return 9;
+    }
+
+    // Comparisons still use the stdlib operators, not tag comparison.
+    if (!(some == Optional.Some(value = 2))) { return 10; }
+    if (some == Optional.Some(value = 3)) { return 11; }
+    if (!(some != Optional.Some(value = 3))) { return 12; }
+    if (some == none) { return 13; }
+    if (!(some != none)) { return 14; }
+    if (!(some == 2)) { return 15; }
+    if (some == 3) { return 16; }
+    if (!(none != 2)) { return 17; }
+
+    // Copyable optionals copy freely.
+    var copy1 = some;
+    var copy2 = some;
+    if (copy1 != copy2) { return 18; }
+    _ = explicit;
+
+    return 42;
+}

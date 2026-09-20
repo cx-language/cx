@@ -29,3 +29,21 @@ void main() {
     }
 }
 ```
+
+Enums can be generic, in which case the type parameters can be used
+in the associated values of any case.
+The type arguments are inferred from the associated values when possible,
+specified explicitly on the case, or taken from the expected type.
+
+```cs
+enum Result<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+void main() {
+    var a = Result.Ok(value = 1); // Result<int>, inferred
+    var b = Result.Ok<bool>(value = true); // explicit type arguments
+    Result<int> c = Result.Err(code = 404); // from the declared type
+}
+```

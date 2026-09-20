@@ -1,7 +1,7 @@
 # Generics
 
-Functions and structs can be parameterized over types.
-Type parameters are declared in angle brackets after the function or struct name,
+Functions, structs, and enums can be parameterized over types.
+Type parameters are declared in angle brackets after the function or type name,
 and can then be used like any other type within the declaration.
 
 ```cs
@@ -31,6 +31,21 @@ void main() {
     var list = List<int>();
     var boolList = List([true, false]);
     var map = Map<int, int>();
+}
+```
+
+Generic enums work the same way.
+The type parameters can be used in the associated values of any case.
+
+```cs
+enum Opt<T> {
+    Some(T value),
+    None,
+}
+
+void main() {
+    var present = Opt.Some(value = 1);
+    Opt<int> absent = Opt.None;
 }
 ```
 

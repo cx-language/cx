@@ -1,0 +1,15 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: generic-enum-invalid-arg-name.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+enum Result<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:23: error: invalid argument name 'wrong' for parameter 'value'
+    var x = Result.Ok(wrong = 1);
+}
+
+// CHECK-NOT: generic-enum-invalid-arg-name.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

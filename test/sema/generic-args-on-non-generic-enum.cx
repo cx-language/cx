@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: generic-args-on-non-generic-enum.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+enum E {
+    A(int a),
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:21: error: too many generic arguments to 'E', expected 0
+    var x = E.A<int>(a = 1);
+}
+
+// CHECK-NOT: generic-args-on-non-generic-enum.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

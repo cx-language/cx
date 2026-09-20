@@ -1,20 +1,16 @@
 
-%"Optional<int>" = type { i1, i32 }
+%"Optional<int>" = type { i32, <{ { i32 } }> }
 
 define %"Optional<int>" @_EN4main1fE() {
   %i = alloca i32, align 4
-  %1 = alloca %"Optional<int>", align 8
+  %enum = alloca %"Optional<int>", align 8
   store i32 1, ptr %i, align 4
+  %tag = getelementptr inbounds %"Optional<int>", ptr %enum, i32 0, i32 0
+  store i32 1, ptr %tag, align 4
   %i.load = load i32, ptr %i, align 4
-  call void @_EN3std8OptionalI3intE4initE3int(ptr %1, i32 %i.load)
-  %.load = load %"Optional<int>", ptr %1, align 4
-  ret %"Optional<int>" %.load
-}
-
-define void @_EN3std8OptionalI3intE4initE3int(ptr %this, i32 %value) {
-  %hasValue = getelementptr inbounds %"Optional<int>", ptr %this, i32 0, i32 0
-  store i1 true, ptr %hasValue, align 1
-  %value1 = getelementptr inbounds %"Optional<int>", ptr %this, i32 0, i32 1
-  store i32 %value, ptr %value1, align 4
-  ret void
+  %1 = insertvalue { i32 } undef, i32 %i.load, 0
+  %associatedValue = getelementptr inbounds %"Optional<int>", ptr %enum, i32 0, i32 1
+  store { i32 } %1, ptr %associatedValue, align 4
+  %enum.load = load %"Optional<int>", ptr %enum, align 4
+  ret %"Optional<int>" %enum.load
 }

@@ -46,3 +46,25 @@ void main() {
     println(x! + 1); // fine if x is non-null, otherwise will abort at runtime
 }
 ```
+
+## Switching on nullable values
+
+The `?` suffix is shorthand for the generic `Optional` enum,
+so a nullable value can also be matched with a `switch` statement.
+The `Some` case binds the wrapped value, if any.
+
+```cs
+void main() {
+    int? x = 1;
+
+    switch (x) {
+        case Some value:
+            println(value.value); // prints 1
+        case None:
+            println("x is null");
+    }
+}
+```
+
+Only value types can be switched on this way;
+to check a nullable pointer for null, compare it against `null` instead.

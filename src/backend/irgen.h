@@ -72,6 +72,8 @@ struct IRGenerator {
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);
     Value* emitOptionalConstruction(Type wrappedType, Expr* arg);
     Value* emitOptionalUnwrap(Expr& operand, const Expr& expr, const llvm::Twine& name);
+    Value* emitOptionalHasValueTest(Value* enumValue);
+    Value* emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType);
     void emitAssert(Value* condition, const Expr* expr, Location location, llvm::StringRef message = "Assertion failed", const llvm::Twine& name = "assert");
     Value* emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements);
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
@@ -221,8 +223,10 @@ struct IRGenerator {
     llvm::SmallVector<BasicBlock*, 4> continueTargets;
     BasicBlock* insertBlock;
     Function* currentFunction = nullptr;
-    static const int optionalHasValueFieldIndex = 0;
-    static const int optionalValueFieldIndex = 1;
+    static const int optionalTagFieldIndex = 0;
+    static const int optionalPayloadFieldIndex = 1;
+    static int64_t getOptionalSomeTag();
+    static int64_t getOptionalNoneTag();
 };
 
 } // namespace cx

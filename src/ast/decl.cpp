@@ -553,9 +553,23 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
     case DeclKind::TypeTemplate:
         llvm_unreachable("handled via TypeTemplate::instantiate()");
 
-    case DeclKind::EnumDecl:
+    case DeclKind::EnumDecl: {
+        auto* enumDecl = llvm::cast<EnumDecl>(this);
+        std::vector<EnumCase> cases;
+        for (auto& enumCase : enumDecl->cases) {
+            cases.emplace_back(enumCase.getName().str(), enumCase.value ? enumCase.value->instantiate(genericArgs) : nullptr,
+                               enumCase.associatedType.resolve(genericArgs), enumCase.accessLevel, enumCase.getLocation());
+        }
+        auto instantiation =
+            makeAST<EnumDecl>(enumDecl->getName().str(), std::move(cases), accessLevel, *enumDecl->getModule(), enumDecl, enumDecl->getLocation());
+        instantiation->genericArgs = std::vector<Type>(genericArgsArray.begin(), genericArgsArray.end());
+        for (auto& enumCase : instantiation->cases) {
+            enumCase.type = NOTNULL(instantiation->getType());
+        }
+        return instantiation;
+    }
     case DeclKind::EnumCase:
-        llvm_unreachable("EnumDecl cannot be generic or declared inside another generic type");
+        llvm_unreachable("handled via EnumDecl");
 
     case DeclKind::VarDecl: {
         auto* varDecl = llvm::cast<VarDecl>(this);

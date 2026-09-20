@@ -1,0 +1,23 @@
+// RUN: check_exit_status 42 %cx run %s
+
+struct Box<T> {
+    T value;
+
+    T2 convert<T2>(T2 x) {
+        return x;
+    }
+}
+
+int main() {
+    var box = Box(value = 1);
+    if (box.convert<int>(41) != 41) { return 1; }
+    if (box.convert<bool>(true) != true) { return 2; }
+    // A spaced '<' after a member access is still a comparison.
+    if (!(box.value < 2)) { return 3; }
+    // So is an unspaced one.
+    if (!(box.value<2)) { return 4; }
+    var limit = 2;
+    if (!(box.value<limit)) { return 5; }
+    if (!(box.value<(2))) { return 6; }
+    return 42;
+}
