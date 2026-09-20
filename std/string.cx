@@ -113,25 +113,81 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return ByteIterator(this);
     }
 
-    // TODO: Support plus and minus signs, non-base-10 numbers, and handle range errors.
     /// Parses the string as an integer, or returns null.
+    /// Supports an optional leading '+' or '-' sign and '0x', '0b', and '0o'
+    /// base prefixes. Out-of-range values return null.
     int? parseInt() {
         if empty() {
             return null;
         }
 
-        int result = 0;
+        var index = 0;
+        var negative = false;
 
-        for c in this {
-            if c >= '0' && c <= '9' {
-                result *= 10;
-                result += int(c - '0');
-            } else {
-                return null;
+        if this[index] == '+' || this[index] == '-' {
+            negative = this[index] == '-';
+            index++;
+        }
+
+        var base = 10;
+
+        if index < size() && this[index] == '0' && index + 1 < size() {
+            var prefix = this[index + 1];
+
+            if prefix == 'x' || prefix == 'b' || prefix == 'o' {
+                if prefix == 'x' {
+                    base = 16;
+                } else if prefix == 'b' {
+                    base = 2;
+                } else {
+                    base = 8;
+                }
+
+                index += 2;
             }
         }
 
-        return result;
+        // Accumulate a negative value so that int_min itself doesn't overflow.
+        var limit = negative ? int_min : -int_max;
+        var multmin = limit / base;
+        var result = 0;
+        var digits = 0;
+
+        for i in index..size() {
+            var c = this[i];
+            var digit = -1;
+
+            if c >= '0' && c <= '9' {
+                digit = int(c - '0');
+            } else if base == 16 && c >= 'a' && c <= 'f' {
+                digit = int(c - 'a') + 10;
+            } else if base == 16 && c >= 'A' && c <= 'F' {
+                digit = int(c - 'A') + 10;
+            }
+
+            if digit < 0 || digit >= base {
+                return null;
+            }
+
+            if result < multmin {
+                return null;
+            }
+
+            result *= base;
+
+            if result < limit + digit {
+                return null;
+            }
+
+            result -= digit;
+            digits++;
+        }
+
+        if digits == 0 {
+            return null;
+        }
+
+        return negative ? result : -result;
     }
 
     // TODO: return iterator instead of eagerly allocating?
