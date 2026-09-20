@@ -238,6 +238,8 @@ struct BinaryExpr : CallExpr {
     BinaryOperator op;
     // True when the LHS was already consumed (moved or deinited) at this assignment; its destructor must not run.
     bool lhsIsMoved = false;
+    // True when the operator is derived from its counterpart (e.g. != from ==) and the result must be negated.
+    bool negateResult = false;
 };
 
 bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);

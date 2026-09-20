@@ -1374,7 +1374,15 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 continue;
             }
 
-            auto genericArgs = getGenericArgsForCall(genericParams, expr, functionTemplate->functionDecl, decls.size() != 1, expectedType);
+            llvm::StringMap<Type> genericArgs;
+            try {
+                genericArgs = getGenericArgsForCall(genericParams, expr, functionTemplate->functionDecl, decls.size() != 1, expectedType);
+            } catch (const CompileError&) {
+                // Derivable comparison operators (e.g. > from <) fall back below; don't fail hard on inference errors.
+                Token::Kind op = Token::None;
+                if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) op = binaryExpr->op;
+                if (op != Token::NotEqual && op != Token::Greater && op != Token::GreaterOrEqual && op != Token::LessOrEqual) throw;
+            }
             if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
             auto* functionDecl = functionTemplate->instantiate(genericArgs);
@@ -1546,6 +1554,59 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     // Restore the written order and fall through to the error
                     // below so the diagnostic shows the user's operand order.
                     std::swap(expr.args[0], expr.args[1]);
+                }
+            }
+        }
+    }
+
+    if (matches.empty()) {
+        if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+            // Derive missing comparison operators from their counterparts so only == and < need overloads.
+            Token::Kind derivedOp = Token::None;
+            bool swapOperands = false;
+            bool negateResult = false;
+            switch (binaryExpr->op) {
+            case Token::NotEqual:
+                derivedOp = Token::Equal;
+                negateResult = true;
+                break;
+            case Token::Greater:
+                derivedOp = Token::Less;
+                swapOperands = true;
+                break;
+            case Token::GreaterOrEqual:
+                derivedOp = Token::Less;
+                negateResult = true;
+                break;
+            case Token::LessOrEqual:
+                derivedOp = Token::Less;
+                swapOperands = true;
+                negateResult = true;
+                break;
+            default:
+                break;
+            }
+            if (derivedOp != Token::None && expr.args.size() == 2) {
+                if (auto* calleeVar = llvm::dyn_cast<VarExpr>(expr.callee)) {
+                    auto savedOp = binaryExpr->op;
+                    auto savedCallee = calleeVar->identifier;
+                    binaryExpr->op = derivedOp;
+                    calleeVar->identifier = getFunctionName(derivedOp);
+                    if (swapOperands) std::swap(expr.args[0], expr.args[1]);
+                    try {
+                        auto derivedCallee = std::string(expr.getFunctionName());
+                        auto derivedDecls = findCalleeCandidates(expr, derivedCallee);
+                        auto* decl = resolveOverload(derivedDecls, expr, derivedCallee, expectedType, allowCommutativeRetry);
+                        binaryExpr->op = savedOp;
+                        calleeVar->identifier = savedCallee;
+                        binaryExpr->negateResult = negateResult;
+                        return decl;
+                    } catch (const CompileError&) {
+                        // Restore the written form and fall through to the error below.
+                        binaryExpr->op = savedOp;
+                        calleeVar->identifier = savedCallee;
+                        if (swapOperands) std::swap(expr.args[0], expr.args[1]);
+                    }
                 }
             }
         }

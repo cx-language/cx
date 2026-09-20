@@ -269,7 +269,9 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     }
 
     if (expr.calleeDecl != nullptr) {
-        return emitCallExpr(expr);
+        auto* value = emitCallExpr(expr);
+        if (expr.negateResult) value = createNot(value);
+        return value;
     }
 
     if (expr.op == Token::Equal || expr.op == Token::NotEqual) {
