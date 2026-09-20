@@ -1,10 +1,24 @@
 // RUN: %not %cx -parse %s | %FileCheck %s
 
+// CHECK-NOT: error
+// CHECK-NOT: warning
+
+struct S {
+    int x;
+}
+
 void main() {
-    // CHECK: [[@LINE+1]]:16: error: unexpected '->', use '=>' for lambdas
+    // CHECK: [[@LINE+1]]:16: error: unexpected '->', use '=>' for lambdas or '.' for member access
     var f = () -> {
         return 1;
     };
-    // CHECK: [[@LINE+1]]:15: error: unexpected '->', use '=>' for lambdas
+    // CHECK: [[@LINE+1]]:15: error: unexpected '->', use '=>' for lambdas or '.' for member access
     var g = x -> x + 1;
+    var s = S(x = 1);
+    var p = &s;
+    // CHECK: [[@LINE+1]]:14: error: unexpected '->', use '=>' for lambdas or '.' for member access
+    println(p->x);
 }
+
+// CHECK-NOT: error
+// CHECK-NOT: warning
