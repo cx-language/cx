@@ -348,7 +348,6 @@ bool cx::isBuiltinOp(Token::Kind op, Type left, Type right) {
 
 llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
     // TODO: Add overflow checks.
-    // TODO: Handle signedness for '>>' operator;
 
     auto lhs = getLHS().getConstantIntegerValue();
     auto rhs = getRHS().getConstantIntegerValue();

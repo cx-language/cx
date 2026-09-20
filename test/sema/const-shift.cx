@@ -1,0 +1,10 @@
+// RUN: %cx -typecheck %s | %FileCheck -allow-empty %s
+
+void main() {
+    // CHECK-NOT: const-shift.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+    // Negative constants shift arithmetically, so this fits in int8.
+    int8 y = -16 >> 2;
+    int8 z = 16 >> 2;
+    assert(y == -4);
+    assert(z == 4);
+}
