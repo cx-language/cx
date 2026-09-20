@@ -1,0 +1,6 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: float literals cannot contain separators
+    println(1_0e10);
+}

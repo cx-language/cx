@@ -1,0 +1,6 @@
+global a = float 1.0E+10
+global b = float 1.0E+10
+global c = float 1.0E+10
+global d = float 0.001
+global e = float 250
+global f = float 1

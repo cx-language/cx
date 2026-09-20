@@ -1,0 +1,8 @@
+// RUN: check-snapshots
+
+var a = 1e10;
+var b = 1E10;
+var c = 1.0e10;
+var d = 1e-3;
+var e = 2.5e+2;
+var f = 1e0;

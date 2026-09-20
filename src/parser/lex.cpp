@@ -113,6 +113,7 @@ Token Lexer::readNumber() {
     bool isFloat = false;
     bool sawSeparator = false;
     bool sawNonSeparator = false;
+    bool sawExponent = false;
     uint64_t intValue = *begin - '0';
     char ch = readChar();
 
@@ -171,6 +172,20 @@ Token Lexer::readNumber() {
             if (ch == '.' && !isFloat) {
                 if (sawSeparator) ERROR(firstLocation, "float literals cannot contain separators");
                 isFloat = true;
+            } else if ((ch == 'e' || ch == 'E') && !sawExponent) {
+                if (sawSeparator) ERROR(firstLocation, "float literals cannot contain separators");
+                end++;
+                ch = readChar();
+                if (ch == '+' || ch == '-') {
+                    end++;
+                    ch = readChar();
+                }
+                if (!std::isdigit(ch)) ERROR(firstLocation, "float literal exponent must have at least one digit");
+                isFloat = true;
+                sawExponent = true;
+                end++;
+                ch = readChar();
+                continue;
             } else if (std::isdigit(ch)) {
                 // Only add to the integer value if we're not a floating-point
                 // value, otherwise simply continue to the next character
@@ -178,6 +193,7 @@ Token Lexer::readNumber() {
                     appendDigit(ch - '0', 10);
                 }
             } else if (ch == '_') {
+                if (isFloat) ERROR(firstLocation, "float literals cannot contain separators");
                 sawSeparator = true;
             } else {
                 goto end;

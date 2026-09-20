@@ -19,6 +19,24 @@ Type      | Meaning
 `bool`    | boolean
 `char`    | C/C++ `char` type
 
+## Numeric literals
+
+Integer literals are decimal by default. Underscores may separate digits for
+readability (`1_000_000`), and the prefixes `0x`, `0o`, and `0b` select
+hexadecimal, octal, and binary.
+
+Floating-point literals have a fraction (`.5` is written `0.5`), a base-10
+exponent introduced by `e` or `E` with an optional sign, or both:
+
+```cs
+void main() {
+    println(100.0);
+    println(1e10);
+    println(1.5e-3);
+    println(2E+2);
+}
+```
+
 ## Arithmetic operators
 
 There are the usual arithmetic operators `+`, `-`, `*`, `/`, `%`, `&&`, `||`,
