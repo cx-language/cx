@@ -1115,9 +1115,11 @@ ContinueStmt* Parser::parseContinueStmt() {
 }
 
 /// stmt ::= var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
-///          while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt
+///          while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt | block
 Stmt* Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
+    case Token::LeftBrace:
+        return makeAST<CompoundStmt>(parseBlock(parent));
     case Token::Return:
         return parseReturnStmt();
     case Token::Defer:
