@@ -1,0 +1,28 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+// CHECK-NOT: switch-on-string-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void nonConstantCase() {
+    string s = "a";
+    string t = "b";
+    switch (s) {
+        // CHECK: [[@LINE+1]]:14: error: case value must be constant
+        case t: println("t"); break;
+        default: break;
+    }
+}
+
+void mismatchedCase() {
+    string s = "a";
+    switch (s) {
+        // CHECK: [[@LINE+1]]:14: error: case value type 'int' doesn't match switch condition type 'string'
+        case 1: println("one"); break;
+        default: break;
+    }
+}
+
+void main() {
+    nonConstantCase();
+    mismatchedCase();
+}
+
+// CHECK-NOT: switch-on-string-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -51,6 +51,11 @@ void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
 }
 
 void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
+    if (switchStmt.condition->type.isBasicType() && switchStmt.condition->type.getName() == "string") {
+        emitStringSwitchStmt(switchStmt);
+        return;
+    }
+
     Value* enumValue = nullptr;
     Value* condition = emitExprOrEnumTag(*switchStmt.condition, &enumValue);
 
@@ -103,6 +108,54 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
         // The null case is routed by the null check, not the switch instruction.
         if (value) switchInst->cases.emplace_back(value, block);
         ++casesIterator;
+    }
+
+    setInsertPoint(defaultBlock);
+    emitBlock(switchStmt.defaultStmts, end);
+
+    breakTargets.pop_back();
+    setInsertPoint(end);
+}
+
+// Strings can't use the switch instruction, so compare against each case value in turn.
+void IRGenerator::emitStringSwitchStmt(const SwitchStmt& switchStmt) {
+    Function* stringEquals = nullptr;
+    for (auto* decl : Module::getStdlibModule()->symbolTable.findInTopLevelScope("==")) {
+        auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
+        if (!functionDecl) continue;
+        auto params = functionDecl->getParams();
+        if (params.size() == 2 && params[0].type.isBasicType() && params[0].type.getName() == "string" && params[1].type.isBasicType()
+            && params[1].type.getName() == "string") {
+            stringEquals = getFunction(*functionDecl);
+            break;
+        }
+    }
+    ASSERT(stringEquals);
+
+    auto* stringType = getIRType(switchStmt.condition->type);
+    Value* condition = emitExprForPassing(*switchStmt.condition, stringType);
+
+    auto* function = insertBlock->parent;
+    auto* defaultBlock = new BasicBlock("switch.default", function);
+    auto* end = new BasicBlock("switch.end", function);
+    breakTargets.push_back(end);
+
+    std::vector<BasicBlock*> caseBlocks;
+    for (size_t i = 0; i < switchStmt.cases.size(); ++i) {
+        auto* caseBlock = new BasicBlock("switch.case." + std::to_string(i), function);
+        auto* nextBlock = i + 1 < switchStmt.cases.size() ? new BasicBlock("switch.test." + std::to_string(i + 1), function) : defaultBlock;
+        Value* caseValue = emitExprForPassing(*switchStmt.cases[i].value, stringType);
+        createCondBr(createCall(stringEquals, {condition, caseValue}, nullptr), caseBlock, nextBlock);
+        caseBlocks.push_back(caseBlock);
+        setInsertPoint(nextBlock);
+    }
+    if (switchStmt.cases.empty()) {
+        createBr(defaultBlock);
+    }
+
+    for (size_t i = 0; i < switchStmt.cases.size(); ++i) {
+        setInsertPoint(caseBlocks[i]);
+        emitBlock(switchStmt.cases[i].stmts, end);
     }
 
     setInsertPoint(defaultBlock);

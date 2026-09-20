@@ -6,7 +6,7 @@ enum E {
 }
 
 void doublePointer(int** p) {
-    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, or enum type, got 'int**'
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int**'
     switch (p) {
     default:
         break;
@@ -14,7 +14,7 @@ void doublePointer(int** p) {
 }
 
 void associatedValueEnumPointer(E* e) {
-    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, or enum type, got 'E*'
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'E*'
     switch (e) {
     default:
         break;
