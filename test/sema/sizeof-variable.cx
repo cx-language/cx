@@ -1,9 +1,14 @@
 // RUN: %not %cx -typecheck %s | %FileCheck %s
 
+// CHECK-NOT: error
+// CHECK-NOT: warning
+
 void main() {
     var a = [1,2,3]
-    // CHECK: [[@LINE+1]]:20: error: 'a' is not a type
     var s = sizeof(a)
     // CHECK: [[@LINE+1]]:20: error: 'a' is not a type
     var e = sizeof(a[0])
 }
+
+// CHECK-NOT: error
+// CHECK-NOT: warning

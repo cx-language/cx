@@ -451,7 +451,7 @@ Type Parser::parseType() {
     }
 }
 
-/// sizeof-expr ::= 'sizeof' '(' type ')'
+/// sizeof-expr ::= 'sizeof' '(' (type | variable) ')'
 SizeofExpr* Parser::parseSizeofExpr() {
     ASSERT(currentToken() == Token::Sizeof);
     auto location = getCurrentLocation();

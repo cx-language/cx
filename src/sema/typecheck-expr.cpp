@@ -1939,6 +1939,46 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
 }
 
 Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
+    // `sizeof` accepts a variable as well as a type, e.g. `sizeof(x)`. A type
+    // with the same name takes precedence, so previously valid `sizeof(T)`
+    // expressions are unaffected even if a variable shadows the type name.
+    // Name lookup failures and non-value declarations fall through to the
+    // normal type path below.
+    if (expr.operandType.isBasicType() && !expr.operandType.isBuiltinType()) {
+        auto* basicType = llvm::cast<BasicType>(expr.operandType.typeBase);
+        if (basicType->genericArgs.empty()) {
+            auto decls = findDecls(basicType->name);
+            bool namesType = llvm::any_of(decls, [](Decl* decl) { return decl->isTypeDecl() || decl->isTypeTemplate(); });
+            bool varHadError = false;
+            if (!namesType) {
+                try {
+                    Decl* decl = findDecl(basicType->name, expr.location);
+                    Type varType;
+                    if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+                        varType = varDecl->type;
+                    } else if (auto* paramDecl = llvm::dyn_cast<ParamDecl>(decl)) {
+                        varType = paramDecl->type;
+                    } else if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(decl)) {
+                        varType = fieldDecl->type;
+                    } else {
+                        decl = nullptr;
+                    }
+                    if (decl && !varType) {
+                        varHadError = true;
+                    } else if (varType) {
+                        checkHasAccess(*decl, expr.location, AccessLevel::None);
+                        decl->referenced = true;
+                        expr.operandType = varType;
+                    }
+                } catch (const CompileError&) {
+                    // Fall through to report the type error below.
+                }
+            }
+            if (varHadError) {
+                throw CompileError::dependentError(); // Declaration had an error, don't cascade.
+            }
+        }
+    }
     typecheckType(expr.operandType, AccessLevel::None);
     return Type::getUInt64();
 }
