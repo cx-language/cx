@@ -1,36 +1,31 @@
-# Comparison with related projects
+# Comparison with related languages
 
-cx is a C-based hybrid low-level/high-level language: it keeps the C machine
-model, manual memory management, and pay-only-for-what-you-use performance,
-and adds modern productivity features with a familiar C-like syntax.
-This page explains how it differs from neighboring languages.
+## cx vs. C
 
-## Difference between cx and C
-
-cx starts from C and stays compatible with it: C headers can be imported
-directly, cx functions can be declared `extern "C"` to be callable from C,
-and both languages share the same ABI, so cx can be adopted gradually
-alongside existing C code.
+cx is heavily based on C and is in many ways compatible with it:
+C headers can be imported directly and cx functions can be declared `extern "C"` to be callable from C,
+so cx can be adopted gradually alongside existing C code.
 
 What cx adds over C:
 
-- Memory-safe conveniences without garbage collection: nullable types checked
-  at compile time, plus array bounds checks, integer overflow checks, and null
-  checks enabled by default. Each check can be disabled individually.
+- Memory-safety conveniences without garbage collection: array bounds checks,
+  integer overflow checks, and non-null asserts. Enabled by default in development builds,
+  disabled by default in release builds.
+- Improved type safety: nullable types checked at compile time, type-safe tagged unions.
 - Higher-level features: generics with interface bounds, function overloading,
-  named arguments, closures, method call syntax, operator overloading, tagged
-  unions, tuples, multiple return values, `defer`, and destructuring.
+  named arguments, closures, method call syntax, operator overloading, sum types,
+  tuples, multiple return values, and `defer`.
 - A richer standard library: real string types, array and string slices,
   resizable arrays, maps, sets, range-based algorithms, file system access,
   and Unicode support.
-- A modern compilation model: no header files or forward declarations,
+- A modern compilation model: no header files or forward declarations required,
   whole-program compilation, and a built-in build system (`cx build`) that
-  works with no configuration and fetches Git dependencies.
-- No preprocessor besides `#ifdef` conditions set from the command line.
+  works with no configuration and fetches Git dependencies automatically.
+- No preprocessor, but conditional compilation using `#if` is supported.
 
-The tradeoff is language size and maturity: C is minimal, standardized, and
-available everywhere, while cx is a larger, younger, still-evolving language
-that trades spec simplicity for day-to-day productivity.
+The tradeoff is language/ecosystem maturity vs modern expressiveness/developer ergonomics:
+C is standardized, time-tested, and available everywhere, while cx is a still-evolving language
+with a richer feature set designed for day-to-day productivity and joy of programming.
 
 ## Difference between cx and C++
 
