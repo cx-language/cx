@@ -44,6 +44,7 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     case Token::Star:
     case Token::Slash:
     case Token::Modulo:
+    case Token::PositiveModulo:
         return PrecedenceGroup::MulDiv;
     case Token::AndAnd:
         return PrecedenceGroup::LogicalAnd;
@@ -87,6 +88,7 @@ bool cx::isBinaryOperator(Token::Kind tokenKind) {
     case Token::Star:
     case Token::Slash:
     case Token::Modulo:
+    case Token::PositiveModulo:
     case Token::And:
     case Token::AndAnd:
     case Token::Or:
@@ -291,6 +293,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "/=",
         "%",
         "%=",
+        "%%",
         "++",
         "--",
         "!",

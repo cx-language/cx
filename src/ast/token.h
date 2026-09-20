@@ -71,6 +71,7 @@ struct Token {
         SlashEqual,
         Modulo,
         ModuloEqual,
+        PositiveModulo,
         Increment,
         Decrement,
         Not,

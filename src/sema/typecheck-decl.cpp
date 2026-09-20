@@ -502,6 +502,7 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
         case Token::Star:
         case Token::Slash:
         case Token::Modulo:
+        case Token::PositiveModulo:
         case Token::And:
         case Token::Or:
         case Token::Xor:

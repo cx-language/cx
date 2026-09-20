@@ -371,6 +371,8 @@ llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
         return lhs / rhs;
     case Token::Modulo:
         return lhs % rhs;
+    case Token::PositiveModulo:
+        return (lhs % rhs + rhs) % rhs;
     case Token::And:
         return lhs & rhs;
     case Token::Or:

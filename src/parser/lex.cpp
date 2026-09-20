@@ -328,6 +328,7 @@ Token Lexer::nextToken() {
         case '%':
             ch = readChar();
             if (ch == '=') return Token(Token::ModuloEqual, getCurrentLocation());
+            if (ch == '%') return Token(Token::PositiveModulo, getCurrentLocation());
             unreadChar(ch);
             return Token(Token::Modulo, getCurrentLocation());
         case '<':
