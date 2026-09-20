@@ -6,7 +6,7 @@ enum Shape {
 
 void main() {
     Shape s = Circle(2);
-    switch (s) {
+    switch s {
         case Circle c:
             println("circle: ", 3.14 * c.radius * c.radius);
         case Rect r:

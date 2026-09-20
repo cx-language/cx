@@ -140,7 +140,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
         var result = StringBuffer();
 
         for c in this {
-            switch (c) {
+            switch c {
                 case '\0': result += "\\0";
                 case '\n': result += "\\n";
                 case '\r': result += "\\r";

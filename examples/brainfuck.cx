@@ -47,7 +47,7 @@ struct Program {
             if !"+-><[].,".contains(ch)
                 continue;
 
-            switch (ch) {
+            switch ch {
                 case '[':
                     leftStack.push(pc);
 
@@ -71,7 +71,7 @@ struct Program {
         var size = code.size();
 
         while pc < size {
-            switch (code[pc]) {
+            switch code[pc] {
                 case '+':
                     tape.increment();
 
