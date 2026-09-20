@@ -1,6 +1,9 @@
 
 %"Opt<int>" = type { i32, <{ { i32 } }> }
 
+@0 = private unnamed_addr constant [66 x i8] c"invalid value in switch over enum 'Opt' at generic-enum.cx:12:13\0A\00", align 1
+@1 = private unnamed_addr constant [66 x i8] c"invalid value in switch over enum 'Opt' at generic-enum.cx:19:13\0A\00", align 1
+
 define i32 @main() {
   %a = alloca %"Opt<int>", align 8
   %enum = alloca %"Opt<int>", align 8
@@ -47,9 +50,10 @@ switch.case.1:                                    ; preds = %0
   br label %switch.end
 
 switch.default:                                   ; preds = %0
-  br label %switch.end
+  call void @_EN3std10assertFailEP4char(ptr @0)
+  unreachable
 
-switch.end:                                       ; preds = %switch.default, %switch.case.1, %switch.case.0
+switch.end:                                       ; preds = %switch.case.1, %switch.case.0
   %b.tag = getelementptr inbounds %"Opt<int>", ptr %b, i32 0, i32 0
   %b.tag.load = load i32, ptr %b.tag, align 4
   switch i32 %b.tag.load, label %switch.default15 [
@@ -67,8 +71,8 @@ switch.case.114:                                  ; preds = %switch.end
   ret i32 0
 
 switch.default15:                                 ; preds = %switch.end
-  br label %switch.end16
-
-switch.end16:                                     ; preds = %switch.default15
-  ret i32 0
+  call void @_EN3std10assertFailEP4char(ptr @1)
+  unreachable
 }
+
+declare void @_EN3std10assertFailEP4char(ptr)

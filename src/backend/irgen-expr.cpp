@@ -369,14 +369,18 @@ void IRGenerator::emitAssert(Value* condition, const Expr* expr, Location locati
     auto* function = insertBlock->parent;
     auto* failBlock = new BasicBlock((name + ".fail").str(), function);
     auto* successBlock = new BasicBlock((name + ".success").str(), function);
-    auto* assertFail = getFunction(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("assertFail")));
     createCondBr(condition, failBlock, successBlock);
     setInsertPoint(failBlock);
+    emitAbortWithMessage(message, location);
+    setInsertPoint(successBlock);
+}
+
+void IRGenerator::emitAbortWithMessage(llvm::StringRef message, Location location) {
+    auto* assertFail = getFunction(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("assertFail")));
     auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":", std::to_string(location.line), ":",
                                                std::to_string(location.column), "\n");
     createCall(assertFail, createGlobalStringPtr(messageAndLocation), nullptr);
     createUnreachable();
-    setInsertPoint(successBlock);
 }
 
 Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements) {
@@ -592,8 +596,7 @@ Value* IRGenerator::emitTupleElementAccess(const MemberExpr& expr) {
 Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
     auto* value = emitLvalueExpr(base);
 
-    if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType()
-        && value->getType()->getPointee()->equals(getIRType(base.type))) {
+    if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() && value->getType()->getPointee()->equals(getIRType(base.type))) {
         value = createLoad(value);
     }
 

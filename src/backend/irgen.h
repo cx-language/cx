@@ -14,6 +14,7 @@ namespace cx {
 
 struct Module;
 struct Type;
+struct CompileOptions;
 struct IRGenerator;
 
 struct IRGenScope {
@@ -34,7 +35,7 @@ struct IRGenScope {
 };
 
 struct IRGenerator {
-    IRGenerator();
+    explicit IRGenerator(const CompileOptions& options);
     IRModule& emitModule(const Module& sourceModule);
     void emitFunctionBody(const FunctionDecl& decl, Function& function);
     void createDestructorCall(Function* destructor, Value* receiver);
@@ -75,6 +76,7 @@ struct IRGenerator {
     Value* emitOptionalHasValueTest(Value* enumValue);
     Value* emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType);
     void emitAssert(Value* condition, const Expr* expr, Location location, llvm::StringRef message = "Assertion failed", const llvm::Twine& name = "assert");
+    void emitAbortWithMessage(llvm::StringRef message, Location location);
     Value* emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements);
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
     Value* emitClosureCallExpr(const CallExpr& expr);
@@ -95,6 +97,7 @@ struct IRGenerator {
     void emitReturnStmt(const ReturnStmt& stmt);
     void emitIfStmt(const IfStmt& ifStmt);
     void emitSwitchStmt(const SwitchStmt& switchStmt);
+    bool emitEnumSwitchCheck(const SwitchStmt& switchStmt, SwitchInst& switchInst, BasicBlock* end);
     void emitForStmt(const ForStmt& forStmt);
     void emitBreakStmt(const BreakStmt&);
     void emitContinueStmt(const ContinueStmt&);
@@ -214,6 +217,7 @@ struct IRGenerator {
         Function* function;
     };
 
+    const CompileOptions& options;
     std::vector<IRGenScope> scopes;
     IRModule* module = nullptr;
     std::vector<IRModule*> generatedModules;

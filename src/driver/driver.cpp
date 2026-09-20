@@ -84,6 +84,11 @@ cl::bits<PrintOpt> printOpts(cl::desc("Print output from intermediate steps:"), 
 enum class Backend { LLVM, C };
 cl::opt<Backend> backend("backend", cl::desc("Select code-generation backend to use:"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
                          cl::values(clEnumValN(Backend::LLVM, "llvm", "LLVM backend (default)"), clEnumValN(Backend::C, "c", "C backend")));
+cl::opt<BuildMode> buildMode("mode", cl::desc("Select build mode:"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
+                             cl::values(clEnumValN(BuildMode::Debug, "debug", "Debug mode (default): safety checks enabled"),
+                                        clEnumValN(BuildMode::ReleaseSafe, "release-safe", "Release-safe mode: safety checks enabled"),
+                                        clEnumValN(BuildMode::ReleaseFast, "release-fast", "Release-fast mode: safety checks disabled")),
+                             cl::init(BuildMode::Debug));
 cl::opt<bool> cDispatch("c-dispatch", cl::desc("Generate goto-free C code using dispatch loops (for C compilers without goto support)"),
                         cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"), cl::cat(outputCategory));
@@ -231,7 +236,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     addPredefinedImportSearchPaths(buildParams.filePaths);
 
-    CompileOptions options = {noUnusedWarnings, importSearchPaths, frameworkSearchPaths, defines, cflags};
+    CompileOptions options = {buildMode, noUnusedWarnings, importSearchPaths, frameworkSearchPaths, defines, cflags};
     auto remainingPrintOpts = std::popcount(printOpts.getBits());
     bool printSectionDividers = remainingPrintOpts > 1;
 
@@ -273,7 +278,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         if (!remainingPrintOpts) return 0;
     }
 
-    IRGenerator irGenerator;
+    IRGenerator irGenerator(options);
     for (auto* importedModule : Module::getAllImportedModules()) {
         irGenerator.emitModule(*importedModule);
     }

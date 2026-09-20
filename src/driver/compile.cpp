@@ -52,7 +52,7 @@ CompileToCResult cx::compileToC(const char* fileName, const char* source, const 
 
     if (errors) return CompileToCResult{.status = 1};
 
-    IRGenerator irGenerator;
+    IRGenerator irGenerator(compileOptions);
     for (auto* importedModule : Module::getAllImportedModules()) {
         irGenerator.emitModule(*importedModule);
     }

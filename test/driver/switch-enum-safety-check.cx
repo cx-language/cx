@@ -1,0 +1,97 @@
+// RUN: %cx -print-llvm %s | %FileCheck %s --check-prefix=SAFE
+// RUN: %cx -print-llvm --mode=release-fast %s | %FileCheck %s --check-prefix=FAST
+// RUN: check_exit_status 0 %cx run %s
+// RUN: check_exit_status 0 %cx run --mode=debug %s
+// RUN: check_exit_status 0 %cx run --mode=release-safe %s
+// RUN: check_exit_status 0 %cx run --mode=release-fast %s
+// RUN: check_exit_status 0 %cx run --backend=c %s
+// RUN: check_exit_status 0 %cx run --mode=release-fast --backend=c %s
+
+enum Outcome {
+    Ok(int value),
+    Err(int code),
+    Pending,
+}
+
+int exhaustive(Outcome* o) {
+    switch (*o) {
+        case Ok value:
+            return value.value;
+        case Err:
+            return -1;
+        case Pending:
+            return 0;
+    }
+}
+
+int partial(Outcome* o) {
+    switch (*o) {
+        case Ok value:
+            return value.value;
+    }
+    return -99;
+}
+
+int withDefault(Outcome* o) {
+    switch (*o) {
+        case Ok value:
+            return value.value;
+        default:
+            return -2;
+    }
+}
+
+void main() {
+    var a = Outcome.Ok(value = 7);
+    var b = Outcome.Err(code = 1);
+    var c = Outcome.Pending;
+    assert(exhaustive(a) == 7);
+    assert(exhaustive(b) == -1);
+    assert(exhaustive(c) == 0);
+    assert(partial(a) == 7);
+    assert(partial(b) == -99);
+    assert(partial(c) == -99);
+    assert(withDefault(a) == 7);
+    assert(withDefault(c) == -2);
+}
+
+// SAFE: c"invalid value in switch over enum 'Outcome' at {{[^"]*}}:{{[0-9]+}}:{{[0-9]+}}
+
+// SAFE-LABEL: define {{.*}}exhaustive
+// SAFE: switch i32 %{{.*}}, label %switch.default [
+// SAFE: i32 0, label %switch.case.0
+// SAFE: i32 1, label %switch.case.1
+// SAFE: i32 2, label %switch.case.2
+// SAFE-LABEL: switch.default:
+// SAFE: call void {{.*}}assertFail{{.*}}(ptr @{{[0-9]+}})
+// SAFE: unreachable
+
+// SAFE-LABEL: define {{.*}}partial
+// SAFE: switch i32 %{{.*}}, label %switch.default [
+// SAFE: i32 0, label %switch.case.0
+// SAFE: i32 1, label %switch.end
+// SAFE: i32 2, label %switch.end
+// SAFE-LABEL: switch.default:
+// SAFE: call void {{.*}}assertFail{{.*}}(ptr @{{[0-9]+}})
+// SAFE: unreachable
+
+// SAFE-LABEL: define {{.*}}withDefault
+// SAFE-NOT: assertFail
+// SAFE: ret i32 -2
+
+// FAST-NOT: invalid value in switch
+// FAST-LABEL: define {{.*}}exhaustive
+// FAST: switch i32 %{{.*}}, label %switch.default [
+// FAST-NOT: assertFail
+// FAST-LABEL: switch.default:
+// FAST-NEXT: unreachable
+
+// FAST-LABEL: define {{.*}}partial
+// FAST: i32 1, label %switch.end
+// FAST: i32 2, label %switch.end
+// FAST-LABEL: switch.default:
+// FAST-NEXT: unreachable
+
+// FAST-LABEL: define {{.*}}withDefault
+// FAST-NOT: assertFail
+// FAST: ret i32 -2

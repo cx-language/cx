@@ -77,6 +77,12 @@ void main() {
 }
 ```
 
+When switching over an enum without a `default`, the compiler inserts a safety check that aborts
+with an error if the value is somehow not one of the enum's cases. Valid but unhandled cases still
+fall through to the code after the switch. The check is emitted in every build mode except
+release-fast (`--mode=release-fast`), where the compiler instead assumes the value is always
+a valid case.
+
 ## defer
 
 `defer` defers the execution of a statement to the exits of the current scope.

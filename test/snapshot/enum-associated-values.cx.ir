@@ -62,14 +62,19 @@ switch.case.2:
     return j.load
 
 switch.default:
-    br switch.end
+    void _9 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'E' at enum-associated-values.cx:14:13
+")
+    unreachable
 
 switch.end:
     int* e.tag_0 = getelementptr e, 0
     int e.tag.load_0 = load e.tag_0
-    bool _9 = e.tag.load_0 == int 0
+    bool _10 = e.tag.load_0 == int 0
     int* e.tag_1 = getelementptr e, 0
     int e.tag.load_1 = load e.tag_1
-    bool _10 = e.tag.load_1 == int 1
+    bool _11 = e.tag.load_1 == int 1
     return int 0
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }
