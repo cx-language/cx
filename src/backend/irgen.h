@@ -63,6 +63,7 @@ struct IRGenerator {
     Value* emitUndefinedLiteralExpr(const UndefinedLiteralExpr& expr);
     Value* emitArrayLiteralExpr(const ArrayLiteralExpr& expr);
     Value* emitTupleExpr(const TupleExpr& expr);
+    Value* emitAggregateElements(Type type, llvm::ArrayRef<NamedValue> elements);
     Value* emitImplicitNullComparison(Value* operand, BinaryOperator op = Token::NotEqual);
     Value* emitNot(const UnaryExpr& expr);
     Value* emitUnaryExpr(const UnaryExpr& expr);
