@@ -1035,9 +1035,7 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
             VarDecl* associatedValue = nullptr;
             if (currentToken() == Token::Identifier) {
                 auto name = parse(Token::Identifier);
-                // TODO: UndefinedLiteralExpr as initializer is a hack, should be nullptr.
-                associatedValue = makeAST<VarDecl>(Type(), name.getString().str(), makeAST<UndefinedLiteralExpr>(name.location), parent, AccessLevel::None,
-                                                   *currentModule, name.location);
+                associatedValue = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
             }
 
             parse(Token::Colon);
