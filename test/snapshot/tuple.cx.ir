@@ -41,6 +41,6 @@ struct { bool, struct { float } } _EN4main1fE() {
 
 struct { bool, float } _EN4main1gE() {
     struct { bool, float } _0 = insertvalue struct { bool, float } undefined, 0, bool true
-    struct { bool, float } _1 = insertvalue _0, 1, int 1
+    struct { bool, float } _1 = insertvalue _0, 1, float 1
     return _1
 }

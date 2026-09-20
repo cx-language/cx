@@ -1,0 +1,12 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+int? pick(bool b) {
+    var x = 1;
+    var y = 2;
+    return b ? x : y;
+}
+
+void main() {
+    assert(pick(true)! == 1);
+    assert(pick(false)! == 2);
+}

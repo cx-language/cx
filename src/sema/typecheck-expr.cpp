@@ -604,14 +604,27 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
             expr->type = convertedType;
 
             if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-                ifExpr->thenExpr->type = convertedType;
-                ifExpr->elseExpr->type = convertedType;
+                if (Expr* convertedThen = convert(ifExpr->thenExpr, convertedType, allowPointerToTemporary)) {
+                    ifExpr->thenExpr = convertedThen;
+                }
+                if (Expr* convertedElse = convert(ifExpr->elseExpr, convertedType, allowPointerToTemporary)) {
+                    ifExpr->elseExpr = convertedElse;
+                }
             }
 
             if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(expr); arrayLiteral && convertedType.isConstantArray()) {
                 for (auto& element : arrayLiteral->elements) {
                     if (Expr* convertedElement = convert(element, convertedType.getElementType(), allowPointerToTemporary)) {
                         element = convertedElement;
+                    }
+                }
+            }
+
+            if (auto* tupleExpr = llvm::dyn_cast<TupleExpr>(expr); tupleExpr && convertedType.isTupleType()) {
+                auto targetElements = convertedType.getTupleElements();
+                for (size_t i = 0; i < tupleExpr->elements.size(); ++i) {
+                    if (Expr* convertedElement = convert(tupleExpr->elements[i].value, targetElements[i].type, allowPointerToTemporary)) {
+                        tupleExpr->elements[i].value = convertedElement;
                     }
                 }
             }
@@ -768,6 +781,10 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         auto* tupleExpr = llvm::dyn_cast_or_null<TupleExpr>(expr);
         auto sourceElements = source.getTupleElements();
         auto targetElements = target.getTupleElements();
+
+        if (sourceElements.size() != targetElements.size()) {
+            return Type();
+        }
 
         for (size_t i = 0; i < sourceElements.size(); ++i) {
             if (sourceElements[i].name != targetElements[i].name) {

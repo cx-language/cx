@@ -1,0 +1,11 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+(int? a, int b) make() {
+    return (a = 1, b = 2);
+}
+
+void main() {
+    var t = make();
+    assert(t.a! == 1);
+    assert(t.b == 2);
+}
