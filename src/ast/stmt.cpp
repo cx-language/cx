@@ -60,7 +60,7 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto condition = switchStmt->condition->instantiate(genericArgs);
         auto cases = map(switchStmt->cases, [&](const SwitchCase& switchCase) {
             auto value = switchCase.value->instantiate(genericArgs);
-            auto associatedValue = llvm::cast<VarDecl>(switchCase.associatedValue->instantiate(genericArgs, {}));
+            auto associatedValue = switchCase.associatedValue ? llvm::cast<VarDecl>(switchCase.associatedValue->instantiate(genericArgs, {})) : nullptr;
             auto stmts = ::instantiate(switchCase.stmts, genericArgs);
             return SwitchCase(value, associatedValue, std::move(stmts));
         });
