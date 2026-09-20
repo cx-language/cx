@@ -29,12 +29,7 @@ struct List<Element> {
     /// Initializes an list containing the elements of the given array.
     List(Element[] elements) {
         init(capacity = elements.size());
-
-        // TODO: When array references can be iterated, iterate 'elements' directly.
-        // TODO: Add push() overload for pushing all elements from an array reference.
-        for index in 0..elements.size() {
-            push(elements[index]);
-        }
+        push(elements);
     }
 
     /// Initializes the list to contain the given number of uninitialized elements.
@@ -107,10 +102,16 @@ struct List<Element> {
             grow();
         }
 
-        // TODO: Shouldn't need '&' here.
-        (&buffer[size]).init(element);
+        buffer[size].init(element);
         size++;
         return &buffer[size - 1];
+    }
+
+    /// Adds all elements from the given array to the end of the list.
+    void push(Element[] elements) {
+        for element in elements {
+            push(element);
+        }
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.

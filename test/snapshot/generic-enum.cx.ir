@@ -9,7 +9,7 @@ int main() {
     int* tag = getelementptr enum, 0
     store int 0 to tag
     struct { int } _0 = insertvalue struct { int } undefined, 0, int 1
-    union { struct { int }, void }* associatedValue = getelementptr enum, 1
+    union { struct { int } }* associatedValue = getelementptr enum, 1
     struct { int }* _1 = cast associatedValue to struct { int }*
     store _0 to _1
     Opt<int> enum.load = load enum
@@ -26,7 +26,7 @@ int main() {
     }
 
 switch.case.0:
-    union { struct { int }, void }* _2 = getelementptr a, 1
+    union { struct { int } }* _2 = getelementptr a, 1
     struct { int }* some = cast _2 to struct { int }*
     int* tag_1 = getelementptr enum_1, 0
     store int 0 to tag_1
@@ -34,7 +34,7 @@ switch.case.0:
     int value.load = load value
     int _3 = value.load + int 1
     struct { int } _4 = insertvalue struct { int } undefined, 0, _3
-    union { struct { int }, void }* associatedValue_0 = getelementptr enum_1, 1
+    union { struct { int } }* associatedValue_0 = getelementptr enum_1, 1
     struct { int }* _5 = cast associatedValue_0 to struct { int }*
     store _4 to _5
     Opt<int> enum.load_1 = load enum_1
@@ -62,7 +62,7 @@ switch.end:
     }
 
 switch.case.0_0:
-    union { struct { int }, void }* _7 = getelementptr b, 1
+    union { struct { int } }* _7 = getelementptr b, 1
     struct { int }* some_0 = cast _7 to struct { int }*
     int* value_0 = getelementptr some_0, 0
     int value.load_0 = load value_0

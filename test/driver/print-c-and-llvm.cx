@@ -1,0 +1,13 @@
+// RUN: %cx -print-c -print-llvm %s | %FileCheck %s
+// RUN: %cx --backend=c -print-c -print-llvm %s | %FileCheck %s
+
+void main() {}
+
+// CHECK-NOT: print-c-and-llvm.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK: === BEGIN C ===
+// CHECK: int main(void)
+// CHECK: === END C ===
+// CHECK: === BEGIN LLVM ===
+// CHECK: define i32 @main()
+// CHECK: === END LLVM ===
+// CHECK-NOT: print-c-and-llvm.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

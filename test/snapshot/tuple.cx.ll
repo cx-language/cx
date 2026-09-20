@@ -33,5 +33,5 @@ define { i1, { float } } @_EN4main1fE() {
 }
 
 define { i1, float } @_EN4main1gE() {
-  ret { i1, float } { i1 true, i32 1 }
+  ret { i1, float } { i1 true, float 1.000000e+00 }
 }

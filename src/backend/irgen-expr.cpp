@@ -139,13 +139,17 @@ Value* IRGenerator::emitArrayLiteralExpr(const ArrayLiteralExpr& expr) {
     return array;
 }
 
-Value* IRGenerator::emitTupleExpr(const TupleExpr& expr) {
-    Value* tuple = createUndefined(expr.type);
+Value* IRGenerator::emitAggregateElements(Type type, llvm::ArrayRef<NamedValue> elements) {
+    Value* aggregate = createUndefined(type);
     int index = 0;
-    for (auto& element : expr.elements) {
-        tuple = createInsertValue(tuple, emitExpr(*element.value), index++);
+    for (auto& element : elements) {
+        aggregate = createInsertValue(aggregate, emitExpr(*element.value), index++);
     }
-    return tuple;
+    return aggregate;
+}
+
+Value* IRGenerator::emitTupleExpr(const TupleExpr& expr) {
+    return emitAggregateElements(expr.type, expr.elements);
 }
 
 Value* IRGenerator::emitImplicitNullComparison(Value* operand, BinaryOperator op) {
@@ -431,7 +435,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
 
     // Handle implicit conversions to type 'T[*]'.
     if (expr.type.removePointer().isConstantArray() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
-        return createCast(emitLvalueExpr(expr), targetType);
+        return createCast(loadThroughStorageAddress(emitLvalueExpr(expr), expr.type), targetType);
     }
 
     // Handle implicit conversions to void pointer, and to base type pointer.
@@ -486,12 +490,7 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
     createStore(tag, createGEP(enumValue, 0, nullptr, "tag"));
 
     if (!associatedValueElements.empty()) {
-        // TODO: This is duplicated in emitTupleExpr.
-        Value* associatedValue = createUndefined(enumCase.associatedType);
-        int index = 0;
-        for (auto& element : associatedValueElements) {
-            associatedValue = createInsertValue(associatedValue, emitExpr(*element.value), index++);
-        }
+        Value* associatedValue = emitAggregateElements(enumCase.associatedType, associatedValueElements);
         auto* associatedValuePtr = createCast(createGEP(enumValue, 1, nullptr, "associatedValue"), associatedValue->getType()->getPointerTo());
         createStore(associatedValue, associatedValuePtr);
     }
@@ -554,7 +553,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     if (expr.isMoveInit()) {
-        auto* receiverValue = emitExpr(*expr.getReceiver());
+        auto* receiverValue = loadThroughStorageAddress(emitExprAsPointer(*expr.getReceiver()), expr.getReceiver()->type);
         auto* argumentValue = emitExpr(*expr.args[0].value);
         createStore(argumentValue, receiverValue);
         return nullptr;
@@ -950,6 +949,15 @@ Value* IRGenerator::emitExprAsPointer(const Expr& expr) {
     auto* value = emitLvalueExpr(expr);
     if (!value->getType()->isPointerType()) {
         value = createTempAlloca(value);
+    }
+    return value;
+}
+
+Value* IRGenerator::loadThroughStorageAddress(Value* value, Type exprType) {
+    // Spilled params and locals add an indirection: when value points to the expr's own
+    // pointer type instead of into the data, load once to get the data pointer.
+    if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() && value->getType()->getPointee()->equals(getIRType(exprType))) {
+        return createLoad(value);
     }
     return value;
 }

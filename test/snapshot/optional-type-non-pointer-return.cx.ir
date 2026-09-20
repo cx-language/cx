@@ -7,7 +7,7 @@ Optional<int> _EN4main1fE() {
     store int 1 to tag
     int i.load = load i
     struct { int } _0 = insertvalue struct { int } undefined, 0, i.load
-    union { void, struct { int } }* associatedValue = getelementptr enum, 1
+    union { struct { int } }* associatedValue = getelementptr enum, 1
     struct { int }* _1 = cast associatedValue to struct { int }*
     store _0 to _1
     Optional<int> enum.load = load enum

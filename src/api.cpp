@@ -1,6 +1,8 @@
 #include "cx.h"
 #ifdef _WIN32
-// TODO
+#pragma warning(push, 0)
+#include <windows.h>
+#pragma warning(pop)
 #else
 #include <dlfcn.h>
 #endif
@@ -48,7 +50,10 @@ CxFunction cxGetFunction(CxModule* module, const char* name) {
         auto mangledName = mangleFunctionDecl(*functionDecl);
 
 #ifdef _WIN32
-        // TODO
+        HMODULE lib = LoadLibraryA("main.dll");
+        if (lib) {
+            function.ptr = reinterpret_cast<void*>(GetProcAddress(lib, mangledName.c_str()));
+        }
 #else
         void* lib = dlopen("main.so", RTLD_LAZY);
         function.ptr = dlsym(lib, mangledName.c_str());

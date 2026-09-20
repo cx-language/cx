@@ -165,6 +165,28 @@ void testParseInt() {
     assert("1".parseInt() == 1);
     assert("123789".parseInt() == 123789);
     assert("2147483647".parseInt() == 2147483647);
+    assert("+42".parseInt() == 42);
+    assert("-42".parseInt() == -42);
+    assert("-".parseInt() == null);
+    assert("+".parseInt() == null);
+    assert("0".parseInt() == 0);
+    assert("007".parseInt() == 7);
+    assert("0x10".parseInt() == 16);
+    assert("0xff".parseInt() == 255);
+    assert("0xFF".parseInt() == 255);
+    assert("-0x10".parseInt() == -16);
+    assert("0x".parseInt() == null);
+    assert("0b101".parseInt() == 5);
+    assert("0b102".parseInt() == null);
+    assert("0b".parseInt() == null);
+    assert("0o17".parseInt() == 15);
+    assert("0o18".parseInt() == null);
+    assert("0o".parseInt() == null);
+    assert("2147483648".parseInt() == null);
+    assert("-2147483648".parseInt()! == int_min);
+    assert("-2147483649".parseInt() == null);
+    assert("0x7fffffff".parseInt() == 2147483647);
+    assert("0x80000000".parseInt() == null);
 }
 
 void testEscape() {

@@ -17,12 +17,9 @@ struct Map<Key: Hashable, Value> {
         hashTable = List(128, List<MapEntry<Key, Value>>());
     }
 
-    // FIXME: Should assert that the key is not in the map, instead of no-oping.
-    /// Inserts an element into the map. If the element exists already, nothing is done.
+    /// Inserts an element into the map. The key must not already be in the map.
     void insert(Key key, Value value) {
-        if contains(key) {
-            return;
-        }
+        assert(!contains(key));
 
         var hashValue = convertHash(key.hash()) % capacity();
         hashTable[hashValue].push(MapEntry(key, value));
@@ -35,7 +32,7 @@ struct Map<Key: Hashable, Value> {
 
     /// Inserts, or updates an existing value.
     void set(Key key, Value value) {
-        var existing = &this[key];
+        var existing = this[key];
 
         if existing {
             *existing = value;
@@ -170,8 +167,7 @@ struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
         var slotEnd = &slot.data()[slot.size()];
         current++;
 
-        // TODO: Allow comparing T[*] and T* without casts.
-        if cast<void*>(current) == cast<void*>(slotEnd) {
+        if current == slotEnd {
             hashTableIterator.increment();
             skipEmptySlots();
         }

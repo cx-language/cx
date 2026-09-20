@@ -103,5 +103,5 @@ struct Program {
 
 void main() {
     var text = readFile("inputs/mandel.b");
-    Program(string(text)).run();
+    Program(string(text!)).run();
 }

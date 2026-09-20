@@ -184,8 +184,8 @@ llvm::APSInt Token::getIntegerValue() const {
 }
 
 llvm::APFloat Token::getFloatingPointValue() const {
-    // TODO: Which float semantics to use?
-    llvm::APFloat value(llvm::APFloat::IEEEsingle(), src.string);
+    // Literals may convert to any floating-point type, so parse in double precision like C.
+    llvm::APFloat value(llvm::APFloat::IEEEdouble(), src.string);
     return value;
 }
 

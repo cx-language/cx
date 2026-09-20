@@ -1,0 +1,18 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct Box<T> {
+    T value;
+}
+
+void main() {
+    // CHECK-NOT: ambiguous-bare-generic-type.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+    // CHECK: [[@LINE+2]]:5: error: ambiguous reference to 'Box'
+    // CHECK-NEXT: Box? x = null;
+    Box? x = null;
+}
+
+// CHECK: 3:8: note: candidate type in module 'main':
+// CHECK-NEXT: struct Box<T> {
+// CHECK: {{.*}}std/Box.cx:2:8: note: candidate type in module 'std':
+// CHECK-NEXT: struct Box<T> {
+// CHECK-NOT: ambiguous-bare-generic-type.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

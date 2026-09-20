@@ -641,8 +641,29 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
             expr->type = convertedType;
 
             if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-                ifExpr->thenExpr->type = convertedType;
-                ifExpr->elseExpr->type = convertedType;
+                if (Expr* convertedThen = convert(ifExpr->thenExpr, convertedType, allowPointerToTemporary)) {
+                    ifExpr->thenExpr = convertedThen;
+                }
+                if (Expr* convertedElse = convert(ifExpr->elseExpr, convertedType, allowPointerToTemporary)) {
+                    ifExpr->elseExpr = convertedElse;
+                }
+            }
+
+            if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(expr); arrayLiteral && convertedType.isConstantArray()) {
+                for (auto& element : arrayLiteral->elements) {
+                    if (Expr* convertedElement = convert(element, convertedType.getElementType(), allowPointerToTemporary)) {
+                        element = convertedElement;
+                    }
+                }
+            }
+
+            if (auto* tupleExpr = llvm::dyn_cast<TupleExpr>(expr); tupleExpr && convertedType.isTupleType()) {
+                auto targetElements = convertedType.getTupleElements();
+                for (size_t i = 0; i < tupleExpr->elements.size(); ++i) {
+                    if (Expr* convertedElement = convert(tupleExpr->elements[i].value, targetElements[i].type, allowPointerToTemporary)) {
+                        tupleExpr->elements[i].value = convertedElement;
+                    }
+                }
             }
         }
         return expr;
@@ -786,10 +807,6 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             });
 
             if (isConvertible) {
-                for (auto& element : arrayLiteralExpr->elements) {
-                    // FIXME: Don't set type here.
-                    element->type = target.getElementType();
-                }
                 return target;
             }
         }
@@ -856,6 +873,10 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         auto* tupleExpr = llvm::dyn_cast_or_null<TupleExpr>(expr);
         auto sourceElements = source.getTupleElements();
         auto targetElements = target.getTupleElements();
+
+        if (sourceElements.size() != targetElements.size()) {
+            return Type();
+        }
 
         for (size_t i = 0; i < sourceElements.size(); ++i) {
             if (sourceElements[i].name != targetElements[i].name) {
@@ -1278,6 +1299,25 @@ void cx::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> 
     }
 }
 
+// Whether the call's generic arguments can be taken from the expected type. The callee must belong to the same type
+// as the expected type, or to the template pattern it was instantiated from. For non-constructor calls the return type
+// must additionally mention a generic parameter; a concrete return type carries no information about the callee's parameters.
+static bool canInferFromExpectedType(llvm::ArrayRef<GenericParamDecl> genericParams, FunctionDecl* decl, Type expectedType) {
+    if (!expectedType || !expectedType.isBasicType() || expectedType.getGenericArgs().empty()
+        || llvm::any_of(expectedType.getGenericArgs(), [](Type t) { return t.isUnresolvedType(); })) {
+        return false;
+    }
+    auto* expectedDecl = expectedType.getDecl();
+    if (!expectedDecl) return false;
+    if (decl->isConstructorDecl()) {
+        auto* pattern = decl->getTypeDecl();
+        return expectedDecl == pattern || expectedDecl->instantiatedFrom == pattern;
+    }
+    auto* returnDecl = decl->getReturnType().getDecl();
+    if (expectedDecl != returnDecl && expectedDecl->instantiatedFrom != returnDecl) return false;
+    return llvm::any_of(genericParams, [&](auto& genericParam) { return containsGenericParam(decl->getReturnType(), genericParam.getName()); });
+}
+
 llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                          Type expectedType) {
     ASSERT(!genericParams.empty());
@@ -1285,9 +1325,7 @@ llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
     llvm::ArrayRef<Type> genericArgTypes;
 
     if (call.genericArgs.empty()) {
-        if (expectedType && expectedType.isBasicType() && !expectedType.getGenericArgs().empty()
-            && llvm::none_of(expectedType.getGenericArgs(), [](Type t) { return t.isUnresolvedType(); })
-            && BasicType::get(expectedType.getName(), {}).getDecl() == (decl->isConstructorDecl() ? decl->getTypeDecl() : decl->getReturnType().getDecl())) {
+        if (canInferFromExpectedType(genericParams, decl, expectedType)) {
             genericArgTypes = expectedType.getGenericArgs();
         } else if (call.args.empty()) {
             if (returnOnError) return {};
@@ -1418,7 +1456,7 @@ static bool isStdlibDecl(const Match& match) {
 }
 
 static bool isCHeaderDecl(const Match& match) {
-    return match.decl->getModule() && match.decl->getModule()->name.ends_with("_h");
+    return match.decl->getModule() && match.decl->getModule()->isCHeaderImport;
 }
 
 static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, const CallExpr& call) {
@@ -1780,6 +1818,9 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     }
 
     if (decls.empty()) {
+        if (expr.getFunctionName() == "[]" || expr.getFunctionName() == "[]=") {
+            ERROR(expr.callee->location, "'" << expr.receiverType << "' doesn't provide an operator" << expr.getFunctionName());
+        }
         ERROR(expr.callee->location, "unknown identifier '" << callee << "'");
     }
 
@@ -2274,8 +2315,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType) {
                 return element.type;
             }
         }
-    } else {
-        for (auto& field : baseType.getDecl()->fields) {
+    } else if (auto* baseDecl = baseType.getDecl()) {
+        for (auto& field : baseDecl->fields) {
             if (field.getName() == expr.member) {
                 checkHasAccess(field, expr.location, AccessLevel::None);
                 expr.decl = &field;
@@ -2733,6 +2774,13 @@ void Typechecker::setMoved(Expr* expr, bool isMoved) {
             return;
         }
     }
+    if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
+        if (cast->castKind == ImplicitCastExpr::OptionalWrap) {
+            setMoved(cast->operand, isMoved);
+        }
+        return;
+    }
+
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr)) {
         ASSERT(varExpr->decl);
 

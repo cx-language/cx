@@ -4,13 +4,17 @@
 using namespace cx;
 
 void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
-    // TODO: Emit deferred expressions and destructor calls after the evaluation of the return
-    // value, but before emitting the return instruction. The return value expression may depend on
-    // the values that the deferred expressions and/or destructor calls could deallocate.
+    // Evaluate the return value first: it may depend on values that the deferred
+    // expressions and/or destructor calls deallocate.
+    Value* returnValue = nullptr;
+    if (stmt.value) {
+        returnValue = emitExprForPassing(*stmt.value, insertBlock->parent->returnType);
+    }
+
     emitDeferredExprsAndDestructorCallsForReturn();
 
-    if (auto* returnValue = stmt.value) {
-        createReturn(emitExprForPassing(*returnValue, insertBlock->parent->returnType));
+    if (stmt.value) {
+        createReturn(returnValue);
     } else {
         createReturn(currentDecl->isMain() ? createConstantInt(Type::getInt(), 0) : nullptr);
     }

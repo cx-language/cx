@@ -46,7 +46,7 @@ assert.fail:
 
 assert.success:
     store a.load.load_0 to _0
-    union { void, struct { int } }* _7 = getelementptr _0, 1
+    union { struct { int } }* _7 = getelementptr _0, 1
     int* _8 = cast _7 to int*
     int .load = load _8
     int* b.load = load b_0

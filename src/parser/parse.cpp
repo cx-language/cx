@@ -997,13 +997,19 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
         parseStmtTerminator();
         return stmt;
     }
+    bool thenIsBlock = currentToken() == Token::LeftBrace;
     auto thenStmts = parseBlockOrStmt(parent);
     std::vector<Stmt*> elseStmts;
+    Location elseLocation;
     if (currentToken() == Token::Else) {
-        consumeToken();
+        elseLocation = consumeToken().location;
         elseStmts = parseBlockOrStmt(parent);
+    } else if (!thenIsBlock && thenStmts.size() == 1) {
+        if (auto* innerIf = llvm::dyn_cast<IfStmt>(thenStmts.front()); innerIf && !innerIf->elseBody.empty()) {
+            WARN(innerIf->elseLocation, "add explicit braces to avoid dangling else");
+        }
     }
-    return makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts));
+    return makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts), elseLocation);
 }
 
 /// while-stmt ::= 'while' (expr | var-decl) block-or-stmt
@@ -1106,9 +1112,7 @@ std::pair<Expr*, VarDecl*> Parser::parseSwitchCaseHeader(Decl* parent) {
     VarDecl* associatedValue = nullptr;
     if (currentToken() == Token::Identifier) {
         auto name = parse(Token::Identifier);
-        // TODO: UndefinedLiteralExpr as initializer is a hack, should be nullptr.
-        associatedValue = makeAST<VarDecl>(Type(), name.getString().str(), makeAST<UndefinedLiteralExpr>(name.location), parent, AccessLevel::None,
-                                           *currentModule, name.location);
+        associatedValue = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
     }
 
     parse(Token::Colon);

@@ -24,7 +24,7 @@ int main() {
 
 coalesce.value:
     store _3 to _0
-    union { void, struct { int } }* _6 = getelementptr _0, 1
+    union { struct { int } }* _6 = getelementptr _0, 1
     int* _7 = cast _6 to int*
     int .load = load _7
     br coalesce.end(.load)
@@ -55,7 +55,7 @@ coalesce.end_0(Optional<int> coalesce_0):
 
 coalesce.value_1:
     store _12 to _1
-    union { void, struct { int } }* _15 = getelementptr _1, 1
+    union { struct { int } }* _15 = getelementptr _1, 1
     int* _16 = cast _15 to int*
     int .load_0 = load _16
     br coalesce.end_1(.load_0)
@@ -68,7 +68,7 @@ coalesce.default_1:
 
 coalesce.value_2:
     store _17 to _2
-    union { void, struct { int } }* _20 = getelementptr _2, 1
+    union { struct { int } }* _20 = getelementptr _2, 1
     int* _21 = cast _20 to int*
     int .load_1 = load _21
     br coalesce.end_2(.load_1)

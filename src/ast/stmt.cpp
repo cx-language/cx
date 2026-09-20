@@ -58,7 +58,7 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto condition = ifStmt->condition->instantiate(genericArgs);
         auto thenBody = ::instantiate(ifStmt->thenBody, genericArgs);
         auto elseBody = ::instantiate(ifStmt->elseBody, genericArgs);
-        return makeAST<IfStmt>(condition, std::move(thenBody), std::move(elseBody));
+        return makeAST<IfStmt>(condition, std::move(thenBody), std::move(elseBody), ifStmt->elseLocation);
     }
     case StmtKind::SwitchStmt: {
         auto* switchStmt = llvm::cast<SwitchStmt>(this);

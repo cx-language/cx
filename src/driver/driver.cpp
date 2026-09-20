@@ -72,7 +72,6 @@ cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"), cl::
 cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"), cl::cat(stageSelectionCategory));
 
 cl::OptionCategory outputCategory("Output Options");
-// TODO: support simultaneous -print-c and -print-llvm? (requires both C backend and LLVM backend)
 enum class PrintOpt { AST, IR, IRAll, C, LLVM, LLVMAll };
 cl::bits<PrintOpt> printOpts(cl::desc("Print output from intermediate steps:"), cl::sub(build), cl::sub(cl::SubCommand::getTopLevel()), cl::cat(outputCategory),
                              cl::values(clEnumValN(PrintOpt::AST, "print-ast", "Print the abstract syntax tree of main module"),
@@ -318,6 +317,38 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     bool isWindows = llvm::sys::path::extension(ccPath) == ".exe";
     bool isMSVC = isWindows; // Assuming MSVC-compatible C compiler.
 
+    auto printCSection = [&](const std::string& cCode) {
+        if (handlePrintOpt(PrintOpt::C)) {
+            printSection("C", [&] { llvm::outs() << cCode << "\n"; });
+            return true;
+        }
+        return false;
+    };
+
+    auto printLLVMSections = [&](LLVMGenerator& llvmGenerator) {
+        if (handlePrintOpt(PrintOpt::LLVMAll)) {
+            handlePrintOpt(PrintOpt::LLVM);
+            printSection("LLVM", [&] {
+                for (auto* module : llvmGenerator.generatedModules) {
+                    module->setModuleIdentifier("");
+                    module->setSourceFileName("");
+                    module->print(llvm::outs(), nullptr);
+                }
+            });
+            return true;
+        }
+        if (handlePrintOpt(PrintOpt::LLVM)) {
+            printSection("LLVM", [&] {
+                auto* llvmModule = llvmGenerator.generatedModules.back();
+                llvmModule->setModuleIdentifier("");
+                llvmModule->setSourceFileName("");
+                llvmModule->print(llvm::outs(), nullptr);
+            });
+            return true;
+        }
+        return false;
+    };
+
     switch (backend.getValue()) {
     case Backend::C: {
         CGenerator cGen(cDispatch);
@@ -326,10 +357,17 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         }
         std::string cCode = cGen.finish();
 
-        if (handlePrintOpt(PrintOpt::C)) {
-            printSection("C", [&] { llvm::outs() << cCode << "\n"; });
-            if (!remainingPrintOpts) return 0;
+        bool printed = printCSection(cCode);
+
+        if (printOpts.isSet(PrintOpt::LLVM) || printOpts.isSet(PrintOpt::LLVMAll)) {
+            LLVMGenerator printLLVMGenerator;
+            for (auto* irModule : irGenerator.generatedModules) {
+                printLLVMGenerator.codegenModule(*irModule);
+            }
+            printed = printLLVMSections(printLLVMGenerator) || printed;
         }
+
+        if (printed && !remainingPrintOpts) return 0;
 
         if (emitAssembly) ABORT("--emit-assembly is not supported with the C backend");
         outputFileExtension = "c";
@@ -347,26 +385,20 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         for (auto* irModule : irGenerator.generatedModules) {
             llvmGenerator.codegenModule(*irModule);
         }
-        llvm::Module* llvmModule = llvmGenerator.generatedModules.back();
 
-        if (handlePrintOpt(PrintOpt::LLVMAll)) {
-            handlePrintOpt(PrintOpt::LLVM);
-            printSection("LLVM", [&] {
-                for (auto* module : llvmGenerator.generatedModules) {
-                    module->setModuleIdentifier("");
-                    module->setSourceFileName("");
-                    module->print(llvm::outs(), nullptr);
-                }
-            });
-            if (!remainingPrintOpts) return 0;
-        } else if (handlePrintOpt(PrintOpt::LLVM)) {
-            printSection("LLVM", [&] {
-                llvmModule->setModuleIdentifier("");
-                llvmModule->setSourceFileName("");
-                llvmModule->print(llvm::outs(), nullptr);
-            });
-            if (!remainingPrintOpts) return 0;
+        bool printed = false;
+
+        if (printOpts.isSet(PrintOpt::C)) {
+            CGenerator printCGen(cDispatch);
+            for (auto* irModule : irGenerator.generatedModules) {
+                printCGen.codegenModule(*irModule);
+            }
+            printed = printCSection(printCGen.finish());
         }
+
+        printed = printLLVMSections(llvmGenerator) || printed;
+
+        if (printed && !remainingPrintOpts) return 0;
 
         llvm::Module linkedModule("", llvmGenerator.ctx);
         llvm::Linker linker(linkedModule);

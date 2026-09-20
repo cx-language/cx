@@ -93,6 +93,12 @@ struct StringBuffer: Comparable, Hashable, Printable {
         return true;
     }
 
+    /// Appends the given character.
+    bool write(char c) {
+        push(c);
+        return true;
+    }
+
     /// Removes the first character from the string.
     /// Other characters are moved towards the beginning of the string by one index.
     void removeFirst() {

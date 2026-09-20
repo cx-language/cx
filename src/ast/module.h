@@ -63,6 +63,17 @@ struct SymbolTable {
         return results.front();
     }
 
+    llvm::SmallVector<Decl*, 8> findInAllScopes(llvm::StringRef name) const {
+        ASSERT(!name.empty());
+        llvm::SmallVector<Decl*, 8> decls;
+        auto realName = applyIdentifierReplacements(name);
+        for (auto& scope : llvm::reverse(scopes)) {
+            auto it = scope->decls.find(realName);
+            if (it != scope->decls.end()) llvm::append_range(decls, it->second);
+        }
+        return decls;
+    }
+
     llvm::ArrayRef<Decl*> findInTopLevelScope(llvm::StringRef name) const {
         ASSERT(!name.empty());
         auto it = scopes.front()->decls.find(applyIdentifierReplacements(name));
@@ -151,7 +162,8 @@ struct Module {
     static Module* getStdlibModule();
 
 private:
-    void addToSymbolTableWithName(Decl& decl, llvm::StringRef name);
+    // Returns true when the name was already defined and a redefinition was reported.
+    bool addToSymbolTableWithName(Decl& decl, llvm::StringRef name);
 
 public:
     std::string name;

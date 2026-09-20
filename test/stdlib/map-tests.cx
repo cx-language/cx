@@ -71,10 +71,10 @@ void testDuplicates() {
     var map = Map<string, int>();
 
     map.insert("ok", 1);
-    map.insert("ok", 2);
+    map.set("ok", 2);
     assert(map.contains("ok"));
 
-    assert(map["ok"]! == 1);
+    assert(map["ok"]! == 2);
 
     map.remove("ok");
     assert(!map.contains("ok"));
@@ -87,9 +87,6 @@ void testIterator() {
     map.insert("a", "a");
     map.insert("ccc", "ccc");
     map.insert("bb", "bb");
-    map.insert("a", "a");
-    map.insert("ccc", "ccc");
-    map.insert("ccc", "ccc");
 
     var a = false;
     var bb = false;
@@ -118,7 +115,6 @@ void testIterator() {
 void testEmptyMapIterator() {
     var map = Map<string, string>();
     map.insert("foo", "foo");
-    map.insert("foo", "foo");
     map.remove("foo");
 
     for _ in map {
@@ -128,7 +124,6 @@ void testEmptyMapIterator() {
 
 void testUnitMapIterator() {
     var map = Map<string, string>();
-    map.insert("foo", "foo");
     map.insert("foo", "foo");
     var count = 0;
 

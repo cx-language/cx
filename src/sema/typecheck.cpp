@@ -1,4 +1,5 @@
 #include "typecheck.h"
+#include <system_error>
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallPtrSet.h>
@@ -69,7 +70,7 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
     }
 
     auto module = new Module(moduleName.str());
-    std::error_code error;
+    std::error_code error = std::make_error_code(std::errc::no_such_file_or_directory);
 
     if (config) {
         for (auto& dependency : config->declaredDependencies) {
@@ -208,6 +209,7 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
                     } catch (const CompileError& error) {
                         error.report();
                     }
+                    if (!interface.getDecl()) continue;
                     std::vector<FieldDecl> inheritedFields;
 
                     for (auto& field : interface.getDecl()->fields) {
@@ -295,13 +297,12 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
     }
 }
 
-static llvm::SmallVector<Decl*, 8> findDeclsInModules(llvm::StringRef name, llvm::ArrayRef<Module*> modules, bool topLevelOnly = false) {
+static llvm::SmallVector<Decl*, 8> findDeclsInModules(llvm::StringRef name, llvm::ArrayRef<Module*> modules) {
     ASSERT(!name.empty());
     llvm::SmallVector<Decl*, 8> decls;
 
     for (auto& module : modules) {
-        auto matches = topLevelOnly ? module->symbolTable.findInTopLevelScope(name) : module->symbolTable.findFirst(name);
-        llvm::append_range(decls, matches);
+        llvm::append_range(decls, module->symbolTable.findFirst(name));
     }
 
     return decls;
@@ -315,10 +316,10 @@ static Decl* findDeclInModules(llvm::StringRef name, Location location, llvm::Ar
         return decls[0];
     } else if (decls.empty()) {
         return nullptr;
-    } else if (llvm::all_of(decls, [](Decl* decl) { return decl->getModule() && decl->getModule()->name.ends_with("_h"); })) {
-        // For duplicate definitions in C headers, return the last definition.
-        // TODO: This should only work for declarations of the same thing.
-        return decls.back(); // For duplicate definitions in C headers, return the last definition.
+    } else if (llvm::all_of(decls, [](Decl* decl) { return decl->getModule() && decl->getModule()->isCHeaderImport; })
+               && llvm::all_of(decls, [&](Decl* decl) { return decl->kind == decls[0]->kind; })) {
+        // Duplicate declarations of the same thing from C headers resolve to the last one.
+        return decls.back();
     } else {
         ERROR(location, "ambiguous reference to '" << name << "'");
     }
@@ -354,7 +355,8 @@ Decl* Typechecker::findDecl(llvm::StringRef name, Location location) const {
 
 static void appendUnique(std::vector<Decl*>& target, llvm::ArrayRef<Decl*> source) {
     for (auto& element : source) {
-        // TODO: Should this ever be false? I.e. should the same decl ever be in multiple different modules?
+        // findDecls searches overlapping scopes (stdlib both directly and via
+        // getAllImportedModules), so the same decl legitimately appears twice.
         if (!llvm::is_contained(target, element)) {
             target.push_back(element);
         }
@@ -388,7 +390,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
         }
 
         for (auto& field : receiverTypeDecl->fields) {
-            // TODO: Only one comparison should be needed.
+            // Unqualified for implicit-receiver lookup, qualified for explicit member access.
             if (field.getName() == name || field.getQualifiedName() == name) {
                 decls.emplace_back(&field);
             }
@@ -396,8 +398,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
     }
 
     if (currentModule->name != "std") {
-        appendUnique(decls, findDeclsInModules(name, currentModule, false));
-        appendUnique(decls, findDeclsInModules(name, currentModule, true)); // HACK, TODO: one find function should be enough
+        appendUnique(decls, currentModule->symbolTable.findInAllScopes(name));
     }
 
     appendUnique(decls, findDeclsInModules(name, Module::getStdlibModule()));
