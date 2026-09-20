@@ -309,7 +309,8 @@ Decl* Typechecker::findDecl(llvm::StringRef name, Location location) const {
 
 static void appendUnique(std::vector<Decl*>& target, llvm::ArrayRef<Decl*> source) {
     for (auto& element : source) {
-        // TODO: Should this ever be false? I.e. should the same decl ever be in multiple different modules?
+        // findDecls searches overlapping scopes (stdlib both directly and via
+        // getAllImportedModules), so the same decl legitimately appears twice.
         if (!llvm::is_contained(target, element)) {
             target.push_back(element);
         }
