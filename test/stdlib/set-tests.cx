@@ -80,7 +80,7 @@ void testEmptySetIterator() {
     s.insert("foo");
     s.remove("foo");
 
-    for e in s {
+    for _ in s {
         assert(false);
     }
 }

@@ -149,7 +149,7 @@ void testEmptyMapIterator() {
     map.insert(1, 2);
     map.remove(1);
 
-    for e in map {
+    for _ in map {
         assert(false);
     }
 }

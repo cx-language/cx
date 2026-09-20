@@ -83,7 +83,7 @@ void testEmptyOrderedSetIterator() {
     s.insert(79);
     s.remove(79);
 
-    for e in s {
+    for _ in s {
         assert(false);
     }
 }

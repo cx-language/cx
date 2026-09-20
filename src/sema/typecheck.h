@@ -158,6 +158,7 @@ struct Typechecker {
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     llvm::SmallPtrSet<Decl*, 32> movedDecls;
+    std::vector<VarDecl*> localVarDecls;
     NarrowMap narrowedTypes;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;

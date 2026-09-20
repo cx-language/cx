@@ -233,12 +233,14 @@ void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, Acces
 
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.typechecked) return;
+    int errorsBefore = errors;
     llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
     // Lambda bodies are checked inline within the enclosing function; moves they record
     // must not clobber the enclosing move state, which is restored when the body is done.
     llvm::SaveAndRestore saveMovedDecls(movedDecls, movedDecls);
     // 'break' and 'continue' must not cross function boundaries into enclosing loops or switches.
     llvm::SaveAndRestore saveControlStmts(currentControlStmts, std::vector<Stmt*>());
+    llvm::SaveAndRestore saveLocalVarDecls(localVarDecls, std::vector<VarDecl*>());
 
     if (decl.hasPack()) {
         ERROR(decl.getPackParam()->getLocation(), "variadic parameter requires a generic function");
@@ -344,6 +346,15 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         }
     }
 
+    // Don't warn about unused variables in the standard library or after errors.
+    if (errors == errorsBefore && decl.getModule()->name != "std" && !options.noUnusedWarnings) {
+        for (auto* varDecl : localVarDecls) {
+            if (!varDecl->isReferenced() && !varDecl->getName().starts_with("_")) {
+                WARN(varDecl->getLocation(), "unused variable '" << varDecl->getName() << "'");
+            }
+        }
+    }
+
     decl.typechecked = true;
 }
 
@@ -435,6 +446,10 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
 }
 
 void Typechecker::typecheckVarDecl(VarDecl& decl) {
+    if (!decl.isGlobal()) {
+        localVarDecls.push_back(&decl);
+    }
+
     Type declaredType = decl.type;
     if (declaredType) {
         typecheckType(declaredType, !decl.isGlobal() ? AccessLevel::None : decl.accessLevel);
