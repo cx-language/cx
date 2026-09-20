@@ -1,5 +1,10 @@
 #include "cx.h"
 #ifdef _WIN32
+// Exclude the min/max, GDI, and OLE APIs: their macros (min, max, ERROR,
+// interface) would otherwise break cx headers included below.
+#define NOMINMAX
+#define NOGDI
+#define WIN32_LEAN_AND_MEAN
 #pragma warning(push, 0)
 #include <windows.h>
 #pragma warning(pop)
