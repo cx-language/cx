@@ -5,6 +5,7 @@
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/module.h"
+#include "../driver/driver.h"
 
 using namespace cx;
 

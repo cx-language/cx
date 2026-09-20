@@ -1,4 +1,5 @@
 #include "irgen.h"
+#include "../ast/module.h"
 #include "../driver/driver.h"
 
 using namespace cx;

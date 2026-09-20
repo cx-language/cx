@@ -6,6 +6,7 @@
 #pragma warning(pop)
 #include "../ast/arena.h"
 #include "../ast/module.h"
+#include "../driver/driver.h"
 #include "c-import.h"
 
 using namespace cx;
