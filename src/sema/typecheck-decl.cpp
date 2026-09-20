@@ -222,9 +222,10 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
 
         for (Type constraint : genericParam.constraints) {
             try {
+                const int errorsBefore = errors;
                 typecheckType(constraint, userAccessLevel);
 
-                if (!constraint.getDecl()->isInterface()) {
+                if (errors == errorsBefore && !constraint.getDecl()->isInterface()) {
                     ERROR(constraint.location, "only interface types can be used as generic constraints");
                 }
             } catch (const CompileError& error) {

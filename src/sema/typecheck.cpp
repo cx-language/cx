@@ -188,6 +188,7 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
                     } catch (const CompileError& error) {
                         error.report();
                     }
+                    if (!interface.getDecl()) continue;
                     std::vector<FieldDecl> inheritedFields;
 
                     for (auto& field : interface.getDecl()->fields) {

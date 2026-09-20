@@ -1,14 +1,17 @@
 // RUN: %not %cx -typecheck %s | %FileCheck %s
 
-// FIXME: Disabled for now.
-// CHECK-NOT: [[@LINE+1]]:1: error: too few generic arguments to 'List', expected 1
+// CHECK-NOT: missing-generic-args.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK: [[@LINE+2]]:1: error: too few generic arguments to 'List', expected 1
+// CHECK-NEXT: List f() {
 List f() {
     // CHECK: [[@LINE+1]]:5: error: mismatching return type 'List<int>', expected 'List'
     return List<int>();
 }
 
 enum E {
-    // FIXME: Disabled for now.
-    // CHECK-NOT: [[@LINE+1]]:7: error: too few generic arguments to 'List', expected 1
+    // CHECK: [[@LINE+1]]:7: error: too few generic arguments to 'List', expected 1
     A(List l);
 }
+
+// CHECK: 6:6: warning: unused declaration 'f'
+// CHECK-NOT: missing-generic-args.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

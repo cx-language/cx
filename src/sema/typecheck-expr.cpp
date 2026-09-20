@@ -1117,6 +1117,25 @@ void cx::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> 
     }
 }
 
+// Whether the call's generic arguments can be taken from the expected type. The callee must belong to the same type
+// as the expected type, or to the template pattern it was instantiated from. For non-constructor calls the return type
+// must additionally mention a generic parameter; a concrete return type carries no information about the callee's parameters.
+static bool canInferFromExpectedType(llvm::ArrayRef<GenericParamDecl> genericParams, FunctionDecl* decl, Type expectedType) {
+    if (!expectedType || !expectedType.isBasicType() || expectedType.getGenericArgs().empty()
+        || llvm::any_of(expectedType.getGenericArgs(), [](Type t) { return t.isUnresolvedType(); })) {
+        return false;
+    }
+    auto* expectedDecl = expectedType.getDecl();
+    if (!expectedDecl) return false;
+    if (decl->isConstructorDecl()) {
+        auto* pattern = decl->getTypeDecl();
+        return expectedDecl == pattern || expectedDecl->instantiatedFrom == pattern;
+    }
+    auto* returnDecl = decl->getReturnType().getDecl();
+    if (expectedDecl != returnDecl && expectedDecl->instantiatedFrom != returnDecl) return false;
+    return llvm::any_of(genericParams, [&](auto& genericParam) { return containsGenericParam(decl->getReturnType(), genericParam.getName()); });
+}
+
 llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                          Type expectedType) {
     ASSERT(!genericParams.empty());
@@ -1124,9 +1143,7 @@ llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
     llvm::ArrayRef<Type> genericArgTypes;
 
     if (call.genericArgs.empty()) {
-        if (expectedType && expectedType.isBasicType() && !expectedType.getGenericArgs().empty()
-            && llvm::none_of(expectedType.getGenericArgs(), [](Type t) { return t.isUnresolvedType(); })
-            && BasicType::get(expectedType.getName(), {}).getDecl() == (decl->isConstructorDecl() ? decl->getTypeDecl() : decl->getReturnType().getDecl())) {
+        if (canInferFromExpectedType(genericParams, decl, expectedType)) {
             genericArgTypes = expectedType.getGenericArgs();
         } else if (call.args.empty()) {
             if (returnOnError) return {};
@@ -1920,8 +1937,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType) {
                 return element.type;
             }
         }
-    } else {
-        for (auto& field : baseType.getDecl()->fields) {
+    } else if (auto* baseDecl = baseType.getDecl()) {
+        for (auto& field : baseDecl->fields) {
             if (field.getName() == expr.member) {
                 checkHasAccess(field, expr.location, AccessLevel::None);
                 expr.decl = &field;
