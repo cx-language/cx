@@ -27,6 +27,17 @@ bool operator!= <T: Comparable>(Optional<T>* a, T* b) {
     return !(*a == *b);
 }
 
+/// Returns true if the optional holds a value equal to a.
+bool operator== <T: Comparable>(T* a, Optional<T>* b) {
+    if (*b == null) return false;
+    return *a == (*b)!;
+}
+
+/// Returns true if the optional holds a value differing from a.
+bool operator!= <T: Comparable>(T* a, Optional<T>* b) {
+    return !(*a == *b);
+}
+
 /// Returns true if the optional pointer is non-null and points to a value equal to b.
 bool operator== <T: Comparable>(Optional<T*>* a, T* b) {
     if (*a == null) return false;
@@ -35,6 +46,17 @@ bool operator== <T: Comparable>(Optional<T*>* a, T* b) {
 
 /// Returns true if the optional pointer is null or points to a value differing from b.
 bool operator!= <T: Comparable>(Optional<T*>* a, T* b) {
+    return !(*a == *b);
+}
+
+/// Returns true if the optional pointer is non-null and points to a value equal to a.
+bool operator== <T: Comparable>(T* a, Optional<T*>* b) {
+    if (*b == null) return false;
+    return *a == *(*b);
+}
+
+/// Returns true if the optional pointer is null or points to a value differing from a.
+bool operator!= <T: Comparable>(T* a, Optional<T*>* b) {
     return !(*a == *b);
 }
 

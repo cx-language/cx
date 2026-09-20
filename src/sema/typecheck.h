@@ -36,17 +36,19 @@ struct ArgumentValidation {
     Error error;
     int index;
     bool didConvertArguments;
+    bool didUnwrapOptional;
 
-    static ArgumentValidation success(bool didConvertArguments) { return {None, -1, didConvertArguments}; }
-    static ArgumentValidation tooFew() { return {TooFew, -1, false}; }
-    static ArgumentValidation tooMany() { return {TooMany, -1, false}; }
-    static ArgumentValidation invalidName(size_t index) { return {InvalidName, int(index), false}; }
-    static ArgumentValidation invalidType(size_t index) { return {InvalidType, int(index), false}; }
+    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional) { return {None, -1, didConvertArguments, didUnwrapOptional}; }
+    static ArgumentValidation tooFew() { return {TooFew, -1, false, false}; }
+    static ArgumentValidation tooMany() { return {TooMany, -1, false, false}; }
+    static ArgumentValidation invalidName(size_t index) { return {InvalidName, int(index), false, false}; }
+    static ArgumentValidation invalidType(size_t index) { return {InvalidType, int(index), false, false}; }
 };
 
 struct Match {
     Decl* decl;
     bool didConvertArguments;
+    bool didUnwrapOptional;
 };
 
 struct VariadicGenericArgs {
