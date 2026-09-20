@@ -1,0 +1,6 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:18: error: lambda parameters cannot have default values
+    var h = (int x = 1) => x;
+}

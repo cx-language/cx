@@ -1,0 +1,43 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:world
+// CHECK-NEXT:cx
+// CHECK-NEXT:1
+// CHECK-NEXT:2
+// CHECK-NEXT:10
+// CHECK-NEXT:10
+
+int counter = 0;
+
+int next() {
+    counter = counter + 1;
+    return counter;
+}
+
+void greet(public string name = "world") {
+    println(name);
+}
+
+void count(int x = next()) {
+    println(x);
+}
+
+struct S {
+    int x;
+    int y;
+    S(public int x, public int y = 10) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
+void main() {
+    greet();
+    greet(name = "cx");
+    count();
+    count();
+    count(10);
+
+    var s = S(x = 1);
+    println(s.y);
+}

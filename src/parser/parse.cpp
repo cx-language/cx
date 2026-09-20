@@ -517,6 +517,11 @@ LambdaExpr* Parser::parseLambdaExpr() {
         params.push_back(ParamDecl(Type(), paramName.getString().str(), false, paramName.location));
     } else {
         params = parseParamList(nullptr, false);
+        for (auto& param : params) {
+            if (param.defaultValue) {
+                ERROR(param.getLocation(), "lambda parameters cannot have default values");
+            }
+        }
     }
 
     auto lambda = makeAST<LambdaExpr>(std::move(params), currentModule, location);
@@ -1149,6 +1154,13 @@ ParamDecl Parser::parseParam(bool requireType) {
     auto name = parse(Token::Identifier);
     ParamDecl param(type, name.getString().str(), isPublic, name.location);
     param.isPack = isPack;
+    if (currentToken() == Token::Assignment) {
+        if (isPack) {
+            ERROR(name.location, "variadic parameter cannot have a default value");
+        }
+        consumeToken();
+        param.defaultValue = parseExpr();
+    }
     return param;
 }
 
@@ -1171,6 +1183,14 @@ std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireType
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
     parse(Token::RightParen);
+    for (size_t i = 1; i < params.size(); ++i) {
+        if (params[i - 1].defaultValue && !params[i].defaultValue && !params[i].isPack) {
+            if (params[i].getName().empty()) {
+                ERROR(params[i].getLocation(), "unnamed parameter follows a parameter with a default value");
+            }
+            ERROR(params[i].getLocation(), "parameter '" << params[i].getName() << "' without a default value follows a parameter with a default value");
+        }
+    }
     return params;
 }
 
