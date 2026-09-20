@@ -201,9 +201,9 @@ struct List<Element> {
 
     /// Returns the first element satisfying the predicate, or null.
     Element*? find(bool(Element*) predicate) {
-        for element in this {
-            if predicate(element) {
-                return element;
+        for i in 0..size() {
+            if predicate(this[i]) {
+                return this[i];
             }
         }
 

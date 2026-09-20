@@ -1,13 +1,17 @@
 
 %"ArrayIterator<int>" = type { ptr, ptr }
+%StringBuffer = type { %"List<char>" }
+%"List<char>" = type { ptr, i32, i32 }
+
+@0 = private unnamed_addr constant [5 x i8] c"%.*s\00", align 1
 
 define i32 @main() {
   %__iterator = alloca %"ArrayIterator<int>", align 8
   %1 = alloca [3 x i32], align 4
-  %e = alloca ptr, align 8
+  %e = alloca i32, align 4
   %a = alloca [2 x i32], align 4
   %__iterator1 = alloca %"ArrayIterator<int>", align 8
-  %e2 = alloca ptr, align 8
+  %e2 = alloca i32, align 4
   store [3 x i32] [i32 1, i32 2, i32 3], ptr %1, align 4
   %2 = getelementptr inbounds [3 x i32], ptr %1, i32 0, i32 0
   %3 = getelementptr inbounds i32, ptr %2, i32 3
@@ -22,9 +26,10 @@ loop.condition:                                   ; preds = %loop.increment, %0
 
 loop.body:                                        ; preds = %loop.condition
   %7 = call ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %__iterator)
-  store ptr %7, ptr %e, align 8
-  %e.load = load ptr, ptr %e, align 8
-  call void @_EN3std7printlnI3intEEP3int(ptr %e.load)
+  %.load = load i32, ptr %7, align 4
+  store i32 %.load, ptr %e, align 4
+  %e.load = load i32, ptr %e, align 4
+  call void @_EN3std7printlnI3intEE3int(i32 %e.load)
   br label %loop.increment
 
 loop.increment:                                   ; preds = %loop.body
@@ -40,22 +45,23 @@ loop.end:                                         ; preds = %loop.condition
   store %"ArrayIterator<int>" %11, ptr %__iterator1, align 8
   br label %loop.condition3
 
-loop.condition3:                                  ; preds = %loop.increment6, %loop.end
+loop.condition3:                                  ; preds = %loop.increment7, %loop.end
   %12 = call i1 @_EN3std13ArrayIteratorI3intE8hasValueE(ptr %__iterator1)
-  br i1 %12, label %loop.body4, label %loop.end7
+  br i1 %12, label %loop.body4, label %loop.end8
 
 loop.body4:                                       ; preds = %loop.condition3
   %13 = call ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %__iterator1)
-  store ptr %13, ptr %e2, align 8
-  %e.load5 = load ptr, ptr %e2, align 8
-  call void @_EN3std7printlnI3intEEP3int(ptr %e.load5)
-  br label %loop.increment6
+  %.load5 = load i32, ptr %13, align 4
+  store i32 %.load5, ptr %e2, align 4
+  %e.load6 = load i32, ptr %e2, align 4
+  call void @_EN3std7printlnI3intEE3int(i32 %e.load6)
+  br label %loop.increment7
 
-loop.increment6:                                  ; preds = %loop.body4
+loop.increment7:                                  ; preds = %loop.body4
   call void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %__iterator1)
   br label %loop.condition3
 
-loop.end7:                                        ; preds = %loop.condition3
+loop.end8:                                        ; preds = %loop.condition3
   ret i32 0
 }
 
@@ -74,11 +80,11 @@ define ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %this) {
   ret ptr %current.load
 }
 
-define void @_EN3std7printlnI3intEEP3int(ptr %value) {
-  %value1 = alloca ptr, align 8
-  store ptr %value, ptr %value1, align 8
-  %value.load = load ptr, ptr %value1, align 8
-  call void @_EN3std5printI3intEEP3int(ptr %value.load)
+define void @_EN3std7printlnI3intEE3int(i32 %value) {
+  %value1 = alloca i32, align 4
+  store i32 %value, ptr %value1, align 4
+  %value.load = load i32, ptr %value1, align 4
+  call void @_EN3std5printI3intEE3int(i32 %value.load)
   call void @_EN3std5printI4charEE4char(i8 10)
   ret void
 }
@@ -91,6 +97,27 @@ define void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %this) {
   ret void
 }
 
-declare void @_EN3std5printI3intEEP3int(ptr)
+define void @_EN3std5printI3intEE3int(i32 %value) {
+  %value1 = alloca i32, align 4
+  %s = alloca %StringBuffer, align 8
+  store i32 %value, ptr %value1, align 4
+  %1 = call %StringBuffer @_EN3std3int8toStringE(ptr %value1)
+  store %StringBuffer %1, ptr %s, align 8
+  %2 = call i32 @_EN3std12StringBuffer4sizeE(ptr %s)
+  %3 = call ptr @_EN3std12StringBuffer4dataE(ptr %s)
+  %4 = call i32 (ptr, ...) @printf(ptr @0, i32 %2, ptr %3)
+  call void @_EN3std12StringBuffer6deinitE(ptr %s)
+  ret void
+}
 
 declare void @_EN3std5printI4charEE4char(i8)
+
+declare %StringBuffer @_EN3std3int8toStringE(ptr)
+
+declare i32 @_EN3std12StringBuffer4sizeE(ptr)
+
+declare ptr @_EN3std12StringBuffer4dataE(ptr)
+
+declare i32 @printf(ptr, ...)
+
+declare void @_EN3std12StringBuffer6deinitE(ptr)
