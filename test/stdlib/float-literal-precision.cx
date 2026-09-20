@@ -1,0 +1,12 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    // Float literals keep full precision when used in a float64 context.
+    float64 a = 0.1;
+    float64 b = 0.2;
+    assert(a + b == 0.30000000000000004);
+    // Narrower targets still get correctly rounded values.
+    float32 c = 0.5;
+    assert(c == 0.5);
+    assert(float32(0.1) == float32(0.10000000149011612));
+}

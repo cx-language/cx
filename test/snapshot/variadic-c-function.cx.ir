@@ -1,7 +1,7 @@
 
 int main() {
     float* f = alloca float
-    store float 4.19999981 to f
+    store float 4.2000000000000002 to f
     float f.load = load f
     int _0 = call printf(char* "%d %f", int -3, float f.load)
     return int 0
