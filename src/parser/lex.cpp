@@ -1,6 +1,7 @@
 #include "lex.h"
 #include <cctype>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
@@ -115,6 +116,13 @@ Token Lexer::readNumber() {
     uint64_t intValue = *begin - '0';
     char ch = readChar();
 
+    auto appendDigit = [&](uint64_t digit, uint64_t base) {
+        if (intValue > (std::numeric_limits<uint64_t>::max() - digit) / base) {
+            ERROR(firstLocation, "integer literal is too large");
+        }
+        intValue = intValue * base + digit;
+    };
+
     switch (ch) {
     case 'b':
         if (begin[0] != '0') goto end;
@@ -122,8 +130,7 @@ Token Lexer::readNumber() {
         while (true) {
             ch = readChar();
             if (ch == '0' || ch == '1') {
-                intValue <<= 1;
-                intValue |= ch == '1';
+                appendDigit(ch == '1', 2);
                 sawNonSeparator = true;
                 end++;
                 continue;
@@ -142,8 +149,7 @@ Token Lexer::readNumber() {
         while (true) {
             ch = readChar();
             if (ch >= '0' && ch <= '7') {
-                intValue *= 8;
-                intValue += ch - '0';
+                appendDigit(ch - '0', 8);
                 sawNonSeparator = true;
                 end++;
                 continue;
@@ -169,8 +175,7 @@ Token Lexer::readNumber() {
                 // Only add to the integer value if we're not a floating-point
                 // value, otherwise simply continue to the next character
                 if (!isFloat) {
-                    intValue *= 10;
-                    intValue += ch - '0';
+                    appendDigit(ch - '0', 10);
                 }
             } else if (ch == '_') {
                 sawSeparator = true;
@@ -189,23 +194,20 @@ Token Lexer::readNumber() {
             ch = readChar();
 
             if (std::isdigit(ch)) {
-                intValue *= 16;
-                intValue += ch - '0';
+                appendDigit(ch - '0', 16);
                 sawNonSeparator = true;
                 end++;
             } else if (ch == '_') {
                 end++;
             } else if (ch >= 'a' && ch <= 'f') {
                 if (lettercase > 0) ERROR(lastLocation, "mixed letter case in hex literal");
-                intValue *= 16;
-                intValue += ch - 'a' + 10;
+                appendDigit(ch - 'a' + 10, 16);
                 sawNonSeparator = true;
                 end++;
                 lettercase = -1;
             } else if (ch >= 'A' && ch <= 'F') {
                 if (lettercase < 0) ERROR(lastLocation, "mixed letter case in hex literal");
-                intValue *= 16;
-                intValue += ch - 'A' + 10;
+                appendDigit(ch - 'A' + 10, 16);
                 sawNonSeparator = true;
                 end++;
                 lettercase = 1;
