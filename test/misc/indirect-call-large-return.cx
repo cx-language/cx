@@ -1,0 +1,57 @@
+// RUN: check_exit_status 0 %cx run %s
+// RUN: check_exit_status 0 %cx run --backend=c %s
+
+struct Big {
+    int a;
+    int b;
+    int c;
+    int d;
+    int e;
+}
+
+Big makeBig(int n) {
+    return Big(n, n + 1, n + 2, n + 3, n + 4);
+}
+
+Big applyBig(Big(int) f, int x) {
+    return f(x);
+}
+
+enum Outcome {
+    Ok(int value),
+    Err(string error),
+}
+
+Outcome makeOutcome(int n) {
+    return Outcome.Ok(value = n * 2);
+}
+
+Outcome applyOutcome(Outcome(int) f, int x) {
+    return f(x);
+}
+
+void main() {
+    var b = applyBig(makeBig, 10);
+    assert(b.a == 10 && b.e == 14);
+
+    var g = (int n) -> makeBig(n);
+    var c = g(20);
+    assert(c.a == 20 && c.e == 24);
+
+    var o = applyOutcome(makeOutcome, 21);
+    switch (o) {
+        case Ok value:
+            assert(value.value == 42);
+        case Err error:
+            assert(false);
+    }
+
+    var h = (int n) -> makeOutcome(n);
+    var o2 = h(10);
+    switch (o2) {
+        case Ok value:
+            assert(value.value == 20);
+        case Err error:
+            assert(false);
+    }
+}

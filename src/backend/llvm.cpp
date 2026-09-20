@@ -269,7 +269,9 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         auto sretType = getLLVMType(cxFunctionType->getReturnType());
         auto sretAlloca = builder.CreateAlloca(sretType, nullptr, "sret.alloca");
         args.insert(args.begin(), sretAlloca);
-        builder.CreateCall(llvmFunctionType, function, args);
+        auto* call = builder.CreateCall(llvmFunctionType, function, args);
+        // Direct calls inherit this from the callee, but indirect calls through function pointers can't.
+        call->addParamAttr(0, llvm::Attribute::get(ctx, llvm::Attribute::StructRet, sretType));
         return builder.CreateLoad(sretType, sretAlloca, "sret.load");
     } else {
         return builder.CreateCall(llvmFunctionType, function, args);
