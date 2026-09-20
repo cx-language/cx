@@ -812,11 +812,15 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
             continue;
         }
 
+        auto lhsEndLine = lookAhead(-1).location.line;
         auto backtrackLocation = currentTokenIndex;
         auto op = consumeToken();
-        auto rhs = parseBinaryExpr(getPrecedence(op) + 1);
+        // Assignments associate to the right so `a = b = 1` parses as `a = (b = 1)`.
+        auto rhs = parseBinaryExpr(isAssignmentOperator(op) ? getPrecedence(op) : getPrecedence(op) + 1);
 
-        if (isAssignmentOperator(currentToken())) {
+        if (isAssignmentOperator(currentToken()) && op.location.line != lhsEndLine) {
+            // The operator continues on a later line only to hit an assignment (e.g. a
+            // dereference statement after another statement); backtrack so it starts a new statement.
             currentTokenIndex = backtrackLocation;
             break;
         }

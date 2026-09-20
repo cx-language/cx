@@ -69,7 +69,7 @@ struct IRGenerator {
     Value* emitLogicalOr(const Expr& left, const Expr& right);
     Value* emitBoolConvertibleOperand(const Expr& expr);
     Value* emitBinaryExpr(const BinaryExpr& expr);
-    void emitAssignment(const BinaryExpr& expr);
+    Value* emitAssignment(const BinaryExpr& expr);
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);
     Value* emitOptionalConstruction(Type wrappedType, Expr* arg);
     Value* emitOptionalUnwrap(Expr& operand, const Expr& expr, const llvm::Twine& name);

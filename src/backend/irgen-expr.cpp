@@ -264,8 +264,7 @@ Value* IRGenerator::emitBoolConvertibleOperand(const Expr& expr) {
 
 Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     if (expr.isAssignment()) {
-        emitAssignment(expr);
-        return nullptr;
+        return emitAssignment(expr);
     }
 
     if (expr.calleeDecl != nullptr) {
@@ -320,12 +319,13 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     }
 }
 
-void IRGenerator::emitAssignment(const BinaryExpr& expr) {
-    if (expr.getRHS().isUndefinedLiteralExpr()) return;
+Value* IRGenerator::emitAssignment(const BinaryExpr& expr) {
+    if (expr.getRHS().isUndefinedLiteralExpr()) return createUndefined(getIRType(expr.type));
 
     auto lvalue = emitAssignmentLHS(expr.getLHS(), expr.lhsIsMoved);
     auto rvalue = emitExprForPassing(expr.getRHS(), lvalue->getType()->getPointee());
     createStore(rvalue, lvalue);
+    return rvalue;
 }
 
 static bool isBuiltinArrayToArrayRefConversion(Type sourceType, IRType* targetType) {
@@ -638,8 +638,9 @@ Value* IRGenerator::emitIndexAssignmentExpr(const IndexAssignmentExpr& expr) {
     }
 
     auto gep = emitIndexedAccess(*expr.getBase(), *expr.getIndex());
-    createStore(emitExpr(*expr.getValue()), gep);
-    return nullptr;
+    auto* value = emitExpr(*expr.getValue());
+    createStore(value, gep);
+    return value;
 }
 
 Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {

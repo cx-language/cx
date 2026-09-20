@@ -373,7 +373,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (op == Token::Assignment) {
         typecheckAssignment(expr, expr.location);
-        return Type::getVoid();
+        return expr.getLHS().type;
     }
 
     if (isCompoundAssignmentOperator(op)) {
@@ -485,6 +485,9 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     auto* rhs = &expr.getRHS();
 
     typecheckExpr(*lhs, true);
+    if (!lhs->isLvalue()) {
+        ERROR(lhs->location, "cannot assign to expression of type '" << lhs->type << "'");
+    }
     Type lhsType = lhs->assignableType;
     Type rhsType = typecheckExpr(*rhs, false, lhsType);
 
@@ -2192,7 +2195,7 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
         ERROR(expr.getValue()->location, "cannot assign '" << expr.getValue()->type << "' to '" << elementType << "'");
     }
 
-    return Type::getVoid();
+    return elementType;
 }
 
 Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
@@ -2519,6 +2522,13 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
 }
 
 void Typechecker::setMoved(Expr* expr, bool isMoved) {
+    // An assignment evaluates to its left-hand side, so moving the result moves from there.
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(expr)) {
+        if (binaryExpr->op == Token::Assignment) {
+            setMoved(&binaryExpr->getLHS(), isMoved);
+            return;
+        }
+    }
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr)) {
         ASSERT(varExpr->decl);
 
