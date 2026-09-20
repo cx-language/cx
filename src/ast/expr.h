@@ -318,6 +318,7 @@ struct ImplicitCastExpr : Expr {
         OptionalUnwrap,
         AutoReference,
         AutoDereference,
+        NumericWiden,
     };
 
     ImplicitCastExpr(Expr* operand, Type targetType, Kind kind) : Expr(ExprKind::ImplicitCastExpr, operand->location), operand(operand), castKind(kind) {

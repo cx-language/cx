@@ -630,6 +630,44 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
     return nullptr;
 }
 
+static int getFloatBitWidth(Type type) {
+    if (type.isFloat16()) return 16;
+    if (type.isFloat64()) return 64;
+    if (type.isFloat80()) return 80;
+    return 32; // float and float32
+}
+
+// True when every value of the source numeric type is exactly representable in the target.
+static bool isSafeNumericWidening(Type source, Type target) {
+    auto width = [](Type type) { return type.isChar() ? 8 : type.getIntegerBitWidth(); };
+    auto isSigned = [](Type type) { return type.isInteger() && type.isSigned(); }; // char zero-extends
+
+    if ((source.isInteger() || source.isChar()) && target.isInteger()) {
+        if (width(target) < width(source)) return false;
+        if (isSigned(source) && !isSigned(target)) return false;
+        if (width(target) == width(source) && isSigned(source) != isSigned(target)) return false;
+        return true;
+    }
+
+    if ((source.isInteger() || source.isChar()) && target.isFloatingPoint()) {
+        // Largest integer width exactly representable in the mantissa.
+        int maxWidth = target.isFloat16() ? 8 : target.isFloat64() ? 32 : target.isFloat80() ? 64 : 16;
+        return width(source) <= maxWidth;
+    }
+
+    if (source.isFloatingPoint() && target.isFloatingPoint()) {
+        return getFloatBitWidth(target) >= getFloatBitWidth(source);
+    }
+
+    return false;
+}
+
+bool Typechecker::isReinterpretible(const Expr* expr, Type source, Type target) const {
+    std::optional<ImplicitCastExpr::Kind> innerKind;
+    // Widening changes the value representation, so pointers to it can't be reinterpreted.
+    return isImplicitlyConvertible(expr, source, target, false, &innerKind) && innerKind != ImplicitCastExpr::NumericWiden;
+}
+
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
                                           std::optional<ImplicitCastExpr::Kind>* implicitCastKind) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
@@ -651,7 +689,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && target.isPointerType() && (source.getPointee().isMutable() || !target.getPointee().isMutable())
-        && (isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee()) || target.getPointee().isVoid())) {
+        && (isReinterpretible(nullptr, source.getPointee(), target.getPointee()) || target.getPointee().isVoid())) {
         return source;
     }
 
@@ -727,10 +765,16 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
     }
 
+    // Safe numeric widening applies to values; constants are folded by the rule above.
+    if (isSafeNumericWidening(source, target)) {
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::NumericWiden;
+        return target;
+    }
+
     if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.removeOptional().isPointerType() &&
         // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
         (source.isMutable() || (expr && expr->isConstant()) || !target.removeOptional().getPointee().isMutable())
-        && isImplicitlyConvertible(expr, source, target.removeOptional().getPointee())) {
+        && isReinterpretible(expr, source, target.removeOptional().getPointee())) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return source;
     }
@@ -753,7 +797,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isArrayType() && target.removeOptional().isPointerType()
-        && isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee())) {
+        && isReinterpretible(nullptr, source.getElementType(), target.removeOptional().getPointee())) {
         return source;
     }
 
@@ -763,7 +807,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && source.getPointee().isArrayType() && target.removeOptional().isPointerType()
-        && isImplicitlyConvertible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee())) {
+        && isReinterpretible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee())) {
         return source;
     }
 

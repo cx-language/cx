@@ -112,6 +112,13 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         return llvm::cast<UnaryExpr>(this)->getConstantIntegerValue();
     case ExprKind::BinaryExpr:
         return llvm::cast<BinaryExpr>(this)->getConstantIntegerValue();
+    case ExprKind::ImplicitCastExpr: {
+        // Only widening casts reach here; they preserve the value.
+        auto value = llvm::cast<ImplicitCastExpr>(this)->operand->getConstantIntegerValue();
+        value = value.extOrTrunc(type.getIntegerBitWidth());
+        value.setIsSigned(type.isSigned());
+        return value;
+    }
     case ExprKind::SizeofExpr:
     case ExprKind::IfExpr:
         llvm_unreachable("unimplemented");
