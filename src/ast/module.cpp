@@ -15,9 +15,10 @@ Module* Module::getStdlibModule() {
     return it->second;
 }
 
-void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) {
+bool Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) {
     if (auto existing = symbolTable.findInCurrentScope(name); !existing.empty()) {
         REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << name << "'");
+        return true;
     }
 
     if (decl.isGlobal()) {
@@ -25,6 +26,7 @@ void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) {
     } else {
         symbolTable.add(name, &decl);
     }
+    return false;
 }
 
 void Module::addToSymbolTable(FunctionTemplate& decl) {
@@ -47,7 +49,7 @@ void Module::addToSymbolTable(TypeTemplate& decl) {
 
 void Module::addToSymbolTable(TypeDecl& decl) {
     llvm::cast<BasicType>(decl.getType().typeBase)->decl = &decl;
-    addToSymbolTableWithName(decl, decl.getQualifiedName());
+    if (addToSymbolTableWithName(decl, decl.getQualifiedName())) return;
 
     for (auto& memberDecl : decl.methods) {
         if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl)) {

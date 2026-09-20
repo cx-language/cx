@@ -151,7 +151,8 @@ struct Module {
     static Module* getStdlibModule();
 
 private:
-    void addToSymbolTableWithName(Decl& decl, llvm::StringRef name);
+    // Returns true when the name was already defined and a redefinition was reported.
+    bool addToSymbolTableWithName(Decl& decl, llvm::StringRef name);
 
 public:
     std::string name;
