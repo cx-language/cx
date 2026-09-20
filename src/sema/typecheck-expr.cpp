@@ -1526,6 +1526,9 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     }
 
     if (decls.empty()) {
+        if (expr.getFunctionName() == "[]" || expr.getFunctionName() == "[]=") {
+            ERROR(expr.callee->location, "'" << expr.receiverType << "' doesn't provide an operator" << expr.getFunctionName());
+        }
         ERROR(expr.callee->location, "unknown identifier '" << callee << "'");
     }
 
