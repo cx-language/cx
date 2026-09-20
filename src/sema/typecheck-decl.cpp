@@ -552,7 +552,12 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     }
 
     if (!decl.isGlobal()) currentModule->addToSymbolTable(decl);
-    if (!decl.initializer) return;
+    if (!decl.initializer) {
+        if (!declaredType) {
+            ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation or initializer");
+        }
+        return;
+    }
     Type initializerType = decl.initializer->type;
     if (!initializerType) return;
 

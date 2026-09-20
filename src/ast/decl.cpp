@@ -88,7 +88,7 @@ static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Str
         switch (stmt->kind) {
         case StmtKind::VarStmt: {
             result.push_back(stmt);
-            if (llvm::cast<VarStmt>(stmt)->decl->getName() == packName) shadowedHere = true;
+            if (llvm::any_of(llvm::cast<VarStmt>(stmt)->decls, [&](auto* decl) { return decl->getName() == packName; })) shadowedHere = true;
             break;
         }
         case StmtKind::ForEachStmt: {
@@ -118,7 +118,7 @@ static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Str
                 std::vector<Stmt*> iteration;
                 auto* loopVar = makeAST<VarDecl>(Type(), forEach->variable->getName().str(), makeAST<VarExpr>(std::string(expandedName), forEach->location),
                                                  parentFunc, AccessLevel::None, module, forEach->variable->getLocation());
-                iteration.push_back(makeAST<VarStmt>(loopVar));
+                iteration.push_back(makeAST<VarStmt>(std::vector<VarDecl*>{loopVar}));
                 for (Stmt* cloned : clonedBody)
                     iteration.push_back(cloned);
                 result.push_back(makeAST<CompoundStmt>(std::move(iteration)));
@@ -150,7 +150,8 @@ static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Str
         }
         case StmtKind::ForStmt: {
             auto* forStmt = llvm::cast<ForStmt>(stmt);
-            bool nestedShadowed = shadowedHere || (forStmt->variable && forStmt->variable->decl->getName() == packName);
+            bool nestedShadowed =
+                shadowedHere || (forStmt->variable && llvm::any_of(forStmt->variable->decls, [&](auto* decl) { return decl->getName() == packName; }));
             forStmt->body = unrollPackLoops(forStmt->body, packName, expandedNames, parentFunc, module, nestedShadowed);
             result.push_back(forStmt);
             break;

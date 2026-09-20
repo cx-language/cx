@@ -56,10 +56,10 @@ struct ReturnStmt : Stmt {
 };
 
 struct VarStmt : Stmt {
-    VarStmt(VarDecl* decl) : Stmt(StmtKind::VarStmt), decl(decl) {}
+    VarStmt(std::vector<VarDecl*>&& decls) : Stmt(StmtKind::VarStmt), decls(std::move(decls)) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::VarStmt; }
 
-    VarDecl* decl;
+    std::vector<VarDecl*> decls;
 };
 
 /// A statement that consists of the evaluation of a single expression.

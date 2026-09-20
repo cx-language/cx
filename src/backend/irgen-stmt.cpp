@@ -114,7 +114,9 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
 
 void IRGenerator::emitForStmt(const ForStmt& forStmt) {
     if (forStmt.variable) {
-        emitVarDecl(*forStmt.variable->decl);
+        for (auto* decl : forStmt.variable->decls) {
+            emitVarDecl(*decl);
+        }
     }
 
     auto* increment = forStmt.increment;
@@ -177,7 +179,9 @@ void IRGenerator::emitStmt(const Stmt& stmt) {
         emitReturnStmt(llvm::cast<ReturnStmt>(stmt));
         break;
     case StmtKind::VarStmt:
-        emitVarDecl(*llvm::cast<VarStmt>(stmt).decl);
+        for (auto* decl : llvm::cast<VarStmt>(stmt).decls) {
+            emitVarDecl(*decl);
+        }
         break;
     case StmtKind::ExprStmt:
         emitPlainExpr(*llvm::cast<ExprStmt>(stmt).expr);

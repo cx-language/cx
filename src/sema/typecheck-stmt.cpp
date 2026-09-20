@@ -141,7 +141,8 @@ static void collectAssignedNames(const Stmt* stmt, llvm::StringSet<>& names) {
         if (auto* value = llvm::cast<ReturnStmt>(stmt)->value) collectAssignedNames(*value, names);
         return;
     case StmtKind::VarStmt:
-        if (auto* initializer = llvm::cast<VarStmt>(stmt)->decl->initializer) collectAssignedNames(*initializer, names);
+        for (auto* decl : llvm::cast<VarStmt>(stmt)->decls)
+            if (auto* initializer = decl->initializer) collectAssignedNames(*initializer, names);
         return;
     case StmtKind::ExprStmt:
         collectAssignedNames(*llvm::cast<ExprStmt>(stmt)->expr, names);
@@ -270,7 +271,9 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
 }
 
 void Typechecker::typecheckVarStmt(VarStmt& stmt) {
-    typecheckVarDecl(*stmt.decl);
+    for (auto* decl : stmt.decls) {
+        typecheckVarDecl(*decl);
+    }
 }
 
 void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {

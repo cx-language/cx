@@ -578,11 +578,16 @@ bool Parser::shouldParseVarStmt() {
     while (true) {
         if (lookAhead(offset).is(Token::Assignment)) {
             if (lookAhead(offset - 1).is(Token::Identifier)) {
-                if (lookAhead(offset - 2).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater})) {
+                // Walk back over any ', name' pairs of a multi-variable declaration.
+                int back = offset - 2;
+                while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
+                    back -= 2;
+                }
+                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater})) {
                     return true;
                 }
-                if (lookAhead(offset - 2).is(Token::Star)) {
-                    if (lookAhead(offset - 3).is(Token::Semicolon) || lookAhead(offset - 2).location.line != lookAhead(offset - 3).location.line) {
+                if (lookAhead(back).is(Token::Star)) {
+                    if (lookAhead(back - 1).is(Token::Semicolon) || lookAhead(back).location.line != lookAhead(back - 1).location.line) {
                         return false;
                     }
                     return true;
@@ -591,7 +596,12 @@ bool Parser::shouldParseVarStmt() {
             return false;
         } else if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).location.line != lookAhead(offset - 1).location.line) {
             if (lookAhead(offset - 1).is(Token::Identifier)) {
-                if (lookAhead(offset - 2).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater, Token::Star})) {
+                // Walk back over any ', name' pairs of a multi-variable declaration.
+                int back = offset - 2;
+                while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
+                    back -= 2;
+                }
+                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater, Token::Star})) {
                     return true;
                 }
             }
@@ -892,7 +902,7 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     if (currentToken() == Token::Assignment) {
         consumeToken();
         initializer = parseExpr();
-    } else if (currentToken() == Token::Semicolon || currentToken().location.line != lookAhead(-1).location.line) {
+    } else if (currentToken() == Token::Semicolon || currentToken() == Token::Comma || currentToken().location.line != lookAhead(-1).location.line) {
         WARN(nameLocation, "missing initializer");
     }
 
@@ -900,9 +910,17 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     return makeAST<VarDecl>(type, name.str(), initializer, parent, accessLevel, *currentModule, nameLocation);
 }
 
-/// var-stmt ::= var-decl
+/// var-stmt ::= var-decl (',' id ('=' initializer)?)*
 VarStmt* Parser::parseVarStmt(Decl* parent) {
-    return makeAST<VarStmt>(parseVarDecl(parent, AccessLevel::None));
+    std::vector<VarDecl*> decls;
+    decls.push_back(parseVarDecl(parent, AccessLevel::None, false));
+    while (currentToken() == Token::Comma) {
+        consumeToken();
+        auto name = parse(Token::Identifier);
+        decls.push_back(parseVarDeclAfterName(parent, AccessLevel::None, decls.front()->type, name.getString(), name.location, false));
+    }
+    parseStmtTerminator();
+    return makeAST<VarStmt>(std::move(decls));
 }
 
 /// expr-stmt ::= expr ('\n' | ';')
@@ -1020,7 +1038,7 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
 
     auto varStmt = currentToken() == Token::Semicolon ? (consumeToken(), nullptr) : parseVarStmt(parent);
 
-    if (!varStmt || varStmt->decl->initializer) {
+    if (!varStmt || varStmt->decls.front()->initializer) {
         // C-style for loop. The condition and increment expressions may be omitted.
         Expr* condition = nullptr;
         if (currentToken() == Token::Semicolon) {
@@ -1039,7 +1057,8 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         auto body = parseBlockOrStmt(parent);
         return makeAST<ForStmt>(varStmt, condition, increment, std::move(body), location);
     } else if (currentToken() == Token::In) {
-        ERROR(varStmt->decl->getLocation(), "for-each loop variable must be a bare identifier, write 'for " << varStmt->decl->getName() << " in ...'");
+        ERROR(varStmt->decls.front()->getLocation(),
+              "for-each loop variable must be a bare identifier, write 'for " << varStmt->decls.front()->getName() << " in ...'");
     } else {
         parse(Token::In);
         llvm_unreachable("parse() throws on mismatch");
