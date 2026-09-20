@@ -17,7 +17,6 @@ static bool isOperator(const FunctionDecl& functionDecl) {
 }
 
 static const char* operatorName(const FunctionDecl& functionDecl) {
-    // TODO: Handle unary +, -, *, &.
     return llvm::StringSwitch<const char*>(functionDecl.getName())
         .Case("+", "pl")
         .Case("-", "mi")
@@ -82,7 +81,8 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
         for (auto& element : type.getTupleElements()) {
             mangleType(stream, element.type);
         }
-        stream << '_'; // TODO: should this be removed?
+        // Terminates the element list so adjacent types can't merge into it.
+        stream << '_';
         break;
     case TypeKind::FunctionType:
         stream << 'F';
