@@ -37,14 +37,15 @@ llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
 }
 
 llvm::Type* LLVMGenerator::getStructType(IRStructType* type) {
-    if (type->name.empty()) {
-        auto fields = map(type->fields, [&](const IRField& field) { return getLLVMType(field.type); });
-        // TODO: can these be cached to `structs` as well?
-        return llvm::StructType::get(ctx, std::move(fields), type->packed);
-    }
-
     auto it = structs.find(type);
     if (it != structs.end()) return NOTNULL(it->second);
+
+    if (type->name.empty()) {
+        auto fields = map(type->fields, [&](const IRField& field) { return getLLVMType(field.type); });
+        auto* llvmStruct = llvm::StructType::get(ctx, std::move(fields), type->packed);
+        structs.try_emplace(type, llvmStruct);
+        return llvmStruct;
+    }
 
     auto llvmStruct = llvm::StructType::create(ctx, type->getName());
     structs.try_emplace(type, llvmStruct);
