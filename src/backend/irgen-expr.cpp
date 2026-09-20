@@ -686,13 +686,16 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
 
     setInsertPoint(thenBlock);
     auto* thenValue = emitExpr(*expr.thenExpr);
-    createBr(endIfBlock, thenValue);
+    // Void branches produce no value to join; like void calls, the result is only usable in discard positions.
+    bool isVoid = thenValue->getType()->isVoid();
+    createBr(endIfBlock, isVoid ? nullptr : thenValue);
 
     setInsertPoint(elseBlock);
     auto* elseValue = emitExpr(*expr.elseExpr);
-    createBr(endIfBlock, elseValue);
+    createBr(endIfBlock, isVoid ? nullptr : elseValue);
 
     setInsertPoint(endIfBlock);
+    if (isVoid) return thenValue;
     endIfBlock->parameter = new Parameter{ValueKind::Parameter, thenValue->getType(), "if.result"};
     return endIfBlock->parameter;
 }

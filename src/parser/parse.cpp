@@ -553,6 +553,22 @@ IfExpr* Parser::parseIfExpr(Expr* condition) {
     return makeAST<IfExpr>(condition, thenExpr, elseExpr, location);
 }
 
+/// if-then-else-expr ::= 'if' expr 'then' expr 'else' expr
+IfExpr* Parser::parseIfThenElseExpr() {
+    ASSERT(currentToken() == Token::If);
+    auto location = consumeToken().location;
+    Expr* condition;
+    {
+        llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
+        condition = parseExpr();
+    }
+    parse(Token::Then);
+    auto thenExpr = parseExpr();
+    parse(Token::Else);
+    auto elseExpr = parseExpr();
+    return makeAST<IfExpr>(condition, thenExpr, elseExpr, location);
+}
+
 bool Parser::shouldParseVarStmt() {
     if (currentToken().is({Token::Var, Token::Const})) return true;
     if (!currentToken().is({Token::Identifier, Token::LeftParen})) return false;
@@ -721,6 +737,9 @@ Expr* Parser::parsePostfixExpr() {
         break;
     case Token::Undefined:
         expr = parseUndefinedLiteral();
+        break;
+    case Token::If:
+        expr = parseIfThenElseExpr();
         break;
     default:
         unexpectedToken(currentToken());
@@ -923,9 +942,9 @@ DeferStmt* Parser::parseDeferStmt() {
 }
 
 /// if-stmt ::= 'if' (expr | var-decl) block-or-stmt ('else' block-or-stmt)?
-IfStmt* Parser::parseIfStmt(Decl* parent) {
+Stmt* Parser::parseIfStmt(Decl* parent) {
     ASSERT(currentToken() == Token::If);
-    consumeToken();
+    auto location = consumeToken().location;
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
     Expr* condition;
@@ -933,6 +952,18 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExprOrVarDecl(parent);
         if (parens) parse(Token::RightParen);
+    }
+    if (currentToken() == Token::Then) {
+        if (condition->isVarDeclExpr()) {
+            ERROR(condition->location, "variable declaration conditions are not supported in if expressions");
+        }
+        consumeToken();
+        auto thenExpr = parseExpr();
+        parse(Token::Else);
+        auto elseExpr = parseExpr();
+        auto stmt = makeAST<ExprStmt>(makeAST<IfExpr>(condition, thenExpr, elseExpr, location));
+        parseStmtTerminator();
+        return stmt;
     }
     auto thenStmts = parseBlockOrStmt(parent);
     std::vector<Stmt*> elseStmts;

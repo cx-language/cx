@@ -88,8 +88,8 @@ bool Expr::isConstant() const {
         return llvm::cast<ImplicitCastExpr>(this)->operand->isConstant();
 
     case ExprKind::IfExpr:
-        return llvm::cast<IfExpr>(this)->condition->isConstant() && llvm::cast<IfExpr>(this)->thenExpr->isConstant()
-            && llvm::cast<IfExpr>(this)->elseExpr->isConstant();
+        // Not folded even when constant; codegen always emits branches.
+        return false;
     }
 
     llvm_unreachable("all cases handled");

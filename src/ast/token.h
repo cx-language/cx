@@ -46,6 +46,7 @@ struct Token {
         Sizeof,
         Struct,
         Switch,
+        Then,
         This,
         True,
         Undefined,

@@ -1,0 +1,24 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:1
+// CHECK-NEXT:2
+// CHECK-NEXT:yes
+// CHECK-NEXT:1
+// CHECK-NEXT:p
+// CHECK-NEXT:1
+
+void main() {
+    var x = if true then 1 else 2;
+    println(x);
+
+    var nested = if true then if false then 1 else 2 else 3;
+    println(nested);
+
+    if true then println("yes") else println("no");
+
+    int? c = 5;
+    println(if c then 1 else 0);
+
+    if (true) then println("p") else println("q");
+    println(if true then 1 else 2);
+}

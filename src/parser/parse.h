@@ -107,6 +107,7 @@ private:
     CallExpr* parseCallExpr(Expr* callee);
     LambdaExpr* parseLambdaExpr();
     IfExpr* parseIfExpr(Expr* condition);
+    IfExpr* parseIfThenElseExpr();
     bool shouldParseVarStmt();
     bool shouldParseGenericArgumentList();
     bool shouldParseGenericArgumentListAfterMember();
@@ -126,7 +127,7 @@ private:
     VarStmt* parseVarStmt(Decl* parent);
     ExprStmt* parseExprStmt();
     DeferStmt* parseDeferStmt();
-    IfStmt* parseIfStmt(Decl* parent);
+    Stmt* parseIfStmt(Decl* parent);
     WhileStmt* parseWhileStmt(Decl* parent);
     Stmt* parseForOrForEachStmt(Decl* parent);
     SwitchStmt* parseSwitchStmt(Decl* parent);
