@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds everything the online playground needs: the C* frontend compiled to
+# Builds everything the online playground needs: the cx frontend compiled to
 # WebAssembly plus the in-browser C toolchain. See wasm/README.md.
 #
 # Usage: ./wasm/build.sh [output-dir]

@@ -1,17 +1,17 @@
 # WebAssembly playground
 
-This directory contains everything needed to run the C* online playground
+This directory contains everything needed to run the cx online playground
 without a server: the compiler frontend compiled to WebAssembly, a small
 in-browser C toolchain, and the tests for the browser runtime.
 
 ## Architecture
 
 ```
-C* source --(1)--> C code --(2)--> WebAssembly module --(3)--> output
+cx source --(1)--> C code --(2)--> WebAssembly module --(3)--> output
 ```
 
-1. **C* to C** (`src/wasm/api.cpp` compiled with Emscripten to
-   `cx-wasm.js`): runs the C* frontend (parsing, type checking, IR
+1. **cx to cx* (`src/wasm/api.cpp` compiled with Emscripten to
+   `cx-wasm.js`): runs the cx frontend (parsing, type checking, IR
    generation, C code generation) in the browser. Always generates goto-free
    dispatch code (`CompileToCOptions::dispatchMode`), and rejects C header
    imports (`CX_NO_C_IMPORT`). Diagnostics go to stdout/stderr, which the
@@ -53,7 +53,7 @@ one half:
 
 `build-frontend.sh` builds LLVM's `LLVMSupport` for WebAssembly from source
 (matching `LLVM_VERSION`, default 23.1.1) and links it with the embeddable
-frontend translation units listed in the script. The C* standard library
+frontend translation units listed in the script. The cx standard library
 (`std/`) is preloaded into the module's file system at `/cx/std`.
 
 `build-xcc-dist.sh` clones xcc at the pinned revision (`XCC_REF`), builds
@@ -79,7 +79,7 @@ node wasm/smoke-playground.mjs wasm/dist
 ```
 
 `test-wasi-shim.mjs` compiles the committed fixture (`wasm/fixtures/smoke.c`,
-representative C* output) with the real `cc.wasm` on the real shim and runs
+representative cx output) with the real `cc.wasm` on the real shim and runs
 the result. `test-pipeline.mjs` additionally covers the shared pipeline
 stages with a mocked frontend. `smoke-playground.mjs` covers stage 1 with the
 real Emscripten build.

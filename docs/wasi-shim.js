@@ -1,4 +1,4 @@
-// Minimal WASI (wasi_snapshot_preview1) implementation for the C* playground.
+// Minimal WASI (wasi_snapshot_preview1) implementation for the cx playground.
 //
 // Runs both the in-browser C compiler (cc.wasm, built from xcc's wcc) and the
 // user programs it produces. It provides an in-memory file system and just

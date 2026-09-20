@@ -1,6 +1,6 @@
 # Strings
 
-C* has two string types:
+cx has two string types:
 
 - `string`, a reference to a sequence of characters, and the type of string literals.\
   Use it when you need to pass a string to a function without mutating it.\

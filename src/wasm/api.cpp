@@ -1,12 +1,12 @@
 // WebAssembly API for the online playground.
 //
 // This file is compiled with Emscripten to a cx-wasm module that runs the
-// C* frontend (parsing, type checking, IR generation, C code generation)
+// cx frontend (parsing, type checking, IR generation, C code generation)
 // entirely in the browser. It exposes a single function:
 //
 //   std::string cxCompileToC(std::string source, std::string importSearchPath)
 //
-// which compiles C* source code to C code and returns a JSON object:
+// which compiles cx source code to C code and returns a JSON object:
 //   {"status": 0, "cCode": "..."} on success,
 //   {"status": 1} on failure (with an optional "internalError" message if the
 //   failure happened inside the compiler rather than in the user program).

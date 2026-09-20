@@ -1,12 +1,12 @@
-// Shared playground pipeline: C* source -> C -> WebAssembly -> output.
+// Shared playground pipeline: cx source -> C -> WebAssembly -> output.
 //
 // This file contains no environment-specific code (no Worker, fetch, or file
 // system access beyond the injected objects), so it can be loaded in browsers
 // (via <script> or importScripts), in Web Workers, and in Node.js (for tests).
 //
 // The pipeline stages:
-//   1. cxCompileToC: the C* frontend compiled to WebAssembly (cx-wasm) turns
-//      C* source into C code plus diagnostics.
+//   1. cxCompileToC: the cx frontend compiled to WebAssembly (cx-wasm) turns
+//      cx source into C code plus diagnostics.
 //   2. compileCToWasm: the in-browser C compiler (cc.wasm, built from xcc's
 //      wcc) compiles the C code to a WebAssembly module, running on CxWasi.
 //   3. runWasm: the compiled module is executed on CxWasi, capturing stdout.
@@ -16,7 +16,7 @@
 
     // Fresh file system for one run, pre-populated with the C toolchain files
     // (wccFiles maps absolute paths like "/usr/include/stdio.h" to Uint8Array
-    // contents) and the C* standard library location expected by cx-wasm.
+    // contents) and the cx standard library location expected by cx-wasm.
     function createCompilerFs(CxWasi, wccFiles) {
         var fs = new CxWasi.FileSystem();
         fs.mkdirs("/tmp");
@@ -28,7 +28,7 @@
         return fs;
     }
 
-    // Stage 1: compile C* source to C. createModule instantiates a FRESH
+    // Stage 1: compile cx source to C. createModule instantiates a FRESH
     // compiler module for every compilation and is never reused afterwards:
     // like the command-line compiler (start, compile, exit), each compilation
     // gets pristine global state, and dropping the instance afterwards means

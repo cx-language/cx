@@ -1,6 +1,6 @@
 # Casting
 
-C* has no C-style cast syntax. Instead, there are two explicit conversions:
+cx has no C-style cast syntax. Instead, there are two explicit conversions:
 
 - Converting between scalar types with a call to the target type: `int(x)`, `float(x)`, and so on.
 - Reinterpreting pointers with the `cast` builtin: `cast<T>(x)`.

@@ -3,17 +3,17 @@
 ## Simple and expressive language
 
 - Only structs instead of having both struct and class.
-- Only pointers instead of having both pointers and references. Note that C* pointers are not identical to C/C++ pointers.
+- Only pointers instead of having both pointers and references. Note that cx pointers are not identical to C/C++ pointers.
 - Member access always uses `.`, never `->`.
 - Switch statement cases break automatically, avoids bugs caused by missing `break` in C and C++. 
   Fallthrough is opt-in. Variables can also be declared inside switch cases without requiring a block.
 - Simpler to parse, making it easier to implement syntax highlighting, auto-formatting, linting, etc.
 - Single-parameter constructors are not implicit by default.
 - Only one initialization syntax instead of [three](https://en.cppreference.com/w/cpp/language/initialization).
-- The `static` keyword is not overloaded with 3 different meanings. C* uses it only for non-instance members.
+- The `static` keyword is not overloaded with 3 different meanings. cx uses it only for non-instance members.
 - No built-in preprocessor, at least not in the same form as C and C++.
-  C* only has the conditional compilation directive `#ifdef` and its friends, which can be configured only from the
-  command-line, not from source code as can be done in C and C++ with `#define`. Although there is no preprocessor, C*
+  cx only has the conditional compilation directive `#ifdef` and its friends, which can be configured only from the
+  command-line, not from source code as can be done in C and C++ with `#define`. Although there is no preprocessor, cx
   may get macros in some form if it turns out the language needs them.
 - No `const` (except for C interop).
 
@@ -27,7 +27,7 @@ Semantics are more in line with usual programmer expectations:
 
 ## Safer by default
 
-C* inserts at least the following safety checks by default:
+cx inserts at least the following safety checks by default:
 
 - Array bounds checks
 - Integer overflow checks
@@ -59,7 +59,7 @@ Modern type system features for convenience and performance:
     constructors/assignment operators.
   - C++17 `std::variant`: not easy or elegant to use (see
     https://bitbashing.io/std-visit.html).
-- Using `interface`s (C*'s equivalent of C++ concepts) allows defining what kind of types are valid for a given template
+- Using `interface`s (cx's equivalent of C++ concepts) allows defining what kind of types are valid for a given template
   parameter when writing a generic type or function. This leads to much more readable error messages when instantiating
   generic types or functions with an incompatible type as the generic argument. C++-style unconstrained generic
   parameters are still allowed for flexibility.
@@ -83,7 +83,7 @@ Modern type system features for convenience and performance:
 
 ## Improved syntax
 
-- C*'s syntax is clean, consistent, and similar to the C family of languages.
+- cx's syntax is clean, consistent, and similar to the C family of languages.
 - No C-style cast syntax, only C++-style casts and built-in type constructors.
 - Simpler lambda/closure syntax with argument type inference by default.
 - More readable syntax for function pointer types.
@@ -106,7 +106,7 @@ All of the above should result in faster compilation times and increased program
 
 ## Standard build system and package manager
 
-Building a C* project is done with a single command, `cx build`, which works out of the box without any build
+Building a cx project is done with a single command, `cx build`, which works out of the box without any build
 configuration, and dependencies are fetched from Git repositories. See the [Build system](./build-system) page for details.
 
 Long-term goal: include a built-in linting tool that runs during compilation to enforce a specific coding style, or to
@@ -120,20 +120,20 @@ More optimization opportunities:
   C++.
 - Pointers can be declared non-aliasing either individually or globally with a compiler flag.
 - The language provides a type-safe reallocation function for arrays, instead of just allocation and deallocation
-  functions like C++. For example, the C* equivalent of C++'s `std::vector` makes use of this function.
+  functions like C++. For example, the cx equivalent of C++'s `std::vector` makes use of this function.
 - Unsigned integer overflow is undefined. There are still functions to do wrapping arithmetic on both signed and
   unsigned integers, when needed.
 - Compiler is allowed to reorder struct fields. This can be prevented using an attribute or compiler flag.
 
-C* uses the open-source LLVM library as a code generation back-end, benefiting from all current and future optimizations
+cx uses the open-source LLVM library as a code generation back-end, benefiting from all current and future optimizations
 implemented in LLVM.
 
 No hidden expensive operations, such as implicit calls to copy constructors and copy assignment operators like in C++.
 
 ## Transparent interoperation with existing C APIs
 
-C headers can be imported directly from C* code. The Clang API is used to parse the C headers and allow the contained
-declarations to be accessed from C* code. C* functions can be declared `extern "C"` to enable calling them from C.
+C headers can be imported directly from cx code. The Clang API is used to parse the C headers and allow the contained
+declarations to be accessed from cx code. cx functions can be declared `extern "C"` to enable calling them from C.
 
 Support for some level of interoperability with C++ APIs is a longer-term goal.
 

@@ -1,5 +1,5 @@
 // Full playground smoke test with real builds. Loads the Emscripten-built
-// C* frontend and the xcc distribution from <dist-dir>, compiles a C*
+// cx frontend and the xcc distribution from <dist-dir>, compiles a cx
 // program end to end, and checks its output. Usage:
 //   node wasm/smoke-playground.mjs <dist-dir>
 
@@ -43,7 +43,7 @@ async function main() {
     if (compiled.status !== 0) {
         console.error("diagnostics:\n" + compiled.diagnostics.stderr);
     }
-    check(compiled.status === 0, "stage 1 (C* to C) succeeds");
+    check(compiled.status === 0, "stage 1 (cx to C) succeeds");
     check(compiled.cCode.includes("Hello from the playground"), "stage 1 generates C");
 
     // Stages 2+3 with the real toolchain distribution.

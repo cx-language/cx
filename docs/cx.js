@@ -1,4 +1,4 @@
-// CodeMirror mode for C*.
+// CodeMirror mode for cx.
 // Based on the CodeMirror Go mode by Marijn Haverbeke and others:
 //
 // CodeMirror, copyright (c) by Marijn Haverbeke and others

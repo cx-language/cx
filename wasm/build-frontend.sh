@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds the C* frontend (parser, type checker, IR, C backend) to WebAssembly
+# Builds the cx frontend (parser, type checker, IR, C backend) to WebAssembly
 # with Emscripten for the online playground. See wasm/README.md.
 #
 # Prerequisites: emcc, cmake, ninja or make, python3, llvm-ar (any version).
@@ -61,7 +61,7 @@ if [ ! -f "$LLVM_BUILD/lib/libLLVMSupport.a" ]; then
     cmake --build "$LLVM_BUILD" --target LLVMSupport -j "$LLVM_JOBS"
 fi
 
-echo "Compiling the C* frontend to WebAssembly..."
+echo "Compiling the cx frontend to WebAssembly..."
 mkdir -p "$WORK/frontend-obj" "$OUT"
 
 # Translation units of the embeddable frontend. This is everything needed to

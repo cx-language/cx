@@ -1,21 +1,21 @@
 # Introduction
 
-C* (pronounced "C star") is a C-based hybrid low-level/high-level general-purpose programming language.
+cx is a C-based hybrid low-level/high-level general-purpose programming language.
 It is designed for applications where runtime performance and programmer productivity matter.
 The language is simple and unopinionated, supporting imperative, generic, data-oriented, functional, and object-oriented programming.
 The language also aims to support interoperability and side-by-side usage with existing C/C++ code to allow gradual adoption.
 
 ## Goals
 
-The primary goals of C* are:
+The primary goals of cx are:
 
 - Improve productivity and expressivity compared to C/C++.
 - Improve performance of standard library and common programming patterns (such as runtime polymorphism) compared to C/C++.
 - Fix various design flaws and footguns present in C/C++.
-- Don't change too much from C/C++, especially in terms of syntax, so that C/C++ programmers are immediately productive in C*.
+- Don't change too much from C/C++, especially in terms of syntax, so that C/C++ programmers are immediately productive in cx.
 - Don't introduce any "big new ideas" or dogma. Instead, focus on what has been proven to work and implement those in the best way possible.
 
-## Why C*?
+## Why cx?
 
 C++ is a huge and complex language that has accumulated many problems over the years, for example:
 
@@ -56,10 +56,10 @@ or languages (for writing new code).
 > "Within C++, there is a much smaller and cleaner language struggling to get out."
 > — _Bjarne Stroustrup_
 
-C* is trying to be that language.
+cx is trying to be that language.
 
 Let's take a look at another popular systems programming language, Rust,
-which also solves the majority of the above problems. Rust differs from C* in the following aspects:
+which also solves the majority of the above problems. Rust differs from cx in the following aspects:
 
 - Guaranteed memory safety is useful for certain types of projects, but for
   non-safety-critical projects it comes at a cost in productivity (e.g. fighting
@@ -77,12 +77,12 @@ which also solves the majority of the above problems. Rust differs from C* in th
 - Naming convention for standard library and language keywords favors cryptic
   abbreviated names, instead of clear non-abbreviated ones.
 - The Rust compiler complains if you use non-snake-case names for variables or
-  functions, or non-camel-case names for types. C*, like C++, should not
+  functions, or non-camel-case names for types. cx, like C++, should not
   force programmers to use a specific style.
 - Forces the programmer to write very explicit code (e.g. [console I/O][6]).
 - Numeric literals don't work well in generic code ([example][7]).
 
-So in summary, C* is intended to be used over Rust for non-safety-critical
+So in summary, cx is intended to be used over Rust for non-safety-critical
 applications where programmer productivity, ergonomics, and performance are more
 important than Rust's safety and explicitness.
 

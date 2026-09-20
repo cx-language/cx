@@ -48,8 +48,8 @@ namespace cl = llvm::cl;
 
 namespace cx {
 
-cl::SubCommand build("build", "Build a C* project");
-cl::SubCommand run("run", "Build and run a C* executable");
+cl::SubCommand build("build", "Build a cx project");
+cl::SubCommand run("run", "Build and run a cx executable");
 
 cl::OptionCategory dependencyCategory("Dependency Options");
 cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(cl::SubCommand::getAll()), cl::cat(dependencyCategory));
@@ -75,8 +75,8 @@ cl::OptionCategory outputCategory("Output Options");
 enum class PrintOpt { AST, IR, IRAll, C, LLVM, LLVMAll };
 cl::bits<PrintOpt> printOpts(cl::desc("Print output from intermediate steps:"), cl::sub(build), cl::sub(cl::SubCommand::getTopLevel()), cl::cat(outputCategory),
                              cl::values(clEnumValN(PrintOpt::AST, "print-ast", "Print the abstract syntax tree of main module"),
-                                        clEnumValN(PrintOpt::IR, "print-ir", "Print C* intermediate representation of main module"),
-                                        clEnumValN(PrintOpt::IRAll, "print-ir-all", "Print C* intermediate representation of all compiled modules"),
+                                        clEnumValN(PrintOpt::IR, "print-ir", "Print cx intermediate representation of main module"),
+                                        clEnumValN(PrintOpt::IRAll, "print-ir-all", "Print cx intermediate representation of all compiled modules"),
                                         clEnumValN(PrintOpt::C, "print-c", "Print generated C code"),
                                         clEnumValN(PrintOpt::LLVM, "print-llvm", "Print LLVM intermediate representation of main module"),
                                         clEnumValN(PrintOpt::LLVMAll, "print-llvm-all", "Print LLVM intermediate representation of all compiled modules")));
@@ -108,7 +108,7 @@ cl::opt<bool> warnUnusedResult("Wunused-result", cl::desc("Warn about unused exp
 cl::opt<int> errorLimit("error-limit", cl::desc("Limit the number of reported errors (10 by default, 0 removes limit)"), cl::init(10),
                         cl::sub(cl::SubCommand::getAll()), cl::cat(diagnosticCategory));
 
-cl::SubCommand lspSubcommand("lsp", "Start the C* language server (LSP over stdio)");
+cl::SubCommand lspSubcommand("lsp", "Start the cx language server (LSP over stdio)");
 
 } // namespace cx
 
@@ -687,7 +687,7 @@ int cx::driverMain(int argc, const char** argv) {
     llvm::setBugReportMsg("Please submit a bug report to https://github.com/emillaine/cx/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
     cl::HideUnrelatedOptions({&stageSelectionCategory, &outputCategory, &dependencyCategory, &diagnosticCategory});
-    cl::ParseCommandLineOptions(argc, argv, "C* compiler\n");
+    cl::ParseCommandLineOptions(argc, argv, "cx compiler\n");
     addPlatformCompileOptions();
 
     diagnosticOptions.disableWarnings = disableWarnings;

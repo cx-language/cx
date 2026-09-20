@@ -1,4 +1,4 @@
-// Tests for cx::compileToC(), the in-memory C* to C compilation entry point
+// Tests for cx::compileToC(), the in-memory cx to C compilation entry point
 // that is also used by the WebAssembly build of the compiler.
 //
 // Like the command-line compiler, compileToC() is designed to run once per

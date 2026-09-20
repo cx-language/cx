@@ -40,7 +40,7 @@ if another file also needs the module, it must import it too.
 
 ## Importing C headers
 
-An import target ending in `.h` imports a C header instead of a C* module.
+An import target ending in `.h` imports a C header instead of a cx module.
 See [Using C libraries](low-level-programming#using-c-libraries).
 
 ## Compiling files directly

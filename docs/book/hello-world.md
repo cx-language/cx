@@ -19,7 +19,7 @@ cx hello.cx
 ./hello # or hello.exe on Windows
 ```
 
-Or we can let the C* compiler do both steps using the `run` command:
+Or we can let the cx compiler do both steps using the `run` command:
 
 ```sh
 cx run hello.cx
@@ -29,7 +29,7 @@ If we use the `run` command, the executable file `hello` will not be created.
 
 ## Syntax
 
-The syntax of C* is mostly similar to the C family of languages, 
+The syntax of cx is mostly similar to the C family of languages, 
 but there are some minor differences intended to make the language slightly easier to read and write:
 
 - Semicolons are optional.
@@ -37,7 +37,7 @@ but there are some minor differences intended to make the language slightly easi
 
 ### Comments
 
-C* has two kinds of comments:
+cx has two kinds of comments:
 
 - Line comments, starting with `//` and extending until the end of the line.
 - Block comments, enclosed within `/*` and `*/`, with the ability to be nested.

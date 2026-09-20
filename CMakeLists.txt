@@ -54,7 +54,7 @@ include_directories(SYSTEM ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 add_definitions(-DCX_ROOT_DIR="${PROJECT_SOURCE_DIR}")
 
 # Define the include path of the Clang builtin headers, to be used by the compiler to avoid errors
-# about missing C headers when importing C headers from C* code. For more information, see e.g.
+# about missing C headers when importing C headers from cx code. For more information, see e.g.
 # http://clang.llvm.org/docs/FAQ.html#i-get-errors-about-some-headers-being-missing-stddef-h-stdarg-h
 # CLANG_CMAKE_DIR is defined by ClangConfig.cmake during the above find_package(Clang) call.
 add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_CMAKE_DIR}/../../clang/${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}/include")

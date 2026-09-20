@@ -1,6 +1,6 @@
 # Enum types
 
-C*'s enums are scoped and can optionally have associated values for each enum value.
+cx's enums are scoped and can optionally have associated values for each enum value.
 
 ```cs
 enum JsonValue {

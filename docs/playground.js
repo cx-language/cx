@@ -1,6 +1,6 @@
-// Main-thread interface to the C* playground Web Worker.
+// Main-thread interface to the cx playground Web Worker.
 //
-// The worker compiles and runs C* code entirely in the browser: the C*
+// The worker compiles and runs cx code entirely in the browser: the cx
 // compiler frontend (compiled to WebAssembly) translates the program to C,
 // an in-browser C compiler translates it to WebAssembly, and the result is
 // executed with captured stdout/stderr. See playground-worker.js.
@@ -93,7 +93,7 @@
         });
     }
 
-    // Compiles and runs C* source code, resolving to {stdout, stderr}.
+    // Compiles and runs cx source code, resolving to {stdout, stderr}.
     // Never rejects: internal failures are reported via stderr.
     function run(code) {
         if (!isSupported()) {

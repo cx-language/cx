@@ -25,7 +25,7 @@ struct CompileToCResult {
     std::string cCode;
 };
 
-/// Compiles C* source code held in memory to C code.
+/// Compiles cx source code held in memory to C code.
 ///
 /// Like the command-line compiler, this is designed to run once per process:
 /// global state (error count, type caches, imported modules) is intentionally

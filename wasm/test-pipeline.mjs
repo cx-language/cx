@@ -1,5 +1,5 @@
 // Tests docs/playground-pipeline.js by running the full browser pipeline with
-// a mocked C* frontend (returning the committed fixture) and the real WASI
+// a mocked cx frontend (returning the committed fixture) and the real WASI
 // shim + C toolchain. Usage:
 //   node wasm/test-pipeline.mjs <toolchain-dir>
 // See test-wasi-shim.mjs for the <toolchain-dir> layouts.
@@ -45,14 +45,14 @@ async function main() {
                 },
             },
             cxCompileToC: (source, importSearchPath) => {
-                check(source.includes("fib"), "frontend receives the C* source");
+                check(source.includes("fib"), "frontend receives the cx source");
                 check(importSearchPath === "/cx", "frontend receives the std search path");
                 return JSON.stringify({ status: 0, cCode: fixture });
             },
         };
     };
 
-    // Stage 1: C* to C.
+    // Stage 1: cx to C.
     const compiled = await CxPipeline.compileCxToC(CxWasmFactory, "void main() { fib(); }\n");
     check(compiled.status === 0, "stage 1 succeeds");
     check(compiled.cCode.includes("int main(void)"), "stage 1 returns generated C");

@@ -2,7 +2,7 @@
 
 ## `undefined`
 
-By default C* warns you when you use a variable before initializing it.
+By default cx warns you when you use a variable before initializing it.
 The `undefined` keyword allows you to explicitly mark a variable as uninitialized, suppressing the warning.
 This is useful for example when you need to pass a variable to a C function to be initialized as an out parameter.
 
@@ -16,7 +16,7 @@ void main() {
 
 ## Using C libraries
 
-C headers can be imported directly from C* code.
+C headers can be imported directly from cx code.
 The compiler uses the Clang API to parse the header and make its declarations available.
 To import a header, write an import declaration with the header file name:
 
@@ -28,7 +28,7 @@ void main() {
 }
 ```
 
-Imported functions are called like ordinary C* functions.
+Imported functions are called like ordinary cx functions.
 Memory allocation functions work the same way:
 
 ```cs
@@ -43,7 +43,7 @@ void main() {
 
 Individual functions can also be declared with `extern`, without importing a header.
 The standard library uses `extern` declarations in `std/libc.cx`
-to give common C functions more precise C* types:
+to give common C functions more precise cx types:
 
 ```cs
 extern int putchar(int ch);
@@ -53,8 +53,8 @@ void main() {
 }
 ```
 
-C struct fields are accessed with `.`, just like C* struct fields.
-A C* function can be passed where a C function pointer is expected:
+C struct fields are accessed with `.`, just like cx struct fields.
+A cx function can be passed where a C function pointer is expected:
 
 ```cs
 import "stdlib.h";

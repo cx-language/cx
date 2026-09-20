@@ -77,10 +77,10 @@ for file in book/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md 
     esac
 
     if [ "$relpath" = "index" ]; then
-        title="C* Programming Language"
+        title="cx Programming Language"
     else
         # The first '# ' heading is the section name (unwrap links: '# [List](...)' -> 'List').
-        title="C* - $(sed -n 's/^# //p' "$file" | head -n 1 | sed 's/^\[\(.*\)\](.*/\1/')"
+        title="cx - $(sed -n 's/^# //p' "$file" | head -n 1 | sed 's/^\[\(.*\)\](.*/\1/')"
     fi
 
     # The std index page lives at std/index.html: build/std.html would be

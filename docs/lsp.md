@@ -1,6 +1,6 @@
-# C* Language Server (`cx-lsp`)
+# cx Language Server (`cx-lsp`)
 
-`cx-lsp` brings C* to any editor that speaks the [Language Server
+`cx-lsp` brings cx to any editor that speaks the [Language Server
 Protocol](https://microsoft.github.io/language-server-protocol/) (VS Code,
 Neovim, Emacs, Helix, Zed, ...). Start it with `cx-lsp` directly, or with `cx
 lsp` (which forwards stdio to `cx-lsp` found next to `cx` or on `PATH`).

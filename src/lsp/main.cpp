@@ -1,4 +1,4 @@
-// cx-lsp: the C* language server.
+// cx-lsp: the cx language server.
 //
 // Two modes in one binary so queries always run in a pristine address space:
 //
@@ -40,7 +40,7 @@ int main(int argc, const char** argv) {
         }
         if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
             llvm::outs() << "Usage:\n"
-                            "  cx-lsp            Run the C* language server (LSP over stdio)\n"
+                            "  cx-lsp            Run the cx language server (LSP over stdio)\n"
                             "  cx-lsp --query    Run one compiler query from stdin as JSON and exit\n";
             return 0;
         }

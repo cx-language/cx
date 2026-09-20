@@ -482,7 +482,7 @@ std::vector<ServerDiagnostic> checkDocument(ServerState& state, const OpenDocume
         fallback.range.start = {0, 0};
         fallback.range.end = {0, 1};
         fallback.severity = 1;
-        fallback.message = "C* language server: analysis failed (see server log)";
+        fallback.message = "cx language server: analysis failed (see server log)";
         diagnostics.push_back(std::move(fallback));
         return diagnostics;
     }

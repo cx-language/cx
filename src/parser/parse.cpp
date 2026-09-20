@@ -449,7 +449,7 @@ Type Parser::parseType() {
             type = parseArrayType(type);
             break;
         case Token::And:
-            ERROR(getCurrentLocation(), "C* doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
+            ERROR(getCurrentLocation(), "cx doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
         default:
             return type.withLocation(location);
         }

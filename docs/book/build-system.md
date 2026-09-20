@@ -1,6 +1,6 @@
 # Build system
 
-`cx build` builds a C* project with no configuration:
+`cx build` builds a cx project with no configuration:
 run it in the project directory and it compiles every `.cx` file there, recursively,
 into an executable named after the directory.
 
@@ -14,7 +14,7 @@ $ ./myproject
 ```
 
 Extra build settings go in a `build.cx` file in the project directory,
-written in plain C* syntax. Each setting is a variable declaration:
+written in plain cx syntax. Each setting is a variable declaration:
 
 ```cx
 var name = "myproject"
@@ -31,7 +31,7 @@ Supported settings:
 - `libraries`: system libraries to link, as if passed with `-l`.
 - `frameworks`: macOS frameworks to link, as if passed with `-framework`.
 - `pkgConfigDependencies`: system libraries resolved via `pkg-config --cflags --libs`.
-- `dependencies`: C* libraries to fetch from Git, as `(package = "...", url = "...", version = "...")` entries (see below).
+- `dependencies`: cx libraries to fetch from Git, as `(package = "...", url = "...", version = "...")` entries (see below).
 
 Each setting can be declared only once,
 but `#if` conditions select settings per platform or configuration:
@@ -53,7 +53,7 @@ for one-off overrides.
 
 ## Installing dependencies
 
-Dependencies are C* libraries hosted in Git repositories.
+Dependencies are cx libraries hosted in Git repositories.
 Each entry gives the `package` name used by `import`,
 the repository `url` (any URL `git clone` accepts),
 and the `version` to check out (a tag, branch, or commit):

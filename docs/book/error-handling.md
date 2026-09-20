@@ -1,6 +1,6 @@
 # Error handling
 
-C* has no exceptions. Instead, the current idioms for reporting failures are
+cx has no exceptions. Instead, the current idioms for reporting failures are
 nullable return values and status codes, checked by the caller:
 
 ```cs

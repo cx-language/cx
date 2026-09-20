@@ -42,5 +42,5 @@ void main() {
 }
 ```
 
-A C* function can be passed where a C function pointer is expected,
+A cx function can be passed where a C function pointer is expected,
 see [Using C libraries](low-level-programming).

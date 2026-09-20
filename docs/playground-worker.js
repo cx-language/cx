@@ -1,6 +1,6 @@
-// Web Worker hosting the C* playground pipeline.
+// Web Worker hosting the cx playground pipeline.
 //
-// The worker loads the Emscripten-built C* frontend (cx-wasm.js), the WASI
+// The worker loads the Emscripten-built cx frontend (cx-wasm.js), the WASI
 // shim, the shared pipeline, and the C toolchain files, then answers
 // {"action": "run", "id", "code"} messages with
 // {"id", "stdout", "stderr"}.
@@ -70,7 +70,7 @@ async function runCode(code) {
     try {
         compiled = await CxPipeline.compileCxToC(CxWasm, code);
     } catch (error) {
-        return { stdout: "", stderr: "error: the C* compiler failed to run (" + (error && error.message ? error.message : error) + ")\n" };
+        return { stdout: "", stderr: "error: the cx compiler failed to run (" + (error && error.message ? error.message : error) + ")\n" };
     }
     if (compiled.status !== 0) {
         var compileStderr = compiled.diagnostics.stderr;

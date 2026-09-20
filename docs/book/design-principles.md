@@ -22,7 +22,7 @@
   change too much. Only change things that are an objective improvement from C++
   or otherwise well justified.
 
-## Resources for further C* language design
+## Resources for further cx language design
 
 - ["What are the weakest points of C++ in your opinion?" on Reddit](https://www.reddit.com/r/cpp/comments/7lvteh/what_are_the_weakest_points_of_c_in_your_opinion/?st=JBM8MFRN&sh=30098ea8)
 - ["What would you change in C++ if backwards compatibility was not an issue?" on Reddit][1]

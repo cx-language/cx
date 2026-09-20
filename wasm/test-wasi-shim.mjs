@@ -1,5 +1,5 @@
 // End-to-end test of docs/wasi-shim.js using the real in-browser C compiler
-// (cc.wasm, built from xcc) and real C* output. Mirrors exactly what the
+// (cc.wasm, built from xcc) and real cx output. Mirrors exactly what the
 // browser playground does: compile C to WebAssembly with cc.wasm, then run
 // the result.
 //
@@ -73,7 +73,7 @@ async function main() {
         ccWasm = await readFile(path.join(xccDir, "cc.wasm"));
     }
 
-    // Compile a C program (representative C* output, see wasm/fixtures/) with
+    // Compile a C program (representative cx output, see wasm/fixtures/) with
     // cc.wasm running on the shim.
     const source = await readFile(new URL("./fixtures/smoke.c", import.meta.url), "utf8");
     fs.writeFile("/work/main.c", source);
