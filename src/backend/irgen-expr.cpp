@@ -262,6 +262,46 @@ Value* IRGenerator::emitBoolConvertibleOperand(const Expr& expr) {
     return value;
 }
 
+Value* IRGenerator::emitNullCoalescingExpr(const BinaryExpr& expr) {
+    // The left side is evaluated once up front; both the null test and the value branch reuse it.
+    auto* lhsValue = emitExpr(expr.getLHS());
+    Value* hasValue;
+    if (expr.getLHS().type.isImplementedAsPointer()) {
+        hasValue = emitImplicitNullComparison(lhsValue);
+    } else {
+        hasValue = emitOptionalHasValueTest(lhsValue);
+    }
+
+    auto* function = insertBlock->parent;
+    auto* valueBlock = new BasicBlock("coalesce.value", function);
+    auto* defaultBlock = new BasicBlock("coalesce.default");
+    auto* endBlock = new BasicBlock("coalesce.end");
+    createCondBr(hasValue, valueBlock, defaultBlock);
+
+    setInsertPoint(valueBlock);
+    Value* thenValue;
+    if (expr.type == expr.getLHS().type) {
+        // The result is the optional itself (e.g. `int? ?? int?`); the tested value is already it.
+        thenValue = lhsValue;
+    } else {
+        // Unwrap without asserting; the branch proves the value is non-null.
+        Value* unwrapped = lhsValue;
+        if (!expr.getLHS().type.isImplementedAsPointer()) {
+            if (!unwrapped->getType()->isPointerType()) unwrapped = createTempAlloca(unwrapped);
+            unwrapped = createLoad(emitOptionalPayloadPtr(unwrapped, expr.getLHS().type.getWrappedType()));
+        }
+        thenValue = createCastIfNeeded(unwrapped, expr.type);
+    }
+    createBr(endBlock, thenValue);
+
+    setInsertPoint(defaultBlock);
+    createBr(endBlock, emitExpr(expr.getRHS()));
+
+    setInsertPoint(endBlock);
+    endBlock->parameter = new Parameter{ValueKind::Parameter, thenValue->getType(), "coalesce"};
+    return endBlock->parameter;
+}
+
 Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     if (expr.isAssignment()) {
         return emitAssignment(expr);
@@ -294,6 +334,9 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
 
     case Token::OrOr:
         return emitLogicalOr(expr.getLHS(), expr.getRHS());
+
+    case Token::QuestionQuestion:
+        return emitNullCoalescingExpr(expr);
 
     case Token::PositiveModulo: {
         auto left = emitExprOrEnumTag(expr.getLHS(), nullptr);

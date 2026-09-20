@@ -67,6 +67,7 @@ struct IRGenerator {
     Value* emitConstantIncrement(const UnaryExpr& expr, int value);
     Value* emitLogicalAnd(const Expr& left, const Expr& right);
     Value* emitLogicalOr(const Expr& left, const Expr& right);
+    Value* emitNullCoalescingExpr(const BinaryExpr& expr);
     Value* emitBoolConvertibleOperand(const Expr& expr);
     Value* emitBinaryExpr(const BinaryExpr& expr);
     Value* emitAssignment(const BinaryExpr& expr);

@@ -70,6 +70,8 @@ bool Expr::isConstant() const {
     }
     case ExprKind::BinaryExpr: {
         auto binaryExpr = llvm::cast<BinaryExpr>(this);
+        // Like IfExpr, `??` always emits branches and is never folded.
+        if (binaryExpr->op == Token::QuestionQuestion) return false;
         return binaryExpr->op != Token::Assignment && binaryExpr->getLHS().isConstant() && binaryExpr->getRHS().isConstant();
     }
 

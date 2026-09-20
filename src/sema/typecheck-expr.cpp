@@ -382,6 +382,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         return typecheckBinaryExpr(expr);
     }
 
+    if (op == Token::QuestionQuestion) {
+        return typecheckNullCoalescingExpr(expr);
+    }
+
     if (op == Token::AndAnd || op == Token::OrOr) {
         Type leftType = typecheckExpr(expr.getLHS());
         auto outerNarrowings = narrowedTypes;
@@ -2274,6 +2278,48 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
     }
 
     return createClosureType(*expr.functionDecl, expr.location);
+}
+
+Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
+    Type leftType = typecheckExpr(expr.getLHS());
+    if (!leftType.isOptionalType()) {
+        ERROR(expr.getLHS().location, "left operand of '" << toString(Token::QuestionQuestion) << "' must be an optional, got '" << leftType << "'");
+    }
+    auto wrappedType = leftType.getWrappedType();
+
+    // The right side only executes when the left side is null, so only narrowings valid on both paths survive.
+    auto outerNarrowings = narrowedTypes;
+    applyNarrowings(expr.getLHS(), false);
+    Type rightType = typecheckExpr(expr.getRHS());
+    intersectNarrowings(outerNarrowings);
+
+    // Prefer the unwrapped left type, but never implicitly unwrap the right side: `o1 ?? o2`
+    // must stay null when both are null, not trap unwrapping `o2`.
+    if (auto* convertedRHS = convert(&expr.getRHS(), wrappedType)) {
+        auto* current = convertedRHS;
+        bool unwrapsRHS = false;
+        while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(current)) {
+            unwrapsRHS |= cast->castKind == ImplicitCastExpr::OptionalUnwrap;
+            current = cast->operand;
+        }
+        if (!unwrapsRHS) {
+            expr.setRHS(convertedRHS);
+            return wrappedType;
+        }
+    }
+
+    // Otherwise the unwrapped value widens to the right side's type (e.g. `char? ?? 0.5` is a float).
+    if (!rightType.isOptionalType() && isSafeNumericWidening(wrappedType, rightType)) {
+        return rightType;
+    }
+
+    // Otherwise both sides stay optional (e.g. `int? ?? int?` is an `int?`).
+    if (auto* convertedRHS = convert(&expr.getRHS(), leftType)) {
+        expr.setRHS(convertedRHS);
+        return leftType;
+    }
+
+    ERROR(expr.location, "incompatible operand types ('" << leftType << "' and '" << rightType << "')");
 }
 
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {

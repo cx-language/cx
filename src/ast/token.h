@@ -106,6 +106,7 @@ struct Token {
         Semicolon,
         FatArrow,
         QuestionMark,
+        QuestionQuestion,
         TokenCount
     };
 

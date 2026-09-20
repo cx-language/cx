@@ -429,6 +429,9 @@ Token Lexer::nextToken() {
         case ':':
             return Token(Token::Colon, getCurrentLocation());
         case '?':
+            ch = readChar();
+            if (ch == '?') return Token(Token::QuestionQuestion, getCurrentLocation());
+            unreadChar(ch);
             return Token(Token::QuestionMark, getCurrentLocation());
         case '\0':
             goto end;

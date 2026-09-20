@@ -1,0 +1,21 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+// CHECK-NOT: null-coalescing.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    int a = 1;
+    // CHECK: [[@LINE+1]]:13: error: left operand of '??' must be an optional, got 'int'
+    println(a ?? 2);
+
+    // CHECK: [[@LINE+1]]:13: error: left operand of '??' must be an optional, got 'null'
+    println(null ?? 5);
+
+    int? o = null;
+    float? f = null;
+    // CHECK: [[@LINE+1]]:15: error: incompatible operand types ('int?' and 'float?')
+    println(o ?? f);
+
+    // CHECK: [[@LINE+1]]:15: error: incompatible operand types ('int?' and 'string')
+    println(o ?? "s");
+}
+
+// CHECK-NOT: null-coalescing.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

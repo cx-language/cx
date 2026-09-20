@@ -437,6 +437,11 @@ Type Parser::parseType() {
             type = OptionalType::get(type, Mutability::Mutable, location);
             consumeToken();
             break;
+        case Token::QuestionQuestion:
+            // A lexed `??` in type position is two nested optionals (e.g. `int??`).
+            type = OptionalType::get(OptionalType::get(type, Mutability::Mutable, location), Mutability::Mutable, location);
+            consumeToken();
+            break;
         case Token::LeftParen:
             type = parseFunctionType(type);
             break;
@@ -583,7 +588,7 @@ bool Parser::shouldParseVarStmt() {
                 while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
                     back -= 2;
                 }
-                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater})) {
+                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater})) {
                     return true;
                 }
                 if (lookAhead(back).is(Token::Star)) {
@@ -601,7 +606,7 @@ bool Parser::shouldParseVarStmt() {
                 while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
                     back -= 2;
                 }
-                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater, Token::Star})) {
+                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater, Token::Star})) {
                     return true;
                 }
             }
@@ -646,6 +651,7 @@ bool Parser::shouldParseGenericArgumentListAfterMember() {
         case Token::Comma:
         case Token::Star:
         case Token::QuestionMark:
+        case Token::QuestionQuestion:
         case Token::LeftBracket:
         case Token::RightBracket:
         case Token::IntegerLiteral:
@@ -816,7 +822,8 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
         auto backtrackLocation = currentTokenIndex;
         auto op = consumeToken();
         // Assignments associate to the right so `a = b = 1` parses as `a = (b = 1)`.
-        auto rhs = parseBinaryExpr(isAssignmentOperator(op) ? getPrecedence(op) : getPrecedence(op) + 1);
+        // `??` does too so `a ?? b ?? c` parses as `a ?? (b ?? c)`.
+        auto rhs = parseBinaryExpr(isAssignmentOperator(op) || op == Token::QuestionQuestion ? getPrecedence(op) : getPrecedence(op) + 1);
 
         if (isAssignmentOperator(currentToken()) && op.location.line != lhsEndLine) {
             // The operator continues on a later line only to hit an assignment (e.g. a

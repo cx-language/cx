@@ -101,6 +101,7 @@ struct Typechecker {
     Type typecheckTupleExpr(TupleExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
+    Type typecheckNullCoalescingExpr(BinaryExpr& expr);
     void typecheckAssignment(BinaryExpr& expr, Location location);
     Type typecheckCallExpr(CallExpr& expr, Type expectedType = Type());
     Type typecheckBuiltinConversion(CallExpr& expr);

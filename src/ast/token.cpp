@@ -15,6 +15,7 @@ namespace {
 enum class PrecedenceGroup {
     Assignment,
     IfExpr,
+    NullCoalescing,
     LogicalOr,
     LogicalAnd,
     Bitwise,
@@ -59,6 +60,8 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
         return PrecedenceGroup::Bitwise;
     case Token::QuestionMark:
         return PrecedenceGroup::IfExpr;
+    case Token::QuestionQuestion:
+        return PrecedenceGroup::NullCoalescing;
     default:
         if (isAssignmentOperator(tokenKind)) return PrecedenceGroup::Assignment;
         llvm_unreachable("invalid binary operator");
@@ -98,6 +101,7 @@ bool cx::isBinaryOperator(Token::Kind tokenKind) {
     case Token::RightShift:
     case Token::DotDot:
     case Token::DotDotDot:
+    case Token::QuestionQuestion:
         return true;
     default:
         return isAssignmentOperator(tokenKind);
@@ -328,6 +332,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         ";",
         "=>",
         "?",
+        "??",
     };
     static_assert(std::size(tokenStrings) == Token::TokenCount, "tokenStrings array not up-to-date");
     return tokenStrings[tokenKind];

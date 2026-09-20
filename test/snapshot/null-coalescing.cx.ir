@@ -1,0 +1,99 @@
+
+extern Optional<int> a()
+
+extern Optional<int> b()
+
+extern int c()
+
+extern int* p()
+
+extern int* q()
+
+int main() {
+    int* x = alloca int
+    Optional<int>* _0 = alloca Optional<int>
+    Optional<int>* y = alloca Optional<int>
+    int* z = alloca int
+    Optional<int>* _1 = alloca Optional<int>
+    Optional<int>* _2 = alloca Optional<int>
+    int** w = alloca int*
+    Optional<int> _3 = call a()
+    int _4 = extractvalue _3, 0
+    bool _5 = _4 == int 1
+    br _5, coalesce.value, coalesce.default
+
+coalesce.value:
+    store _3 to _0
+    union { void, struct { int } }* _6 = getelementptr _0, 1
+    int* _7 = cast _6 to int*
+    int .load = load _7
+    br coalesce.end(.load)
+
+coalesce.default:
+    br coalesce.end(int 0)
+
+coalesce.end(int coalesce):
+    store coalesce to x
+    Optional<int> _8 = call a()
+    int _9 = extractvalue _8, 0
+    bool _10 = _9 == int 1
+    br _10, coalesce.value, coalesce.default
+
+coalesce.value_0:
+    br coalesce.end_0(_8)
+
+coalesce.default_0:
+    Optional<int> _11 = call b()
+    br coalesce.end_0(_11)
+
+coalesce.end_0(Optional<int> coalesce_0):
+    store coalesce_0 to y
+    Optional<int> _12 = call a()
+    int _13 = extractvalue _12, 0
+    bool _14 = _13 == int 1
+    br _14, coalesce.value, coalesce.default
+
+coalesce.value_1:
+    store _12 to _1
+    union { void, struct { int } }* _15 = getelementptr _1, 1
+    int* _16 = cast _15 to int*
+    int .load_0 = load _16
+    br coalesce.end_1(.load_0)
+
+coalesce.default_1:
+    Optional<int> _17 = call b()
+    int _18 = extractvalue _17, 0
+    bool _19 = _18 == int 1
+    br _19, coalesce.value, coalesce.default
+
+coalesce.value_2:
+    store _17 to _2
+    union { void, struct { int } }* _20 = getelementptr _2, 1
+    int* _21 = cast _20 to int*
+    int .load_1 = load _21
+    br coalesce.end_2(.load_1)
+
+coalesce.default_2:
+    int _22 = call c()
+    br coalesce.end_2(_22)
+
+coalesce.end_2(int coalesce_1):
+    br coalesce.end_1(coalesce_1)
+
+coalesce.end_1(int coalesce_2):
+    store coalesce_2 to z
+    int* _23 = call p()
+    bool _24 = _23 != int* null
+    br _24, coalesce.value, coalesce.default
+
+coalesce.value_3:
+    br coalesce.end_3(_23)
+
+coalesce.default_3:
+    int* _25 = call q()
+    br coalesce.end_3(_25)
+
+coalesce.end_3(int* coalesce_3):
+    store coalesce_3 to w
+    return int 0
+}
