@@ -1,0 +1,41 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+enum E {
+    A,
+    B,
+}
+
+enum Opt<T> {
+    Some(T value),
+    None,
+}
+
+int f<T>(E e, T x) {
+    switch e {
+        case E.A:
+            return 1;
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
+int g<T>(Opt<T> o) {
+    switch o {
+        case Opt.Some some:
+            return 1;
+        case Opt.None:
+            return 0;
+    }
+
+    return 0;
+}
+
+void main() {
+    assert(f(E.A, 0) == 1);
+    assert(f(E.B, 0) == 0);
+    assert(g(Opt.Some(value = 1)) == 1);
+    Opt<int> none = Opt.None;
+    assert(g(none) == 0);
+}
