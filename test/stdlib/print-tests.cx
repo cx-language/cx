@@ -23,4 +23,7 @@ void main() {
     Optional<int> empty = Optional.None;
     println(empty); // CHECK-NEXT: null
     println(Optional.Some(value = 42)); // CHECK-NEXT: 42
+    Result<int, string> ok = Result.Ok(value = 42);
+    println(ok); // CHECK-NEXT: Ok(42)
+    println(Result.Err<int, string>(error = "boom")); // CHECK-NEXT: Err(boom)
 }

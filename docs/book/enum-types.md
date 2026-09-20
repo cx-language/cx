@@ -36,14 +36,17 @@ The type arguments are inferred from the associated values when possible,
 specified explicitly on the case, or taken from the expected type.
 
 ```cs
-enum Result<T> {
+enum Outcome<T> {
     Ok(T value),
     Err(int code),
 }
 
 void main() {
-    var a = Result.Ok(value = 1); // Result<int>, inferred
-    var b = Result.Ok<bool>(value = true); // explicit type arguments
-    Result<int> c = Result.Err(code = 404); // from the declared type
+    var a = Outcome.Ok(value = 1); // Outcome<int>, inferred
+    var b = Outcome.Ok<bool>(value = true); // explicit type arguments
+    Outcome<int> c = Outcome.Err(code = 404); // from the declared type
 }
 ```
+
+The standard library provides a general `Result<T, E>` enum for error handling;
+see [Error handling](error-handling).

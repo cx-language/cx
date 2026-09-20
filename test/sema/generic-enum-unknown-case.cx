@@ -2,14 +2,14 @@
 
 // CHECK-NOT: generic-enum-unknown-case.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
-enum Result<T> {
+enum Outcome<T> {
     Ok(T value),
     Err(int code),
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:20: error: enum 'Result' has no case named 'Bogus'
-    var x = Result.Bogus;
+    // CHECK: [[@LINE+1]]:21: error: enum 'Outcome' has no case named 'Bogus'
+    var x = Outcome.Bogus;
 }
 
 // CHECK-NOT: generic-enum-unknown-case.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

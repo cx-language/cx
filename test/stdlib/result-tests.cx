@@ -1,0 +1,71 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+Result<int, string> parseDigit(char c) {
+    if c >= '0' && c <= '9' {
+        return Result.Ok(value = int(c) - int('0'));
+    }
+    return Result.Err(error = "not a digit");
+}
+
+void main() {
+    testConstruction();
+    testCaseComparison();
+    testUnwrap();
+    testSwitch();
+    testPrint();
+}
+
+void testConstruction() {
+    Result<int, string> inferred = Result.Ok(value = 1);
+    assert(inferred == Result.Ok);
+
+    var explicit = Result.Ok<int, string>(value = 2);
+    assert(unwrap(explicit) == 2);
+
+    Result<int, string> fromDeclaredType = Result.Err(error = "boom");
+    assert(fromDeclaredType == Result.Err);
+
+    var explicitErr = Result.Err<int, string>(error = "bang");
+    assert(explicitErr == Result.Err);
+}
+
+void testCaseComparison() {
+    var ok = parseDigit('7');
+    var err = parseDigit('x');
+
+    assert(ok == Result.Ok);
+    assert(ok != Result.Err);
+    assert(err == Result.Err);
+    assert(err != Result.Ok);
+    assert(!(ok == Result.Err));
+    assert(!(err == Result.Ok));
+}
+
+void testUnwrap() {
+    assert(unwrap(parseDigit('7')) == 7);
+    assert(unwrap(Result.Ok<int, int>(value = 42)) == 42);
+}
+
+void testSwitch() {
+    var ok = parseDigit('7');
+    var err = parseDigit('x');
+
+    switch (ok) {
+        case Ok value:
+            assert(value.value == 7);
+        case Err error:
+            assert(false);
+    }
+
+    switch (err) {
+        case Result.Ok value:
+            assert(false);
+        case Result.Err error:
+            assert(error.error == "not a digit");
+    }
+}
+
+void testPrint() {
+    print(parseDigit('7'));
+    print(parseDigit('x'));
+}
