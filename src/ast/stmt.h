@@ -65,10 +65,12 @@ struct VarStmt : Stmt {
 
 /// A statement that consists of the evaluation of a single expression.
 struct ExprStmt : Stmt {
-    ExprStmt(Expr* expr) : Stmt(StmtKind::ExprStmt), expr(expr) {}
+    ExprStmt(Expr* expr, bool discardsResult = false) : Stmt(StmtKind::ExprStmt), expr(expr), discardsResult(discardsResult) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::ExprStmt; }
 
     Expr* expr;
+    // True for the explicit '_ = expr' discard form.
+    bool discardsResult;
 };
 
 struct DeferStmt : Stmt {

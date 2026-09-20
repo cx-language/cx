@@ -146,6 +146,7 @@ struct Typechecker {
     EnumCase* getEnumCase(const Expr& expr, Type expectedType = Type(), CallExpr* call = nullptr);
     EnumCase* instantiateEnumCase(TypeTemplate& typeTemplate, llvm::StringRef caseName, const MemberExpr& memberExpr, CallExpr* call, Type expectedType);
     void checkReturnPointerToLocal(const Expr* returnValue) const;
+    void warnIfUnusedResult(const Expr& expr, Type type) const;
     static void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);
     void maybeCaptureVariable(VariableDecl& variableDecl);
     llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const BuildConfig* config, llvm::StringRef moduleName);

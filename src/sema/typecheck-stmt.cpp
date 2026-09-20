@@ -251,6 +251,15 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     }
 }
 
+void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
+    // Anchor on the enclosing function so generic stdlib code instantiated from
+    // user code stays exempt; currentModule is the instantiation site there.
+    Module* module = currentFunction ? currentFunction->getModule() : currentModule;
+    if (!options.warnUnusedResult || module->name == "std") return;
+    if (!type || type.isVoid() || type.isNeverType() || expr.isAssignment() || expr.kind == ExprKind::IndexAssignmentExpr) return;
+    WARN(expr.location, "unused result of type '" << type << "'");
+}
+
 void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     Type returnValueType = stmt.value ? typecheckExpr(*stmt.value, false, currentFunction->getReturnType()) : Type::getVoid();
 
@@ -611,13 +620,17 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
         case StmtKind::VarStmt:
             typecheckVarStmt(llvm::cast<VarStmt>(*stmt));
             break;
-        case StmtKind::ExprStmt:
-            typecheckExpr(*llvm::cast<ExprStmt>(stmt)->expr);
+        case StmtKind::ExprStmt: {
+            auto& exprStmt = *llvm::cast<ExprStmt>(stmt);
+            Type type = typecheckExpr(*exprStmt.expr);
+            if (!exprStmt.discardsResult) warnIfUnusedResult(*exprStmt.expr, type);
             break;
+        }
         case StmtKind::DeferStmt: {
             // Deferred expressions run at scope exit, when narrowings established here may no longer hold.
             llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
-            typecheckExpr(*llvm::cast<DeferStmt>(stmt)->expr);
+            auto& expr = *llvm::cast<DeferStmt>(stmt)->expr;
+            warnIfUnusedResult(expr, typecheckExpr(expr));
             break;
         }
         case StmtKind::IfStmt:

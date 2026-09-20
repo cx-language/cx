@@ -1190,7 +1190,9 @@ Stmt* Parser::parseStmt(Decl* parent) {
         if (currentToken().getString() == "_") {
             consumeToken();
             parse(Token::Assignment);
-            return parseExprStmt();
+            auto* stmt = parseExprStmt();
+            stmt->discardsResult = true;
+            return stmt;
         } else if (lookAhead(1).is(Token::Assignment)) {
             return parseExprStmt();
         }
