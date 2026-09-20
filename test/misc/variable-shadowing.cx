@@ -1,0 +1,27 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:2
+// CHECK-NEXT:1
+// CHECK-NEXT:0
+// CHECK-NEXT:1
+// CHECK-NEXT:0
+
+void main() {
+    var x = 1;
+    var c = true;
+    if c {
+        var x = 2;
+        println(x);
+    } else {
+        var x = 3;
+        println(x);
+    }
+    println(x);
+    for i in 0..2 {
+        var y = i;
+        println(y);
+    }
+    for i in 0..1 {
+        var y = i;
+        println(y);
+    }
+}

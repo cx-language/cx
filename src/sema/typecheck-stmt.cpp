@@ -286,6 +286,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     NarrowMap thenNarrowings, elseNarrowings;
 
     {
+        Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         applyNarrowings(*ifStmt.condition, true);
         for (auto& stmt : ifStmt.thenBody) {
@@ -297,6 +298,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     }
 
     {
+        Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         applyNarrowings(*ifStmt.condition, false);
         for (auto& stmt : ifStmt.elseBody) {
@@ -429,6 +431,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     }
 
     {
+        Scope scope(nullptr, &currentModule->symbolTable);
         NarrowMap outerNarrowings = narrowedTypes;
         for (auto& defaultStmt : stmt.defaultStmts) {
             typecheckStmt(defaultStmt);
