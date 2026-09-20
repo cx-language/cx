@@ -15,7 +15,7 @@ int main() {
     int* tag_0 = getelementptr enum_0, 0
     store int 1 to tag_0
     struct { int } _0 = insertvalue struct { int } undefined, 0, int 2
-    union { void, struct { int } }* associatedValue = getelementptr enum_0, 1
+    union { struct { int } }* associatedValue = getelementptr enum_0, 1
     struct { int }* _1 = cast associatedValue to struct { int }*
     store _0 to _1
     Optional<int> enum.load_0 = load enum_0
@@ -23,7 +23,7 @@ int main() {
     int* tag_1 = getelementptr enum_1, 0
     store int 1 to tag_1
     struct { int } _2 = insertvalue struct { int } undefined, 0, int 3
-    union { void, struct { int } }* associatedValue_0 = getelementptr enum_1, 1
+    union { struct { int } }* associatedValue_0 = getelementptr enum_1, 1
     struct { int }* _3 = cast associatedValue_0 to struct { int }*
     store _2 to _3
     Optional<int> enum.load_1 = load enum_1
@@ -130,7 +130,7 @@ void _EN4main1fE() {
     int* tag_0 = getelementptr enum_0, 0
     store int 1 to tag_0
     struct { int } _1 = insertvalue struct { int } undefined, 0, int 2
-    union { void, struct { int } }* associatedValue = getelementptr enum_0, 1
+    union { struct { int } }* associatedValue = getelementptr enum_0, 1
     struct { int }* _2 = cast associatedValue to struct { int }*
     store _1 to _2
     Optional<int> enum.load_0 = load enum_0
@@ -138,7 +138,7 @@ void _EN4main1fE() {
     int* tag_1 = getelementptr enum_1, 0
     store int 1 to tag_1
     struct { int } _3 = insertvalue struct { int } undefined, 0, int 3
-    union { void, struct { int } }* associatedValue_0 = getelementptr enum_1, 1
+    union { struct { int } }* associatedValue_0 = getelementptr enum_1, 1
     struct { int }* _4 = cast associatedValue_0 to struct { int }*
     store _3 to _4
     Optional<int> enum.load_1 = load enum_1
@@ -157,23 +157,23 @@ void _EN4main1fE() {
     br _6, if.then, if.else
 
 if.then:
-    union { void, struct { int } }* _7 = getelementptr c, 1
+    union { struct { int } }* _7 = getelementptr c, 1
     int* _8 = cast _7 to int*
     int .load = load _8
     int _9 = .load + int 1
     store _9 to x
-    union { void, struct { int } }* _10 = getelementptr c, 1
+    union { struct { int } }* _10 = getelementptr c, 1
     int* _11 = cast _10 to int*
     int .load_0 = load _11
     int _12 = int 1 + .load_0
     int* tag_4 = getelementptr enum_4, 0
     store int 1 to tag_4
-    union { void, struct { int } }* _13 = getelementptr c, 1
+    union { struct { int } }* _13 = getelementptr c, 1
     int* _14 = cast _13 to int*
     int .load_1 = load _14
     int _15 = -.load_1
     struct { int } _16 = insertvalue struct { int } undefined, 0, _15
-    union { void, struct { int } }* associatedValue_1 = getelementptr enum_4, 1
+    union { struct { int } }* associatedValue_1 = getelementptr enum_4, 1
     struct { int }* _17 = cast associatedValue_1 to struct { int }*
     store _16 to _17
     Optional<int> enum.load_4 = load enum_4
@@ -190,7 +190,7 @@ if.end:
     br _19, if.then, if.else
 
 if.then_0:
-    union { void, struct { int } }* _20 = getelementptr c, 1
+    union { struct { int } }* _20 = getelementptr c, 1
     int* _21 = cast _20 to int*
     int .load_2 = load _21
     int _22 = .load_2 + int 1
@@ -214,7 +214,7 @@ __implicit_unwrap.fail:
 
 __implicit_unwrap.success:
     store c.load_1 to _0
-    union { void, struct { int } }* _26 = getelementptr _0, 1
+    union { struct { int } }* _26 = getelementptr _0, 1
     int* _27 = cast _26 to int*
     int .load_3 = load _27
     void _28 = call _EN4main12takesNonNullE3int(int .load_3)
@@ -224,7 +224,7 @@ __implicit_unwrap.success:
     br _30, if.then, if.else
 
 if.then_1:
-    union { void, struct { int } }* _31 = getelementptr c, 1
+    union { struct { int } }* _31 = getelementptr c, 1
     int* _32 = cast _31 to int*
     int .load_4 = load _32
     void _33 = call _EN4main12takesNonNullE3int(int .load_4)

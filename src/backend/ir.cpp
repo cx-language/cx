@@ -43,7 +43,15 @@ IRType* cx::getIRType(Type astType) {
                                           false,
                                           false};
                 irTypes.emplace(astType.typeBase, irType);
-                auto associatedTypes = map(enumDecl->cases, [](const EnumCase& c) { return IRField{getIRType(c.associatedType), c.name}; });
+                // Cases without associated values carry no payload, so only cases with
+                // associated types become union fields. Payload access casts the whole
+                // union, so field indices don't matter.
+                std::vector<IRField> associatedTypes;
+                for (auto& enumCase : enumDecl->cases) {
+                    if (enumCase.associatedType) {
+                        associatedTypes.push_back(IRField{getIRType(enumCase.associatedType), enumCase.name});
+                    }
+                }
                 unionType->fields = std::move(associatedTypes);
                 return irType;
             } else {
@@ -697,11 +705,7 @@ llvm::raw_ostream& cx::operator<<(llvm::raw_ostream& stream, IRType* type) {
         } else {
             stream << "union { ";
             for (auto& field : type->getFields()) {
-                if (field.type) { // TODO: Element type should exist for all enum associated values
-                    stream << field.type;
-                } else {
-                    stream << "void";
-                }
+                stream << field.type;
                 if (&field != &type->getFields().back()) stream << ", ";
             }
             return stream << " }";

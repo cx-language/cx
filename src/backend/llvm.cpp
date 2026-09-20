@@ -95,7 +95,6 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
         llvm::Type* largestFieldType;
         int largestFieldSize = 0;
         for (auto& field : unionType->getFields()) {
-            if (!field.type) continue; // TODO: Element type should exist for all enum associated values
             auto fieldType = getLLVMType(field.type);
             auto size = module->getDataLayout().getTypeAllocSize(fieldType);
             if (size > largestFieldSize) {

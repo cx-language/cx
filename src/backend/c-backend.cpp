@@ -995,16 +995,15 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
         if (!define) break;
         alreadyEmittedTypes.insert(type);
 
-        // Generate type dependencies first. Cases without associated values have no type.
+        // Generate type dependencies first.
         for (auto& field : unionType->fields) {
-            if (field.type) codegenTypeDefinition(stream, field.type, true);
+            codegenTypeDefinition(stream, field.type, true);
         }
 
         // Named unions are defined in C headers; only anonymous enum payload unions need definitions here.
         if (unionType->name.empty()) {
             stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << " {\n";
             for (auto& field : unionType->fields) {
-                if (!field.type) continue; // Cases without associated values carry no data.
                 stream.indent(4);
                 codegenType(stream, field.type, !field.type->isPointerType());
                 stream << " " << field.name;
