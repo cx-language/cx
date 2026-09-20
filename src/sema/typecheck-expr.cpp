@@ -1650,6 +1650,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         decl = resolveOverload(decls, expr, callee, expectedType);
+
+        // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
+        if (llvm::isa<DestructorDecl>(decl)) {
+            setMoved(expr.getReceiver(), true);
+        }
     } else {
         auto callee = expr.getFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
