@@ -1,5 +1,6 @@
 
-%"Optional<int>" = type { i32, <{ { i32 } }> }
+%0 = type <{ { i32 } }>
+%"Optional<int>" = type { i32, %0 }
 
 define %"Optional<int>" @_EN4main1fE() {
   %i = alloca i32, align 4

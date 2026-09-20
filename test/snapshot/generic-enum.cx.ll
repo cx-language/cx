@@ -1,5 +1,6 @@
 
-%"Opt<int>" = type { i32, <{ { i32 } }> }
+%0 = type <{ { i32 } }>
+%"Opt<int>" = type { i32, %0 }
 
 define i32 @main() {
   %a = alloca %"Opt<int>", align 8

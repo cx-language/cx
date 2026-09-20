@@ -1,5 +1,6 @@
 
-%"Optional<int>" = type { i32, <{ { i32 } }> }
+%0 = type <{ { i32 } }>
+%"Optional<int>" = type { i32, %0 }
 
 @0 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:33:18\0A\00", align 1
 

@@ -1,5 +1,6 @@
 
-%"Optional<ArrayRef<int8>>" = type { i32, <{ { %"ArrayRef<int8>" } }> }
+%0 = type <{ { %"ArrayRef<int8>" } }>
+%"Optional<ArrayRef<int8>>" = type { i32, %0 }
 %"ArrayRef<int8>" = type { ptr, i32 }
 
 define i32 @main() {

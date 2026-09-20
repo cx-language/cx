@@ -1,5 +1,6 @@
 
-%E = type { i32, <{ { [12 x i32] } }> }
+%0 = type <{ { [12 x i32] } }>
+%E = type { i32, %0 }
 %"S<E>" = type { ptr }
 
 define i32 @main() {

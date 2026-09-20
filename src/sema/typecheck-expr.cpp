@@ -593,6 +593,13 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
     std::optional<ImplicitCastExpr::Kind> implicitCastKind;
     if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind)) {
         if (implicitCastKind) {
+            if (*implicitCastKind == ImplicitCastExpr::OptionalWrap && expr->type != convertedType.getWrappedType()) {
+                // One wrap node constructs a single level, so convert the operand to the wrapped
+                // type first (e.g. `int` to `int?` when wrapping to `int??`). Each recursion
+                // strips one optional level, so this terminates.
+                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary);
+                if (!expr) return nullptr;
+            }
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
             if (*implicitCastKind == ImplicitCastExpr::AutoReference && expr->hasAssignableType() && expr->assignableType.isOptionalType()
                 && !expr->assignableType.getWrappedType().isImplementedAsPointer() && expr->type == expr->assignableType.getWrappedType()) {

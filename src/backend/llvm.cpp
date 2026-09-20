@@ -88,7 +88,10 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
         if (it != structs.end()) return it->second;
 
         auto unionType = llvm::cast<IRUnionType>(type);
-        auto structType = unionType->name.empty() ? llvm::StructType::get(ctx) : llvm::StructType::create(ctx, unionType->name);
+        // Anonymous unions still need distinct opaque types: the uniqued empty struct from
+        // StructType::get is shared while it has no body, so a nested union lowered during
+        // field lowering would alias it and the outer setBody would not take effect.
+        auto structType = unionType->name.empty() ? llvm::StructType::create(ctx) : llvm::StructType::create(ctx, unionType->name);
         structs.try_emplace(unionType, structType);
 
         llvm::Type* largestFieldType;

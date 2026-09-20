@@ -1,0 +1,20 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:5
+// CHECK-NEXT:7
+// CHECK-NEXT:5
+// CHECK-NEXT:5
+// CHECK-NEXT:true
+
+void main() {
+    int?? d = 5;
+    println(d!!);
+    int??? t = 7;
+    println(t!!!);
+    int? o = 5;
+    int?? w = o;
+    println(w!!);
+    int? mid = d!;
+    println(mid!);
+    println(d! != null);
+}

@@ -1,5 +1,6 @@
 
-%E = type { i32, <{ { i1, i32 } }> }
+%0 = type <{ { i1, i32 } }>
+%E = type { i32, %0 }
 
 define i32 @main() {
   %e = alloca %E, align 8
