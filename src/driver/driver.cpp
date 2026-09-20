@@ -265,6 +265,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         typechecker.typecheckModule(*importedModule, nullptr);
     }
     typechecker.typecheckModule(mainModule, buildParams.config);
+    typechecker.checkUnusedDecls(mainModule);
 
     if (errors) return 1;
 

@@ -156,6 +156,7 @@ private:
 public:
     std::string name;
     std::vector<SourceFile> sourceFiles;
+    bool isCHeaderImport = false;
     SymbolTable symbolTable;
     std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;
     static llvm::StringMap<Module*> allImportedModules;

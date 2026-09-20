@@ -1,0 +1,5 @@
+// RUN: true
+
+void helper() {
+    println("help");
+}

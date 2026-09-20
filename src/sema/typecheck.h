@@ -63,6 +63,7 @@ struct Typechecker {
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
       isPostProcessing(false), options(options) {}
     void typecheckModule(Module& module, const BuildConfig* config);
+    void checkUnusedDecls(const Module& mainModule);
 
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
     void typecheckVarDecl(VarDecl& decl);

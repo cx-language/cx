@@ -1,5 +1,6 @@
 #include "typecheck.h"
 #pragma warning(push, 0)
+#include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/SaveAndRestore.h>
@@ -133,7 +134,7 @@ void Typechecker::postProcess() {
     }
 }
 
-static void checkUnusedDecls(const Module& module) {
+static void checkUnusedDeclsInModule(const Module& module) {
     for (auto& sourceFile : module.sourceFiles) {
         for (auto& decl : sourceFile.topLevelDecls) {
             if (decl->isReferenced()) continue;
@@ -144,6 +145,24 @@ static void checkUnusedDecls(const Module& module) {
             }
         }
     }
+}
+
+// Warns about unused declarations after the whole program is typechecked, so
+// that references from importing modules are seen. Runs dependencies first.
+static void checkUnusedDeclsTransitive(const Module& module, llvm::SmallPtrSetImpl<const Module*>& visited) {
+    if (!visited.insert(&module).second) return;
+    for (auto* imported : module.getImportedModules()) {
+        if (imported->name != "std" && !imported->isCHeaderImport) {
+            checkUnusedDeclsTransitive(*imported, visited);
+        }
+    }
+    checkUnusedDeclsInModule(module);
+}
+
+void Typechecker::checkUnusedDecls(const Module& mainModule) {
+    if (options.noUnusedWarnings) return;
+    llvm::SmallPtrSet<const Module*, 8> visited;
+    checkUnusedDeclsTransitive(mainModule, visited);
 }
 
 void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
@@ -247,10 +266,6 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
                 }
             }
         }
-    }
-
-    if (module.name != "std" && !options.noUnusedWarnings) {
-        checkUnusedDecls(module);
     }
 }
 

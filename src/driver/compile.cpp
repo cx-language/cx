@@ -49,6 +49,7 @@ CompileToCResult cx::compileToC(const char* fileName, const char* source, const 
         typechecker.typecheckModule(*importedModule, nullptr);
     }
     typechecker.typecheckModule(mainModule, nullptr);
+    typechecker.checkUnusedDecls(mainModule);
 
     if (errors) return CompileToCResult{.status = 1};
 

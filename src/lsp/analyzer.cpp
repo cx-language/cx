@@ -1467,6 +1467,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             typechecker.typecheckModule(*imported, nullptr);
         }
         typechecker.typecheckModule(*module, nullptr);
+        typechecker.checkUnusedDecls(*module);
 
         result.mainModule = module;
     } catch (const CompileError& error) {
