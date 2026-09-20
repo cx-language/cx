@@ -5,6 +5,9 @@ define i32 @main() {
 }
 
 define float @_EN4main1fI5floatEE5float(float %a) {
-  %1 = fneg float %a
+  %a1 = alloca float, align 4
+  store float %a, ptr %a1, align 4
+  %a.load = load float, ptr %a1, align 4
+  %1 = fneg float %a.load
   ret float %1
 }

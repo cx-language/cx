@@ -8,15 +8,24 @@ int main() {
 }
 
 void _EN4main3Foo4initE3int(Foo* this, int i) {
-    int* i_0 = getelementptr this, 0
+    int* i_0 = alloca int
     store i to i_0
+    int* i_1 = getelementptr this, 0
+    int i.load = load i_0
+    store i.load to i_1
     return void
 }
 
 void _EN4main3Bar4initE3int3int(Bar* this, int j, int i) {
-    int* i_0 = getelementptr this, 0
-    store i to i_0
-    int* j_0 = getelementptr this, 1
+    int* j_0 = alloca int
+    int* i_0 = alloca int
     store j to j_0
+    store i to i_0
+    int* i_1 = getelementptr this, 0
+    int i.load = load i_0
+    store i.load to i_1
+    int* j_1 = getelementptr this, 1
+    int j.load = load j_0
+    store j.load to j_1
     return void
 }

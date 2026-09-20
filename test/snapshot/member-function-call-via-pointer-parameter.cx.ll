@@ -3,8 +3,14 @@
 %Bar = type { i32 }
 
 define void @_EN4main3quxEP3FooP3Bar(ptr %f, ptr %b) {
-  call void @_EN4main3Foo3fooE(ptr %f)
-  call void @_EN4main3Bar3barE(ptr %b)
+  %f1 = alloca ptr, align 8
+  %b2 = alloca ptr, align 8
+  store ptr %f, ptr %f1, align 8
+  store ptr %b, ptr %b2, align 8
+  %f.load = load ptr, ptr %f1, align 8
+  call void @_EN4main3Foo3fooE(ptr %f.load)
+  %b.load = load ptr, ptr %b2, align 8
+  call void @_EN4main3Bar3barE(ptr %b.load)
   ret void
 }
 

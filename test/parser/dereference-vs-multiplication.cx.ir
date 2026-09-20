@@ -4,13 +4,20 @@ int _EN4main1gE() {
 }
 
 void _EN4main1fEP3int3int(int* a, int b) {
+    int** a_0 = alloca int*
+    int* b_0 = alloca int
     int* m = alloca int
     int* n = alloca int
+    store a to a_0
+    store b to b_0
     int _0 = call _EN4main1gE()
     store _0 to m
-    store b to a
+    int* a.load = load a_0
+    int b.load = load b_0
+    store b.load to a.load
     int _1 = call _EN4main1gE()
-    int _2 = _1 * b
+    int b.load_0 = load b_0
+    int _2 = _1 * b.load_0
     store _2 to n
     return void
 }

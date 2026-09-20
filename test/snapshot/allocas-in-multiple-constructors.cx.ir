@@ -14,7 +14,9 @@ void _EN4main1S4initE(S* this) {
 }
 
 void _EN4main1S4initE3int(S* this, int foo) {
+    int* foo_0 = alloca int
     int* j = alloca int
+    store foo to foo_0
     store int 5 to j
     return void
 }

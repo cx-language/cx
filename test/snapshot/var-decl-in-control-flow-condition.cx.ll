@@ -66,6 +66,8 @@ define ptr @_EN4main1hE() {
 declare void @_EN3std10assertFailEP4char(ptr)
 
 define void @_EN4main1jEP3int(ptr %i) {
+  %i1 = alloca ptr, align 8
+  store ptr %i, ptr %i1, align 8
   ret void
 }
 

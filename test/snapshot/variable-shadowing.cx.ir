@@ -10,8 +10,11 @@ int main() {
 }
 
 void _EN4main1S4initE3int(S* this, int i_0) {
-    int* i_1 = getelementptr this, 0
+    int* i_1 = alloca int
     store i_0 to i_1
+    int* i_2 = getelementptr this, 0
+    int i.load = load i_1
+    store i.load to i_2
     return void
 }
 

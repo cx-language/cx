@@ -1,17 +1,33 @@
 
 int[2] _EN4main1fE3int3int(int foo, int bar) {
-    int _0 = foo + bar
+    int* foo_0 = alloca int
+    int* bar_0 = alloca int
+    store foo to foo_0
+    store bar to bar_0
+    int foo.load = load foo_0
+    int bar.load = load bar_0
+    int _0 = foo.load + bar.load
     int[2] _1 = insertvalue int[2] undefined, 0, _0
-    int _2 = foo - bar
+    int foo.load_0 = load foo_0
+    int bar.load_0 = load bar_0
+    int _2 = foo.load_0 - bar.load_0
     int[2] _3 = insertvalue _1, 1, _2
     return _3
 }
 
 int[2] _EN4main1gE3int3int(int foo, int bar) {
+    int* foo_0 = alloca int
+    int* bar_0 = alloca int
     int[2]* c = alloca int[2]
-    int _0 = foo + bar
+    store foo to foo_0
+    store bar to bar_0
+    int foo.load = load foo_0
+    int bar.load = load bar_0
+    int _0 = foo.load + bar.load
     int[2] _1 = insertvalue int[2] undefined, 0, _0
-    int _2 = foo - bar
+    int foo.load_0 = load foo_0
+    int bar.load_0 = load bar_0
+    int _2 = foo.load_0 - bar.load_0
     int[2] _3 = insertvalue _1, 1, _2
     store _3 to c
     int[2] c.load = load c

@@ -19,8 +19,11 @@ define ptr @_EN4main3fooE() {
 }
 
 define void @_EN4main1A4initEA2_4bool(ptr %this, [2 x i1] %b) {
-  %b1 = getelementptr inbounds %A, ptr %this, i32 0, i32 0
+  %b1 = alloca [2 x i1], align 1
   store [2 x i1] %b, ptr %b1, align 1
+  %b2 = getelementptr inbounds %A, ptr %this, i32 0, i32 0
+  %b.load = load [2 x i1], ptr %b1, align 1
+  store [2 x i1] %b.load, ptr %b2, align 1
   ret void
 }
 
@@ -31,8 +34,11 @@ define ptr @_EN4main1A2ffE(ptr %this) {
 }
 
 define void @_EN4main1B4initE4char(ptr %this, i8 %a) {
-  %a1 = getelementptr inbounds %B, ptr %this, i32 0, i32 0
+  %a1 = alloca i8, align 1
   store i8 %a, ptr %a1, align 1
+  %a2 = getelementptr inbounds %B, ptr %this, i32 0, i32 0
+  %a.load = load i8, ptr %a1, align 1
+  store i8 %a.load, ptr %a2, align 1
   ret void
 }
 

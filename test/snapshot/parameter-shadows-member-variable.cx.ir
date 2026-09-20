@@ -7,7 +7,10 @@ int main() {
 }
 
 void _EN4main1S3fooE3int(S* this, int bar) {
-    int _0 = bar + int 42
+    int* bar_0 = alloca int
+    store bar to bar_0
+    int bar.load = load bar_0
+    int _0 = bar.load + int 42
     return void
 }
 

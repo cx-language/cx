@@ -21,7 +21,10 @@ void _EN4main1iE() {
 }
 
 int _EN4main1iE3int(int x) {
-    switch x {
+    int* x_0 = alloca int
+    store x to x_0
+    int x.load = load x_0
+    switch x.load {
         int 0 -> switch.case.0
     }
 

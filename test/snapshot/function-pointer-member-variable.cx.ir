@@ -1,6 +1,9 @@
 
 int _EN4main3fooE3int(int a) {
-    return a
+    int* a_0 = alloca int
+    store a to a_0
+    int a.load = load a_0
+    return a.load
 }
 
 int main() {
@@ -14,8 +17,11 @@ int main() {
 }
 
 void _EN4main1X4initEF3int_3int(X* this, int(int)* p) {
-    int(int)** p_0 = getelementptr this, 0
+    int(int)** p_0 = alloca int(int)*
     store p to p_0
+    int(int)** p_1 = getelementptr this, 0
+    int(int)* p.load = load p_0
+    store p.load to p_1
     return void
 }
 

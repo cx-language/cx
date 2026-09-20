@@ -1,6 +1,9 @@
 
 int _EN4main1fE3int(int a) {
-    return a
+    int* a_0 = alloca int
+    store a to a_0
+    int a.load = load a_0
+    return a.load
 }
 
 int main() {

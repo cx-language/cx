@@ -1,6 +1,9 @@
 
 float _EN4main1fE5float(float b) {
+    float* b_0 = alloca float
+    store b to b_0
+    float b.load = load b_0
     float _0 = float 4 * float 2
-    float _1 = b * _0
+    float _1 = b.load * _0
     return _1
 }

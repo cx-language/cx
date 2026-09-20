@@ -2,6 +2,8 @@
 %"Range<int>" = type { i32, i32 }
 
 define void @_EN4main1fE5RangeI3intE(%"Range<int>" %r) {
+  %r1 = alloca %"Range<int>", align 8
+  store %"Range<int>" %r, ptr %r1, align 4
   ret void
 }
 

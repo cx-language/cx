@@ -172,9 +172,8 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
     }
     case Token::And: {
         auto* value = emitExprAsPointer(expr.getOperand());
-        // Function parameters are SSA values, not memory, so spill them to a temporary to form a real address.
-        // FIXME: This is a point-in-time copy; stores through the address don't update the parameter.
-        // Remove once parameters get entry-block allocas ("Codegen allocas for parameters").
+        // 'this' and unnamed parameters are SSA values, not memory, so spill them to a temporary to form a real address.
+        // FIXME: This is a point-in-time copy; stores through the address don't update the original.
         if (llvm::isa<Parameter>(value)) {
             value = createTempAlloca(value);
         }
@@ -336,7 +335,8 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
 
     if (isBuiltinArrayToArrayRefConversion(expr.type, targetType)) {
         ASSERT(expr.type.removePointer().isConstantArray());
-        auto* value = emitExprAsPointer(expr);
+        // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
+        auto* value = expr.type.isPointerType() ? emitExpr(expr) : emitExprAsPointer(expr);
         auto* elementPtr = createGEP(value, 0);
         auto* arrayRef = createInsertValue(createUndefined(targetType), elementPtr, 0);
         auto size = createConstantInt(Type::getInt(), expr.type.removePointer().getArraySize());
@@ -558,7 +558,8 @@ Value* IRGenerator::getArrayLength(const Expr&, Type objectType) {
 
 Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
     auto type = BasicType::get("ArrayIterator", objectType.getElementType());
-    auto* value = emitExprAsPointer(object);
+    // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
+    auto* value = object.type.isPointerType() ? emitExpr(object) : emitExprAsPointer(object);
     auto* elementPtr = createGEP(value, 0);
     auto* size = getArrayLength(object, objectType);
     auto* end = createGEP(elementPtr, {size});
@@ -805,7 +806,7 @@ Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
         if (enumDecl->hasAssociatedValues() && !expr.type.isImplementedAsPointer()) {
             auto* value = emitLvalueExpr(expr);
             if (!value->getType()->isPointerType()) {
-                // Aggregate-typed parameters have no address; spill to a temp so the tag load and associated-value access work.
+                // Temporaries have no address; spill to a temp so the tag load and associated-value access work.
                 value = createTempAlloca(value);
             }
             if (enumValue) *enumValue = value;
@@ -823,7 +824,7 @@ Value* IRGenerator::emitLvalueExpr(const Expr& expr) {
     // Pointer-implemented optionals need no access adjustment: the narrowed type is a compile-time view of the same value.
     if (expr.hasAssignableType() && expr.assignableType.isOptionalType() && !expr.assignableType.getWrappedType().isImplementedAsPointer()
         && expr.type == expr.assignableType.getWrappedType()) {
-        // Function parameters are SSA values, not memory; spill to a temp so the payload access works.
+        // Temporaries are SSA values, not memory; spill to a temp so the payload access works.
         if (!value->getType()->isPointerType()) value = createTempAlloca(value);
         return emitOptionalPayloadPtr(value, expr.assignableType.getWrappedType());
     }

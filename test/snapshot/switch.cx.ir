@@ -1,6 +1,9 @@
 
 void _EN4main3fooE3int(int i) {
-    switch i {
+    int* i_0 = alloca int
+    store i to i_0
+    int i.load = load i_0
+    switch i.load {
         int 0 -> switch.case.0
         int -1 -> switch.case.1
         int 42 -> switch.case.2
@@ -10,8 +13,10 @@ switch.case.0:
     br switch.end
 
 switch.case.1:
-    void _0 = call _EN4main3fooE3int(int i)
-    void _1 = call _EN4main3fooE3int(int i)
+    int i.load_0 = load i_0
+    void _0 = call _EN4main3fooE3int(int i.load_0)
+    int i.load_1 = load i_0
+    void _1 = call _EN4main3fooE3int(int i.load_1)
     br switch.end
 
 switch.case.2:
@@ -21,7 +26,8 @@ switch.default:
     br switch.end
 
 switch.end:
-    switch i {
+    int i.load_2 = load i_0
+    switch i.load_2 {
         int 0 -> switch.case.0
     }
 
@@ -29,7 +35,8 @@ switch.case.0_0:
     br switch.end_0
 
 switch.default_0:
-    void _2 = call _EN4main3fooE3int(int i)
+    int i.load_3 = load i_0
+    void _2 = call _EN4main3fooE3int(int i.load_3)
     br switch.end_0
 
 switch.end_0:
@@ -37,7 +44,10 @@ switch.end_0:
 }
 
 int _EN4main1fEP1S(S* s) {
-    int* i = getelementptr s, 0
+    S** s_0 = alloca S*
+    store s to s_0
+    S* s.load = load s_0
+    int* i = getelementptr s.load, 0
     int i.load = load i
     switch i.load {
         int 0 -> switch.case.0

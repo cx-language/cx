@@ -18,13 +18,19 @@ int main() {
 }
 
 void _EN4main3Foo4initE3int4bool(Foo* this, int a, bool b) {
-    int* a_0 = getelementptr this, 0
+    int* a_0 = alloca int
+    bool* b_0 = alloca bool
     store a to a_0
-    bool* b_0 = getelementptr this, 1
     store b to b_0
     int* a_1 = getelementptr this, 0
-    int a.load = load a_1
-    int _0 = a.load + int 1
-    store _0 to a_1
+    int a.load = load a_0
+    store a.load to a_1
+    bool* b_1 = getelementptr this, 1
+    bool b.load = load b_0
+    store b.load to b_1
+    int* a_2 = getelementptr this, 0
+    int a.load_0 = load a_2
+    int _0 = a.load_0 + int 1
+    store _0 to a_2
     return void
 }

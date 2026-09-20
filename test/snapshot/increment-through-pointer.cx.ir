@@ -1,13 +1,17 @@
 
 void _EN4main1fEP3int(int* a) {
+    int** a_0 = alloca int*
     int** p = alloca int*
-    store a to p
+    store a to a_0
+    int* a.load = load a_0
+    store a.load to p
     int* p.load = load p
     int p.load.load = load p.load
     int _0 = p.load.load + int 1
     store _0 to p.load
-    int a.load = load a
-    int _1 = a.load + int -1
-    store _1 to a
+    int* a.load_0 = load a_0
+    int a.load.load = load a.load_0
+    int _1 = a.load.load + int -1
+    store _1 to a.load_0
     return void
 }

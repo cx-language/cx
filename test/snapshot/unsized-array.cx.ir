@@ -24,27 +24,29 @@ int main() {
 }
 
 void _EN4main3fooE8ArrayRefI3intE(ArrayRef<int> ints) {
+    ArrayRef<int>* ints_0 = alloca ArrayRef<int>
     int* a = alloca int
-    ArrayRef<int>* _0 = alloca ArrayRef<int>
     int* b = alloca int
-    ArrayRef<int>* _1 = alloca ArrayRef<int>
     ArrayRef<int>* c = alloca ArrayRef<int>
-    store ints to _0
-    int* _2 = call _EN3std8ArrayRefI3intEixE3int(ArrayRef<int>* _0, int 1)
-    int .load = load _2
+    store ints to ints_0
+    int* _0 = call _EN3std8ArrayRefI3intEixE3int(ArrayRef<int>* ints_0, int 1)
+    int .load = load _0
     store .load to a
-    store ints to _1
-    int _3 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* _1)
-    store _3 to b
-    store ints to c
+    int _1 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* ints_0)
+    store _1 to b
+    ArrayRef<int> ints.load = load ints_0
+    store ints.load to c
     return void
 }
 
 void _EN4main3barEPA3_3int(int[3]* ints) {
+    int[3]** ints_0 = alloca int[3]*
     int* b = alloca int
     ArrayRef<int>* ref = alloca ArrayRef<int>
+    store ints to ints_0
     store int 3 to b
-    int* _0 = getelementptr ints, 0
+    int[3]* ints.load = load ints_0
+    int* _0 = getelementptr ints.load, 0
     ArrayRef<int> _1 = insertvalue ArrayRef<int> undefined, 0, _0
     ArrayRef<int> _2 = insertvalue _1, 1, int 3
     store _2 to ref
@@ -58,13 +60,17 @@ int _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this) {
 }
 
 int* _EN3std8ArrayRefI3intEixE3int(ArrayRef<int>* this, int index) {
+    int* index_0 = alloca int
     string* __str = alloca string
-    bool _0 = index < int 0
+    store index to index_0
+    int index.load = load index_0
+    bool _0 = index.load < int 0
     br _0, or.end(_0), or.rhs(_0)
 
 or.rhs:
+    int index.load_0 = load index_0
     int _1 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this)
-    bool _2 = index >= _1
+    bool _2 = index.load_0 >= _1
     br or.end(_2)
 
 or.end(bool or):
@@ -73,7 +79,8 @@ or.end(bool or):
 if.then:
     void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "operator[]", int 10)
     string __str.load = load __str
-    void _4 = call _EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ArrayRef<int>* this, string __str.load, int index)
+    int index.load_1 = load index_0
+    void _4 = call _EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ArrayRef<int>* this, string __str.load, int index.load_1)
     br if.end
 
 if.else:
@@ -82,25 +89,26 @@ if.else:
 if.end:
     int** data = getelementptr this, 0
     int* data.load = load data
-    int* _5 = getelementptr data.load, index
+    int index.load_2 = load index_0
+    int* _5 = getelementptr data.load, index.load_2
     return _5
 }
 
 void _EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ArrayRef<int>* this, string function, int index) {
+    string* function_0 = alloca string
+    int* index_0 = alloca int
     string* __str = alloca string
-    string* _0 = alloca string
     string* __str_0 = alloca string
-    int* _1 = alloca int
     string* __str_1 = alloca string
-    int* _2 = alloca int
-    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "ArrayRef.", int 9)
-    store function to _0
-    void _4 = call _EN3std6string4initEP4char3int(string* __str_0, char* ": index ", int 8)
-    store index to _1
-    void _5 = call _EN3std6string4initEP4char3int(string* __str_1, char* " is out of bounds, size is ", int 27)
-    int _6 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this)
-    store _6 to _2
-    never _7 = call _EN3std5abortI6string6string6string3int6string3intEVEP6stringP6stringP6stringP3intP6stringP3int(string* __str, string* _0, string* __str_0, int* _1, string* __str_1, int* _2)
+    int* _0 = alloca int
+    store function to function_0
+    store index to index_0
+    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "ArrayRef.", int 9)
+    void _2 = call _EN3std6string4initEP4char3int(string* __str_0, char* ": index ", int 8)
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_1, char* " is out of bounds, size is ", int 27)
+    int _4 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this)
+    store _4 to _0
+    never _5 = call _EN3std5abortI6string6string6string3int6string3intEVEP6stringP6stringP6stringP3intP6stringP3int(string* __str, string* function_0, string* __str_0, int* index_0, string* __str_1, int* _0)
     return void
 }
 

@@ -78,7 +78,10 @@ int* _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* this) {
 }
 
 void _EN3std7printlnI3intEEP3int(int* value) {
-    void _0 = call _EN3std5printI3intEEP3int(int* value)
+    int** value_0 = alloca int*
+    store value to value_0
+    int* value.load = load value_0
+    void _0 = call _EN3std5printI3intEEP3int(int* value.load)
     void _1 = call _EN3std5printI4charEE4char(char 10)
     return void
 }

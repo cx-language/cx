@@ -1,9 +1,19 @@
 
 void _EN4main1fEP7float647float647float64(float64* foo, float64 bar, float64 baz) {
-    float64 foo.load = load foo
-    float64 _0 = bar * baz
+    float64** foo_0 = alloca float64*
+    float64* bar_0 = alloca float64
+    float64* baz_0 = alloca float64
+    store foo to foo_0
+    store bar to bar_0
+    store baz to baz_0
+    float64* foo.load = load foo_0
+    float64* foo.load_0 = load foo_0
+    float64 foo.load.load = load foo.load_0
+    float64 bar.load = load bar_0
+    float64 baz.load = load baz_0
+    float64 _0 = bar.load * baz.load
     float64 _1 = float64 1 - _0
-    float64 _2 = foo.load * _1
-    store _2 to foo
+    float64 _2 = foo.load.load * _1
+    store _2 to foo.load
     return void
 }

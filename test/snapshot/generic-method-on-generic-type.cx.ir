@@ -1,6 +1,9 @@
 
 int _EN4main1gE4bool(bool i) {
-    int _0 = cast i to int
+    bool* i_0 = alloca bool
+    store i to i_0
+    bool i.load = load i_0
+    int _0 = cast i.load to int
     return _0
 }
 
@@ -16,5 +19,7 @@ void _EN4main1XI3intE4initE(X<int>* this) {
 }
 
 void _EN4main1XI3intE1fI4boolEEF4bool_3int(X<int>* this, int(bool)* u) {
+    int(bool)** u_0 = alloca int(bool)*
+    store u to u_0
     return void
 }

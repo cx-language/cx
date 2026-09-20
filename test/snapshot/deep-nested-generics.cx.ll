@@ -30,12 +30,16 @@ define void @_EN4main1SI1RE1sE(ptr %this) {
 }
 
 define %"A<R>" @_EN4main1AI1AI1REEixE3int(ptr %this, i32 %i) {
+  %i1 = alloca i32, align 4
+  store i32 %i, ptr %i1, align 4
   %t = getelementptr inbounds %"A<A<R>>", ptr %this, i32 0, i32 0
   %t.load = load %"A<R>", ptr %t, align 4
   ret %"A<R>" %t.load
 }
 
 define %R @_EN4main1AI1REixE3int(ptr %this, i32 %i) {
+  %i1 = alloca i32, align 4
+  store i32 %i, ptr %i1, align 4
   %t = getelementptr inbounds %"A<R>", ptr %this, i32 0, i32 0
   %t.load = load %R, ptr %t, align 4
   ret %R %t.load

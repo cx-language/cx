@@ -56,10 +56,16 @@ ClosedRangeIterator<int> _EN3std11ClosedRangeI3intE8iteratorE(ClosedRange<int>* 
 }
 
 void _EN3std11ClosedRangeI3intE4initE3int3int(ClosedRange<int>* this, int start, int end) {
-    int* start_0 = getelementptr this, 0
+    int* start_0 = alloca int
+    int* end_0 = alloca int
     store start to start_0
-    int* end_0 = getelementptr this, 1
     store end to end_0
+    int* start_1 = getelementptr this, 0
+    int start.load = load start_0
+    store start.load to start_1
+    int* end_1 = getelementptr this, 1
+    int end.load = load end_0
+    store end.load to end_1
     return void
 }
 
@@ -87,16 +93,14 @@ void _EN3std19ClosedRangeIteratorI3intE9incrementE(ClosedRangeIterator<int>* thi
 }
 
 void _EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ClosedRangeIterator<int>* this, ClosedRange<int> range) {
-    ClosedRange<int>* _0 = alloca ClosedRange<int>
-    ClosedRange<int>* _1 = alloca ClosedRange<int>
+    ClosedRange<int>* range_0 = alloca ClosedRange<int>
+    store range to range_0
     int* current = getelementptr this, 0
-    store range to _0
-    int _2 = call _EN3std11ClosedRangeI3intE5startE(ClosedRange<int>* _0)
-    store _2 to current
+    int _0 = call _EN3std11ClosedRangeI3intE5startE(ClosedRange<int>* range_0)
+    store _0 to current
     int* end = getelementptr this, 1
-    store range to _1
-    int _3 = call _EN3std11ClosedRangeI3intE3endE(ClosedRange<int>* _1)
-    store _3 to end
+    int _1 = call _EN3std11ClosedRangeI3intE3endE(ClosedRange<int>* range_0)
+    store _1 to end
     return void
 }
 

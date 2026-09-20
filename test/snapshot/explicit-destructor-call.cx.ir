@@ -1,6 +1,9 @@
 
 void _EN4main1fEP1A(A* a) {
-    void _0 = call _EN4main1A6deinitE(A* a)
+    A** a_0 = alloca A*
+    store a to a_0
+    A* a.load = load a_0
+    void _0 = call _EN4main1A6deinitE(A* a.load)
     return void
 }
 
@@ -9,9 +12,13 @@ void _EN4main1A6deinitE(A* this) {
 }
 
 void _EN4main1gEP1B(B* b) {
+    B** b_0 = alloca B*
+    store b to b_0
     return void
 }
 
 void _EN4main1hEP4char(char* c) {
+    char** c_0 = alloca char*
+    store c to c_0
     return void
 }

@@ -1,22 +1,36 @@
 
 vec2 _EN4mainmlE4vec24vec2(vec2 a, vec2 b) {
+    vec2* a_0 = alloca vec2
+    vec2* b_0 = alloca vec2
     vec2* _0 = alloca vec2
-    int x = extractvalue a, 0
-    int x_0 = extractvalue b, 0
-    int _1 = x * x_0
-    int y = extractvalue a, 1
-    int y_0 = extractvalue b, 1
-    int _2 = y * y_0
+    store a to a_0
+    store b to b_0
+    int* x = getelementptr a_0, 0
+    int x.load = load x
+    int* x_0 = getelementptr b_0, 0
+    int x.load_0 = load x_0
+    int _1 = x.load * x.load_0
+    int* y = getelementptr a_0, 1
+    int y.load = load y
+    int* y_0 = getelementptr b_0, 1
+    int y.load_0 = load y_0
+    int _2 = y.load * y.load_0
     void _3 = call _EN4main4vec24initE3int3int(vec2* _0, int _1, int _2)
     vec2 .load = load _0
     return .load
 }
 
 void _EN4main4vec24initE3int3int(vec2* this, int x, int y) {
-    int* x_0 = getelementptr this, 0
+    int* x_0 = alloca int
+    int* y_0 = alloca int
     store x to x_0
-    int* y_0 = getelementptr this, 1
     store y to y_0
+    int* x_1 = getelementptr this, 0
+    int x.load = load x_0
+    store x.load to x_1
+    int* y_1 = getelementptr this, 1
+    int y.load = load y_0
+    store y.load to y_1
     return void
 }
 
@@ -41,12 +55,21 @@ int main() {
 }
 
 bool _EN4maineqE4vec24vec2(vec2 a, vec2 b) {
-    int x = extractvalue a, 0
-    int x_0 = extractvalue b, 0
-    bool _0 = x == x_0
+    vec2* a_0 = alloca vec2
+    vec2* b_0 = alloca vec2
+    store a to a_0
+    store b to b_0
+    int* x = getelementptr a_0, 0
+    int x.load = load x
+    int* x_0 = getelementptr b_0, 0
+    int x.load_0 = load x_0
+    bool _0 = x.load == x.load_0
     return _0
 }
 
 int _EN4main4vec2ixE3int(vec2* this, int index) {
-    return index
+    int* index_0 = alloca int
+    store index to index_0
+    int index.load = load index_0
+    return index.load
 }

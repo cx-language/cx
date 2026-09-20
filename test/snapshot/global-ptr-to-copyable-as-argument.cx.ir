@@ -7,5 +7,7 @@ int main() {
 }
 
 void _EN4main3fooEOP1S(S* p) {
+    S** p_0 = alloca S*
+    store p to p_0
     return void
 }

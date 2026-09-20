@@ -18,5 +18,7 @@ define void @_EN4main1SI3intE4initE(ptr %this) {
 }
 
 define void @_EN4main1SI3intE1fEP3int(ptr %this, ptr %t) {
+  %t1 = alloca ptr, align 8
+  store ptr %t, ptr %t1, align 8
   ret void
 }

@@ -1,7 +1,10 @@
 
 void _EN4main3getEP3Foo(Foo* f) {
+    Foo** f_0 = alloca Foo*
     int* m = alloca int
-    int* i = getelementptr f, 0
+    store f to f_0
+    Foo* f.load = load f_0
+    int* i = getelementptr f.load, 0
     int i.load = load i
     store i.load to m
     return void

@@ -238,6 +238,8 @@ if.end_1:
 }
 
 void _EN4main12takesNonNullE3int(int i) {
+    int* i_0 = alloca int
+    store i to i_0
     return void
 }
 

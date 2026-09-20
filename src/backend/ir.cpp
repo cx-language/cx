@@ -551,7 +551,9 @@ void Value::print(llvm::raw_ostream& stream) const {
 bool Value::loads(Value* value, int gepIndex) {
     if (auto load = llvm::dyn_cast<LoadInst>(this)) {
         if (gepIndex == -1) {
-            return load->value == value;
+            // Dereferencing through memory (e.g. `*p` where p is a spilled parameter or local)
+            // lowers to a chain of loads; a null check on the end of the chain covers the base.
+            return load->value == value || load->value->loads(value, gepIndex);
         } else {
             if (auto gep = llvm::dyn_cast<ConstGEPInst>(load->value)) {
                 if (gep->pointer == value && gep->index == gepIndex) return true;

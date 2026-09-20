@@ -23,8 +23,11 @@ bool* _EN4main1A2ffE(A* this) {
 }
 
 void _EN4main1A4initEA2_4bool(A* this, bool[2] b) {
-    bool[2]* b_0 = getelementptr this, 0
+    bool[2]* b_0 = alloca bool[2]
     store b to b_0
+    bool[2]* b_1 = getelementptr this, 0
+    bool[2] b.load = load b_0
+    store b.load to b_1
     return void
 }
 
@@ -34,7 +37,10 @@ char* _EN4main1B2ggE(B* this) {
 }
 
 void _EN4main1B4initE4char(B* this, char a) {
-    char* a_0 = getelementptr this, 0
+    char* a_0 = alloca char
     store a to a_0
+    char* a_1 = getelementptr this, 0
+    char a.load = load a_0
+    store a.load to a_1
     return void
 }

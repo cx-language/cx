@@ -22,11 +22,11 @@ int main() {
 }
 
 void _EN4main1fI3intEE8ArrayRefI3intE(ArrayRef<int> a) {
+    ArrayRef<int>* a_0 = alloca ArrayRef<int>
     int* s = alloca int
-    ArrayRef<int>* _0 = alloca ArrayRef<int>
-    store a to _0
-    int _1 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* _0)
-    store _1 to s
+    store a to a_0
+    int _0 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* a_0)
+    store _0 to s
     return void
 }
 

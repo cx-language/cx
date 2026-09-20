@@ -76,7 +76,13 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     }
 
     for (auto& param : decl.getParams()) {
-        setLocalValue(&*arg++, &param);
+        if (param.getName().empty()) {
+            setLocalValue(&*arg++, &param);
+            continue;
+        }
+        auto* spill = createEntryBlockAlloca(param.type, param.getName());
+        createStore(&*arg++, spill);
+        setLocalValue(spill, &param);
     }
 
     if (decl.isDestructorDecl()) {

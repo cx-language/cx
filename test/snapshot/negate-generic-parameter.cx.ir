@@ -5,6 +5,9 @@ int main() {
 }
 
 float _EN4main1fI5floatEE5float(float a) {
-    float _0 = -a
+    float* a_0 = alloca float
+    store a to a_0
+    float a.load = load a_0
+    float _0 = -a.load
     return _0
 }

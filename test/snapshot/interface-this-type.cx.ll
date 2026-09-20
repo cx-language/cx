@@ -18,12 +18,18 @@ define void @_EN4main1S4initE(ptr %this) {
 }
 
 define ptr @_EN4main1S3fooEP1S(ptr %this, ptr %a) {
+  %a1 = alloca ptr, align 8
+  store ptr %a, ptr %a1, align 8
   ret ptr %this
 }
 
 define void @_EN4main1fI1SEEP1S(ptr %a) {
-  %1 = call ptr @_EN4main1S3barE(ptr %a)
-  %2 = call ptr @_EN4main1S3fooEP1S(ptr %a, ptr %1)
+  %a1 = alloca ptr, align 8
+  store ptr %a, ptr %a1, align 8
+  %a.load = load ptr, ptr %a1, align 8
+  %a.load2 = load ptr, ptr %a1, align 8
+  %1 = call ptr @_EN4main1S3barE(ptr %a.load2)
+  %2 = call ptr @_EN4main1S3fooEP1S(ptr %a.load, ptr %1)
   ret void
 }
 
