@@ -261,6 +261,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     if (auto converted = convert(stmt.value, currentFunction->getReturnType())) {
         stmt.value = converted;
     } else {
+        diagnoseClosureConversion(returnValueType, currentFunction->getReturnType(), stmt.location);
         ERROR(stmt.location, "mismatching return type '" << returnValueType << "', expected '" << currentFunction->getReturnType() << "'");
     }
 

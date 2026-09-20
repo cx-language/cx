@@ -17,6 +17,13 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
 
     auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter{ValueKind::Parameter, getIRType(p.type), p.getName().str()}; });
 
+    if (!decl.captures.empty()) {
+        auto captureParams = map(decl.captures, [](const VariableDecl* c) {
+            return Parameter{ValueKind::Parameter, getIRType(c->getCaptureType()), ("__capture_" + c->getName()).str()};
+        });
+        params.insert(params.begin(), captureParams.begin(), captureParams.end());
+    }
+
     if (decl.isMethodDecl()) {
         params.insert(params.begin(), Parameter{ValueKind::Parameter, getIRType(decl.getTypeDecl()->getType().getPointerTo()), "this"});
     }
@@ -46,6 +53,26 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
     if (decl.getTypeDecl()) {
         setLocalValue(&*arg++, nullptr);
+    }
+
+    for (auto* captured : decl.captures) {
+        if (captured->isReferenceCapture()) {
+            // Captured `this` is already a pointer to the caller's object; bind it directly
+            // like a method's `this` param so member access aliases the object, not a copy.
+            Value* thisParam = &*arg++;
+            auto inserted = scopes.back().valuesByDecl.try_emplace(captured, thisParam);
+            ASSERT(inserted.second);
+            auto thisInserted = scopes.back().valuesByDecl.try_emplace(nullptr, thisParam);
+            ASSERT(thisInserted.second);
+            continue;
+        }
+        // Captures spill to allocas so stores, member access, and address-of treat them like
+        // locals. The allocas hold per-call copies, so unlike regular locals they get no
+        // destructor call here; the closure's stored values are destroyed with the closure.
+        auto* spill = createEntryBlockAlloca(captured->type, ("__capture_" + captured->getName()).str());
+        createStore(&*arg++, spill);
+        auto inserted = scopes.back().valuesByDecl.try_emplace(captured, spill);
+        ASSERT(inserted.second);
     }
 
     for (auto& param : decl.getParams()) {

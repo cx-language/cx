@@ -1,10 +1,17 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %cx -typecheck %s | %FileCheck %s --allow-empty
+// CHECK-NOT: warning
+// CHECK-NOT: error
 
 struct S {
     int d;
 
-    void foo() {
-        // CHECK: [[@LINE+1]]:43: error: unknown identifier 'd'
-        var b = (int c, int a) -> c + a + d;
+    int foo(int c) {
+        var b = (int x) -> x + c + d;
+        return b(1);
     }
+}
+
+void main() {
+    var s = S(d = 5);
+    _ = s.foo(1);
 }

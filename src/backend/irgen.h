@@ -77,6 +77,7 @@ struct IRGenerator {
     void emitAssert(Value* condition, const Expr* expr, Location location, llvm::StringRef message = "Assertion failed", const llvm::Twine& name = "assert");
     Value* emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements);
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
+    Value* emitClosureCallExpr(const CallExpr& expr);
     Value* emitBuiltinCast(const CallExpr& expr);
     Value* emitSizeofExpr(const SizeofExpr& expr);
     Value* emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr = nullptr);

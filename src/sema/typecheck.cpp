@@ -285,8 +285,8 @@ Decl* Typechecker::findDecl(llvm::StringRef name, Location location) const {
         return match;
     }
 
-    if (currentFunction) {
-        if (auto* typeDecl = currentFunction->getTypeDecl()) {
+    for (FunctionDecl* function = currentFunction; function; function = function->parentFunction) {
+        if (auto* typeDecl = function->getTypeDecl()) {
             for (auto& field : typeDecl->fields) {
                 if (field.getName() == name) {
                     return &field;
@@ -319,8 +319,13 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
     ASSERT(!name.empty());
     std::vector<Decl*> decls;
 
-    if (!receiverTypeDecl && currentFunction) {
-        receiverTypeDecl = currentFunction->getTypeDecl();
+    if (!receiverTypeDecl) {
+        for (FunctionDecl* function = currentFunction; function; function = function->parentFunction) {
+            if (function->getTypeDecl()) {
+                receiverTypeDecl = function->getTypeDecl();
+                break;
+            }
+        }
     }
 
     if (receiverTypeDecl) {

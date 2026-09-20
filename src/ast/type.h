@@ -103,6 +103,9 @@ struct Type {
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
     TypeKind getKind() const { return typeBase->kind; }
+    bool isClosureType() const;
+    llvm::ArrayRef<Type> getClosureParamTypes() const;
+    Type getClosureReturnType() const;
     TypeDecl* getDecl() const;
     DestructorDecl* getDestructor() const;
     bool equalsIgnoreTopLevelMutable(Type) const;

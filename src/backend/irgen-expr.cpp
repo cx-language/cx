@@ -399,7 +399,32 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
     return enumValue;
 }
 
+Value* IRGenerator::emitClosureCallExpr(const CallExpr& expr) {
+    auto* closureDecl = llvm::cast<TypeDecl>(llvm::cast<VariableDecl>(expr.calleeDecl)->type.getDecl());
+    size_t captureCount = closureDecl->fields.size() - 1;
+
+    Value* closure = emitExpr(*expr.callee);
+    Value* function = createExtractValue(closure, 0);
+    auto paramTypes = llvm::cast<IRFunctionType>(function->getType()->getPointee())->getParamTypes();
+    ASSERT(paramTypes.size() == captureCount + expr.args.size());
+
+    llvm::SmallVector<Value*, 16> args;
+    for (size_t i = 0; i < captureCount; ++i) {
+        args.push_back(createExtractValue(closure, i + 1));
+    }
+    for (size_t i = 0; i < expr.args.size(); ++i) {
+        args.push_back(emitExprForPassing(*expr.args[i].value, paramTypes[captureCount + i]));
+    }
+    return createCall(function, args, &expr);
+}
+
 Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit) {
+    if (auto* variableDecl = llvm::dyn_cast_or_null<VariableDecl>(expr.calleeDecl)) {
+        if (variableDecl->type.isClosureType()) {
+            return emitClosureCallExpr(expr);
+        }
+    }
+
     if (expr.isBuiltinConversion()) {
         return createCastIfNeeded(emitExpr(*expr.args.front().value), expr.type);
     }
@@ -614,10 +639,26 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     scopes = std::move(scopesBackup);
     if (insertBlockBackup) setInsertPoint(insertBlockBackup);
 
-    VarExpr varExpr(functionDecl->getName().str(), functionDecl->getLocation());
-    varExpr.decl = functionDecl;
-    varExpr.type = expr.type;
-    return emitVarExpr(varExpr);
+    if (functionDecl->captures.empty()) {
+        VarExpr varExpr(functionDecl->getName().str(), functionDecl->getLocation());
+        varExpr.decl = functionDecl;
+        varExpr.type = expr.type;
+        return emitVarExpr(varExpr);
+    }
+
+    Value* closure = createUndefined(getIRType(expr.type));
+    closure = createInsertValue(closure, getFunction(*functionDecl), 0);
+    int index = 1;
+    for (auto* captured : functionDecl->captures) {
+        VarExpr captureExpr(std::string(captured->getName()), captured->getLocation());
+        captureExpr.decl = captured;
+        // emitExpr loads iff the pointee matches the expression type, so typing `this`
+        // captures as pointers stores the pointer instead of a copy of the object.
+        captureExpr.type = captured->getCaptureType();
+        captureExpr.assignableType = captured->getCaptureType();
+        closure = createInsertValue(closure, emitExpr(captureExpr), index++);
+    }
+    return closure;
 }
 
 Value* IRGenerator::emitIfExpr(const IfExpr& expr) {

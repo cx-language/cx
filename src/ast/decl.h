@@ -122,6 +122,12 @@ struct VariableDecl : Decl {
     Decl* parent;
     Type type;
 
+    /// The implicit `this` is a pointer at runtime even with a by-value declared type
+    /// (Copyable struct or union receiver), so capturing it carries the pointer.
+    bool isReferenceCapture() const { return getName() == "this"; }
+    /// The closure field and hidden parameter type when capturing this variable.
+    Type getCaptureType() const { return isReferenceCapture() ? type.removePointer().getPointerTo() : type; }
+
 protected:
     VariableDecl(DeclKind kind, AccessLevel accessLevel, Decl* parent, Type type) : Decl(kind, accessLevel), parent(parent), type(type) {}
 };
@@ -201,6 +207,11 @@ struct FunctionDecl : Decl {
     Module& module;
     bool typechecked;
     bool isPackInstantiation = false;
+    // Enclosing function for lambdas, null otherwise. Set during typechecking.
+    FunctionDecl* parentFunction = nullptr;
+    // Outer locals and parameters captured by value, in first-use order. Only lambdas capture.
+    // Codegen passes these as hidden leading parameters; the AST params only hold user parameters.
+    std::vector<VariableDecl*> captures;
 
 protected:
     FunctionDecl(DeclKind kind, FunctionProto&& proto, std::vector<Type>&& genericArgs, AccessLevel accessLevel, Module& module, Location location)
@@ -280,6 +291,7 @@ struct TypeDecl : Decl {
     std::vector<ConstructorDecl*> getConstructors() const;
     DestructorDecl* getDestructor() const;
     Type getType(Mutability mutability = Mutability::Mutable) const;
+    bool isClosure() const { return isStruct() && getName().starts_with("__closure"); }
     Type getTypeForPassing() const;
     bool passByValue() const { return ((isStruct() || tag == TypeTag::Enum) && isCopyable()) || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }

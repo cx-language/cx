@@ -1,0 +1,216 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:104
+// CHECK-NEXT:7
+// CHECK-NEXT:43
+// CHECK-NEXT:151
+// CHECK-NEXT:1
+// CHECK-NEXT:1
+// CHECK-NEXT:11
+// CHECK-NEXT:21
+// CHECK-NEXT:hi
+// CHECK-NEXT:5
+// CHECK-NEXT:11
+// CHECK-NEXT:22
+// CHECK-NEXT:11
+// CHECK-NEXT:12
+// CHECK-NEXT:13
+// CHECK-NEXT:call 7
+// CHECK-NEXT:call 7
+// CHECK-NEXT:end
+// CHECK-NEXT:deinit 7
+// CHECK-NEXT:3
+// CHECK-NEXT:5
+// CHECK-NEXT:7
+// CHECK-NEXT:1
+// CHECK-NEXT:1
+
+void capturesParam(int p) {
+    var d = 3;
+    var b = (int c) -> c + p + d;
+    println(b(1));
+}
+
+struct S {
+    int d;
+
+    int get(int c) {
+        var b = (int x) -> x + c + d;
+        return b(1);
+    }
+
+    int callMethod(int c) {
+        var b = (int x) -> x + helper(c);
+        return b(1);
+    }
+
+    int helper(int y) {
+        return y * 2;
+    }
+}
+
+void nested() {
+    var a = 1;
+    a = 41;
+    var outer = (int b) -> {
+        var inner = (int c) -> a + b + c;
+        return inner(100);
+    };
+    println(outer(10));
+}
+
+void capturesAreCopies() {
+    var a = 1;
+    var b = (int c) -> c + a;
+    a = 99;
+    println(b(0));
+}
+
+void loopCapture() {
+    for i in 0..3 {
+        var f = (int c) -> c + i * 10;
+        println(f(1));
+    }
+}
+
+void stringAndOptional() {
+    var s = "hi";
+    int? o = 5;
+    var h = () -> s;
+    println(h());
+    var j = () -> o;
+    println(j());
+}
+
+void pointerSeesMutations() {
+    var a = 1;
+    var p = &a;
+    var f = () -> *p + 1;
+    a = 10;
+    println(f());
+}
+
+void closureCallsClosure() {
+    var a = 1;
+    var f = (int c) -> c + a;
+    var g = (int c) -> f(c) * 2;
+    println(g(10));
+}
+
+void callIt<T>(T f, int x) {
+    println(f(x));
+}
+
+struct Point {
+    int x;
+    int y;
+}
+
+void structCapture() {
+    var p = Point(x = 1, y = 2);
+    var f = (int c) -> p.x + p.y + c;
+    println(f(10));
+}
+
+struct Tracer {
+    int id;
+
+    ~Tracer() {
+        println("deinit ", id);
+    }
+}
+
+void destructorRunsOnce() {
+    var t = Tracer(id = 7);
+    var f = () -> t.id;
+    println("call ", f());
+    println("call ", f());
+    println("end");
+}
+
+struct Counter {
+    int n;
+
+    void bump(int times) {
+        var f = () -> {
+            n = n + 1;
+        };
+        for i in 0..times {
+            f();
+        }
+    }
+}
+
+struct CopyableCounter: Copyable {
+    int n;
+
+    void bump() {
+        var f = () -> {
+            n = 5;
+        };
+        f();
+    }
+
+    void bumpNested() {
+        var g = () -> {
+            var f = () -> {
+                n = 7;
+            };
+            f();
+        };
+        g();
+    }
+}
+
+void captureStoreIsLocal() {
+    var a = 1;
+    var f = () -> {
+        a = 5;
+    };
+    f();
+    println(a);
+}
+
+struct CopyablePoint: Copyable {
+    int x;
+    int y;
+}
+
+void structFieldStoreIsLocal() {
+    var p = CopyablePoint(x = 1, y = 2);
+    var f = () -> {
+        p.x = 9;
+    };
+    f();
+    println(p.x);
+}
+
+void main() {
+    capturesParam(100);
+    var s = S(d = 5);
+    println(s.get(1));
+    println(s.callMethod(21));
+    nested();
+    capturesAreCopies();
+    loopCapture();
+    stringAndOptional();
+    pointerSeesMutations();
+    closureCallsClosure();
+    var a = 10;
+    var f = (int c) -> c + a;
+    callIt(f, 1);
+    var g = f;
+    println(g(2));
+    structCapture();
+    destructorRunsOnce();
+    var c = Counter(n = 0);
+    c.bump(3);
+    println(c.n);
+    var cc = CopyableCounter(n = 0);
+    cc.bump();
+    println(cc.n);
+    cc.bumpNested();
+    println(cc.n);
+    captureStoreIsLocal();
+    structFieldStoreIsLocal();
+}

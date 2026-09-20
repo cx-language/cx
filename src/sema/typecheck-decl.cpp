@@ -234,6 +234,9 @@ void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, Acces
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.typechecked) return;
     llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
+    // Lambda bodies are checked inline within the enclosing function; moves they record
+    // must not clobber the enclosing move state, which is restored when the body is done.
+    llvm::SaveAndRestore saveMovedDecls(movedDecls, movedDecls);
 
     if (decl.hasPack()) {
         ERROR(decl.getPackParam()->getLocation(), "variadic parameter requires a generic function");
@@ -300,7 +303,10 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                 }
             }
 
-            ASSERT(decl.getReturnType());
+            if (!decl.getReturnType()) {
+                ASSERT(decl.isLambda());
+                decl.proto.returnType = Type::getVoid();
+            }
 
             // This prevents creating destructors calls during codegen.
             for (auto* movedDecl : movedDecls) {
@@ -457,6 +463,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
                 hint = " (add '?' to the type to make it nullable)";
             }
 
+            diagnoseClosureConversion(initializerType, declaredType, decl.initializer->location);
             ERROR(decl.initializer->location, "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint);
         }
     } else {
