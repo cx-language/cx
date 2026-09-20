@@ -122,6 +122,7 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
 /// argument ::= (id '=')? expr
 std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
     parse(Token::LeftParen);
+    llvm::SaveAndRestore allowBlockLambdaInArgs(allowBlockLambda, true);
     std::vector<NamedValue> args;
 
     if (currentToken() == Token::RightParen && allowEmpty) {
@@ -474,6 +475,7 @@ Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
     ASSERT(currentToken() == Token::LeftBracket);
     auto location = getCurrentLocation();
     consumeToken();
+    llvm::SaveAndRestore allowBlockLambdaInIndex(allowBlockLambda, true);
     auto index = parseExpr();
     parse(Token::RightBracket);
 
@@ -504,6 +506,7 @@ CallExpr* Parser::parseCallExpr(Expr* callee) {
     return makeAST<CallExpr>(callee, std::move(args), std::move(genericArgs), location);
 }
 
+/// lambda-expr ::= param-list '=>' expr | param-list ('=>')? block | id '=>' expr | id '=>' block
 LambdaExpr* Parser::parseLambdaExpr() {
     ASSERT(currentToken().is({Token::LeftParen, Token::Identifier}));
     auto location = getCurrentLocation();
@@ -516,14 +519,18 @@ LambdaExpr* Parser::parseLambdaExpr() {
         params = parseParamList(nullptr, false);
     }
 
-    parse(Token::RightArrow);
     auto lambda = makeAST<LambdaExpr>(std::move(params), currentModule, location);
 
     if (currentToken() == Token::LeftBrace) {
         lambda->functionDecl->body = parseBlock(lambda->functionDecl);
     } else {
-        auto expr = parseExpr();
-        lambda->functionDecl->body = {makeAST<ReturnStmt>(expr, expr->location)};
+        parse(Token::FatArrow);
+        if (currentToken() == Token::LeftBrace) {
+            lambda->functionDecl->body = parseBlock(lambda->functionDecl);
+        } else {
+            auto expr = parseExpr();
+            lambda->functionDecl->body = {makeAST<ReturnStmt>(expr, expr->location)};
+        }
     }
 
     return lambda;
@@ -620,8 +627,11 @@ bool Parser::shouldParseGenericArgumentListAfterMember() {
     }
 }
 
-/// Returns true if a right-arrow token immediately follows the current set of parentheses.
-bool Parser::arrowAfterParentheses() {
+/// Returns true if a fat-arrow token immediately follows the current set of parentheses,
+/// or a left-brace does and block-bodied lambdas are allowed in this position.
+/// Block-bodied lambdas are disallowed while parsing loop/if/switch conditions,
+/// where '(expr) {' is a parenthesized condition followed by the body, not a lambda.
+bool Parser::lambdaAfterParentheses() {
     ASSERT(currentToken() == Token::LeftParen);
     int offset = 1;
 
@@ -638,7 +648,8 @@ bool Parser::arrowAfterParentheses() {
         }
     }
 
-    return lookAhead(offset) == Token::RightArrow;
+    if (lookAhead(offset) == Token::FatArrow) return true;
+    return allowBlockLambda && lookAhead(offset) == Token::LeftBrace;
 }
 
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
@@ -654,7 +665,7 @@ Expr* Parser::parsePostfixExpr() {
         case Token::LeftParen:
             expr = parseCallExpr(parseVarExpr());
             break;
-        case Token::RightArrow:
+        case Token::FatArrow:
             expr = parseLambdaExpr();
             break;
         case Token::Less:
@@ -691,7 +702,7 @@ Expr* Parser::parsePostfixExpr() {
         expr = parseThis();
         break;
     case Token::LeftParen:
-        if (arrowAfterParentheses()) {
+        if (lambdaAfterParentheses()) {
             expr = parseLambdaExpr();
         } else {
             expr = parseTupleLiteralOrParenExpr();
@@ -798,6 +809,7 @@ Expr* Parser::parseExprOrVarDecl(Decl* parent) {
 /// expr-list ::= '' | nonempty-expr-list ','?
 /// nonempty-expr-list ::= expr | expr ',' nonempty-expr-list
 std::vector<Expr*> Parser::parseExprList() {
+    llvm::SaveAndRestore allowBlockLambdaInList(allowBlockLambda, true);
     std::vector<Expr*> exprs;
 
     switch (currentToken()) {
@@ -911,8 +923,12 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
     consumeToken();
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
-    auto condition = parseExprOrVarDecl(parent);
-    if (parens) parse(Token::RightParen);
+    Expr* condition;
+    {
+        llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
+        condition = parseExprOrVarDecl(parent);
+        if (parens) parse(Token::RightParen);
+    }
     auto thenStmts = parseBlockOrStmt(parent);
     std::vector<Stmt*> elseStmts;
     if (currentToken() == Token::Else) {
@@ -928,8 +944,12 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     auto location = consumeToken().location;
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
-    auto condition = parseExprOrVarDecl(parent);
-    if (parens) parse(Token::RightParen);
+    Expr* condition;
+    {
+        llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
+        condition = parseExprOrVarDecl(parent);
+        if (parens) parse(Token::RightParen);
+    }
     auto body = parseBlockOrStmt(parent);
     return makeAST<WhileStmt>(condition, std::move(body), location);
 }
@@ -952,7 +972,11 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         }
         auto* varDecl = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
         parse(Token::In);
-        auto range = parseExpr();
+        Expr* range;
+        {
+            llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
+            range = parseExpr();
+        }
         if (parens) parse(Token::RightParen);
         auto body = parseBlockOrStmt(parent);
         return makeAST<ForEachStmt>(varDecl, range, std::move(body), location);
@@ -966,11 +990,13 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         if (currentToken() == Token::Semicolon) {
             consumeToken();
         } else {
+            llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
             condition = parseExpr();
             parse(Token::Semicolon);
         }
         Expr* increment = nullptr;
         if (currentToken() != Token::RightParen && currentToken() != Token::LeftBrace) {
+            llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
             increment = parseExpr();
         }
         if (parens) parse(Token::RightParen);
@@ -991,7 +1017,11 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
 SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
     ASSERT(currentToken() == Token::Switch);
     consumeToken();
-    auto condition = parseExpr();
+    Expr* condition;
+    {
+        llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
+        condition = parseExpr();
+    }
     parse(Token::LeftBrace);
     std::vector<SwitchCase> cases;
     std::vector<Stmt*> defaultStmts;

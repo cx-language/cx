@@ -287,7 +287,6 @@ Token Lexer::nextToken() {
         case '-':
             ch = readChar();
             if (ch == '-') return Token(Token::Decrement, getCurrentLocation());
-            if (ch == '>') return Token(Token::RightArrow, getCurrentLocation());
             if (ch == '=') return Token(Token::MinusEqual, getCurrentLocation());
             unreadChar(ch);
             return Token(Token::Minus, getCurrentLocation());
@@ -327,6 +326,9 @@ Token Lexer::nextToken() {
             ch = readChar();
             if (ch == '=') {
                 return Token(Token::Equal, getCurrentLocation());
+            }
+            if (ch == '>') {
+                return Token(Token::FatArrow, getCurrentLocation());
             }
             unreadChar(ch);
             return Token(Token::Assignment, getCurrentLocation());

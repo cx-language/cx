@@ -5,20 +5,20 @@ void foo<T>(T(int, int) a) {
 }
 
 void main() {
-    foo((int a, int b) -> a + b);
-    foo((a, int b) -> { return a + b });
-    foo((int a, b) -> {
+    foo((int a, int b) => a + b);
+    foo((a, int b) { return a + b });
+    foo((int a, b) {
         if (a > b) {
             return a + b;
         } else {
             return a - b;
         }
     });
-    foo((a, b) -> {
+    foo((a, b) {
         var x = a + b;
         return x;
     });
-    foo((int a, int b) -> {
+    foo((int a, int b) {
         if (a == b) {
             return;
         }

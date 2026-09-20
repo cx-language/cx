@@ -110,7 +110,7 @@ private:
     bool shouldParseVarStmt();
     bool shouldParseGenericArgumentList();
     bool shouldParseGenericArgumentListAfterMember();
-    bool arrowAfterParentheses();
+    bool lambdaAfterParentheses();
     Expr* parsePostfixExpr();
     UnaryExpr* parsePrefixExpr();
     Expr* parsePreOrPostfixExpr();
@@ -166,6 +166,7 @@ private:
     std::vector<Token> tokenBuffer;
     size_t currentTokenIndex;
     const CompileOptions& options;
+    bool allowBlockLambda = true;
 };
 
 } // namespace cx

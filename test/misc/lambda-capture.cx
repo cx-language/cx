@@ -27,7 +27,7 @@
 
 void capturesParam(int p) {
     var d = 3;
-    var b = (int c) -> c + p + d;
+    var b = (int c) => c + p + d;
     println(b(1));
 }
 
@@ -35,12 +35,12 @@ struct S {
     int d;
 
     int get(int c) {
-        var b = (int x) -> x + c + d;
+        var b = (int x) => x + c + d;
         return b(1);
     }
 
     int callMethod(int c) {
-        var b = (int x) -> x + helper(c);
+        var b = (int x) => x + helper(c);
         return b(1);
     }
 
@@ -52,8 +52,8 @@ struct S {
 void nested() {
     var a = 1;
     a = 41;
-    var outer = (int b) -> {
-        var inner = (int c) -> a + b + c;
+    var outer = (int b) {
+        var inner = (int c) => a + b + c;
         return inner(100);
     };
     println(outer(10));
@@ -61,14 +61,14 @@ void nested() {
 
 void capturesAreCopies() {
     var a = 1;
-    var b = (int c) -> c + a;
+    var b = (int c) => c + a;
     a = 99;
     println(b(0));
 }
 
 void loopCapture() {
     for i in 0..3 {
-        var f = (int c) -> c + i * 10;
+        var f = (int c) => c + i * 10;
         println(f(1));
     }
 }
@@ -76,24 +76,24 @@ void loopCapture() {
 void stringAndOptional() {
     var s = "hi";
     int? o = 5;
-    var h = () -> s;
+    var h = () => s;
     println(h());
-    var j = () -> o;
+    var j = () => o;
     println(j());
 }
 
 void pointerSeesMutations() {
     var a = 1;
     var p = &a;
-    var f = () -> *p + 1;
+    var f = () => *p + 1;
     a = 10;
     println(f());
 }
 
 void closureCallsClosure() {
     var a = 1;
-    var f = (int c) -> c + a;
-    var g = (int c) -> f(c) * 2;
+    var f = (int c) => c + a;
+    var g = (int c) => f(c) * 2;
     println(g(10));
 }
 
@@ -108,7 +108,7 @@ struct Point {
 
 void structCapture() {
     var p = Point(x = 1, y = 2);
-    var f = (int c) -> p.x + p.y + c;
+    var f = (int c) => p.x + p.y + c;
     println(f(10));
 }
 
@@ -122,7 +122,7 @@ struct Tracer {
 
 void destructorRunsOnce() {
     var t = Tracer(id = 7);
-    var f = () -> t.id;
+    var f = () => t.id;
     println("call ", f());
     println("call ", f());
     println("end");
@@ -132,7 +132,7 @@ struct Counter {
     int n;
 
     void bump(int times) {
-        var f = () -> {
+        var f = () {
             n = n + 1;
         };
         for i in 0..times {
@@ -145,15 +145,15 @@ struct CopyableCounter: Copyable {
     int n;
 
     void bump() {
-        var f = () -> {
+        var f = () {
             n = 5;
         };
         f();
     }
 
     void bumpNested() {
-        var g = () -> {
-            var f = () -> {
+        var g = () {
+            var f = () {
                 n = 7;
             };
             f();
@@ -164,7 +164,7 @@ struct CopyableCounter: Copyable {
 
 void captureStoreIsLocal() {
     var a = 1;
-    var f = () -> {
+    var f = () {
         a = 5;
     };
     f();
@@ -178,7 +178,7 @@ struct CopyablePoint: Copyable {
 
 void structFieldStoreIsLocal() {
     var p = CopyablePoint(x = 1, y = 2);
-    var f = () -> {
+    var f = () {
         p.x = 9;
     };
     f();
@@ -197,7 +197,7 @@ void main() {
     pointerSeesMutations();
     closureCallsClosure();
     var a = 10;
-    var f = (int c) -> c + a;
+    var f = (int c) => c + a;
     callIt(f, 1);
     var g = f;
     println(g(2));

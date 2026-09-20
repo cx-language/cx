@@ -72,7 +72,7 @@ void main() {
     var even = numbers.filter(isEven);
     println(even); // prints [0, 2, 4]
 
-    var doubled = even.map(n -> n * 2);
+    var doubled = even.map(n => n * 2);
     println(doubled); // prints [0, 4, 8]
 }
 ```

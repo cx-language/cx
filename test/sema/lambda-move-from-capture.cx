@@ -9,7 +9,7 @@ struct Point {
 
 void main() {
     var p = Point(x = 1, y = 2);
-    var f = () -> {
+    var f = () {
         // CHECK: [[@LINE+1]]:17: error: cannot move from captured variable 'p'
         var q = p;
         return q.x;

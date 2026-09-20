@@ -6,7 +6,7 @@ struct S {
     int d;
 
     int foo(int c) {
-        var b = (int x) -> x + c + d;
+        var b = (int x) => x + c + d;
         return b(1);
     }
 }

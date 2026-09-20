@@ -4,6 +4,6 @@
 
 void main() {
     var a = 1;
-    var b = (int c) -> c + a;
+    var b = (int c) => c + a;
     _ = b(2);
 }
