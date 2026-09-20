@@ -1976,9 +1976,10 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         auto& arg = expr.args[result.index];
         auto* param = &params[result.index];
         if (param->getName().empty()) {
-            ERROR(arg.location, "invalid argument name '" << arg.name << "', parameter #" << (result.index + 1) << " is unnamed");
+            ERROR_WITH_NOTES(arg.location, std::move(declNote),
+                             "invalid argument name '" << arg.name << "', parameter #" << (result.index + 1) << " is unnamed");
         }
-        ERROR(arg.location, "invalid argument name '" << arg.name << "' for parameter '" << param->getName() << "'");
+        ERROR_WITH_NOTES(arg.location, std::move(declNote), "invalid argument name '" << arg.name << "' for parameter '" << param->getName() << "'");
         break;
     }
     case ArgumentValidation::InvalidType: {
@@ -1989,8 +1990,9 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         // reports the range instead of a generic mismatch. This either throws or returns null,
         // since probing already failed, so discarding the result is safe.
         (void)convert(arg.value, param->type, true);
-        ERROR(arg.location,
-              "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param->type << "'");
+        ERROR_WITH_NOTES(arg.location, std::move(declNote),
+                         "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param->type
+                                              << "'");
         break;
     }
     }
