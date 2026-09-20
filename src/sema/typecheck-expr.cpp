@@ -902,6 +902,64 @@ static Type replaceUnresolvedGenericParamsWithPlaceholders(Type type, llvm::Arra
     return type.resolve(placeholders);
 }
 
+static bool containsUnresolvedType(Type type) {
+    switch (type.getKind()) {
+    case TypeKind::BasicType:
+        for (Type genericArg : type.getGenericArgs()) {
+            if (containsUnresolvedType(genericArg)) {
+                return true;
+            }
+        }
+        return false;
+
+    case TypeKind::ArrayType:
+        return containsUnresolvedType(type.getElementType());
+
+    case TypeKind::TupleType:
+        for (auto& element : type.getTupleElements()) {
+            if (containsUnresolvedType(element.type)) {
+                return true;
+            }
+        }
+        return false;
+
+    case TypeKind::FunctionType:
+        for (Type paramType : type.getParamTypes()) {
+            if (containsUnresolvedType(paramType)) {
+                return true;
+            }
+        }
+        return containsUnresolvedType(type.getReturnType());
+
+    case TypeKind::PointerType:
+        return containsUnresolvedType(type.getPointee());
+
+    case TypeKind::UnresolvedType:
+        return true;
+    }
+
+    llvm_unreachable("all cases handled");
+}
+
+// True when the argument is a lambda with an uninferred parameter type that the expected type
+// can't provide yet. Typechecking it now would pass unresolved placeholder types to the lambda's
+// parameters; the argument is skipped until more generic arguments are known.
+static bool isLambdaAwaitingInference(const Expr& arg, Type expectedType) {
+    auto* lambda = llvm::dyn_cast<LambdaExpr>(&arg);
+    if (!lambda || arg.hasType() || !expectedType.isFunctionType()) return false;
+
+    auto params = lambda->functionDecl->getParams();
+    auto expectedParamTypes = expectedType.getParamTypes();
+
+    for (size_t i = 0; i < params.size() && i < expectedParamTypes.size(); ++i) {
+        if (!params[i].type && containsUnresolvedType(expectedParamTypes[i])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                             bool returnOnError) {
     if (call.args.size() > params.size()) return {};
@@ -911,6 +969,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
     }
 
     std::vector<Type> inferredGenericArgs;
+    llvm::StringMap<Type> inferredArgsByName;
 
     for (auto& genericParam : genericParams) {
         Type genericArg;
@@ -922,7 +981,11 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
             if (containsGenericParam(paramType, genericParam.getName())) {
                 // FIXME: The args will also be typechecked by validateAndConvertArguments() after this function. Get rid of this duplicated typechecking.
                 auto* argValue = arg.value;
-                auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(paramType, genericParams);
+                // Substitute arguments inferred so far so lambdas get concrete expected parameter types when possible.
+                auto knownArgs = inferredArgsByName;
+                if (genericArg) knownArgs[genericParam.getName()] = genericArg;
+                auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(paramType.resolve(knownArgs), genericParams);
+                if (isLambdaAwaitingInference(*argValue, expectedType)) continue;
                 // TODO: Should probably not typecheck here because it might change the expression's type?
                 Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
                 Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
@@ -932,6 +995,11 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
                     genericArg = maybeGenericArg;
                     genericArgValue = argValue;
                 } else {
+                    // Agreeing arguments need no convertibility check, which can't handle parameter types
+                    // that still mention other uninferred generic parameters. Convertibility is rechecked
+                    // with concrete types after inference.
+                    if (maybeGenericArg == genericArg) continue;
+
                     Type paramTypeWithGenericArg = paramType.resolve({{genericParam.getName(), genericArg}});
                     Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam.getName(), maybeGenericArg}});
 
@@ -949,6 +1017,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
 
         if (genericArg) {
             inferredGenericArgs.push_back(genericArg);
+            inferredArgsByName[genericParam.getName()] = genericArg;
         } else {
             return {};
         }

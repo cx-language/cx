@@ -1,0 +1,21 @@
+// RUN: check_exit_status 0 %cx run %s
+// RUN: check_exit_status 0 %cx run --backend=c %s
+
+struct Box<T> {
+    T value;
+}
+
+U mapBox<T, U>(Box<T>* box, U(T) transform) {
+    return transform(box.value);
+}
+
+T firstOr<T, E>(T first, T(E) fallback, E error) {
+    return fallback(error);
+}
+
+void main() {
+    var box = Box(21);
+    assert(mapBox(box, n -> n * 2) == 42);
+    assert(mapBox(box, (int n) -> n + 1) == 22);
+    assert(firstOr(1, e -> e * 2, 21) == 42);
+}
