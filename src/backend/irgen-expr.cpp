@@ -375,6 +375,14 @@ static bool isBuiltinArrayToArrayRefConversion(Type sourceType, IRType* targetTy
     return sourceType.removePointer().isConstantArray() && targetType->isStruct() && targetType->getName().starts_with("ArrayRef<");
 }
 
+static bool isListToArrayRefConversion(Type sourceType, IRType* targetType) {
+    return sourceType.isBasicType() && sourceType.getName() == "List" && targetType->isStruct() && targetType->getName().starts_with("ArrayRef<");
+}
+
+static bool isStringBufferToStringConversion(Type sourceType, IRType* targetType) {
+    return sourceType.isBasicType() && sourceType.getName() == "StringBuffer" && targetType->isStruct() && targetType->getName() == "string";
+}
+
 Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     if (!targetType) {
         // In variadic calls, arrays decay to pointers to their first element (as in C).
@@ -396,6 +404,26 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
         auto* arrayRef = createInsertValue(createUndefined(targetType), elementPtr, 0);
         auto size = createConstantInt(Type::getInt(), expr.type.removePointer().getArraySize());
         return createInsertValue(arrayRef, size, 1);
+    }
+
+    if (isListToArrayRefConversion(expr.type, targetType)) {
+        auto* listPtr = emitExprAsPointer(expr);
+        auto* buffer = createLoad(createGEP(listPtr, 0));
+        auto* size = createLoad(createGEP(listPtr, 1));
+        auto* arrayRef = createInsertValue(createUndefined(targetType), buffer, 0);
+        return createInsertValue(arrayRef, size, 1);
+    }
+
+    if (isStringBufferToStringConversion(expr.type, targetType)) {
+        auto* listPtr = createGEP(emitExprAsPointer(expr), 0);
+        auto* buffer = createLoad(createGEP(listPtr, 0));
+        auto* listSize = createLoad(createGEP(listPtr, 1));
+        // StringBuffer stores a trailing null that the string view excludes.
+        auto* size = createBinaryOp(Token::Minus, listSize, createConstantInt(listSize->getType(), 1), nullptr);
+        auto* arrayRefType = targetType->getFields()[0].type;
+        auto* arrayRef = createInsertValue(createUndefined(arrayRefType), buffer, 0);
+        arrayRef = createInsertValue(arrayRef, size, 1);
+        return createInsertValue(createUndefined(targetType), arrayRef, 0);
     }
 
     // Handle implicit conversions to type 'T[*]'.

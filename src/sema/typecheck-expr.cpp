@@ -688,6 +688,14 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         if (source.isConstantArray() && (target.isUnsizedArrayPointer() || target.isArrayRef())) return source;
     }
 
+    if (source.isBasicType() && target.isArrayRef() && source.getName() == "List" && source.getGenericArgs() == target.getGenericArgs()) {
+        return source;
+    }
+
+    if (source.isBasicType() && source.getName() == "StringBuffer" && target.isBasicType() && target.getName() == "string") {
+        return source;
+    }
+
     if (source.isTupleType() && target.isTupleType() && source.getTupleElements() == target.getTupleElements()) {
         return source;
     }
@@ -1269,18 +1277,21 @@ static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> unfilteredCandi
     });
 }
 
+static std::vector<ParamDecl> getMatchParams(const Match& match) {
+    if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(match.decl)) {
+        return functionDecl->getParams();
+    } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(match.decl)) {
+        return llvm::cast<FunctionType>(variableDecl->type.typeBase)->getParamDecls();
+    } else {
+        llvm_unreachable("unhandled callee decl");
+    }
+}
+
 static const Match* findMatchByPredicate(llvm::ArrayRef<Match> matches, const CallExpr& call, llvm::function_ref<bool(Type param, Type arg)> predicate) {
     const Match* result = nullptr;
 
     for (auto& match : matches) {
-        std::vector<ParamDecl> params;
-        if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(match.decl)) {
-            params = functionDecl->getParams();
-        } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(match.decl)) {
-            params = llvm::cast<FunctionType>(variableDecl->type.typeBase)->getParamDecls();
-        } else {
-            llvm_unreachable("unhandled callee decl");
-        }
+        auto params = getMatchParams(match);
 
         if (params.size() == call.args.size()) {
             if (llvm::all_of(llvm::zip_first(params, call.args), [&](auto&& pair) {
@@ -1290,6 +1301,32 @@ static const Match* findMatchByPredicate(llvm::ArrayRef<Match> matches, const Ca
                 if (result) return nullptr;
                 result = &match;
             }
+        }
+    }
+
+    return result;
+}
+
+// Returns the only candidate with the most exactly matching arguments, or null
+// when tied. Subsumes the all-exact rule: a unique all-exact candidate is also
+// the unique most-exact one.
+static const Match* findMatchWithMostExactArgs(llvm::ArrayRef<Match> matches, const CallExpr& call) {
+    const Match* result = nullptr;
+    auto bestCount = -1;
+
+    for (auto& match : matches) {
+        auto params = getMatchParams(match);
+        if (params.size() != call.args.size()) continue;
+
+        auto count = llvm::count_if(llvm::zip_first(params, call.args), [](auto&& pair) {
+            auto&& [param, arg] = pair;
+            return param.type == arg.value->type;
+        });
+        if (count > bestCount) {
+            bestCount = count;
+            result = &match;
+        } else if (count == bestCount) {
+            result = nullptr;
         }
     }
 
@@ -1315,7 +1352,7 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
     } else if (llvm::count_if(matches, [](auto& match) { return match.didUnwrapOptional == false; }) == 1) {
         // Implicit unwrapping discards nullability; prefer the overload that preserves it.
         return llvm::find_if(matches, [](auto& match) { return match.didUnwrapOptional == false; });
-    } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg; })) {
+    } else if (auto match = findMatchWithMostExactArgs(matches, call)) {
         return match;
     } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) {
         return match;
