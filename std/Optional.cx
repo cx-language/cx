@@ -27,6 +27,17 @@ bool operator!= <T: Comparable>(Optional<T>* a, T* b) {
     return !(*a == *b);
 }
 
+/// Returns true if the optional pointer is non-null and points to a value equal to b.
+bool operator== <T: Comparable>(Optional<T*>* a, T* b) {
+    if (*a == null) return false;
+    return *(*a) == *b;
+}
+
+/// Returns true if the optional pointer is null or points to a value differing from b.
+bool operator!= <T: Comparable>(Optional<T*>* a, T* b) {
+    return !(*a == *b);
+}
+
 /// Prints the given value.
 void print<T: Printable>(Optional<T>* optional) {
     if (*optional == null) {
