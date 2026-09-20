@@ -288,6 +288,12 @@ Token Lexer::nextToken() {
             ch = readChar();
             if (ch == '-') return Token(Token::Decrement, getCurrentLocation());
             if (ch == '=') return Token(Token::MinusEqual, getCurrentLocation());
+            if (ch == '>') {
+                // '->' was the lambda arrow before it was changed to '=>'; recover as
+                // a fat arrow so parsing continues and only this error is reported.
+                REPORT_ERROR(getCurrentLocation(), "unexpected '->', use '=>' for lambdas");
+                return Token(Token::FatArrow, getCurrentLocation());
+            }
             unreadChar(ch);
             return Token(Token::Minus, getCurrentLocation());
         case '*':

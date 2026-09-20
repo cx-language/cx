@@ -1,0 +1,10 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:16: error: unexpected '->', use '=>' for lambdas
+    var f = () -> {
+        return 1;
+    };
+    // CHECK: [[@LINE+1]]:15: error: unexpected '->', use '=>' for lambdas
+    var g = x -> x + 1;
+}
