@@ -251,13 +251,12 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
     }
 }
 
-static llvm::SmallVector<Decl*, 8> findDeclsInModules(llvm::StringRef name, llvm::ArrayRef<Module*> modules, bool topLevelOnly = false) {
+static llvm::SmallVector<Decl*, 8> findDeclsInModules(llvm::StringRef name, llvm::ArrayRef<Module*> modules) {
     ASSERT(!name.empty());
     llvm::SmallVector<Decl*, 8> decls;
 
     for (auto& module : modules) {
-        auto matches = topLevelOnly ? module->symbolTable.findInTopLevelScope(name) : module->symbolTable.findFirst(name);
-        llvm::append_range(decls, matches);
+        llvm::append_range(decls, module->symbolTable.findFirst(name));
     }
 
     return decls;
@@ -352,8 +351,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
     }
 
     if (currentModule->name != "std") {
-        appendUnique(decls, findDeclsInModules(name, currentModule, false));
-        appendUnique(decls, findDeclsInModules(name, currentModule, true)); // HACK, TODO: one find function should be enough
+        appendUnique(decls, currentModule->symbolTable.findInAllScopes(name));
     }
 
     appendUnique(decls, findDeclsInModules(name, Module::getStdlibModule()));
