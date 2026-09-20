@@ -191,6 +191,11 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
                     std::vector<FieldDecl> inheritedFields;
 
                     for (auto& field : interface.getDecl()->fields) {
+                        auto duplicate = llvm::find_if(typeDecl->fields, [&](const FieldDecl& f) { return f.getName() == field.getName(); });
+                        if (duplicate != typeDecl->fields.end()) {
+                            WARN(duplicate->getLocation(),
+                                 "field '" << field.getName() << "' duplicates inherited field from interface '" << interface.getDecl()->getName() << "'");
+                        }
                         inheritedFields.push_back(field.instantiate(genericArgs, *typeDecl));
                     }
 

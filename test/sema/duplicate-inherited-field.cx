@@ -1,0 +1,18 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+interface Named {
+    string name = "anon";
+}
+
+struct Person: Named {
+    // CHECK: [[@LINE+1]]:12: warning: field 'name' duplicates inherited field from interface 'Named'
+    string name;
+}
+
+struct Robot: Named {
+    int serial;
+}
+
+// CHECK-NOT: duplicates inherited field
+
+void main() {}
