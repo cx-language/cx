@@ -299,9 +299,20 @@ void CGenerator::codegenBinary(const BinaryInst* inst) {
     case Token::Star:
         stream << '*';
         break;
-    case Token::Slash:
+    case Token::Slash: {
+        // MSVC rejects division with a literal zero divisor (C2124) even for
+        // floats, where it is well-defined IEEE arithmetic. x * (±INFINITY)
+        // computes the same result for every x, so spell it that way. GCC and
+        // xcc accept the division form, but the product form works for them too.
+        auto* divisor = llvm::dyn_cast<ConstantFP>(inst->right);
+        if (divisor && divisor->value.isZero()) {
+            // The dividend was already emitted before the switch.
+            stream << (divisor->value.isNegative() ? "* (-INFINITY);\n" : "* INFINITY;\n");
+            return;
+        }
         stream << '/';
         break;
+    }
     case Token::Modulo:
         stream << '%';
         break;
@@ -469,7 +480,8 @@ void CGenerator::codegenTempDeclarationForType(IRType* type, const std::string& 
         codegenType(stream, elementType, true);
         stream << " (*" << name << ")";
         for (int size : dimensions) {
-            stream << "[" << size << "]";
+            // See codegenTypeSuffix: MSVC rejects zero-size arrays.
+            stream << "[" << (size == 0 ? 1 : size) << "]";
         }
         return;
     }
@@ -1066,7 +1078,9 @@ void CGenerator::codegenTypeSuffix(llvm::raw_string_ostream& stream, IRType* typ
     switch (type->kind) {
     case IRTypeKind::IRArrayType: {
         auto* arrayType = llvm::cast<IRArrayType>(type);
-        stream << "[" << arrayType->size << "]";
+        // MSVC rejects zero-size arrays (C2466); over-allocate one dummy
+        // element instead. It is never accessed: indexing is bounds-checked.
+        stream << "[" << (arrayType->size == 0 ? 1 : arrayType->size) << "]";
         break;
     }
     case IRTypeKind::IRFunctionType: {
