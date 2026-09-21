@@ -92,6 +92,7 @@ struct IRGenerator {
     Value* emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr = nullptr);
     Value* emitMemberExpr(const MemberExpr& expr);
     Value* emitTupleElementAccess(const MemberExpr& expr);
+    Value* emitMainArgv(Value* argc, Value* argv, Type argvType, Location location);
     Value* emitIndexedAccess(const Expr& base, const Expr& index);
     Value* emitIndexExpr(const IndexExpr& expr);
     Value* emitIndexAssignmentExpr(const IndexAssignmentExpr& expr);

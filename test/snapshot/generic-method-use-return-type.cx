@@ -9,7 +9,8 @@ struct X<T> {
     void g() {}
 }
 
-void main(X<int> x) {
+void main() {
+    X<int> x = undefined;
     var a = x.f(false);
     a.g();
 }

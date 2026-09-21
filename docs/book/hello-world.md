@@ -32,6 +32,23 @@ To pass command-line arguments to the program, put them after a `--` separator:
 cx run hello.cx -- arg1 arg2
 ```
 
+## Command-line arguments
+
+To read command-line arguments, declare `main` with `argc`/`argv` parameters:
+
+```cs
+void main(int argc, string[] argv) {
+    println(argc);
+    for arg in argv {
+        println(arg);
+    }
+}
+```
+
+`argc` is the number of arguments and `argv` holds them as strings.
+Like in C, the first argument is the program name (or path), so `argc` is at least 1 when arguments are passed normally.
+The parameters may also be omitted entirely, and `main` may return `void` or `int` for the exit status.
+
 ## Syntax
 
 The syntax of cx is mostly similar to the C family of languages, 

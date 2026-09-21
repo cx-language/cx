@@ -2,16 +2,16 @@
 // RUN: %cx run %s -- hello "two words" | %FileCheck -match-full-lines --check-prefix=QUOTED %s
 // RUN: %not %cx %s -- hello 2>&1 | %FileCheck --check-prefix=ERROR %s
 
-int main(int argc, char*[*] argv) {
+int main(int argc, string[] argv) {
     // CHECK: 2
     // QUOTED: 3
     println(argc);
     // CHECK-NEXT: hello
     // QUOTED-NEXT: hello
-    println(string(argv[1]));
+    println(argv[1]);
     // QUOTED-NEXT: two words
     if argc > 2 {
-        println(string(argv[2]));
+        println(argv[2]);
     }
     return 0;
 }

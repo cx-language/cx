@@ -245,6 +245,26 @@ void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, Acces
     }
 }
 
+// 'main' lowers directly to the C entry point, so only signatures the compiler
+// can materialize from argc/argv are accepted.
+static void checkMainSignature(const FunctionDecl& decl) {
+    if (!decl.getReturnType().isVoid() && !decl.getReturnType().isInt()) {
+        ERROR(decl.getLocation(), "'main' must return 'void' or 'int'");
+    }
+
+    auto params = decl.getParams();
+    bool validParams = params.empty();
+    if (params.size() == 1 && params[0].type.isInt()) {
+        validParams = true;
+    } else if (params.size() == 2 && params[0].type.isInt() && params[1].type.isArrayRef()) {
+        Type elementType = params[1].type.getElementType();
+        validParams = elementType.isBasicType() && elementType.getName() == "string";
+    }
+    if (!validParams) {
+        ERROR(decl.getLocation(), "'main' must take no parameters, '(int argc)', or '(int argc, string[] argv)'");
+    }
+}
+
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.typechecked) return;
     int errorsBefore = errors;
@@ -283,6 +303,10 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
         typecheckType(decl.getReturnType(), decl.accessLevel);
+    }
+
+    if (decl.isMain() && !decl.isMethodDecl()) {
+        checkMainSignature(decl);
     }
 
     if (!decl.isExtern()) {

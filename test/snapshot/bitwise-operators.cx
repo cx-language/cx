@@ -1,6 +1,10 @@
 // RUN: check-snapshots
 
-void main(int a, int b, uint c, uint d) {
+void main() {
+    int a = undefined;
+    int b = undefined;
+    uint c = undefined;
+    uint d = undefined;
     _ = a & b;
     _ = a | b;
     _ = a ^ b;

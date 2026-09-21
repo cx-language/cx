@@ -17,6 +17,12 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
 
     auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter{ValueKind::Parameter, getIRType(p.type), p.getName().str()}; });
 
+    if (decl.isMain() && !decl.isMethodDecl() && !decl.getParams().empty()) {
+        // The OS passes argc/argv; the declared params are materialized from them in emitFunctionBody.
+        params = {Parameter{ValueKind::Parameter, getIRType(Type::getInt()), "argc"},
+                  Parameter{ValueKind::Parameter, getIRType(BasicType::get("char", {}).getPointerTo().getPointerTo()), "argv"}};
+    }
+
     if (!decl.captures.empty()) {
         auto captureParams = map(decl.captures, [](const VariableDecl* c) {
             return Parameter{ValueKind::Parameter, getIRType(c->getCaptureType()), ("__capture_" + c->getName()).str()};
@@ -75,11 +81,18 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
         ASSERT(inserted.second);
     }
 
+    Value* mainArgv = nullptr;
+    if (decl.isMain() && !decl.isMethodDecl() && decl.getParams().size() == 2) {
+        mainArgv = emitMainArgv(&function.params[0], &function.params[1], decl.getParams()[1].type, decl.getLocation());
+    }
+
     for (auto& param : decl.getParams()) {
         // Spill parameters to allocas so they have stable addresses: method receivers and
         // address-of must alias the parameter across uses, not a fresh temporary per use.
+        Value* value = &*arg++;
+        if (mainArgv && param.type.isArrayRef()) value = mainArgv;
         auto* spill = createEntryBlockAlloca(param.type, param.getName());
-        createStore(&*arg++, spill);
+        createStore(value, spill);
         setLocalValue(spill, &param);
     }
 
@@ -100,6 +113,54 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
             createUnreachable();
         }
     }
+}
+
+Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Location location) {
+    Type stringType = BasicType::get("string", {});
+    auto* mallocFunction = getFunction(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("malloc")));
+
+    // Copy the C strings into a heap array of strings that lives for the whole program run.
+    Value* count = createCast(argc, Type::getUInt64(), "argv.count");
+    Value* allocSize = createBinaryOp(Token::Star, createSizeof(stringType), count, nullptr, "argv.size");
+    Value* storage = createCall(mallocFunction, allocSize, nullptr);
+    // malloc(0) may return null, but no storage is needed when there are no arguments.
+    Value* hasStorage = createBinaryOp(Token::NotEqual, storage, createConstantNull(storage->getType()), nullptr);
+    Value* noArgs = createBinaryOp(Token::Equal, argc, createConstantInt(Type::getInt(), 0), nullptr);
+    emitAssert(createBinaryOp(Token::Or, hasStorage, noArgs, nullptr), nullptr, location, "Out of memory", "argv");
+
+    Function* stringInit = nullptr;
+    for (auto* decl : Module::getStdlibModule()->symbolTable.findInTopLevelScope("string.init")) {
+        auto params = llvm::cast<ConstructorDecl>(decl)->getParams();
+        if (params.size() == 1 && params[0].type.isPointerType() && params[0].type.getPointee().isChar()) {
+            stringInit = getFunction(*llvm::cast<ConstructorDecl>(decl));
+            break;
+        }
+    }
+    ASSERT(stringInit);
+
+    Value* elements = createCast(storage, stringType.getPointerTo(), "argv.elements");
+    auto* indexAlloca = createEntryBlockAlloca(Type::getInt(), "argv_i");
+    createStore(createConstantInt(Type::getInt(), 0), indexAlloca);
+
+    auto* cond = new BasicBlock("argv.cond");
+    auto* body = new BasicBlock("argv.body");
+    auto* end = new BasicBlock("argv.end");
+    createBr(cond);
+
+    setInsertPoint(cond);
+    Value* index = createLoad(indexAlloca);
+    createCondBr(createBinaryOp(Token::Less, index, argc, nullptr), body, end);
+
+    setInsertPoint(body);
+    Value* cString = createLoad(createGEP(argv, {index}));
+    createCall(stringInit, {createGEP(elements, {index}), cString}, nullptr);
+    createStore(createBinaryOp(Token::Plus, index, createConstantInt(Type::getInt(), 1), nullptr), indexAlloca);
+    createBr(cond);
+
+    setInsertPoint(end);
+    Value* array = createUndefined(argvType);
+    array = createInsertValue(array, elements, 0);
+    return createInsertValue(array, argc, 1);
 }
 
 void IRGenerator::emitFunctionDecl(const FunctionDecl& decl) {
