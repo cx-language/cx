@@ -38,6 +38,29 @@ void main() {
 }
 ```
 
+## break and continue
+
+`break` exits the innermost enclosing loop or `switch` statement,
+and `continue` skips to the next iteration of the innermost enclosing loop:
+
+```cs
+void main() {
+    for i in 0..10 {
+        if i == 3 {
+            continue; // skips 3
+        }
+        if i == 5 {
+            break; // stops the loop
+        }
+        println(i); // prints: 0 1 2 4
+    }
+}
+```
+
+Since `switch` cases don't fall through, `break` is only needed in a `switch` to skip
+the rest of the matched case body. A `continue` inside a `switch` applies to the
+enclosing loop.
+
 ## if
 
 ```cs
