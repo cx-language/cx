@@ -26,6 +26,11 @@ cx run hello.cx
 ```
 
 If we use the `run` command, the executable file `hello` will not be created.
+To pass command-line arguments to the program, put them after a `--` separator:
+
+```sh
+cx run hello.cx -- arg1 arg2
+```
 
 ## Syntax
 

@@ -1,6 +1,8 @@
 #include "driver.h"
 #include <bit>
+#include <cctype>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -49,7 +51,7 @@ namespace cl = llvm::cl;
 namespace cx {
 
 cl::SubCommand build("build", "Build a cx project");
-cl::SubCommand run("run", "Build and run a cx executable");
+cl::SubCommand run("run", "Build and run a cx executable (program arguments follow '--')");
 
 cl::OptionCategory dependencyCategory("Dependency Options");
 cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(cl::SubCommand::getAll()), cl::cat(dependencyCategory));
@@ -111,6 +113,47 @@ cl::opt<int> errorLimit("error-limit", cl::desc("Limit the number of reported er
 cl::SubCommand lspSubcommand("lsp", "Start the cx language server (LSP over stdio)");
 
 } // namespace cx
+
+// Arguments after '--' on the command line, passed to the executed program by 'run'.
+static std::vector<std::string> programArgs;
+
+// Quotes one program argument for the shell that runs 'cx run' programs (POSIX sh, cmd.exe on Windows).
+static std::string shellEscape(llvm::StringRef arg) {
+    if (!arg.empty() && llvm::all_of(arg, [](char ch) { return std::isalnum(static_cast<unsigned char>(ch)) || std::strchr("_@%+=:,./-", ch); })) {
+        return arg.str();
+    }
+#ifdef _WIN32
+    // cmd.exe passes double-quoted text through (except %var% expansion, defeated by doubling);
+    // the C runtime then turns \\ into \ and \" into ". Track cmd.exe's quote-toggle state
+    // (\" flips it) so metacharacters outside quotes can still be caret-escaped.
+    std::string result = "\"";
+    bool quoted = true;
+    for (char ch : arg) {
+        if (ch == '"') {
+            result += "\\\"";
+            quoted = !quoted;
+        } else {
+            if (!quoted && std::strchr("&|<>()^!", ch)) result += '^';
+            if (ch == '\\')
+                result += "\\\\";
+            else if (ch == '%')
+                result += "%%";
+            else
+                result += ch;
+        }
+    }
+    return result + "\"";
+#else
+    std::string result = "'";
+    for (char ch : arg) {
+        if (ch == '\'')
+            result += "'\\''";
+        else
+            result += ch;
+    }
+    return result + "'";
+#endif
+}
 
 static int exec(const char* command, std::string& output) {
     FILE* pipe = popen(command, "r");
@@ -528,7 +571,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     }
 
     if (run) {
-        std::string command = (tempOutputFilePath + " 2>&1").str();
+        std::string command = tempOutputFilePath.str().str();
+        for (const auto& arg : programArgs) {
+            command += " " + shellEscape(arg);
+        }
+        command += " 2>&1";
         std::string output;
         int executableExitStatus = exec(command.c_str(), output);
         llvm::outs() << output;
@@ -690,8 +737,20 @@ static void addPlatformCompileOptions() {
 int cx::driverMain(int argc, const char** argv) {
     llvm::setBugReportMsg("Please submit a bug report to https://github.com/emillaine/cx/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
+    // Like cargo and npm, everything after '--' is passed to the executed program by 'run'.
+    // Split it off before option parsing so it is never mistaken for input files or flags.
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--") == 0) {
+            programArgs.assign(argv + i + 1, argv + argc);
+            argc = i;
+            break;
+        }
+    }
     cl::HideUnrelatedOptions({&stageSelectionCategory, &outputCategory, &dependencyCategory, &diagnosticCategory});
     cl::ParseCommandLineOptions(argc, argv, "cx compiler\n");
+    if (!programArgs.empty() && !run) {
+        ABORT("program arguments require the 'run' subcommand");
+    }
     addPlatformCompileOptions();
 
     diagnosticOptions.disableWarnings = disableWarnings;
