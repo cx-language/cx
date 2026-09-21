@@ -3,6 +3,7 @@
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/mangle.h"
+#include "../ast/module.h"
 
 using namespace cx;
 
