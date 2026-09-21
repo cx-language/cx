@@ -192,7 +192,8 @@ foreach(shard RANGE ${LIT_SHARD_MAX})
         COMMAND lit --verbose --succinct -j1 ${EXTRA_LIT_FLAGS} ${shard_files}
         -Dcx_path=$<TARGET_FILE:cx>
         -Dfilecheck_path=$<TARGET_FILE:FileCheck>
-        -Dtest_dir=${PROJECT_SOURCE_DIR}/test)
+        -Dtest_dir=${PROJECT_SOURCE_DIR}/test
+        -Dllvm_version=${LLVM_VERSION_MAJOR})
 endforeach()
 
 # Download the LLVM FileCheck utility for tests.

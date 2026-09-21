@@ -130,7 +130,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         shell: bash
         run: |
-          pip install lit psutil
+          pip install "lit==23.*" psutil
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt-get update
             sudo apt-get install libglfw3-dev
