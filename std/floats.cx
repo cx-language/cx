@@ -2,6 +2,11 @@
 // 'compare' function for all floating-point types.
 
 private void printFloat(float64 value, StringBuffer* stream) {
+    // NaN has an implementation-defined sign; print all NaNs the same.
+    if value != value {
+        stream.write("nan");
+        return;
+    }
     // Maximum length from https://stackoverflow.com/a/1701272/3425536
     char[1080] result = undefined;
     // Shortest representation that parses back to the same value. 17 significant
@@ -22,6 +27,11 @@ private void printFloat(float64 value, StringBuffer* stream) {
 }
 
 private void printFloat32(float32 value, StringBuffer* stream) {
+    // NaN has an implementation-defined sign; print all NaNs the same.
+    if value != value {
+        stream.write("nan");
+        return;
+    }
     char[1080] result = undefined;
     // Shortest representation that parses back to the same value; 9 significant
     // digits always round-trip for 32-bit floats.
@@ -40,6 +50,11 @@ private void printFloat32(float32 value, StringBuffer* stream) {
 }
 
 private void printFloat16(float16 value, StringBuffer* stream) {
+    // NaN has an implementation-defined sign; print all NaNs the same.
+    if value != value {
+        stream.write("nan");
+        return;
+    }
     char[1080] result = undefined;
     // Shortest representation that parses back to the same value; 5 significant
     // digits always round-trip for 16-bit floats.

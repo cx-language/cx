@@ -45,7 +45,9 @@ void cx::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
         ABORT("couldn't get permissions for '" << sourcePath << "': " << error.message());
     }
     if (auto error = llvm::sys::fs::copy_file(sourcePath, targetPath)) {
-        ABORT("couldn't copy '" << sourcePath << "' to '" << targetPath << "': " << error.message());
+        // A bad output path is a user error, not a compiler bug, so report it
+        // without a stack trace even when CX_PRINT_STACK_TRACE is set.
+        abort(StringBuilder() << "couldn't write output file '" << targetPath << "': " << error.message());
     }
     if (auto error = llvm::sys::fs::setPermissions(targetPath, *permissions)) {
         ABORT("couldn't set permissions for '" << targetPath << "': " << error.message());

@@ -2,7 +2,12 @@
 // RUN: file-exists %T/absolute-output
 // RUN: cd %T && %cx %s -o relative-output
 // RUN: file-exists %T/relative-output
+// RUN: %not %cx %s -o %T/nonexistent/output 2>&1 | %FileCheck %s
 
 void main() {
     println("hi");
 }
+
+// CHECK-NOT: PrintStackTrace
+// CHECK: error: couldn't write output file '{{.*}}nonexistent{{[/\\]}}output': {{.*}}
+// CHECK-NOT: PrintStackTrace

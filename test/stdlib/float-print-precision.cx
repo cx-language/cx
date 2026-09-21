@@ -19,6 +19,11 @@ void main() {
     println(one / 0.0); // CHECK-NEXT: inf
     println(-one / 0.0); // CHECK-NEXT: -inf
     println(0.0 / 0.0); // CHECK-NEXT: nan
+    println(-(0.0 / 0.0)); // CHECK-NEXT: nan
+    float64 zero = 0.0;
+    println(zero / zero); // CHECK-NEXT: nan
+    float16 halfZero = 0.0;
+    println(halfZero / halfZero); // CHECK-NEXT: nan
 }
 
 // CHECK-NOT: float-print-precision.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

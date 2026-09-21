@@ -384,7 +384,9 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
     if (width < 128) {
         // The operation is exact in 128 bits, so any loss in the round trip is an overflow.
         auto* wideType = getIRType(isSigned ? Type::getInt128() : Type::getUInt128());
-        auto* wideResult = createBinaryOp(op, createCast(left, wideType), createCast(right, wideType), &expr);
+        auto* wideLeft = createCast(left, wideType);
+        auto* wideRight = createCast(right, wideType);
+        auto* wideResult = createBinaryOp(op, wideLeft, wideRight, &expr);
         result = createCast(wideResult, type);
         overflowed = createBinaryOp(Token::NotEqual, wideResult, createCast(result, wideType), &expr);
     } else if (op != Token::Star) {
@@ -412,7 +414,9 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
         // with b != 0, result / b != a exactly when the multiply overflowed. Operands are
         // nonzero below, and the MIN / -1 division trap is guarded, so the division is safe.
         auto* unsignedType = getIRType(getUnsignedIntegerType(width));
-        result = createCastIfNeeded(createBinaryOp(Token::Star, createCastIfNeeded(left, unsignedType), createCastIfNeeded(right, unsignedType), &expr), type);
+        auto* a = createCastIfNeeded(left, unsignedType);
+        auto* b = createCastIfNeeded(right, unsignedType);
+        result = createCastIfNeeded(createBinaryOp(Token::Star, a, b, &expr), type);
 
         auto* function = insertBlock->parent;
         auto* checkBlock = new BasicBlock("overflow.check", function);
@@ -426,10 +430,12 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
             auto* one = createCast(createConstantInt(Type::getUInt(), 1), unsignedType);
             auto* minValue = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
             auto* min = createCast(minValue, type);
-            auto* minCase1 =
-                createBinaryOp(Token::And, createBinaryOp(Token::Equal, left, minusOne, &expr), createBinaryOp(Token::Equal, right, min, &expr), &expr);
-            auto* minCase2 =
-                createBinaryOp(Token::And, createBinaryOp(Token::Equal, left, min, &expr), createBinaryOp(Token::Equal, right, minusOne, &expr), &expr);
+            auto* leftIsMinusOne = createBinaryOp(Token::Equal, left, minusOne, &expr);
+            auto* rightIsMin = createBinaryOp(Token::Equal, right, min, &expr);
+            auto* minCase1 = createBinaryOp(Token::And, leftIsMinusOne, rightIsMin, &expr);
+            auto* leftIsMin = createBinaryOp(Token::Equal, left, min, &expr);
+            auto* rightIsMinusOne = createBinaryOp(Token::Equal, right, minusOne, &expr);
+            auto* minCase2 = createBinaryOp(Token::And, leftIsMin, rightIsMinusOne, &expr);
             auto* divBlock = new BasicBlock("overflow.div", function);
             createCondBr(createBinaryOp(Token::Or, minCase1, minCase2, &expr), endBlock, divBlock, createConstantBool(true));
             setInsertPoint(divBlock);
