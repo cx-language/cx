@@ -205,18 +205,22 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
                         error.report();
                     }
                     if (!interface.getDecl()) continue;
-                    std::vector<FieldDecl> inheritedFields;
 
-                    for (auto& field : interface.getDecl()->fields) {
-                        auto duplicate = llvm::find_if(typeDecl->fields, [&](const FieldDecl& f) { return f.getName() == field.getName(); });
-                        if (duplicate != typeDecl->fields.end()) {
-                            WARN(duplicate->getLocation(),
-                                 "field '" << field.getName() << "' duplicates inherited field from interface '" << interface.getDecl()->getName() << "'");
+                    // Enums have no fields, so an interface field requirement fails conformance instead.
+                    if (!typeDecl->isEnumDecl()) {
+                        std::vector<FieldDecl> inheritedFields;
+
+                        for (auto& field : interface.getDecl()->fields) {
+                            auto duplicate = llvm::find_if(typeDecl->fields, [&](const FieldDecl& f) { return f.getName() == field.getName(); });
+                            if (duplicate != typeDecl->fields.end()) {
+                                WARN(duplicate->getLocation(),
+                                     "field '" << field.getName() << "' duplicates inherited field from interface '" << interface.getDecl()->getName() << "'");
+                            }
+                            inheritedFields.push_back(field.instantiate(genericArgs, *typeDecl));
                         }
-                        inheritedFields.push_back(field.instantiate(genericArgs, *typeDecl));
-                    }
 
-                    typeDecl->fields.insert(typeDecl->fields.begin(), inheritedFields.begin(), inheritedFields.end());
+                        typeDecl->fields.insert(typeDecl->fields.begin(), inheritedFields.begin(), inheritedFields.end());
+                    }
 
                     for (auto member : interface.getDecl()->methods) {
                         auto methodDecl = llvm::cast<MethodDecl>(member);

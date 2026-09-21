@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: enum-impl-decl-error-missing-method.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+interface X {
+    void foo();
+}
+
+// CHECK: [[@LINE+1]]:6: error: 'Z' doesn't have member function 'foo' (expected prototype 'void foo()') required by interface 'X'
+enum Z: X {
+    A,
+}
+
+// CHECK-NOT: enum-impl-decl-error-missing-method.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -516,6 +516,21 @@ void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
 }
 
 void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
+    for (Type interface : decl.interfaces) {
+        typecheckType(interface, decl.accessLevel);
+        auto* interfaceDecl = interface.getDecl();
+
+        if (!interfaceDecl->isInterface()) {
+            REPORT_ERROR(interface.location, "'" << interface << "' is not an interface");
+            continue;
+        }
+
+        std::string errorReason;
+        if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
+            REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
+        }
+    }
+
     std::vector<const EnumCase*> cases = map(decl.cases, [](const EnumCase& c) { return &c; });
     std::ranges::sort(cases, [](auto* a, auto* b) { return a->getName() < b->getName(); });
     auto it = std::ranges::adjacent_find(cases, [](auto* a, auto* b) { return a->getName() == b->getName(); });
@@ -530,6 +545,10 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
         if (enumCase.associatedType) {
             typecheckType(enumCase.associatedType, enumCase.accessLevel);
         }
+    }
+
+    for (auto& methodDecl : decl.methods) {
+        typecheckMethodDecl(*methodDecl);
     }
 
     checkForInfiniteSize(decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));

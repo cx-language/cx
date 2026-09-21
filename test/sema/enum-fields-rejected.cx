@@ -1,0 +1,11 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: enum-fields-rejected.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+enum E {
+    A,
+    // CHECK: [[@LINE+1]]:9: error: enums cannot have fields
+    int x;
+}
+
+// CHECK-NOT: enum-fields-rejected.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

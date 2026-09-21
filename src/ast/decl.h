@@ -347,13 +347,16 @@ struct EnumCase : VariableDecl {
 };
 
 struct EnumDecl : TypeDecl {
-    EnumDecl(std::string&& name, std::vector<EnumCase>&& cases, AccessLevel accessLevel, Module& module, const TypeDecl* instantiatedFrom, Location location)
+    EnumDecl(std::string&& name, std::vector<EnumCase>&& cases, std::vector<Type>&& interfaces, AccessLevel accessLevel, Module& module,
+             const TypeDecl* instantiatedFrom, Location location)
     : TypeDecl(DeclKind::EnumDecl, TypeTag::Enum, std::move(name), accessLevel, module, instantiatedFrom, location), cases(std::move(cases)) {
+        this->interfaces = std::move(interfaces);
         for (auto& enumCase : this->cases) {
             enumCase.parent = this;
             enumCase.type = NOTNULL(getType());
         }
     }
+    void addCase(EnumCase&& enumCase);
     bool hasAssociatedValues() const;
     EnumCase* getCaseByName(llvm::StringRef name);
     // TODO: Select tag type to be able to hold all enum values.

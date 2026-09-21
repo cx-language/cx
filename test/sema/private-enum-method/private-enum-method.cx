@@ -1,0 +1,8 @@
+// RUN: %cx -typecheck %s %p/a.cx 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck %s %p/a.cx 2>&1 | %FileCheck %p/a.cx
+
+void main() {
+    var a = A.X;
+    // CHECK: [[@LINE+1]]:7: warning: 'f' is private
+    a.f();
+}

@@ -1587,42 +1587,78 @@ TypeTemplate* Parser::parseEnumTemplate(AccessLevel accessLevel) {
     return makeAST<TypeTemplate>(std::move(genericParams), enumDecl, accessLevel);
 }
 
-/// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' enum-case-decl* '}' ';'?
+/// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' (enum-case-decl | member-decl)* '}' ';'?
 /// enum-case-decl ::= id tuple-type? (',' | '\n' | ';')
+/// member-decl ::= function-decl | function-template-decl
 EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     ASSERT(currentToken() == Token::Enum);
     consumeToken();
 
     std::vector<Type> interfaces;
     auto name = parseTypeHeader(interfaces, genericParams);
+    auto* enumDecl =
+        makeAST<EnumDecl>(name.getString().str(), std::vector<EnumCase>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr, name.location);
 
     parse(Token::LeftBrace);
-    std::vector<EnumCase> cases;
     auto valueCounter = llvm::APSInt::get(0);
 
     while (currentToken() != Token::RightBrace) {
-        auto caseName = parse(Token::Identifier);
-        Type associatedType;
-
-        if (currentToken() == Token::LeftParen) {
-            associatedType = parseTupleType();
+        AccessLevel accessLevel = AccessLevel::Default;
+        while (currentToken() == Token::Private) {
+            if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
+            accessLevel = AccessLevel::Private;
+            consumeToken();
         }
 
-        auto value = makeAST<IntLiteralExpr>(valueCounter, caseName.location);
-        cases.push_back(EnumCase(caseName.getString().str(), value, associatedType, typeAccessLevel, caseName.location));
-        ++valueCounter;
+        // A lone identifier names a case; anything else starts a member function signature.
+        if (currentToken() == Token::Identifier
+            && (lookAhead(1).is({Token::Comma, Token::LeftParen, Token::Semicolon, Token::RightBrace})
+                || lookAhead(1).location.line != currentToken().location.line)) {
+            if (accessLevel != AccessLevel::Default) {
+                WARN(getCurrentLocation(), "enum cases cannot be private");
+            }
+            auto caseName = parse(Token::Identifier);
+            Type associatedType;
 
-        if (currentToken() == Token::Comma) {
-            consumeToken();
+            if (currentToken() == Token::LeftParen) {
+                associatedType = parseTupleType();
+            }
+
+            auto value = makeAST<IntLiteralExpr>(valueCounter, caseName.location);
+            enumDecl->addCase(EnumCase(caseName.getString().str(), value, associatedType, typeAccessLevel, caseName.location));
+            ++valueCounter;
+
+            if (currentToken() == Token::Comma) {
+                consumeToken();
+            } else {
+                parseStmtTerminator();
+            }
         } else {
-            parseStmtTerminator();
+            if (currentToken() == Token::Tilde) {
+                ERROR(getCurrentLocation(), "enums cannot have destructors");
+            }
+            auto type = parseType();
+            auto location = getCurrentLocation();
+            auto methodName = parseFunctionName(enumDecl);
+
+            switch (currentToken()) {
+            case Token::LeftParen:
+                enumDecl->addMethod(parseFunctionDecl(enumDecl, accessLevel, /*requireBody=*/true, type, methodName, location));
+                break;
+            case Token::Less:
+                enumDecl->addMethod(parseFunctionTemplate(enumDecl, accessLevel, type, methodName, location));
+                break;
+            default:
+                ERROR(location, "enums cannot have fields");
+                break;
+            }
         }
     }
 
     consumeToken();
     // Allow an optional trailing ';' (e.g. `enum E {...};`).
     if (currentToken() == Token::Semicolon) consumeToken();
-    return makeAST<EnumDecl>(name.getString().str(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.location);
+    return enumDecl;
 }
 
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')

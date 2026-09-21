@@ -311,7 +311,8 @@ struct CToCxConverter final : clang::ASTConsumer {
                         addIntegerConstantToSymbolTable(enumeratorName, value, type);
                     }
 
-                    auto* cxEnumDecl = makeAST<EnumDecl>(getName(enumDecl).str(), std::move(cases), AccessLevel::Default, module, nullptr, Location());
+                    auto* cxEnumDecl =
+                        makeAST<EnumDecl>(getName(enumDecl).str(), std::move(cases), std::vector<Type>(), AccessLevel::Default, module, nullptr, Location());
                     module.addToSymbolTable(cxEnumDecl);
                     module.sourceFiles.front().topLevelDecls.push_back(cxEnumDecl);
                     break;

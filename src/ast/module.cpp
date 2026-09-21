@@ -60,7 +60,13 @@ void Module::addToSymbolTable(TypeDecl& decl) {
 
 void Module::addToSymbolTable(EnumDecl& decl) {
     llvm::cast<BasicType>(decl.getType().typeBase)->decl = &decl;
-    addToSymbolTableWithName(decl, decl.getQualifiedName());
+    if (addToSymbolTableWithName(decl, decl.getQualifiedName())) return;
+
+    for (auto& memberDecl : decl.methods) {
+        if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl)) {
+            addToSymbolTable(*nonTemplateMethod);
+        }
+    }
 }
 
 void Module::addToSymbolTable(VarDecl& decl) {

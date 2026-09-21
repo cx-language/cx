@@ -1,0 +1,97 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// CHECK-NOT: enum-methods.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+enum E {
+    A(int x),
+    B,
+
+    int tag() {
+        switch this {
+            case A a: return 10 + a.x;
+            case B: return 20;
+        }
+    }
+
+    bool isA() {
+        return this == A;
+    }
+
+    private int secret() {
+        return 7;
+    }
+
+    int pub() {
+        return secret();
+    }
+
+    T pick<T>(T ifA, T ifB) {
+        switch this {
+            case A: return ifA;
+            case B: return ifB;
+        }
+    }
+}
+
+enum Maybe<T> {
+    Value(T value),
+    Empty,
+
+    T unwrapOr(T fallback) {
+        switch this {
+            case Value v: return v.value;
+            case Empty: return fallback;
+        }
+    }
+}
+
+enum P: Printable {
+    Ok(int code),
+    Fail,
+
+    void print(StringBuffer* stream) {
+        switch this {
+            case Ok c:
+                stream.append("Ok(");
+                c.code.print(stream);
+                stream.append(")");
+            case Fail: stream.append("Fail");
+        }
+    }
+}
+
+void take<T: Printable>(T* value) {
+    println(value);
+}
+
+void main() {
+    var a = E.A(5);
+    // CHECK:15
+    println(a.tag());
+    // CHECK-NEXT:true
+    println(a.isA());
+    // CHECK-NEXT:false
+    println(E.B.isA());
+    // CHECK-NEXT:7
+    println(a.pub());
+    // CHECK-NEXT:x
+    println(a.pick("x", "y"));
+    // CHECK-NEXT:2
+    println(E.B.pick(1, 2));
+
+    Maybe<int> e = Maybe.Empty;
+    // CHECK-NEXT:42
+    println(Maybe.Value(42).unwrapOr(0));
+    // CHECK-NEXT:7
+    println(e.unwrapOr(7));
+
+    var p = P.Ok(200);
+    // CHECK-NEXT:Ok(200)
+    println(p);
+    // CHECK-NEXT:Fail
+    take(P.Fail);
+    // CHECK-NEXT:Ok(200)
+    println(p.toString());
+}
+
+// CHECK-NOT: enum-methods.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

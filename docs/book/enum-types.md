@@ -72,3 +72,53 @@ void main() {
     Outcome<int> _b = Err(500);
 }
 ```
+
+Enums can define member functions, which are called on enum values.
+Inside a member function, `this` is the enum value the function was called on:
+
+```cs
+enum Outcome<T> {
+    Ok(T value),
+    Err(int code),
+
+    bool isOk() {
+        return this == Ok;
+    }
+
+    T unwrapOr(T fallback) {
+        switch this {
+            case Ok v: return v.value;
+            case Err: return fallback;
+        }
+    }
+}
+
+void main() {
+    var a = Outcome.Ok(1);
+    println(a.isOk()); // prints true
+    println(a.unwrapOr(0)); // prints 1
+    println(Outcome.Err<int>(404).unwrapOr(0)); // prints 0
+}
+```
+
+Enums can also implement interfaces by listing them after the enum name:
+
+```cs
+enum Color: Printable {
+    Red,
+    Green,
+    Blue,
+
+    void print(StringBuffer* stream) {
+        switch this {
+            case Red: stream.append("red");
+            case Green: stream.append("green");
+            case Blue: stream.append("blue");
+        }
+    }
+}
+
+void main() {
+    println(Color.Red); // prints red
+}
+```

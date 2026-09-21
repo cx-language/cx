@@ -468,6 +468,12 @@ EnumCase::EnumCase(std::string&& name, Expr* value, Type associatedType, AccessL
 : VariableDecl(DeclKind::EnumCase, accessLevel, nullptr, Type() /* initialized by EnumDecl constructor */), name(std::move(name)), value(value),
   associatedType(associatedType), location(location) {}
 
+void EnumDecl::addCase(EnumCase&& enumCase) {
+    enumCase.parent = this;
+    enumCase.type = NOTNULL(getType());
+    cases.push_back(std::move(enumCase));
+}
+
 EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) {
     for (auto& enumCase : cases) {
         if (enumCase.getName() == name) {
@@ -572,11 +578,32 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
             cases.emplace_back(enumCase.getName().str(), enumCase.value ? enumCase.value->instantiate(genericArgs) : nullptr,
                                enumCase.associatedType.resolve(genericArgs), enumCase.accessLevel, enumCase.getLocation());
         }
-        auto instantiation =
-            makeAST<EnumDecl>(enumDecl->getName().str(), std::move(cases), accessLevel, *enumDecl->getModule(), enumDecl, enumDecl->getLocation());
+        auto interfaces = map(enumDecl->interfaces, [&](Type type) { return type.resolve(genericArgs); });
+        auto instantiation = makeAST<EnumDecl>(enumDecl->getName().str(), std::move(cases), std::move(interfaces), accessLevel, *enumDecl->getModule(),
+                                               enumDecl, enumDecl->getLocation());
         instantiation->genericArgs = std::vector<Type>(genericArgsArray.begin(), genericArgsArray.end());
         for (auto& enumCase : instantiation->cases) {
             enumCase.type = NOTNULL(instantiation->getType());
+        }
+        for (auto& method : enumDecl->methods) {
+            if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(method)) {
+                instantiation->addMethod(nonTemplateMethod->instantiate(genericArgs, {}, *instantiation));
+            } else {
+                auto* functionTemplate = llvm::cast<FunctionTemplate>(method);
+                auto* methodDecl = llvm::cast<MethodDecl>(functionTemplate->functionDecl);
+                auto methodInstantiation = methodDecl->instantiate(genericArgs, {}, *instantiation);
+
+                std::vector<GenericParamDecl> genericParams;
+                genericParams.reserve(functionTemplate->genericParams.size());
+
+                for (auto& genericParam : functionTemplate->genericParams) {
+                    genericParams.emplace_back(genericParam.getName().str(), genericParam.getLocation());
+                    genericParams.back().constraints = genericParam.constraints;
+                }
+
+                auto accessLevel = methodInstantiation->accessLevel;
+                instantiation->addMethod(makeAST<FunctionTemplate>(std::move(genericParams), methodInstantiation, accessLevel));
+            }
         }
         return instantiation;
     }
