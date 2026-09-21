@@ -1,6 +1,7 @@
 #include "c-backend.h"
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/Path.h>
@@ -514,6 +515,12 @@ void CGenerator::codegenConstantString(const ConstantString* inst) {
 }
 
 void CGenerator::codegenConstantInt(const ConstantInt* inst) {
+    // -9223372036854775808 parses as unary minus applied to 9223372036854775808,
+    // which doesn't fit a signed 64-bit int; spell it to avoid the warning.
+    if (inst->value.isSigned() && inst->value.getSignificantBits() <= 64 && inst->value.getSExtValue() == INT64_MIN) {
+        stream << "(-9223372036854775807 - 1)";
+        return;
+    }
     stream << inst->value;
 }
 
