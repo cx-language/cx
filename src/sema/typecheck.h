@@ -182,5 +182,7 @@ struct Typechecker {
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location);
 bool containsGenericParam(Type type, llvm::StringRef genericParam);
 void diagnoseClosureConversion(Type source, Type target, Location location);
+// Suggests an explicit conversion when a value of one numeric type is used where another is expected.
+std::string narrowingHint(Type source, Type target);
 
 } // namespace cx

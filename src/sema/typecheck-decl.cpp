@@ -645,11 +645,13 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         if (auto converted = convert(decl.initializer, declaredType)) {
             decl.initializer = converted;
         } else {
-            const char* hint = "";
+            std::string hint;
 
             if (initializerType.isNull()) {
                 ASSERT(!declaredType.isOptionalType());
                 hint = " (add '?' to the type to make it nullable)";
+            } else {
+                hint = narrowingHint(initializerType, declaredType);
             }
 
             diagnoseClosureConversion(initializerType, declaredType, decl.initializer->location);
@@ -683,7 +685,8 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
         if (Expr* converted = convert(decl.defaultValue, decl.type)) {
             decl.defaultValue = converted;
         } else {
-            ERROR(decl.defaultValue->location, "cannot assign '" << decl.defaultValue->type << "' to '" << decl.type << "'");
+            ERROR(decl.defaultValue->location,
+                  "cannot assign '" << decl.defaultValue->type << "' to '" << decl.type << "'" << narrowingHint(decl.defaultValue->type, decl.type));
         }
     }
 }

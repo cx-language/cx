@@ -525,7 +525,7 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
         rhs = converted;
     } else {
         diagnoseClosureConversion(rhsType, lhsType, location);
-        ERROR(location, "cannot assign '" << rhsType << "' to '" << lhsType << "'");
+        ERROR(location, "cannot assign '" << rhsType << "' to '" << lhsType << "'" << narrowingHint(rhsType, lhsType));
     }
 
     // Assigning a possibly-null value invalidates narrowing; assigning a non-null value preserves it.
@@ -1310,6 +1310,12 @@ void cx::diagnoseClosureConversion(Type source, Type target, Location location) 
     if (source.isClosureType() && target.isFunctionType()) {
         ERROR(location, "cannot convert capturing lambda '" << source << "' to function type '" << target << "'");
     }
+}
+
+std::string cx::narrowingHint(Type source, Type target) {
+    auto isNumeric = [](Type type) { return type.isInteger() || type.isFloatingPoint() || type.isChar(); };
+    if (!isNumeric(source) || !isNumeric(target)) return "";
+    return " (use '" + target.toString() + "(...)' to convert explicitly)";
 }
 
 void cx::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location) {
@@ -2173,7 +2179,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             if (Expr* converted = convert(defaultArg, param.type, true)) {
                 defaultArg = converted;
             } else {
-                ERROR(expr.location, "cannot assign '" << defaultArg->type << "' to '" << param.type << "'");
+                ERROR(expr.location, "cannot assign '" << defaultArg->type << "' to '" << param.type << "'" << narrowingHint(defaultArg->type, param.type));
             }
             expr.args.emplace_back(std::string(param.getName()), defaultArg, expr.location);
         }
@@ -2208,7 +2214,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         (void)convert(arg.value, param->type, true);
         ERROR_WITH_NOTES(arg.location, std::move(declNote),
                          "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param->type
-                                              << "'");
+                                              << "'" << narrowingHint(arg.value->type, param->type));
         break;
     }
     }
@@ -2424,7 +2430,8 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
     if (auto converted = convert(expr.getValue(), elementType)) {
         expr.setValue(converted);
     } else {
-        ERROR(expr.getValue()->location, "cannot assign '" << expr.getValue()->type << "' to '" << elementType << "'");
+        ERROR(expr.getValue()->location,
+              "cannot assign '" << expr.getValue()->type << "' to '" << elementType << "'" << narrowingHint(expr.getValue()->type, elementType));
     }
 
     return elementType;
