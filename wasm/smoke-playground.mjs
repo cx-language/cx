@@ -56,7 +56,7 @@ async function main() {
     const fs = CxPipeline.createCompilerFs(CxWasi, wccFiles);
 
     const cResult = await CxPipeline.compileCToWasm(CxWasi, fs, ccWasmBytes, compiled.cCode);
-    check(cResult.exitCode === 0, "stage 2 (C to WebAssembly) succeeds");
+    check(cResult.exitCode === 0, "stage 2 (C to WebAssembly) succeeds, stderr: " + JSON.stringify(cResult.stderr.slice(-2000)));
     check(!!cResult.wasmBytes, "stage 2 produces a module");
 
     const runResult = await CxPipeline.runWasm(CxWasi, fs, cResult.wasmBytes);
