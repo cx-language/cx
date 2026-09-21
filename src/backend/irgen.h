@@ -155,8 +155,6 @@ struct IRGenerator {
             const llvm::fltSemantics* semantics = nullptr;
             if (name == "float" || name == "float32") {
                 semantics = &llvm::APFloat::IEEEsingle();
-            } else if (name == "float16") {
-                semantics = &llvm::APFloat::IEEEhalf();
             } else if (name == "float80") {
                 semantics = &llvm::APFloat::x87DoubleExtended();
             }

@@ -30,7 +30,6 @@ llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
         .Case("uint64", llvm::Type::getInt64Ty(ctx))
         .Case("uint128", llvm::Type::getInt128Ty(ctx))
         .Case("float", llvm::Type::getFloatTy(ctx))
-        .Case("float16", llvm::Type::getHalfTy(ctx))
         .Case("float32", llvm::Type::getFloatTy(ctx))
         .Case("float64", llvm::Type::getDoubleTy(ctx))
         .Case("float80", llvm::Type::getX86_FP80Ty(ctx))

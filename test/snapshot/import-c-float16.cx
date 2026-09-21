@@ -1,0 +1,7 @@
+// RUN: check-snapshots
+
+import "inputs/import-c-float16.h";
+
+void main() {
+    println(plain(41));
+}

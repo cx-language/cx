@@ -771,7 +771,6 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
 }
 
 static int getFloatBitWidth(Type type) {
-    if (type.isFloat16()) return 16;
     if (type.isFloat64()) return 64;
     if (type.isFloat80()) return 80;
     return 32; // float and float32
@@ -791,7 +790,7 @@ static bool isSafeNumericWidening(Type source, Type target) {
 
     if ((source.isInteger() || source.isChar()) && target.isFloatingPoint()) {
         // Largest integer width exactly representable in the mantissa.
-        int maxWidth = target.isFloat16() ? 8 : target.isFloat64() ? 32 : target.isFloat80() ? 64 : 16;
+        int maxWidth = target.isFloat64() ? 32 : target.isFloat80() ? 64 : 16;
         return width(source) <= maxWidth;
     }
 

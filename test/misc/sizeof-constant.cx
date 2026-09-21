@@ -22,8 +22,6 @@ void main() {
     println(sizeof(uint128));
     // CHECK-NEXT:4
     println(sizeof(float));
-    // CHECK-NEXT:2
-    println(sizeof(float16));
     // CHECK-NEXT:4
     println(sizeof(float32));
     // CHECK-NEXT:8

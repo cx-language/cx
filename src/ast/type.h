@@ -63,7 +63,7 @@ struct Type {
     bool isConstantArray() const;
     bool isArrayRef() const;
     bool isUnsizedArrayPointer() const;
-    bool isFloatingPoint() const { return isFloat() || isFloat16() || isFloat32() || isFloat64() || isFloat80(); }
+    bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
     bool isIncrementable() const { return isInteger() || isFloatingPoint() || isUnsizedArrayPointer(); }
@@ -84,7 +84,6 @@ struct Type {
     bool isUInt128() const;
     bool isByte() const;
     bool isFloat() const;
-    bool isFloat16() const;
     bool isFloat32() const;
     bool isFloat64() const;
     bool isFloat80() const;
@@ -147,7 +146,6 @@ struct Type {
     // TODO: Return correct uintptr type by checking target platform pointer size.
     static Type getUIntPtr(Mutability mutability = Mutability::Mutable, Location location = Location()) { return getUInt64(mutability, location); }
     static Type getFloat(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getFloat16(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getFloat32(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getFloat64(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getFloat80(Mutability mutability = Mutability::Mutable, Location location = Location());

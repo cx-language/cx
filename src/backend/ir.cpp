@@ -614,7 +614,7 @@ bool IRType::isUnsignedInteger() {
 
 bool IRType::isFloatingPoint() {
     if (!isBasicType()) return false;
-    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"float", "float16", "float32", "float64", "float80"}, true).Default(false);
+    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"float", "float32", "float64", "float80"}, true).Default(false);
 }
 
 bool IRType::isChar() {

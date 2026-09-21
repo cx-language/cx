@@ -49,29 +49,6 @@ private void printFloat32(float32 value, StringBuffer* stream) {
     stream.append(string(result));
 }
 
-private void printFloat16(float16 value, StringBuffer* stream) {
-    // NaN has an implementation-defined sign; print all NaNs the same.
-    if value != value {
-        stream.append("nan");
-        return;
-    }
-    char[1080] result = undefined;
-    // Shortest representation that parses back to the same value; 5 significant
-    // digits always round-trip for 16-bit floats.
-    int bestPrecision = 5;
-    uint64 bestLength = 1080;
-    for precision in 1..6 {
-        sprintf(result, "%.*g", precision, float64(value));
-        uint64 length = strlen(result);
-        if float16(strtof(result, null)) == value && length < bestLength {
-            bestPrecision = precision;
-            bestLength = length;
-        }
-    }
-    sprintf(result, "%.*g", bestPrecision, float64(value));
-    stream.append(string(result));
-}
-
 /// A floating-point number.
 struct float: Copyable, Comparable, Printable {
     /// Compares this value to another.
@@ -83,20 +60,6 @@ struct float: Copyable, Comparable, Printable {
     /// representation that parses back to the same value.
     void print(StringBuffer* stream) {
         printFloat32(this, stream);
-    }
-}
-
-/// A 16-bit floating-point number.
-struct float16: Copyable, Comparable, Printable {
-    /// Compares this value to another.
-    Ordering compare(float16* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
-    }
-
-    /// Writes this value to the given stream, using the shortest
-    /// representation that parses back to the same value.
-    void print(StringBuffer* stream) {
-        printFloat16(this, stream);
     }
 }
 

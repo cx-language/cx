@@ -93,7 +93,8 @@ struct CToCxConverter final : clang::ASTConsumer {
             return getIntTypeByWidth(targetInfo->getLongLongWidth(), false);
         case clang::BuiltinType::Float16:
         case clang::BuiltinType::BFloat16:
-            return Type::getFloat16();
+            ASSERT(false); // Skipped before conversion; float32 as a fallback.
+            return Type::getFloat32();
         case clang::BuiltinType::Float:
             return Type::getFloat();
         case clang::BuiltinType::Double:
@@ -276,12 +277,90 @@ struct CToCxConverter final : clang::ASTConsumer {
         module.sourceFiles.front().topLevelDecls.push_back(varDecl);
     }
 
+    // True when converting this type would reach a 16-bit float. Mirrors toCx
+    // case for case, including pointed-to records: conversion fills in record
+    // fields eagerly, so a pointer doesn't hide float16.
+    bool typeUsesFloat16(clang::QualType qualType, std::unordered_set<const clang::RecordDecl*>& visited) {
+        auto& type = *qualType.getTypePtr();
+        switch (type.getTypeClass()) {
+        case clang::Type::Pointer:
+            return typeUsesFloat16(llvm::cast<clang::PointerType>(type).getPointeeType(), visited);
+        case clang::Type::Builtin: {
+            auto kind = llvm::cast<clang::BuiltinType>(type).getKind();
+            return kind == clang::BuiltinType::Float16 || kind == clang::BuiltinType::BFloat16;
+        }
+        case clang::Type::Typedef:
+            return typeUsesFloat16(llvm::cast<clang::TypedefType>(type).desugar(), visited);
+        case clang::Type::PredefinedSugar:
+            return typeUsesFloat16(llvm::cast<clang::PredefinedSugarType>(type).desugar(), visited);
+        case clang::Type::Record: {
+            auto* def = llvm::cast<clang::RecordType>(type).getDecl()->getDefinition();
+            if (!def) return false;
+            return recordUsesFloat16(*def, visited);
+        }
+        case clang::Type::Paren:
+            return typeUsesFloat16(llvm::cast<clang::ParenType>(type).getInnerType(), visited);
+        case clang::Type::FunctionProto: {
+            auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
+            if (typeUsesFloat16(functionProtoType.getReturnType(), visited)) return true;
+            for (clang::QualType paramType : functionProtoType.getParamTypes()) {
+                if (typeUsesFloat16(paramType, visited)) return true;
+            }
+            return false;
+        }
+        case clang::Type::FunctionNoProto:
+            return typeUsesFloat16(llvm::cast<clang::FunctionNoProtoType>(type).getReturnType(), visited);
+        case clang::Type::ConstantArray:
+            return typeUsesFloat16(llvm::cast<clang::ConstantArrayType>(type).getElementType(), visited);
+        case clang::Type::IncompleteArray:
+            return typeUsesFloat16(llvm::cast<clang::IncompleteArrayType>(type).getElementType(), visited);
+        case clang::Type::Attributed:
+            return typeUsesFloat16(llvm::cast<clang::AttributedType>(type).getEquivalentType(), visited);
+        case clang::Type::Decayed:
+            return typeUsesFloat16(llvm::cast<clang::DecayedType>(type).getDecayedType(), visited);
+        case clang::Type::Vector:
+            return typeUsesFloat16(llvm::cast<clang::VectorType>(type).getElementType(), visited);
+        case clang::Type::Enum:
+        default:
+            return false;
+        }
+    }
+
+    bool recordUsesFloat16(const clang::RecordDecl& recordDecl, std::unordered_set<const clang::RecordDecl*>& visited) {
+        const clang::RecordDecl* def = recordDecl.getDefinition();
+        if (!def) return false;
+        if (!visited.insert(llvm::cast<clang::RecordDecl>(def->getCanonicalDecl())).second) return false;
+        for (auto* field : def->fields()) {
+            if (typeUsesFloat16(field->getType(), visited)) return true;
+        }
+        return false;
+    }
+
+    // 16-bit floats have no cx counterpart and no size- and ABI-preserving
+    // mapping, so declarations using them are skipped. The header still
+    // imports; using a skipped name fails at the use site.
+    bool skipIfUsesFloat16(clang::QualType type, llvm::StringRef name, Location location) {
+        std::unordered_set<const clang::RecordDecl*> visited;
+        if (!typeUsesFloat16(type, visited)) return false;
+        WARN(location, "skipping C declaration '" << name << "': 16-bit floating-point types are not supported");
+        return true;
+    }
+
+    bool skipIfUsesFloat16(const clang::RecordDecl& recordDecl) {
+        std::unordered_set<const clang::RecordDecl*> visited;
+        if (!recordUsesFloat16(recordDecl, visited)) return false;
+        WARN(toCx(recordDecl.getLocation()), "skipping C declaration '" << getName(recordDecl) << "': 16-bit floating-point types are not supported");
+        return true;
+    }
+
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) override {
         for (clang::Decl* decl : declGroup) {
             try {
                 switch (decl->getKind()) {
                 case clang::Decl::Function: {
-                    auto functionDecl = toCx(*llvm::cast<clang::FunctionDecl>(decl));
+                    auto& clangDecl = llvm::cast<clang::FunctionDecl>(*decl);
+                    if (skipIfUsesFloat16(clangDecl.getType(), clangDecl.getNameAsString(), toCx(clangDecl.getLocation()))) break;
+                    auto functionDecl = toCx(clangDecl);
                     if (module.symbolTable.findInTopLevelScope(functionDecl->getName()).empty()) {
                         module.addToSymbolTable(functionDecl);
                         module.sourceFiles.front().topLevelDecls.push_back(functionDecl);
@@ -293,6 +372,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                     // Convert definitions even when a forward declaration came
                     // first; toCx unifies them via the canonical declaration.
                     if (!decl->isFirstDecl() && !recordDecl.isCompleteDefinition()) break;
+                    if (skipIfUsesFloat16(recordDecl)) break;
                     toCx(recordDecl);
                     break;
                 }
@@ -320,6 +400,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                 case clang::Decl::Var: {
                     auto& varDecl = llvm::cast<clang::VarDecl>(*decl);
                     if (varDecl.getLinkageInternal() != clang::Linkage::External) break;
+                    if (skipIfUsesFloat16(varDecl.getType(), varDecl.getNameAsString(), toCx(varDecl.getLocation()))) break;
                     auto* cxVarDecl = toCx(varDecl);
                     module.addToSymbolTable(*cxVarDecl);
                     module.sourceFiles.front().topLevelDecls.push_back(cxVarDecl);
@@ -327,6 +408,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                 }
                 case clang::Decl::Typedef: {
                     auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);
+                    if (skipIfUsesFloat16(typedefDecl.getUnderlyingType(), typedefDecl.getNameAsString(), toCx(typedefDecl.getLocation()))) break;
                     auto underlyingType = toCx(typedefDecl.getUnderlyingType());
                     if (underlyingType.isBasicType()) {
                         // HACK: This defines a type alias in a hacky way
