@@ -1,0 +1,89 @@
+import "OpenGL/gl3.h";
+
+uint compileShader(string path, uint kind) {
+    var source = readFile(path);
+    if source == null {
+        abort("cannot read shader file: ", path);
+    }
+    var shader = glCreateShader(kind);
+    var cstr = source.cString();
+    glShaderSource(shader, 1, cstr, null);
+    glCompileShader(shader);
+    int status = undefined;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, status);
+    if status == 0 {
+        char[512] log = undefined;
+        glGetShaderInfoLog(shader, 512, null, &log[0]);
+        var message = StringBuffer(&log[0]);
+        abort("shader compile failed: ", path, ": ", message);
+    }
+    return shader;
+}
+
+uint createProgram(string vertPath, string fragPath) {
+    var vert = compileShader(vertPath, GL_VERTEX_SHADER);
+    var frag = compileShader(fragPath, GL_FRAGMENT_SHADER);
+    var program = glCreateProgram();
+    glAttachShader(program, vert);
+    glAttachShader(program, frag);
+    glLinkProgram(program);
+    int status = undefined;
+    glGetProgramiv(program, GL_LINK_STATUS, status);
+    if status == 0 {
+        char[512] log = undefined;
+        glGetProgramInfoLog(program, 512, null, &log[0]);
+        var message = StringBuffer(&log[0]);
+        abort("program link failed: ", message);
+    }
+    glDeleteShader(vert);
+    glDeleteShader(frag);
+    return program;
+}
+
+struct BlockUniforms: Copyable {
+    int mvp;
+    int cameraPos;
+    int fogColor;
+    int fogNear;
+    int fogFar;
+}
+
+int uniformLoc(uint program, string name) {
+    var buf = StringBuffer(name);
+    return glGetUniformLocation(program, buf.cString());
+}
+
+BlockUniforms getBlockUniforms(uint program) {
+    return BlockUniforms(mvp = uniformLoc(program, "mvp"),
+        cameraPos = uniformLoc(program, "cameraPos"),
+        fogColor = uniformLoc(program, "fogColor"),
+        fogNear = uniformLoc(program, "fogNear"),
+        fogFar = uniformLoc(program, "fogFar"));
+}
+
+void setMat4(int location, Mat4* m) {
+    glUniformMatrix4fv(location, 1, GL_FALSE, m.m.data());
+}
+
+void setVec3(int location, Vec3* v) {
+    glUniform3f(location, v.x, v.y, v.z);
+}
+
+void setFloat(int location, float f) {
+    glUniform1f(location, f);
+}
+
+void setBlockFog(BlockUniforms* u, Vec3* eye) {
+    setVec3(u.cameraPos, eye);
+    var sky = Vec3(0.45, 0.65, 1.0);
+    setVec3(u.fogColor, sky);
+    setFloat(u.fogNear, 40.0);
+    setFloat(u.fogFar, 160.0);
+}
+
+void checkGlError(string where) {
+    var code = glGetError();
+    if code != GL_NO_ERROR {
+        abort("GL error at ", where, ": ", int(code));
+    }
+}

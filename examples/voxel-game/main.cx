@@ -1,0 +1,295 @@
+import "GLFW/glfw3.h";
+import "OpenGL/gl3.h";
+
+// Unbuffered line logging: println stays in the stdio buffer when stdout
+// is redirected, so live progress goes through the raw fd stream.
+void logLine<T: Printable>(T*... args) {
+    var out = stdout();
+    for arg in args {
+        out.write(arg);
+    }
+    out.write("\n");
+}
+
+void appendInt(StringBuffer* buf, int value) {
+    var digits = "0123456789";
+    if value == 0 {
+        buf.append('0');
+        return;
+    }
+    var n = value;
+    if n < 0 {
+        buf.append('-');
+        n = -n;
+    }
+    var start = buf.size();
+    while n > 0 {
+        buf.append(digits[n % 10]);
+        n = n / 10;
+    }
+    var end = buf.size() - 1;
+    var i = start;
+    while i < end {
+        var tmp = buf[i];
+        buf[i] = buf[end];
+        buf[end] = tmp;
+        i++;
+        end--;
+    }
+}
+
+void buildCrosshairMesh(Mesh* m) {
+    var positions = List<float>();
+    var normals = List<float>();
+    var colors = List<float>();
+    var white = Vec3(1.0, 1.0, 1.0);
+    pushLine(positions, normals, Vec3(-0.015, 0.0, 0.0), Vec3(0.015, 0.0, 0.0));
+    pushLineColor(colors, white);
+    pushLine(positions, normals, Vec3(0.0, -0.02, 0.0), Vec3(0.0, 0.02, 0.0));
+    pushLineColor(colors, white);
+    initMesh(m, positions, normals, colors);
+}
+
+void buildHighlightMesh(Mesh* m, int x, int y, int z) {
+    var positions = List<float>();
+    var normals = List<float>();
+    var colors = List<float>();
+    var black = Vec3(0.0, 0.0, 0.0);
+    var x0 = float(x) - 0.01;
+    var y0 = float(y) - 0.01;
+    var z0 = float(z) - 0.01;
+    var x1 = float(x) + 1.01;
+    var y1 = float(y) + 1.01;
+    var z1 = float(z) + 1.01;
+    Vec3[8] c = [Vec3(x0, y0, z0), Vec3(x1, y0, z0), Vec3(x1, y0, z1), Vec3(x0, y0, z1),
+        Vec3(x0, y1, z0), Vec3(x1, y1, z0), Vec3(x1, y1, z1), Vec3(x0, y1, z1)];
+    int[24] e = [0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7];
+    for i in 0..12 {
+        pushLine(positions, normals, c[e[i * 2]], c[e[i * 2 + 1]]);
+        pushLineColor(colors, black);
+    }
+    initMesh(m, positions, normals, colors);
+}
+
+int runGame(bool debug) {
+    if glfwInit() == 0 {
+        println("glfwInit failed");
+        return 1;
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
+    var window = glfwCreateWindow(1280, 720, "voxel-game", null, null);
+    if window == null {
+        println("glfwCreateWindow failed");
+        glfwTerminate();
+        return 1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    var program = createProgram("assets/block.vert", "assets/block.frag");
+    var flatProgram = createProgram("assets/block.vert", "assets/flat.frag");
+    var uniforms = getBlockUniforms(program);
+    var flatMvp = uniformLoc(flatProgram, "mvp");
+    glUseProgram(program);
+    var world = makeWorld(8, 8);
+    glEnable(GL_DEPTH_TEST);
+    Mesh crosshair = undefined;
+    buildCrosshairMesh(crosshair);
+    Mesh highlight = undefined;
+    buildHighlightMesh(highlight, 0, -10, 0);
+    var hasTarget = false;
+    int tx = 0;
+    int ty = -10;
+    int tz = 0;
+
+    var spawnH = terrainHeight(64, 64);
+    var player = Player(pos = Vec3(64.5, float(spawnH) + 2.0, 64.5), vel = Vec3(0.0, 0.0, 0.0),
+        yaw = 0.0, pitch = 0.0, onGround = false);
+    var selected = blockGrass;
+
+    var haveLast = false;
+    float64 lastX = undefined;
+    float64 lastY = undefined;
+    var prevLeft = false;
+    var prevRight = false;
+    var lastTime = glfwGetTime();
+    var fpsFrames = 0;
+    var fpsStart = lastTime;
+    var frameMax = 0.0;
+
+    while glfwWindowShouldClose(window) == 0 {
+        var now = glfwGetTime();
+        var dt = float(now - lastTime);
+        lastTime = now;
+        if dt > 0.05 {
+            dt = 0.05;
+        }
+        if dt < 0.0 {
+            dt = 0.0;
+        }
+
+        if glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS {
+            glfwSetWindowShouldClose(window, 1);
+        }
+
+        float64 mx = undefined;
+        float64 my = undefined;
+        glfwGetCursorPos(window, mx, my);
+        var input = Input();
+        if haveLast {
+            input.lookDX = float(mx - lastX);
+            input.lookDY = float(my - lastY);
+        }
+        lastX = mx;
+        lastY = my;
+        haveLast = true;
+        input.forward = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
+        input.back = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
+        input.left = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
+        input.right = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
+        input.jump = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+        input.sprint = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+
+        var want = selected;
+        if glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS {
+            want = blockGrass;
+        }
+        if glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS {
+            want = blockDirt;
+        }
+        if glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS {
+            want = blockStone;
+        }
+        if glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS {
+            want = blockSand;
+        }
+        if glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS {
+            want = blockWood;
+        }
+        if glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS {
+            want = blockLeaves;
+        }
+        if want != selected {
+            selected = want;
+            logLine("selected block ", int(selected));
+        }
+
+        updatePlayer(world, player, input, dt);
+
+        var hit = raycastVoxel(world, eyePos(player), lookDir(player), 6.0);
+        var showTarget = hit.hit && worldContains(world, hit.x, hit.y, hit.z);
+        if showTarget != hasTarget || (showTarget && (hit.x != tx || hit.y != ty || hit.z != tz)) {
+            destroyMesh(highlight);
+            if showTarget {
+                buildHighlightMesh(highlight, hit.x, hit.y, hit.z);
+                tx = hit.x;
+                ty = hit.y;
+                tz = hit.z;
+            } else {
+                buildHighlightMesh(highlight, 0, -10, 0);
+            }
+            hasTarget = showTarget;
+        }
+
+        var left = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+        var right = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+        if left && !prevLeft && showTarget {
+            if tryBreak(world, player) {
+                logLine("broke block at ", hit.x, " ", hit.y, " ", hit.z);
+            }
+        }
+        if right && !prevRight && hit.hit && worldContains(world, hit.px, hit.py, hit.pz) {
+            if tryPlace(world, player, selected) {
+                logLine("placed block at ", hit.px, " ", hit.py, " ", hit.pz);
+            }
+        }
+        prevLeft = left;
+        prevRight = right;
+
+        int width = undefined;
+        int height = undefined;
+        glfwGetFramebufferSize(window, width, height);
+        glViewport(0, 0, width, height);
+        glClearColor(0.45, 0.65, 1.0, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        var eye = eyePos(player);
+        var proj = mat4Perspective(radians(75.0), float(width) / float(height), 0.1, 500.0);
+        var view = mat4LookAt(eye, eye + lookDir(player), Vec3(0.0, 1.0, 0.0));
+        var mvp = proj * view;
+        glUseProgram(program);
+        setMat4(uniforms.mvp, mvp);
+        setBlockFog(uniforms, eye);
+        for i in 0..world.chunks.size() {
+            drawMesh(world.chunks[i].mesh);
+        }
+
+        glUseProgram(flatProgram);
+        setMat4(flatMvp, mvp);
+        if hasTarget {
+            drawMeshLines(highlight);
+        }
+        var ident = mat4Identity();
+        setMat4(flatMvp, ident);
+        glDisable(GL_DEPTH_TEST);
+        drawMeshLines(crosshair);
+        glEnable(GL_DEPTH_TEST);
+
+        fpsFrames++;
+        if dt > frameMax {
+            frameMax = dt;
+        }
+        if now - fpsStart >= 1.0 {
+            var title = StringBuffer("voxel-game - ");
+            appendInt(title, fpsFrames);
+            title.append(" FPS (");
+            appendInt(title, int(frameMax * 1000.0));
+            title.append("ms max)");
+            glfwSetWindowTitle(window, title.cString());
+            if debug {
+                logLine("debug pos=", player.pos.x, " ", player.pos.y, " ", player.pos.z,
+                    " yaw=", player.yaw, " pitch=", player.pitch, " fps=", fpsFrames,
+                    " target=", hit.hit, " ", hit.x, " ", hit.y, " ", hit.z);
+            }
+            fpsFrames = 0;
+            fpsStart = now;
+            frameMax = 0.0;
+        }
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    destroyMesh(crosshair);
+    destroyMesh(highlight);
+    destroyWorld(world);
+    glDeleteProgram(flatProgram);
+    glDeleteProgram(program);
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
+}
+
+int main(string[] args) {
+    var debug = false;
+    for i in 0..args.size() {
+        if args[i] == "--self-test" {
+            return runSelfTest();
+        }
+        if args[i] == "--screenshot" {
+            if i + 1 >= args.size() {
+                println("usage: --screenshot <path>");
+                return 1;
+            }
+            return runScreenshot(args[i + 1]);
+        }
+        if args[i] == "--debug" {
+            debug = true;
+        }
+    }
+    return runGame(debug);
+}

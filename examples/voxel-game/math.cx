@@ -1,0 +1,107 @@
+// 3D math: vectors, matrices, and transforms (column-major matrices).
+
+struct Vec3: Copyable {
+    float x;
+    float y;
+    float z;
+
+    float length() {
+        return sqrt(x * x + y * y + z * z);
+    }
+
+    Vec3 normalized() {
+        var len = length();
+        return Vec3(x / len, y / len, z / len);
+    }
+
+    float dot(Vec3 other) {
+        return x * other.x + y * other.y + z * other.z;
+    }
+
+    Vec3 cross(Vec3 other) {
+        return Vec3(
+            y * other.z - z * other.y,
+            z * other.x - x * other.z,
+            x * other.y - y * other.x
+        );
+    }
+}
+
+Vec3 operator+(Vec3 a, Vec3 b) {
+    return Vec3(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+
+Vec3 operator-(Vec3 a, Vec3 b) {
+    return Vec3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+Vec3 operator*(Vec3 v, float s) {
+    return Vec3(v.x * s, v.y * s, v.z * s);
+}
+
+Vec3 operator*(float s, Vec3 v) {
+    return Vec3(v.x * s, v.y * s, v.z * s);
+}
+
+struct Mat4: Copyable {
+    float[16] m;
+}
+
+Mat4 mat4Identity() {
+    var result = Mat4(m = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]);
+    return result;
+}
+
+Mat4 mat4Mul(Mat4 a, Mat4 b) {
+    var result = mat4Identity();
+    for col in 0..4 {
+        for row in 0..4 {
+            var sum = 0.0;
+            for k in 0..4 {
+                sum += a.m[k * 4 + row] * b.m[col * 4 + k];
+            }
+            result.m[col * 4 + row] = sum;
+        }
+    }
+    return result;
+}
+
+Mat4 operator*(Mat4 a, Mat4 b) {
+    return mat4Mul(a, b);
+}
+
+Mat4 mat4Perspective(float fovY, float aspect, float near, float far) {
+    var f = 1.0 / tan(fovY / 2.0);
+    var result = mat4Identity();
+    result.m[0] = f / aspect;
+    result.m[5] = f;
+    result.m[10] = (far + near) / (near - far);
+    result.m[11] = -1.0;
+    result.m[14] = (2.0 * far * near) / (near - far);
+    result.m[15] = 0.0;
+    return result;
+}
+
+Mat4 mat4LookAt(Vec3 eye, Vec3 center, Vec3 up) {
+    var f = (center - eye).normalized();
+    var s = f.cross(up).normalized();
+    var u = s.cross(f);
+    var result = mat4Identity();
+    result.m[0] = s.x;
+    result.m[4] = s.y;
+    result.m[8] = s.z;
+    result.m[1] = u.x;
+    result.m[5] = u.y;
+    result.m[9] = u.z;
+    result.m[2] = -f.x;
+    result.m[6] = -f.y;
+    result.m[10] = -f.z;
+    result.m[12] = -s.dot(eye);
+    result.m[13] = -u.dot(eye);
+    result.m[14] = f.dot(eye);
+    return result;
+}
+
+float radians(float degrees) {
+    return degrees * pi / 180.0;
+}
