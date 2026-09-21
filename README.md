@@ -1,30 +1,14 @@
-> [!NOTE]
-> This project was started in January 2017 after I had been annoyed with C++ for a long time, and had not found any good
-> alternatives for my use cases.
-> The current state of the project is that it's functional, but far from truly production-ready. I almost got to the
-> point of releasing the first pre-release version and announcing the project publicly.
-> However, nowadays there are several languages with sufficiently similar design goals, such
-> as [Odin](https://odin-lang.org/), [Jai](https://en.wikipedia.org/?title=JAI_(programming_language)&redirect=no),
-> and [Zig](https://ziglang.org/). Therefore, this project is no longer being developed.
-
 # The cx Programming Language
 
-cx is a C-based hybrid low-level/high-level programming language focused on runtime
+cx (stylized as lowercase, not to be confused with languages called CX or Cx) is a C-family hybrid low-level/high-level programming language focused on runtime
 performance and developer productivity (in this order of priority). The language is simple and unopinionated,
 supporting imperative, generic, data-oriented, functional, and object-oriented programming.
-It compiles to efficient native code via LLVM, with no garbage collection or hidden runtime.
+It compiles to efficient native code via LLVM or the C backend, with no garbage collection or hidden runtime.
 
-The project is still in early stages of development: some planned features have not yet been implemented,
-existing ones are subject to change, and the documentation is scarce.
 
-## Not to be confused with
-
-cx shares its name with several unrelated languages:
-
-- [CX](https://github.com/skycoin/cx), Skycoin's general-purpose language with Go-like syntax.
-- [Cx](https://github.com/fernandothedev/cx), a language that transpiles to C99.
-- [Cx](https://github.com/COMMENTERTHE9/Cx_lang), a GC-free systems language for game engines.
-- [C++/CX](https://learn.microsoft.com/en-us/cpp/cppcx/type-system-c-cx?view=msvc-170&redirectedfrom=MSDN), Microsoft's C++ extensions for the Windows Runtime.
+> [!NOTE]
+> The project is nearing its 0.1 release: there are still some planned features that haven't been implemented yet,
+and the currently implemented features are subject to change, and there are bugs.
 
 To learn more about the language, visit the website:
 
