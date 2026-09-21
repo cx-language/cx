@@ -181,10 +181,6 @@ struct ReportedWarning {
 
 static llvm::SmallSet<ReportedWarning, 8> reportedWarnings;
 
-void cx::resetReportedWarnings() {
-    reportedWarnings.clear();
-}
-
 void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes) {
     if (diagnosticOptions.disableWarnings) return;
 

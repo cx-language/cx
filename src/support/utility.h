@@ -115,7 +115,6 @@ void printStackTrace();
 [[noreturn]] void abort(llvm::StringRef message);
 void reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes = {});
 void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes = {});
-void resetReportedWarnings();
 
 #define ABORT(args) \
     { \

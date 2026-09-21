@@ -63,9 +63,7 @@ using NarrowMap = llvm::DenseMap<Decl*, Type>;
 struct Typechecker {
     Typechecker(const CompileOptions& options)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
-      isPostProcessing(false), options(options) {
-        resetReportedWarnings();
-    }
+      isPostProcessing(false), options(options) {}
     void typecheckModule(Module& module, const BuildConfig* config);
     void checkUnusedDecls(const Module& mainModule);
 
