@@ -126,7 +126,11 @@ struct VariableDecl : Decl {
     /// (Copyable struct or union receiver), so capturing it carries the pointer.
     bool isReferenceCapture() const { return getName() == "this"; }
     /// The closure field and hidden parameter type when capturing this variable.
-    Type getCaptureType() const { return isReferenceCapture() ? type.removePointer().getPointerTo() : type; }
+    Type getCaptureType() const {
+        // Capturing a borrow stores the address like capturing a pointer; the closure never owns the value.
+        if (type.isReferenceType()) return type.getPointee().getPointerTo();
+        return isReferenceCapture() ? type.removePointer().getPointerTo() : type;
+    }
 
 protected:
     VariableDecl(DeclKind kind, AccessLevel accessLevel, Decl* parent, Type type) : Decl(kind, accessLevel), parent(parent), type(type) {}

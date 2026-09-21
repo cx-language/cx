@@ -23,6 +23,11 @@ struct TupleElement;
 
 enum class Mutability { Mutable, Const };
 
+enum class PointerKind {
+    Pointer, // T*: an explicit, storable pointer. Formed with '&'.
+    Reference, // T&: an implicit, non-storable borrow. Only valid as a function parameter type.
+};
+
 enum class TypeKind {
     BasicType,
     ArrayType,
@@ -55,6 +60,7 @@ struct Type {
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
+    bool isReferenceType() const;
     bool isImplementedAsPointer() const;
     bool isUnresolvedType() const { return getKind() == TypeKind::UnresolvedType; }
     bool isOptionalType() const { return isBasicType() && getName() == "Optional"; }
@@ -105,6 +111,7 @@ struct Type {
     Type withMutability(Mutability m) const { return Type(typeBase, m, location); }
     Type getPointerTo() const;
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
+    Type removeReference() const { return isReferenceType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
     TypeKind getKind() const { return typeBase->kind; }
     bool isClosureType() const;
@@ -114,6 +121,7 @@ struct Type {
     DestructorDecl* getDestructor() const;
     bool equalsIgnoreTopLevelMutable(Type) const;
     bool containsUnresolvedPlaceholder() const;
+    bool containsReference() const;
     void printTo(std::ostream& stream) const;
     std::string toString() const;
 
@@ -126,6 +134,7 @@ struct Type {
     Type getReturnType() const;
     llvm::ArrayRef<Type> getParamTypes() const;
     Type getPointee() const;
+    PointerKind getPointerKind() const;
     Type getWrappedType() const;
 
     static Type getVoid(Mutability mutability = Mutability::Mutable, Location location = Location());
@@ -230,14 +239,15 @@ public:
 };
 
 struct PointerType : TypeBase {
-    static Type get(Type pointeeType, Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type get(Type pointeeType, PointerKind kind = PointerKind::Pointer, Mutability mutability = Mutability::Mutable, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::PointerType; }
 
 private:
-    PointerType(Type pointeeType) : TypeBase(TypeKind::PointerType), pointeeType(pointeeType) {}
+    PointerType(Type pointeeType, PointerKind kind) : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), pointerKind(kind) {}
 
 public:
     Type pointeeType;
+    PointerKind pointerKind;
 };
 
 namespace OptionalType {

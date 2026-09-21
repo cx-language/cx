@@ -4,6 +4,7 @@
 #include <llvm/ADT/StringSet.h>
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
+#include "../ast/arena.h"
 #include "../ast/module.h"
 #include "../driver/driver.h"
 
@@ -286,9 +287,12 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
             }
             break;
         }
-        case DeclKind::ParamDecl:
-            localVariableType = llvm::cast<ParamDecl>(varExpr->decl)->type;
+        case DeclKind::ParamDecl: {
+            auto paramType = llvm::cast<ParamDecl>(varExpr->decl)->type;
+            // The address of a borrow is the caller's address, not the parameter slot.
+            if (!paramType.isReferenceType()) localVariableType = paramType;
             break;
+        }
 
         default:
             break;
@@ -296,7 +300,7 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     }
 
     if (localVariableType && currentFunction->getReturnType().removeOptional().isPointerType()
-        && currentFunction->getReturnType().removeOptional().getPointee().equalsIgnoreTopLevelMutable(localVariableType)) {
+        && currentFunction->getReturnType().removeOptional().getPointee().equalsIgnoreTopLevelMutable(localVariableType.removeReference())) {
         WARN(returnValue->location, "returning pointer to local variable (local variables will not exist after the function returns)");
     }
 }
@@ -315,6 +319,11 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
 
     if (!currentFunction->getReturnType()) {
         ASSERT(currentFunction->isLambda());
+        if (returnValueType.isReferenceType()) {
+            // A borrow can't be returned: read the value out (copying or moving it) instead of aliasing it.
+            stmt.value = makeAST<ImplicitCastExpr>(stmt.value, returnValueType.getPointee(), ImplicitCastExpr::AutoDereference);
+            returnValueType = returnValueType.getPointee();
+        }
         currentFunction->proto.returnType = returnValueType;
     }
 

@@ -82,7 +82,7 @@ static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> me
     }
 }
 
-void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs) {
+void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs, bool allowReference) {
     switch (type.getKind()) {
     case TypeKind::BasicType: {
         Decl* decl;
@@ -154,12 +154,16 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         }
         break;
     case TypeKind::FunctionType:
+        // A borrow in a parameter slot never outlives the call, even when the function type itself is stored.
         for (auto paramType : type.getParamTypes()) {
-            typecheckType(paramType, userAccessLevel, recheckGenericArgs);
+            typecheckType(paramType, userAccessLevel, recheckGenericArgs, true);
         }
         typecheckType(type.getReturnType(), userAccessLevel, recheckGenericArgs);
         break;
     case TypeKind::PointerType: {
+        if (type.isReferenceType() && !allowReference) {
+            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter type");
+        }
         typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
     }
@@ -175,7 +179,7 @@ void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLeve
         }
     }
 
-    typecheckType(decl.type, userAccessLevel);
+    typecheckType(decl.type, userAccessLevel, true, true);
     if (!decl.getName().empty()) {
         currentModule->symbolTable.add(decl.getName(), &decl);
     }
@@ -725,6 +729,12 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         }
 
         decl.type = NOTNULL(initializerType.withMutability(decl.type.mutability));
+    }
+
+    if (decl.type.isReferenceType()) {
+        // A borrow can't be named: read the value out (copying or moving it) instead of aliasing it.
+        decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
+        decl.type = decl.type.getPointee();
     }
 
     if (!decl.type.isImplicitlyCopyable()) {

@@ -91,7 +91,7 @@ struct Typechecker {
     void typecheckDoWhileStmt(DoWhileStmt& doWhileStmt);
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
-    void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true);
+    void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true, bool allowReference = false);
     void typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel);
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel);
     void typecheckTypeDecl(TypeDecl& decl);
@@ -131,7 +131,7 @@ struct Typechecker {
     /// Inner conversions for pointer reinterpretation must preserve the value representation.
     bool isReinterpretible(const Expr* expr, Type source, Type target, bool diagnoseOutOfRange = true) const;
     void typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, bool positive = true);
-    Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam);
+    Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType = false);
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                 Type expectedType);
     Decl* findDecl(llvm::StringRef name, Location location) const;

@@ -93,7 +93,7 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
         mangleType(stream, type.getReturnType());
         break;
     case TypeKind::PointerType:
-        stream << 'P';
+        stream << (type.isReferenceType() ? 'R' : 'P');
         mangleType(stream, type.getPointee());
         break;
     case TypeKind::UnresolvedType:

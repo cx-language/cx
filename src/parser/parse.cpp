@@ -407,7 +407,7 @@ Type Parser::parseFunctionType(Type returnType) {
     return FunctionType::get(returnType, std::move(paramTypes), false, Mutability::Mutable, returnType.location);
 }
 
-/// type ::= simple-type | 'const' simple-type | type '*' | type '?' | function-type | tuple-type
+/// type ::= simple-type | 'const' simple-type | type '*' | type '&' | type '?' | function-type | tuple-type
 Type Parser::parseType() {
     Type type;
     auto location = getCurrentLocation();
@@ -430,7 +430,7 @@ Type Parser::parseType() {
     while (true) {
         switch (currentToken()) {
         case Token::Star:
-            type = PointerType::get(type, Mutability::Mutable, location);
+            type = PointerType::get(type, PointerKind::Pointer, Mutability::Mutable, location);
             consumeToken();
             break;
         case Token::QuestionMark:
@@ -449,7 +449,11 @@ Type Parser::parseType() {
             type = parseArrayType(type);
             break;
         case Token::And:
-            ERROR(getCurrentLocation(), "cx doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
+            type = PointerType::get(type, PointerKind::Reference, Mutability::Mutable, location);
+            consumeToken();
+            break;
+        case Token::AndAnd:
+            ERROR(getCurrentLocation(), "nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
         default:
             return type.withLocation(location);
         }
@@ -588,7 +592,7 @@ bool Parser::shouldParseVarStmt() {
                 while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
                     back -= 2;
                 }
-                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater})) {
+                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater, Token::And})) {
                     return true;
                 }
                 if (lookAhead(back).is(Token::Star)) {
@@ -606,7 +610,8 @@ bool Parser::shouldParseVarStmt() {
                 while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
                     back -= 2;
                 }
-                if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater, Token::Star})) {
+                if (lookAhead(back).is(
+                        {Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater, Token::Star, Token::And})) {
                     return true;
                 }
             }
@@ -650,6 +655,7 @@ bool Parser::shouldParseGenericArgumentListAfterMember() {
         case Token::Const:
         case Token::Comma:
         case Token::Star:
+        case Token::And:
         case Token::QuestionMark:
         case Token::QuestionQuestion:
         case Token::LeftBracket:

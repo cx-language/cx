@@ -131,7 +131,7 @@ struct CToCxConverter final : clang::ASTConsumer {
             if (pointeeType->isFunctionType()) {
                 return OptionalType::get(toCx(pointeeType), mutability);
             }
-            return OptionalType::get(PointerType::get(toCx(pointeeType), Mutability::Mutable), mutability);
+            return OptionalType::get(PointerType::get(toCx(pointeeType), PointerKind::Pointer, Mutability::Mutable), mutability);
         }
         case clang::Type::Builtin:
             return toCx(llvm::cast<clang::BuiltinType>(type)).withMutability(mutability);

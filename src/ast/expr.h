@@ -346,6 +346,7 @@ struct ImplicitCastExpr : Expr {
         OptionalUnwrap,
         AutoReference,
         AutoDereference,
+        Reborrow,
         NumericWiden,
     };
 

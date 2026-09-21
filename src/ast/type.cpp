@@ -118,7 +118,7 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
                                  location);
     }
     case TypeKind::PointerType:
-        return PointerType::get(getPointee().resolve(replacements), mutability, location);
+        return PointerType::get(getPointee().resolve(replacements), getPointerKind(), mutability, location);
     case TypeKind::UnresolvedType:
         llvm_unreachable("invalid unresolved type");
     }
@@ -155,8 +155,8 @@ Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isV
     return getType(FunctionType(returnType, std::move(paramTypes), isVariadic), mutability, location);
 }
 
-Type PointerType::get(Type pointeeType, Mutability mutability, Location location) {
-    return getType(PointerType(pointeeType), mutability, location);
+Type PointerType::get(Type pointeeType, PointerKind kind, Mutability mutability, Location location) {
+    return getType(PointerType(pointeeType, kind), mutability, location);
 }
 
 Type OptionalType::get(Type wrappedType, Mutability mutability, Location location) {
@@ -272,6 +272,32 @@ Type Type::getPointee() const {
     return llvm::cast<PointerType>(typeBase)->pointeeType.withLocation(location);
 }
 
+bool Type::isReferenceType() const {
+    return isPointerType() && llvm::cast<PointerType>(typeBase)->pointerKind == PointerKind::Reference;
+}
+
+PointerKind Type::getPointerKind() const {
+    return llvm::cast<PointerType>(typeBase)->pointerKind;
+}
+
+bool Type::containsReference() const {
+    switch (getKind()) {
+    case TypeKind::BasicType:
+        return llvm::any_of(getGenericArgs(), [](Type arg) { return arg.containsReference(); });
+    case TypeKind::ArrayType:
+        return getElementType().containsReference();
+    case TypeKind::TupleType:
+        return llvm::any_of(getTupleElements(), [](auto& element) { return element.type.containsReference(); });
+    case TypeKind::FunctionType:
+        return llvm::any_of(getParamTypes(), [](Type param) { return param.containsReference(); }) || getReturnType().containsReference();
+    case TypeKind::PointerType:
+        return isReferenceType() || getPointee().containsReference();
+    case TypeKind::UnresolvedType:
+        return false;
+    }
+    llvm_unreachable("all cases handled");
+}
+
 bool Type::isImplementedAsPointer() const {
     auto unwrapped = removeOptional();
     return unwrapped.isPointerType() || unwrapped.isUnsizedArrayPointer() || unwrapped.isFunctionType();
@@ -302,7 +328,7 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
     case TypeKind::FunctionType:
         return other.isFunctionType() && getReturnType() == other.getReturnType() && getParamTypes() == other.getParamTypes();
     case TypeKind::PointerType:
-        return other.isPointerType() && getPointee() == other.getPointee();
+        return other.isPointerType() && getPointerKind() == other.getPointerKind() && getPointee() == other.getPointee();
     case TypeKind::UnresolvedType:
         return false;
     }
@@ -459,7 +485,7 @@ void Type::printTo(std::ostream& stream) const {
     case TypeKind::PointerType:
         getPointee().printTo(stream);
         if (!isMutable()) stream << " const";
-        stream << '*';
+        stream << (isReferenceType() ? '&' : '*');
         break;
     case TypeKind::UnresolvedType:
         stream << "<UNRESOLVED>";

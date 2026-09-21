@@ -364,7 +364,8 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         if (expr.isConstant()) {
             operandType = operandType.withMutability(Mutability::Mutable);
         }
-        return PointerType::get(operandType);
+        // Taking the address of a borrow exposes the borrowed address; it never nests.
+        return PointerType::get(operandType.removeReference());
 
     case Token::Increment:
         operandType = operandType.removePointer();
@@ -393,6 +394,32 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     }
 }
 
+static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange);
+
+// Suggests '*' when a comparison mixes a raw pointer with an integer constant of its
+// pointee type. Only reachable when the builtin deref above didn't apply (e.g. optional
+// or void pointers) or no overload matched, where spelling the deref explicitly may help.
+static std::string mixedPointerOperandHint(const BinaryExpr& expr) {
+    if (!isComparisonOperator(expr.op)) return "";
+
+    const Expr &lhs = expr.getLHS(), &rhs = expr.getRHS();
+    auto isRawPointer = [](Type type) { return type.removeOptional().isPointerType() && !type.removeOptional().isReferenceType(); };
+
+    auto check = [&](const Expr& ptrSide, const Expr& valueSide) -> std::string {
+        Type pointee = ptrSide.type.removeOptional().getPointee();
+        if (!valueSide.isConstant() || (!valueSide.type.isInteger() && !valueSide.type.isChar()) || !pointee.isInteger()) return "";
+        if (!checkRange(valueSide, valueSide.getConstantIntegerValue(), pointee, false)) return "";
+        if (auto* var = llvm::dyn_cast<VarExpr>(&ptrSide)) {
+            return " (to compare the pointed-to value, dereference '*" + var->identifier + "')";
+        }
+        return " (to compare the pointed-to value, dereference the pointer operand with '*')";
+    };
+
+    if (isRawPointer(lhs.type) && !isRawPointer(rhs.type)) return check(lhs, rhs);
+    if (isRawPointer(rhs.type) && !isRawPointer(lhs.type)) return check(rhs, lhs);
+    return "";
+}
+
 static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) {
     std::string hint;
 
@@ -405,7 +432,7 @@ static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind
         }
         hint += "' cannot be null)";
     } else {
-        hint = "";
+        hint = mixedPointerOperandHint(expr);
     }
 
     ERROR(expr.location, "invalid operands '" << expr.getLHS().type << "' and '" << expr.getRHS().type << "' to '" << toString(op) << "'" << hint);
@@ -428,8 +455,6 @@ static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* curr
     }
     return false;
 }
-
-static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange);
 
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.op;
@@ -519,6 +544,25 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
+    }
+
+    // Operators auto-deref: unless both operands are raw pointers (an address comparison),
+    // deref any pointer or borrow operand so the operation applies to the pointed-to values.
+    // Derefing up front lets the conversions below handle inexact matches, e.g. 'uint*' against
+    // an 'int' constant. Optional and unsized-array-pointer operands are excluded: they keep
+    // the conversions below (null-aware identity, pointer-to-array decay). Null literals are
+    // excluded so 'p == null' still reports the pointer type.
+    bool bothRawPointers = leftType.isPointerType() && rightType.isPointerType() && !leftType.isReferenceType() && !rightType.isReferenceType();
+    bool eitherSpecial = leftType.isOptionalType() || rightType.isOptionalType() || leftType.isUnsizedArrayPointer() || rightType.isUnsizedArrayPointer();
+    if (!bothRawPointers && !eitherSpecial) {
+        if (leftType.isPointerType() && !leftType.getPointee().isVoid() && !expr.getRHS().isNullLiteralExpr()) {
+            expr.setLHS(makeAST<ImplicitCastExpr>(&expr.getLHS(), leftType.getPointee(), ImplicitCastExpr::AutoDereference));
+            leftType = leftType.getPointee();
+        }
+        if (rightType.isPointerType() && !rightType.getPointee().isVoid() && !expr.getLHS().isNullLiteralExpr()) {
+            expr.setRHS(makeAST<ImplicitCastExpr>(&expr.getRHS(), rightType.getPointee(), ImplicitCastExpr::AutoDereference));
+            rightType = rightType.getPointee();
+        }
     }
 
     if (leftType.removeOptional().isPointerType() && rightType.removeOptional().isPointerType()) {
@@ -633,7 +677,7 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
         }
     }
 
-    if (!rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
+    if (!rhsType.removeReference().isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
         setMoved(rhs, true);
         setMoved(lhs, false);
     }
@@ -835,7 +879,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isPointerType() && target.isPointerType() && (source.getPointee().isMutable() || !target.getPointee().isMutable())
+    if (source.isPointerType() && target.isPointerType() && source.isReferenceType() == target.isReferenceType()
+        && (source.getPointee().isMutable() || !target.getPointee().isMutable())
         && (isReinterpretible(nullptr, source.getPointee(), target.getPointee(), diagnoseOutOfRange) || target.getPointee().isVoid())) {
         return source;
     }
@@ -868,7 +913,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         if ((expr->type.isInteger() || expr->type.isChar() || (expr->type.isEnumType() && !llvm::cast<EnumDecl>(expr->type.getDecl())->hasAssociatedValues()))
             && expr->isConstant()) {
             auto value = expr->getConstantIntegerValue();
-            auto adjustedTarget = allowPointerToTemporary ? target.removePointer() : target; // Convert e.g. int literal to uint when comparing to uint*.
+            // Convert e.g. int literal to uint when binding to uint&; raw pointer parameters require an explicit '&'.
+            auto adjustedTarget = allowPointerToTemporary ? target.removeReference() : target;
 
             if (adjustedTarget.isInteger()) {
                 if (!checkRange(*expr, value, adjustedTarget, diagnoseOutOfRange)) return Type();
@@ -891,7 +937,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         // Special case: allow passing string literals as C-strings (const char* or const char[*]).
-        if (expr->isStringLiteralExpr()
+        if (expr->isStringLiteralExpr() && !target.removeOptional().isReferenceType()
             && ((target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() && !target.removeOptional().getPointee().isMutable())
                 || (target.removeOptional().isUnsizedArrayPointer() && target.removeOptional().getElementType().isChar()
                     && !target.removeOptional().getElementType().isMutable()))) {
@@ -916,12 +962,22 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.removeOptional().isPointerType() &&
-        // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
-        (source.isMutable() || (expr && expr->isConstant()) || !target.removeOptional().getPointee().isMutable())
-        && isReinterpretible(expr, source, target.removeOptional().getPointee(), diagnoseOutOfRange)) {
+    // Bind values to borrow parameters implicitly. Borrowing never copies, moves, or stores, and requires
+    // an exact type match: the backend passes the operand's address as is, so no representation change
+    // (wrapping, view conversion) may happen underneath the borrow. Raw pointer parameters require '&'.
+    if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.isReferenceType() &&
+        // Allow forming mutable borrows of constants. This is safe because constants will be inlined at the usage site.
+        (source.isMutable() || (expr && expr->isConstant()) || !target.getPointee().isMutable()) && source.equalsIgnoreTopLevelMutable(target.getPointee())) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return source;
+    }
+
+    // Reborrow a pointer as a borrow of its pointee. The address passes through unchanged;
+    // this only reinterprets the static type, so borrows keep working where pointers flow.
+    if (target.isReferenceType() && source.isPointerType() && !source.isReferenceType() && (source.getPointee().isMutable() || !target.getPointee().isMutable())
+        && source.getPointee().equalsIgnoreTopLevelMutable(target.getPointee())) {
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::Reborrow;
+        return target;
     }
 
     if (source.isPointerType() && source.getPointee() == target && expr && !expr->isReferenceExpr()) {
@@ -1028,7 +1084,13 @@ bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
     llvm_unreachable("all cases handled");
 }
 
-Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam) {
+Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType) {
+    if (!inFunctionType && argType.isReferenceType() && !paramType.isReferenceType()) {
+        // A bare borrow binds as its referent, so borrowing never leaks into inferred value types.
+        // Inside function types the borrow is part of the callee's ABI and must be preserved.
+        argType = argType.getPointee();
+    }
+
     if (paramType.isBasicType() && paramType.getName() == genericParam) {
         return argType;
     }
@@ -1038,7 +1100,7 @@ Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef g
         // capturing lambdas where plain function pointers are expected.
         auto closureParams = argType.getClosureParamTypes();
         std::vector<Type> paramTypes(closureParams.begin(), closureParams.end());
-        return findGenericArg(FunctionType::get(argType.getClosureReturnType(), std::move(paramTypes), false), paramType, genericParam);
+        return findGenericArg(FunctionType::get(argType.getClosureReturnType(), std::move(paramTypes), false), paramType, genericParam, inFunctionType);
     }
 
     switch (argType.getKind()) {
@@ -1046,7 +1108,7 @@ Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef g
         if (!argType.getGenericArgs().empty() && paramType.isBasicType() && paramType.getName() == argType.getName()) {
             ASSERT(argType.getGenericArgs().size() == paramType.getGenericArgs().size());
             for (auto&& [argTypeGenericArg, paramTypeGenericArg] : llvm::zip_first(argType.getGenericArgs(), paramType.getGenericArgs())) {
-                if (Type type = findGenericArg(argTypeGenericArg, paramTypeGenericArg, genericParam)) {
+                if (Type type = findGenericArg(argTypeGenericArg, paramTypeGenericArg, genericParam, inFunctionType)) {
                     return type;
                 }
             }
@@ -1055,14 +1117,14 @@ Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef g
 
     case TypeKind::ArrayType:
         if (paramType.isArrayType()) {
-            return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam);
+            return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
         }
         break;
 
     case TypeKind::TupleType:
         if (paramType.isTupleType()) {
             for (auto&& [argTypeElement, paramTypeElement] : llvm::zip_first(argType.getTupleElements(), paramType.getTupleElements())) {
-                if (Type type = findGenericArg(argTypeElement.type, paramTypeElement.type, genericParam)) {
+                if (Type type = findGenericArg(argTypeElement.type, paramTypeElement.type, genericParam, inFunctionType)) {
                     return type;
                 }
             }
@@ -1072,17 +1134,17 @@ Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef g
     case TypeKind::FunctionType:
         if (paramType.isFunctionType()) {
             for (auto&& [argTypeParamType, paramTypeParamTypes] : llvm::zip_first(argType.getParamTypes(), paramType.getParamTypes())) {
-                if (Type type = findGenericArg(argTypeParamType, paramTypeParamTypes, genericParam)) {
+                if (Type type = findGenericArg(argTypeParamType, paramTypeParamTypes, genericParam, true)) {
                     return type;
                 }
             }
-            return findGenericArg(argType.getReturnType(), paramType.getReturnType(), genericParam);
+            return findGenericArg(argType.getReturnType(), paramType.getReturnType(), genericParam, true);
         }
         break;
 
     case TypeKind::PointerType:
         if (paramType.isPointerType()) {
-            return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
+            return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam, inFunctionType);
         }
         break;
 
@@ -1093,11 +1155,11 @@ Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef g
     // TODO: Should probably try matching generic arg also with implicitly-converted values, instead duplicating the special cases here. This is bug prone.
 
     if (paramType.removeOptional().isPointerType()) {
-        return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam);
+        return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam, inFunctionType);
     }
 
     if (paramType.isArrayRef() && argType.removeOptional().removePointer().isArrayType()) {
-        return findGenericArg(argType.removeOptional().removePointer().getElementType(), paramType.getElementType(), genericParam);
+        return findGenericArg(argType.removeOptional().removePointer().getElementType(), paramType.getElementType(), genericParam, inFunctionType);
     }
 
     return Type();
@@ -1454,9 +1516,48 @@ void cx::diagnoseClosureConversion(Type source, Type target, Location location) 
 }
 
 std::string cx::narrowingHint(Type source, Type target) {
+    if (target.removeOptional().isPointerType() && !target.removeOptional().isReferenceType()
+        && source.equalsIgnoreTopLevelMutable(target.removeOptional().getPointee())) {
+        return " (use '&' to take the address explicitly)";
+    }
     auto isNumeric = [](Type type) { return type.isInteger() || type.isFloatingPoint() || type.isChar(); };
     if (!isNumeric(source) || !isNumeric(target)) return "";
     return " (use '" + target.toString() + "(...)' to convert explicitly)";
+}
+
+// Suggests '&' when a call would match a concrete candidate by taking addresses.
+static std::string addressOfHintForCall(const CallExpr& expr, llvm::ArrayRef<Decl*> candidates) {
+    for (Decl* candidate : candidates) {
+        auto* functionDecl = llvm::dyn_cast<FunctionDecl>(candidate);
+        if (!functionDecl || functionDecl->isVariadic()) continue;
+        auto params = functionDecl->getParams();
+        if (params.size() != expr.args.size()) continue;
+        if (llvm::any_of(expr.args, [](auto& arg) { return !arg.name.empty(); })) continue;
+
+        bool anyAddress = false;
+        const Expr* firstAddressArg = nullptr;
+        for (size_t i = 0; i < expr.args.size(); ++i) {
+            Type argType = expr.args[i].value->type;
+            Type paramType = params[i].type;
+            if (argType == paramType) continue;
+            if (paramType.isPointerType() && !paramType.isReferenceType() && argType.equalsIgnoreTopLevelMutable(paramType.getPointee())) {
+                anyAddress = true;
+                if (!firstAddressArg) firstAddressArg = expr.args[i].value;
+                continue;
+            }
+            anyAddress = false;
+            break;
+        }
+        if (!anyAddress) continue;
+
+        if (firstAddressArg) {
+            if (auto* var = llvm::dyn_cast<VarExpr>(firstAddressArg)) {
+                return " (did you mean '&" + var->identifier + "'?)";
+            }
+        }
+        return " (use '&' to pass arguments by pointer)";
+    }
+    return "";
 }
 
 void cx::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location) {
@@ -1505,6 +1606,11 @@ llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
             genericArgTypes = inferredGenericArgs;
         }
     } else {
+        for (Type arg : call.genericArgs) {
+            if (arg.containsReference()) {
+                ERROR(arg.location, "reference type '" << arg << "' may only appear as a function parameter type");
+            }
+        }
         genericArgTypes = call.genericArgs;
     }
 
@@ -1531,6 +1637,12 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
 
     auto sourceType = typecheckExpr(*expr.args.front().value);
     auto targetType = BasicType::get(expr.getFunctionName(), {});
+
+    if (sourceType.isReferenceType()) {
+        // Borrows convert as their referent; builtin conversions always copy into a fresh scalar.
+        expr.args.front().value = makeAST<ImplicitCastExpr>(expr.args.front().value, sourceType.getPointee(), ImplicitCastExpr::AutoDereference);
+        sourceType = sourceType.getPointee();
+    }
 
     if (sourceType == targetType) {
         WARN(expr.callee->location, "unnecessary conversion to same type");
@@ -2036,12 +2148,12 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         if (auto binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
             // Don't list candidate functions for operators; they're usually irrelevant stdlib overloads that drown out the actual error.
             ERROR(expr.callee->location, "no matching operator '" << binaryExpr->op << "' with arguments '" << binaryExpr->getLHS().type << "' and '"
-                                                                  << binaryExpr->getRHS().type << "'");
+                                                                  << binaryExpr->getRHS().type << "'" << mixedPointerOperandHint(*binaryExpr));
         } else {
             auto argTypes = map(expr.args, [&](const NamedValue& arg) { return typecheckExpr(*arg.value).toString(); });
             ERROR_WITH_NOTES(expr.callee->location, getCandidateNotes(candidates, expr),
                              (isConstructorCall ? "no matching constructor '" : "no matching function '")
-                                 << calleeWithGenericArgs << "(" << llvm::join(argTypes, ", ") << ")'");
+                                 << calleeWithGenericArgs << "(" << llvm::join(argTypes, ", ") << ")'" << addressOfHintForCall(expr, candidates));
         }
     } else {
         ERROR(expr.callee->location, "'" << callee << "' is not a function");
@@ -2124,7 +2236,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             typecheckExpr(*expr.args[0].value);
 
             if (expr.isMoveInit()) {
-                if (!expr.args[0].value->type.isImplicitlyCopyable()) {
+                if (!expr.args[0].value->type.removeReference().isImplicitlyCopyable()) {
                     setMoved(expr.args[0].value, true);
                 }
                 return Type::getVoid();
@@ -2193,13 +2305,13 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         for (size_t i = 0; i < expr.args.size(); ++i) {
             int paramIndex = expr.argParamIndices[i];
             const ParamDecl* param = (paramIndex != -1 && size_t(paramIndex) < params.size()) ? &params[size_t(paramIndex)] : nullptr;
-            if (!expr.args[i].value->type.isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
+            if (!expr.args[i].value->type.removeReference().isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
                 setMoved(expr.args[i].value, true);
             }
         }
     } else {
         for (auto&& [param, arg] : llvm::zip_longest(params, expr.args)) {
-            if (arg && !arg->value->type.isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
+            if (arg && !arg->value->type.removeReference().isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
                 setMoved(arg->value, true);
             }
         }
@@ -2505,7 +2617,7 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
             }
         }
     }
-    typecheckType(expr.operandType, AccessLevel::None);
+    typecheckType(expr.operandType, AccessLevel::None, /*recheckGenericArgs=*/true, /*allowReference=*/true);
     return Type::getUInt64();
 }
 
@@ -2863,7 +2975,9 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
     if (!type.isUndefined()) { // TODO: Don't special-case the 'undefined' type.
         // Expression types derive from already-checked declarations, so rechecking their
         // generic arguments would only duplicate warnings (e.g. inside generic method bodies).
-        typecheckType(type, AccessLevel::None, /*recheckGenericArgs=*/false);
+        // Top-level borrows are legitimate transient expression types (e.g. a bare borrow
+        // parameter); stored borrows are still rejected in nested positions.
+        typecheckType(type, AccessLevel::None, /*recheckGenericArgs=*/false, /*allowReference=*/true);
     }
 
     return expr.type;

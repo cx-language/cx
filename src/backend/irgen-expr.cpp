@@ -205,6 +205,10 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
         return operand;
     }
     case Token::And: {
+        // A borrow already is the address; load it out of its slot instead of taking the slot's address.
+        if (expr.getOperand().type.isReferenceType()) {
+            return loadThroughStorageAddress(emitExprAsPointer(expr.getOperand()), expr.getOperand().type);
+        }
         auto* value = emitExprAsPointer(expr.getOperand());
         // 'this' is an SSA value, not memory, so spill it to a temporary to form a real address.
         // FIXME: This is a point-in-time copy; stores through the address don't update the original.
@@ -1114,6 +1118,8 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
         return emitPlainExpr(*expr.operand);
     case ImplicitCastExpr::AutoDereference:
         return createLoad(emitPlainExpr(*expr.operand));
+    case ImplicitCastExpr::Reborrow:
+        return emitExpr(*expr.operand);
     case ImplicitCastExpr::NumericWiden:
         return createCastIfNeeded(emitExpr(*expr.operand), expr.type);
     }
