@@ -52,7 +52,7 @@ BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> d
     auto& symbols = module.symbolTable;
     name = getConfigValue<StringLiteralExpr>(symbols.findOne("name"), "");
     multitarget = getConfigValue<BoolLiteralExpr>(symbols.findOne("multitarget"), false);
-    outputDirectory = getConfigValue<StringLiteralExpr>(symbols.findOne("outputDirectory"), "bin");
+    outputDirectory = getConfigValue<StringLiteralExpr>(symbols.findOne("outputDirectory"), ".");
     this->defines = getStringList(symbols.findOne("defines"));
     libraries = getStringList(symbols.findOne("libraries"));
     frameworks = getStringList(symbols.findOne("frameworks"));

@@ -24,8 +24,8 @@ var libraries = ["m"]
 
 Supported settings:
 
-- `name`: the executable name. Output goes in the `bin` directory by default.
-- `outputDirectory`: where to place executables (`bin` by default).
+- `name`: the executable name. Output goes in the project root directory by default.
+- `outputDirectory`: where to place executables (project root by default).
 - `multitarget`: if true, build each subdirectory of `src/` (or of the project directory, if there is no `src/`) as a separate executable.
 - `defines`: preprocessor definitions, as if passed with `-D`.
 - `libraries`: system libraries to link, as if passed with `-l`.

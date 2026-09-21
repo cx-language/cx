@@ -688,15 +688,25 @@ static void addConfigBuildFlags(const BuildConfig& config) {
     addPkgConfigFlags(config.pkgConfigDependencies);
 }
 
+static std::string getDefaultOutputFileName(llvm::StringRef targetRootDir) {
+    llvm::StringRef filename = llvm::sys::path::filename(targetRootDir);
+    if (!filename.empty() && filename != "." && filename != "..") return filename.str();
+    llvm::SmallString<128> currentPath;
+    if (auto error = llvm::sys::fs::current_path(currentPath)) return "main";
+    filename = llvm::sys::path::filename(currentPath);
+    if (filename.empty()) return "main";
+    return filename.str();
+}
+
 static int buildDirectory(llvm::StringRef directory, const char* argv0) {
     BuildConfig config(directory.str(), {defines.begin(), defines.end()});
     fetchDependencies(config);
     addConfigBuildFlags(config);
 
     for (auto& targetRootDir : config.getTargetRootDirectories()) {
-        llvm::StringRef outputFileName;
+        std::string outputFileName;
         if (config.multitarget || config.name.empty()) {
-            outputFileName = llvm::sys::path::filename(targetRootDir);
+            outputFileName = getDefaultOutputFileName(targetRootDir);
         } else {
             outputFileName = config.name;
         }
@@ -707,7 +717,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0) {
             .config = &config,
             .argv0 = argv0,
             .outputDirectory = config.outputDirectory,
-            .outputFileName = outputFileName.str(),
+            .outputFileName = outputFileName,
         });
         if (exitStatus != 0) return exitStatus;
     }

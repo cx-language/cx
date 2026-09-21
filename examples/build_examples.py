@@ -27,10 +27,14 @@ for file in os.listdir("."):
         os.remove(output)
     elif file not in ignored_dirs and os.path.isdir(file):
         extra_args = ["-Wno-unused"] if file in no_unused_dirs else []
+        before = set(os.listdir(file))
         exit_status = subprocess.call([args.cx, "build", "-Werror"] + extra_args + cx_args, cwd=file)
-        bin_dir = os.path.join(file, "bin")
-        if os.path.isdir(bin_dir):
-            shutil.rmtree(bin_dir)
+        for entry in set(os.listdir(file)) - before:
+            path = os.path.join(file, entry)
+            if os.path.isdir(path) and not os.path.islink(path):
+                shutil.rmtree(path)
+            else:
+                os.remove(path)
     else:
         continue
 

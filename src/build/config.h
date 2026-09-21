@@ -26,7 +26,7 @@ struct BuildConfig {
     std::string name;
     std::vector<Dependency> declaredDependencies;
     bool multitarget = false;
-    std::string outputDirectory;
+    std::string outputDirectory = ".";
     std::vector<std::string> defines;
     std::vector<std::string> libraries;
     std::vector<std::string> frameworks;

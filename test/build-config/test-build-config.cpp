@@ -85,17 +85,28 @@ void testMissingUrl() {
     check(false, "dependency without url field is rejected");
 }
 
+void testMissingBuildFile() {
+    llvm::SmallString<128> dir;
+    checkNoError(llvm::sys::fs::createUniqueDirectory("cx-build-config-test", dir), "create temp project directory");
+    cx::BuildConfig config{std::string(dir.str())};
+    check(config.name.empty(), "name defaults to empty");
+    check(config.outputDirectory == ".", "output directory defaults to project root");
+    check(!config.multitarget, "multitarget defaults to false");
+}
+
 } // namespace
 
 int main(int argc, const char** argv) {
     if (argc != 2) {
-        std::cerr << "usage: test_build_config <git-urls|missing-url>\n";
+        std::cerr << "usage: test_build_config <git-urls|missing-url|missing-build-file>\n";
         return 2;
     }
 
     std::string testCase = argv[1];
     if (testCase == "git-urls") {
         testGitUrls();
+    } else if (testCase == "missing-build-file") {
+        testMissingBuildFile();
     } else if (testCase == "missing-url") {
         testMissingUrl();
     } else {
