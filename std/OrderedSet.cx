@@ -13,24 +13,24 @@ struct OrderedSet<Element> {
     }
 
     /// Returns true if the Set contains `e`, otherwise false.
-    bool contains(Element* e) {
+    bool contains(Element& e) {
         return map.contains(e);
     }
 
     /// Removes an element from the Set, if it exists.
-    void remove(Element* e) {
+    void remove(Element& e) {
         map.remove(e);
     }
 
     /// Returns the value immediately lower than `e`, or `null` if
     /// `e` is the smallest element in the Set.
-    Element*? lower(Element* e) {
+    Element*? lower(Element& e) {
         return map.lowerKey(e);
     }
 
     /// Returns the value immediately higher than `e`, or `null` if
     /// `e` is the largest element in the Set.
-    Element*? higher(Element* e) {
+    Element*? higher(Element& e) {
         return map.higherKey(e);
     }
 
@@ -65,7 +65,7 @@ struct OrderedSetIterator<Element>: Copyable, Iterator<Element*> {
     private OrderedMapIterator<Element, bool> mapIter;
 
     /// Initializes an iterator over the given set.
-    OrderedSetIterator(OrderedSet<Element>* set) {
+    OrderedSetIterator(OrderedSet<Element>& set) {
         this.mapIter = set.map.iterator();
     }
 
@@ -76,7 +76,7 @@ struct OrderedSetIterator<Element>: Copyable, Iterator<Element*> {
 
     /// Returns the current element.
     Element* value() {
-        return mapIter.value().key;
+        return &mapIter.value().key;
     }
 
     /// Advances to the next element.

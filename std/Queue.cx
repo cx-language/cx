@@ -52,7 +52,7 @@ struct Queue<T> {
 
     /// Access element in the front of the queue
     T* first() {
-        return head!.value;
+        return &head!.value;
     }
 
     /// Returns the number of elements in the queue

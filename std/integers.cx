@@ -50,7 +50,7 @@ const uint64 uint64_min = 0;
 // TODO: Remove code duplication by declaring an 'Integer' interface that implements the 'compare'
 // function for all integer types.
 
-private void printSigned(int64 value, StringBuffer* stream) {
+private void printSigned(int64 value, StringBuffer& stream) {
     if value < 0 {
         stream.append('-');
         // Negate via value + 1 so that int64_min doesn't overflow.
@@ -60,7 +60,7 @@ private void printSigned(int64 value, StringBuffer* stream) {
     }
 }
 
-private void printUnsigned(uint64 value, StringBuffer* stream) {
+private void printUnsigned(uint64 value, StringBuffer& stream) {
     char[20] digits = undefined;
     var count = 0;
 
@@ -83,12 +83,12 @@ private void printUnsigned(uint64 value, StringBuffer* stream) {
 /// A signed integer.
 struct int: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(int* other) {
+    Ordering compare(int& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printSigned(int64(this), stream);
     }
 
@@ -101,12 +101,12 @@ struct int: Copyable, Comparable, Printable, Hashable {
 /// An 8-bit signed integer.
 struct int8: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(int8* other) {
+    Ordering compare(int8& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printSigned(int64(this), stream);
     }
 
@@ -119,12 +119,12 @@ struct int8: Copyable, Comparable, Printable, Hashable {
 /// A 16-bit signed integer.
 struct int16: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(int16* other) {
+    Ordering compare(int16& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printSigned(int64(this), stream);
     }
 
@@ -137,12 +137,12 @@ struct int16: Copyable, Comparable, Printable, Hashable {
 /// A 32-bit signed integer.
 struct int32: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(int32* other) {
+    Ordering compare(int32& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printSigned(int64(this), stream);
     }
 
@@ -155,12 +155,12 @@ struct int32: Copyable, Comparable, Printable, Hashable {
 /// A 64-bit signed integer.
 struct int64: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(int64* other) {
+    Ordering compare(int64& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printSigned(this, stream);
     }
 
@@ -174,7 +174,7 @@ struct int64: Copyable, Comparable, Printable, Hashable {
 /// A 128-bit signed integer.
 struct int128: Copyable, Comparable {
     /// Compares this value to another.
-    Ordering compare(int128* other) {
+    Ordering compare(int128& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 }
@@ -182,12 +182,12 @@ struct int128: Copyable, Comparable {
 /// An unsigned integer.
 struct uint: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(uint* other) {
+    Ordering compare(uint& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -200,12 +200,12 @@ struct uint: Copyable, Comparable, Printable, Hashable {
 /// An 8-bit unsigned integer.
 struct uint8: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(uint8* other) {
+    Ordering compare(uint8& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -218,12 +218,12 @@ struct uint8: Copyable, Comparable, Printable, Hashable {
 /// An 8-bit unsigned integer.
 struct byte: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(byte* other) {
+    Ordering compare(byte& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -236,12 +236,12 @@ struct byte: Copyable, Comparable, Printable, Hashable {
 /// A 16-bit unsigned integer.
 struct uint16: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(uint16* other) {
+    Ordering compare(uint16& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -254,12 +254,12 @@ struct uint16: Copyable, Comparable, Printable, Hashable {
 /// A 32-bit unsigned integer.
 struct uint32: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(uint32* other) {
+    Ordering compare(uint32& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -272,12 +272,12 @@ struct uint32: Copyable, Comparable, Printable, Hashable {
 /// A 64-bit unsigned integer.
 struct uint64: Copyable, Comparable, Printable, Hashable {
     /// Compares this value to another.
-    Ordering compare(uint64* other) {
+    Ordering compare(uint64& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         printUnsigned(this, stream);
     }
 
@@ -291,7 +291,7 @@ struct uint64: Copyable, Comparable, Printable, Hashable {
 /// A 128-bit unsigned integer.
 struct uint128: Copyable, Comparable {
     /// Compares this value to another.
-    Ordering compare(uint128* other) {
+    Ordering compare(uint128& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 }

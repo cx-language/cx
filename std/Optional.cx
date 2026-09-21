@@ -5,38 +5,38 @@ enum Optional<T> {
 }
 
 /// Returns true if both optionals are equal.
-bool operator== <T: Comparable>(Optional<T>* a, Optional<T>* b) {
+bool operator== <T: Comparable>(Optional<T>& a, Optional<T>& b) {
     if ((*a == null) != (*b == null)) return false;
     if (*b == null) return true;
     return (*a)! == (*b)!;
 }
 
 /// Returns true if the optional holds a value equal to b.
-bool operator== <T: Comparable>(Optional<T>* a, T* b) {
+bool operator== <T: Comparable>(Optional<T>& a, T& b) {
     if (*a == null) return false;
     return (*a)! == *b;
 }
 
 /// Returns true if the optional holds a value equal to a.
-bool operator== <T: Comparable>(T* a, Optional<T>* b) {
+bool operator== <T: Comparable>(T& a, Optional<T>& b) {
     if (*b == null) return false;
     return *a == (*b)!;
 }
 
 /// Returns true if the optional pointer is non-null and points to a value equal to b.
-bool operator== <T: Comparable>(Optional<T*>* a, T* b) {
+bool operator== <T: Comparable>(Optional<T*>& a, T& b) {
     if (*a == null) return false;
     return *(*a) == *b;
 }
 
 /// Returns true if the optional pointer is non-null and points to a value equal to a.
-bool operator== <T: Comparable>(T* a, Optional<T*>* b) {
+bool operator== <T: Comparable>(T& a, Optional<T*>& b) {
     if (*b == null) return false;
     return *a == *(*b);
 }
 
 /// Prints the given value.
-void print<T: Printable>(Optional<T>* optional) {
+void print<T: Printable>(Optional<T>& optional) {
     if (*optional == null) {
         print("null");
     } else {

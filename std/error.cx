@@ -6,7 +6,7 @@ never abortWrapper() {
 }
 
 /// Aborts the program, printing the given values to stderr.
-never abort<T: Printable>(T*... args) {
+never abort<T: Printable>(T&... args) {
     for arg in args {
         stderr().write(arg);
     }

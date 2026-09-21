@@ -3,7 +3,7 @@
 interface Comparable {
     /// Returns `Ordering.Less` if `this` is less than `other`, `Ordering.Equal` if `this` is equal
     /// to `other`, or `Ordering.Greater` if `this` is greater than `other`.
-    Ordering compare(This* other);
+    Ordering compare(This& other);
 }
 
 /// The result of comparing two values.
@@ -17,11 +17,11 @@ enum Ordering {
 }
 
 /// Returns true if a equals b.
-bool operator== <T: Comparable>(T* a, T* b) {
+bool operator== <T: Comparable>(T& a, T& b) {
     return a.compare(b) == Ordering.Equal;
 }
 
 /// Returns true if a is less than b.
-bool operator< <T: Comparable>(T* a, T* b) {
+bool operator< <T: Comparable>(T& a, T& b) {
     return a.compare(b) == Ordering.Less;
 }

@@ -191,12 +191,12 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     /// Writes this string to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         stream.append(string(this));
     }
 
     /// Compares this string to another.
-    Ordering compare(StringBuffer* other) {
+    Ordering compare(StringBuffer& other) {
         return string(this).compare(string(other));
     }
 
@@ -230,7 +230,7 @@ StringBuffer operator+(string a, string b) {
 
 /// Concatenates the string and the character.
 StringBuffer operator+(string a, char b) {
-    return a + string(b, 1);
+    return a + string(&b, 1);
 }
 
 /// Concatenates the two strings.
@@ -262,26 +262,26 @@ StringBuffer operator+(StringBuffer a, char[*] b) {
 }
 
 /// Returns true if both strings are equal.
-bool operator==(StringBuffer* a, StringBuffer* b) {
+bool operator==(StringBuffer& a, StringBuffer& b) {
     return string(a) == string(b);
 }
 
 /// Returns true if both strings are equal.
-bool operator==(StringBuffer* a, string b) {
+bool operator==(StringBuffer& a, string b) {
     return string(a) == b;
 }
 
 /// Returns true if both strings are equal.
-bool operator==(string a, StringBuffer* b) {
+bool operator==(string a, StringBuffer& b) {
     return a == string(b);
 }
 
 /// Returns true if both strings are equal.
-bool operator==(char[*] a, StringBuffer* b) {
+bool operator==(char[*] a, StringBuffer& b) {
     return string(a) == string(b);
 }
 
 /// Returns true if both strings are equal.
-bool operator==(StringBuffer* a, char[*] b) {
+bool operator==(StringBuffer& a, char[*] b) {
     return string(a) == string(b);
 }

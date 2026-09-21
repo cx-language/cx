@@ -15,12 +15,12 @@ struct Set<Key: Hashable> {
     }
 
     /// Removes an element from the set, if it exists there.
-    void remove(Key* key) {
+    void remove(Key& key) {
         map.remove(key);
     }
 
     /// Checks if e is part of the set.
-    bool contains(Key* key) {
+    bool contains(Key& key) {
         return map.contains(key);
     }
 
@@ -45,7 +45,7 @@ struct SetIterator<Element>: Copyable, Iterator<Element*> {
     private MapIterator<Element, bool> iterator;
 
     /// Initializes an iterator over the given set.
-    SetIterator(Set<Element>*  set) {
+    SetIterator(Set<Element>& set) {
         iterator = MapIterator(set.map);
     }
 
@@ -56,7 +56,7 @@ struct SetIterator<Element>: Copyable, Iterator<Element*> {
 
     /// Returns the current element.
     Element* value() {
-        return iterator.value().key;
+        return &iterator.value().key;
     }
 
     /// Advances to the next element.

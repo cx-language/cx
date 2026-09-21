@@ -20,7 +20,7 @@ struct OutputFileStream {
     }
 
     /// Writes the given value to the file.
-    void write<T: Printable>(T* value) {
+    void write<T: Printable>(T& value) {
         var s = value.toString();
         fprintf(file!, "%.*s", s.size(), s.data());
         fflush(file);

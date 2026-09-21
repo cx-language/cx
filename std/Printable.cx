@@ -2,7 +2,7 @@
 interface Printable {
     // TODO: Make this member function take any OutputStream as an argument once the compiler supports it.
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream);
+    void print(StringBuffer& stream);
 
     /// Returns this value rendered as a string.
     StringBuffer toString() {

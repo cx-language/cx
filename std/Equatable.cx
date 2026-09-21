@@ -1,10 +1,10 @@
 /// A type whose instances can be compared for equality, i.e. with the `==` and `!=` operators.
 interface Equatable {
     /// Returns true if `this` is equal to `other`.
-    bool equals(This* other);
+    bool equals(This& other);
 }
 
 /// Returns true if a equals b.
-bool operator==<T: Equatable>(T* a, T* b) {
+bool operator==<T: Equatable>(T& a, T& b) {
     return a.equals(b);
 }

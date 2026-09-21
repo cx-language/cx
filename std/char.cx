@@ -16,12 +16,12 @@ struct char: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Compares this value to another.
-    Ordering compare(char* other) {
+    Ordering compare(char& other) {
         return int(this).compare(int(other));
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         stream.append(this);
     }
 

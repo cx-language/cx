@@ -18,7 +18,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     /// Initializes a string viewing the given buffer.
-    string(StringBuffer* stringBuffer) {
+    string(StringBuffer& stringBuffer) {
         characters = ArrayRef(stringBuffer.data(), stringBuffer.size());
     }
 
@@ -287,13 +287,13 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     /// Writes this string to the given stream.
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         stream.append(this);
     }
 
     /// Compares this string to another.
-    Ordering compare(string* other) {
-        for index in 0..min(size(), other.size()) {
+    Ordering compare(string& other) {
+        for index in 0..min(&size(), &other.size()) {
             if this[index] < other[index] { return Ordering.Less; }
             if this[index] > other[index] { return Ordering.Greater; }
         }

@@ -1,5 +1,5 @@
 /// Prints the given value followed by a newline.
-void println<T>(T* value) {
+void println<T>(T& value) {
     print(value);
     print('\n');
 }
@@ -23,19 +23,13 @@ void println(char[*]? value) {
 }
 
 /// Prints the given value.
-void print<T: Printable>(T value) {
+void print<T: Printable>(T& value) {
     var s = value.toString();
     printf("%.*s", s.size(), s.data());
 }
 
 /// Prints the given value.
-void print<T: Printable>(T* value) {
-    var s = value.toString();
-    printf("%.*s", s.size(), s.data());
-}
-
-/// Prints the given value.
-void print<T: Printable>(List<T>* list) {
+void print<T: Printable>(List<T>& list) {
     print(ArrayRef(list));
 }
 
@@ -84,7 +78,7 @@ void println<T: Copyable>(T... args) {
 }
 
 /// Prints the given values followed by a newline.
-void println<T: Printable>(T*... args) {
+void println<T: Printable>(T&... args) {
     for arg in args {
         print(arg);
     }
