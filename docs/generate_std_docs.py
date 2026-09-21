@@ -108,6 +108,15 @@ def strip_line_comment(line):
     return line.split("//", 1)[0]
 
 
+# Matches single-line 'c' and "s" literals, honoring backslash escapes, so
+# that braces inside them don't affect nesting tracking.
+_LITERAL_RE = re.compile(r"'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"")
+
+
+def blank_literals(code):
+    return _LITERAL_RE.sub("''", code)
+
+
 def parse_file(path):
     """Returns (types, functions, constants) declared in one .cx file."""
     types = []
@@ -165,7 +174,8 @@ def parse_file(path):
             if (match := VARIANT_RE.match(code)) is not None:
                 current.add_member(match.group(1), match.group(1), doc, path.name, lineno)
             doc = []
-        depth += code.count("{") - code.count("}")
+        depth_code = blank_literals(code)
+        depth += depth_code.count("{") - depth_code.count("}")
         if depth == 0:
             current = None
 

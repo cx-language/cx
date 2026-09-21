@@ -196,6 +196,39 @@ class FixtureTest(unittest.TestCase):
         self.assertLess(size, ctor)
 
 
+BRACE_FIXTURE = """\
+private struct Parser {
+    void parse() {
+        if c == '{' {
+            out.push('{');
+        } else if peek() == '}' {
+            out.push('}');
+        }
+        var m = parseError("expected ',' or '}'", pos);
+    }
+}
+
+/// Does the thing.
+void doThing() {
+    out.write("{}");
+}
+"""
+
+
+class BraceLiteralTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.directory, (_, functions, _) = parse_fixture(BRACE_FIXTURE)
+        cls.functions = functions
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.directory.cleanup()
+
+    def test_braces_in_literals_ignored(self):
+        self.assertEqual(set(self.functions), {"doThing"})
+
+
 class ConditionalTest(unittest.TestCase):
     def test_if_marked_conditional(self):
         with tempfile.TemporaryDirectory() as std_dir:
@@ -332,7 +365,10 @@ class StdlibTest(unittest.TestCase):
         for name in ["unsafeRemoveAt", "quickSort", "insertionSort", "partition",
                      "printSigned", "printUnsigned", "skipEmptySlots", "rebalance",
                      "rotateLeft", "rotateRight", "grow", "indexOutOfBounds",
-                     "setBalance", "height", "minInSubtree", "maxInSubtree"]:
+                     "setBalance", "height", "minInSubtree", "maxInSubtree",
+                     "parseError", "JsonParser", "hexValue", "pushUtf8", "byteValue",
+                     "writeIndent", "writeQuoted", "writeNumber", "writeJson",
+                     "maxJsonDepth"]:
             self.assertNotIn(f"`{name}`", combined, name)
             self.assertNotIn(f" {name}(", combined, name)
 
