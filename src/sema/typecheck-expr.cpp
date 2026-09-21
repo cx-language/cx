@@ -2414,17 +2414,12 @@ static bool isValidCast(Type sourceType, Type targetType) {
         if (targetType.isPointerType()) {
             Type targetPointee = targetType.getPointee();
 
-            if (sourcePointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
-                return true;
-            } else if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
-                return true;
-            } else if (targetPointee.isConstantArray() && sourcePointee == targetPointee.getElementType()) {
+            // Reinterpretation between any two pointer types is allowed; only dropping const is rejected.
+            if (!targetPointee.isMutable() || sourcePointee.isMutable()) {
                 return true;
             }
         } else if (targetType.isUnsizedArrayPointer()) {
-            if (sourcePointee.isVoid() && (!targetType.getElementType().isMutable() || sourcePointee.isMutable())) {
-                return true;
-            } else if (sourcePointee == targetType.getElementType()) {
+            if (!targetType.getElementType().isMutable() || sourcePointee.isMutable()) {
                 return true;
             }
         }
