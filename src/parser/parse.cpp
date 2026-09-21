@@ -916,8 +916,6 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     if (currentToken() == Token::Assignment) {
         consumeToken();
         initializer = parseExpr();
-    } else if (currentToken() == Token::Semicolon || currentToken() == Token::Comma || currentToken().location.line != lookAhead(-1).location.line) {
-        WARN(nameLocation, "missing initializer");
     }
 
     if (requireTerminator) parseStmtTerminator();

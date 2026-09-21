@@ -1,6 +1,9 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: variable-without-initializer.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
-    // CHECK: [[@LINE+1]]:12: warning: missing initializer
+    // CHECK: [[@LINE+1]]:12: warning: unused variable 'i'
     int*** i;
 }
+
+// CHECK-NOT: variable-without-initializer.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

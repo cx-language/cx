@@ -314,6 +314,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     // Lambda bodies are checked inline within the enclosing function; moves they record
     // must not clobber the enclosing move state, which is restored when the body is done.
     llvm::SaveAndRestore saveMovedDecls(movedDecls, movedDecls);
+    llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls, definitelyAssignedDecls);
     // 'break' and 'continue' must not cross function boundaries into enclosing loops or switches.
     llvm::SaveAndRestore saveControlStmts(currentControlStmts, std::vector<Stmt*>());
     llvm::SaveAndRestore saveLocalVarDecls(localVarDecls, std::vector<VarDecl*>());
@@ -359,6 +360,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             Type thisType = receiverTypeDecl->getTypeForPassing();
             auto* varDecl = makeAST<VarDecl>(thisType, "this", nullptr, &decl, AccessLevel::None, *currentModule, decl.getLocation());
             currentModule->addToSymbolTable(varDecl);
+            definitelyAssignedDecls.insert(varDecl);
         }
 
         bool delegatedInit = false;
@@ -636,7 +638,13 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         if (!declaredType) {
             ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation or initializer");
         }
+        if (decl.isGlobal()) {
+            WARN(decl.getLocation(), "missing initializer");
+        }
         return;
+    }
+    if (!decl.isGlobal()) {
+        definitelyAssignedDecls.insert(&decl);
     }
     Type initializerType = decl.initializer->type;
     if (!initializerType) return;
