@@ -1,0 +1,11 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:6
+// CHECK:16384
+// CHECK:48
+
+void main() {
+    uint8[2 * 3] pixels = [1, 2, 3, 4, 5, 6];
+    println(pixels.size());
+    println(sizeof(uint8[64 * 64 * 4]));
+    println(sizeof(int[(1 + 2) * 4]));
+}

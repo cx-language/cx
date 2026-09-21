@@ -2,6 +2,7 @@
 
 A static array stores a fixed number of elements of the same type.
 The size is written next to the element type: `int[3]` is an array of three integers.
+The size can be any constant integer expression, such as `uint8[64 * 64 * 4]`.
 
 ```cs
 void main() {

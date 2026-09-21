@@ -331,16 +331,43 @@ std::vector<Type> Parser::parseGenericArgumentList() {
     return genericArgs;
 }
 
+// Rejects zero divisors and out-of-range shift amounts in an array bound
+// before constant evaluation, where they would assert instead of erroring.
+static void checkArraySizeDivisors(const Expr& expr) {
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+        checkArraySizeDivisors(binaryExpr->getLHS());
+        checkArraySizeDivisors(binaryExpr->getRHS());
+        if (!binaryExpr->getLHS().isFoldableIntConstant() || !binaryExpr->getRHS().isFoldableIntConstant()) return;
+
+        switch (binaryExpr->op) {
+        case Token::Slash:
+        case Token::Modulo:
+        case Token::PositiveModulo:
+            if (binaryExpr->getRHS().getConstantIntegerValue().isZero()) {
+                ERROR(binaryExpr->location, "division by zero in array size");
+            }
+            break;
+        case Token::LeftShift:
+        case Token::RightShift: {
+            auto shift = binaryExpr->getRHS().getConstantIntegerValue();
+            if (shift.isNegative() || shift.ugt(255)) {
+                ERROR(binaryExpr->location, "shift amount out of range in array size");
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    } else if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&expr)) {
+        checkArraySizeDivisors(unaryExpr->getOperand());
+    }
+}
+
 Type Parser::parseArrayType(Type elementType) {
     ASSERT(currentToken() == Token::LeftBracket);
     consumeToken();
 
     switch (currentToken()) {
-    case Token::IntegerLiteral: {
-        auto arraySize = consumeToken().getIntegerValue().getExtValue();
-        parse(Token::RightBracket);
-        return ArrayType::get(elementType, arraySize, elementType.location);
-    }
     case Token::RightBracket:
         consumeToken();
         return BasicType::get("ArrayRef", elementType, Mutability::Mutable, elementType.location);
@@ -350,12 +377,26 @@ Type Parser::parseArrayType(Type elementType) {
         parse(Token::RightBracket);
         return ArrayType::get(elementType, ArrayType::UnknownSize, elementType.location);
 
-    default:
-        ERROR(getCurrentLocation(), "non-literal array bounds not implemented yet");
+    default: {
+        const Expr* sizeExpr = parseExpr();
+        parse(Token::RightBracket);
+        checkArraySizeDivisors(*sizeExpr);
+        if (!sizeExpr->isFoldableIntConstant()) {
+            ERROR(sizeExpr->location, "array size must be a constant integer expression");
+        }
+        llvm::APSInt size = sizeExpr->getConstantIntegerValue();
+        if (size.isNegative()) {
+            ERROR(sizeExpr->location, "array size must be non-negative");
+        }
+        if (size.getActiveBits() > 63) {
+            ERROR(sizeExpr->location, "array size is too large");
+        }
+        return ArrayType::get(elementType, size.getSExtValue(), elementType.location);
+    }
     }
 }
 
-/// simple-type ::= id | id generic-argument-list | id '[' (int-literal | '*')? ']'
+/// simple-type ::= id | id generic-argument-list | id '[' (const-int-expr | '*')? ']'
 Type Parser::parseSimpleType(Mutability mutability) {
     auto identifier = parse(Token::Identifier);
     std::vector<Type> genericArgs;
