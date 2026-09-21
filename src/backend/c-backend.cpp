@@ -518,6 +518,23 @@ void CGenerator::codegenConstantInt(const ConstantInt* inst) {
 }
 
 void CGenerator::codegenConstantFP(const ConstantFP* inst) {
+    if (inst->value.isNaN()) {
+        stream << "NAN";
+        return;
+    }
+    if (inst->value.isInfinity()) {
+        if (inst->value.isNegative()) stream << "-";
+        stream << "INFINITY";
+        return;
+    }
+    // Give narrow constants their own type so arithmetic and casts round through it
+    // like the LLVM backend; a bare decimal would compute in double precision.
+    auto name = llvm::cast<IRBasicType>(inst->type)->name;
+    if (name == "float" || name == "float16" || name == "float32" || name == "float80") {
+        stream << "(";
+        codegenType(stream, inst->type, true);
+        stream << ") ";
+    }
     llvm::SmallString<128> str;
     inst->value.toString(str);
     stream << str;
@@ -1034,6 +1051,7 @@ std::string CGenerator::finish() {
            "#include <stdlib.h>\n"
            "#include <string.h>\n"
            "#include <stdbool.h>\n"
+           "#include <math.h>\n"
            "#ifdef __wasm\n"
            "// xcc's WebAssembly libc neither declares nor defines abort(), so map\n"
            "// it to exit() (which terminates the process via WASI). Other\n"

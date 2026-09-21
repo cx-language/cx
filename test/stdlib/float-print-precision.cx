@@ -1,0 +1,24 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines %s
+// CHECK-NOT: float-print-precision.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    // Float literals print with full 32-bit precision.
+    println(3.141592653589793); // CHECK: 3.1415927
+    println(0.1); // CHECK-NEXT: 0.1
+    println(100.0); // CHECK-NEXT: 100
+    println(1e10); // CHECK-NEXT: 1e+10
+    println(1.0 / 3.0); // CHECK-NEXT: 0.33333334
+    // Float64 values print with full 64-bit precision.
+    float64 pi = 3.141592653589793;
+    println(pi); // CHECK-NEXT: 3.141592653589793
+    float64 one = 1.0;
+    float64 three = 3.0;
+    println(one / three); // CHECK-NEXT: 0.3333333333333333
+    println(float16(0.1)); // CHECK-NEXT: 0.1
+    println(one / 0.0); // CHECK-NEXT: inf
+    println(-one / 0.0); // CHECK-NEXT: -inf
+    println(0.0 / 0.0); // CHECK-NEXT: nan
+}
+
+// CHECK-NOT: float-print-precision.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

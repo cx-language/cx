@@ -4,7 +4,56 @@
 private void printFloat(float64 value, StringBuffer* stream) {
     // Maximum length from https://stackoverflow.com/a/1701272/3425536
     char[1080] result = undefined;
-    sprintf(result, "%g", value);
+    // Shortest representation that parses back to the same value. 17 significant
+    // digits always round-trip for 64-bit floats, so some precision always matches
+    // (except NaN, which falls back to the full-precision rendering below).
+    int bestPrecision = 17;
+    uint64 bestLength = 1080;
+    for precision in 1..18 {
+        sprintf(result, "%.*g", precision, value);
+        uint64 length = strlen(result);
+        if strtod(result, null) == value && length < bestLength {
+            bestPrecision = precision;
+            bestLength = length;
+        }
+    }
+    sprintf(result, "%.*g", bestPrecision, value);
+    stream.write(string(result));
+}
+
+private void printFloat32(float32 value, StringBuffer* stream) {
+    char[1080] result = undefined;
+    // Shortest representation that parses back to the same value; 9 significant
+    // digits always round-trip for 32-bit floats.
+    int bestPrecision = 9;
+    uint64 bestLength = 1080;
+    for precision in 1..10 {
+        sprintf(result, "%.*g", precision, float64(value));
+        uint64 length = strlen(result);
+        if strtof(result, null) == value && length < bestLength {
+            bestPrecision = precision;
+            bestLength = length;
+        }
+    }
+    sprintf(result, "%.*g", bestPrecision, float64(value));
+    stream.write(string(result));
+}
+
+private void printFloat16(float16 value, StringBuffer* stream) {
+    char[1080] result = undefined;
+    // Shortest representation that parses back to the same value; 5 significant
+    // digits always round-trip for 16-bit floats.
+    int bestPrecision = 5;
+    uint64 bestLength = 1080;
+    for precision in 1..6 {
+        sprintf(result, "%.*g", precision, float64(value));
+        uint64 length = strlen(result);
+        if float16(strtof(result, null)) == value && length < bestLength {
+            bestPrecision = precision;
+            bestLength = length;
+        }
+    }
+    sprintf(result, "%.*g", bestPrecision, float64(value));
     stream.write(string(result));
 }
 
@@ -15,9 +64,10 @@ struct float: Copyable, Comparable, Printable {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
-    /// Writes this value to the given stream.
+    /// Writes this value to the given stream, using the shortest
+    /// representation that parses back to the same value.
     void print(StringBuffer* stream) {
-        printFloat(float64(this), stream);
+        printFloat32(this, stream);
     }
 }
 
@@ -28,9 +78,10 @@ struct float16: Copyable, Comparable, Printable {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
-    /// Writes this value to the given stream.
+    /// Writes this value to the given stream, using the shortest
+    /// representation that parses back to the same value.
     void print(StringBuffer* stream) {
-        printFloat(float64(this), stream);
+        printFloat16(this, stream);
     }
 }
 
@@ -41,9 +92,10 @@ struct float32: Copyable, Comparable, Printable {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
-    /// Writes this value to the given stream.
+    /// Writes this value to the given stream, using the shortest
+    /// representation that parses back to the same value.
     void print(StringBuffer* stream) {
-        printFloat(float64(this), stream);
+        printFloat32(this, stream);
     }
 }
 
@@ -54,7 +106,8 @@ struct float64: Copyable, Comparable, Printable {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
-    /// Writes this value to the given stream.
+    /// Writes this value to the given stream, using the shortest
+    /// representation that parses back to the same value.
     void print(StringBuffer* stream) {
         printFloat(this, stream);
     }

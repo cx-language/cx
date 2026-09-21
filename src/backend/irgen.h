@@ -146,7 +146,25 @@ struct IRGenerator {
     Value* createConstantInt(IRType* type, int64_t value) { return createConstantInt(type, llvm::APSInt::get(value)); }
     Value* createConstantInt(Type type, llvm::APSInt value) { return createConstantInt(getIRType(type), std::move(value)); }
     Value* createConstantInt(Type type, int64_t value) { return createConstantInt(getIRType(type), llvm::APSInt::get(value)); }
-    Value* createConstantFP(IRType* type, llvm::APFloat value) { return new ConstantFP{ValueKind::ConstantFP, type, std::move(value)}; }
+    Value* createConstantFP(IRType* type, llvm::APFloat value) {
+        // Float literals are parsed in double precision; round to the constant's own type so backends agree on the value.
+        if (type->isBasicType()) {
+            auto name = llvm::cast<IRBasicType>(type)->name;
+            const llvm::fltSemantics* semantics = nullptr;
+            if (name == "float" || name == "float32") {
+                semantics = &llvm::APFloat::IEEEsingle();
+            } else if (name == "float16") {
+                semantics = &llvm::APFloat::IEEEhalf();
+            } else if (name == "float80") {
+                semantics = &llvm::APFloat::x87DoubleExtended();
+            }
+            if (semantics) {
+                bool losesInfo = false;
+                value.convert(*semantics, llvm::APFloat::rmNearestTiesToEven, &losesInfo);
+            }
+        }
+        return new ConstantFP{ValueKind::ConstantFP, type, std::move(value)};
+    }
     Value* createConstantFP(IRType* type, double value) { return createConstantFP(type, llvm::APFloat(value)); }
     Value* createConstantFP(Type type, llvm::APFloat value) { return createConstantFP(getIRType(type), std::move(value)); }
     Value* createConstantFP(Type type, double value) { return createConstantFP(getIRType(type), llvm::APFloat(value)); }

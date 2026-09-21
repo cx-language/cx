@@ -7,6 +7,10 @@ extern void free(void*? ptr);
 extern never abort();
 /// Exits the program with the given status.
 extern never exit(int status);
+/// Parses a double from the string.
+extern float64 strtod(const char* str, char**? endptr);
+/// Parses a float from the string.
+extern float32 strtof(const char* str, char**? endptr);
 
 // stdio.h
 /// A C file handle.
