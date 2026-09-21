@@ -1,5 +1,4 @@
 // RUN: %not %cx run -Werror %s 2>&1 | %FileCheck -match-full-lines %s
-// RUN: %not %cx run -Werror --backend=c %s 2>&1 | %FileCheck -match-full-lines %s
 
 void main() {
     int128 min = int128(1) << int128(127);

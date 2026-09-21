@@ -1,0 +1,11 @@
+// RUN: %not %cx run -Werror --backend=c %s 2>&1 | %FileCheck -match-full-lines %s
+// UNSUPPORTED: windows
+
+// MSVC doesn't support __int128, which the C backend emits for int128.
+
+void main() {
+    int128 min = int128(1) << int128(127);
+    // CHECK: integer overflow at integer-overflow-int128-mul-run-c.cx:[[@LINE+1]]:20
+    int128 r = min * int128(-1);
+    println(r == r);
+}
