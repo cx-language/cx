@@ -85,6 +85,17 @@ void testMissingUrl() {
     check(false, "dependency without url field is rejected");
 }
 
+void testSearchPaths() {
+    auto project = writeTestProject("var headerSearchPaths = [\"vendor/mylib/include\"]\n"
+                                    "var librarySearchPaths = [\"vendor/mylib/lib\"]\n"
+                                    "var libraries = [\"mylib\"]\n");
+    cx::BuildConfig config{std::string(project)};
+
+    check(config.headerSearchPaths.size() == 1 && config.headerSearchPaths[0] == "vendor/mylib/include", "header search paths are parsed");
+    check(config.librarySearchPaths.size() == 1 && config.librarySearchPaths[0] == "vendor/mylib/lib", "library search paths are parsed");
+    check(config.libraries.size() == 1 && config.libraries[0] == "mylib", "libraries are parsed");
+}
+
 void testMissingBuildFile() {
     llvm::SmallString<128> dir;
     checkNoError(llvm::sys::fs::createUniqueDirectory("cx-build-config-test", dir), "create temp project directory");
@@ -98,13 +109,15 @@ void testMissingBuildFile() {
 
 int main(int argc, const char** argv) {
     if (argc != 2) {
-        std::cerr << "usage: test_build_config <git-urls|missing-url|missing-build-file>\n";
+        std::cerr << "usage: test_build_config <git-urls|missing-url|missing-build-file|search-paths>\n";
         return 2;
     }
 
     std::string testCase = argv[1];
     if (testCase == "git-urls") {
         testGitUrls();
+    } else if (testCase == "search-paths") {
+        testSearchPaths();
     } else if (testCase == "missing-build-file") {
         testMissingBuildFile();
     } else if (testCase == "missing-url") {

@@ -161,6 +161,7 @@ add_test(NAME build-config-git-urls COMMAND test_build_config git-urls)
 add_test(NAME build-config-missing-url COMMAND test_build_config missing-url)
 set_tests_properties(build-config-missing-url PROPERTIES PASS_REGULAR_EXPRESSION "missing required 'url'")
 add_test(NAME build-config-missing-build-file COMMAND test_build_config missing-build-file)
+add_test(NAME build-config-search-paths COMMAND test_build_config search-paths)
 
 # Compiler tests, sharded over one CTest test per few files so CTest
 # reports progress as tests complete. A single aggregate lit invocation

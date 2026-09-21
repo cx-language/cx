@@ -263,6 +263,14 @@ static void emitLLVMModuleToMachineCode(llvm::Module& module, llvm::StringRef fi
     file.flush();
 }
 
+static bool isLibraryFilePath(llvm::StringRef value) {
+    if (!llvm::sys::fs::exists(value)) return false;
+    if (value.contains('/') || value.contains('\\')) return true;
+    auto extension = llvm::sys::path::extension(value);
+    return extension == ".a" || extension == ".so" || extension == ".dylib" || extension == ".lib" || extension == ".dll" || extension == ".o"
+        || extension == ".obj";
+}
+
 static void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::OF_None);
@@ -534,7 +542,16 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     addFlaggedArgs("-I", options.importSearchPaths);
     addFlaggedArgs("-D", options.defines);
     addFlaggedArgs("-L", librarySearchPaths);
-    addFlaggedArgs("-l", libraries);
+    for (const auto& library : libraries) {
+        // A -l value naming an existing library file is passed to the linker as
+        // an input file; -l with a path is otherwise rejected ("library ... not found").
+        if (isLibraryFilePath(library)) {
+            ccArgs.push_back(library.c_str());
+        } else {
+            ccArgs.push_back("-l");
+            ccArgs.push_back(library.c_str());
+        }
+    }
     addFlaggedArgs("-F", frameworkSearchPaths);
     addFlaggedArgs("-framework", frameworks);
     if (!isMSVC) {
@@ -689,6 +706,12 @@ static void addPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
 static void addConfigBuildFlags(const BuildConfig& config) {
     for (auto& define : config.defines) {
         defines.push_back(define);
+    }
+    for (auto& path : config.headerSearchPaths) {
+        importSearchPaths.push_back(path);
+    }
+    for (auto& path : config.librarySearchPaths) {
+        librarySearchPaths.push_back(path);
     }
     for (auto& library : config.libraries) {
         libraries.push_back(library);

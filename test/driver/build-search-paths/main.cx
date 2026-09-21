@@ -1,0 +1,9 @@
+// RUN: cd %S && %cx run | %FileCheck -match-full-lines -strict-whitespace %s
+
+// CHECK:42
+
+import "answer.h";
+
+void main() {
+    println(ANSWER);
+}
