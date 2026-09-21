@@ -1,7 +1,7 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 // CHECK-NOT: main-invalid-params.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
-// CHECK: [[@LINE+1]]:6: error: 'main' must take no parameters, '(int argc)', or '(int argc, string[] argv)'
-void main(string name) {
+// CHECK: [[@LINE+1]]:6: error: 'main' must take no parameters or '(string[] args)'
+void main(int argc, string[] argv) {
 }
 // CHECK-NOT: main-invalid-params.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

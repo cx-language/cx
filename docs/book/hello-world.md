@@ -34,20 +34,21 @@ cx run hello.cx -- arg1 arg2
 
 ## Command-line arguments
 
-To read command-line arguments, declare `main` with `argc`/`argv` parameters:
+To read command-line arguments, declare `main` with an `args` parameter:
 
 ```cs
-void main(int argc, string[] argv) {
-    println(argc);
-    for arg in argv {
+int main(string[] args) {
+    println(args.size());
+    for arg in args {
         println(arg);
     }
+    return 0;
 }
 ```
 
-`argc` is the number of arguments and `argv` holds them as strings.
-Like in C, the first argument is the program name (or path), so `argc` is at least 1 when arguments are passed normally.
-The parameters may also be omitted entirely, and `main` may return `void` or `int` for the exit status.
+`args` holds the arguments as strings. Like in C, the first argument is the
+program name (or path), so `args` is never empty when arguments are passed normally.
+The parameter may also be omitted entirely, and `main` may return `void` or `int` for the exit status.
 
 ## Syntax
 

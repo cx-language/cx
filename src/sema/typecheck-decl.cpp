@@ -298,14 +298,12 @@ static void checkMainSignature(const FunctionDecl& decl) {
 
     auto params = decl.getParams();
     bool validParams = params.empty();
-    if (params.size() == 1 && params[0].type.isInt()) {
-        validParams = true;
-    } else if (params.size() == 2 && params[0].type.isInt() && params[1].type.isArrayRef()) {
-        Type elementType = params[1].type.getElementType();
+    if (params.size() == 1 && params[0].type.isArrayRef()) {
+        Type elementType = params[0].type.getElementType();
         validParams = elementType.isBasicType() && elementType.getName() == "string";
     }
     if (!validParams) {
-        ERROR(decl.getLocation(), "'main' must take no parameters, '(int argc)', or '(int argc, string[] argv)'");
+        ERROR(decl.getLocation(), "'main' must take no parameters or '(string[] args)'");
     }
 }
 

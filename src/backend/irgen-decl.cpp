@@ -18,7 +18,7 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter{ValueKind::Parameter, getIRType(p.type), p.getName().str()}; });
 
     if (decl.isMain() && !decl.isMethodDecl() && !decl.getParams().empty()) {
-        // The OS passes argc/argv; the declared params are materialized from them in emitFunctionBody.
+        // The OS passes argc/argv; the declared args array is materialized from them in emitFunctionBody.
         params = {Parameter{ValueKind::Parameter, getIRType(Type::getInt()), "argc"},
                   Parameter{ValueKind::Parameter, getIRType(BasicType::get("char", {}).getPointerTo().getPointerTo()), "argv"}};
     }
@@ -82,15 +82,15 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     }
 
     Value* mainArgv = nullptr;
-    if (decl.isMain() && !decl.isMethodDecl() && decl.getParams().size() == 2) {
-        mainArgv = emitMainArgv(&function.params[0], &function.params[1], decl.getParams()[1].type, decl.getLocation());
+    if (decl.isMain() && !decl.isMethodDecl() && decl.getParams().size() == 1) {
+        mainArgv = emitMainArgv(&function.params[0], &function.params[1], decl.getParams()[0].type, decl.getLocation());
     }
 
     for (auto& param : decl.getParams()) {
         // Spill parameters to allocas so they have stable addresses: method receivers and
         // address-of must alias the parameter across uses, not a fresh temporary per use.
         Value* value = &*arg++;
-        if (mainArgv && param.type.isArrayRef()) value = mainArgv;
+        if (mainArgv) value = mainArgv;
         auto* spill = createEntryBlockAlloca(param.type, param.getName());
         createStore(value, spill);
         setLocalValue(spill, &param);
