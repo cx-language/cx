@@ -20,7 +20,11 @@ struct Location {
 
     bool print() const {
         if (file && *file) {
-            llvm::errs() << file;
+            // Directory builds discover sources as ./file.cx; omit the leading ./ for readability.
+            llvm::StringRef path(file);
+            while (path.consume_front("./") || path.consume_front(".\\")) {
+            }
+            llvm::errs() << path;
             if (isValid()) {
                 llvm::errs() << ':' << line << ':' << column;
             }

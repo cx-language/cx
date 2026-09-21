@@ -4,7 +4,7 @@
 // CHECK-NOT: error
 
 void main() {
-    // CHECK: .{{[/\\]}}main.cx:[[@LINE+1]]:13: error: unknown identifier 'x'
+    // CHECK: {{^}}main.cx:[[@LINE+1]]:13: error: unknown identifier 'x'
     println(x);
 }
 
