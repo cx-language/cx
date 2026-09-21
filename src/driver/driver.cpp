@@ -565,12 +565,16 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         }
     }
 
-    renameFile(tempOutputFilePath, outputPathPrefix + buildParams.outputFileName);
+    // An absolute -o path is used as is; otherwise the output directory is prepended.
+    llvm::SmallString<128> outputPath;
+    if (!llvm::sys::path::is_absolute(buildParams.outputFileName)) {
+        outputPath = outputPathPrefix;
+    }
+    outputPath += buildParams.outputFileName;
+
+    renameFile(tempOutputFilePath, outputPath);
 
     if (isMSVC) {
-        auto outputPath = outputPathPrefix;
-        outputPath += buildParams.outputFileName;
-
         for (llvm::StringRef extension : {"ilk", "pdb"}) {
             auto path = tempOutputFilePath;
             llvm::sys::path::replace_extension(path, extension);

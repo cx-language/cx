@@ -1,0 +1,8 @@
+// RUN: %cx %s -o %T/absolute-output
+// RUN: file-exists %T/absolute-output
+// RUN: cd %T && %cx %s -o relative-output
+// RUN: file-exists %T/relative-output
+
+void main() {
+    println("hi");
+}
