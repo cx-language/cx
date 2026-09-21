@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+void foo(int[] x) {}
+void foo(string[] x) {}
+
+void main() {
+    // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'foo'
+    // CHECK: 3:6: note: candidate function:
+    // CHECK-NEXT: void foo(int[] x) {}
+    // CHECK: 4:6: note: candidate function:
+    // CHECK-NEXT: void foo(string[] x) {}
+    // CHECK-NOT: note
+    foo([]);
+}

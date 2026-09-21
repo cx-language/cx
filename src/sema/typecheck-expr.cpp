@@ -301,10 +301,15 @@ static Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&, Type expectedTy
 Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expectedType) {
     if (array.elements.empty()) {
         if (expectedType && !expectedType.containsUnresolvedPlaceholder()) {
-            return expectedType;
-        } else {
-            ERROR(array.location, "couldn't infer type of empty array literal");
+            Type unwrapped = expectedType;
+            while (unwrapped.isOptionalType()) {
+                unwrapped = unwrapped.getWrappedType();
+            }
+            if (unwrapped.isArrayType() || unwrapped.isArrayRef()) {
+                return expectedType;
+            }
         }
+        ERROR(array.location, "couldn't infer type of empty array literal");
     }
 
     Type firstType = typecheckExpr(*array.elements[0]);
@@ -2002,10 +2007,17 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     auto calleeWithGenericArgs = getQualifiedTypeName(callee, expr.genericArgs);
 
     if (matches.size() > 1) {
-        for (auto& arg : expr.args) {
-            if (!arg.value->hasType()) {
-                typecheckExpr(*arg.value);
+        try {
+            for (auto& arg : expr.args) {
+                if (!arg.value->hasType()) {
+                    typecheckExpr(*arg.value);
+                }
             }
+        } catch (const CompileError&) {
+            // Args like `[]` need expected types to infer. Multiple applicable overloads
+            // means the call is ambiguous; report that instead of the inference error.
+            ERROR_WITH_NOTES(expr.callee->location, getCandidateNotes(map(matches, [](auto& match) { return match.decl; }), expr),
+                             "ambiguous reference to '" << calleeWithGenericArgs << "'" << (isConstructorCall ? " constructor" : ""));
         }
 
         if (auto match = resolveAmbiguousOverload(matches, expr)) {
@@ -2256,7 +2268,12 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         bool hadType = arg.value->hasType();
 
         if (!arg.value->hasType()) {
-            typecheckExpr(*arg.value, false, param.type);
+            try {
+                typecheckExpr(*arg.value, false, param.type);
+            } catch (const CompileError&) {
+                arg.value->removeTypes();
+                return ArgumentValidation::invalidType(i);
+            }
         }
 
         bool invalidType = false;

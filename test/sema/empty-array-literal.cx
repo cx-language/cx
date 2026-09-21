@@ -14,4 +14,10 @@ void main() {
 
     // CHECK: [[@LINE+1]]:11: error: couldn't infer type of empty array literal
     print([]);
+
+    // CHECK: [[@LINE+1]]:13: error: couldn't infer type of empty array literal
+    int x = [];
+
+    // CHECK: [[@LINE+1]]:23: error: couldn't infer type of empty array literal
+    List<string>* l = [];
 }
