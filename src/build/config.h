@@ -28,6 +28,8 @@ struct BuildConfig {
     bool multitarget = false;
     std::string outputDirectory = ".";
     std::vector<std::string> defines;
+    std::vector<std::string> headerSearchPaths;
+    std::vector<std::string> librarySearchPaths;
     std::vector<std::string> libraries;
     std::vector<std::string> frameworks;
     std::vector<std::string> pkgConfigDependencies;

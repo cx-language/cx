@@ -28,7 +28,9 @@ Supported settings:
 - `outputDirectory`: where to place executables (project root by default).
 - `multitarget`: if true, build each subdirectory of `src/` (or of the project directory, if there is no `src/`) as a separate executable.
 - `defines`: preprocessor definitions, as if passed with `-D`.
-- `libraries`: system libraries to link, as if passed with `-l`.
+- `headerSearchPaths`: directories to search for C headers, as if passed with `-I`.
+- `librarySearchPaths`: directories to search for libraries, as if passed with `-L`.
+- `libraries`: system libraries to link, as if passed with `-l`. A value naming an existing file (such as a vendored static archive) is linked directly instead of being searched for.
 - `frameworks`: macOS frameworks to link, as if passed with `-framework`.
 - `pkgConfigDependencies`: system libraries resolved via `pkg-config --cflags --libs`.
 - `dependencies`: cx libraries to fetch from Git, as `(package = "...", url = "...", version = "...")` entries (see below).
@@ -79,3 +81,12 @@ If you'd rather not fetch over the network, you can vendor dependencies instead:
 copy the library sources into your project (for example under `vendor/`),
 and `cx build` compiles them as part of it, with no `import` or `build.cx` entry needed.
 Sources kept outside the project can likewise be used with `-I` plus `import`.
+
+Vendored C libraries work the same way: point `headerSearchPaths` at their headers
+and `librarySearchPaths` at their binaries, then link by name:
+
+```cx
+var headerSearchPaths = ["vendor/mylib/include"]
+var librarySearchPaths = ["vendor/mylib/lib"]
+var libraries = ["mylib"]
+```

@@ -29,7 +29,24 @@ void main() {
 }
 ```
 
+Any two pointer types convert directly, with no need to go through `void*`:
+
+```cs
+import "stdlib.h";
+
+void main() {
+    var p = malloc(4)!;
+    int* ip = cast<int*>(p);
+    *ip = 42;
+    uint* up = cast<uint*>(ip);
+    println(*up); // prints 42
+    free(p);
+}
+```
+
 Casts that don't make sense are rejected at compile time, for example `cast<int**>(false)`.
+Dropping `const` is rejected too: `cast<int*>` accepts `int*` and `void*`,
+but not `const int*`.
 Conversions that are always safe need no syntax at all:
 integer literals convert to the expected numeric type automatically,
 and pointers are dereferenced automatically when a value is expected,

@@ -1,0 +1,9 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+// CHECK-NOT: array-size-division-by-zero.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    // CHECK: [[@LINE+1]]:11: error: division by zero in array size
+    int[1 / 0] a;
+}
+
+// CHECK-NOT: array-size-division-by-zero.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
