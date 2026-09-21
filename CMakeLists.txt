@@ -112,10 +112,6 @@ target_link_libraries(libcx ${LLVM_LIBS})
 # Tests. Note: tests are run with CTest rather than custom build targets so
 # that expected compiler error output isn't misinterpreted as build errors
 # (MSBuild fails custom build steps whose output matches its error pattern).
-add_test(NAME lit COMMAND lit --verbose --succinct ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
-    -Dcx_path=$<TARGET_FILE:cx>
-    -Dfilecheck_path=$<TARGET_FILE:FileCheck>
-    -Dtest_dir=${PROJECT_SOURCE_DIR}/test)
 add_executable(example_embedding examples/embedding/embedding.cpp)
 target_include_directories(example_embedding PRIVATE src)
 target_link_libraries(example_embedding libcx)
@@ -130,7 +126,21 @@ add_test(NAME lsp COMMAND python3 "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "
 # pipe read forever instead of failing (takes ~2s locally; 600s is ample
 # even for Windows Debug).
 set_tests_properties(lsp PROPERTIES TIMEOUT 600)
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>)
+# The two example suites write the same output files into examples/, so they
+# must not run concurrently with each other now that check runs tests in
+# parallel.
+set_tests_properties(examples examples-c-backend PROPERTIES RESOURCE_LOCK examples-workdir)
+include(ProcessorCount)
+ProcessorCount(CHECK_PARALLEL_JOBS)
+if(CHECK_PARALLEL_JOBS EQUAL 0)
+    set(CHECK_PARALLEL_JOBS 4)
+endif()
+# Two extra slots so the serial long-pole suites (docs, examples, lsp)
+# don't starve the lit shards of workers.
+math(EXPR CHECK_PARALLEL_JOBS "${CHECK_PARALLEL_JOBS} + 2")
+add_custom_target(check
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --parallel ${CHECK_PARALLEL_JOBS} -C $<CONFIG>
+    USES_TERMINAL)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
 add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config)
 
@@ -150,6 +160,39 @@ target_link_libraries(test_build_config libcx)
 add_test(NAME build-config-git-urls COMMAND test_build_config git-urls)
 add_test(NAME build-config-missing-url COMMAND test_build_config missing-url)
 set_tests_properties(build-config-missing-url PROPERTIES PASS_REGULAR_EXPRESSION "missing required 'url'")
+
+# Compiler tests, sharded over one CTest test per few files so CTest
+# reports progress as tests complete. A single aggregate lit invocation
+# only reports when the whole suite finishes, since CTest captures each
+# test's output until it completes (which also hides lit's own progress
+# bar). Shards amortize lit's startup cost over several files; each shard
+# runs single-threaded (-j1) so CTest remains the only scheduler. Files
+# are dealt round-robin for balance. Declared after the slower suites so
+# those start first on fresh build directories without recorded costs.
+file(GLOB_RECURSE LIT_TEST_FILES CONFIGURE_DEPENDS
+    RELATIVE ${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/test/*.cx)
+list(SORT LIT_TEST_FILES)
+# Mirror lit's `excludes`: helper sources under inputs/ aren't tests.
+list(FILTER LIT_TEST_FILES EXCLUDE REGEX "(^|/)inputs/")
+set(LIT_SHARD_COUNT 128)
+set(shard_index 0)
+foreach(lit_test IN LISTS LIT_TEST_FILES)
+    math(EXPR shard "${shard_index} % ${LIT_SHARD_COUNT}")
+    list(APPEND LIT_SHARD_${shard} "${PROJECT_SOURCE_DIR}/test/${lit_test}")
+    math(EXPR shard_index "${shard_index} + 1")
+endforeach()
+math(EXPR LIT_SHARD_MAX "${LIT_SHARD_COUNT} - 1")
+foreach(shard RANGE ${LIT_SHARD_MAX})
+    if(NOT DEFINED LIT_SHARD_${shard})
+        continue()
+    endif()
+    set(shard_files ${LIT_SHARD_${shard}})
+    add_test(NAME lit/shard-${shard}
+        COMMAND lit --verbose --succinct -j1 ${EXTRA_LIT_FLAGS} ${shard_files}
+        -Dcx_path=$<TARGET_FILE:cx>
+        -Dfilecheck_path=$<TARGET_FILE:FileCheck>
+        -Dtest_dir=${PROJECT_SOURCE_DIR}/test)
+endforeach()
 
 # Download the LLVM FileCheck utility for tests.
 set(FILECHECK_SRC_PATH "llvmorg-${LLVM_PACKAGE_VERSION}/llvm/utils/FileCheck/FileCheck.cpp")

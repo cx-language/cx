@@ -127,6 +127,8 @@ cmake --build . --target check
 
 This runs the full suite via CTest: the lit/compiler tests, the example programs (LLVM and C backends),
 the documentation snippets, and the language server end-to-end tests.
+Run a subset from the build directory with e.g. `ctest -R 'docs-snippets'`.
+To run a single compiler test file, invoke `lit` with the flags shown by `ctest -N -V`.
 
 The C++ code style is enforced by ClangFormat and ClangTidy:
 
