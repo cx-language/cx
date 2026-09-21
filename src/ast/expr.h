@@ -213,6 +213,9 @@ struct CallExpr : Expr {
     std::vector<Type> genericArgs;
     Type receiverType;
     Decl* calleeDecl;
+    // Maps each arg to its parameter index, or -1 for variadic extras. Filled by typechecking.
+    // Args stay in written order so they evaluate in argument order; backends reorder via this mapping.
+    std::vector<int> argParamIndices;
 
 protected:
     CallExpr(ExprKind kind, Expr* callee, std::vector<NamedValue>&& args, Location location)

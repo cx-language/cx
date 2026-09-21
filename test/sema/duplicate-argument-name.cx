@@ -1,0 +1,15 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: duplicate-argument-name.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct S: Copyable {
+    int a;
+    int b;
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:22: error: duplicate argument for parameter 'a'
+    var s = S(a = 1, a = 2);
+}
+
+// CHECK-NOT: duplicate-argument-name.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

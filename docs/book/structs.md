@@ -56,6 +56,9 @@ void main() {
 }
 ```
 
+Named arguments can be given in any order and can skip fields with
+default values. Argument expressions always evaluate in the order written.
+
 To customize construction, declare a constructor: a member function
 with the same name as the struct. It must initialize every field,
 using `this.` to refer to fields shadowed by parameters:

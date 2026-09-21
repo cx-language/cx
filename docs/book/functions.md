@@ -46,6 +46,36 @@ void main() {
 }
 ```
 
+Arguments can be passed positionally or by name.
+Named arguments can be given in any order:
+
+```cs
+string greet(string greeting, string name) {
+    return greeting + " " + name;
+}
+
+void main() {
+    println(greet(name = "world", greeting = "hi")); // prints "hi world"
+}
+```
+
+Argument expressions always evaluate in the order written.
+
+Parameters can have default values, which may be omitted. Later
+arguments can still be passed by name when an earlier default
+is omitted:
+
+```cs
+void greet(string greeting = "hi", string name = "world") {
+    println(greeting, " ", name);
+}
+
+void main() {
+    greet(); // prints "hi world"
+    greet(name = "cx"); // prints "hi cx"
+}
+```
+
 Functions can return multiple values using tuples:
 
 ```cs
@@ -80,6 +110,5 @@ void main() {
 
 ## Planned features
 
-- Default parameter values
 - Destructuring for multiple return values
 - Tuples with anonymous members

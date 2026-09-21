@@ -3,6 +3,6 @@
 int f(int foo, bool bar) { return foo; }
 
 int main() {
-    // CHECK: [[@LINE+1]]:23: error: invalid argument name 'qux' for parameter 'bar'
+    // CHECK: [[@LINE+1]]:23: error: invalid argument name 'qux'
     return f(foo = 5, qux = false);
 }

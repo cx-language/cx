@@ -3,6 +3,6 @@
 void f(int a) { }
 
 void main() {
-    // CHECK: [[@LINE+1]]:7: error: invalid argument name 'foo' for parameter 'a'
+    // CHECK: [[@LINE+1]]:7: error: invalid argument name 'foo'
     f(foo = 0);
 }

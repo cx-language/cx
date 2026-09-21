@@ -1,0 +1,51 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Widget {
+    string name;
+    string help = "";
+    string extra = "";
+}
+
+string record(string s) {
+    println("eval ", s);
+    return s;
+}
+
+string greet(string greeting, string name) {
+    return greeting + " " + name;
+}
+
+enum E {
+    A(int a, int b)
+}
+
+void main() {
+    // CHECK:be
+    var b = Widget(name = "b", extra = "e");
+    println(b.name, b.extra);
+
+    // CHECK-NEXT:ce
+    var c = Widget(extra = "e", name = "c");
+    println(c.name, c.extra);
+
+    // CHECK-NEXT:pe
+    var p = Widget("p", extra = "e");
+    println(p.name, p.extra);
+
+    // CHECK-NEXT:hi world
+    println(greet(name = "world", greeting = "hi"));
+
+    // CHECK-NEXT:21
+    var e = E.A(b = 1, a = 2);
+    switch (e) {
+        case A pair:
+            println(pair.a, pair.b);
+    }
+
+    // CHECK-NEXT:eval b
+    // CHECK-NEXT:eval a
+    // CHECK-NEXT:ab
+    var s = Widget(extra = record("b"), name = record("a"));
+    println(s.name, s.extra);
+}

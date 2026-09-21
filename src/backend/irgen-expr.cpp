@@ -647,6 +647,29 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
     return enumValue;
 }
 
+Value* IRGenerator::emitEnumCaseCall(const EnumCase& enumCase, const CallExpr& expr) {
+    if (expr.argParamIndices.size() != expr.args.size()) return emitEnumCase(enumCase, expr.args);
+    auto enumDecl = enumCase.getEnumDecl();
+    auto tag = emitExpr(*enumCase.value);
+    if (!enumDecl->hasAssociatedValues()) return tag;
+
+    auto* enumValue = createEntryBlockAlloca(enumDecl->getType(), "enum");
+    createStore(tag, createGEP(enumValue, 0, nullptr, "tag"));
+
+    if (!expr.args.empty()) {
+        llvm::SmallVector<Value*, 8> writtenValues;
+        for (auto& arg : expr.args)
+            writtenValues.push_back(emitExpr(*arg.value));
+        Value* associatedValue = createUndefined(enumCase.associatedType);
+        for (size_t i = 0; i < expr.args.size(); ++i)
+            associatedValue = createInsertValue(associatedValue, writtenValues[i], expr.argParamIndices[i]);
+        auto* associatedValuePtr = createCast(createGEP(enumValue, 1, nullptr, "associatedValue"), associatedValue->getType()->getPointerTo());
+        createStore(associatedValue, associatedValuePtr);
+    }
+
+    return enumValue;
+}
+
 Value* IRGenerator::emitClosureCallExpr(const CallExpr& expr) {
     auto* closureDecl = llvm::cast<TypeDecl>(llvm::cast<VariableDecl>(expr.calleeDecl)->type.getDecl());
     size_t captureCount = closureDecl->fields.size() - 1;
@@ -682,13 +705,20 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     if (expr.getFunctionName() == "assert") {
-        auto& message = llvm::cast<StringLiteralExpr>(*expr.args[1].value).value;
-        emitAssert(emitExpr(*expr.args.front().value), &expr, expr.callee->location, message);
+        const Expr* condition = expr.args.front().value;
+        const auto* messageExpr = llvm::cast<StringLiteralExpr>(expr.args[1].value);
+        if (expr.argParamIndices.size() == expr.args.size()) {
+            for (size_t i = 0; i < expr.args.size(); ++i) {
+                if (expr.argParamIndices[i] == 0) condition = expr.args[i].value;
+                if (expr.argParamIndices[i] == 1) messageExpr = llvm::cast<StringLiteralExpr>(expr.args[i].value);
+            }
+        }
+        emitAssert(emitExpr(*condition), &expr, expr.callee->location, messageExpr->value);
         return nullptr;
     }
 
     if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(expr.calleeDecl)) {
-        return emitEnumCase(*enumCase, expr.args);
+        return emitEnumCaseCall(*enumCase, expr);
     }
 
     if (expr.getReceiver() && expr.receiverType.removePointer().isArrayType()) {
@@ -746,11 +776,37 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
         ++param;
     }
 
-    for (const auto& arg : expr.args) {
-        auto paramType = param != params.end() ? *param++ : nullptr;
-        auto* argValue = emitExprForPassing(*arg.value, paramType);
-        ASSERT(!paramType || argValue->getType()->equals(paramType));
-        args.push_back(argValue);
+    std::vector<IRType*> argParamTypes(param, params.end());
+    if (expr.argParamIndices.size() == expr.args.size()) {
+        llvm::SmallVector<Value*, 16> writtenValues;
+        for (size_t i = 0; i < expr.args.size(); ++i) {
+            int paramIndex = expr.argParamIndices[i];
+            IRType* paramType = (paramIndex != -1 && size_t(paramIndex) < argParamTypes.size()) ? argParamTypes[size_t(paramIndex)] : nullptr;
+            auto* argValue = emitExprForPassing(*expr.args[i].value, paramType);
+            ASSERT(!paramType || argValue->getType()->equals(paramType));
+            writtenValues.push_back(argValue);
+        }
+        llvm::SmallVector<Value*, 16> orderedValues(argParamTypes.size(), nullptr);
+        llvm::SmallVector<Value*, 4> extras;
+        for (size_t i = 0; i < expr.args.size(); ++i) {
+            int paramIndex = expr.argParamIndices[i];
+            if (paramIndex == -1) {
+                extras.push_back(writtenValues[i]);
+            } else {
+                orderedValues[size_t(paramIndex)] = writtenValues[i];
+            }
+        }
+        for (auto* value : orderedValues)
+            if (value) args.push_back(value);
+        for (auto* value : extras)
+            args.push_back(value);
+    } else {
+        for (const auto& arg : expr.args) {
+            auto paramType = param != params.end() ? *param++ : nullptr;
+            auto* argValue = emitExprForPassing(*arg.value, paramType);
+            ASSERT(!paramType || argValue->getType()->equals(paramType));
+            args.push_back(argValue);
+        }
     }
 
     if (calleeDecl->isConstructorDecl()) {

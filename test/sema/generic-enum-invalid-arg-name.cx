@@ -8,7 +8,7 @@ enum Outcome<T> {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:24: error: invalid argument name 'wrong' for parameter 'value'
+    // CHECK: [[@LINE+1]]:24: error: invalid argument name 'wrong'
     var x = Outcome.Ok(wrong = 1);
 }
 

@@ -31,7 +31,7 @@ struct Type;
 struct CompileOptions;
 
 struct ArgumentValidation {
-    enum Error { None, TooFew, TooMany, InvalidName, InvalidType };
+    enum Error { None, TooFew, TooMany, InvalidName, DuplicateName, InvalidType };
 
     Error error;
     int index;
@@ -42,6 +42,7 @@ struct ArgumentValidation {
     static ArgumentValidation tooFew() { return {TooFew, -1, false, false}; }
     static ArgumentValidation tooMany() { return {TooMany, -1, false, false}; }
     static ArgumentValidation invalidName(size_t index) { return {InvalidName, int(index), false, false}; }
+    static ArgumentValidation duplicateName(size_t index) { return {DuplicateName, int(index), false, false}; }
     static ArgumentValidation invalidType(size_t index) { return {InvalidType, int(index), false, false}; }
 };
 

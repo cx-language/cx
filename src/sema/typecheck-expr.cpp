@@ -143,6 +143,51 @@ static void unnarrow(Expr& expr) {
     }
 }
 
+// Maps call args to params: named args by name (order-free), positional args to
+// the next unassigned param in declaration order. Missing params must have defaults.
+// On success fills argToParam (param index or -1 for variadic extra) and paramToArg
+// (arg index or -1 for missing) and returns nullopt; otherwise returns the error.
+static std::optional<ArgumentValidation> computeArgParamMapping(llvm::ArrayRef<NamedValue> args, llvm::ArrayRef<ParamDecl> params, bool isVariadic,
+                                                                std::vector<int>& argToParam, std::vector<int>& paramToArg) {
+    argToParam.assign(args.size(), -1);
+    paramToArg.assign(params.size(), -1);
+
+    for (size_t i = 0; i < args.size(); ++i) {
+        auto& arg = args[i];
+        if (arg.name.empty()) {
+            auto unassigned = llvm::find(paramToArg, -1);
+            if (unassigned == paramToArg.end()) {
+                if (isVariadic) {
+                    argToParam[i] = -1;
+                } else {
+                    return ArgumentValidation::tooMany();
+                }
+            } else {
+                size_t paramIndex = size_t(unassigned - paramToArg.begin());
+                argToParam[i] = int(paramIndex);
+                paramToArg[paramIndex] = int(i);
+            }
+        } else {
+            int paramIndex = -1;
+            for (size_t j = 0; j < params.size(); ++j) {
+                if (!params[j].getName().empty() && params[j].getName() == arg.name) {
+                    paramIndex = int(j);
+                    break;
+                }
+            }
+            if (paramIndex == -1) return ArgumentValidation::invalidName(i);
+            if (paramToArg[size_t(paramIndex)] != -1) return ArgumentValidation::duplicateName(i);
+            argToParam[i] = paramIndex;
+            paramToArg[size_t(paramIndex)] = int(i);
+        }
+    }
+
+    for (size_t j = 0; j < params.size(); ++j) {
+        if (paramToArg[j] == -1 && !params[j].defaultValue) return ArgumentValidation::tooFew();
+    }
+    return std::nullopt;
+}
+
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType) {
     if (findDecls(expr.identifier).empty()) {
         if (auto* enumCase = getExpectedEnumCase(expr.identifier, expectedType)) {
@@ -1096,10 +1141,16 @@ static bool isLambdaAwaitingInference(const Expr& arg, Type expectedType) {
 
 std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                             bool returnOnError) {
-    if (call.args.size() > params.size()) return {};
-
-    for (size_t i = call.args.size(); i < params.size(); ++i) {
-        if (!params[i].defaultValue) return {};
+    std::vector<int> argToParam, paramToArg;
+    auto mappingError = computeArgParamMapping(call.args, params, false, argToParam, paramToArg);
+    bool useMapping = !mappingError;
+    if (mappingError) {
+        if (returnOnError) return {};
+        if (mappingError->error == ArgumentValidation::TooFew || mappingError->error == ArgumentValidation::TooMany) return {};
+        if (call.args.size() > params.size()) return {};
+        for (size_t i = call.args.size(); i < params.size(); ++i) {
+            if (!params[i].defaultValue) return {};
+        }
     }
 
     std::vector<Type> inferredGenericArgs;
@@ -1109,8 +1160,9 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
         Type genericArg;
         Expr* genericArgValue = nullptr;
 
-        for (auto&& [arg, param] : llvm::zip_first(call.args, params)) {
-            Type paramType = param.type;
+        for (size_t i = 0; i < call.args.size(); ++i) {
+            auto& arg = call.args[i];
+            Type paramType = useMapping ? params[size_t(argToParam[i])].type : params[i].type;
 
             if (containsGenericParam(paramType, genericParam.getName())) {
                 // FIXME: The args will also be typechecked by validateAndConvertArguments() after this function. Get rid of this duplicated typechecking.
@@ -1188,13 +1240,69 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
     auto fixedParams = params.drop_back();
     Type packType = params.back().type;
 
-    if (call.args.size() < fixedParams.size()) return std::nullopt;
-    size_t packCount = call.args.size() - fixedParams.size();
+    std::vector<int> fixedArgForParam(fixedParams.size(), -1);
+    std::vector<size_t> packArgIndices;
+    size_t packCount = 0;
 
-    for (size_t i = fixedParams.size(); i < call.args.size(); ++i) {
-        if (!call.args[i].name.empty()) {
-            if (returnOnError) return std::nullopt;
-            ERROR(call.args[i].location, "variadic arguments cannot have labels");
+    bool hasNamed = llvm::any_of(call.args, [](auto& arg) { return !arg.name.empty(); });
+    if (!hasNamed) {
+        if (call.args.size() < fixedParams.size()) return std::nullopt;
+        packCount = call.args.size() - fixedParams.size();
+        for (size_t j = 0; j < fixedParams.size(); ++j)
+            fixedArgForParam[j] = int(j);
+        for (size_t j = 0; j < packCount; ++j)
+            packArgIndices.push_back(fixedParams.size() + j);
+    } else {
+        std::vector<int> namedFixedToArg(fixedParams.size(), -1);
+        bool mappingFailed = false;
+        for (size_t i = 0; i < call.args.size() && !mappingFailed; ++i) {
+            if (call.args[i].name.empty()) continue;
+            int paramIndex = -1;
+            for (size_t j = 0; j < fixedParams.size(); ++j) {
+                if (!fixedParams[j].getName().empty() && fixedParams[j].getName() == call.args[i].name) {
+                    paramIndex = int(j);
+                    break;
+                }
+            }
+            if (paramIndex == -1 || namedFixedToArg[size_t(paramIndex)] != -1) {
+                mappingFailed = true;
+            } else {
+                namedFixedToArg[size_t(paramIndex)] = int(i);
+            }
+        }
+        if (!mappingFailed) {
+            fixedArgForParam = namedFixedToArg;
+            for (size_t i = 0; i < call.args.size(); ++i) {
+                if (!call.args[i].name.empty()) continue;
+                auto unassigned = llvm::find(fixedArgForParam, -1);
+                if (unassigned == fixedArgForParam.end()) {
+                    packArgIndices.push_back(i);
+                } else {
+                    *unassigned = int(i);
+                }
+            }
+            for (size_t j = 0; j < fixedParams.size(); ++j) {
+                if (fixedArgForParam[j] == -1 && !fixedParams[j].defaultValue) {
+                    mappingFailed = true;
+                    break;
+                }
+            }
+            packCount = packArgIndices.size();
+        }
+        if (mappingFailed) {
+            if (call.args.size() < fixedParams.size()) return std::nullopt;
+            packCount = call.args.size() - fixedParams.size();
+            for (size_t i = fixedParams.size(); i < call.args.size(); ++i) {
+                if (!call.args[i].name.empty()) {
+                    if (returnOnError) return std::nullopt;
+                    ERROR(call.args[i].location, "variadic arguments cannot have labels");
+                }
+            }
+            for (size_t j = 0; j < fixedParams.size(); ++j)
+                fixedArgForParam[j] = int(j);
+            packArgIndices.clear();
+            for (size_t j = 0; j < packCount; ++j)
+                packArgIndices.push_back(fixedParams.size() + j);
         }
     }
 
@@ -1225,11 +1333,12 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
         Type genericArg;
         Expr* genericArgValue = nullptr;
 
-        for (size_t i = 0; i < fixedParams.size(); ++i) {
-            Type paramType = fixedParams[i].type;
+        for (size_t j = 0; j < fixedParams.size(); ++j) {
+            Type paramType = fixedParams[j].type;
             if (!paramType || !containsGenericParam(paramType, genericParam->getName())) continue;
+            if (fixedArgForParam[j] == -1) continue;
 
-            auto* argValue = call.args[i].value;
+            auto* argValue = call.args[size_t(fixedArgForParam[j])].value;
             auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(paramType, genericParams);
             Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
             Type maybeGenericArg = findGenericArg(argType, paramType, genericParam->getName());
@@ -1258,7 +1367,7 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
     }
 
     for (size_t j = 0; j < packCount; ++j) {
-        auto* argValue = call.args[fixedParams.size() + j].value;
+        auto* argValue = call.args[packArgIndices[j]].value;
         auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(packType, genericParams);
         Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
 
@@ -1439,10 +1548,16 @@ static const Match* findMatchByPredicate(llvm::ArrayRef<Match> matches, const Ca
         auto params = getMatchParams(match);
 
         if (params.size() == call.args.size()) {
-            if (llvm::all_of(llvm::zip_first(params, call.args), [&](auto&& pair) {
-                    auto&& [param, arg] = pair;
-                    return predicate(param.type, arg.value->type);
-                })) {
+            std::vector<int> argToParam, paramToArg;
+            if (computeArgParamMapping(call.args, params, false, argToParam, paramToArg)) continue;
+            bool allMatch = true;
+            for (size_t i = 0; i < call.args.size(); ++i) {
+                if (!predicate(params[size_t(argToParam[i])].type, call.args[i].value->type)) {
+                    allMatch = false;
+                    break;
+                }
+            }
+            if (allMatch) {
                 if (result) return nullptr;
                 result = &match;
             }
@@ -1462,11 +1577,13 @@ static const Match* findMatchWithMostExactArgs(llvm::ArrayRef<Match> matches, co
     for (auto& match : matches) {
         auto params = getMatchParams(match);
         if (params.size() != call.args.size()) continue;
+        std::vector<int> argToParam, paramToArg;
+        if (computeArgParamMapping(call.args, params, false, argToParam, paramToArg)) continue;
 
-        auto count = llvm::count_if(llvm::zip_first(params, call.args), [](auto&& pair) {
-            auto&& [param, arg] = pair;
-            return param.type == arg.value->type;
-        });
+        int count = 0;
+        for (size_t i = 0; i < call.args.size(); ++i) {
+            if (params[size_t(argToParam[i])].type == call.args[i].value->type) ++count;
+        }
         if (count > bestCount) {
             bestCount = count;
             result = &match;
@@ -1931,8 +2048,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         assertParams.back().defaultValue = makeAST<StringLiteralExpr>(std::string("Assertion failed"), expr.location);
         validateAndConvertArguments(expr, assertParams, false, expr.getFunctionName(), expr.location);
         validateGenericArgCount(0, expr.genericArgs, expr.getFunctionName(), expr.location);
-        if (!llvm::isa<StringLiteralExpr>(expr.args[1].value)) {
-            ERROR(expr.args[1].location, "assert message must be a string literal");
+        for (size_t i = 0; i < expr.args.size(); ++i) {
+            if (expr.argParamIndices[i] == 1 && !llvm::isa<StringLiteralExpr>(expr.args[i].value)) {
+                ERROR(expr.args[i].location, "assert message must be a string literal");
+            }
         }
         return Type::getVoid();
     }
@@ -2038,9 +2157,19 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         validateAndConvertArguments(expr, params, false, decl->getName(), expr.location);
     }
 
-    for (auto&& [param, arg] : llvm::zip_longest(params, expr.args)) {
-        if (arg && !arg->value->type.isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
-            setMoved(arg->value, true);
+    if (expr.argParamIndices.size() == expr.args.size()) {
+        for (size_t i = 0; i < expr.args.size(); ++i) {
+            int paramIndex = expr.argParamIndices[i];
+            const ParamDecl* param = (paramIndex != -1 && size_t(paramIndex) < params.size()) ? &params[size_t(paramIndex)] : nullptr;
+            if (!expr.args[i].value->type.isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
+                setMoved(expr.args[i].value, true);
+            }
+        }
+    } else {
+        for (auto&& [param, arg] : llvm::zip_longest(params, expr.args)) {
+            if (arg && !arg->value->type.isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
+                setMoved(arg->value, true);
+            }
         }
     }
 
@@ -2080,45 +2209,36 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 }
 
 ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic) {
-    if (expr.args.size() < params.size()) {
-        for (size_t i = expr.args.size(); i < params.size(); ++i) {
-            if (!params[i].defaultValue) return ArgumentValidation::tooFew();
-        }
-    } else if (!isVariadic && expr.args.size() > params.size()) {
-        return ArgumentValidation::tooMany();
-    }
+    std::vector<int> argToParam, paramToArg;
+    if (auto mappingError = computeArgParamMapping(expr.args, params, isVariadic, argToParam, paramToArg)) return *mappingError;
 
     bool didConvertArguments = false;
     bool didUnwrapOptional = false;
 
     for (size_t i = 0; i < expr.args.size(); ++i) {
         auto& arg = expr.args[i];
-        auto* param = i < params.size() ? &params[i] : nullptr;
+        int paramIndex = argToParam[i];
+        if (paramIndex == -1) continue;
+        auto& param = params[size_t(paramIndex)];
 
-        if (!arg.name.empty() && (!param || arg.name != param->getName())) {
-            return ArgumentValidation::invalidName(i);
+        bool hadType = arg.value->hasType();
+
+        if (!arg.value->hasType()) {
+            typecheckExpr(*arg.value, false, param.type);
         }
 
-        if (param) {
-            bool hadType = arg.value->hasType();
-
-            if (!arg.value->hasType()) {
-                typecheckExpr(*arg.value, false, param ? param->type : Type());
-            }
-
-            bool invalidType = false;
-            std::optional<ImplicitCastExpr::Kind> implicitCastKind;
-            // Probing: other overload candidates are still untried, so don't diagnose yet.
-            if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param->type, true, &implicitCastKind, false)) {
-                didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
-                didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
-            } else {
-                invalidType = true;
-            }
-
-            if (!hadType) arg.value->removeTypes();
-            if (invalidType) return ArgumentValidation::invalidType(i);
+        bool invalidType = false;
+        std::optional<ImplicitCastExpr::Kind> implicitCastKind;
+        // Probing: other overload candidates are still untried, so don't diagnose yet.
+        if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param.type, true, &implicitCastKind, false)) {
+            didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
+            didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
+        } else {
+            invalidType = true;
         }
+
+        if (!hadType) arg.value->removeTypes();
+        if (invalidType) return ArgumentValidation::invalidType(i);
     }
 
     return ArgumentValidation::success(didConvertArguments, didUnwrapOptional);
@@ -2148,13 +2268,18 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                                               const Decl* calleeDecl) {
     auto result = getArgumentValidationResult(expr, params, isVariadic);
 
+    std::vector<int> argToParam, paramToArg;
+    // Mapping is available in every case except arity errors, which return before filling it fully.
+    // Recompute for error messages; success always has a complete mapping.
+    computeArgParamMapping(expr.args, params, isVariadic, argToParam, paramToArg);
+
     // Arguments are type-checked here for error messages, but type-converted only in the success case below
     // (they might not convert properly in the case of error).
-    for (int i = 0; i < std::max(params.size(), expr.args.size()); i++) {
-        auto* arg = i < expr.args.size() ? &expr.args[i] : nullptr;
-        auto* param = i < params.size() ? &params[i] : nullptr;
-        if (!arg) continue;
-        if (!arg->value->hasType()) typecheckExpr(*arg->value, false, param ? param->type : Type());
+    for (size_t i = 0; i < expr.args.size(); ++i) {
+        auto& arg = expr.args[i];
+        Type expectedType;
+        if (i < argToParam.size() && argToParam[i] != -1) expectedType = params[size_t(argToParam[i])].type;
+        if (!arg.value->hasType()) typecheckExpr(*arg.value, false, expectedType);
     }
 
     // Point arity errors at the declaration so the source excerpt shows the expected prototype.
@@ -2164,15 +2289,14 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
     }
 
     switch (result.error) {
-    case ArgumentValidation::None:
-        for (int i = 0; i < std::max(params.size(), expr.args.size()); i++) {
-            auto* arg = i < expr.args.size() ? &expr.args[i] : nullptr;
-            auto* param = i < params.size() ? &params[i] : nullptr;
-            if (!arg) continue;
-            if (param) arg->value = convert(arg->value, param->type, true);
+    case ArgumentValidation::None: {
+        for (size_t i = 0; i < expr.args.size(); ++i) {
+            int paramIndex = argToParam[i];
+            if (paramIndex != -1) expr.args[i].value = convert(expr.args[i].value, params[size_t(paramIndex)].type, true);
         }
-        for (size_t i = expr.args.size(); i < params.size(); ++i) {
-            const ParamDecl& param = params[i];
+        for (size_t j = 0; j < params.size(); ++j) {
+            if (paramToArg[j] != -1) continue;
+            const ParamDecl& param = params[j];
             ASSERT(param.defaultValue);
             Expr* defaultArg = param.defaultValue->instantiate({});
             if (!defaultArg->hasType()) typecheckExpr(*defaultArg, false, param.type);
@@ -2181,9 +2305,12 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             } else {
                 ERROR(expr.location, "cannot assign '" << defaultArg->type << "' to '" << param.type << "'" << narrowingHint(defaultArg->type, param.type));
             }
+            argToParam.push_back(int(j));
             expr.args.emplace_back(std::string(param.getName()), defaultArg, expr.location);
         }
+        expr.argParamIndices = std::move(argToParam);
         break;
+    }
     case ArgumentValidation::TooFew: {
         size_t requiredParamCount = 0;
         for (auto& param : params) {
@@ -2200,21 +2327,25 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         break;
     case ArgumentValidation::InvalidName: {
         auto& arg = expr.args[result.index];
-        auto* param = &params[result.index];
-        ERROR_WITH_NOTES(arg.location, std::move(declNote), "invalid argument name '" << arg.name << "' for parameter '" << param->getName() << "'");
+        ERROR_WITH_NOTES(arg.location, std::move(declNote), "invalid argument name '" << arg.name << "'");
+        break;
+    }
+    case ArgumentValidation::DuplicateName: {
+        auto& arg = expr.args[result.index];
+        ERROR_WITH_NOTES(arg.location, std::move(declNote), "duplicate argument for parameter '" << arg.name << "'");
         break;
     }
     case ArgumentValidation::InvalidType: {
         auto& arg = expr.args[result.index];
-        auto* param = &params[result.index];
-        diagnoseClosureConversion(arg.value->type, param->type, arg.location);
+        auto& param = params[size_t(argToParam[size_t(result.index)])];
+        diagnoseClosureConversion(arg.value->type, param.type, arg.location);
         // Validation probed without diagnosing; re-run once so an out-of-range literal still
         // reports the range instead of a generic mismatch. This either throws or returns null,
         // since probing already failed, so discarding the result is safe.
-        (void)convert(arg.value, param->type, true);
+        (void)convert(arg.value, param.type, true);
         ERROR_WITH_NOTES(arg.location, std::move(declNote),
-                         "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param->type
-                                              << "'" << narrowingHint(arg.value->type, param->type));
+                         "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type
+                                              << "'" << narrowingHint(arg.value->type, param.type));
         break;
     }
     }
