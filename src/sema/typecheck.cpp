@@ -163,7 +163,12 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
 
     auto stdModule = importModule(nullptr, nullptr, "std");
     if (!stdModule) {
-        ABORT("couldn't import the standard library: " << stdModule.getError().message());
+        std::string searched;
+        for (auto& path : options.importSearchPaths) {
+            searched += "\n  " + path + "/std";
+        }
+        ABORT("couldn't import the standard library (" << stdModule.getError().message() << "); searched:" << searched
+                                                       << "\n(set CX_ROOT to the directory containing std/ to override)");
     }
 
     // Process all imports before typechecking anything else, so that deferred typechecking

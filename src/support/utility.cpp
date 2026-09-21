@@ -6,6 +6,7 @@
 #include <llvm/ADT/SmallSet.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
 #include <llvm/Support/Process.h>
 #include <llvm/Support/Program.h>
 #ifndef __EMSCRIPTEN__
@@ -105,6 +106,32 @@ std::optional<std::string> cx::findExternalCCompiler() {
         }
     }
     return std::nullopt;
+}
+
+std::string cx::getCxRootDir() {
+    if (auto root = llvm::sys::Process::GetEnv("CX_ROOT")) {
+        if (!root->empty()) return *root;
+    }
+#ifndef __EMSCRIPTEN__
+    // Anchor on this function's address so dladdr(3) resolves to the running
+    // binary (libcx links statically into each executable).
+    std::string executable = llvm::sys::fs::getMainExecutable("", reinterpret_cast<void*>(&getCxRootDir));
+    if (!executable.empty()) {
+        std::string directory = llvm::sys::path::parent_path(executable).str();
+        for (int level = 0; level < 3 && !directory.empty(); ++level) {
+            const std::string candidates[] = {directory, directory + "/share/cx"};
+            for (auto& candidate : candidates) {
+                if (llvm::sys::fs::is_directory(candidate + "/std")) return candidate;
+            }
+            directory = llvm::sys::path::parent_path(directory).str();
+        }
+    }
+#endif
+#ifdef CX_ROOT_DIR
+    return CX_ROOT_DIR;
+#else
+    return "";
+#endif
 }
 
 void cx::printStackTrace() {
