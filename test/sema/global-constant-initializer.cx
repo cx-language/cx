@@ -1,0 +1,67 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:1
+// CHECK-NEXT:2
+// CHECK-NEXT:3
+// CHECK-NEXT:hello
+// CHECK-NEXT:42
+// CHECK-NEXT:null
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:3
+// CHECK-NEXT:false
+// CHECK-NEXT:4
+// CHECK-NEXT:-1.5
+// CHECK-NEXT:true
+// CHECK-NEXT:1
+// CHECK-NEXT:-1
+// CHECK-NEXT:0
+// CHECK-NEXT:5
+// CHECK-NEXT:1
+// CHECK-NEXT:1
+
+int[3] numbers = [1, 2, 3];
+string greeting = "hello";
+int? answer = 42;
+int? nothing = null;
+bool both = true && false;
+bool either = false || true;
+int t = 1 < 2 ? 3 : 4;
+bool b = 2 > 3 ? true : false;
+float f = 1.5 + 2.5;
+float neg = -1.5;
+bool less = 1 < 2;
+int x = 1;
+int* ptr = &x;
+
+enum Color { red, green }
+int inverted = ~Color.red;
+int negated = -Color.red;
+
+const one = 1;
+const two = one + 1;
+const three = one + 2;
+int five = two + three;
+int[2] pair = [one, one];
+
+void main() {
+    println(numbers[0]);
+    println(numbers[1]);
+    println(numbers[2]);
+    println(greeting);
+    println(answer!);
+    println(nothing);
+    println(both);
+    println(either);
+    println(t);
+    println(b);
+    println(f);
+    println(neg);
+    println(less);
+    println(*ptr);
+    println(inverted);
+    println(negated);
+    println(five);
+    println(pair[0]);
+    println(pair[1]);
+}

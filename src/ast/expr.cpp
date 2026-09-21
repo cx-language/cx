@@ -102,6 +102,100 @@ bool Expr::isConstant() const {
     llvm_unreachable("all cases handled");
 }
 
+bool Expr::isFoldableIntConstant() const {
+    switch (kind) {
+    case ExprKind::VarExpr: {
+        auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl);
+        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableIntConstant();
+    }
+    case ExprKind::IntLiteralExpr:
+    case ExprKind::CharacterLiteralExpr:
+        return true;
+    case ExprKind::UnaryExpr: {
+        auto* unaryExpr = llvm::cast<UnaryExpr>(this);
+        switch (unaryExpr->op) {
+        case Token::Plus:
+        case Token::Minus:
+        case Token::Tilde:
+            return unaryExpr->getOperand().isFoldableIntConstant();
+        default:
+            return false;
+        }
+    }
+    case ExprKind::BinaryExpr: {
+        auto& binaryExpr = llvm::cast<BinaryExpr>(*this);
+        switch (binaryExpr.op) {
+        case Token::Plus:
+        case Token::Minus:
+        case Token::Star:
+        case Token::Slash:
+        case Token::Modulo:
+        case Token::PositiveModulo:
+        case Token::And:
+        case Token::Or:
+        case Token::Xor:
+        case Token::LeftShift:
+        case Token::RightShift:
+            return binaryExpr.getLHS().isFoldableIntConstant() && binaryExpr.getRHS().isFoldableIntConstant();
+        default:
+            return false;
+        }
+    }
+    case ExprKind::SizeofExpr:
+        return llvm::cast<SizeofExpr>(this)->operandType.getSizeInBytes().has_value();
+    case ExprKind::ImplicitCastExpr: {
+        auto* cast = llvm::cast<ImplicitCastExpr>(this);
+        return cast->castKind == ImplicitCastExpr::NumericWiden && cast->operand->isFoldableIntConstant();
+    }
+    case ExprKind::IfExpr: {
+        auto* ifExpr = llvm::cast<IfExpr>(this);
+        return ifExpr->condition->isFoldableBoolConstant() && ifExpr->thenExpr->isFoldableIntConstant() && ifExpr->elseExpr->isFoldableIntConstant();
+    }
+    default:
+        return false;
+    }
+}
+
+bool Expr::isFoldableBoolConstant() const {
+    switch (kind) {
+    case ExprKind::VarExpr: {
+        auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl);
+        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableBoolConstant();
+    }
+    case ExprKind::BoolLiteralExpr:
+        return true;
+    case ExprKind::UnaryExpr: {
+        auto* unaryExpr = llvm::cast<UnaryExpr>(this);
+        return unaryExpr->op == Token::Not && unaryExpr->getOperand().isFoldableBoolConstant();
+    }
+    case ExprKind::BinaryExpr: {
+        auto& binaryExpr = llvm::cast<BinaryExpr>(*this);
+        switch (binaryExpr.op) {
+        case Token::AndAnd:
+        case Token::OrOr:
+            return binaryExpr.getLHS().isFoldableBoolConstant() && binaryExpr.getRHS().isFoldableBoolConstant();
+        case Token::Equal:
+        case Token::NotEqual:
+        case Token::Less:
+        case Token::LessOrEqual:
+        case Token::Greater:
+        case Token::GreaterOrEqual:
+            return binaryExpr.getLHS().isFoldableIntConstant() && binaryExpr.getRHS().isFoldableIntConstant();
+        default:
+            return false;
+        }
+    }
+    case ExprKind::ImplicitCastExpr:
+        return llvm::cast<ImplicitCastExpr>(this)->operand->isFoldableBoolConstant();
+    case ExprKind::IfExpr: {
+        auto* ifExpr = llvm::cast<IfExpr>(this);
+        return ifExpr->condition->isFoldableBoolConstant() && ifExpr->thenExpr->isFoldableBoolConstant() && ifExpr->elseExpr->isFoldableBoolConstant();
+    }
+    default:
+        return false;
+    }
+}
+
 llvm::APSInt Expr::getConstantIntegerValue() const {
     switch (kind) {
     case ExprKind::VarExpr:
@@ -158,6 +252,11 @@ bool Expr::getConstantBoolValue() const {
         llvm_unreachable("not a constant bool");
     case ExprKind::BoolLiteralExpr:
         return llvm::cast<BoolLiteralExpr>(this)->value;
+    case ExprKind::UnaryExpr: {
+        auto* unaryExpr = llvm::cast<UnaryExpr>(this);
+        if (unaryExpr->op == Token::Not) return !unaryExpr->getOperand().getConstantBoolValue();
+        llvm_unreachable("not a constant bool");
+    }
     case ExprKind::ImplicitCastExpr:
         return llvm::cast<ImplicitCastExpr>(this)->operand->getConstantBoolValue();
     case ExprKind::BinaryExpr: {

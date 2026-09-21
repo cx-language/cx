@@ -489,23 +489,145 @@ void CGenerator::codegenGlobalVariable(const GlobalVariable* inst) {
     codegenType(stream, inst->type, true);
     stream << ' ' << inst->name;
     codegenTypeSuffix(stream, inst->type, true);
-    // Only constant expressions are valid C static initializers; anything else keeps a zero initializer.
     if (inst->value) {
-        switch (inst->value->kind) {
-        case ValueKind::ConstantInt:
-        case ValueKind::ConstantFP:
-        case ValueKind::ConstantBool:
-        case ValueKind::Function:
-        case ValueKind::SizeofInst:
-            stream << " = ";
-            codegenInst(inst->value);
-            break;
-        default:
-            break;
-        }
+        stream << " = ";
+        codegenGlobalInitializer(inst->value);
     }
     stream << ";\n";
     emittedValues.insert({inst, "(&" + inst->name + ")"});
+}
+
+void CGenerator::codegenGlobalInitializer(const Value* value) {
+    switch (value->kind) {
+    case ValueKind::ConstantInt:
+        return codegenConstantInt(llvm::cast<ConstantInt>(value));
+    case ValueKind::ConstantFP:
+        return codegenConstantFP(llvm::cast<ConstantFP>(value));
+    case ValueKind::ConstantBool:
+        return codegenConstantBool(llvm::cast<ConstantBool>(value));
+    case ValueKind::ConstantString:
+        return codegenConstantString(llvm::cast<ConstantString>(value));
+    case ValueKind::ConstantNull:
+        return codegenConstantNull(llvm::cast<ConstantNull>(value));
+    case ValueKind::Function:
+        stream << getCFunctionName(llvm::cast<Function>(value));
+        return;
+    case ValueKind::GlobalVariable:
+        stream << "(&" << llvm::cast<GlobalVariable>(value)->name << ")";
+        return;
+    case ValueKind::SizeofInst:
+        return codegenSizeof(llvm::cast<SizeofInst>(value));
+    case ValueKind::Undefined:
+        stream << "{0}";
+        return;
+    case ValueKind::InsertInst: {
+        auto* insert = llvm::cast<InsertInst>(value);
+        IRType* aggregateType = insert->aggregate->getType();
+        int count = aggregateType->isArrayType() ? aggregateType->getArraySize() : (int)aggregateType->getFields().size();
+        std::vector<const Value*> elements(count, nullptr);
+        for (auto* current = insert; current; current = llvm::dyn_cast<InsertInst>(current->aggregate)) {
+            if (!elements[current->index]) elements[current->index] = current->value;
+        }
+        stream << "{";
+        for (int i = 0; i < count; ++i) {
+            if (i > 0) stream << ", ";
+            if (elements[i]) {
+                codegenGlobalInitializer(elements[i]);
+            } else {
+                stream << "{0}";
+            }
+        }
+        stream << "}";
+        return;
+    }
+    case ValueKind::BinaryInst: {
+        auto* binary = llvm::cast<BinaryInst>(value);
+        stream << "(";
+        codegenGlobalInitializer(binary->left);
+        stream << ' ';
+        switch (binary->op.kind) {
+        case Token::Plus:
+            stream << '+';
+            break;
+        case Token::Minus:
+            stream << '-';
+            break;
+        case Token::Star:
+            stream << '*';
+            break;
+        case Token::Slash:
+            stream << '/';
+            break;
+        case Token::Modulo:
+            stream << '%';
+            break;
+        case Token::LeftShift:
+            stream << "<<";
+            break;
+        case Token::RightShift:
+            stream << ">>";
+            break;
+        case Token::And:
+            stream << '&';
+            break;
+        case Token::Or:
+            stream << '|';
+            break;
+        case Token::Xor:
+            stream << '^';
+            break;
+        case Token::Equal:
+            stream << "==";
+            break;
+        case Token::NotEqual:
+            stream << "!=";
+            break;
+        case Token::Less:
+            stream << '<';
+            break;
+        case Token::LessOrEqual:
+            stream << "<=";
+            break;
+        case Token::Greater:
+            stream << '>';
+            break;
+        case Token::GreaterOrEqual:
+            stream << ">=";
+            break;
+        default:
+            llvm_unreachable("unexpected binary operator in global initializer");
+        }
+        stream << ' ';
+        codegenGlobalInitializer(binary->right);
+        stream << ")";
+        return;
+    }
+    case ValueKind::UnaryInst: {
+        auto* unary = llvm::cast<UnaryInst>(value);
+        // `~` lowers to a Not instruction (see emitNot), so Not with an integer operand is a bitwise not.
+        switch (unary->op.kind) {
+        case Token::Plus:
+            stream << "(+";
+            break;
+        case Token::Minus:
+            stream << "(-";
+            break;
+        case Token::Tilde:
+            stream << "(~";
+            break;
+        case Token::Not:
+            stream << (unary->operand->getType()->isBool() ? "(!" : "(~");
+            break;
+        default:
+            llvm_unreachable("unexpected unary operator in global initializer");
+        }
+        codegenGlobalInitializer(unary->operand);
+        stream << ")";
+        return;
+    }
+    default:
+        llvm_unreachable("unexpected value in global initializer");
+    }
 }
 
 void CGenerator::codegenConstantString(const ConstantString* inst) {

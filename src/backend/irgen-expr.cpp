@@ -23,6 +23,23 @@ Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
         return createGlobalStringPtr(expr.value);
     }
 
+    if (emittingGlobalInitializer && expr.hasType()) {
+        // Build the string object as a constant aggregate instead of calling the constructor.
+        // Layout: string { characters: ArrayRef<char> { data: char[*], size: int } }.
+        auto* stringType = getIRType(expr.type);
+        auto stringFields = stringType->getFields();
+        auto charactersField = llvm::find_if(stringFields, [](const IRField& field) { return field.name == "characters"; });
+        ASSERT(charactersField != stringFields.end());
+        auto arrayRefFields = charactersField->type->getFields();
+        auto dataField = llvm::find_if(arrayRefFields, [](const IRField& field) { return field.name == "data"; });
+        auto sizeField = llvm::find_if(arrayRefFields, [](const IRField& field) { return field.name == "size"; });
+        ASSERT(dataField != arrayRefFields.end() && sizeField != arrayRefFields.end());
+
+        auto* arrayRef = createInsertValue(createUndefined(charactersField->type), createGlobalStringPtr(expr.value), dataField - arrayRefFields.begin());
+        arrayRef = createInsertValue(arrayRef, createConstantInt(Type::getInt(), expr.value.size()), sizeField - arrayRefFields.begin());
+        return createInsertValue(createUndefined(stringType), arrayRef, charactersField - stringFields.begin());
+    }
+
     auto* stringPtr = createGlobalStringPtr(expr.value);
     auto* size = createConstantInt(Type::getInt(), expr.value.size());
     auto* alloca = createEntryBlockAlloca(BasicType::get("string", {}), "__str");
@@ -449,9 +466,11 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
 
     switch (expr.op) {
     case Token::AndAnd:
+        if (expr.isFoldableBoolConstant()) return createConstantBool(expr.getConstantBoolValue());
         return emitLogicalAnd(expr.getLHS(), expr.getRHS());
 
     case Token::OrOr:
+        if (expr.isFoldableBoolConstant()) return createConstantBool(expr.getConstantBoolValue());
         return emitLogicalOr(expr.getLHS(), expr.getRHS());
 
     case Token::QuestionQuestion:
@@ -600,6 +619,20 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
     auto enumDecl = enumCase.getEnumDecl();
     auto tag = emitExpr(*enumCase.value);
     if (!enumDecl->hasAssociatedValues()) return tag;
+
+    if (emittingGlobalInitializer) {
+        // Only single-payload enums (i.e. Optional) reach here; anything else is rejected in sema.
+        // The payload union has one member, so the payload value initializes it directly.
+        auto* enumType = getIRType(enumDecl->getType());
+        ASSERT(enumType->getFields()[optionalPayloadFieldIndex].type->getFields().size() == 1);
+        Value* enumValue = createInsertValue(createUndefined(enumType), tag, optionalTagFieldIndex);
+        if (!associatedValueElements.empty()) {
+            Value* payload = emitAggregateElements(enumCase.associatedType, associatedValueElements);
+            auto* unionType = enumType->getFields()[optionalPayloadFieldIndex].type;
+            enumValue = createInsertValue(enumValue, createInsertValue(createUndefined(unionType), payload, 0), optionalPayloadFieldIndex);
+        }
+        return enumValue;
+    }
 
     // TODO: Could reuse variable alloca instead of always creating a new one here.
     auto* enumValue = createEntryBlockAlloca(enumDecl->getType(), "enum");
@@ -879,6 +912,11 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
 }
 
 Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
+    // Integer ternaries fold in emitPlainExpr; fold boolean ones here so global initializers stay branch-free.
+    if (expr.hasType() && expr.type.isBool() && expr.isFoldableBoolConstant()) {
+        return createConstantBool(expr.getConstantBoolValue());
+    }
+
     auto* condition = emitExpr(*expr.condition);
     if (condition->getType()->isPointerType()) {
         condition = emitImplicitNullComparison(condition);
@@ -996,7 +1034,8 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
 }
 
 Value* IRGenerator::emitPlainExpr(const Expr& expr) {
-    if (expr.isConstant() && expr.type.isInteger()) {
+    // Cyclic constants can leave expressions untyped; don't fold those.
+    if (expr.hasType() && expr.type.isInteger() && expr.isFoldableIntConstant()) {
         return createConstantInt(expr.type, expr.getConstantIntegerValue());
     }
 

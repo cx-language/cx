@@ -533,9 +533,15 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
     case ExprKind::FloatLiteralExpr:
     case ExprKind::BoolLiteralExpr:
     case ExprKind::CharacterLiteralExpr:
+    case ExprKind::StringLiteralExpr:
     case ExprKind::NullLiteralExpr:
     case ExprKind::UndefinedLiteralExpr:
     case ExprKind::SizeofExpr:
+        return true;
+    case ExprKind::ArrayLiteralExpr:
+        for (auto& element : llvm::cast<ArrayLiteralExpr>(expr).elements) {
+            if (!isSupportedGlobalInitializer(*element, seen)) return false;
+        }
         return true;
     case ExprKind::VarExpr: {
         auto* decl = llvm::cast<VarExpr>(expr).decl;
@@ -543,18 +549,26 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
         if (llvm::isa<FunctionDecl>(decl)) return true;
         auto* varDecl = llvm::dyn_cast<VarDecl>(decl);
         // Immutable globals inline their initializer; mutable ones need a runtime load.
-        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && seen.insert(varDecl).second
-            && isSupportedGlobalInitializer(*varDecl->initializer, seen);
+        if (!varDecl || varDecl->type.isMutable() || !varDecl->initializer || !seen.insert(varDecl).second) return false;
+        // Path-scoped: constants shared between converging paths stay supported, only true cycles fail.
+        bool result = isSupportedGlobalInitializer(*varDecl->initializer, seen);
+        seen.erase(varDecl);
+        return result;
     }
-    case ExprKind::MemberExpr:
-        return llvm::isa_and_nonnull<EnumCase>(llvm::cast<MemberExpr>(expr).decl);
+    case ExprKind::MemberExpr: {
+        // Tag-only cases lower to their tag constant; payload cases need runtime construction.
+        auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(llvm::cast<MemberExpr>(expr).decl);
+        return enumCase && !enumCase->getEnumDecl()->hasAssociatedValues();
+    }
     case ExprKind::UnaryExpr: {
         auto& unary = llvm::cast<UnaryExpr>(expr);
         switch (unary.op) {
         case Token::Plus:
         case Token::Minus:
         case Token::Tilde:
-            return isSupportedGlobalInitializer(unary.getOperand(), seen);
+            // Enum tags lower to integers; pointers and optionals would miscompile.
+            return (expr.type.isInteger() || expr.type.isFloatingPoint() || expr.type.isChar() || (expr.type.isEnumType() && !expr.type.isOptionalType()))
+                && isSupportedGlobalInitializer(unary.getOperand(), seen);
         case Token::Not:
             return unary.getOperand().type.isBool() && isSupportedGlobalInitializer(unary.getOperand(), seen);
         case Token::And: {
@@ -575,6 +589,10 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
         auto& binary = llvm::cast<BinaryExpr>(expr);
         if (!isSupportedGlobalInitializer(binary.getLHS(), seen) || !isSupportedGlobalInitializer(binary.getRHS(), seen)) {
             return false;
+        }
+        // && and || have no constant instruction form; only foldable ones are supported.
+        if (binary.op == Token::AndAnd || binary.op == Token::OrOr) {
+            return expr.isFoldableBoolConstant();
         }
         switch (binary.op) {
         case Token::Plus:
@@ -603,9 +621,18 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
     }
     case ExprKind::ImplicitCastExpr: {
         auto& cast = llvm::cast<ImplicitCastExpr>(expr);
-        // Pointer-implemented optionals need no construction, other casts need loads or branches.
-        return cast.castKind == ImplicitCastExpr::OptionalWrap && expr.type.isOptionalType() && expr.type.getWrappedType().isImplementedAsPointer()
-            && isSupportedGlobalInitializer(*cast.operand, seen);
+        // Pointer-implemented optionals need no construction; value-implemented ones are built as
+        // constant aggregates. Other casts need loads or branches.
+        return cast.castKind == ImplicitCastExpr::OptionalWrap && expr.type.isOptionalType() && isSupportedGlobalInitializer(*cast.operand, seen);
+    }
+    case ExprKind::IfExpr: {
+        // Ternaries emit branches unless folded; only integer and boolean ones fold.
+        auto& ifExpr = llvm::cast<IfExpr>(expr);
+        if (!isSupportedGlobalInitializer(*ifExpr.condition, seen) || !isSupportedGlobalInitializer(*ifExpr.thenExpr, seen)
+            || !isSupportedGlobalInitializer(*ifExpr.elseExpr, seen)) {
+            return false;
+        }
+        return (expr.type.isInteger() && expr.isFoldableIntConstant()) || (expr.type.isBool() && expr.isFoldableBoolConstant());
     }
     default:
         return false;

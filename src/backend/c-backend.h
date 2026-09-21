@@ -27,6 +27,9 @@ struct CGenerator {
     void codegenSizeof(const SizeofInst* inst);
     void codegenBasicBlock(const BasicBlock* block);
     void codegenGlobalVariable(const GlobalVariable* inst);
+    // Renders a global initializer as a C constant expression. Only the constructs that sema
+    // allows in global initializers reach here; anything else is a compiler bug.
+    void codegenGlobalInitializer(const Value* value);
     void codegenConstantString(const ConstantString* inst);
     void codegenConstantInt(const ConstantInt* inst);
     void codegenConstantFP(const ConstantFP* inst);

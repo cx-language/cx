@@ -426,7 +426,8 @@ llvm::Value* LLVMGenerator::codegenGlobalVariable(const GlobalVariable* inst) {
 }
 
 llvm::Value* LLVMGenerator::codegenConstantString(const ConstantString* inst) {
-    return builder.CreateGlobalString(inst->value);
+    // Pass the module explicitly: globals are emitted without an insert block.
+    return builder.CreateGlobalString(inst->value, "", 0, module);
 }
 
 llvm::Value* LLVMGenerator::codegenConstantInt(const ConstantInt* inst) {

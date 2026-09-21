@@ -1,6 +1,6 @@
 // RUN: check-snapshots
 
-int[3] foo = undefined;
+int[3] foo = [0, 1, 2];
 
 void main() {
     int[1] qux = [42];

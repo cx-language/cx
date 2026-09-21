@@ -81,6 +81,11 @@ struct Expr {
     bool isAssignment() const;
     bool isReferenceExpr() const;
     bool isConstant() const;
+    // True when getConstantIntegerValue/getConstantBoolValue handle the expression. Stricter than
+    // isConstant: ternary conditions and &&/|| operands must be boolean-foldable, comparisons must
+    // be over integers, and implicit casts must be numeric widenings.
+    bool isFoldableIntConstant() const;
+    bool isFoldableBoolConstant() const;
     llvm::APSInt getConstantIntegerValue() const;
     bool getConstantBoolValue() const;
     bool isLvalue() const;

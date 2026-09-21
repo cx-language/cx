@@ -258,6 +258,9 @@ struct IRGenerator {
     llvm::SmallVector<BasicBlock*, 4> continueTargets;
     BasicBlock* insertBlock;
     Function* currentFunction = nullptr;
+    // True while emitting a global variable initializer, which must be a pure constant: string
+    // literals and optional values take constant construction paths instead of emitting calls.
+    bool emittingGlobalInitializer = false;
     static const int optionalTagFieldIndex = 0;
     static const int optionalPayloadFieldIndex = 1;
     static int64_t getOptionalSomeTag();

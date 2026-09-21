@@ -15,3 +15,19 @@ void main() {
 const c = 0.1; // global constant, type inferred as 'float'
 const float d = 0.2; // global constant, explicit type
 ```
+
+Global variables are initialized before the program starts,
+so their initializers must be constant expressions:
+literals, arithmetic on constants, and references to other constants,
+but not function calls.
+
+```cs
+const threshold = 10;
+int limit = threshold * 2;
+string greeting = "hello";
+
+void main() {
+    println(limit); // prints 20
+    println(greeting); // prints hello
+}
+```

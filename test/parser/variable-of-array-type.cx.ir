@@ -1,4 +1,4 @@
-global foo = int[3] undefined
+global foo = int[3] _0
 
 int main() {
     int[1]* qux = alloca int[1]

@@ -1,5 +1,5 @@
 
-@foo = private global [3 x i32] undef
+@foo = private global [3 x i32] [i32 0, i32 1, i32 2]
 
 define i32 @main() {
   %qux = alloca [1 x i32], align 4

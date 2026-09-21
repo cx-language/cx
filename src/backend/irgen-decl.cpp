@@ -181,7 +181,25 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
     }
 
     if (decl.isGlobal()) {
+        // Global initializers are pure constants, but emission creates value instructions that
+        // need an insert block. Give them a dead block (leaked like the rest of the IR) instead
+        // of the previous function's block, and null out the current function so any attempt
+        // to emit control flow, calls, or allocas fails loudly instead of corrupting codegen.
+        // Cyclic constants can leave initializers untyped (a pre-existing sema gap); those keep
+        // the previous function so emission limps along exactly like before.
+        bool wellFormed = !decl.initializer || decl.initializer->hasType();
+        auto* deadBlock = new BasicBlock("global.init");
+        llvm::SaveAndRestore saveInsertBlock(insertBlock, deadBlock);
+        llvm::SaveAndRestore<Function*> saveCurrentFunction(currentFunction, wellFormed ? nullptr : currentFunction);
+        llvm::SaveAndRestore saveEmittingGlobal(emittingGlobalInitializer, true);
+
         Value* value = decl.initializer ? emitExpr(*decl.initializer) : nullptr;
+
+        if (wellFormed) {
+            for (auto* inst : deadBlock->body) {
+                ASSERT(llvm::isa<InsertInst>(inst) || llvm::isa<BinaryInst>(inst) || llvm::isa<UnaryInst>(inst));
+            }
+        }
 
         if (decl.type.isMutable()) {
             value = createGlobalVariable(value, decl.type, decl.getName());

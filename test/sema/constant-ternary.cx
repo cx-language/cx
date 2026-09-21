@@ -9,4 +9,10 @@ void main() {
     assert(((1 == 1 ? 2 == 2 ? 5 : 6 : 7)) == 5);
     const flag = true;
     assert((flag ? 8 : 9) == 8);
+    // Optional conditions aren't foldable; they must emit branches, not crash the folder.
+    const int? maybe = 5;
+    assert((maybe ? 1 : 2) == 1);
+    assert((maybe && true) == true);
+    const int? none = null;
+    assert((none ? 1 : 2) == 2);
 }
