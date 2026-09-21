@@ -218,8 +218,5 @@ else()
     set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
 endif()
 
-file(DOWNLOAD
-    "https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-${LLVM_PACKAGE_VERSION}/clang-tools-extra/clang-tidy/tool/run-clang-tidy.py"
-    "${CMAKE_BINARY_DIR}/run-clang-tidy.py")
-add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" "${CMAKE_BINARY_DIR}" --check)
-add_custom_target(format COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" "${CMAKE_BINARY_DIR}" --skip-clang-tidy)
+add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" --check)
+add_custom_target(format COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh")
