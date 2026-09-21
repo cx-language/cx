@@ -13,6 +13,9 @@ args, cx_args = arg_parser.parse_known_args()
 
 os.chdir(os.path.dirname(__file__))
 ignored_dirs = ["inputs"]
+# The embedding example's entry point is called from the C++ host, so unused
+# declarations are expected there; all other warnings are still errors.
+no_unused_dirs = ["embedding"]
 
 for file in os.listdir("."):
     if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl"]:
@@ -23,7 +26,8 @@ for file in os.listdir("."):
         exit_status = subprocess.call([args.cx, file, "-o", output, "-Werror"] + cx_args)
         os.remove(output)
     elif file not in ignored_dirs and os.path.isdir(file):
-        exit_status = subprocess.call([args.cx, "build"] + cx_args, cwd=file)
+        extra_args = ["-Wno-unused"] if file in no_unused_dirs else []
+        exit_status = subprocess.call([args.cx, "build", "-Werror"] + extra_args + cx_args, cwd=file)
         bin_dir = os.path.join(file, "bin")
         if os.path.isdir(bin_dir):
             shutil.rmtree(bin_dir)
