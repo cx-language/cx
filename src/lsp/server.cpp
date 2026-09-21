@@ -240,6 +240,7 @@ int completionKindToLsp(const std::string& kind) {
     if (kind == "variable" || kind == "parameter") return 6;
     if (kind == "type") return 7;
     if (kind == "keyword") return 14;
+    if (kind == "enumMember") return 20;
     return 1; // Text
 }
 
@@ -628,6 +629,9 @@ int runServer(const ServerOptions& options) {
             capabilities["definitionProvider"] = true;
             JsonObject completion;
             completion["resolveProvider"] = false;
+            JsonArray triggers;
+            triggers.push_back(".");
+            completion["triggerCharacters"] = std::move(triggers);
             capabilities["completionProvider"] = std::move(completion);
             capabilities["documentSymbolProvider"] = true;
             capabilities["referencesProvider"] = true;

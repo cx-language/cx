@@ -12,7 +12,7 @@ lsp` (which forwards stdio to `cx-lsp` found next to `cx` or on `PATH`).
 | Diagnostics (parse + type errors, as you type) | `textDocument/publishDiagnostics` |
 | Hover signatures | `textDocument/hover` |
 | Go to definition | `textDocument/definition` |
-| Completions (keywords, locals, top-level and stdlib declarations) | `textDocument/completion` |
+| Completions (keywords, locals, top-level/stdlib declarations, members after `.`) | `textDocument/completion` |
 | File outline (functions, types, fields, methods, enum cases) | `textDocument/documentSymbol` |
 | Find references (same package + imports, including type names) | `textDocument/references` |
 | Syntax highlighting (whole file + ranges) | `textDocument/semanticTokens/full`, `textDocument/semanticTokens/range` |

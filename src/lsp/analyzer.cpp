@@ -1411,6 +1411,435 @@ void SemanticCollector::visitDecl(Decl* decl) {
     }
 }
 
+constexpr const char* kCompletionPlaceholder = "cxLspCompletionPlaceholder";
+
+std::string getLineText(const std::string& content, int line0) {
+    size_t start = 0;
+    for (int i = 0; i < line0; ++i) {
+        size_t nl = content.find('\n', start);
+        if (nl == std::string::npos) return "";
+        start = nl + 1;
+    }
+    size_t end = content.find('\n', start);
+    std::string line = content.substr(start, end == std::string::npos ? end : end - start);
+    if (!line.empty() && line.back() == '\r') line.pop_back();
+    return line;
+}
+
+size_t getLineStartOffset(const std::string& content, int line0) {
+    size_t start = 0;
+    for (int i = 0; i < line0; ++i) {
+        size_t nl = content.find('\n', start);
+        if (nl == std::string::npos) return std::string::npos;
+        start = nl + 1;
+    }
+    return start;
+}
+
+std::optional<int> findMemberDot(const std::string& line, int cursorChar) {
+    if (cursorChar < 0 || cursorChar > static_cast<int>(line.size())) return std::nullopt;
+    int i = cursorChar;
+    while (i > 0 && (std::isalnum(static_cast<unsigned char>(line[i - 1])) || line[i - 1] == '_'))
+        --i;
+    int afterDot = i;
+    while (afterDot > 0 && (line[afterDot - 1] == ' ' || line[afterDot - 1] == '\t'))
+        --afterDot;
+    if (afterDot <= 0 || line[afterDot - 1] != '.') return std::nullopt;
+    int dot = afterDot - 1;
+    if (dot > 0 && line[dot - 1] == '.') return std::nullopt;
+    if (dot + 1 < static_cast<int>(line.size()) && line[dot + 1] == '.') return std::nullopt;
+    if (dot > 0 && dot + 1 < static_cast<int>(line.size()) && std::isdigit(static_cast<unsigned char>(line[dot - 1]))
+        && std::isdigit(static_cast<unsigned char>(line[dot + 1]))) {
+        return std::nullopt;
+    }
+    return dot;
+}
+
+bool isMemberCompletionContext(const std::string& content, LspPosition pos) {
+    return findMemberDot(getLineText(content, pos.line), pos.character).has_value();
+}
+
+bool needsCompletionPlaceholder(const std::string& content, LspPosition pos) {
+    std::string line = getLineText(content, pos.line);
+    if (!findMemberDot(line, pos.character)) return false;
+    int i = pos.character;
+    int identEnd = i;
+    while (i > 0 && (std::isalnum(static_cast<unsigned char>(line[i - 1])) || line[i - 1] == '_'))
+        --i;
+    if (i < identEnd) return false;
+    if (pos.character < static_cast<int>(line.size())) {
+        char next = line[pos.character];
+        if (std::isalpha(static_cast<unsigned char>(next)) || next == '_') return false;
+    }
+    return true;
+}
+
+std::string insertCompletionPlaceholder(const std::string& content, LspPosition pos) {
+    size_t lineStart = getLineStartOffset(content, pos.line);
+    if (lineStart == std::string::npos) return content;
+    size_t lineEnd = content.find('\n', lineStart);
+    size_t lineLen = (lineEnd == std::string::npos ? content.size() : lineEnd) - lineStart;
+    if (lineLen > 0 && content[lineStart + lineLen - 1] == '\r') --lineLen;
+    int ch = std::max(0, std::min(pos.character, static_cast<int>(lineLen)));
+    std::string out = content;
+    out.insert(lineStart + ch, kCompletionPlaceholder);
+    return out;
+}
+
+struct MemberExprCollector {
+    std::vector<MemberExpr*> members;
+    void visitExpr(Expr* expr) {
+        if (!expr) return;
+        switch (expr->kind) {
+        case ExprKind::VarExpr:
+        case ExprKind::StringLiteralExpr:
+        case ExprKind::CharacterLiteralExpr:
+        case ExprKind::IntLiteralExpr:
+        case ExprKind::FloatLiteralExpr:
+        case ExprKind::BoolLiteralExpr:
+        case ExprKind::NullLiteralExpr:
+        case ExprKind::UndefinedLiteralExpr:
+        case ExprKind::SizeofExpr:
+            return;
+        case ExprKind::MemberExpr: {
+            auto* member = llvm::cast<MemberExpr>(expr);
+            members.push_back(member);
+            visitExpr(member->base);
+            return;
+        }
+        case ExprKind::CallExpr:
+        case ExprKind::UnaryExpr:
+        case ExprKind::BinaryExpr:
+        case ExprKind::IndexExpr:
+        case ExprKind::IndexAssignmentExpr: {
+            auto* call = llvm::cast<CallExpr>(expr);
+            visitExpr(call->callee);
+            for (auto& arg : call->args)
+                visitExpr(arg.value);
+            return;
+        }
+        case ExprKind::ArrayLiteralExpr:
+            for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
+                visitExpr(el);
+            return;
+        case ExprKind::TupleExpr:
+            for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+                visitExpr(el.value);
+            return;
+        case ExprKind::UnwrapExpr:
+            visitExpr(llvm::cast<UnwrapExpr>(expr)->operand);
+            return;
+        case ExprKind::LambdaExpr:
+            if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);
+            return;
+        case ExprKind::IfExpr: {
+            auto* ifExpr = llvm::cast<IfExpr>(expr);
+            visitExpr(ifExpr->condition);
+            visitExpr(ifExpr->thenExpr);
+            visitExpr(ifExpr->elseExpr);
+            return;
+        }
+        case ExprKind::SwitchExpr: {
+            auto* switchExpr = llvm::cast<SwitchExpr>(expr);
+            visitExpr(switchExpr->condition);
+            for (auto& arm : switchExpr->arms) {
+                visitExpr(arm.value);
+                if (arm.associatedValue) visitDecl(arm.associatedValue);
+                visitExpr(arm.expr);
+            }
+            if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr);
+            return;
+        }
+        case ExprKind::ImplicitCastExpr:
+            visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand);
+            return;
+        case ExprKind::VarDeclExpr:
+            visitDecl(llvm::cast<VarDeclExpr>(expr)->varDecl);
+            return;
+        }
+    }
+    void visitStmt(Stmt* stmt) {
+        if (!stmt) return;
+        switch (stmt->kind) {
+        case StmtKind::ReturnStmt:
+            visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
+            return;
+        case StmtKind::VarStmt:
+            for (auto* decl : llvm::cast<VarStmt>(stmt)->decls)
+                visitDecl(decl);
+            return;
+        case StmtKind::ExprStmt:
+            visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
+            return;
+        case StmtKind::DeferStmt:
+            visitExpr(llvm::cast<DeferStmt>(stmt)->expr);
+            return;
+        case StmtKind::IfStmt: {
+            auto* ifStmt = llvm::cast<IfStmt>(stmt);
+            visitExpr(ifStmt->condition);
+            for (auto* s : ifStmt->thenBody)
+                visitStmt(s);
+            for (auto* s : ifStmt->elseBody)
+                visitStmt(s);
+            return;
+        }
+        case StmtKind::SwitchStmt: {
+            auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
+            visitExpr(switchStmt->condition);
+            for (auto& c : switchStmt->cases) {
+                visitExpr(c.value);
+                if (c.associatedValue) visitDecl(c.associatedValue);
+                for (auto* s : c.stmts)
+                    visitStmt(s);
+            }
+            for (auto* s : switchStmt->defaultStmts)
+                visitStmt(s);
+            return;
+        }
+        case StmtKind::WhileStmt: {
+            auto* whileStmt = llvm::cast<WhileStmt>(stmt);
+            visitExpr(whileStmt->condition);
+            for (auto* s : whileStmt->body)
+                visitStmt(s);
+            return;
+        }
+        case StmtKind::DoWhileStmt: {
+            auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+            visitExpr(doWhileStmt->condition);
+            for (auto* s : doWhileStmt->body)
+                visitStmt(s);
+            return;
+        }
+        case StmtKind::ForStmt: {
+            auto* forStmt = llvm::cast<ForStmt>(stmt);
+            if (forStmt->variable) visitStmt(forStmt->variable);
+            visitExpr(forStmt->condition);
+            visitExpr(forStmt->increment);
+            for (auto* s : forStmt->body)
+                visitStmt(s);
+            return;
+        }
+        case StmtKind::ForEachStmt: {
+            auto* forEach = llvm::cast<ForEachStmt>(stmt);
+            if (forEach->variable) visitDecl(forEach->variable);
+            visitExpr(forEach->range);
+            for (auto* s : forEach->body)
+                visitStmt(s);
+            return;
+        }
+        case StmtKind::BreakStmt:
+        case StmtKind::ContinueStmt:
+            return;
+        case StmtKind::CompoundStmt:
+            for (auto* s : llvm::cast<CompoundStmt>(stmt)->body)
+                visitStmt(s);
+            return;
+        }
+    }
+    void visitDecl(Decl* decl) {
+        if (!decl) return;
+        switch (decl->kind) {
+        case DeclKind::FunctionDecl:
+        case DeclKind::MethodDecl:
+        case DeclKind::ConstructorDecl:
+        case DeclKind::DestructorDecl: {
+            auto* fn = llvm::cast<FunctionDecl>(decl);
+            for (auto& param : fn->getParams()) {
+                if (param.defaultValue) visitExpr(param.defaultValue);
+            }
+            if (fn->body) {
+                for (auto* s : *fn->body)
+                    visitStmt(s);
+            }
+            return;
+        }
+        case DeclKind::FunctionTemplate:
+            visitDecl(llvm::cast<FunctionTemplate>(decl)->functionDecl);
+            return;
+        case DeclKind::TypeDecl: {
+            auto* typeDecl = llvm::cast<TypeDecl>(decl);
+            for (auto& field : typeDecl->fields) {
+                if (field.defaultValue) visitExpr(field.defaultValue);
+            }
+            for (auto* method : typeDecl->methods)
+                visitDecl(method);
+            return;
+        }
+        case DeclKind::TypeTemplate:
+            visitDecl(llvm::cast<TypeTemplate>(decl)->typeDecl);
+            return;
+        case DeclKind::EnumDecl: {
+            auto* enumDecl = llvm::cast<EnumDecl>(decl);
+            for (auto& c : enumDecl->cases) {
+                if (c.value) visitExpr(c.value);
+            }
+            return;
+        }
+        case DeclKind::VarDecl: {
+            auto* var = llvm::cast<VarDecl>(decl);
+            if (var->initializer) visitExpr(var->initializer);
+            return;
+        }
+        case DeclKind::FieldDecl: {
+            auto* field = llvm::cast<FieldDecl>(decl);
+            if (field->defaultValue) visitExpr(field->defaultValue);
+            return;
+        }
+        case DeclKind::ParamDecl: {
+            auto* param = llvm::cast<ParamDecl>(decl);
+            if (param->defaultValue) visitExpr(param->defaultValue);
+            return;
+        }
+        default:
+            return;
+        }
+    }
+};
+
+MemberExpr* findPlaceholderMember(Module* mainModule) {
+    if (!mainModule) return nullptr;
+    MemberExprCollector collector;
+    for (auto* module : allModules(mainModule)) {
+        for (auto& sourceFile : module->sourceFiles) {
+            for (auto* decl : sourceFile.topLevelDecls)
+                collector.visitDecl(decl);
+        }
+    }
+    for (auto* member : collector.members) {
+        if (member->member == kCompletionPlaceholder) return member;
+    }
+    return nullptr;
+}
+
+MemberExpr* findMemberAt(Module* mainModule, const std::string& filePath, LspPosition pos) {
+    if (!mainModule) return nullptr;
+    MemberExprCollector collector;
+    for (auto* module : allModules(mainModule)) {
+        for (auto& sourceFile : module->sourceFiles) {
+            for (auto* decl : sourceFile.topLevelDecls)
+                collector.visitDecl(decl);
+        }
+    }
+    MemberExpr* best = nullptr;
+    for (auto* member : collector.members) {
+        Location loc = member->location;
+        if (!loc.isValid() || !loc.file || filePath != loc.file) continue;
+        if (loc.line - 1 != pos.line) continue;
+        int start = loc.column - 1;
+        int end = start + static_cast<int>(member->member.size());
+        if (pos.character >= start && pos.character <= end) {
+            if (!best || start > best->location.column - 1) best = member;
+        }
+    }
+    return best;
+}
+
+std::vector<CompletionItem> membersForEnumCases(EnumDecl* enumDecl) {
+    std::vector<CompletionItem> out;
+    if (!enumDecl) return out;
+    for (auto& c : enumDecl->cases) {
+        if (c.getName().empty()) continue;
+        CompletionItem item;
+        item.label = c.getName().str();
+        item.kind = "enumMember";
+        item.detail = hoverForDecl(c);
+        out.push_back(std::move(item));
+    }
+    return out;
+}
+
+std::vector<CompletionItem> membersForType(Type type) {
+    std::vector<CompletionItem> out;
+    if (!type) return out;
+    Type t = type.removeOptional().removePointer();
+    if (t.isArrayType()) {
+        Type elem = t.getElementType();
+        std::string elemName = elem ? elem.toString() : "T";
+        out.push_back({"data", "method", elemName + "[] data()"});
+        out.push_back({"size", "method", "int size()"});
+        out.push_back({"iterator", "method", "ArrayIterator<" + elemName + "> iterator()"});
+        return out;
+    }
+    if (t.isTupleType()) {
+        for (auto& el : t.getTupleElements()) {
+            CompletionItem item;
+            item.label = el.name;
+            item.kind = "field";
+            item.detail = (el.type ? el.type.toString() + " " : "") + el.name;
+            out.push_back(std::move(item));
+        }
+        return out;
+    }
+    TypeDecl* decl = t.getDecl();
+    if (!decl || decl->isEnumDecl()) return out;
+    for (auto& field : decl->fields) {
+        if (field.getName().empty()) continue;
+        CompletionItem item;
+        item.label = field.getName().str();
+        item.kind = "field";
+        item.detail = hoverForDecl(field);
+        out.push_back(std::move(item));
+    }
+    for (auto* method : decl->methods) {
+        if (!method || method->getName().empty()) continue;
+        if (llvm::isa<ConstructorDecl>(method)) continue;
+        if (method->getName().starts_with("[")) continue;
+        CompletionItem item;
+        item.label = method->getName().str();
+        item.kind = "method";
+        if (auto* fn = llvm::dyn_cast<FunctionDecl>(method)) {
+            item.detail = formatFunctionSignature(*fn);
+        } else if (auto* tmpl = llvm::dyn_cast<FunctionTemplate>(method)) {
+            if (tmpl->functionDecl) item.detail = formatFunctionSignature(*tmpl->functionDecl);
+        }
+        bool exists = false;
+        for (auto& e : out) {
+            if (e.label == item.label) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) out.push_back(std::move(item));
+    }
+    return out;
+}
+
+Decl* findTopLevelDecl(Module* mainModule, llvm::StringRef name) {
+    for (auto* module : allModules(mainModule)) {
+        for (auto& sourceFile : module->sourceFiles) {
+            for (auto* decl : sourceFile.topLevelDecls) {
+                if (decl->getName() == name) return decl;
+            }
+        }
+    }
+    return nullptr;
+}
+
+std::vector<CompletionItem> completeMembersFor(MemberExpr* memberExpr, Module* mainModule) {
+    if (!memberExpr || !memberExpr->base) return {};
+    Expr* base = memberExpr->base;
+    if (auto* var = llvm::dyn_cast<VarExpr>(base)) {
+        Decl* decl = var->decl ? var->decl : findTopLevelDecl(mainModule, var->identifier);
+        if (decl) {
+            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl)) return membersForEnumCases(enumDecl);
+            if (auto* tmpl = llvm::dyn_cast<TypeTemplate>(decl)) {
+                if (auto* enumTemplate = llvm::dyn_cast<EnumDecl>(tmpl->typeDecl)) return membersForEnumCases(enumTemplate);
+                return {};
+            }
+            if (llvm::isa<TypeDecl>(decl)) return {};
+            if (auto* varDecl = llvm::dyn_cast<VariableDecl>(decl)) {
+                Type t = base->type ? base->type : varDecl->type;
+                return membersForType(t);
+            }
+            return {};
+        }
+        if (base->type) return membersForType(base->type);
+        return {};
+    }
+    if (base->type) return membersForType(base->type);
+    return {};
+}
+
 } // namespace
 
 FrontendResult runFrontendOnce(const LspQuery& query) {
@@ -1641,7 +2070,24 @@ bool gotoDefinitionAt(Module* mainModule, const std::string& filePath, LspPositi
     return true;
 }
 
-std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& filePath, LspPosition pos) {
+std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& filePath, LspPosition pos, const std::string& content) {
+    if (mainModule) {
+        if (MemberExpr* placeholder = findPlaceholderMember(mainModule)) {
+            auto members = completeMembersFor(placeholder, mainModule);
+            llvm::sort(members, [](const CompletionItem& a, const CompletionItem& b) { return a.label < b.label; });
+            return members;
+        }
+    }
+    if (isMemberCompletionContext(content, pos)) {
+        if (!mainModule) return {};
+        if (MemberExpr* atPos = findMemberAt(mainModule, filePath, pos)) {
+            auto members = completeMembersFor(atPos, mainModule);
+            llvm::sort(members, [](const CompletionItem& a, const CompletionItem& b) { return a.label < b.label; });
+            return members;
+        }
+        return {};
+    }
+
     std::vector<CompletionItem> items;
     static const char* keywords[] = {"break",  "case",   "const",  "continue", "default", "defer",     "else",      "enum",    "extern",
                                      "false",  "for",    "if",     "import",   "in",      "interface", "null",      "private", "public",
@@ -2122,6 +2568,9 @@ JsonValue diagnosticsToJson(const std::vector<LspDiagnostic>& diagnostics) {
 
 JsonValue handleQuery(const JsonValue& queryJson) {
     LspQuery query = parseLspQuery(queryJson);
+    if (query.method == "completion" && needsCompletionPlaceholder(query.content, query.position)) {
+        query.content = insertCompletionPlaceholder(query.content, query.position);
+    }
     FrontendResult frontend = runFrontendOnce(query);
     std::vector<LspDiagnostic> diagnostics = toLspDiagnostics(frontend.diagnostics, frontend.filePath, frontend.content);
 
@@ -2147,7 +2596,7 @@ JsonValue handleQuery(const JsonValue& queryJson) {
         return JsonValue(std::move(result));
     } else if (query.method == "completion") {
         JsonArray items;
-        for (auto& item : completeAt(frontend.mainModule, query.filePath, query.position)) {
+        for (auto& item : completeAt(frontend.mainModule, query.filePath, query.position, frontend.content)) {
             JsonObject entry;
             entry["label"] = item.label;
             entry["kind"] = item.kind;
