@@ -1,6 +1,7 @@
 #include "server.h"
 #include "analyzer.h"
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <new>
 #include <optional>
@@ -242,6 +243,31 @@ int completionKindToLsp(const std::string& kind) {
     if (kind == "keyword") return 14;
     if (kind == "enumMember") return 20;
     return 1; // Text
+}
+
+/// True for names called with parens. Operator overloads (`+`, `==`) are
+/// spelled infix, so they complete to the bare name.
+bool isCallableLabel(const std::string& label) {
+    if (label.empty() || (!std::isalpha(static_cast<unsigned char>(label[0])) && label[0] != '_')) return false;
+    for (char ch : label) {
+        if (!std::isalnum(static_cast<unsigned char>(ch)) && ch != '_') return false;
+    }
+    return true;
+}
+
+/// True when the cursor is immediately followed by `(`, in which case call
+/// parens are already present and must not be inserted again.
+bool isFollowedByParen(const std::string& text, LspPosition pos) {
+    size_t start = 0;
+    for (int i = 0; i < pos.line; ++i) {
+        size_t newline = text.find('\n', start);
+        if (newline == std::string::npos) return false;
+        start = newline + 1;
+    }
+    size_t lineEnd = text.find('\n', start);
+    size_t end = lineEnd == std::string::npos ? text.size() : lineEnd;
+    size_t cursor = start + static_cast<size_t>(std::max(0, pos.character));
+    return cursor < end && text[cursor] == '(';
 }
 
 int symbolKindToLsp(const std::string& kind) {
@@ -619,7 +645,6 @@ int runServer(const ServerOptions& options) {
                     }
                 }
             }
-
             JsonObject capabilities;
             JsonObject sync;
             sync["openClose"] = true;
@@ -750,14 +775,22 @@ int runServer(const ServerOptions& options) {
             }
             JsonObject query = buildPositionalQuery(state, "completion", *doc, findJson(*params, "position"));
             auto result = runQuerySubprocess(state, std::move(query));
+            bool followedByParen = isFollowedByParen(doc->text, positionFromJson(findJson(*params, "position")));
             JsonArray items;
             if (result) {
                 if (auto* entries = findJsonArray(*result, "items")) {
                     for (auto& entry : *entries) {
                         JsonObject item;
-                        item["label"] = getJsonString(entry, "label");
-                        item["kind"] = completionKindToLsp(getJsonString(entry, "kind"));
+                        std::string label = getJsonString(entry, "label");
+                        std::string kind = getJsonString(entry, "kind");
+                        item["label"] = label;
+                        item["kind"] = completionKindToLsp(kind);
                         item["detail"] = getJsonString(entry, "detail");
+                        if ((kind == "function" || kind == "method") && isCallableLabel(label) && !followedByParen) {
+                            // Plain text only, never snippets: `name(` when the callable takes parameters
+                            // so the caret lands inside, `name()` otherwise.
+                            item["insertText"] = label + (getJsonBool(entry, "hasParams") ? "(" : "()");
+                        }
                         items.push_back(std::move(item));
                     }
                 }

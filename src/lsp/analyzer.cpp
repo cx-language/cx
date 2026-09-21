@@ -1748,6 +1748,15 @@ std::vector<CompletionItem> membersForEnumCases(EnumDecl* enumDecl) {
     return out;
 }
 
+bool declHasParams(Decl* decl) {
+    FunctionDecl* fn = nullptr;
+    if (auto* function = llvm::dyn_cast<FunctionDecl>(decl))
+        fn = function;
+    else if (auto* tmpl = llvm::dyn_cast<FunctionTemplate>(decl))
+        fn = tmpl->functionDecl;
+    return fn && !fn->getParams().empty();
+}
+
 std::vector<CompletionItem> membersForType(Type type) {
     std::vector<CompletionItem> out;
     if (!type) return out;
@@ -1792,9 +1801,13 @@ std::vector<CompletionItem> membersForType(Type type) {
         } else if (auto* tmpl = llvm::dyn_cast<FunctionTemplate>(method)) {
             if (tmpl->functionDecl) item.detail = formatFunctionSignature(*tmpl->functionDecl);
         }
+        item.hasParams = declHasParams(method);
+        // Overloads share the label, so dedupe by signature: identical
+        // entries (e.g. an interface default plus an identical override)
+        // collapse, distinct overloads are all listed.
         bool exists = false;
         for (auto& e : out) {
-            if (e.label == item.label) {
+            if (e.label == item.label && e.detail == item.detail) {
                 exists = true;
                 break;
             }
@@ -2101,9 +2114,6 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
     auto addDecl = [&](Decl* decl) {
         if (!decl || decl->getName().empty()) return;
         std::string name = decl->getName().str();
-        for (auto& existing : items) {
-            if (existing.label == name) return;
-        }
         CompletionItem item;
         item.label = name;
         if (decl->isFunctionDecl() || decl->isFunctionTemplate()) {
@@ -2112,6 +2122,7 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                 item.detail = formatFunctionSignature(*fn);
             else if (auto* tmpl = llvm::dyn_cast<FunctionTemplate>(decl))
                 item.detail = formatFunctionSignature(*tmpl->functionDecl);
+            item.hasParams = declHasParams(decl);
         } else if (decl->isTypeDecl() || decl->isTypeTemplate()) {
             item.kind = "type";
             item.detail = hoverForDecl(*decl);
@@ -2120,6 +2131,12 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
             item.detail = hoverForDecl(*decl);
         } else {
             item.kind = "variable";
+        }
+        // Functions dedupe by signature so every overload is listed;
+        // other declarations dedupe by name (first scope wins).
+        for (auto& existing : items) {
+            if (existing.label != name) continue;
+            if (item.kind != "function" || existing.detail == item.detail) return;
         }
         items.push_back(std::move(item));
     };
@@ -2601,6 +2618,7 @@ JsonValue handleQuery(const JsonValue& queryJson) {
             entry["label"] = item.label;
             entry["kind"] = item.kind;
             entry["detail"] = item.detail;
+            entry["hasParams"] = item.hasParams;
             items.push_back(std::move(entry));
         }
         result["items"] = std::move(items);

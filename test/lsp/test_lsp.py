@@ -426,6 +426,41 @@ def test_completion_members(cx_lsp, path):
     items = labels_for(content, (9, 15))
     check("query-completion-member-call", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
 
+    # Overloaded methods list every overload, not just the first.
+    content = 'void main() {\n    var buf = StringBuffer("hi");\n    buf.\n}\n'
+    result = run_query(cx_lsp, base_query("completion", path, content, (2, 8)))
+    details = sorted(item["detail"] for item in result.get("items", []) if item["label"] == "append")
+    check(
+        "query-completion-member-overloads",
+        details == ["void StringBuffer.append(char c)", "void StringBuffer.append(string s)"],
+        json.dumps(details)[:300],
+    )
+    flags = {}
+    for item in result.get("items", []):
+        flags.setdefault(item["label"], []).append(item.get("hasParams"))
+    check(
+        "query-completion-member-has-params",
+        flags.get("append") == [True, True] and flags.get("empty") == [False],
+        json.dumps({k: flags.get(k) for k in ("append", "empty")})[:300],
+    )
+
+    # Overloaded top-level functions list every overload too.
+    content = "int add(int x, int y) {\n    return x + y;\n}\nint add(int x) {\n    return x;\n}\nvoid main() {\n\n}\n"
+    result = run_query(cx_lsp, base_query("completion", path, content, (7, 0)))
+    details = sorted(item["detail"] for item in result.get("items", []) if item["label"] == "add")
+    check(
+        "query-completion-overloads",
+        details == ["int add(int x)", "int add(int x, int y)"],
+        json.dumps(details)[:300],
+    )
+    adds = [item.get("hasParams") for item in result.get("items", []) if item["label"] == "add"]
+    mains = [item.get("hasParams") for item in result.get("items", []) if item["label"] == "main"]
+    check(
+        "query-completion-has-params",
+        adds == [True, True] and mains == [False],
+        json.dumps({"add": adds, "main": mains})[:300],
+    )
+
 
 def test_package_dedup(cx_lsp):
     # A package directory that the "std" import resolves to (like std/
@@ -582,7 +617,8 @@ def test_server(command, path, label):
     session = LspSession(command)
     # Malformed input must be skipped without killing the session.
     session.send_raw(b"this is not a framed message\r\n\r\n")
-    session.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"capabilities": {}}})
+    caps = {"textDocument": {"completion": {"completionItem": {"snippetSupport": True}}}}
+    session.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"capabilities": caps}})
     response = session.read()
     capabilities = response["result"]["capabilities"]
     check(f"{label}-initialize", capabilities.get("hoverProvider") is True, json.dumps(capabilities)[:300])
@@ -623,6 +659,94 @@ def test_server(command, path, label):
         "int add(int x, int y)" in response["result"]["contents"]["value"],
         json.dumps(response)[:300],
     )
+
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 20,
+            "method": "textDocument/completion",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": 6, "character": 4}},
+        }
+    )
+    response = session.read()
+    items = {item["label"]: item for item in response["result"]}
+    check(
+        f"{label}-completion-call-parens",
+        items.get("add", {}).get("insertText") == "add(" and "insertTextFormat" not in items.get("add", {}),
+        json.dumps(items.get("add"))[:300],
+    )
+    operators = [item for name, item in items.items() if name in ("+", "==", "<")]
+    check(
+        f"{label}-completion-operator",
+        operators != [] and all("insertText" not in item for item in operators),
+        json.dumps(operators)[:300],
+    )
+
+    member_uri = uri + ".member.cx"
+    member_content = 'void main() {\n    var buf = StringBuffer("hi");\n    buf.\n}\n'
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": member_uri, "languageId": "cx", "version": 1, "text": member_content}},
+        }
+    )
+    notification = session.read()
+    check(
+        f"{label}-completion-member-open",
+        notification["method"] == "textDocument/publishDiagnostics",
+        json.dumps(notification)[:200],
+    )
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 21,
+            "method": "textDocument/completion",
+            "params": {"textDocument": {"uri": member_uri}, "position": {"line": 2, "character": 8}},
+        }
+    )
+    response = session.read()
+    appends = [item for item in response["result"] if item["label"] == "append"]
+    check(
+        f"{label}-completion-member-call-parens",
+        sorted(item.get("insertText", "") for item in appends) == ["append(", "append("]
+        and all("insertTextFormat" not in item for item in appends),
+        json.dumps(appends)[:300],
+    )
+    empties = [item for item in response["result"] if item["label"] == "empty"]
+    check(
+        f"{label}-completion-member-noargs",
+        [item.get("insertText", "") for item in empties] == ["empty()"],
+        json.dumps(empties)[:300],
+    )
+
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "method": "textDocument/didChange",
+            "params": {
+                "textDocument": {"uri": member_uri, "version": 2},
+                "contentChanges": [{"text": 'void main() {\n    var buf = StringBuffer("hi");\n    buf.append()\n}\n'}],
+            },
+        }
+    )
+    notification = session.read()
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 22,
+            "method": "textDocument/completion",
+            "params": {"textDocument": {"uri": member_uri}, "position": {"line": 2, "character": 14}},
+        }
+    )
+    response = session.read()
+    appends = [item for item in response["result"] if item["label"] == "append"]
+    check(
+        f"{label}-completion-no-dup-parens",
+        appends != [] and all("insertText" not in item for item in appends),
+        json.dumps(appends)[:300],
+    )
+    session.send({"jsonrpc": "2.0", "method": "textDocument/didClose", "params": {"textDocument": {"uri": member_uri}}})
 
     function_type = legend.get("tokenTypes", []).index("function")
     definition_bit = 1 << legend.get("tokenModifiers", []).index("definition")
@@ -767,6 +891,46 @@ def test_server(command, path, label):
     check(f"{label}-exit-code", code == 0, f"exit code {code}")
 
 
+def test_server_no_snippets(command, label):
+    with tempfile.TemporaryDirectory() as directory:
+        path = os.path.join(directory, "main.cx")
+        with open(path, "w") as file:
+            file.write(GOOD_SOURCE)
+        session = LspSession(command)
+        session.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"capabilities": {}}})
+        session.read()
+        session.send({"jsonrpc": "2.0", "method": "initialized", "params": {}})
+        uri = "file://" + path
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "languageId": "cx", "version": 1, "text": GOOD_SOURCE}},
+            }
+        )
+        session.read()
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "textDocument/completion",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 6, "character": 4}},
+            }
+        )
+        response = session.read()
+        items = {item["label"]: item for item in response["result"]}
+        check(
+            f"{label}-completion-plain-parens",
+            items.get("add", {}).get("insertText") == "add(" and "insertTextFormat" not in items.get("add", {}),
+            json.dumps(items.get("add"))[:300],
+        )
+        session.send({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}})
+        session.read()
+        session.send({"jsonrpc": "2.0", "method": "exit", "params": {}})
+        code, _ = session.close()
+        check(f"{label}-exit-code", code == 0, f"exit code {code}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cx-lsp", required=True)
@@ -783,6 +947,8 @@ def main():
         test_build_file_modes(args.cx_lsp)
         test_server([args.cx_lsp], path, "server")
         test_server([args.cx, "lsp"], path, "cx-lsp-subcommand")
+        test_server_no_snippets([args.cx_lsp], "server-nosnippet")
+        test_server_no_snippets([args.cx, "lsp"], "cx-lsp-subcommand-nosnippet")
 
     if FAILURES:
         print(f"\n{len(FAILURES)} failure(s): {', '.join(FAILURES)}")
