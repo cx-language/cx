@@ -181,6 +181,39 @@ void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLeve
     }
 }
 
+// Returns true if the block can exit an enclosing loop via 'break', i.e. contains a
+// 'break' that doesn't bind to a nested loop or switch. Lambda bodies can't break
+// across function boundaries, so expressions are never descended into.
+static bool blockCanBreak(llvm::ArrayRef<Stmt*> block) {
+    for (auto* stmt : block) {
+        switch (stmt->kind) {
+        case StmtKind::BreakStmt:
+            return true;
+        case StmtKind::IfStmt: {
+            auto& ifStmt = llvm::cast<IfStmt>(*stmt);
+            if (blockCanBreak(ifStmt.thenBody) || blockCanBreak(ifStmt.elseBody)) return true;
+            break;
+        }
+        case StmtKind::CompoundStmt:
+            if (blockCanBreak(llvm::cast<CompoundStmt>(*stmt).body)) return true;
+            break;
+        case StmtKind::SwitchStmt:
+        case StmtKind::WhileStmt:
+        case StmtKind::DoWhileStmt:
+        case StmtKind::ForStmt:
+        case StmtKind::ForEachStmt:
+            break; // Breaks inside bind to the nested statement, not to the enclosing loop.
+        case StmtKind::ReturnStmt:
+        case StmtKind::VarStmt:
+        case StmtKind::ExprStmt:
+        case StmtKind::DeferStmt:
+        case StmtKind::ContinueStmt:
+            break; // These contain no statements.
+        }
+    }
+    return false;
+}
+
 static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
     if (block.empty()) return false;
 
@@ -212,6 +245,17 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
         if (!llvm::all_of(switchStmt.cases, [](SwitchCase& c) { return allPathsReturn(c.stmts); })) return false;
         if (switchStmt.defaultStmts.empty()) return switchStmt.coversAllEnumCases;
         return allPathsReturn(switchStmt.defaultStmts);
+    }
+    case StmtKind::ForStmt: {
+        // 'while' loops are lowered into 'for' loops before this runs. A missing condition ('for(;;)') never terminates.
+        auto& forStmt = llvm::cast<ForStmt>(*block.back());
+        if (forStmt.condition && (!forStmt.condition->isConstant() || !forStmt.condition->getConstantBoolValue())) return false;
+        return !blockCanBreak(forStmt.body);
+    }
+    case StmtKind::DoWhileStmt: {
+        auto& doWhileStmt = llvm::cast<DoWhileStmt>(*block.back());
+        if (!doWhileStmt.condition->isConstant() || !doWhileStmt.condition->getConstantBoolValue()) return false;
+        return !blockCanBreak(doWhileStmt.body);
     }
     default:
         return false;
