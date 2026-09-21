@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck %s | %FileCheck %s
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
 interface B {
     // CHECK: [[@LINE+1]]:5: warning: interface members cannot be private

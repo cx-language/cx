@@ -21,10 +21,11 @@ print_flags = [c.flag for c in checks_to_run]
 command = sys.argv[1:] + print_flags
 
 try:
-    raw_output = subprocess.check_output(command, text=True)
+    raw_output = subprocess.check_output(command, text=True, stderr=subprocess.PIPE)
 except subprocess.CalledProcessError as error:
     print("Command:", " ".join(command), file=sys.stderr)
     print(error.output, file=sys.stderr)
+    print(error.stderr, file=sys.stderr)
     sys.exit(error.returncode)
 
 sections = {}

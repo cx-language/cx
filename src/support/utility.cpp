@@ -54,12 +54,12 @@ void cx::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
 }
 
 void cx::printDiagnostic(Location location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message) {
-    if (llvm::outs().has_colors()) {
-        llvm::outs().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
+    if (llvm::errs().has_colors()) {
+        llvm::errs().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
     }
 
     if (location.print()) {
-        llvm::outs() << ": ";
+        llvm::errs() << ": ";
     }
 
     printColored(type, color);
@@ -68,15 +68,15 @@ void cx::printDiagnostic(Location location, llvm::StringRef type, llvm::raw_ostr
 
     if (location.file && *location.file && location.isValid()) {
         auto line = readLineFromFile(location);
-        llvm::outs() << '\n' << line << '\n';
+        llvm::errs() << '\n' << line << '\n';
 
         for (char ch : line.substr(0, location.column - 1)) {
-            llvm::outs() << (ch != '\t' ? ' ' : '\t');
+            llvm::errs() << (ch != '\t' ? ' ' : '\t');
         }
         printColored('^', llvm::raw_ostream::GREEN);
     }
 
-    llvm::outs() << '\n';
+    llvm::errs() << '\n';
 }
 
 CompileError::CompileError(Location location, std::string&& message, std::vector<Note>&& notes)
@@ -126,7 +126,7 @@ void cx::abort(llvm::StringRef message) {
         throw CompileError(Location(), message.str());
     }
     printColored("error: ", llvm::raw_ostream::RED);
-    llvm::outs() << message << '\n';
+    llvm::errs() << message << '\n';
     exit(1);
 }
 

@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 // CHECK: [[@LINE+1]]:23: error: parameter 'b' without a default value follows a parameter with a default value
 void f(int a = 1, int b) {}

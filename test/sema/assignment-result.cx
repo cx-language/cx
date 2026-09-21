@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void rvalue() {
     var a = 1;

@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void f(uint a) {
     // CHECK: [[@LINE+1]]:17: error: no matching operator '..' with arguments 'float' and 'uint'

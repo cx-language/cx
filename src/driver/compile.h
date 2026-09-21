@@ -34,7 +34,7 @@ struct CompileToCResult {
 /// for each compilation instead - for WebAssembly that means instantiating a
 /// new module, which gives a pristine address space just like a new process.
 ///
-/// Diagnostics are written to llvm::outs() (which the WebAssembly build
+/// Diagnostics are written to llvm::errs() (which the WebAssembly build
 /// captures), and the generated C code is returned. No files are written and
 /// no subprocesses are spawned.
 ///

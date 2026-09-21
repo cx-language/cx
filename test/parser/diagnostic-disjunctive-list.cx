@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s | %FileCheck -strict-whitespace %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck -strict-whitespace %s
 
 void main() {
     // CHECK: [[@LINE+1]]:15: error: expected type, got '>'

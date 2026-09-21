@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck %s -Wno-unused | %FileCheck %s
+// RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 // RUN: check-snapshots -w
 
 // CHECK-NOT: warning

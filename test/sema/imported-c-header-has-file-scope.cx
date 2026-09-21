@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s %p/inputs/imported-c-header-has-file-scope/second-file.cx | %FileCheck %s
+// RUN: %not %cx -typecheck %s %p/inputs/imported-c-header-has-file-scope/second-file.cx 2>&1 | %FileCheck %s
 
 import "inputs/imported-c-header-has-file-scope/a.h"
 

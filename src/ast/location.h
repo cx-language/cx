@@ -20,9 +20,9 @@ struct Location {
 
     bool print() const {
         if (file && *file) {
-            llvm::outs() << file;
+            llvm::errs() << file;
             if (isValid()) {
-                llvm::outs() << ':' << line << ':' << column;
+                llvm::errs() << ':' << line << ':' << column;
             }
             return true;
         }

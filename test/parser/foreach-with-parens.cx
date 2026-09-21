@@ -1,4 +1,4 @@
-// RUN: %not %cx -parse %s | %FileCheck %s
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
 void main() {
     // CHECK: [[@LINE+1]]:5: error: for-each loop header must not be parenthesized, write 'for i in ...'

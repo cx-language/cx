@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void f(void* a, void* b) {
     // CHECK: [[@LINE+1]]:8: error: invalid operands 'void' and 'void' to '=='

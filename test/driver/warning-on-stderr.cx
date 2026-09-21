@@ -1,0 +1,9 @@
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck %s 2>/dev/null | %FileCheck --allow-empty --check-prefix=EMPTY %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:9: warning: unused variable 'unusedVar'
+    int unusedVar = 1;
+}
+
+// EMPTY-NOT: {{.}}

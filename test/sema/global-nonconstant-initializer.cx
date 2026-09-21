@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 // CHECK: [[@LINE+1]]:19: error: global variable initializer must be a constant expression
 string greeting = "hello";

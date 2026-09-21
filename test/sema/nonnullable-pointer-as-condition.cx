@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck %s -Wno-unused | %FileCheck %s
+// RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
 void f(int* p) {
     // CHECK: [[@LINE+1]]:9: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'

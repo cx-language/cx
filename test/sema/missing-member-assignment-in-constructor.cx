@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck %s | %FileCheck %s
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
 struct A {
     int i;

@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck -Werror %s | %FileCheck %s -allow-empty
+// RUN: %cx -typecheck -Werror %s 2>&1 | %FileCheck %s -allow-empty
 
 void f<T>() {}
 

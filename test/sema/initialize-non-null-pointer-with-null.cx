@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void main() {
     // CHECK: [[@LINE+1]]:14: error: cannot assign 'null' to 'int*' (add '?' to the type to make it nullable)

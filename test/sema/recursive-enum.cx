@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 // CHECK: [[@LINE+1]]:6: error: 'E' has infinite size because it contains itself
 enum E {

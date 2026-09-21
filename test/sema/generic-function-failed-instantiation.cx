@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 bool foo<T>(T t) {
     // CHECK: [[@LINE+1]]:14: error: invalid operands 'bool' and 'int' to '<'

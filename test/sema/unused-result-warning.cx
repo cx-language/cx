@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck %s -Wunused-result | %FileCheck %s
+// RUN: %cx -typecheck %s -Wunused-result 2>&1 | %FileCheck %s
 // RUN: %cx -typecheck %s -Werror
 // CHECK-NOT: unused-result-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 

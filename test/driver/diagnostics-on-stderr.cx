@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>/dev/null | %FileCheck --allow-empty --check-prefix=EMPTY %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'undefinedVar'
+    println(undefinedVar);
+}
+
+// EMPTY-NOT: {{.}}

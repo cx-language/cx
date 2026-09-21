@@ -1,5 +1,5 @@
 // RUN: check-snapshots -Wno-unused
-// RUN: %cx -typecheck -Wno-unused %s | %FileCheck %s
+// RUN: %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
 
 void main() {
     int? a = null;

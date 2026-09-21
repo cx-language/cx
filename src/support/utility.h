@@ -106,9 +106,9 @@ struct CompileError : std::exception {
 };
 
 template<typename T> void printColored(const T& text, llvm::raw_ostream::Colors color) {
-    if (llvm::outs().has_colors()) llvm::outs().changeColor(color, true);
-    llvm::outs() << text;
-    if (llvm::outs().has_colors()) llvm::outs().resetColor();
+    if (llvm::errs().has_colors()) llvm::errs().changeColor(color, true);
+    llvm::errs() << text;
+    if (llvm::errs().has_colors()) llvm::errs().resetColor();
 }
 
 void printStackTrace();

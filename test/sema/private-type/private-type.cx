@@ -1,6 +1,6 @@
-// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %s
-// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %p/a.cx
-// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %p/a.cx -check-prefix=CHECK-PRIVATE-IN-PUBLIC-DECL
+// RUN: %cx -typecheck %s %p/a.cx 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck %s %p/a.cx 2>&1 | %FileCheck %p/a.cx
+// RUN: %cx -typecheck %s %p/a.cx 2>&1 | %FileCheck %p/a.cx -check-prefix=CHECK-PRIVATE-IN-PUBLIC-DECL
 
 void main() {
     // CHECK: [[@LINE+1]]:5: warning: 'A' is private

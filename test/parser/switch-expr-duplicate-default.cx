@@ -1,4 +1,4 @@
-// RUN: %not %cx -parse %s | %FileCheck %s
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
 // CHECK: [[@LINE+5]]:9: error: switch-expression may only contain one 'default' case
 int f(int n) {

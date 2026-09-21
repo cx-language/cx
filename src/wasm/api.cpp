@@ -11,7 +11,7 @@
 //   {"status": 1} on failure (with an optional "internalError" message if the
 //   failure happened inside the compiler rather than in the user program).
 //
-// Diagnostics (errors and warnings) are written to stdout/stderr, which the
+// Diagnostics (errors and warnings) are written to stderr, which the
 // JavaScript glue code captures. The generated C code is then compiled to an
 // executable WebAssembly module by the playground's in-browser C toolchain
 // (see docs/playground.js) and run.
