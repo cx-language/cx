@@ -18,11 +18,11 @@ define void @_EN4main1B4initE(ptr %this) {
 
 define i32 @_EN4main1B1gE(ptr %this) {
   %1 = call i32 @_EN4main1B1fE(ptr %this)
-  %2 = sext i32 %1 to i128
-  %3 = mul i128 %2, 2
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %2 = sext i32 %1 to i64
+  %3 = mul i64 %2, 2
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success

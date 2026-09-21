@@ -28,11 +28,11 @@ int _EN4main9__lambda0E3int(int __capture_p, int __capture_d, int c) {
     store c to c_0
     int c.load = load c_0
     int __capture_p.load = load __capture_p_0
-    int128 _0 = cast c.load to int128
-    int128 _1 = cast __capture_p.load to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast c.load to int64
+    int64 _1 = cast __capture_p.load to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false
@@ -45,11 +45,11 @@ overflow.fail:
 
 overflow.success:
     int __capture_d.load = load __capture_d_0
-    int128 _8 = cast _3 to int128
-    int128 _9 = cast __capture_d.load to int128
-    int128 _10 = _8 + _9
+    int64 _8 = cast _3 to int64
+    int64 _9 = cast __capture_d.load to int64
+    int64 _10 = _8 + _9
     int _11 = cast _10 to int
-    int128 _12 = cast _11 to int128
+    int64 _12 = cast _11 to int64
     bool _13 = _10 != _12
     bool _14 = !_13
     bool overflow.condition_0 = _14 == bool false
@@ -119,11 +119,11 @@ int _EN4main9__lambda2E3int(int __capture_a, int c) {
     store c to c_0
     int c.load = load c_0
     int __capture_a.load = load __capture_a_0
-    int128 _0 = cast c.load to int128
-    int128 _1 = cast __capture_a.load to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast c.load to int64
+    int64 _1 = cast __capture_a.load to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false
@@ -145,11 +145,11 @@ int _EN4main9__lambda1E3int(int __capture_c, S* __capture_this, int x) {
     store x to x_0
     int x.load = load x_0
     int __capture_c.load = load __capture_c_0
-    int128 _0 = cast x.load to int128
-    int128 _1 = cast __capture_c.load to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast x.load to int64
+    int64 _1 = cast __capture_c.load to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false
@@ -163,11 +163,11 @@ overflow.fail:
 overflow.success:
     int* d = getelementptr __capture_this, 0
     int d.load = load d
-    int128 _8 = cast _3 to int128
-    int128 _9 = cast d.load to int128
-    int128 _10 = _8 + _9
+    int64 _8 = cast _3 to int64
+    int64 _9 = cast d.load to int64
+    int64 _10 = _8 + _9
     int _11 = cast _10 to int
-    int128 _12 = cast _11 to int128
+    int64 _12 = cast _11 to int64
     bool _13 = _10 != _12
     bool _14 = !_13
     bool overflow.condition_0 = _14 == bool false

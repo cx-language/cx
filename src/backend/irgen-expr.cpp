@@ -381,9 +381,11 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
     Value* result;
     Value* overflowed;
 
-    if (width < 128) {
-        // The operation is exact in 128 bits, so any loss in the round trip is an overflow.
-        auto* wideType = getIRType(isSigned ? Type::getInt128() : Type::getUInt128());
+    if (width < 64) {
+        // The operation is exact in 64 bits, so any loss in the round trip is an overflow.
+        // Widen only to 64 bits: MSVC and xcc (the playground's C compiler) don't support
+        // __int128, so 64-bit operands use the in-width checks below instead of widening.
+        auto* wideType = getIRType(isSigned ? Type::getInt64() : Type::getUInt64());
         auto* wideLeft = createCast(left, wideType);
         auto* wideRight = createCast(right, wideType);
         auto* wideResult = createBinaryOp(op, wideLeft, wideRight, &expr);
@@ -403,16 +405,17 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
             auto* x = createBinaryOp(Token::Xor, a, op == Token::Plus ? r : b, &expr);
             auto* y = createBinaryOp(Token::Xor, op == Token::Plus ? b : a, r, &expr);
             // Cast the 1 up from 32 bits: the C backend prints integer constants without a type,
-            // so a bare 128-bit 1 would shift as a C int.
+            // so a bare 1 would shift as a C int.
             auto* one = createCast(createConstantInt(Type::getUInt(), 1), unsignedType);
             auto* signBit = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
             auto* signBitSet = createBinaryOp(Token::And, createBinaryOp(Token::And, x, y, &expr), signBit, &expr);
             overflowed = createBinaryOp(Token::NotEqual, signBitSet, createConstantInt(unsignedType, 0), &expr);
         }
     } else {
-        // 128-bit multiply has no wider type; check the wrapped result against division instead:
-        // with b != 0, result / b != a exactly when the multiply overflowed. Operands are
-        // nonzero below, and the MIN / -1 division trap is guarded, so the division is safe.
+        // 64-bit multiply can't widen (MSVC and xcc lack __int128) and 128-bit multiply
+        // has no wider type; check the wrapped result against division instead: with b != 0,
+        // result / b != a exactly when the multiply overflowed. Operands are nonzero below,
+        // and the MIN / -1 division trap is guarded, so the division is safe.
         auto* unsignedType = getIRType(getUnsignedIntegerType(width));
         auto* a = createCastIfNeeded(left, unsignedType);
         auto* b = createCastIfNeeded(right, unsignedType);

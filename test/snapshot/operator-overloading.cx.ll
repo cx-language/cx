@@ -14,12 +14,12 @@ define %vec2 @_EN4mainmlE4vec24vec2(%vec2 %a, %vec2 %b) {
   %x.load = load i32, ptr %x, align 4
   %x3 = getelementptr inbounds %vec2, ptr %b2, i32 0, i32 0
   %x.load4 = load i32, ptr %x3, align 4
-  %2 = sext i32 %x.load to i128
-  %3 = sext i32 %x.load4 to i128
-  %4 = mul i128 %2, %3
-  %5 = trunc i128 %4 to i32
-  %6 = sext i32 %5 to i128
-  %7 = icmp ne i128 %4, %6
+  %2 = sext i32 %x.load to i64
+  %3 = sext i32 %x.load4 to i64
+  %4 = mul i64 %2, %3
+  %5 = trunc i64 %4 to i32
+  %6 = sext i32 %5 to i64
+  %7 = icmp ne i64 %4, %6
   %8 = xor i1 %7, true
   %overflow.condition = icmp eq i1 %8, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -33,12 +33,12 @@ overflow.success:                                 ; preds = %0
   %y.load = load i32, ptr %y, align 4
   %y5 = getelementptr inbounds %vec2, ptr %b2, i32 0, i32 1
   %y.load6 = load i32, ptr %y5, align 4
-  %9 = sext i32 %y.load to i128
-  %10 = sext i32 %y.load6 to i128
-  %11 = mul i128 %9, %10
-  %12 = trunc i128 %11 to i32
-  %13 = sext i32 %12 to i128
-  %14 = icmp ne i128 %11, %13
+  %9 = sext i32 %y.load to i64
+  %10 = sext i32 %y.load6 to i64
+  %11 = mul i64 %9, %10
+  %12 = trunc i64 %11 to i32
+  %13 = sext i32 %12 to i64
+  %14 = icmp ne i64 %11, %13
   %15 = xor i1 %14, true
   %overflow.condition7 = icmp eq i1 %15, false
   br i1 %overflow.condition7, label %overflow.fail8, label %overflow.success9

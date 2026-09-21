@@ -238,22 +238,28 @@ define ptr @_EN3std13allocateArrayI3intEE3int(i32 %size) {
   store i32 %size, ptr %size1, align 4
   %size.load = load i32, ptr %size1, align 4
   %1 = sext i32 %size.load to i64
-  %2 = zext i64 %1 to i128
-  %3 = mul i128 4, %2
-  %4 = trunc i128 %3 to i64
-  %5 = zext i64 %4 to i128
-  %6 = icmp ne i128 %3, %5
-  %7 = xor i1 %6, true
-  %overflow.condition = icmp eq i1 %7, false
+  %2 = mul i64 4, %1
+  %3 = icmp eq i64 %1, 0
+  br i1 %3, label %overflow.end, label %overflow.check
+
+overflow.check:                                   ; preds = %0
+  %4 = udiv i64 %2, %1
+  %5 = icmp ne i64 %4, 4
+  br label %overflow.end
+
+overflow.end:                                     ; preds = %overflow.check, %0
+  %overflowed = phi i1 [ false, %0 ], [ %5, %overflow.check ]
+  %6 = xor i1 %overflowed, true
+  %overflow.condition = icmp eq i1 %6, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
-overflow.fail:                                    ; preds = %0
+overflow.fail:                                    ; preds = %overflow.end
   call void @_EN3std10assertFailEP4char(ptr @0)
   unreachable
 
-overflow.success:                                 ; preds = %0
-  %8 = call ptr @malloc(i64 %4)
-  %assert.condition = icmp eq ptr %8, null
+overflow.success:                                 ; preds = %overflow.end
+  %7 = call ptr @malloc(i64 %2)
+  %assert.condition = icmp eq ptr %7, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %overflow.success
@@ -261,7 +267,7 @@ assert.fail:                                      ; preds = %overflow.success
   unreachable
 
 assert.success:                                   ; preds = %overflow.success
-  ret ptr %8
+  ret ptr %7
 }
 
 declare void @_EN3std5RangeI3intE4initE3int3int(ptr, i32, i32)

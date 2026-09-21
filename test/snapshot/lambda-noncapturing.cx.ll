@@ -29,12 +29,12 @@ define i32 @_EN4main9__lambda0E3int3int(i32 %a, i32 %b) {
   store i32 %b, ptr %b2, align 4
   %a.load = load i32, ptr %a1, align 4
   %b.load = load i32, ptr %b2, align 4
-  %1 = sext i32 %a.load to i128
-  %2 = sext i32 %b.load to i128
-  %3 = add i128 %1, %2
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %1 = sext i32 %a.load to i64
+  %2 = sext i32 %b.load to i64
+  %3 = add i64 %1, %2
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -54,12 +54,12 @@ define i32 @_EN4main9__lambda1E3int3int(i32 %a, i32 %b) {
   store i32 %b, ptr %b2, align 4
   %a.load = load i32, ptr %a1, align 4
   %b.load = load i32, ptr %b2, align 4
-  %1 = sext i32 %a.load to i128
-  %2 = sext i32 %b.load to i128
-  %3 = add i128 %1, %2
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %1 = sext i32 %a.load to i64
+  %2 = sext i32 %b.load to i64
+  %3 = add i64 %1, %2
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -85,12 +85,12 @@ define i32 @_EN4main9__lambda2E3int3int(i32 %a, i32 %b) {
 if.then:                                          ; preds = %0
   %a.load3 = load i32, ptr %a1, align 4
   %b.load4 = load i32, ptr %b2, align 4
-  %2 = sext i32 %a.load3 to i128
-  %3 = sext i32 %b.load4 to i128
-  %4 = add i128 %2, %3
-  %5 = trunc i128 %4 to i32
-  %6 = sext i32 %5 to i128
-  %7 = icmp ne i128 %4, %6
+  %2 = sext i32 %a.load3 to i64
+  %3 = sext i32 %b.load4 to i64
+  %4 = add i64 %2, %3
+  %5 = trunc i64 %4 to i32
+  %6 = sext i32 %5 to i64
+  %7 = icmp ne i64 %4, %6
   %8 = xor i1 %7, true
   %overflow.condition = icmp eq i1 %8, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -98,12 +98,12 @@ if.then:                                          ; preds = %0
 if.else:                                          ; preds = %0
   %a.load5 = load i32, ptr %a1, align 4
   %b.load6 = load i32, ptr %b2, align 4
-  %9 = sext i32 %a.load5 to i128
-  %10 = sext i32 %b.load6 to i128
-  %11 = sub i128 %9, %10
-  %12 = trunc i128 %11 to i32
-  %13 = sext i32 %12 to i128
-  %14 = icmp ne i128 %11, %13
+  %9 = sext i32 %a.load5 to i64
+  %10 = sext i32 %b.load6 to i64
+  %11 = sub i64 %9, %10
+  %12 = trunc i64 %11 to i32
+  %13 = sext i32 %12 to i64
+  %14 = icmp ne i64 %11, %13
   %15 = xor i1 %14, true
   %overflow.condition7 = icmp eq i1 %15, false
   br i1 %overflow.condition7, label %overflow.fail8, label %overflow.success9
@@ -134,12 +134,12 @@ define i32 @_EN4main9__lambda3E3int3int(i32 %a, i32 %b) {
   store i32 %b, ptr %b2, align 4
   %a.load = load i32, ptr %a1, align 4
   %b.load = load i32, ptr %b2, align 4
-  %1 = sext i32 %a.load to i128
-  %2 = sext i32 %b.load to i128
-  %3 = add i128 %1, %2
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %1 = sext i32 %a.load to i64
+  %2 = sext i32 %b.load to i64
+  %3 = add i64 %1, %2
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success

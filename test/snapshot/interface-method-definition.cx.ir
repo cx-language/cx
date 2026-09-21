@@ -14,11 +14,11 @@ void _EN4main1B4initE(B* this) {
 
 int _EN4main1B1gE(B* this) {
     int _0 = call _EN4main1B1fE(B* this)
-    int128 _1 = cast _0 to int128
-    int128 _2 = cast int 2 to int128
-    int128 _3 = _1 * _2
+    int64 _1 = cast _0 to int64
+    int64 _2 = cast int 2 to int64
+    int64 _3 = _1 * _2
     int _4 = cast _3 to int
-    int128 _5 = cast _4 to int128
+    int64 _5 = cast _4 to int64
     bool _6 = _3 != _5
     bool _7 = !_6
     bool overflow.condition = _7 == bool false

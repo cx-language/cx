@@ -38,12 +38,12 @@ define i32 @_EN4main9__lambda0E3int(i32 %__capture_p, i32 %__capture_d, i32 %c) 
   store i32 %c, ptr %c3, align 4
   %c.load = load i32, ptr %c3, align 4
   %__capture_p.load = load i32, ptr %__capture_p1, align 4
-  %1 = sext i32 %c.load to i128
-  %2 = sext i32 %__capture_p.load to i128
-  %3 = add i128 %1, %2
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %1 = sext i32 %c.load to i64
+  %2 = sext i32 %__capture_p.load to i64
+  %3 = add i64 %1, %2
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -54,12 +54,12 @@ overflow.fail:                                    ; preds = %0
 
 overflow.success:                                 ; preds = %0
   %__capture_d.load = load i32, ptr %__capture_d2, align 4
-  %8 = sext i32 %4 to i128
-  %9 = sext i32 %__capture_d.load to i128
-  %10 = add i128 %8, %9
-  %11 = trunc i128 %10 to i32
-  %12 = sext i32 %11 to i128
-  %13 = icmp ne i128 %10, %12
+  %8 = sext i32 %4 to i64
+  %9 = sext i32 %__capture_d.load to i64
+  %10 = add i64 %8, %9
+  %11 = trunc i64 %10 to i32
+  %12 = sext i32 %11 to i64
+  %13 = icmp ne i64 %10, %12
   %14 = xor i1 %13, true
   %overflow.condition4 = icmp eq i1 %14, false
   br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
@@ -124,12 +124,12 @@ define i32 @_EN4main9__lambda2E3int(i32 %__capture_a, i32 %c) {
   store i32 %c, ptr %c2, align 4
   %c.load = load i32, ptr %c2, align 4
   %__capture_a.load = load i32, ptr %__capture_a1, align 4
-  %1 = sext i32 %c.load to i128
-  %2 = sext i32 %__capture_a.load to i128
-  %3 = add i128 %1, %2
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %1 = sext i32 %c.load to i64
+  %2 = sext i32 %__capture_a.load to i64
+  %3 = add i64 %1, %2
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -149,12 +149,12 @@ define i32 @_EN4main9__lambda1E3int(i32 %__capture_c, ptr %__capture_this, i32 %
   store i32 %x, ptr %x2, align 4
   %x.load = load i32, ptr %x2, align 4
   %__capture_c.load = load i32, ptr %__capture_c1, align 4
-  %1 = sext i32 %x.load to i128
-  %2 = sext i32 %__capture_c.load to i128
-  %3 = add i128 %1, %2
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %1 = sext i32 %x.load to i64
+  %2 = sext i32 %__capture_c.load to i64
+  %3 = add i64 %1, %2
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -166,12 +166,12 @@ overflow.fail:                                    ; preds = %0
 overflow.success:                                 ; preds = %0
   %d = getelementptr inbounds %S, ptr %__capture_this, i32 0, i32 0
   %d.load = load i32, ptr %d, align 4
-  %8 = sext i32 %4 to i128
-  %9 = sext i32 %d.load to i128
-  %10 = add i128 %8, %9
-  %11 = trunc i128 %10 to i32
-  %12 = sext i32 %11 to i128
-  %13 = icmp ne i128 %10, %12
+  %8 = sext i32 %4 to i64
+  %9 = sext i32 %d.load to i64
+  %10 = add i64 %8, %9
+  %11 = trunc i64 %10 to i32
+  %12 = sext i32 %11 to i64
+  %13 = icmp ne i64 %10, %12
   %14 = xor i1 %13, true
   %overflow.condition3 = icmp eq i1 %14, false
   br i1 %overflow.condition3, label %overflow.fail4, label %overflow.success5

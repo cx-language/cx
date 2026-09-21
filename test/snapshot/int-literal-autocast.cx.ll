@@ -10,13 +10,10 @@ define i32 @main() {
   store i64 42, ptr %b, align 4
   store i8 -42, ptr %c, align 1
   %b.load = load i64, ptr %b, align 4
-  %1 = zext i64 %b.load to i128
-  %2 = add i128 %1, 1
-  %3 = trunc i128 %2 to i64
-  %4 = zext i64 %3 to i128
-  %5 = icmp ne i128 %2, %4
-  %6 = xor i1 %5, true
-  %overflow.condition = icmp eq i1 %6, false
+  %1 = add i64 %b.load, 1
+  %2 = icmp ult i64 %1, %b.load
+  %3 = xor i1 %2, true
+  %overflow.condition = icmp eq i1 %3, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
@@ -24,7 +21,7 @@ overflow.fail:                                    ; preds = %0
   unreachable
 
 overflow.success:                                 ; preds = %0
-  store i64 %3, ptr %b, align 4
+  store i64 %1, ptr %b, align 4
   ret i32 0
 }
 

@@ -19,11 +19,11 @@ loop.body:
     store _4 to i
     int p.load = load p
     int i.load = load i
-    int128 _5 = cast p.load to int128
-    int128 _6 = cast i.load to int128
-    int128 _7 = _5 - _6
+    int64 _5 = cast p.load to int64
+    int64 _6 = cast i.load to int64
+    int64 _7 = _5 - _6
     int _8 = cast _7 to int
-    int128 _9 = cast _8 to int128
+    int64 _9 = cast _8 to int64
     bool _10 = _7 != _9
     bool _11 = !_10
     bool overflow.condition = _11 == bool false

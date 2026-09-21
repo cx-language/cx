@@ -10,11 +10,11 @@ void _EN4main1S3fooE3int(S* this, int bar) {
     int* bar_0 = alloca int
     store bar to bar_0
     int bar.load = load bar_0
-    int128 _0 = cast bar.load to int128
-    int128 _1 = cast int 42 to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast bar.load to int64
+    int64 _1 = cast int 42 to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false

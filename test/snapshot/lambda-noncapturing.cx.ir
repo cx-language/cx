@@ -23,11 +23,11 @@ int _EN4main9__lambda0E3int3int(int a, int b) {
     store b to b_0
     int a.load = load a_0
     int b.load = load b_0
-    int128 _0 = cast a.load to int128
-    int128 _1 = cast b.load to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast a.load to int64
+    int64 _1 = cast b.load to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false
@@ -52,11 +52,11 @@ int _EN4main9__lambda1E3int3int(int a, int b) {
     store b to b_0
     int a.load = load a_0
     int b.load = load b_0
-    int128 _0 = cast a.load to int128
-    int128 _1 = cast b.load to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast a.load to int64
+    int64 _1 = cast b.load to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false
@@ -84,11 +84,11 @@ int _EN4main9__lambda2E3int3int(int a, int b) {
 if.then:
     int a.load_0 = load a_0
     int b.load_0 = load b_0
-    int128 _1 = cast a.load_0 to int128
-    int128 _2 = cast b.load_0 to int128
-    int128 _3 = _1 + _2
+    int64 _1 = cast a.load_0 to int64
+    int64 _2 = cast b.load_0 to int64
+    int64 _3 = _1 + _2
     int _4 = cast _3 to int
-    int128 _5 = cast _4 to int128
+    int64 _5 = cast _4 to int64
     bool _6 = _3 != _5
     bool _7 = !_6
     bool overflow.condition = _7 == bool false
@@ -97,11 +97,11 @@ if.then:
 if.else:
     int a.load_1 = load a_0
     int b.load_1 = load b_0
-    int128 _8 = cast a.load_1 to int128
-    int128 _9 = cast b.load_1 to int128
-    int128 _10 = _8 - _9
+    int64 _8 = cast a.load_1 to int64
+    int64 _9 = cast b.load_1 to int64
+    int64 _10 = _8 - _9
     int _11 = cast _10 to int
-    int128 _12 = cast _11 to int128
+    int64 _12 = cast _11 to int64
     bool _13 = _10 != _12
     bool _14 = !_13
     bool overflow.condition_0 = _14 == bool false
@@ -135,11 +135,11 @@ int _EN4main9__lambda3E3int3int(int a, int b) {
     store b to b_0
     int a.load = load a_0
     int b.load = load b_0
-    int128 _0 = cast a.load to int128
-    int128 _1 = cast b.load to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast a.load to int64
+    int64 _1 = cast b.load to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false

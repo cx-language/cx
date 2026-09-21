@@ -9,11 +9,11 @@ vec2 _EN4mainmlE4vec24vec2(vec2 a, vec2 b) {
     int x.load = load x
     int* x_0 = getelementptr b_0, 0
     int x.load_0 = load x_0
-    int128 _1 = cast x.load to int128
-    int128 _2 = cast x.load_0 to int128
-    int128 _3 = _1 * _2
+    int64 _1 = cast x.load to int64
+    int64 _2 = cast x.load_0 to int64
+    int64 _3 = _1 * _2
     int _4 = cast _3 to int
-    int128 _5 = cast _4 to int128
+    int64 _5 = cast _4 to int64
     bool _6 = _3 != _5
     bool _7 = !_6
     bool overflow.condition = _7 == bool false
@@ -29,11 +29,11 @@ overflow.success:
     int y.load = load y
     int* y_0 = getelementptr b_0, 1
     int y.load_0 = load y_0
-    int128 _9 = cast y.load to int128
-    int128 _10 = cast y.load_0 to int128
-    int128 _11 = _9 * _10
+    int64 _9 = cast y.load to int64
+    int64 _10 = cast y.load_0 to int64
+    int64 _11 = _9 * _10
     int _12 = cast _11 to int
-    int128 _13 = cast _12 to int128
+    int64 _13 = cast _12 to int64
     bool _14 = _11 != _13
     bool _15 = !_14
     bool overflow.condition_0 = _15 == bool false

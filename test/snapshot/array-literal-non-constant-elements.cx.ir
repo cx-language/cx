@@ -6,11 +6,11 @@ int[2] _EN4main1fE3int3int(int foo, int bar) {
     store bar to bar_0
     int foo.load = load foo_0
     int bar.load = load bar_0
-    int128 _0 = cast foo.load to int128
-    int128 _1 = cast bar.load to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast foo.load to int64
+    int64 _1 = cast bar.load to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false
@@ -25,11 +25,11 @@ overflow.success:
     int[2] _8 = insertvalue int[2] undefined, 0, _3
     int foo.load_0 = load foo_0
     int bar.load_0 = load bar_0
-    int128 _9 = cast foo.load_0 to int128
-    int128 _10 = cast bar.load_0 to int128
-    int128 _11 = _9 - _10
+    int64 _9 = cast foo.load_0 to int64
+    int64 _10 = cast bar.load_0 to int64
+    int64 _11 = _9 - _10
     int _12 = cast _11 to int
-    int128 _13 = cast _12 to int128
+    int64 _13 = cast _12 to int64
     bool _14 = _11 != _13
     bool _15 = !_14
     bool overflow.condition_0 = _15 == bool false
@@ -56,11 +56,11 @@ int[2] _EN4main1gE3int3int(int foo, int bar) {
     store bar to bar_0
     int foo.load = load foo_0
     int bar.load = load bar_0
-    int128 _0 = cast foo.load to int128
-    int128 _1 = cast bar.load to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast foo.load to int64
+    int64 _1 = cast bar.load to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false
@@ -75,11 +75,11 @@ overflow.success:
     int[2] _8 = insertvalue int[2] undefined, 0, _3
     int foo.load_0 = load foo_0
     int bar.load_0 = load bar_0
-    int128 _9 = cast foo.load_0 to int128
-    int128 _10 = cast bar.load_0 to int128
-    int128 _11 = _9 - _10
+    int64 _9 = cast foo.load_0 to int64
+    int64 _10 = cast bar.load_0 to int64
+    int64 _11 = _9 - _10
     int _12 = cast _11 to int
-    int128 _13 = cast _12 to int128
+    int64 _13 = cast _12 to int64
     bool _14 = _11 != _13
     bool _15 = !_14
     bool overflow.condition_0 = _15 == bool false

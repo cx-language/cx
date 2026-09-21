@@ -11,12 +11,12 @@ define [2 x i32] @_EN4main1fE3int3int(i32 %foo, i32 %bar) {
   store i32 %bar, ptr %bar2, align 4
   %foo.load = load i32, ptr %foo1, align 4
   %bar.load = load i32, ptr %bar2, align 4
-  %1 = sext i32 %foo.load to i128
-  %2 = sext i32 %bar.load to i128
-  %3 = add i128 %1, %2
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %1 = sext i32 %foo.load to i64
+  %2 = sext i32 %bar.load to i64
+  %3 = add i64 %1, %2
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -29,12 +29,12 @@ overflow.success:                                 ; preds = %0
   %8 = insertvalue [2 x i32] undef, i32 %4, 0
   %foo.load3 = load i32, ptr %foo1, align 4
   %bar.load4 = load i32, ptr %bar2, align 4
-  %9 = sext i32 %foo.load3 to i128
-  %10 = sext i32 %bar.load4 to i128
-  %11 = sub i128 %9, %10
-  %12 = trunc i128 %11 to i32
-  %13 = sext i32 %12 to i128
-  %14 = icmp ne i128 %11, %13
+  %9 = sext i32 %foo.load3 to i64
+  %10 = sext i32 %bar.load4 to i64
+  %11 = sub i64 %9, %10
+  %12 = trunc i64 %11 to i32
+  %13 = sext i32 %12 to i64
+  %14 = icmp ne i64 %11, %13
   %15 = xor i1 %14, true
   %overflow.condition5 = icmp eq i1 %15, false
   br i1 %overflow.condition5, label %overflow.fail6, label %overflow.success7
@@ -58,12 +58,12 @@ define [2 x i32] @_EN4main1gE3int3int(i32 %foo, i32 %bar) {
   store i32 %bar, ptr %bar2, align 4
   %foo.load = load i32, ptr %foo1, align 4
   %bar.load = load i32, ptr %bar2, align 4
-  %1 = sext i32 %foo.load to i128
-  %2 = sext i32 %bar.load to i128
-  %3 = add i128 %1, %2
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %1 = sext i32 %foo.load to i64
+  %2 = sext i32 %bar.load to i64
+  %3 = add i64 %1, %2
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -76,12 +76,12 @@ overflow.success:                                 ; preds = %0
   %8 = insertvalue [2 x i32] undef, i32 %4, 0
   %foo.load3 = load i32, ptr %foo1, align 4
   %bar.load4 = load i32, ptr %bar2, align 4
-  %9 = sext i32 %foo.load3 to i128
-  %10 = sext i32 %bar.load4 to i128
-  %11 = sub i128 %9, %10
-  %12 = trunc i128 %11 to i32
-  %13 = sext i32 %12 to i128
-  %14 = icmp ne i128 %11, %13
+  %9 = sext i32 %foo.load3 to i64
+  %10 = sext i32 %bar.load4 to i64
+  %11 = sub i64 %9, %10
+  %12 = trunc i64 %11 to i32
+  %13 = sext i32 %12 to i64
+  %14 = icmp ne i64 %11, %13
   %15 = xor i1 %14, true
   %overflow.condition5 = icmp eq i1 %15, false
   br i1 %overflow.condition5, label %overflow.fail6, label %overflow.success7

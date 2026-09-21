@@ -24,12 +24,12 @@ loop.body:                                        ; preds = %loop.condition
   store i32 %3, ptr %i, align 4
   %sum.load = load i32, ptr %sum, align 4
   %i.load = load i32, ptr %i, align 4
-  %4 = sext i32 %sum.load to i128
-  %5 = sext i32 %i.load to i128
-  %6 = add i128 %4, %5
-  %7 = trunc i128 %6 to i32
-  %8 = sext i32 %7 to i128
-  %9 = icmp ne i128 %6, %8
+  %4 = sext i32 %sum.load to i64
+  %5 = sext i32 %i.load to i64
+  %6 = add i64 %4, %5
+  %7 = trunc i64 %6 to i32
+  %8 = sext i32 %7 to i64
+  %9 = icmp ne i64 %6, %8
   %10 = xor i1 %9, true
   %overflow.condition = icmp eq i1 %10, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success

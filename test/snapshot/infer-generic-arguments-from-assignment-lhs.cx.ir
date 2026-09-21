@@ -230,34 +230,38 @@ int* _EN3std13allocateArrayI3intEE3int(int size) {
     store size to size_0
     int size.load = load size_0
     uint64 _0 = cast size.load to uint64
-    uint128 _1 = cast uint64 4 to uint128
-    uint128 _2 = cast _0 to uint128
-    uint128 _3 = _1 * _2
-    uint64 _4 = cast _3 to uint64
-    uint128 _5 = cast _4 to uint128
-    bool _6 = _3 != _5
-    bool _7 = !_6
-    bool overflow.condition = _7 == bool false
+    uint64 _1 = uint64 4 * _0
+    bool _2 = _0 == uint64 0
+    br _2, overflow.end(bool false), overflow.check(bool false)
+
+overflow.check:
+    uint64 _3 = _1 / _0
+    bool _4 = _3 != uint64 4
+    br overflow.end(_4)
+
+overflow.end(bool overflowed):
+    bool _5 = !overflowed
+    bool overflow.condition = _5 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _8 = call _EN3std10assertFailEP4char(char* "integer overflow at allocate.cx:36:46
+    void _6 = call _EN3std10assertFailEP4char(char* "integer overflow at allocate.cx:36:46
 ")
     unreachable
 
 overflow.success:
-    void* _9 = call malloc(uint64 _4)
-    bool assert.condition = _9 == void* null
+    void* _7 = call malloc(uint64 _1)
+    bool assert.condition = _7 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _10 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+    void _8 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
 ")
     unreachable
 
 assert.success:
-    int* _11 = cast _9 to int*
-    return _11
+    int* _9 = cast _7 to int*
+    return _9
 }
 
 RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {

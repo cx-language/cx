@@ -160,11 +160,11 @@ if.then:
     union { struct { int } }* _7 = getelementptr c, 1
     int* _8 = cast _7 to int*
     int .load = load _8
-    int128 _9 = cast .load to int128
-    int128 _10 = cast int 1 to int128
-    int128 _11 = _9 + _10
+    int64 _9 = cast .load to int64
+    int64 _10 = cast int 1 to int64
+    int64 _11 = _9 + _10
     int _12 = cast _11 to int
-    int128 _13 = cast _12 to int128
+    int64 _13 = cast _12 to int64
     bool _14 = _11 != _13
     bool _15 = !_14
     bool overflow.condition = _15 == bool false
@@ -189,11 +189,11 @@ overflow.success:
     union { struct { int } }* _19 = getelementptr c, 1
     int* _20 = cast _19 to int*
     int .load_0 = load _20
-    int128 _21 = cast int 1 to int128
-    int128 _22 = cast .load_0 to int128
-    int128 _23 = _21 + _22
+    int64 _21 = cast int 1 to int64
+    int64 _22 = cast .load_0 to int64
+    int64 _23 = _21 + _22
     int _24 = cast _23 to int
-    int128 _25 = cast _24 to int128
+    int64 _25 = cast _24 to int64
     bool _26 = _23 != _25
     bool _27 = !_26
     bool overflow.condition_0 = _27 == bool false

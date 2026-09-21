@@ -27,11 +27,11 @@ void _EN4main2g2EF3int4bool_3int(int(int, bool)* p) {
     int(int, bool)* p.load = load p_0
     bool _0 = !bool true
     int _1 = call p.load(int 42, bool _0)
-    int128 _2 = cast _1 to int128
-    int128 _3 = cast int 1 to int128
-    int128 _4 = _2 + _3
+    int64 _2 = cast _1 to int64
+    int64 _3 = cast int 1 to int64
+    int64 _4 = _2 + _3
     int _5 = cast _4 to int
-    int128 _6 = cast _5 to int128
+    int64 _6 = cast _5 to int64
     bool _7 = _4 != _6
     bool _8 = !_7
     bool overflow.condition = _8 == bool false

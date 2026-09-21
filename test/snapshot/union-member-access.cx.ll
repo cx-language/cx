@@ -16,12 +16,12 @@ define i32 @main() {
   %u.load = load %U, ptr %u, align 1
   %1 = call i32 @_EN4main3fooE1U(%U %u.load)
   %b.load = load i32, ptr %u, align 4
-  %2 = sext i32 %1 to i128
-  %3 = sext i32 %b.load to i128
-  %4 = add i128 %2, %3
-  %5 = trunc i128 %4 to i32
-  %6 = sext i32 %5 to i128
-  %7 = icmp ne i128 %4, %6
+  %2 = sext i32 %1 to i64
+  %3 = sext i32 %b.load to i64
+  %4 = add i64 %2, %3
+  %5 = trunc i64 %4 to i32
+  %6 = sext i32 %5 to i64
+  %7 = icmp ne i64 %4, %6
   %8 = xor i1 %7, true
   %overflow.condition = icmp eq i1 %8, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success

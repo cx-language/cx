@@ -18,11 +18,11 @@ define void @_EN4main1S3fooE3int(ptr %this, i32 %bar) {
   %bar1 = alloca i32, align 4
   store i32 %bar, ptr %bar1, align 4
   %bar.load = load i32, ptr %bar1, align 4
-  %1 = sext i32 %bar.load to i128
-  %2 = add i128 %1, 42
-  %3 = trunc i128 %2 to i32
-  %4 = sext i32 %3 to i128
-  %5 = icmp ne i128 %2, %4
+  %1 = sext i32 %bar.load to i64
+  %2 = add i64 %1, 42
+  %3 = trunc i64 %2 to i32
+  %4 = sext i32 %3 to i64
+  %5 = icmp ne i64 %2, %4
   %6 = xor i1 %5, true
   %overflow.condition = icmp eq i1 %6, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success

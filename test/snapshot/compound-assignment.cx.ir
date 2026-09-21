@@ -3,11 +3,11 @@ int main() {
     int* i = alloca int
     store int 0 to i
     int i.load = load i
-    int128 _0 = cast i.load to int128
-    int128 _1 = cast int 1 to int128
-    int128 _2 = _0 + _1
+    int64 _0 = cast i.load to int64
+    int64 _1 = cast int 1 to int64
+    int64 _2 = _0 + _1
     int _3 = cast _2 to int
-    int128 _4 = cast _3 to int128
+    int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
     bool overflow.condition = _6 == bool false
@@ -21,11 +21,11 @@ overflow.fail:
 overflow.success:
     store _3 to i
     int i.load_0 = load i
-    int128 _8 = cast i.load_0 to int128
-    int128 _9 = cast int 1 to int128
-    int128 _10 = _8 - _9
+    int64 _8 = cast i.load_0 to int64
+    int64 _9 = cast int 1 to int64
+    int64 _10 = _8 - _9
     int _11 = cast _10 to int
-    int128 _12 = cast _11 to int128
+    int64 _12 = cast _11 to int64
     bool _13 = _10 != _12
     bool _14 = !_13
     bool overflow.condition_0 = _14 == bool false
@@ -39,11 +39,11 @@ overflow.fail_0:
 overflow.success_0:
     store _11 to i
     int i.load_1 = load i
-    int128 _16 = cast i.load_1 to int128
-    int128 _17 = cast int 1 to int128
-    int128 _18 = _16 * _17
+    int64 _16 = cast i.load_1 to int64
+    int64 _17 = cast int 1 to int64
+    int64 _18 = _16 * _17
     int _19 = cast _18 to int
-    int128 _20 = cast _19 to int128
+    int64 _20 = cast _19 to int64
     bool _21 = _18 != _20
     bool _22 = !_21
     bool overflow.condition_1 = _22 == bool false

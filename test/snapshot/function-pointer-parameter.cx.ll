@@ -28,11 +28,11 @@ define void @_EN4main2g2EF3int4bool_3int(ptr %p) {
   store ptr %p, ptr %p1, align 8
   %p.load = load ptr, ptr %p1, align 8
   %1 = call i32 %p.load(i32 42, i1 false)
-  %2 = sext i32 %1 to i128
-  %3 = add i128 %2, 1
-  %4 = trunc i128 %3 to i32
-  %5 = sext i32 %4 to i128
-  %6 = icmp ne i128 %3, %5
+  %2 = sext i32 %1 to i64
+  %3 = add i64 %2, 1
+  %4 = trunc i64 %3 to i32
+  %5 = sext i32 %4 to i64
+  %6 = icmp ne i64 %3, %5
   %7 = xor i1 %6, true
   %overflow.condition = icmp eq i1 %7, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success

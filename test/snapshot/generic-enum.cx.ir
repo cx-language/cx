@@ -32,11 +32,11 @@ switch.case.0:
     store int 0 to tag_1
     int* value = getelementptr some, 0
     int value.load = load value
-    int128 _3 = cast value.load to int128
-    int128 _4 = cast int 1 to int128
-    int128 _5 = _3 + _4
+    int64 _3 = cast value.load to int64
+    int64 _4 = cast int 1 to int64
+    int64 _5 = _3 + _4
     int _6 = cast _5 to int
-    int128 _7 = cast _6 to int128
+    int64 _7 = cast _6 to int64
     bool _8 = _5 != _7
     bool _9 = !_8
     bool overflow.condition = _9 == bool false

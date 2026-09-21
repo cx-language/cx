@@ -158,11 +158,11 @@ define void @_EN4main1fE() {
 if.then:                                          ; preds = %0
   %4 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
   %.load = load i32, ptr %4, align 4
-  %5 = sext i32 %.load to i128
-  %6 = add i128 %5, 1
-  %7 = trunc i128 %6 to i32
-  %8 = sext i32 %7 to i128
-  %9 = icmp ne i128 %6, %8
+  %5 = sext i32 %.load to i64
+  %6 = add i64 %5, 1
+  %7 = trunc i64 %6 to i32
+  %8 = sext i32 %7 to i64
+  %9 = icmp ne i64 %6, %8
   %10 = xor i1 %9, true
   %overflow.condition = icmp eq i1 %10, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
@@ -184,11 +184,11 @@ overflow.success:                                 ; preds = %if.then
   store i32 %7, ptr %x, align 4
   %13 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
   %.load16 = load i32, ptr %13, align 4
-  %14 = sext i32 %.load16 to i128
-  %15 = add i128 1, %14
-  %16 = trunc i128 %15 to i32
-  %17 = sext i32 %16 to i128
-  %18 = icmp ne i128 %15, %17
+  %14 = sext i32 %.load16 to i64
+  %15 = add i64 1, %14
+  %16 = trunc i64 %15 to i32
+  %17 = sext i32 %16 to i64
+  %18 = icmp ne i64 %15, %17
   %19 = xor i1 %18, true
   %overflow.condition17 = icmp eq i1 %19, false
   br i1 %overflow.condition17, label %overflow.fail18, label %overflow.success19

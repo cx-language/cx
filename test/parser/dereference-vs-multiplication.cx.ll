@@ -19,12 +19,12 @@ define void @_EN4main1fEP3int3int(ptr %a, i32 %b) {
   store i32 %b.load, ptr %a.load, align 4
   %2 = call i32 @_EN4main1gE()
   %b.load3 = load i32, ptr %b2, align 4
-  %3 = sext i32 %2 to i128
-  %4 = sext i32 %b.load3 to i128
-  %5 = mul i128 %3, %4
-  %6 = trunc i128 %5 to i32
-  %7 = sext i32 %6 to i128
-  %8 = icmp ne i128 %5, %7
+  %3 = sext i32 %2 to i64
+  %4 = sext i32 %b.load3 to i64
+  %5 = mul i64 %3, %4
+  %6 = trunc i64 %5 to i32
+  %7 = sext i32 %6 to i64
+  %8 = icmp ne i64 %5, %7
   %9 = xor i1 %8, true
   %overflow.condition = icmp eq i1 %9, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
