@@ -4,7 +4,7 @@
 private void printFloat(float64 value, StringBuffer* stream) {
     // NaN has an implementation-defined sign; print all NaNs the same.
     if value != value {
-        stream.write("nan");
+        stream.append("nan");
         return;
     }
     // Maximum length from https://stackoverflow.com/a/1701272/3425536
@@ -29,7 +29,7 @@ private void printFloat(float64 value, StringBuffer* stream) {
 private void printFloat32(float32 value, StringBuffer* stream) {
     // NaN has an implementation-defined sign; print all NaNs the same.
     if value != value {
-        stream.write("nan");
+        stream.append("nan");
         return;
     }
     char[1080] result = undefined;
@@ -52,7 +52,7 @@ private void printFloat32(float32 value, StringBuffer* stream) {
 private void printFloat16(float16 value, StringBuffer* stream) {
     // NaN has an implementation-defined sign; print all NaNs the same.
     if value != value {
-        stream.write("nan");
+        stream.append("nan");
         return;
     }
     char[1080] result = undefined;
