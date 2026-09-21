@@ -1792,9 +1792,12 @@ std::vector<CompletionItem> membersForType(Type type) {
         } else if (auto* tmpl = llvm::dyn_cast<FunctionTemplate>(method)) {
             if (tmpl->functionDecl) item.detail = formatFunctionSignature(*tmpl->functionDecl);
         }
+        // Overloads share the label, so dedupe by signature: identical
+        // entries (e.g. an interface default plus an identical override)
+        // collapse, distinct overloads are all listed.
         bool exists = false;
         for (auto& e : out) {
-            if (e.label == item.label) {
+            if (e.label == item.label && e.detail == item.detail) {
                 exists = true;
                 break;
             }
@@ -2101,9 +2104,6 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
     auto addDecl = [&](Decl* decl) {
         if (!decl || decl->getName().empty()) return;
         std::string name = decl->getName().str();
-        for (auto& existing : items) {
-            if (existing.label == name) return;
-        }
         CompletionItem item;
         item.label = name;
         if (decl->isFunctionDecl() || decl->isFunctionTemplate()) {
@@ -2120,6 +2120,12 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
             item.detail = hoverForDecl(*decl);
         } else {
             item.kind = "variable";
+        }
+        // Functions dedupe by signature so every overload is listed;
+        // other declarations dedupe by name (first scope wins).
+        for (auto& existing : items) {
+            if (existing.label != name) continue;
+            if (item.kind != "function" || existing.detail == item.detail) return;
         }
         items.push_back(std::move(item));
     };

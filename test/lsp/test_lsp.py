@@ -426,6 +426,26 @@ def test_completion_members(cx_lsp, path):
     items = labels_for(content, (9, 15))
     check("query-completion-member-call", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
 
+    # Overloaded methods list every overload, not just the first.
+    content = 'void main() {\n    var buf = StringBuffer("hi");\n    buf.\n}\n'
+    result = run_query(cx_lsp, base_query("completion", path, content, (2, 8)))
+    details = sorted(item["detail"] for item in result.get("items", []) if item["label"] == "append")
+    check(
+        "query-completion-member-overloads",
+        details == ["void StringBuffer.append(char c)", "void StringBuffer.append(string s)"],
+        json.dumps(details)[:300],
+    )
+
+    # Overloaded top-level functions list every overload too.
+    content = "int add(int x, int y) {\n    return x + y;\n}\nint add(int x) {\n    return x;\n}\nvoid main() {\n\n}\n"
+    result = run_query(cx_lsp, base_query("completion", path, content, (7, 0)))
+    details = sorted(item["detail"] for item in result.get("items", []) if item["label"] == "add")
+    check(
+        "query-completion-overloads",
+        details == ["int add(int x)", "int add(int x, int y)"],
+        json.dumps(details)[:300],
+    )
+
 
 def test_package_dedup(cx_lsp):
     # A package directory that the "std" import resolves to (like std/
