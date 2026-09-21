@@ -9,9 +9,9 @@ struct A: Printable {
     string b;
 
     void print(StringBuffer* stream) {
-        stream.write(a);
-        stream.write("+");
-        stream.write(b);
+        stream.append(a);
+        stream.append("+");
+        stream.append(b);
     }
 }
 

@@ -4,9 +4,9 @@ struct A: Printable {
     string a;
 
     void print(StringBuffer* stream) {
-        stream.write(a);
-        stream.write(a);
-        stream.write("!");
+        stream.append(a);
+        stream.append(a);
+        stream.append("!");
     }
 }
 

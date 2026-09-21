@@ -4,11 +4,11 @@ struct Point: Printable {
     int y;
 
     void print(StringBuffer* stream) {
-        stream.write("(");
+        stream.append("(");
         x.print(stream);
-        stream.write(", ");
+        stream.append(", ");
         y.print(stream);
-        stream.write(")");
+        stream.append(")");
     }
 }
 

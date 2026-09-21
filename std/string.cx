@@ -288,7 +288,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     /// Writes this string to the given stream.
     void print(StringBuffer* stream) {
-        stream.write(this);
+        stream.append(this);
     }
 
     /// Compares this string to another.

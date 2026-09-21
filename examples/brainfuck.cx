@@ -61,7 +61,7 @@ struct Program {
             }
 
             pc++;
-            code.push(ch);
+            code.append(ch);
         }
     }
 

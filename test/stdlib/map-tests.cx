@@ -43,7 +43,7 @@ void testResize() {
         var lol = StringBuffer();
 
         for _ in 0..(i+1) {
-            lol.push('a');
+            lol.append('a');
         }
 
         map.insert(lol, i);

@@ -18,7 +18,7 @@ private void printFloat(float64 value, StringBuffer* stream) {
         }
     }
     sprintf(result, "%.*g", bestPrecision, value);
-    stream.write(string(result));
+    stream.append(string(result));
 }
 
 private void printFloat32(float32 value, StringBuffer* stream) {
@@ -36,7 +36,7 @@ private void printFloat32(float32 value, StringBuffer* stream) {
         }
     }
     sprintf(result, "%.*g", bestPrecision, float64(value));
-    stream.write(string(result));
+    stream.append(string(result));
 }
 
 private void printFloat16(float16 value, StringBuffer* stream) {
@@ -54,7 +54,7 @@ private void printFloat16(float16 value, StringBuffer* stream) {
         }
     }
     sprintf(result, "%.*g", bestPrecision, float64(value));
-    stream.write(string(result));
+    stream.append(string(result));
 }
 
 /// A floating-point number.

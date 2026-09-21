@@ -21,7 +21,7 @@ Result<StringBuffer, StringBuffer> parse(string input) {
             pos++;
             return Ok(out);
         } else {
-            out.push(c);
+            out.append(c);
             pos++;
         }
     }

@@ -17,7 +17,7 @@ void main() {
     var b = StringBuffer(a);
     // b holds a copy of "test" that we can mutate
 
-    b.push('!');
+    b.append('!');
     // b now hold "test!", a is unchanged
 
     println(a);
