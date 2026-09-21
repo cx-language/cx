@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <fstream>
 #include <ostream>
+#include <set>
+#include <tuple>
 #pragma warning(push, 0)
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
@@ -168,8 +170,19 @@ void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<
     }
 }
 
+static std::set<std::tuple<std::string, short, short, std::string>> reportedWarnings;
+
+void cx::resetReportedWarnings() {
+    reportedWarnings.clear();
+}
+
 void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes) {
     if (diagnosticOptions.disableWarnings) return;
+
+    // Overload resolution typechecks call arguments once per candidate; report each unique warning only once.
+    if (!reportedWarnings.emplace(location.file ? location.file : "", location.line, location.column, message.str()).second) {
+        return;
+    }
 
     if (diagnosticOptions.warningsAsErrors) {
         reportError(location, message, notes);
