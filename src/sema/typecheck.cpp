@@ -150,21 +150,11 @@ static void checkUnusedDeclsInModule(const Module& module) {
 }
 
 // Warns about unused declarations after the whole program is typechecked, so
-// that references from importing modules are seen. Runs dependencies first.
-static void checkUnusedDeclsTransitive(const Module& module, llvm::SmallPtrSetImpl<const Module*>& visited) {
-    if (!visited.insert(&module).second) return;
-    for (auto* imported : module.getImportedModules()) {
-        if (imported->name != "std" && !imported->isCHeaderImport) {
-            checkUnusedDeclsTransitive(*imported, visited);
-        }
-    }
-    checkUnusedDeclsInModule(module);
-}
-
+// that references from importing modules are seen. Only the main module is
+// checked: imported modules are library code the importer doesn't control.
 void Typechecker::checkUnusedDecls(const Module& mainModule) {
     if (options.noUnusedWarnings) return;
-    llvm::SmallPtrSet<const Module*, 8> visited;
-    checkUnusedDeclsTransitive(mainModule, visited);
+    checkUnusedDeclsInModule(mainModule);
 }
 
 void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
