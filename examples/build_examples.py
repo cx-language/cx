@@ -18,7 +18,7 @@ ignored_dirs = ["inputs"]
 no_unused_dirs = ["embedding"]
 
 for file in os.listdir("."):
-    if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl"]:
+    if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl", "voxel-game"]:
         continue
 
     if file.endswith(".cx"):
