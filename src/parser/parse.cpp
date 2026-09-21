@@ -926,7 +926,7 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
 
 /// var-stmt ::= var-decl (',' id ('=' initializer)?)*
 VarStmt* Parser::parseVarStmt(Decl* parent) {
-    std::vector<VarDecl*> decls;
+    llvm::SmallVector<VarDecl*, 1> decls;
     decls.push_back(parseVarDecl(parent, AccessLevel::None, false));
     while (currentToken() == Token::Comma) {
         consumeToken();

@@ -3,6 +3,7 @@
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/ADT/SmallVector.h>
 #pragma warning(pop)
 
 namespace cx {
@@ -64,10 +65,10 @@ struct ReturnStmt : Stmt {
 };
 
 struct VarStmt : Stmt {
-    VarStmt(std::vector<VarDecl*>&& decls) : Stmt(StmtKind::VarStmt), decls(std::move(decls)) {}
+    VarStmt(llvm::SmallVector<VarDecl*, 1>&& decls) : Stmt(StmtKind::VarStmt), decls(std::move(decls)) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::VarStmt; }
 
-    std::vector<VarDecl*> decls;
+    llvm::SmallVector<VarDecl*, 1> decls;
 };
 
 /// A statement that consists of the evaluation of a single expression.

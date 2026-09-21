@@ -118,7 +118,7 @@ static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Str
                 std::vector<Stmt*> iteration;
                 auto* loopVar = makeAST<VarDecl>(Type(), forEach->variable->getName().str(), makeAST<VarExpr>(std::string(expandedName), forEach->location),
                                                  parentFunc, AccessLevel::None, module, forEach->variable->getLocation());
-                iteration.push_back(makeAST<VarStmt>(std::vector<VarDecl*>{loopVar}));
+                iteration.push_back(makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{loopVar}));
                 for (Stmt* cloned : clonedBody)
                     iteration.push_back(cloned);
                 result.push_back(makeAST<CompoundStmt>(std::move(iteration)));

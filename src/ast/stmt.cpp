@@ -39,7 +39,7 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
     }
     case StmtKind::VarStmt: {
         auto* varStmt = llvm::cast<VarStmt>(this);
-        std::vector<VarDecl*> decls;
+        llvm::SmallVector<VarDecl*, 1> decls;
         for (auto* decl : varStmt->decls) {
             decls.push_back(llvm::cast<VarDecl>(decl->instantiate(genericArgs, {})));
         }
@@ -175,7 +175,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
 
     auto iteratorVarDecl = makeAST<VarDecl>(Type(nullptr, Mutability::Mutable, location), std::string(iteratorVariableName), iteratorValue, variable->parent,
                                             AccessLevel::None, *variable->getModule(), location);
-    auto iteratorVarStmt = makeAST<VarStmt>(std::vector<VarDecl*>{iteratorVarDecl});
+    auto iteratorVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{iteratorVarDecl});
 
     auto iteratorVarExpr = makeAST<VarExpr>(std::string(iteratorVariableName), location);
     auto hasValueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr, "hasValue", location);
@@ -187,7 +187,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     Expr* loopInit = byValue ? makeAST<UnaryExpr>(Token::Star, valueCallExpr, location) : valueCallExpr;
     auto loopVariableVarDecl = makeAST<VarDecl>(variable->type, variable->getName().str(), loopInit, variable->parent, AccessLevel::None,
                                                 *variable->getModule(), variable->getLocation());
-    auto loopVariableVarStmt = makeAST<VarStmt>(std::vector<VarDecl*>{loopVariableVarDecl});
+    auto loopVariableVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{loopVariableVarDecl});
 
     std::vector<Stmt*> forBody;
     forBody.push_back(loopVariableVarStmt);
