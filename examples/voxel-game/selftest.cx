@@ -1,0 +1,360 @@
+import "GLFW/glfw3.h";
+import "OpenGL/gl3.h";
+
+void expectNear(float actual, float expected, string label) {
+    if abs(actual - expected) > 0.001 {
+        println("FAIL: ", label, " got ", actual, " want ", expected);
+        abort("self-test failed");
+    }
+}
+
+void testMath() {
+    var a = Vec3(1.0, 0.0, 0.0);
+    var b = Vec3(0.0, 1.0, 0.0);
+    expectNear(a.dot(b), 0.0, "dot perpendicular");
+    expectNear(a.dot(a), 1.0, "dot self");
+    var c = a.cross(b);
+    expectNear(c.x, 0.0, "cross x");
+    expectNear(c.y, 0.0, "cross y");
+    expectNear(c.z, 1.0, "cross z");
+    expectNear(Vec3(3.0, 4.0, 0.0).length(), 5.0, "length");
+    expectNear(Vec3(0.0, 0.0, 7.0).normalized().z, 1.0, "normalized");
+    var scaled = 2.0 * Vec3(1.0, 2.0, 3.0);
+    expectNear(scaled.y, 4.0, "scalar mul left");
+    var added = Vec3(1.0, 1.0, 1.0) + Vec3(2.0, 3.0, 4.0);
+    expectNear(added.z, 5.0, "add");
+
+    var ident = mat4Identity();
+    var p = mat4Perspective(radians(90.0), 1.0, 0.1, 100.0);
+    var q = ident * p;
+    for i in 0..16 {
+        expectNear(q.m[i], p.m[i], "identity mul");
+    }
+    expectNear(p.m[0], 1.0, "perspective m0");
+    expectNear(p.m[5], 1.0, "perspective m5");
+    expectNear(p.m[11], -1.0, "perspective m11");
+
+    var eye = Vec3(0.0, 0.0, 3.0);
+    var view = mat4LookAt(eye, Vec3(0.0, 0.0, 0.0), Vec3(0.0, 1.0, 0.0));
+    expectNear(view.m[14], -3.0, "lookAt translate");
+    println("math ok");
+}
+
+void testNoise() {
+    var h0 = terrainHeight(0, 0);
+    if h0 < 10 || h0 > 45 {
+        abort("self-test: terrainHeight(0, 0) out of range");
+    }
+    if terrainHeight(0, 0) != h0 {
+        abort("self-test: terrainHeight not deterministic");
+    }
+    var different = false;
+    for x in 0..32 {
+        if terrainHeight(x, 7) != h0 {
+            different = true;
+        }
+    }
+    if !different {
+        abort("self-test: terrain is flat");
+    }
+    println("noise ok");
+}
+
+int topSolid(World* w, int x, int z) {
+    var y = chunkH - 1;
+    while y >= 0 {
+        if worldGet(w, x, y, z) != blockAir {
+            return y;
+        }
+        y--;
+    }
+    return -1;
+}
+
+void testPlayer() {
+    var world = makeWorldData(2, 2);
+    var top = topSolid(world, 16, 16);
+    var player = Player(pos = Vec3(16.5, 50.0, 16.5), vel = Vec3(0.0, 0.0, 0.0),
+        yaw = 0.0, pitch = 0.0, onGround = false);
+    var input = Input();
+    for _ in 0..240 {
+        updatePlayer(world, player, input, 1.0 / 60.0);
+    }
+    if !player.onGround {
+        abort("self-test: player did not land");
+    }
+    expectNear(player.pos.y, float(top) + 1.0, "landing height");
+
+    input.jump = true;
+    updatePlayer(world, player, input, 1.0 / 60.0);
+    input.jump = false;
+    if player.onGround {
+        abort("self-test: jump did not lift off");
+    }
+    var maxY = player.pos.y;
+    for _ in 0..240 {
+        updatePlayer(world, player, input, 1.0 / 60.0);
+        if player.pos.y > maxY {
+            maxY = player.pos.y;
+        }
+    }
+    if !player.onGround {
+        abort("self-test: player did not land after jump");
+    }
+    if maxY < float(top) + 2.0 {
+        abort("self-test: jump too low");
+    }
+
+    var g = topSolid(world, 16, 16);
+    for x in 14..22 {
+        for y in g - 1..g + 5 {
+            for z in 15..18 {
+                worldSet(world, x, y, z, blockAir);
+            }
+        }
+    }
+    for x in 14..22 {
+        for z in 15..18 {
+            worldSet(world, x, g - 1, z, blockStone);
+        }
+    }
+    for y in g..g + 5 {
+        for z in 15..18 {
+            worldSet(world, 20, y, z, blockStone);
+        }
+    }
+    player.pos = Vec3(16.5, float(g) + 0.5, 16.5);
+    player.vel = Vec3(0.0, 0.0, 0.0);
+    player.yaw = pi / 2.0;
+    player.onGround = false;
+    input.forward = true;
+    for _ in 0..240 {
+        updatePlayer(world, player, input, 1.0 / 60.0);
+    }
+    input.forward = false;
+    println("wall stop x: ", player.pos.x);
+    if player.pos.x > 19.8 || player.pos.x < 19.0 {
+        abort("self-test: wall stop wrong");
+    }
+    if !player.onGround {
+        abort("self-test: player not grounded after walk");
+    }
+    println("player ok");
+}
+
+void checkAppendInt(int value, string want) {
+    var b = StringBuffer();
+    appendInt(b, value);
+    if !(b == want) {
+        abort("self-test: appendInt failed");
+    }
+}
+
+void testAppendInt() {
+    checkAppendInt(0, "0");
+    checkAppendInt(7, "7");
+    checkAppendInt(42, "42");
+    checkAppendInt(120, "120");
+    checkAppendInt(1000, "1000");
+    checkAppendInt(-35, "-35");
+    var b = StringBuffer("fps=");
+    appendInt(b, 60);
+    if !(b == "fps=60") {
+        abort("self-test: appendInt suffix failed");
+    }
+    println("appendInt ok");
+}
+
+void testLogStream() {
+    var a = stdout();
+    a.write("logstream ");
+    var b = stdout();
+    b.write("ok");
+    b.write("\n");
+    println("stdout ok");
+}
+
+void testLook() {
+    var world = makeWorldData(1, 1);
+    var player = Player(pos = Vec3(8.5, 50.0, 8.5), vel = Vec3(0.0, 0.0, 0.0),
+        yaw = 0.0, pitch = 0.0, onGround = false);
+    var input = Input();
+    input.lookDX = 100.0;
+    input.lookDY = 60.0;
+    updatePlayer(world, player, input, 1.0 / 60.0);
+    expectNear(player.yaw, 0.3, "look yaw");
+    expectNear(player.pitch, -0.18, "look pitch");
+    input.lookDX = 0.0;
+    input.lookDY = -10000.0;
+    updatePlayer(world, player, input, 1.0 / 60.0);
+    expectNear(player.pitch, 1.55, "pitch clamp up");
+    input.lookDY = 10000.0;
+    updatePlayer(world, player, input, 1.0 / 60.0);
+    expectNear(player.pitch, -1.55, "pitch clamp down");
+    var dir = lookDir(player);
+    if dir.y > -0.99 {
+        abort("self-test: look down dir wrong");
+    }
+    println("look ok");
+}
+
+void testRaycast() {
+    var world = makeWorldData(2, 2);
+    var top = topSolid(world, 5, 5);
+    var hit = raycastVoxel(world, Vec3(5.5, 60.0, 5.5), Vec3(0.0, -1.0, 0.0), 100.0);
+    if !hit.hit || hit.x != 5 || hit.y != top || hit.z != 5 {
+        abort("self-test: vertical raycast missed");
+    }
+    if hit.px != 5 || hit.py != top + 1 || hit.pz != 5 {
+        abort("self-test: vertical raycast prev cell wrong");
+    }
+    worldSet(world, 8, 50, 5, blockStone);
+    var side = raycastVoxel(world, Vec3(5.5, 50.5, 5.5), Vec3(1.0, 0.0, 0.0), 10.0);
+    if !side.hit || side.x != 8 || side.y != 50 || side.z != 5 {
+        abort("self-test: horizontal raycast missed");
+    }
+    if side.px != 7 || side.py != 50 || side.pz != 5 {
+        abort("self-test: horizontal raycast prev cell wrong");
+    }
+    var short = raycastVoxel(world, Vec3(5.5, 50.5, 5.5), Vec3(1.0, 0.0, 0.0), 2.0);
+    if short.hit {
+        abort("self-test: raycast ignored maxDist");
+    }
+    var sky = raycastVoxel(world, Vec3(5.5, 60.0, 5.5), Vec3(0.0, 1.0, 0.0), 10.0);
+    if sky.hit {
+        abort("self-test: sky raycast hit");
+    }
+    println("raycast ok");
+}
+
+void testWorld(World* w) {
+    if worldGet(w, 0, 0, 0) != blockStone {
+        abort("self-test: expected stone at y=0");
+    }
+    if worldGet(w, 0, 63, 0) != blockAir {
+        abort("self-test: expected air at y=63");
+    }
+    if worldGet(w, -1, 10, 0) != blockStone {
+        abort("self-test: expected solid outside world");
+    }
+    var h = terrainHeight(5, 5);
+    var top = worldGet(w, 5, h - 1, 5);
+    if top != blockGrass && top != blockSand {
+        abort("self-test: unexpected surface block");
+    }
+    var solid = 0;
+    for x in 0..32 {
+        for z in 0..32 {
+            for y in 0..64 {
+                if worldGet(w, x, y, z) != blockAir {
+                    solid++;
+                }
+            }
+        }
+    }
+    println("solid blocks: ", solid);
+    if solid < 10000 {
+        abort("self-test: too few solid blocks");
+    }
+    var verts = 0;
+    for i in 0..w.chunks.size() {
+        verts += w.chunks[i].mesh.vertexCount;
+    }
+    println("mesh vertices: ", verts);
+    if verts < 1000 {
+        abort("self-test: mesh too small");
+    }
+    println("world ok");
+}
+
+void testRender() {
+    if glfwInit() == 0 {
+        abort("self-test: glfwInit failed");
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
+    glfwWindowHint(GLFW_VISIBLE, 0);
+    var window = glfwCreateWindow(64, 64, "self-test", null, null);
+    if window == null {
+        abort("self-test: window failed");
+    }
+    glfwMakeContextCurrent(window);
+
+    var world = makeWorld(2, 2);
+    testWorld(world);
+
+    var program = createProgram("assets/block.vert", "assets/block.frag");
+    glUseProgram(program);
+
+    glEnable(GL_DEPTH_TEST);
+    glViewport(0, 0, 64, 64);
+    glClearColor(0.45, 0.65, 1.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    var proj = mat4Perspective(radians(70.0), 1.0, 0.1, 200.0);
+    var eye = Vec3(16.5, 60.0, 16.5);
+    var view = mat4LookAt(eye, Vec3(16.5, 0.0, 16.5), Vec3(0.0, 0.0, -1.0));
+    var mvp = proj * view;
+    var uniforms = getBlockUniforms(program);
+    setMat4(uniforms.mvp, mvp);
+    setBlockFog(uniforms, eye);
+    for i in 0..world.chunks.size() {
+        drawMesh(world.chunks[i].mesh);
+    }
+    checkGlError("self-test draw");
+
+    uint8[64 * 64 * 4] pixels = undefined;
+    glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    int center = (32 * 64 + 32) * 4;
+    var r = pixels[center];
+    var g = pixels[center + 1];
+    var bb = pixels[center + 2];
+    println("center pixel: ", r, " ", g, " ", bb);
+    if bb == 255 {
+        abort("self-test: center pixel is sky, terrain missing");
+    }
+    if int(r) + int(g) + int(bb) < 60 {
+        abort("self-test: center pixel too dark");
+    }
+
+    var etop = topSolid(world, 10, 10);
+    var editor = Player(pos = Vec3(10.5, float(etop) + 3.0, 10.5), vel = Vec3(0.0, 0.0, 0.0),
+        yaw = 0.0, pitch = -1.55, onGround = false);
+    if !tryBreak(world, editor) {
+        abort("self-test: break failed");
+    }
+    if worldGet(world, 10, etop, 10) != blockAir {
+        abort("self-test: break did not clear");
+    }
+    if !tryPlace(world, editor, blockStone) {
+        abort("self-test: place failed");
+    }
+    if worldGet(world, 10, etop, 10) != blockStone {
+        abort("self-test: place did not set");
+    }
+    editor.pos = Vec3(10.5, float(etop) + 1.1, 10.5);
+    if tryPlace(world, editor, blockStone) {
+        abort("self-test: place inside player allowed");
+    }
+    checkGlError("self-test rebuild");
+    println("edit ok");
+    destroyWorld(world);
+    glDeleteProgram(program);
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    println("render ok");
+}
+
+int runSelfTest() {
+    testMath();
+    testAppendInt();
+    testLogStream();
+    testNoise();
+    testPlayer();
+    testLook();
+    testRaycast();
+    testRender();
+    println("self-test passed");
+    return 0;
+}

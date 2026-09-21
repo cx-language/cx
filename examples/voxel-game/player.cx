@@ -1,0 +1,308 @@
+// First-person player: look, walk, jump, collide, and raycast blocks.
+
+struct Input: Copyable {
+    bool forward = false;
+    bool back = false;
+    bool left = false;
+    bool right = false;
+    bool jump = false;
+    bool sprint = false;
+    float lookDX = 0.0;
+    float lookDY = 0.0;
+}
+
+struct Player: Copyable {
+    Vec3 pos;
+    Vec3 vel;
+    float yaw;
+    float pitch;
+    bool onGround;
+}
+
+Vec3 lookDir(Player* p) {
+    var cp = cos(p.pitch);
+    return Vec3(sin(p.yaw) * cp, sin(p.pitch), -cos(p.yaw) * cp);
+}
+
+Vec3 eyePos(Player* p) {
+    return Vec3(p.pos.x, p.pos.y + 1.6, p.pos.z);
+}
+
+bool boxCollides(World* w, Vec3 pos) {
+    var eps = 0.001;
+    var x0 = int(floor(pos.x - 0.3 + eps));
+    var x1 = int(floor(pos.x + 0.3 - eps));
+    var y0 = int(floor(pos.y + eps));
+    var y1 = int(floor(pos.y + 1.8 - eps));
+    var z0 = int(floor(pos.z - 0.3 + eps));
+    var z1 = int(floor(pos.z + 0.3 - eps));
+    var x1e = x1 + 1;
+    var y1e = y1 + 1;
+    var z1e = z1 + 1;
+    for bx in x0..x1e {
+        for by in y0..y1e {
+            for bz in z0..z1e {
+                if worldGet(w, bx, by, bz) != blockAir {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+void moveAxis(World* w, Player* p, int axis, float delta) {
+    var remaining = delta;
+    while abs(remaining) > 0.0001 {
+        var step = clamp(remaining, -0.3, 0.3);
+        var next = p.pos;
+        if axis == 0 {
+            next.x += step;
+        } else if axis == 1 {
+            next.y += step;
+        } else {
+            next.z += step;
+        }
+        if !boxCollides(w, next) {
+            p.pos = next;
+            remaining -= step;
+            continue;
+        }
+        if axis == 0 {
+            if step > 0.0 {
+                p.pos.x = floor(next.x + 0.3) - 0.3 - 0.001;
+            } else {
+                p.pos.x = floor(next.x - 0.3) + 1.0 + 0.3 + 0.001;
+            }
+            p.vel.x = 0.0;
+        } else if axis == 1 {
+            if step > 0.0 {
+                p.pos.y = floor(next.y + 1.8) - 1.8 - 0.001;
+            } else {
+                p.pos.y = floor(next.y) + 1.0 + 0.001;
+                p.onGround = true;
+            }
+            p.vel.y = 0.0;
+        } else {
+            if step > 0.0 {
+                p.pos.z = floor(next.z + 0.3) - 0.3 - 0.001;
+            } else {
+                p.pos.z = floor(next.z - 0.3) + 1.0 + 0.3 + 0.001;
+            }
+            p.vel.z = 0.0;
+        }
+        return;
+    }
+}
+
+void updatePlayer(World* w, Player* p, Input* input, float dt) {
+    p.yaw += input.lookDX * 0.003;
+    p.pitch -= input.lookDY * 0.003;
+    if p.pitch > 1.55 {
+        p.pitch = 1.55;
+    }
+    if p.pitch < -1.55 {
+        p.pitch = -1.55;
+    }
+
+    var fwd = Vec3(sin(p.yaw), 0.0, -cos(p.yaw));
+    var right = Vec3(cos(p.yaw), 0.0, sin(p.yaw));
+    var wish = Vec3(0.0, 0.0, 0.0);
+    if input.forward {
+        wish = wish + fwd;
+    }
+    if input.back {
+        wish = wish - fwd;
+    }
+    if input.right {
+        wish = wish + right;
+    }
+    if input.left {
+        wish = wish - right;
+    }
+    var speed = 5.0;
+    if input.sprint {
+        speed = 8.0;
+    }
+    if wish.dot(wish) > 0.0 {
+        wish = wish.normalized() * speed;
+    }
+    p.vel.x = wish.x;
+    p.vel.z = wish.z;
+
+    p.vel.y -= 22.0 * dt;
+    if p.vel.y < -30.0 {
+        p.vel.y = -30.0;
+    }
+    if input.jump && p.onGround {
+        p.vel.y = 8.0;
+        p.onGround = false;
+    }
+
+    p.onGround = false;
+    moveAxis(w, p, 0, p.vel.x * dt);
+    moveAxis(w, p, 2, p.vel.z * dt);
+    moveAxis(w, p, 1, p.vel.y * dt);
+}
+
+// Amanatides and Woo voxel traversal. Returns the hit cell and the
+// previously visited (empty) cell for placement.
+(bool hit, int x, int y, int z, int px, int py, int pz) raycastVoxel(World* w, Vec3 origin, Vec3 dir, float maxDist) {
+    var x = int(floor(origin.x));
+    var y = int(floor(origin.y));
+    var z = int(floor(origin.z));
+    var stepX = 1;
+    var stepY = 1;
+    var stepZ = 1;
+    var tMaxX = 1e30;
+    var tMaxY = 1e30;
+    var tMaxZ = 1e30;
+    var tDeltaX = 1e30;
+    var tDeltaY = 1e30;
+    var tDeltaZ = 1e30;
+    if dir.x > 0.0 {
+        tMaxX = (float(x + 1) - origin.x) / dir.x;
+        tDeltaX = 1.0 / dir.x;
+    } else if dir.x < 0.0 {
+        stepX = -1;
+        tMaxX = (origin.x - float(x)) / -dir.x;
+        tDeltaX = 1.0 / -dir.x;
+    }
+    if dir.y > 0.0 {
+        tMaxY = (float(y + 1) - origin.y) / dir.y;
+        tDeltaY = 1.0 / dir.y;
+    } else if dir.y < 0.0 {
+        stepY = -1;
+        tMaxY = (origin.y - float(y)) / -dir.y;
+        tDeltaY = 1.0 / -dir.y;
+    }
+    if dir.z > 0.0 {
+        tMaxZ = (float(z + 1) - origin.z) / dir.z;
+        tDeltaZ = 1.0 / dir.z;
+    } else if dir.z < 0.0 {
+        stepZ = -1;
+        tMaxZ = (origin.z - float(z)) / -dir.z;
+        tDeltaZ = 1.0 / -dir.z;
+    }
+    var px = x;
+    var py = y;
+    var pz = z;
+    var t = 0.0;
+    while t <= maxDist {
+        if tMaxX < tMaxY && tMaxX < tMaxZ {
+            px = x;
+            py = y;
+            pz = z;
+            x += stepX;
+            t = tMaxX;
+            tMaxX += tDeltaX;
+        } else if tMaxY < tMaxZ {
+            px = x;
+            py = y;
+            pz = z;
+            y += stepY;
+            t = tMaxY;
+            tMaxY += tDeltaY;
+        } else {
+            px = x;
+            py = y;
+            pz = z;
+            z += stepZ;
+            t = tMaxZ;
+            tMaxZ += tDeltaZ;
+        }
+        if t > maxDist {
+            break;
+        }
+        if worldGet(w, x, y, z) != blockAir {
+            return (hit = true, x = x, y = y, z = z, px = px, py = py, pz = pz);
+        }
+    }
+    return (hit = false, x = 0, y = 0, z = 0, px = 0, py = 0, pz = 0);
+}
+
+bool worldContains(World* w, int x, int y, int z) {
+    return x >= 0 && z >= 0 && y >= 0 && y < chunkH && x < w.chunksX * chunkW && z < w.chunksZ * chunkD;
+}
+
+bool blockOverlapsPlayer(Player* p, int x, int y, int z) {
+    var eps = 0.001;
+    if float(x + 1) <= p.pos.x - 0.3 + eps {
+        return false;
+    }
+    if float(x) >= p.pos.x + 0.3 - eps {
+        return false;
+    }
+    if float(z + 1) <= p.pos.z - 0.3 + eps {
+        return false;
+    }
+    if float(z) >= p.pos.z + 0.3 - eps {
+        return false;
+    }
+    if float(y + 1) <= p.pos.y + eps {
+        return false;
+    }
+    if float(y) >= p.pos.y + 1.8 - eps {
+        return false;
+    }
+    return true;
+}
+
+bool tryBreak(World* w, Player* p) {
+    var hit = raycastVoxel(w, eyePos(p), lookDir(p), 6.0);
+    if !hit.hit || !worldContains(w, hit.x, hit.y, hit.z) {
+        return false;
+    }
+    worldSet(w, hit.x, hit.y, hit.z, blockAir);
+    rebuildAround(w, hit.x, hit.y, hit.z);
+    return true;
+}
+
+bool tryPlace(World* w, Player* p, uint8 selected) {
+    var hit = raycastVoxel(w, eyePos(p), lookDir(p), 6.0);
+    if !hit.hit || !worldContains(w, hit.px, hit.py, hit.pz) {
+        return false;
+    }
+    if worldGet(w, hit.px, hit.py, hit.pz) != blockAir {
+        return false;
+    }
+    if blockOverlapsPlayer(p, hit.px, hit.py, hit.pz) {
+        return false;
+    }
+    worldSet(w, hit.px, hit.py, hit.pz, selected);
+    rebuildAround(w, hit.px, hit.py, hit.pz);
+    return true;
+}
+
+void rebuildAround(World* w, int x, int y, int z) {
+    var cx = x / chunkW;
+    var cz = z / chunkD;
+    var c = worldChunk(w, cx, cz);
+    if c != null {
+        buildChunkMesh(w, c);
+    }
+    if x % chunkW == 0 {
+        var n = worldChunk(w, cx - 1, cz);
+        if n != null {
+            buildChunkMesh(w, n);
+        }
+    }
+    if x % chunkW == chunkW - 1 {
+        var n = worldChunk(w, cx + 1, cz);
+        if n != null {
+            buildChunkMesh(w, n);
+        }
+    }
+    if z % chunkD == 0 {
+        var n = worldChunk(w, cx, cz - 1);
+        if n != null {
+            buildChunkMesh(w, n);
+        }
+    }
+    if z % chunkD == chunkD - 1 {
+        var n = worldChunk(w, cx, cz + 1);
+        if n != null {
+            buildChunkMesh(w, n);
+        }
+    }
+}
