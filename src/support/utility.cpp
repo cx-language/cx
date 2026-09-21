@@ -40,10 +40,18 @@ std::string cx::readLineFromFile(Location location) {
 }
 
 void cx::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
+    // Rename atomically so rebuilding over a running executable swaps in a new
+    // inode instead of overwriting the running image in place (on macOS that
+    // breaks the code signature and every launch of the rebuilt binary dies).
+    if (!llvm::sys::fs::rename(sourcePath, targetPath)) return;
+
+    // Renaming across filesystems fails; fall back to replacing the target,
+    // removing it first so the copy still lands on a fresh inode.
     auto permissions = llvm::sys::fs::getPermissions(sourcePath);
     if (auto error = permissions.getError()) {
         ABORT("couldn't get permissions for '" << sourcePath << "': " << error.message());
     }
+    llvm::sys::fs::remove(targetPath);
     if (auto error = llvm::sys::fs::copy_file(sourcePath, targetPath)) {
         // A bad output path is a user error, not a compiler bug, so report it
         // without a stack trace even when CX_PRINT_STACK_TRACE is set.

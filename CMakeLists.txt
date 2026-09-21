@@ -142,7 +142,7 @@ add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --parallel ${CHECK_PARALLEL_JOBS} -C $<CONFIG>
     USES_TERMINAL)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
-add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config)
+add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config test_rename)
 
 # Tests for the in-memory compilation API (also used by the WebAssembly build).
 add_executable(test_compile_api test/compile-api/test-compile-api.cpp src/wasm/api.cpp)
@@ -162,6 +162,12 @@ add_test(NAME build-config-missing-url COMMAND test_build_config missing-url)
 set_tests_properties(build-config-missing-url PROPERTIES PASS_REGULAR_EXPRESSION "missing required 'url'")
 add_test(NAME build-config-missing-build-file COMMAND test_build_config missing-build-file)
 add_test(NAME build-config-search-paths COMMAND test_build_config search-paths)
+
+# Tests for cx::renameFile (output file replacement).
+add_executable(test_rename test/support/test-rename.cpp)
+target_include_directories(test_rename PRIVATE src)
+target_link_libraries(test_rename libcx)
+add_test(NAME support-rename COMMAND test_rename)
 
 # Compiler tests, sharded over one CTest test per few files so CTest
 # reports progress as tests complete. A single aggregate lit invocation
