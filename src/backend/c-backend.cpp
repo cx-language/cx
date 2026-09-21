@@ -201,6 +201,9 @@ void CGenerator::codegenLoad(const LoadInst* inst) {
 }
 
 void CGenerator::codegenStore(const StoreInst* inst) {
+    if (inst->value->kind == ValueKind::Undefined) {
+        return;
+    }
     stream.indent(4);
     if (inst->value->getType()->isArrayType()) {
         stream << "memcpy(";
