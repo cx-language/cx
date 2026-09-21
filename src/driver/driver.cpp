@@ -545,6 +545,10 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (isMSVC) {
         ccArgs.push_back("-link");
         ccArgs.push_back("-DEBUG");
+        // The default 1MB stack overflows on deeply recursive programs that
+        // run fine elsewhere (e.g. JSON parsing); reserve 8MB to match the
+        // Unix default. Reservation costs only address space until used.
+        ccArgs.push_back("/STACK:8388608");
         ccArgs.push_back("legacy_stdio_definitions.lib");
         ccArgs.push_back("ucrt.lib");
         ccArgs.push_back("msvcrt.lib");
