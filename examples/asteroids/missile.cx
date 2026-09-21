@@ -14,7 +14,7 @@ struct Missile {
         SDL_RenderLine(renderer, a.x, a.y, b.x, b.y);
     }
 
-    void update(float delta, GameState* state) {
+    void update(float delta, GameState& state) {
         var velocity = Vector2(direction) * missileSpeed;
         position = position + velocity * delta;
 

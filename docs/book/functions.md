@@ -96,7 +96,7 @@ matching it can have a different type. Inside the function, iterate over the
 parameter with a for loop:
 
 ```cs
-void printAll<T: Printable>(T*... args) {
+void printAll<T: Printable>(T&... args) {
     for arg in args {
         print(arg);
     }

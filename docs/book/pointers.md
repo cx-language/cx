@@ -7,13 +7,13 @@ cx pointers are mostly like C/C++ pointers, with the following differences:
 - They cannot be null by default.
   To create nullable pointers, they need to be marked as [nullable](nullable-types).
 - They don't support pointer arithmetic. For pointer arithmetic, array pointers have to be used, see below.
-- When passing a `T*` where a `T` is expected, the pointer is automatically dereferenced. 
-- When passing a `T` value where a `T*` is expected, the address is automatically passed.
+- Forming one from a value needs an explicit `&`.
+  For the implicit form, see [Borrowed parameters](#borrowed-parameters).
 
-To form a pointer, the `&` operator can be used.
-To dereference a pointer, the `*` operator can be used.
-Comparing pointers compares the stored memory addresses.
-To compare the pointed values, the pointers need to be dereferenced first.
+To form a pointer, the `&` operator is used.
+To dereference a pointer, the `*` operator is used.
+Comparing two pointers compares the stored memory addresses.
+Comparing a pointer against a value compares the pointed-to value instead.
 
 ```cs
 void main() {
@@ -27,9 +27,42 @@ void main() {
     int j = 6;
     p = &j; // Change p to point to j
     println(p == q); // Prints false because pointers point to different memory addresses
+    println(p == 6); // Prints true because the pointed-to value is compared
 
     *p = 7; // Change the value of j
     println(*p + *q); // Sums the values pointed to by p and q, prints 13
+}
+```
+
+## Borrowed parameters
+
+Functions that only use a value for the duration of the call take it by borrow, written `T&`.
+Callers pass values as usual; the compiler borrows them automatically.
+Temporaries and literals can be borrowed too; they live until the end of the call.
+Passing a stored `T*` where a `T&` is expected reborrows it.
+Inside the function, member access works directly, and `*` reads or writes through the borrow.
+
+Unlike pointers, borrows cannot be stored: `T&` may only appear as a function parameter type,
+and reading a borrow into a variable copies the value out.
+
+```cs
+void bump(int& x) {
+    *x += 1;
+}
+
+int listSize(List<int>& list) {
+    return list.size();
+}
+
+void main() {
+    var i = 41;
+    bump(i);
+    println(i); // prints 42
+
+    var list = List([1, 2, 3]);
+    println(listSize(list)); // prints 3
+    bump(list[0]);
+    println(list[0]); // prints 2
 }
 ```
 

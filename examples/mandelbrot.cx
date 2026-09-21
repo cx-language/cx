@@ -9,11 +9,11 @@ struct Complex: Copyable {
     }
 }
 
-Complex operator+(Complex* a, Complex* b) {
+Complex operator+(Complex& a, Complex& b) {
     return Complex(a.r + b.r, a.i + b.i);
 }
 
-Complex operator*(Complex* a, Complex* b) {
+Complex operator*(Complex& a, Complex& b) {
     return Complex(a.r * b.r - a.i * b.i, a.r * b.i + a.i * b.r);
 }
 

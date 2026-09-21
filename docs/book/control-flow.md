@@ -117,7 +117,7 @@ enum Outcome {
     Err(string error),
 }
 
-string describe(Outcome* outcome) {
+string describe(Outcome& outcome) {
     return switch *outcome {
         case Ok: "ok",
         case Err error: error.error,

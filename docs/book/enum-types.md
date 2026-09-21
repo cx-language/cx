@@ -112,7 +112,7 @@ enum Color: Printable {
     Green,
     Blue,
 
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         switch this {
             case Red: stream.append("red");
             case Green: stream.append("green");

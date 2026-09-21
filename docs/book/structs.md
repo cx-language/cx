@@ -27,8 +27,8 @@ struct Person {
 
 void main() {
     var foo = Person(name = "Foo", age = 42, friend = null);
-    var bar = Person(name = "Bar", age = 42, friend = foo);
-    foo.friend = bar;
+    var bar = Person(name = "Bar", age = 42, friend = &foo);
+    foo.friend = &bar;
 
     foo.moveLeft(); // foo.x is now -0.1
     bar.moveRight();  // bar.x is now 0.1

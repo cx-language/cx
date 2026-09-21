@@ -66,7 +66,7 @@ struct X: Fooable {
     }
 }
 
-void callFoo<T: Fooable>(T* f) {
+void callFoo<T: Fooable>(T& f) {
     println(f.foo());
 }
 
@@ -96,7 +96,7 @@ A generic algorithm constrained on `Iterator<int>` accepts any implementation,
 standard or hand-written, and knows `value()` returns `int`:
 
 ```cs
-int sumFirst<It: Iterator<int>>(It* iterator, int n) {
+int sumFirst<It: Iterator<int>>(It& iterator, int n) {
     var total = 0;
     var i = 0;
     while i < n && iterator.hasValue() {

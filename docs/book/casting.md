@@ -32,6 +32,6 @@ void main() {
 Casts that don't make sense are rejected at compile time, for example `cast<int**>(false)`.
 Conversions that are always safe need no syntax at all:
 integer literals convert to the expected numeric type automatically,
-and pointers are dereferenced automatically when a value is expected,
-just as a value's address is taken automatically when a pointer is expected
-(see [Pointers](pointers)).
+pointers are dereferenced automatically when a value is expected,
+and values bind to `T&` borrow parameters automatically.
+Forming a `T*` pointer needs an explicit `&` (see [Pointers](pointers)).

@@ -23,7 +23,7 @@ struct X: Fooable {
     }
 }
 
-void callFoo<T: Fooable>(T* f) {
+void callFoo<T: Fooable>(T& f) {
     println(f.foo());
 }
 

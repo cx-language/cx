@@ -46,7 +46,7 @@ struct Player {
         }
     }
 
-    void update(float delta, GameState* state) {
+    void update(float delta, GameState& state) {
         if isKeyDown(SDL_SCANCODE_RIGHT) {
             direction += turningSpeed * delta;
         }

@@ -45,7 +45,7 @@ void mainLoop(SDL_Renderer* renderer) {
     keyState = cast<const bool[*]>(SDL_GetKeyboardState(null)!);
 
     while true {
-        if SDL_PollEvent(event) {
+        if SDL_PollEvent(&event) {
             switch event.type {
                 case SDL_EVENT_QUIT:
                     return;
