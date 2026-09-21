@@ -370,6 +370,63 @@ def test_query_modes(cx_lsp, path):
     check("query-malformed", proc.returncode == 0 and envelope.get("ok") is False)
 
 
+def test_completion_members(cx_lsp, path):
+    def labels_for(content, pos):
+        result = run_query(cx_lsp, base_query("completion", path, content, pos))
+        return {item["label"]: item for item in result.get("items", [])}
+
+    POINT = "struct Point: Copyable {\n    int x;\n    int y;\n    void move(int dx) {}\n}\n"
+
+    # Struct instance: only its fields and methods, no keywords or globals.
+    content = POINT + "void main() {\n    Point p = Point(0, 0);\n    p.\n}\n"
+    items = labels_for(content, (7, 6))
+    check("query-completion-member-struct", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
+    check("query-completion-member-struct-kinds", items.get("x", {}).get("kind") == "field" and items.get("move", {}).get("kind") == "method")
+
+    # Partial member name still restricts to members.
+    content = POINT + "void main() {\n    Point p = Point(0, 0);\n    p.m\n}\n"
+    items = labels_for(content, (7, 7))
+    check("query-completion-member-partial", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
+
+    # Enum type: only its cases.
+    content = "enum Color {\n    Red,\n    Green,\n}\nvoid main() {\n    Color.\n}\n"
+    items = labels_for(content, (5, 10))
+    check("query-completion-member-enum", set(items) == {"Red", "Green"}, json.dumps(sorted(items))[:300])
+
+    # Tuple value: only its element names.
+    content = "void main() {\n    var t = (a = 1, b = 2);\n    t.\n}\n"
+    items = labels_for(content, (2, 6))
+    check("query-completion-member-tuple", set(items) == {"a", "b"}, json.dumps(sorted(items))[:300])
+
+    # Array value: only its member functions.
+    content = "void main() {\n    var arr = [1, 2, 3];\n    arr.\n}\n"
+    items = labels_for(content, (2, 8))
+    check("query-completion-member-array", set(items) == {"data", "size", "iterator"}, json.dumps(sorted(items))[:300])
+
+    # Pointer and optional receivers unwrap to the pointee/wrapped members.
+    content = POINT + "void main() {\n    Point p = Point(0, 0);\n    Point* ptr = &p;\n    ptr.\n}\n"
+    items = labels_for(content, (8, 8))
+    check("query-completion-member-pointer", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
+
+    content = POINT + "void main() {\n    Point? opt = Point(0, 0);\n    opt.\n}\n"
+    items = labels_for(content, (7, 8))
+    check("query-completion-member-optional", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
+
+    # `this.` inside a method completes the enclosing type.
+    content = "struct Point: Copyable {\n    int x;\n    int y;\n    void move(int dx) {\n        this.\n    }\n}\n"
+    items = labels_for(content, (4, 13))
+    check("query-completion-member-this", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
+
+    # Chained member and call-result receivers.
+    content = "struct Point: Copyable {\n    int x;\n    int y;\n}\nstruct Wrapper: Copyable {\n    Point inner;\n}\nvoid main() {\n    Wrapper w = Wrapper(Point(1, 2));\n    w.inner.\n}\n"
+    items = labels_for(content, (9, 12))
+    check("query-completion-member-chained", set(items) == {"x", "y"}, json.dumps(sorted(items))[:300])
+
+    content = POINT + "Point getPoint() {\n    return Point(0, 0);\n}\nvoid main() {\n    getPoint().\n}\n"
+    items = labels_for(content, (9, 15))
+    check("query-completion-member-call", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
+
+
 def test_package_dedup(cx_lsp):
     # A package directory that the "std" import resolves to (like std/
     # itself) must be analyzed once, not once as the open package and once
@@ -721,6 +778,7 @@ def main():
         with open(path, "w") as file:
             file.write(GOOD_SOURCE)
         test_query_modes(args.cx_lsp, path)
+        test_completion_members(args.cx_lsp, path)
         test_package_dedup(args.cx_lsp)
         test_build_file_modes(args.cx_lsp)
         test_server([args.cx_lsp], path, "server")

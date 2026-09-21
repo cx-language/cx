@@ -125,7 +125,7 @@ struct SymbolInfo {
 
 struct CompletionItem {
     std::string label;
-    std::string kind; // "keyword", "function", "variable", "type", "field" or "parameter".
+    std::string kind; // "keyword", "function", "method", "variable", "type", "field", "enumMember" or "parameter".
     std::string detail;
 };
 
@@ -193,7 +193,7 @@ LspQuery parseLspQuery(const JsonValue& queryJson);
 SymbolInfo findAt(Module* mainModule, const std::string& filePath, LspPosition pos);
 std::string hoverAt(Module* mainModule, const std::string& filePath, LspPosition pos);
 bool gotoDefinitionAt(Module* mainModule, const std::string& filePath, LspPosition pos, std::string& outFilePath, LspRange& outRange);
-std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& filePath, LspPosition pos);
+std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& filePath, LspPosition pos, const std::string& content);
 std::vector<DocumentSymbol> documentSymbolsIn(Module* mainModule, const std::string& filePath);
 std::vector<std::pair<std::string, LspRange>> referencesTo(Module* mainModule, const std::string& filePath, LspPosition pos);
 /// Highlight tokens for one file, sorted by (line, start). Works on raw text
