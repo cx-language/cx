@@ -127,6 +127,7 @@ struct CompletionItem {
     std::string label;
     std::string kind; // "keyword", "function", "method", "variable", "type", "field", "enumMember" or "parameter".
     std::string detail;
+    bool hasParams = false; // True when a "function"/"method" takes parameters.
 };
 
 struct DocumentSymbol {
