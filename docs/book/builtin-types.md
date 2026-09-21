@@ -39,7 +39,7 @@ void main() {
 
 ## Arithmetic operators
 
-There are the usual arithmetic operators `+`, `-`, `*`, `/`, `%`, `&&`, `||`,
+There are the usual arithmetic operators `+`, `-`, `*`, `/`, `%`, `%%`, `&&`, `||`,
 `!`, `&`, `|`, `^`, `~`, `<<`, `>>`, and the compound assignment counterparts
 for the binary operators: `+=`, `-=`, `*=`, `/=`, `%=`, `&&=`, `||=`, `&=`,
 `|=`, `^=`, `<<=`, `>>=`.
@@ -51,6 +51,20 @@ Constant arithmetic is checked at compile time: a constant `+`, `-`, or `*`
 whose result doesn't fit its type is an error in every build mode. The wrapping
 behavior can be enabled for individual operations with a special syntax (not
 implemented yet).
+
+The `%` operator is a truncated remainder: its result takes the sign of
+the dividend, so `-7 % 3` is `-1`. The `%%` operator is a positive
+remainder instead: its result takes the sign of the divisor, so with a
+positive divisor the result is always in the range 0 to divisor - 1.
+
+```cs
+void main() {
+    println(7 % 3); // prints 1
+    println(-7 % 3); // prints -1
+    println(7 %% 3); // prints 1
+    println(-7 %% 3); // prints 2
+}
+```
 
 ### Increment and decrement operators
 

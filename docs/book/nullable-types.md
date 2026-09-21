@@ -68,3 +68,36 @@ void main() {
 
 Only value types can be switched on this way;
 to check a nullable pointer for null, compare it against `null` instead.
+
+## Null coalescing operator
+
+The `??` operator provides a default value for a nullable expression:
+if the left side is non-null, its value is used, otherwise the right
+side is evaluated and used instead.
+
+```cs
+void main() {
+    int? a = null;
+    println(a ?? 7); // prints 7
+
+    int? b = 42;
+    println(b ?? 7); // prints 42
+
+    string? name = null;
+    string displayName = name ?? "anonymous";
+    println(displayName); // prints anonymous
+}
+```
+
+The left side is evaluated once, and the right side only when the left
+side is null. If the right side is also nullable, the result stays
+nullable:
+
+```cs
+void main() {
+    int? a = null;
+    int? b = null;
+    int? c = a ?? b;
+    println(c); // prints null
+}
+```

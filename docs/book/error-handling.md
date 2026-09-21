@@ -90,6 +90,17 @@ void main() {
 }
 ```
 
+`assert` takes an optional second argument, a string literal used as the
+failure message. It is printed along with the location of the assertion.
+
+```cs
+void main() {
+    var x = 2 + 2;
+    assert(x == 4, "math is broken");
+    println("math works"); // prints math works
+}
+```
+
 `assert(false)` marks unreachable code: the compiler knows execution cannot continue past it,
 so no return is needed after it.
 To abort unconditionally with a message, call `abort`:
@@ -108,6 +119,22 @@ void main() {
 }
 ```
 
-## Planned features
+## Unimplemented code
 
-- Custom messages in `assert`.
+Use `todo` to mark code that isn't written yet.
+It aborts with "Not implemented", or with the given reason,
+so unfinished paths fail loudly instead of silently doing the wrong thing.
+Since `todo` never returns, the compiler accepts it anywhere a value is expected.
+
+```cs
+int parsePort(string service) {
+    if service == "http" {
+        return 80;
+    }
+    todo("only http is supported for now");
+}
+
+void main() {
+    println(parsePort("http")); // prints 80
+}
+```
