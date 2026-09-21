@@ -518,6 +518,9 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     }
 
     for (auto& flag : options.cflags) {
+        // The C importer (Clang) needs MSVC extensions to parse system headers on Windows,
+        // but cl itself rejects the Clang-only flag with a D9002 warning, so don't pass it on.
+        if (isMSVC && flag == "-fms-extensions") continue;
         ccArgs.push_back(flag.c_str());
     }
     auto addFlaggedArgs = [&](const char* flag, const auto& values) {
