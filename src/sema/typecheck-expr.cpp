@@ -210,12 +210,17 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
     }
 
     switch (decl->kind) {
-    case DeclKind::VarDecl:
+    case DeclKind::VarDecl: {
+        auto* varDecl = llvm::cast<VarDecl>(decl);
         if (!useIsWriteOnly) checkNotMoved(*decl, expr);
+        if (!useIsWriteOnly && !varDecl->isGlobal() && !varDecl->initializer && !definitelyAssignedDecls.count(decl)) {
+            ERROR(expr.location, "use of uninitialized variable '" << expr.identifier << "'");
+        }
         if (!useIsWriteOnly) {
             if (auto narrowed = narrowedTypes.find(decl); narrowed != narrowedTypes.end()) return narrowed->second;
         }
-        return llvm::cast<VarDecl>(decl)->type;
+        return varDecl->type;
+    }
     case DeclKind::ParamDecl:
         if (!useIsWriteOnly) checkNotMoved(*decl, expr);
         if (!useIsWriteOnly) {
@@ -447,10 +452,12 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     if (op == Token::AndAnd || op == Token::OrOr) {
         Type leftType = typecheckExpr(expr.getLHS());
         auto outerNarrowings = narrowedTypes;
+        auto afterLHSAssignedDecls = definitelyAssignedDecls;
         applyNarrowings(expr.getLHS(), op == Token::AndAnd);
         Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
         // The right side may not execute (short-circuit), so only narrowings valid on both paths survive.
         intersectNarrowings(outerNarrowings);
+        definitelyAssignedDecls = afterLHSAssignedDecls;
         // Like if conditions, operands may be optionals, testing for non-null.
         if ((leftType.isBool() || leftType.isOptionalType()) && (rightType.isBool() || rightType.isOptionalType())) {
             return Type::getBool();
@@ -550,6 +557,27 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     return resultType;
 }
 
+// Walks member and index bases to the underlying variable, if any.
+static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
+    Expr* current = &lhs;
+    while (true) {
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) return varExpr;
+        if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(current)) {
+            current = memberExpr->base;
+            continue;
+        }
+        if (auto* indexExpr = llvm::dyn_cast<IndexExpr>(current)) {
+            current = indexExpr->getBase();
+            continue;
+        }
+        if (auto* indexAssignExpr = llvm::dyn_cast<IndexAssignmentExpr>(current)) {
+            current = indexAssignExpr->getBase();
+            continue;
+        }
+        return nullptr;
+    }
+}
+
 void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     auto* lhs = &expr.getLHS();
     auto* rhs = &expr.getRHS();
@@ -598,6 +626,11 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
 
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
         expr.lhsIsMoved = movedDecls.count(varExpr->decl);
+    }
+    if (auto* baseVarExpr = getAssignmentBaseVarExpr(*lhs)) {
+        if (baseVarExpr->decl->isVarDecl()) {
+            definitelyAssignedDecls.insert(baseVarExpr->decl);
+        }
     }
 
     if (!rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
@@ -2477,14 +2510,14 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
     return Type::getUInt64();
 }
 
-Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType) {
+Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool useIsWriteOnly) {
     if (auto* enumCase = getEnumCase(expr, expectedType)) {
         checkHasAccess(*enumCase->getEnumDecl(), expr.base->location, AccessLevel::None);
         expr.decl = enumCase;
         return enumCase->type;
     }
 
-    Type baseType = typecheckExpr(*expr.base);
+    Type baseType = typecheckExpr(*expr.base, useIsWriteOnly);
     if (!expr.base->isThis()) baseType = baseType.removeOptional();
     baseType = baseType.removePointer();
 
@@ -2511,8 +2544,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType) {
     ERROR(expr.location, "no member named '" << expr.member << "' in '" << baseType << "'");
 }
 
-Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
-    Type lhsType = typecheckExpr(*expr.getBase());
+Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
+    Type lhsType = typecheckExpr(*expr.getBase(), baseIsWriteOnly);
     Type arrayType;
 
     if (lhsType.removeOptional().isArrayType()) {
@@ -2550,9 +2583,16 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
 }
 
 Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
-    auto elementType = typecheckIndexExpr(expr);
+    auto elementType = typecheckIndexExpr(expr, true);
 
     if (!expr.getBase()->type.removeOptional().removePointer().isArrayType()) {
+        if (auto* baseVarExpr = getAssignmentBaseVarExpr(*expr.getBase())) {
+            if (auto* baseVarDecl = llvm::dyn_cast<VarDecl>(baseVarExpr->decl)) {
+                if (!baseVarDecl->isGlobal() && !baseVarDecl->initializer && !definitelyAssignedDecls.count(baseVarDecl)) {
+                    ERROR(baseVarExpr->location, "use of uninitialized variable '" << baseVarExpr->identifier << "'");
+                }
+            }
+        }
         return typecheckCallExpr(expr);
     }
 
@@ -2563,6 +2603,12 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
     } else {
         ERROR(expr.getValue()->location,
               "cannot assign '" << expr.getValue()->type << "' to '" << elementType << "'" << narrowingHint(expr.getValue()->type, elementType));
+    }
+
+    if (auto* varExpr = getAssignmentBaseVarExpr(*expr.getBase())) {
+        if (varExpr->decl->isVarDecl()) {
+            definitelyAssignedDecls.insert(varExpr->decl);
+        }
     }
 
     return elementType;
@@ -2655,9 +2701,11 @@ Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
 
     // The right side only executes when the left side is null, so only narrowings valid on both paths survive.
     auto outerNarrowings = narrowedTypes;
+    auto afterLHSAssignedDecls = definitelyAssignedDecls;
     applyNarrowings(expr.getLHS(), false);
     Type rightType = typecheckExpr(expr.getRHS());
     intersectNarrowings(outerNarrowings);
+    definitelyAssignedDecls = afterLHSAssignedDecls;
 
     // Prefer the unwrapped left type, but never implicitly unwrap the right side: `o1 ?? o2`
     // must stay null when both are null, not trap unwrapping `o2`.
@@ -2692,13 +2740,27 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto conditionType = typecheckExpr(*expr.condition);
     typecheckImplicitlyBoolConvertibleExpr(conditionType, expr.condition->location);
     auto outerNarrowings = narrowedTypes;
+    auto outerAssignedDecls = definitelyAssignedDecls;
     applyNarrowings(*expr.condition, true);
     auto thenType = typecheckExpr(*expr.thenExpr);
     auto thenNarrowings = narrowedTypes;
+    auto thenAssignedDecls = definitelyAssignedDecls;
     narrowedTypes = outerNarrowings;
+    definitelyAssignedDecls = outerAssignedDecls;
     applyNarrowings(*expr.condition, false);
     auto elseType = typecheckExpr(*expr.elseExpr);
     intersectNarrowings(thenNarrowings);
+    if (!thenType.isNeverType() && elseType.isNeverType()) {
+        definitelyAssignedDecls = thenAssignedDecls;
+    } else if (!thenType.isNeverType() && !elseType.isNeverType()) {
+        auto elseAssignedDecls = definitelyAssignedDecls;
+        definitelyAssignedDecls = thenAssignedDecls;
+        for (auto* decl : llvm::to_vector(definitelyAssignedDecls)) {
+            if (!elseAssignedDecls.count(decl)) {
+                definitelyAssignedDecls.erase(decl);
+            }
+        }
+    }
 
     if (auto convertedElse = convert(expr.elseExpr, thenType, false, false)) {
         expr.elseExpr = convertedElse;
@@ -2759,10 +2821,10 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         type = typecheckSizeofExpr(llvm::cast<SizeofExpr>(expr));
         break;
     case ExprKind::MemberExpr:
-        type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr), expectedType);
+        type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr), expectedType, useIsWriteOnly);
         break;
     case ExprKind::IndexExpr:
-        type = typecheckIndexExpr(llvm::cast<IndexExpr>(expr));
+        type = typecheckIndexExpr(llvm::cast<IndexExpr>(expr), useIsWriteOnly);
         break;
     case ExprKind::IndexAssignmentExpr:
         type = typecheckIndexAssignmentExpr(llvm::cast<IndexAssignmentExpr>(expr));

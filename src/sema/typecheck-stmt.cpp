@@ -9,6 +9,36 @@
 
 using namespace cx;
 
+// True when a switch case body may fall through to the code after the switch.
+// Unlike allPathsDiverge, 'break' falls through (it exits the switch), while
+// 'continue' doesn't (it skips past the switch to the loop increment).
+static bool switchCaseMayFallThrough(llvm::ArrayRef<Stmt*> block) {
+    if (block.empty()) return true;
+
+    switch (block.back()->kind) {
+    case StmtKind::ReturnStmt:
+    case StmtKind::ContinueStmt:
+        return false;
+    case StmtKind::BreakStmt:
+        return true;
+    case StmtKind::ExprStmt: {
+        auto& exprStmt = llvm::cast<ExprStmt>(*block.back());
+        auto* call = llvm::dyn_cast<CallExpr>(exprStmt.expr);
+        return !call || !call->type || !call->type.isNeverType();
+    }
+    case StmtKind::IfStmt: {
+        auto& ifStmt = llvm::cast<IfStmt>(*block.back());
+        return switchCaseMayFallThrough(ifStmt.thenBody) || switchCaseMayFallThrough(ifStmt.elseBody);
+    }
+    case StmtKind::SwitchStmt:
+        return true;
+    case StmtKind::CompoundStmt:
+        return switchCaseMayFallThrough(llvm::cast<CompoundStmt>(*block.back()).body);
+    default:
+        return true;
+    }
+}
+
 // True when no path through the block falls through to the next statement: every path
 // returns, calls a never-returning function, or breaks/continues past the analyzed block.
 // `break`/`continue` inside a nested loop or switch target that construct instead.
@@ -325,28 +355,33 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     llvm::SmallPtrSet<Decl*, 32> thenMovedDecls, elseMovedDecls;
     NarrowMap outerNarrowings = narrowedTypes;
     NarrowMap thenNarrowings, elseNarrowings;
+    llvm::SmallPtrSet<Decl*, 32> thenAssignedDecls, elseAssignedDecls;
 
     {
         Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
+        llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, true);
         for (auto& stmt : ifStmt.thenBody) {
             typecheckStmt(stmt);
         }
         thenMovedDecls = movedDecls;
         thenNarrowings = narrowedTypes;
+        thenAssignedDecls = definitelyAssignedDecls;
         narrowedTypes = outerNarrowings;
     }
 
     {
         Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
+        llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, false);
         for (auto& stmt : ifStmt.elseBody) {
             typecheckStmt(stmt);
         }
         elseMovedDecls = movedDecls;
         elseNarrowings = narrowedTypes;
+        elseAssignedDecls = definitelyAssignedDecls;
         narrowedTypes = outerNarrowings;
     }
 
@@ -364,11 +399,20 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     bool elseDiverges = !ifStmt.elseBody.empty() && allPathsDiverge(ifStmt.elseBody);
     if (thenDiverges && !elseDiverges) {
         narrowedTypes = elseNarrowings;
+        definitelyAssignedDecls = elseAssignedDecls;
     } else if (elseDiverges && !thenDiverges) {
         narrowedTypes = thenNarrowings;
+        definitelyAssignedDecls = thenAssignedDecls;
     } else if (!thenDiverges && !elseDiverges) {
         narrowedTypes = thenNarrowings;
         intersectNarrowings(elseNarrowings);
+        llvm::SmallPtrSet<Decl*, 32> mergedAssignedDecls;
+        for (auto* decl : thenAssignedDecls) {
+            if (elseAssignedDecls.count(decl)) {
+                mergedAssignedDecls.insert(decl);
+            }
+        }
+        definitelyAssignedDecls = std::move(mergedAssignedDecls);
     }
 
     currentControlStmts.pop_back();
@@ -443,6 +487,7 @@ void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase*
     }
     associatedValue->type = NOTNULL(enumCase->associatedType);
     typecheckVarDecl(*associatedValue);
+    definitelyAssignedDecls.insert(associatedValue);
 }
 
 // Switch expressions lower directly to a switch instruction, so unlike switch statements
@@ -535,6 +580,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     // Cases of a null-routed optional switch match the dereferenced value; codegen unwraps before switching.
     Type caseTargetType = nullRoutedOptional ? conditionType.getWrappedType().getPointee() : conditionType;
     bool seenNullCase = false;
+    std::vector<llvm::SmallPtrSet<Decl*, 32>> bodyAssignedDecls;
 
     for (auto& switchCase : stmt.cases) {
         // Null-routed switches match against the dereferenced type and accept `case null`,
@@ -587,6 +633,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
         Scope scope(nullptr, &currentModule->symbolTable);
         NarrowMap outerNarrowings = narrowedTypes;
+        llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
 
         typecheckSwitchCaseBinding(switchCase.associatedValue, enumCase);
 
@@ -594,15 +641,22 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             typecheckStmt(caseStmt);
         }
         narrowedTypes = outerNarrowings;
+        if (switchCaseMayFallThrough(switchCase.stmts)) {
+            bodyAssignedDecls.push_back(definitelyAssignedDecls);
+        }
     }
 
     {
         Scope scope(nullptr, &currentModule->symbolTable);
         NarrowMap outerNarrowings = narrowedTypes;
+        llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         for (auto& defaultStmt : stmt.defaultStmts) {
             typecheckStmt(defaultStmt);
         }
         narrowedTypes = outerNarrowings;
+        if (!stmt.defaultStmts.empty() && switchCaseMayFallThrough(stmt.defaultStmts)) {
+            bodyAssignedDecls.push_back(definitelyAssignedDecls);
+        }
     }
 
     dropNarrowingsForNames(bodyAssignedNames);
@@ -610,6 +664,16 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     currentControlStmts.pop_back();
 
     stmt.coversAllEnumCases = coversAllEnumCases(stmt, conditionType);
+    if ((!stmt.defaultStmts.empty() || stmt.coversAllEnumCases) && !bodyAssignedDecls.empty()) {
+        definitelyAssignedDecls = bodyAssignedDecls.front();
+        for (auto& body : llvm::ArrayRef(bodyAssignedDecls).drop_front()) {
+            for (auto* decl : llvm::to_vector(definitelyAssignedDecls)) {
+                if (!body.count(decl)) {
+                    definitelyAssignedDecls.erase(decl);
+                }
+            }
+        }
+    }
     warnAboutUnhandledEnumCases(stmt, conditionType);
 }
 
@@ -626,21 +690,42 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
     if (expr.defaultExpr) collectAssignedNames(*expr.defaultExpr, assignedNames);
     dropNarrowingsForNames(assignedNames);
 
+    std::vector<llvm::SmallPtrSet<Decl*, 32>> armAssignedDecls;
+
     for (auto& arm : expr.arms) {
         auto* enumCase = typecheckSwitchCaseValue(arm.value, conditionType);
 
         Scope scope(nullptr, &currentModule->symbolTable);
         NarrowMap outerNarrowings = narrowedTypes;
+        llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
 
         typecheckSwitchCaseBinding(arm.associatedValue, enumCase);
         typecheckExpr(*arm.expr, false, expectedType);
         narrowedTypes = outerNarrowings;
+        if (!arm.expr->type.isNeverType()) {
+            armAssignedDecls.push_back(definitelyAssignedDecls);
+        }
     }
 
     if (expr.defaultExpr) {
         NarrowMap outerNarrowings = narrowedTypes;
+        llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         typecheckExpr(*expr.defaultExpr, false, expectedType);
         narrowedTypes = outerNarrowings;
+        if (!expr.defaultExpr->type.isNeverType()) {
+            armAssignedDecls.push_back(definitelyAssignedDecls);
+        }
+    }
+
+    if (!armAssignedDecls.empty()) {
+        definitelyAssignedDecls = armAssignedDecls.front();
+        for (auto& arm : llvm::ArrayRef(armAssignedDecls).drop_front()) {
+            for (auto* decl : llvm::to_vector(definitelyAssignedDecls)) {
+                if (!arm.count(decl)) {
+                    definitelyAssignedDecls.erase(decl);
+                }
+            }
+        }
     }
 
     if (!expr.defaultExpr) {
@@ -767,6 +852,8 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
         typecheckImplicitlyBoolConvertibleExpr(conditionType, forStmt.condition->location);
     }
 
+    // The body and increment may not execute, so assignments there don't hold after the loop.
+    llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
     currentControlStmts.push_back(&forStmt);
 
     if (forStmt.condition) applyNarrowings(*forStmt.condition, true);
@@ -797,9 +884,7 @@ void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
     NarrowMap outerNarrowings = narrowedTypes;
     dropNarrowingsForNames(assignedNames);
 
-    Type conditionType = typecheckExpr(*doWhileStmt.condition);
-    typecheckImplicitlyBoolConvertibleExpr(conditionType, doWhileStmt.condition->location);
-
+    // The body runs before the first check, so unlike while loops its assignments hold after.
     currentControlStmts.push_back(&doWhileStmt);
 
     for (auto& stmt : doWhileStmt.body) {
@@ -807,6 +892,9 @@ void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
     }
 
     currentControlStmts.pop_back();
+
+    Type conditionType = typecheckExpr(*doWhileStmt.condition);
+    typecheckImplicitlyBoolConvertibleExpr(conditionType, doWhileStmt.condition->location);
 
     narrowedTypes = outerNarrowings;
     dropNarrowingsForNames(assignedNames);
@@ -850,6 +938,7 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
         case StmtKind::DeferStmt: {
             // Deferred expressions run at scope exit, when narrowings established here may no longer hold.
             llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
+            llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
             auto& expr = *llvm::cast<DeferStmt>(stmt)->expr;
             warnIfUnusedResult(expr, typecheckExpr(expr));
             break;

@@ -147,6 +147,14 @@ Value* IRGenerator::emitUndefinedLiteralExpr(const UndefinedLiteralExpr& expr) {
 }
 
 Value* IRGenerator::emitArrayLiteralExpr(const ArrayLiteralExpr& expr) {
+    if (expr.elements.empty() && expr.type.isArrayRef()) {
+        auto* irType = getIRType(expr.type);
+        auto fields = irType->getFields();
+        ASSERT(fields.size() == 2);
+        Value* arrayRef = createInsertValue(createUndefined(irType), createConstantNull(fields[0].type), 0);
+        return createInsertValue(arrayRef, createConstantInt(fields[1].type, 0), 1);
+    }
+
     Value* array = createUndefined(expr.type);
     auto index = 0;
 
@@ -531,6 +539,9 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
         if (expr.type.isConstantArray()) {
             auto* value = emitExprAsPointer(expr);
             ASSERT(value->getType()->getPointee()->isArrayType());
+            if (expr.type.getArraySize() == 0) {
+                return createConstantNull(value->getType()->getPointee()->getElementType()->getPointerTo());
+            }
             return createGEP(value, 0);
         }
         return emitExpr(expr);
@@ -542,7 +553,12 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
         ASSERT(expr.type.removePointer().isConstantArray());
         // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
         auto* value = expr.type.isPointerType() ? emitExpr(expr) : emitExprAsPointer(expr);
-        auto* elementPtr = createGEP(value, 0);
+        Value* elementPtr;
+        if (expr.type.removePointer().getArraySize() == 0) {
+            elementPtr = createConstantNull(targetType->getFields()[0].type);
+        } else {
+            elementPtr = createGEP(value, 0);
+        }
         auto* arrayRef = createInsertValue(createUndefined(targetType), elementPtr, 0);
         auto size = createConstantInt(Type::getInt(), expr.type.removePointer().getArraySize());
         return createInsertValue(arrayRef, size, 1);
@@ -852,6 +868,13 @@ Value* IRGenerator::getArrayLength(const Expr&, Type objectType) {
 
 Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
     auto type = BasicType::get("ArrayIterator", objectType.getElementType());
+    if (objectType.getArraySize() == 0) {
+        auto* irType = getIRType(type);
+        auto fields = irType->getFields();
+        ASSERT(fields.size() == 2);
+        auto* iterator = createInsertValue(createUndefined(type), createConstantNull(fields[0].type), 0);
+        return createInsertValue(iterator, createConstantNull(fields[1].type), 1);
+    }
     // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
     auto* value = object.type.isPointerType() ? emitExpr(object) : emitExprAsPointer(object);
     auto* elementPtr = createGEP(value, 0);

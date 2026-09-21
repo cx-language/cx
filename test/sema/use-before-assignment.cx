@@ -1,0 +1,52 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: use-before-assignment.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void useBeforeAssign() {
+    int x;
+    // CHECK: [[@LINE+1]]:13: error: use of uninitialized variable 'x'
+    println(x);
+}
+
+void assignInThenOnly(bool c) {
+    int x;
+    if c {
+        x = 1;
+    }
+    // CHECK: [[@LINE+1]]:13: error: use of uninitialized variable 'x'
+    println(x);
+}
+
+void assignInLoopBody() {
+    int x;
+    for i in 0..10 {
+        x = i;
+    }
+    // CHECK: [[@LINE+1]]:13: error: use of uninitialized variable 'x'
+    println(x);
+}
+
+void okAssignBeforeUse() {
+    int x;
+    x = 1;
+    println(x);
+}
+
+void okBothBranches(bool c) {
+    int x;
+    if c {
+        x = 1;
+    } else {
+        x = 2;
+    }
+    println(x);
+}
+
+void main() {
+    useBeforeAssign();
+    assignInThenOnly(true);
+    assignInLoopBody();
+    okAssignBeforeUse();
+    okBothBranches(true);
+}
+
+// CHECK-NOT: use-before-assignment.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

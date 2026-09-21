@@ -79,24 +79,17 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     /// Appends the given character.
-    void push(char c) {
+    void append(char c) {
         characters[size()] = c;
         characters.push('\0');
     }
 
     /// Appends the given string.
-    bool write(string s) {
+    void append(string s) {
         // TODO: Optimize
         for ch in s {
-            push(ch);
+            append(ch);
         }
-        return true;
-    }
-
-    /// Appends the given character.
-    bool write(char c) {
-        push(c);
-        return true;
     }
 
     /// Removes the first character from the string.
@@ -199,7 +192,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Writes this string to the given stream.
     void print(StringBuffer* stream) {
-        stream.write(string(this));
+        stream.append(string(this));
     }
 
     /// Compares this string to another.
@@ -225,11 +218,11 @@ StringBuffer operator+(string a, string b) {
     var result = StringBuffer();
 
     for ch in a {
-        result.push(ch);
+        result.append(ch);
     }
 
     for ch in b {
-        result.push(ch);
+        result.append(ch);
     }
 
     return result;
@@ -250,7 +243,7 @@ StringBuffer operator+(StringBuffer a, string b) {
     var result = a; // TODO: Workaround until parameters can be mutated.
 
     for ch in b {
-        result.push(ch);
+        result.append(ch);
     }
 
     return result;
@@ -259,7 +252,7 @@ StringBuffer operator+(StringBuffer a, string b) {
 /// Concatenates the string and the character.
 StringBuffer operator+(StringBuffer a, char b) {
     var result = a; // TODO: Workaround until parameters can be mutated.
-    result.push(b);
+    result.append(b);
     return result;
 }
 

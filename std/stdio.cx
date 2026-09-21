@@ -102,7 +102,7 @@ StringBuffer readLine() {
             break;
         }
 
-        line.push(char(c));
+        line.append(char(c));
     }
 
     return line;

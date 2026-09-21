@@ -52,7 +52,7 @@ const uint64 uint64_min = 0;
 
 private void printSigned(int64 value, StringBuffer* stream) {
     if value < 0 {
-        stream.write('-');
+        stream.append('-');
         // Negate via value + 1 so that int64_min doesn't overflow.
         printUnsigned(uint64(-(value + 1)) + uint64(1), stream);
     } else {
@@ -76,7 +76,7 @@ private void printUnsigned(uint64 value, StringBuffer* stream) {
 
     while count > 0 {
         count--;
-        stream.write(digits[count]);
+        stream.append(digits[count]);
     }
 }
 

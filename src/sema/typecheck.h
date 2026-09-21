@@ -111,8 +111,8 @@ struct Typechecker {
     Type typecheckBuiltinConversion(CallExpr& expr);
     Type typecheckBuiltinCast(CallExpr& expr);
     Type typecheckSizeofExpr(SizeofExpr& expr);
-    Type typecheckMemberExpr(MemberExpr& expr, Type expectedType = Type());
-    Type typecheckIndexExpr(IndexExpr& expr);
+    Type typecheckMemberExpr(MemberExpr& expr, Type expectedType = Type(), bool useIsWriteOnly = false);
+    Type typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly = false);
     Type typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr);
     Type typecheckUnwrapExpr(UnwrapExpr& expr);
     Type typecheckLambdaExpr(LambdaExpr& expr, Type expectedType);
@@ -175,6 +175,7 @@ struct Typechecker {
     llvm::SmallPtrSet<Decl*, 32> movedDecls;
     std::vector<VarDecl*> localVarDecls;
     NarrowMap narrowedTypes;
+    llvm::SmallPtrSet<Decl*, 32> definitelyAssignedDecls;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
     const CompileOptions& options;
