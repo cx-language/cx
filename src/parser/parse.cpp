@@ -90,7 +90,14 @@ static std::string formatList(llvm::ArrayRef<Token::Kind> tokens) {
     if (expected.size() == 0) {
         ERROR(token.location, "unexpected " << quote(token) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : ""));
     } else {
-        ERROR(token.location, "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "") << ", got " << quote(token));
+        // Naming something with a keyword (e.g. a parameter called `in`) reports
+        // "expected identifier"; say outright that the word is reserved.
+        const char* hint = "";
+        if (expected.size() == 1 && expected[0] == Token::Identifier && token.kind >= Token::Break && token.kind <= Token::While) {
+            hint = " (reserved word, cannot be used as an identifier)";
+        }
+        ERROR(token.location,
+              "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "") << ", got " << quote(token) << hint);
     }
 }
 

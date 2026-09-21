@@ -31,3 +31,13 @@ void main() {
     println(greeting); // prints hello
 }
 ```
+
+## Reserved words
+
+The following words are reserved and cannot be used as identifiers
+(for variables, parameters, functions, or types):
+
+`break`, `case`, `const`, `continue`, `default`, `defer`, `do`, `else`,
+`enum`, `extern`, `false`, `for`, `if`, `import`, `in`, `interface`,
+`null`, `private`, `public`, `return`, `sizeof`, `struct`, `switch`,
+`then`, `this`, `true`, `undefined`, `var`, `while`
