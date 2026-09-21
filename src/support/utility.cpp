@@ -2,9 +2,8 @@
 #include <algorithm>
 #include <fstream>
 #include <ostream>
-#include <set>
-#include <tuple>
 #pragma warning(push, 0)
+#include <llvm/ADT/SmallSet.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Process.h>
@@ -170,7 +169,17 @@ void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<
     }
 }
 
-static std::set<std::tuple<std::string, short, short, std::string>> reportedWarnings;
+struct ReportedWarning {
+    std::string file;
+    Location::IntegerType line;
+    Location::IntegerType column;
+    std::string message;
+
+    bool operator==(const ReportedWarning& other) const = default;
+    std::strong_ordering operator<=>(const ReportedWarning& other) const = default;
+};
+
+static llvm::SmallSet<ReportedWarning, 8> reportedWarnings;
 
 void cx::resetReportedWarnings() {
     reportedWarnings.clear();
@@ -180,7 +189,8 @@ void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRe
     if (diagnosticOptions.disableWarnings) return;
 
     // Overload resolution typechecks call arguments once per candidate; report each unique warning only once.
-    if (!reportedWarnings.emplace(location.file ? location.file : "", location.line, location.column, message.str()).second) {
+    ReportedWarning warning{location.file ? location.file : "", location.line, location.column, message.str()};
+    if (!reportedWarnings.insert(warning).second) {
         return;
     }
 
