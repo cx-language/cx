@@ -86,6 +86,13 @@ maturity, cx is still young.
   compile errors produced by Rust's borrow checker, since you can see the exact runtime conditions that caused the
   violation in your debugger.
 
+- Rust tries to make you write the correct code the first time.
+  If that code turns out to be the wrong approach and gets deleted,
+  all the time spent making it correct was wasted.
+  cx lets you write quick, hacky, even incorrect code to reach the design decision faster:
+  if you discard it, you haven't sunk much effort into making it correct.
+  And nothing stops you from making the surviving code correct afterwards.
+
 - Rust code is by design very explicit.
   While this is useful for code where you care about every little detail, every instance of possible runtime overhead, and every error condition,
   it is counterproductive for code where you don't care about such things.
