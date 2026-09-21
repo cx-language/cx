@@ -1264,6 +1264,8 @@ std::string CGenerator::finish() {
            "float truncf(float x) { return (float)trunc((double)x); }\n"
            "float roundf(float x) { return (float)round((double)x); }\n"
            "float fmodf(float x, float y) { return (float)fmod((double)x, (double)y); }\n"
+           "// xcc's WebAssembly libc lacks strtof, so provide it in terms of strtod.\n"
+           "float strtof(const char* s, char** e) { return (float)strtod(s, e); }\n"
            "#endif\n"
          + preludeStream.str() + stream.str();
 }

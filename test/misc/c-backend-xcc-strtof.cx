@@ -1,0 +1,10 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+// CHECK: #ifdef __wasm
+// CHECK: float strtof(const char* s, char** e) { return (float)strtod(s, e); }
+// CHECK: #endif
+
+// xcc (the playground's C compiler) neither declares nor defines strtof, so
+// the C prelude provides it in terms of strtod. Other toolchains are
+// unaffected by this fallback.
+
+void main() {}
