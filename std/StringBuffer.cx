@@ -278,19 +278,9 @@ bool operator==(StringBuffer* a, string b) {
     return string(a) == b;
 }
 
-/// Returns true if both strings differ.
-bool operator!=(StringBuffer* a, string b) {
-    return string(a) != b;
-}
-
 /// Returns true if both strings are equal.
 bool operator==(string a, StringBuffer* b) {
     return a == string(b);
-}
-
-/// Returns true if both strings differ.
-bool operator!=(string a, StringBuffer* b) {
-    return a != string(b);
 }
 
 /// Returns true if both strings are equal.
@@ -298,17 +288,7 @@ bool operator==(char[*] a, StringBuffer* b) {
     return string(a) == string(b);
 }
 
-/// Returns true if both strings differ.
-bool operator!=(char[*] a, StringBuffer* b) {
-    return string(a) != string(b);
-}
-
 /// Returns true if both strings are equal.
 bool operator==(StringBuffer* a, char[*] b) {
     return string(a) == string(b);
-}
-
-/// Returns true if both strings differ.
-bool operator!=(StringBuffer* a, char[*] b) {
-    return string(a) != string(b);
 }

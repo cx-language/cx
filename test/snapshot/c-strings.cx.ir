@@ -9,21 +9,22 @@ int main() {
     void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "x", int 1)
     string __str.load = load __str
     bool _3 = call _EN3stdeqEP4char6string(char* _1, string __str.load)
-    void _4 = call _EN3std6string4initEP4char3int(string* __str_0, char* "x", int 1)
-    string __str.load_0 = load __str_0
-    void _5 = call _EN3std12StringBuffer4initE6string(StringBuffer* _0, string __str.load_0)
-    List<char>* _6 = getelementptr _0, 0
-    char** _7 = getelementptr _6, 0
-    char* .load = load _7
-    int* _8 = getelementptr _6, 1
-    int .load_0 = load _8
-    int _9 = .load_0 - int 1
-    ArrayRef<char> _10 = insertvalue ArrayRef<char> undefined, 0, .load
-    ArrayRef<char> _11 = insertvalue _10, 1, _9
-    string _12 = insertvalue string undefined, 0, _11
     char[1024]* a_0 = getelementptr s, 0
-    char* _13 = cast a_0 to char*
-    bool _14 = call _EN3stdneE6stringP4char(string _12, char* _13)
+    char* _4 = cast a_0 to char*
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_0, char* "x", int 1)
+    string __str.load_0 = load __str_0
+    void _6 = call _EN3std12StringBuffer4initE6string(StringBuffer* _0, string __str.load_0)
+    List<char>* _7 = getelementptr _0, 0
+    char** _8 = getelementptr _7, 0
+    char* .load = load _8
+    int* _9 = getelementptr _7, 1
+    int .load_0 = load _9
+    int _10 = .load_0 - int 1
+    ArrayRef<char> _11 = insertvalue ArrayRef<char> undefined, 0, .load
+    ArrayRef<char> _12 = insertvalue _11, 1, _10
+    string _13 = insertvalue string undefined, 0, _12
+    bool _14 = call _EN3stdeqEP4char6string(char* _4, string _13)
+    bool _15 = !_14
     return int 0
 }
 
@@ -31,9 +32,6 @@ bool _EN3stdeqEP4char6string(char* a, string b) {
 }
 
 void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
-}
-
-bool _EN3stdneE6stringP4char(string a, char* b) {
 }
 
 void _EN3std12StringBuffer4initE6string(StringBuffer* this, string s) {

@@ -1518,7 +1518,33 @@ static std::vector<ParamDecl> getVariableCalleeParams(const VariableDecl& callee
     return llvm::cast<FunctionType>(calleeDecl.type.typeBase)->getParamDecls(calleeDecl.getLocation());
 }
 
+// True for operators with fallback resolution: == and != retry with swapped operands,
+// and !=, >, >=, and <= derive from == and <. A single non-matching overload must not
+// fail hard for these; it falls through to the fallbacks below like a non-match.
+static bool hasComparisonFallback(const CallExpr& expr) {
+    auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr);
+    if (!binaryExpr) return false;
+    switch (binaryExpr->op) {
+    case Token::Equal:
+    case Token::NotEqual:
+    case Token::Greater:
+    case Token::GreaterOrEqual:
+    case Token::LessOrEqual:
+        return true;
+    default:
+        return false;
+    }
+}
+
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry) {
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr); binaryExpr && expr.calleeDecl) {
+        // Argument validation probes typecheck arguments and then clear their types, so
+        // operators resolve twice. Derivation swaps operands in place, which would toggle
+        // back on the second pass. BinaryExpr resolution ignores expectedType, so the
+        // first result is final.
+        return expr.calleeDecl;
+    }
+
     std::vector<Match> matches;
     std::vector<Match> templateMatches;
     llvm::ArrayRef<Decl*> candidates = decls;
@@ -1545,6 +1571,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 auto* functionDecl = functionTemplate->instantiateVariadic(variadicArgs->fixedArgs, variadicArgs->packArgs, std::move(variadicArgs->cacheKey));
 
                 if (decls.size() == 1) {
+                    if (!matchArguments(expr, functionDecl) && hasComparisonFallback(expr)) continue;
                     validateAndConvertArguments(expr, *functionDecl, callee, expr.callee->location);
                     deferTypechecking(functionDecl);
                     return functionDecl;
@@ -1576,6 +1603,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             auto* functionDecl = functionTemplate->instantiate(genericArgs);
 
             if (decls.size() == 1) {
+                if (!matchArguments(expr, functionDecl) && hasComparisonFallback(expr)) continue;
                 validateAndConvertArguments(expr, *functionDecl, callee, expr.callee->location);
                 deferTypechecking(functionDecl);
                 return functionDecl;
@@ -1597,6 +1625,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
             if (decls.size() == 1) {
                 validateGenericArgCount(0, expr.genericArgs, expr.getFunctionName(), expr.location);
+                if (!matchArguments(expr, functionDecl) && hasComparisonFallback(expr)) continue;
                 validateAndConvertArguments(expr, *functionDecl, callee, expr.callee->location);
                 return functionDecl;
             }

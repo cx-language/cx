@@ -8,8 +8,3 @@ interface Equatable {
 bool operator==<T: Equatable>(T* a, T* b) {
     return a.equals(b);
 }
-
-/// Returns true if a differs from b.
-bool operator!=<T: Equatable>(T* a, T* b) {
-    return !a.equals(b);
-}

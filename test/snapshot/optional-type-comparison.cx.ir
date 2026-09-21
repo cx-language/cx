@@ -40,7 +40,7 @@ if.end:
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _6 = call _EN3std10assertFailEP4char(char* "Unwrap failed at Optional.cx:22:16
+    void _6 = call _EN3std10assertFailEP4char(char* "Unwrap failed at Optional.cx:17:16
 ")
     unreachable
 

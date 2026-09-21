@@ -334,17 +334,7 @@ bool operator==(char* a, string b) {
     return string(a) == b;
 }
 
-/// Returns true if both strings differ.
-bool operator!=(char* a, string b) {
-    return string(a) != b;
-}
-
 /// Returns true if both strings are equal.
 bool operator==(string a, char* b) {
     return a == string(b);
-}
-
-/// Returns true if both strings differ.
-bool operator!=(string a, char* b) {
-    return a != string(b);
 }
