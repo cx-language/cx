@@ -1,0 +1,331 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    testSeparators();
+    testSplitDrive();
+    testIsAbsolute();
+    testSplit();
+    testExtension();
+    testJoin();
+    testComponents();
+    testNormalize();
+    testRelativePath();
+}
+
+void testSeparators() {
+    assert(isSeparator('/'), "isSeparator slash");
+    assert(isSeparator('\\'), "isSeparator backslash");
+    assert(!isSeparator('a'), "isSeparator letter");
+}
+
+void testSplitDrive() {
+    var d = splitDrive("/a/b");
+    assert(d.drive == "" && d.rest == "/a/b", "splitDrive posix");
+    d = splitDrive("a");
+    assert(d.drive == "" && d.rest == "a", "splitDrive plain");
+    d = splitDrive("");
+    assert(d.drive == "" && d.rest == "", "splitDrive empty");
+    d = splitDrive("C:/a");
+    assert(d.drive == "C:" && d.rest == "/a", "splitDrive drive abs");
+    d = splitDrive("C:a");
+    assert(d.drive == "C:" && d.rest == "a", "splitDrive drive rel");
+    d = splitDrive("C:");
+    assert(d.drive == "C:" && d.rest == "", "splitDrive drive only");
+    d = splitDrive("\\\\server\\share\\x");
+    assert(d.drive == "\\\\server\\share" && d.rest == "\\x", "splitDrive unc backslash");
+    d = splitDrive("//server/share/x");
+    assert(d.drive == "//server/share" && d.rest == "/x", "splitDrive unc slash");
+    d = splitDrive("//");
+    assert(d.drive == "" && d.rest == "//", "splitDrive lone slashes");
+    d = splitDrive("//server");
+    assert(d.drive == "" && d.rest == "//server", "splitDrive no share");
+}
+
+void testIsAbsolute() {
+    assert(isAbsolute("/"), "isAbsolute root");
+    assert(isAbsolute("/a"), "isAbsolute posix");
+    assert(!isAbsolute("a"), "isAbsolute relative");
+    assert(!isAbsolute(""), "isAbsolute empty");
+    assert(isAbsolute("C:/a"), "isAbsolute drive abs");
+    assert(isAbsolute("C:\\a"), "isAbsolute drive backslash");
+    assert(!isAbsolute("C:a"), "isAbsolute drive rel");
+    assert(isAbsolute("\\\\server\\share"), "isAbsolute unc");
+    assert(isAbsolute("\\a"), "isAbsolute lone backslash");
+    assert(isRelative("a/b"), "isRelative posix");
+    assert(!isRelative("/"), "isRelative root");
+}
+
+void testSplit() {
+    var s = split("a/b");
+    assert(s.dir == "a" && s.base == "b", "split basic");
+    s = split("a/");
+    assert(s.dir == "a" && s.base == "", "split trailing slash");
+    s = split("a");
+    assert(s.dir == "" && s.base == "a", "split no dir");
+    s = split("/a");
+    assert(s.dir == "/" && s.base == "a", "split root file");
+    s = split("/");
+    assert(s.dir == "/" && s.base == "", "split root");
+    s = split("");
+    assert(s.dir == "" && s.base == "", "split empty");
+    s = split("a\\b");
+    assert(s.dir == "a" && s.base == "b", "split backslash");
+    s = split("//a");
+    assert(s.dir == "//" && s.base == "a", "split double root");
+    s = split("a//");
+    assert(s.dir == "a" && s.base == "", "split double trailing");
+    s = split("///");
+    assert(s.dir == "///" && s.base == "", "split all separators");
+    s = split("C:\\a\\b");
+    assert(s.dir == "C:\\a" && s.base == "b", "split drive backslash");
+    assert(dirname("C:/a/b") == "C:/a", "dirname drive");
+    assert(basename("C:\\a\\b") == "b", "basename drive");
+    assert(dirname("a/b") == "a", "dirname basic");
+    assert(dirname("a/b/") == "a/b", "dirname trailing slash");
+    assert(dirname("a") == "", "dirname bare");
+    assert(basename("a/b") == "b", "basename basic");
+    assert(basename("a/b/") == "", "basename trailing slash");
+    assert(basename("a") == "a", "basename bare");
+}
+
+void testExtension() {
+    var e = splitExtension("a.tar.gz");
+    assert(e.root == "a.tar" && e.ext == ".gz", "splitExtension basic");
+    e = splitExtension("a/b.txt");
+    assert(e.root == "a/b" && e.ext == ".txt", "splitExtension dir");
+    e = splitExtension(".bashrc");
+    assert(e.root == ".bashrc" && e.ext == "", "splitExtension dotfile");
+    e = splitExtension("..");
+    assert(e.root == ".." && e.ext == "", "splitExtension dotdot");
+    e = splitExtension(".");
+    assert(e.root == "." && e.ext == "", "splitExtension dot");
+    e = splitExtension("...");
+    assert(e.root == "..." && e.ext == "", "splitExtension dots");
+    e = splitExtension("file.");
+    assert(e.root == "file" && e.ext == ".", "splitExtension trailing dot");
+    e = splitExtension("a/b");
+    assert(e.root == "a/b" && e.ext == "", "splitExtension none");
+    e = splitExtension("a/b/");
+    assert(e.root == "a/b/" && e.ext == "", "splitExtension trailing slash");
+    e = splitExtension("");
+    assert(e.root == "" && e.ext == "", "splitExtension empty");
+    e = splitExtension("a.d/b");
+    assert(e.root == "a.d/b" && e.ext == "", "splitExtension dot in dir");
+    e = splitExtension("C:\\a\\b.txt");
+    assert(e.root == "C:\\a\\b" && e.ext == ".txt", "splitExtension backslash");
+    e = splitExtension("a/b.c/d");
+    assert(e.root == "a/b.c/d" && e.ext == "", "splitExtension dot dir only");
+    assert(stem("a.") == "a", "stem trailing dot");
+    assert(extension("a/b.txt") == ".txt", "extension basic");
+    assert(extension("a/b") == "", "extension none");
+    assert(extension(".bashrc") == "", "extension dotfile");
+    assert(stem("a.tar.gz") == "a.tar", "stem basic");
+    assert(stem(".bashrc") == ".bashrc", "stem dotfile");
+    assert(stem("a/b/") == "", "stem trailing slash");
+    assert(stem("a/b.txt") == "b", "stem dir");
+    assert(stem("C:\\x\\y.md") == "y", "stem backslash");
+
+    var st = stripExtension("a.tar.gz");
+    assert(&st == "a.tar", "stripExtension basic");
+    st = stripExtension("a/b");
+    assert(&st == "a/b", "stripExtension none");
+
+    var w = withExtension("a/b.txt", ".md");
+    assert(&w == "a/b.md", "withExtension dotted");
+    w = withExtension("a/b.txt", "md");
+    assert(&w == "a/b.md", "withExtension bare");
+    w = withExtension("a/b", ".md");
+    assert(&w == "a/b.md", "withExtension added");
+    w = withExtension("a/b.txt", "");
+    assert(&w == "a/b", "withExtension stripped");
+    w = withExtension("a.tar.gz", ".zip");
+    assert(&w == "a.tar.zip", "withExtension last only");
+
+    assert(hasExtension("a.txt"), "hasExtension yes");
+    assert(!hasExtension("a"), "hasExtension no");
+    assert(!hasExtension(".bashrc"), "hasExtension dotfile");
+    assert(isHidden(".bashrc"), "isHidden dotfile");
+    assert(isHidden("a/.b"), "isHidden nested");
+    assert(!isHidden("."), "isHidden dot");
+    assert(!isHidden(".."), "isHidden dotdot");
+    assert(!isHidden("a"), "isHidden plain");
+    assert(!isHidden("a/b/"), "isHidden trailing slash");
+}
+
+void testJoin() {
+    var r = join("a", "b");
+    assert(&r == "a/b", "join basic");
+    r = join("a/", "b");
+    assert(&r == "a/b", "join trailing slash");
+    r = join("/", "b");
+    assert(&r == "/b", "join root");
+    r = join("//", "b");
+    assert(&r == "//b", "join double root");
+    r = join("a", "/b");
+    assert(&r == "/b", "join absolute wins");
+    r = join("", "b");
+    assert(&r == "b", "join empty a");
+    r = join("a", "");
+    assert(&r == "a/", "join empty b");
+    r = join("a/", "");
+    assert(&r == "a/", "join empty b keeps slash");
+    r = join("", "");
+    assert(&r == "", "join both empty");
+    r = join("C:/a", "/b");
+    assert(&r == "C:/b", "join keeps drive");
+    r = join("C:/a", "D:/b");
+    assert(&r == "D:/b", "join other drive wins");
+    r = join("C:/a", "C:/b");
+    assert(&r == "C:/b", "join same drive absolute");
+    r = join("C:a", "C:b");
+    assert(&r == "C:a/b", "join same drive relative");
+    r = join("C:/a", "b");
+    assert(&r == "C:/a/b", "join drive plus relative");
+    r = join("C:", "b");
+    assert(&r == "C:b", "join bare drive");
+    r = join("a", "C:b");
+    assert(&r == "C:b", "join drive b wins");
+    r = join("//srv/sh", "x");
+    assert(&r == "//srv/sh/x", "join unc");
+    r = join("//srv/sh", "/x");
+    assert(&r == "//srv/sh/x", "join unc keeps share");
+    r = join("a\\b", "c");
+    assert(&r == "a\\b/c", "join keeps backslash");
+    r = join("a", "b/c");
+    assert(&r == "a/b/c", "join multi-segment b");
+    r = join("a/b", "c/d");
+    assert(&r == "a/b/c/d", "join multi-segment both");
+
+    r = joinAll(["a", "b", "c"]);
+    assert(&r == "a/b/c", "joinAll basic");
+    r = joinAll(["a"]);
+    assert(&r == "a", "joinAll single");
+    r = joinAll(["/a", "b"]);
+    assert(&r == "/a/b", "joinAll rooted");
+    r = joinAll(["a", "/b"]);
+    assert(&r == "/b", "joinAll absolute wins");
+    r = joinAll([]);
+    assert(&r == "", "joinAll empty array");
+    var empty = List<string>();
+    r = joinAll(&empty);
+    assert(&r == "", "joinAll empty list");
+    var ab = List(["a", "b"]);
+    r = joinAll(&ab);
+    assert(&r == "a/b", "joinAll list");
+}
+
+void testComponents() {
+    var c = components("a/b/c");
+    assert(c.size() == 3 && c[0] == "a" && c[1] == "b" && c[2] == "c", "components basic");
+    c = components("/a/b");
+    assert(c.size() == 2 && c[0] == "a" && c[1] == "b", "components rooted");
+    c = components("a//b");
+    assert(c.size() == 2 && c[0] == "a" && c[1] == "b", "components empty skipped");
+    c = components("");
+    assert(c.size() == 0, "components empty");
+    c = components("/");
+    assert(c.size() == 0, "components root");
+    c = components("a/");
+    assert(c.size() == 1 && c[0] == "a", "components trailing slash");
+    c = components("C:/a/b");
+    assert(c.size() == 3 && c[0] == "C:" && c[1] == "a" && c[2] == "b", "components drive");
+    c = components("//srv/sh/x");
+    assert(c.size() == 2 && c[0] == "//srv/sh" && c[1] == "x", "components unc");
+    c = components("a/./../b");
+    assert(c.size() == 4 && c[0] == "a" && c[1] == "." && c[2] == ".." && c[3] == "b", "components dots verbatim");
+
+    var t = toPosixSeparators("a\\b/c");
+    assert(&t == "a/b/c", "toPosixSeparators mixed");
+    t = toPosixSeparators("a/b");
+    assert(&t == "a/b", "toPosixSeparators plain");
+    t = toPosixSeparators("");
+    assert(&t == "", "toPosixSeparators empty");
+}
+
+void testNormalize() {
+    var n = normalize("");
+    assert(&n == ".", "normalize empty");
+    n = normalize(".");
+    assert(&n == ".", "normalize dot");
+    n = normalize("./");
+    assert(&n == ".", "normalize dot slash");
+    n = normalize("a//b");
+    assert(&n == "a/b", "normalize double slash");
+    n = normalize("a/./b");
+    assert(&n == "a/b", "normalize dot skipped");
+    n = normalize("a/../b");
+    assert(&n == "b", "normalize dotdot pops");
+    n = normalize("../a");
+    assert(&n == "../a", "normalize leading dotdot");
+    n = normalize("/..");
+    assert(&n == "/", "normalize above root");
+    n = normalize("a/");
+    assert(&n == "a", "normalize trailing slash");
+    n = normalize("/");
+    assert(&n == "/", "normalize root");
+    n = normalize("a/b/..");
+    assert(&n == "a", "normalize trailing dotdot");
+    n = normalize("a/b/../..");
+    assert(&n == ".", "normalize all popped");
+    n = normalize("C:/a/../..");
+    assert(&n == "C:/", "normalize drive root");
+    n = normalize("C:a/../b");
+    assert(&n == "C:b", "normalize drive relative");
+    n = normalize("C:");
+    assert(&n == "C:", "normalize bare drive");
+    n = normalize("//srv/sh");
+    assert(&n == "//srv/sh", "normalize unc root");
+    n = normalize("\\\\srv\\sh\\a\\..\\b");
+    assert(&n == "//srv/sh/b", "normalize unc backslash");
+    n = normalize("a\\b");
+    assert(&n == "a/b", "normalize backslash");
+    n = normalize("..");
+    assert(&n == "..", "normalize dotdot");
+    n = normalize("../..");
+    assert(&n == "../..", "normalize two dotdots");
+    n = normalize("a/../../b");
+    assert(&n == "../b", "normalize dotdot past start");
+    n = normalize("/a/../../b");
+    assert(&n == "/b", "normalize rooted dotdot past root");
+    n = normalize("C:\\a\\.\\b");
+    assert(&n == "C:/a/b", "normalize drive dot backslash");
+    n = normalize("C:/");
+    assert(&n == "C:/", "normalize drive root slash");
+    n = normalize("a/b/c/../../d");
+    assert(&n == "a/d", "normalize double pop");
+    n = normalize("./a");
+    assert(&n == "a", "normalize leading dot");
+    n = normalize("a/.");
+    assert(&n == "a", "normalize trailing dot");
+}
+
+void testRelativePath() {
+    var r = relativePath("/a/b", "/a/c");
+    assert(&r == "../c", "relativePath sibling");
+    r = relativePath("/a/b", "/a/b/c");
+    assert(&r == "c", "relativePath child");
+    r = relativePath("/a/b/c", "/a/b");
+    assert(&r == "..", "relativePath parent");
+    r = relativePath("a/b", "a/b");
+    assert(&r == ".", "relativePath same");
+    r = relativePath("a", "b");
+    assert(&r == "../b", "relativePath neighbors");
+    r = relativePath("a/b", "c/d");
+    assert(&r == "../../c/d", "relativePath disjoint");
+    r = relativePath("a", "");
+    assert(&r == "..", "relativePath to empty");
+    r = relativePath("", "a");
+    assert(&r == "a", "relativePath from empty");
+    r = relativePath("", "");
+    assert(&r == ".", "relativePath both empty");
+    r = relativePath("/a", "b");
+    assert(&r == "b", "relativePath mixed from absolute");
+    r = relativePath("a", "/b");
+    assert(&r == "/b", "relativePath mixed to absolute");
+    r = relativePath("C:/a", "D:/b");
+    assert(&r == "D:/b", "relativePath other drive");
+    r = relativePath("C:/a/b", "C:/a/c");
+    assert(&r == "../c", "relativePath same drive");
+    r = relativePath("../a", "../b");
+    assert(&r == "../b", "relativePath dotdot prefix");
+}
