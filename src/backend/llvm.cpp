@@ -306,7 +306,7 @@ llvm::Value* LLVMGenerator::codegenBinary(const BinaryInst* inst) {
         if (isFloat) return builder.CreateFCmpOEQ(left, right);
         return builder.CreateICmpEQ(left, right, inst->name);
     case Token::NotEqual:
-        if (isFloat) return builder.CreateFCmpONE(left, right);
+        if (isFloat) return builder.CreateFCmpUNE(left, right);
         return builder.CreateICmpNE(left, right);
     case Token::Less:
         if (isFloat) return builder.CreateFCmpOLT(left, right);

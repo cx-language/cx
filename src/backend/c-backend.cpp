@@ -666,6 +666,9 @@ void CGenerator::codegenConstantFP(const ConstantFP* inst) {
     }
     llvm::SmallString<128> str;
     inst->value.toString(str);
+    // Integral values have no decimal point; spell them as floating literals
+    // so C doesn't parse them as integers.
+    if (llvm::StringRef(str).find_first_of(".eE") == llvm::StringRef::npos) str += ".0";
     stream << str;
 }
 
