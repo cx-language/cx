@@ -1,0 +1,666 @@
+// argparser: a CLI argument parser library.
+//
+// Supports boolean flags, string and integer options (long `--name`,
+// short `-n`, `--name=value`, and combined shorts like `-abc`), positional
+// arguments, git-style subcommands with their own options, and generated
+// help text.
+//
+// Example:
+//
+//   int main(string[] argv) {
+//       var parser = ArgParser(name = "greet", description = "Print a greeting.");
+//       parser.addFlag(FlagSpec(name = "loud", help = "Use ALL CAPS.", shortName = "l"));
+//       parser.addOption(OptionSpec(name = "name", help = "Who to greet.", shortName = "n",
+//           valueName = "NAME", defaultValue = "world"));
+//       if !parser.parse(argv) {
+//           stderr().write(parser.error());
+//           stderr().write("\n");
+//           return 1;
+//       }
+//       if parser.helpRequested() {
+//           println(helpText(parser));
+//           return 0;
+//       }
+//       var greeting = StringBuffer("Hello, ") + parser.option("name");
+//       if parser.flag("loud") {
+//           println("loud!");
+//       } else {
+//           println(greeting);
+//       }
+//       return 0;
+//   }
+
+// A boolean flag, e.g. `--verbose` / `-v`. Present means true.
+struct FlagSpec {
+    // Long name without dashes, e.g. "verbose".
+    string name;
+    string help = "";
+    // Single-character short name, e.g. "v", or "" for none.
+    string shortName = "";
+    // Parse result: whether the flag was given.
+    bool isSet = false;
+}
+
+// A string-valued option, e.g. `--output FILE` / `-o FILE` / `--output=FILE`.
+struct OptionSpec {
+    string name;
+    string help = "";
+    string shortName = "";
+    // Placeholder shown in help text, e.g. "FILE".
+    string valueName = "VALUE";
+    string defaultValue = "";
+    // Parse results.
+    bool isSet = false;
+    // The parsed value, or defaultValue when the option was not given.
+    string value = "";
+}
+
+// An integer-valued option, e.g. `--count N`.
+struct IntOptionSpec {
+    string name;
+    string help = "";
+    string shortName = "";
+    string valueName = "N";
+    int defaultValue = 0;
+    // Parse results.
+    bool isSet = false;
+    int value = 0;
+}
+
+// A positional argument, matched in declaration order.
+struct PositionalSpec {
+    // Placeholder shown in help text, e.g. "FILE".
+    string name;
+    string help = "";
+    bool required = true;
+    // Parse results.
+    bool isSet = false;
+    string value = "";
+}
+
+// A set of flags, options, and positionals plus the engine that parses
+// arguments into them. Embedded in both ArgParser and CommandSpec.
+struct OptionSet {
+    List<FlagSpec> flags = List<FlagSpec>();
+    List<OptionSpec> options = List<OptionSpec>();
+    List<IntOptionSpec> intOptions = List<IntOptionSpec>();
+    List<PositionalSpec> positionals = List<PositionalSpec>();
+    // Surplus positional values beyond the declared ones.
+    List<string> extras = List<string>();
+
+    // Parse state.
+    StringBuffer errorMessage = StringBuffer();
+    bool helpWasRequested = false;
+    int nextPositional = 0;
+
+    void addFlag(FlagSpec spec) {
+        flags.push(spec);
+    }
+
+    void addOption(OptionSpec spec) {
+        spec.value = spec.defaultValue;
+        options.push(spec);
+    }
+
+    void addIntOption(IntOptionSpec spec) {
+        spec.value = spec.defaultValue;
+        intOptions.push(spec);
+    }
+
+    void addPositional(PositionalSpec spec) {
+        positionals.push(spec);
+    }
+
+    string errorText() {
+        return errorMessage.substr(0);
+    }
+
+    // --- Queries (abort on unknown names: those are programmer errors). ---
+
+    bool flag(string name) {
+        var spec = findFlag(name);
+        if spec {
+            return spec.isSet;
+        }
+        abort("argparser: unknown flag '--", name, "'");
+    }
+
+    string option(string name) {
+        var spec = findOption(name);
+        if spec {
+            return spec.value;
+        }
+        abort("argparser: unknown option '--", name, "'");
+    }
+
+    int intOption(string name) {
+        var spec = findIntOption(name);
+        if spec {
+            return spec.value;
+        }
+        abort("argparser: unknown option '--", name, "'");
+    }
+
+    string positional(string name) {
+        for i in 0..positionals.size() {
+            if positionals[i].name == name {
+                return positionals[i].value;
+            }
+        }
+        abort("argparser: unknown positional '<", name, ">'");
+    }
+
+    // Whether the named option/positional was explicitly given.
+    bool optionIsSet(string name) {
+        var spec = findOption(name);
+        if spec {
+            return spec.isSet;
+        }
+        abort("argparser: unknown option '--", name, "'");
+    }
+
+    bool intOptionIsSet(string name) {
+        var spec = findIntOption(name);
+        if spec {
+            return spec.isSet;
+        }
+        abort("argparser: unknown option '--", name, "'");
+    }
+
+    bool positionalIsSet(string name) {
+        for i in 0..positionals.size() {
+            if positionals[i].name == name {
+                return positionals[i].isSet;
+            }
+        }
+        abort("argparser: unknown positional '<", name, ">'");
+    }
+
+    // --- Lookups. ---
+
+    // Clears all parse results so the set can be parsed again.
+    void reset() {
+        for i in 0..flags.size() {
+            flags[i].isSet = false;
+        }
+        for i in 0..options.size() {
+            options[i].isSet = false;
+            options[i].value = options[i].defaultValue;
+        }
+        for i in 0..intOptions.size() {
+            intOptions[i].isSet = false;
+            intOptions[i].value = intOptions[i].defaultValue;
+        }
+        for i in 0..positionals.size() {
+            positionals[i].isSet = false;
+            positionals[i].value = "";
+        }
+        while extras.size() > 0 {
+            extras.removeLast();
+        }
+        errorMessage = StringBuffer();
+        helpWasRequested = false;
+        nextPositional = 0;
+    }
+
+    FlagSpec*? findFlag(string name) {
+        for i in 0..flags.size() {
+            if flags[i].name == name {
+                return flags[i];
+            }
+        }
+        return null;
+    }
+
+    OptionSpec*? findOption(string name) {
+        for i in 0..options.size() {
+            if options[i].name == name {
+                return options[i];
+            }
+        }
+        return null;
+    }
+
+    IntOptionSpec*? findIntOption(string name) {
+        for i in 0..intOptions.size() {
+            if intOptions[i].name == name {
+                return intOptions[i];
+            }
+        }
+        return null;
+    }
+
+    FlagSpec*? findFlagByShort(char c) {
+        for i in 0..flags.size() {
+            if flags[i].shortName.size() == 1 && flags[i].shortName[0] == c {
+                return flags[i];
+            }
+        }
+        return null;
+    }
+
+    OptionSpec*? findOptionByShort(char c) {
+        for i in 0..options.size() {
+            if options[i].shortName.size() == 1 && options[i].shortName[0] == c {
+                return options[i];
+            }
+        }
+        return null;
+    }
+
+    IntOptionSpec*? findIntOptionByShort(char c) {
+        for i in 0..intOptions.size() {
+            if intOptions[i].shortName.size() == 1 && intOptions[i].shortName[0] == c {
+                return intOptions[i];
+            }
+        }
+        return null;
+    }
+
+    // --- Parse engine. ---
+
+    // Parses one `--name` or `--name=value` argument at args[i].
+    // `name` excludes the leading dashes. Returns the next index to process,
+    // or -1 on error.
+    int parseLongArg(string name, string value, bool hasValue, string[] args, int i) {
+        var flag = findFlag(name);
+        if flag {
+            if hasValue {
+                errorMessage = StringBuffer("option '--") + name + "' takes no value";
+                return -1;
+            }
+            flag.isSet = true;
+            return i + 1;
+        }
+        var opt = findOption(name);
+        if opt {
+            if hasValue {
+                opt.value = value;
+            } else {
+                if i + 1 >= args.size() {
+                    errorMessage = StringBuffer("option '--") + name + "' requires a value";
+                    return -1;
+                }
+                opt.value = args[i + 1];
+                i++;
+            }
+            opt.isSet = true;
+            return i + 1;
+        }
+        var intOpt = findIntOption(name);
+        if intOpt {
+            string text = value;
+            if !hasValue {
+                if i + 1 >= args.size() {
+                    errorMessage = StringBuffer("option '--") + name + "' requires a value";
+                    return -1;
+                }
+                text = args[i + 1];
+                i++;
+            }
+            var parsed = text.parseInt();
+            if parsed == null {
+                errorMessage = StringBuffer("invalid integer value '") + text + "' for '--" + name + "'";
+                return -1;
+            }
+            intOpt.value = parsed;
+            intOpt.isSet = true;
+            return i + 1;
+        }
+        errorMessage = StringBuffer("unknown option '--") + name + "'";
+        return -1;
+    }
+
+    // Parses one short-option cluster at args[i]. `cluster` excludes the
+    // leading dash. Returns the next index to process, or -1 on error.
+    int parseShortArg(string cluster, string[] args, int i) {
+        var j = 0;
+        while j < cluster.size() {
+            var c = cluster[j];
+            if c == 'h' {
+                helpWasRequested = true;
+                return i + 1;
+            }
+            var flag = findFlagByShort(c);
+            if flag {
+                flag.isSet = true;
+                j++;
+                continue;
+            }
+            var opt = findOptionByShort(c);
+            if opt {
+                if j + 1 < cluster.size() {
+                    opt.value = cluster.substr(j + 1);
+                } else {
+                    if i + 1 >= args.size() {
+                        errorMessage = StringBuffer("option '-") + c + "' requires a value";
+                        return -1;
+                    }
+                    opt.value = args[i + 1];
+                    i++;
+                }
+                opt.isSet = true;
+                return i + 1;
+            }
+            var intOpt = findIntOptionByShort(c);
+            if intOpt {
+                string text = "";
+                if j + 1 < cluster.size() {
+                    text = cluster.substr(j + 1);
+                } else {
+                    if i + 1 >= args.size() {
+                        errorMessage = StringBuffer("option '-") + c + "' requires a value";
+                        return -1;
+                    }
+                    text = args[i + 1];
+                    i++;
+                }
+                var parsed = text.parseInt();
+                if parsed == null {
+                    errorMessage = StringBuffer("invalid integer value '") + text + "' for '-" + c + "'";
+                    return -1;
+                }
+                intOpt.value = parsed;
+                intOpt.isSet = true;
+                return i + 1;
+            }
+            errorMessage = StringBuffer("unknown option '-") + c + "'";
+            return -1;
+        }
+        return i + 1;
+    }
+
+    void addPositionalValue(string value) {
+        if nextPositional < positionals.size() {
+            positionals[nextPositional].value = value;
+            positionals[nextPositional].isSet = true;
+            nextPositional++;
+        } else {
+            extras.push(value);
+        }
+    }
+
+    bool checkRequired() {
+        for i in 0..positionals.size() {
+            if positionals[i].required && !positionals[i].isSet {
+                errorMessage = StringBuffer("missing required argument '<") + positionals[i].name + ">'";
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Parses args[start..] with no command matching. Used for subcommands.
+    bool parseRest(string[] args, int start) {
+        var endOfOptions = false;
+        var i = start;
+        while i < args.size() {
+            var arg = args[i];
+            if !endOfOptions && arg == "--" {
+                endOfOptions = true;
+                i++;
+                continue;
+            }
+            if !endOfOptions && arg.size() > 1 && arg[0] == '-' {
+                var next = parseOptionToken(arg, args, i);
+                if next < 0 {
+                    return false;
+                }
+                if helpWasRequested {
+                    return true;
+                }
+                i = next;
+                continue;
+            }
+            addPositionalValue(arg);
+            i++;
+        }
+        return checkRequired();
+    }
+
+    // Dispatches one `-...` token (never bare "-" or "--") to the short/long
+    // handler. Returns the next index, or -1 on error.
+    int parseOptionToken(string arg, string[] args, int i) {
+        if arg.size() > 2 && arg[0] == '-' && arg[1] == '-' {
+            var body = arg.substr(2);
+            var eq = body.find('=');
+            if eq < body.size() {
+                var name = body.substr(0..eq);
+                if name == "help" {
+                    helpWasRequested = true;
+                    return i + 1;
+                }
+                return parseLongArg(name, body.substr(eq + 1), true, args, i);
+            }
+            if body == "help" {
+                helpWasRequested = true;
+                return i + 1;
+            }
+            return parseLongArg(body, "", false, args, i);
+        }
+        return parseShortArg(arg.substr(1), args, i);
+    }
+}
+
+// A subcommand with its own options, e.g. `todo add --priority high TITLE`.
+struct CommandSpec {
+    string name;
+    string help = "";
+    OptionSet options = OptionSet();
+
+    void addFlag(FlagSpec spec) {
+        options.addFlag(spec);
+    }
+
+    void addOption(OptionSpec spec) {
+        options.addOption(spec);
+    }
+
+    void addIntOption(IntOptionSpec spec) {
+        options.addIntOption(spec);
+    }
+
+    void addPositional(PositionalSpec spec) {
+        options.addPositional(spec);
+    }
+
+    bool flag(string name) {
+        return options.flag(name);
+    }
+
+    string option(string name) {
+        return options.option(name);
+    }
+
+    int intOption(string name) {
+        return options.intOption(name);
+    }
+
+    string positional(string name) {
+        return options.positional(name);
+    }
+
+    bool optionIsSet(string name) {
+        return options.optionIsSet(name);
+    }
+
+    bool intOptionIsSet(string name) {
+        return options.intOptionIsSet(name);
+    }
+
+    bool positionalIsSet(string name) {
+        return options.positionalIsSet(name);
+    }
+}
+
+// A command-line parser: global options plus optional subcommands.
+struct ArgParser {
+    string name = "";
+    string description = "";
+    OptionSet options = OptionSet();
+    List<CommandSpec> commands = List<CommandSpec>();
+    int matchedCommandIndex = -1;
+
+    void addFlag(FlagSpec spec) {
+        options.addFlag(spec);
+    }
+
+    void addOption(OptionSpec spec) {
+        options.addOption(spec);
+    }
+
+    void addIntOption(IntOptionSpec spec) {
+        options.addIntOption(spec);
+    }
+
+    void addPositional(PositionalSpec spec) {
+        options.addPositional(spec);
+    }
+
+    // Declares a subcommand, returning it for adding its own options:
+    // `var add = parser.addCommand("add", "Add a task");`
+    // Configure each command before adding the next one: the returned
+    // pointer is invalidated by later addCommand calls.
+    CommandSpec* addCommand(string name, string help) {
+        return commands.push(CommandSpec(name = name, help = help));
+    }
+
+    CommandSpec*? findCommand(string name) {
+        for i in 0..commands.size() {
+            if commands[i].name == name {
+                return commands[i];
+            }
+        }
+        return null;
+    }
+
+    bool hasCommand() {
+        return matchedCommandIndex >= 0;
+    }
+
+    CommandSpec*? matchedCommand() {
+        if matchedCommandIndex < 0 {
+            return null;
+        }
+        return commands[matchedCommandIndex];
+    }
+
+    bool flag(string name) {
+        return options.flag(name);
+    }
+
+    string option(string name) {
+        return options.option(name);
+    }
+
+    int intOption(string name) {
+        return options.intOption(name);
+    }
+
+    string positional(string name) {
+        return options.positional(name);
+    }
+
+    bool optionIsSet(string name) {
+        return options.optionIsSet(name);
+    }
+
+    bool intOptionIsSet(string name) {
+        return options.intOptionIsSet(name);
+    }
+
+    bool positionalIsSet(string name) {
+        return options.positionalIsSet(name);
+    }
+
+    // True when `--help` or `-h` was seen. The caller should print helpText()
+    // (or commandHelpText for the matched command) and exit 0.
+    bool helpRequested() {
+        if options.helpWasRequested {
+            return true;
+        }
+        if matchedCommandIndex >= 0 {
+            return commands[matchedCommandIndex].options.helpWasRequested;
+        }
+        return false;
+    }
+
+    // The failure message after parse() returns false.
+    string error() {
+        if matchedCommandIndex >= 0 {
+            return commands[matchedCommandIndex].options.errorText();
+        }
+        return options.errorText();
+    }
+
+    // Parses argv (including the program name at index 0). Returns true on
+    // success; on failure returns false and error() explains why. When the
+    // parser has commands, the first bare word must be a command name
+    // (unless it comes after `--`); remaining arguments are parsed as that
+    // command's options. `-h` and `--help` are reserved: they always request
+    // help. The parser is reset first, so it can be parsed repeatedly.
+    bool parse(string[] args) {
+        options.reset();
+        for i in 0..commands.size() {
+            commands[i].options.reset();
+        }
+        matchedCommandIndex = -1;
+        var endOfOptions = false;
+        var i = 1;
+        while i < args.size() {
+            var arg = args[i];
+            if !endOfOptions && arg == "--" {
+                endOfOptions = true;
+                i++;
+                continue;
+            }
+            if !endOfOptions && arg.size() > 1 && arg[0] == '-' {
+                var next = options.parseOptionToken(arg, args, i);
+                if next < 0 {
+                    return false;
+                }
+                if options.helpWasRequested {
+                    return true;
+                }
+                i = next;
+                continue;
+            }
+            if !endOfOptions && commands.size() > 0 && matchedCommandIndex < 0 {
+                var cmd = findCommand(arg);
+                if cmd == null {
+                    options.errorMessage = unknownCommandMessage(arg);
+                    return false;
+                }
+                matchedCommandIndex = commandIndex(arg);
+                return commands[matchedCommandIndex].options.parseRest(args, i + 1);
+            }
+            options.addPositionalValue(arg);
+            i++;
+        }
+        return options.checkRequired();
+    }
+
+    int commandIndex(string name) {
+        for i in 0..commands.size() {
+            if commands[i].name == name {
+                return i;
+            }
+        }
+        abort("argparser: unknown command '", name, "'");
+    }
+
+    StringBuffer unknownCommandMessage(string name) {
+        var msg = StringBuffer("unknown command '") + name + "'";
+        if commands.size() > 0 {
+            msg.append(" (expected one of: ");
+            for i in 0..commands.size() {
+                if i > 0 {
+                    msg.append(", ");
+                }
+                msg.append(commands[i].name);
+            }
+            msg.append(")");
+        }
+        return msg;
+    }
+}
