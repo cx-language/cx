@@ -32,7 +32,7 @@ void checkCompact(string name, string input, string expected) {
     }
 }
 
-void checkError(string name, string input, JsonError* expected) {
+void checkError(string name, string input, JsonError& expected) {
     var r = parseJson(input);
     switch (r) {
         case Ok v:
@@ -48,7 +48,7 @@ void checkError(string name, string input, JsonError* expected) {
     }
 }
 
-void checkMessage(JsonError* error, string expected) {
+void checkMessage(JsonError& error, string expected) {
     var actual = error.toString();
     if actual != expected {
         println("FAIL message\nexpected: ", expected, "\nactual: ", actual);

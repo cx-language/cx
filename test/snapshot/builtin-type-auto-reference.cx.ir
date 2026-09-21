@@ -1,5 +1,5 @@
 
-void _EN4main3fooEP3int(int* ref_i) {
+void _EN4main3fooER3int(int* ref_i) {
     int** ref_i_0 = alloca int*
     store ref_i to ref_i_0
     return void
@@ -8,6 +8,6 @@ void _EN4main3fooEP3int(int* ref_i) {
 int main() {
     int* bar = alloca int
     store int 42 to bar
-    void _0 = call _EN4main3fooEP3int(int* bar)
+    void _0 = call _EN4main3fooER3int(int* bar)
     return int 0
 }

@@ -1,5 +1,5 @@
 
-void _EN4main3ptrEP3Foo(Foo* p) {
+void _EN4main3ptrER3Foo(Foo* p) {
     Foo** p_0 = alloca Foo*
     store p to p_0
     return void
@@ -7,6 +7,6 @@ void _EN4main3ptrEP3Foo(Foo* p) {
 
 int main() {
     Foo* f = alloca Foo
-    void _0 = call _EN4main3ptrEP3Foo(Foo* f)
+    void _0 = call _EN4main3ptrER3Foo(Foo* f)
     return int 0
 }

@@ -2,12 +2,9 @@
 int main() {
     S<int>* s = alloca S<int>
     int* _0 = alloca int
-    int* _1 = alloca int
-    void _2 = call _EN4main1SI3intE4initE(S<int>* s)
+    void _1 = call _EN4main1SI3intE4initE(S<int>* s)
     store int 0 to _0
-    void _3 = call _EN4main1SI3intE1fEP3int(S<int>* s, int* _0)
-    store int 0 to _1
-    void _4 = call _EN4main1SI3intE1fEP3int(S<int>* s, int* _1)
+    void _2 = call _EN4main1SI3intE1fEP3int(S<int>* s, int* _0)
     return int 0
 }
 

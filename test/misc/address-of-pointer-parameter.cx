@@ -1,7 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:42
-// CHECK-NEXT:42
-// CHECK-NEXT:43
 // CHECK-NEXT:43
 
 void bar(int*?* pp) {
@@ -21,26 +19,13 @@ void fooAddr(int*? p) {
     bar(&p);
 }
 
-void fooAutoRef(int*? p) {
-    if (p == null) {
-        return;
-    }
-    bar(p);
-}
-
 void fooAddrPlain(int* p) {
-    bar(&p);
-}
-
-void fooAutoRefPlain(int* p) {
-    bar(p);
+    barPlain(&p);
 }
 
 void main() {
     int x = 42;
     fooAddr(&x);
-    fooAutoRef(&x);
     int y = 43;
     fooAddrPlain(&y);
-    fooAutoRefPlain(&y);
 }

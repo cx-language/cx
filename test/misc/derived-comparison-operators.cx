@@ -19,11 +19,11 @@ struct V {
     int x;
 }
 
-bool operator==(V* a, V* b) {
+bool operator==(V& a, V& b) {
     return a.x == b.x;
 }
 
-bool operator<(V* a, V* b) {
+bool operator<(V& a, V& b) {
     return a.x < b.x;
 }
 
@@ -31,11 +31,11 @@ struct W {
     int x;
 }
 
-bool operator==(W* a, W* b) {
+bool operator==(W& a, W& b) {
     return a.x == b.x;
 }
 
-bool operator!=(W* a, W* b) {
+bool operator!=(W& a, W& b) {
     println("explicit");
     return a.x != b.x;
 }

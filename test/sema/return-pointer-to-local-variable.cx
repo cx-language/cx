@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 int* f0() {
     var a = 3;
@@ -8,7 +8,7 @@ int* f0() {
 
 int* f1() {
     var a = 3;
-    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
     return a;
 }
 
@@ -21,7 +21,7 @@ struct S: Copyable {
     }
 
     int* f3() {
-        // CHECK-NOT: [[@LINE+1]]:16: warning: returning pointer to local variable
+        // CHECK: [[@LINE+1]]:9: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
         return i;
     }
 }
@@ -32,7 +32,7 @@ int* f4(int a) {
 }
 
 int* f5(int a) {
-    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
     return a;
 }
 
@@ -47,6 +47,11 @@ int** f7(int* a) {
 }
 
 int** f8(int* a) {
-    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int*', expected 'int**' (use '&' to take the address explicitly)
     return a;
+}
+
+int* f9(int& a) {
+    // CHECK-NOT: [[@LINE+1]]:13: warning: returning pointer to local variable
+    return &a;
 }

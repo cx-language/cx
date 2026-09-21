@@ -78,10 +78,11 @@ define ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %this) {
 
 define void @_EN3std7printlnI3intEE3int(i32 %value) {
   %value1 = alloca i32, align 4
+  %1 = alloca i8, align 1
   store i32 %value, ptr %value1, align 4
-  %value.load = load i32, ptr %value1, align 4
-  call void @_EN3std5printI3intEE3int(i32 %value.load)
-  call void @_EN3std5printI4charEE4char(i8 10)
+  call void @_EN3std5printI3intEER3int(ptr %value1)
+  store i8 10, ptr %1, align 1
+  call void @_EN3std5printI4charEER4char(ptr %1)
   ret void
 }
 
@@ -93,6 +94,6 @@ define void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %this) {
   ret void
 }
 
-declare void @_EN3std5printI3intEE3int(i32)
+declare void @_EN3std5printI3intEER3int(ptr)
 
-declare void @_EN3std5printI4charEE4char(i8)
+declare void @_EN3std5printI4charEER4char(ptr)

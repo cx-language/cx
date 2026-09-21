@@ -6,5 +6,5 @@ void main() {
     var i = 42;
     var x = &i;
     foo(x);
-    foo(i);
+    foo(&i);
 }

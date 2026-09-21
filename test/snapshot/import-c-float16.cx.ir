@@ -7,17 +7,18 @@ int main() {
 
 void _EN3std7printlnI3intEE3int(int value) {
     int* value_0 = alloca int
+    char* _0 = alloca char
     store value to value_0
-    int value.load = load value_0
-    void _0 = call _EN3std5printI3intEE3int(int value.load)
-    void _1 = call _EN3std5printI4charEE4char(char 10)
+    void _1 = call _EN3std5printI3intEER3int(int* value_0)
+    store char 10 to _0
+    void _2 = call _EN3std5printI4charEER4char(char* _0)
     return void
 }
 
 extern int plain(int)
 
-void _EN3std5printI3intEE3int(int value) {
+void _EN3std5printI3intEER3int(int* value) {
 }
 
-void _EN3std5printI4charEE4char(char value) {
+void _EN3std5printI4charEER4char(char* value) {
 }

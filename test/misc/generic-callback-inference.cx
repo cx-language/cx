@@ -5,7 +5,7 @@ struct Box<T> {
     T value;
 }
 
-U mapBox<T, U>(Box<T>* box, U(T) transform) {
+U mapBox<T, U>(Box<T>& box, U(T) transform) {
     return transform(box.value);
 }
 

@@ -5,7 +5,7 @@ void foo(int[] a) {}
 void main() {
     var a = [1, 2, 3];
     foo(a);
-    baz(a);
+    baz(&a);
 }
 
 void baz(int[3]* b) {}

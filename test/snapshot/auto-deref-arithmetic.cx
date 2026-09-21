@@ -2,7 +2,7 @@
 
 void main() {
     int a = 0;
-    int* p = a;
+    int* p = &a;
     a += p;
     a = a * p;
 }

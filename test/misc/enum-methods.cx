@@ -49,7 +49,7 @@ enum P: Printable {
     Ok(int code),
     Fail,
 
-    void print(StringBuffer* stream) {
+    void print(StringBuffer& stream) {
         switch this {
             case Ok c:
                 stream.append("Ok(");
@@ -60,7 +60,7 @@ enum P: Printable {
     }
 }
 
-void take<T: Printable>(T* value) {
+void take<T: Printable>(T& value) {
     println(value);
 }
 

@@ -1,0 +1,29 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: reference-type-restrictions.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct S {
+    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter type
+    int& field;
+}
+
+// CHECK: [[@LINE+1]]:1: error: reference type 'int&' may only appear as a function parameter type
+int& returnsBorrow() {
+    var x = 1;
+    return x;
+}
+
+// CHECK: [[@LINE+1]]:21: error: reference type 'int&' may only appear as a function parameter type
+void optionalBorrow(int&? o) {
+}
+
+void localBorrow() {
+    var x = 1;
+    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter type
+    int& r = x;
+}
+
+// CHECK: 11:6: warning: unused declaration 'returnsBorrow'
+// CHECK: 17:6: warning: unused declaration 'optionalBorrow'
+// CHECK: 20:6: warning: unused declaration 'localBorrow'
+// CHECK-NOT: reference-type-restrictions.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

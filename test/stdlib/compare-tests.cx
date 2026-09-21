@@ -3,7 +3,7 @@
 struct C: Comparable {
     int a;
 
-    Ordering compare(C* other) {
+    Ordering compare(C& other) {
         return this.a.compare(other.a);
     }
 }
@@ -11,7 +11,7 @@ struct C: Comparable {
 struct E: Equatable {
     int a;
 
-    bool equals(E* other) {
+    bool equals(E& other) {
         return this.a == other.a;
     }
 }

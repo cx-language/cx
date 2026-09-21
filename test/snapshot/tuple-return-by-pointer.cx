@@ -8,7 +8,7 @@ struct S {
     }
 
     (int a)* g() {
-        return t;
+        return &t;
     }
 }
 

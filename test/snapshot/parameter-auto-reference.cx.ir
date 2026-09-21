@@ -2,11 +2,11 @@
 void _EN4main1fE1S(S s) {
     S* s_0 = alloca S
     store s to s_0
-    void _0 = call _EN4main1gEP1S(S* s_0)
+    void _0 = call _EN4main1gER1S(S* s_0)
     return void
 }
 
-void _EN4main1gEP1S(S* s) {
+void _EN4main1gER1S(S* s) {
     S** s_0 = alloca S*
     store s to s_0
     return void

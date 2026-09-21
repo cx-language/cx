@@ -10,5 +10,5 @@ enum E {
 }
 
 void main() {
-    E e = E.A(S<E>(E.A(S<E>(null))));
+    E e = E.A(S<E>(&E.A(S<E>(null))));
 }

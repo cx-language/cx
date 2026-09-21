@@ -1,0 +1,86 @@
+// RUN: check_exit_status 0 %cx run %s
+// RUN: check_exit_status 0 %cx run --backend=c %s
+
+void bump(int& x) {
+    *x += 1;
+}
+
+int plusOne(int& x) {
+    return *x + 1;
+}
+
+int strLen(string& s) {
+    return s.size();
+}
+
+void bumpForwarded(int& x) {
+    bump(x);
+}
+
+int copyOut(int& p) {
+    var r = p;
+    r = 100;
+    return r;
+}
+
+bool equal(int& a, int& b) {
+    return a == b;
+}
+
+bool less(int& a, int& b) {
+    return a < b;
+}
+
+int* borrowAddr(int& x) {
+    return &x;
+}
+
+void main() {
+    // Values bind to borrows; mutation is visible to the caller.
+    var x = 1;
+    bump(x);
+    assert(x == 2);
+
+    // Temporaries and literals bind to borrows.
+    assert(plusOne(41) == 42);
+    assert(strLen("hello") == 5);
+
+    // Stored pointers reborrow as borrows.
+    int* p = &x;
+    assert(plusOne(p) == 3);
+    bump(p);
+    assert(x == 3);
+
+    // Borrows forward to borrows without copying.
+    bumpForwarded(x);
+    assert(x == 4);
+
+    // Borrows can't be named: reading one into a variable copies.
+    assert(copyOut(x) == 100);
+    assert(x == 4);
+
+    // Taking the address of a borrow exposes the borrowed address.
+    assert(borrowAddr(x) == &x);
+    assert(*borrowAddr(x) == 4);
+
+    // Borrow comparison is transparent: it compares values, not addresses.
+    var y = 4;
+    var z = 5;
+    assert(equal(x, y));
+    assert(!equal(x, z));
+    assert(less(x, z));
+    assert(!less(z, x));
+
+    // Mixed pointer/value comparison compares the pointed-to value,
+    // even when the types don't match exactly; two pointers compare addresses.
+    var u = uint(4);
+    uint* q = &u;
+    assert(q == 4);
+    assert(q == u);
+    assert(p == x);
+    var w = 4;
+    int* r = &w;
+    assert(!(p == r));
+    assert(p == p);
+    assert(p != r);
+}

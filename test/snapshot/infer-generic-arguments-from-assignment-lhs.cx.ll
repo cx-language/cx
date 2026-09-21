@@ -82,7 +82,7 @@ loop.end:                                         ; preds = %loop.condition
 define %"ArrayIterator<int>" @_EN3std4ListI3intE8iteratorE(ptr %this) {
   %1 = alloca %"ArrayIterator<int>", align 8
   %2 = alloca %"ArrayRef<int>", align 8
-  call void @_EN3std8ArrayRefI3intE4initEP4ListI3intE(ptr %2, ptr %this)
+  call void @_EN3std8ArrayRefI3intE4initER4ListI3intE(ptr %2, ptr %this)
   %.load = load %"ArrayRef<int>", ptr %2, align 8
   call void @_EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ptr %1, %"ArrayRef<int>" %.load)
   %.load1 = load %"ArrayIterator<int>", ptr %1, align 8
@@ -203,7 +203,7 @@ if.end10:                                         ; preds = %if.else9, %if.then6
   br label %if.end
 }
 
-define void @_EN3std8ArrayRefI3intE4initEP4ListI3intE(ptr %this, ptr %list) {
+define void @_EN3std8ArrayRefI3intE4initER4ListI3intE(ptr %this, ptr %list) {
   %list1 = alloca ptr, align 8
   store ptr %list, ptr %list1, align 8
   %data = getelementptr inbounds %"ArrayRef<int>", ptr %this, i32 0, i32 0

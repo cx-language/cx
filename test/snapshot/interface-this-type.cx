@@ -21,7 +21,7 @@ struct S: Interface {
 void main() {
     var a = S();
     var b = S();
-    f(a.foo(b));
+    f(a.foo(&b));
 }
 
 void f<T: Interface>(T* a) {

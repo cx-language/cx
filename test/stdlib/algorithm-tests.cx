@@ -51,5 +51,5 @@ void testQuickSort() {
 }
 
 void testMax() {
-    assert(max(7, 9) == 9);
+    assert(*max(&7, &9) == 9);
 }

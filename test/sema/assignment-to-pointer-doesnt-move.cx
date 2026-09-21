@@ -4,6 +4,6 @@ struct X {}
 
 void f(X x) {
     X*? p = null;
-    p = x;
-    p = x;
+    p = &x;
+    p = &x;
 }

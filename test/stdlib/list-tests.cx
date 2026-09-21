@@ -185,7 +185,7 @@ void testFilter() {
     a.push(3);
     a.push(4);
 
-    var b = a.filter(value => *value % 2 == 0); // FIXME: Make this compile without the dereference.
+    var b = a.filter(value => value % 2 == 0);
     assert(b.size() == 2);
     assert(b[0] == 2);
     assert(b[1] == 4);

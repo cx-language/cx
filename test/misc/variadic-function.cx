@@ -5,14 +5,14 @@
 // CHECK-EMPTY:
 // CHECK:a|12
 
-void printAll<T: Printable>(T*... args) {
+void printAll<T: Printable>(T&... args) {
     for arg in args {
         print(arg);
     }
     print('\n');
 }
 
-void printFirstAndRest<T: Printable, U: Printable>(T* first, U*... rest) {
+void printFirstAndRest<T: Printable, U: Printable>(T& first, U&... rest) {
     print(first);
     print("|");
     for arg in rest {

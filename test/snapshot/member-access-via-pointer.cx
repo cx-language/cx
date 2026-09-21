@@ -10,7 +10,7 @@ void get(Foo* f) {
 
 void main() {
     Foo f = undefined;
-    Foo* rf = f;
+    Foo* rf = &f;
     var n = rf.i;
     get(rf);
 }

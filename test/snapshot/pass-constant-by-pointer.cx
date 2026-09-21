@@ -3,11 +3,10 @@
 const int i = 0;
 
 struct S<T> {
-    void f(T* t) {}
+    void f(const T* t) {}
 }
 
 void main() {
     var s = S<int>();
-    s.f(/*&*/i); // TODO: Allow '&' here or don't allow mutable pointers to constants at all.
-    s.f(i);
+    s.f(&i);
 }

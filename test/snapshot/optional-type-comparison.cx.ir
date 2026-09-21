@@ -8,11 +8,11 @@ int main() {
     Optional<int> enum.load = load enum
     store enum.load to a
     store int 1 to _0
-    bool _1 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* _0)
+    bool _1 = call _EN3stdeqI3intEERO3intR3int(Optional<int>* a, int* _0)
     return int 0
 }
 
-bool _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* b) {
+bool _EN3stdeqI3intEERO3intR3int(Optional<int>* a, int* b) {
     Optional<int>** a_0 = alloca Optional<int>*
     int** b_0 = alloca int*
     Optional<int>* _0 = alloca Optional<int>

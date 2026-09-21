@@ -9,7 +9,6 @@ void bar(int*?* p) {
 }
 
 void foo(int*? p) {
-    bar(p);
     bar(&p);
 }
 
@@ -20,7 +19,5 @@ void main() {
     int*? n = null;
     foo(n);
     // CHECK:deref-nonnull
-    // CHECK-NEXT:deref-nonnull
-    // CHECK-NEXT:deref-null
     // CHECK-NEXT:deref-null
 }

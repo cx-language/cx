@@ -17,7 +17,7 @@ void f(int* i) {}
 void main() {
     A a = undefined;
     B b = undefined;
-    f(A());
-    f(B());
-    f(0);
+    f(&A());
+    f(&B());
+    f(&0);
 }

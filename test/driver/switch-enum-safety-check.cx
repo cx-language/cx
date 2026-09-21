@@ -10,7 +10,7 @@ enum Outcome {
     Pending,
 }
 
-int exhaustive(Outcome* o) {
+int exhaustive(Outcome& o) {
     switch (*o) {
         case Ok value:
             return value.value;
@@ -21,7 +21,7 @@ int exhaustive(Outcome* o) {
     }
 }
 
-int partial(Outcome* o) {
+int partial(Outcome& o) {
     switch (*o) {
         case Ok value:
             return value.value;
@@ -29,7 +29,7 @@ int partial(Outcome* o) {
     return -99;
 }
 
-int withDefault(Outcome* o) {
+int withDefault(Outcome& o) {
     switch (*o) {
         case Ok value:
             return value.value;

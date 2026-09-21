@@ -3,7 +3,7 @@
 void main() {
     var three = [0, 42, 0];
     foo(three);
-    bar(three);
+    bar(&three);
     var b = three.size();
     int[] ref = three;
     var bb = ref.size();

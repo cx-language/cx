@@ -13,7 +13,7 @@ Outcome<int> parseDigit(char c) {
     return Err(404);
 }
 
-int unwrapOr(Outcome<int>* outcome, int defaultValue) {
+int unwrapOr(Outcome<int>& outcome, int defaultValue) {
     switch (*outcome) {
         case Ok value:
             return value.value;

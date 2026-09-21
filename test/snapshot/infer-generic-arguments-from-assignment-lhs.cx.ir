@@ -73,7 +73,7 @@ void _EN3std4ListI3intE4initE(List<int>* this) {
 ArrayIterator<int> _EN3std4ListI3intE8iteratorE(List<int>* this) {
     ArrayIterator<int>* _0 = alloca ArrayIterator<int>
     ArrayRef<int>* _1 = alloca ArrayRef<int>
-    void _2 = call _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* _1, List<int>* this)
+    void _2 = call _EN3std8ArrayRefI3intE4initER4ListI3intE(ArrayRef<int>* _1, List<int>* this)
     ArrayRef<int> .load = load _1
     void _3 = call _EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ArrayIterator<int>* _0, ArrayRef<int> .load)
     ArrayIterator<int> .load_0 = load _0
@@ -209,7 +209,7 @@ void _EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ArrayIterator<int>* this,
     return void
 }
 
-void _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* this, List<int>* list) {
+void _EN3std8ArrayRefI3intE4initER4ListI3intE(ArrayRef<int>* this, List<int>* list) {
     List<int>** list_0 = alloca List<int>*
     store list to list_0
     int** data = getelementptr this, 0

@@ -13,11 +13,11 @@ define i32 @main() {
   %enum.load = load %"Optional<int>", ptr %enum, align 4
   store %"Optional<int>" %enum.load, ptr %a, align 4
   store i32 1, ptr %1, align 4
-  %2 = call i1 @_EN3stdeqI3intEEPO3intP3int(ptr %a, ptr %1)
+  %2 = call i1 @_EN3stdeqI3intEERO3intR3int(ptr %a, ptr %1)
   ret i32 0
 }
 
-define i1 @_EN3stdeqI3intEEPO3intP3int(ptr %a, ptr %b) {
+define i1 @_EN3stdeqI3intEERO3intR3int(ptr %a, ptr %b) {
   %a1 = alloca ptr, align 8
   %b2 = alloca ptr, align 8
   %1 = alloca %"Optional<int>", align 8

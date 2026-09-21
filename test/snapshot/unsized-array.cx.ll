@@ -118,8 +118,8 @@ define void @_EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ptr %this, %st
   call void @_EN3std6string4initEP4char3int(ptr %__str4, ptr @3, i32 27)
   %2 = call i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %this)
   store i32 %2, ptr %1, align 4
-  %3 = call %never @_EN3std5abortI6string6string6string3int6string3intEVEP6stringP6stringP6stringP3intP6stringP3int(ptr %__str, ptr %function1, ptr %__str3, ptr %index2, ptr %__str4, ptr %1)
+  %3 = call %never @_EN3std5abortI6string6string6string3int6string3intEVER6stringR6stringR6stringR3intR6stringR3int(ptr %__str, ptr %function1, ptr %__str3, ptr %index2, ptr %__str4, ptr %1)
   ret void
 }
 
-declare %never @_EN3std5abortI6string6string6string3int6string3intEVEP6stringP6stringP6stringP3intP6stringP3int(ptr, ptr, ptr, ptr, ptr, ptr)
+declare %never @_EN3std5abortI6string6string6string3int6string3intEVER6stringR6stringR6stringR3intR6stringR3int(ptr, ptr, ptr, ptr, ptr, ptr)
