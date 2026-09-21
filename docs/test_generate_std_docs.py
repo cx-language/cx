@@ -366,7 +366,7 @@ class StdlibTest(unittest.TestCase):
                      "printSigned", "printUnsigned", "skipEmptySlots", "rebalance",
                      "rotateLeft", "rotateRight", "grow", "indexOutOfBounds",
                      "setBalance", "height", "minInSubtree", "maxInSubtree",
-                     "parseError", "JsonParser", "hexValue", "pushUtf8", "byteValue",
+                     "writeMessage", "JsonParser", "hexValue", "pushUtf8", "byteValue",
                      "writeIndent", "writeQuoted", "writeNumber", "writeJson",
                      "maxJsonDepth"]:
             self.assertNotIn(f"`{name}`", combined, name)

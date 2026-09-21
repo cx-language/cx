@@ -3,20 +3,20 @@
 cx's enums are scoped and can optionally have associated values for each enum value.
 
 ```cs
-enum JsonValue {
+enum JsonNode {
     String(StringBuffer value),
-    Array(List<JsonValue> value),
-    Object(Map<StringBuffer, JsonValue> value),
+    Array(List<JsonNode> value),
+    Object(Map<StringBuffer, JsonNode> value),
     Number(float64 value),
     Boolean(bool value),
     Null,
 }
 
 void main() {
-    JsonValue a = JsonValue.Array(List([
-        JsonValue.Boolean(false), 
-        JsonValue.Number(42), 
-        JsonValue.Null
+    JsonNode a = JsonNode.Array(List([
+        JsonNode.Boolean(false),
+        JsonNode.Number(42),
+        JsonNode.Null
     ]));
 
     switch (a) {
@@ -29,6 +29,9 @@ void main() {
     }
 }
 ```
+
+The standard library provides its own `JsonValue` tagged union,
+with JSON parsing and printing, on the `json` reference page.
 
 Enums can be generic, in which case the type parameters can be used
 in the associated values of any case.

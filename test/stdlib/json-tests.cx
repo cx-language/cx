@@ -1,0 +1,207 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx run -Werror --mode=release-fast %s
+// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+
+void checkPretty(string name, string input, string expected) {
+    var r = parseJson(input);
+    switch (r) {
+        case Ok v:
+            var actual = v.value.toString(pretty = true);
+            if actual != expected {
+                println("FAIL ", name, "\nexpected: ", expected, "\nactual: ", actual);
+            }
+            assert(actual == expected);
+        case Err e:
+            println("FAIL ", name, ": unexpected error: ", e.error.toString());
+            assert(false);
+    }
+}
+
+void checkCompact(string name, string input, string expected) {
+    var r = parseJson(input);
+    switch (r) {
+        case Ok v:
+            var actual = v.value.toString();
+            if actual != expected {
+                println("FAIL ", name, "\nexpected: ", expected, "\nactual: ", actual);
+            }
+            assert(actual == expected);
+        case Err e:
+            println("FAIL ", name, ": unexpected error: ", e.error.toString());
+            assert(false);
+    }
+}
+
+void checkError(string name, string input, JsonError* expected) {
+    var r = parseJson(input);
+    switch (r) {
+        case Ok v:
+            println("FAIL ", name, ": expected error, got: ", v.value.toString());
+            assert(false);
+        case Err e:
+            if e.error != *expected || e.error.toString() != expected.toString() {
+                println("FAIL ", name, ": expected ", expected.toString(), ", got: ", e.error.toString());
+            }
+            // == compares enum cases; toString() pins the offset.
+            assert(e.error == *expected);
+            assert(e.error.toString() == expected.toString());
+    }
+}
+
+void checkMessage(JsonError* error, string expected) {
+    var actual = error.toString();
+    if actual != expected {
+        println("FAIL message\nexpected: ", expected, "\nactual: ", actual);
+    }
+    assert(actual == expected);
+}
+
+void checkRoundTrip(string name, string input) {
+    var r1 = parseJson(input);
+    switch (r1) {
+        case Ok v1:
+            var once = v1.value.toString(pretty = true);
+            var r2 = parseJson(string(once));
+            switch (r2) {
+                case Ok v2:
+                    var twice = v2.value.toString(pretty = true);
+                    if twice != string(once) {
+                        println("FAIL ", name, "\nfirst: ", once, "\nsecond: ", twice);
+                    }
+                    assert(twice == string(once));
+                case Err e:
+                    println("FAIL ", name, ": reparse error: ", e.error.toString());
+                    assert(false);
+            }
+        case Err e:
+            println("FAIL ", name, ": parse error: ", e.error.toString());
+            assert(false);
+    }
+}
+
+void testValues() {
+    checkPretty("null", "null", "null");
+    checkPretty("true", "true", "true");
+    checkPretty("false", "false", "false");
+    checkPretty("int", "42", "42");
+    checkPretty("negative int", "-17", "-17");
+    checkPretty("zero", "0", "0");
+    checkPretty("int64 max", "9223372036854775807", "9223372036854775807");
+    checkPretty("int64 min", "-9223372036854775808", "-9223372036854775808");
+    checkPretty("int64 overflow", "9223372036854775808", "9.223372036854776e+18");
+    checkPretty("float", "3.14", "3.14");
+    checkPretty("float precision", "3.141592653589793", "3.141592653589793");
+    checkPretty("float precision 2", "0.30000000000000004", "0.30000000000000004");
+    checkPretty("negative float", "-2.5", "-2.5");
+    checkPretty("exponent", "1e10", "1e+10");
+    checkPretty("negative exponent", "-2.5e-3", "-0.0025");
+    checkPretty("zero fraction", "0.5", "0.5");
+    checkPretty("zero exponent", "0e1", "0");
+    checkPretty("plus exponent", "-0.5e+2", "-50");
+    checkPretty("upper exponent", "1E3", "1000");
+    checkPretty("big int to float", "12345678901234567890123", "1.2345678901234568e+22");
+    checkPretty("duplicate keys", "{\"a\": 1, \"a\": 2}", "{\n  \"a\": 1,\n  \"a\": 2\n}");
+    checkPretty("empty string", "\"\"", "\"\"");
+    checkPretty("string", "\"hello\"", "\"hello\"");
+    checkPretty("escapes", "\"a\\\"b\\\\c\\/d\\b\\f\\n\\r\\t\"", "\"a\\\"b\\\\c/d\\b\\f\\n\\r\\t\"");
+    checkPretty("unicode", "\"caf\\u00e9\"", "\"café\"");
+    checkPretty("surrogate pair", "\"\\uD834\\uDD1E\"", "\"𝄞\"");
+    checkPretty("empty array", "[]", "[]");
+    checkPretty("empty object", "{}", "{}");
+    checkPretty("array", "[1, true, null]", "[\n  1,\n  true,\n  null\n]");
+    checkPretty("nested", "{\"a\": [1, {\"b\": null}]}", "{\n  \"a\": [\n    1,\n    {\n      \"b\": null\n    }\n  ]\n}");
+    checkPretty("whitespace", "  { \"a\" : 1 }  ", "{\n  \"a\": 1\n}");
+    checkCompact("compact", "{\"a\": [1, 2]}", "{\"a\":[1,2]}");
+    checkCompact("compact escapes", "\"\\u0001\"", "\"\\u0001\"");
+}
+
+void testRawUtf8() {
+    checkPretty("raw utf-8", "\"café\"", "\"café\"");
+    checkPretty("raw astral", "\"𝄞\"", "\"𝄞\"");
+    checkCompact("raw utf-8 compact", "[\"café\",\"𝄞\"]", "[\"café\",\"𝄞\"]");
+    checkRoundTrip("raw utf-8 round trip", "{\"s\": \"café 𝄞\"}");
+}
+
+void testErrors() {
+    checkError("empty input", "", JsonError.UnexpectedCharacter(0));
+    checkError("blank input", "   ", JsonError.UnexpectedCharacter(3));
+    checkError("lone brace", "{", JsonError.ExpectedStringKey(1));
+    checkError("lone bracket", "[", JsonError.UnexpectedCharacter(1));
+    checkError("trailing comma", "[1,]", JsonError.UnexpectedCharacter(3));
+    checkError("missing comma array", "[1 2]", JsonError.ExpectedCommaOrBracket(3));
+    checkError("missing comma object", "{\"a\": 1 2}", JsonError.ExpectedCommaOrBrace(8));
+    checkError("missing colon", "{\"a\"}", JsonError.ExpectedColon(4));
+    checkError("missing key", "{1: 2}", JsonError.ExpectedStringKey(1));
+    checkError("bad literal", "tru", JsonError.InvalidLiteral(3));
+    checkError("bad escape", "\"\\x\"", JsonError.InvalidEscape(3));
+    checkError("unpaired surrogate", "\"\\uD834\"", JsonError.UnpairedSurrogate(7));
+    checkError("lone low surrogate", "\"\\uDD1E\"", JsonError.UnpairedSurrogate(7));
+    checkError("bad unicode offset", "\"\\u12xz\"", JsonError.InvalidUnicodeEscape(3));
+    checkError("unclosed string", "\"abc", JsonError.UnterminatedString(4));
+    checkError("unclosed escape", "\"abc\\", JsonError.UnterminatedEscape(5));
+    checkError("control character", "\"a\nb\"", JsonError.UnescapedControlCharacter(2));
+    checkError("leading zero", "01", JsonError.UnexpectedTrailingCharacters(1));
+    checkError("bare minus", "-", JsonError.InvalidNumber(1));
+    checkError("plus", "+1", JsonError.UnexpectedCharacter(0));
+    checkError("trailing dot", "1.", JsonError.InvalidNumber(2));
+    checkError("trailing garbage", "1 2", JsonError.UnexpectedTrailingCharacters(2));
+    checkError("single quotes", "'x'", JsonError.UnexpectedCharacter(0));
+    checkError("huge exponent", "1e999", JsonError.NumberOutOfRange(0));
+    checkError("message position", "{\"a\": tru}", JsonError.InvalidLiteral(9));
+    checkError("message nested", "[1, {\"b\": 2}] trailing", JsonError.UnexpectedTrailingCharacters(14));
+}
+
+void testMessages() {
+    checkMessage(JsonError.UnexpectedCharacter(3), "unexpected character at offset 3");
+    checkMessage(JsonError.InvalidLiteral(9), "invalid literal at offset 9");
+    checkMessage(JsonError.ExpectedStringKey(1), "expected string key at offset 1");
+    checkMessage(JsonError.ExpectedColon(4), "expected ':' at offset 4");
+    checkMessage(JsonError.ExpectedCommaOrBrace(8), "expected ',' or '}' at offset 8");
+    checkMessage(JsonError.ExpectedCommaOrBracket(3), "expected ',' or ']' at offset 3");
+    checkMessage(JsonError.UnterminatedString(4), "unterminated string at offset 4");
+    checkMessage(JsonError.UnterminatedEscape(5), "unterminated escape at offset 5");
+    checkMessage(JsonError.InvalidEscape(3), "invalid escape at offset 3");
+    checkMessage(JsonError.InvalidUnicodeEscape(3), "invalid unicode escape at offset 3");
+    checkMessage(JsonError.UnpairedSurrogate(7), "unpaired surrogate at offset 7");
+    checkMessage(JsonError.UnescapedControlCharacter(2), "unescaped control character at offset 2");
+    checkMessage(JsonError.InvalidNumber(2), "invalid number at offset 2");
+    checkMessage(JsonError.NumberOutOfRange(0), "number out of range at offset 0");
+    checkMessage(JsonError.UnexpectedTrailingCharacters(14), "unexpected trailing characters at offset 14");
+    checkMessage(JsonError.MaximumDepthExceeded(1000), "maximum nesting depth exceeded at offset 1000");
+}
+
+void testDepth() {
+    var nested = "[".repeat(100) + "]".repeat(100);
+    checkRoundTrip("deep nesting", string(nested));
+    var tooDeep = "[".repeat(1500) + "]".repeat(1500);
+    checkError("nesting depth exceeded", string(tooDeep), JsonError.MaximumDepthExceeded(1000));
+}
+
+void testRoundTrips() {
+    checkRoundTrip("round trip", "{\"s\": \"a\\\"b\\\\c\\u00e9\\uD834\\uDD1E\\u0001\", \"i\": -42, \"f\": 3.141592653589793, \"e\": 1e10, \"a\": [1, true, null, {}, []], \"o\": {}}");
+}
+
+void testPrint() {
+    var r = parseJson("{\"a\": [1, true, null]}");
+    switch (r) {
+        case Ok v:
+            print(v.value);
+            println("");
+            println(v.value);
+            // Printable's automatic toString() renders compact JSON.
+            assert(v.value.toString() == "{\"a\":[1,true,null]}");
+        case Err e:
+            println("FAIL print: unexpected error: ", e.error.toString());
+            assert(false);
+    }
+}
+
+void main() {
+    testValues();
+    testRawUtf8();
+    testErrors();
+    testMessages();
+    testDepth();
+    testRoundTrips();
+    testPrint();
+}

@@ -1,0 +1,565 @@
+/// A JSON value: a tagged union of all JSON types.
+///
+/// Whole numbers that fit in 64 bits parse as `Integer`; fractional and
+/// overlarge numbers parse as `Number`. Objects preserve insertion order and
+/// allow duplicate keys.
+enum JsonValue : Printable {
+    String(StringBuffer value),
+    Integer(int64 value),
+    Number(float64 value),
+    Boolean(bool value),
+    Null,
+    Array(List<JsonValue> value),
+    Object(List<JsonMember> value),
+
+    /// Writes the value in compact JSON form.
+    ///
+    /// Printable's `toString()` renders this same form.
+    void print(StringBuffer* stream) {
+        writeJson(stream, this, 0, false);
+    }
+
+    /// Renders the value as JSON, indented with 2 spaces per level when
+    /// `pretty` is true and on one line otherwise.
+    ///
+    /// Numbers print in the shortest form that parses back to the same value.
+    /// Non-finite `Number` values abort; JSON has no spelling for them.
+    StringBuffer toString(bool pretty) {
+        var out = StringBuffer();
+        writeJson(out, this, 0, pretty);
+        return out;
+    }
+}
+
+/// One key-value pair of a JSON object.
+struct JsonMember {
+    /// The member's key.
+    StringBuffer key;
+    /// The member's value.
+    JsonValue value;
+}
+
+/// A JSON parse error: what went wrong and the byte offset where parsing stopped.
+enum JsonError: Printable {
+    UnexpectedCharacter(int offset),
+    InvalidLiteral(int offset),
+    ExpectedStringKey(int offset),
+    ExpectedColon(int offset),
+    ExpectedCommaOrBrace(int offset),
+    ExpectedCommaOrBracket(int offset),
+    UnterminatedString(int offset),
+    UnterminatedEscape(int offset),
+    InvalidEscape(int offset),
+    InvalidUnicodeEscape(int offset),
+    UnpairedSurrogate(int offset),
+    UnescapedControlCharacter(int offset),
+    InvalidNumber(int offset),
+    NumberOutOfRange(int offset),
+    UnexpectedTrailingCharacters(int offset),
+    MaximumDepthExceeded(int offset),
+
+    /// Writes the error as text, with its byte offset.
+    void print(StringBuffer* stream) {
+        switch this {
+            case UnexpectedCharacter e: writeMessage(stream, "unexpected character", e.offset);
+            case InvalidLiteral e: writeMessage(stream, "invalid literal", e.offset);
+            case ExpectedStringKey e: writeMessage(stream, "expected string key", e.offset);
+            case ExpectedColon e: writeMessage(stream, "expected ':'", e.offset);
+            case ExpectedCommaOrBrace e: writeMessage(stream, "expected ',' or '}'", e.offset);
+            case ExpectedCommaOrBracket e: writeMessage(stream, "expected ',' or ']'", e.offset);
+            case UnterminatedString e: writeMessage(stream, "unterminated string", e.offset);
+            case UnterminatedEscape e: writeMessage(stream, "unterminated escape", e.offset);
+            case InvalidEscape e: writeMessage(stream, "invalid escape", e.offset);
+            case InvalidUnicodeEscape e: writeMessage(stream, "invalid unicode escape", e.offset);
+            case UnpairedSurrogate e: writeMessage(stream, "unpaired surrogate", e.offset);
+            case UnescapedControlCharacter e: writeMessage(stream, "unescaped control character", e.offset);
+            case InvalidNumber e: writeMessage(stream, "invalid number", e.offset);
+            case NumberOutOfRange e: writeMessage(stream, "number out of range", e.offset);
+            case UnexpectedTrailingCharacters e: writeMessage(stream, "unexpected trailing characters", e.offset);
+            case MaximumDepthExceeded e: writeMessage(stream, "maximum nesting depth exceeded", e.offset);
+        }
+    }
+}
+
+/// Parses the JSON document in `text`.
+///
+/// Surrounding whitespace is allowed, but trailing characters are an error.
+/// Whole numbers that fit in 64 bits become `Integer`; other numbers become
+/// `Number`, with out-of-range numbers an error. Inputs nested more than 1000
+/// levels deep are rejected. On failure returns which error occurred and at
+/// which byte offset.
+Result<JsonValue, JsonError> parseJson(string text) {
+    var parser = JsonParser(text);
+    var r = parser.parseValue(0);
+    if r == Ok {
+        parser.skipWhitespace();
+        if parser.pos < text.size() {
+            return Err(JsonError.UnexpectedTrailingCharacters(parser.pos));
+        }
+    }
+    return r;
+}
+
+private const int maxJsonDepth = 1000;
+
+private void writeMessage(StringBuffer* stream, string text, int offset) {
+    stream.append(text);
+    stream.append(" at offset ");
+    offset.print(stream);
+}
+
+private struct JsonParser {
+    string input;
+    int pos = 0;
+
+    char peek() {
+        if pos < input.size() {
+            return input[pos];
+        }
+        return '\0';
+    }
+
+    void skipWhitespace() {
+        while true {
+            // JSON whitespace is exactly these four characters.
+            char c = peek();
+            if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
+                pos++;
+            } else {
+                return;
+            }
+        }
+    }
+
+    Result<JsonValue, JsonError> parseValue(int depth) {
+        skipWhitespace();
+        char c = peek();
+        if c == '{' {
+            return parseObject(depth);
+        } else if c == '[' {
+            return parseArray(depth);
+        } else if c == '"' {
+            var r = parseString();
+            switch (r) {
+                case Ok s: return Ok(JsonValue.String(s.value));
+                case Err e: return Err(e.error);
+            }
+        } else if c == 't' {
+            return parseLiteral("true", JsonValue.Boolean(true));
+        } else if c == 'f' {
+            return parseLiteral("false", JsonValue.Boolean(false));
+        } else if c == 'n' {
+            return parseLiteral("null", JsonValue.Null);
+        } else if c == '-' || c.isDigit() {
+            return parseNumber();
+        }
+        return Err(JsonError.UnexpectedCharacter(pos));
+    }
+
+    Result<JsonValue, JsonError> parseLiteral(string word, JsonValue value) {
+        for i in 0..word.size() {
+            if pos >= input.size() || input[pos] != word[i] {
+                return Err(JsonError.InvalidLiteral(pos));
+            }
+            pos++;
+        }
+        return Ok(value);
+    }
+
+    Result<JsonValue, JsonError> parseObject(int depth) {
+        if depth >= maxJsonDepth {
+            return Err(JsonError.MaximumDepthExceeded(pos));
+        }
+        pos++; // '{'
+        var members = List<JsonMember>();
+        skipWhitespace();
+        if peek() == '}' {
+            pos++;
+            return Ok(JsonValue.Object(members));
+        }
+        while true {
+            skipWhitespace();
+            if peek() != '"' {
+                return Err(JsonError.ExpectedStringKey(pos));
+            }
+            var key = parseString();
+            switch (key) {
+                case Ok k:
+                    skipWhitespace();
+                    if peek() != ':' {
+                        return Err(JsonError.ExpectedColon(pos));
+                    }
+                    pos++;
+                    var value = parseValue(depth + 1);
+                    switch (value) {
+                        case Ok v: members.push(JsonMember(k.value, v.value));
+                        case Err e: return Err(e.error);
+                    }
+                case Err e: return Err(e.error);
+            }
+            skipWhitespace();
+            if peek() == ',' {
+                pos++;
+            } else if peek() == '}' {
+                pos++;
+                return Ok(JsonValue.Object(members));
+            } else {
+                return Err(JsonError.ExpectedCommaOrBrace(pos));
+            }
+        }
+        assert(false);
+    }
+
+    Result<JsonValue, JsonError> parseArray(int depth) {
+        if depth >= maxJsonDepth {
+            return Err(JsonError.MaximumDepthExceeded(pos));
+        }
+        pos++; // '['
+        var elements = List<JsonValue>();
+        skipWhitespace();
+        if peek() == ']' {
+            pos++;
+            return Ok(JsonValue.Array(elements));
+        }
+        while true {
+            var r = parseValue(depth + 1);
+            switch (r) {
+                case Ok v: elements.push(v.value);
+                case Err e: return Err(e.error);
+            }
+            skipWhitespace();
+            if peek() == ',' {
+                pos++;
+            } else if peek() == ']' {
+                pos++;
+                return Ok(JsonValue.Array(elements));
+            } else {
+                return Err(JsonError.ExpectedCommaOrBracket(pos));
+            }
+        }
+        assert(false);
+    }
+
+    Result<StringBuffer, JsonError> parseString() {
+        pos++; // opening quote
+        var out = StringBuffer();
+        while true {
+            if pos >= input.size() {
+                return Err(JsonError.UnterminatedString(pos));
+            }
+            char c = input[pos];
+            if c == '"' {
+                pos++;
+                return Ok(out);
+            } else if c == '\\' {
+                pos++;
+                if pos >= input.size() {
+                    return Err(JsonError.UnterminatedEscape(pos));
+                }
+                char e = input[pos];
+                pos++;
+                if e == '"' {
+                    out.append('"');
+                } else if e == '\\' {
+                    out.append('\\');
+                } else if e == '/' {
+                    out.append('/');
+                } else if e == 'b' {
+                    out.append(char(8));
+                } else if e == 'f' {
+                    out.append(char(12));
+                } else if e == 'n' {
+                    out.append('\n');
+                } else if e == 'r' {
+                    out.append('\r');
+                } else if e == 't' {
+                    out.append('\t');
+                } else if e == 'u' {
+                    int code = parseHex4();
+                    if code < 0 {
+                        return Err(JsonError.InvalidUnicodeEscape(pos));
+                    }
+                    if code >= 0xD800 && code <= 0xDBFF {
+                        if pos + 6 > input.size() || input[pos] != '\\' || input[pos + 1] != 'u' {
+                            return Err(JsonError.UnpairedSurrogate(pos));
+                        }
+                        pos += 2;
+                        int lo = parseHex4();
+                        if lo < 0xDC00 || lo > 0xDFFF {
+                            return Err(JsonError.UnpairedSurrogate(pos));
+                        }
+                        code = 0x10000 + ((code - 0xD800) << 10) + (lo - 0xDC00);
+                    } else if code >= 0xDC00 && code <= 0xDFFF {
+                        return Err(JsonError.UnpairedSurrogate(pos));
+                    }
+                    pushUtf8(out, code);
+                } else {
+                    return Err(JsonError.InvalidEscape(pos));
+                }
+            } else if byteValue(c) < 32 {
+                return Err(JsonError.UnescapedControlCharacter(pos));
+            } else {
+                out.append(c);
+                pos++;
+            }
+        }
+        assert(false);
+    }
+
+    // Parses 4 hex digits at pos, advancing past them. Returns -1 if invalid.
+    int parseHex4() {
+        if pos + 4 > input.size() {
+            return -1;
+        }
+        int start = pos;
+        int code = 0;
+        for _ in 0..4 {
+            int digit = hexValue(input[pos]);
+            if digit < 0 {
+                pos = start;
+                return -1;
+            }
+            code = code * 16 + digit;
+            pos++;
+        }
+        return code;
+    }
+
+    Result<JsonValue, JsonError> parseNumber() {
+        int start = pos;
+        if peek() == '-' {
+            pos++;
+        }
+        if peek() == '0' {
+            pos++;
+        } else if peek() >= '1' && peek() <= '9' {
+            while peek().isDigit() {
+                pos++;
+            }
+        } else {
+            return Err(JsonError.InvalidNumber(pos));
+        }
+        bool isFloat = false;
+        if peek() == '.' {
+            isFloat = true;
+            pos++;
+            if !peek().isDigit() {
+                return Err(JsonError.InvalidNumber(pos));
+            }
+            while peek().isDigit() {
+                pos++;
+            }
+        }
+        if peek() == 'e' || peek() == 'E' {
+            isFloat = true;
+            pos++;
+            if peek() == '+' || peek() == '-' {
+                pos++;
+            }
+            if !peek().isDigit() {
+                return Err(JsonError.InvalidNumber(pos));
+            }
+            while peek().isDigit() {
+                pos++;
+            }
+        }
+        string lexeme = input.substr(start..pos);
+        if !isFloat {
+            int64 integer = 0;
+            bool negative = lexeme[0] == '-';
+            int i = negative ? 1 : 0;
+            bool overflow = false;
+            while i < lexeme.size() {
+                int64 digit = int64(int(lexeme[i]) - int('0'));
+                if negative {
+                    if integer < (int64_min + digit) / 10 {
+                        overflow = true;
+                        break;
+                    }
+                    integer = integer * 10 - digit;
+                } else {
+                    if integer > (int64_max - digit) / 10 {
+                        overflow = true;
+                        break;
+                    }
+                    integer = integer * 10 + digit;
+                }
+                i++;
+            }
+            if !overflow {
+                return Ok(JsonValue.Integer(integer));
+            }
+        }
+        var text = StringBuffer(lexeme);
+        float64 value = strtod(text.cString(), null);
+        // Only infinite values equal their own half.
+        if value != 0.0 && value / 2.0 == value {
+            return Err(JsonError.NumberOutOfRange(start));
+        }
+        return Ok(JsonValue.Number(value));
+    }
+}
+
+// Numeric value of a byte. Goes through uint8 because plain char may be
+// signed, which would make bytes above 127 negative.
+private int byteValue(char c) {
+    return int(uint8(c));
+}
+
+private int hexValue(char c) {
+    if c >= '0' && c <= '9' {
+        return int(c) - int('0');
+    }
+    if c >= 'a' && c <= 'f' {
+        return int(c) - int('a') + 10;
+    }
+    if c >= 'A' && c <= 'F' {
+        return int(c) - int('A') + 10;
+    }
+    return -1;
+}
+
+private void pushUtf8(StringBuffer* out, int code) {
+    if code < 0x80 {
+        out.append(char(code));
+    } else if code < 0x800 {
+        out.append(char(0xC0 + (code >> 6)));
+        out.append(char(0x80 + (code & 0x3F)));
+    } else if code < 0x10000 {
+        out.append(char(0xE0 + (code >> 12)));
+        out.append(char(0x80 + ((code >> 6) & 0x3F)));
+        out.append(char(0x80 + (code & 0x3F)));
+    } else {
+        out.append(char(0xF0 + (code >> 18)));
+        out.append(char(0x80 + ((code >> 12) & 0x3F)));
+        out.append(char(0x80 + ((code >> 6) & 0x3F)));
+        out.append(char(0x80 + (code & 0x3F)));
+    }
+}
+
+private void writeIndent(StringBuffer* out, int count) {
+    int i = 0;
+    while i < count {
+        out.append(' ');
+        i++;
+    }
+}
+
+private void writeQuoted(StringBuffer* out, StringBuffer* s) {
+    out.append('"');
+    for i in 0..s.size() {
+        int code = byteValue((*s)[i]);
+        if code == 34 {
+            out.append("\\\"");
+        } else if code == 92 {
+            out.append("\\\\");
+        } else if code == 8 {
+            out.append("\\b");
+        } else if code == 12 {
+            out.append("\\f");
+        } else if code == 10 {
+            out.append("\\n");
+        } else if code == 13 {
+            out.append("\\r");
+        } else if code == 9 {
+            out.append("\\t");
+        } else if code < 32 {
+            out.append("\\u00");
+            out.append("0123456789abcdef"[code >> 4]);
+            out.append("0123456789abcdef"[code & 15]);
+        } else {
+            out.append((*s)[i]);
+        }
+    }
+    out.append('"');
+}
+
+// Renders the shortest spelling that parses back to `value`. 17 significant
+// digits always suffice for 64-bit floats; shorter widths win when they match.
+private void writeNumber(StringBuffer* out, float64 value) {
+    // NaN is the only value that doesn't equal itself. (Spelled this way
+    // because `value != value` is false for NaN.) Only infinite values equal
+    // their own half.
+    if !(value == value) || (value != 0.0 && value / 2.0 == value) {
+        abort("JsonValue.Number must be finite");
+    }
+    char[32] result = undefined;
+    int bestPrecision = 17;
+    uint64 bestLength = 32;
+    for precision in 1..18 {
+        sprintf(result, "%.*g", precision, value);
+        uint64 length = strlen(result);
+        if strtod(result, null) == value && length < bestLength {
+            bestPrecision = precision;
+            bestLength = length;
+        }
+    }
+    sprintf(result, "%.*g", bestPrecision, value);
+    out.append(string(result));
+}
+
+private void writeJson(StringBuffer* out, JsonValue* value, int level, bool indented) {
+    switch (*value) {
+        case String s: writeQuoted(out, s.value);
+        case Integer n: n.value.print(out);
+        case Number f: writeNumber(out, f.value);
+        case Boolean b:
+            if b.value {
+                out.append("true");
+            } else {
+                out.append("false");
+            }
+        case Null: out.append("null");
+        case Array a:
+            if a.value.empty() {
+                out.append("[]");
+            } else {
+                out.append('[');
+                bool first = true;
+                for element in a.value {
+                    if !first {
+                        out.append(',');
+                    }
+                    first = false;
+                    if indented {
+                        out.append('\n');
+                        writeIndent(out, (level + 1) * 2);
+                    }
+                    writeJson(out, element, level + 1, indented);
+                }
+                if indented {
+                    out.append('\n');
+                    writeIndent(out, level * 2);
+                }
+                out.append(']');
+            }
+        case Object o:
+            if o.value.empty() {
+                out.append("{}");
+            } else {
+                out.append('{');
+                bool first = true;
+                for member in o.value {
+                    if !first {
+                        out.append(',');
+                    }
+                    first = false;
+                    if indented {
+                        out.append('\n');
+                        writeIndent(out, (level + 1) * 2);
+                    }
+                    writeQuoted(out, member.key);
+                    out.append(':');
+                    if indented {
+                        out.append(' ');
+                    }
+                    writeJson(out, member.value, level + 1, indented);
+                }
+                if indented {
+                    out.append('\n');
+                    writeIndent(out, level * 2);
+                }
+                out.append('}');
+            }
+    }
+}
