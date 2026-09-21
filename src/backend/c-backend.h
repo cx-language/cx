@@ -61,6 +61,12 @@ struct CGenerator {
     // assigns all names up front (see codegenFunctionDispatch), and later
     // uses during body emission find the existing registration.
     const std::string& getOrCreateTempName(const Value* inst, llvm::StringRef prefix);
+    // Mints a fresh (base + counter) name for a local or temporary,
+    // skipping candidates already claimed in this function.
+    std::string claimSuffixedName(llvm::StringRef base);
+    // Resets per-function value naming: restarts the suffix counter and
+    // claims the parameter names, which are emitted verbatim.
+    void resetValueNaming(const Function* function);
     const std::string& getTempName(const Value* inst, llvm::StringRef prefix);
     // Returns the C name for a struct or union type, generating and registering
     // one for anonymous types (tuples, enum payload unions) on first use.
@@ -96,9 +102,12 @@ struct CGenerator {
     std::unordered_map<IRType*, std::string> generatedTypeNames;
     std::unordered_set<std::string> alreadyDefinedFunctions;
     std::unordered_map<const Value*, std::string> emittedValues;
-    // Sanitized basic block parameter names claimed in the function currently
-    // being emitted; cleared on entry to codegenFunction.
-    std::unordered_set<std::string> emittedBlockParamNames;
+    // C identifiers claimed in the value namespace of the function currently
+    // being emitted: parameters (emitted verbatim) plus every minted local,
+    // temporary, and block parameter. Consulted when minting suffixed names
+    // so that a base ending in digits cannot collide with another name;
+    // e.g. pack parameter `args_1` + suffix `1` must not reuse `args_11`.
+    std::unordered_set<std::string> usedValueNames;
     // Program counter value per basic block, used only in dispatch mode.
     std::unordered_map<const BasicBlock*, int> dispatchBlockIds;
     int valueSuffixCounter = 0;
