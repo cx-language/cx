@@ -54,23 +54,27 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Returns the character at the given index.
     char operator[](int index) {
+        if index < 0 || index >= size() indexOutOfBounds("operator[]", index);
         return characters[index];
     }
 
     /// Returns the character at the given offset from the end.
     /// Offset 1 is the last character; offsets outside 1..size() abort.
     char operator[-](int index) {
+        if index < 1 || index > size() indexOutOfBounds("operator[-]", index);
         return characters[size() - index];
     }
 
     /// Sets the character at the given index.
     void operator[]=(int index, char c) {
+        if index < 0 || index >= size() indexOutOfBounds("operator[]=", index);
         characters[index] = c;
     }
 
     /// Sets the character at the given offset from the end.
     /// Offset 1 is the last character; offsets outside 1..size() abort.
     void operator[-]=(int index, char c) {
+        if index < 1 || index > size() indexOutOfBounds("operator[-]=", index);
         characters[size() - index] = c;
     }
 

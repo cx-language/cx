@@ -67,7 +67,7 @@ struct List<Element> {
     /// Returns the element at the given index.
     /// Returns the element at the given index.
     Element* operator[](int index) {
-        if index >= size {
+        if index < 0 || index >= size {
             indexOutOfBounds(index);
         }
 
@@ -86,12 +86,18 @@ struct List<Element> {
 
     /// Sets the element at the given index.
     void operator[]=(int index, Element element) {
+        if index < 0 || index >= size {
+            indexOutOfBounds(index);
+        }
         buffer[index] = element;
     }
 
     /// Sets the element at the given offset from the end.
     /// Offset 1 is the last element; offsets outside 1..size() abort.
     void operator[-]=(int index, Element element) {
+        if index < 1 || index > size {
+            indexOutOfBounds(index);
+        }
         buffer[size - index] = element;
     }
 
@@ -185,7 +191,7 @@ struct List<Element> {
     /// Removes the element at the given index from the list and returns it.
     /// Elements following the removed element are moved towards the beginning of the list by one index.
     Element removeAt(int index) {
-        if index >= size {
+        if index < 0 || index >= size {
             indexOutOfBounds(index);
         }
 
