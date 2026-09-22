@@ -1,0 +1,11 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines %s
+
+void main() {
+    println(sum([1, 2, 3])); // CHECK: 6
+    println(sum(List([1, 2, 3]))); // CHECK-NEXT: 6
+    println(sum([1.5, 2.5])); // CHECK-NEXT: 4
+    println(sum([-1, 1])); // CHECK-NEXT: 0
+    println(sum([7])); // CHECK-NEXT: 7
+    var arr = [10, 20, 30];
+    println(sum(arr)); // CHECK-NEXT: 60
+}

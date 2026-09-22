@@ -1,0 +1,2 @@
+/// A type whose values can be added with `+`, used to constrain generic arithmetic like `sum`.
+interface Addable {}
