@@ -3,6 +3,8 @@
 `cx build` builds a cx project with no configuration:
 run it in the project directory and it compiles every `.cx` file there, recursively,
 into an executable named after the directory.
+The only exception is the `build.cx` file in the project directory itself,
+which holds build settings instead of source code (see below).
 
 ```sh
 myproject/
@@ -107,9 +109,11 @@ myproject/
 import shapes;
 ```
 
-`cx build` runs at the project root and only reads the `build.cx` there:
-`build.cx` files inside `vendor/` or other subdirectories are ignored,
-as is everything else under `vendor/` except via `import`.
+`cx build` runs at the project root and only reads the `build.cx` there.
+The `build.cx` at an imported package's root is likewise reserved, though its
+settings don't apply transitively. A `build.cx` anywhere else is an ordinary
+source file and compiles as usual.
+Everything else under `vendor/` is only reachable via `import`.
 Because vendored code compiles as an imported module rather than as part of
 your project, unused functions in it don't produce warnings.
 Sources kept outside the project can likewise be used with `-I` plus `import`.

@@ -9,6 +9,7 @@
 #pragma warning(pop)
 #include "../ast/module.h"
 #include "../build/config.h"
+#include "../build/dependencies.h"
 #include "../driver/driver.h"
 #include "../parser/parse.h"
 
@@ -43,8 +44,8 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
     // split into nested packages via `import` once a package needs its vendored deps versioned independently.
     for (llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end; it != end; it.increment(error)) {
         if (error) break;
-        // Build files are config, not source, so never parse them as code (see getSourceFiles).
-        if (llvm::sys::path::extension(it->path()) == ".cx" && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName) {
+        // Only the package root's build file is reserved (see isRootBuildFile).
+        if (llvm::sys::path::extension(it->path()) == ".cx" && !isRootBuildFile(it->path(), directoryPath.str())) {
             paths.push_back(it->path());
         }
     }
