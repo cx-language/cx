@@ -1,0 +1,71 @@
+// Process management: environment variables and running subprocesses.
+
+private extern char*? getenv(const char* name);
+#if Windows
+private extern int _putenv(const char* nameEqualsValue);
+#else
+private extern int setenv(const char* name, const char* value, int overwrite);
+#endif
+private extern int system(const char* command);
+#if Windows
+private extern FILE*? _popen(const char* command, const char* mode);
+private extern int _pclose(FILE* stream);
+#else
+private extern FILE*? popen(const char* command, const char* mode);
+private extern int pclose(FILE* stream);
+#endif
+
+/// Returns the value of the environment variable, or null if it's not set.
+string? getenv(string name) {
+    var value = getenv(StringBuffer(name).cString());
+    if !value return null;
+    return string(value);
+}
+
+#if Windows
+/// Sets the environment variable, aborting on failure.
+void setenv(string name, string value) {
+    var assignment = StringBuffer(name) + "=" + value;
+    if _putenv(assignment.cString()) != 0 abort("setenv failed for ", name);
+}
+#else
+/// Sets the environment variable, aborting on failure.
+void setenv(string name, string value) {
+    if setenv(StringBuffer(name).cString(), StringBuffer(value).cString(), 1) != 0 abort("setenv failed for ", name);
+}
+#endif
+
+/// Runs the command in a shell, returning its exit status.
+int system(string command) {
+    return system(StringBuffer(command).cString());
+}
+
+#if Windows
+/// Runs the command in a shell, returning its standard output.
+StringBuffer capture(string command) {
+    var pipe = _popen(StringBuffer(command).cString(), "r");
+    if !pipe abort("capture failed for command: ", command);
+    var output = readPipe(pipe);
+    _pclose(pipe);
+    return output;
+}
+#else
+/// Runs the command in a shell, returning its standard output.
+StringBuffer capture(string command) {
+    var pipe = popen(StringBuffer(command).cString(), "r");
+    if !pipe abort("capture failed for command: ", command);
+    var output = readPipe(pipe);
+    pclose(pipe);
+    return output;
+}
+#endif
+
+private StringBuffer readPipe(FILE* pipe) {
+    var output = StringBuffer();
+    while true {
+        var c = fgetc(pipe);
+        if c < 0 break;
+        output.append(char(c));
+    }
+    return output;
+}

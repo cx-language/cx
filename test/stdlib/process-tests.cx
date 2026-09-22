@@ -1,0 +1,27 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    testGetSetEnv();
+    testGetUnsetEnv();
+    testSystem();
+    testCapture();
+}
+
+void testGetSetEnv() {
+    setenv("CX_TEST_PROCESS_VAR", "hello123");
+    assert(getenv("CX_TEST_PROCESS_VAR")! == "hello123");
+}
+
+void testGetUnsetEnv() {
+    assert(getenv("CX_DEFINITELY_UNSET_VAR_XYZ") == null);
+}
+
+void testSystem() {
+    assert(system("exit 0") == 0);
+    assert(system("exit 1") != 0);
+}
+
+void testCapture() {
+    var output = capture("echo hello");
+    assert(string(&output).contains("hello"));
+}
