@@ -1,0 +1,23 @@
+// RUN: %cx run -Werror --release-safe %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --release %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --release-safe --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --release --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK-NOT: release-mode-optimizations.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK:10000000
+// CHECK-NOT: release-mode-optimizations.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+// Release modes optimize the tail recursion below into a loop (the LLVM
+// pipeline, or -O3 from the C compiler with the C backend). Debug builds
+// keep one stack frame per call and segfault on this input, so completing
+// proves optimization is active.
+
+int countdown(int n, int acc) {
+    if n == 0 {
+        return acc;
+    }
+    return countdown(n - 1, acc + 1);
+}
+
+void main() {
+    println(countdown(10000000, 0));
+}
