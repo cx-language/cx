@@ -29,7 +29,7 @@ struct List<Element> {
     /// Initializes an list containing the elements of the given array.
     List(Element[] elements) {
         init(capacity = elements.size());
-        push(elements);
+        append(elements);
     }
 
     /// Initializes the list to contain the given number of uninitialized elements.
@@ -108,7 +108,7 @@ struct List<Element> {
     }
 
     /// Adds all elements from the given array to the end of the list.
-    void push(Element[] elements) {
+    void append(Element[] elements) {
         for element in elements {
             push(element);
         }
