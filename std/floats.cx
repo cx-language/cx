@@ -50,7 +50,7 @@ private void printFloat32(float32 value, OutputStream* stream) {
 }
 
 /// A floating-point number.
-struct float: Copyable, Comparable, Printable {
+struct float: Copyable, Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(float* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -64,7 +64,7 @@ struct float: Copyable, Comparable, Printable {
 }
 
 /// A 32-bit floating-point number.
-struct float32: Copyable, Comparable, Printable {
+struct float32: Copyable, Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(float32* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -78,7 +78,7 @@ struct float32: Copyable, Comparable, Printable {
 }
 
 /// A 64-bit floating-point number.
-struct float64: Copyable, Comparable, Printable {
+struct float64: Copyable, Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(float64* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;

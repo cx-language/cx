@@ -58,6 +58,25 @@ StringBuffer join<T: Printable>(List<T>* list, string separator) {
     return join(ArrayRef(list), separator);
 }
 
+/// Returns the sum of the array elements, aborting on empty arrays.
+T sum<T: Addable>(ArrayRef<T> array) {
+    if array.empty() {
+        abort("Called sum() on empty array");
+    }
+    var total = array[0];
+
+    for index in 1..array.size() {
+        total += array[index];
+    }
+
+    return total;
+}
+
+/// Returns the sum of the list elements, aborting on empty lists.
+T sum<T: Addable>(List<T>* list) {
+    return sum(ArrayRef(list));
+}
+
 /// Prints the given value.
 void print<T: Printable>(ArrayRef<T> array) {
     print('[');

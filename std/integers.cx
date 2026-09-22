@@ -32,7 +32,7 @@ private void printUnsigned(uint64 value, OutputStream* stream) {
 }
 
 /// A signed integer.
-struct int: Copyable, Comparable, Printable, Hashable {
+struct int: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const int max = 2147483647;
     /// Smallest value of this type.
@@ -55,7 +55,7 @@ struct int: Copyable, Comparable, Printable, Hashable {
 }
 
 /// An 8-bit signed integer.
-struct int8: Copyable, Comparable, Printable, Hashable {
+struct int8: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const int8 max = 127;
     /// Smallest value of this type.
@@ -78,7 +78,7 @@ struct int8: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 16-bit signed integer.
-struct int16: Copyable, Comparable, Printable, Hashable {
+struct int16: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const int16 max = 32767;
     /// Smallest value of this type.
@@ -101,7 +101,7 @@ struct int16: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 32-bit signed integer.
-struct int32: Copyable, Comparable, Printable, Hashable {
+struct int32: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const int32 max = 2147483647;
     /// Smallest value of this type.
@@ -124,7 +124,7 @@ struct int32: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 64-bit signed integer.
-struct int64: Copyable, Comparable, Printable, Hashable {
+struct int64: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const int64 max = 9223372036854775807;
     /// Smallest value of this type.
@@ -156,7 +156,7 @@ struct int128: Copyable, Comparable {
 }
 
 /// An unsigned integer.
-struct uint: Copyable, Comparable, Printable, Hashable {
+struct uint: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const uint max = 4294967295;
     /// Smallest value of this type.
@@ -179,7 +179,7 @@ struct uint: Copyable, Comparable, Printable, Hashable {
 }
 
 /// An 8-bit unsigned integer.
-struct uint8: Copyable, Comparable, Printable, Hashable {
+struct uint8: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const uint8 max = 255;
     /// Smallest value of this type.
@@ -202,7 +202,7 @@ struct uint8: Copyable, Comparable, Printable, Hashable {
 }
 
 /// An 8-bit unsigned integer.
-struct byte: Copyable, Comparable, Printable, Hashable {
+struct byte: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const byte max = 255;
     /// Smallest value of this type.
@@ -225,7 +225,7 @@ struct byte: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 16-bit unsigned integer.
-struct uint16: Copyable, Comparable, Printable, Hashable {
+struct uint16: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const uint16 max = 65535;
     /// Smallest value of this type.
@@ -248,7 +248,7 @@ struct uint16: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 32-bit unsigned integer.
-struct uint32: Copyable, Comparable, Printable, Hashable {
+struct uint32: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const uint32 max = 4294967295;
     /// Smallest value of this type.
@@ -271,7 +271,7 @@ struct uint32: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 64-bit unsigned integer.
-struct uint64: Copyable, Comparable, Printable, Hashable {
+struct uint64: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const uint64 max = 18446744073709551615;
     /// Smallest value of this type.
