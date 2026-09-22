@@ -61,6 +61,19 @@ extern int remove(const char* filename);
 extern int ungetc(int c, FILE* file);
 /// Moves the file position to the start.
 extern void rewind(FILE* file);
+#if Windows
+private extern FILE*? _popen(const char* command, const char* mode);
+private extern int _pclose(FILE* stream);
+/// Runs the command in a shell, returning a pipe to its standard output.
+FILE*? popen(const char* command, const char* mode) { return _popen(command, mode); }
+/// Closes the pipe, returning its exit status.
+int pclose(FILE* stream) { return _pclose(stream); }
+#else
+/// Runs the command in a shell, returning a pipe to its standard output.
+extern FILE*? popen(const char* command, const char* mode);
+/// Closes the pipe, returning its exit status.
+extern int pclose(FILE* stream);
+#endif
 /// Origin for fseek: start of file.
 const SEEK_SET = 0;
 /// Origin for fseek: current position.

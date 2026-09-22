@@ -8,8 +8,6 @@ private extern int setenv(const char* name, const char* value, int overwrite);
 #endif
 private extern int system(const char* command);
 
-private int captureCounter = 0;
-
 /// Returns the value of the environment variable, or null if it's not set.
 string? getenv(string name) {
     var value = getenv(StringBuffer(name).cString());
@@ -39,14 +37,15 @@ int system(string command) {
 ///
 /// The exit status is ignored; use system() when it matters.
 StringBuffer capture(string command) {
-    captureCounter++;
-    var path = StringBuffer("cx_capture_") + captureCounter.toString() + ".tmp";
-    defer remove(path.cString());
+    var pipe = popen(StringBuffer(command).cString(), "r");
+    if !pipe abort("capture failed for command: ", command);
+    defer pclose(pipe!);
 
-    var fullCommand = command + " > " + string(&path);
-    system(string(&fullCommand));
-
-    var output = readFile(string(&path));
-    if !output abort("capture failed for command: ", command);
+    var output = StringBuffer();
+    while true {
+        var c = fgetc(pipe);
+        if c < 0 break;
+        output.append(char(c));
+    }
     return output;
 }
