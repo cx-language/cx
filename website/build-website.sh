@@ -34,6 +34,9 @@ done
 
 cd "$(dirname "$0")" || exit
 
+# Reject smart typography in prose sources (see check_prose.py).
+python3 check_prose.py || exit
+
 pandoc --version >/dev/null || exit
 
 # Pandoc 2 emits different default styles (notably 'html { font-size: 20px }'),
@@ -92,7 +95,9 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
     fi
 
     mkdir -p "build/$(dirname "$outpath")"
-    pandoc "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
+    # markdown-smart: pandoc would otherwise reintroduce curly quotes,
+    # ellipsis, and em/en dashes into the generated HTML.
+    pandoc -f markdown-smart "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting

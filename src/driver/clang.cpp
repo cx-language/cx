@@ -9,7 +9,7 @@
 #include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/Support/Path.h>
-#include <llvm/Support/VirtualFileSystem.h> // Fixes "error: invalid use of incomplete type ‘class llvm::vfs::FileSystem’" on GCC.
+#include <llvm/Support/VirtualFileSystem.h> // Fixes "error: invalid use of incomplete type 'class llvm::vfs::FileSystem'" on GCC.
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/TargetParser/Host.h>
 #pragma warning(pop)
