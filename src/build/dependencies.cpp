@@ -76,10 +76,19 @@ std::vector<std::string> cx::getSourceFiles(llvm::StringRef rootDirectory) {
 
         // Build files are config, not source, so never compile them. Match by file name:
         // full paths can't be compared reliably across separator styles (Windows).
-        if (llvm::sys::path::extension(it->path()) == ".cx" && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName) {
+        // Vendored packages are likewise excluded: they join the build via `import`, not as main-module sources.
+        if (llvm::sys::path::extension(it->path()) == ".cx" && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName
+            && !isVendoredPath(it->path())) {
             sourceFiles.push_back(it->path());
         }
     }
 
     return sourceFiles;
+}
+
+bool cx::isVendoredPath(llvm::StringRef path) {
+    for (auto it = llvm::sys::path::begin(path), end = llvm::sys::path::end(path); it != end; ++it) {
+        if (*it == "vendor") return true;
+    }
+    return false;
 }

@@ -1,0 +1,4 @@
+// RUN: true
+
+// Ignored: cx build only reads the build.cx at the project root.
+var name = "decoy-should-be-ignored"

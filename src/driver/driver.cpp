@@ -218,6 +218,9 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
 
     for (auto& keyValue : relativeImportSearchPaths) {
         importSearchPaths.push_back(keyValue.getKey().str());
+        // Vendored packages are imported by name, so each source directory's
+        // vendor/ subdirectory is a package container: `import foo` finds vendor/foo.
+        importSearchPaths.push_back((keyValue.getKey() + "/vendor").str());
     }
 
     // The standard library root is resolved at runtime (see getCxRootDir) so
@@ -737,6 +740,9 @@ static void addConfigBuildFlags(const BuildConfig& config) {
     for (auto& define : config.defines) {
         defines.push_back(define);
     }
+    // The project root's vendor/ holds importable packages (multitarget builds
+    // compile sources under src/, whose parents never include the root).
+    importSearchPaths.push_back((llvm::StringRef(config.rootDirectory) + "/vendor").str());
     for (auto& path : config.headerSearchPaths) {
         importSearchPaths.push_back(path);
     }
