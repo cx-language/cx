@@ -113,8 +113,6 @@ List<StringBuffer> listDirectory(string path) {
 }
 #endif
 
-private int listCounter = 0;
-
 #if Windows
 private StringBuffer quotedPath(string path) {
     return StringBuffer("\"") + path + "\"";
@@ -138,24 +136,26 @@ private StringBuffer quotedPath(string path) {
 #endif
 
 private List<StringBuffer> readDirectoryListing(StringBuffer command, bool stripCarriageReturns) {
-    listCounter++;
-    var tmpPath = StringBuffer("cx_list_") + listCounter.toString() + ".tmp";
-    defer remove(tmpPath.cString());
-
-    var fullCommand = string(&command) + " > " + string(&tmpPath);
-    system(fullCommand);
+    var pipe = popen(command.cString(), "r");
+    if !pipe return List<StringBuffer>();
+    defer pclose(pipe);
 
     var result = List<StringBuffer>();
-    var output = readFile(string(&tmpPath));
-    if !output return result;
-    var content = output;
-    for line in string(&content).lines() {
-        var name = line;
-        if stripCarriageReturns && name.endsWith("\r") {
-            name = name.substr(0..name.size() - 1);
+    var current = StringBuffer();
+    while true {
+        var c = fgetc(pipe);
+        if c < 0 || c == '\n' {
+            if stripCarriageReturns && !current.empty() && current[current.size() - 1] == '\r' {
+                current.removeLast();
+            }
+            if !current.empty() {
+                result.push(StringBuffer(string(&current)));
+            }
+            current = StringBuffer();
+            if c < 0 break;
+        } else {
+            current.append(char(c));
         }
-        if name.empty() || name == string(&tmpPath) continue;
-        result.push(StringBuffer(name));
     }
 
     sort(result);
