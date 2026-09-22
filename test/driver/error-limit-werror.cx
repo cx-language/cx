@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s -Werror --error-limit=2 2>&1 | %FileCheck %s
+
+// CHECK-COUNT-2: error: unused declaration
+void unused1() {}
+void unused2() {}
+void unused3() {}
+void main() {}
