@@ -675,6 +675,9 @@ IfExpr* Parser::parseIfThenElseExpr() {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExpr();
     }
+    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+        ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not if expressions");
+    }
     parse(Token::Then);
     auto thenExpr = parseExpr();
     parse(Token::Else);
@@ -1091,7 +1094,16 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
         condition = parseExprOrVarDecl(parent);
         if (parens) parse(Token::RightParen);
     }
+    // A trailing identifier after an `is` check binds the matched payload in the then-branch.
+    VarDecl* isBinding = nullptr;
+    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+        auto name = parse(Token::Identifier);
+        isBinding = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+    }
     if (currentToken() == Token::Then) {
+        if (isBinding) {
+            ERROR(isBinding->location, "an 'is' binding is only allowed in if statements, not if expressions");
+        }
         if (condition->isVarDeclExpr()) {
             ERROR(condition->location, "variable declaration conditions are not supported in if expressions");
         }
@@ -1115,7 +1127,9 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
             WARN(innerIf->elseLocation, "add explicit braces to avoid dangling else");
         }
     }
-    return makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts), elseLocation);
+    auto* ifStmt = makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts), elseLocation);
+    ifStmt->isBinding = isBinding;
+    return ifStmt;
 }
 
 /// while-stmt ::= 'while' (expr | var-decl) block-or-stmt

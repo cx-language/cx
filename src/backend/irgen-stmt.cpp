@@ -32,6 +32,34 @@ void IRGenerator::emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuatio
 }
 
 void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
+    // `if s is Case name` binds the payload for the then-branch.
+    if (ifStmt.isBinding) {
+        auto& isExpr = llvm::cast<BinaryExpr>(*ifStmt.condition);
+        Value* enumValue = nullptr;
+        Value* tag = emitExprOrEnumTag(isExpr.getLHS(), &enumValue);
+        Value* caseTag = emitExprOrEnumTag(isExpr.getRHS(), nullptr);
+        auto* condition = createBinaryOp(Token::Equal, tag, caseTag, &isExpr);
+
+        auto* function = insertBlock->parent;
+        auto* thenBlock = new BasicBlock("if.then", function);
+        auto* elseBlock = new BasicBlock("if.else", function);
+        auto* endIfBlock = new BasicBlock("if.end", function);
+        createCondBr(condition, thenBlock, elseBlock);
+
+        setInsertPoint(thenBlock);
+        auto type = ifStmt.isBinding->type.getPointerTo();
+        auto* bindingPtr = createCast(createGEP(enumValue, 1), type, ifStmt.isBinding->getName());
+        // Like switch bindings, the binding borrows the enum payload, so it must not run a destructor.
+        setLocalValue(bindingPtr, ifStmt.isBinding, false);
+        emitBlock(ifStmt.thenBody, endIfBlock);
+
+        setInsertPoint(elseBlock);
+        emitBlock(ifStmt.elseBody, endIfBlock);
+
+        setInsertPoint(endIfBlock);
+        return;
+    }
+
     auto* condition = emitExpr(*ifStmt.condition);
 
     // FIXME: Lower implicit null checks such as `if (ptr)` and `if (!ptr)` to null comparisons.

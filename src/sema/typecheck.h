@@ -184,6 +184,8 @@ struct Typechecker {
 
 bool validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
+// Returns the enum case tested by an `is` expression's right side, or null when it isn't one.
+EnumCase* getIsEnumCase(Expr& expr);
 bool containsGenericParam(Type type, llvm::StringRef genericParam);
 void diagnoseClosureConversion(Type source, Type target, Location location);
 // Suggests an explicit conversion when a value of one numeric type is used where another is expected.

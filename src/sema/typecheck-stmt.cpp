@@ -362,6 +362,11 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, true);
+        if (ifStmt.isBinding) {
+            auto* isExpr = llvm::cast<BinaryExpr>(ifStmt.condition);
+            ASSERT(isExpr->op == Token::Is);
+            typecheckSwitchCaseBinding(ifStmt.isBinding, getIsEnumCase(isExpr->getRHS()));
+        }
         for (auto& stmt : ifStmt.thenBody) {
             typecheckStmt(stmt);
         }

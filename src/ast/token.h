@@ -40,6 +40,7 @@ struct Token {
         Import,
         In,
         Interface,
+        Is,
         Null,
         Private,
         Public,

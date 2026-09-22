@@ -438,6 +438,16 @@ static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* curr
 
 static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange);
 
+EnumCase* cx::getIsEnumCase(Expr& expr) {
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(&expr)) {
+        return llvm::dyn_cast<EnumCase>(varExpr->decl);
+    }
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) {
+        return llvm::dyn_cast<EnumCase>(memberExpr->decl);
+    }
+    return nullptr;
+}
+
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.op;
 
@@ -454,6 +464,19 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (op == Token::QuestionQuestion) {
         return typecheckNullCoalescingExpr(expr);
+    }
+
+    if (op == Token::Is) {
+        Type leftType = typecheckExpr(expr.getLHS());
+        if (!leftType.isEnumType()) {
+            ERROR(expr.getLHS().location, "left side of 'is' must be an enum, got '" << leftType << "'");
+        }
+        typecheckExpr(expr.getRHS(), false, leftType);
+        auto* enumCase = getIsEnumCase(expr.getRHS());
+        if (!enumCase || enumCase->getEnumDecl() != leftType.getDecl()) {
+            ERROR(expr.getRHS().location, "right side of 'is' must be a case of enum '" << leftType << "'");
+        }
+        return Type::getBool();
     }
 
     if (op == Token::AndAnd || op == Token::OrOr) {
