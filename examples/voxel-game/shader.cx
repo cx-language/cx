@@ -1,4 +1,4 @@
-import "OpenGL/gl3.h";
+import "GLFW/glfw3.h";
 
 uint compileShader(string path, uint kind) {
     var source = readFile(path);
