@@ -332,6 +332,7 @@ Expr* Parser::parseTupleLiteralOrParenExpr() {
     auto elements = parseArgumentList(false);
 
     if (elements.size() == 1 && elements[0].name.empty()) {
+        elements[0].value->parenthesized = true;
         return elements[0].value;
     }
 
@@ -908,6 +909,21 @@ UnaryExpr* Parser::parseIncrementOrDecrementExpr(Expr* operand) {
     return makeAST<UnaryExpr>(op.kind, operand, op.location);
 }
 
+/// Warns when && and || are mixed without clarifying parentheses.
+static void warnAboutMixedLogicalOperators(const Token& op, Expr* lhs, Expr* rhs) {
+    if (op.kind != Token::AndAnd && op.kind != Token::OrOr) return;
+
+    auto checkOperand = [&](Expr* operand) {
+        auto* binary = llvm::dyn_cast<BinaryExpr>(operand);
+        if (!binary || binary->parenthesized) return;
+        if ((op.kind == Token::OrOr && binary->op == Token::AndAnd) || (op.kind == Token::AndAnd && binary->op == Token::OrOr)) {
+            WARN(operand->location, "mixing '&&' and '||' without parentheses; add parentheses to clarify");
+        }
+    };
+    checkOperand(lhs);
+    checkOperand(rhs);
+}
+
 /// binary-expr ::= expr op expr
 Expr* Parser::parseBinaryExpr(int minPrecedence) {
     auto lhs = parsePreOrPostfixExpr();
@@ -932,6 +948,7 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
             break;
         }
 
+        warnAboutMixedLogicalOperators(op, lhs, rhs);
         lhs = makeAST<BinaryExpr>(op.kind, lhs, rhs, op.location);
     }
 

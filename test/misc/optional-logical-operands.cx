@@ -44,7 +44,7 @@ void main() {
     int x = 5;
     int*? p = &x;
     int*? q = null;
-    println(p && q || p);
+    println((p && q) || p);
     println(q && p);
     if (o && o == 5) {
         println("narrowed");
