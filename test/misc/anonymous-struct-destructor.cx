@@ -1,0 +1,32 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:working anon
+// CHECK-NEXT:anon closed
+// CHECK-NEXT:working wrapped
+// CHECK-NEXT:wrapped closed
+
+struct Logger {
+    string prefix;
+    ~Logger() {
+        println(prefix, " closed");
+    }
+}
+
+struct Wrapper {
+    (Logger log) t;
+}
+
+void withAnonymousStruct() {
+    var _t = (log = Logger(prefix = "anon"));
+    println("working anon");
+}
+
+void withWrapper() {
+    var _w = Wrapper(t = (log = Logger(prefix = "wrapped")));
+    println("working wrapped");
+}
+
+void main() {
+    withAnonymousStruct();
+    withWrapper();
+}
