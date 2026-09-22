@@ -1,5 +1,5 @@
 
-%0 = type <{ { i32 } }>
+%0 = type { { i32 } }
 %"Optional<int>" = type { i32, %0 }
 
 declare %"Optional<int>" @a()

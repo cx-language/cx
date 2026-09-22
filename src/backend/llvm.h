@@ -51,6 +51,9 @@ struct LLVMGenerator {
     void codegenFunctionBody(const Function* function, llvm::Function* llvmFunction);
     llvm::Type* getLLVMType(IRType* type, bool* isSret = nullptr);
     bool shouldUseSret(llvm::Type* returnType);
+    bool shouldPassIndirectly(llvm::Type* type);
+    void emitMemcpy(llvm::Value* dest, llvm::Value* src, llvm::Type* type);
+    llvm::Value* materializeConstant(llvm::Constant* constant, llvm::Type* type);
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getStructType(IRStructType* type);
 

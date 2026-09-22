@@ -1,5 +1,5 @@
 
-%0 = type <{ { i32 } }>
+%0 = type { { i32 } }
 %"Optional<int>" = type { i32, %0 }
 
 @0 = private unnamed_addr constant [56 x i8] c"integer overflow at optional-type-non-pointer.cx:26:19\0A\00", align 1

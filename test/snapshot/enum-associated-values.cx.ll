@@ -1,5 +1,5 @@
 
-%0 = type <{ { i1, i32 } }>
+%0 = type { { i1, i32 } }
 %E = type { i32, %0 }
 
 @0 = private unnamed_addr constant [74 x i8] c"invalid value in switch over enum 'E' at enum-associated-values.cx:14:13\0A\00", align 1

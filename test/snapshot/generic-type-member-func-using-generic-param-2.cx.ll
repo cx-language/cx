@@ -19,6 +19,6 @@ define void @_EN4main1CI4boolE1fE(ptr %this) {
 
 define void @_EN4main1CI4boolE1gE(ptr %this) {
   %a = alloca i64, align 8
-  store i64 1, ptr %a, align 4
+  store i64 1, ptr %a, align 8
   ret void
 }

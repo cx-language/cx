@@ -1,5 +1,5 @@
 
-%0 = type <{ { [12 x i32] } }>
+%0 = type { { [12 x i32] } }
 %E = type { i32, %0 }
 %"S<E>" = type { ptr }
 
@@ -23,8 +23,9 @@ define i32 @main() {
   %4 = insertvalue { %"S<E>" } undef, %"S<E>" %.load3, 0
   %associatedValue4 = getelementptr inbounds %E, ptr %enum, i32 0, i32 1
   store { %"S<E>" } %4, ptr %associatedValue4, align 8
-  %enum.load = load %E, ptr %enum, align 4
-  store %E %enum.load, ptr %e, align 4
+  %enum.load = alloca %E, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 4 %enum.load, ptr align 4 %enum, i64 52, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 4 %e, ptr align 4 %enum.load, i64 52, i1 false)
   ret i32 0
 }
 
@@ -36,3 +37,8 @@ define void @_EN4main1SI1EE4initEOP1E(ptr %this, ptr %e) {
   store ptr %e.load, ptr %e2, align 8
   ret void
 }
+
+; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #0
+
+attributes #0 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
