@@ -130,11 +130,11 @@ struct Typechecker {
                                  std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr, bool diagnoseOutOfRange = true) const;
     /// Inner conversions for pointer reinterpretation must preserve the value representation.
     bool isReinterpretible(const Expr* expr, Type source, Type target, bool diagnoseOutOfRange = true) const;
-    void typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, bool positive = true);
+    void typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, Location endLocation, bool positive = true);
     Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam);
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                 Type expectedType);
-    Decl* findDecl(llvm::StringRef name, Location location) const;
+    Decl* findDecl(llvm::StringRef name, Location location, Location endLocation = {}) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false) const;
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry = true);

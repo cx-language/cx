@@ -15,6 +15,6 @@ struct Y {
 void f<T: X>(T t) {}
 
 void main() {
-    // CHECK: [[@LINE+1]]:6: error: type 'Y' doesn't implement interface 'X'
+    // CHECK: [[@LINE+1]]:5: error: type 'Y' doesn't implement interface 'X'
     f(Y());
 }

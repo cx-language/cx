@@ -250,7 +250,7 @@ end:
     }
 
     if (isFloat) return Token(Token::FloatLiteral, getCurrentLocation(), llvm::StringRef(begin, end - begin));
-    return Token(getCurrentLocation(), intValue);
+    return Token(getCurrentLocation(), intValue, int(end - begin));
 }
 
 static const llvm::StringMap<Token::Kind> keywords = {
