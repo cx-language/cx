@@ -353,8 +353,8 @@ struct Finder {
         }
         switch (type.getKind()) {
         case TypeKind::BasicType:
-            for (Type arg : type.getGenericArgs())
-                visitType(arg, depth + 1);
+            for (GenericArg arg : type.getGenericArgs())
+                if (arg.isType()) visitType(arg.type, depth + 1);
             break;
         case TypeKind::ArrayType:
             visitType(type.getElementType(), depth + 1);
@@ -585,8 +585,8 @@ void Finder::visitDecl(Decl* decl, int depth) {
         auto* typeDecl = llvm::cast<TypeDecl>(decl);
         for (Type interface : typeDecl->interfaces)
             visitType(interface, depth + 1);
-        for (Type arg : typeDecl->genericArgs)
-            visitType(arg, depth + 1);
+        for (GenericArg arg : typeDecl->genericArgs)
+            if (arg.isType()) visitType(arg.type, depth + 1);
         for (auto& field : typeDecl->fields) {
             consider(&field, field.getLocation(), field.getName().size(), nullptr, true, depth + 1);
             visitType(field.type, depth + 1);
@@ -637,8 +637,8 @@ struct ReferenceCollector {
         if (type.getDecl() == target) locations.emplace_back(type.location, type.toString().size());
         switch (type.getKind()) {
         case TypeKind::BasicType:
-            for (Type arg : type.getGenericArgs())
-                visitType(arg);
+            for (GenericArg arg : type.getGenericArgs())
+                if (arg.isType()) visitType(arg.type);
             break;
         case TypeKind::ArrayType:
             visitType(type.getElementType());
@@ -849,8 +849,8 @@ void ReferenceCollector::visitDecl(Decl* decl) {
         auto* typeDecl = llvm::cast<TypeDecl>(decl);
         for (Type interface : typeDecl->interfaces)
             visitType(interface);
-        for (Type arg : typeDecl->genericArgs)
-            visitType(arg);
+        for (GenericArg arg : typeDecl->genericArgs)
+            if (arg.isType()) visitType(arg.type);
         for (auto& field : typeDecl->fields) {
             if (&field == target) locations.emplace_back(field.getLocation(), field.getName().size());
             visitType(field.type);
@@ -1122,8 +1122,8 @@ struct SemanticCollector {
             // type highlights. The direct generic args (not getWrappedType())
             // preserve the inner locations.
             if ((type.isOptionalType() || type.isSlice()) && !type.getGenericArgs().empty()) {
-                for (Type arg : type.getGenericArgs())
-                    visitType(arg);
+                for (GenericArg arg : type.getGenericArgs())
+                    if (arg.isType()) visitType(arg.type);
                 return;
             }
             if (TypeDecl* typeDecl = type.getDecl()) {
@@ -1134,8 +1134,8 @@ struct SemanticCollector {
                 // Builtins without decls (`void`) and unresolved names.
                 emit(type.location, type.getName(), "type", false);
             }
-            for (Type arg : type.getGenericArgs())
-                visitType(arg);
+            for (GenericArg arg : type.getGenericArgs())
+                if (arg.isType()) visitType(arg.type);
             return;
         }
         case TypeKind::ArrayType:
@@ -1199,8 +1199,8 @@ void SemanticCollector::visitExpr(Expr* expr) {
         }
         for (auto& arg : call->args)
             visitExpr(arg.value);
-        for (Type arg : call->genericArgs)
-            visitType(arg);
+        for (GenericArg arg : call->genericArgs)
+            if (arg.isType()) visitType(arg.type);
         return;
     }
     case ExprKind::ArrayLiteralExpr:
@@ -1366,8 +1366,8 @@ void SemanticCollector::visitDecl(Decl* decl) {
         auto* typeDecl = llvm::cast<TypeDecl>(decl);
         for (Type interface : typeDecl->interfaces)
             visitType(interface);
-        for (Type arg : typeDecl->genericArgs)
-            visitType(arg);
+        for (GenericArg arg : typeDecl->genericArgs)
+            if (arg.isType()) visitType(arg.type);
         for (auto& field : typeDecl->fields) {
             emitDecl(&field, true);
             visitType(field.type);

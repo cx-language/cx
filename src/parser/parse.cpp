@@ -345,13 +345,40 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
     }
 }
 
-/// generic-argument-list ::= '<' non-empty-type-list '>'
-std::vector<Type> Parser::parseGenericArgumentList() {
+/// generic-argument-list ::= '<' generic-arg (',' generic-arg)* '>'
+/// generic-arg ::= type | integer-literal
+std::vector<GenericArg> Parser::parseGenericArgumentList() {
     ASSERT(currentToken() == Token::Less);
     consumeToken();
-    std::vector<Type> genericArgs = parseNonEmptyTypeList();
-    parse(Token::Greater);
-    return genericArgs;
+    std::vector<GenericArg> genericArgs;
+
+    while (true) {
+        if (currentToken() == Token::IntegerLiteral) {
+            auto location = getCurrentLocation();
+            llvm::APSInt value = currentToken().getIntegerValue();
+            consumeToken();
+            if (value.isNegative()) {
+                ERROR(location, "integer generic argument must be non-negative");
+            }
+            if (value.getActiveBits() > 63) {
+                ERROR(location, "integer generic argument is too large");
+            }
+            genericArgs.push_back(GenericArg::fromInt(value.getSExtValue(), location));
+        } else {
+            genericArgs.push_back(parseType());
+        }
+
+        if (currentToken() == Token::Comma) {
+            consumeToken();
+        } else {
+            if (currentToken() == Token::RightShift) {
+                tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().location);
+                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().location.nextColumn()));
+            }
+            parse(Token::Greater);
+            return genericArgs;
+        }
+    }
 }
 
 // Rejects zero divisors and out-of-range shift amounts in an array bound
@@ -393,7 +420,7 @@ Type Parser::parseArrayType(Type elementType) {
     switch (currentToken()) {
     case Token::RightBracket:
         consumeToken();
-        return BasicType::get("Slice", elementType, Mutability::Mutable, elementType.location);
+        return BasicType::get("Slice", GenericArg(elementType), Mutability::Mutable, elementType.location);
 
     case Token::Star:
         consumeToken();
@@ -403,6 +430,10 @@ Type Parser::parseArrayType(Type elementType) {
     default: {
         const Expr* sizeExpr = parseExpr();
         parse(Token::RightBracket);
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(sizeExpr)) {
+            // A bare identifier may name an integer generic parameter; validated during typechecking.
+            return ArrayType::get(elementType, varExpr->identifier, elementType.location);
+        }
         checkArraySizeDivisors(*sizeExpr);
         if (!sizeExpr->isFoldableIntConstant()) {
             ERROR(sizeExpr->location, "array size must be a constant integer expression");
@@ -422,7 +453,7 @@ Type Parser::parseArrayType(Type elementType) {
 /// simple-type ::= id | id generic-argument-list | id '[' (const-int-expr | '*')? ']'
 Type Parser::parseSimpleType(Mutability mutability) {
     auto identifier = parse(Token::Identifier);
-    std::vector<Type> genericArgs;
+    std::vector<GenericArg> genericArgs;
 
     switch (currentToken()) {
     case Token::Less:
@@ -579,7 +610,7 @@ UnwrapExpr* Parser::parseUnwrapExpr(Expr* operand) {
 
 /// call-expr ::= expr generic-argument-list? argument-list
 CallExpr* Parser::parseCallExpr(Expr* callee) {
-    std::vector<Type> genericArgs;
+    std::vector<GenericArg> genericArgs;
     if (currentToken() == Token::Less) {
         genericArgs = parseGenericArgumentList();
     }
@@ -1411,11 +1442,19 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
     parse(Token::Less);
     while (true) {
         auto genericParamName = parse(Token::Identifier);
-        genericParams.emplace_back(genericParamName.getString().str(), genericParamName.location);
+        if (currentToken() == Token::Identifier) {
+            // An integer generic parameter, declared like a function parameter (e.g. `int N`).
+            auto valueParamName = parse(Token::Identifier);
+            auto& param = genericParams.emplace_back(valueParamName.getString().str(), valueParamName.location);
+            param.isValueParam = true;
+            param.valueType = BasicType::get(genericParamName.getString(), {}, Mutability::Mutable, genericParamName.location);
+        } else {
+            genericParams.emplace_back(genericParamName.getString().str(), genericParamName.location);
 
-        if (currentToken() == Token::Colon) {
-            consumeToken();
-            genericParams.back().constraints = {parseType()};
+            if (currentToken() == Token::Colon) {
+                consumeToken();
+                genericParams.back().constraints = {parseType()};
+            }
         }
 
         if (currentToken() == Token::Greater) break;
@@ -1480,9 +1519,9 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
     FunctionProto proto(name.str(), std::move(params), returnType, isVariadic, isExtern);
 
     if (receiverTypeDecl) {
-        return makeAST<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<Type>(), accessLevel, location);
+        return makeAST<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<GenericArg>(), accessLevel, location);
     } else {
-        return makeAST<FunctionDecl>(std::move(proto), std::vector<Type>(), accessLevel, *currentModule, location);
+        return makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), accessLevel, *currentModule, location);
     }
 }
 
@@ -1602,8 +1641,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     std::vector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
-    auto typeDecl = makeAST<TypeDecl>(tag, typeName.getString().str(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
-                                      typeName.location);
+    auto typeDecl = makeAST<TypeDecl>(tag, typeName.getString().str(), std::vector<GenericArg>(), std::move(interfaces), typeAccessLevel, *currentModule,
+                                      nullptr, typeName.location);
     bool hasConstructor = false;
     parse(Token::LeftBrace);
 

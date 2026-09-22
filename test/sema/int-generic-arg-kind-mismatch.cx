@@ -1,0 +1,22 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: int-generic-arg-kind-mismatch.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct FixedArray<T, int N> {
+    T[N] elements;
+}
+
+struct MyBox<T> {
+    T value;
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:24: error: expected type generic argument for parameter 'T' of 'FixedArray'
+    var a = FixedArray<3, int>(elements = [1]);
+    // CHECK: [[@LINE+1]]:19: error: expected type generic argument for parameter 'T' of 'MyBox'
+    var b = MyBox<3>(value = 1);
+    _ = a;
+    _ = b;
+}
+
+// CHECK-NOT: int-generic-arg-kind-mismatch.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
