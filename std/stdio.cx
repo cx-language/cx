@@ -69,7 +69,7 @@ void print(char[*]? cString) {
 ///
 /// Copyable arguments pass by value so that a char prints as a single character
 /// instead of decaying to a C string in print(). Calls with non-Copyable
-/// arguments use the pointer overload below.
+/// arguments use the borrow overload below.
 void println<T: Copyable>(T... args) {
     for arg in args {
         print(arg);

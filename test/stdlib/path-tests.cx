@@ -207,10 +207,10 @@ void testJoin() {
     r = joinAll([]);
     assert(&r == "", "joinAll empty array");
     var empty = List<string>();
-    r = joinAll(&empty);
+    r = joinAll(empty);
     assert(&r == "", "joinAll empty list");
     var ab = List(["a", "b"]);
-    r = joinAll(&ab);
+    r = joinAll(ab);
     assert(&r == "a/b", "joinAll list");
 }
 

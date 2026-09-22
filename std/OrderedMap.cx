@@ -398,9 +398,9 @@ struct OrderedMapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*>
     private OrderedMap<Key, Value>* map;
 
     /// Initializes an iterator over the given map.
-    OrderedMapIterator(OrderedMap<Key, Value>* map) {
+    OrderedMapIterator(OrderedMap<Key, Value>& map) {
         current = map.firstNode();
-        this.map = map;
+        this.map = &map;
     }
 
     /// Returns true if there are more entries.

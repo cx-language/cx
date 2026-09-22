@@ -222,9 +222,9 @@ StringBuffer joinAll(string[] parts) {
 }
 
 /// Folds join over a list; handy for rejoining components() output.
-StringBuffer joinAll(List<string>* parts) {
+StringBuffer joinAll(List<string>& parts) {
     var result = StringBuffer();
-    for part in *parts {
+    for part in parts {
         result = join(string(&result), part);
     }
     return result;
