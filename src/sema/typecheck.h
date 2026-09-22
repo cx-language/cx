@@ -165,6 +165,8 @@ struct Typechecker {
     void applyNarrowings(const Expr& condition, bool polarity);
     void intersectNarrowings(const NarrowMap& other);
     void dropNarrowingsForNames(const llvm::StringSet<>& names);
+    bool validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
+    bool genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs);
 
     Module* currentModule;
     SourceFile* currentSourceFile;
@@ -182,7 +184,6 @@ struct Typechecker {
     const std::vector<BuildConfig::ResolvedDependency>* dependencies; // Closure, or null without a project.
 };
 
-bool validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
 // Returns the enum case tested by an `is` expression's right side, or null when it isn't one.
 EnumCase* getIsEnumCase(Expr& expr);

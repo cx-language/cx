@@ -11,12 +11,16 @@ struct MyBox<T> {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:24: error: expected type generic argument for parameter 'T' of 'FixedArray'
+    // CHECK: [[@LINE+2]]:24: error: expected type generic argument for parameter 'T' of 'FixedArray'
+    // CHECK: [[@LINE+1]]:27: error: expected integer generic argument for parameter 'N' of 'FixedArray'
     var a = FixedArray<3, int>(elements = [1]);
     // CHECK: [[@LINE+1]]:19: error: expected type generic argument for parameter 'T' of 'MyBox'
     var b = MyBox<3>(value = 1);
+    // CHECK: [[@LINE+1]]:29: error: expected integer generic argument for parameter 'N' of 'FixedArray'
+    var c = FixedArray<int, string>(elements = [1]);
     _ = a;
     _ = b;
+    _ = c;
 }
 
 // CHECK-NOT: int-generic-arg-kind-mismatch.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
