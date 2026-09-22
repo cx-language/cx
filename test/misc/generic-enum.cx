@@ -43,14 +43,14 @@ int main() {
 
     switch (inferred) {
         case Opt.Some some:
-            if (some.value != 1) { return 3; }
+            if (some != 1) { return 3; }
         case None:
             return 4;
     }
 
     switch (ok) {
         case Ok success:
-            if (success.value != 2) { return 5; }
+            if (success != 2) { return 5; }
         case Err failure:
             return 6;
     }
@@ -59,26 +59,26 @@ int main() {
         case Outcome.Ok success:
             return 7;
         case Outcome.Err failure:
-            if (failure.code != 5) { return 8; }
+            if (failure != 5) { return 8; }
     }
 
     switch (either) {
         case Either.Left left:
             return 9;
         case Either.Right right:
-            if (!right.value) { return 10; }
+            if (!right) { return 10; }
     }
 
     switch (flag) {
         case Opt.Some some:
-            if (some.value) { return 11; }
+            if (some) { return 11; }
         case Opt.None:
             return 12;
     }
 
     switch (wrapped) {
         case Opt.Some some:
-            if (some.value != 3) { return 13; }
+            if (some != 3) { return 13; }
         case Opt.None:
             return 14;
     }
@@ -92,7 +92,7 @@ int main() {
 
     switch (maybeNone) {
         case Some inner:
-            switch (inner.value) {
+            switch (inner) {
                 case Opt.Some some:
                     return 16;
                 case Opt.None:

@@ -1099,7 +1099,8 @@ Value* IRGenerator::emitSwitchExpr(const SwitchExpr& expr) {
         if (auto* associatedValue = arm.associatedValue) {
             auto type = associatedValue->type.getPointerTo();
             auto* associatedValuePtr = createCast(createGEP(enumValue, 1), type, associatedValue->getName());
-            setLocalValue(associatedValuePtr, associatedValue);
+            // The binding borrows the enum payload, so it must not run a destructor.
+            setLocalValue(associatedValuePtr, associatedValue, false);
         }
 
         // Never arms diverge, so they terminate the block instead of branching out with a value.

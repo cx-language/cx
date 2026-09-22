@@ -41,7 +41,7 @@ struct IRGenerator {
     void emitFunctionBody(const FunctionDecl& decl, Function& function);
     void createDestructorCall(Function* destructor, Value* receiver);
     /// 'decl' is null if this is the 'this' value.
-    void setLocalValue(Value* value, const VariableDecl* decl);
+    void setLocalValue(Value* value, const VariableDecl* decl, bool deferDestructor = true);
     Value* getValueOrNull(const Decl* decl);
     Value* getValue(const Decl* decl);
     Value* getThis(IRType* targetType = nullptr);
