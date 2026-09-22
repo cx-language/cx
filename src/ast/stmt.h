@@ -43,7 +43,7 @@ struct Stmt {
     bool isCompoundStmt() const { return kind == StmtKind::CompoundStmt; }
     bool isBreakable() const;
     bool isContinuable() const;
-    Stmt* instantiate(const llvm::StringMap<Type>& genericArgs) const;
+    Stmt* instantiate(const llvm::StringMap<GenericArg>& genericArgs) const;
 
     const StmtKind kind;
 

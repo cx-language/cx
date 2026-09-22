@@ -89,7 +89,7 @@ struct Expr {
     llvm::APSInt getConstantIntegerValue() const;
     bool getConstantBoolValue() const;
     bool isLvalue() const;
-    Expr* instantiate(const llvm::StringMap<Type>& genericArgs) const;
+    Expr* instantiate(const llvm::StringMap<GenericArg>& genericArgs) const;
     FieldDecl* getFieldDecl() const;
     const Expr* withoutImplicitCast() const;
     bool isThis() const;
@@ -187,7 +187,7 @@ struct TupleExpr : Expr {
 };
 
 struct CallExpr : Expr {
-    CallExpr(Expr* callee, std::vector<NamedValue>&& args, std::vector<Type>&& genericArgs, Location location)
+    CallExpr(Expr* callee, std::vector<NamedValue>&& args, std::vector<GenericArg>&& genericArgs, Location location)
     : Expr(ExprKind::CallExpr, location), callee(callee), args(std::move(args)), genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
     llvm::StringRef getFunctionName() const;
@@ -213,7 +213,7 @@ struct CallExpr : Expr {
 
     Expr* callee;
     std::vector<NamedValue> args;
-    std::vector<Type> genericArgs;
+    std::vector<GenericArg> genericArgs;
     Type receiverType;
     Decl* calleeDecl;
     // Maps each arg to its parameter index, or -1 for variadic extras. Filled by typechecking.

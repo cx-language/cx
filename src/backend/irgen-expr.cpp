@@ -108,7 +108,7 @@ int64_t IRGenerator::getOptionalNoneTag() {
 
 Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Expr* arg) {
     auto* decl = Module::getStdlibModule()->symbolTable.findOne("Optional");
-    auto* enumDecl = llvm::cast<EnumDecl>(llvm::cast<TypeTemplate>(decl)->instantiate(wrappedType));
+    auto* enumDecl = llvm::cast<EnumDecl>(llvm::cast<TypeTemplate>(decl)->instantiate(GenericArg(wrappedType)));
     auto* enumCase = enumDecl->getCaseByName(arg ? "Some" : "None");
     ASSERT(enumCase);
     if (arg) {
@@ -866,7 +866,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
 
 Value* IRGenerator::emitBuiltinCast(const CallExpr& expr) {
     auto* value = emitExpr(*expr.args.front().value);
-    auto type = expr.genericArgs.front();
+    auto type = expr.genericArgs.front().type;
     return createCastIfNeeded(value, type);
 }
 
@@ -911,7 +911,7 @@ Value* IRGenerator::getArrayData(const Expr& object, Type objectType) {
 }
 
 Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
-    auto type = BasicType::get("ArrayIterator", objectType.getElementType());
+    auto type = BasicType::get("ArrayIterator", GenericArg(objectType.getElementType()));
     if (objectType.getArraySize() == 0) {
         auto* irType = getIRType(type);
         auto fields = irType->getFields();
