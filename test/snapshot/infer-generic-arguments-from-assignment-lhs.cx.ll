@@ -8,31 +8,31 @@
 @0 = private unnamed_addr constant [39 x i8] c"integer overflow at allocate.cx:36:46\0A\00", align 1
 @1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
 
-define i32 @main() {
+define i32 @main() #0 !dbg !4 {
   %i = alloca %"List<int>", align 8
   %j = alloca %"List<int>", align 8
   %1 = alloca %"List<int>", align 8
-  call void @_EN3std4ListI3intE4initE8capacity3int(ptr %i, i32 10)
-  call void @_EN3std4ListI3intE4initE(ptr %j)
-  call void @_EN3std4ListI3intE6deinitE(ptr %i)
-  call void @_EN3std4ListI3intE4initE(ptr %1)
+  call void @_EN3std4ListI3intE4initE8capacity3int(ptr %i, i32 10), !dbg !7
+  call void @_EN3std4ListI3intE4initE(ptr %j), !dbg !8
+  call void @_EN3std4ListI3intE6deinitE(ptr %i), !dbg !9
+  call void @_EN3std4ListI3intE4initE(ptr %1), !dbg !10
   %.load = load %"List<int>", ptr %1, align 8
   store %"List<int>" %.load, ptr %i, align 8
-  call void @_EN3std4ListI3intE6deinitE(ptr %j)
-  call void @_EN3std4ListI3intE6deinitE(ptr %i)
+  call void @_EN3std4ListI3intE6deinitE(ptr %j), !dbg !9
+  call void @_EN3std4ListI3intE6deinitE(ptr %i), !dbg !9
   ret i32 0
 }
 
-define void @_EN3std4ListI3intE4initE8capacity3int(ptr %this, i32 %capacity) {
+define void @_EN3std4ListI3intE4initE8capacity3int(ptr %this, i32 %capacity) #0 !dbg !11 {
   %capacity1 = alloca i32, align 4
   store i32 %capacity, ptr %capacity1, align 4
-  call void @_EN3std4ListI3intE4initE(ptr %this)
+  call void @_EN3std4ListI3intE4initE(ptr %this), !dbg !13
   %capacity.load = load i32, ptr %capacity1, align 4
-  call void @_EN3std4ListI3intE7reserveE3int(ptr %this, i32 %capacity.load)
+  call void @_EN3std4ListI3intE7reserveE3int(ptr %this, i32 %capacity.load), !dbg !14
   ret void
 }
 
-define void @_EN3std4ListI3intE4initE(ptr %this) {
+define void @_EN3std4ListI3intE4initE(ptr %this) #0 !dbg !15 {
   %size = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 1
   store i32 0, ptr %size, align 4
   %capacity = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 2
@@ -40,7 +40,7 @@ define void @_EN3std4ListI3intE4initE(ptr %this) {
   ret void
 }
 
-define void @_EN3std4ListI3intE6deinitE(ptr %this) {
+define void @_EN3std4ListI3intE6deinitE(ptr %this) #0 !dbg !16 {
   %__iterator = alloca %"ArrayIterator<int>", align 8
   %element = alloca ptr, align 8
   %capacity = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 2
@@ -49,7 +49,7 @@ define void @_EN3std4ListI3intE6deinitE(ptr %this) {
   br i1 %1, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
-  %2 = call %"ArrayIterator<int>" @_EN3std4ListI3intE8iteratorE(ptr %this)
+  %2 = call %"ArrayIterator<int>" @_EN3std4ListI3intE8iteratorE(ptr %this), !dbg !17
   store %"ArrayIterator<int>" %2, ptr %__iterator, align 8
   br label %loop.condition
 
@@ -60,36 +60,36 @@ if.end:                                           ; preds = %loop.end, %if.else
   ret void
 
 loop.condition:                                   ; preds = %loop.increment, %if.then
-  %3 = call i1 @_EN3std13ArrayIteratorI3intE8hasValueE(ptr %__iterator)
+  %3 = call i1 @_EN3std13ArrayIteratorI3intE8hasValueE(ptr %__iterator), !dbg !17
   br i1 %3, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %4 = call ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %__iterator)
+  %4 = call ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %__iterator), !dbg !17
   store ptr %4, ptr %element, align 8
   br label %loop.increment
 
 loop.increment:                                   ; preds = %loop.body
-  call void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %__iterator)
+  call void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %__iterator), !dbg !17
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
   %buffer = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 0
   %buffer.load = load ptr, ptr %buffer, align 8
-  call void @_EN3std10deallocateIAU_3intEEAU_3int(ptr %buffer.load)
+  call void @_EN3std10deallocateIAU_3intEEAU_3int(ptr %buffer.load), !dbg !18
   br label %if.end
 }
 
-define %"ArrayIterator<int>" @_EN3std4ListI3intE8iteratorE(ptr %this) {
+define %"ArrayIterator<int>" @_EN3std4ListI3intE8iteratorE(ptr %this) #0 !dbg !19 {
   %1 = alloca %"ArrayIterator<int>", align 8
   %2 = alloca %"Slice<int>", align 8
-  call void @_EN3std5SliceI3intE4initEP4ListI3intE(ptr %2, ptr %this)
+  call void @_EN3std5SliceI3intE4initEP4ListI3intE(ptr %2, ptr %this), !dbg !20
   %.load = load %"Slice<int>", ptr %2, align 8
-  call void @_EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ptr %1, %"Slice<int>" %.load)
+  call void @_EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ptr %1, %"Slice<int>" %.load), !dbg !21
   %.load1 = load %"ArrayIterator<int>", ptr %1, align 8
   ret %"ArrayIterator<int>" %.load1
 }
 
-define i1 @_EN3std13ArrayIteratorI3intE8hasValueE(ptr %this) {
+define i1 @_EN3std13ArrayIteratorI3intE8hasValueE(ptr %this) #0 !dbg !22 {
   %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
   %current.load = load ptr, ptr %current, align 8
   %end = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 1
@@ -98,13 +98,13 @@ define i1 @_EN3std13ArrayIteratorI3intE8hasValueE(ptr %this) {
   ret i1 %1
 }
 
-define ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %this) {
+define ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %this) #0 !dbg !24 {
   %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
   %current.load = load ptr, ptr %current, align 8
   ret ptr %current.load
 }
 
-define void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %this) {
+define void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %this) #0 !dbg !25 {
   %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
   %current.load = load ptr, ptr %current, align 8
   %1 = getelementptr inbounds i32, ptr %current.load, i32 1
@@ -112,15 +112,15 @@ define void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %this) {
   ret void
 }
 
-define void @_EN3std10deallocateIAU_3intEEAU_3int(ptr %allocation) {
+define void @_EN3std10deallocateIAU_3intEEAU_3int(ptr %allocation) #0 !dbg !26 {
   %allocation1 = alloca ptr, align 8
   store ptr %allocation, ptr %allocation1, align 8
   %allocation.load = load ptr, ptr %allocation1, align 8
-  call void @free(ptr %allocation.load)
+  call void @free(ptr %allocation.load), !dbg !28
   ret void
 }
 
-define void @_EN3std4ListI3intE7reserveE3int(ptr %this, i32 %minimumCapacity) {
+define void @_EN3std4ListI3intE7reserveE3int(ptr %this, i32 %minimumCapacity) #0 !dbg !29 {
   %minimumCapacity1 = alloca i32, align 4
   %newBuffer = alloca ptr, align 8
   %__iterator = alloca %"RangeIterator<int>", align 8
@@ -137,12 +137,12 @@ define void @_EN3std4ListI3intE7reserveE3int(ptr %this, i32 %minimumCapacity) {
 
 if.then:                                          ; preds = %0
   %minimumCapacity.load2 = load i32, ptr %minimumCapacity1, align 4
-  %3 = call ptr @_EN3std13allocateArrayI3intEE3int(i32 %minimumCapacity.load2)
+  %3 = call ptr @_EN3std13allocateArrayI3intEE3int(i32 %minimumCapacity.load2), !dbg !30
   store ptr %3, ptr %newBuffer, align 8
   %size = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 1
   %size.load = load i32, ptr %size, align 4
-  call void @_EN3std5RangeI3intE4initE3int3int(ptr %1, i32 0, i32 %size.load)
-  %4 = call %"RangeIterator<int>" @_EN3std5RangeI3intE8iteratorE(ptr %1)
+  call void @_EN3std5RangeI3intE4initE3int3int(ptr %1, i32 0, i32 %size.load), !dbg !31
+  %4 = call %"RangeIterator<int>" @_EN3std5RangeI3intE8iteratorE(ptr %1), !dbg !32
   store %"RangeIterator<int>" %4, ptr %__iterator, align 4
   br label %loop.condition
 
@@ -153,11 +153,11 @@ if.end:                                           ; preds = %if.end10, %if.else
   ret void
 
 loop.condition:                                   ; preds = %loop.increment, %if.then
-  %5 = call i1 @_EN3std13RangeIteratorI3intE8hasValueE(ptr %__iterator)
+  %5 = call i1 @_EN3std13RangeIteratorI3intE8hasValueE(ptr %__iterator), !dbg !32
   br i1 %5, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %6 = call i32 @_EN3std13RangeIteratorI3intE5valueE(ptr %__iterator)
+  %6 = call i32 @_EN3std13RangeIteratorI3intE5valueE(ptr %__iterator), !dbg !32
   store i32 %6, ptr %index, align 4
   %buffer = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 0
   %buffer.load = load ptr, ptr %buffer, align 8
@@ -175,7 +175,7 @@ loop.body:                                        ; preds = %loop.condition
   br label %loop.increment
 
 loop.increment:                                   ; preds = %loop.body
-  call void @_EN3std13RangeIteratorI3intE9incrementE(ptr %__iterator)
+  call void @_EN3std13RangeIteratorI3intE9incrementE(ptr %__iterator), !dbg !32
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
@@ -187,7 +187,7 @@ loop.end:                                         ; preds = %loop.condition
 if.then6:                                         ; preds = %loop.end
   %buffer7 = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 0
   %buffer.load8 = load ptr, ptr %buffer7, align 8
-  call void @_EN3std10deallocateIAU_3intEEAU_3int(ptr %buffer.load8)
+  call void @_EN3std10deallocateIAU_3intEEAU_3int(ptr %buffer.load8), !dbg !33
   br label %if.end10
 
 if.else9:                                         ; preds = %loop.end
@@ -203,37 +203,37 @@ if.end10:                                         ; preds = %if.else9, %if.then6
   br label %if.end
 }
 
-define void @_EN3std5SliceI3intE4initEP4ListI3intE(ptr %this, ptr %list) {
+define void @_EN3std5SliceI3intE4initEP4ListI3intE(ptr %this, ptr %list) #0 !dbg !34 {
   %list1 = alloca ptr, align 8
   store ptr %list, ptr %list1, align 8
   %data = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 0
   %list.load = load ptr, ptr %list1, align 8
-  %1 = call ptr @_EN3std4ListI3intE4dataE(ptr %list.load)
+  %1 = call ptr @_EN3std4ListI3intE4dataE(ptr %list.load), !dbg !36
   store ptr %1, ptr %data, align 8
   %size = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 1
   %list.load2 = load ptr, ptr %list1, align 8
-  %2 = call i32 @_EN3std4ListI3intE4sizeE(ptr %list.load2)
+  %2 = call i32 @_EN3std4ListI3intE4sizeE(ptr %list.load2), !dbg !37
   store i32 %2, ptr %size, align 4
   ret void
 }
 
-define void @_EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ptr %this, %"Slice<int>" %array) {
+define void @_EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ptr %this, %"Slice<int>" %array) #0 !dbg !38 {
   %array1 = alloca %"Slice<int>", align 8
   store %"Slice<int>" %array, ptr %array1, align 8
   %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
-  %1 = call ptr @_EN3std5SliceI3intE4dataE(ptr %array1)
+  %1 = call ptr @_EN3std5SliceI3intE4dataE(ptr %array1), !dbg !39
   store ptr %1, ptr %current, align 8
   %end = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 1
-  %2 = call ptr @_EN3std5SliceI3intE4dataE(ptr %array1)
-  %3 = call i32 @_EN3std5SliceI3intE4sizeE(ptr %array1)
+  %2 = call ptr @_EN3std5SliceI3intE4dataE(ptr %array1), !dbg !40
+  %3 = call i32 @_EN3std5SliceI3intE4sizeE(ptr %array1), !dbg !41
   %4 = getelementptr inbounds i32, ptr %2, i32 %3
   store ptr %4, ptr %end, align 8
   ret void
 }
 
-declare void @free(ptr)
+declare void @free(ptr) #0
 
-define ptr @_EN3std13allocateArrayI3intEE3int(i32 %size) {
+define ptr @_EN3std13allocateArrayI3intEE3int(i32 %size) #0 !dbg !42 {
   %size1 = alloca i32, align 4
   store i32 %size, ptr %size1, align 4
   %size.load = load i32, ptr %size1, align 4
@@ -254,56 +254,111 @@ overflow.end:                                     ; preds = %overflow.check, %0
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %overflow.end
-  call void @_EN3std10assertFailEP4char(ptr @0)
+  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !43
   unreachable
 
 overflow.success:                                 ; preds = %overflow.end
-  %7 = call ptr @malloc(i64 %2)
+  %7 = call ptr @malloc(i64 %2), !dbg !44
   %assert.condition = icmp eq ptr %7, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %overflow.success
-  call void @_EN3std10assertFailEP4char(ptr @1)
+  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !43
   unreachable
 
 assert.success:                                   ; preds = %overflow.success
   ret ptr %7
 }
 
-declare void @_EN3std5RangeI3intE4initE3int3int(ptr, i32, i32)
+declare void @_EN3std5RangeI3intE4initE3int3int(ptr, i32, i32) #0
 
-declare %"RangeIterator<int>" @_EN3std5RangeI3intE8iteratorE(ptr)
+declare %"RangeIterator<int>" @_EN3std5RangeI3intE8iteratorE(ptr) #0
 
-declare i1 @_EN3std13RangeIteratorI3intE8hasValueE(ptr)
+declare i1 @_EN3std13RangeIteratorI3intE8hasValueE(ptr) #0
 
-declare i32 @_EN3std13RangeIteratorI3intE5valueE(ptr)
+declare i32 @_EN3std13RangeIteratorI3intE5valueE(ptr) #0
 
-declare void @_EN3std13RangeIteratorI3intE9incrementE(ptr)
+declare void @_EN3std13RangeIteratorI3intE9incrementE(ptr) #0
 
-define ptr @_EN3std5SliceI3intE4dataE(ptr %this) {
+define ptr @_EN3std5SliceI3intE4dataE(ptr %this) #0 !dbg !45 {
   %data = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 0
   %data.load = load ptr, ptr %data, align 8
   ret ptr %data.load
 }
 
-define i32 @_EN3std5SliceI3intE4sizeE(ptr %this) {
+define i32 @_EN3std5SliceI3intE4sizeE(ptr %this) #0 !dbg !46 {
   %size = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 1
   %size.load = load i32, ptr %size, align 4
   ret i32 %size.load
 }
 
-define ptr @_EN3std4ListI3intE4dataE(ptr %this) {
+define ptr @_EN3std4ListI3intE4dataE(ptr %this) #0 !dbg !47 {
   %buffer = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 0
   %buffer.load = load ptr, ptr %buffer, align 8
   ret ptr %buffer.load
 }
 
-define i32 @_EN3std4ListI3intE4sizeE(ptr %this) {
+define i32 @_EN3std4ListI3intE4sizeE(ptr %this) #0 !dbg !48 {
   %size = getelementptr inbounds %"List<int>", ptr %this, i32 0, i32 1
   %size.load = load i32, ptr %size, align 4
   ret i32 %size.load
 }
 
-declare void @_EN3std10assertFailEP4char(ptr)
+declare void @_EN3std10assertFailEP4char(ptr) #0
 
-declare ptr @malloc(i64)
+declare ptr @malloc(i64) #0
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "infer-generic-arguments-from-assignment-lhs.cx")
+!4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 4, column: 19, scope: !4)
+!8 = !DILocation(line: 5, column: 19, scope: !4)
+!9 = !DILocation(line: 3, column: 6, scope: !4)
+!10 = !DILocation(line: 7, column: 9, scope: !4)
+!11 = distinct !DISubprogram(name: "init", linkageName: "_EN3std4ListI3intE4initE8capacity3int", scope: !12, file: !12, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
+!12 = !DIFile(filename: "List.cx")
+!13 = !DILocation(line: 16, column: 9, scope: !11)
+!14 = !DILocation(line: 17, column: 9, scope: !11)
+!15 = distinct !DISubprogram(name: "init", linkageName: "_EN3std4ListI3intE4initE", scope: !12, file: !12, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
+!16 = distinct !DISubprogram(name: "deinit", linkageName: "_EN3std4ListI3intE6deinitE", scope: !12, file: !12, line: 43, type: !5, scopeLine: 43, spFlags: DISPFlagDefinition, unit: !2)
+!17 = !DILocation(line: 45, column: 13, scope: !16)
+!18 = !DILocation(line: 48, column: 13, scope: !16)
+!19 = distinct !DISubprogram(name: "iterator", linkageName: "_EN3std4ListI3intE8iteratorE", scope: !12, file: !12, line: 215, type: !5, scopeLine: 215, spFlags: DISPFlagDefinition, unit: !2)
+!20 = !DILocation(line: 217, column: 30, scope: !19)
+!21 = !DILocation(line: 217, column: 16, scope: !19)
+!22 = distinct !DISubprogram(name: "hasValue", linkageName: "_EN3std13ArrayIteratorI3intE8hasValueE", scope: !23, file: !23, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!23 = !DIFile(filename: "ArrayIterator.cx")
+!24 = distinct !DISubprogram(name: "value", linkageName: "_EN3std13ArrayIteratorI3intE5valueE", scope: !23, file: !23, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!25 = distinct !DISubprogram(name: "increment", linkageName: "_EN3std13ArrayIteratorI3intE9incrementE", scope: !23, file: !23, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
+!26 = distinct !DISubprogram(name: "deallocate", linkageName: "_EN3std10deallocateIAU_3intEEAU_3int", scope: !27, file: !27, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
+!27 = !DIFile(filename: "allocate.cx")
+!28 = !DILocation(line: 53, column: 5, scope: !26)
+!29 = distinct !DISubprogram(name: "reserve", linkageName: "_EN3std4ListI3intE7reserveE3int", scope: !12, file: !12, line: 140, type: !5, scopeLine: 140, spFlags: DISPFlagDefinition, unit: !2)
+!30 = !DILocation(line: 142, column: 29, scope: !29)
+!31 = !DILocation(line: 144, column: 27, scope: !29)
+!32 = !DILocation(line: 144, column: 13, scope: !29)
+!33 = !DILocation(line: 151, column: 17, scope: !29)
+!34 = distinct !DISubprogram(name: "init", linkageName: "_EN3std5SliceI3intE4initEP4ListI3intE", scope: !35, file: !35, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!35 = !DIFile(filename: "Slice.cx")
+!36 = !DILocation(line: 14, column: 21, scope: !34)
+!37 = !DILocation(line: 15, column: 21, scope: !34)
+!38 = distinct !DISubprogram(name: "init", linkageName: "_EN3std13ArrayIteratorI3intE4initE5SliceI3intE", scope: !23, file: !23, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!39 = !DILocation(line: 8, column: 25, scope: !38)
+!40 = !DILocation(line: 9, column: 22, scope: !38)
+!41 = !DILocation(line: 9, column: 35, scope: !38)
+!42 = distinct !DISubprogram(name: "allocateArray", linkageName: "_EN3std13allocateArrayI3intEE3int", scope: !27, file: !27, line: 35, type: !5, scopeLine: 35, spFlags: DISPFlagDefinition, unit: !2)
+!43 = !DILocation(line: 35, column: 9, scope: !42)
+!44 = !DILocation(line: 36, column: 26, scope: !42)
+!45 = distinct !DISubprogram(name: "data", linkageName: "_EN3std5SliceI3intE4dataE", scope: !35, file: !35, line: 55, type: !5, scopeLine: 55, spFlags: DISPFlagDefinition, unit: !2)
+!46 = distinct !DISubprogram(name: "size", linkageName: "_EN3std5SliceI3intE4sizeE", scope: !35, file: !35, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
+!47 = distinct !DISubprogram(name: "data", linkageName: "_EN3std4ListI3intE4dataE", scope: !12, file: !12, line: 117, type: !5, scopeLine: 117, spFlags: DISPFlagDefinition, unit: !2)
+!48 = distinct !DISubprogram(name: "size", linkageName: "_EN3std4ListI3intE4sizeE", scope: !12, file: !12, line: 53, type: !5, scopeLine: 53, spFlags: DISPFlagDefinition, unit: !2)

@@ -83,7 +83,7 @@ switch.case.011:                                  ; preds = %switch.end
 switch.case.113:                                  ; preds = %switch.end
   ret i32 0
 
-switch.default15:                                 ; preds = %switch.end
+switch.default14:                                 ; preds = %switch.end
   call void @_EN3std10assertFailEP4char(ptr @2), !dbg !7
   unreachable
 }

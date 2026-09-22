@@ -66,6 +66,3 @@ int* _EN3std5ArrayI3intN3_EixE3int(Array<int, 3>* this, int index) {
     int* _0 = getelementptr elements, int 0, index.load
     return _0
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}
