@@ -4,6 +4,9 @@
 // CHECK-NEXT:anon closed
 // CHECK-NEXT:working wrapped
 // CHECK-NEXT:wrapped closed
+// CHECK-NEXT:first closed
+// CHECK-NEXT:end
+// CHECK-NEXT:second closed
 
 struct Logger {
     string prefix;
@@ -26,7 +29,14 @@ void withWrapper() {
     println("working wrapped");
 }
 
+void withReassignment() {
+    var t = (log = Logger(prefix = "first"));
+    t = (log = Logger(prefix = "second"));
+    println("end");
+}
+
 void main() {
     withAnonymousStruct();
     withWrapper();
+    withReassignment();
 }
