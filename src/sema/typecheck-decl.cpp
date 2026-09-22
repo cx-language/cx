@@ -91,6 +91,11 @@ static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> me
 }
 
 void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs, bool allowReference) {
+    if (!allowReference && type.storesBorrow()) {
+        // Report the outermost type (e.g. 'int&?' rather than the nested 'int&')
+        // so the diagnostic matches what the user wrote.
+        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter type");
+    }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
         Decl* decl;
