@@ -904,7 +904,7 @@ static void addPlatformCompileOptions() {
 }
 
 int cx::driverMain(int argc, const char** argv) {
-    llvm::setBugReportMsg("Please submit a bug report to https://github.com/emillaine/cx/issues and include the crash backtrace.\n");
+    llvm::setBugReportMsg("Please submit a bug report to https://github.com/cx-language/cx/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
     // Like cargo and npm, everything after '--' is passed to the executed program by 'run'.
     // Split it off before option parsing so it is never mistaken for input files or flags.
