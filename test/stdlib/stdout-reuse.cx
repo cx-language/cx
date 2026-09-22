@@ -5,7 +5,7 @@
 // CHECK:logline 2 3.5 false
 // CHECK:survived
 
-void logLine<T: Printable>(T*... args) {
+void logLine<T: Printable>(T&... args) {
     var out = stdout();
     for arg in args {
         out.write(arg);

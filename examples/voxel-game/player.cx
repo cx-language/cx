@@ -19,16 +19,16 @@ struct Player: Copyable {
     bool onGround;
 }
 
-Vec3 lookDir(Player* p) {
+Vec3 lookDir(Player& p) {
     var cp = cos(p.pitch);
     return Vec3(sin(p.yaw) * cp, sin(p.pitch), -cos(p.yaw) * cp);
 }
 
-Vec3 eyePos(Player* p) {
+Vec3 eyePos(Player& p) {
     return Vec3(p.pos.x, p.pos.y + 1.6, p.pos.z);
 }
 
-bool boxCollides(World* w, Vec3 pos) {
+bool boxCollides(World& w, Vec3 pos) {
     var eps = 0.001;
     var x0 = int(floor(pos.x - 0.3 + eps));
     var x1 = int(floor(pos.x + 0.3 - eps));
@@ -51,7 +51,7 @@ bool boxCollides(World* w, Vec3 pos) {
     return false;
 }
 
-void moveAxis(World* w, Player* p, int axis, float delta) {
+void moveAxis(World& w, Player& p, int axis, float delta) {
     var remaining = delta;
     while abs(remaining) > 0.0001 {
         var step = clamp(remaining, -0.3, 0.3);
@@ -95,7 +95,7 @@ void moveAxis(World* w, Player* p, int axis, float delta) {
     }
 }
 
-void updatePlayer(World* w, Player* p, Input* input, float dt) {
+void updatePlayer(World& w, Player& p, Input& input, float dt) {
     p.yaw += input.lookDX * 0.003;
     p.pitch -= input.lookDY * 0.003;
     if p.pitch > 1.55 {
@@ -147,7 +147,7 @@ void updatePlayer(World* w, Player* p, Input* input, float dt) {
 
 // Amanatides and Woo voxel traversal. Returns the hit cell and the
 // previously visited (empty) cell for placement.
-(bool hit, int x, int y, int z, int px, int py, int pz) raycastVoxel(World* w, Vec3 origin, Vec3 dir, float maxDist) {
+(bool hit, int x, int y, int z, int px, int py, int pz) raycastVoxel(World& w, Vec3 origin, Vec3 dir, float maxDist) {
     var x = int(floor(origin.x));
     var y = int(floor(origin.y));
     var z = int(floor(origin.z));
@@ -221,11 +221,11 @@ void updatePlayer(World* w, Player* p, Input* input, float dt) {
     return (hit = false, x = 0, y = 0, z = 0, px = 0, py = 0, pz = 0);
 }
 
-bool worldContains(World* w, int x, int y, int z) {
+bool worldContains(World& w, int x, int y, int z) {
     return x >= 0 && z >= 0 && y >= 0 && y < chunkH && x < w.chunksX * chunkW && z < w.chunksZ * chunkD;
 }
 
-bool blockOverlapsPlayer(Player* p, int x, int y, int z) {
+bool blockOverlapsPlayer(Player& p, int x, int y, int z) {
     var eps = 0.001;
     if float(x + 1) <= p.pos.x - 0.3 + eps {
         return false;
@@ -248,7 +248,7 @@ bool blockOverlapsPlayer(Player* p, int x, int y, int z) {
     return true;
 }
 
-bool tryBreak(World* w, Player* p) {
+bool tryBreak(World& w, Player& p) {
     var hit = raycastVoxel(w, eyePos(p), lookDir(p), 6.0);
     if !hit.hit || !worldContains(w, hit.x, hit.y, hit.z) {
         return false;
@@ -258,7 +258,7 @@ bool tryBreak(World* w, Player* p) {
     return true;
 }
 
-bool tryPlace(World* w, Player* p, uint8 selected) {
+bool tryPlace(World& w, Player& p, uint8 selected) {
     var hit = raycastVoxel(w, eyePos(p), lookDir(p), 6.0);
     if !hit.hit || !worldContains(w, hit.px, hit.py, hit.pz) {
         return false;
@@ -274,7 +274,7 @@ bool tryPlace(World* w, Player* p, uint8 selected) {
     return true;
 }
 
-void rebuildAround(World* w, int x, int y, int z) {
+void rebuildAround(World& w, int x, int y, int z) {
     var cx = x / chunkW;
     var cz = z / chunkD;
     var c = worldChunk(w, cx, cz);

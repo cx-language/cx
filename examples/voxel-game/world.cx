@@ -22,14 +22,14 @@ int blockIndex(int x, int y, int z) {
     return x + z * chunkW + y * chunkW * chunkD;
 }
 
-Chunk*? worldChunk(World* w, int cx, int cz) {
+Chunk*? worldChunk(World& w, int cx, int cz) {
     if cx < 0 || cz < 0 || cx >= w.chunksX || cz >= w.chunksZ {
         return null;
     }
-    return w.chunks[cz * w.chunksX + cx];
+    return &w.chunks[cz * w.chunksX + cx];
 }
 
-uint8 worldGet(World* w, int x, int y, int z) {
+uint8 worldGet(World& w, int x, int y, int z) {
     if y < 0 {
         return blockStone;
     }
@@ -46,7 +46,7 @@ uint8 worldGet(World* w, int x, int y, int z) {
     return c.blocks[blockIndex(x % chunkW, y, z % chunkD)];
 }
 
-void worldSet(World* w, int x, int y, int z, uint8 b) {
+void worldSet(World& w, int x, int y, int z, uint8 b) {
     if y < 0 || y >= chunkH || x < 0 || z < 0 {
         return;
     }
@@ -57,7 +57,7 @@ void worldSet(World* w, int x, int y, int z, uint8 b) {
     c.blocks[blockIndex(x % chunkW, y, z % chunkD)] = b;
 }
 
-void genChunkTerrain(Chunk* c) {
+void genChunkTerrain(Chunk& c) {
     for x in 0..chunkW {
         for z in 0..chunkD {
             var gx = c.cx * chunkW + x;
@@ -97,7 +97,7 @@ Chunk makeChunk(int cx, int cz) {
     return c;
 }
 
-void plantTrees(World* w) {
+void plantTrees(World& w) {
     for ci in 0..w.chunks.size() {
         var c = w.chunks[ci];
         for x in 0..chunkW {
@@ -140,7 +140,7 @@ void plantTrees(World* w) {
     }
 }
 
-void pushFaceColor(List<float>* colors, Vec3 color) {
+void pushFaceColor(List<float>& colors, Vec3 color) {
     for _ in 0..6 {
         colors.push(color.x);
         colors.push(color.y);
@@ -148,7 +148,7 @@ void pushFaceColor(List<float>* colors, Vec3 color) {
     }
 }
 
-void pushBlockFace(List<float>* positions, List<float>* normals, List<float>* colors, int x, int y, int z, int face, Vec3 color) {
+void pushBlockFace(List<float>& positions, List<float>& normals, List<float>& colors, int x, int y, int z, int face, Vec3 color) {
     var ox = float(x);
     var oy = float(y);
     var oz = float(z);
@@ -186,7 +186,7 @@ void pushBlockFace(List<float>* positions, List<float>* normals, List<float>* co
     pushFaceColor(colors, color);
 }
 
-void buildChunkMesh(World* w, Chunk* c) {
+void buildChunkMesh(World& w, Chunk& c) {
     if c.hasMesh {
         destroyMesh(c.mesh);
         c.hasMesh = false;
@@ -230,7 +230,7 @@ World makeWorldData(int chunksX, int chunksZ) {
     return w;
 }
 
-void buildAllMeshes(World* w) {
+void buildAllMeshes(World& w) {
     for i in 0..w.chunks.size() {
         buildChunkMesh(w, w.chunks[i]);
     }
@@ -242,7 +242,7 @@ World makeWorld(int chunksX, int chunksZ) {
     return w;
 }
 
-void destroyWorld(World* w) {
+void destroyWorld(World& w) {
     for i in 0..w.chunks.size() {
         var c = w.chunks[i];
         if c.hasMesh {

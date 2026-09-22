@@ -206,7 +206,7 @@ struct OptionSet {
     FlagSpec*? findFlag(string name) {
         for i in 0..flags.size() {
             if flags[i].name == name {
-                return flags[i];
+                return &flags[i];
             }
         }
         return null;
@@ -215,7 +215,7 @@ struct OptionSet {
     OptionSpec*? findOption(string name) {
         for i in 0..options.size() {
             if options[i].name == name {
-                return options[i];
+                return &options[i];
             }
         }
         return null;
@@ -224,7 +224,7 @@ struct OptionSet {
     IntOptionSpec*? findIntOption(string name) {
         for i in 0..intOptions.size() {
             if intOptions[i].name == name {
-                return intOptions[i];
+                return &intOptions[i];
             }
         }
         return null;
@@ -233,7 +233,7 @@ struct OptionSet {
     FlagSpec*? findFlagByShort(char c) {
         for i in 0..flags.size() {
             if flags[i].shortName.size() == 1 && flags[i].shortName[0] == c {
-                return flags[i];
+                return &flags[i];
             }
         }
         return null;
@@ -242,7 +242,7 @@ struct OptionSet {
     OptionSpec*? findOptionByShort(char c) {
         for i in 0..options.size() {
             if options[i].shortName.size() == 1 && options[i].shortName[0] == c {
-                return options[i];
+                return &options[i];
             }
         }
         return null;
@@ -251,7 +251,7 @@ struct OptionSet {
     IntOptionSpec*? findIntOptionByShort(char c) {
         for i in 0..intOptions.size() {
             if intOptions[i].shortName.size() == 1 && intOptions[i].shortName[0] == c {
-                return intOptions[i];
+                return &intOptions[i];
             }
         }
         return null;
@@ -528,7 +528,7 @@ struct ArgParser {
     CommandSpec*? findCommand(string name) {
         for i in 0..commands.size() {
             if commands[i].name == name {
-                return commands[i];
+                return &commands[i];
             }
         }
         return null;
@@ -542,7 +542,7 @@ struct ArgParser {
         if matchedCommandIndex < 0 {
             return null;
         }
-        return commands[matchedCommandIndex];
+        return &commands[matchedCommandIndex];
     }
 
     bool flag(string name) {
