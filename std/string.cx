@@ -45,6 +45,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     /// Returns the character at the given offset from the end.
     /// Offset 1 is the last character; offsets outside 1..size() abort.
     char operator[-](int index) {
+        if index < 1 || index > size() indexOutOfBounds("operator[-]", index);
         return characters[characters.size() - index];
     }
 
