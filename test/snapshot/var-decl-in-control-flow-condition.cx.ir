@@ -63,9 +63,6 @@ void _EN4main1jEP3int(int* i) {
     return void
 }
 
-void _EN3std10assertFailEP4char(char* message) {
-}
-
 void _EN4main1gE() {
     int** c1 = alloca int*
     int** c2 = alloca int*

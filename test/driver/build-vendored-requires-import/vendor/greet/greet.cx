@@ -1,0 +1,5 @@
+// RUN: true
+
+void greet() {
+    println("hello from vendor");
+}

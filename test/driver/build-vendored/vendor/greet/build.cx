@@ -1,0 +1,10 @@
+// RUN: true
+
+// Ignored: only the build.cx at the project root is read. This file is
+// deliberately invalid as module source, so the test fails if nested build
+// files are ever compiled as code.
+var name = "decoy-should-be-ignored"
+
+void decoyShouldBeIgnored() {
+    nonexistentIdentifier;
+}

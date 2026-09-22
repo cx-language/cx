@@ -1,4 +1,4 @@
-// Tests docs/playground-pipeline.js by running the full browser pipeline with
+// Tests website/playground-pipeline.js by running the full browser pipeline with
 // a mocked cx frontend (returning the committed fixture) and the real WASI
 // shim + C toolchain. Usage:
 //   node wasm/test-pipeline.mjs <toolchain-dir>
@@ -10,9 +10,9 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const repoRoot = new URL("..", import.meta.url).pathname;
-const CxWasi = require(repoRoot + "docs/wasi-shim.js");
-const CxPipeline = require(repoRoot + "docs/playground-pipeline.js");
-const fflate = require(repoRoot + "docs/lib/fflate.js");
+const CxWasi = require(repoRoot + "website/wasi-shim.js");
+const CxPipeline = require(repoRoot + "website/playground-pipeline.js");
+const fflate = require(repoRoot + "website/lib/fflate.js");
 
 const toolchainDir = process.argv[2];
 if (!toolchainDir) {

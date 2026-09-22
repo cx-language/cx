@@ -12,9 +12,3 @@ int main() {
     void _2 = call baz(int(int)* _EN4main1fE3int)
     return int 0
 }
-
-extern void foo(int(int)*)
-
-extern void bar(int(int)*)
-
-extern void baz(int(int)*)

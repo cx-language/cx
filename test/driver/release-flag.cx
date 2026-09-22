@@ -1,0 +1,11 @@
+// RUN: %cx run -Werror --release %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %not %cx run --release-safe %s 2>&1 | %FileCheck %s --check-prefix=SAFE
+// RUN: %not %cx run --release --release-safe %s 2>&1 | %FileCheck %s --check-prefix=CONFLICT
+// CHECK:-2147483648
+// SAFE: integer overflow
+// CONFLICT: error: can't combine --release with --release-safe
+
+void main() {
+    int x = 2147483647;
+    println(x + 1);
+}

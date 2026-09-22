@@ -94,6 +94,3 @@ switch.default_0:
 switch.end_0:
     return int 0
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

@@ -38,7 +38,7 @@ under `src/`).
 
 ## Limitations
 
-- Unsaved changes in *imported* packages are not visible yet — save the
+- Unsaved changes in *imported* packages are not visible yet - save the
   imported file first.
 
 ## Editor setup
@@ -161,8 +161,8 @@ server honors that instead of working around it:
 
 - The long-lived server process **never runs the compiler frontend**. It only
   stores open-document text and speaks LSP JSON-RPC over stdio.
-- Every operation — each keystroke's diagnostics, each hover, each completion
-  — spawns a fresh **`cx-lsp --query` subprocess**, pipes it one JSON query
+- Every operation - each keystroke's diagnostics, each hover, each completion
+  - spawns a fresh **`cx-lsp --query` subprocess**, pipes it one JSON query
   (file path, unsaved content, open documents, cursor position), reads back
   one JSON result, and lets the process exit. The OS reclaims all compiler
   memory, exactly like a normal `cx` invocation.
@@ -174,7 +174,7 @@ server honors that instead of working around it:
     "ambiguous reference" errors;
   - files under a `build.cx` file are analyzed as its target root
     (found by searching upwards, honoring `multitarget` layouts), so
-    cross-file references work from nested subdirectories too — the build
+    cross-file references work from nested subdirectories too - the build
     file is only used to locate the root, dependencies are never fetched;
   - anything else is standalone, like `cx file.cx`.
 - Diagnostics are owned by the file being checked: an error in a sibling file

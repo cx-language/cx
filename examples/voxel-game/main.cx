@@ -37,22 +37,35 @@ void appendInt(StringBuffer& buf, int value) {
     }
 }
 
+// Maps crosshair space to NDC for a width x height framebuffer. Pixels
+// are square but NDC is not, so x is squeezed by the aspect ratio to
+// keep the arms equally long on screen.
+Mat4 crosshairMatrix(int width, int height) {
+    var m = mat4Identity();
+    m.m[0] = float(height) / float(width);
+    return m;
+}
+
 void buildCrosshairMesh(Mesh& m) {
     var positions = List<float>();
     var normals = List<float>();
     var colors = List<float>();
+    var uvs = List<float>();
     var white = Vec3(1.0, 1.0, 1.0);
-    pushLine(positions, normals, Vec3(-0.015, 0.0, 0.0), Vec3(0.015, 0.0, 0.0));
+    pushLine(positions, normals, Vec3(-0.02, 0.0, 0.0), Vec3(0.02, 0.0, 0.0));
     pushLineColor(colors, white);
+    pushLineUV(uvs);
     pushLine(positions, normals, Vec3(0.0, -0.02, 0.0), Vec3(0.0, 0.02, 0.0));
     pushLineColor(colors, white);
-    initMesh(m, positions, normals, colors);
+    pushLineUV(uvs);
+    initMesh(m, positions, normals, colors, uvs);
 }
 
 void buildHighlightMesh(Mesh& m, int x, int y, int z) {
     var positions = List<float>();
     var normals = List<float>();
     var colors = List<float>();
+    var uvs = List<float>();
     var black = Vec3(0.0, 0.0, 0.0);
     var x0 = float(x) - 0.01;
     var y0 = float(y) - 0.01;
@@ -66,8 +79,9 @@ void buildHighlightMesh(Mesh& m, int x, int y, int z) {
     for i in 0..12 {
         pushLine(positions, normals, c[e[i * 2]], c[e[i * 2 + 1]]);
         pushLineColor(colors, black);
+        pushLineUV(uvs);
     }
-    initMesh(m, positions, normals, colors);
+    initMesh(m, positions, normals, colors, uvs);
 }
 
 int runGame(bool debug) {
@@ -79,6 +93,7 @@ int runGame(bool debug) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
+    glfwWindowHint(GLFW_SAMPLES, 4);
     var window = glfwCreateWindow(1280, 720, "voxel-game", null, null);
     if window == null {
         println("glfwCreateWindow failed");
@@ -93,7 +108,9 @@ int runGame(bool debug) {
     var flatProgram = createProgram("assets/block.vert", "assets/flat.frag");
     var uniforms = getBlockUniforms(program);
     var flatMvp = uniformLoc(flatProgram, "mvp");
+    var blockTex = createBlockTexture();
     glUseProgram(program);
+    bindBlockTexture(uniforms, blockTex);
     var world = makeWorld(8, 8);
     glEnable(GL_DEPTH_TEST);
     Mesh crosshair = undefined;
@@ -232,8 +249,8 @@ int runGame(bool debug) {
         if hasTarget {
             drawMeshLines(highlight);
         }
-        var ident = mat4Identity();
-        setMat4(flatMvp, ident);
+        var xhair = crosshairMatrix(width, height);
+        setMat4(flatMvp, xhair);
         glDisable(GL_DEPTH_TEST);
         drawMeshLines(crosshair);
         glEnable(GL_DEPTH_TEST);
@@ -266,6 +283,7 @@ int runGame(bool debug) {
     destroyMesh(crosshair);
     destroyMesh(highlight);
     destroyWorld(world);
+    destroyBlockTexture(blockTex);
     glDeleteProgram(flatProgram);
     glDeleteProgram(program);
     glfwDestroyWindow(window);

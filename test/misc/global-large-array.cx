@@ -1,0 +1,8 @@
+// RUN: check_exit_status 7 %cx run %s
+// RUN: check_exit_status 7 %cx run --backend=c %s
+
+var g = [1, 2, 3, 4, 5, 6];
+
+int main() {
+    return g[0] + g[5];
+}

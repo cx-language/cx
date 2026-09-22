@@ -157,7 +157,7 @@ __Simple type inference__ for local and global variables, to improve productivit
 as well as more amenable to type changes when refactoring.
 The strong type system ensures that type inference will not cause any unexpected typing issues.
 
-## …and all the good parts from C and C++
+## ...and all the good parts from C and C++
 
 - Performance and control.
 - Pay only for what you use.

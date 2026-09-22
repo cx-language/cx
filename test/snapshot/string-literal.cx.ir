@@ -7,6 +7,3 @@ int main() {
     store __str.load to s
     return int 0
 }
-
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
-}

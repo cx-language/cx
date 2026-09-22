@@ -12,11 +12,11 @@ and the currently implemented features are subject to change, and there are bugs
 
 To learn more about the language, visit the website:
 
-> [emillaine.github.io/cx](https://emillaine.github.io/cx/)
+> [cx-language.github.io/cx](https://cx-language.github.io/cx/)
 
 For more code samples, see [`examples`](examples).
 
-You can also read the language documentation in Markdown format under [`docs/book`](docs/book).
+You can also read the language documentation in Markdown format under [`docs`](docs).
 
 To ask a question or open a discussion, create an issue or join the [cx Discord server](https://discord.gg/hsDbW9p).
 
@@ -123,7 +123,7 @@ The C++ code style is enforced by ClangFormat:
 
 To work on the browser playground or the website, see [wasm/README.md](wasm/README.md)
 (architecture, building, and testing of the WebAssembly frontend and the in-browser C toolchain).
-Run `docs/build-website.sh --serve` to develop the website locally.
+Run `website/build-website.sh --serve` to develop the website locally.
 
 ## License
 

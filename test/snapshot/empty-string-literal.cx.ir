@@ -5,9 +5,3 @@ int main() {
     int _1 = call _EN3std6string4sizeE(string* __str)
     return _1
 }
-
-int _EN3std6string4sizeE(string* this) {
-}
-
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
-}

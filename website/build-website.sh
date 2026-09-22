@@ -2,7 +2,7 @@
 # To develop the website locally, run this script after each change,
 # and serve the generated HTML from the build directory using e.g. 'npx serve'.
 # Or run with --serve to build and serve in one step:
-#   docs/build-website.sh --serve [--port <port>]
+#   website/build-website.sh --serve [--port <port>]
 
 SERVE=0
 PORT=8000
@@ -34,6 +34,9 @@ done
 
 cd "$(dirname "$0")" || exit
 
+# Reject smart typography in prose sources (see check_prose.py).
+python3 check_prose.py || exit
+
 pandoc --version >/dev/null || exit
 
 # Pandoc 2 emits different default styles (notably 'html { font-size: 20px }'),
@@ -52,10 +55,10 @@ mkdir build
 rm -rf .generated
 python3 generate_std_docs.py || exit
 
-for file in book/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html; do
+for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html; do
     case $file in
-        book/*)
-            relpath="${file#book/}"
+        ../docs/*)
+            relpath="${file#../docs/}"
             relpath="${relpath%.md}"
             ;;
         .generated/*)
@@ -92,7 +95,15 @@ for file in book/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md 
     fi
 
     mkdir -p "build/$(dirname "$outpath")"
-    pandoc "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
+    # markdown-smart: pandoc would otherwise reintroduce curly quotes,
+    # ellipsis, and em/en dashes into the generated HTML. The front page is
+    # raw HTML, not Markdown: forcing the Markdown reader on it escapes its
+    # indented blocks into code listings.
+    case "$file" in
+        *.md) from="markdown-smart" ;;
+        *) from="html" ;;
+    esac
+    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
@@ -134,7 +145,7 @@ showcase = [
 
 if "##EXAMPLECODE##" in template:
     with open("../examples/" + showcase[0][1]) as file:
-        example = html.escape(file.read(), quote=False)
+        example = html.escape(file.read().rstrip("\n"), quote=False)
     template = template.replace("##EXAMPLECODE##", example)
 
 if "##EXAMPLESELECTOR##" in template:
@@ -150,7 +161,7 @@ with open(path, "w") as file:
     file.write(template)
 
 if outpath == "index":
-    examples = [{"name": name, "code": open("../examples/" + filename).read()} for name, filename in showcase]
+    examples = [{"name": name, "code": open("../examples/" + filename).read().rstrip("\n")} for name, filename in showcase]
     for example in examples:
         assert "</script" not in example["code"], "example breaks out of playground-examples.js: " + example["name"]
     with open("build/playground-examples.js", "w") as file:

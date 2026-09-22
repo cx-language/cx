@@ -36,16 +36,33 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     }
 
     auto returnType = getIRType(decl.isMain() ? Type::getInt() : decl.getReturnType());
+
+    // Definitions are emitted once per program: a function referenced from several
+    // modules reuses the first module's object, so later modules call it as an
+    // external declaration instead of emitting a duplicate definition. Reuse only
+    // when the signature matches; same-named externs with different types (e.g. a
+    // C import shadowing a std extern) keep separate objects so each call uses
+    // its own module's parameter types.
+    for (auto& instantiation : functionInstantiations) {
+        auto* existing = instantiation.function;
+        if (existing->mangledName != mangledName) continue;
+        if (existing->isVariadic != decl.isVariadic()) continue;
+        if (!existing->returnType->equals(returnType)) continue;
+        if (existing->params.size() != params.size()) continue;
+        bool signatureMatch = true;
+        for (size_t i = 0; i < params.size(); ++i) {
+            if (!existing->params[i].type->equals(params[i].type)) {
+                signatureMatch = false;
+                break;
+            }
+        }
+        if (signatureMatch) return existing;
+    }
+
     auto function = new Function{
         ValueKind::Function, mangledName, decl.getName().str(), returnType, std::move(params), {}, decl.isExtern(), decl.isVariadic(), decl.getLocation(),
     };
     module->functions.push_back(function);
-
-    for (auto& instantiation : functionInstantiations) {
-        if (instantiation.function->mangledName == mangledName) {
-            return function;
-        }
-    }
 
     functionInstantiations.push_back({&decl, function});
     return function;
