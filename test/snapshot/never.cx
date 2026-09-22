@@ -5,7 +5,7 @@
 never f() { f() }
 
 // CHECK-NOT: warning
-never g() { abort() }
+never g() { abortWrapper() }
 
 // CHECK: [[@LINE+1]]:7: warning: 'h' is declared to never return but it does return
 never h() {}

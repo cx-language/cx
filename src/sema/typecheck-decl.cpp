@@ -476,6 +476,9 @@ void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
 }
 
 void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
+    // Members of generic instantiations carry template-definition locations;
+    // access warnings for them would duplicate the use-site checks, so suppress.
+    llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
     for (Type interface : decl.interfaces) {
         typecheckType(interface, decl.accessLevel);
         auto* interfaceDecl = interface.getDecl();
@@ -516,6 +519,9 @@ void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
 }
 
 void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
+    // Members of generic instantiations carry template-definition locations;
+    // access warnings for them would duplicate the use-site checks, so suppress.
+    llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
     for (Type interface : decl.interfaces) {
         typecheckType(interface, decl.accessLevel);
         auto* interfaceDecl = interface.getDecl();

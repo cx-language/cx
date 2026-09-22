@@ -19,12 +19,40 @@
 using namespace cx;
 
 void Typechecker::checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel) {
-    // FIXME: Compare SourceFile objects instead of file path strings.
-    if (decl.accessLevel == AccessLevel::Private && strcmp(decl.getLocation().file, location.file) != 0) {
+    // Access warnings for members of generic instantiations are suppressed:
+    // the use-site type expression is already checked with the use location
+    // (see the generic-argument rechecking in typecheckType), so checks with
+    // template-definition locations would only produce duplicate noise.
+    if (suppressAccessWarnings) return;
+    if (decl.accessLevel == AccessLevel::Private && !inSameModule(decl, location)) {
         WARN(location, "'" << decl.getName() << "' is private");
     } else if (userAccessLevel != AccessLevel::None && decl.accessLevel < userAccessLevel) {
         WARN(location, "using " << decl.accessLevel << " type '" << decl.getName() << "' in " << userAccessLevel << " declaration");
     }
+}
+
+bool Typechecker::inSameModule(const Decl& decl, Location location) const {
+    if (Module* declModule = decl.getModule()) {
+        if (Module* useModule = findModuleForFile(location.file)) return declModule == useModule;
+    }
+    // Fall back to comparing file paths for declarations without module information.
+    const char* declFile = decl.getLocation().file;
+    return declFile && location.file && strcmp(declFile, location.file) == 0;
+}
+
+Module* Typechecker::findModuleForFile(const char* file) const {
+    if (!file) return nullptr;
+    auto matches = [&](const Module* module) {
+        for (auto& sourceFile : module->sourceFiles) {
+            if (sourceFile.filePath == file) return true;
+        }
+        return false;
+    };
+    if (currentModule && matches(currentModule)) return currentModule;
+    for (Module* module : Module::getAllImportedModules()) {
+        if (matches(module)) return module;
+    }
+    return nullptr;
 }
 
 void Typechecker::maybeCaptureVariable(VariableDecl& variableDecl) {
@@ -1674,8 +1702,11 @@ static bool isCHeaderDecl(const Match& match) {
 }
 
 static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, const CallExpr& call) {
-    if (llvm::count_if(matches, isStdlibDecl) == 1 && llvm::all_of(matches, [](auto& match) { return isStdlibDecl(match) || isCHeaderDecl(match); })) {
-        return llvm::find_if(matches, isStdlibDecl);
+    // An explicitly imported C header takes precedence over the implicit prelude:
+    // importing a header must actually provide its declarations, including for
+    // names the standard library also declares (those are module-private).
+    if (llvm::count_if(matches, isCHeaderDecl) == 1 && llvm::all_of(matches, [](auto& match) { return isStdlibDecl(match) || isCHeaderDecl(match); })) {
+        return llvm::find_if(matches, isCHeaderDecl);
     } else if (llvm::all_of(matches, isCHeaderDecl)) {
         // Redeclarations in multiple C headers are considered the same declaration, so just return one of them.
         return &matches[0];

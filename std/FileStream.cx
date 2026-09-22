@@ -14,7 +14,7 @@ struct OutputFileStream {
         ownsFile = true;
     }
 
-    OutputFileStream(public FILE* file, public bool ownsFile) {
+    private OutputFileStream(FILE* file, public bool ownsFile) {
         this.file = file;
         this.ownsFile = ownsFile;
     }
@@ -52,10 +52,10 @@ private FILE* openStandardFile(FILE*?* cachedFile, int fileDescriptor) {
 
 /// Returns a stream writing to standard output.
 OutputFileStream stdout() {
-    return OutputFileStream(file = openStandardFile(&stdoutFile, 1), ownsFile = false);
+    return OutputFileStream(openStandardFile(&stdoutFile, 1), false);
 }
 
 /// Returns a stream writing to standard error.
 OutputFileStream stderr() {
-    return OutputFileStream(file = openStandardFile(&stderrFile, 2), ownsFile = false);
+    return OutputFileStream(openStandardFile(&stderrFile, 2), false);
 }
