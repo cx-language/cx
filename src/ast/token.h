@@ -24,6 +24,8 @@ struct Token {
         FloatLiteral,
         StringLiteral,
         CharacterLiteral,
+        InterpStart,
+        InterpEnd,
         Break,
         Case,
         Const,

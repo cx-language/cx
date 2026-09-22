@@ -249,6 +249,28 @@ StringBuffer operator+(StringBuffer a, string b) {
     return result;
 }
 
+/// Concatenates the two strings.
+StringBuffer operator+(string a, StringBuffer b) {
+    var result = StringBuffer(a);
+
+    for ch in b {
+        result.append(ch);
+    }
+
+    return result;
+}
+
+/// Concatenates the two strings.
+StringBuffer operator+(StringBuffer a, StringBuffer b) {
+    var result = a; // TODO: Workaround until parameters can be mutated.
+
+    for ch in b {
+        result.append(ch);
+    }
+
+    return result;
+}
+
 /// Concatenates the string and the character.
 StringBuffer operator+(StringBuffer a, char b) {
     var result = a; // TODO: Workaround until parameters can be mutated.
