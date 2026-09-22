@@ -178,6 +178,11 @@ static std::string replaceEscapeChars(llvm::StringRef literalContent, Location l
     result.reserve(literalContent.size());
 
     for (auto it = literalContent.begin(), end = literalContent.end(); it != end; ++it) {
+        if (*it == '$' && it + 1 != end && *(it + 1) == '$') {
+            result += '$';
+            ++it;
+            continue;
+        }
         if (*it == '\\') {
             ++it;
             ASSERT(it != end);
@@ -221,6 +226,37 @@ StringLiteralExpr* Parser::parseStringLiteral() {
     auto expr = makeAST<StringLiteralExpr>(std::move(content), getCurrentLocation());
     consumeToken();
     return expr;
+}
+
+static StringLiteralExpr* makeStringLiteralExpr(llvm::StringRef rawContent, Location location) {
+    return makeAST<StringLiteralExpr>(replaceEscapeChars(rawContent, location), location);
+}
+
+/// Parses `InterpStart expr InterpEnd (chunk InterpStart expr InterpEnd)*`,
+/// combining the pieces with `+` over `toString()` calls. `acc` holds the
+/// already-parsed leading chunk, or null when the literal starts with an
+/// interpolation.
+Expr* Parser::parseInterpolationRest(Expr* acc) {
+    while (currentToken() == Token::InterpStart) {
+        auto interpLocation = getCurrentLocation();
+        consumeToken();
+        Expr* value = parseExpr();
+        Token endToken = parse(Token::InterpEnd);
+        auto* member = makeAST<MemberExpr>(value, std::string("toString"), value->location);
+        auto* stringified = makeAST<CallExpr>(member, std::vector<NamedValue>(), std::vector<Type>(), value->location);
+        Expr* piece = stringified;
+        acc = acc ? makeAST<BinaryExpr>(Token::Plus, acc, piece, interpLocation) : piece;
+
+        // A chunk on the same line continues this literal; anything else
+        // starts a new (possibly erroneous) construct.
+        if (currentToken() == Token::StringLiteral && currentToken().location.line == endToken.location.line) {
+            auto continuation = currentToken();
+            consumeToken();
+            Expr* chunk = makeStringLiteralExpr(continuation.getString(), getCurrentLocation());
+            acc = makeAST<BinaryExpr>(Token::Plus, acc, chunk, interpLocation);
+        }
+    }
+    return acc;
 }
 
 CharacterLiteralExpr* Parser::parseCharacterLiteral() {
@@ -764,8 +800,21 @@ Expr* Parser::parsePostfixExpr() {
             break;
         }
         break;
-    case Token::StringLiteral:
-        expr = parseStringLiteral();
+    case Token::StringLiteral: {
+        // Interpolated strings desugar to `+` chains over `toString()` calls.
+        if (lookAhead(1) != Token::InterpStart) {
+            expr = parseStringLiteral();
+            break;
+        }
+        auto token = currentToken();
+        auto location = getCurrentLocation();
+        consumeToken();
+        expr = makeStringLiteralExpr(token.getString(), location);
+        expr = parseInterpolationRest(expr);
+        break;
+    }
+    case Token::InterpStart:
+        expr = parseInterpolationRest(nullptr);
         break;
     case Token::CharacterLiteral:
         expr = parseCharacterLiteral();
@@ -1775,6 +1824,10 @@ ImportDecl* Parser::parseImportDecl() {
         importTarget = parseStringLiteral()->value;
     } else {
         importTarget = parse({Token::Identifier, Token::StringLiteral}, "after 'import'").getString().str();
+    }
+
+    if (currentToken() == Token::InterpStart) {
+        ERROR(getCurrentLocation(), "string interpolation is not allowed in import paths");
     }
 
     parseStmtTerminator("after 'import' declaration");
