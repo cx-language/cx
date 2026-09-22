@@ -164,7 +164,7 @@ uint createBlockTexture() {
     uint8[128 * 16 * 3] atlas = undefined;
     fillAtlas(atlas.data());
     uint tex = undefined;
-    glGenTextures(1, tex);
+    glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -175,12 +175,12 @@ uint createBlockTexture() {
     return tex;
 }
 
-void bindBlockTexture(BlockUniforms* u, uint tex) {
+void bindBlockTexture(BlockUniforms& u, uint tex) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex);
     setInt(u.blockTex, 0);
 }
 
 void destroyBlockTexture(uint tex) {
-    glDeleteTextures(1, tex);
+    glDeleteTextures(1, &tex);
 }
