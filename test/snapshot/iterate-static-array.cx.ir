@@ -96,9 +96,3 @@ void _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* this) {
     store _0 to current
     return void
 }
-
-void _EN3std5printI3intEER3int(int* value) {
-}
-
-void _EN3std5printI4charEER4char(char* value) {
-}
