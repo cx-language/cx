@@ -522,12 +522,12 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
 }
 
 Value* IRGenerator::emitAssignment(const BinaryExpr& expr) {
-    if (expr.getRHS().isUndefinedLiteralExpr()) return createUndefined(getIRType(expr.type));
+    if (expr.getRHS().isUndefinedLiteralExpr()) return nullptr;
 
     auto lvalue = emitAssignmentLHS(expr.getLHS(), expr.lhsIsMoved);
     auto rvalue = emitExprForPassing(expr.getRHS(), lvalue->getType()->getPointee());
     createStore(rvalue, lvalue);
-    return rvalue;
+    return nullptr;
 }
 
 static bool isBuiltinArrayToArrayRefConversion(Type sourceType, IRType* targetType) {
@@ -607,6 +607,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
 
     // TODO: Refactor the following.
     auto* value = emitLvalueExpr(expr);
+    if (!value) return nullptr;
 
     if (targetType->isPointerType() && value->getType()->equals(targetType->getPointee())) {
         return createTempAlloca(value);
@@ -964,13 +965,14 @@ Value* IRGenerator::emitIndexExpr(const IndexExpr& expr) {
 
 Value* IRGenerator::emitIndexAssignmentExpr(const IndexAssignmentExpr& expr) {
     if (!expr.getBase()->type.removeOptional().removePointer().isArrayType()) {
-        return emitCallExpr(expr);
+        emitCallExpr(expr);
+        return nullptr;
     }
 
     auto gep = emitIndexedAccess(*expr.getBase(), *expr.getIndex());
     auto* value = emitExpr(*expr.getValue());
     createStore(value, gep);
-    return value;
+    return nullptr;
 }
 
 Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
@@ -1036,7 +1038,7 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
     setInsertPoint(thenBlock);
     auto* thenValue = emitExpr(*expr.thenExpr);
     // Void branches produce no value to join; like void calls, the result is only usable in discard positions.
-    bool isVoid = thenValue->getType()->isVoid();
+    bool isVoid = !thenValue || thenValue->getType()->isVoid();
     createBr(endIfBlock, isVoid ? nullptr : thenValue);
 
     setInsertPoint(elseBlock);
