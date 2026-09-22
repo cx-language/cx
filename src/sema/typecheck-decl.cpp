@@ -74,6 +74,13 @@ static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::Small
     return result;
 }
 
+// Substituted references are valid in members of an instantiation whose generic arguments
+// contain a reference: the use-site spelling was already validated, so the reference arrived
+// through substitution rather than being written in a stored position.
+static bool allowsSubstitutedReference(const TypeDecl& typeDecl) {
+    return typeDecl.instantiatedFrom != nullptr && llvm::any_of(typeDecl.genericArgs, [](Type arg) { return arg.containsReference(); });
+}
+
 static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> memberTypes) {
     llvm::SmallPtrSet<const TypeDecl*, 8> visiting;
     visiting.insert(&target);
@@ -96,8 +103,10 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
             // first use's locations; relocate them to the current use. This is exact when
             // the nested types start where the outer type starts (e.g. 'A' in 'A*?').
             if (recheckGenericArgs) {
+                // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
+                bool nestedAllowReference = allowReference && type.isOptionalType();
                 for (auto genericArg : basicType->genericArgs) {
-                    typecheckType(genericArg.withLocation(type.location), userAccessLevel);
+                    typecheckType(genericArg.withLocation(type.location), userAccessLevel, true, nestedAllowReference);
                 }
             }
         } else {
@@ -108,8 +117,10 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 break;
             }
 
+            // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
+            bool nestedAllowReference = allowReference && type.isOptionalType();
             for (auto genericArg : basicType->genericArgs) {
-                typecheckType(genericArg, userAccessLevel);
+                typecheckType(genericArg, userAccessLevel, true, nestedAllowReference);
             }
 
             auto decls = findDecls(basicType->getQualifiedName());
@@ -149,8 +160,10 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
         break;
     case TypeKind::TupleType:
+        // Tuples are transparent to the placement rule like Optional: elements of a tuple in
+        // borrowed position are borrowed too.
         for (auto& element : type.getTupleElements()) {
-            typecheckType(element.type, userAccessLevel, recheckGenericArgs);
+            typecheckType(element.type, userAccessLevel, recheckGenericArgs, allowReference);
         }
         break;
     case TypeKind::FunctionType:
@@ -543,11 +556,13 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
         ERROR((*it)->getLocation(), "duplicate enum case '" << (*it)->getName() << "'");
     }
 
+    bool allowReference = allowsSubstitutedReference(decl);
+
     for (auto& enumCase : decl.cases) {
         typecheckExpr(*enumCase.value);
 
         if (enumCase.associatedType) {
-            typecheckType(enumCase.associatedType, enumCase.accessLevel);
+            typecheckType(enumCase.associatedType, enumCase.accessLevel, true, allowReference);
         }
     }
 
@@ -735,6 +750,8 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         // A borrow can't be named: read the value out (copying or moving it) instead of aliasing it.
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
+    } else if (decl.type.storesBorrow()) {
+        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter type");
     }
 
     if (!decl.type.isImplicitlyCopyable()) {
@@ -750,7 +767,9 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 }
 
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
-    typecheckType(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel));
+    bool allowReference = false;
+    if (auto* parent = llvm::dyn_cast<TypeDecl>(decl.getParentDecl())) allowReference = allowsSubstitutedReference(*parent);
+    typecheckType(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel), true, allowReference);
 
     if (decl.defaultValue) {
         typecheckExpr(*decl.defaultValue, false, decl.type);

@@ -980,13 +980,22 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
+    // Reborrow an optional pointer as an optional borrow. Like Reborrow, the address passes
+    // through unchanged with null staying null; this only reinterprets the static type.
+    if (target.isOptionalType() && target.getWrappedType().isReferenceType() && source.isOptionalType() && source.getWrappedType().isPointerType()
+        && !source.getWrappedType().isReferenceType() && (source.getWrappedType().getPointee().isMutable() || !target.getWrappedType().getPointee().isMutable())
+        && source.getWrappedType().getPointee().equalsIgnoreTopLevelMutable(target.getWrappedType().getPointee())) {
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::Reborrow;
+        return target;
+    }
+
     if (source.isPointerType() && source.getPointee() == target && expr && !expr->isReferenceExpr()) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoDereference;
         return target;
     }
 
     if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr())
-        && isImplicitlyConvertible(expr, source, target.getWrappedType(), false, nullptr, diagnoseOutOfRange)) {
+        && isImplicitlyConvertible(expr, source, target.getWrappedType(), allowPointerToTemporary, nullptr, diagnoseOutOfRange)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalWrap;
         return target;
     }
@@ -1758,6 +1767,9 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
     } else if (llvm::count_if(matches, [](auto& match) { return match.didUnwrapOptional == false; }) == 1) {
         // Implicit unwrapping discards nullability; prefer the overload that preserves it.
         return llvm::find_if(matches, [](auto& match) { return match.didUnwrapOptional == false; });
+    } else if (llvm::count_if(matches, [](auto& match) { return match.didWrapOptional == false; }) == 1) {
+        // Implicit wrapping adds nullability; prefer the overload that binds directly.
+        return llvm::find_if(matches, [](auto& match) { return match.didWrapOptional == false; });
     } else if (auto match = findMatchWithMostExactArgs(matches, call)) {
         return match;
     } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) {
@@ -2358,6 +2370,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
 
     bool didConvertArguments = false;
     bool didUnwrapOptional = false;
+    bool didWrapOptional = false;
 
     for (size_t i = 0; i < expr.args.size(); ++i) {
         auto& arg = expr.args[i];
@@ -2377,6 +2390,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param.type, true, &implicitCastKind, false)) {
             didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
             didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
+            didWrapOptional = didWrapOptional || implicitCastKind == ImplicitCastExpr::OptionalWrap || arg.value->isNullLiteralExpr();
         } else {
             invalidType = true;
         }
@@ -2385,7 +2399,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         if (invalidType) return ArgumentValidation::invalidType(i);
     }
 
-    return ArgumentValidation::success(didConvertArguments, didUnwrapOptional);
+    return ArgumentValidation::success(didConvertArguments, didUnwrapOptional, didWrapOptional);
 }
 
 std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params) {
@@ -2396,7 +2410,7 @@ std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDec
     }
     auto result = getArgumentValidationResult(expr, params, isVariadic);
     if (result.error) return std::nullopt;
-    return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional};
+    return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional, result.didWrapOptional};
 }
 
 void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, Location location) {

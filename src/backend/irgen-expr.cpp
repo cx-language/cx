@@ -1108,6 +1108,14 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
     switch (expr.castKind) {
     case ImplicitCastExpr::OptionalWrap:
         if (expr.type.getWrappedType().isImplementedAsPointer()) {
+            if (expr.type.getWrappedType().isReferenceType() && !expr.operand->type.isReferenceType()) {
+                // Borrowing through the wrap: the operand is a value, so take the address-preserving
+                // path and materialize temporaries the way argument passing does. (An operand that is
+                // already a borrow takes the normal path below.)
+                Value* value = emitLvalueExpr(*expr.operand);
+                if (!value->getType()->isPointerType()) value = createTempAlloca(value);
+                return value;
+            }
             return emitExpr(*expr.operand);
         } else {
             return emitOptionalConstruction(expr.operand->type, expr.operand);

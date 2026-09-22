@@ -37,19 +37,23 @@ struct ArgumentValidation {
     int index;
     bool didConvertArguments;
     bool didUnwrapOptional;
+    bool didWrapOptional;
 
-    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional) { return {None, -1, didConvertArguments, didUnwrapOptional}; }
-    static ArgumentValidation tooFew() { return {TooFew, -1, false, false}; }
-    static ArgumentValidation tooMany() { return {TooMany, -1, false, false}; }
-    static ArgumentValidation invalidName(size_t index) { return {InvalidName, int(index), false, false}; }
-    static ArgumentValidation duplicateName(size_t index) { return {DuplicateName, int(index), false, false}; }
-    static ArgumentValidation invalidType(size_t index) { return {InvalidType, int(index), false, false}; }
+    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional, bool didWrapOptional) {
+        return {None, -1, didConvertArguments, didUnwrapOptional, didWrapOptional};
+    }
+    static ArgumentValidation tooFew() { return {TooFew, -1, false, false, false}; }
+    static ArgumentValidation tooMany() { return {TooMany, -1, false, false, false}; }
+    static ArgumentValidation invalidName(size_t index) { return {InvalidName, int(index), false, false, false}; }
+    static ArgumentValidation duplicateName(size_t index) { return {DuplicateName, int(index), false, false, false}; }
+    static ArgumentValidation invalidType(size_t index) { return {InvalidType, int(index), false, false, false}; }
 };
 
 struct Match {
     Decl* decl;
     bool didConvertArguments;
     bool didUnwrapOptional;
+    bool didWrapOptional;
 };
 
 struct VariadicGenericArgs {

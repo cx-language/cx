@@ -298,6 +298,26 @@ bool Type::containsReference() const {
     llvm_unreachable("all cases handled");
 }
 
+// Whether storing a value of this type would retain a borrow: a reference in any position
+// except a function parameter type (naming a function doesn't name its future arguments).
+bool Type::storesBorrow() const {
+    switch (getKind()) {
+    case TypeKind::BasicType:
+        return llvm::any_of(getGenericArgs(), [](Type arg) { return arg.storesBorrow(); });
+    case TypeKind::ArrayType:
+        return getElementType().storesBorrow();
+    case TypeKind::TupleType:
+        return llvm::any_of(getTupleElements(), [](auto& element) { return element.type.storesBorrow(); });
+    case TypeKind::FunctionType:
+        return getReturnType().storesBorrow();
+    case TypeKind::PointerType:
+        return isReferenceType() || getPointee().storesBorrow();
+    case TypeKind::UnresolvedType:
+        return false;
+    }
+    llvm_unreachable("all cases handled");
+}
+
 bool Type::isImplementedAsPointer() const {
     auto unwrapped = removeOptional();
     return unwrapped.isPointerType() || unwrapped.isUnsizedArrayPointer() || unwrapped.isFunctionType();

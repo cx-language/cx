@@ -122,6 +122,7 @@ struct Type {
     bool equalsIgnoreTopLevelMutable(Type) const;
     bool containsUnresolvedPlaceholder() const;
     bool containsReference() const;
+    bool storesBorrow() const;
     void printTo(std::ostream& stream) const;
     std::string toString() const;
 
