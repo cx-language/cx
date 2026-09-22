@@ -72,6 +72,8 @@ bool Expr::isConstant() const {
         auto binaryExpr = llvm::cast<BinaryExpr>(this);
         // Like IfExpr, `??` always emits branches and is never folded.
         if (binaryExpr->op == Token::QuestionQuestion) return false;
+        // Lowered tuple comparisons keep tuple operands, which the getConstant* accessors can't evaluate.
+        if (binaryExpr->tupleComparisonLowering) return false;
         return binaryExpr->op != Token::Assignment && binaryExpr->getLHS().isConstant() && binaryExpr->getRHS().isConstant();
     }
 
@@ -237,7 +239,8 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         return ifExpr->elseExpr->getConstantIntegerValue();
     }
     case ExprKind::SwitchExpr:
-        llvm_unreachable("unimplemented");
+        // Not folded even when constant; codegen always emits branches.
+        llvm_unreachable("not a constant integer");
     default:
         llvm_unreachable("not a constant integer");
     }
