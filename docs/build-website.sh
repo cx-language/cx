@@ -134,7 +134,7 @@ showcase = [
 
 if "##EXAMPLECODE##" in template:
     with open("../examples/" + showcase[0][1]) as file:
-        example = html.escape(file.read(), quote=False)
+        example = html.escape(file.read().rstrip("\n"), quote=False)
     template = template.replace("##EXAMPLECODE##", example)
 
 if "##EXAMPLESELECTOR##" in template:
@@ -150,7 +150,7 @@ with open(path, "w") as file:
     file.write(template)
 
 if outpath == "index":
-    examples = [{"name": name, "code": open("../examples/" + filename).read()} for name, filename in showcase]
+    examples = [{"name": name, "code": open("../examples/" + filename).read().rstrip("\n")} for name, filename in showcase]
     for example in examples:
         assert "</script" not in example["code"], "example breaks out of playground-examples.js: " + example["name"]
     with open("build/playground-examples.js", "w") as file:
