@@ -51,6 +51,13 @@ void main() {
 }
 ```
 
+## Structural typing
+
+Unlike named structs, which are nominal (a value of one struct type is never
+assignable to another struct type, even with identical fields), anonymous
+structs are structural: two anonymous struct types with the same field names
+and field types are the same type, so values convert when each field converts.
+
 ## Planned features
 
 - Destructuring anonymous structs into separate variables; for now, access fields by name.
