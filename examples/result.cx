@@ -1,0 +1,18 @@
+// Errors are values: fallible functions return Result instead of throwing.
+Result<int, string> divide(int a, int b) {
+    if b == 0 {
+        return Result.Err(error = "division by zero");
+    }
+    return Result.Ok(value = a / b);
+}
+
+void main() {
+    switch divide(7, 2) {
+        case Ok value: println(value.value);
+        case Err error: println(error.error);
+    }
+    switch divide(7, 0) {
+        case Ok value: println(value.value);
+        case Err error: println(error.error);
+    }
+}
