@@ -560,7 +560,8 @@ def test_build_file_modes(cx_lsp):
         )
 
     # Vendored packages are imported by name, not analyzed as part of the
-    # importing module: no import errors and no redefinition errors.
+    # importing module: no import errors and no redefinition errors. A build.cx
+    # below the package root is an ordinary source file.
     with tempfile.TemporaryDirectory() as directory:
         root = os.path.join(directory, "vproj")
         vendordir = os.path.join(root, "vendor", "greet")
@@ -572,10 +573,10 @@ def test_build_file_modes(cx_lsp):
         with open(os.path.join(vendordir, "greet.cx"), "w") as file:
             file.write('void greet() {\n    println("hi");\n}\n\nvoid unusedHelper() {\n}\n')
         main_path = os.path.join(root, "main.cx")
-        main_content = "import greet;\n\nvoid main() {\n    greet();\n}\n"
+        main_content = "import greet;\n\nvoid main() {\n    greet();\n    other();\n}\n"
         with open(main_path, "w") as file:
             file.write(main_content)
-        nested_path = os.path.join(subdir, "other.cx")
+        nested_path = os.path.join(subdir, "build.cx")
         nested_content = "import greet;\n\nvoid other() {\n    greet();\n}\n"
         with open(nested_path, "w") as file:
             file.write(nested_content)

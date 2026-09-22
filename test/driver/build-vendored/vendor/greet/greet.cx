@@ -1,6 +1,7 @@
 // RUN: true
 
 void greet() {
+    greetHelper();
     println("hello from vendor");
 }
 

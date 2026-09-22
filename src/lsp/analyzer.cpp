@@ -143,12 +143,14 @@ std::string readLineFromDisk(const std::string& filePath, int line1Based) {
     return line;
 }
 
-/// Finds the build root containing filePath by walking up from parentDir
-/// looking for a build.cx file, or nullopt if the file stands alone.
-/// Only locates the target root (mirroring `cx build` without running it);
+/// Finds the build root governing filePath by walking up from parentDir to the
+/// outermost directory whose build.cx target roots contain the file, or nullopt
+/// if the file stands alone. Outermost wins to mirror `cx build`, which runs at
+/// the project root and compiles nested build.cx files as ordinary sources;
 /// dependencies are still resolved via import search paths, never fetched.
 std::optional<std::string> findBuildRoot(const std::string& filePath, const std::string& parentDir) {
     std::string dir = parentDir;
+    std::optional<std::string> outermost;
     while (true) {
         std::string buildFilePath = dir + "/" + BuildConfig::buildFileName;
         bool isFile = false;
@@ -158,13 +160,13 @@ std::optional<std::string> findBuildRoot(const std::string& filePath, const std:
                 // Either separator: file paths may use backslashes on Windows
                 // while roots built from URIs use forward slashes.
                 if (filePath == root || llvm::StringRef(filePath).starts_with(root + "/") || llvm::StringRef(filePath).starts_with(root + "\\")) {
-                    return root;
+                    outermost = root;
+                    break;
                 }
             }
-            return std::nullopt;
         }
         llvm::StringRef parent = llvm::sys::path::parent_path(dir);
-        if (parent == dir) return std::nullopt; // Filesystem root reached.
+        if (parent == dir) return outermost; // Filesystem root reached.
         dir = parent.str();
     }
 }
@@ -1930,15 +1932,16 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         }
 
         // Main file from memory, siblings from disk or the openDocs overlay.
-        // Build files are config, not source, so never load them as code.
-        // Vendored packages are likewise excluded: they join the module via `import`.
+        // The build root's build.cx is config, not source; a build.cx anywhere
+        // else is an ordinary source file. Vendored packages are likewise
+        // excluded: they join the module via `import`.
         std::vector<std::string> siblingPaths;
         if (moduleDir) {
             options.importSearchPaths.push_back(*moduleDir + "/vendor");
             std::error_code ec;
             for (llvm::sys::fs::recursive_directory_iterator it(*moduleDir, ec), end; it != end && !ec; it.increment(ec)) {
-                if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath
-                    && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName && !isVendoredPath(it->path())) {
+                if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath && !isVendoredPath(it->path())
+                    && !isRootBuildFile(it->path(), *moduleDir)) {
                     siblingPaths.push_back(it->path());
                 }
             }

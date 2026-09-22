@@ -74,11 +74,9 @@ std::vector<std::string> cx::getSourceFiles(llvm::StringRef rootDirectory) {
             break;
         }
 
-        // Build files are config, not source, so never compile them. Match by file name:
-        // full paths can't be compared reliably across separator styles (Windows).
-        // Vendored packages are likewise excluded: they join the build via `import`, not as main-module sources.
-        if (llvm::sys::path::extension(it->path()) == ".cx" && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName
-            && !isVendoredPath(it->path())) {
+        // The root build.cx is config, not source; anything else compiles,
+        // including a build.cx below the root (see isRootBuildFile).
+        if (llvm::sys::path::extension(it->path()) == ".cx" && !isVendoredPath(it->path()) && !isRootBuildFile(it->path(), rootDirectory)) {
             sourceFiles.push_back(it->path());
         }
     }
@@ -91,4 +89,12 @@ bool cx::isVendoredPath(llvm::StringRef path) {
         if (*it == "vendor") return true;
     }
     return false;
+}
+
+bool cx::isRootBuildFile(llvm::StringRef path, llvm::StringRef rootDirectory) {
+    if (llvm::sys::path::filename(path) != BuildConfig::buildFileName) return false;
+    // Filesystem identity, not string comparison: spellings differ across
+    // separator styles (Windows) and relative forms. Unresolvable paths
+    // compile by default; only the known config is skipped.
+    return llvm::sys::fs::equivalent(llvm::sys::path::parent_path(path), rootDirectory);
 }
