@@ -231,13 +231,13 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
     case DeclKind::MethodDecl:
         return Type(llvm::cast<FunctionDecl>(decl)->getFunctionType(), Mutability::Mutable, Location());
     case DeclKind::GenericParamDecl:
-        llvm_unreachable("cannot refer to generic parameters yet");
+        ERROR(expr.location, "cannot refer to generic parameter '" << expr.identifier << "' as a value");
     case DeclKind::ConstructorDecl:
-        llvm_unreachable("cannot refer to constructors yet");
+        ERROR(expr.location, "cannot refer to constructor '" << expr.identifier << "' as a value");
     case DeclKind::DestructorDecl:
-        llvm_unreachable("cannot refer to destructors yet");
+        ERROR(expr.location, "cannot refer to destructor '" << expr.identifier << "' as a value");
     case DeclKind::FunctionTemplate:
-        llvm_unreachable("cannot refer to generic functions yet");
+        ERROR(expr.location, "cannot refer to generic function '" << expr.identifier << "' without specifying type arguments");
     case DeclKind::TypeDecl:
         return llvm::cast<TypeDecl>(decl)->getType();
     case DeclKind::TypeTemplate:
@@ -253,7 +253,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         return llvm::cast<FieldDecl>(decl)->type;
     }
     case DeclKind::ImportDecl:
-        llvm_unreachable("import statement validation not implemented yet");
+        ERROR(expr.location, "cannot refer to import '" << expr.identifier << "' as a value");
     }
     llvm_unreachable("all cases handled");
 }
