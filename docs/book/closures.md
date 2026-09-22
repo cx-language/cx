@@ -7,10 +7,10 @@ Lambdas are commonly passed to higher-order functions such as `map` and `filter`
 void main() {
     var numbers = List([0, 1, 2, 3, 4]);
 
-    var even = numbers.filter(n => n % 2 == 0);
+    var even = numbers.filter(n => n % 2 == 0).toList();
     println(even); // prints [0, 2, 4]
 
-    var doubled = even.map(n => n * 2);
+    var doubled = even.map(n => n * 2).toList();
     println(doubled); // prints [0, 4, 8]
 }
 ```

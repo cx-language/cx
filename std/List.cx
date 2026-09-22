@@ -227,52 +227,14 @@ struct List<Element> {
         return null;
     }
 
-    /// Returns a list of the transformed elements.
-    List<Output> map<Output>(Output(Element*) transform) {
-        var output = List<Output>(capacity = this.size);
-
-        for element in this {
-            output.push(transform(element));
-        }
-
-        return output;
+    /// Lazily transforms the elements. Collect the results with toList().
+    MappedIterator<Output, Element, ArrayIterator<Element>> map<Output>(Output(Element) transform) {
+        return MappedIterator(iterator(), transform);
     }
 
-    /// Returns a list of the transformed elements.
-    List<Output> map<Output>(Output(Element) transform) {
-        var output = List<Output>(capacity = this.size);
-
-        for element in this {
-            output.push(transform(element));
-        }
-
-        return output;
-    }
-
-    /// Returns a list of the elements to include.
-    List<Element> filter(bool(Element*) include) {
-        var output = List<Element>();
-
-        for element in this {
-            if include(element) {
-                output.push(element);
-            }
-        }
-
-        return output;
-    }
-
-    /// Returns a list of the elements to include.
-    List<Element> filter(bool(Element) include) {
-        var output = List<Element>();
-
-        for element in this {
-            if include(element) {
-                output.push(element);
-            }
-        }
-
-        return output;
+    /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
+    FilterIterator<Element, ArrayIterator<Element>> filter(bool(Element) include) {
+        return FilterIterator(iterator(), include);
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.

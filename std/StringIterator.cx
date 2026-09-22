@@ -23,4 +23,14 @@ struct StringIterator: Copyable, Iterator<char> {
     void increment() {
         current++;
     }
+
+    /// Collects the remaining characters into a list.
+    List<char> toList() {
+        var output = List<char>();
+        while hasValue() {
+            output.push(value());
+            increment();
+        }
+        return output;
+    }
 }
