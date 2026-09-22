@@ -30,8 +30,8 @@ wasm/dist/
 examples/*/bin/
 
 # Generated documentation
-docs/html/
-docs/.generated/
+website/html/
+website/.generated/
 
 # LaTeX
 *.aux

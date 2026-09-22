@@ -7,8 +7,8 @@ Private declarations are omitted.
 Only single-line declarations are recognized; anything else is ignored.
 
 Usage:
-    docs/generate_std_docs.py                       regenerate into docs/.generated
-    docs/generate_std_docs.py --output-dir <dir>    regenerate elsewhere
+    website/generate_std_docs.py                    regenerate into website/.generated
+    website/generate_std_docs.py --output-dir <dir> regenerate elsewhere
 """
 
 import argparse
@@ -19,7 +19,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 STD_DIR = ROOT / "std"
-STAGING_DIR = ROOT / "docs" / ".generated"
+STAGING_DIR = ROOT / "website" / ".generated"
 SOURCE_URL = "https://github.com/emillaine/cx/blob/main/std"
 
 OPERATOR_SLUGS = {
@@ -290,7 +290,7 @@ def render_index(title, pages):
         f"# {title}",
         "",
         "Auto-generated from the [standard library sources](https://github.com/emillaine/cx/tree/main/std)",
-        "by [generate_std_docs.py](https://github.com/emillaine/cx/blob/main/docs/generate_std_docs.py).",
+        "by [generate_std_docs.py](https://github.com/emillaine/cx/blob/main/website/generate_std_docs.py).",
         "",
     ]
     for relpath, types, functions, constants, _ in pages:
@@ -375,9 +375,9 @@ def render_toc_items(pages):
 
 
 def write_toc(output_dir, pages):
-    toc = (ROOT / "docs" / "toc.html").read_text()
+    toc = (ROOT / "website" / "toc.html").read_text()
     if TOC_PLACEHOLDER not in toc:
-        raise SystemExit(f"docs/toc.html lacks the {TOC_PLACEHOLDER} marker")
+        raise SystemExit(f"website/toc.html lacks the {TOC_PLACEHOLDER} marker")
     items = "\n".join(render_toc_items(pages))
     (output_dir / "toc.html").write_text(re.sub(r"[ \t]*" + re.escape(TOC_PLACEHOLDER), items, toc))
 

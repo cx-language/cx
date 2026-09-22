@@ -1,4 +1,4 @@
-// Exercises docs/editor.js showcase wiring with a minimal fake DOM.
+// Exercises website/editor.js showcase wiring with a minimal fake DOM.
 // Run with: node wasm/test-editor.mjs
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
@@ -150,7 +150,7 @@ const sandbox = {
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
-vm.runInContext(await readFile(repoRoot + "docs/editor.js", "utf8"), sandbox);
+vm.runInContext(await readFile(repoRoot + "website/editor.js", "utf8"), sandbox);
 
 // Simulate page load.
 sandbox.document.listeners["DOMContentLoaded"]();
