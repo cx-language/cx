@@ -1,11 +1,11 @@
 
-%U = type <{ i32 }>
+%U = type { i32 }
 
 @0 = private unnamed_addr constant [50 x i8] c"integer overflow at union-member-access.cx:13:19\0A\00", align 1
 
 define i32 @_EN4main3fooE1U(%U %u) {
   %u1 = alloca %U, align 8
-  store %U %u, ptr %u1, align 1
+  store %U %u, ptr %u1, align 4
   %b.load = load i32, ptr %u1, align 4
   ret i32 %b.load
 }
@@ -13,7 +13,7 @@ define i32 @_EN4main3fooE1U(%U %u) {
 define i32 @main() {
   %u = alloca %U, align 8
   store i32 21, ptr %u, align 4
-  %u.load = load %U, ptr %u, align 1
+  %u.load = load %U, ptr %u, align 4
   %1 = call i32 @_EN4main3fooE1U(%U %u.load)
   %b.load = load i32, ptr %u, align 4
   %2 = sext i32 %1 to i64

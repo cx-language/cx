@@ -1,0 +1,24 @@
+// RUN: check_exit_status 0 %cx run %s
+// RUN: check_exit_status 0 %cx run --backend=c %s
+
+struct Big {
+    int a;
+    int b;
+    int c;
+    int d;
+    int e;
+}
+
+int take(Big x) {
+    return x.a;
+}
+
+Big produce() {
+    return undefined;
+}
+
+int main() {
+    take(undefined);
+    produce();
+    return 0;
+}

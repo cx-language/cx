@@ -1,5 +1,5 @@
 
-%0 = type <{ { %"ArrayRef<int8>" } }>
+%0 = type { { %"ArrayRef<int8>" } }
 %"Optional<ArrayRef<int8>>" = type { i32, %0 }
 %"ArrayRef<int8>" = type { ptr, i32 }
 
@@ -8,7 +8,13 @@ define i32 @main() {
   %enum = alloca %"Optional<ArrayRef<int8>>", align 8
   %tag = getelementptr inbounds %"Optional<ArrayRef<int8>>", ptr %enum, i32 0, i32 0
   store i32 0, ptr %tag, align 4
-  %enum.load = load %"Optional<ArrayRef<int8>>", ptr %enum, align 4
-  store %"Optional<ArrayRef<int8>>" %enum.load, ptr %a, align 4
+  %enum.load = alloca %"Optional<ArrayRef<int8>>", align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %enum.load, ptr align 8 %enum, i64 24, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %a, ptr align 8 %enum.load, i64 24, i1 false)
   ret i32 0
 }
+
+; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #0
+
+attributes #0 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }

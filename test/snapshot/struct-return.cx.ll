@@ -2,11 +2,12 @@
 %S2 = type { double, double, double, double }
 %S = type { [4 x double] }
 
-define void @_EN4main19returnsLargeStruct2E(ptr sret(%S2) %sret.arg) {
+define void @_EN4main19returnsLargeStruct2E(ptr sret(%S2) align 8 %sret.arg) {
   %1 = alloca %S2, align 8
   call void @_EN4main2S24initE7float647float647float647float64(ptr %1, double 0.000000e+00, double 1.000000e+00, double 2.000000e+00, double 3.000000e+00)
-  %.load = load %S2, ptr %1, align 8
-  store %S2 %.load, ptr %sret.arg, align 8
+  %.load = alloca %S2, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %.load, ptr align 8 %1, i64 32, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %sret.arg, ptr align 8 %.load, i64 32, i1 false)
   ret void
 }
 
@@ -34,18 +35,21 @@ define void @_EN4main2S24initE7float647float647float647float64(ptr %this, double
   ret void
 }
 
+; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #0
+
 define i32 @main() {
   %s = alloca %S, align 8
   %s2 = alloca %S2, align 8
   %sret.alloca = alloca %S, align 8
-  call void @returnsLargeStruct(ptr sret(%S) %sret.alloca)
-  %sret.load = load %S, ptr %sret.alloca, align 8
-  store %S %sret.load, ptr %s, align 8
+  call void @returnsLargeStruct(ptr sret(%S) align 8 %sret.alloca)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %s, ptr align 8 %sret.alloca, i64 32, i1 false)
   %sret.alloca1 = alloca %S2, align 8
-  call void @_EN4main19returnsLargeStruct2E(ptr sret(%S2) %sret.alloca1)
-  %sret.load2 = load %S2, ptr %sret.alloca1, align 8
-  store %S2 %sret.load2, ptr %s2, align 8
+  call void @_EN4main19returnsLargeStruct2E(ptr sret(%S2) align 8 %sret.alloca1)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %s2, ptr align 8 %sret.alloca1, i64 32, i1 false)
   ret i32 0
 }
 
-declare void @returnsLargeStruct(ptr sret(%S))
+declare void @returnsLargeStruct(ptr sret(%S) align 8)
+
+attributes #0 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }

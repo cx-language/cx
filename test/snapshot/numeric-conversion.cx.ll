@@ -10,7 +10,7 @@ define i32 @main() {
   store float %1, ptr %f, align 4
   %f.load = load float, ptr %f, align 4
   %2 = fptosi float %f.load to i64
-  store i64 %2, ptr %u, align 4
+  store i64 %2, ptr %u, align 8
   store i32 1, ptr %s, align 4
   ret i32 0
 }
