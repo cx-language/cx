@@ -93,6 +93,7 @@ int64? fileSize(string path) {
 
     fseek(file, 0, SEEK_END);
     var size = ftell(file);
+    if size < 0 return null;
     return size;
 }
 
@@ -108,15 +109,33 @@ List<StringBuffer> listDirectory(string path) {
 ///
 /// Names come from the shell, so a name containing a line break is split in two.
 List<StringBuffer> listDirectory(string path) {
-    return readDirectoryListing(StringBuffer("ls -1 ") + quotedPath(path) + " 2>/dev/null", false);
+    return readDirectoryListing(StringBuffer("ls -1 -- ") + quotedPath(path) + " 2>/dev/null", false);
 }
 #endif
 
 private int listCounter = 0;
 
+#if Windows
 private StringBuffer quotedPath(string path) {
     return StringBuffer("\"") + path + "\"";
 }
+#else
+// Single-quote for POSIX shells so double quotes, dollar signs, and backticks
+// in the path are passed literally. A single quote in the path closes the
+// quoting, adds an escaped quote, and reopens it.
+private StringBuffer quotedPath(string path) {
+    var result = StringBuffer("'");
+    for ch in path {
+        if ch == '\'' {
+            result += "'\\''";
+        } else {
+            result += ch;
+        }
+    }
+    result += "'";
+    return result;
+}
+#endif
 
 private List<StringBuffer> readDirectoryListing(StringBuffer command, bool stripCarriageReturns) {
     listCounter++;
