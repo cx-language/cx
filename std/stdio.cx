@@ -22,16 +22,16 @@ void println(char[*]? value) {
     print('\n');
 }
 
-/// Prints the given value.
+/// Prints the given value without allocating.
 void print<T: Printable>(T value) {
-    var s = value.toString();
-    printf("%.*s", s.size(), s.data());
+    var stream = OutputStream();
+    value.print(stream);
 }
 
-/// Prints the given value.
+/// Prints the given value without allocating.
 void print<T: Printable>(T* value) {
-    var s = value.toString();
-    printf("%.*s", s.size(), s.data());
+    var stream = OutputStream();
+    value.print(stream);
 }
 
 /// Prints the given value.
@@ -53,7 +53,7 @@ void print<T: Printable>(ArrayRef<T> array) {
     print(']');
 }
 
-/// Prints the given value.
+/// Prints the given value without allocating.
 void print(const char[*]? cString) {
     if cString {
         printf("%s", cString);
@@ -62,7 +62,7 @@ void print(const char[*]? cString) {
     }
 }
 
-/// Prints the given value.
+/// Prints the given value without allocating.
 void print(char[*]? cString) {
     if cString {
         printf("%s", cString);

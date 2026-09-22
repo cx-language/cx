@@ -26,10 +26,10 @@ struct OutputFileStream {
         }
     }
 
-    /// Writes the given value to the file.
+    /// Writes the given value to the file without allocating.
     void write<T: Printable>(T* value) {
-        var s = value.toString();
-        fprintf(file!, "%.*s", s.size(), s.data());
+        var stream = OutputStream(file!);
+        value.print(stream);
         fflush(file);
     }
 }
