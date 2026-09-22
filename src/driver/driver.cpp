@@ -777,13 +777,13 @@ static void addConfigBuildFlags(const BuildConfig& config) {
     // compile sources under src/, whose parents never include the root).
     importSearchPaths.push_back((llvm::StringRef(config.rootDirectory) + "/vendor").str());
     for (auto& path : config.headerSearchPaths) {
-        importSearchPaths.push_back(path);
+        importSearchPaths.push_back(absolutizePackagePath(config.rootDirectory, path));
     }
     for (auto& path : config.librarySearchPaths) {
-        librarySearchPaths.push_back(path);
+        librarySearchPaths.push_back(absolutizePackagePath(config.rootDirectory, path));
     }
     for (auto& library : config.libraries) {
-        libraries.push_back(library);
+        libraries.push_back(absolutizePackagePath(config.rootDirectory, library));
     }
     for (auto& framework : config.frameworks) {
         frameworks.push_back(framework);
@@ -820,8 +820,8 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0) {
     resolveDependencyClosure(config, baseOptions, /*fetchMissing=*/true);
 
     // Route each dependency's pkg-config output and union its link
-    // contributions. Defines and search paths stay package-scoped in the
-    // closure records; there is one binary, so linking is global.
+    // contributions. Defines, search paths, and cflags stay package-scoped in
+    // the closure records; there is one binary, so linking is global.
     for (auto& record : config.resolvedDependencies) {
         auto split = queryPkgConfigFlags(record.pkgConfigDependencies);
         for (auto& define : split.defines) {
@@ -836,7 +836,6 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0) {
         }
         for (auto& flag : split.cflags) {
             record.options.cflags.push_back(flag);
-            cflags.push_back(flag);
         }
         for (auto& path : split.librarySearchPaths) {
             librarySearchPaths.push_back(absolutizePackagePath(record.rootDirectory, path));
@@ -870,7 +869,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0) {
         } else {
             outputFileName = config.name;
         }
-        auto sourceFiles = getSourceFiles(targetRootDir);
+        auto sourceFiles = getSourceFiles(targetRootDir, config.rootDirectory);
         // TODO: Add support for library packages.
         int exitStatus = buildModuleFromFiles({
             .filePaths = sourceFiles,

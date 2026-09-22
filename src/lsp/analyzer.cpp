@@ -1945,6 +1945,10 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             for (auto& define : projectConfig.defines) {
                 options.defines.push_back(define);
             }
+            // The project root's vendor/ holds importable packages. The file's
+            // own directory contributes its vendor/ above; a multitarget file
+            // under src/foo needs both (see driver.cpp addConfigBuildFlags).
+            options.importSearchPaths.push_back(buildDir + "/vendor");
             for (auto& path : projectConfig.headerSearchPaths) {
                 options.importSearchPaths.push_back(absolutizePackagePath(buildDir, path));
             }
@@ -1952,16 +1956,20 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         }
 
         // Main file from memory, siblings from disk or the openDocs overlay.
-        // The build root's build.cx is config, not source; a build.cx anywhere
-        // else is an ordinary source file. Vendored packages are likewise
-        // excluded: they join the module via `import`.
+        // Only the project root's build.cx is config, not source; a build.cx
+        // anywhere else is an ordinary source file. Vendored packages are
+        // likewise excluded: they join the module via `import`.
         std::vector<std::string> siblingPaths;
         if (moduleDir) {
-            options.importSearchPaths.push_back(*moduleDir + "/vendor");
+            std::string moduleVendor = *moduleDir + "/vendor";
+            if (buildDir.empty() || moduleVendor != buildDir + "/vendor") {
+                options.importSearchPaths.push_back(std::move(moduleVendor));
+            }
+            std::string exclusionRoot = buildDir.empty() ? *moduleDir : buildDir;
             std::error_code ec;
             for (llvm::sys::fs::recursive_directory_iterator it(*moduleDir, ec), end; it != end && !ec; it.increment(ec)) {
                 if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath && !isVendoredPath(it->path())
-                    && !isRootBuildFile(it->path(), *moduleDir)) {
+                    && !isRootBuildFile(it->path(), exclusionRoot)) {
                     siblingPaths.push_back(it->path());
                 }
             }

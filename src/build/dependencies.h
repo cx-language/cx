@@ -41,7 +41,10 @@ struct DependencyResolution {
 DependencyResolution resolveDependency(const std::vector<BuildConfig::ResolvedDependency>& closure, llvm::StringRef packageName);
 // Joins a package-relative path onto its root; absolute paths pass through.
 std::string absolutizePackagePath(llvm::StringRef rootDirectory, const std::string& path);
-std::vector<std::string> getSourceFiles(llvm::StringRef rootDirectory);
+// All .cx files under targetRoot, except the project root's build.cx.
+// Only the project root's build file is config; a build.cx anywhere else
+// (including a multitarget target root) compiles as an ordinary source.
+std::vector<std::string> getSourceFiles(llvm::StringRef targetRoot, llvm::StringRef projectRoot);
 // True when path lies under a 'vendor' directory. Vendored packages are
 // imported by name, never compiled as part of the importing module.
 bool isVendoredPath(llvm::StringRef path);
