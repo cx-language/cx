@@ -2,11 +2,11 @@ import "GLFW/glfw3.h";
 
 uint compileShader(string path, uint kind) {
     var source = readFile(path);
-    if source == null {
+    if source == Err {
         abort("cannot read shader file: ", path);
     }
     var shader = glCreateShader(kind);
-    var cstr = source.cString();
+    var cstr = unwrap(source).cString();
     glShaderSource(shader, 1, cstr, null);
     glCompileShader(shader);
     int status = undefined;

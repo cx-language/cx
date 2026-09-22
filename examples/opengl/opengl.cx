@@ -84,7 +84,7 @@ int main() {
 }
 
 void LoadShader(GLuint shaderID, string path) {
-    StringBuffer shaderSource = readFile(path)!;
+    StringBuffer shaderSource = unwrap(readFile(path));
     const char* shaderSourcePointer = shaderSource.cString();
 
     glShaderSource(shaderID, 1, &shaderSourcePointer, null);
