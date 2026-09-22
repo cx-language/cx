@@ -13,6 +13,8 @@
 #include "../ast/decl.h"
 #include "../ast/expr.h"
 #include "../ast/stmt.h"
+#include "../build/config.h"
+#include "../driver/driver.h"
 
 namespace llvm {
 class StringRef;
@@ -24,11 +26,9 @@ template<typename T> class Optional;
 namespace cx {
 
 struct Module;
-struct BuildConfig;
 struct SourceFile;
 struct Location;
 struct Type;
-struct CompileOptions;
 
 struct ArgumentValidation {
     enum Error { None, TooFew, TooMany, InvalidName, DuplicateName, InvalidType };
@@ -62,16 +62,16 @@ struct VariadicGenericArgs {
 using NarrowMap = llvm::DenseMap<Decl*, Type>;
 
 struct Typechecker {
-    Typechecker(const CompileOptions& options)
+    Typechecker(const CompileOptions& options, const std::vector<BuildConfig::ResolvedDependency>* dependencies = nullptr)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
-      isPostProcessing(false), options(options) {}
-    void typecheckModule(Module& module, const BuildConfig* config);
+      isPostProcessing(false), options(options), dependencies(dependencies) {}
+    void typecheckModule(Module& module, const CompileOptions& packageOptions);
     void checkUnusedDecls(const Module& mainModule);
 
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
     void typecheckVarDecl(VarDecl& decl);
     void typecheckFieldDecl(FieldDecl& decl);
-    void typecheckTopLevelDecl(Decl& decl, const BuildConfig* config);
+    void typecheckTopLevelDecl(Decl& decl);
     void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);
     void typecheckFunctionDecl(FunctionDecl& decl);
     void typecheckFunctionTemplate(FunctionTemplate& decl);
@@ -97,7 +97,7 @@ struct Typechecker {
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
     void typecheckEnumDecl(EnumDecl& decl);
-    void typecheckImportDecl(ImportDecl& decl, const BuildConfig* config);
+    void typecheckImportDecl(ImportDecl& decl);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType);
     Type typecheckNullLiteralExpr(NullLiteralExpr& expr, Type expectedType);
@@ -155,7 +155,7 @@ struct Typechecker {
     void warnIfUnusedResult(const Expr& expr, Type type) const;
     static void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);
     void maybeCaptureVariable(VariableDecl& variableDecl);
-    llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const BuildConfig* config, llvm::StringRef moduleName);
+    llvm::ErrorOr<const Module&> importModule(SourceFile* importer, llvm::StringRef moduleName);
     void deferTypechecking(Decl* decl);
     void postProcess();
 
@@ -178,7 +178,8 @@ struct Typechecker {
     llvm::SmallPtrSet<Decl*, 32> definitelyAssignedDecls;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
-    const CompileOptions& options;
+    CompileOptions options; // Active package's options; switched per module.
+    const std::vector<BuildConfig::ResolvedDependency>* dependencies; // Closure, or null without a project.
 };
 
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location);

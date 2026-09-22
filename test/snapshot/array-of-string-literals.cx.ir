@@ -12,6 +12,3 @@ int main() {
     store _3 to a
     return int 0
 }
-
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
-}

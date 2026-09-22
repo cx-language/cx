@@ -64,9 +64,6 @@ void _EN4main4vec24initE3int3int(vec2* this, int x, int y) {
     return void
 }
 
-void _EN3std10assertFailEP4char(char* message) {
-}
-
 int main() {
     vec2* v = alloca vec2
     vec2* _0 = alloca vec2

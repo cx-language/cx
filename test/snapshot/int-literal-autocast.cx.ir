@@ -23,6 +23,3 @@ overflow.success:
     store _1 to b
     return int 0
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

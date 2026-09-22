@@ -42,9 +42,6 @@ overflow.success:
     return _3
 }
 
-void _EN3std10assertFailEP4char(char* message) {
-}
-
 int _EN4main9__lambda1E3int3int(int a, int b) {
     int* a_0 = alloca int
     int* b_0 = alloca int

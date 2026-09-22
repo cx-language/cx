@@ -1,0 +1,4 @@
+// RUN: true
+
+var defines = ["GREET_LOUD"]
+var headerSearchPaths = ["include"]

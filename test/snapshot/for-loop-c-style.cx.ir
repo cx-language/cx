@@ -42,6 +42,3 @@ overflow.success:
     store _4 to sum
     br loop.increment
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

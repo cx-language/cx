@@ -16,6 +16,15 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
         }
     }
 
+    // Definitions are emitted once per program: a function referenced from several
+    // modules reuses the first module's object, so later modules call it as an
+    // external declaration instead of emitting a duplicate definition.
+    for (auto& instantiation : functionInstantiations) {
+        if (instantiation.function->mangledName == mangledName) {
+            return instantiation.function;
+        }
+    }
+
     auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter{ValueKind::Parameter, getIRType(p.type), p.getName().str()}; });
 
     if (decl.isMain() && !decl.isMethodDecl() && !decl.getParams().empty()) {
@@ -40,12 +49,6 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
         ValueKind::Function, mangledName, decl.getName().str(), returnType, std::move(params), {}, decl.isExtern(), decl.isVariadic(), decl.getLocation(),
     };
     module->functions.push_back(function);
-
-    for (auto& instantiation : functionInstantiations) {
-        if (instantiation.function->mangledName == mangledName) {
-            return function;
-        }
-    }
 
     functionInstantiations.push_back({&decl, function});
     return function;

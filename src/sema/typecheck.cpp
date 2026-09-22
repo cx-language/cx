@@ -8,7 +8,7 @@
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/module.h"
-#include "../build/config.h"
+#include "../build/dependencies.h"
 #include "../driver/driver.h"
 #include "../parser/parse.h"
 
@@ -39,9 +39,12 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
     std::error_code error;
     std::vector<std::string> paths;
 
+    // ponytail: an imported package's own vendor/ subdirectory (transitive vendoring) compiles as part of it;
+    // split into nested packages via `import` once a package needs its vendored deps versioned independently.
     for (llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end; it != end; it.increment(error)) {
         if (error) break;
-        if (llvm::sys::path::extension(it->path()) == ".cx") {
+        // Only the package root's build file is reserved (see isRootBuildFile).
+        if (llvm::sys::path::extension(it->path()) == ".cx" && !isRootBuildFile(it->path(), directoryPath.str())) {
             paths.push_back(it->path());
         }
     }
@@ -62,7 +65,7 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
     return error;
 }
 
-llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, const BuildConfig* config, llvm::StringRef moduleName) {
+llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, llvm::StringRef moduleName) {
     auto it = Module::getAllImportedModulesMap().find(moduleName);
     if (it != Module::getAllImportedModulesMap().end()) {
         if (importer) importer->addImportedModule(it->second);
@@ -72,19 +75,31 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
     auto module = new Module(moduleName.str());
     std::error_code error = std::make_error_code(std::errc::no_such_file_or_directory);
 
-    if (config) {
-        for (auto& dependency : config->declaredDependencies) {
-            if (dependency.package == moduleName) {
-                error = importModuleSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, options);
-                goto done;
-            }
+    // Each package parses and typechecks with its own options; a cached module
+    // is always complete, so reimporting never reparses.
+    const CompileOptions* packageOptions = &options;
+    const BuildConfig::ResolvedDependency* resolution = nullptr;
+    if (dependencies) {
+        auto result = resolveDependency(*dependencies, moduleName);
+        if (result.ambiguous) {
+            // typecheckImportDecl reports this at the import; the std pre-import
+            // below has no location, so report here instead.
+            REPORT_ERROR(Location(), result.ambiguityDetail);
+            return error;
         }
+        resolution = result.dependency;
+    }
+
+    if (resolution) {
+        packageOptions = &resolution->options;
+        error = importModuleSourcesInDirectoryRecursively(resolution->rootDirectory, *module, *packageOptions);
+        goto done;
     }
 
     for (llvm::StringRef importPath : options.importSearchPaths) {
         auto modulePath = (importPath + "/" + moduleName).str();
         if (llvm::sys::fs::is_directory(modulePath)) {
-            error = importModuleSourcesInDirectoryRecursively(modulePath, *module, options);
+            error = importModuleSourcesInDirectoryRecursively(modulePath, *module, *packageOptions);
             goto done;
         }
     }
@@ -93,7 +108,7 @@ done:
     if (error) return error;
     if (importer) importer->addImportedModule(module);
     Module::getAllImportedModulesMap()[module->name] = module;
-    typecheckModule(*module, nullptr);
+    typecheckModule(*module, *packageOptions);
     return *module;
 }
 
@@ -157,11 +172,12 @@ void Typechecker::checkUnusedDecls(const Module& mainModule) {
     checkUnusedDeclsInModule(mainModule);
 }
 
-void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
+void Typechecker::typecheckModule(Module& module, const CompileOptions& packageOptions) {
     llvm::SaveAndRestore restoreModule(currentModule);
     llvm::SaveAndRestore restoreSourceFile(currentSourceFile);
+    llvm::SaveAndRestore restoreOptions(options, packageOptions);
 
-    auto stdModule = importModule(nullptr, nullptr, "std");
+    auto stdModule = importModule(nullptr, "std");
     if (!stdModule) {
         std::string searched;
         for (auto& path : options.importSearchPaths) {
@@ -181,7 +197,7 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
             currentSourceFile = &sourceFile;
 
             try {
-                typecheckImportDecl(*llvm::cast<ImportDecl>(decl), config);
+                typecheckImportDecl(*llvm::cast<ImportDecl>(decl));
                 postProcess();
             } catch (const CompileError& error) {
                 error.report();
@@ -286,7 +302,7 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
             // Imports were already processed in the pre-pass above.
             if (!decl->isVarDecl() && !decl->isImportDecl()) {
                 try {
-                    typecheckTopLevelDecl(*decl, config);
+                    typecheckTopLevelDecl(*decl);
                     postProcess();
                 } catch (const CompileError& error) {
                     error.report();

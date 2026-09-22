@@ -1,0 +1,27 @@
+// RUN: true
+
+import "greet.h";
+
+#if MAIN_ONLY
+void greet() {
+    println("main leaked");
+}
+#else
+void greet() {
+    println("greet");
+}
+#endif
+
+#if GREET_LOUD
+void loudness() {
+    println("loud");
+}
+#else
+void loudness() {
+    println("quiet");
+}
+#endif
+
+void number() {
+    println(GREET_NUM);
+}

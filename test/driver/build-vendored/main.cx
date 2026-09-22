@@ -1,0 +1,12 @@
+// RUN: cd %S && %cx run 2>&1 | %FileCheck -match-full-lines -strict-whitespace %s
+
+// CHECK-NOT: warning
+// CHECK:greet helper
+// CHECK:hello from vendor
+// CHECK-NOT: warning
+
+import greet;
+
+void main() {
+    greet();
+}

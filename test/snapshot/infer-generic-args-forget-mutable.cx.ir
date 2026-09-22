@@ -18,6 +18,3 @@ int main() {
     void _2 = call _EN4main1fE5RangeI3intE(Range<int> .load)
     return int 0
 }
-
-void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
-}

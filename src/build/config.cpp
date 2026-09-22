@@ -39,6 +39,7 @@ static const StringLiteralExpr* getRequiredString(const TupleExpr* tuple, llvm::
 }
 
 BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> defines) : rootDirectory(std::move(rootDirectory)) {
+    if (this->rootDirectory.empty()) return;
     auto buildFilePath = this->rootDirectory + "/" + buildFileName;
     if (!llvm::sys::fs::exists(buildFilePath)) return;
 
