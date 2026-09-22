@@ -33,6 +33,3 @@ overflow.fail:
 overflow.success:
     return _4
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

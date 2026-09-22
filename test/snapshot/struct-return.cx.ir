@@ -39,5 +39,3 @@ int main() {
     store _1 to s2
     return int 0
 }
-
-extern S returnsLargeStruct()

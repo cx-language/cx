@@ -47,9 +47,6 @@ overflow.success:
     return void
 }
 
-void _EN3std10assertFailEP4char(char* message) {
-}
-
 int main() {
     void _0 = call _EN4main1gEF_4void(void()* _EN4main1fE)
     void _1 = call _EN4main2g2EF3int4bool_3int(int(int, bool)* _EN4main2f2E3int4bool)
