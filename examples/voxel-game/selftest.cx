@@ -266,6 +266,232 @@ void testWorld(World* w) {
     println("world ok");
 }
 
+void testTexture() {
+    if tileForBlock(blockGrass, faceTop) != tileGrassTop {
+        abort("self-test: grass top tile wrong");
+    }
+    if tileForBlock(blockGrass, facePX) != tileGrassSide {
+        abort("self-test: grass side tile wrong");
+    }
+    if tileForBlock(blockGrass, faceBottom) != tileDirt {
+        abort("self-test: grass bottom tile wrong");
+    }
+    if tileForBlock(blockDirt, faceTop) != tileDirt {
+        abort("self-test: dirt tile wrong");
+    }
+    if tileForBlock(blockWood, faceTop) != tileWoodTop {
+        abort("self-test: wood top tile wrong");
+    }
+    if tileForBlock(blockWood, faceNX) != tileWoodSide {
+        abort("self-test: wood side tile wrong");
+    }
+    if tileForBlock(blockLeaves, facePZ) != tileLeaves {
+        abort("self-test: leaves tile wrong");
+    }
+    var uv = tileUV(tileGrassSide);
+    var inset0 = uv.u0 * float(atlasWidth) - float(tileGrassSide * tileSize);
+    if inset0 <= 0.0 || inset0 >= 0.5 {
+        abort("self-test: atlas u0 inset wrong");
+    }
+    var inset1 = float((tileGrassSide + 1) * tileSize) - uv.u1 * float(atlasWidth);
+    if inset1 <= 0.0 || inset1 >= 0.5 {
+        abort("self-test: atlas u1 inset wrong");
+    }
+    expectNear(uv.u1 - uv.u0, 0.125, "tile span");
+    expectNear(uv.v0, 0.0, "tile v0");
+    expectNear(uv.v1, 1.0, "tile v1");
+    var dirt = tilePixel(tileDirt, 3, 3);
+    if dirt.r < 100 || dirt.r > 160 || dirt.g < 60 || dirt.g > 120 || dirt.b < 25 || dirt.b > 80 {
+        abort("self-test: dirt texel out of range");
+    }
+    var edge = tilePixel(tileGrassSide, 0, 15);
+    if edge.g < 130 {
+        abort("self-test: grass side top row not green");
+    }
+    var topMax = 0;
+    for y in 0..16 {
+        for x in 0..16 {
+            var gg = tilePixel(tileGrassTop, x, y).g;
+            if gg > topMax {
+                topMax = gg;
+            }
+        }
+    }
+    if topMax > 170 {
+        abort("self-test: grass top too bright");
+    }
+    var soil = tilePixel(tileGrassSide, 0, 0);
+    if soil.g > 120 {
+        abort("self-test: grass side bottom row not dirt");
+    }
+    var lastGroove = -100;
+    var grooves = 0;
+    for x in 0..16 {
+        if tilePixel(tileWoodSide, x, 8).r < 103 {
+            if grooves > 0 && x - lastGroove != 4 {
+                abort("self-test: bark grooves unevenly spaced");
+            }
+            lastGroove = x;
+            grooves++;
+        }
+    }
+    if grooves != 4 {
+        abort("self-test: bark groove count wrong");
+    }
+    var minG = 1000;
+    var maxG = -1000;
+    for y in 0..16 {
+        for x in 0..16 {
+            var leaf = tilePixel(tileLeaves, x, y);
+            if leaf.g <= leaf.r + 20 || leaf.r > 70 {
+                abort("self-test: leaves texel out of range");
+            }
+            if leaf.g < minG {
+                minG = leaf.g;
+            }
+            if leaf.g > maxG {
+                maxG = leaf.g;
+            }
+        }
+    }
+    if minG < 115 || maxG > 160 {
+        abort("self-test: leaves brightness out of range");
+    }
+    if maxG - minG < 15 {
+        abort("self-test: leaves tile has no variation");
+    }
+    for i in 0..16 {
+        if tilePixel(tileWoodTop, i, 0).r >= 95 || tilePixel(tileWoodTop, i, 15).r >= 95 ||
+            tilePixel(tileWoodTop, 0, i).r >= 95 || tilePixel(tileWoodTop, 15, i).r >= 95 {
+            abort("self-test: log border not bark");
+        }
+    }
+    int[8] inX = [1, 14, 1, 14, 8, 8, 1, 14];
+    int[8] inY = [1, 1, 14, 14, 1, 14, 8, 8];
+    for i in 0..8 {
+        if tilePixel(tileWoodTop, inX[i], inY[i]).r < 95 {
+            abort("self-test: bark thicker than 1px");
+        }
+    }
+    if tilePixel(tileWoodTop, 7, 7).r < 120 {
+        abort("self-test: log center not light");
+    }
+    bool[8] seen = [false, false, false, false, false, false, false, false];
+    for x in 0..4 {
+        for y in 10..14 {
+            for z in 0..4 {
+                for f in 0..6 {
+                    var v = faceVariant(tileDirt, x, y, z, f);
+                    if v < 0 || v > 7 {
+                        abort("self-test: face variant out of range");
+                    }
+                    seen[v] = true;
+                    var vd = faceVariant(tileGrassSide, x, y, z, f);
+                    if vd != 0 && vd != 4 {
+                        abort("self-test: directional tile rotates");
+                    }
+                    var wb = faceVariant(tileWoodSide, x, y, z, f);
+                    if wb != 0 && wb != 4 {
+                        abort("self-test: bark tile rotates");
+                    }
+                }
+            }
+        }
+    }
+    var distinct = 0;
+    for i in 0..8 {
+        if seen[i] == true {
+            distinct++;
+        }
+    }
+    if distinct < 5 {
+        abort("self-test: face variants not spread");
+    }
+    var uv0 = List<float>();
+    pushFaceUV(uv0, tileDirt, 0);
+    var uv2 = List<float>();
+    pushFaceUV(uv2, tileDirt, 2);
+    var uv4 = List<float>();
+    pushFaceUV(uv4, tileDirt, 4);
+    if uv0.size() != 12 {
+        abort("self-test: face UV count wrong");
+    }
+    expectNear(uv0[0], 0.25, "face uv u0");
+    expectNear(uv0[1], 0.0, "face uv v0");
+    expectNear(uv2[0], 0.375, "face uv rot180 u");
+    expectNear(uv2[1], 1.0, "face uv rot180 v");
+    expectNear(uv4[0], 0.375, "face uv mirror u");
+    expectNear(uv4[1], 0.0, "face uv mirror v");
+    var a = tilePixel(tileStone, 5, 9);
+    var b = tilePixel(tileStone, 5, 9);
+    if a.r != b.r || a.g != b.g || a.b != b.b {
+        abort("self-test: texture not deterministic");
+    }
+    println("texture ok");
+}
+
+void testRestingContact() {
+    var world = makeWorldData(1, 1);
+    for x in 0..16 {
+        for z in 0..16 {
+            for y in 0..11 {
+                worldSet(world, x, y, z, blockStone);
+            }
+            for y in 11..16 {
+                worldSet(world, x, y, z, blockAir);
+            }
+        }
+    }
+    var player = Player(pos = Vec3(8.5, 11.5, 8.5), vel = Vec3(0.0, 0.0, 0.0),
+        yaw = 0.0, pitch = 0.0, onGround = false);
+    var input = Input();
+    for _ in 0..120 {
+        updatePlayer(world, player, input, 1.0 / 60.0);
+    }
+    if !player.onGround {
+        abort("self-test: resting player did not land");
+    }
+    var restY = player.pos.y;
+    for _ in 0..240 {
+        updatePlayer(world, player, input, 1.0 / 120.0);
+        if player.pos.y != restY {
+            abort("self-test: resting player moved");
+        }
+    }
+    for y in 0..11 {
+        worldSet(world, 8, y, 7, blockAir);
+    }
+    input.forward = true;
+    var fell = false;
+    for _ in 0..240 {
+        updatePlayer(world, player, input, 1.0 / 60.0);
+        if !player.onGround {
+            fell = true;
+            break;
+        }
+    }
+    if !fell {
+        abort("self-test: ledge drop did not fall");
+    }
+    var airY = player.pos.y;
+    for _ in 0..30 {
+        updatePlayer(world, player, input, 1.0 / 60.0);
+    }
+    if player.pos.y >= airY {
+        abort("self-test: ledge drop did not descend");
+    }
+    println("resting ok");
+}
+
+void testCrosshair() {
+    var m = crosshairMatrix(1280, 720);
+    expectNear(m.m[0], 720.0 / 1280.0, "crosshair aspect");
+    expectNear(m.m[5], 1.0, "crosshair y scale");
+    expectNear(m.m[10], 1.0, "crosshair z scale");
+    expectNear(m.m[15], 1.0, "crosshair w scale");
+    println("crosshair ok");
+}
+
 void testRender() {
     if glfwInit() == 0 {
         abort("self-test: glfwInit failed");
@@ -275,6 +501,7 @@ void testRender() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
     glfwWindowHint(GLFW_VISIBLE, 0);
+    glfwWindowHint(GLFW_SAMPLES, 4);
     var window = glfwCreateWindow(64, 64, "self-test", null, null);
     if window == null {
         abort("self-test: window failed");
@@ -285,6 +512,7 @@ void testRender() {
     testWorld(world);
 
     var program = createProgram("assets/block.vert", "assets/block.frag");
+    var blockTex = createBlockTexture();
     glUseProgram(program);
 
     glEnable(GL_DEPTH_TEST);
@@ -297,6 +525,7 @@ void testRender() {
     var mvp = proj * view;
     var uniforms = getBlockUniforms(program);
     setMat4(uniforms.mvp, mvp);
+    bindBlockTexture(uniforms, blockTex);
     setBlockFog(uniforms, eye);
     for i in 0..world.chunks.size() {
         drawMesh(world.chunks[i].mesh);
@@ -339,6 +568,7 @@ void testRender() {
     checkGlError("self-test rebuild");
     println("edit ok");
     destroyWorld(world);
+    destroyBlockTexture(blockTex);
     glDeleteProgram(program);
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -353,6 +583,9 @@ int runSelfTest() {
     testPlayer();
     testLook();
     testRaycast();
+    testTexture();
+    testCrosshair();
+    testRestingContact();
     testRender();
     println("self-test passed");
     return 0;

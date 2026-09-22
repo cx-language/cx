@@ -1,19 +1,21 @@
 import "GLFW/glfw3.h";
 
-// Non-indexed triangle mesh with separate position, normal, and color
-// buffers (one vertex per corner, three corners per triangle).
+// Non-indexed triangle mesh with separate position, normal, color, and
+// UV buffers (one vertex per corner, three corners per triangle).
 struct Mesh {
     uint vao;
     uint positionVbo;
     uint normalVbo;
     uint colorVbo;
+    uint uvVbo;
     int vertexCount;
 }
 
-void initMesh(Mesh* mesh, float[] positions, float[] normals, float[] colors) {
+void initMesh(Mesh* mesh, float[] positions, float[] normals, float[] colors, float[] uvs) {
     assert(positions.size() == normals.size());
     assert(positions.size() == colors.size());
     assert(positions.size() % 3 == 0);
+    assert(uvs.size() * 3 == positions.size() * 2);
     mesh.vertexCount = positions.size() / 3;
 
     glGenVertexArrays(1, mesh.vao);
@@ -37,6 +39,12 @@ void initMesh(Mesh* mesh, float[] positions, float[] normals, float[] colors) {
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, null);
 
+    glGenBuffers(1, mesh.uvVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.uvVbo);
+    glBufferData(GL_ARRAY_BUFFER, uvs.size() * 4, uvs.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, null);
+
     glBindVertexArray(0);
 }
 
@@ -57,6 +65,7 @@ void destroyMesh(Mesh* mesh) {
     glDeleteBuffers(1, mesh.positionVbo);
     glDeleteBuffers(1, mesh.normalVbo);
     glDeleteBuffers(1, mesh.colorVbo);
+    glDeleteBuffers(1, mesh.uvVbo);
 }
 
 void pushCorner(List<float>* dst, Vec3 v) {
@@ -93,4 +102,20 @@ void pushLineColor(List<float>* colors, Vec3 color) {
         colors.push(color.y);
         colors.push(color.z);
     }
+}
+
+void pushUV(List<float>* uvs, float u, float v) {
+    uvs.push(u);
+    uvs.push(v);
+}
+
+void pushTriUV(List<float>* uvs, float au, float av, float bu, float bv, float cu, float cv) {
+    pushUV(uvs, au, av);
+    pushUV(uvs, bu, bv);
+    pushUV(uvs, cu, cv);
+}
+
+void pushLineUV(List<float>* uvs) {
+    pushUV(uvs, 0.0, 0.0);
+    pushUV(uvs, 0.0, 0.0);
 }

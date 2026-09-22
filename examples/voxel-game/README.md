@@ -1,9 +1,11 @@
 # voxel-game
 
 A Minecraft-style voxel game written in cx: procedurally generated
-blocky terrain with trees, first-person walking and jumping, block
-breaking and placing, rendered with OpenGL 3.3. It uses the
-[GLFW](https://www.glfw.org) C library for window management.
+and textured blocky terrain with trees, first-person walking and
+jumping, block breaking and placing, rendered with OpenGL 3.3. It
+uses the [GLFW](https://www.glfw.org) C library for window
+management. Block textures are generated procedurally at startup
+into a texture atlas (see `texture.cx`).
 
 ## Building
 
