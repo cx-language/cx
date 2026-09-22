@@ -4,7 +4,7 @@
 @2 = private unnamed_addr constant [65 x i8] c"integer overflow at array-literal-non-constant-elements.cx:8:18\0A\00", align 1
 @3 = private unnamed_addr constant [65 x i8] c"integer overflow at array-literal-non-constant-elements.cx:8:29\0A\00", align 1
 
-define [2 x i32] @_EN4main1fE3int3int(i32 %foo, i32 %bar) {
+define [2 x i32] @_EN4main1fE3int3int(i32 %foo, i32 %bar) #0 !dbg !4 {
   %foo1 = alloca i32, align 4
   %bar2 = alloca i32, align 4
   store i32 %foo, ptr %foo1, align 4
@@ -22,7 +22,7 @@ define [2 x i32] @_EN4main1fE3int3int(i32 %foo, i32 %bar) {
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @0)
+  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -40,7 +40,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition5, label %overflow.fail6, label %overflow.success7
 
 overflow.fail6:                                   ; preds = %overflow.success
-  call void @_EN3std10assertFailEP4char(ptr @1)
+  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !7
   unreachable
 
 overflow.success7:                                ; preds = %overflow.success
@@ -48,9 +48,9 @@ overflow.success7:                                ; preds = %overflow.success
   ret [2 x i32] %16
 }
 
-declare void @_EN3std10assertFailEP4char(ptr)
+declare void @_EN3std10assertFailEP4char(ptr) #0
 
-define [2 x i32] @_EN4main1gE3int3int(i32 %foo, i32 %bar) {
+define [2 x i32] @_EN4main1gE3int3int(i32 %foo, i32 %bar) #0 !dbg !8 {
   %foo1 = alloca i32, align 4
   %bar2 = alloca i32, align 4
   %c = alloca [2 x i32], align 4
@@ -69,7 +69,7 @@ define [2 x i32] @_EN4main1gE3int3int(i32 %foo, i32 %bar) {
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @2)
+  call void @_EN3std10assertFailEP4char(ptr @2), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -87,7 +87,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition5, label %overflow.fail6, label %overflow.success7
 
 overflow.fail6:                                   ; preds = %overflow.success
-  call void @_EN3std10assertFailEP4char(ptr @3)
+  call void @_EN3std10assertFailEP4char(ptr @3), !dbg !9
   unreachable
 
 overflow.success7:                                ; preds = %overflow.success
@@ -96,3 +96,19 @@ overflow.success7:                                ; preds = %overflow.success
   %c.load = load [2 x i32], ptr %c, align 4
   ret [2 x i32] %c.load
 }
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "array-literal-non-constant-elements.cx")
+!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE3int3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 3, column: 8, scope: !4)
+!8 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE3int3int", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!9 = !DILocation(line: 7, column: 8, scope: !8)
