@@ -250,6 +250,13 @@ struct BinaryExpr : CallExpr {
     bool lhsIsMoved = false;
     // True when the operator is derived from its counterpart (e.g. != from ==) and the result must be negated.
     bool negateResult = false;
+    // For tuple `==`/`!=`: elementwise lowering over compiler-generated temporaries.
+    // Codegen binds the temporaries to the operand values, so operands with side
+    // effects evaluate once no matter how many elements are compared. Null when
+    // the comparison wasn't lowered this way (e.g. in global initializers).
+    VarDecl* tupleTempLHS = nullptr;
+    VarDecl* tupleTempRHS = nullptr;
+    Expr* tupleComparisonLowering = nullptr;
 };
 
 bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);

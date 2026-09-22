@@ -460,6 +460,24 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
         return emitAssignment(expr);
     }
 
+    if (expr.tupleComparisonLowering) {
+        // Tuple comparison was lowered to elementwise comparison over
+        // compiler-generated temporaries during typechecking. Evaluate each
+        // side once and bind the temporaries to the values, so operands with
+        // side effects run only once no matter how many elements are compared.
+        // The bindings alias the values (no copies), so there is nothing to
+        // destroy; they are removed right after the lowering is emitted.
+        auto* lhsValue = emitExpr(expr.getLHS());
+        auto* rhsValue = emitExpr(expr.getRHS());
+        auto& bindings = scopes.back().valuesByDecl;
+        bindings[expr.tupleTempLHS] = lhsValue;
+        bindings[expr.tupleTempRHS] = rhsValue;
+        auto* result = emitExpr(*expr.tupleComparisonLowering);
+        bindings.erase(expr.tupleTempLHS);
+        bindings.erase(expr.tupleTempRHS);
+        return result;
+    }
+
     if (expr.calleeDecl != nullptr) {
         auto* value = emitCallExpr(expr);
         if (expr.negateResult) value = createNot(value);

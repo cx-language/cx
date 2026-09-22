@@ -500,7 +500,6 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             return true;
         };
         // Only comparable nominally: same arity, same distinct non-empty element names. The lowering below accesses elements by name.
-        // FIXME: operands with side effects are evaluated once per element; bind them to temporaries.
         auto namesMatch = leftElements.size() == rightElements.size() && !leftElements.empty() && hasDistinctNames(leftElements)
                        && hasDistinctNames(rightElements) && llvm::all_of(llvm::zip_first(leftElements, rightElements), [](auto&& pair) {
                               auto&& [left, right] = pair;
@@ -510,15 +509,49 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         if (namesMatch) {
             // Lower tuple comparison to elementwise comparison (e.g. `(a == b) && (c == d)`).
             auto combiner = op == Token::Equal ? Token::AndAnd : Token::OrOr;
+            // Bind each side to a compiler-generated temporary so operands with
+            // side effects evaluate once; the element accesses below read the
+            // temporaries. (`__`-prefixed identifiers are reserved for the
+            // compiler, so these can't collide with user declarations.)
+            // Outside functions there is no scope for temporaries, but global
+            // initializers can only be constants, so comparing the operands
+            // directly is harmless there.
+            VarDecl* lhsTemp = nullptr;
+            VarDecl* rhsTemp = nullptr;
+            Expr* lhsBase = &expr.getLHS();
+            Expr* rhsBase = &expr.getRHS();
+            if (currentFunction) {
+                static uint64_t tupleTempCounter = 0;
+                lhsTemp = makeAST<VarDecl>(leftType, "__tuple_lhs_" + std::to_string(tupleTempCounter++), nullptr, currentFunction, AccessLevel::None,
+                                           *currentModule, expr.location);
+                rhsTemp = makeAST<VarDecl>(rightType, "__tuple_rhs_" + std::to_string(tupleTempCounter++), nullptr, currentFunction, AccessLevel::None,
+                                           *currentModule, expr.location);
+                typecheckVarDecl(*lhsTemp);
+                typecheckVarDecl(*rhsTemp);
+                // The temporaries have no initializer; codegen binds them to
+                // the operand values before emitting the lowering.
+                definitelyAssignedDecls.insert(lhsTemp);
+                definitelyAssignedDecls.insert(rhsTemp);
+                lhsBase = makeAST<VarExpr>(std::string(lhsTemp->getName()), expr.location);
+                rhsBase = makeAST<VarExpr>(std::string(rhsTemp->getName()), expr.location);
+            }
             Expr* result = nullptr;
             for (size_t i = 0; i < leftElements.size(); ++i) {
-                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(&expr.getLHS(), std::string(leftElements[i].name), expr.location),
-                                                       makeAST<MemberExpr>(&expr.getRHS(), std::string(rightElements[i].name), expr.location), expr.location);
+                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(lhsBase, std::string(leftElements[i].name), expr.location),
+                                                       makeAST<MemberExpr>(rhsBase, std::string(rightElements[i].name), expr.location), expr.location);
                 result = result ? makeAST<BinaryExpr>(combiner, result, comparison, expr.location) : comparison;
             }
             ASSERT(result);
-            expr = llvm::cast<BinaryExpr>(*result);
-            return typecheckBinaryExpr(expr);
+            if (!currentFunction) {
+                expr = llvm::cast<BinaryExpr>(*result);
+                return typecheckBinaryExpr(expr);
+            }
+            Type loweredType = typecheckBinaryExpr(llvm::cast<BinaryExpr>(*result));
+            ASSERT(loweredType.isBool());
+            expr.tupleTempLHS = lhsTemp;
+            expr.tupleTempRHS = rhsTemp;
+            expr.tupleComparisonLowering = result;
+            return Type::getBool();
         }
     }
 
