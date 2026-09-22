@@ -120,6 +120,7 @@ add_test(NAME examples-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/examples
 add_test(NAME docs-snippets COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>")
 add_test(NAME docs-snippets-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
 add_test(NAME docs-stdlib-unit COMMAND python3 "${PROJECT_SOURCE_DIR}/website/test_generate_std_docs.py")
+add_test(NAME prose COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_prose.py")
 # Language server end-to-end tests (query subprocess + stdio server session).
 add_test(NAME lsp COMMAND python3 "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "--cx-lsp=$<TARGET_FILE:cx-lsp>" "--cx=$<TARGET_FILE:cx>")
 # Bound the stdio session: a framing regression would otherwise block on a
@@ -227,7 +228,8 @@ else()
     set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
 endif()
 
-add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" --check)
+add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" --check
+    COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_prose.py")
 add_custom_target(format COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh")
 
 # Relocatable install layout: binaries in <prefix>/bin locate std/ at
