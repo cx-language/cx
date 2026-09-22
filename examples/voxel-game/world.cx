@@ -26,7 +26,7 @@ Chunk*? worldChunk(World& w, int cx, int cz) {
     if cx < 0 || cz < 0 || cx >= w.chunksX || cz >= w.chunksZ {
         return null;
     }
-    return w.chunks[cz * w.chunksX + cx];
+    return &w.chunks[cz * w.chunksX + cx];
 }
 
 uint8 worldGet(World& w, int x, int y, int z) {
