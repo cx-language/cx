@@ -39,6 +39,25 @@ void print<T: Printable>(List<T>* list) {
     print(ArrayRef(list));
 }
 
+/// Joins the array elements into a string with the given separator.
+StringBuffer join<T: Printable>(ArrayRef<T> array, string separator) {
+    var result = StringBuffer();
+
+    for index in 0..array.size() {
+        if index != 0 {
+            result.append(separator);
+        }
+        array[index].print(OutputStream(result));
+    }
+
+    return result;
+}
+
+/// Joins the list elements into a string with the given separator.
+StringBuffer join<T: Printable>(List<T>* list, string separator) {
+    return join(ArrayRef(list), separator);
+}
+
 /// Prints the given value.
 void print<T: Printable>(ArrayRef<T> array) {
     print('[');
