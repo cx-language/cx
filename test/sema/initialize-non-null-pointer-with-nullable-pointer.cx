@@ -3,7 +3,7 @@
 extern int*? foo();
 
 void main() {
-    // CHECK: [[@LINE+1]]:17: warning: value may be null; unwrap it with a postfix '!' to silence this warning
+    // CHECK: [[@LINE+1]]:14: warning: value may be null; unwrap it with a postfix '!' to silence this warning
     int* f = foo();
 }
 

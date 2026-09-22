@@ -1,0 +1,60 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    testFloatVector2();
+    testIntVector2();
+    testFloatVector3();
+    testIntVector3();
+}
+
+void testFloatVector2() {
+    var a = Vector2(1.0, 2.0);
+    var b = Vector2(3.0, 4.0);
+    assert((a + b).x == 4.0 && (a + b).y == 6.0);
+    assert((b - a).x == 2.0 && (b - a).y == 2.0);
+    assert((a * 2.0).x == 2.0 && (2.0 * a).y == 4.0);
+    assert(a.dot(b) == 11.0);
+    assert(Vector2(3.0, 4.0).length() == 5.0);
+    var n = Vector2(3.0, 4.0).normalized();
+    assert(n.x == 0.6 && n.y == 0.8);
+}
+
+void testIntVector2() {
+    var a = Vector2(1, 2);
+    var b = Vector2(3, 4);
+    assert((a + b).x == 4 && (a + b).y == 6);
+    assert((b - a).x == 2 && (b - a).y == 2);
+    assert((a * 2).x == 2 && (2 * a).y == 4);
+    assert(a.dot(b) == 11);
+    assert(Vector2(3, 4).length() == 5.0);
+}
+
+void testFloatVector3() {
+    var a = Vector3(1.0, 2.0, 3.0);
+    var b = Vector3(4.0, 5.0, 6.0);
+    assert((a + b).x == 5.0 && (a + b).y == 7.0 && (a + b).z == 9.0);
+    assert((b - a).x == 3.0 && (b - a).y == 3.0 && (b - a).z == 3.0);
+    assert((a * 2.0).z == 6.0 && (2.0 * a).z == 6.0);
+    assert(a.dot(b) == 32.0);
+    var x = Vector3(1.0, 0.0, 0.0);
+    var y = Vector3(0.0, 1.0, 0.0);
+    var z = x.cross(y);
+    assert(z.x == 0.0 && z.y == 0.0 && z.z == 1.0);
+    assert(Vector3(1.0, 2.0, 2.0).length() == 3.0);
+    var n = Vector3(1.0, 2.0, 2.0).normalized();
+    assert(n.z == n.y && n.y == 2.0 * n.x);
+}
+
+void testIntVector3() {
+    var a = Vector3(1, 2, 3);
+    var b = Vector3(4, 5, 6);
+    assert((a + b).x == 5 && (a + b).y == 7 && (a + b).z == 9);
+    assert((b - a).x == 3 && (b - a).y == 3 && (b - a).z == 3);
+    assert((a * 2).z == 6 && (2 * a).z == 6);
+    assert(a.dot(b) == 32);
+    var x = Vector3(1, 0, 0);
+    var y = Vector3(0, 1, 0);
+    var z = x.cross(y);
+    assert(z.x == 0 && z.y == 0 && z.z == 1);
+    assert(Vector3(1, 2, 2).length() == 3.0);
+}

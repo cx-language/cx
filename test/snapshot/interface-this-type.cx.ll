@@ -1,40 +1,65 @@
 
 %S = type { ptr }
 
-define i32 @main() {
+define i32 @main() #0 !dbg !4 {
   %a = alloca %S, align 8
   %b = alloca %S, align 8
-  call void @_EN4main1S4initE(ptr %a)
-  call void @_EN4main1S4initE(ptr %b)
-  %1 = call ptr @_EN4main1S3fooEP1S(ptr %a, ptr %b)
-  call void @_EN4main1fI1SEEP1S(ptr %1)
+  call void @_EN4main1S4initE(ptr %a), !dbg !7
+  call void @_EN4main1S4initE(ptr %b), !dbg !8
+  %1 = call ptr @_EN4main1S3fooEP1S(ptr %a, ptr %b), !dbg !9
+  call void @_EN4main1fI1SEEP1S(ptr %1), !dbg !10
   ret i32 0
 }
 
-define void @_EN4main1S4initE(ptr %this) {
+define void @_EN4main1S4initE(ptr %this) #0 !dbg !11 {
   %that = getelementptr inbounds %S, ptr %this, i32 0, i32 0
   store ptr %this, ptr %that, align 8
   ret void
 }
 
-define ptr @_EN4main1S3fooEP1S(ptr %this, ptr %a) {
+define ptr @_EN4main1S3fooEP1S(ptr %this, ptr %a) #0 !dbg !12 {
   %a1 = alloca ptr, align 8
   store ptr %a, ptr %a1, align 8
   ret ptr %this
 }
 
-define void @_EN4main1fI1SEEP1S(ptr %a) {
+define void @_EN4main1fI1SEEP1S(ptr %a) #0 !dbg !13 {
   %a1 = alloca ptr, align 8
   store ptr %a, ptr %a1, align 8
   %a.load = load ptr, ptr %a1, align 8
   %a.load2 = load ptr, ptr %a1, align 8
-  %1 = call ptr @_EN4main1S3barE(ptr %a.load2)
-  %2 = call ptr @_EN4main1S3fooEP1S(ptr %a.load, ptr %1)
+  %1 = call ptr @_EN4main1S3barE(ptr %a.load2), !dbg !14
+  %2 = call ptr @_EN4main1S3fooEP1S(ptr %a.load, ptr %1), !dbg !15
   ret void
 }
 
-define ptr @_EN4main1S3barE(ptr %this) {
-  %1 = call ptr @_EN4main1S3fooEP1S(ptr %this, ptr %this)
-  %2 = call ptr @_EN4main1S3fooEP1S(ptr %this, ptr %1)
+define ptr @_EN4main1S3barE(ptr %this) #0 !dbg !16 {
+  %1 = call ptr @_EN4main1S3fooEP1S(ptr %this, ptr %this), !dbg !17
+  %2 = call ptr @_EN4main1S3fooEP1S(ptr %this, ptr %1), !dbg !18
   ret ptr %2
 }
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "interface-this-type.cx")
+!4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 21, type: !5, scopeLine: 21, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 22, column: 13, scope: !4)
+!8 = !DILocation(line: 23, column: 13, scope: !4)
+!9 = !DILocation(line: 24, column: 9, scope: !4)
+!10 = !DILocation(line: 24, column: 5, scope: !4)
+!11 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1S4initE", scope: !3, file: !3, line: 14, type: !5, scopeLine: 14, spFlags: DISPFlagDefinition, unit: !2)
+!12 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main1S3fooEP1S", scope: !3, file: !3, line: 16, type: !5, scopeLine: 16, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fI1SEEP1S", scope: !3, file: !3, line: 27, type: !5, scopeLine: 27, spFlags: DISPFlagDefinition, unit: !2)
+!14 = !DILocation(line: 28, column: 13, scope: !13)
+!15 = !DILocation(line: 28, column: 7, scope: !13)
+!16 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main1S3barE", scope: !3, file: !3, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
+!17 = !DILocation(line: 9, column: 20, scope: !16)
+!18 = !DILocation(line: 9, column: 16, scope: !16)

@@ -27,6 +27,7 @@ wasm/dist/
 *.exe
 *.pdb
 *.ilk
+*.dSYM/
 examples/*/bin/
 
 # Generated documentation

@@ -53,6 +53,13 @@ Token Parser::consumeToken() {
     return token;
 }
 
+/// Returns one past the last consumed token, i.e. the end of the
+/// construct just parsed. Only valid right after the construct's
+/// final token was consumed.
+Location Parser::getLastTokenEndLocation() {
+    return getTokenEndLocation(lookAhead(-1));
+}
+
 /// Adds quotes around the string representation of the given token unless
 /// it's an identifier, numeric literal, string literal, or end-of-file.
 static std::string quote(Token::Kind tokenKind) {
@@ -163,12 +170,13 @@ std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
 VarExpr* Parser::parseVarExpr() {
     ASSERT(currentToken() == Token::Identifier);
     auto id = consumeToken();
-    return makeAST<VarExpr>(id.getString().str(), id.location);
+    return makeExpr<VarExpr>(id.getString().str(), id.location);
 }
 
 VarExpr* Parser::parseThis() {
     ASSERT(currentToken() == Token::This);
     auto expr = makeAST<VarExpr>("this", getCurrentLocation());
+    expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
 }
@@ -219,6 +227,7 @@ StringLiteralExpr* Parser::parseStringLiteral() {
     ASSERT(currentToken() == Token::StringLiteral);
     auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
     auto expr = makeAST<StringLiteralExpr>(std::move(content), getCurrentLocation());
+    expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
 }
@@ -228,6 +237,7 @@ CharacterLiteralExpr* Parser::parseCharacterLiteral() {
     auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
     if (content.size() != 1) ERROR(getCurrentLocation(), "character literal must consist of a single UTF-8 byte");
     auto expr = makeAST<CharacterLiteralExpr>(content[0], getCurrentLocation());
+    expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
 }
@@ -235,6 +245,7 @@ CharacterLiteralExpr* Parser::parseCharacterLiteral() {
 IntLiteralExpr* Parser::parseIntLiteral() {
     ASSERT(currentToken() == Token::IntegerLiteral);
     auto expr = makeAST<IntLiteralExpr>(currentToken().getIntegerValue(), getCurrentLocation());
+    expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
 }
@@ -242,6 +253,7 @@ IntLiteralExpr* Parser::parseIntLiteral() {
 FloatLiteralExpr* Parser::parseFloatLiteral() {
     ASSERT(currentToken() == Token::FloatLiteral);
     auto expr = makeAST<FloatLiteralExpr>(currentToken().getFloatingPointValue(), getCurrentLocation());
+    expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
 }
@@ -251,9 +263,11 @@ BoolLiteralExpr* Parser::parseBoolLiteral() {
     switch (currentToken()) {
     case Token::True:
         expr = makeAST<BoolLiteralExpr>(true, getCurrentLocation());
+        expr->endLocation = getTokenEndLocation(currentToken());
         break;
     case Token::False:
         expr = makeAST<BoolLiteralExpr>(false, getCurrentLocation());
+        expr->endLocation = getTokenEndLocation(currentToken());
         break;
     default:
         llvm_unreachable("all cases handled");
@@ -265,6 +279,7 @@ BoolLiteralExpr* Parser::parseBoolLiteral() {
 NullLiteralExpr* Parser::parseNullLiteral() {
     ASSERT(currentToken() == Token::Null);
     auto expr = makeAST<NullLiteralExpr>(getCurrentLocation());
+    expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
 }
@@ -272,6 +287,7 @@ NullLiteralExpr* Parser::parseNullLiteral() {
 UndefinedLiteralExpr* Parser::parseUndefinedLiteral() {
     ASSERT(currentToken() == Token::Undefined);
     auto expr = makeAST<UndefinedLiteralExpr>(getCurrentLocation());
+    expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
 }
@@ -283,7 +299,7 @@ ArrayLiteralExpr* Parser::parseArrayLiteral() {
     consumeToken();
     auto elements = parseExprList();
     parse(Token::RightBracket);
-    return makeAST<ArrayLiteralExpr>(std::move(elements), location);
+    return makeExpr<ArrayLiteralExpr>(std::move(elements), location);
 }
 
 /// tuple-literal ::= '(' tuple-literal-elements ')'
@@ -307,7 +323,7 @@ Expr* Parser::parseTupleLiteralOrParenExpr() {
         }
     }
 
-    return makeAST<TupleExpr>(std::move(elements), location);
+    return makeExpr<TupleExpr>(std::move(elements), location);
 }
 
 /// non-empty-type-list ::= type | type ',' non-empty-type-list
@@ -512,18 +528,20 @@ SizeofExpr* Parser::parseSizeofExpr() {
     parse(Token::LeftParen);
     auto type = parseType();
     parse(Token::RightParen);
-    return makeAST<SizeofExpr>(type, location);
+    return makeExpr<SizeofExpr>(type, location);
 }
 
 /// member-expr ::= expr '.' id
 MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
     auto location = getCurrentLocation();
     auto member = parse(Token::Identifier);
-    return makeAST<MemberExpr>(lhs, member.getString().str(), location);
+    return makeExpr<MemberExpr>(lhs, member.getString().str(), location);
 }
 
 /// index-expr ::= expr '[' expr ']'
 /// index-assignment-expr ::= index-expr '=' expr
+/// A leading minus inside the brackets indexes from the end instead:
+/// 'base[-offset]' accesses 'base[base.size() - offset]'.
 Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
     ASSERT(currentToken() == Token::LeftBracket);
     auto location = getCurrentLocation();
@@ -532,12 +550,23 @@ Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
     auto index = parseExpr();
     parse(Token::RightBracket);
 
-    if (currentToken() == Token::Assignment) {
-        consumeToken();
-        return makeAST<IndexAssignmentExpr>(base, index, parseExpr(), location);
+    // A leading minus marks a from-end index. Strip it so operator[-]
+    // receives the plain offset; this is known statically, so unlike a
+    // runtime sign check it costs nothing.
+    bool fromEnd = false;
+    if (auto* unary = llvm::dyn_cast<UnaryExpr>(index)) {
+        if (unary->op == Token::Minus) {
+            fromEnd = true;
+            index = &unary->getOperand();
+        }
     }
 
-    return makeAST<IndexExpr>(base, index, location);
+    if (currentToken() == Token::Assignment) {
+        consumeToken();
+        return makeExpr<IndexAssignmentExpr>(base, index, parseExpr(), location, fromEnd);
+    }
+
+    return makeExpr<IndexExpr>(base, index, location, fromEnd);
 }
 
 /// unwrap-expr ::= expr '!'
@@ -545,7 +574,7 @@ UnwrapExpr* Parser::parseUnwrapExpr(Expr* operand) {
     ASSERT(currentToken() == Token::Not);
     auto location = getCurrentLocation();
     consumeToken();
-    return makeAST<UnwrapExpr>(operand, location);
+    return makeExpr<UnwrapExpr>(operand, location);
 }
 
 /// call-expr ::= expr generic-argument-list? argument-list
@@ -554,9 +583,8 @@ CallExpr* Parser::parseCallExpr(Expr* callee) {
     if (currentToken() == Token::Less) {
         genericArgs = parseGenericArgumentList();
     }
-    auto location = getCurrentLocation();
     auto args = parseArgumentList(true);
-    return makeAST<CallExpr>(callee, std::move(args), std::move(genericArgs), location);
+    return makeExpr<CallExpr>(callee, std::move(args), std::move(genericArgs), callee->location);
 }
 
 /// lambda-expr ::= param-list '=>' expr | param-list ('=>')? block | id '=>' expr | id '=>' block
@@ -591,6 +619,7 @@ LambdaExpr* Parser::parseLambdaExpr() {
         }
     }
 
+    lambda->endLocation = getLastTokenEndLocation();
     return lambda;
 }
 
@@ -603,7 +632,7 @@ IfExpr* Parser::parseIfExpr(Expr* condition) {
     auto thenExpr = parseExpr();
     parse(Token::Colon);
     auto elseExpr = parseExpr();
-    return makeAST<IfExpr>(condition, thenExpr, elseExpr, location);
+    return makeExpr<IfExpr>(condition, thenExpr, elseExpr, location);
 }
 
 /// if-then-else-expr ::= 'if' expr 'then' expr 'else' expr
@@ -619,7 +648,7 @@ IfExpr* Parser::parseIfThenElseExpr() {
     auto thenExpr = parseExpr();
     parse(Token::Else);
     auto elseExpr = parseExpr();
-    return makeAST<IfExpr>(condition, thenExpr, elseExpr, location);
+    return makeExpr<IfExpr>(condition, thenExpr, elseExpr, location);
 }
 
 bool Parser::shouldParseVarStmt() {
@@ -845,7 +874,7 @@ Expr* Parser::parsePostfixExpr() {
 UnaryExpr* Parser::parsePrefixExpr() {
     ASSERT(isUnaryOperator(currentToken()));
     auto op = consumeToken();
-    return makeAST<UnaryExpr>(op.kind, parsePreOrPostfixExpr(), op.location);
+    return makeExpr<UnaryExpr>(op.kind, parsePreOrPostfixExpr(), op.location);
 }
 
 Expr* Parser::parsePreOrPostfixExpr() {
@@ -856,7 +885,7 @@ Expr* Parser::parsePreOrPostfixExpr() {
 /// dec-expr ::= expr '--'
 UnaryExpr* Parser::parseIncrementOrDecrementExpr(Expr* operand) {
     auto op = parse({Token::Increment, Token::Decrement});
-    return makeAST<UnaryExpr>(op.kind, operand, op.location);
+    return makeExpr<UnaryExpr>(op.kind, operand, op.location);
 }
 
 /// binary-expr ::= expr op expr
@@ -883,7 +912,7 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
             break;
         }
 
-        lhs = makeAST<BinaryExpr>(op.kind, lhs, rhs, op.location);
+        lhs = makeExpr<BinaryExpr>(op.kind, lhs, rhs, op.location);
     }
 
     return lhs;
@@ -898,7 +927,7 @@ Expr* Parser::parseExprOrVarDecl(Decl* parent) {
     if (!shouldParseVarStmt()) {
         return parseExpr();
     } else {
-        return makeAST<VarDeclExpr>(parseVarDecl(parent, AccessLevel::None, false));
+        return makeExpr<VarDeclExpr>(parseVarDecl(parent, AccessLevel::None, false));
     }
 }
 
@@ -1039,7 +1068,7 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
         auto thenExpr = parseExpr();
         parse(Token::Else);
         auto elseExpr = parseExpr();
-        auto stmt = makeAST<ExprStmt>(makeAST<IfExpr>(condition, thenExpr, elseExpr, location));
+        auto stmt = makeAST<ExprStmt>(makeExpr<IfExpr>(condition, thenExpr, elseExpr, location));
         parseStmtTerminator();
         return stmt;
     }
@@ -1252,7 +1281,7 @@ SwitchExpr* Parser::parseSwitchExpr() {
     }
 
     consumeToken();
-    return makeAST<SwitchExpr>(condition, std::move(arms), defaultExpr, location);
+    return makeExpr<SwitchExpr>(condition, std::move(arms), defaultExpr, location);
 }
 
 /// break-stmt ::= 'break' ('\n' | ';')
@@ -1401,6 +1430,16 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
     if (name.getString() == "operator") {
         auto op = consumeToken();
         if (op == Token::LeftBracket) {
+            if (currentToken() == Token::Minus) {
+                consumeToken();
+                parse(Token::RightBracket);
+                if (currentToken() == Token::Assignment) {
+                    consumeToken();
+                    return "[-]=";
+                } else {
+                    return "[-]";
+                }
+            }
             parse(Token::RightBracket);
             if (currentToken() == Token::Assignment) {
                 consumeToken();

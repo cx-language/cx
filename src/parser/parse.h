@@ -5,6 +5,7 @@
 #pragma warning(push, 0)
 #include <llvm/Support/MemoryBuffer.h>
 #pragma warning(pop)
+#include "../ast/arena.h"
 #include "../ast/type.h"
 #include "lex.h"
 
@@ -82,6 +83,12 @@ private:
     Location getCurrentLocation();
     Token lookAhead(int offset);
     Token consumeToken();
+    Location getLastTokenEndLocation();
+    template<typename T, typename... Args> T* makeExpr(Args&&... args) {
+        T* expr = makeAST<T>(std::forward<Args>(args)...);
+        expr->endLocation = getLastTokenEndLocation();
+        return expr;
+    }
     Token parse(llvm::ArrayRef<Token::Kind> expected, const char* contextInfo = nullptr);
     void parseStmtTerminator(const char* contextInfo = nullptr);
     std::vector<NamedValue> parseArgumentList(bool allowEmpty);
