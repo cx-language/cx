@@ -143,6 +143,10 @@ Token Lexer::lexStringResume() {
     while (true) {
         auto ch = readChar();
 
+        if (ch == '\0') {
+            ERROR(getCurrentLocation(), "unterminated string literal");
+        }
+
         if (ch == stringFrame.delimiter) {
             const char* chunkEnd = currentFilePosition;
             const char* chunkBegin = stringFrame.contentBegin;
@@ -155,7 +159,9 @@ Token Lexer::lexStringResume() {
         }
 
         if (ch == '\\') {
-            readChar();
+            if (readChar() == '\0') {
+                ERROR(getCurrentLocation(), "unterminated string literal");
+            }
             continue;
         }
 
@@ -198,6 +204,10 @@ Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
 
     while (true) {
         auto ch = readChar();
+
+        if (ch == '\0') {
+            ERROR(getCurrentLocation(), "unterminated " << toString(literalKind));
+        }
 
         if (escape) {
             escape = false;
