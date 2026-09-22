@@ -15,6 +15,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/MC/TargetRegistry.h>
+#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
@@ -86,8 +87,9 @@ enum class Backend { LLVM, C };
 cl::opt<Backend> backend("backend", cl::desc("Select code-generation backend to use:"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
                          cl::values(clEnumValN(Backend::LLVM, "llvm", "LLVM backend (default)"), clEnumValN(Backend::C, "c", "C backend")));
 BuildMode buildMode = BuildMode::Debug;
-cl::opt<bool> releaseMode("release", cl::desc("Release mode: safety checks disabled"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
-cl::opt<bool> releaseSafeMode("release-safe", cl::desc("Release-safe mode: safety checks enabled"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
+cl::opt<bool> releaseMode("release", cl::desc("Release mode: optimized, safety checks disabled"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
+cl::opt<bool> releaseSafeMode("release-safe", cl::desc("Release-safe mode: optimized, safety checks enabled"), cl::sub(cl::SubCommand::getAll()),
+                              cl::cat(outputCategory));
 cl::opt<bool> cDispatch("c-dispatch", cl::desc("Generate goto-free C code using dispatch loops (for C compilers without goto support)"),
                         cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"), cl::cat(outputCategory));
@@ -232,7 +234,7 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
     addHeaderSearchPathsFromCCompilerOutput();
 }
 
-static void emitLLVMModuleToMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
+static llvm::TargetMachine* createTargetMachine(llvm::Module& module, llvm::Reloc::Model relocModel, BuildMode mode) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
@@ -245,15 +247,36 @@ static void emitLLVMModuleToMachineCode(llvm::Module& module, llvm::StringRef fi
     if (!target) ABORT(errorMessage);
 
     llvm::TargetOptions options;
-    auto* targetMachine = target->createTargetMachine(triple, "generic", "", options, relocModel);
+    auto optLevel = mode == BuildMode::Debug ? llvm::CodeGenOptLevel::Default : llvm::CodeGenOptLevel::Aggressive;
+    auto* targetMachine = target->createTargetMachine(triple, "generic", "", options, relocModel, std::nullopt, optLevel);
     module.setDataLayout(targetMachine->createDataLayout());
+    return targetMachine;
+}
 
+static void optimizeLLVMModule(llvm::Module& module, BuildMode mode, llvm::TargetMachine* targetMachine) {
+    if (mode == BuildMode::Debug) return;
+
+    llvm::LoopAnalysisManager loopAnalyses;
+    llvm::FunctionAnalysisManager functionAnalyses;
+    llvm::CGSCCAnalysisManager cgsccAnalyses;
+    llvm::ModuleAnalysisManager moduleAnalyses;
+    llvm::PassBuilder passBuilder(targetMachine);
+    passBuilder.registerModuleAnalyses(moduleAnalyses);
+    passBuilder.registerCGSCCAnalyses(cgsccAnalyses);
+    passBuilder.registerFunctionAnalyses(functionAnalyses);
+    passBuilder.registerLoopAnalyses(loopAnalyses);
+    passBuilder.crossRegisterProxies(loopAnalyses, functionAnalyses, cgsccAnalyses, moduleAnalyses);
+    llvm::ModulePassManager passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+    passManager.run(module, moduleAnalyses);
+}
+
+static void emitLLVMModuleToMachineCode(llvm::Module& module, llvm::TargetMachine& targetMachine, llvm::StringRef fileName, llvm::CodeGenFileType fileType) {
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::OF_None);
     if (error) ABORT(error.message());
 
     llvm::legacy::PassManager passManager;
-    if (targetMachine->addPassesToEmitFile(passManager, file, nullptr, fileType)) {
+    if (targetMachine.addPassesToEmitFile(passManager, file, nullptr, fileType)) {
         ABORT("TargetMachine can't emit a file of this type");
     }
 
@@ -461,6 +484,10 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
             if (error) ABORT("LLVM module linking failed");
         }
 
+        auto relocModel = noPIE ? llvm::Reloc::Model::Static : llvm::Reloc::Model::PIC_;
+        auto* targetMachine = createTargetMachine(linkedModule, relocModel, options.mode);
+        optimizeLLVMModule(linkedModule, options.mode, targetMachine);
+
         if (emitBitcode) {
             emitLLVMBitcode(linkedModule, "output.bc");
             return 0;
@@ -472,8 +499,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         }
 
         auto fileType = emitAssembly ? llvm::CodeGenFileType::AssemblyFile : llvm::CodeGenFileType::ObjectFile;
-        auto relocModel = noPIE ? llvm::Reloc::Model::Static : llvm::Reloc::Model::PIC_;
-        emitLLVMModuleToMachineCode(linkedModule, tempIntermediateFilePath, fileType, relocModel);
+        emitLLVMModuleToMachineCode(linkedModule, *targetMachine, tempIntermediateFilePath, fileType);
         break;
     }
 
@@ -521,6 +547,12 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         // Note: GCC/Clang-only flags, MSVC rejects unknown -W options.
         ccArgs.push_back("-Wno-incompatible-pointer-types");
         ccArgs.push_back("-Wno-format");
+    }
+
+    if (backend == Backend::C && options.mode != BuildMode::Debug) {
+        // External MSVC-compatible compilers (cl, clang-cl) take /O2. The
+        // embedded Clang driver runs in GNU mode, so it takes -O3.
+        ccArgs.push_back(isMSVC && useExternalCCompiler ? "/O2" : "-O3");
     }
 
     for (auto& flag : options.cflags) {

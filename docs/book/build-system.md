@@ -53,6 +53,18 @@ custom conditions are enabled with `-D` flags: `cx build -DEXTRA`.
 `-D`, `-I`, `-L`, `-l`, and `-framework` flags can also be passed directly
 for one-off overrides.
 
+## Build modes
+
+`cx build` and `cx run` build in debug mode by default: unoptimized for fast
+compilation, safety checks enabled. Two flags select optimized release builds:
+
+- `--release`: fully optimized (`-O3`), safety checks disabled.
+- `--release-safe`: fully optimized (`-O3`), safety checks enabled.
+
+Safety checks abort the program with an error on integer overflow and similar
+traps; `--release` drops them for maximum speed, so arithmetic overflow
+wraps instead.
+
 ## Installing dependencies
 
 Dependencies are cx libraries hosted in Git repositories.
