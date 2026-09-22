@@ -1,5 +1,7 @@
 # voxel-game
 
+<img width="1392" height="860" alt="Screenshot 2026-09-22 at 10 25 51" src="https://github.com/user-attachments/assets/c21f64b3-3d0c-44db-a742-b896d4ab1c17" />
+
 A Minecraft-style voxel game written in cx: procedurally generated
 and textured blocky terrain with trees, first-person walking and
 jumping, block breaking and placing, rendered with OpenGL 3.3. It
