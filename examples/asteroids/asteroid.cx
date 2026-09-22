@@ -13,18 +13,18 @@ float randomFloat(float a, float b) {
 }
 
 struct Asteroid {
-    Vector2 position;
-    Vector2 velocity;
+    Vector2<float> position;
+    Vector2<float> velocity;
     float rotation;
     float rotationSpeed;
     float size;
-    Vector2[8] vertices;
+    Vector2<float>[8] vertices;
 
     Asteroid() {
         position = Vector2(randomFloat(0, width), randomFloat(0, height));
         var direction = randomFloat(-pi, pi);
         var speed = randomFloat(minSpeed, maxSpeed);
-        velocity = Vector2(direction) * speed;
+        velocity = vectorFromAngle(direction) * speed;
         rotation = 0;
         rotationSpeed = randomFloat(-maxRotationSpeed, maxRotationSpeed);
         size = randomFloat(minSize, maxSize);
@@ -33,7 +33,7 @@ struct Asteroid {
         for i in 0..vertices.size() {
             var offset = 1 + randomFloat(-formVariation, formVariation);
             var angle = float(i) / float(vertices.size()) * pi * 2;
-            vertices[i] = Vector2(angle) * (offset * size);
+            vertices[i] = vectorFromAngle(angle) * (offset * size);
         }
     }
 
