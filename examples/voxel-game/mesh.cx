@@ -1,4 +1,4 @@
-import "OpenGL/gl3.h";
+import "GLFW/glfw3.h";
 
 // Non-indexed triangle mesh with separate position, normal, and color
 // buffers (one vertex per corner, three corners per triangle).

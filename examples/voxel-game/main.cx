@@ -1,5 +1,4 @@
 import "GLFW/glfw3.h";
-import "OpenGL/gl3.h";
 
 // Unbuffered line logging: println stays in the stdio buffer when stdout
 // is redirected, so live progress goes through the raw fd stream.
