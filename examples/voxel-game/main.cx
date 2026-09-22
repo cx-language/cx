@@ -1,42 +1,5 @@
 import "GLFW/glfw3.h";
 
-// Unbuffered line logging: println stays in the stdio buffer when stdout
-// is redirected, so live progress goes through the raw fd stream.
-void logLine<T: Printable>(T*... args) {
-    var out = stdout();
-    for arg in args {
-        out.write(arg);
-    }
-    out.write("\n");
-}
-
-void appendInt(StringBuffer* buf, int value) {
-    var digits = "0123456789";
-    if value == 0 {
-        buf.append('0');
-        return;
-    }
-    var n = value;
-    if n < 0 {
-        buf.append('-');
-        n = -n;
-    }
-    var start = buf.size();
-    while n > 0 {
-        buf.append(digits[n % 10]);
-        n = n / 10;
-    }
-    var end = buf.size() - 1;
-    var i = start;
-    while i < end {
-        var tmp = buf[i];
-        buf[i] = buf[end];
-        buf[end] = tmp;
-        i++;
-        end--;
-    }
-}
-
 // Maps crosshair space to NDC for a width x height framebuffer. Pixels
 // are square but NDC is not, so x is squeezed by the aspect ratio to
 // keep the arms equally long on screen.
@@ -191,7 +154,7 @@ int runGame(bool debug) {
         }
         if want != selected {
             selected = want;
-            logLine("selected block ", int(selected));
+            stdout().writeln("selected block ", int(selected));
         }
 
         updatePlayer(world, player, input, dt);
@@ -215,12 +178,12 @@ int runGame(bool debug) {
         var right = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
         if left && !prevLeft && showTarget {
             if tryBreak(world, player) {
-                logLine("broke block at ", hit.x, " ", hit.y, " ", hit.z);
+                stdout().writeln("broke block at ", hit.x, " ", hit.y, " ", hit.z);
             }
         }
         if right && !prevRight && hit.hit && worldContains(world, hit.px, hit.py, hit.pz) {
             if tryPlace(world, player, selected) {
-                logLine("placed block at ", hit.px, " ", hit.py, " ", hit.pz);
+                stdout().writeln("placed block at ", hit.px, " ", hit.py, " ", hit.pz);
             }
         }
         prevLeft = left;
@@ -261,13 +224,13 @@ int runGame(bool debug) {
         }
         if now - fpsStart >= 1.0 {
             var title = StringBuffer("voxel-game - ");
-            appendInt(title, fpsFrames);
+            title.append(fpsFrames);
             title.append(" FPS (");
-            appendInt(title, int(frameMax * 1000.0));
+            title.append(int(frameMax * 1000.0));
             title.append("ms max)");
             glfwSetWindowTitle(window, title.cString());
             if debug {
-                logLine("debug pos=", player.pos.x, " ", player.pos.y, " ", player.pos.z,
+                stdout().writeln("debug pos=", player.pos.x, " ", player.pos.y, " ", player.pos.z,
                     " yaw=", player.yaw, " pitch=", player.pitch, " fps=", fpsFrames,
                     " target=", hit.hit, " ", hit.x, " ", hit.y, " ", hit.z);
             }
