@@ -36,6 +36,11 @@ struct FilterIterator<Input, It>: Iterator<Input*> {
         return MappedIterator(*this, transform);
     }
 
+    /// Lazily appends another iterator's elements.
+    ChainIterator<Input, FilterIterator<Input, It>, Other> chain<Other>(Other other) {
+        return ChainIterator(*this, other);
+    }
+
     /// Collects the remaining elements into a list.
     List<Input> toList() {
         var output = List<Input>();

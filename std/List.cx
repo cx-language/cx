@@ -237,6 +237,11 @@ struct List<Element> {
         return FilterIterator(iterator(), include);
     }
 
+    /// Lazily appends another iterator's elements. Collect the results with toList().
+    ChainIterator<Element, ArrayIterator<Element>, Other> chain<Other>(Other other) {
+        return ChainIterator(iterator(), other);
+    }
+
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element*) predicate) { return all(iterator(), predicate); }

@@ -38,6 +38,11 @@ struct MappedIterator<Output, Input, It>: Iterator<Output*> {
         return FilterIterator(*this, include);
     }
 
+    /// Lazily appends another iterator's elements.
+    ChainIterator<Output, MappedIterator<Output, Input, It>, Other> chain<Other>(Other other) {
+        return ChainIterator(*this, other);
+    }
+
     /// Collects the remaining elements into a list.
     List<Output> toList() {
         var output = List<Output>();
