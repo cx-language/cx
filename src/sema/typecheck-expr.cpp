@@ -2613,8 +2613,18 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
             }
         }
     } else if (auto* baseDecl = baseType.getDecl()) {
+        // Instance fields cannot be accessed via the type name (e.g. `S.x`);
+        // only static constants are. Without this, field access via a type
+        // would typecheck but crash codegen which expects an instance.
+        bool baseIsType = false;
+        if (auto* varBase = llvm::dyn_cast<VarExpr>(expr.base)) {
+            baseIsType = varBase->decl && (varBase->decl->isTypeDecl() || varBase->decl->kind == DeclKind::TypeTemplate);
+        } else if (auto* memberBase = llvm::dyn_cast<MemberExpr>(expr.base)) {
+            baseIsType = memberBase->decl && (memberBase->decl->isTypeDecl() || memberBase->decl->kind == DeclKind::TypeTemplate);
+        }
         for (auto& field : baseDecl->fields) {
             if (field.getName() == expr.member) {
+                if (baseIsType) break;
                 checkHasAccess(field, expr.location, AccessLevel::None);
                 expr.decl = &field;
                 return field.type.withMutability(baseType.mutability);
