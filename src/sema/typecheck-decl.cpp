@@ -511,6 +511,23 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
         typecheckMethodDecl(*methodDecl);
     }
 
+    // Static constants share the value namespace with fields; duplicates would
+    // make `Type.name` and `instance.name` resolve differently (type access
+    // prefers the constant, instance access prefers the field).
+    for (size_t i = 0; i < realDecl->staticConsts.size(); ++i) {
+        auto* constant = realDecl->staticConsts[i];
+        for (size_t j = 0; j < i; ++j) {
+            if (realDecl->staticConsts[j]->getName() == constant->getName()) {
+                ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+            }
+        }
+        for (auto& field : realDecl->fields) {
+            if (field.getName() == constant->getName()) {
+                ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+            }
+        }
+    }
+
     checkForInfiniteSize(decl, map(realDecl->fields, [](const FieldDecl& field) { return field.type; }));
 }
 
@@ -555,6 +572,22 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
 
     for (auto& methodDecl : decl.methods) {
         typecheckMethodDecl(*methodDecl);
+    }
+
+    // Static constants share the value namespace with cases; duplicates would
+    // make `Enum.name` ambiguous between a case and a constant.
+    for (size_t i = 0; i < decl.staticConsts.size(); ++i) {
+        auto* constant = decl.staticConsts[i];
+        for (size_t j = 0; j < i; ++j) {
+            if (decl.staticConsts[j]->getName() == constant->getName()) {
+                ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+            }
+        }
+        for (auto& enumCase : decl.cases) {
+            if (enumCase.getName() == constant->getName()) {
+                ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+            }
+        }
     }
 
     checkForInfiniteSize(decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
