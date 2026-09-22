@@ -3,8 +3,8 @@
 void main() {
     testGetSetEnv();
     testGetUnsetEnv();
-    testSystem();
-    testCapture();
+    testRunStatus();
+    testRunOutput();
 }
 
 void testGetSetEnv() {
@@ -16,12 +16,15 @@ void testGetUnsetEnv() {
     assert(getenv("CX_DEFINITELY_UNSET_VAR_XYZ") == null);
 }
 
-void testSystem() {
-    assert(system("exit 0") == 0);
-    assert(system("exit 1") != 0);
+void testRunStatus() {
+    assert(run("exit 0").status == 0);
+    assert(run("exit 3").status == 3);
+    var silent = run("exit 0");
+    assert(string(&silent.output) == "");
 }
 
-void testCapture() {
-    var output = capture("echo hello");
-    assert(string(&output).contains("hello"));
+void testRunOutput() {
+    var result = run("echo hello");
+    assert(result.status == 0);
+    assert(string(&result.output).contains("hello"));
 }
