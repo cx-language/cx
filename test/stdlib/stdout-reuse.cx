@@ -1,0 +1,22 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:one
+// CHECK:two
+// CHECK:logline 1 2.5 true
+// CHECK:logline 2 3.5 false
+// CHECK:survived
+
+void logLine<T: Printable>(T*... args) {
+    var out = stdout();
+    for arg in args {
+        out.write(arg);
+    }
+    out.write("\n");
+}
+
+void main() {
+    stdout().write("one\n");
+    stdout().write("two\n");
+    logLine("logline ", 1, " ", 2.5, " ", true);
+    logLine("logline ", 2, " ", 3.5, " ", false);
+    println("survived");
+}

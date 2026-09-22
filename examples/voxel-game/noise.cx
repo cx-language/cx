@@ -1,0 +1,49 @@
+// Deterministic value noise for terrain generation. Uses only shifts and
+// xors for mixing so debug integer-overflow checks cannot fire.
+
+// Coordinates are biased positive before hashing so negative world
+// positions hash sanely.
+uint64 hash2(int x, int z) {
+    var h = uint64(x + 100000) + uint64(z + 100000) * 1000000;
+    h ^= h >> 33;
+    h ^= h << 17;
+    h ^= h >> 23;
+    h ^= h << 5;
+    return h;
+}
+
+float hash01(int x, int z) {
+    var h = hash2(x, z);
+    return float(h % 1000000) / 1000000.0;
+}
+
+float valueNoise2(float x, float z) {
+    var xi = int(floor(x));
+    var zi = int(floor(z));
+    var xf = x - floor(x);
+    var zf = z - floor(z);
+    var u = xf * xf * (3.0 - 2.0 * xf);
+    var v = zf * zf * (3.0 - 2.0 * zf);
+    var a = hash01(xi, zi);
+    var b = hash01(xi + 1, zi);
+    var c = hash01(xi, zi + 1);
+    var d = hash01(xi + 1, zi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+
+float fbm2(float x, float z) {
+    var total = 0.0;
+    var amp = 0.5;
+    var freq = 1.0;
+    for _ in 0..4 {
+        total += amp * valueNoise2(x * freq, z * freq);
+        amp *= 0.5;
+        freq *= 2.0;
+    }
+    return total;
+}
+
+int terrainHeight(int x, int z) {
+    var n = fbm2(float(x) / 32.0, float(z) / 32.0);
+    return 18 + int(n * 24.0);
+}

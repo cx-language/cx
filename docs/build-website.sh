@@ -141,7 +141,7 @@ if "##EXAMPLESELECTOR##" in template:
     options = "".join(
         '<option value="{}"{}>{}</option>'.format(index, " selected" if index == 0 else "", html.escape(name))
         for index, (name, _) in enumerate(showcase)
-    )
+    ) + '<option value="more">More examples...</option>'
     template = template.replace(
         "##EXAMPLESELECTOR##", '<select id="example-selector" aria-label="Example">' + options + "</select>"
     )
@@ -181,6 +181,8 @@ import functools
 import http.server
 import os
 import sys
+import threading
+import webbrowser
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -193,6 +195,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return translated
 
 
+threading.Timer(1.0, lambda: webbrowser.open("http://localhost:" + sys.argv[1] + "/")).start()
 http.server.ThreadingHTTPServer(
     ("", int(sys.argv[1])),
     functools.partial(Handler, directory="build"),

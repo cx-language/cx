@@ -754,6 +754,9 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
         if (expr.getFunctionName() == "size") {
             return getArrayLength(*expr.getReceiver(), expr.receiverType.removePointer());
         }
+        if (expr.getFunctionName() == "data") {
+            return getArrayData(*expr.getReceiver(), expr.receiverType.removePointer());
+        }
         if (expr.getFunctionName() == "iterator") {
             return getArrayIterator(*expr.getReceiver(), expr.receiverType.removePointer());
         }
@@ -877,6 +880,19 @@ Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, c
 
 Value* IRGenerator::getArrayLength(const Expr&, Type objectType) {
     return createConstantInt(Type::getInt(), objectType.getArraySize());
+}
+
+Value* IRGenerator::getArrayData(const Expr& object, Type objectType) {
+    if (objectType.isUnsizedArrayPointer()) {
+        return emitExpr(object);
+    }
+    // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
+    auto* value = object.type.isPointerType() ? emitExpr(object) : emitExprAsPointer(object);
+    ASSERT(value->getType()->getPointee()->isArrayType());
+    if (objectType.getArraySize() == 0) {
+        return createConstantNull(value->getType()->getPointee()->getElementType()->getPointerTo());
+    }
+    return createGEP(value, 0);
 }
 
 Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {

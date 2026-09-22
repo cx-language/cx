@@ -1,0 +1,18 @@
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:a1b2c3d4e5f6
+
+// With 12 pack arguments, the C backend's (base + counter) local naming
+// must not reuse a parameter name: the copy of `args_1` gets suffix `1`,
+// which would collide with parameter `args_11` and produce uncompilable C.
+
+void printAll<T: Printable>(T*... args) {
+    for arg in args {
+        print(arg);
+    }
+    print('\n');
+}
+
+void main() {
+    printAll("a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6);
+}

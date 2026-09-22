@@ -1,0 +1,81 @@
+import "GLFW/glfw3.h";
+
+// Renders the spawn view offscreen and saves it as a binary PPM (P6).
+int runScreenshot(string path) {
+    if glfwInit() == 0 {
+        println("glfwInit failed");
+        return 1;
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
+    glfwWindowHint(GLFW_VISIBLE, 0);
+    var window = glfwCreateWindow(640, 480, "screenshot", null, null);
+    if window == null {
+        println("window failed");
+        glfwTerminate();
+        return 1;
+    }
+    glfwMakeContextCurrent(window);
+
+    var world = makeWorld(8, 8);
+    var program = createProgram("assets/block.vert", "assets/block.frag");
+    glUseProgram(program);
+    glEnable(GL_DEPTH_TEST);
+    glViewport(0, 0, 640, 480);
+    glClearColor(0.45, 0.65, 1.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    var ground = terrainHeight(64, 64);
+    var player = Player(pos = Vec3(64.5, float(ground) + 1.0, 64.5), vel = Vec3(0.0, 0.0, 0.0),
+        yaw = 0.7, pitch = -0.05, onGround = true);
+    var eye = eyePos(player);
+    var dir = lookDir(player);
+    var proj = mat4Perspective(radians(75.0), 640.0 / 480.0, 0.1, 500.0);
+    var view = mat4LookAt(eye, eye + dir * 10.0, Vec3(0.0, 1.0, 0.0));
+    var mvp = proj * view;
+    var uniforms = getBlockUniforms(program);
+    setMat4(uniforms.mvp, mvp);
+    setBlockFog(uniforms, eye);
+    for i in 0..world.chunks.size() {
+        drawMesh(world.chunks[i].mesh);
+    }
+    checkGlError("screenshot draw");
+
+    uint8[640 * 480 * 3] pixels = undefined;
+    glReadPixels(0, 0, 640, 480, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+    var sky = 0;
+    for i in 0..307200 {
+        var r = pixels[i * 3];
+        var g = pixels[i * 3 + 1];
+        var b = pixels[i * 3 + 2];
+        if b > r && b > g {
+            sky++;
+        }
+    }
+    var skyFrac = float(sky) / 307200.0;
+    println("sky fraction: ", skyFrac);
+    if skyFrac < 0.05 || skyFrac > 0.95 {
+        abort("screenshot: scene badly framed");
+    }
+
+    uint8[640 * 480 * 3] flipped = undefined;
+    for row in 0..480 {
+        for col in 0..1920 {
+            flipped[row * 1920 + col] = pixels[(479 - row) * 1920 + col];
+        }
+    }
+    var body = string(cast<char*>(&flipped[0]), 640 * 480 * 3);
+    var out = StringBuffer("P6\n640 480\n255\n");
+    out.append(body);
+    if !writeFile(path, string(out)) {
+        abort("screenshot: cannot write file");
+    }
+    println("wrote ", path);
+    destroyWorld(world);
+    glDeleteProgram(program);
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
+}

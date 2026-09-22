@@ -54,6 +54,8 @@ BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> d
     multitarget = getConfigValue<BoolLiteralExpr>(symbols.findOne("multitarget"), false);
     outputDirectory = getConfigValue<StringLiteralExpr>(symbols.findOne("outputDirectory"), ".");
     this->defines = getStringList(symbols.findOne("defines"));
+    headerSearchPaths = getStringList(symbols.findOne("headerSearchPaths"));
+    librarySearchPaths = getStringList(symbols.findOne("librarySearchPaths"));
     libraries = getStringList(symbols.findOne("libraries"));
     frameworks = getStringList(symbols.findOne("frameworks"));
     pkgConfigDependencies = getStringList(symbols.findOne("pkgConfigDependencies"));

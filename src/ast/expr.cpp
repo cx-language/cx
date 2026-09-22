@@ -105,7 +105,9 @@ bool Expr::isConstant() const {
 bool Expr::isFoldableIntConstant() const {
     switch (kind) {
     case ExprKind::VarExpr: {
-        auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl);
+        // Unresolved references (e.g. array bounds examined during parsing) are never constant.
+        auto* decl = llvm::cast<VarExpr>(this)->decl;
+        auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
         return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableIntConstant();
     }
     case ExprKind::IntLiteralExpr:

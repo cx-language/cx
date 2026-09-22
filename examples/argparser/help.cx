@@ -1,0 +1,191 @@
+// Help text generation for argparser. See argparser.cx for the API overview.
+
+private StringBuffer flagLeftCell(FlagSpec* spec) {
+    var cell = StringBuffer("  ");
+    if spec.shortName.size() > 0 {
+        cell.append("-");
+        cell.append(spec.shortName);
+        cell.append(", ");
+    }
+    cell.append("--");
+    cell.append(spec.name);
+    return cell;
+}
+
+private StringBuffer optionLeftCell(OptionSpec* spec) {
+    var cell = flagLeftCellFor(spec.shortName, spec.name);
+    cell.append(" ");
+    cell.append(spec.valueName);
+    return cell;
+}
+
+private StringBuffer intOptionLeftCell(IntOptionSpec* spec) {
+    var cell = flagLeftCellFor(spec.shortName, spec.name);
+    cell.append(" ");
+    cell.append(spec.valueName);
+    return cell;
+}
+
+private StringBuffer flagLeftCellFor(string shortName, string name) {
+    var cell = StringBuffer("  ");
+    if shortName.size() > 0 {
+        cell.append("-");
+        cell.append(shortName);
+        cell.append(", ");
+    }
+    cell.append("--");
+    cell.append(name);
+    return cell;
+}
+
+private bool setHasOptions(OptionSet* set) {
+    return set.flags.size() > 0 || set.options.size() > 0 || set.intOptions.size() > 0;
+}
+
+// Appends "[options]", "<REQ>", "[OPT]" fragments for the set to buf.
+private void writeUsageArgs(StringBuffer* buf, OptionSet* set) {
+    if setHasOptions(set) {
+        buf.append(" [options]");
+    }
+    for i in 0..set.positionals.size() {
+        buf.append(" ");
+        if set.positionals[i].required {
+            buf.append("<");
+            buf.append(set.positionals[i].name);
+            buf.append(">");
+        } else {
+            buf.append("[");
+            buf.append(set.positionals[i].name);
+            buf.append("]");
+        }
+    }
+}
+
+// Width of the widest option row, including the auto-generated help row.
+private int optionSectionWidth(OptionSet* set) {
+    var width = 10; // "  -h, --help"
+    for i in 0..set.flags.size() {
+        var cell = flagLeftCell(set.flags[i]);
+        if cell.size() > width {
+            width = cell.size();
+        }
+    }
+    for i in 0..set.options.size() {
+        var cell = optionLeftCell(set.options[i]);
+        if cell.size() > width {
+            width = cell.size();
+        }
+    }
+    for i in 0..set.intOptions.size() {
+        var cell = intOptionLeftCell(set.intOptions[i]);
+        if cell.size() > width {
+            width = cell.size();
+        }
+    }
+    return width;
+}
+
+private void writePaddedRow(StringBuffer* buf, string left, string help, int width) {
+    buf.append(left);
+    buf.append(" ".repeat(width - left.size() + 2));
+    buf.append(help);
+    buf.append("\n");
+}
+
+private void writeOptionsSection(StringBuffer* buf, OptionSet* set) {
+    buf.append("Options:\n");
+    var width = optionSectionWidth(set);
+    for i in 0..set.flags.size() {
+        var cell = flagLeftCell(set.flags[i]);
+        writePaddedRow(buf, cell.substr(0), set.flags[i].help, width);
+    }
+    for i in 0..set.options.size() {
+        var cell = optionLeftCell(set.options[i]);
+        writePaddedRow(buf, cell.substr(0), set.options[i].help, width);
+    }
+    for i in 0..set.intOptions.size() {
+        var cell = intOptionLeftCell(set.intOptions[i]);
+        writePaddedRow(buf, cell.substr(0), set.intOptions[i].help, width);
+    }
+    writePaddedRow(buf, "  -h, --help", "Show this help message and exit.", width);
+}
+
+private void writeArgumentsSection(StringBuffer* buf, OptionSet* set) {
+    if set.positionals.size() == 0 {
+        return;
+    }
+    buf.append("\nArguments:\n");
+    var width = 0;
+    for i in 0..set.positionals.size() {
+        var w = set.positionals[i].name.size() + 2;
+        if w > width {
+            width = w;
+        }
+    }
+    for i in 0..set.positionals.size() {
+        var left = StringBuffer("  ") + set.positionals[i].name;
+        if set.positionals[i].required {
+            writePaddedRow(buf, left.substr(0), set.positionals[i].help, width);
+        } else {
+            var help = StringBuffer(set.positionals[i].help) + " (optional)";
+            writePaddedRow(buf, left.substr(0), help.substr(0), width);
+        }
+    }
+}
+
+// Full help text for the program: usage, description, commands, options.
+StringBuffer helpText(ArgParser* parser) {
+    var buf = StringBuffer("Usage: ");
+    buf.append(parser.name);
+    if parser.commands.size() > 0 {
+        buf.append(" [options] <command> [<args>]");
+    } else {
+        writeUsageArgs(buf, parser.options);
+    }
+    buf.append("\n");
+    if parser.description.size() > 0 {
+        buf.append("\n");
+        buf.append(parser.description);
+        buf.append("\n");
+    }
+    if parser.commands.size() > 0 {
+        buf.append("\nCommands:\n");
+        var width = 0;
+        for i in 0..parser.commands.size() {
+            var w = parser.commands[i].name.size() + 2;
+            if w > width {
+                width = w;
+            }
+        }
+        for i in 0..parser.commands.size() {
+            var left = StringBuffer("  ") + parser.commands[i].name;
+            writePaddedRow(buf, left.substr(0), parser.commands[i].help, width);
+        }
+        buf.append("\nRun '");
+        buf.append(parser.name);
+        buf.append(" <command> --help' for command-specific help.\n");
+    }
+    buf.append("\n");
+    writeOptionsSection(buf, parser.options);
+    writeArgumentsSection(buf, parser.options);
+    return buf;
+}
+
+// Help text for one subcommand.
+StringBuffer commandHelpText(ArgParser* parser, CommandSpec* cmd) {
+    var buf = StringBuffer("Usage: ");
+    buf.append(parser.name);
+    buf.append(" ");
+    buf.append(cmd.name);
+    writeUsageArgs(buf, cmd.options);
+    buf.append("\n");
+    if cmd.help.size() > 0 {
+        buf.append("\n");
+        buf.append(cmd.help);
+        buf.append("\n");
+    }
+    buf.append("\n");
+    writeOptionsSection(buf, cmd.options);
+    writeArgumentsSection(buf, cmd.options);
+    return buf;
+}
