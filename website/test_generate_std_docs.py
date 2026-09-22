@@ -117,7 +117,7 @@ class FixtureTest(unittest.TestCase):
 
     def test_page_title_and_source(self):
         self.assertIn(
-            "# [fixture](https://github.com/emillaine/cx/blob/main/std/fixture.cx)"
+            "# [fixture](https://github.com/cx-language/cx/blob/main/std/fixture.cx)"
             '{target="_blank"}\n',
             self.markdown,
         )
@@ -125,7 +125,7 @@ class FixtureTest(unittest.TestCase):
 
     def test_type_header_and_doc(self):
         self.assertIn(
-            "## [struct Widget: Copyable](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L2)"
+            "## [struct Widget: Copyable](https://github.com/cx-language/cx/blob/main/std/fixture.cx#L2)"
             '{target="_blank"} {#type-Widget}',
             self.markdown,
         )
@@ -133,7 +133,7 @@ class FixtureTest(unittest.TestCase):
 
     def test_members(self):
         self.assertIn(
-            "### [size](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L3)"
+            "### [size](https://github.com/cx-language/cx/blob/main/std/fixture.cx#L3)"
             '{target="_blank"} {#Widget-size}',
             self.markdown,
         )
@@ -153,7 +153,7 @@ class FixtureTest(unittest.TestCase):
 
     def test_operator_slug(self):
         self.assertIn(
-            "## [operator==](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L28)"
+            "## [operator==](https://github.com/cx-language/cx/blob/main/std/fixture.cx#L28)"
             '{target="_blank"} {#fn-operator-eq}',
             self.markdown,
         )
@@ -163,19 +163,19 @@ class FixtureTest(unittest.TestCase):
 
     def test_enum_variants(self):
         self.assertIn(
-            "### [Red](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L39)"
+            "### [Red](https://github.com/cx-language/cx/blob/main/std/fixture.cx#L39)"
             '{target="_blank"} {#Color-Red}',
             self.markdown,
         )
         self.assertIn(
-            "### [Green](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L40)"
+            "### [Green](https://github.com/cx-language/cx/blob/main/std/fixture.cx#L40)"
             '{target="_blank"} {#Color-Green}',
             self.markdown,
         )
 
     def test_extern_and_const(self):
         self.assertIn(
-            "## [answer](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L45)"
+            "## [answer](https://github.com/cx-language/cx/blob/main/std/fixture.cx#L45)"
             '{target="_blank"} {#const-answer}',
             self.markdown,
         )
@@ -338,7 +338,7 @@ class StdlibTest(unittest.TestCase):
 
     def test_known_entries(self):
         page = self.rendered["List.cx"]
-        base = "https://github.com/emillaine/cx/blob/main/std/List.cx"
+        base = "https://github.com/cx-language/cx/blob/main/std/List.cx"
         for snippet in [
             f'# [List]({base}){{target="_blank"}}',
             f'## [struct List\\<Element\\>]({base}#L2){{target="_blank"}} {{#type-List}}',
@@ -353,7 +353,7 @@ class StdlibTest(unittest.TestCase):
         stdio = self.rendered["stdio.cx"]
         self.assertEqual(
             stdio.count(
-                "## [println](https://github.com/emillaine/cx/blob/main/std/stdio.cx#L2)"
+                "## [println](https://github.com/cx-language/cx/blob/main/std/stdio.cx#L2)"
                 '{target="_blank"} {#fn-println}'
             ),
             1,
