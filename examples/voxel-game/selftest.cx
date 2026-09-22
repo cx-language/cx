@@ -141,35 +141,31 @@ void testPlayer() {
     println("player ok");
 }
 
-void checkAppendInt(int value, string want) {
+void checkAppendPrintable(int value, string want) {
     var b = StringBuffer();
-    appendInt(b, value);
+    b.append(value);
     if !(b == want) {
-        abort("self-test: appendInt failed");
+        abort("self-test: append failed");
     }
 }
 
-void testAppendInt() {
-    checkAppendInt(0, "0");
-    checkAppendInt(7, "7");
-    checkAppendInt(42, "42");
-    checkAppendInt(120, "120");
-    checkAppendInt(1000, "1000");
-    checkAppendInt(-35, "-35");
+void testAppendPrintable() {
+    checkAppendPrintable(0, "0");
+    checkAppendPrintable(7, "7");
+    checkAppendPrintable(42, "42");
+    checkAppendPrintable(120, "120");
+    checkAppendPrintable(1000, "1000");
+    checkAppendPrintable(-35, "-35");
     var b = StringBuffer("fps=");
-    appendInt(b, 60);
+    b.append(60);
     if !(b == "fps=60") {
-        abort("self-test: appendInt suffix failed");
+        abort("self-test: append suffix failed");
     }
-    println("appendInt ok");
+    println("append ok");
 }
 
 void testLogStream() {
-    var a = stdout();
-    a.write("logstream ");
-    var b = stdout();
-    b.write("ok");
-    b.write("\n");
+    stdout().writeln("logstream ", "ok");
     println("stdout ok");
 }
 
@@ -577,7 +573,7 @@ void testRender() {
 
 int runSelfTest() {
     testMath();
-    testAppendInt();
+    testAppendPrintable();
     testLogStream();
     testNoise();
     testPlayer();
