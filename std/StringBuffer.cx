@@ -191,7 +191,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     /// Writes this string to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         stream.append(string(this));
     }
 

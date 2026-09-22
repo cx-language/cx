@@ -15,7 +15,7 @@ enum JsonValue : Printable {
     /// Writes the value in compact JSON form.
     ///
     /// Printable's `toString()` renders this same form.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         writeJson(stream, this, 0, false);
     }
 
@@ -26,7 +26,8 @@ enum JsonValue : Printable {
     /// Non-finite `Number` values abort; JSON has no spelling for them.
     StringBuffer toString(bool pretty) {
         var out = StringBuffer();
-        writeJson(out, this, 0, pretty);
+        var stream = OutputStream(out);
+        writeJson(stream, this, 0, pretty);
         return out;
     }
 }
@@ -59,7 +60,7 @@ enum JsonError: Printable {
     MaximumDepthExceeded(int offset),
 
     /// Writes the error as text, with its byte offset.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         switch this {
             case UnexpectedCharacter e: writeMessage(stream, "unexpected character", e.offset);
             case InvalidLiteral e: writeMessage(stream, "invalid literal", e.offset);
@@ -102,7 +103,7 @@ Result<JsonValue, JsonError> parseJson(string text) {
 
 private const int maxJsonDepth = 1000;
 
-private void writeMessage(StringBuffer* stream, string text, int offset) {
+private void writeMessage(OutputStream* stream, string text, int offset) {
     stream.append(text);
     stream.append(" at offset ");
     offset.print(stream);
@@ -437,7 +438,7 @@ private void pushUtf8(StringBuffer* out, int code) {
     }
 }
 
-private void writeIndent(StringBuffer* out, int count) {
+private void writeIndent(OutputStream* out, int count) {
     int i = 0;
     while i < count {
         out.append(' ');
@@ -445,7 +446,7 @@ private void writeIndent(StringBuffer* out, int count) {
     }
 }
 
-private void writeQuoted(StringBuffer* out, StringBuffer* s) {
+private void writeQuoted(OutputStream* out, StringBuffer* s) {
     out.append('"');
     for i in 0..s.size() {
         int code = byteValue((*s)[i]);
@@ -476,7 +477,7 @@ private void writeQuoted(StringBuffer* out, StringBuffer* s) {
 
 // Renders the shortest spelling that parses back to `value`. 17 significant
 // digits always suffice for 64-bit floats; shorter widths win when they match.
-private void writeNumber(StringBuffer* out, float64 value) {
+private void writeNumber(OutputStream* out, float64 value) {
     // NaN is the only value that doesn't equal itself. (Spelled this way
     // because `value != value` is false for NaN.) Only infinite values equal
     // their own half.
@@ -498,7 +499,7 @@ private void writeNumber(StringBuffer* out, float64 value) {
     out.append(string(result));
 }
 
-private void writeJson(StringBuffer* out, JsonValue* value, int level, bool indented) {
+private void writeJson(OutputStream* out, JsonValue* value, int level, bool indented) {
     switch (*value) {
         case String s: writeQuoted(out, s.value);
         case Integer n: n.value.print(out);

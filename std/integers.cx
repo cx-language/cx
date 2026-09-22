@@ -50,7 +50,7 @@ const uint64 uint64_min = 0;
 // TODO: Remove code duplication by declaring an 'Integer' interface that implements the 'compare'
 // function for all integer types.
 
-private void printSigned(int64 value, StringBuffer* stream) {
+private void printSigned(int64 value, OutputStream* stream) {
     if value < 0 {
         stream.append('-');
         // Negate via value + 1 so that int64_min doesn't overflow.
@@ -60,7 +60,7 @@ private void printSigned(int64 value, StringBuffer* stream) {
     }
 }
 
-private void printUnsigned(uint64 value, StringBuffer* stream) {
+private void printUnsigned(uint64 value, OutputStream* stream) {
     char[20] digits = undefined;
     var count = 0;
 
@@ -88,7 +88,7 @@ struct int: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printSigned(int64(this), stream);
     }
 
@@ -106,7 +106,7 @@ struct int8: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printSigned(int64(this), stream);
     }
 
@@ -124,7 +124,7 @@ struct int16: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printSigned(int64(this), stream);
     }
 
@@ -142,7 +142,7 @@ struct int32: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printSigned(int64(this), stream);
     }
 
@@ -160,7 +160,7 @@ struct int64: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printSigned(this, stream);
     }
 
@@ -187,7 +187,7 @@ struct uint: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -205,7 +205,7 @@ struct uint8: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -223,7 +223,7 @@ struct byte: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -241,7 +241,7 @@ struct uint16: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -259,7 +259,7 @@ struct uint32: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -277,7 +277,7 @@ struct uint64: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         printUnsigned(this, stream);
     }
 

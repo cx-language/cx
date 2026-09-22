@@ -1,13 +1,61 @@
+/// A stream that accepts printed output, writing to a string buffer,
+/// to a file, or to standard output.
+///
+/// Writing to a file or standard output never allocates; buffering into a
+/// `StringBuffer` allocates only to grow the buffer itself.
+struct OutputStream {
+    private StringBuffer*? buffer;
+    private FILE*? file;
+
+    /// Writes to standard output.
+    OutputStream() {
+        buffer = null;
+        file = null;
+    }
+
+    OutputStream(public StringBuffer* buffer) {
+        this.buffer = buffer;
+        file = null;
+    }
+
+    OutputStream(public FILE* file) {
+        this.file = file;
+        buffer = null;
+    }
+
+    /// Writes the string without allocating when writing to a file or standard output.
+    void append(string s) {
+        if buffer {
+            buffer.append(s);
+        } else if file {
+            fwrite(s.data(), sizeof(char), uint64(s.size()), file);
+        } else {
+            printf("%.*s", s.size(), s.data());
+        }
+    }
+
+    /// Writes the character without allocating when writing to a file or standard output.
+    void append(char c) {
+        if buffer {
+            buffer.append(c);
+        } else if file {
+            fputc(int(c), file);
+        } else {
+            printf("%c", int(c));
+        }
+    }
+}
+
 /// A type that can be printed.
 interface Printable {
-    // TODO: Make this member function take any OutputStream as an argument once the compiler supports it.
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream);
+    void print(OutputStream* stream);
 
     /// Returns this value rendered as a string.
     StringBuffer toString() {
         var result = StringBuffer();
-        this.print(result);
+        var stream = OutputStream(result);
+        this.print(stream);
         return result;
     }
 }

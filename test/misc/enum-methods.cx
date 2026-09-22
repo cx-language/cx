@@ -49,7 +49,7 @@ enum P: Printable {
     Ok(int code),
     Fail,
 
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         switch this {
             case Ok c:
                 stream.append("Ok(");

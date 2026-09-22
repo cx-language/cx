@@ -21,7 +21,7 @@ struct char: Copyable, Comparable, Printable, Hashable {
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer* stream) {
+    void print(OutputStream* stream) {
         stream.append(this);
     }
 
