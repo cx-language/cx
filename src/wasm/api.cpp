@@ -14,7 +14,7 @@
 // Diagnostics (errors and warnings) are written to stderr, which the
 // JavaScript glue code captures. The generated C code is then compiled to an
 // executable WebAssembly module by the playground's in-browser C toolchain
-// (see docs/playground.js) and run.
+// (see website/playground.js) and run.
 //
 // The standard library is provided via the virtual file system: the build
 // preloads the repository's std/ directory at /cx/std (so the playground

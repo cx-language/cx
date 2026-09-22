@@ -2,7 +2,7 @@
 # To develop the website locally, run this script after each change,
 # and serve the generated HTML from the build directory using e.g. 'npx serve'.
 # Or run with --serve to build and serve in one step:
-#   docs/build-website.sh --serve [--port <port>]
+#   website/build-website.sh --serve [--port <port>]
 
 SERVE=0
 PORT=8000
@@ -52,10 +52,10 @@ mkdir build
 rm -rf .generated
 python3 generate_std_docs.py || exit
 
-for file in book/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html; do
+for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html; do
     case $file in
-        book/*)
-            relpath="${file#book/}"
+        ../docs/*)
+            relpath="${file#../docs/}"
             relpath="${relpath%.md}"
             ;;
         .generated/*)

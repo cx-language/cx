@@ -12,7 +12,7 @@ arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--cx", help="path to cx compiler executable", default="cx")
 args, cx_args = arg_parser.parse_known_args()
 
-book_dir = os.path.join(os.path.dirname(__file__), "book")
+docs_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "docs"))
 failures = []
 
 
@@ -49,11 +49,11 @@ def check_snippet(path, index, code, reference_only):
             print(run.stderr)
 
 
-for filename in sorted(os.listdir(book_dir)):
+for filename in sorted(os.listdir(docs_dir)):
     if not filename.endswith(".md"):
         continue
 
-    with open(os.path.join(book_dir, filename)) as file:
+    with open(os.path.join(docs_dir, filename)) as file:
         blocks = re.findall(r"^```cs( \{\.noRun\})?\n(.*?)^```", file.read(), re.M | re.S)
         for index, (marker, code) in enumerate(blocks):
             check_snippet(filename, index, code, reference_only=bool(marker))

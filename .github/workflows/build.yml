@@ -233,16 +233,16 @@ jobs:
           sudo dpkg -i pandoc-3.11-1-amd64.deb
 
           (
-            cd docs || exit 1
+            cd website || exit 1
             ./build-website.sh
           )
 
-          touch docs/build/.nojekyll
+          touch website/build/.nojekyll
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/build
+          path: website/build
 
       - name: Deploy to GitHub Pages
         id: deployment

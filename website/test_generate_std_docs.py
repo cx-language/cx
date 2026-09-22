@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for generate_std_docs.py. Run with: python3 docs/test_generate_std_docs.py"""
+"""Tests for generate_std_docs.py. Run with: python3 website/test_generate_std_docs.py"""
 
 import re
 import sys
@@ -23,8 +23,8 @@ from generate_std_docs import (
     render_toc_items,
 )
 
-DOCS_DIR = Path(__file__).resolve().parent
-STD_DIR = DOCS_DIR.parent / "std"
+WEBSITE_DIR = Path(__file__).resolve().parent
+STD_DIR = WEBSITE_DIR.parent / "std"
 
 FIXTURE = """\
 /// A widget.
