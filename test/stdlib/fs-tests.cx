@@ -1,0 +1,55 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    testExists();
+    testCreateListRenameRemove();
+    testFileSize();
+    testCurrentAndChangeDirectory();
+    testListMissingDirectory();
+}
+
+void testExists() {
+    assert(exists("."));
+    assert(!exists("CX_DEFINITELY_MISSING_FILE_XYZ"));
+}
+
+void testCreateListRenameRemove() {
+    assert(createDirectory("cx_fs_test_dir"));
+    assert(!createDirectory("cx_fs_test_dir"));
+    assert(exists("cx_fs_test_dir"));
+    assert(writeFile("cx_fs_test_dir/a.txt", "hello"));
+    assert(writeFile("cx_fs_test_dir/b.txt", "world!"));
+
+    var names = listDirectory("cx_fs_test_dir");
+    assert(names.size() == 2);
+    assert(string(&names[0]) == "a.txt");
+    assert(string(&names[1]) == "b.txt");
+
+    assert(rename("cx_fs_test_dir/a.txt", "cx_fs_test_dir/c.txt"));
+    assert(!exists("cx_fs_test_dir/a.txt"));
+    assert(exists("cx_fs_test_dir/c.txt"));
+
+    assert(remove("cx_fs_test_dir/b.txt"));
+    assert(remove("cx_fs_test_dir/c.txt"));
+    assert(removeDirectory("cx_fs_test_dir"));
+    assert(!exists("cx_fs_test_dir"));
+}
+
+void testFileSize() {
+    assert(writeFile("cx_fs_test_size.txt", "hello"));
+    assert(fileSize("cx_fs_test_size.txt")! == 5);
+    assert(remove("cx_fs_test_size.txt"));
+    assert(fileSize("CX_DEFINITELY_MISSING_FILE_XYZ") == null);
+}
+
+void testCurrentAndChangeDirectory() {
+    assert(createDirectory("cx_fs_test_cwd_dir"));
+    assert(changeDirectory("cx_fs_test_cwd_dir"));
+    assert(string(&currentDirectory()).endsWith("cx_fs_test_cwd_dir"));
+    assert(changeDirectory(".."));
+    assert(removeDirectory("cx_fs_test_cwd_dir"));
+}
+
+void testListMissingDirectory() {
+    assert(listDirectory("CX_DEFINITELY_MISSING_DIR_XYZ").size() == 0);
+}
