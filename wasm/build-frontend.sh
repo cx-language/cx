@@ -85,6 +85,7 @@ SRCS="
     src/backend/irgen-stmt.cpp
     src/driver/compile.cpp
     src/build/config.cpp
+    src/build/dependencies.cpp
     src/parser/lex.cpp
     src/parser/parse.cpp
     src/sema/c-import.cpp
