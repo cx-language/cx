@@ -89,9 +89,3 @@ void _EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ArrayRef<int>* this, s
     never _5 = call _EN3std5abortI6string6string6string3int6string3intEVER6stringR6stringR6stringR3intR6stringR3int(string* __str, string* function_0, string* __str_0, int* index_0, string* __str_1, int* _0)
     return void
 }
-
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
-}
-
-never _EN3std5abortI6string6string6string3int6string3intEVER6stringR6stringR6stringR3intR6stringR3int(string* args_0, string* args_1, string* args_2, int* args_3, string* args_4, int* args_5) {
-}
