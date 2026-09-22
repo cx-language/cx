@@ -7,11 +7,11 @@ bool isEven(int n) {
 void main() {
     var numbers = List([0, 1, 2, 3, 4]);
 
-    var even = numbers.filter(isEven);
+    var even = numbers.filter(isEven).toList();
     // CHECK: [0, 2, 4]
     println(even);
 
-    var doubled = even.map(n => n * 2);
+    var doubled = even.map(n => n * 2).toList();
     // CHECK-NEXT: [0, 4, 8]
     println(doubled);
 }

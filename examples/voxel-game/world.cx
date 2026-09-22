@@ -140,7 +140,7 @@ void plantTrees(World* w) {
     }
 }
 
-void pushFaceColor(List<float>* colors, Vec3 color) {
+void pushFaceColor(List<float>* colors, Vector3<float> color) {
     for _ in 0..6 {
         colors.push(color.x);
         colors.push(color.y);
@@ -216,36 +216,36 @@ void pushBlockFace(List<float>* positions, List<float>* normals, List<float>* co
     var oz = float(z);
     if face == faceTop {
         pushQuad(positions, normals,
-            Vec3(ox, oy + 1.0, oz), Vec3(ox, oy + 1.0, oz + 1.0),
-            Vec3(ox + 1.0, oy + 1.0, oz + 1.0), Vec3(ox + 1.0, oy + 1.0, oz),
-            Vec3(0.0, 1.0, 0.0));
+            Vector3(ox, oy + 1.0, oz), Vector3(ox, oy + 1.0, oz + 1.0),
+            Vector3(ox + 1.0, oy + 1.0, oz + 1.0), Vector3(ox + 1.0, oy + 1.0, oz),
+            Vector3(0.0, 1.0, 0.0));
     } else if face == faceBottom {
         pushQuad(positions, normals,
-            Vec3(ox, oy, oz), Vec3(ox + 1.0, oy, oz),
-            Vec3(ox + 1.0, oy, oz + 1.0), Vec3(ox, oy, oz + 1.0),
-            Vec3(0.0, -1.0, 0.0));
+            Vector3(ox, oy, oz), Vector3(ox + 1.0, oy, oz),
+            Vector3(ox + 1.0, oy, oz + 1.0), Vector3(ox, oy, oz + 1.0),
+            Vector3(0.0, -1.0, 0.0));
     } else if face == facePX {
         pushQuad(positions, normals,
-            Vec3(ox + 1.0, oy, oz), Vec3(ox + 1.0, oy, oz + 1.0),
-            Vec3(ox + 1.0, oy + 1.0, oz + 1.0), Vec3(ox + 1.0, oy + 1.0, oz),
-            Vec3(1.0, 0.0, 0.0));
+            Vector3(ox + 1.0, oy, oz), Vector3(ox + 1.0, oy, oz + 1.0),
+            Vector3(ox + 1.0, oy + 1.0, oz + 1.0), Vector3(ox + 1.0, oy + 1.0, oz),
+            Vector3(1.0, 0.0, 0.0));
     } else if face == faceNX {
         pushQuad(positions, normals,
-            Vec3(ox, oy, oz + 1.0), Vec3(ox, oy, oz),
-            Vec3(ox, oy + 1.0, oz), Vec3(ox, oy + 1.0, oz + 1.0),
-            Vec3(-1.0, 0.0, 0.0));
+            Vector3(ox, oy, oz + 1.0), Vector3(ox, oy, oz),
+            Vector3(ox, oy + 1.0, oz), Vector3(ox, oy + 1.0, oz + 1.0),
+            Vector3(-1.0, 0.0, 0.0));
     } else if face == facePZ {
         pushQuad(positions, normals,
-            Vec3(ox, oy, oz + 1.0), Vec3(ox + 1.0, oy, oz + 1.0),
-            Vec3(ox + 1.0, oy + 1.0, oz + 1.0), Vec3(ox, oy + 1.0, oz + 1.0),
-            Vec3(0.0, 0.0, 1.0));
+            Vector3(ox, oy, oz + 1.0), Vector3(ox + 1.0, oy, oz + 1.0),
+            Vector3(ox + 1.0, oy + 1.0, oz + 1.0), Vector3(ox, oy + 1.0, oz + 1.0),
+            Vector3(0.0, 0.0, 1.0));
     } else {
         pushQuad(positions, normals,
-            Vec3(ox + 1.0, oy, oz), Vec3(ox, oy, oz),
-            Vec3(ox, oy + 1.0, oz), Vec3(ox + 1.0, oy + 1.0, oz),
-            Vec3(0.0, 0.0, -1.0));
+            Vector3(ox + 1.0, oy, oz), Vector3(ox, oy, oz),
+            Vector3(ox, oy + 1.0, oz), Vector3(ox + 1.0, oy + 1.0, oz),
+            Vector3(0.0, 0.0, -1.0));
     }
-    pushFaceColor(colors, Vec3(1.0, 1.0, 1.0));
+    pushFaceColor(colors, Vector3(1.0, 1.0, 1.0));
     pushFaceUV(uvs, tile, faceVariant(tile, x, y, z, face));
 }
 

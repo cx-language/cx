@@ -21,6 +21,7 @@ void main() {
     println(list[0]); // prints the first element, 1
     println(list.first()); // also prints the first element
     println(list.last()); // prints the last element, 3
+    println(list[-1]); // also prints the last element
     // println(list[3]); // invalid index, this would cause an assertion error
 
     // Print each element in the list.
@@ -60,6 +61,9 @@ void main() {
 
 We can use the functional `map` and `filter` operations on lists, with
 function pointers or lambda expressions.
+They are lazy: they return iterators that compute elements on demand,
+so chained operations only traverse the list once.
+Collect the results into a list with `toList()`.
 
 ```cs
 bool isEven(int n) {
@@ -69,10 +73,10 @@ bool isEven(int n) {
 void main() {
     var numbers = List([0, 1, 2, 3, 4]);
 
-    var even = numbers.filter(isEven);
+    var even = numbers.filter(isEven).toList();
     println(even); // prints [0, 2, 4]
 
-    var doubled = even.map(n => n * 2);
+    var doubled = even.map(n => n * 2).toList();
     println(doubled); // prints [0, 4, 8]
 }
 ```

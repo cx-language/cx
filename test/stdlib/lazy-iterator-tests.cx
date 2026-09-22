@@ -1,0 +1,69 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+int transformCalls = 0;
+int filterCalls = 0;
+
+int countTransform(int x) {
+    transformCalls++;
+    return x * 2;
+}
+
+bool countFilter(int x) {
+    filterCalls++;
+    return x % 2 == 0;
+}
+
+void main() {
+    testMapIsLazy();
+    testFilterIsLazy();
+    testChain();
+    testMapThenFilter();
+    testToList();
+    testRangeToList();
+}
+
+void testMapIsLazy() {
+    var list = List([1, 2, 3]);
+    var mapped = list.map(countTransform);
+    assert(transformCalls == 0);
+    var result = mapped.toList();
+    assert(transformCalls == 3);
+    assert(result.size() == 3);
+    assert(result[0] == 2 && result[1] == 4 && result[2] == 6);
+}
+
+void testFilterIsLazy() {
+    var list = List([1, 2, 3, 4]);
+    var filtered = list.filter(countFilter);
+    assert(filterCalls == 0);
+    var result = filtered.toList();
+    assert(result.size() == 2);
+    assert(result[0] == 2 && result[1] == 4);
+}
+
+void testChain() {
+    var list = List([0, 1, 2, 3, 4]);
+    var result = list.filter(countFilter).map(countTransform).toList();
+    assert(result.size() == 3);
+    assert(result[0] == 0 && result[1] == 4 && result[2] == 8);
+}
+
+void testMapThenFilter() {
+    var list = List([1, 2, 3, 4]);
+    var result = list.map(countTransform).filter(n => n > 4).toList();
+    assert(result.size() == 2);
+    assert(result[0] == 6 && result[1] == 8);
+}
+
+void testToList() {
+    var list = List([1, 2, 3]);
+    var copy = list.iterator().toList();
+    assert(copy.size() == 3 && copy[2] == 3);
+    var lines = "a\nb".lines().toList();
+    assert(lines.size() == 2 && lines[1] == "b");
+}
+
+void testRangeToList() {
+    var numbers = (0..3).iterator().toList();
+    assert(numbers.size() == 3 && numbers[2] == 2);
+}

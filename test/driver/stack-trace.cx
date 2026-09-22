@@ -1,0 +1,23 @@
+// RUN: %not %cx run %s 2>&1 | %FileCheck %s
+// UNSUPPORTED: windows
+// CHECK-NOT: stack-trace.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void inner() {
+    abort("boom");
+}
+
+void middle() {
+    inner();
+}
+
+void main() {
+    middle();
+}
+
+// CHECK: boom
+// CHECK: printStackTrace
+// CHECK: abortWrapper
+// CHECK: _EN4main5innerE
+// CHECK: _EN4main6middleE
+// CHECK: main
+// CHECK-NOT: stack-trace.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

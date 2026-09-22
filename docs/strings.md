@@ -18,9 +18,9 @@ void main() {
     // b holds a copy of "test" that we can mutate
 
     b.append('!');
-    // b now hold "test!", a is unchanged
+    // b now holds "test!", a is unchanged
 
-    println(a);
-    println(b);
+    println(a); // prints "test"
+    println(b); // prints "test!"
 }
 ```

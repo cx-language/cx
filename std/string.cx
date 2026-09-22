@@ -42,6 +42,13 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return characters[index];
     }
 
+    /// Returns the character at the given offset from the end.
+    /// Offset 1 is the last character; offsets outside 1..size() abort.
+    char operator[-](int index) {
+        if index < 1 || index > size() indexOutOfBounds("operator[-]", index);
+        return characters[characters.size() - index];
+    }
+
     /// Returns a pointer to the first character.
     char[*] data() {
         return characters.data();
@@ -276,14 +283,9 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return result;
     }
 
-    // TODO: Return non-allocating iterator instead of allocating a string buffer.
-    /// Returns the string repeated the given number of times.
-    StringBuffer repeat(int count) {
-        var result = StringBuffer(capacity = this.size() * count);
-        for _ in 0..count {
-            result += this;
-        }
-        return result;
+    /// Returns the string repeated the given number of times, without allocating.
+    RepeatIterator<string> repeat(int count) {
+        return RepeatIterator(this, count);
     }
 
     /// Writes this string to the given stream.
@@ -337,4 +339,24 @@ bool operator==(char* a, string b) {
 /// Returns true if both strings are equal.
 bool operator==(string a, char* b) {
     return a == string(b);
+}
+
+/// Returns true if the repetition equals the string, without allocating.
+bool operator==(RepeatIterator<string> a, string b) {
+    var offset = 0;
+    for chunk in a {
+        if offset + chunk.size() > b.size() {
+            return false;
+        }
+        if b.substr(offset..offset + chunk.size()) != chunk {
+            return false;
+        }
+        offset += chunk.size();
+    }
+    return offset == b.size();
+}
+
+/// Returns true if the repetition equals the string, without allocating.
+bool operator==(string a, RepeatIterator<string> b) {
+    return b == a;
 }
