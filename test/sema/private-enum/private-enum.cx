@@ -1,5 +1,6 @@
-// RUN: %cx -typecheck %s %p/a.cx 2>&1 | %FileCheck %s
-// RUN: %cx -typecheck %s %p/a.cx 2>&1 | %FileCheck %p/a.cx
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %p/mod/a.cx
+import mod;
 
 void main() {
     // CHECK: private-enum.cx:[[@LINE+1]]:13: warning: 'A' is private

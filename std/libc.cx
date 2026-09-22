@@ -1,103 +1,103 @@
 // stdlib.h
 /// Allocates size bytes of memory.
-extern void*? malloc(uint64 size);
+private extern void*? malloc(uint64 size);
 /// Frees memory allocated by malloc.
-extern void free(void*? ptr);
+private extern void free(void*? ptr);
 /// Aborts the program immediately.
-extern never abort();
+private extern never abort();
 /// Exits the program with the given status.
-extern never exit(int status);
+private extern never exit(int status);
 /// Parses a double from the string.
-extern float64 strtod(const char* str, char**? endptr);
+private extern float64 strtod(const char* str, char**? endptr);
 /// Parses a float from the string.
-extern float32 strtof(const char* str, char**? endptr);
+private extern float32 strtof(const char* str, char**? endptr);
 
 // stdio.h
 /// A C file handle.
-struct FILE {}
+private struct FILE {}
 /// Prints formatted output to stdout.
-extern int printf(const char* format, ...);
+private extern int printf(const char* format, ...);
 /// Prints formatted output to the given file.
-extern int fprintf(FILE* file, const char* format, ...);
+private extern int fprintf(FILE* file, const char* format, ...);
 /// Prints formatted output into the given string.
-extern int sprintf(char* str, const char* format, ...);
+private extern int sprintf(char* str, const char* format, ...);
 /// Prints the given string followed by a newline.
-extern int puts(const char* str);
+private extern int puts(const char* str);
 /// Writes the given string to the file.
-extern int fputs(const char* str, FILE* file);
+private extern int fputs(const char* str, FILE* file);
 /// Writes the given character to the file.
-extern int fputc(int c, FILE* file);
+private extern int fputc(int c, FILE* file);
 /// Reads a character from stdin.
-extern int getchar();
+private extern int getchar();
 /// Opens the named file.
-extern FILE*? fopen(const char* filename, const char* mode);
+private extern FILE*? fopen(const char* filename, const char* mode);
 #if Windows
 private extern FILE*? _fdopen(int fd, const char* mode);
 /// Opens a file descriptor as a file.
-FILE*? fdopen(int fd, const char* mode) { return _fdopen(fd, mode); }
+private FILE*? fdopen(int fd, const char* mode) { return _fdopen(fd, mode); }
 #else
 /// Opens a file descriptor as a file.
-extern FILE*? fdopen(int fd, const char* mode);
+private extern FILE*? fdopen(int fd, const char* mode);
 #endif
 /// Reads a character from the file.
-extern int fgetc(FILE* file);
+private extern int fgetc(FILE* file);
 /// Reads elements from the file.
-extern uint64 fread(void* data, uint64 size, uint64 count, FILE* file);
+private extern uint64 fread(void* data, uint64 size, uint64 count, FILE* file);
 /// Writes elements to the file.
-extern void fwrite(const void* data, uint64 size, uint64 count, FILE* file);
+private extern void fwrite(const void* data, uint64 size, uint64 count, FILE* file);
 /// Moves the file position.
-extern void fseek(FILE* file, int64 offset, int origin);
+private extern void fseek(FILE* file, int64 offset, int origin);
 /// Returns the current file position.
-extern int64 ftell(FILE* file);
+private extern int64 ftell(FILE* file);
 /// Closes the file.
-extern int fclose(FILE* file);
+private extern int fclose(FILE* file);
 /// Flushes buffered output to the file.
-extern int fflush(FILE* file);
+private extern int fflush(FILE* file);
 /// Returns true at end of file.
-extern int feof(FILE* file);
+private extern int feof(FILE* file);
 /// Deletes the named file.
-extern int remove(const char* filename);
+private extern int remove(const char* filename);
 /// Pushes a character back onto the file.
-extern int ungetc(int c, FILE* file);
+private extern int ungetc(int c, FILE* file);
 /// Moves the file position to the start.
-extern void rewind(FILE* file);
+private extern void rewind(FILE* file);
 /// Origin for fseek: start of file.
-const SEEK_SET = 0;
+private const SEEK_SET = 0;
 /// Origin for fseek: current position.
-const SEEK_CUR = 1;
+private const SEEK_CUR = 1;
 /// Origin for fseek: end of file.
-const SEEK_END = 2;
+private const SEEK_END = 2;
 
 // string.h
 /// Returns the length of the string.
-extern uint64 strlen(const char* string);
+private extern uint64 strlen(const char* string);
 
 // ctype.h
 /// Returns true if the character is alphanumeric.
-extern int isalnum(int ch);
+private extern int isalnum(int ch);
 /// Returns true if the character is a letter.
-extern int isalpha(int ch);
+private extern int isalpha(int ch);
 /// Returns true if the character is lowercase.
-extern int islower(int ch);
+private extern int islower(int ch);
 /// Returns true if the character is uppercase.
-extern int isupper(int ch);
+private extern int isupper(int ch);
 /// Returns true if the character is a digit.
-extern int isdigit(int ch);
+private extern int isdigit(int ch);
 /// Returns true if the character is a hexadecimal digit.
-extern int isxdigit(int ch);
+private extern int isxdigit(int ch);
 /// Returns true if the character is a control character.
-extern int iscntrl(int ch);
+private extern int iscntrl(int ch);
 /// Returns true if the character is printable but not a space.
-extern int isgraph(int ch);
+private extern int isgraph(int ch);
 /// Returns true if the character is whitespace.
-extern int isspace(int ch);
+private extern int isspace(int ch);
 /// Returns true if the character is a blank.
-extern int isblank(int ch);
+private extern int isblank(int ch);
 /// Returns true if the character is printable.
-extern int isprint(int ch);
+private extern int isprint(int ch);
 /// Returns true if the character is punctuation.
-extern int ispunct(int ch);
+private extern int ispunct(int ch);
 /// Converts the character to lowercase.
-extern int tolower(int ch);
+private extern int tolower(int ch);
 /// Converts the character to uppercase.
-extern int toupper(int ch);
+private extern int toupper(int ch);

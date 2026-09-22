@@ -146,6 +146,11 @@ bool writeFile(string path, string content) {
     return true;
 }
 
+/// Deletes the named file, returning true on success.
+bool removeFile(string path) {
+    return remove(StringBuffer(path).cString()) == 0;
+}
+
 /// Prints the message to stderr and aborts.
 void assertFail(const char* message) {
     var stream = fdopen(2, "w");

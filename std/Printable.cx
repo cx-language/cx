@@ -18,7 +18,7 @@ struct OutputStream {
         file = null;
     }
 
-    OutputStream(public FILE* file) {
+    private OutputStream(FILE* file) {
         this.file = file;
         buffer = null;
     }

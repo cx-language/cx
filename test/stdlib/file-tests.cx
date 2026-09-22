@@ -10,7 +10,7 @@ void testReadWriteFile() {
     bool success = writeFile("test.txt", text);
     assert(success);
     var content = unwrap(readFile("test.txt"));
-    remove("test.txt");
+    removeFile("test.txt");
     assert(string(content) == text);
 }
 

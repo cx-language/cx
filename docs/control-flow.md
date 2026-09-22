@@ -138,14 +138,14 @@ This avoids the mistake of forgetting to add necessary cleanup calls when we add
 
 ```cs
 int main() {
-    var p = malloc(sizeof(int)); // allocate some resource
-    defer free(p); // defer deallocation of the resource
+    var p = safeAllocate<int>(0); // allocate some resource
+    defer deallocate(p); // defer deallocation of the resource
 
     if p == null {
-        return 1; // free(p) will be called immediately before this return
+        return 1; // deallocate(p) will be called immediately before this return
     }
 
-    return 0; // free(p) will be called also before this return
+    return 0; // deallocate(p) will be called also before this return
 }
 ```
 
