@@ -46,7 +46,7 @@ for the binary operators: `+=`, `-=`, `*=`, `/=`, `%=`, `&&=`, `||=`, `&=`,
 
 An important thing to note about `+`, `-`, and `*` is that they don't silently
 wrap on overflow. Instead they abort with an "integer overflow" error, except in
-release-fast mode (`--mode=release-fast`), where overflow is unchecked and wraps.
+release mode (`--release`), where overflow is unchecked and wraps.
 Constant arithmetic is checked at compile time: a constant `+`, `-`, or `*`
 whose result doesn't fit its type is an error in every build mode. The wrapping
 behavior can be enabled for individual operations with a special syntax (not

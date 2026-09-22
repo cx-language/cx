@@ -1,4 +1,4 @@
 // C-backend runtime checks for switch-enum-safety-check.cx, split out so
 // no single test makes 8 compiler runs (see the timeout note in test/lit.cfg).
 // RUN: check_exit_status 0 %cx run --backend=c %S/switch-enum-safety-check.cx
-// RUN: check_exit_status 0 %cx run --mode=release-fast --backend=c %S/switch-enum-safety-check.cx
+// RUN: check_exit_status 0 %cx run --release --backend=c %S/switch-enum-safety-check.cx

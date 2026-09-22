@@ -1,5 +1,5 @@
 // RUN: check_exit_status 0 %cx run -Werror %s
-// RUN: check_exit_status 0 %cx run -Werror --mode=release-fast %s
+// RUN: check_exit_status 0 %cx run -Werror --release %s
 // RUN: check_exit_status 0 %cx run -Werror --backend=c %s
 
 void checkPretty(string name, string input, string expected) {

@@ -1,5 +1,5 @@
-// RUN: %cx run -Werror --mode=release-fast %s | %FileCheck -match-full-lines -strict-whitespace %s
-// RUN: %cx run -Werror --mode=release-fast --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --release %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --release --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK-NOT: integer-overflow-release-fast.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 // CHECK:-2147483648
 // CHECK-NEXT:2147483647
