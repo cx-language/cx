@@ -1,5 +1,4 @@
 import "GLFW/glfw3.h";
-import "OpenGL/gl3.h";
 
 void expectNear(float actual, float expected, string label) {
     if abs(actual - expected) > 0.001 {
