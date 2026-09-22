@@ -245,8 +245,10 @@ struct IRGenerator {
     DestructorDecl* getDefaultDestructor(TypeDecl& typeDecl);
     void deferDestructorCall(Value* receiver, const VariableDecl* decl);
     bool anonymousStructNeedsDestruction(Type type);
+    bool anonymousStructHasExplicitDestruction(Type type);
     bool typeNeedsDestruction(Type type);
     void deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes = {});
+    void destroyExplicitElementsForAssignment(Value* base, Type type);
     IRGenScope& globalScope() { return scopes.front(); }
     void setInsertPoint(BasicBlock* block);
 

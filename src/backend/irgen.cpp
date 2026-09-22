@@ -170,6 +170,35 @@ void IRGenerator::deferDestructorCall(Value* receiver, const VariableDecl* decl)
     deferDestructionForType(receiver, decl->type, decl, {});
 }
 
+// Destroys explicit-destructor elements before overwriting an anonymous struct
+// on assignment, mirroring emitAssignmentLHS for named structs (which only
+// destroys explicit destructors, not default ones). GEPs are emitted eagerly:
+// unlike scope-exit destruction, the calls immediately follow in the same block.
+void IRGenerator::destroyExplicitElementsForAssignment(Value* base, Type type) {
+    if (auto* destructor = type.getDestructor()) {
+        createDestructorCall(getFunction(*destructor), base);
+    } else if (type.isAnonymousStructType()) {
+        int index = 0;
+        for (auto& element : type.getAnonymousStructElements()) {
+            if (element.type.getDestructor() || anonymousStructHasExplicitDestruction(element.type)) {
+                destroyExplicitElementsForAssignment(createGEP(base, index, nullptr, element.name), element.type);
+            }
+            ++index;
+        }
+    }
+}
+
+// True when an anonymous struct transitively contains an explicit destructor,
+// used to avoid emitting dead GEPs on assignment when there is nothing to destroy.
+bool IRGenerator::anonymousStructHasExplicitDestruction(Type type) {
+    if (!type.isAnonymousStructType()) return false;
+    for (auto& element : type.getAnonymousStructElements()) {
+        if (element.type.getDestructor()) return true;
+        if (anonymousStructHasExplicitDestruction(element.type)) return true;
+    }
+    return false;
+}
+
 void IRGenerator::emitDeferredExprsAndDestructorCallsForReturn(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls) {
     for (auto& scope : llvm::reverse(scopes)) {
         scope.onScopeEnd(returnMovedDecls);
@@ -243,6 +272,8 @@ Value* IRGenerator::emitAssignmentLHS(const Expr& lhs, bool skipDestructor) {
                 createDestructorCall(getFunction(*destructor), value);
             }
         }
+    } else if (lhs.type.isAnonymousStructType()) {
+        destroyExplicitElementsForAssignment(value, lhs.type);
     }
 
     return value;
