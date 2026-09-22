@@ -1,0 +1,41 @@
+// RUN: check-snapshots
+
+struct Big : Copyable {
+    int a;
+    int b;
+    int c;
+    int d;
+    int e;
+}
+
+struct Outer {
+    Big item;
+    int tag;
+}
+
+struct Wide {
+    int128 a;
+    int128 b;
+}
+
+Big ident(Big x) {
+    return x;
+}
+
+Outer makeOuter() {
+    return Outer(Big(1, 2, 3, 4, 5), 7);
+}
+
+Wide identWide(Wide x) {
+    return x;
+}
+
+int main() {
+    var b = Big(1, 2, 3, 4, 5);
+    var c = ident(b);
+    var flag = true;
+    var d = flag ? b : c;
+    var w = Wide(int128(1), int128(2));
+    var v = identWide(w);
+    return d.a + makeOuter().item.a + makeOuter().tag + int(v.a);
+}

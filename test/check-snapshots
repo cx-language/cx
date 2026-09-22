@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -32,13 +33,15 @@ sections = {}
 if len(checks_to_run) == 1:
     sections[checks_to_run[0].name] = raw_output
 else:
-    import re
-
     matches = re.finditer(r"=== BEGIN (\w+) ===\n(.*?\n?)=== END \1 ===", raw_output, re.DOTALL)
     for match in matches:
         section_name = match.group(1)
         content = match.group(2)
         sections[section_name] = content
+
+# The host target varies by machine; strip it so snapshots stay portable.
+if "LLVM" in sections:
+    sections["LLVM"] = re.sub(r"^target (datalayout|triple) = \".*\"\n", "", sections["LLVM"], flags=re.MULTILINE)
 
 for check in checks_to_run:
     snapshot_path = test_file + check.extension
