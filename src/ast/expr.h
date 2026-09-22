@@ -98,6 +98,8 @@ struct Expr {
     Type type;
     Type assignableType;
     Location location;
+    // True when this expression was explicitly parenthesized in source.
+    bool parenthesized = false;
 
 protected:
     Expr(ExprKind kind, Location location) : kind(kind), location(location) {}

@@ -417,7 +417,9 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto* binaryExpr = llvm::cast<BinaryExpr>(this);
         auto lhs = binaryExpr->getLHS().instantiate(genericArgs);
         auto rhs = binaryExpr->getRHS().instantiate(genericArgs);
-        return makeAST<BinaryExpr>(binaryExpr->op, lhs, rhs, binaryExpr->location);
+        auto* instantiation = makeAST<BinaryExpr>(binaryExpr->op, lhs, rhs, binaryExpr->location);
+        instantiation->parenthesized = binaryExpr->parenthesized;
+        return instantiation;
     }
     case ExprKind::CallExpr: {
         auto* callExpr = llvm::cast<CallExpr>(this);
