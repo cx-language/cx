@@ -141,7 +141,7 @@ if "##EXAMPLESELECTOR##" in template:
     options = "".join(
         '<option value="{}"{}>{}</option>'.format(index, " selected" if index == 0 else "", html.escape(name))
         for index, (name, _) in enumerate(showcase)
-    )
+    ) + '<option value="more">More examples...</option>'
     template = template.replace(
         "##EXAMPLESELECTOR##", '<select id="example-selector" aria-label="Example">' + options + "</select>"
     )
