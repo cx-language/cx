@@ -12,7 +12,11 @@ void IRGenScope::onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMove
     for (auto& p : reverse(destructorsToCall)) {
         if (p.decl && p.decl->hasBeenMoved()) continue;
         if (p.decl && returnMovedDecls && returnMovedDecls->contains(p.decl)) continue;
-        irGenerator->createDestructorCall(p.function, p.value);
+        Value* receiver = p.value;
+        for (int index : p.indexes) {
+            receiver = irGenerator->createGEP(receiver, index);
+        }
+        irGenerator->createDestructorCall(p.function, receiver);
     }
 }
 
@@ -32,6 +36,13 @@ void IRGenerator::setLocalValue(Value* value, const VariableDecl* decl) {
     if (decl) {
         deferDestructorCall(value, decl);
     }
+}
+
+// Binds a switch associated value, which borrows the enum payload storage and
+// must not be destroyed (the payload is owned by the switched enum value).
+void IRGenerator::setBorrowedValue(Value* value, const VariableDecl* decl) {
+    auto it = scopes.back().valuesByDecl.try_emplace(decl, value);
+    ASSERT(it.second);
 }
 
 Value* IRGenerator::getValueOrNull(const Decl* decl) {
@@ -92,7 +103,7 @@ DestructorDecl* IRGenerator::getDefaultDestructor(TypeDecl& typeDecl) {
     ASSERT(!typeDecl.getDestructor());
 
     for (auto& field : typeDecl.fields) {
-        if (field.type.getDestructor()) {
+        if (field.type.getDestructor() || anonymousStructNeedsDestruction(field.type)) {
             auto destructor = makeAST<DestructorDecl>(typeDecl, typeDecl.getLocation());
             destructor->body = std::vector<Stmt*>();
             return destructor;
@@ -102,21 +113,61 @@ DestructorDecl* IRGenerator::getDefaultDestructor(TypeDecl& typeDecl) {
     return nullptr;
 }
 
-void IRGenerator::deferDestructorCall(Value* receiver, const VariableDecl* decl) {
-    ASSERT(decl->type);
-    Function* function = nullptr;
-
-    if (auto* destructor = decl->type.getDestructor()) {
-        function = getFunction(*destructor);
-    } else if (auto* typeDecl = decl->type.getDecl()) {
-        if (auto defaultDestructor = getDefaultDestructor(*typeDecl)) {
-            function = getFunction(*defaultDestructor);
+// True when an anonymous struct transitively contains an element that needs
+// destruction: an explicit destructor, a named struct with an explicit (or
+// shallow default) destructor, or a nested anonymous struct that qualifies.
+bool IRGenerator::anonymousStructNeedsDestruction(Type type) {
+    if (!type.isAnonymousStructType()) return false;
+    for (auto& element : type.getAnonymousStructElements()) {
+        if (element.type.getDestructor()) return true;
+        if (anonymousStructNeedsDestruction(element.type)) return true;
+        if (auto* elementDecl = element.type.getDecl()) {
+            if (elementDecl->getDestructor()) return true;
+            for (auto& field : elementDecl->fields) {
+                if (field.type.getDestructor() || anonymousStructNeedsDestruction(field.type)) return true;
+            }
         }
     }
+    return false;
+}
 
-    if (function) {
-        scopes.back().destructorsToCall.push_back({function, receiver, decl});
+bool IRGenerator::typeNeedsDestruction(Type type) {
+    if (type.getDestructor()) return true;
+    if (anonymousStructNeedsDestruction(type)) return true;
+    if (auto* typeDecl = type.getDecl()) {
+        // Preserve the existing shallow check for named structs; anonymous
+        // struct awareness is handled via anonymousStructNeedsDestruction above
+        // and in getDefaultDestructor.
+        for (auto& field : typeDecl->fields) {
+            if (field.type.getDestructor() || anonymousStructNeedsDestruction(field.type)) return true;
+        }
     }
+    return false;
+}
+
+void IRGenerator::deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes) {
+    if (auto* destructor = type.getDestructor()) {
+        scopes.back().destructorsToCall.push_back({getFunction(*destructor), base, owner, std::move(indexes)});
+    } else if (type.isAnonymousStructType()) {
+        int index = 0;
+        for (auto& element : type.getAnonymousStructElements()) {
+            if (typeNeedsDestruction(element.type)) {
+                auto elementIndexes = indexes;
+                elementIndexes.push_back(index);
+                deferDestructionForType(base, element.type, owner, std::move(elementIndexes));
+            }
+            ++index;
+        }
+    } else if (auto* typeDecl = type.getDecl()) {
+        if (auto defaultDestructor = getDefaultDestructor(*typeDecl)) {
+            scopes.back().destructorsToCall.push_back({getFunction(*defaultDestructor), base, owner, std::move(indexes)});
+        }
+    }
+}
+
+void IRGenerator::deferDestructorCall(Value* receiver, const VariableDecl* decl) {
+    ASSERT(decl->type);
+    deferDestructionForType(receiver, decl->type, decl, {});
 }
 
 void IRGenerator::emitDeferredExprsAndDestructorCallsForReturn(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls) {

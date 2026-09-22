@@ -27,6 +27,10 @@ struct IRGenScope {
         Function* function;
         Value* value;
         const Decl* decl;
+        // Non-empty for anonymous struct elements: GEP indexes from the
+        // variable alloca to the destructible element, applied at scope end
+        // so the GEPs dominate the destructor call.
+        std::vector<int> indexes;
     };
 
     llvm::SmallVector<const Expr*, 8> deferredExprs;
@@ -42,6 +46,7 @@ struct IRGenerator {
     void createDestructorCall(Function* destructor, Value* receiver);
     /// 'decl' is null if this is the 'this' value.
     void setLocalValue(Value* value, const VariableDecl* decl);
+    void setBorrowedValue(Value* value, const VariableDecl* decl);
     Value* getValueOrNull(const Decl* decl);
     Value* getValue(const Decl* decl);
     Value* getThis(IRType* targetType = nullptr);
@@ -239,6 +244,9 @@ struct IRGenerator {
     void deferEvaluationOf(const Expr& expr);
     DestructorDecl* getDefaultDestructor(TypeDecl& typeDecl);
     void deferDestructorCall(Value* receiver, const VariableDecl* decl);
+    bool anonymousStructNeedsDestruction(Type type);
+    bool typeNeedsDestruction(Type type);
+    void deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes = {});
     IRGenScope& globalScope() { return scopes.front(); }
     void setInsertPoint(BasicBlock* block);
 
