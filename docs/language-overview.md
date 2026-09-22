@@ -2,107 +2,145 @@
 
 ## Simple and expressive language
 
-- Only structs instead of having both struct and class.
-- Only pointers instead of having both pointers and references. Note that cx pointers are not identical to C/C++ pointers.
-- Member access always uses `.`, never `->`.
-- Switch statement cases break automatically, avoids bugs caused by missing `break` in C and C++. 
-  Fallthrough is opt-in. Variables can also be declared inside switch cases without requiring a block.
-- Simpler to parse, making it easier to implement syntax highlighting, auto-formatting, linting, etc.
-- Single-parameter constructors are not implicit by default.
-- Only one initialization syntax instead of [three](https://en.cppreference.com/w/cpp/language/initialization).
-- The `static` keyword is not overloaded with 3 different meanings. cx uses it only for non-instance members.
-- No built-in preprocessor, at least not in the same form as C and C++.
-  cx only has the conditional compilation directive `#ifdef` and its friends, which can be configured only from the
-  command-line, not from source code as can be done in C and C++ with `#define`. Although there is no preprocessor, cx
-  may get macros in some form if it turns out the language needs them.
-- No `const` (except for C interop).
+cx keeps the language small so there is less to learn and less that can surprise you.
+There is only one composite value type (`struct`) instead of separate struct and class concepts,
+a single pointer type instead of parallel pointers and references, and member access always
+uses `.`, never `->`. Fewer overlapping concepts means a C++ programmer is productive immediately,
+without relearning which of several similar tools fits each situation.
 
-Semantics are more in line with usual programmer expectations:
+Control flow follows the same principle. Switch cases break automatically, so a missing `break`
+can never silently fall through the way it does in C and C++:
 
-- Read-only use of `operator[]` on maps doesn't insert a default-constructed element.
-- Inline functions are actually inlined, at least in debug mode.
-- The integer types `int` and `uint` are at least 32 bits.
-- String literals have a dedicated type, so they know their own size and have all the string manipulation member functions.
-- Array parameters aren't silently converted into pointers.
+```cs
+void main() {
+    var x = 2;
+    switch x {
+        case 1: println("one");
+        case 2: println("two");
+        default: println("other");
+    }
+}
+```
+
+The language is also simpler to implement tooling for: parsing is straightforward, which makes
+syntax highlighting, auto-formatting, and linting easier to write and keep correct.
 
 ## Safer by default
 
-cx inserts at least the following safety checks by default:
+Bugs that C and C++ leave to testing and luck are caught automatically. Array accesses are
+bounds-checked, integer arithmetic is overflow-checked, and dereferencing null is checked,
+so corrupted output and security holes from reading past a buffer turn into loud failures
+at the exact line that caused them. The checks can be disabled individually or globally
+when measured performance requires it.
 
-- Array bounds checks
-- Integer overflow checks
-- Null checks
+Values that may be absent are marked with `?`, which forces callers to handle both cases
+instead of forgetting a null check:
 
-These checks can be disabled individually or globally to make the code run faster.
+```cs
+int? readPort() {
+    return 8080;
+}
 
-The compiler warns if a variable might be read before being initialized, for example when passing it as an out parameter
-to a C function. If you know the warning is safe to ignore, you can suppress it by assigning the keyword
-`undefined` to the variable.
+void main() {
+    if readPort() != null {
+        println(readPort()! + 1);
+    }
+}
+```
 
-The compiler warns if a function's return value is ignored, by default. The function can be annotated to suppress this
-behavior, if the return value is safe to ignore. The call site can also explicitly declare the return value as unused by
-assigning it to `_`, instead of casting to void. `_` is a magic identifier which is also used in other contexts to
-mean "ignore this value".
+The compiler also warns when a variable might be read before initialization, for example when
+passing it as an out parameter to a C function. Assigning the keyword `undefined` to the
+variable suppresses the warning when the programmer knows it is safe. Ignored return values
+produce a warning as well; assigning to `_` marks a result as deliberately unused instead of
+casting to void.
 
 ## Improved type system
 
-Stronger typing to help avoid bugs and to make refactoring easier:
+Stronger typing catches bugs at compile time and makes refactoring safer. There are no
+bug-prone implicit conversions between built-in types; safe ones are still allowed but can be
+forbidden with a compiler flag. All types are non-nullable by default, with `?` marking the
+ones that admit null, so an unexpected null becomes a compile error rather than a crash.
 
-- No bug-prone implicit conversions between built-in types. Safe implicit conversions are still allowed, but may also be
-  prevented with a compiler flag.
-- All types are non-nullable by default. Nullable types are annotated with `?`.
+Fallible operations return `Result` instead of out parameters or sentinel values, and callers
+handle each case explicitly with `switch`:
 
-Modern type system features for convenience and performance:
+```cs
+Result<int, string> fetch(bool ok) {
+    if ok {
+        return Result.Ok(value = 42);
+    }
+    return Result.Err(error = "boom");
+}
 
-- Proper tagged union type to allow runtime polymorphism without dynamic allocation and virtual function calls.
-  - C `union`: not type-safe, have to write a lot of wrapper code to call destructors and move/copy
-    constructors/assignment operators.
-  - C++17 `std::variant`: not easy or elegant to use (see
-    https://bitbashing.io/std-visit.html).
-- Using `interface`s (cx's equivalent of C++ concepts) allows defining what kind of types are valid for a given template
-  parameter when writing a generic type or function. This leads to much more readable error messages when instantiating
-  generic types or functions with an incompatible type as the generic argument. C++-style unconstrained generic
-  parameters are still allowed for flexibility.
-- Arrays are first-class values that can be returned and passed by value. Arrays know their own size, either statically
-  or at runtime.
-- First-class tuples to allow e.g. returning multiple values or storing pairs of values in a container using a
-  lightweight syntax.
+void main() {
+    switch fetch(true) {
+        case Ok value: println(value.value);
+        case Err error: println(error.error);
+    }
+}
+```
+
+Generic code constrains its parameters with `interface`s (cx's equivalent of C++ concepts),
+so instantiating a template with an unsuitable type reports which requirement failed instead
+of pages of substitution errors. Unconstrained parameters stay available for flexibility.
+Arrays are first-class values with a known size that can be returned and passed by value,
+and tuples provide lightweight syntax for grouping values.
 
 ## Standard library covers common use cases better
 
-- More string manipulation functions, e.g. case-insensitive comparison, `split`, `join`, `startsWith`, `endsWith`.
-- String and array slice types: `StringRef` and `ArrayRef`.
-- Unicode-correct string type in addition to a raw byte string type.
-- Algorithms take range objects instead of iterator pairs for ease of use.
-- Iterable types in the standard library provide `map`, `filter`, `reduce`, etc. as member functions.
-- File system library.
-- Process library.
-- Better math support:
-  - Math functions can be evaluated at compile-time.
-  - Standard library provides math constants such as Pi.
+String handling works on views and owned buffers with practical helpers. Splitting user input
+and rejoining it needs no manual loop:
+
+```cs
+void main() {
+    var csv = StringBuffer("a,b,c");
+    println(join(csv.split(','), ";"));
+}
+```
+
+Collections offer the transformations used in everyday data processing. Computing a total or
+reshaping a list reads as a pipeline instead of nested loops and temporary buffers:
+
+```cs
+void main() {
+    var nums = List([1, 2, 3, 4]);
+    println(sum(nums));
+    println(nums.map(n => n * 2));
+}
+```
+
+Math support includes constants such as Pi:
+
+```cs
+void main() {
+    println(pi);
+}
+```
 
 ## Improved syntax
 
-- cx's syntax is clean, consistent, and similar to the C family of languages.
-- No C-style cast syntax, only C++-style casts and built-in type constructors.
-- Simpler lambda/closure syntax with argument type inference by default.
-- More readable syntax for function pointer types.
-- Array size is defined next to the array element type.
-- Semicolons are optional.
+cx's syntax stays close to the C family while removing verbose or cryptic spellings. There is
+no C-style cast syntax, only explicit conversions such as `int(x)`. Array sizes sit next to
+the element type, semicolons are optional, and lambdas infer their argument types, which keeps
+callbacks readable:
+
+```cs
+void main() {
+    var nums = List([1, 2, 3, 4]);
+    var doubled = nums.map(n => n * 2);
+    println(doubled);
+}
+```
 
 ## Better compilation model
 
-- No header files, no forward declarations. API definitions can be generated from the source code if needed.
-- Programs are compiled as a whole, instead of compiling each file separately and then linking them together. This
-  should make compiling faster as it leaves more room for optimizing the build process, and linking is usually quite
-  slow.
-- Libraries are imported as a whole, instead of importing individual files from them, freeing the user of the library
-  from having to figure out which file to import for a specific feature, and freeing the library author from keeping the
-  library's file structure the same for backwards compatibility.
-- Every library is automatically wrapped inside their own namespace, no need to explicitly declare the namespace in each
-  source file.
-
-All of the above should result in faster compilation times and increased programmer productivity compared to C and C++.
+No header files and no forward declarations: a program is compiled as a whole instead of one
+translation unit at a time, which leaves more room for optimization and avoids link-time
+surprises. Libraries are imported as a whole, so users never hunt for which file declares a
+feature, and library authors can reorganize files without breaking compatibility. Every
+library lives in its own namespace automatically, with no per-file declarations to maintain.
+Together this means faster builds and less time wrestling the build when a project grows past
+a handful of files.
 
 ## Standard build system and package manager
 
@@ -132,30 +170,76 @@ No hidden expensive operations, such as implicit calls to copy constructors and 
 
 ## Transparent interoperation with existing C APIs
 
-C headers can be imported directly from cx code. The Clang API is used to parse the C headers and allow the contained
-declarations to be accessed from cx code. cx functions can be declared `extern "C"` to enable calling them from C.
+Existing C libraries stay usable: headers import directly, so calling into battle-tested code
+such as parsers, codecs, or operating system APIs needs no bindings layer. A command-line tool
+that needs one C helper does not have to drop down to C for the whole program:
+
+```cs
+import "stdlib.h";
+
+void main() {
+    println(atoi("42") + 1);
+}
+```
 
 Support for some level of interoperability with C++ APIs is a longer-term goal.
 
 ## Additional language features
 
-__Destructuring__: While iterating a map, the key and value from the key-value pair can be destructured into separate variables.
-Functions can return multiple return values, which can then be destructured into separate variables at the call site.
+__Destructuring__ binds enum payloads and multiple values to separate variables at the point of
+use, so dispatching on a result reads linearly instead of nesting accessors:
 
-__Compile-time reflection__ to cover common use cases such as iteration over enum cases, getting enum case string representations, printing the
-active type of a union, etc. Should follow the "pay only for what you use" principle.
+```cs
+void main() {
+    Result<int, string> r = Result.Ok(value = 42);
+    switch r {
+        case Ok value: println(value.value);
+        case Err error: println(error.error);
+    }
+}
+```
 
-__Named arguments__ as an optional way to avoid cryptic call sites like `foo(true, false)` by labeling the arguments with the corresponding
-parameter name, with the compiler checking that the argument labels match the parameter names, e.g.
-`foo(verbose = true, ignoreErrors = false)`. Consequently, named arguments don't have to be in same order as the parameters. This also
-enables function overloading on parameter names.
+__Named arguments__ label call sites that would otherwise be cryptic sequences like
+`foo(true, false)`. Labels are checked against parameter names and may come in any order,
+which keeps calls readable when a function takes several same-typed parameters:
 
-__Defer statement__ to allow declaring arbitrary code, such as resource cleanup functions, to be executed when exiting the
-current scope. In C++ one has to write an RAII wrapper class to achieve this.
+```cs
+struct Point: Copyable {
+    int x;
+    int y;
+}
 
-__Simple type inference__ for local and global variables, to improve productivity and make the code more readable,
-as well as more amenable to type changes when refactoring.
-The strong type system ensures that type inference will not cause any unexpected typing issues.
+void main() {
+    var p = Point(y = 2, x = 1);
+    println(p.x + p.y);
+}
+```
+
+__Defer statement__ runs cleanup when leaving the current scope, including early returns.
+Resource handling no longer needs an RAII wrapper class per resource just to guarantee release:
+
+```cs
+void process(bool fail) {
+    defer println("releasing resource");
+    if fail {
+        println("failed, returning early");
+        return;
+    }
+    println("working");
+}
+
+void main() {
+    process(false);
+    process(true);
+}
+```
+
+__Simple type inference__ for local and global variables removes redundant annotations, which
+keeps code shorter and makes type changes during refactoring touch fewer lines. The strong
+type system ensures inference never silently picks an unexpected type.
+
+__Compile-time reflection__ (for example iterating over enum cases or rendering an enum case
+as text) is a longer-term goal. It should follow the "pay only for what you use" principle.
 
 ## ...and all the good parts from C and C++
 
