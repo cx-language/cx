@@ -393,7 +393,7 @@ Type Parser::parseArrayType(Type elementType) {
     switch (currentToken()) {
     case Token::RightBracket:
         consumeToken();
-        return BasicType::get("ArrayRef", elementType, Mutability::Mutable, elementType.location);
+        return BasicType::get("Slice", elementType, Mutability::Mutable, elementType.location);
 
     case Token::Star:
         consumeToken();

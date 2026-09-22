@@ -1117,11 +1117,11 @@ struct SemanticCollector {
         if (!type) return;
         switch (type.getKind()) {
         case TypeKind::BasicType: {
-            // Optional (`T?`) and ArrayRef (`T[]`) wrappers are synthesized: the
+            // Optional (`T?`) and Slice (`T[]`) wrappers are synthesized: the
             // location points at the sugar or is invalid, so only the wrapped
             // type highlights. The direct generic args (not getWrappedType())
             // preserve the inner locations.
-            if ((type.isOptionalType() || type.isArrayRef()) && !type.getGenericArgs().empty()) {
+            if ((type.isOptionalType() || type.isSlice()) && !type.getGenericArgs().empty()) {
                 for (Type arg : type.getGenericArgs())
                     visitType(arg);
                 return;

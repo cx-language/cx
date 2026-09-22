@@ -317,7 +317,7 @@ STD_CATEGORIES = [
     (
         "Containers",
         [
-            "ArrayRef.cx",
+            "Slice.cx",
             "Box.cx",
             "List.cx",
             "Map.cx",

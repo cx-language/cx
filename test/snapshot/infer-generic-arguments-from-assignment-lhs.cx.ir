@@ -72,10 +72,10 @@ void _EN3std4ListI3intE4initE(List<int>* this) {
 
 ArrayIterator<int> _EN3std4ListI3intE8iteratorE(List<int>* this) {
     ArrayIterator<int>* _0 = alloca ArrayIterator<int>
-    ArrayRef<int>* _1 = alloca ArrayRef<int>
-    void _2 = call _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* _1, List<int>* this)
-    ArrayRef<int> .load = load _1
-    void _3 = call _EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ArrayIterator<int>* _0, ArrayRef<int> .load)
+    Slice<int>* _1 = alloca Slice<int>
+    void _2 = call _EN3std5SliceI3intE4initEP4ListI3intE(Slice<int>* _1, List<int>* this)
+    Slice<int> .load = load _1
+    void _3 = call _EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ArrayIterator<int>* _0, Slice<int> .load)
     ArrayIterator<int> .load_0 = load _0
     return .load_0
 }
@@ -195,21 +195,21 @@ if.end_0:
     br if.end
 }
 
-void _EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ArrayIterator<int>* this, ArrayRef<int> array) {
-    ArrayRef<int>* array_0 = alloca ArrayRef<int>
+void _EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ArrayIterator<int>* this, Slice<int> array) {
+    Slice<int>* array_0 = alloca Slice<int>
     store array to array_0
     int** current = getelementptr this, 0
-    int* _0 = call _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* array_0)
+    int* _0 = call _EN3std5SliceI3intE4dataE(Slice<int>* array_0)
     store _0 to current
     int** end = getelementptr this, 1
-    int* _1 = call _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* array_0)
-    int _2 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* array_0)
+    int* _1 = call _EN3std5SliceI3intE4dataE(Slice<int>* array_0)
+    int _2 = call _EN3std5SliceI3intE4sizeE(Slice<int>* array_0)
     int* _3 = getelementptr _1, _2
     store _3 to end
     return void
 }
 
-void _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* this, List<int>* list) {
+void _EN3std5SliceI3intE4initEP4ListI3intE(Slice<int>* this, List<int>* list) {
     List<int>** list_0 = alloca List<int>*
     store list to list_0
     int** data = getelementptr this, 0
@@ -222,6 +222,8 @@ void _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* this, List<int>* li
     store _1 to size
     return void
 }
+
+extern void free(void*)
 
 int* _EN3std13allocateArrayI3intEE3int(int size) {
     int* size_0 = alloca int
@@ -262,13 +264,28 @@ assert.success:
     return _9
 }
 
-int* _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* this) {
+RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
+}
+
+void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
+}
+
+bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* this) {
+}
+
+int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* this) {
+}
+
+void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* this) {
+}
+
+int* _EN3std5SliceI3intE4dataE(Slice<int>* this) {
     int** data = getelementptr this, 0
     int* data.load = load data
     return data.load
 }
 
-int _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this) {
+int _EN3std5SliceI3intE4sizeE(Slice<int>* this) {
     int* size = getelementptr this, 1
     int size.load = load size
     return size.load
@@ -284,4 +301,9 @@ int _EN3std4ListI3intE4sizeE(List<int>* this) {
     int* size = getelementptr this, 1
     int size.load = load size
     return size.load
+}
+
+extern void* malloc(uint64)
+
+void _EN3std10assertFailEP4char(char* message) {
 }

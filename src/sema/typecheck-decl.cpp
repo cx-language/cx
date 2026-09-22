@@ -307,7 +307,7 @@ static void checkMainSignature(const FunctionDecl& decl) {
 
     auto params = decl.getParams();
     bool validParams = params.empty();
-    if (params.size() == 1 && params[0].type.isArrayRef()) {
+    if (params.size() == 1 && params[0].type.isSlice()) {
         Type elementType = params[0].type.getElementType();
         validParams = elementType.isBasicType() && elementType.getName() == "string";
     }
