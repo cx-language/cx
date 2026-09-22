@@ -6,7 +6,7 @@
 // must not reuse a parameter name: the copy of `args_1` gets suffix `1`,
 // which would collide with parameter `args_11` and produce uncompilable C.
 
-void printAll<T: Printable>(T*... args) {
+void printAll<T: Printable>(T&... args) {
     for arg in args {
         print(arg);
     }

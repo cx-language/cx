@@ -2,7 +2,7 @@ import "GLFW/glfw3.h";
 
 // Unbuffered line logging: println stays in the stdio buffer when stdout
 // is redirected, so live progress goes through the raw fd stream.
-void logLine<T: Printable>(T*... args) {
+void logLine<T: Printable>(T&... args) {
     var out = stdout();
     for arg in args {
         out.write(arg);
@@ -10,7 +10,7 @@ void logLine<T: Printable>(T*... args) {
     out.write("\n");
 }
 
-void appendInt(StringBuffer* buf, int value) {
+void appendInt(StringBuffer& buf, int value) {
     var digits = "0123456789";
     if value == 0 {
         buf.append('0');
@@ -37,7 +37,7 @@ void appendInt(StringBuffer* buf, int value) {
     }
 }
 
-void buildCrosshairMesh(Mesh* m) {
+void buildCrosshairMesh(Mesh& m) {
     var positions = List<float>();
     var normals = List<float>();
     var colors = List<float>();
@@ -49,7 +49,7 @@ void buildCrosshairMesh(Mesh* m) {
     initMesh(m, positions, normals, colors);
 }
 
-void buildHighlightMesh(Mesh* m, int x, int y, int z) {
+void buildHighlightMesh(Mesh& m, int x, int y, int z) {
     var positions = List<float>();
     var normals = List<float>();
     var colors = List<float>();
@@ -137,7 +137,7 @@ int runGame(bool debug) {
 
         float64 mx = undefined;
         float64 my = undefined;
-        glfwGetCursorPos(window, mx, my);
+        glfwGetCursorPos(window, &mx, &my);
         var input = Input();
         if haveLast {
             input.lookDX = float(mx - lastX);
@@ -211,7 +211,7 @@ int runGame(bool debug) {
 
         int width = undefined;
         int height = undefined;
-        glfwGetFramebufferSize(window, width, height);
+        glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
         glClearColor(0.45, 0.65, 1.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

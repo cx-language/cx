@@ -8,7 +8,7 @@ struct Task {
     string title;
 }
 
-void loadTasks(string content, List<Task>* tasks) {
+void loadTasks(string content, List<Task>& tasks) {
     for line in content.lines() {
         if line.size() < 3 {
             continue;
@@ -22,7 +22,7 @@ void loadTasks(string content, List<Task>* tasks) {
     }
 }
 
-bool saveTasks(string path, List<Task>* tasks) {
+bool saveTasks(string path, List<Task>& tasks) {
     var buf = StringBuffer();
     for i in 0..tasks.size() {
         if tasks[i].done {
@@ -38,7 +38,7 @@ bool saveTasks(string path, List<Task>* tasks) {
     return writeFile(path, buf.substr(0));
 }
 
-int runAdd(CommandSpec* cmd, List<Task>* tasks, string dbPath, bool verbose) {
+int runAdd(CommandSpec& cmd, List<Task>& tasks, string dbPath, bool verbose) {
     tasks.push(Task(done = false, priority = cmd.option("priority"), title = cmd.positional("TITLE")));
     if !saveTasks(dbPath, tasks) {
         stderr().write("failed to write ");
@@ -53,7 +53,7 @@ int runAdd(CommandSpec* cmd, List<Task>* tasks, string dbPath, bool verbose) {
     return 0;
 }
 
-void runList(CommandSpec* cmd, List<Task>* tasks) {
+void runList(CommandSpec& cmd, List<Task>& tasks) {
     var shown = 0;
     for i in 0..tasks.size() {
         if !tasks[i].done || cmd.flag("all") {
@@ -71,7 +71,7 @@ void runList(CommandSpec* cmd, List<Task>* tasks) {
     }
 }
 
-int runDone(CommandSpec* cmd, List<Task>* tasks, string dbPath) {
+int runDone(CommandSpec& cmd, List<Task>& tasks, string dbPath) {
     var parsed = cmd.positional("INDEX").parseInt();
     if parsed == null {
         stderr().write("invalid task index '");

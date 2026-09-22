@@ -59,7 +59,7 @@ void testNoise() {
     println("noise ok");
 }
 
-int topSolid(World* w, int x, int z) {
+int topSolid(World& w, int x, int z) {
     var y = chunkH - 1;
     while y >= 0 {
         if worldGet(w, x, y, z) != blockAir {
@@ -226,7 +226,7 @@ void testRaycast() {
     println("raycast ok");
 }
 
-void testWorld(World* w) {
+void testWorld(World& w) {
     if worldGet(w, 0, 0, 0) != blockStone {
         abort("self-test: expected stone at y=0");
     }
