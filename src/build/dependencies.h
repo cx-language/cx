@@ -41,6 +41,10 @@ struct DependencyResolution {
 DependencyResolution resolveDependency(const std::vector<BuildConfig::ResolvedDependency>& closure, llvm::StringRef packageName);
 // Joins a package-relative path onto its root; absolute paths pass through.
 std::string absolutizePackagePath(llvm::StringRef rootDirectory, const std::string& path);
+// Joins a package-relative library onto its root, leaving bare -l names (e.g.
+// "GL") for the linker; a bare name that names a file in the package still
+// resolves against it.
+std::string absolutizeLibraryPath(llvm::StringRef rootDirectory, const std::string& library);
 // All .cx files under targetRoot, except the project root's build.cx.
 // Only the project root's build file is config; a build.cx anywhere else
 // (including a multitarget target root) compiles as an ordinary source.
