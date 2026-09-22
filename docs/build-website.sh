@@ -181,6 +181,8 @@ import functools
 import http.server
 import os
 import sys
+import threading
+import webbrowser
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -193,6 +195,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return translated
 
 
+threading.Timer(1.0, lambda: webbrowser.open("http://localhost:" + sys.argv[1] + "/")).start()
 http.server.ThreadingHTTPServer(
     ("", int(sys.argv[1])),
     functools.partial(Handler, directory="build"),
