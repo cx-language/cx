@@ -6,7 +6,7 @@ struct LineIterator: Copyable, Iterator<string> {
     /// Initializes an iterator over the given string.
     LineIterator(string stream) {
         this.stream = stream;
-        end = stream.find('\n');
+        end = stream.indexOf('\n');
     }
 
     /// Returns true if there are more lines.
@@ -22,7 +22,7 @@ struct LineIterator: Copyable, Iterator<string> {
     /// Advances to the next line.
     void increment() {
         stream = stream.substr(end + 1);
-        end = stream.find('\n');
+        end = stream.indexOf('\n');
     }
 
     /// Returns itself.

@@ -116,16 +116,16 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Returns true if the string contains the given character.
     bool contains(char c) {
-        return find(c, 0) != size();
+        return indexOf(c, 0) != size();
     }
 
     /// Returns the index of the given character, or the size if it's not found.
-    int find(char c) {
-        return find(c, 0);
+    int indexOf(char c) {
+        return indexOf(c, 0);
     }
 
     /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
-    int find(char c, int start) {
+    int indexOf(char c, int start) {
         for i in start..size() {
             if characters[i] == c {
                 return i;
@@ -161,7 +161,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
         var pos = 0;
 
         while true {
-            pos = find(delim, prev);
+            pos = indexOf(delim, prev);
             var token = substr(prev..pos);
             tokens.push(token);
             prev = pos + 1;

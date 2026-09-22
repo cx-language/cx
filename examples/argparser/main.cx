@@ -14,7 +14,7 @@ void loadTasks(string content, List<Task>* tasks) {
             continue;
         }
         var rest = line.substr(2);
-        var sp = rest.find(' ');
+        var sp = rest.indexOf(' ');
         if sp >= rest.size() {
             continue;
         }
