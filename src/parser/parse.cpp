@@ -1089,16 +1089,24 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
     Expr* condition;
+    VarDecl* isBinding = nullptr;
     {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExprOrVarDecl(parent);
-        if (parens) parse(Token::RightParen);
+        if (parens) {
+            if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+                auto name = parse(Token::Identifier);
+                isBinding = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+            }
+            parse(Token::RightParen);
+        }
     }
     // A trailing identifier after an `is` check binds the matched payload in the then-branch.
-    VarDecl* isBinding = nullptr;
-    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-        auto name = parse(Token::Identifier);
-        isBinding = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+    if (!isBinding) {
+        if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+            auto name = parse(Token::Identifier);
+            isBinding = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+        }
     }
     if (currentToken() == Token::Then) {
         if (isBinding) {
@@ -1142,7 +1150,13 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExprOrVarDecl(parent);
+        if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+            ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
+        }
         if (parens) parse(Token::RightParen);
+    }
+    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+        ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
     }
     auto body = parseBlockOrStmt(parent);
     return makeAST<WhileStmt>(condition, std::move(body), location);
@@ -1160,7 +1174,13 @@ DoWhileStmt* Parser::parseDoWhileStmt(Decl* parent) {
     {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExpr();
+        if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+            ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
+        }
         if (parens) parse(Token::RightParen);
+    }
+    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+        ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
     }
     parseStmtTerminator();
     return makeAST<DoWhileStmt>(condition, std::move(body), location);

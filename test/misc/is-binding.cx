@@ -31,4 +31,11 @@ void main() {
     } else {
         assert(true);
     }
+
+    // Parenthesized conditions support bindings too.
+    if (circle is Circle r) {
+        assert(r == 2.0);
+    } else {
+        assert(false);
+    }
 }
