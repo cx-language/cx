@@ -61,6 +61,10 @@ struct LLVMGenerator {
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getStructType(IRStructType* type);
 
+    // False in release modes: skip DWARF emission entirely. Frame pointers
+    // are still kept so backtrace() unwinds past cx frames.
+    bool emitDebugInfo = true;
+
     llvm::LLVMContext ctx;
     llvm::IRBuilder<> builder{ctx};
     llvm::Module* module = nullptr;
