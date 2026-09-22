@@ -183,7 +183,7 @@ void testParseInt() {
     assert("0o18".parseInt() == null);
     assert("0o".parseInt() == null);
     assert("2147483648".parseInt() == null);
-    assert("-2147483648".parseInt()! == int_min);
+    assert("-2147483648".parseInt()! == int.min);
     assert("-2147483649".parseInt() == null);
     assert("0x7fffffff".parseInt() == 2147483647);
     assert("0x80000000".parseInt() == null);

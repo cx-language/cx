@@ -2592,6 +2592,12 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         return enumCase->type;
     }
 
+    if (VarDecl* staticConst = getStaticConst(expr)) {
+        checkHasAccess(*staticConst, expr.location, AccessLevel::None);
+        expr.decl = staticConst;
+        return staticConst->type;
+    }
+
     Type baseType = typecheckExpr(*expr.base, useIsWriteOnly);
     if (!expr.base->isThis()) baseType = baseType.removeOptional();
     baseType = baseType.removePointer();
@@ -2612,6 +2618,14 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
                 checkHasAccess(field, expr.location, AccessLevel::None);
                 expr.decl = &field;
                 return field.type.withMutability(baseType.mutability);
+            }
+        }
+
+        for (auto* staticConst : baseDecl->staticConsts) {
+            if (staticConst->getName() == expr.member) {
+                checkHasAccess(*staticConst, expr.location, AccessLevel::None);
+                expr.decl = staticConst;
+                return staticConst->type;
             }
         }
     }
@@ -3010,6 +3024,9 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
         if (call) validateGenericArgCount(0, call->genericArgs, enumDecl->getName(), call->location);
         auto* enumCase = enumDecl->getCaseByName(memberExpr->member);
         if (!enumCase) {
+            for (auto* staticConst : enumDecl->staticConsts) {
+                if (staticConst->getName() == memberExpr->member) return nullptr;
+            }
             ERROR(expr.location, "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->member << "'");
         }
         return enumCase;
@@ -3020,6 +3037,40 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
         return instantiateEnumCase(*typeTemplate, memberExpr->member, *memberExpr, call, expectedType);
     }
 
+    return nullptr;
+}
+
+VarDecl* Typechecker::getStaticConst(const Expr& expr) {
+    auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr);
+    if (!memberExpr) return nullptr;
+    auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
+    if (!varExpr) return nullptr;
+    auto decls = findDecls(varExpr->identifier);
+
+    Decl* typeDeclOrNull = nullptr;
+    if (decls.size() == 1) {
+        typeDeclOrNull = decls.front();
+    } else {
+        // A same-named type doesn't prevent static access, but a same-named variable takes precedence.
+        for (Decl* decl : decls) {
+            if (decl->isTypeDecl()) {
+                if (typeDeclOrNull) return nullptr; // Ambiguous.
+                typeDeclOrNull = decl;
+            } else if (decl->kind != DeclKind::TypeTemplate && decl->kind != DeclKind::FunctionDecl && decl->kind != DeclKind::FunctionTemplate) {
+                return nullptr;
+            }
+        }
+        if (!typeDeclOrNull) return nullptr;
+    }
+
+    auto* typeDecl = llvm::dyn_cast<TypeDecl>(typeDeclOrNull);
+    if (!typeDecl) return nullptr;
+
+    for (auto* staticConst : typeDecl->staticConsts) {
+        if (staticConst->getName() == memberExpr->member) {
+            return staticConst;
+        }
+    }
     return nullptr;
 }
 

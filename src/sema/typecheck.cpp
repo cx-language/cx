@@ -272,6 +272,14 @@ void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
                 } catch (const CompileError& error) {
                     error.report();
                 }
+            } else if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                for (auto* staticConst : typeDecl->staticConsts) {
+                    try {
+                        typecheckVarDecl(*staticConst);
+                    } catch (const CompileError& error) {
+                        error.report();
+                    }
+                }
             }
         }
 
@@ -338,6 +346,11 @@ Decl* Typechecker::findDecl(llvm::StringRef name, Location location) const {
                     return &field;
                 }
             }
+            for (auto* staticConst : typeDecl->staticConsts) {
+                if (staticConst->getName() == name) {
+                    return staticConst;
+                }
+            }
         }
     }
 
@@ -392,6 +405,12 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
             // Unqualified for implicit-receiver lookup, qualified for explicit member access.
             if (field.getName() == name || field.getQualifiedName() == name) {
                 decls.emplace_back(&field);
+            }
+        }
+
+        for (auto* staticConst : receiverTypeDecl->staticConsts) {
+            if (staticConst->getName() == name) {
+                decls.emplace_back(staticConst);
             }
         }
     }
