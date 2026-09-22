@@ -163,19 +163,20 @@ DependencyResolution cx::resolveDependency(const std::vector<BuildConfig::Resolv
     return {found, false, ""};
 }
 
-std::vector<std::string> cx::getSourceFiles(llvm::StringRef rootDirectory) {
+std::vector<std::string> cx::getSourceFiles(llvm::StringRef targetRoot, llvm::StringRef projectRoot) {
     std::vector<std::string> sourceFiles;
     std::error_code error;
 
-    for (llvm::sys::fs::recursive_directory_iterator it(rootDirectory, error), end; it != end; it.increment(error)) {
+    for (llvm::sys::fs::recursive_directory_iterator it(targetRoot, error), end; it != end; it.increment(error)) {
         if (error) {
             llvm::errs() << error.message() << '\n';
             break;
         }
 
-        // The root build.cx is config, not source; anything else compiles,
-        // including a build.cx below the root (see isRootBuildFile).
-        if (llvm::sys::path::extension(it->path()) == ".cx" && !isVendoredPath(it->path()) && !isRootBuildFile(it->path(), rootDirectory)) {
+        // Only the project root's build.cx is config, not source; anything
+        // else compiles, including a build.cx below the project root
+        // (see isRootBuildFile).
+        if (llvm::sys::path::extension(it->path()) == ".cx" && !isVendoredPath(it->path()) && !isRootBuildFile(it->path(), projectRoot)) {
             sourceFiles.push_back(it->path());
         }
     }
