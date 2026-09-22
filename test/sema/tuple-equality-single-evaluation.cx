@@ -1,0 +1,24 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:true
+// CHECK-NEXT:true
+// CHECK-NEXT:4
+// CHECK-NEXT:true
+// CHECK-NEXT:2
+
+int calls = 0;
+
+(int x, int y) make(int a, int b) {
+    calls++;
+    return (x = a, y = b);
+}
+
+void main() {
+    // Each side of the comparison evaluates once no matter how many elements are compared.
+    println(make(1, 2) == make(1, 2));
+    println(make(1, 2) != make(1, 3));
+    println(calls);
+    calls = 0;
+    println((p = make(1, 2), q = 3) == (p = make(1, 2), q = 3));
+    println(calls);
+}

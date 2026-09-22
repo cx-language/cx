@@ -1,0 +1,26 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:1
+// CHECK-NEXT:body
+// CHECK-NEXT:2
+
+// Constant tuple comparisons in loop conditions must not crash constant
+// evaluation during missing-return analysis.
+int f() {
+    while ((x = 1, y = 2) == (x = 1, y = 2)) {
+        return 1;
+    }
+    return 2;
+}
+
+int g() {
+    do {
+        println("body");
+    } while ((x = 1, y = 2) != (x = 1, y = 2));
+    return 2;
+}
+
+void main() {
+    println(f());
+    println(g());
+}
