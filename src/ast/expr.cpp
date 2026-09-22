@@ -237,7 +237,8 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         return ifExpr->elseExpr->getConstantIntegerValue();
     }
     case ExprKind::SwitchExpr:
-        llvm_unreachable("unimplemented");
+        // Not folded even when constant; codegen always emits branches.
+        llvm_unreachable("not a constant integer");
     default:
         llvm_unreachable("not a constant integer");
     }
