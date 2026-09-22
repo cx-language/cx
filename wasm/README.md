@@ -53,7 +53,7 @@ one half:
 
 `build-frontend.sh` builds LLVM's `LLVMSupport` for WebAssembly from source
 (matching `LLVM_VERSION`, default 23.1.1) and links it with the embeddable
-frontend translation units listed in the script. The cx standard library
+frontend translation units globbed in the script. The cx standard library
 (`std/`) is preloaded into the module's file system at `/cx/std`.
 
 `build-xcc-dist.sh` clones xcc at the pinned revision (`XCC_REF`), builds
