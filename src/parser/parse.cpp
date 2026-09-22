@@ -1837,6 +1837,10 @@ ImportDecl* Parser::parseImportDecl() {
     auto location = getCurrentLocation();
     std::string importTarget;
 
+    if (currentToken() == Token::InterpStart) {
+        ERROR(getCurrentLocation(), "string interpolation is not allowed in import paths");
+    }
+
     if (currentToken() == Token::StringLiteral) {
         importTarget = parseStringLiteral()->value;
     } else {
