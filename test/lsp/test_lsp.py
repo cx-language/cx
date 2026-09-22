@@ -596,6 +596,53 @@ def test_build_file_modes(cx_lsp):
         )
 
 
+def test_fetched_dependency(cx_lsp):
+    # Dependencies resolve from ~/.cx with their build file applied: the import
+    # resolves and the dependency's defines select its #if branches (the #else
+    # branch is a type error, so any failure surfaces as diagnostics).
+    with tempfile.TemporaryDirectory() as home:
+        depdir = os.path.join(home, ".cx", "dependencies", "shapes@v1")
+        os.makedirs(depdir)
+        with open(os.path.join(depdir, "build.cx"), "w") as file:
+            file.write('var defines = ["SHAPES_ROUND"]\n')
+        with open(os.path.join(depdir, "shape.cx"), "w") as file:
+            file.write(
+                "#if SHAPES_ROUND\n"
+                "void describe() {\n"
+                '    println("round");\n'
+                "}\n"
+                "#else\n"
+                "void describe() {\n"
+                "    nosuchidentifier;\n"
+                "}\n"
+                "#endif\n"
+            )
+        with tempfile.TemporaryDirectory() as directory:
+            root = os.path.join(directory, "proj")
+            os.makedirs(root)
+            with open(os.path.join(root, "build.cx"), "w") as file:
+                file.write('var dependencies = [(package = "shapes", url = "https://example.com/shapes.git", version = "v1")]\n')
+            main_path = os.path.join(root, "main.cx")
+            main_content = "import shapes;\n\nvoid main() {\n    describe();\n}\n"
+            with open(main_path, "w") as file:
+                file.write(main_content)
+
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = home
+            try:
+                result = run_query(cx_lsp, base_query("check", main_path, main_content))
+            finally:
+                if old_home is None:
+                    del os.environ["HOME"]
+                else:
+                    os.environ["HOME"] = old_home
+            check(
+                "query-fetched-dependency",
+                result["diagnostics"] == [],
+                json.dumps(result["diagnostics"])[:500],
+            )
+
+
 class LspSession:
     def __init__(self, command):
         self.proc = subprocess.Popen(
@@ -981,6 +1028,7 @@ def main():
         test_completion_members(args.cx_lsp, path)
         test_package_dedup(args.cx_lsp)
         test_build_file_modes(args.cx_lsp)
+        test_fetched_dependency(args.cx_lsp)
         test_server([args.cx_lsp], path, "server")
         test_server([args.cx, "lsp"], path, "cx-lsp-subcommand")
         test_server_no_snippets([args.cx_lsp], "server-nosnippet")

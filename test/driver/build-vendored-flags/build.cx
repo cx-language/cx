@@ -1,0 +1,4 @@
+// RUN: true
+
+var name = "build-vendored-flags"
+var defines = ["MAIN_ONLY"]

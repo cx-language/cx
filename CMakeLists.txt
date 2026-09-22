@@ -162,6 +162,11 @@ add_test(NAME build-config-missing-url COMMAND test_build_config missing-url)
 set_tests_properties(build-config-missing-url PROPERTIES PASS_REGULAR_EXPRESSION "missing required 'url'")
 add_test(NAME build-config-missing-build-file COMMAND test_build_config missing-build-file)
 add_test(NAME build-config-search-paths COMMAND test_build_config search-paths)
+add_test(NAME build-config-closure-transitive COMMAND test_build_config closure-transitive)
+add_test(NAME build-config-closure-cycle COMMAND test_build_config closure-cycle)
+add_test(NAME build-config-closure-vendored COMMAND test_build_config closure-vendored)
+add_test(NAME build-config-closure-missing-skipped COMMAND test_build_config closure-missing-skipped)
+add_test(NAME build-config-resolve-dependency COMMAND test_build_config resolve-dependency)
 
 # Tests for cx::renameFile (output file replacement).
 add_executable(test_rename test/support/test-rename.cpp)
