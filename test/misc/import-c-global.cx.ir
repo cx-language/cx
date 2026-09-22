@@ -5,6 +5,3 @@ int main() {
     void _0 = call _EN3std5printI3intEE3int(int my_global.load)
     return int 0
 }
-
-void _EN3std5printI3intEE3int(int value) {
-}

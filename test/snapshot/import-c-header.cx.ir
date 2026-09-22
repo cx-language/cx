@@ -11,7 +11,3 @@ int main() {
     store _1 to bar
     return int 0
 }
-
-extern int puts(char*)
-
-extern uint getBar(Foo*)

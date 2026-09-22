@@ -1,0 +1,7 @@
+// RUN: true
+
+// An ordinary source file despite the name: only the package root's
+// build.cx is reserved.
+void greetHelper() {
+    println("greet helper");
+}

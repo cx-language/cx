@@ -33,6 +33,3 @@ assert.success_0:
     store uint8 1 to _6
     return int 0
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

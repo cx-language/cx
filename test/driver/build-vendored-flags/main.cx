@@ -1,0 +1,23 @@
+// RUN: cd %S && %cx run 2>&1 | %FileCheck -match-full-lines -strict-whitespace %s
+
+// CHECK-NOT: warning
+// CHECK:greet
+// CHECK:loud
+// CHECK:7
+// CHECK:ok
+// CHECK-NOT: warning
+
+import greet;
+
+#if GREET_LOUD
+void main() {
+    println("leak!");
+}
+#else
+void main() {
+    greet();
+    loudness();
+    number();
+    println("ok");
+}
+#endif

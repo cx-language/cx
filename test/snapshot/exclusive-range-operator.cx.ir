@@ -46,21 +46,3 @@ overflow.success:
     store _8 to p
     br loop.increment
 }
-
-RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
-}
-
-void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
-}
-
-bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* this) {
-}
-
-int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* this) {
-}
-
-void _EN3std10assertFailEP4char(char* message) {
-}
-
-void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* this) {
-}

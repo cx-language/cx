@@ -267,9 +267,6 @@ if.end_1:
     return void
 }
 
-void _EN3std10assertFailEP4char(char* message) {
-}
-
 void _EN4main12takesNonNullE3int(int i) {
     int* i_0 = alloca int
     store i to i_0

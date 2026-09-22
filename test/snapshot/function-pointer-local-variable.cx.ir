@@ -53,9 +53,6 @@ overflow.success:
     return void
 }
 
-void _EN3std10assertFailEP4char(char* message) {
-}
-
 int main() {
     void()** lf = alloca void()*
     int(int, bool)** lf2 = alloca int(int, bool)*

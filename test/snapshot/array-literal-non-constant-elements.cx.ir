@@ -45,9 +45,6 @@ overflow.success_0:
     return _17
 }
 
-void _EN3std10assertFailEP4char(char* message) {
-}
-
 int[2] _EN4main1gE3int3int(int foo, int bar) {
     int* foo_0 = alloca int
     int* bar_0 = alloca int

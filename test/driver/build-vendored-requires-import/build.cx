@@ -1,0 +1,3 @@
+// RUN: true
+
+var name = "build-vendored-requires-import"
