@@ -35,6 +35,21 @@ int* borrowAddr(int& x) {
     return &x;
 }
 
+int getOrNegOne(int&? o) {
+    if o {
+        return *o;
+    }
+    return -1;
+}
+
+int pickOverload(int& r) {
+    return 1;
+}
+
+int pickOverload(int&? o) {
+    return 2;
+}
+
 void main() {
     // Values bind to borrows; mutation is visible to the caller.
     var x = 1;
@@ -83,4 +98,18 @@ void main() {
     assert(!(p == r));
     assert(p == p);
     assert(p != r);
+
+    // Nullable borrows accept lvalues, temporaries, null, and (nullable) pointers.
+    assert(getOrNegOne(x) == 4);
+    assert(getOrNegOne(7) == 7);
+    assert(getOrNegOne(null) == -1);
+    assert(getOrNegOne(p) == 4);
+    int*? q2 = &x;
+    assert(getOrNegOne(q2) == 4);
+    int*? n = null;
+    assert(getOrNegOne(n) == -1);
+
+    // Overload resolution prefers the non-nullable borrow when both match.
+    assert(pickOverload(x) == 1);
+    assert(pickOverload(null) == 2);
 }

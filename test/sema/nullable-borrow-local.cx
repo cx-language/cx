@@ -1,0 +1,11 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: nullable-borrow-local.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    var x = 1;
+    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter type
+    int&? r = x;
+}
+
+// CHECK-NOT: nullable-borrow-local.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

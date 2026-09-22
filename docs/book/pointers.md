@@ -45,6 +45,10 @@ Inside the function, member access works directly, and `*` reads or writes throu
 Unlike pointers, borrows cannot be stored: `T&` may only appear as a function parameter type,
 and reading a borrow into a variable copies the value out.
 
+A borrow can be nullable, written `T&?`, for parameters that may or may not receive a value.
+It accepts everything a `T&` accepts, plus `null` and nullable pointers.
+Inside the function, test the parameter before dereferencing it.
+
 ```cs
 void bump(int& x) {
     *x += 1;
@@ -63,6 +67,21 @@ void main() {
     println(listSize(list)); // prints 3
     bump(list[0]);
     println(list[0]); // prints 2
+}
+```
+
+```cs
+int getOrDefault(int&? o, int fallback) {
+    if o {
+        return *o;
+    }
+    return fallback;
+}
+
+void main() {
+    var i = 41;
+    println(getOrDefault(i, 0)); // prints 41
+    println(getOrDefault(null, 0)); // prints 0
 }
 ```
 
