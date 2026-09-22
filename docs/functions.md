@@ -76,7 +76,7 @@ void main() {
 }
 ```
 
-Functions can return multiple values using tuples:
+Functions can return multiple values using anonymous structs:
 
 ```cs
 (int a, bool b) foo() {
@@ -111,4 +111,4 @@ void main() {
 ## Planned features
 
 - Destructuring for multiple return values
-- Tuples with anonymous members
+- Anonymous structs with unnamed members

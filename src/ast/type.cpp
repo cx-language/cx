@@ -51,8 +51,8 @@ bool Type::isImplicitlyCopyable() const {
         return !getDecl() || getDecl()->passByValue();
     case TypeKind::ArrayType:
         return !isConstantArray() || getElementType().isImplicitlyCopyable();
-    case TypeKind::TupleType:
-        return llvm::all_of(llvm::cast<TupleType>(typeBase)->elements, [&](auto& element) { return element.type.isImplicitlyCopyable(); });
+    case TypeKind::AnonymousStructType:
+        return llvm::all_of(llvm::cast<AnonymousStructType>(typeBase)->elements, [&](auto& element) { return element.type.isImplicitlyCopyable(); });
     case TypeKind::FunctionType:
     case TypeKind::PointerType:
         return true;
@@ -108,9 +108,10 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
     case TypeKind::ArrayType:
         return ArrayType::get(getElementType().resolve(replacements), getArraySize(), location);
 
-    case TypeKind::TupleType: {
-        auto elements = map(getTupleElements(), [&](auto& element) { return TupleElement{element.name, element.type.resolve(replacements)}; });
-        return TupleType::get(std::move(elements), mutability, location);
+    case TypeKind::AnonymousStructType: {
+        auto elements =
+            map(getAnonymousStructElements(), [&](auto& element) { return AnonymousStructElement{element.name, element.type.resolve(replacements)}; });
+        return AnonymousStructType::get(std::move(elements), mutability, location);
     }
     case TypeKind::FunctionType: {
         auto paramTypes = map(getParamTypes(), [&](Type t) { return t.resolve(replacements); });
@@ -147,8 +148,8 @@ Type ArrayType::get(Type elementType, int64_t size, Location location) {
     return getType(ArrayType(elementType, size), elementType.mutability, location);
 }
 
-Type TupleType::get(std::vector<TupleElement>&& elements, Mutability mutability, Location location) {
-    return getType(TupleType(std::move(elements)), mutability, location);
+Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Mutability mutability, Location location) {
+    return getType(AnonymousStructType(std::move(elements)), mutability, location);
 }
 
 Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic, Mutability mutability, Location location) {
@@ -167,7 +168,7 @@ Type UnresolvedType::get(Mutability mutability, Location location) {
     return getType(UnresolvedType(), mutability, location);
 }
 
-bool cx::operator==(const TupleElement& a, const TupleElement& b) {
+bool cx::operator==(const AnonymousStructElement& a, const AnonymousStructElement& b) {
     return a.name == b.name && a.type == b.type;
 }
 
@@ -252,8 +253,8 @@ int64_t Type::getArraySize() const {
     return llvm::cast<ArrayType>(typeBase)->size;
 }
 
-llvm::ArrayRef<TupleElement> Type::getTupleElements() const {
-    return llvm::cast<TupleType>(typeBase)->elements;
+llvm::ArrayRef<AnonymousStructElement> Type::getAnonymousStructElements() const {
+    return llvm::cast<AnonymousStructType>(typeBase)->elements;
 }
 
 llvm::ArrayRef<Type> Type::getGenericArgs() const {
@@ -297,8 +298,8 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
         return other.isBasicType() && getName() == other.getName() && getGenericArgs() == other.getGenericArgs();
     case TypeKind::ArrayType:
         return other.isArrayType() && getElementType() == other.getElementType() && getArraySize() == other.getArraySize();
-    case TypeKind::TupleType:
-        return other.isTupleType() && getTupleElements() == other.getTupleElements();
+    case TypeKind::AnonymousStructType:
+        return other.isAnonymousStructType() && getAnonymousStructElements() == other.getAnonymousStructElements();
     case TypeKind::FunctionType:
         return other.isFunctionType() && getReturnType() == other.getReturnType() && getParamTypes() == other.getParamTypes();
     case TypeKind::PointerType:
@@ -326,8 +327,8 @@ bool Type::containsUnresolvedPlaceholder() const {
     case TypeKind::ArrayType:
         return getElementType().containsUnresolvedPlaceholder();
 
-    case TypeKind::TupleType:
-        for (auto& element : getTupleElements()) {
+    case TypeKind::AnonymousStructType:
+        for (auto& element : getAnonymousStructElements()) {
             if (element.type.containsUnresolvedPlaceholder()) {
                 return true;
             }
@@ -438,12 +439,12 @@ void Type::printTo(std::ostream& stream) const {
         }
         stream << "]";
         break;
-    case TypeKind::TupleType:
+    case TypeKind::AnonymousStructType:
         stream << "(";
-        for (auto& element : getTupleElements()) {
+        for (auto& element : getAnonymousStructElements()) {
             element.type.printTo(stream);
             stream << " " << element.name;
-            if (&element != &getTupleElements().back()) stream << ", ";
+            if (&element != &getAnonymousStructElements().back()) stream << ", ";
         }
         stream << ")";
         break;

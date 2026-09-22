@@ -359,8 +359,8 @@ struct Finder {
         case TypeKind::ArrayType:
             visitType(type.getElementType(), depth + 1);
             break;
-        case TypeKind::TupleType:
-            for (auto& element : type.getTupleElements())
+        case TypeKind::AnonymousStructType:
+            for (auto& element : type.getAnonymousStructElements())
                 visitType(element.type, depth + 1);
             break;
         case TypeKind::FunctionType:
@@ -417,9 +417,9 @@ void Finder::visitExpr(Expr* expr, int depth) {
             visitExpr(el, depth + 1);
         return;
     }
-    case ExprKind::TupleExpr: {
-        auto* tuple = llvm::cast<TupleExpr>(expr);
-        for (auto& el : tuple->elements)
+    case ExprKind::AnonymousStructExpr: {
+        auto* anonymousStruct = llvm::cast<AnonymousStructExpr>(expr);
+        for (auto& el : anonymousStruct->elements)
             visitExpr(el.value, depth + 1);
         return;
     }
@@ -643,8 +643,8 @@ struct ReferenceCollector {
         case TypeKind::ArrayType:
             visitType(type.getElementType());
             break;
-        case TypeKind::TupleType:
-            for (auto& element : type.getTupleElements())
+        case TypeKind::AnonymousStructType:
+            for (auto& element : type.getAnonymousStructElements())
                 visitType(element.type);
             break;
         case TypeKind::FunctionType:
@@ -699,8 +699,8 @@ void ReferenceCollector::visitExpr(Expr* expr) {
         for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
             visitExpr(el);
         return;
-    case ExprKind::TupleExpr:
-        for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+    case ExprKind::AnonymousStructExpr:
+        for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
             visitExpr(el.value);
         return;
     case ExprKind::UnwrapExpr:
@@ -1141,8 +1141,8 @@ struct SemanticCollector {
         case TypeKind::ArrayType:
             visitType(llvm::cast<ArrayType>(type.typeBase)->elementType);
             return;
-        case TypeKind::TupleType:
-            for (auto& element : llvm::cast<TupleType>(type.typeBase)->elements)
+        case TypeKind::AnonymousStructType:
+            for (auto& element : llvm::cast<AnonymousStructType>(type.typeBase)->elements)
                 visitType(element.type);
             return;
         case TypeKind::FunctionType: {
@@ -1207,8 +1207,8 @@ void SemanticCollector::visitExpr(Expr* expr) {
         for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
             visitExpr(el);
         return;
-    case ExprKind::TupleExpr:
-        for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+    case ExprKind::AnonymousStructExpr:
+        for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
             visitExpr(el.value);
         return;
     case ExprKind::UnwrapExpr:
@@ -1527,8 +1527,8 @@ struct MemberExprCollector {
             for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
                 visitExpr(el);
             return;
-        case ExprKind::TupleExpr:
-            for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+        case ExprKind::AnonymousStructExpr:
+            for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
                 visitExpr(el.value);
             return;
         case ExprKind::UnwrapExpr:
@@ -1774,8 +1774,8 @@ std::vector<CompletionItem> membersForType(Type type) {
         out.push_back({"iterator", "method", "ArrayIterator<" + elemName + "> iterator()"});
         return out;
     }
-    if (t.isTupleType()) {
-        for (auto& el : t.getTupleElements()) {
+    if (t.isAnonymousStructType()) {
+        for (auto& el : t.getAnonymousStructElements()) {
             CompletionItem item;
             item.label = el.name;
             item.kind = "field";
@@ -2212,8 +2212,8 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                 for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
                     visitExpr(el);
                 return;
-            case ExprKind::TupleExpr:
-                for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+            case ExprKind::AnonymousStructExpr:
+                for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
                     visitExpr(el.value);
                 return;
             case ExprKind::UnwrapExpr:

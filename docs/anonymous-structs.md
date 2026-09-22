@@ -1,8 +1,8 @@
-# Tuples
+# Anonymous structs
 
-A tuple groups a fixed set of named values into a single value.
-Tuple elements are accessed by name with `.`, like struct fields,
-but unlike structs, tuples need no declaration.
+An anonymous struct groups a fixed set of named fields into a single value.
+Fields are accessed by name with `.`, like named struct fields,
+but unlike named structs, anonymous structs need no declaration.
 
 ```cs
 void main() {
@@ -12,7 +12,7 @@ void main() {
 }
 ```
 
-Functions can return multiple values by returning a tuple:
+Functions can return multiple values by returning an anonymous struct:
 
 ```cs
 (string name, int age) parseUser(string input) {
@@ -26,8 +26,8 @@ void main() {
 }
 ```
 
-Tuples can be nested, and compared for equality with `==` and `!=`.
-Two tuples are equal if all their elements are equal.
+Anonymous structs can be nested, and compared for equality with `==` and `!=`.
+Two anonymous structs are equal if all their fields are equal.
 
 ```cs
 void main() {
@@ -38,7 +38,7 @@ void main() {
 }
 ```
 
-Tuples are also handy as element types in containers,
+Anonymous structs are also handy as element types in containers,
 for example to store pairs of values in a list:
 
 ```cs
@@ -53,5 +53,5 @@ void main() {
 
 ## Planned features
 
-- Destructuring tuples into separate variables; for now, access elements by name.
-- Anonymous tuple members.
+- Destructuring anonymous structs into separate variables; for now, access fields by name.
+- Unnamed members.

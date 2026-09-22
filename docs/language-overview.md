@@ -65,7 +65,7 @@ Modern type system features for convenience and performance:
   parameters are still allowed for flexibility.
 - Arrays are first-class values that can be returned and passed by value. Arrays know their own size, either statically
   or at runtime.
-- First-class tuples to allow e.g. returning multiple values or storing pairs of values in a container using a
+- First-class anonymous structs to allow e.g. returning multiple values or storing pairs of values in a container using a
   lightweight syntax.
 
 ## Standard library covers common use cases better

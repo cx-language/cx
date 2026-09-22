@@ -286,11 +286,11 @@ ArrayLiteralExpr* Parser::parseArrayLiteral() {
     return makeAST<ArrayLiteralExpr>(std::move(elements), location);
 }
 
-/// tuple-literal ::= '(' tuple-literal-elements ')'
-/// tuple-literal-elements ::= tuple-literal-element | tuple-literal-elements ',' tuple-literal-element
-/// tuple-literal-element ::= (id '=')? expr
+/// anonymous-struct-literal ::= '(' anonymous-struct-literal-elements ')'
+/// anonymous-struct-literal-elements ::= anonymous-struct-literal-element | anonymous-struct-literal-elements ',' anonymous-struct-literal-element
+/// anonymous-struct-literal-element ::= (id '=')? expr
 /// paren-expr ::= '(' expr ')'
-Expr* Parser::parseTupleLiteralOrParenExpr() {
+Expr* Parser::parseAnonymousStructLiteralOrParenExpr() {
     ASSERT(currentToken() == Token::LeftParen);
     auto location = getCurrentLocation();
     auto elements = parseArgumentList(false);
@@ -307,7 +307,7 @@ Expr* Parser::parseTupleLiteralOrParenExpr() {
         }
     }
 
-    return makeAST<TupleExpr>(std::move(elements), location);
+    return makeAST<AnonymousStructExpr>(std::move(elements), location);
 }
 
 /// non-empty-type-list ::= type | type ',' non-empty-type-list
@@ -419,14 +419,14 @@ Type Parser::parseSimpleType(Mutability mutability) {
     }
 }
 
-/// tuple-type ::= '(' tuple-type-elements ')'
-/// tuple-type-elements ::= tuple-type-element | tuple-type-elements ',' tuple-type-element
-/// tuple-type-element ::= type id?
-Type Parser::parseTupleType() {
+/// anonymous-struct-type ::= '(' anonymous-struct-type-elements ')'
+/// anonymous-struct-type-elements ::= anonymous-struct-type-element | anonymous-struct-type-elements ',' anonymous-struct-type-element
+/// anonymous-struct-type-element ::= type id?
+Type Parser::parseAnonymousStructType() {
     ASSERT(currentToken() == Token::LeftParen);
     auto location = getCurrentLocation();
     consumeToken();
-    std::vector<TupleElement> elements;
+    std::vector<AnonymousStructElement> elements;
 
     while (currentToken() != Token::RightParen) {
         auto type = parseType();
@@ -436,7 +436,7 @@ Type Parser::parseTupleType() {
     }
 
     consumeToken();
-    return TupleType::get(std::move(elements), Mutability::Mutable, location);
+    return AnonymousStructType::get(std::move(elements), Mutability::Mutable, location);
 }
 
 /// function-type ::= type '(' param-types ')'
@@ -455,7 +455,7 @@ Type Parser::parseFunctionType(Type returnType) {
     return FunctionType::get(returnType, std::move(paramTypes), false, Mutability::Mutable, returnType.location);
 }
 
-/// type ::= simple-type | 'const' simple-type | type '*' | type '?' | function-type | tuple-type
+/// type ::= simple-type | 'const' simple-type | type '*' | type '?' | function-type | anonymous-struct-type
 Type Parser::parseType() {
     Type type;
     auto location = getCurrentLocation();
@@ -469,7 +469,7 @@ Type Parser::parseType() {
         type = parseSimpleType(Mutability::Const);
         break;
     case Token::LeftParen:
-        type = parseTupleType();
+        type = parseAnonymousStructType();
         break;
     default:
         ERROR(getCurrentLocation(), "expected type, got " << quote(currentToken()));
@@ -739,7 +739,7 @@ bool Parser::lambdaAfterParentheses() {
 
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
-///                  paren-expr | array-literal | tuple-literal | index-expr | index-assignment-expr
+///                  paren-expr | array-literal | anonymous-struct-literal | index-expr | index-assignment-expr
 ///                  member-expr | unwrap-expr | lambda-expr | sizeof-expr
 Expr* Parser::parsePostfixExpr() {
     Expr* expr;
@@ -790,7 +790,7 @@ Expr* Parser::parsePostfixExpr() {
         if (lambdaAfterParentheses()) {
             expr = parseLambdaExpr();
         } else {
-            expr = parseTupleLiteralOrParenExpr();
+            expr = parseAnonymousStructLiteralOrParenExpr();
         }
         break;
     case Token::LeftBracket:
@@ -1636,7 +1636,7 @@ TypeTemplate* Parser::parseEnumTemplate(AccessLevel accessLevel) {
 }
 
 /// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' (enum-case-decl | member-decl)* '}' ';'?
-/// enum-case-decl ::= id tuple-type? (',' | '\n' | ';')
+/// enum-case-decl ::= id anonymous-struct-type? (',' | '\n' | ';')
 /// member-decl ::= function-decl | function-template-decl
 EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     ASSERT(currentToken() == Token::Enum);
@@ -1669,7 +1669,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             Type associatedType;
 
             if (currentToken() == Token::LeftParen) {
-                associatedType = parseTupleType();
+                associatedType = parseAnonymousStructType();
             }
 
             auto value = makeAST<IntLiteralExpr>(valueCounter, caseName.location);

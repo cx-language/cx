@@ -17,7 +17,7 @@ bool hasReturnValue(const CallInst* inst) {
     return !returnType->isVoid() && !returnType->isNever();
 }
 
-// Named structs use field names (see codegenTypeDefinition); anonymous tuples fall back to indices.
+// Named structs use field names (see codegenTypeDefinition); anonymous structs fall back to indices.
 std::string getFieldName(IRType* type, int index) {
     ASSERT(index < (int)type->getFields().size());
     const auto& fieldName = type->getFields()[index].name;
