@@ -1,0 +1,17 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: type-field-access.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct S {
+    int x;
+    const y = 5;
+}
+
+void main() {
+    println(S.y);
+    var s = S(x = 3);
+    println(s.x);
+    println(s.y);
+    // CHECK: [[@LINE+1]]:15: error: no member named 'x' in 'S'
+    println(S.x);
+}
+// CHECK-NOT: type-field-access.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
