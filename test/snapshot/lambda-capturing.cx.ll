@@ -106,15 +106,25 @@ define i32 @_EN4main1S3getE3int(ptr %this, i32 %c) {
   %b = alloca %__closure1, align 8
   store i32 %c, ptr %c1, align 4
   %c.load = load i32, ptr %c1, align 4
-  %1 = insertvalue %__closure1 { ptr @_EN4main9__lambda1E3int, i32 undef, ptr undef }, i32 %c.load, 1
-  %2 = insertvalue %__closure1 %1, ptr %this, 2
-  store %__closure1 %2, ptr %b, align 8
-  %b.load = load %__closure1, ptr %b, align 8
-  %3 = extractvalue %__closure1 %b.load, 0
-  %4 = extractvalue %__closure1 %b.load, 1
-  %5 = extractvalue %__closure1 %b.load, 2
-  %6 = call i32 %3(i32 %4, ptr %5, i32 1)
-  ret i32 %6
+  %insert.alloca = alloca %__closure1, align 8
+  store %__closure1 { ptr @_EN4main9__lambda1E3int, i32 undef, ptr undef }, ptr %insert.alloca, align 8
+  %insert.gep = getelementptr inbounds %__closure1, ptr %insert.alloca, i32 0, i32 1
+  store i32 %c.load, ptr %insert.gep, align 4
+  %insert.alloca2 = alloca %__closure1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %insert.alloca2, ptr align 8 %insert.alloca, i64 24, i1 false)
+  %insert.gep3 = getelementptr inbounds %__closure1, ptr %insert.alloca2, i32 0, i32 2
+  store ptr %this, ptr %insert.gep3, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %b, ptr align 8 %insert.alloca2, i64 24, i1 false)
+  %b.load = alloca %__closure1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %b.load, ptr align 8 %b, i64 24, i1 false)
+  %1 = getelementptr inbounds %__closure1, ptr %b.load, i32 0, i32 0
+  %2 = load ptr, ptr %1, align 8
+  %3 = getelementptr inbounds %__closure1, ptr %b.load, i32 0, i32 1
+  %4 = load i32, ptr %3, align 4
+  %5 = getelementptr inbounds %__closure1, ptr %b.load, i32 0, i32 2
+  %6 = load ptr, ptr %5, align 8
+  %7 = call i32 %2(i32 %4, ptr %6, i32 1)
+  ret i32 %7
 }
 
 define i32 @_EN4main9__lambda2E3int(i32 %__capture_a, i32 %c) {
@@ -183,3 +193,8 @@ overflow.fail4:                                   ; preds = %overflow.success
 overflow.success5:                                ; preds = %overflow.success
   ret i32 %11
 }
+
+; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #0
+
+attributes #0 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }

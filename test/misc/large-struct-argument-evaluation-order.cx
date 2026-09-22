@@ -1,0 +1,24 @@
+// RUN: check_exit_status 1 %cx run %s
+// RUN: check_exit_status 1 %cx run --backend=c %s
+
+struct Big {
+    int a;
+    int b;
+    int c;
+    int d;
+    int e;
+}
+
+int first(Big x, int y) {
+    return x.a;
+}
+
+int replaceFirst(Big* p) {
+    p.a = 99;
+    return 0;
+}
+
+int main() {
+    var b = Big(1, 2, 3, 4, 5);
+    return first(b, replaceFirst(&b));
+}

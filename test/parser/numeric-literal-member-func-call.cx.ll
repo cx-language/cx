@@ -4,7 +4,7 @@ define i32 @main() {
   %1 = alloca i32, align 4
   store i32 0, ptr %1, align 4
   %2 = call i64 @_EN3std3int4hashE(ptr %1)
-  store i64 %2, ptr %foo, align 4
+  store i64 %2, ptr %foo, align 8
   ret i32 0
 }
 
