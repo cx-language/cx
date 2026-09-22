@@ -65,7 +65,7 @@ void cx::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
     }
 }
 
-void cx::printDiagnostic(Location location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message) {
+void cx::printDiagnostic(Location location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message, Location endLocation) {
     if (llvm::errs().has_colors()) {
         llvm::errs().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
     }
@@ -85,23 +85,36 @@ void cx::printDiagnostic(Location location, llvm::StringRef type, llvm::raw_ostr
         for (char ch : line.substr(0, location.column - 1)) {
             llvm::errs() << (ch != '\t' ? ' ' : '\t');
         }
-        printColored('^', llvm::raw_ostream::GREEN);
+
+        // Underline the source range when the end is past the start on the
+        // same line, or to the end of the line for multiline ranges.
+        int endColumn = -1;
+        if (endLocation.isValid() && endLocation.line >= location.line && (endLocation.line > location.line || endLocation.column > location.column)) {
+            endColumn = endLocation.line == location.line ? std::min<int>(endLocation.column, int(line.size()) + 1) : int(line.size()) + 1;
+        }
+        if (endColumn > location.column) {
+            for (int i = location.column; i < endColumn; i++) {
+                printColored('~', llvm::raw_ostream::GREEN);
+            }
+        } else {
+            printColored('^', llvm::raw_ostream::GREEN);
+        }
     }
 
     llvm::errs() << '\n';
 }
 
-CompileError::CompileError(Location location, std::string&& message, std::vector<Note>&& notes)
-: location(location), message(std::move(message)), notes(std::move(notes)) {}
+CompileError::CompileError(Location location, std::string&& message, std::vector<Note>&& notes, Location endLocation)
+: location(location), message(std::move(message)), notes(std::move(notes)), endLocation(endLocation) {}
 
 void CompileError::report() const {
     if (message.empty()) return;
-    reportError(location, StringBuilder() << message, notes);
+    reportError(location, StringBuilder() << message, notes, endLocation);
 }
 
 void CompileError::reportAsWarning() const {
     if (message.empty()) return;
-    reportWarning(location, StringBuilder() << message, notes);
+    reportWarning(location, StringBuilder() << message, notes, endLocation);
 }
 
 std::optional<std::string> cx::findExternalCCompiler() {
@@ -177,7 +190,7 @@ static void collectDiagnostic(Location location, const char* severity, llvm::Str
     diagnosticCollector->push_back(std::move(diagnostic));
 }
 
-void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes) {
+void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes, Location endLocation) {
     errors++;
     if (diagnosticCollector) {
         collectDiagnostic(location, "error", message, notes);
@@ -199,7 +212,7 @@ void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<
 #endif
     }
 
-    printDiagnostic(location, "error", llvm::raw_ostream::RED, message);
+    printDiagnostic(location, "error", llvm::raw_ostream::RED, message, endLocation);
 
     for (auto& note : notes) {
         printDiagnostic(note.location, "note", llvm::raw_ostream::BLACK, note.message);
@@ -218,7 +231,7 @@ struct ReportedWarning {
 
 static llvm::SmallSet<ReportedWarning, 8> reportedWarnings;
 
-void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes) {
+void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes, Location endLocation) {
     if (diagnosticOptions.disableWarnings) return;
 
     // Overload resolution typechecks call arguments once per candidate; report each unique warning only once.
@@ -228,13 +241,13 @@ void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRe
     }
 
     if (diagnosticOptions.warningsAsErrors) {
-        reportError(location, message, notes);
+        reportError(location, message, notes, endLocation);
     } else {
         if (diagnosticCollector) {
             collectDiagnostic(location, "warning", message, notes);
             return;
         }
-        printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message);
+        printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message, endLocation);
 
         for (auto& note : notes) {
             printDiagnostic(note.location, "note", llvm::raw_ostream::BLACK, note.message);

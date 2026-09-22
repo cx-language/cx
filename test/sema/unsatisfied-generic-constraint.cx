@@ -11,7 +11,7 @@ struct F: Copyable {
 void main() {
     F f = undefined;
 
-    // CHECK: 15:8: error: type 'F' doesn't implement interface 'Fooable'
+    // CHECK: 15:5: error: type 'F' doesn't implement interface 'Fooable'
     bar(f);
 }
 

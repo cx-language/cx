@@ -62,7 +62,7 @@ struct StringBuilder : llvm::raw_string_ostream {
 
 std::string readLineFromFile(Location location);
 void renameFile(llvm::Twine sourcePath, llvm::Twine targetPath);
-void printDiagnostic(Location location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message);
+void printDiagnostic(Location location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message, Location endLocation = {});
 
 struct Note {
     Location location;
@@ -92,7 +92,7 @@ struct CollectedDiagnostic {
 extern std::vector<CollectedDiagnostic>* diagnosticCollector;
 
 struct CompileError : std::exception {
-    CompileError(Location location, std::string&& message, std::vector<Note>&& notes = {});
+    CompileError(Location location, std::string&& message, std::vector<Note>&& notes = {}, Location endLocation = {});
     /// Creates a specific type of compile error used for propagating non-reported errors that are the result of a previous, reported error.
     /// For example using a variable whose initializer has an error.
     static CompileError dependentError() { return CompileError(Location(), ""); }
@@ -103,6 +103,7 @@ struct CompileError : std::exception {
     Location location;
     std::string message; // Empty if this is a silent "dependent error", resulting from a previous, reported error.
     std::vector<Note> notes;
+    Location endLocation; // One past the last underlined character. Invalid renders a point instead of a range.
 };
 
 template<typename T> void printColored(const T& text, llvm::raw_ostream::Colors color) {
@@ -113,8 +114,8 @@ template<typename T> void printColored(const T& text, llvm::raw_ostream::Colors 
 
 void printStackTrace();
 [[noreturn]] void abort(llvm::StringRef message);
-void reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes = {});
-void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes = {});
+void reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes = {}, Location endLocation = {});
+void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes = {}, Location endLocation = {});
 
 #define ABORT(args) \
     { \
@@ -149,6 +150,17 @@ void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<No
 #define WARN(location, args) \
     { \
         reportWarning(location, StringBuilder() << args); \
+    }
+
+#define ERROR_RANGE(begin, end, args) \
+    { \
+        printStackTrace(); \
+        throw CompileError(begin, std::move((StringBuilder() << args).string), {}, end); \
+    }
+
+#define WARN_RANGE(begin, end, args) \
+    { \
+        reportWarning(begin, StringBuilder() << args, {}, end); \
     }
 
 std::optional<std::string> findExternalCCompiler();

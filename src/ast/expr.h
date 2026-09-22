@@ -98,6 +98,9 @@ struct Expr {
     Type type;
     Type assignableType;
     Location location;
+    // One past the last source character of the expression. Invalid for
+    // synthesized expressions, which render as a point at location.
+    Location endLocation;
 
 protected:
     Expr(ExprKind kind, Location location) : kind(kind), location(location) {}
@@ -359,6 +362,7 @@ struct ImplicitCastExpr : Expr {
     ImplicitCastExpr(Expr* operand, Type targetType, Kind kind) : Expr(ExprKind::ImplicitCastExpr, operand->location), operand(operand), castKind(kind) {
         type = NOTNULL(targetType);
         assignableType = NOTNULL(targetType);
+        endLocation = operand->endLocation;
     }
     static bool classof(const Expr* e) { return e->kind == ExprKind::ImplicitCastExpr; }
 

@@ -8,7 +8,7 @@ enum Outcome<T> {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:34: error: too many generic arguments to 'Outcome', expected 1
+    // CHECK: [[@LINE+1]]:21: error: too many generic arguments to 'Outcome', expected 1
     var x = Outcome.Ok<int, bool>(value = 1);
 }
 
