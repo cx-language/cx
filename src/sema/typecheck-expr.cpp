@@ -441,7 +441,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (op == Token::Assignment) {
         typecheckAssignment(expr, expr.location);
-        return expr.getLHS().type;
+        return Type::getVoid();
     }
 
     if (isCompoundAssignmentOperator(op)) {
@@ -2637,7 +2637,8 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
                 }
             }
         }
-        return typecheckCallExpr(expr);
+        typecheckCallExpr(expr);
+        return Type::getVoid();
     }
 
     typecheckExpr(*expr.getValue());
@@ -2655,7 +2656,7 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
         }
     }
 
-    return elementType;
+    return Type::getVoid();
 }
 
 Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
@@ -3057,13 +3058,6 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
 }
 
 void Typechecker::setMoved(Expr* expr, bool isMoved) {
-    // An assignment evaluates to its left-hand side, so moving the result moves from there.
-    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(expr)) {
-        if (binaryExpr->op == Token::Assignment) {
-            setMoved(&binaryExpr->getLHS(), isMoved);
-            return;
-        }
-    }
     if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
         if (cast->castKind == ImplicitCastExpr::OptionalWrap) {
             setMoved(cast->operand, isMoved);
