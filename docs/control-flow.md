@@ -80,6 +80,32 @@ void main() {
 }
 ```
 
+The `is` operator tests whether an enum value is a specific case.
+Appending a name binds the case's payload in the then-branch,
+using the same semantics as `switch` case bindings:
+
+```cs
+enum Outcome {
+    Ok(int value),
+    Err(string error),
+}
+
+string describe(Outcome* outcome) {
+    if *outcome is Err e {
+        return e;
+    }
+    if *outcome is Ok {
+        return "ok";
+    }
+    return "unknown";
+}
+
+void main() {
+    var ok = Outcome.Ok(value = 1);
+    println(describe(ok)); // prints "ok"
+}
+```
+
 ## switch
 
 Unlike in most C-based languages, the case bodies don't fall through to the next by default,

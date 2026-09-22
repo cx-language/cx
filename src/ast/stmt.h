@@ -94,6 +94,8 @@ struct IfStmt : Stmt {
     static bool classof(const Stmt* s) { return s->kind == StmtKind::IfStmt; }
 
     Expr* condition;
+    // Set when the condition binds an enum payload (`if s is Case name`); visible in the then-branch only.
+    VarDecl* isBinding = nullptr;
     std::vector<Stmt*> thenBody;
     std::vector<Stmt*> elseBody;
     Location elseLocation;

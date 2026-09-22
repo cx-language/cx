@@ -1,0 +1,34 @@
+// RUN: check_exit_status 0 %cx run %s
+// RUN: check_exit_status 0 %cx run --backend=c %s
+
+enum Shape {
+    Circle(float radius),
+    Rect(float width, float height),
+}
+
+void main() {
+    var circle = Shape.Circle(radius = 2.0);
+    if circle is Circle r {
+        assert(r == 2.0);
+    } else {
+        assert(false);
+    }
+
+    var rect = Shape.Rect(width = 3.0, height = 4.0);
+    if rect is Rect d {
+        assert(d.width * d.height == 12.0);
+    } else {
+        assert(false);
+    }
+
+    if circle is Rect {
+        assert(false);
+    }
+
+    // Bindings don't leak into the else branch or past the statement.
+    if rect is Rect d {
+        assert(d.width == 3.0);
+    } else {
+        assert(true);
+    }
+}

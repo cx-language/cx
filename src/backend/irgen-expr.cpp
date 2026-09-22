@@ -511,6 +511,12 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     case Token::QuestionQuestion:
         return emitNullCoalescingExpr(expr);
 
+    case Token::Is: {
+        auto left = emitExprOrEnumTag(expr.getLHS(), nullptr);
+        auto right = emitExprOrEnumTag(expr.getRHS(), nullptr);
+        return createBinaryOp(Token::Equal, left, right, &expr);
+    }
+
     case Token::PositiveModulo: {
         auto left = emitExprOrEnumTag(expr.getLHS(), nullptr);
         auto right = emitExprOrEnumTag(expr.getRHS(), nullptr);
