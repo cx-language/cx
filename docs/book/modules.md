@@ -16,6 +16,8 @@ import shapes;
 
 Dependencies declared in `build.cx` are imported by their package name
 (see [Build system](build-system)).
+Vendored dependencies are imported the same way:
+a `vendor/<package>/` directory is found without extra flags.
 Other directories are made importable with `-I`:
 
 ```sh

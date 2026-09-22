@@ -90,8 +90,28 @@ with no central index or publishing step.
 ### Vendoring
 
 If you'd rather not fetch over the network, you can vendor dependencies instead:
-copy the library sources into your project (for example under `vendor/`),
-and `cx build` compiles them as part of it, with no `import` or `build.cx` entry needed.
+copy each library into its own directory under `vendor/`,
+with the directory name matching the `package` name you'd import,
+and `import` it by that name:
+
+```sh
+myproject/
+├── build.cx
+├── main.cx         # contains: import shapes;
+└── vendor/
+    └── shapes/
+        └── shape.cx
+```
+
+```cx
+import shapes;
+```
+
+`cx build` runs at the project root and only reads the `build.cx` there:
+`build.cx` files inside `vendor/` or other subdirectories are ignored,
+as is everything else under `vendor/` except via `import`.
+Because vendored code compiles as an imported module rather than as part of
+your project, unused functions in it don't produce warnings.
 Sources kept outside the project can likewise be used with `-I` plus `import`.
 
 Vendored C libraries work the same way: point `headerSearchPaths` at their headers

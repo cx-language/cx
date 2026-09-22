@@ -39,6 +39,8 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
     std::error_code error;
     std::vector<std::string> paths;
 
+    // ponytail: an imported package's own vendor/ subdirectory (transitive vendoring) compiles as part of it;
+    // split into nested packages via `import` once a package needs its vendored deps versioned independently.
     for (llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end; it != end; it.increment(error)) {
         if (error) break;
         if (llvm::sys::path::extension(it->path()) == ".cx") {

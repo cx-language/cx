@@ -559,6 +559,41 @@ def test_build_file_modes(cx_lsp):
             json.dumps(messages)[:500],
         )
 
+    # Vendored packages are imported by name, not analyzed as part of the
+    # importing module: no import errors and no redefinition errors.
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "vproj")
+        vendordir = os.path.join(root, "vendor", "greet")
+        subdir = os.path.join(root, "sub")
+        os.makedirs(vendordir)
+        os.makedirs(subdir)
+        with open(os.path.join(root, "build.cx"), "w") as file:
+            file.write('var name = "vproj"\n')
+        with open(os.path.join(vendordir, "greet.cx"), "w") as file:
+            file.write('void greet() {\n    println("hi");\n}\n\nvoid unusedHelper() {\n}\n')
+        main_path = os.path.join(root, "main.cx")
+        main_content = "import greet;\n\nvoid main() {\n    greet();\n}\n"
+        with open(main_path, "w") as file:
+            file.write(main_content)
+        nested_path = os.path.join(subdir, "other.cx")
+        nested_content = "import greet;\n\nvoid other() {\n    greet();\n}\n"
+        with open(nested_path, "w") as file:
+            file.write(nested_content)
+
+        result = run_query(cx_lsp, base_query("check", main_path, main_content))
+        check(
+            "query-vendored-import",
+            result["diagnostics"] == [],
+            json.dumps(result["diagnostics"])[:500],
+        )
+
+        result = run_query(cx_lsp, base_query("check", nested_path, nested_content))
+        check(
+            "query-vendored-import-nested",
+            result["diagnostics"] == [],
+            json.dumps(result["diagnostics"])[:500],
+        )
+
 
 class LspSession:
     def __init__(self, command):

@@ -1,0 +1,8 @@
+// RUN: true
+
+void greet() {
+    println("hello from vendor");
+}
+
+void unusedHelper() {
+}

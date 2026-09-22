@@ -19,6 +19,7 @@
 #include "../ast/stmt.h"
 #include "../ast/type.h"
 #include "../build/config.h"
+#include "../build/dependencies.h"
 #include "../driver/driver.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
@@ -1879,7 +1880,11 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         // Import search paths: file's directory first, then workspace folders,
         // then explicit extras, then the distribution root (for std/) and system paths.
         std::string parentDir = llvm::sys::path::parent_path(filePath).str();
-        if (!parentDir.empty()) options.importSearchPaths.push_back(parentDir);
+        if (!parentDir.empty()) {
+            options.importSearchPaths.push_back(parentDir);
+            // Vendored packages are imported by name (see driver.cpp).
+            options.importSearchPaths.push_back((llvm::StringRef(parentDir) + "/vendor").str());
+        }
         for (auto& folder : query.workspaceFolders)
             options.importSearchPaths.push_back(folder);
         for (auto& path : query.importSearchPaths)
@@ -1926,12 +1931,14 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
 
         // Main file from memory, siblings from disk or the openDocs overlay.
         // Build files are config, not source, so never load them as code.
+        // Vendored packages are likewise excluded: they join the module via `import`.
         std::vector<std::string> siblingPaths;
         if (moduleDir) {
+            options.importSearchPaths.push_back(*moduleDir + "/vendor");
             std::error_code ec;
             for (llvm::sys::fs::recursive_directory_iterator it(*moduleDir, ec), end; it != end && !ec; it.increment(ec)) {
                 if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath
-                    && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName) {
+                    && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName && !isVendoredPath(it->path())) {
                     siblingPaths.push_back(it->path());
                 }
             }
