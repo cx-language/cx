@@ -1,5 +1,5 @@
 // RUN: %cx -print-llvm %s | %FileCheck %s --check-prefix=SAFE
-// RUN: %cx -print-llvm --mode=release-fast %s | %FileCheck %s --check-prefix=FAST
+// RUN: %cx -print-llvm --release %s | %FileCheck %s --check-prefix=FAST
 // Runtime checks live in switch-enum-safety-check-run.cx and
 // switch-enum-safety-check-run-c.cx: one test making 8 compiler runs kept
 // timing out on loaded runners.

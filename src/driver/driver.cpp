@@ -85,11 +85,9 @@ cl::bits<PrintOpt> printOpts(cl::desc("Print output from intermediate steps:"), 
 enum class Backend { LLVM, C };
 cl::opt<Backend> backend("backend", cl::desc("Select code-generation backend to use:"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
                          cl::values(clEnumValN(Backend::LLVM, "llvm", "LLVM backend (default)"), clEnumValN(Backend::C, "c", "C backend")));
-cl::opt<BuildMode> buildMode("mode", cl::desc("Select build mode:"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
-                             cl::values(clEnumValN(BuildMode::Debug, "debug", "Debug mode (default): safety checks enabled"),
-                                        clEnumValN(BuildMode::ReleaseSafe, "release-safe", "Release-safe mode: safety checks enabled"),
-                                        clEnumValN(BuildMode::ReleaseFast, "release-fast", "Release-fast mode: safety checks disabled")),
-                             cl::init(BuildMode::Debug));
+BuildMode buildMode = BuildMode::Debug;
+cl::opt<bool> releaseMode("release", cl::desc("Release mode: safety checks disabled"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
+cl::opt<bool> releaseSafeMode("release-safe", cl::desc("Release-safe mode: safety checks enabled"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> cDispatch("c-dispatch", cl::desc("Generate goto-free C code using dispatch loops (for C compilers without goto support)"),
                         cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"), cl::cat(outputCategory));
@@ -792,6 +790,12 @@ int cx::driverMain(int argc, const char** argv) {
     }
     cl::HideUnrelatedOptions({&stageSelectionCategory, &outputCategory, &dependencyCategory, &diagnosticCategory});
     cl::ParseCommandLineOptions(argc, argv, "cx compiler\n");
+    if (releaseMode && releaseSafeMode) ABORT("can't combine --release with --release-safe");
+    if (releaseMode) {
+        buildMode = BuildMode::ReleaseFast;
+    } else if (releaseSafeMode) {
+        buildMode = BuildMode::ReleaseSafe;
+    }
     if (!programArgs.empty() && !run) {
         ABORT("program arguments require the 'run' subcommand");
     }
