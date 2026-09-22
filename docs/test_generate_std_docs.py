@@ -342,8 +342,10 @@ class StdlibTest(unittest.TestCase):
         for snippet in [
             f'# [List]({base}){{target="_blank"}}',
             f'## [struct List\\<Element\\>]({base}#L2){{target="_blank"}} {{#type-List}}',
-            f'### [push]({base}#L100){{target="_blank"}} {{#List-push}}',
+            f'### [push]({base}#L116){{target="_blank"}} {{#List-push}}',
             f'### [operator\\[\\]]({base}#L69){{target="_blank"}} {{#List-operator-index}}',
+            f'### [operator\\[-\\]]({base}#L79){{target="_blank"}} {{#List-operator-index-from-end}}',
+            f'### [operator\\[-\\]=]({base}#L94){{target="_blank"}} {{#List-operator-index-from-end-assign}}',
             fenced("Element* push(Element element)"),
             "Adds the given element to the end of the list, returning a pointer to it.",
         ]:

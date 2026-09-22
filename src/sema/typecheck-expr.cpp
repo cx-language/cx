@@ -2607,15 +2607,43 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
     }
 
     Expr* indexExpr = expr.getIndex();
-    Type indexType = typecheckExpr(*indexExpr);
+    bool indexChecked = false;
 
-    if (auto converted = convert(indexExpr, ArrayType::getIndexType())) {
-        expr.setIndex(converted);
-        indexExpr = converted;
-    } else if (!indexType.isInteger()) {
-        ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
+    // A from-end index 'base[-offset]' accesses 'base[size - offset]'.
+    // Desugar constant-size arrays here while the offset is still unchecked,
+    // so it is checked exactly once as part of the difference. Other types
+    // resolve the operator[-] call built by the parser. (Non-array types
+    // returned above, so arrayType is always set here.)
+    if (expr.fromEnd) {
+        if (!arrayType.isConstantArray()) {
+            ERROR_RANGE(indexExpr->location, indexExpr->endLocation, "from-end index '[-]' is not supported for arrays of unknown size");
+        }
+        llvm::APSInt sizeValue(64, false);
+        sizeValue = arrayType.getArraySize();
+        auto* sizeLiteral = makeAST<IntLiteralExpr>(std::move(sizeValue), indexExpr->location);
+        sizeLiteral->endLocation = indexExpr->location;
+        auto* difference = makeAST<BinaryExpr>(BinaryOperator(Token::Minus), sizeLiteral, indexExpr, indexExpr->location);
+        difference->endLocation = indexExpr->endLocation;
+        typecheckExpr(*difference);
+        expr.setIndex(difference);
+        indexExpr = difference;
+        // Clear so re-checks (e.g. overload probing checking arguments per
+        // candidate) see a plain index instead of desugaring again.
+        expr.fromEnd = false;
+        indexChecked = true;
     }
-    // Wider integer indexes pass through unconverted; both backends accept any integer index type.
+
+    if (!indexChecked) {
+        Type indexType = typecheckExpr(*indexExpr);
+
+        if (auto converted = convert(indexExpr, ArrayType::getIndexType())) {
+            expr.setIndex(converted);
+            indexExpr = converted;
+        } else if (!indexType.isInteger()) {
+            ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
+        }
+        // Wider integer indexes pass through unconverted; both backends accept any integer index type.
+    }
 
     if (arrayType.isConstantArray()) {
         if (indexExpr->isConstant()) {

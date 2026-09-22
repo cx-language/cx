@@ -44,6 +44,13 @@ struct ArrayRef<Element>: Copyable {
         return data[index];
     }
 
+    /// Returns a reference to the element at the given offset from the end.
+    /// Offset 1 is the last element; offsets outside 1..size() abort.
+    Element* operator[-](int index) {
+        if index < 1 || index > size() indexOutOfBounds("operator[-]", index);
+        return data[size() - index];
+    }
+
     /// Returns a pointer to the first element.
     Element[*] data() {
         return data;
