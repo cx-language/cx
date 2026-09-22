@@ -69,7 +69,7 @@ function initializeCodeEditor(block) {
                         selector.blur();
                     }
                     if (selector.value === "more") {
-                        window.open("https://github.com/emillaine/cx/tree/main/examples", "_blank");
+                        window.open("https://github.com/cx-language/cx/tree/main/examples", "_blank");
                         selector.value = currentExample;
                         return;
                     }

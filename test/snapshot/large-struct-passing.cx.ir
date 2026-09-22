@@ -1,0 +1,173 @@
+
+Big _EN4main5identE3Big(Big x) {
+    Big* x_0 = alloca Big
+    store x to x_0
+    Big x.load = load x_0
+    return x.load
+}
+
+Outer _EN4main9makeOuterE() {
+    Outer* _0 = alloca Outer
+    Big* _1 = alloca Big
+    void _2 = call _EN4main3Big4initE3int3int3int3int3int(Big* _1, int 1, int 2, int 3, int 4, int 5)
+    Big .load = load _1
+    void _3 = call _EN4main5Outer4initE3Big3int(Outer* _0, Big .load, int 7)
+    Outer .load_0 = load _0
+    return .load_0
+}
+
+void _EN4main5Outer4initE3Big3int(Outer* this, Big item, int tag) {
+    Big* item_0 = alloca Big
+    int* tag_0 = alloca int
+    store item to item_0
+    store tag to tag_0
+    Big* item_1 = getelementptr this, 0
+    Big item.load = load item_0
+    store item.load to item_1
+    int* tag_1 = getelementptr this, 1
+    int tag.load = load tag_0
+    store tag.load to tag_1
+    return void
+}
+
+void _EN4main3Big4initE3int3int3int3int3int(Big* this, int a, int b, int c, int d, int e) {
+    int* a_0 = alloca int
+    int* b_0 = alloca int
+    int* c_0 = alloca int
+    int* d_0 = alloca int
+    int* e_0 = alloca int
+    store a to a_0
+    store b to b_0
+    store c to c_0
+    store d to d_0
+    store e to e_0
+    int* a_1 = getelementptr this, 0
+    int a.load = load a_0
+    store a.load to a_1
+    int* b_1 = getelementptr this, 1
+    int b.load = load b_0
+    store b.load to b_1
+    int* c_1 = getelementptr this, 2
+    int c.load = load c_0
+    store c.load to c_1
+    int* d_1 = getelementptr this, 3
+    int d.load = load d_0
+    store d.load to d_1
+    int* e_1 = getelementptr this, 4
+    int e.load = load e_0
+    store e.load to e_1
+    return void
+}
+
+Wide _EN4main9identWideE4Wide(Wide x) {
+    Wide* x_0 = alloca Wide
+    store x to x_0
+    Wide x.load = load x_0
+    return x.load
+}
+
+int main() {
+    Big* b = alloca Big
+    Big* c = alloca Big
+    bool* flag = alloca bool
+    Big* d = alloca Big
+    Wide* w = alloca Wide
+    Wide* v = alloca Wide
+    void _0 = call _EN4main3Big4initE3int3int3int3int3int(Big* b, int 1, int 2, int 3, int 4, int 5)
+    Big b.load = load b
+    Big _1 = call _EN4main5identE3Big(Big b.load)
+    store _1 to c
+    store bool true to flag
+    bool flag.load = load flag
+    br flag.load, if.then, if.else
+
+if.then:
+    Big b.load_0 = load b
+    br if.end(b.load_0)
+
+if.else:
+    Big c.load = load c
+    br if.end(c.load)
+
+if.end(Big if.result):
+    store if.result to d
+    int128 _2 = cast int 1 to int128
+    int128 _3 = cast int 2 to int128
+    void _4 = call _EN4main4Wide4initE6int1286int128(Wide* w, int128 _2, int128 _3)
+    Wide w.load = load w
+    Wide _5 = call _EN4main9identWideE4Wide(Wide w.load)
+    store _5 to v
+    int* a = getelementptr d, 0
+    int a.load = load a
+    Outer _6 = call _EN4main9makeOuterE()
+    Big item = extractvalue _6, 0
+    int a_0 = extractvalue item, 0
+    int64 _7 = cast a.load to int64
+    int64 _8 = cast a_0 to int64
+    int64 _9 = _7 + _8
+    int _10 = cast _9 to int
+    int64 _11 = cast _10 to int64
+    bool _12 = _9 != _11
+    bool _13 = !_12
+    bool overflow.condition = _13 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _14 = call _EN3std10assertFailEP4char(char* "integer overflow at large-struct-passing.cx:40:16
+")
+    unreachable
+
+overflow.success:
+    Outer _15 = call _EN4main9makeOuterE()
+    int tag = extractvalue _15, 1
+    int64 _16 = cast _10 to int64
+    int64 _17 = cast tag to int64
+    int64 _18 = _16 + _17
+    int _19 = cast _18 to int
+    int64 _20 = cast _19 to int64
+    bool _21 = _18 != _20
+    bool _22 = !_21
+    bool overflow.condition_0 = _22 == bool false
+    br overflow.condition_0, overflow.fail, overflow.success
+
+overflow.fail_0:
+    void _23 = call _EN3std10assertFailEP4char(char* "integer overflow at large-struct-passing.cx:40:37
+")
+    unreachable
+
+overflow.success_0:
+    int128* a_1 = getelementptr v, 0
+    int128 a.load_0 = load a_1
+    int _24 = cast a.load_0 to int
+    int64 _25 = cast _19 to int64
+    int64 _26 = cast _24 to int64
+    int64 _27 = _25 + _26
+    int _28 = cast _27 to int
+    int64 _29 = cast _28 to int64
+    bool _30 = _27 != _29
+    bool _31 = !_30
+    bool overflow.condition_1 = _31 == bool false
+    br overflow.condition_1, overflow.fail, overflow.success
+
+overflow.fail_1:
+    void _32 = call _EN3std10assertFailEP4char(char* "integer overflow at large-struct-passing.cx:40:55
+")
+    unreachable
+
+overflow.success_1:
+    return _28
+}
+
+void _EN4main4Wide4initE6int1286int128(Wide* this, int128 a, int128 b) {
+    int128* a_0 = alloca int128
+    int128* b_0 = alloca int128
+    store a to a_0
+    store b to b_0
+    int128* a_1 = getelementptr this, 0
+    int128 a.load = load a_0
+    store a.load to a_1
+    int128* b_1 = getelementptr this, 1
+    int128 b.load = load b_0
+    store b.load to b_1
+    return void
+}

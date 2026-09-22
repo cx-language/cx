@@ -26,7 +26,7 @@ Chunk*? worldChunk(World& w, int cx, int cz) {
     if cx < 0 || cz < 0 || cx >= w.chunksX || cz >= w.chunksZ {
         return null;
     }
-    return &w.chunks[cz * w.chunksX + cx];
+    return w.chunks[cz * w.chunksX + cx];
 }
 
 uint8 worldGet(World& w, int x, int y, int z) {
@@ -148,7 +148,69 @@ void pushFaceColor(List<float>& colors, Vec3 color) {
     }
 }
 
-void pushBlockFace(List<float>& positions, List<float>& normals, List<float>& colors, int x, int y, int z, int face, Vec3 color) {
+// UVs for one block face under orientation variant (0-7: four
+// rotations, plus mirror when variant >= 4). Corner order matches
+// pushQuad: triangulation and lighting are unaffected.
+void pushFaceUV(List<float>& uvs, int tile, int variant) {
+    var t = tileUV(tile);
+    var au = t.u0;
+    var av = t.v0;
+    var bu = t.u1;
+    var bv = t.v0;
+    var cu = t.u1;
+    var cv = t.v1;
+    var du = t.u0;
+    var dv = t.v1;
+    if variant >= 4 {
+        var tmp = au;
+        au = bu;
+        bu = tmp;
+        tmp = cu;
+        cu = du;
+        du = tmp;
+        variant -= 4;
+    }
+    if variant == 1 {
+        var tu = au;
+        var tv = av;
+        au = bu;
+        av = bv;
+        bu = cu;
+        bv = cv;
+        cu = du;
+        cv = dv;
+        du = tu;
+        dv = tv;
+    } else if variant == 2 {
+        var tu = au;
+        var tv = av;
+        au = cu;
+        av = cv;
+        cu = tu;
+        cv = tv;
+        tu = bu;
+        tv = bv;
+        bu = du;
+        bv = dv;
+        du = tu;
+        dv = tv;
+    } else if variant == 3 {
+        var tu = au;
+        var tv = av;
+        au = du;
+        av = dv;
+        du = cu;
+        dv = cv;
+        cu = bu;
+        cv = bv;
+        bu = tu;
+        bv = tv;
+    }
+    pushTriUV(uvs, au, av, bu, bv, cu, cv);
+    pushTriUV(uvs, au, av, cu, cv, du, dv);
+}
+
+void pushBlockFace(List<float>& positions, List<float>& normals, List<float>& colors, List<float>& uvs, int x, int y, int z, int face, int tile) {
     var ox = float(x);
     var oy = float(y);
     var oz = float(z);
@@ -183,7 +245,8 @@ void pushBlockFace(List<float>& positions, List<float>& normals, List<float>& co
             Vec3(ox, oy + 1.0, oz), Vec3(ox + 1.0, oy + 1.0, oz),
             Vec3(0.0, 0.0, -1.0));
     }
-    pushFaceColor(colors, color);
+    pushFaceColor(colors, Vec3(1.0, 1.0, 1.0));
+    pushFaceUV(uvs, tile, faceVariant(tile, x, y, z, face));
 }
 
 void buildChunkMesh(World& w, Chunk& c) {
@@ -194,6 +257,7 @@ void buildChunkMesh(World& w, Chunk& c) {
     var positions = List<float>();
     var normals = List<float>();
     var colors = List<float>();
+    var uvs = List<float>();
     int[6] dx = [0, 0, 1, -1, 0, 0];
     int[6] dy = [1, -1, 0, 0, 0, 0];
     int[6] dz = [0, 0, 0, 0, 1, -1];
@@ -209,13 +273,13 @@ void buildChunkMesh(World& w, Chunk& c) {
                 var gz = c.cz * chunkD + z;
                 for f in 0..6 {
                     if worldGet(w, gx + dx[f], gy + dy[f], gz + dz[f]) == blockAir {
-                        pushBlockFace(positions, normals, colors, gx, gy, gz, f, blockColor(b, f));
+                        pushBlockFace(positions, normals, colors, uvs, gx, gy, gz, f, tileForBlock(b, f));
                     }
                 }
             }
         }
     }
-    initMesh(c.mesh, positions, normals, colors);
+    initMesh(c.mesh, positions, normals, colors, uvs);
     c.hasMesh = true;
 }
 

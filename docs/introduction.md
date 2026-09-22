@@ -54,7 +54,7 @@ new code in it forever. Sooner or later it will be replaced by another language
 or languages (for writing new code).
 
 > "Within C++, there is a much smaller and cleaner language struggling to get out."
-> — _Bjarne Stroustrup_
+> - _Bjarne Stroustrup_
 
 cx is trying to be that language.
 

@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+void foo<T>(T x) {}
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: cannot refer to generic function 'foo' without specifying type arguments
+    var f = foo;
+}

@@ -8,7 +8,7 @@ define i32 @main() {
   %qux4 = alloca i32, align 4
   store i32 -1, ptr %foo, align 4
   store i32 0, ptr %bar, align 4
-  store i64 0, ptr %qux, align 4
+  store i64 0, ptr %qux, align 8
   store i8 0, ptr %qux2, align 1
   store i32 -1, ptr %qux3, align 4
   %qux3.load = load i32, ptr %qux3, align 4

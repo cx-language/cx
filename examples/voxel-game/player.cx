@@ -51,6 +51,26 @@ bool boxCollides(World& w, Vec3 pos) {
     return false;
 }
 
+// True when a solid block supports the player's feet.
+bool hasGround(World& w, Player& p) {
+    var eps = 0.001;
+    var x0 = int(floor(p.pos.x - 0.3 + eps));
+    var x1 = int(floor(p.pos.x + 0.3 - eps));
+    var z0 = int(floor(p.pos.z - 0.3 + eps));
+    var z1 = int(floor(p.pos.z + 0.3 - eps));
+    var gy = int(floor(p.pos.y)) - 1;
+    var x1e = x1 + 1;
+    var z1e = z1 + 1;
+    for bx in x0..x1e {
+        for bz in z0..z1e {
+            if worldGet(w, bx, gy, bz) != blockAir {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void moveAxis(World& w, Player& p, int axis, float delta) {
     var remaining = delta;
     while abs(remaining) > 0.0001 {
@@ -130,19 +150,32 @@ void updatePlayer(World& w, Player& p, Input& input, float dt) {
     p.vel.x = wish.x;
     p.vel.z = wish.z;
 
-    p.vel.y -= 22.0 * dt;
-    if p.vel.y < -30.0 {
-        p.vel.y = -30.0;
-    }
-    if input.jump && p.onGround {
+    var jumped = input.jump && p.onGround;
+    if jumped {
         p.vel.y = 8.0;
         p.onGround = false;
+    } else if p.onGround {
+        // Resting contact holds still instead of integrating gravity:
+        // re-falling onto the ground every frame sinks below the
+        // collision threshold on short frames and snaps back, which
+        // wobbles the camera.
+        p.vel.y = 0.0;
+    } else {
+        p.vel.y -= 22.0 * dt;
+        if p.vel.y < -30.0 {
+            p.vel.y = -30.0;
+        }
     }
 
-    p.onGround = false;
     moveAxis(w, p, 0, p.vel.x * dt);
     moveAxis(w, p, 2, p.vel.z * dt);
-    moveAxis(w, p, 1, p.vel.y * dt);
+    if p.onGround {
+        if !hasGround(w, p) {
+            p.onGround = false;
+        }
+    } else {
+        moveAxis(w, p, 1, p.vel.y * dt);
+    }
 }
 
 // Amanatides and Woo voxel traversal. Returns the hit cell and the

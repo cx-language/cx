@@ -64,38 +64,19 @@ fi
 echo "Compiling the cx frontend to WebAssembly..."
 mkdir -p "$WORK/frontend-obj" "$OUT"
 
-# Translation units of the embeddable frontend. This is everything needed to
-# parse, type-check, and generate C code, excluding the LLVM backend, the
+# Translation units of the embeddable frontend: everything needed to parse,
+# type-check, and generate C code, excluding the LLVM backend, the
 # command-line driver, and the Clang-based C importer (C header imports are
-# rejected with an error in WebAssembly builds).
-SRCS="
-    src/ast/ast-print.cpp
-    src/ast/decl.cpp
-    src/ast/expr.cpp
-    src/ast/mangle.cpp
-    src/ast/module.cpp
-    src/ast/stmt.cpp
-    src/ast/token.cpp
-    src/ast/type.cpp
-    src/backend/c-backend.cpp
-    src/backend/ir.cpp
-    src/backend/irgen.cpp
-    src/backend/irgen-decl.cpp
-    src/backend/irgen-expr.cpp
-    src/backend/irgen-stmt.cpp
-    src/driver/compile.cpp
-    src/build/config.cpp
-    src/parser/lex.cpp
-    src/parser/parse.cpp
-    src/sema/c-import.cpp
-    src/sema/null-analyzer.cpp
-    src/sema/typecheck.cpp
-    src/sema/typecheck-decl.cpp
-    src/sema/typecheck-expr.cpp
-    src/sema/typecheck-stmt.cpp
-    src/support/utility.cpp
-    src/wasm/api.cpp
-"
+# rejected with an error in WebAssembly builds). Globbed rather than listed so
+# new frontend files are picked up automatically; keep LLVM-backend files out
+# of the globbed directories or extend the exclusion below.
+SRCS=""
+for src in src/ast/*.cpp src/backend/*.cpp src/build/*.cpp src/driver/compile.cpp src/parser/*.cpp src/sema/*.cpp src/support/*.cpp src/wasm/api.cpp; do
+    case "$src" in
+    src/backend/llvm.cpp) continue ;;
+    esac
+    SRCS="$SRCS $src"
+done
 
 # Note: embind requires RTTI for type names unless told otherwise; the
 # codebase is -fno-rtti throughout and the bindings only use plain strings,

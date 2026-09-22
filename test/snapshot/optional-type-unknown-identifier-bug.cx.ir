@@ -30,6 +30,3 @@ void _EN4main1XI3intE4initE(X<int>* this) {
     store Y<int>* null to y
     return void
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

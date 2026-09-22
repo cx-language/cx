@@ -1,4 +1,4 @@
-// End-to-end test of docs/wasi-shim.js using the real in-browser C compiler
+// End-to-end test of website/wasi-shim.js using the real in-browser C compiler
 // (cc.wasm, built from xcc) and real cx output. Mirrors exactly what the
 // browser playground does: compile C to WebAssembly with cc.wasm, then run
 // the result.
@@ -15,8 +15,8 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const repoRoot = new URL("..", import.meta.url).pathname;
-const CxWasi = require(repoRoot + "docs/wasi-shim.js");
-const fflate = require(repoRoot + "docs/lib/fflate.js");
+const CxWasi = require(repoRoot + "website/wasi-shim.js");
+const fflate = require(repoRoot + "website/lib/fflate.js");
 
 const xccDir = process.argv[2];
 if (!xccDir) {

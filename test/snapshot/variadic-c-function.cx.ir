@@ -6,5 +6,3 @@ int main() {
     int _0 = call printf(char* "%d %f", int -3, float f.load)
     return int 0
 }
-
-extern int printf(char*)

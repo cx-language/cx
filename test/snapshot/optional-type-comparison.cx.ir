@@ -54,6 +54,3 @@ assert.success:
     bool _9 = .load == b.load.load
     return _9
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

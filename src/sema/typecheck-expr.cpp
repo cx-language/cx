@@ -231,13 +231,13 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
     case DeclKind::MethodDecl:
         return Type(llvm::cast<FunctionDecl>(decl)->getFunctionType(), Mutability::Mutable, Location());
     case DeclKind::GenericParamDecl:
-        llvm_unreachable("cannot refer to generic parameters yet");
+        ERROR(expr.location, "cannot refer to generic parameter '" << expr.identifier << "' as a value");
     case DeclKind::ConstructorDecl:
-        llvm_unreachable("cannot refer to constructors yet");
+        ERROR(expr.location, "cannot refer to constructor '" << expr.identifier << "' as a value");
     case DeclKind::DestructorDecl:
-        llvm_unreachable("cannot refer to destructors yet");
+        ERROR(expr.location, "cannot refer to destructor '" << expr.identifier << "' as a value");
     case DeclKind::FunctionTemplate:
-        llvm_unreachable("cannot refer to generic functions yet");
+        ERROR(expr.location, "cannot refer to generic function '" << expr.identifier << "' without specifying type arguments");
     case DeclKind::TypeDecl:
         return llvm::cast<TypeDecl>(decl)->getType();
     case DeclKind::TypeTemplate:
@@ -253,7 +253,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         return llvm::cast<FieldDecl>(decl)->type;
     }
     case DeclKind::ImportDecl:
-        llvm_unreachable("import statement validation not implemented yet");
+        ERROR(expr.location, "cannot refer to import '" << expr.identifier << "' as a value");
     }
     llvm_unreachable("all cases handled");
 }
@@ -466,7 +466,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (op == Token::Assignment) {
         typecheckAssignment(expr, expr.location);
-        return expr.getLHS().type;
+        return Type::getVoid();
     }
 
     if (isCompoundAssignmentOperator(op)) {
@@ -525,7 +525,6 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             return true;
         };
         // Only comparable nominally: same arity, same distinct non-empty element names. The lowering below accesses elements by name.
-        // FIXME: operands with side effects are evaluated once per element; bind them to temporaries.
         auto namesMatch = leftElements.size() == rightElements.size() && !leftElements.empty() && hasDistinctNames(leftElements)
                        && hasDistinctNames(rightElements) && llvm::all_of(llvm::zip_first(leftElements, rightElements), [](auto&& pair) {
                               auto&& [left, right] = pair;
@@ -535,15 +534,49 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         if (namesMatch) {
             // Lower tuple comparison to elementwise comparison (e.g. `(a == b) && (c == d)`).
             auto combiner = op == Token::Equal ? Token::AndAnd : Token::OrOr;
+            // Bind each side to a compiler-generated temporary so operands with
+            // side effects evaluate once; the element accesses below read the
+            // temporaries. (`__`-prefixed identifiers are reserved for the
+            // compiler, so these can't collide with user declarations.)
+            // Outside functions there is no scope for temporaries, but global
+            // initializers can only be constants, so comparing the operands
+            // directly is harmless there.
+            VarDecl* lhsTemp = nullptr;
+            VarDecl* rhsTemp = nullptr;
+            Expr* lhsBase = &expr.getLHS();
+            Expr* rhsBase = &expr.getRHS();
+            if (currentFunction) {
+                static uint64_t tupleTempCounter = 0;
+                lhsTemp = makeAST<VarDecl>(leftType, "__tuple_lhs_" + std::to_string(tupleTempCounter++), nullptr, currentFunction, AccessLevel::None,
+                                           *currentModule, expr.location);
+                rhsTemp = makeAST<VarDecl>(rightType, "__tuple_rhs_" + std::to_string(tupleTempCounter++), nullptr, currentFunction, AccessLevel::None,
+                                           *currentModule, expr.location);
+                typecheckVarDecl(*lhsTemp);
+                typecheckVarDecl(*rhsTemp);
+                // The temporaries have no initializer; codegen binds them to
+                // the operand values before emitting the lowering.
+                definitelyAssignedDecls.insert(lhsTemp);
+                definitelyAssignedDecls.insert(rhsTemp);
+                lhsBase = makeAST<VarExpr>(std::string(lhsTemp->getName()), expr.location);
+                rhsBase = makeAST<VarExpr>(std::string(rhsTemp->getName()), expr.location);
+            }
             Expr* result = nullptr;
             for (size_t i = 0; i < leftElements.size(); ++i) {
-                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(&expr.getLHS(), std::string(leftElements[i].name), expr.location),
-                                                       makeAST<MemberExpr>(&expr.getRHS(), std::string(rightElements[i].name), expr.location), expr.location);
+                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(lhsBase, std::string(leftElements[i].name), expr.location),
+                                                       makeAST<MemberExpr>(rhsBase, std::string(rightElements[i].name), expr.location), expr.location);
                 result = result ? makeAST<BinaryExpr>(combiner, result, comparison, expr.location) : comparison;
             }
             ASSERT(result);
-            expr = llvm::cast<BinaryExpr>(*result);
-            return typecheckBinaryExpr(expr);
+            if (!currentFunction) {
+                expr = llvm::cast<BinaryExpr>(*result);
+                return typecheckBinaryExpr(expr);
+            }
+            Type loweredType = typecheckBinaryExpr(llvm::cast<BinaryExpr>(*result));
+            ASSERT(loweredType.isBool());
+            expr.tupleTempLHS = lhsTemp;
+            expr.tupleTempRHS = rhsTemp;
+            expr.tupleComparisonLowering = result;
+            return Type::getBool();
         }
     }
 
@@ -2730,7 +2763,8 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
                 }
             }
         }
-        return typecheckCallExpr(expr);
+        typecheckCallExpr(expr);
+        return Type::getVoid();
     }
 
     typecheckExpr(*expr.getValue());
@@ -2748,7 +2782,7 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
         }
     }
 
-    return elementType;
+    return Type::getVoid();
 }
 
 Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
@@ -3152,13 +3186,6 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
 }
 
 void Typechecker::setMoved(Expr* expr, bool isMoved) {
-    // An assignment evaluates to its left-hand side, so moving the result moves from there.
-    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(expr)) {
-        if (binaryExpr->op == Token::Assignment) {
-            setMoved(&binaryExpr->getLHS(), isMoved);
-            return;
-        }
-    }
     if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
         if (cast->castKind == ImplicitCastExpr::OptionalWrap) {
             setMoved(cast->operand, isMoved);

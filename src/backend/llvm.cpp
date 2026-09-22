@@ -5,11 +5,30 @@
 #include <llvm/IR/CFG.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/TargetParser/Host.h>
 #pragma warning(pop)
 
 #include "ir.h"
 
 using namespace cx;
+
+static const llvm::DataLayout& getHostDataLayout() {
+    static const llvm::DataLayout* dataLayout = [] {
+        llvm::InitializeNativeTarget();
+        llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
+        std::string errorMessage;
+        auto* target = llvm::TargetRegistry::lookupTarget(triple, errorMessage);
+        ASSERT(target && "couldn't lookup native target");
+        llvm::TargetOptions options;
+        auto* targetMachine = target->createTargetMachine(triple, "generic", "", options, llvm::Reloc::PIC_);
+        ASSERT(targetMachine && "couldn't create target machine for host data layout");
+        return new llvm::DataLayout(targetMachine->createDataLayout());
+    }();
+    return *dataLayout;
+}
 
 llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
     return llvm::StringSwitch<llvm::Type*>(name)
@@ -66,7 +85,18 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
     case IRTypeKind::IRFunctionType: {
         auto functionType = llvm::cast<IRFunctionType>(type);
         auto returnType = getLLVMType(functionType->returnType);
-        auto paramTypes = map(functionType->paramTypes, [&](IRType* p) { return getLLVMType(p); });
+        std::vector<llvm::Type*> paramTypes;
+        paramTypes.reserve(functionType->paramTypes.size() + 1);
+        for (IRType* param : functionType->paramTypes) {
+            auto paramLLVMType = getLLVMType(param);
+            // Larger aggregates are passed indirectly to avoid materializing
+            // large SSA copies that expand during codegen.
+            if (shouldPassIndirectly(paramLLVMType)) {
+                paramTypes.push_back(llvm::PointerType::get(ctx, 0));
+            } else {
+                paramTypes.push_back(paramLLVMType);
+            }
+        }
         // Use hidden sret pointer parameter to return larger structs to be compatible with the C calling convention.
         if (shouldUseSret(returnType)) {
             if (isSret) *isSret = true;
@@ -95,18 +125,22 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
         auto structType = unionType->name.empty() ? llvm::StructType::create(ctx) : llvm::StructType::create(ctx, unionType->name);
         structs.try_emplace(unionType, structType);
 
-        llvm::Type* largestFieldType;
-        int largestFieldSize = 0;
+        llvm::Type* largestFieldType = nullptr;
+        uint64_t largestFieldSize = 0;
         for (auto& field : unionType->getFields()) {
             auto fieldType = getLLVMType(field.type);
-            auto size = module->getDataLayout().getTypeAllocSize(fieldType);
+            auto size = getHostDataLayout().getTypeAllocSize(fieldType);
             if (size > largestFieldSize) {
                 largestFieldType = fieldType;
                 largestFieldSize = size;
             }
         }
 
-        structType->setBody(largestFieldType, largestFieldSize);
+        if (largestFieldType) {
+            structType->setBody(largestFieldType, false);
+        } else {
+            structType->setBody({}, false);
+        }
         return structType;
     }
     }
@@ -115,7 +149,30 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
 }
 
 bool LLVMGenerator::shouldUseSret(llvm::Type* returnType) {
-    return !returnType->isVoidTy() && module->getDataLayout().getTypeAllocSize(returnType) > 16;
+    return !returnType->isVoidTy() && getHostDataLayout().getTypeAllocSize(returnType) > 16;
+}
+
+bool LLVMGenerator::shouldPassIndirectly(llvm::Type* type) {
+    if (type->isVoidTy()) return false;
+    // Only aggregates can be large; scalars are always passed directly.
+    if (!type->isStructTy() && !type->isArrayTy()) return false;
+    return getHostDataLayout().getTypeAllocSize(type) > 16;
+}
+
+void LLVMGenerator::emitMemcpy(llvm::Value* dest, llvm::Value* src, llvm::Type* type) {
+    auto& layout = getHostDataLayout();
+    auto size = layout.getTypeAllocSize(type);
+    auto align = layout.getABITypeAlign(type).value();
+    builder.CreateMemCpy(dest, llvm::MaybeAlign(align), src, llvm::MaybeAlign(align), llvm::ConstantInt::get(llvm::Type::getInt64Ty(ctx), size));
+}
+
+llvm::Value* LLVMGenerator::materializeConstant(llvm::Constant* constant, llvm::Type* type) {
+    auto* alloca = builder.CreateAlloca(type, nullptr, "const.alloca");
+    // Undef needs no store: uninitialized memory already represents it.
+    if (!llvm::isa<llvm::UndefValue>(constant)) {
+        builder.CreateStore(constant, alloca);
+    }
+    return alloca;
 }
 
 llvm::Function* LLVMGenerator::getFunction(const Function* function) {
@@ -132,11 +189,19 @@ llvm::Function* LLVMGenerator::getFunction(const Function* function) {
     }
     for (auto param = function->params.begin(); arg != argsEnd; ++param, ++arg) {
         arg->setName(param->name);
+        auto paramLLVMType = getLLVMType(param->type);
+        if (shouldPassIndirectly(paramLLVMType)) {
+            arg->addAttr(llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
+            auto align = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
+            arg->addAttr(llvm::Attribute::getWithAlignment(ctx, llvm::Align(align)));
+        }
     }
 
     if (isSret) {
         auto structType = getLLVMType(function->returnType);
         llvmFunction->getArg(0)->addAttr(llvm::Attribute::get(ctx, llvm::Attribute::StructRet, structType));
+        auto align = getHostDataLayout().getABITypeAlign(structType).value();
+        llvmFunction->getArg(0)->addAttr(llvm::Attribute::getWithAlignment(ctx, llvm::Align(align)));
     }
     return llvmFunction;
 }
@@ -157,10 +222,23 @@ void LLVMGenerator::codegenFunctionBody(const Function* function, llvm::Function
         builder.SetInsertPoint(llvmBlock);
 
         if (block->parameter) {
-            auto phi = builder.CreatePHI(getLLVMType(block->parameter->type), 2, block->parameter->name);
+            auto paramLLVMType = getLLVMType(block->parameter->type);
+            // Larger aggregates are represented as pointers to avoid large SSA copies.
+            bool indirect = shouldPassIndirectly(paramLLVMType);
+            auto phiType = indirect ? llvm::PointerType::get(ctx, 0) : paramLLVMType;
+            auto phi = builder.CreatePHI(phiType, 2, block->parameter->name);
             for (auto pred : block->predecessors) {
                 auto value = getValue(pred->body.back()->getBranchArgument());
                 auto target = getBasicBlock(pred);
+                if (indirect && llvm::isa<llvm::Constant>(value)) {
+                    // Constants have no dependencies, so materialize them at the top of the
+                    // entry block, which dominates the PHI. (The current insert point past
+                    // the PHI does not.)
+                    llvm::IRBuilder<>::InsertPointGuard guard(builder);
+                    auto& entryBlock = llvmFunction->getEntryBlock();
+                    builder.SetInsertPoint(&entryBlock, entryBlock.begin());
+                    value = materializeConstant(llvm::cast<llvm::Constant>(value), paramLLVMType);
+                }
                 phi->addIncoming(value, target);
             }
             generatedValues.emplace(block->parameter, phi);
@@ -206,7 +284,14 @@ llvm::Value* LLVMGenerator::codegenAlloca(const AllocaInst* inst) {
 llvm::Value* LLVMGenerator::codegenReturn(const ReturnInst* inst) {
     if (isCurrentFunctionSret) {
         auto currentFunction = builder.GetInsertBlock()->getParent();
-        builder.CreateStore(getValue(inst->value), currentFunction->getArg(0));
+        auto sretPtr = currentFunction->getArg(0);
+        auto returnLLVMType = getLLVMType(inst->value->getType());
+        auto value = getValue(inst->value);
+        if (shouldPassIndirectly(returnLLVMType) && !llvm::isa<llvm::Constant>(value)) {
+            emitMemcpy(sretPtr, value, returnLLVMType);
+        } else {
+            builder.CreateStore(value, sretPtr);
+        }
         return builder.CreateRetVoid();
     }
     return inst->value ? builder.CreateRet(getValue(inst->value)) : builder.CreateRetVoid();
@@ -239,35 +324,125 @@ llvm::Value* LLVMGenerator::codegenSwitch(const SwitchInst* inst) {
 }
 
 llvm::Value* LLVMGenerator::codegenLoad(const LoadInst* inst) {
-    return builder.CreateLoad(getLLVMType(inst->getType()), getValue(inst->value), inst->name);
+    auto llvmType = getLLVMType(inst->getType());
+    if (shouldPassIndirectly(llvmType)) {
+        // Larger aggregates stay in memory to avoid materializing large SSA
+        // copies that expand during codegen. Copy to a fresh alloca: returning
+        // the source pointer would let later stores observably mutate the value.
+        auto dest = builder.CreateAlloca(llvmType, nullptr, inst->name);
+        emitMemcpy(dest, getValue(inst->value), llvmType);
+        return dest;
+    }
+    return builder.CreateLoad(llvmType, getValue(inst->value), inst->name);
 }
 
 llvm::Value* LLVMGenerator::codegenStore(const StoreInst* inst) {
+    if (inst->value->kind == ValueKind::Undefined) {
+        return nullptr;
+    }
+    auto valueLLVMType = getLLVMType(inst->value->getType());
     auto value = getValue(inst->value);
     auto pointer = getValue(inst->pointer);
+    if (shouldPassIndirectly(valueLLVMType)) {
+        // Constant aggregates store directly: unlike SSA values, they don't
+        // expand into scalar operations during codegen.
+        if (llvm::isa<llvm::Constant>(value)) {
+            return builder.CreateStore(value, pointer);
+        }
+        emitMemcpy(pointer, value, valueLLVMType);
+        return nullptr;
+    }
     return builder.CreateStore(value, pointer);
 }
 
 llvm::Value* LLVMGenerator::codegenInsert(const InsertInst* inst) {
+    auto aggregateLLVMType = getLLVMType(inst->aggregate->getType());
+    if (shouldPassIndirectly(aggregateLLVMType)) {
+        auto aggregate = getValue(inst->aggregate);
+        auto value = getValue(inst->value);
+        if (llvm::isa<llvm::Constant>(aggregate) && llvm::isa<llvm::Constant>(value)) {
+            // Fold to a constant instead of emitting code. Global initializers
+            // have no insert block, so this path must not emit instructions.
+            return builder.CreateInsertValue(aggregate, value, inst->index);
+        }
+        ASSERT(builder.GetInsertBlock());
+        auto tempAlloca = builder.CreateAlloca(aggregateLLVMType, nullptr, "insert.alloca");
+        if (inst->aggregate->kind != ValueKind::Undefined) {
+            if (auto* constant = llvm::dyn_cast<llvm::Constant>(aggregate)) {
+                builder.CreateStore(constant, tempAlloca);
+            } else {
+                emitMemcpy(tempAlloca, aggregate, aggregateLLVMType);
+            }
+        }
+        auto fieldPtr = builder.CreateConstInBoundsGEP2_32(aggregateLLVMType, tempAlloca, 0, inst->index, "insert.gep");
+        auto fieldLLVMType = getLLVMType(inst->value->getType());
+        if (inst->value->kind == ValueKind::Undefined) {
+            // Leave the field uninitialized.
+        } else if (shouldPassIndirectly(fieldLLVMType)) {
+            if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
+                builder.CreateStore(constant, fieldPtr);
+            } else {
+                emitMemcpy(fieldPtr, value, fieldLLVMType);
+            }
+        } else {
+            builder.CreateStore(value, fieldPtr);
+        }
+        return tempAlloca;
+    }
     auto aggregate = getValue(inst->aggregate);
     auto value = getValue(inst->value);
     return builder.CreateInsertValue(aggregate, value, inst->index);
 }
 
 llvm::Value* LLVMGenerator::codegenExtract(const ExtractInst* inst) {
+    auto aggregateLLVMType = getLLVMType(inst->aggregate->getType());
+    if (shouldPassIndirectly(aggregateLLVMType)) {
+        auto aggregatePtr = getValue(inst->aggregate);
+        if (llvm::isa<llvm::Constant>(aggregatePtr)) {
+            return builder.CreateExtractValue(aggregatePtr, inst->index, inst->name);
+        }
+        auto fieldPtr = builder.CreateConstInBoundsGEP2_32(aggregateLLVMType, aggregatePtr, 0, inst->index, inst->name);
+        auto fieldLLVMType = getLLVMType(inst->getType());
+        if (shouldPassIndirectly(fieldLLVMType)) {
+            auto tempAlloca = builder.CreateAlloca(fieldLLVMType, nullptr, "extract.alloca");
+            emitMemcpy(tempAlloca, fieldPtr, fieldLLVMType);
+            return tempAlloca;
+        }
+        return builder.CreateLoad(fieldLLVMType, fieldPtr, inst->name);
+    }
     auto aggregate = getValue(inst->aggregate);
     return builder.CreateExtractValue(aggregate, inst->index, inst->name);
 }
 
 llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
     auto function = getValue(inst->function);
-    auto args = map(inst->args, [&](auto* arg) { return getValue(arg); });
     auto cxFunctionType = inst->function->getType();
     if (cxFunctionType->isPointerType()) cxFunctionType = cxFunctionType->getPointee();
     ASSERT(cxFunctionType->isFunctionType());
 
     bool isSret;
     auto* llvmFunctionType = llvm::cast<llvm::FunctionType>(getLLVMType(cxFunctionType, &isSret));
+    auto paramTypes = cxFunctionType->getParamTypes();
+    std::vector<llvm::Value*> args;
+    args.reserve(inst->args.size() + 1);
+    for (size_t i = 0; i < inst->args.size(); ++i) {
+        auto value = getValue(inst->args[i]);
+        // Named arguments are reordered to parameter order, so fixed parameters
+        // line up positionally and variadic extras come last.
+        bool isExtra = i >= paramTypes.size();
+        auto argLLVMType = isExtra ? getLLVMType(inst->args[i]->getType()) : getLLVMType(paramTypes[i]);
+        if (shouldPassIndirectly(argLLVMType)) {
+            if (isExtra) {
+                // C varargs passes aggregates by value rather than by pointer.
+                if (!llvm::isa<llvm::Constant>(value)) {
+                    value = builder.CreateLoad(argLLVMType, value);
+                }
+            } else if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
+                value = materializeConstant(constant, argLLVMType);
+            }
+        }
+        args.push_back(value);
+    }
     if (isSret) {
         auto sretType = getLLVMType(cxFunctionType->getReturnType());
         auto sretAlloca = builder.CreateAlloca(sretType, nullptr, "sret.alloca");
@@ -275,9 +450,34 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         auto* call = builder.CreateCall(llvmFunctionType, function, args);
         // Direct calls inherit this from the callee, but indirect calls through function pointers can't.
         call->addParamAttr(0, llvm::Attribute::get(ctx, llvm::Attribute::StructRet, sretType));
+        auto align = getHostDataLayout().getABITypeAlign(sretType).value();
+        call->addParamAttr(0, llvm::Attribute::getWithAlignment(ctx, llvm::Align(align)));
+        for (size_t i = 0; i < paramTypes.size(); ++i) {
+            auto paramLLVMType = getLLVMType(paramTypes[i]);
+            if (shouldPassIndirectly(paramLLVMType)) {
+                // +1 for the hidden sret parameter.
+                unsigned index = static_cast<unsigned>(i + 1);
+                call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
+                auto paramAlign = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
+                call->addParamAttr(index, llvm::Attribute::getWithAlignment(ctx, llvm::Align(paramAlign)));
+            }
+        }
+        if (shouldPassIndirectly(sretType)) {
+            return sretAlloca;
+        }
         return builder.CreateLoad(sretType, sretAlloca, "sret.load");
     } else {
-        return builder.CreateCall(llvmFunctionType, function, args);
+        auto* call = builder.CreateCall(llvmFunctionType, function, args);
+        for (size_t i = 0; i < paramTypes.size(); ++i) {
+            auto paramLLVMType = getLLVMType(paramTypes[i]);
+            if (shouldPassIndirectly(paramLLVMType)) {
+                unsigned index = static_cast<unsigned>(i);
+                call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
+                auto paramAlign = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
+                call->addParamAttr(index, llvm::Attribute::getWithAlignment(ctx, llvm::Align(paramAlign)));
+            }
+        }
+        return call;
     }
 }
 
@@ -453,6 +653,11 @@ llvm::Value* LLVMGenerator::codegenUndefined(const Undefined* inst) {
 }
 
 llvm::Value* LLVMGenerator::getValue(const Value* value) {
+    // Functions are shared across IR modules (see IRGenerator::getFunction), so they
+    // must resolve against the current LLVM module every time: the cache below would
+    // otherwise return another module's function. getFunction already deduplicates
+    // within the module, making the bypass equivalent for single-module programs.
+    if (value->kind == ValueKind::Function) return getFunction(llvm::cast<Function>(value));
     auto it = generatedValues.find(value);
     if (it != generatedValues.end()) return it->second;
     auto llvmValue = codegenInst(value);
@@ -524,6 +729,11 @@ llvm::Value* LLVMGenerator::codegenInst(const Value* value) {
 llvm::Module& LLVMGenerator::codegenModule(const IRModule& sourceModule) {
     ASSERT(!module);
     module = new llvm::Module(sourceModule.name, ctx);
+    // Set the host target before lowering any types: IRBuilder derives alloca
+    // and load/store alignments from the module layout, which must agree with
+    // the layout used for indirect-passing decisions and memcpy alignments.
+    module->setTargetTriple(llvm::Triple(llvm::sys::getDefaultTargetTriple()));
+    module->setDataLayout(getHostDataLayout());
 
     for (auto* globalVariable : sourceModule.globalVariables) {
         getValue(globalVariable);

@@ -310,7 +310,7 @@ void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
     // user code stays exempt; currentModule is the instantiation site there.
     Module* module = currentFunction ? currentFunction->getModule() : currentModule;
     if (!options.warnUnusedResult || module->name == "std") return;
-    if (!type || type.isVoid() || type.isNeverType() || expr.isAssignment() || expr.kind == ExprKind::IndexAssignmentExpr) return;
+    if (!type || type.isVoid() || type.isNeverType()) return;
     WARN(expr.location, "unused result of type '" << type << "'");
 }
 

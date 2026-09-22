@@ -47,28 +47,10 @@ overflow.success:
     br loop.increment
 }
 
-RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
-}
-
-bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* this) {
-}
-
-int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* this) {
-}
-
-void _EN3std10assertFailEP4char(char* message) {
-}
-
-void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* this) {
-}
-
 int main() {
     Range<int>* _0 = alloca Range<int>
     void _1 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int 5)
     Range<int> .load = load _0
     int _2 = call _EN4main3fooE5RangeI3intE(Range<int> .load)
     return _2
-}
-
-void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
 }

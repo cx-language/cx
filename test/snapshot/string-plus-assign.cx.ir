@@ -11,15 +11,3 @@ int main() {
     void _3 = call _EN3std12StringBuffer6deinitE(StringBuffer* a)
     return int 0
 }
-
-void _EN3std12StringBuffer6deinitE(StringBuffer* this) {
-}
-
-void _EN3std12StringBuffer4initE(StringBuffer* this) {
-}
-
-StringBuffer _EN3stdplE12StringBuffer6string(StringBuffer a, string b) {
-}
-
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
-}

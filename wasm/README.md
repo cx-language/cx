@@ -19,11 +19,11 @@ cx source --(1)--> C code --(2)--> WebAssembly module --(3)--> output
 2. **C to WebAssembly** (`cc.wasm` + `wcc-files.zip`, built from
    [xcc](https://github.com/tyfkda/xcc)): xcc's single-file C compiler,
    self-hosted to WebAssembly, compiles the generated C to a WASI module.
-   It runs on the minimal WASI implementation in `docs/wasi-shim.js`.
-3. **Run** (`docs/wasi-shim.js`): the compiled module is executed with
+   It runs on the minimal WASI implementation in `website/wasi-shim.js`.
+3. **Run** (`website/wasi-shim.js`): the compiled module is executed with
    captured stdout/stderr.
 
-The browser glue lives in `docs/`: `playground.js` (main-thread API),
+The browser glue lives in `website/`: `playground.js` (main-thread API),
 `playground-worker.js` (runs the pipeline off the main thread with a
 timeout), `playground-pipeline.js` (shared, testable pipeline stages), and
 `wasi-shim.js` (minimal WASI preview1 + in-memory file system).
@@ -53,14 +53,14 @@ one half:
 
 `build-frontend.sh` builds LLVM's `LLVMSupport` for WebAssembly from source
 (matching `LLVM_VERSION`, default 23.1.1) and links it with the embeddable
-frontend translation units listed in the script. The cx standard library
+frontend translation units globbed in the script. The cx standard library
 (`std/`) is preloaded into the module's file system at `/cx/std`.
 
 `build-xcc-dist.sh` clones xcc at the pinned revision (`XCC_REF`), builds
 `wcc` natively, self-hosts it to `cc.wasm` (`make wcc-gen2`), and packs its
 headers and libraries into `wcc-files.zip`.
 
-Both scripts default to writing into `wasm/dist/`, which `docs/build-website.sh`
+Both scripts default to writing into `wasm/dist/`, which `website/build-website.sh`
 copies into the generated site. Build products are git-ignored; the website
 CI builds them (see `.github/workflows/build.yml`).
 

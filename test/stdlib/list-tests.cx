@@ -8,7 +8,8 @@ struct C {
 void main() {
     testListInsertionAndRemoval();
     testListInitFromLiteral();
-    testPushArray();
+    testAppendArray();
+    testNestedPushAppend();
     testListInitWithRepeatedValue();
     testArrayIterator();
     testListMutatingIteration();
@@ -49,14 +50,22 @@ void testListInitFromLiteral() {
     assert(a[2] == 3);
 }
 
-void testPushArray() {
+void testAppendArray() {
     var a = List([1, 2]);
     var b = [3, 4, 5];
-    a.push(b);
+    a.append(b);
 
     assert(a.size() == 5);
     assert(a[2] == 3);
     assert(a[4] == 5);
+}
+
+void testNestedPushAppend() {
+    var a = List<int[]>();
+    a.push([]);
+    assert(a.size() == 1 && a[0].size() == 0);
+    a.append([]);
+    assert(a.size() == 1);
 }
 
 void testListInitWithRepeatedValue() {

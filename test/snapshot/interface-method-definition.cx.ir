@@ -36,6 +36,3 @@ overflow.success:
 int _EN4main1B1fE(B* this) {
     return int 21
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

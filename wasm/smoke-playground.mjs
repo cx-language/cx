@@ -9,9 +9,9 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const repoRoot = new URL("..", import.meta.url).pathname;
-const CxWasi = require(repoRoot + "docs/wasi-shim.js");
-const CxPipeline = require(repoRoot + "docs/playground-pipeline.js");
-const fflate = require(repoRoot + "docs/lib/fflate.js");
+const CxWasi = require(repoRoot + "website/wasi-shim.js");
+const CxPipeline = require(repoRoot + "website/playground-pipeline.js");
+const fflate = require(repoRoot + "website/lib/fflate.js");
 
 const distDir = process.argv[2];
 if (!distDir) {

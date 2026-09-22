@@ -1,5 +1,7 @@
 // RUN: true
 
-var name = "build-nested-sub"
-
-var defines = ["FROM_BUILD_FILE"]
+// An ordinary source file despite the name: only the package root's
+// build.cx is the build config.
+void nestedHelper() {
+    println("nested");
+}
