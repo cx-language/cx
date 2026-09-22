@@ -62,11 +62,18 @@ function initializeCodeEditor(block) {
                 selector.addEventListener("keydown", function() {
                     selectedWithPointer = false;
                 });
+                var currentExample = selector.value;
                 selector.onchange = function() {
                     if (selectedWithPointer) {
                         selectedWithPointer = false;
                         selector.blur();
                     }
+                    if (selector.value === "more") {
+                        window.open("https://github.com/emillaine/cx/tree/main/examples", "_blank");
+                        selector.value = currentExample;
+                        return;
+                    }
+                    currentExample = selector.value;
                     var example = CxExamples[Number(selector.value)];
                     if (!example) return;
                     editor.setValue(example.code);

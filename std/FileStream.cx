@@ -1,6 +1,7 @@
 /// Writes formatted output to a file.
 struct OutputFileStream {
     private FILE*? file;
+    private bool ownsFile;
 
     /// Opens the given file descriptor for writing.
     OutputFileStream(public int fileDescriptor) {
@@ -10,12 +11,18 @@ struct OutputFileStream {
             println("Couldn't open file descriptor ", fileDescriptor, " for writing");
             abort();
         }
+        ownsFile = true;
+    }
+
+    OutputFileStream(public FILE* file, public bool ownsFile) {
+        this.file = file;
+        this.ownsFile = ownsFile;
     }
 
     /// Closes the file.
     ~OutputFileStream() {
-        if file {
-            fclose(file);
+        if ownsFile && file {
+            fclose(file!);
         }
     }
 
@@ -27,12 +34,28 @@ struct OutputFileStream {
     }
 }
 
+private FILE*? stdoutFile = null;
+private FILE*? stderrFile = null;
+
+/// Opens the standard file descriptor on first use, caching the result so repeated calls share one file.
+private FILE* openStandardFile(FILE*?* cachedFile, int fileDescriptor) {
+    if !*cachedFile {
+        *cachedFile = fdopen(fileDescriptor, "w");
+
+        if !*cachedFile { // TODO: Error handling
+            println("Couldn't open file descriptor ", fileDescriptor, " for writing");
+            abort();
+        }
+    }
+    return (*cachedFile)!;
+}
+
 /// Returns a stream writing to standard output.
 OutputFileStream stdout() {
-    return OutputFileStream(fileDescriptor = 1);
+    return OutputFileStream(file = openStandardFile(&stdoutFile, 1), ownsFile = false);
 }
 
 /// Returns a stream writing to standard error.
 OutputFileStream stderr() {
-    return OutputFileStream(fileDescriptor = 2);
+    return OutputFileStream(file = openStandardFile(&stderrFile, 2), ownsFile = false);
 }

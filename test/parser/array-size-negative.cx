@@ -1,0 +1,9 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+// CHECK-NOT: array-size-negative.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    // CHECK: [[@LINE+1]]:11: error: array size must be non-negative
+    int[1 - 2] a;
+}
+
+// CHECK-NOT: array-size-negative.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

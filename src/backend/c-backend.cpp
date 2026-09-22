@@ -71,7 +71,7 @@ void CGenerator::codegenModule(const IRModule& module) {
 }
 
 void CGenerator::codegenAlloca(const AllocaInst* inst) {
-    auto name = (!inst->name.empty() ? inst->name : "_alloca") + std::to_string(valueSuffixCounter++);
+    auto name = claimSuffixedName(!inst->name.empty() ? inst->name : "_alloca");
     if (dispatchMode) {
         // The declaration is hoisted (see codegenFunctionDispatch); only register the name.
         emittedValues.insert({inst, "(&" + name + ")"});
@@ -704,7 +704,23 @@ const std::string& CGenerator::getOrCreateTempName(const Value* inst, llvm::Stri
     if (it != emittedValues.end()) {
         return it->second;
     }
-    return emittedValues.insert({inst, prefix.str() + std::to_string(valueSuffixCounter++)}).first->second;
+    return emittedValues.insert({inst, claimSuffixedName(prefix)}).first->second;
+}
+
+std::string CGenerator::claimSuffixedName(llvm::StringRef base) {
+    std::string name;
+    do {
+        name = base.str() + std::to_string(valueSuffixCounter++);
+    } while (!usedValueNames.insert(name).second);
+    return name;
+}
+
+void CGenerator::resetValueNaming(const Function* function) {
+    valueSuffixCounter = 0;
+    usedValueNames.clear();
+    for (auto& param : function->params) {
+        usedValueNames.insert(param.name);
+    }
 }
 
 const std::string& CGenerator::getOrCreateTypeName(IRType* type, const std::string& name, llvm::StringRef prefix) {
@@ -822,7 +838,6 @@ void CGenerator::codegenFunctionPrototype(const Function* function) {
 }
 
 void CGenerator::codegenFunction(const Function* function) {
-    emittedBlockParamNames.clear();
     stream << '\n';
     codegenFunctionPrototype(function);
     if (function->isExtern) {
@@ -833,7 +848,7 @@ void CGenerator::codegenFunction(const Function* function) {
         return;
     } else {
         stream << " {\n";
-        valueSuffixCounter = 0;
+        resetValueNaming(function);
         collectBlockParams(function);
         copyArrayParams(function);
         for (auto* block : function->body) {
@@ -866,10 +881,10 @@ const std::string& CGenerator::getBlockParamName(const Parameter* param) {
     // with a numeric suffix.
     std::string base = sanitizeBlockParamName(param->name);
     std::string name = base;
-    for (int suffix = 0; emittedBlockParamNames.contains(name); ++suffix) {
+    for (int suffix = 0; usedValueNames.contains(name); ++suffix) {
         name = base + std::to_string(suffix);
     }
-    emittedBlockParamNames.insert(name);
+    usedValueNames.insert(name);
     return emittedValues.insert({param, std::move(name)}).first->second;
 }
 
@@ -890,6 +905,8 @@ void CGenerator::copyArrayParams(const Function* function) {
     for (auto& param : function->params) {
         if (!param.type->isArrayType()) continue;
         std::string copyName = "_cx_arg_" + param.name;
+        while (!usedValueNames.insert(copyName).second)
+            copyName += "_";
         stream.indent(4);
         codegenType(stream, param.type, true);
         stream << ' ' << copyName;
@@ -902,7 +919,7 @@ void CGenerator::copyArrayParams(const Function* function) {
 
 void CGenerator::codegenFunctionDispatch(const Function* function) {
     stream << " {\n";
-    valueSuffixCounter = 0;
+    resetValueNaming(function);
     copyArrayParams(function);
     dispatchBlockIds.clear();
 
@@ -919,7 +936,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             switch (inst->kind) {
             case ValueKind::AllocaInst: {
                 auto* alloca = llvm::cast<AllocaInst>(inst);
-                auto name = (!alloca->name.empty() ? alloca->name : "_alloca") + std::to_string(valueSuffixCounter++);
+                auto name = claimSuffixedName(!alloca->name.empty() ? alloca->name : "_alloca");
                 stream.indent(4);
                 codegenType(stream, alloca->allocatedType, true);
                 stream << ' ' << name;
@@ -931,7 +948,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             case ValueKind::CallInst: {
                 auto* call = llvm::cast<CallInst>(inst);
                 if (!hasReturnValue(call)) break;
-                auto name = "_call" + std::to_string(valueSuffixCounter++);
+                auto name = claimSuffixedName("_call");
                 stream.indent(4);
                 codegenTempDeclarationForType(call->getType(), name);
                 stream << ";\n";
@@ -943,12 +960,11 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             case ValueKind::BinaryInst:
             case ValueKind::UnaryInst:
             case ValueKind::CastInst: {
-                auto name = (inst->kind == ValueKind::LoadInst      ? "_load"
-                             : inst->kind == ValueKind::ExtractInst ? "_extract"
-                             : inst->kind == ValueKind::BinaryInst  ? "_binary_op"
-                             : inst->kind == ValueKind::UnaryInst   ? "_unary_op"
-                                                                    : "_cast")
-                          + std::to_string(valueSuffixCounter++);
+                auto name = claimSuffixedName(inst->kind == ValueKind::LoadInst      ? "_load"
+                                              : inst->kind == ValueKind::ExtractInst ? "_extract"
+                                              : inst->kind == ValueKind::BinaryInst  ? "_binary_op"
+                                              : inst->kind == ValueKind::UnaryInst   ? "_unary_op"
+                                                                                     : "_cast");
                 stream.indent(4);
                 codegenTempDeclarationForType(inst->getType(), name);
                 stream << ";\n";
@@ -958,7 +974,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             case ValueKind::InsertInst: {
                 auto* insert = llvm::cast<InsertInst>(inst);
                 auto* type = insert->aggregate->getType();
-                auto name = "_insert" + std::to_string(valueSuffixCounter++);
+                auto name = claimSuffixedName("_insert");
                 stream.indent(4);
                 codegenType(stream, type, true);
                 stream << ' ' << name;
@@ -970,7 +986,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             case ValueKind::GEPInst:
             case ValueKind::ConstGEPInst: {
                 auto prefix = inst->kind == ValueKind::GEPInst ? "_get_element_ptr" : "_const_get_element_ptr";
-                auto name = prefix + std::to_string(valueSuffixCounter++);
+                auto name = claimSuffixedName(prefix);
                 stream.indent(4);
                 codegenTempDeclarationForType(inst->getType(), name);
                 stream << ";\n";

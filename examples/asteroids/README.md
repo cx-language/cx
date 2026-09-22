@@ -1,5 +1,5 @@
 This directory contains a bare-bones clone of the Asteroids game. It uses the [SDL](https://www.libsdl.org) C library for graphics.
-To build the project, install pkg-config and SDL3, then run `cx build`. This creates a `bin/asteroids` executable.
+To build the project, install pkg-config and SDL3, then run `cx build`. This creates an `asteroids` executable.
 
 On Ubuntu 25.04 and newer, install the prerequisites with `sudo apt-get install -y pkg-config libsdl3-dev`.
 

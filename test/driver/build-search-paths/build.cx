@@ -1,0 +1,4 @@
+// RUN: true
+
+var name = "build-search-paths"
+var headerSearchPaths = ["vendor/include"]

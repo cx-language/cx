@@ -2,6 +2,7 @@
 
 A static array stores a fixed number of elements of the same type.
 The size is written next to the element type: `int[3]` is an array of three integers.
+The size can be any constant integer expression, such as `uint8[64 * 64 * 4]`.
 
 ```cs
 void main() {
@@ -21,6 +22,17 @@ void main() {
 
 Out-of-bounds accesses are caught: constant indices are checked at compile time,
 and the index operator does bounds checks in debug builds.
+
+`data()` returns a pointer to the first element, for passing the contents
+to C functions or doing pointer arithmetic:
+
+```cs
+void main() {
+    int[3] numbers = [1, 2, 3];
+    int[*] p = numbers.data();
+    println(p[0]); // prints 1
+}
+```
 
 Arrays are values: assigning an array copies its elements.
 To pass an array to a function without copying, take it by an array reference (`T[]`),

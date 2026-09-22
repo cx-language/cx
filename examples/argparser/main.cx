@@ -1,0 +1,152 @@
+// todo: a demo task manager built on the argparser library.
+// Usage: todo [--db FILE] [--verbose] <command> [<args>]
+// Commands: add TITLE [--priority LEVEL], list [--all], done INDEX.
+
+struct Task {
+    bool done;
+    string priority;
+    string title;
+}
+
+void loadTasks(string content, List<Task>* tasks) {
+    for line in content.lines() {
+        if line.size() < 3 {
+            continue;
+        }
+        var rest = line.substr(2);
+        var sp = rest.find(' ');
+        if sp >= rest.size() {
+            continue;
+        }
+        tasks.push(Task(done = line[0] == '1', priority = rest.substr(0..sp), title = rest.substr(sp + 1)));
+    }
+}
+
+bool saveTasks(string path, List<Task>* tasks) {
+    var buf = StringBuffer();
+    for i in 0..tasks.size() {
+        if tasks[i].done {
+            buf.append("1 ");
+        } else {
+            buf.append("0 ");
+        }
+        buf.append(tasks[i].priority);
+        buf.append(" ");
+        buf.append(tasks[i].title);
+        buf.append("\n");
+    }
+    return writeFile(path, buf.substr(0));
+}
+
+int runAdd(CommandSpec* cmd, List<Task>* tasks, string dbPath, bool verbose) {
+    tasks.push(Task(done = false, priority = cmd.option("priority"), title = cmd.positional("TITLE")));
+    if !saveTasks(dbPath, tasks) {
+        stderr().write("failed to write ");
+        stderr().write(dbPath);
+        stderr().write("\n");
+        return 1;
+    }
+    if verbose {
+        println("Saved ", tasks.size(), " task(s) to ", dbPath, ".");
+    }
+    println("Added task ", tasks.size(), ": ", cmd.positional("TITLE"));
+    return 0;
+}
+
+void runList(CommandSpec* cmd, List<Task>* tasks) {
+    var shown = 0;
+    for i in 0..tasks.size() {
+        if !tasks[i].done || cmd.flag("all") {
+            shown++;
+            if tasks[i].done {
+                print("[x] ");
+            } else {
+                print("[ ] ");
+            }
+            println(i + 1, " (", tasks[i].priority, ") ", tasks[i].title);
+        }
+    }
+    if shown == 0 {
+        println("No tasks.");
+    }
+}
+
+int runDone(CommandSpec* cmd, List<Task>* tasks, string dbPath) {
+    var parsed = cmd.positional("INDEX").parseInt();
+    if parsed == null {
+        stderr().write("invalid task index '");
+        stderr().write(cmd.positional("INDEX"));
+        stderr().write("'\n");
+        return 1;
+    }
+    if parsed < 1 || parsed > tasks.size() {
+        stderr().write("task index out of range: ");
+        stderr().write(cmd.positional("INDEX"));
+        stderr().write("\n");
+        return 1;
+    }
+    tasks[parsed - 1].done = true;
+    if !saveTasks(dbPath, tasks) {
+        stderr().write("failed to write ");
+        stderr().write(dbPath);
+        stderr().write("\n");
+        return 1;
+    }
+    println("Done: ", tasks[parsed - 1].title);
+    return 0;
+}
+
+int main(string[] argv) {
+    var parser = ArgParser(name = "todo", description = "A tiny task manager.");
+    parser.addOption(OptionSpec(name = "db", help = "Task database file.", shortName = "d",
+        valueName = "FILE", defaultValue = "todo.db"));
+    parser.addFlag(FlagSpec(name = "verbose", help = "Verbose output.", shortName = "v"));
+    var add = parser.addCommand("add", "Add a task.");
+    add.addOption(OptionSpec(name = "priority", help = "Priority level.", shortName = "p",
+        valueName = "LEVEL", defaultValue = "normal"));
+    add.addPositional(PositionalSpec(name = "TITLE", help = "Task title."));
+    var list = parser.addCommand("list", "List tasks.");
+    list.addFlag(FlagSpec(name = "all", help = "Include completed tasks.", shortName = "a"));
+    var done = parser.addCommand("done", "Mark a task done.");
+    done.addPositional(PositionalSpec(name = "INDEX", help = "1-based task number."));
+
+    if !parser.parse(argv) {
+        stderr().write(parser.error());
+        stderr().write("\n");
+        return 1;
+    }
+    if parser.helpRequested() {
+        var helpCmd = parser.matchedCommand();
+        if helpCmd {
+            println(commandHelpText(parser, helpCmd));
+        } else {
+            println(helpText(parser));
+        }
+        return 0;
+    }
+    if !parser.hasCommand() {
+        println(helpText(parser));
+        return 0;
+    }
+
+    var tasks = List<Task>();
+    var content = readFile(parser.option("db"));
+    if content {
+        loadTasks(content.substr(0), tasks);
+    }
+
+    var cmd = parser.matchedCommand();
+    if cmd {
+        if cmd.name == "add" {
+            return runAdd(cmd, tasks, parser.option("db"), parser.flag("verbose"));
+        }
+        if cmd.name == "list" {
+            runList(cmd, tasks);
+            return 0;
+        }
+        if cmd.name == "done" {
+            return runDone(cmd, tasks, parser.option("db"));
+        }
+    }
+    return 1;
+}
