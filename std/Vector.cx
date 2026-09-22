@@ -16,8 +16,7 @@ struct Vector2<T>: Copyable {
     }
 
     /// Returns the vector scaled to unit length.
-    /// Only meaningful for floating-point elements
-    /// (and float64 elements hit an unnecessary-conversion error).
+    /// Only meaningful for floating-point elements.
     Vector2<T> normalized() {
         var len = T(length());
         return Vector2(x / len, y / len);
@@ -70,8 +69,7 @@ struct Vector3<T>: Copyable {
     }
 
     /// Returns the vector scaled to unit length.
-    /// Only meaningful for floating-point elements
-    /// (and float64 elements hit an unnecessary-conversion error).
+    /// Only meaningful for floating-point elements.
     Vector3<T> normalized() {
         var len = T(length());
         return Vector3(x / len, y / len, z / len);
