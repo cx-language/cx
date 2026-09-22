@@ -59,6 +59,16 @@ std::string cx::absolutizePackagePath(llvm::StringRef rootDirectory, const std::
     return (rootDirectory + "/" + path).str();
 }
 
+std::string cx::absolutizeLibraryPath(llvm::StringRef rootDirectory, const std::string& library) {
+    if (llvm::sys::path::is_absolute(library)) return library;
+    if (library.find('/') == std::string::npos && library.find('\\') == std::string::npos) {
+        std::string candidate = (rootDirectory + "/" + library).str();
+        if (!llvm::sys::fs::exists(candidate)) return library;
+        return candidate;
+    }
+    return absolutizePackagePath(rootDirectory, library);
+}
+
 void cx::resolveDependencyClosure(BuildConfig& config, const CompileOptions& baseOptions, bool fetchMissing) {
     struct WorkItem {
         bool isVendored = false;
@@ -138,9 +148,7 @@ void cx::resolveDependencyClosure(BuildConfig& config, const CompileOptions& bas
             record.librarySearchPaths.push_back(absolutizePackagePath(root, path));
         }
         for (auto& library : depConfig.libraries) {
-            // A bare -l name absolutizes to a nonexistent path and falls back
-            // to -l at link time; a relative archive resolves against the dep.
-            record.libraries.push_back(absolutizePackagePath(root, library));
+            record.libraries.push_back(absolutizeLibraryPath(root, library));
         }
         record.frameworks = depConfig.frameworks;
         config.resolvedDependencies.push_back(std::move(record));

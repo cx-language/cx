@@ -783,7 +783,7 @@ static void addConfigBuildFlags(const BuildConfig& config) {
         librarySearchPaths.push_back(absolutizePackagePath(config.rootDirectory, path));
     }
     for (auto& library : config.libraries) {
-        libraries.push_back(absolutizePackagePath(config.rootDirectory, library));
+        libraries.push_back(absolutizeLibraryPath(config.rootDirectory, library));
     }
     for (auto& framework : config.frameworks) {
         frameworks.push_back(framework);
