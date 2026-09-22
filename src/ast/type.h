@@ -19,14 +19,14 @@ namespace cx {
 struct ParamDecl;
 struct TypeDecl;
 struct DestructorDecl;
-struct TupleElement;
+struct AnonymousStructElement;
 
 enum class Mutability { Mutable, Const };
 
 enum class TypeKind {
     BasicType,
     ArrayType,
-    TupleType,
+    AnonymousStructType,
     FunctionType,
     PointerType,
     UnresolvedType, // Placeholder for unresolved generic parameters
@@ -52,7 +52,7 @@ struct Type {
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
     bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
     bool isRangeType() const { return isBasicType() && (getName() == "Range" || getName() == "ClosedRange"); }
-    bool isTupleType() const { return getKind() == TypeKind::TupleType; }
+    bool isAnonymousStructType() const { return getKind() == TypeKind::AnonymousStructType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
     bool isImplementedAsPointer() const;
@@ -121,7 +121,7 @@ struct Type {
     std::string getQualifiedTypeName() const;
     Type getElementType() const;
     int64_t getArraySize() const;
-    llvm::ArrayRef<TupleElement> getTupleElements() const;
+    llvm::ArrayRef<AnonymousStructElement> getAnonymousStructElements() const;
     llvm::ArrayRef<Type> getGenericArgs() const;
     Type getReturnType() const;
     llvm::ArrayRef<Type> getParamTypes() const;
@@ -193,22 +193,22 @@ public:
     int64_t size;
 };
 
-struct TupleElement {
+struct AnonymousStructElement {
     std::string name;
     Type type;
 };
 
-bool operator==(const TupleElement&, const TupleElement&);
+bool operator==(const AnonymousStructElement&, const AnonymousStructElement&);
 
-struct TupleType : TypeBase {
-    static Type get(std::vector<TupleElement>&& elements, Mutability mutability = Mutability::Mutable, Location location = Location());
-    static bool classof(const TypeBase* t) { return t->kind == TypeKind::TupleType; }
+struct AnonymousStructType : TypeBase {
+    static Type get(std::vector<AnonymousStructElement>&& elements, Mutability mutability = Mutability::Mutable, Location location = Location());
+    static bool classof(const TypeBase* t) { return t->kind == TypeKind::AnonymousStructType; }
 
 private:
-    TupleType(std::vector<TupleElement>&& elements) : TypeBase(TypeKind::TupleType), elements(std::move(elements)) {}
+    AnonymousStructType(std::vector<AnonymousStructElement>&& elements) : TypeBase(TypeKind::AnonymousStructType), elements(std::move(elements)) {}
 
 public:
-    std::vector<TupleElement> elements;
+    std::vector<AnonymousStructElement> elements;
 };
 
 struct FunctionType : TypeBase {

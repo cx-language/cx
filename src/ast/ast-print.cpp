@@ -237,9 +237,9 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Expr& expr) {
         stream << "ArrayLiteralExpr";
         break;
     }
-    case ExprKind::TupleExpr: {
-        //            auto& tupleExpr = llvm::cast<TupleExpr>(expr);
-        stream << "TupleExpr";
+    case ExprKind::AnonymousStructExpr: {
+        //            auto& anonymousStructExpr = llvm::cast<AnonymousStructExpr>(expr);
+        stream << "AnonymousStructExpr";
         break;
     }
     case ExprKind::UnaryExpr: {

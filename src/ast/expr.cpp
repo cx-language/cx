@@ -49,8 +49,8 @@ bool Expr::isConstant() const {
         }
         return true;
 
-    case ExprKind::TupleExpr:
-        for (auto& element : llvm::cast<TupleExpr>(this)->elements) {
+    case ExprKind::AnonymousStructExpr:
+        for (auto& element : llvm::cast<AnonymousStructExpr>(this)->elements) {
             if (!element.value->isConstant()) {
                 return false;
             }
@@ -72,8 +72,8 @@ bool Expr::isConstant() const {
         auto binaryExpr = llvm::cast<BinaryExpr>(this);
         // Like IfExpr, `??` always emits branches and is never folded.
         if (binaryExpr->op == Token::QuestionQuestion) return false;
-        // Lowered tuple comparisons keep tuple operands, which the getConstant* accessors can't evaluate.
-        if (binaryExpr->tupleComparisonLowering) return false;
+        // Lowered anonymous struct comparisons keep anonymous struct operands, which the getConstant* accessors can't evaluate.
+        if (binaryExpr->anonymousStructComparisonLowering) return false;
         return binaryExpr->op != Token::Assignment && binaryExpr->getLHS().isConstant() && binaryExpr->getRHS().isConstant();
     }
 
@@ -363,11 +363,11 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto elements = ::instantiate(arrayLiteralExpr->elements, genericArgs);
         return makeAST<ArrayLiteralExpr>(std::move(elements), arrayLiteralExpr->location);
     }
-    case ExprKind::TupleExpr: {
-        auto* tupleExpr = llvm::cast<TupleExpr>(this);
-        auto elements =
-            map(tupleExpr->elements, [&](const NamedValue& element) { return NamedValue(std::string(element.name), element.value->instantiate(genericArgs)); });
-        return makeAST<TupleExpr>(std::move(elements), tupleExpr->location);
+    case ExprKind::AnonymousStructExpr: {
+        auto* anonymousStructExpr = llvm::cast<AnonymousStructExpr>(this);
+        auto elements = map(anonymousStructExpr->elements,
+                            [&](const NamedValue& element) { return NamedValue(std::string(element.name), element.value->instantiate(genericArgs)); });
+        return makeAST<AnonymousStructExpr>(std::move(elements), anonymousStructExpr->location);
     }
     case ExprKind::UnaryExpr: {
         auto* unaryExpr = llvm::cast<UnaryExpr>(this);
@@ -593,7 +593,7 @@ LambdaExpr::LambdaExpr(std::vector<ParamDecl>&& params, Module* module, Location
 
 VarDeclExpr::VarDeclExpr(VarDecl* varDecl) : Expr(ExprKind::VarDeclExpr, varDecl->getLocation()), varDecl(varDecl) {}
 
-const Expr* TupleExpr::getElementByName(llvm::StringRef name) const {
+const Expr* AnonymousStructExpr::getElementByName(llvm::StringRef name) const {
     for (auto& element : elements) {
         if (element.name == name) {
             return element.value;

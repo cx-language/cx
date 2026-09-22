@@ -53,8 +53,9 @@ static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::Small
         return containsItselfByValue(type.getElementType(), target, visiting);
     }
 
-    if (type.isTupleType()) {
-        return llvm::any_of(type.getTupleElements(), [&](const TupleElement& element) { return containsItselfByValue(element.type, target, visiting); });
+    if (type.isAnonymousStructType()) {
+        return llvm::any_of(type.getAnonymousStructElements(),
+                            [&](const AnonymousStructElement& element) { return containsItselfByValue(element.type, target, visiting); });
     }
 
     if (type.isOptionalType()) {
@@ -149,8 +150,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     case TypeKind::ArrayType:
         typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
         break;
-    case TypeKind::TupleType:
-        for (auto& element : type.getTupleElements()) {
+    case TypeKind::AnonymousStructType:
+        for (auto& element : type.getAnonymousStructElements()) {
             typecheckType(element.type, userAccessLevel, recheckGenericArgs);
         }
         break;

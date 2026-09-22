@@ -102,7 +102,7 @@ struct Typechecker {
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType);
     Type typecheckNullLiteralExpr(NullLiteralExpr& expr, Type expectedType);
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr, Type expectedType = Type());
-    Type typecheckTupleExpr(TupleExpr& expr);
+    Type typecheckAnonymousStructExpr(AnonymousStructExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
     Type typecheckNullCoalescingExpr(BinaryExpr& expr);

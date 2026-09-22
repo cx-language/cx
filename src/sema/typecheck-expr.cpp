@@ -324,14 +324,14 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
     return ArrayType::get(firstType, int64_t(array.elements.size()));
 }
 
-Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
+Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
     auto elements = map(expr.elements, [&](const NamedValue& namedValue) {
         if (namedValue.name.empty()) {
-            ERROR(namedValue.location, "anonymous tuple members are not supported yet; name each element (e.g. `(x = 1, y = 2)`)");
+            ERROR(namedValue.location, "unnamed anonymous struct members are not supported yet; name each field (e.g. `(x = 1, y = 2)`)");
         }
-        return TupleElement{namedValue.name, typecheckExpr(*namedValue.value)};
+        return AnonymousStructElement{namedValue.name, typecheckExpr(*namedValue.value)};
     });
-    return TupleType::get(std::move(elements));
+    return AnonymousStructType::get(std::move(elements));
 }
 
 void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, bool positive) {
@@ -488,10 +488,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         }
     }
 
-    if ((op == Token::Equal || op == Token::NotEqual) && leftType.isTupleType() && rightType.isTupleType()) {
-        auto leftElements = leftType.getTupleElements();
-        auto rightElements = rightType.getTupleElements();
-        auto hasDistinctNames = [](llvm::ArrayRef<TupleElement> elements) {
+    if ((op == Token::Equal || op == Token::NotEqual) && leftType.isAnonymousStructType() && rightType.isAnonymousStructType()) {
+        auto leftElements = leftType.getAnonymousStructElements();
+        auto rightElements = rightType.getAnonymousStructElements();
+        auto hasDistinctNames = [](llvm::ArrayRef<AnonymousStructElement> elements) {
             for (size_t i = 0; i < elements.size(); ++i) {
                 for (size_t j = i + 1; j < elements.size(); ++j) {
                     if (elements[i].name == elements[j].name) return false;
@@ -507,7 +507,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                           });
 
         if (namesMatch) {
-            // Lower tuple comparison to elementwise comparison (e.g. `(a == b) && (c == d)`).
+            // Lower anonymous struct comparison to elementwise comparison (e.g. `(a == b) && (c == d)`).
             auto combiner = op == Token::Equal ? Token::AndAnd : Token::OrOr;
             // Bind each side to a compiler-generated temporary so operands with
             // side effects evaluate once; the element accesses below read the
@@ -521,11 +521,11 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             Expr* lhsBase = &expr.getLHS();
             Expr* rhsBase = &expr.getRHS();
             if (currentFunction) {
-                static uint64_t tupleTempCounter = 0;
-                lhsTemp = makeAST<VarDecl>(leftType, "__tuple_lhs_" + std::to_string(tupleTempCounter++), nullptr, currentFunction, AccessLevel::None,
-                                           *currentModule, expr.location);
-                rhsTemp = makeAST<VarDecl>(rightType, "__tuple_rhs_" + std::to_string(tupleTempCounter++), nullptr, currentFunction, AccessLevel::None,
-                                           *currentModule, expr.location);
+                static uint64_t anonymousStructTempCounter = 0;
+                lhsTemp = makeAST<VarDecl>(leftType, "__anonymous_struct_lhs_" + std::to_string(anonymousStructTempCounter++), nullptr, currentFunction,
+                                           AccessLevel::None, *currentModule, expr.location);
+                rhsTemp = makeAST<VarDecl>(rightType, "__anonymous_struct_rhs_" + std::to_string(anonymousStructTempCounter++), nullptr, currentFunction,
+                                           AccessLevel::None, *currentModule, expr.location);
                 typecheckVarDecl(*lhsTemp);
                 typecheckVarDecl(*rhsTemp);
                 // The temporaries have no initializer; codegen binds them to
@@ -548,9 +548,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             }
             Type loweredType = typecheckBinaryExpr(llvm::cast<BinaryExpr>(*result));
             ASSERT(loweredType.isBool());
-            expr.tupleTempLHS = lhsTemp;
-            expr.tupleTempRHS = rhsTemp;
-            expr.tupleComparisonLowering = result;
+            expr.anonymousStructTempLHS = lhsTemp;
+            expr.anonymousStructTempRHS = rhsTemp;
+            expr.anonymousStructComparisonLowering = result;
             return Type::getBool();
         }
     }
@@ -794,11 +794,11 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
                 }
             }
 
-            if (auto* tupleExpr = llvm::dyn_cast<TupleExpr>(expr); tupleExpr && convertedType.isTupleType()) {
-                auto targetElements = convertedType.getTupleElements();
-                for (size_t i = 0; i < tupleExpr->elements.size(); ++i) {
-                    if (Expr* convertedElement = convert(tupleExpr->elements[i].value, targetElements[i].type, allowPointerToTemporary)) {
-                        tupleExpr->elements[i].value = convertedElement;
+            if (auto* anonymousStructExpr = llvm::dyn_cast<AnonymousStructExpr>(expr); anonymousStructExpr && convertedType.isAnonymousStructType()) {
+                auto targetElements = convertedType.getAnonymousStructElements();
+                for (size_t i = 0; i < anonymousStructExpr->elements.size(); ++i) {
+                    if (Expr* convertedElement = convert(anonymousStructExpr->elements[i].value, targetElements[i].type, allowPointerToTemporary)) {
+                        anonymousStructExpr->elements[i].value = convertedElement;
                     }
                 }
             }
@@ -864,7 +864,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isTupleType() && target.isTupleType() && source.getTupleElements() == target.getTupleElements()) {
+    if (source.isAnonymousStructType() && target.isAnonymousStructType() && source.getAnonymousStructElements() == target.getAnonymousStructElements()) {
         return source;
     }
 
@@ -1005,10 +1005,10 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isTupleType() && target.isTupleType()) {
-        auto* tupleExpr = llvm::dyn_cast_or_null<TupleExpr>(expr);
-        auto sourceElements = source.getTupleElements();
-        auto targetElements = target.getTupleElements();
+    if (source.isAnonymousStructType() && target.isAnonymousStructType()) {
+        auto* anonymousStructExpr = llvm::dyn_cast_or_null<AnonymousStructExpr>(expr);
+        auto sourceElements = source.getAnonymousStructElements();
+        auto targetElements = target.getAnonymousStructElements();
 
         if (sourceElements.size() != targetElements.size()) {
             return Type();
@@ -1019,7 +1019,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                 return Type();
             }
 
-            auto* elementValue = tupleExpr ? tupleExpr->elements[i].value : nullptr;
+            auto* elementValue = anonymousStructExpr ? anonymousStructExpr->elements[i].value : nullptr;
 
             if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange)) {
                 return Type();
@@ -1045,8 +1045,9 @@ bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
     case TypeKind::ArrayType:
         return containsGenericParam(type.getElementType(), genericParam);
 
-    case TypeKind::TupleType:
-        return llvm::any_of(type.getTupleElements(), [&](const TupleElement& element) { return containsGenericParam(element.type, genericParam); });
+    case TypeKind::AnonymousStructType:
+        return llvm::any_of(type.getAnonymousStructElements(),
+                            [&](const AnonymousStructElement& element) { return containsGenericParam(element.type, genericParam); });
 
     case TypeKind::FunctionType:
         for (Type paramType : type.getParamTypes()) {
@@ -1097,9 +1098,9 @@ Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef g
         }
         break;
 
-    case TypeKind::TupleType:
-        if (paramType.isTupleType()) {
-            for (auto&& [argTypeElement, paramTypeElement] : llvm::zip_first(argType.getTupleElements(), paramType.getTupleElements())) {
+    case TypeKind::AnonymousStructType:
+        if (paramType.isAnonymousStructType()) {
+            for (auto&& [argTypeElement, paramTypeElement] : llvm::zip_first(argType.getAnonymousStructElements(), paramType.getAnonymousStructElements())) {
                 if (Type type = findGenericArg(argTypeElement.type, paramTypeElement.type, genericParam)) {
                     return type;
                 }
@@ -1164,8 +1165,8 @@ static bool containsUnresolvedType(Type type) {
     case TypeKind::ArrayType:
         return containsUnresolvedType(type.getElementType());
 
-    case TypeKind::TupleType:
-        for (auto& element : type.getTupleElements()) {
+    case TypeKind::AnonymousStructType:
+        for (auto& element : type.getAnonymousStructElements()) {
             if (containsUnresolvedType(element.type)) {
                 return true;
             }
@@ -2229,7 +2230,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     } else {
         auto type = llvm::cast<EnumCase>(decl)->associatedType;
         if (type) {
-            params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
+            params = map(type.getAnonymousStructElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
         }
         validateAndConvertArguments(expr, params, false, decl->getName(), expr.location);
     }
@@ -2454,7 +2455,7 @@ static bool isValidCast(Type sourceType, Type targetType) {
 
         return false;
 
-    case TypeKind::TupleType:
+    case TypeKind::AnonymousStructType:
     case TypeKind::FunctionType:
         return false;
 
@@ -2569,8 +2570,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         if (llvm::is_contained({"count", "length", "size"}, expr.member)) {
             ERROR(expr.location, "use the '.size()' member function to get the number of elements in an array");
         }
-    } else if (baseType.isTupleType()) {
-        for (auto& element : baseType.getTupleElements()) {
+    } else if (baseType.isAnonymousStructType()) {
+        for (auto& element : baseType.getAnonymousStructElements()) {
             if (element.name == expr.member) {
                 return element.type;
             }
@@ -2850,8 +2851,8 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
     case ExprKind::ArrayLiteralExpr:
         type = typecheckArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr), expectedType);
         break;
-    case ExprKind::TupleExpr:
-        type = typecheckTupleExpr(llvm::cast<TupleExpr>(expr));
+    case ExprKind::AnonymousStructExpr:
+        type = typecheckAnonymousStructExpr(llvm::cast<AnonymousStructExpr>(expr));
         break;
     case ExprKind::UnaryExpr:
         type = typecheckUnaryExpr(llvm::cast<UnaryExpr>(expr));
@@ -3010,8 +3011,9 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
     } else if (matchedExpectedType) {
         genericArgTypes = matchedExpectedType.getGenericArgs();
     } else if (call && templateCase->associatedType) {
-        auto params = map(templateCase->associatedType.getTupleElements(),
-                          [&](const TupleElement& element) { return ParamDecl(element.type, std::string(element.name), false, templateCase->getLocation()); });
+        auto params = map(templateCase->associatedType.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
+            return ParamDecl(element.type, std::string(element.name), false, templateCase->getLocation());
+        });
         if (call->args.size() != params.size()) {
             // Report the count error; inference can't proceed without matching arguments.
             validateAndConvertArguments(*call, params, false, templateCase->getName(), call->location);

@@ -16,7 +16,7 @@ void add(int a, int b,) {
     println(a + b);
 }
 
-void useTuple((int a, float b,) t) {
+void useAnonymousStruct((int a, float b,) t) {
     println(t.a);
 }
 
@@ -27,8 +27,8 @@ void main() {
     println(array[0] + array[1]);
     var single = [1,];
     println(single[0]);
-    var tuple = (a = 1, b = 2,);
-    println(tuple.a + tuple.b);
+    var anonymousStruct = (a = 1, b = 2,);
+    println(anonymousStruct.a + anonymousStruct.b);
     println((1,));
-    useTuple((a = 1, b = 2.5,));
+    useAnonymousStruct((a = 1, b = 2.5,));
 }

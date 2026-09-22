@@ -31,7 +31,7 @@ enum class ExprKind {
     NullLiteralExpr,
     UndefinedLiteralExpr,
     ArrayLiteralExpr,
-    TupleExpr,
+    AnonymousStructExpr,
     UnaryExpr,
     BinaryExpr,
     CallExpr,
@@ -59,7 +59,7 @@ struct Expr {
     bool isNullLiteralExpr() const { return kind == ExprKind::NullLiteralExpr; }
     bool isUndefinedLiteralExpr() const { return kind == ExprKind::UndefinedLiteralExpr; }
     bool isArrayLiteralExpr() const { return kind == ExprKind::ArrayLiteralExpr; }
-    bool isTupleExpr() const { return kind == ExprKind::TupleExpr; }
+    bool isAnonymousStructExpr() const { return kind == ExprKind::AnonymousStructExpr; }
     bool isUnaryExpr() const { return kind == ExprKind::UnaryExpr; }
     bool isBinaryExpr() const { return kind == ExprKind::BinaryExpr; }
     bool isCallExpr() const { return kind == ExprKind::CallExpr; }
@@ -175,10 +175,10 @@ struct NamedValue {
     Location location;
 };
 
-struct TupleExpr : Expr {
-    TupleExpr(std::vector<NamedValue>&& elements, Location location) : Expr(ExprKind::TupleExpr, location), elements(std::move(elements)) {}
+struct AnonymousStructExpr : Expr {
+    AnonymousStructExpr(std::vector<NamedValue>&& elements, Location location) : Expr(ExprKind::AnonymousStructExpr, location), elements(std::move(elements)) {}
     const Expr* getElementByName(llvm::StringRef name) const;
-    static bool classof(const Expr* e) { return e->kind == ExprKind::TupleExpr; }
+    static bool classof(const Expr* e) { return e->kind == ExprKind::AnonymousStructExpr; }
 
     std::vector<NamedValue> elements;
 };
@@ -250,13 +250,13 @@ struct BinaryExpr : CallExpr {
     bool lhsIsMoved = false;
     // True when the operator is derived from its counterpart (e.g. != from ==) and the result must be negated.
     bool negateResult = false;
-    // For tuple `==`/`!=`: elementwise lowering over compiler-generated temporaries.
+    // For anonymous struct `==`/`!=`: elementwise lowering over compiler-generated temporaries.
     // Codegen binds the temporaries to the operand values, so operands with side
     // effects evaluate once no matter how many elements are compared. Null when
     // the comparison wasn't lowered this way (e.g. in global initializers).
-    VarDecl* tupleTempLHS = nullptr;
-    VarDecl* tupleTempRHS = nullptr;
-    Expr* tupleComparisonLowering = nullptr;
+    VarDecl* anonymousStructTempLHS = nullptr;
+    VarDecl* anonymousStructTempRHS = nullptr;
+    Expr* anonymousStructComparisonLowering = nullptr;
 };
 
 bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);

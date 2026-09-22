@@ -76,9 +76,9 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
         stream << '_';
         mangleType(stream, type.getElementType());
         break;
-    case TypeKind::TupleType:
+    case TypeKind::AnonymousStructType:
         stream << 'T';
-        for (auto& element : type.getTupleElements()) {
+        for (auto& element : type.getAnonymousStructElements()) {
             mangleType(stream, element.type);
         }
         // Terminates the element list so adjacent types can't merge into it.

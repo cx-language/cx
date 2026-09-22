@@ -64,7 +64,7 @@ struct IRGenerator {
     Value* emitNullLiteralExpr(const NullLiteralExpr& expr);
     Value* emitUndefinedLiteralExpr(const UndefinedLiteralExpr& expr);
     Value* emitArrayLiteralExpr(const ArrayLiteralExpr& expr);
-    Value* emitTupleExpr(const TupleExpr& expr);
+    Value* emitAnonymousStructExpr(const AnonymousStructExpr& expr);
     Value* emitAggregateElements(Type type, llvm::ArrayRef<NamedValue> elements);
     Value* emitImplicitNullComparison(Value* operand, BinaryOperator op = Token::NotEqual);
     Value* emitNot(const UnaryExpr& expr);
@@ -92,7 +92,7 @@ struct IRGenerator {
     Value* emitSizeofExpr(const SizeofExpr& expr);
     Value* emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr = nullptr);
     Value* emitMemberExpr(const MemberExpr& expr);
-    Value* emitTupleElementAccess(const MemberExpr& expr);
+    Value* emitAnonymousStructElementAccess(const MemberExpr& expr);
     Value* emitMainArgv(Value* argc, Value* argv, Type argvType, Location location);
     Value* emitIndexedAccess(const Expr& base, const Expr& index);
     Value* emitIndexExpr(const IndexExpr& expr);

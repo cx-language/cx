@@ -107,8 +107,8 @@ static void collectAssignedNames(const Expr& expr, llvm::StringSet<>& names) {
         for (auto& element : llvm::cast<ArrayLiteralExpr>(expr).elements)
             collectAssignedNames(*element, names);
         return;
-    case ExprKind::TupleExpr:
-        for (auto& element : llvm::cast<TupleExpr>(expr).elements)
+    case ExprKind::AnonymousStructExpr:
+        for (auto& element : llvm::cast<AnonymousStructExpr>(expr).elements)
             collectAssignedNames(*element.value, names);
         return;
     case ExprKind::UnaryExpr:
