@@ -5,5 +5,3 @@ int main() {
     void _0 = call foo(Foo x.load)
     return int 0
 }
-
-extern void foo(Foo)

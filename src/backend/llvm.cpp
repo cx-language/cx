@@ -653,6 +653,11 @@ llvm::Value* LLVMGenerator::codegenUndefined(const Undefined* inst) {
 }
 
 llvm::Value* LLVMGenerator::getValue(const Value* value) {
+    // Functions are shared across IR modules (see IRGenerator::getFunction), so they
+    // must resolve against the current LLVM module every time: the cache below would
+    // otherwise return another module's function. getFunction already deduplicates
+    // within the module, making the bypass equivalent for single-module programs.
+    if (value->kind == ValueKind::Function) return getFunction(llvm::cast<Function>(value));
     auto it = generatedValues.find(value);
     if (it != generatedValues.end()) return it->second;
     auto llvmValue = codegenInst(value);

@@ -36,6 +36,3 @@ overflow.success:
     store _5 to n
     return void
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}
