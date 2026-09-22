@@ -3,54 +3,78 @@
 %B = type { i32 }
 %C = type { %B, %B }
 
-declare i1 @f()
+declare i1 @f() #0
 
-define i32 @main() {
+define i32 @main() #0 !dbg !4 {
   %a = alloca %A, align 8
   %c = alloca %C, align 8
-  call void @_EN4main1A4initE(ptr %a)
-  call void @_EN4main1C4initE(ptr %c)
-  call void @_EN4main1C6deinitE(ptr %c)
-  call void @_EN4main1A6deinitE(ptr %a)
+  call void @_EN4main1A4initE(ptr %a), !dbg !7
+  call void @_EN4main1C4initE(ptr %c), !dbg !8
+  call void @_EN4main1C6deinitE(ptr %c), !dbg !9
+  call void @_EN4main1A6deinitE(ptr %a), !dbg !9
   ret i32 0
 }
 
-define void @_EN4main1A4initE(ptr %this) {
+define void @_EN4main1A4initE(ptr %this) #0 !dbg !10 {
   ret void
 }
 
-define void @_EN4main1C4initE(ptr %this) {
+define void @_EN4main1C4initE(ptr %this) #0 !dbg !11 {
   ret void
 }
 
-define void @_EN4main1C6deinitE(ptr %this) {
+define void @_EN4main1C6deinitE(ptr %this) #0 !dbg !12 {
   %b = getelementptr inbounds %C, ptr %this, i32 0, i32 0
   %bb = getelementptr inbounds %C, ptr %this, i32 0, i32 1
-  call void @_EN4main1B6deinitE(ptr %bb)
-  call void @_EN4main1B6deinitE(ptr %b)
+  call void @_EN4main1B6deinitE(ptr %bb), !dbg !13
+  call void @_EN4main1B6deinitE(ptr %b), !dbg !13
   ret void
 }
 
-define void @_EN4main1A6deinitE(ptr %this) {
+define void @_EN4main1A6deinitE(ptr %this) #0 !dbg !14 {
   %b = getelementptr inbounds %A, ptr %this, i32 0, i32 0
   %bb = getelementptr inbounds %A, ptr %this, i32 0, i32 1
-  %1 = call i1 @f()
+  %1 = call i1 @f(), !dbg !15
   br i1 %1, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
-  call void @_EN4main1B6deinitE(ptr %bb)
-  call void @_EN4main1B6deinitE(ptr %b)
+  call void @_EN4main1B6deinitE(ptr %bb), !dbg !16
+  call void @_EN4main1B6deinitE(ptr %b), !dbg !16
   ret void
 
 if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else
-  call void @_EN4main1B6deinitE(ptr %bb)
-  call void @_EN4main1B6deinitE(ptr %b)
+  call void @_EN4main1B6deinitE(ptr %bb), !dbg !16
+  call void @_EN4main1B6deinitE(ptr %b), !dbg !16
   ret void
 }
 
-define void @_EN4main1B6deinitE(ptr %this) {
+define void @_EN4main1B6deinitE(ptr %this) #0 !dbg !17 {
   ret void
 }
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "destructor-calls-member-destructors.cx")
+!4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 38, type: !5, scopeLine: 38, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 39, column: 13, scope: !4)
+!8 = !DILocation(line: 40, column: 13, scope: !4)
+!9 = !DILocation(line: 38, column: 6, scope: !4)
+!10 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1A4initE", scope: !3, file: !3, line: 10, type: !5, scopeLine: 10, spFlags: DISPFlagDefinition, unit: !2)
+!11 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1C4initE", scope: !3, file: !3, line: 32, type: !5, scopeLine: 32, spFlags: DISPFlagDefinition, unit: !2)
+!12 = distinct !DISubprogram(name: "deinit", linkageName: "_EN4main1C6deinitE", scope: !3, file: !3, line: 29, type: !5, scopeLine: 29, spFlags: DISPFlagDefinition, unit: !2)
+!13 = !DILocation(line: 29, column: 8, scope: !12)
+!14 = distinct !DISubprogram(name: "deinit", linkageName: "_EN4main1A6deinitE", scope: !3, file: !3, line: 16, type: !5, scopeLine: 16, spFlags: DISPFlagDefinition, unit: !2)
+!15 = !DILocation(line: 17, column: 13, scope: !14)
+!16 = !DILocation(line: 16, column: 5, scope: !14)
+!17 = distinct !DISubprogram(name: "deinit", linkageName: "_EN4main1B6deinitE", scope: !3, file: !3, line: 26, type: !5, scopeLine: 26, spFlags: DISPFlagDefinition, unit: !2)

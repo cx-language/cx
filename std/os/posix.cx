@@ -19,6 +19,9 @@ void printStackTrace() {
         printf("%s\n", strings[i]);
     }
 
+    // abort() doesn't flush stdio buffers on all platforms; flush now so the
+    // trace isn't lost.
+    fflush(null);
     free(cast<void*>(strings));
 }
 

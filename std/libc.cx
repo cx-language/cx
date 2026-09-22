@@ -51,8 +51,8 @@ extern void fseek(FILE* file, int64 offset, int origin);
 extern int64 ftell(FILE* file);
 /// Closes the file.
 extern int fclose(FILE* file);
-/// Flushes buffered output to the file.
-extern int fflush(FILE* file);
+/// Flushes buffered output to the file, or to all files if null.
+extern int fflush(FILE*? file);
 /// Returns true at end of file.
 extern int feof(FILE* file);
 /// Deletes the named file.
