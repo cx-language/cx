@@ -104,6 +104,13 @@ struct StringBuffer: Comparable, Hashable, Printable {
         }
     }
 
+    /// Appends the repetition without allocating a temporary.
+    void append(RepeatIterator<string> repetitions) {
+        for chunk in repetitions {
+            append(chunk);
+        }
+    }
+
     /// Removes the first character from the string.
     /// Other characters are moved towards the beginning of the string by one index.
     void removeFirst() {
@@ -271,6 +278,37 @@ StringBuffer operator+(StringBuffer a, char b) {
 /// Concatenates the two strings.
 StringBuffer operator+(StringBuffer a, char[*] b) {
     return a + string(b);
+}
+
+/// Concatenates the repetition and the string.
+StringBuffer operator+(RepeatIterator<string> a, string b) {
+    var result = StringBuffer();
+    for chunk in a {
+        result.append(chunk);
+    }
+    result.append(b);
+    return result;
+}
+
+/// Concatenates the string and the repetition.
+StringBuffer operator+(string a, RepeatIterator<string> b) {
+    var result = StringBuffer(a);
+    for chunk in b {
+        result.append(chunk);
+    }
+    return result;
+}
+
+/// Concatenates two repetitions.
+StringBuffer operator+(RepeatIterator<string> a, RepeatIterator<string> b) {
+    var result = StringBuffer();
+    for chunk in a {
+        result.append(chunk);
+    }
+    for chunk in b {
+        result.append(chunk);
+    }
+    return result;
 }
 
 /// Returns true if both strings are equal.
