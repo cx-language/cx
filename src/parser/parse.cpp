@@ -1547,7 +1547,8 @@ Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<Generic
 
 /// type-decl ::= ('struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}' ';'?
 /// interface-list ::= ':' non-empty-type-list
-/// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl
+/// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl | const-decl
+/// const-decl ::= 'const' id '=' expr
 TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     TypeTag tag;
     switch (consumeToken()) {
@@ -1596,6 +1597,21 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 break;
             }
             LLVM_FALLTHROUGH;
+        case Token::Const:
+            if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
+                if (genericParams && !genericParams->empty()) {
+                    ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                }
+                consumeToken();
+                auto name = parse(Token::Identifier);
+                parse(Token::Assignment);
+                auto* initializer = parseExpr();
+                parseStmtTerminator();
+                typeDecl->staticConsts.push_back(makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString().str(), initializer, nullptr,
+                                                                  accessLevel, *currentModule, name.location));
+                break;
+            }
+            LLVM_FALLTHROUGH;
         default: {
             auto type = parseType();
             auto location = getCurrentLocation();
@@ -1610,6 +1626,17 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 typeDecl->addMethod(parseFunctionTemplate(typeDecl, accessLevel, type, name, location));
                 break;
             default:
+                // A const-qualified member with an initializer is a static constant.
+                if (currentToken() == Token::Assignment && !type.isMutable()) {
+                    if (genericParams && !genericParams->empty()) {
+                        ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                    }
+                    consumeToken();
+                    auto* initializer = parseExpr();
+                    parseStmtTerminator();
+                    typeDecl->staticConsts.push_back(makeAST<VarDecl>(type, name.str(), initializer, nullptr, accessLevel, *currentModule, location));
+                    break;
+                }
                 typeDecl->addField(parseFieldDecl(*typeDecl, accessLevel, type, name, location));
                 break;
             }
@@ -1637,7 +1664,7 @@ TypeTemplate* Parser::parseEnumTemplate(AccessLevel accessLevel) {
 
 /// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' (enum-case-decl | member-decl)* '}' ';'?
 /// enum-case-decl ::= id tuple-type? (',' | '\n' | ';')
-/// member-decl ::= function-decl | function-template-decl
+/// member-decl ::= function-decl | function-template-decl | const-decl
 EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     ASSERT(currentToken() == Token::Enum);
     consumeToken();
@@ -1656,6 +1683,21 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
             accessLevel = AccessLevel::Private;
             consumeToken();
+        }
+
+        // A `const` name followed by `=` declares a constant scoped under the enum name.
+        if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
+            if (genericParams && !genericParams->empty()) {
+                ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+            }
+            consumeToken();
+            auto name = parse(Token::Identifier);
+            parse(Token::Assignment);
+            auto* initializer = parseExpr();
+            parseStmtTerminator();
+            enumDecl->staticConsts.push_back(makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString().str(), initializer, nullptr,
+                                                              accessLevel, *currentModule, name.location));
+            continue;
         }
 
         // A lone identifier names a case; anything else starts a member function signature.
@@ -1688,6 +1730,18 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             auto type = parseType();
             auto location = getCurrentLocation();
             auto methodName = parseFunctionName(enumDecl);
+
+            // A const-qualified member with an initializer is a static constant.
+            if (currentToken() == Token::Assignment && !type.isMutable()) {
+                if (genericParams && !genericParams->empty()) {
+                    ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                }
+                consumeToken();
+                auto* initializer = parseExpr();
+                parseStmtTerminator();
+                enumDecl->staticConsts.push_back(makeAST<VarDecl>(type, methodName.str(), initializer, nullptr, accessLevel, *currentModule, location));
+                continue;
+            }
 
             switch (currentToken()) {
             case Token::LeftParen:

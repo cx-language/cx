@@ -373,13 +373,13 @@ private struct JsonParser {
             while i < lexeme.size() {
                 int64 digit = int64(int(lexeme[i]) - int('0'));
                 if negative {
-                    if integer < (int64_min + digit) / 10 {
+                    if integer < (int64.min + digit) / 10 {
                         overflow = true;
                         break;
                     }
                     integer = integer * 10 - digit;
                 } else {
-                    if integer > (int64_max - digit) / 10 {
+                    if integer > (int64.max - digit) / 10 {
                         overflow = true;
                         break;
                     }

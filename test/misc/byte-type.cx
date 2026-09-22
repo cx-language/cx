@@ -22,9 +22,9 @@ void main() {
     // CHECK-NEXT:255
     println(byte(200) + byte(55));
     // CHECK-NEXT:255
-    println(byte_max);
+    println(byte.max);
     // CHECK-NEXT:0
-    println(byte_min);
+    println(byte.min);
     // CHECK-NEXT:true
     println(byte(1) < byte(2));
 }

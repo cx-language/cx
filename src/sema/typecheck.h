@@ -150,6 +150,7 @@ struct Typechecker {
     TypeDecl* getTypeDecl(const BasicType& type);
     EnumCase* getEnumCase(const Expr& expr, Type expectedType = Type(), CallExpr* call = nullptr);
     EnumCase* getExpectedEnumCase(llvm::StringRef name, Type expectedType);
+    VarDecl* getStaticConst(const Expr& expr);
     EnumCase* instantiateEnumCase(TypeTemplate& typeTemplate, llvm::StringRef caseName, const MemberExpr& memberExpr, CallExpr* call, Type expectedType);
     void checkReturnPointerToLocal(const Expr* returnValue) const;
     void warnIfUnusedResult(const Expr& expr, Type type) const;

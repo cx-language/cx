@@ -32,6 +32,18 @@ bool Expr::isConstant() const {
 
         return false;
     }
+    case ExprKind::MemberExpr: {
+        auto* decl = llvm::cast<MemberExpr>(this)->decl;
+        auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
+
+        if (varDecl) {
+            if (!varDecl->type.isMutable() && varDecl->initializer) {
+                return varDecl->initializer->isConstant();
+            }
+        }
+
+        return false;
+    }
 
     case ExprKind::StringLiteralExpr:
     case ExprKind::CharacterLiteralExpr:
@@ -81,7 +93,6 @@ bool Expr::isConstant() const {
         return llvm::cast<SizeofExpr>(this)->operandType.getSizeInBytes().has_value();
 
     case ExprKind::CallExpr:
-    case ExprKind::MemberExpr:
     case ExprKind::IndexExpr:
     case ExprKind::IndexAssignmentExpr:
     case ExprKind::UnwrapExpr:
@@ -109,6 +120,11 @@ bool Expr::isFoldableIntConstant() const {
     case ExprKind::VarExpr: {
         // Unresolved references (e.g. array bounds examined during parsing) are never constant.
         auto* decl = llvm::cast<VarExpr>(this)->decl;
+        auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
+        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableIntConstant();
+    }
+    case ExprKind::MemberExpr: {
+        auto* decl = llvm::cast<MemberExpr>(this)->decl;
         auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
         return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableIntConstant();
     }
@@ -166,6 +182,11 @@ bool Expr::isFoldableBoolConstant() const {
         auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl);
         return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableBoolConstant();
     }
+    case ExprKind::MemberExpr: {
+        auto* decl = llvm::cast<MemberExpr>(this)->decl;
+        auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
+        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableBoolConstant();
+    }
     case ExprKind::BoolLiteralExpr:
         return true;
     case ExprKind::UnaryExpr: {
@@ -206,6 +227,15 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         if (auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl)) {
             if (!varDecl->type.isMutable() && varDecl->initializer) {
                 return varDecl->initializer->getConstantIntegerValue();
+            }
+        }
+        llvm_unreachable("not a constant integer");
+    case ExprKind::MemberExpr:
+        if (auto* decl = llvm::cast<MemberExpr>(this)->decl) {
+            if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+                if (!varDecl->type.isMutable() && varDecl->initializer) {
+                    return varDecl->initializer->getConstantIntegerValue();
+                }
             }
         }
         llvm_unreachable("not a constant integer");
@@ -252,6 +282,15 @@ bool Expr::getConstantBoolValue() const {
         if (auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl)) {
             if (!varDecl->type.isMutable() && varDecl->initializer) {
                 return varDecl->initializer->getConstantBoolValue();
+            }
+        }
+        llvm_unreachable("not a constant bool");
+    case ExprKind::MemberExpr:
+        if (auto* decl = llvm::cast<MemberExpr>(this)->decl) {
+            if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+                if (!varDecl->type.isMutable() && varDecl->initializer) {
+                    return varDecl->initializer->getConstantBoolValue();
+                }
             }
         }
         llvm_unreachable("not a constant bool");
