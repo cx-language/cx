@@ -54,9 +54,8 @@ switch.case.1:                                    ; preds = %0
 
 switch.case.2:                                    ; preds = %0
   %3 = getelementptr inbounds %E, ptr %e, i32 0, i32 1
-  %j = getelementptr inbounds { i32 }, ptr %3, i32 0, i32 0
-  %j.load = load i32, ptr %j, align 4
-  ret i32 %j.load
+  %eb.load = load i32, ptr %3, align 4
+  ret i32 %eb.load
 
 switch.default:                                   ; preds = %0
   call void @_EN3std10assertFailEP4char(ptr @0), !dbg !7

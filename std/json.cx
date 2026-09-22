@@ -61,22 +61,22 @@ enum JsonError: Printable {
     /// Writes the error as text, with its byte offset.
     void print(StringBuffer* stream) {
         switch this {
-            case UnexpectedCharacter e: writeMessage(stream, "unexpected character", e.offset);
-            case InvalidLiteral e: writeMessage(stream, "invalid literal", e.offset);
-            case ExpectedStringKey e: writeMessage(stream, "expected string key", e.offset);
-            case ExpectedColon e: writeMessage(stream, "expected ':'", e.offset);
-            case ExpectedCommaOrBrace e: writeMessage(stream, "expected ',' or '}'", e.offset);
-            case ExpectedCommaOrBracket e: writeMessage(stream, "expected ',' or ']'", e.offset);
-            case UnterminatedString e: writeMessage(stream, "unterminated string", e.offset);
-            case UnterminatedEscape e: writeMessage(stream, "unterminated escape", e.offset);
-            case InvalidEscape e: writeMessage(stream, "invalid escape", e.offset);
-            case InvalidUnicodeEscape e: writeMessage(stream, "invalid unicode escape", e.offset);
-            case UnpairedSurrogate e: writeMessage(stream, "unpaired surrogate", e.offset);
-            case UnescapedControlCharacter e: writeMessage(stream, "unescaped control character", e.offset);
-            case InvalidNumber e: writeMessage(stream, "invalid number", e.offset);
-            case NumberOutOfRange e: writeMessage(stream, "number out of range", e.offset);
-            case UnexpectedTrailingCharacters e: writeMessage(stream, "unexpected trailing characters", e.offset);
-            case MaximumDepthExceeded e: writeMessage(stream, "maximum nesting depth exceeded", e.offset);
+            case UnexpectedCharacter e: writeMessage(stream, "unexpected character", e);
+            case InvalidLiteral e: writeMessage(stream, "invalid literal", e);
+            case ExpectedStringKey e: writeMessage(stream, "expected string key", e);
+            case ExpectedColon e: writeMessage(stream, "expected ':'", e);
+            case ExpectedCommaOrBrace e: writeMessage(stream, "expected ',' or '}'", e);
+            case ExpectedCommaOrBracket e: writeMessage(stream, "expected ',' or ']'", e);
+            case UnterminatedString e: writeMessage(stream, "unterminated string", e);
+            case UnterminatedEscape e: writeMessage(stream, "unterminated escape", e);
+            case InvalidEscape e: writeMessage(stream, "invalid escape", e);
+            case InvalidUnicodeEscape e: writeMessage(stream, "invalid unicode escape", e);
+            case UnpairedSurrogate e: writeMessage(stream, "unpaired surrogate", e);
+            case UnescapedControlCharacter e: writeMessage(stream, "unescaped control character", e);
+            case InvalidNumber e: writeMessage(stream, "invalid number", e);
+            case NumberOutOfRange e: writeMessage(stream, "number out of range", e);
+            case UnexpectedTrailingCharacters e: writeMessage(stream, "unexpected trailing characters", e);
+            case MaximumDepthExceeded e: writeMessage(stream, "maximum nesting depth exceeded", e);
         }
     }
 }
@@ -141,8 +141,8 @@ private struct JsonParser {
         } else if c == '"' {
             var r = parseString();
             switch (r) {
-                case Ok s: return Ok(JsonValue.String(s.value));
-                case Err e: return Err(e.error);
+                case Ok s: return Ok(JsonValue.String(s));
+                case Err e: return Err(e);
             }
         } else if c == 't' {
             return parseLiteral("true", JsonValue.Boolean(true));
@@ -192,10 +192,10 @@ private struct JsonParser {
                     pos++;
                     var value = parseValue(depth + 1);
                     switch (value) {
-                        case Ok v: members.push(JsonMember(k.value, v.value));
-                        case Err e: return Err(e.error);
+                        case Ok v: members.push(JsonMember(k, v));
+                        case Err e: return Err(e);
                     }
-                case Err e: return Err(e.error);
+                case Err e: return Err(e);
             }
             skipWhitespace();
             if peek() == ',' {
@@ -224,8 +224,8 @@ private struct JsonParser {
         while true {
             var r = parseValue(depth + 1);
             switch (r) {
-                case Ok v: elements.push(v.value);
-                case Err e: return Err(e.error);
+                case Ok v: elements.push(v);
+                case Err e: return Err(e);
             }
             skipWhitespace();
             if peek() == ',' {
@@ -500,23 +500,23 @@ private void writeNumber(StringBuffer* out, float64 value) {
 
 private void writeJson(StringBuffer* out, JsonValue* value, int level, bool indented) {
     switch (*value) {
-        case String s: writeQuoted(out, s.value);
-        case Integer n: n.value.print(out);
-        case Number f: writeNumber(out, f.value);
+        case String s: writeQuoted(out, s);
+        case Integer n: n.print(out);
+        case Number f: writeNumber(out, f);
         case Boolean b:
-            if b.value {
+            if b {
                 out.append("true");
             } else {
                 out.append("false");
             }
         case Null: out.append("null");
         case Array a:
-            if a.value.empty() {
+            if a.empty() {
                 out.append("[]");
             } else {
                 out.append('[');
                 bool first = true;
-                for element in a.value {
+                for element in a {
                     if !first {
                         out.append(',');
                     }
@@ -534,12 +534,12 @@ private void writeJson(StringBuffer* out, JsonValue* value, int level, bool inde
                 out.append(']');
             }
         case Object o:
-            if o.value.empty() {
+            if o.empty() {
                 out.append("{}");
             } else {
                 out.append('{');
                 bool first = true;
-                for member in o.value {
+                for member in o {
                     if !first {
                         out.append(',');
                     }

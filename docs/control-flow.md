@@ -120,7 +120,7 @@ enum Outcome {
 string describe(Outcome* outcome) {
     return switch *outcome {
         case Ok: "ok",
-        case Err error: error.error,
+        case Err error: error,
     };
 }
 

@@ -18,7 +18,7 @@ bool isOk<T>(Outcome<T>* outcome) {
 T unwrapOr<T>(Outcome<T>* outcome, T defaultValue) {
     switch (*outcome) {
         case Ok value:
-            return value.value;
+            return value;
         case Err:
             return defaultValue;
     }

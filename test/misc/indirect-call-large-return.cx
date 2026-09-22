@@ -41,7 +41,7 @@ void main() {
     var o = applyOutcome(makeOutcome, 21);
     switch (o) {
         case Ok value:
-            assert(value.value == 42);
+            assert(value == 42);
         case Err error:
             assert(false);
     }
@@ -50,7 +50,7 @@ void main() {
     var o2 = h(10);
     switch (o2) {
         case Ok value:
-            assert(value.value == 20);
+            assert(value == 20);
         case Err error:
             assert(false);
     }
