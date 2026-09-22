@@ -431,7 +431,7 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto* indexExpr = llvm::cast<IndexExpr>(this);
         auto base = indexExpr->getBase()->instantiate(genericArgs);
         auto index = indexExpr->getIndex()->instantiate(genericArgs);
-        auto* newExpr = makeAST<IndexExpr>(base, index, indexExpr->location);
+        auto* newExpr = makeAST<IndexExpr>(base, index, indexExpr->location, indexExpr->fromEnd);
         newExpr->endLocation = indexExpr->endLocation;
         return newExpr;
     }
@@ -440,7 +440,7 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto base = indexAssignmentExpr->getBase()->instantiate(genericArgs);
         auto index = indexAssignmentExpr->getIndex()->instantiate(genericArgs);
         auto value = indexAssignmentExpr->getValue()->instantiate(genericArgs);
-        auto* newExpr = makeAST<IndexAssignmentExpr>(base, index, value, indexAssignmentExpr->location);
+        auto* newExpr = makeAST<IndexAssignmentExpr>(base, index, value, indexAssignmentExpr->location, indexAssignmentExpr->fromEnd);
         newExpr->endLocation = indexAssignmentExpr->endLocation;
         return newExpr;
     }

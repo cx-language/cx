@@ -21,6 +21,7 @@ void main() {
     println(list[0]); // prints the first element, 1
     println(list.first()); // also prints the first element
     println(list.last()); // prints the last element, 3
+    println(list[-1]); // also prints the last element
     // println(list[3]); // invalid index, this would cause an assertion error
 
     // Print each element in the list.

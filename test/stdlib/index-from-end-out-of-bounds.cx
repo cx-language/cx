@@ -1,0 +1,8 @@
+// RUN: %not %cx run %s 2>&1 | %FileCheck %s
+
+void main() {
+    var list = List<int>();
+    list.push(10);
+    // CHECK: List index 4 is out of bounds, size is 1
+    println(list[-4]);
+}

@@ -57,9 +57,21 @@ struct StringBuffer: Comparable, Hashable, Printable {
         return characters[index];
     }
 
+    /// Returns the character at the given offset from the end.
+    /// Offset 1 is the last character; offsets outside 1..size() abort.
+    char operator[-](int index) {
+        return characters[size() - index];
+    }
+
     /// Sets the character at the given index.
     void operator[]=(int index, char c) {
         characters[index] = c;
+    }
+
+    /// Sets the character at the given offset from the end.
+    /// Offset 1 is the last character; offsets outside 1..size() abort.
+    void operator[-]=(int index, char c) {
+        characters[size() - index] = c;
     }
 
     /// Returns the string as a C-style, i.e. null-terminated, string.

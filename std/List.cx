@@ -74,9 +74,25 @@ struct List<Element> {
         return buffer[index];
     }
 
+    /// Returns a reference to the element at the given offset from the end.
+    /// Offset 1 is the last element; offsets outside 1..size() abort.
+    Element* operator[-](int index) {
+        if index < 1 || index > size {
+            indexOutOfBounds(index);
+        }
+
+        return buffer[size - index];
+    }
+
     /// Sets the element at the given index.
     void operator[]=(int index, Element element) {
         buffer[index] = element;
+    }
+
+    /// Sets the element at the given offset from the end.
+    /// Offset 1 is the last element; offsets outside 1..size() abort.
+    void operator[-]=(int index, Element element) {
+        buffer[size - index] = element;
     }
 
     /// Returns the first element.

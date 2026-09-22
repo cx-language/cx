@@ -540,6 +540,8 @@ MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
 
 /// index-expr ::= expr '[' expr ']'
 /// index-assignment-expr ::= index-expr '=' expr
+/// A leading minus inside the brackets indexes from the end instead:
+/// 'base[-offset]' accesses 'base[base.size() - offset]'.
 Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
     ASSERT(currentToken() == Token::LeftBracket);
     auto location = getCurrentLocation();
@@ -548,12 +550,23 @@ Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
     auto index = parseExpr();
     parse(Token::RightBracket);
 
-    if (currentToken() == Token::Assignment) {
-        consumeToken();
-        return makeExpr<IndexAssignmentExpr>(base, index, parseExpr(), location);
+    // A leading minus marks a from-end index. Strip it so operator[-]
+    // receives the plain offset; this is known statically, so unlike a
+    // runtime sign check it costs nothing.
+    bool fromEnd = false;
+    if (auto* unary = llvm::dyn_cast<UnaryExpr>(index)) {
+        if (unary->op == Token::Minus) {
+            fromEnd = true;
+            index = &unary->getOperand();
+        }
     }
 
-    return makeExpr<IndexExpr>(base, index, location);
+    if (currentToken() == Token::Assignment) {
+        consumeToken();
+        return makeExpr<IndexAssignmentExpr>(base, index, parseExpr(), location, fromEnd);
+    }
+
+    return makeExpr<IndexExpr>(base, index, location, fromEnd);
 }
 
 /// unwrap-expr ::= expr '!'
@@ -1417,6 +1430,16 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
     if (name.getString() == "operator") {
         auto op = consumeToken();
         if (op == Token::LeftBracket) {
+            if (currentToken() == Token::Minus) {
+                consumeToken();
+                parse(Token::RightBracket);
+                if (currentToken() == Token::Assignment) {
+                    consumeToken();
+                    return "[-]=";
+                } else {
+                    return "[-]";
+                }
+            }
             parse(Token::RightBracket);
             if (currentToken() == Token::Assignment) {
                 consumeToken();
