@@ -37,6 +37,7 @@ void main() {
 ## Borrowed parameters
 
 Functions that only use a value for the duration of the call take it by borrow, written `T&`.
+(The `T&` type is also called a reference; compiler diagnostics say "reference type".)
 Callers pass values as usual; the compiler borrows them automatically.
 Temporaries and literals can be borrowed too; they live until the end of the call.
 Passing a stored `T*` where a `T&` is expected reborrows it.
