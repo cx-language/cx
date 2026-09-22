@@ -22,6 +22,16 @@ struct ByteIterator: Copyable, Iterator<uint8> {
         stream = stream.substr(1);
     }
 
+    /// Collects the remaining bytes into a list.
+    List<uint8> toList() {
+        var output = List<uint8>();
+        while hasValue() {
+            output.push(value());
+            increment();
+        }
+        return output;
+    }
+
     /// Returns itself.
     ByteIterator iterator() {
         return this;

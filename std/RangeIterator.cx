@@ -25,4 +25,14 @@ struct RangeIterator<T>: Copyable, Iterator<T> {
     void increment() {
         current++;
     }
+
+    /// Collects the remaining values into a list.
+    List<T> toList() {
+        var output = List<T>();
+        while hasValue() {
+            output.push(value());
+            increment();
+        }
+        return output;
+    }
 }
