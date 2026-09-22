@@ -11,6 +11,7 @@ int runScreenshot(string path) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
     glfwWindowHint(GLFW_VISIBLE, 0);
+    glfwWindowHint(GLFW_SAMPLES, 4);
     var window = glfwCreateWindow(640, 480, "screenshot", null, null);
     if window == null {
         println("window failed");
@@ -21,6 +22,7 @@ int runScreenshot(string path) {
 
     var world = makeWorld(8, 8);
     var program = createProgram("assets/block.vert", "assets/block.frag");
+    var blockTex = createBlockTexture();
     glUseProgram(program);
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, 640, 480);
@@ -37,6 +39,7 @@ int runScreenshot(string path) {
     var mvp = proj * view;
     var uniforms = getBlockUniforms(program);
     setMat4(uniforms.mvp, mvp);
+    bindBlockTexture(uniforms, blockTex);
     setBlockFog(uniforms, eye);
     for i in 0..world.chunks.size() {
         drawMesh(world.chunks[i].mesh);
@@ -74,6 +77,7 @@ int runScreenshot(string path) {
     }
     println("wrote ", path);
     destroyWorld(world);
+    destroyBlockTexture(blockTex);
     glDeleteProgram(program);
     glfwDestroyWindow(window);
     glfwTerminate();

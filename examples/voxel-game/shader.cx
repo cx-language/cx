@@ -42,6 +42,7 @@ uint createProgram(string vertPath, string fragPath) {
 
 struct BlockUniforms: Copyable {
     int mvp;
+    int blockTex;
     int cameraPos;
     int fogColor;
     int fogNear;
@@ -55,6 +56,7 @@ int uniformLoc(uint program, string name) {
 
 BlockUniforms getBlockUniforms(uint program) {
     return BlockUniforms(mvp = uniformLoc(program, "mvp"),
+        blockTex = uniformLoc(program, "blockTex"),
         cameraPos = uniformLoc(program, "cameraPos"),
         fogColor = uniformLoc(program, "fogColor"),
         fogNear = uniformLoc(program, "fogNear"),
@@ -71,6 +73,10 @@ void setVec3(int location, Vec3* v) {
 
 void setFloat(int location, float f) {
     glUniform1f(location, f);
+}
+
+void setInt(int location, int value) {
+    glUniform1i(location, value);
 }
 
 void setBlockFog(BlockUniforms* u, Vec3* eye) {
