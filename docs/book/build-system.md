@@ -89,6 +89,24 @@ import shapes;
 There is no package registry: dependencies are just Git repositories nominated by URL,
 with no central index or publishing step.
 
+### Transitive dependencies
+
+Each dependency's own `build.cx` applies to that dependency: its `defines`,
+`headerSearchPaths`, `librarySearchPaths`, `libraries`, `frameworks`, and
+`pkgConfigDependencies` are used when compiling it, and its `dependencies`
+are fetched and imported the same way, recursively. Paths in a dependency's
+settings resolve against that dependency's directory. Only `name`,
+`outputDirectory`, and `multitarget` stay with the main project.
+
+A package required at two versions, or both vendored and fetched, is an
+error at the importing `import`: remove or unify the duplicate source.
+Command-line `-D`, `-I`, `-L`, `-l`, and `--cflags` flags apply to every
+package; a dependency's `#if` conditions see those plus its own `defines`.
+
+Passing files directly (`cx main.cx`) skips dependency build files: sources
+still resolve, but their settings don't apply. Use `cx build` for projects
+with dependencies.
+
 ### Vendoring
 
 If you'd rather not fetch over the network, you can vendor dependencies instead:
@@ -110,9 +128,8 @@ import shapes;
 ```
 
 `cx build` runs at the project root and only reads the `build.cx` there.
-The `build.cx` at an imported package's root is likewise reserved, though its
-settings don't apply transitively. A `build.cx` anywhere else is an ordinary
-source file and compiles as usual.
+The `build.cx` at an imported package's root applies to that package as above.
+A `build.cx` anywhere else is an ordinary source file and compiles as usual.
 Everything else under `vendor/` is only reachable via `import`.
 Because vendored code compiles as an imported module rather than as part of
 your project, unused functions in it don't produce warnings.
