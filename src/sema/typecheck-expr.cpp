@@ -1546,17 +1546,23 @@ static bool isBareName(GenericArg arg) {
     return arg.isType() && arg.type.isBasicType() && arg.type.getGenericArgs().empty();
 }
 
-// Whether explicit generic arguments fit the parameters, ignoring bare names. Silent for use in overload probing.
-static bool genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs) {
+// A bare name that denotes a known type or value cannot be an integer parameter reference.
+bool Typechecker::genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs) {
     if (genericArgs.size() != genericParams.size()) return false;
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
-        if (genericParam.isValueParam && !genericArg.isInt() && !isBareName(genericArg)) return false;
-        if (!genericParam.isValueParam && genericArg.isInt()) return false;
+        if (genericParam.isValueParam) {
+            if (genericArg.isInt()) continue;
+            if (!isBareName(genericArg)) return false;
+            if (genericArg.type.isBuiltinType() || !findDecls(genericArg.type.getName()).empty()) return false;
+        } else if (genericArg.isInt()) {
+            return false;
+        }
     }
     return true;
 }
 
-bool cx::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location) {
+bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
+                                      Location location) {
     if (genericArgs.size() < genericParams.size()) {
         REPORT_ERROR(location, "too few generic arguments to '" << name << "', expected " << genericParams.size());
         return false;
@@ -1567,9 +1573,11 @@ bool cx::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llv
     }
     bool valid = true;
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
-        if (genericParam.isValueParam && !genericArg.isInt() && !isBareName(genericArg)) {
-            REPORT_ERROR(genericArg.location, "expected integer generic argument for parameter '" << genericParam.getName() << "' of '" << name << "'");
-            valid = false;
+        if (genericParam.isValueParam && !genericArg.isInt()) {
+            if (!isBareName(genericArg) || genericArg.type.isBuiltinType() || !findDecls(genericArg.type.getName()).empty()) {
+                REPORT_ERROR(genericArg.location, "expected integer generic argument for parameter '" << genericParam.getName() << "' of '" << name << "'");
+                valid = false;
+            }
         } else if (!genericParam.isValueParam && genericArg.isInt()) {
             REPORT_ERROR(genericArg.location, "expected type generic argument for parameter '" << genericParam.getName() << "' of '" << name << "'");
             valid = false;
