@@ -3,7 +3,7 @@
 // CHECK:3
 // CHECK-NEXT:6
 
-void foo(ArrayRef<int> x) {
+void foo(Slice<int> x) {
     println(x.size());
     println(x[0] + x[1] + x[2]);
 }

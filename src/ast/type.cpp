@@ -66,8 +66,8 @@ bool Type::isConstantArray() const {
     return isArrayType() && getArraySize() >= 0;
 }
 
-bool Type::isArrayRef() const {
-    return isBasicType() && getName() == "ArrayRef";
+bool Type::isSlice() const {
+    return isBasicType() && getName() == "Slice";
 }
 
 bool Type::isUnsizedArrayPointer() const {
@@ -244,7 +244,7 @@ std::string Type::getQualifiedTypeName() const {
 }
 
 Type Type::getElementType() const {
-    if (isArrayRef()) return getGenericArgs()[0];
+    if (isSlice()) return getGenericArgs()[0];
     return llvm::cast<ArrayType>(typeBase)->elementType.withLocation(location);
 }
 

@@ -25,7 +25,7 @@ Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
 
     if (emittingGlobalInitializer && expr.hasType()) {
         // Build the string object as a constant aggregate instead of calling the constructor.
-        // Layout: string { characters: ArrayRef<char> { data: char[*], size: int } }.
+        // Layout: string { characters: Slice<char> { data: char[*], size: int } }.
         auto* stringType = getIRType(expr.type);
         auto stringFields = stringType->getFields();
         auto charactersField = llvm::find_if(stringFields, [](const IRField& field) { return field.name == "characters"; });
@@ -147,7 +147,7 @@ Value* IRGenerator::emitUndefinedLiteralExpr(const UndefinedLiteralExpr& expr) {
 }
 
 Value* IRGenerator::emitArrayLiteralExpr(const ArrayLiteralExpr& expr) {
-    if (expr.elements.empty() && expr.type.isArrayRef()) {
+    if (expr.elements.empty() && expr.type.isSlice()) {
         auto* irType = getIRType(expr.type);
         auto fields = irType->getFields();
         ASSERT(fields.size() == 2);
@@ -548,12 +548,12 @@ Value* IRGenerator::emitAssignment(const BinaryExpr& expr) {
     return nullptr;
 }
 
-static bool isBuiltinArrayToArrayRefConversion(Type sourceType, IRType* targetType) {
-    return sourceType.removePointer().isConstantArray() && targetType->isStruct() && targetType->getName().starts_with("ArrayRef<");
+static bool isBuiltinArrayToSliceConversion(Type sourceType, IRType* targetType) {
+    return sourceType.removePointer().isConstantArray() && targetType->isStruct() && targetType->getName().starts_with("Slice<");
 }
 
-static bool isListToArrayRefConversion(Type sourceType, IRType* targetType) {
-    return sourceType.isBasicType() && sourceType.getName() == "List" && targetType->isStruct() && targetType->getName().starts_with("ArrayRef<");
+static bool isListToSliceConversion(Type sourceType, IRType* targetType) {
+    return sourceType.isBasicType() && sourceType.getName() == "List" && targetType->isStruct() && targetType->getName().starts_with("Slice<");
 }
 
 static bool isStringBufferToStringConversion(Type sourceType, IRType* targetType) {
@@ -576,7 +576,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
 
     // TODO: Handle implicit conversions in a separate function.
 
-    if (isBuiltinArrayToArrayRefConversion(expr.type, targetType)) {
+    if (isBuiltinArrayToSliceConversion(expr.type, targetType)) {
         ASSERT(expr.type.removePointer().isConstantArray());
         // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
         auto* value = expr.type.isPointerType() ? emitExpr(expr) : emitExprAsPointer(expr);
@@ -591,7 +591,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
         return createInsertValue(arrayRef, size, 1);
     }
 
-    if (isListToArrayRefConversion(expr.type, targetType)) {
+    if (isListToSliceConversion(expr.type, targetType)) {
         auto* listPtr = emitExprAsPointer(expr);
         auto* buffer = createLoad(createGEP(listPtr, 0));
         auto* size = createLoad(createGEP(listPtr, 1));

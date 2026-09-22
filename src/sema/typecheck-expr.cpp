@@ -305,7 +305,7 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
             while (unwrapped.isOptionalType()) {
                 unwrapped = unwrapped.getWrappedType();
             }
-            if (unwrapped.isArrayType() || unwrapped.isArrayRef()) {
+            if (unwrapped.isArrayType() || unwrapped.isSlice()) {
                 return expectedType;
             }
         }
@@ -853,12 +853,12 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isArrayType() && (target.isArrayType() || target.isArrayRef()) && source.getElementType() == target.getElementType()) {
+    if (source.isArrayType() && (target.isArrayType() || target.isSlice()) && source.getElementType() == target.getElementType()) {
         if (target.isArrayType() && source.getArraySize() == target.getArraySize()) return source;
-        if (source.isConstantArray() && (target.isUnsizedArrayPointer() || target.isArrayRef())) return source;
+        if (source.isConstantArray() && (target.isUnsizedArrayPointer() || target.isSlice())) return source;
     }
 
-    if (source.isBasicType() && target.isArrayRef() && source.getName() == "List" && source.getGenericArgs() == target.getGenericArgs()) {
+    if (source.isBasicType() && target.isSlice() && source.getName() == "List" && source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
 
@@ -987,7 +987,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isPointerType() && source.getPointee().isConstantArray() && (target.isArrayRef() || target.isUnsizedArrayPointer())
+    if (source.isPointerType() && source.getPointee().isConstantArray() && (target.isSlice() || target.isUnsizedArrayPointer())
         && source.getPointee().getElementType() == target.getElementType()) {
         return source;
     }
@@ -1136,7 +1136,7 @@ Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef g
         return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam);
     }
 
-    if (paramType.isArrayRef() && argType.removeOptional().removePointer().isArrayType()) {
+    if (paramType.isSlice() && argType.removeOptional().removePointer().isArrayType()) {
         return findGenericArg(argType.removeOptional().removePointer().getElementType(), paramType.getElementType(), genericParam);
     }
 

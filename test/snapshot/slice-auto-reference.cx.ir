@@ -1,6 +1,6 @@
 
-void _EN4main3fooE8ArrayRefI3intE(ArrayRef<int> a) {
-    ArrayRef<int>* a_0 = alloca ArrayRef<int>
+void _EN4main3fooE5SliceI3intE(Slice<int> a) {
+    Slice<int>* a_0 = alloca Slice<int>
     store a to a_0
     return void
 }
@@ -12,9 +12,9 @@ int main() {
     int[3] _2 = insertvalue _1, 2, int 3
     store _2 to a
     int* _3 = getelementptr a, 0
-    ArrayRef<int> _4 = insertvalue ArrayRef<int> undefined, 0, _3
-    ArrayRef<int> _5 = insertvalue _4, 1, int 3
-    void _6 = call _EN4main3fooE8ArrayRefI3intE(ArrayRef<int> _5)
+    Slice<int> _4 = insertvalue Slice<int> undefined, 0, _3
+    Slice<int> _5 = insertvalue _4, 1, int 3
+    void _6 = call _EN4main3fooE5SliceI3intE(Slice<int> _5)
     void _7 = call _EN4main3bazEPA3_3int(int[3]* a)
     return int 0
 }

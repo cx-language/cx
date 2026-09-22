@@ -61,7 +61,7 @@ struct Type {
     bool isBuiltinType() const { return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull() || isVoid(); }
     bool isImplicitlyCopyable() const;
     bool isConstantArray() const;
-    bool isArrayRef() const;
+    bool isSlice() const;
     bool isUnsizedArrayPointer() const;
     bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
