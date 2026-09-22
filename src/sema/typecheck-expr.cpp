@@ -2573,7 +2573,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
     } else if (baseType.isAnonymousStructType()) {
         for (auto& element : baseType.getAnonymousStructElements()) {
             if (element.name == expr.member) {
-                return element.type;
+                return element.type.withMutability(baseType.mutability);
             }
         }
     } else if (auto* baseDecl = baseType.getDecl()) {
