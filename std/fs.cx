@@ -3,12 +3,6 @@
 // Lexical path manipulation without file system access lives in path.cx.
 
 #if Windows
-import "io.h";
-#else
-import "dirent.h";
-#endif
-
-#if Windows
 private extern int _access(const char* path, int mode);
 private extern int _mkdir(const char* path);
 private extern int _rmdir(const char* path);
@@ -104,38 +98,47 @@ int64? fileSize(string path) {
 
 #if Windows
 /// Returns the names in the directory, sorted, or an empty list if it can't be opened.
+///
+/// Names come from the shell, so a name containing a line break is split in two.
 List<StringBuffer> listDirectory(string path) {
-    var result = List<StringBuffer>();
-    var pattern = StringBuffer(path) + "/*";
-    _finddata_t data = undefined;
-    var handle = _findfirst(pattern.cString(), &data);
-    if handle == -1 return result;
-    defer _findclose(handle);
-
-    while true {
-        if data.name != "." && data.name != ".." {
-            result.push(StringBuffer(data.name));
-        }
-        if _findnext(handle, &data) != 0 break;
-    }
-
-    sort(result);
-    return result;
+    return readDirectoryListing(StringBuffer("dir /b ") + quotedPath(path) + " 2>nul", true);
 }
 #else
 /// Returns the names in the directory, sorted, or an empty list if it can't be opened.
+///
+/// Names come from the shell, so a name containing a line break is split in two.
 List<StringBuffer> listDirectory(string path) {
-    var result = List<StringBuffer>();
-    var dir = opendir(StringBuffer(path).cString());
-    if !dir return result;
-    defer closedir(dir);
+    return readDirectoryListing(StringBuffer("ls -1 ") + quotedPath(path) + " 2>/dev/null", false);
+}
+#endif
 
-    while var entry = readdir(dir) {
-        if entry.d_name == "." || entry.d_name == ".." continue;
-        result.push(StringBuffer(entry.d_name));
+private int listCounter = 0;
+
+private StringBuffer quotedPath(string path) {
+    return StringBuffer("\"") + path + "\"";
+}
+
+private List<StringBuffer> readDirectoryListing(StringBuffer command, bool stripCarriageReturns) {
+    listCounter++;
+    var tmpPath = StringBuffer("cx_list_") + listCounter.toString() + ".tmp";
+    defer remove(tmpPath.cString());
+
+    var fullCommand = string(&command) + " > " + string(&tmpPath);
+    system(fullCommand);
+
+    var result = List<StringBuffer>();
+    var output = readFile(string(&tmpPath));
+    if !output return result;
+    var content = output;
+    for line in string(&content).lines() {
+        var name = line;
+        if stripCarriageReturns && name.endsWith("\r") {
+            name = name.substr(0..name.size() - 1);
+        }
+        if name.empty() || name == string(&tmpPath) continue;
+        result.push(StringBuffer(name));
     }
 
     sort(result);
     return result;
 }
-#endif

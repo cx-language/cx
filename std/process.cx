@@ -7,13 +7,8 @@ private extern int _putenv(const char* nameEqualsValue);
 private extern int setenv(const char* name, const char* value, int overwrite);
 #endif
 private extern int system(const char* command);
-#if Windows
-private extern FILE*? _popen(const char* command, const char* mode);
-private extern int _pclose(FILE* stream);
-#else
-private extern FILE*? popen(const char* command, const char* mode);
-private extern int pclose(FILE* stream);
-#endif
+
+private int captureCounter = 0;
 
 /// Returns the value of the environment variable, or null if it's not set.
 string? getenv(string name) {
@@ -40,32 +35,18 @@ int system(string command) {
     return system(StringBuffer(command).cString());
 }
 
-#if Windows
 /// Runs the command in a shell, returning its standard output.
+///
+/// The exit status is ignored; use system() when it matters.
 StringBuffer capture(string command) {
-    var pipe = _popen(StringBuffer(command).cString(), "r");
-    if !pipe abort("capture failed for command: ", command);
-    var output = readPipe(pipe);
-    _pclose(pipe);
-    return output;
-}
-#else
-/// Runs the command in a shell, returning its standard output.
-StringBuffer capture(string command) {
-    var pipe = popen(StringBuffer(command).cString(), "r");
-    if !pipe abort("capture failed for command: ", command);
-    var output = readPipe(pipe);
-    pclose(pipe);
-    return output;
-}
-#endif
+    captureCounter++;
+    var path = StringBuffer("cx_capture_") + captureCounter.toString() + ".tmp";
+    defer remove(path.cString());
 
-private StringBuffer readPipe(FILE* pipe) {
-    var output = StringBuffer();
-    while true {
-        var c = fgetc(pipe);
-        if c < 0 break;
-        output.append(char(c));
-    }
+    var fullCommand = command + " > " + string(&path);
+    system(string(&fullCommand));
+
+    var output = readFile(string(&path));
+    if !output abort("capture failed for command: ", command);
     return output;
 }
