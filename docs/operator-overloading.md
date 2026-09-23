@@ -32,6 +32,11 @@ The overloadable operators are `==`, `!=`, `<`, `<=`, `>`, `>=`,
 `+`, `-`, `*`, `/`, `%`, and the subscript operator `[]` below.
 Operator functions can be generic, like any other function.
 
+Comparison operators are synthesized, so only `==` and `<` need overloads:
+`!=` is the negation of `==`, and `==`/`!=` also match with their operands
+swapped. `a > b` checks `b < a`, `a >= b` checks `!(a < b)`,
+and `a <= b` checks `!(b < a)`.
+
 The subscript operator is overloaded with a member function,
 so it can access the instance through `this`.
 A typical use is indexed access to a type's components,
