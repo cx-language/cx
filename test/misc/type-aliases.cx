@@ -1,0 +1,68 @@
+// RUN: %cx run %s 2>&1 | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK-NOT: type-aliases.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+using Count = int;
+using AliasCount = Count;
+using MaybeCount = Count?;
+using CountList = List<Count>;
+using CountArray = Count[3];
+using CountCallback = int(int);
+
+struct Record {
+    Count value;
+    MaybeCount maybe;
+}
+
+struct Point {
+    int x;
+    int y;
+}
+
+using PointAlias = Point;
+
+enum State {
+    On,
+    Off,
+}
+
+using StateAlias = State;
+
+Count double(Count value) {
+    return value * 2;
+}
+
+int apply(CountCallback callback) {
+    return callback(4);
+}
+
+void main() {
+    Record record = Record(value = 3, maybe = 4);
+    CountArray values = [1, 2, 3];
+    CountList list = List<Count>();
+    PointAlias point = PointAlias(1, 2);
+    StateAlias state = StateAlias.On;
+    int8 small = 5;
+    AliasCount chained = AliasCount(small);
+
+    println(record.value);
+    println(record.maybe!);
+    println(values[1]);
+    println(apply(double));
+    println(list.size());
+    println(point.x + point.y);
+    println(chained);
+    switch state {
+        case On: println("on");
+        case Off: println("off");
+    }
+}
+
+// CHECK:3
+// CHECK-NEXT:4
+// CHECK-NEXT:2
+// CHECK-NEXT:8
+// CHECK-NEXT:0
+// CHECK-NEXT:3
+// CHECK-NEXT:5
+// CHECK-NEXT:on
+// CHECK-NOT: type-aliases.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

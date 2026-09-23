@@ -268,6 +268,16 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to generic function '" << expr.identifier << "' without specifying type arguments");
     case DeclKind::TypeDecl:
         return llvm::cast<TypeDecl>(decl)->getType();
+    case DeclKind::TypeAliasDecl: {
+        auto* alias = llvm::cast<TypeAliasDecl>(decl);
+        Type aliasedType = resolveTypeAliases(alias->aliasedType);
+        typecheckType(aliasedType, AccessLevel::None);
+        if (TypeDecl* typeDecl = aliasedType.getDecl()) {
+            expr.decl = typeDecl;
+            return aliasedType;
+        }
+        ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to type alias '" << expr.identifier << "' as a value");
+    }
     case DeclKind::TypeTemplate:
         ERROR_RANGE(expr.location, expr.endLocation, "'" << expr.identifier << "' is not a variable");
     case DeclKind::EnumDecl:
@@ -1784,7 +1794,7 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
     return genericArgs;
 }
 
-Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
+Type Typechecker::typecheckBuiltinConversion(CallExpr& expr, Type targetType) {
     if (expr.args.size() != 1) {
         ERROR_RANGE(expr.location, expr.endLocation, "expected single argument to converting constructor");
     }
@@ -1796,7 +1806,8 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
     }
 
     auto sourceType = typecheckExpr(*expr.args.front().value);
-    auto targetType = BasicType::get(expr.getFunctionName(), {});
+    if (!targetType) targetType = BasicType::get(expr.getFunctionName(), {});
+    expr.builtinConversion = true;
 
     if (sourceType.isReferenceType()) {
         // Borrows convert as their referent; builtin conversions always copy into a fresh scalar.
@@ -2343,6 +2354,24 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee) {
     TypeDecl* receiverTypeDecl;
 
+    if (!expr.receiverType && expr.callee->isVarExpr()) {
+        auto decls = findDecls(callee);
+        bool hasAlias = llvm::any_of(decls, [](Decl* decl) { return decl->isTypeAliasDecl(); });
+        if (hasAlias) {
+            std::vector<Decl*> expanded;
+            for (Decl* decl : decls) {
+                if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
+                    Type aliasedType = resolveTypeAliases(alias->aliasedType);
+                    typecheckType(aliasedType, AccessLevel::None);
+                    if (TypeDecl* typeDecl = aliasedType.getDecl()) expanded.push_back(typeDecl);
+                } else {
+                    expanded.push_back(decl);
+                }
+            }
+            return expanded;
+        }
+    }
+
     if (expr.receiverType && expr.receiverType.removePointer().isBasicType()) {
         receiverTypeDecl = getTypeDecl(*llvm::cast<BasicType>(expr.receiverType.removePointer().typeBase));
     } else {
@@ -2359,6 +2388,16 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
     if (Type::isBuiltinScalar(expr.getFunctionName())) {
         return typecheckBuiltinConversion(expr);
+    }
+
+    if (expr.callee->isVarExpr()) {
+        Type calleeType = BasicType::get(expr.getFunctionName(), {});
+        if (TypeAliasDecl* alias = findTypeAlias(calleeType)) {
+            Type aliasedType = resolveTypeAliases(alias->aliasedType);
+            if (Type::isBuiltinScalar(aliasedType.getName())) {
+                return typecheckBuiltinConversion(expr, aliasedType);
+            }
+        }
     }
 
     if (expr.isBuiltinCast()) {
@@ -2763,6 +2802,7 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
 }
 
 Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
+    expr.operandType = resolveTypeAliases(std::move(expr.operandType));
     // `sizeof` accepts a variable as well as a type, e.g. `sizeof(x)`. A type
     // with the same name takes precedence, so previously valid `sizeof(T)`
     // expressions are unaffected even if a variable shadows the type name.
@@ -3124,6 +3164,14 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
 }
 
 Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedType) {
+    expectedType = resolveTypeAliases(std::move(expectedType));
+    if (expr.isCallExpr()) {
+        auto& call = llvm::cast<CallExpr>(expr);
+        for (auto& genericArg : call.genericArgs) {
+            if (genericArg.isType()) genericArg.type = resolveTypeAliases(genericArg.type);
+        }
+    }
+
     Type type;
 
     switch (expr.kind) {
@@ -3201,6 +3249,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         break;
     }
 
+    type = resolveTypeAliases(std::move(type));
     expr.type = type;
     expr.assignableType = type;
 
@@ -3264,6 +3313,13 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
     auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
     if (!varExpr) return nullptr;
     auto decls = findDecls(varExpr->identifier);
+    for (Decl*& decl : decls) {
+        if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
+            Type aliasedType = resolveTypeAliases(alias->aliasedType);
+            typecheckType(aliasedType, AccessLevel::None);
+            if (TypeDecl* typeDecl = aliasedType.getDecl()) decl = typeDecl;
+        }
+    }
 
     Decl* enumDeclOrTemplate = nullptr;
     if (decls.size() == 1) {
@@ -3308,6 +3364,13 @@ VarDecl* Typechecker::getStaticConst(const Expr& expr) {
     auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
     if (!varExpr) return nullptr;
     auto decls = findDecls(varExpr->identifier);
+    for (Decl*& decl : decls) {
+        if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
+            Type aliasedType = resolveTypeAliases(alias->aliasedType);
+            typecheckType(aliasedType, AccessLevel::None);
+            if (TypeDecl* typeDecl = aliasedType.getDecl()) decl = typeDecl;
+        }
+    }
 
     Decl* typeDeclOrNull = nullptr;
     if (decls.size() == 1) {

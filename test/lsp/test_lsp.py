@@ -76,6 +76,16 @@ struct Counter: Copyable {
 }
 """
 
+ALIAS_SOURCE = """\
+struct Point {
+    int x;
+}
+using PointAlias = Point;
+void main() {
+    PointAlias.
+}
+"""
+
 BAD_SOURCE = """\
 void main() {
     nosuchidentifier;
@@ -205,6 +215,10 @@ def test_query_modes(cx_lsp, path):
     labels = [item["label"] for item in result.get("items", [])]
     check("query-completion-method-param", "step" in labels)
     check("query-completion-method-local", "doubled" in labels)
+
+    result = run_query(cx_lsp, base_query("completion", path, ALIAS_SOURCE, (5, 15)))
+    labels = [item["label"] for item in result.get("items", [])]
+    check("query-completion-alias-member", "x" in labels, json.dumps(labels)[:300])
 
     result = run_query(cx_lsp, base_query("documentSymbol", path, GOOD_SOURCE))
     names = [s["name"] for s in result.get("symbols", [])]

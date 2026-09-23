@@ -151,6 +151,7 @@ struct Module {
     void addToSymbolTable(FunctionDecl& decl);
     void addToSymbolTable(TypeTemplate& decl);
     void addToSymbolTable(TypeDecl& decl);
+    void addToSymbolTable(TypeAliasDecl& decl);
     void addToSymbolTable(EnumDecl& decl);
     void addToSymbolTable(VarDecl& decl);
     void addToSymbolTable(Decl* decl);

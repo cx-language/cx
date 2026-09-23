@@ -210,6 +210,8 @@ std::string declKindLabel(const Decl& decl) {
         return "type";
     case DeclKind::TypeTemplate:
         return "type";
+    case DeclKind::TypeAliasDecl:
+        return "type alias";
     case DeclKind::EnumDecl:
         return "enum";
     case DeclKind::EnumCase:
@@ -276,6 +278,11 @@ std::string hoverForDecl(const Decl& decl) {
     case DeclKind::TypeTemplate: {
         auto& tmpl = llvm::cast<TypeTemplate>(decl);
         out << "struct " << tmpl.getName().str() << "<...>";
+        break;
+    }
+    case DeclKind::TypeAliasDecl: {
+        auto& alias = llvm::cast<TypeAliasDecl>(decl);
+        out << "using " << alias.getName() << " = " << alias.aliasedType;
         break;
     }
     case DeclKind::EnumDecl: {
@@ -599,6 +606,9 @@ void Finder::visitDecl(Decl* decl, int depth) {
     case DeclKind::TypeTemplate:
         visitDecl(llvm::cast<TypeTemplate>(decl)->typeDecl, depth + 1);
         return;
+    case DeclKind::TypeAliasDecl:
+        visitType(llvm::cast<TypeAliasDecl>(decl)->aliasedType, depth + 1);
+        return;
     case DeclKind::EnumDecl: {
         auto* enumDecl = llvm::cast<EnumDecl>(decl);
         for (auto& c : enumDecl->cases) {
@@ -863,6 +873,9 @@ void ReferenceCollector::visitDecl(Decl* decl) {
     case DeclKind::TypeTemplate:
         visitDecl(llvm::cast<TypeTemplate>(decl)->typeDecl);
         return;
+    case DeclKind::TypeAliasDecl:
+        visitType(llvm::cast<TypeAliasDecl>(decl)->aliasedType);
+        return;
     case DeclKind::EnumDecl: {
         auto* enumDecl = llvm::cast<EnumDecl>(decl);
         for (auto& c : enumDecl->cases) {
@@ -910,6 +923,8 @@ const char* tokenTypeForDecl(const Decl& decl) {
         if (inner && inner->isInterface()) return "interface";
         return "struct";
     }
+    case DeclKind::TypeAliasDecl:
+        return "type";
     case DeclKind::EnumDecl:
         return "enum";
     case DeclKind::EnumCase:
@@ -939,8 +954,8 @@ void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>&
         {"else", "keyword"},   {"enum", "keyword"},      {"extern", "keyword"},    {"false", "keyword"},    {"for", "keyword"},     {"if", "keyword"},
         {"import", "keyword"}, {"in", "keyword"},        {"interface", "keyword"}, {"is", "keyword"},       {"null", "keyword"},    {"private", "keyword"},
         {"public", "keyword"}, {"return", "keyword"},    {"sizeof", "keyword"},    {"struct", "keyword"},   {"switch", "keyword"},  {"this", "keyword"},
-        {"true", "keyword"},   {"undefined", "keyword"}, {"var", "keyword"},       {"while", "keyword"},    {"#if", "macro"},       {"#else", "macro"},
-        {"#endif", "macro"},
+        {"true", "keyword"},   {"undefined", "keyword"}, {"using", "keyword"},     {"var", "keyword"},      {"while", "keyword"},   {"#if", "macro"},
+        {"#else", "macro"},    {"#endif", "macro"},
     };
     auto emit = [&](int line, int start, int length, const char* type) {
         if (length <= 0) return;
@@ -1378,6 +1393,9 @@ void SemanticCollector::visitDecl(Decl* decl) {
             visitDecl(method);
         return;
     }
+    case DeclKind::TypeAliasDecl:
+        visitType(llvm::cast<TypeAliasDecl>(decl)->aliasedType);
+        return;
     case DeclKind::TypeTemplate: {
         auto* tmpl = llvm::cast<TypeTemplate>(decl);
         size_t scope = genericParamNames.size();
@@ -1671,6 +1689,12 @@ struct MemberExprCollector {
                 visitDecl(method);
             return;
         }
+        case DeclKind::TypeAliasDecl: {
+            if (TypeDecl* typeDecl = llvm::cast<TypeAliasDecl>(decl)->aliasedType.getDecl()) {
+                visitDecl(typeDecl);
+            }
+            return;
+        }
         case DeclKind::TypeTemplate:
             visitDecl(llvm::cast<TypeTemplate>(decl)->typeDecl);
             return;
@@ -1844,6 +1868,16 @@ std::vector<CompletionItem> completeMembersFor(MemberExpr* memberExpr, Module* m
             if (auto* tmpl = llvm::dyn_cast<TypeTemplate>(decl)) {
                 if (auto* enumTemplate = llvm::dyn_cast<EnumDecl>(tmpl->typeDecl)) return membersForEnumCases(enumTemplate);
                 return {};
+            }
+            auto* alias = llvm::dyn_cast_or_null<TypeAliasDecl>(decl);
+            if (!alias && llvm::isa<TypeDecl>(decl)) {
+                alias = llvm::dyn_cast_or_null<TypeAliasDecl>(findTopLevelDecl(mainModule, var->identifier));
+            }
+            if (alias) {
+                if (auto* enumDecl = llvm::dyn_cast_or_null<EnumDecl>(base->type.getDecl())) {
+                    return membersForEnumCases(enumDecl);
+                }
+                return base->type ? membersForType(base->type) : membersForType(alias->aliasedType);
             }
             if (llvm::isa<TypeDecl>(decl)) return {};
             if (auto* varDecl = llvm::dyn_cast<VariableDecl>(decl)) {
@@ -2141,9 +2175,9 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
     }
 
     std::vector<CompletionItem> items;
-    static const char* keywords[] = {"break",  "case",   "const",  "continue", "default",   "defer",     "else", "enum",    "extern", "false",
-                                     "for",    "if",     "import", "in",       "interface", "is",        "null", "private", "public", "return",
-                                     "sizeof", "struct", "switch", "this",     "true",      "undefined", "var",  "while"};
+    static const char* keywords[] = {"break",  "case",   "const",  "continue", "default",   "defer",     "else",  "enum",    "extern", "false",
+                                     "for",    "if",     "import", "in",       "interface", "is",        "null",  "private", "public", "return",
+                                     "sizeof", "struct", "switch", "this",     "true",      "undefined", "using", "var",     "while"};
     for (auto* kw : keywords)
         items.push_back({kw, "keyword", "keyword"});
 
@@ -2162,7 +2196,7 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
             else if (auto* tmpl = llvm::dyn_cast<FunctionTemplate>(decl))
                 item.detail = formatFunctionSignature(*tmpl->functionDecl);
             item.hasParams = declHasParams(decl);
-        } else if (decl->isTypeDecl() || decl->isTypeTemplate()) {
+        } else if (decl->isTypeDecl() || decl->isTypeTemplate() || decl->isTypeAliasDecl()) {
             item.kind = "type";
             item.detail = hoverForDecl(*decl);
         } else if (decl->isVariableDecl()) {
@@ -2414,6 +2448,8 @@ std::vector<DocumentSymbol> documentSymbolsIn(Module* mainModule, const std::str
                 symbol.kind = "enum";
             else if (decl->isTypeDecl() || decl->isTypeTemplate())
                 symbol.kind = "struct";
+            else if (decl->isTypeAliasDecl())
+                symbol.kind = "type";
             else if (decl->isVariableDecl())
                 symbol.kind = "variable";
             else

@@ -64,6 +64,7 @@ struct ConstructorDecl;
 struct DestructorDecl;
 struct TypeTemplate;
 struct TypeDecl;
+struct TypeAliasDecl;
 struct EnumDecl;
 struct VarDecl;
 struct FieldDecl;
@@ -167,6 +168,7 @@ private:
     TypeTemplate* parseTypeTemplate(AccessLevel accessLevel);
     Token parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams);
     TypeDecl* parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
+    TypeAliasDecl* parseTypeAliasDecl(AccessLevel accessLevel);
     TypeTemplate* parseEnumTemplate(AccessLevel accessLevel);
     EnumDecl* parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
     ImportDecl* parseImportDecl();

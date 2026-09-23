@@ -195,7 +195,7 @@ struct CallExpr : Expr {
     llvm::StringRef getFunctionName() const;
     std::string getQualifiedFunctionName() const;
     bool isMethodCall() const { return callee->isMemberExpr(); }
-    bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFunctionName()); }
+    bool isBuiltinConversion() const { return builtinConversion || Type::isBuiltinScalar(getFunctionName()); }
     bool isBuiltinCast() const { return getFunctionName() == "cast"; }
     bool isMoveInit() const;
     const Expr* getReceiver() const;
@@ -218,6 +218,7 @@ struct CallExpr : Expr {
     std::vector<GenericArg> genericArgs;
     Type receiverType;
     Decl* calleeDecl;
+    bool builtinConversion = false;
     // Maps each arg to its parameter index, or -1 for variadic extras. Filled by typechecking.
     // Args stay in written order so they evaluate in argument order; backends reorder via this mapping.
     std::vector<int> argParamIndices;

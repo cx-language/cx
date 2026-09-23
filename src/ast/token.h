@@ -55,6 +55,7 @@ struct Token {
         This,
         True,
         Undefined,
+        Using,
         Var,
         While,
         HashIf,
