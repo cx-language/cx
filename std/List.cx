@@ -131,8 +131,8 @@ struct List<Element> {
 
     /// Adds all elements from the given array to the end of the list.
     void append(Element[] elements) {
-        for element in elements {
-            push(element);
+        for i in 0..elements.size() {
+            push(elements[i]);
         }
     }
 
