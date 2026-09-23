@@ -1,6 +1,6 @@
 import "GLFW/glfw3.h";
 
-void expectNear(float actual, float expected, string label) {
+void expectNear(float64 actual, float64 expected, string label) {
     if abs(actual - expected) > 0.001 {
         println("FAIL: ", label, " got ", actual, " want ", expected);
         abort("self-test failed");
@@ -8,19 +8,19 @@ void expectNear(float actual, float expected, string label) {
 }
 
 void testMath() {
-    var a = Vec3(1.0, 0.0, 0.0);
-    var b = Vec3(0.0, 1.0, 0.0);
+    var a = Vector3(1.0, 0.0, 0.0);
+    var b = Vector3(0.0, 1.0, 0.0);
     expectNear(a.dot(b), 0.0, "dot perpendicular");
     expectNear(a.dot(a), 1.0, "dot self");
     var c = a.cross(b);
     expectNear(c.x, 0.0, "cross x");
     expectNear(c.y, 0.0, "cross y");
     expectNear(c.z, 1.0, "cross z");
-    expectNear(Vec3(3.0, 4.0, 0.0).length(), 5.0, "length");
-    expectNear(Vec3(0.0, 0.0, 7.0).normalized().z, 1.0, "normalized");
-    var scaled = 2.0 * Vec3(1.0, 2.0, 3.0);
+    expectNear(Vector3(3.0, 4.0, 0.0).length(), 5.0, "length");
+    expectNear(Vector3(0.0, 0.0, 7.0).normalized().z, 1.0, "normalized");
+    var scaled = 2.0 * Vector3(1.0, 2.0, 3.0);
     expectNear(scaled.y, 4.0, "scalar mul left");
-    var added = Vec3(1.0, 1.0, 1.0) + Vec3(2.0, 3.0, 4.0);
+    var added = Vector3(1.0, 1.0, 1.0) + Vector3(2.0, 3.0, 4.0);
     expectNear(added.z, 5.0, "add");
 
     var ident = mat4Identity();
@@ -33,8 +33,8 @@ void testMath() {
     expectNear(p.m[5], 1.0, "perspective m5");
     expectNear(p.m[11], -1.0, "perspective m11");
 
-    var eye = Vec3(0.0, 0.0, 3.0);
-    var view = mat4LookAt(eye, Vec3(0.0, 0.0, 0.0), Vec3(0.0, 1.0, 0.0));
+    var eye = Vector3(0.0, 0.0, 3.0);
+    var view = mat4LookAt(eye, Vector3(0.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0));
     expectNear(view.m[14], -3.0, "lookAt translate");
     println("math ok");
 }
@@ -73,7 +73,7 @@ int topSolid(World* w, int x, int z) {
 void testPlayer() {
     var world = makeWorldData(2, 2);
     var top = topSolid(world, 16, 16);
-    var player = Player(pos = Vec3(16.5, 50.0, 16.5), vel = Vec3(0.0, 0.0, 0.0),
+    var player = Player(pos = Vector3(16.5, 50.0, 16.5), vel = Vector3(0.0, 0.0, 0.0),
         yaw = 0.0, pitch = 0.0, onGround = false);
     var input = Input();
     for _ in 0..240 {
@@ -122,8 +122,8 @@ void testPlayer() {
             worldSet(world, 20, y, z, blockStone);
         }
     }
-    player.pos = Vec3(16.5, float(g) + 0.5, 16.5);
-    player.vel = Vec3(0.0, 0.0, 0.0);
+    player.pos = Vector3(16.5, float(g) + 0.5, 16.5);
+    player.vel = Vector3(0.0, 0.0, 0.0);
     player.yaw = pi / 2.0;
     player.onGround = false;
     input.forward = true;
@@ -175,7 +175,7 @@ void testLogStream() {
 
 void testLook() {
     var world = makeWorldData(1, 1);
-    var player = Player(pos = Vec3(8.5, 50.0, 8.5), vel = Vec3(0.0, 0.0, 0.0),
+    var player = Player(pos = Vector3(8.5, 50.0, 8.5), vel = Vector3(0.0, 0.0, 0.0),
         yaw = 0.0, pitch = 0.0, onGround = false);
     var input = Input();
     input.lookDX = 100.0;
@@ -200,7 +200,7 @@ void testLook() {
 void testRaycast() {
     var world = makeWorldData(2, 2);
     var top = topSolid(world, 5, 5);
-    var hit = raycastVoxel(world, Vec3(5.5, 60.0, 5.5), Vec3(0.0, -1.0, 0.0), 100.0);
+    var hit = raycastVoxel(world, Vector3(5.5, 60.0, 5.5), Vector3(0.0, -1.0, 0.0), 100.0);
     if !hit.hit || hit.x != 5 || hit.y != top || hit.z != 5 {
         abort("self-test: vertical raycast missed");
     }
@@ -208,18 +208,18 @@ void testRaycast() {
         abort("self-test: vertical raycast prev cell wrong");
     }
     worldSet(world, 8, 50, 5, blockStone);
-    var side = raycastVoxel(world, Vec3(5.5, 50.5, 5.5), Vec3(1.0, 0.0, 0.0), 10.0);
+    var side = raycastVoxel(world, Vector3(5.5, 50.5, 5.5), Vector3(1.0, 0.0, 0.0), 10.0);
     if !side.hit || side.x != 8 || side.y != 50 || side.z != 5 {
         abort("self-test: horizontal raycast missed");
     }
     if side.px != 7 || side.py != 50 || side.pz != 5 {
         abort("self-test: horizontal raycast prev cell wrong");
     }
-    var short = raycastVoxel(world, Vec3(5.5, 50.5, 5.5), Vec3(1.0, 0.0, 0.0), 2.0);
+    var short = raycastVoxel(world, Vector3(5.5, 50.5, 5.5), Vector3(1.0, 0.0, 0.0), 2.0);
     if short.hit {
         abort("self-test: raycast ignored maxDist");
     }
-    var sky = raycastVoxel(world, Vec3(5.5, 60.0, 5.5), Vec3(0.0, 1.0, 0.0), 10.0);
+    var sky = raycastVoxel(world, Vector3(5.5, 60.0, 5.5), Vector3(0.0, 1.0, 0.0), 10.0);
     if sky.hit {
         abort("self-test: sky raycast hit");
     }
@@ -442,7 +442,7 @@ void testRestingContact() {
             }
         }
     }
-    var player = Player(pos = Vec3(8.5, 11.5, 8.5), vel = Vec3(0.0, 0.0, 0.0),
+    var player = Player(pos = Vector3(8.5, 11.5, 8.5), vel = Vector3(0.0, 0.0, 0.0),
         yaw = 0.0, pitch = 0.0, onGround = false);
     var input = Input();
     for _ in 0..120 {
@@ -520,8 +520,8 @@ void testRender() {
     glClearColor(0.45, 0.65, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     var proj = mat4Perspective(radians(70.0), 1.0, 0.1, 200.0);
-    var eye = Vec3(16.5, 60.0, 16.5);
-    var view = mat4LookAt(eye, Vec3(16.5, 0.0, 16.5), Vec3(0.0, 0.0, -1.0));
+    var eye = Vector3(16.5, 60.0, 16.5);
+    var view = mat4LookAt(eye, Vector3(16.5, 0.0, 16.5), Vector3(0.0, 0.0, -1.0));
     var mvp = proj * view;
     var uniforms = getBlockUniforms(program);
     setMat4(uniforms.mvp, mvp);
@@ -547,7 +547,7 @@ void testRender() {
     }
 
     var etop = topSolid(world, 10, 10);
-    var editor = Player(pos = Vec3(10.5, float(etop) + 3.0, 10.5), vel = Vec3(0.0, 0.0, 0.0),
+    var editor = Player(pos = Vector3(10.5, float(etop) + 3.0, 10.5), vel = Vector3(0.0, 0.0, 0.0),
         yaw = 0.0, pitch = -1.55, onGround = false);
     if !tryBreak(world, editor) {
         abort("self-test: break failed");
@@ -561,7 +561,7 @@ void testRender() {
     if worldGet(world, 10, etop, 10) != blockStone {
         abort("self-test: place did not set");
     }
-    editor.pos = Vec3(10.5, float(etop) + 1.1, 10.5);
+    editor.pos = Vector3(10.5, float(etop) + 1.1, 10.5);
     if tryPlace(world, editor, blockStone) {
         abort("self-test: place inside player allowed");
     }

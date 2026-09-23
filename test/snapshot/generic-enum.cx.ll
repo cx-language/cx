@@ -6,7 +6,7 @@
 @1 = private unnamed_addr constant [43 x i8] c"integer overflow at generic-enum.cx:14:45\0A\00", align 1
 @2 = private unnamed_addr constant [66 x i8] c"invalid value in switch over enum 'Opt' at generic-enum.cx:19:13\0A\00", align 1
 
-define i32 @main() {
+define i32 @main() #0 !dbg !4 {
   %a = alloca %"Opt<int>", align 8
   %enum = alloca %"Opt<int>", align 8
   %b = alloca %"Opt<int>", align 8
@@ -53,7 +53,7 @@ switch.case.1:                                    ; preds = %0
   br label %switch.end
 
 switch.default:                                   ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @0)
+  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !7
   unreachable
 
 switch.end:                                       ; preds = %overflow.success, %switch.case.1
@@ -65,7 +65,7 @@ switch.end:                                       ; preds = %overflow.success, %
   ]
 
 overflow.fail:                                    ; preds = %switch.case.0
-  call void @_EN3std10assertFailEP4char(ptr @1)
+  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %switch.case.0
@@ -86,8 +86,22 @@ switch.case.114:                                  ; preds = %switch.end
   ret i32 0
 
 switch.default15:                                 ; preds = %switch.end
-  call void @_EN3std10assertFailEP4char(ptr @2)
+  call void @_EN3std10assertFailEP4char(ptr @2), !dbg !7
   unreachable
 }
 
-declare void @_EN3std10assertFailEP4char(ptr)
+declare void @_EN3std10assertFailEP4char(ptr) #0
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "generic-enum.cx")
+!4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 8, column: 5, scope: !4)

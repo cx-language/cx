@@ -14,7 +14,7 @@ int getAnswer() {
     return 42;
 }
 
-// CHECK: [[@LINE+1]]:18: error: global variable initializer must be a constant expression
+// CHECK: [[@LINE+1]]:9: error: global variable initializer must be a constant expression
 int z = getAnswer();
 
 // CHECK: [[@LINE+1]]:15: error: global variable initializer must be a constant expression

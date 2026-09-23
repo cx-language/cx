@@ -51,8 +51,8 @@ private extern void fseek(FILE* file, int64 offset, int origin);
 private extern int64 ftell(FILE* file);
 /// Closes the file.
 private extern int fclose(FILE* file);
-/// Flushes buffered output to the file.
-private extern int fflush(FILE* file);
+/// Flushes buffered output to the file, or to all files if null.
+private extern int fflush(FILE*? file);
 /// Returns true at end of file.
 private extern int feof(FILE* file);
 /// Deletes the named file.
@@ -61,6 +61,19 @@ private extern int remove(const char* filename);
 private extern int ungetc(int c, FILE* file);
 /// Moves the file position to the start.
 private extern void rewind(FILE* file);
+#if Windows
+private extern FILE*? _popen(const char* command, const char* mode);
+private extern int _pclose(FILE* stream);
+/// Runs the command in a shell, returning a pipe to its standard output.
+private FILE*? popen(const char* command, const char* mode) { return _popen(command, mode); }
+/// Closes the pipe, returning its exit status.
+private int pclose(FILE* stream) { return _pclose(stream); }
+#else
+/// Runs the command in a shell, returning a pipe to its standard output.
+private extern FILE*? popen(const char* command, const char* mode);
+/// Closes the pipe, returning its exit status.
+private extern int pclose(FILE* stream);
+#endif
 /// Origin for fseek: start of file.
 private const SEEK_SET = 0;
 /// Origin for fseek: current position.

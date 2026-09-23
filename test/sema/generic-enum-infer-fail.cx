@@ -8,7 +8,7 @@ enum Outcome<T> {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:24: error: can't infer generic parameters, please specify them explicitly
+    // CHECK: [[@LINE+1]]:21: error: can't infer generic parameters, please specify them explicitly
     var x = Outcome.Err(code = 1);
 }
 

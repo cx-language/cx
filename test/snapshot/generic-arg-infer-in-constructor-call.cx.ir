@@ -27,6 +27,3 @@ void _EN4main3FooI6stringE4initE6string(Foo<string>* this, string t) {
     store t.load to t_1
     return void
 }
-
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
-}

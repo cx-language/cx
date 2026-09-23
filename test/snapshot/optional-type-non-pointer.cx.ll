@@ -6,7 +6,7 @@
 @1 = private unnamed_addr constant [56 x i8] c"integer overflow at optional-type-non-pointer.cx:27:15\0A\00", align 1
 @2 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:33:18\0A\00", align 1
 
-define i32 @main() {
+define i32 @main() #0 !dbg !4 {
   %a = alloca %"Optional<int>", align 8
   %enum = alloca %"Optional<int>", align 8
   %b = alloca %"Optional<int>", align 8
@@ -113,7 +113,7 @@ if.end30:                                         ; preds = %if.else29, %if.then
   ret i32 0
 }
 
-define void @_EN4main1fE() {
+define void @_EN4main1fE() #0 !dbg !7 {
   %a = alloca %"Optional<int>", align 8
   %enum = alloca %"Optional<int>", align 8
   %b = alloca %"Optional<int>", align 8
@@ -177,7 +177,7 @@ if.end:                                           ; preds = %overflow.success19,
   br i1 %12, label %if.then24, label %if.else26
 
 overflow.fail:                                    ; preds = %if.then
-  call void @_EN3std10assertFailEP4char(ptr @0)
+  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !8
   unreachable
 
 overflow.success:                                 ; preds = %if.then
@@ -194,7 +194,7 @@ overflow.success:                                 ; preds = %if.then
   br i1 %overflow.condition17, label %overflow.fail18, label %overflow.success19
 
 overflow.fail18:                                  ; preds = %overflow.success
-  call void @_EN3std10assertFailEP4char(ptr @1)
+  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !8
   unreachable
 
 overflow.success19:                               ; preds = %overflow.success
@@ -228,14 +228,14 @@ if.end27:                                         ; preds = %if.else26, %if.then
   br i1 %__implicit_unwrap.condition, label %__implicit_unwrap.fail, label %__implicit_unwrap.success
 
 __implicit_unwrap.fail:                           ; preds = %if.end27
-  call void @_EN3std10assertFailEP4char(ptr @2)
+  call void @_EN3std10assertFailEP4char(ptr @2), !dbg !8
   unreachable
 
 __implicit_unwrap.success:                        ; preds = %if.end27
   store %"Optional<int>" %c.load28, ptr %1, align 4
   %27 = getelementptr inbounds %"Optional<int>", ptr %1, i32 0, i32 1
   %.load29 = load i32, ptr %27, align 4
-  call void @_EN4main12takesNonNullE3int(i32 %.load29)
+  call void @_EN4main12takesNonNullE3int(i32 %.load29), !dbg !9
   %c.load30 = load %"Optional<int>", ptr %c, align 4
   %28 = extractvalue %"Optional<int>" %c.load30, 0
   %29 = icmp eq i32 %28, 1
@@ -244,7 +244,7 @@ __implicit_unwrap.success:                        ; preds = %if.end27
 if.then31:                                        ; preds = %__implicit_unwrap.success
   %30 = getelementptr inbounds %"Optional<int>", ptr %c, i32 0, i32 1
   %.load32 = load i32, ptr %30, align 4
-  call void @_EN4main12takesNonNullE3int(i32 %.load32)
+  call void @_EN4main12takesNonNullE3int(i32 %.load32), !dbg !10
   br label %if.end34
 
 if.else33:                                        ; preds = %__implicit_unwrap.success
@@ -254,15 +254,15 @@ if.end34:                                         ; preds = %if.else33, %if.then
   ret void
 }
 
-declare void @_EN3std10assertFailEP4char(ptr)
+declare void @_EN3std10assertFailEP4char(ptr) #0
 
-define void @_EN4main12takesNonNullE3int(i32 %i) {
+define void @_EN4main12takesNonNullE3int(i32 %i) #0 !dbg !11 {
   %i1 = alloca i32, align 4
   store i32 %i, ptr %i1, align 4
   ret void
 }
 
-define void @_EN4main1gE() {
+define void @_EN4main1gE() #0 !dbg !12 {
   %p = alloca ptr, align 8
   store ptr null, ptr %p, align 8
   %p.load = load ptr, ptr %p, align 8
@@ -278,3 +278,22 @@ if.else:                                          ; preds = %0
 if.end:                                           ; preds = %if.else, %if.then
   ret void
 }
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "optional-type-non-pointer.cx")
+!4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!8 = !DILocation(line: 18, column: 6, scope: !7)
+!9 = !DILocation(line: 33, column: 5, scope: !7)
+!10 = !DILocation(line: 36, column: 9, scope: !7)
+!11 = distinct !DISubprogram(name: "takesNonNull", linkageName: "_EN4main12takesNonNullE3int", scope: !3, file: !3, line: 45, type: !5, scopeLine: 45, spFlags: DISPFlagDefinition, unit: !2)
+!12 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE", scope: !3, file: !3, line: 40, type: !5, scopeLine: 40, spFlags: DISPFlagDefinition, unit: !2)

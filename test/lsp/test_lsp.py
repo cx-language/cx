@@ -432,7 +432,12 @@ def test_completion_members(cx_lsp, path):
     details = sorted(item["detail"] for item in result.get("items", []) if item["label"] == "append")
     check(
         "query-completion-member-overloads",
-        details == ["void StringBuffer.append(char c)", "void StringBuffer.append(string s)"],
+        details
+        == [
+            "void StringBuffer.append(RepeatIterator<string> repetitions)",
+            "void StringBuffer.append(char c)",
+            "void StringBuffer.append(string s)",
+        ],
         json.dumps(details)[:300],
     )
     flags = {}
@@ -440,7 +445,7 @@ def test_completion_members(cx_lsp, path):
         flags.setdefault(item["label"], []).append(item.get("hasParams"))
     check(
         "query-completion-member-has-params",
-        flags.get("append") == [True, True] and flags.get("empty") == [False],
+        flags.get("append") == [True, True, True] and flags.get("empty") == [False],
         json.dumps({k: flags.get(k) for k in ("append", "empty")})[:300],
     )
 
@@ -558,6 +563,89 @@ def test_build_file_modes(cx_lsp):
             any("unknown identifier 'answer'" in m for m in messages),
             json.dumps(messages)[:500],
         )
+
+    # Vendored packages are imported by name, not analyzed as part of the
+    # importing module: no import errors and no redefinition errors. A build.cx
+    # below the package root is an ordinary source file.
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "vproj")
+        vendordir = os.path.join(root, "vendor", "greet")
+        subdir = os.path.join(root, "sub")
+        os.makedirs(vendordir)
+        os.makedirs(subdir)
+        with open(os.path.join(root, "build.cx"), "w") as file:
+            file.write('var name = "vproj"\n')
+        with open(os.path.join(vendordir, "greet.cx"), "w") as file:
+            file.write('void greet() {\n    println("hi");\n}\n\nvoid unusedHelper() {\n}\n')
+        main_path = os.path.join(root, "main.cx")
+        main_content = "import greet;\n\nvoid main() {\n    greet();\n    other();\n}\n"
+        with open(main_path, "w") as file:
+            file.write(main_content)
+        nested_path = os.path.join(subdir, "build.cx")
+        nested_content = "import greet;\n\nvoid other() {\n    greet();\n}\n"
+        with open(nested_path, "w") as file:
+            file.write(nested_content)
+
+        result = run_query(cx_lsp, base_query("check", main_path, main_content))
+        check(
+            "query-vendored-import",
+            result["diagnostics"] == [],
+            json.dumps(result["diagnostics"])[:500],
+        )
+
+        result = run_query(cx_lsp, base_query("check", nested_path, nested_content))
+        check(
+            "query-vendored-import-nested",
+            result["diagnostics"] == [],
+            json.dumps(result["diagnostics"])[:500],
+        )
+
+
+def test_fetched_dependency(cx_lsp):
+    # Dependencies resolve from ~/.cx with their build file applied: the import
+    # resolves and the dependency's defines select its #if branches (the #else
+    # branch is a type error, so any failure surfaces as diagnostics).
+    with tempfile.TemporaryDirectory() as home:
+        depdir = os.path.join(home, ".cx", "dependencies", "shapes@v1")
+        os.makedirs(depdir)
+        with open(os.path.join(depdir, "build.cx"), "w") as file:
+            file.write('var defines = ["SHAPES_ROUND"]\n')
+        with open(os.path.join(depdir, "shape.cx"), "w") as file:
+            file.write(
+                "#if SHAPES_ROUND\n"
+                "void describe() {\n"
+                '    println("round");\n'
+                "}\n"
+                "#else\n"
+                "void describe() {\n"
+                "    nosuchidentifier;\n"
+                "}\n"
+                "#endif\n"
+            )
+        with tempfile.TemporaryDirectory() as directory:
+            root = os.path.join(directory, "proj")
+            os.makedirs(root)
+            with open(os.path.join(root, "build.cx"), "w") as file:
+                file.write('var dependencies = [(package = "shapes", url = "https://example.com/shapes.git", version = "v1")]\n')
+            main_path = os.path.join(root, "main.cx")
+            main_content = "import shapes;\n\nvoid main() {\n    describe();\n}\n"
+            with open(main_path, "w") as file:
+                file.write(main_content)
+
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = home
+            try:
+                result = run_query(cx_lsp, base_query("check", main_path, main_content))
+            finally:
+                if old_home is None:
+                    del os.environ["HOME"]
+                else:
+                    os.environ["HOME"] = old_home
+            check(
+                "query-fetched-dependency",
+                result["diagnostics"] == [],
+                json.dumps(result["diagnostics"])[:500],
+            )
 
 
 class LspSession:
@@ -709,7 +797,7 @@ def test_server(command, path, label):
     appends = [item for item in response["result"] if item["label"] == "append"]
     check(
         f"{label}-completion-member-call-parens",
-        sorted(item.get("insertText", "") for item in appends) == ["append(", "append("]
+        sorted(item.get("insertText", "") for item in appends) == ["append(", "append(", "append("]
         and all("insertTextFormat" not in item for item in appends),
         json.dumps(appends)[:300],
     )
@@ -945,6 +1033,7 @@ def main():
         test_completion_members(args.cx_lsp, path)
         test_package_dedup(args.cx_lsp)
         test_build_file_modes(args.cx_lsp)
+        test_fetched_dependency(args.cx_lsp)
         test_server([args.cx_lsp], path, "server")
         test_server([args.cx, "lsp"], path, "cx-lsp-subcommand")
         test_server_no_snippets([args.cx_lsp], "server-nosnippet")

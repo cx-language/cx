@@ -1,5 +1,5 @@
 
-define { i1, { float } } @_EN4main1fE() {
+define { i1, { float } } @_EN4main1fE() #0 !dbg !4 {
   %d = alloca { float }, align 8
   %a = alloca { i32, { i1, { float } } }, align 8
   %b = alloca { i1, { float } }, align 8
@@ -32,6 +32,20 @@ define { i1, { float } } @_EN4main1fE() {
   ret { i1, { float } } %b.load9
 }
 
-define { i1, float } @_EN4main1gE() {
+define { i1, float } @_EN4main1gE() #0 !dbg !7 {
   ret { i1, float } { i1 true, float 1.000000e+00 }
 }
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "tuple.cx")
+!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE", scope: !3, file: !3, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)

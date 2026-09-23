@@ -5,7 +5,7 @@ const missileSpeed = 0.3;
 const missileCooldown = 200;
 
 struct Missile {
-    Vector2 position;
+    Vector2<float> position;
     float direction;
 
     void render(SDL_Renderer* renderer) {
@@ -15,21 +15,21 @@ struct Missile {
     }
 
     void update(float delta, GameState* state) {
-        var velocity = Vector2(direction) * missileSpeed;
+        var velocity = vectorFromAngle(direction) * missileSpeed;
         position = position + velocity * delta;
 
         for i in 0..state.asteroids.size() {
             var asteroid = state.asteroids[i];
 
-            if asteroid.position.distance(position) <= asteroid.size ||
-                asteroid.position.distance(tailPosition()) <= asteroid.size {
+            if distance(asteroid.position, position) <= asteroid.size ||
+                distance(asteroid.position, tailPosition()) <= asteroid.size {
                 state.asteroids.removeAt(i);
                 break; // state.asteroids has been mutated, stop iteration.
             }
         }
     }
 
-    Vector2 tailPosition() {
-        return (position - Vector2(missileSize, 0)).rotated(origin = position, angle = direction);
+    Vector2<float> tailPosition() {
+        return rotated(position - Vector2(float(missileSize), 0.0), origin = position, angle = direction);
     }
 }
