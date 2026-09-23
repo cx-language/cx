@@ -1,0 +1,68 @@
+// RUN: check_exit_status 0 %cx run %s
+// RUN: check_exit_status 0 %cx run --backend=c %s
+
+enum Outcome {
+    Ok(int value),
+    Err(string error),
+    Pending,
+}
+
+string describe(Outcome* o) {
+    if *o is Err e {
+        return e;
+    }
+    if *o is Ok {
+        return "ok";
+    }
+    return "pending";
+}
+
+bool isOk(Outcome* o) {
+    return *o is Ok;
+}
+
+void main() {
+    var a = Outcome.Ok(value = 7);
+    var b = Outcome.Err(error = "boom");
+    var c = Outcome.Pending;
+
+    assert(describe(a) == "ok");
+    assert(describe(b) == "boom");
+    assert(describe(c) == "pending");
+    assert(isOk(a));
+    assert(!isOk(b));
+    assert(!isOk(c));
+
+    if b is Err {
+        assert(true);
+    } else {
+        assert(false);
+    }
+
+    if a is Err {
+        assert(false);
+    } else {
+        assert(true);
+    }
+
+    var count = 0;
+    while a is Ok {
+        count++;
+        break;
+    }
+    assert(count == 1);
+
+    int? present = 5;
+    if present is Some v {
+        assert(v == 5);
+    } else {
+        assert(false);
+    }
+
+    int? absent = null;
+    if absent is None {
+        assert(true);
+    } else {
+        assert(false);
+    }
+}

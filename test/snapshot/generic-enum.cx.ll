@@ -3,7 +3,7 @@
 %"Opt<int>" = type { i32, %0 }
 
 @0 = private unnamed_addr constant [66 x i8] c"invalid value in switch over enum 'Opt' at generic-enum.cx:12:13\0A\00", align 1
-@1 = private unnamed_addr constant [43 x i8] c"integer overflow at generic-enum.cx:14:45\0A\00", align 1
+@1 = private unnamed_addr constant [43 x i8] c"integer overflow at generic-enum.cx:14:39\0A\00", align 1
 @2 = private unnamed_addr constant [66 x i8] c"invalid value in switch over enum 'Opt' at generic-enum.cx:19:13\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
@@ -34,9 +34,8 @@ switch.case.0:                                    ; preds = %0
   %1 = getelementptr inbounds %"Opt<int>", ptr %a, i32 0, i32 1
   %tag6 = getelementptr inbounds %"Opt<int>", ptr %enum2, i32 0, i32 0
   store i32 0, ptr %tag6, align 4
-  %value = getelementptr inbounds { i32 }, ptr %1, i32 0, i32 0
-  %value.load = load i32, ptr %value, align 4
-  %2 = sext i32 %value.load to i64
+  %some.load = load i32, ptr %1, align 4
+  %2 = sext i32 %some.load to i64
   %3 = add i64 %2, 1
   %4 = trunc i64 %3 to i32
   %5 = sext i32 %4 to i64
@@ -59,9 +58,9 @@ switch.default:                                   ; preds = %0
 switch.end:                                       ; preds = %overflow.success, %switch.case.1
   %b.tag = getelementptr inbounds %"Opt<int>", ptr %b, i32 0, i32 0
   %b.tag.load = load i32, ptr %b.tag, align 4
-  switch i32 %b.tag.load, label %switch.default15 [
+  switch i32 %b.tag.load, label %switch.default14 [
     i32 0, label %switch.case.011
-    i32 1, label %switch.case.114
+    i32 1, label %switch.case.113
   ]
 
 overflow.fail:                                    ; preds = %switch.case.0
@@ -78,14 +77,13 @@ overflow.success:                                 ; preds = %switch.case.0
 
 switch.case.011:                                  ; preds = %switch.end
   %9 = getelementptr inbounds %"Opt<int>", ptr %b, i32 0, i32 1
-  %value12 = getelementptr inbounds { i32 }, ptr %9, i32 0, i32 0
-  %value.load13 = load i32, ptr %value12, align 4
-  ret i32 %value.load13
+  %some.load12 = load i32, ptr %9, align 4
+  ret i32 %some.load12
 
-switch.case.114:                                  ; preds = %switch.end
+switch.case.113:                                  ; preds = %switch.end
   ret i32 0
 
-switch.default15:                                 ; preds = %switch.end
+switch.default14:                                 ; preds = %switch.end
   call void @_EN3std10assertFailEP4char(ptr @2), !dbg !7
   unreachable
 }

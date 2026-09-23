@@ -1,8 +1,8 @@
 
 %StringBuffer = type { %"List<char>" }
 %"List<char>" = type { ptr, i32, i32 }
-%string = type { %"ArrayRef<char>" }
-%"ArrayRef<char>" = type { ptr, i32 }
+%string = type { %"Slice<char>" }
+%"Slice<char>" = type { ptr, i32 }
 
 @0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
 

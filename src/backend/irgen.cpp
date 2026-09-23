@@ -25,11 +25,11 @@ IRGenerator::IRGenerator(const CompileOptions& options) : options(options) {
     scopes.push_back(IRGenScope(*this));
 }
 
-void IRGenerator::setLocalValue(Value* value, const VariableDecl* decl) {
+void IRGenerator::setLocalValue(Value* value, const VariableDecl* decl, bool deferDestructor) {
     auto it = scopes.back().valuesByDecl.try_emplace(decl, value);
     ASSERT(it.second);
 
-    if (decl) {
+    if (decl && deferDestructor) {
         deferDestructorCall(value, decl);
     }
 }

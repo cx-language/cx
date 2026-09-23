@@ -55,7 +55,7 @@ void testSwitch() {
 
     switch (ok) {
         case Ok value:
-            assert(value.value == 7);
+            assert(value == 7);
         case Err:
             assert(false);
     }
@@ -64,7 +64,7 @@ void testSwitch() {
         case Result.Ok:
             assert(false);
         case Result.Err error:
-            assert(error.error == "not a digit");
+            assert(error == "not a digit");
     }
 }
 

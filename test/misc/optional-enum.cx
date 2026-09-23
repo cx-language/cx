@@ -10,7 +10,7 @@ int main() {
 
     switch (inferred) {
         case Optional.Some v:
-            if (v.value != 1) { return 1; }
+            if (v != 1) { return 1; }
         case Optional.None:
             return 2;
     }
@@ -34,7 +34,7 @@ int main() {
     else { return 7; }
     switch (outer) {
         case Some v:
-            if (v.value! != 5) { return 8; }
+            if (v != 5) { return 8; }
         case None:
             return 9;
     }

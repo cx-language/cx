@@ -6,13 +6,13 @@ void checkPretty(string name, string input, string expected) {
     var r = parseJson(input);
     switch (r) {
         case Ok v:
-            var actual = v.value.toString(pretty = true);
+            var actual = v.toString(pretty = true);
             if actual != expected {
                 println("FAIL ", name, "\nexpected: ", expected, "\nactual: ", actual);
             }
             assert(actual == expected);
         case Err e:
-            println("FAIL ", name, ": unexpected error: ", e.error.toString());
+            println("FAIL ", name, ": unexpected error: ", e.toString());
             assert(false);
     }
 }
@@ -21,13 +21,13 @@ void checkCompact(string name, string input, string expected) {
     var r = parseJson(input);
     switch (r) {
         case Ok v:
-            var actual = v.value.toString();
+            var actual = v.toString();
             if actual != expected {
                 println("FAIL ", name, "\nexpected: ", expected, "\nactual: ", actual);
             }
             assert(actual == expected);
         case Err e:
-            println("FAIL ", name, ": unexpected error: ", e.error.toString());
+            println("FAIL ", name, ": unexpected error: ", e.toString());
             assert(false);
     }
 }
@@ -36,15 +36,15 @@ void checkError(string name, string input, JsonError* expected) {
     var r = parseJson(input);
     switch (r) {
         case Ok v:
-            println("FAIL ", name, ": expected error, got: ", v.value.toString());
+            println("FAIL ", name, ": expected error, got: ", v.toString());
             assert(false);
         case Err e:
-            if e.error != *expected || e.error.toString() != expected.toString() {
-                println("FAIL ", name, ": expected ", expected.toString(), ", got: ", e.error.toString());
+            if e != *expected || e.toString() != expected.toString() {
+                println("FAIL ", name, ": expected ", expected.toString(), ", got: ", e.toString());
             }
             // == compares enum cases; toString() pins the offset.
-            assert(e.error == *expected);
-            assert(e.error.toString() == expected.toString());
+            assert(e == *expected);
+            assert(e.toString() == expected.toString());
     }
 }
 
@@ -60,21 +60,21 @@ void checkRoundTrip(string name, string input) {
     var r1 = parseJson(input);
     switch (r1) {
         case Ok v1:
-            var once = v1.value.toString(pretty = true);
+            var once = v1.toString(pretty = true);
             var r2 = parseJson(string(once));
             switch (r2) {
                 case Ok v2:
-                    var twice = v2.value.toString(pretty = true);
+                    var twice = v2.toString(pretty = true);
                     if twice != string(once) {
                         println("FAIL ", name, "\nfirst: ", once, "\nsecond: ", twice);
                     }
                     assert(twice == string(once));
                 case Err e:
-                    println("FAIL ", name, ": reparse error: ", e.error.toString());
+                    println("FAIL ", name, ": reparse error: ", e.toString());
                     assert(false);
             }
         case Err e:
-            println("FAIL ", name, ": parse error: ", e.error.toString());
+            println("FAIL ", name, ": parse error: ", e.toString());
             assert(false);
     }
 }
@@ -185,13 +185,13 @@ void testPrint() {
     var r = parseJson("{\"a\": [1, true, null]}");
     switch (r) {
         case Ok v:
-            print(v.value);
+            print(&v);
             println("");
-            println(v.value);
+            println(&v);
             // Printable's automatic toString() renders compact JSON.
-            assert(v.value.toString() == "{\"a\":[1,true,null]}");
+            assert(v.toString() == "{\"a\":[1,true,null]}");
         case Err e:
-            println("FAIL print: unexpected error: ", e.error.toString());
+            println("FAIL print: unexpected error: ", e.toString());
             assert(false);
     }
 }

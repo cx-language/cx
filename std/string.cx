@@ -1,10 +1,10 @@
 /// A non-owning string view.
 struct string: Copyable, Comparable, Hashable, Printable {
-    private ArrayRef<char> characters;
+    private Slice<char> characters;
 
     /// Initializes a string of the given length at the given address.
     string(char* pointer, int length) {
-        characters = ArrayRef(pointer, length);
+        characters = Slice(pointer, length);
     }
 
     /// Initializes a string referring to a null-terminated C-style string.
@@ -14,12 +14,12 @@ struct string: Copyable, Comparable, Hashable, Printable {
     /// `string(char* pointer, int length)` instead.
     ///
     string(char* cString) {
-        characters = ArrayRef(cString, int(strlen(cString)));
+        characters = Slice(cString, int(strlen(cString)));
     }
 
     /// Initializes a string viewing the given buffer.
     string(StringBuffer* stringBuffer) {
-        characters = ArrayRef(stringBuffer.data(), stringBuffer.size());
+        characters = Slice(stringBuffer.data(), stringBuffer.size());
     }
 
     /// Returns true if the string has no characters.
