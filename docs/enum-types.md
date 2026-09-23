@@ -4,9 +4,9 @@ cx's enums are scoped and can optionally have associated values for each enum va
 
 ```cs
 enum JsonNode {
-    String(StringBuffer value),
+    String(StringBuf value),
     Array(List<JsonNode> value),
-    Object(Map<StringBuffer, JsonNode> value),
+    Object(Map<StringBuf, JsonNode> value),
     Number(float64 value),
     Boolean(bool value),
     Null,

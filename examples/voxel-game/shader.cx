@@ -15,7 +15,7 @@ uint compileShader(string path, uint kind) {
     if status == 0 {
         char[512] log = undefined;
         glGetShaderInfoLog(shader, 512, null, &log[0]);
-        var message = StringBuffer(&log[0]);
+        var message = StringBuf(&log[0]);
         abort("shader compile failed: ", path, ": ", message);
     }
     return shader;
@@ -33,7 +33,7 @@ uint createProgram(string vertPath, string fragPath) {
     if status == 0 {
         char[512] log = undefined;
         glGetProgramInfoLog(program, 512, null, &log[0]);
-        var message = StringBuffer(&log[0]);
+        var message = StringBuf(&log[0]);
         abort("program link failed: ", message);
     }
     glDeleteShader(vert);
@@ -51,7 +51,7 @@ struct BlockUniforms: Copyable {
 }
 
 int uniformLoc(uint program, string name) {
-    var buf = StringBuffer(name);
+    var buf = StringBuf(name);
     return glGetUniformLocation(program, buf.cString());
 }
 

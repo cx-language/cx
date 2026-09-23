@@ -33,11 +33,11 @@ struct Tape {
 }
 
 struct Program {
-    StringBuffer code;
+    StringBuf code;
     Map<int, int> bracketMap;
 
     Program(string text) {
-        code = StringBuffer();
+        code = StringBuf();
         bracketMap = Map();
 
         var leftStack = List<int>();

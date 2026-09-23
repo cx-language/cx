@@ -313,7 +313,7 @@ TOC_PLACEHOLDER = "<!--STD-PAGES-->"
 # Standard library entry in filename order.
 STD_CATEGORIES = [
     ("Primitive types", ["bool.cx", "char.cx", "integers.cx", "floats.cx", "never.cx"]),
-    ("Strings", ["string.cx", "StringBuffer.cx"]),
+    ("Strings", ["string.cx", "StringBuf.cx"]),
     (
         "Containers",
         [

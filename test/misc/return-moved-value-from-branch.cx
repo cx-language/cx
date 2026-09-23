@@ -9,12 +9,12 @@
 // CHECK-NEXT:dtor 1
 // CHECK-NOT: return-moved-value-from-branch.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
-Result<StringBuffer, StringBuffer> parse(string input) {
+Result<StringBuf, StringBuf> parse(string input) {
     int pos = 1;
-    var out = StringBuffer();
+    var out = StringBuf();
     while true {
         if pos >= input.size() {
-            return Err(StringBuffer("unterminated"));
+            return Err(StringBuf("unterminated"));
         }
         char c = input[pos];
         if c == '"' {

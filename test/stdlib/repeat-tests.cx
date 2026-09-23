@@ -26,7 +26,7 @@ void testConcat() {
 }
 
 void testAppend() {
-    var buf = StringBuffer("x");
+    var buf = StringBuf("x");
     buf.append("ab".repeat(2));
     assert(string(&buf) == "xabab");
 }

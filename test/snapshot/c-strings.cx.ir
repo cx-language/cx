@@ -2,7 +2,7 @@
 int main() {
     S* s = alloca S
     string* __str = alloca string
-    StringBuffer* _0 = alloca StringBuffer
+    StringBuf* _0 = alloca StringBuf
     string* __str_0 = alloca string
     char[1024]* a = getelementptr s, 0
     char* _1 = cast a to char*
@@ -13,7 +13,7 @@ int main() {
     char* _4 = cast a_0 to char*
     void _5 = call _EN3std6string4initEP4char3int(string* __str_0, char* "x", int 1)
     string __str.load_0 = load __str_0
-    void _6 = call _EN3std12StringBuffer4initE6string(StringBuffer* _0, string __str.load_0)
+    void _6 = call _EN3std9StringBuf4initE6string(StringBuf* _0, string __str.load_0)
     List<char>* _7 = getelementptr _0, 0
     char** _8 = getelementptr _7, 0
     char* .load = load _8

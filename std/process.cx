@@ -9,7 +9,7 @@ private extern int setenv(const char* name, const char* value, int overwrite);
 
 /// Returns the value of the environment variable, or null if it's not set.
 string? getenv(string name) {
-    var value = getenv(StringBuffer(name).cString());
+    var value = getenv(StringBuf(name).cString());
     if !value return null;
     return string(value);
 }
@@ -17,20 +17,20 @@ string? getenv(string name) {
 #if Windows
 /// Sets the environment variable, aborting on failure.
 void setenv(string name, string value) {
-    var assignment = StringBuffer(name) + "=" + value;
+    var assignment = StringBuf(name) + "=" + value;
     if _putenv(assignment.cString()) != 0 abort("setenv failed for ", name);
 }
 #else
 /// Sets the environment variable, aborting on failure.
 void setenv(string name, string value) {
-    if setenv(StringBuffer(name).cString(), StringBuffer(value).cString(), 1) != 0 abort("setenv failed for ", name);
+    if setenv(StringBuf(name).cString(), StringBuf(value).cString(), 1) != 0 abort("setenv failed for ", name);
 }
 #endif
 
 /// The exit code and standard output of a finished subprocess.
 struct ProcessResult {
     int status;
-    StringBuffer output;
+    StringBuf output;
 }
 
 /// Runs the command in a shell, returning its exit code and standard output.
@@ -38,10 +38,10 @@ struct ProcessResult {
 /// Standard error is inherited, not captured. Status is -1 if the process
 /// was killed by a signal.
 ProcessResult run(string command) {
-    var pipe = popen(StringBuffer(command).cString(), "r");
+    var pipe = popen(StringBuf(command).cString(), "r");
     if !pipe abort("run failed for command: ", command);
 
-    var output = StringBuffer();
+    var output = StringBuf();
     while true {
         var c = fgetc(pipe);
         if c < 0 break;
