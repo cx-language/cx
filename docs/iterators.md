@@ -32,7 +32,7 @@ struct Countdown {
     }
 
     CountdownIterator iterator() {
-        return CountdownIterator(this);
+        return CountdownIterator(*this);
     }
 }
 
