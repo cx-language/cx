@@ -12,6 +12,8 @@ struct CompileToCOptions {
     /// Directories that are searched for imported modules (in particular the
     /// directory containing the standard library's "std" subdirectory).
     std::vector<std::string> importSearchPaths;
+    /// Predefined macros for #if conditions (e.g. "wasm" for the playground).
+    std::vector<std::string> defines = {};
     bool noUnusedWarnings = false;
     /// Generate goto-free C code using dispatch loops. Required for C
     /// compilers without goto support (e.g. the web playground toolchain).
