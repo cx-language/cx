@@ -54,6 +54,6 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
-!7 = !DILocation(line: 13, column: 24, scope: !4)
+!7 = !DILocation(line: 13, column: 25, scope: !4)
 !8 = !DILocation(line: 13, column: 15, scope: !4)
 !9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1SI1EE4initEOP1E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)

@@ -4,7 +4,7 @@
 
 @0 = private unnamed_addr constant [36 x i8] c"Unwrap failed at Optional.cx:17:16\0A\00", align 1
 
-define i32 @main() {
+define i32 @main() #0 !dbg !4 {
   %a = alloca %"Optional<int>", align 8
   %enum = alloca %"Optional<int>", align 8
   %1 = alloca i32, align 4
@@ -13,11 +13,11 @@ define i32 @main() {
   %enum.load = load %"Optional<int>", ptr %enum, align 4
   store %"Optional<int>" %enum.load, ptr %a, align 4
   store i32 1, ptr %1, align 4
-  %2 = call i1 @_EN3stdeqI3intEERO3intR3int(ptr %a, ptr %1)
+  %2 = call i1 @_EN3stdeqI3intEERO3intR3int(ptr %a, ptr %1), !dbg !7
   ret i32 0
 }
 
-define i1 @_EN3stdeqI3intEERO3intR3int(ptr %a, ptr %b) {
+define i1 @_EN3stdeqI3intEERO3intR3int(ptr %a, ptr %b) #0 !dbg !8 {
   %a1 = alloca ptr, align 8
   %b2 = alloca ptr, align 8
   %1 = alloca %"Optional<int>", align 8
@@ -45,7 +45,7 @@ if.end:                                           ; preds = %if.else
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %if.end
-  call void @_EN3std10assertFailEP4char(ptr @0)
+  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !10
   unreachable
 
 assert.success:                                   ; preds = %if.end
@@ -58,4 +58,21 @@ assert.success:                                   ; preds = %if.end
   ret i1 %8
 }
 
-declare void @_EN3std10assertFailEP4char(ptr)
+declare void @_EN3std10assertFailEP4char(ptr) #0
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "optional-type-comparison.cx")
+!4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 5, column: 7, scope: !4)
+!8 = distinct !DISubprogram(name: "==", linkageName: "_EN3stdeqI3intEERO3intR3int", scope: !9, file: !9, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
+!9 = !DIFile(filename: "Optional.cx")
+!10 = !DILocation(line: 15, column: 6, scope: !8)
