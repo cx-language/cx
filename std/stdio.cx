@@ -22,10 +22,10 @@ void println(char[*]? value) {
     print('\n');
 }
 
-/// Prints the given value.
+/// Prints the given value without allocating.
 void print<T: Printable>(T& value) {
-    var s = value.toString();
-    printf("%.*s", s.size(), s.data());
+    var stream = OutputStream();
+    value.print(stream);
 }
 
 /// Prints the repetition without allocating a temporary.
@@ -35,15 +35,53 @@ void print(RepeatIterator<string> repetitions) {
     }
 }
 
-/// Prints the given value.
+/// Prints the given value without allocating.
 void print<T: Printable>(T* value) {
-    var s = value.toString();
-    printf("%.*s", s.size(), s.data());
+    var stream = OutputStream();
+    value.print(stream);
 }
 
 /// Prints the given value.
 void print<T: Printable>(List<T>& list) {
     print(Slice(list));
+}
+
+/// Joins the array elements into a string with the given separator.
+StringBuffer join<T: Printable>(Slice<T> array, string separator) {
+    var result = StringBuffer();
+
+    for index in 0..array.size() {
+        if index != 0 {
+            result.append(separator);
+        }
+        array[index].print(OutputStream(&result));
+    }
+
+    return result;
+}
+
+/// Joins the list elements into a string with the given separator.
+StringBuffer join<T: Printable>(List<T>* list, string separator) {
+    return join(Slice(list), separator);
+}
+
+/// Returns the sum of the array elements, aborting on empty arrays.
+T sum<T: Addable>(Slice<T> array) {
+    if array.empty() {
+        abort("Called sum() on empty array");
+    }
+    var total = array[0];
+
+    for index in 1..array.size() {
+        total += array[index];
+    }
+
+    return total;
+}
+
+/// Returns the sum of the list elements, aborting on empty lists.
+T sum<T: Addable>(List<T>* list) {
+    return sum(Slice(list));
 }
 
 /// Prints the given value.
@@ -60,7 +98,7 @@ void print<T: Printable>(Slice<T> array) {
     print(']');
 }
 
-/// Prints the given value.
+/// Prints the given value without allocating.
 void print(const char[*]? cString) {
     if cString {
         printf("%s", cString);
@@ -69,7 +107,7 @@ void print(const char[*]? cString) {
     }
 }
 
-/// Prints the given value.
+/// Prints the given value without allocating.
 void print(char[*]? cString) {
     if cString {
         printf("%s", cString);
@@ -115,10 +153,22 @@ StringBuffer readLine() {
     return line;
 }
 
-/// Reads the entire file into a string, or returns null if the file can't be opened.
-StringBuffer? readFile(string path) {
+/// An error reading a file.
+enum FileError : Printable {
+    CouldNotOpen,
+
+    /// Writes the error as text.
+    void print(OutputStream& stream) {
+        switch this {
+            case CouldNotOpen: stream.append("couldn't open file");
+        }
+    }
+}
+
+/// Reads the entire file into a string, or returns an error if the file can't be opened.
+Result<StringBuffer, FileError> readFile(string path) {
     var file = fopen(StringBuffer(path).cString(), "rb");
-    if !file return null;
+    if !file return Err(FileError.CouldNotOpen);
     defer fclose(file);
 
     fseek(file, 0, SEEK_END);
@@ -128,7 +178,7 @@ StringBuffer? readFile(string path) {
     var content = StringBuffer(uninitializedSize = int(size));
     fread(content.data(), sizeof(char), uint64(size), file);
 
-    return content;
+    return Ok(content);
 }
 
 /// Writes the string to the named file.
@@ -139,6 +189,11 @@ bool writeFile(string path, string content) {
 
     fwrite(content.data(), sizeof(char), uint64(content.size()), file);
     return true;
+}
+
+/// Deletes the named file, returning true on success.
+bool removeFile(string path) {
+    return remove(StringBuffer(path).cString()) == 0;
 }
 
 /// Prints the message to stderr and aborts.

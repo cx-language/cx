@@ -152,10 +152,13 @@ struct Typechecker {
     TypeDecl* getTypeDecl(const BasicType& type);
     EnumCase* getEnumCase(const Expr& expr, Type expectedType = Type(), CallExpr* call = nullptr);
     EnumCase* getExpectedEnumCase(llvm::StringRef name, Type expectedType);
+    VarDecl* getStaticConst(const Expr& expr);
     EnumCase* instantiateEnumCase(TypeTemplate& typeTemplate, llvm::StringRef caseName, const MemberExpr& memberExpr, CallExpr* call, Type expectedType);
     void checkReturnPointerToLocal(const Expr* returnValue) const;
     void warnIfUnusedResult(const Expr& expr, Type type) const;
-    static void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);
+    void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);
+    bool inSameModule(const Decl& decl, Location location) const;
+    Module* findModuleForFile(const char* file) const;
     void maybeCaptureVariable(VariableDecl& variableDecl);
     llvm::ErrorOr<const Module&> importModule(SourceFile* importer, llvm::StringRef moduleName);
     void deferTypechecking(Decl* decl);
@@ -172,6 +175,7 @@ struct Typechecker {
 
     Module* currentModule;
     SourceFile* currentSourceFile;
+    bool suppressAccessWarnings = false;
     FunctionDecl* currentFunction;
     Stmt** currentStmt; // Double-pointer so it refers to the correct statement after lowering.
     std::vector<Stmt*> currentControlStmts;

@@ -943,6 +943,10 @@ Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
         return emitEnumCase(*enumCase, {});
     }
 
+    if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(expr.decl)) {
+        return getValue(varDecl);
+    }
+
     if (expr.base->type.removePointer().isAnonymousStructType()) {
         return emitAnonymousStructElementAccess(expr);
     }

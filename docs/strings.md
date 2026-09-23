@@ -24,3 +24,17 @@ void main() {
     println(b); // prints "test!"
 }
 ```
+
+## Interpolation
+
+`$name` embeds a value and `${expr}` an arbitrary expression in a string literal.
+Interpolated values must implement `Printable`. Write `$$` for a literal dollar sign.
+
+```cs
+void main() {
+    var name = "world";
+    println("hello $name!"); // prints "hello world!"
+    println("1 + 2 = ${1 + 2}"); // prints "1 + 2 = 3"
+    println("$$5"); // prints "$5"
+}
+```

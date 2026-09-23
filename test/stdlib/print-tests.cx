@@ -3,7 +3,7 @@
 struct A: Printable {
     string a;
 
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         stream.append(a);
         stream.append(a);
         stream.append("!");
@@ -28,6 +28,6 @@ void main() {
     println(Result.Err<int, string>(error = "boom")); // CHECK-NEXT: Err(boom)
     println(0); // CHECK-NEXT: 0
     println(-1); // CHECK-NEXT: -1
-    println(int64_min); // CHECK-NEXT: -9223372036854775808
-    println(uint64_max); // CHECK-NEXT: 18446744073709551615
+    println(int64.min); // CHECK-NEXT: -9223372036854775808
+    println(uint64.max); // CHECK-NEXT: 18446744073709551615
 }

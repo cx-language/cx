@@ -186,6 +186,11 @@ static std::string replaceEscapeChars(llvm::StringRef literalContent, Location l
     result.reserve(literalContent.size());
 
     for (auto it = literalContent.begin(), end = literalContent.end(); it != end; ++it) {
+        if (*it == '$' && it + 1 != end && *(it + 1) == '$') {
+            result += '$';
+            ++it;
+            continue;
+        }
         if (*it == '\\') {
             ++it;
             ASSERT(it != end);
@@ -230,6 +235,37 @@ StringLiteralExpr* Parser::parseStringLiteral() {
     expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
+}
+
+static StringLiteralExpr* makeStringLiteralExpr(llvm::StringRef rawContent, Location location) {
+    return makeAST<StringLiteralExpr>(replaceEscapeChars(rawContent, location), location);
+}
+
+/// Parses `InterpStart expr InterpEnd (chunk InterpStart expr InterpEnd)*`,
+/// combining the pieces with `+` over `toString()` calls. `acc` holds the
+/// already-parsed leading chunk, or null when the literal starts with an
+/// interpolation.
+Expr* Parser::parseInterpolationRest(Expr* acc) {
+    while (currentToken() == Token::InterpStart) {
+        auto interpLocation = getCurrentLocation();
+        consumeToken();
+        Expr* value = parseExpr();
+        Token endToken = parse(Token::InterpEnd);
+        auto* member = makeAST<MemberExpr>(value, std::string("toString"), value->location);
+        auto* stringified = makeAST<CallExpr>(member, std::vector<NamedValue>(), std::vector<GenericArg>(), value->location);
+        Expr* piece = stringified;
+        acc = acc ? makeAST<BinaryExpr>(Token::Plus, acc, piece, interpLocation) : piece;
+
+        // A chunk on the same line continues this literal; anything else
+        // starts a new (possibly erroneous) construct.
+        if (currentToken() == Token::StringLiteral && currentToken().location.line == endToken.location.line) {
+            auto continuation = currentToken();
+            consumeToken();
+            Expr* chunk = makeStringLiteralExpr(continuation.getString(), getCurrentLocation());
+            acc = makeAST<BinaryExpr>(Token::Plus, acc, chunk, interpLocation);
+        }
+    }
+    return acc;
 }
 
 CharacterLiteralExpr* Parser::parseCharacterLiteral() {
@@ -312,6 +348,7 @@ Expr* Parser::parseAnonymousStructLiteralOrParenExpr() {
     auto elements = parseArgumentList(false);
 
     if (elements.size() == 1 && elements[0].name.empty()) {
+        elements[0].value->parenthesized = true;
         return elements[0].value;
     }
 
@@ -833,8 +870,21 @@ Expr* Parser::parsePostfixExpr() {
             break;
         }
         break;
-    case Token::StringLiteral:
-        expr = parseStringLiteral();
+    case Token::StringLiteral: {
+        // Interpolated strings desugar to `+` chains over `toString()` calls.
+        if (lookAhead(1) != Token::InterpStart) {
+            expr = parseStringLiteral();
+            break;
+        }
+        auto token = currentToken();
+        auto location = getCurrentLocation();
+        consumeToken();
+        expr = makeStringLiteralExpr(token.getString(), location);
+        expr = parseInterpolationRest(expr);
+        break;
+    }
+    case Token::InterpStart:
+        expr = parseInterpolationRest(nullptr);
         break;
     case Token::CharacterLiteral:
         expr = parseCharacterLiteral();
@@ -928,6 +978,21 @@ UnaryExpr* Parser::parseIncrementOrDecrementExpr(Expr* operand) {
     return makeExpr<UnaryExpr>(op.kind, operand, op.location);
 }
 
+/// Warns when && and || are mixed without clarifying parentheses.
+static void warnAboutMixedLogicalOperators(const Token& op, Expr* lhs, Expr* rhs) {
+    if (op.kind != Token::AndAnd && op.kind != Token::OrOr) return;
+
+    auto checkOperand = [&](Expr* operand) {
+        auto* binary = llvm::dyn_cast<BinaryExpr>(operand);
+        if (!binary || binary->parenthesized) return;
+        if ((op.kind == Token::OrOr && binary->op == Token::AndAnd) || (op.kind == Token::AndAnd && binary->op == Token::OrOr)) {
+            WARN(operand->location, "mixing '&&' and '||' without parentheses; add parentheses to clarify");
+        }
+    };
+    checkOperand(lhs);
+    checkOperand(rhs);
+}
+
 /// binary-expr ::= expr op expr
 Expr* Parser::parseBinaryExpr(int minPrecedence) {
     auto lhs = parsePreOrPostfixExpr();
@@ -952,6 +1017,7 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
             break;
         }
 
+        warnAboutMixedLogicalOperators(op, lhs, rhs);
         lhs = makeExpr<BinaryExpr>(op.kind, lhs, rhs, op.location);
     }
 
@@ -1665,7 +1731,8 @@ Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<Generic
 
 /// type-decl ::= ('struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}' ';'?
 /// interface-list ::= ':' non-empty-type-list
-/// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl
+/// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl | const-decl
+/// const-decl ::= 'const' id '=' expr
 TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     TypeTag tag;
     switch (consumeToken()) {
@@ -1716,6 +1783,21 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 break;
             }
             LLVM_FALLTHROUGH;
+        case Token::Const:
+            if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
+                if (genericParams && !genericParams->empty()) {
+                    ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                }
+                consumeToken();
+                auto name = parse(Token::Identifier);
+                parse(Token::Assignment);
+                auto* initializer = parseExpr();
+                parseStmtTerminator();
+                typeDecl->staticConsts.push_back(makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString().str(), initializer, nullptr,
+                                                                  accessLevel, *currentModule, name.location));
+                break;
+            }
+            LLVM_FALLTHROUGH;
         default: {
             auto type = parseType();
             auto location = getCurrentLocation();
@@ -1730,6 +1812,17 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 typeDecl->addMethod(parseFunctionTemplate(typeDecl, accessLevel, type, name, location));
                 break;
             default:
+                // A const-qualified member with an initializer is a static constant.
+                if (currentToken() == Token::Assignment && !type.isMutable()) {
+                    if (genericParams && !genericParams->empty()) {
+                        ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                    }
+                    consumeToken();
+                    auto* initializer = parseExpr();
+                    parseStmtTerminator();
+                    typeDecl->staticConsts.push_back(makeAST<VarDecl>(type, name.str(), initializer, nullptr, accessLevel, *currentModule, location));
+                    break;
+                }
                 typeDecl->addField(parseFieldDecl(*typeDecl, accessLevel, type, name, location));
                 break;
             }
@@ -1757,7 +1850,7 @@ TypeTemplate* Parser::parseEnumTemplate(AccessLevel accessLevel) {
 
 /// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' (enum-case-decl | member-decl)* '}' ';'?
 /// enum-case-decl ::= id anonymous-struct-type? (',' | '\n' | ';')
-/// member-decl ::= function-decl | function-template-decl
+/// member-decl ::= function-decl | function-template-decl | const-decl
 EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     ASSERT(currentToken() == Token::Enum);
     consumeToken();
@@ -1779,6 +1872,21 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
             accessLevel = AccessLevel::Private;
             consumeToken();
+        }
+
+        // A `const` name followed by `=` declares a constant scoped under the enum name.
+        if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
+            if (genericParams && !genericParams->empty()) {
+                ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+            }
+            consumeToken();
+            auto name = parse(Token::Identifier);
+            parse(Token::Assignment);
+            auto* initializer = parseExpr();
+            parseStmtTerminator();
+            enumDecl->staticConsts.push_back(makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString().str(), initializer, nullptr,
+                                                              accessLevel, *currentModule, name.location));
+            continue;
         }
 
         // A lone identifier names a case; anything else starts a member function signature.
@@ -1812,6 +1920,18 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             auto location = getCurrentLocation();
             auto methodName = parseFunctionName(enumDecl);
 
+            // A const-qualified member with an initializer is a static constant.
+            if (currentToken() == Token::Assignment && !type.isMutable()) {
+                if (genericParams && !genericParams->empty()) {
+                    ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                }
+                consumeToken();
+                auto* initializer = parseExpr();
+                parseStmtTerminator();
+                enumDecl->staticConsts.push_back(makeAST<VarDecl>(type, methodName.str(), initializer, nullptr, accessLevel, *currentModule, location));
+                continue;
+            }
+
             switch (currentToken()) {
             case Token::LeftParen:
                 enumDecl->addMethod(parseFunctionDecl(enumDecl, accessLevel, /*requireBody=*/true, type, methodName, location));
@@ -1840,10 +1960,18 @@ ImportDecl* Parser::parseImportDecl() {
     auto location = getCurrentLocation();
     std::string importTarget;
 
+    if (currentToken() == Token::InterpStart) {
+        ERROR(getCurrentLocation(), "string interpolation is not allowed in import paths");
+    }
+
     if (currentToken() == Token::StringLiteral) {
         importTarget = parseStringLiteral()->value;
     } else {
         importTarget = parse({Token::Identifier, Token::StringLiteral}, "after 'import'").getString().str();
+    }
+
+    if (currentToken() == Token::InterpStart) {
+        ERROR(getCurrentLocation(), "string interpolation is not allowed in import paths");
     }
 
     parseStmtTerminator("after 'import' declaration");

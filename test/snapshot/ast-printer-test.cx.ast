@@ -1,8 +1,10 @@
 TypeDecl
 TypeDecl
 FunctionDecl main
-    VarStmt VarDecl text CallExpr VarExpr readFile type=NULL
-        StringLiteralExpr
+    VarStmt VarDecl text CallExpr VarExpr unwrap type=NULL
+        ImplicitCastExpr 2 CallExpr VarExpr readFile type=NULL
+            StringLiteralExpr
+
 
     ExprStmt CallExpr MemberExpr
 

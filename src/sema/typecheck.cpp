@@ -294,6 +294,14 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
                 } catch (const CompileError& error) {
                     error.report();
                 }
+            } else if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                for (auto* staticConst : typeDecl->staticConsts) {
+                    try {
+                        typecheckVarDecl(*staticConst);
+                    } catch (const CompileError& error) {
+                        error.report();
+                    }
+                }
             }
         }
 
@@ -360,14 +368,19 @@ Decl* Typechecker::findDecl(llvm::StringRef name, Location location, Location en
                     return &field;
                 }
             }
+            for (auto* staticConst : typeDecl->staticConsts) {
+                if (staticConst->getName() == name) {
+                    return staticConst;
+                }
+            }
         }
     }
 
-    if (Decl* match = findDeclInModules(name, location, Module::getStdlibModule())) {
+    if (Decl* match = findDeclInModules(name, location, currentSourceFile->importedModules)) {
         return match;
     }
 
-    if (Decl* match = findDeclInModules(name, location, currentSourceFile->importedModules)) {
+    if (Decl* match = findDeclInModules(name, location, Module::getStdlibModule())) {
         return match;
     }
 
@@ -416,19 +429,25 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
                 decls.emplace_back(&field);
             }
         }
+
+        for (auto* staticConst : receiverTypeDecl->staticConsts) {
+            if (staticConst->getName() == name) {
+                decls.emplace_back(staticConst);
+            }
+        }
     }
 
     if (currentModule->name != "std") {
         appendUnique(decls, currentModule->symbolTable.findInAllScopes(name));
     }
 
-    appendUnique(decls, findDeclsInModules(name, Module::getStdlibModule()));
-
     if (currentSourceFile && !inAllImportedModules) {
         appendUnique(decls, findDeclsInModules(name, currentSourceFile->importedModules));
     } else {
         appendUnique(decls, findDeclsInModules(name, Module::getAllImportedModules()));
     }
+
+    appendUnique(decls, findDeclsInModules(name, Module::getStdlibModule()));
 
     return decls;
 }

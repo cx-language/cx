@@ -81,6 +81,122 @@ void Lexer::readBlockComment(Location startLocation) {
     }
 }
 
+Token Lexer::nextToken() {
+    firstLocation.line = lastLocation.line;
+    firstLocation.column = lastLocation.column;
+
+    if (pendingInterpStart) {
+        pendingInterpStart = false;
+        readChar(); // Consume '$'.
+        if (pendingInterpBraceForm) readChar(); // Consume '{'.
+        LexFrame frame;
+        frame.isCode = true;
+        frame.codeFrame.braceForm = pendingInterpBraceForm;
+        frameStack.push_back(frame);
+        return Token(Token::InterpStart, getCurrentLocation(), pendingInterpBraceForm ? "${" : "$");
+    }
+
+    if (!frameStack.empty() && frameStack.back().isCode) return lexCodeToken();
+    if (!frameStack.empty()) return lexStringResume();
+    return lexToken();
+}
+
+Token Lexer::lexCodeToken() {
+    size_t frameIndex = frameStack.size() - 1;
+
+    if (!frameStack[frameIndex].codeFrame.braceForm && frameStack[frameIndex].codeFrame.firstTokenDone) {
+        frameStack.pop_back();
+        frameStack.back().stringFrame.contentBegin = currentFilePosition + 1;
+        return Token(Token::InterpEnd, getCurrentLocation(), "$");
+    }
+
+    if (frameStack[frameIndex].codeFrame.braceForm) {
+        char ch = readChar();
+
+        if (ch == '}') {
+            if (frameStack[frameIndex].codeFrame.braceDepth == 0) {
+                frameStack.pop_back();
+                frameStack.back().stringFrame.contentBegin = currentFilePosition + 1;
+                return Token(Token::InterpEnd, getCurrentLocation(), "}");
+            }
+            frameStack[frameIndex].codeFrame.braceDepth--;
+            unreadChar(ch);
+        } else {
+            if (ch == '{') frameStack[frameIndex].codeFrame.braceDepth++;
+            unreadChar(ch);
+        }
+    }
+
+    Token token = lexToken();
+
+    if (token.kind == Token::None) {
+        ERROR(getCurrentLocation(), "unterminated interpolation, expected '}'");
+    }
+
+    if (!frameStack[frameIndex].codeFrame.braceForm) frameStack[frameIndex].codeFrame.firstTokenDone = true;
+    return token;
+}
+
+Token Lexer::lexStringResume() {
+    StringFrame& stringFrame = frameStack.back().stringFrame;
+
+    while (true) {
+        auto ch = readChar();
+
+        if (ch == '\0') {
+            ERROR(getCurrentLocation(), "unterminated string literal");
+        }
+
+        if (ch == stringFrame.delimiter) {
+            const char* chunkEnd = currentFilePosition;
+            const char* chunkBegin = stringFrame.contentBegin;
+            frameStack.pop_back();
+
+            if (chunkEnd > chunkBegin) {
+                return Token(Token::StringLiteral, getCurrentLocation(), llvm::StringRef(chunkBegin, chunkEnd - chunkBegin));
+            }
+            return nextToken();
+        }
+
+        if (ch == '\\') {
+            if (readChar() == '\0') {
+                ERROR(getCurrentLocation(), "unterminated string literal");
+            }
+            continue;
+        }
+
+        if (ch == '\n' || ch == '\r') {
+            Location newlineLocation = firstLocation;
+            newlineLocation.column += currentFilePosition - stringFrame.quotePos;
+            ERROR(newlineLocation, "newline inside string literal");
+        }
+
+        if (stringFrame.delimiter == '"' && ch == '$') {
+            char next = readChar();
+
+            if (next != '$' && next != '{' && !std::isalpha(next) && next != '_') {
+                unreadChar(next);
+                continue;
+            }
+
+            if (next == '$') continue;
+
+            const char* dollarPos = currentFilePosition - 1;
+            // Interpolation trigger: unread back to '$' so InterpStart
+            // consumption stays uniform, then suspend with a flag.
+            unreadChar(next);
+            unreadChar('$');
+            pendingInterpStart = true;
+            pendingInterpBraceForm = (next == '{');
+
+            if (dollarPos > stringFrame.contentBegin) {
+                return Token(Token::StringLiteral, getCurrentLocation(), llvm::StringRef(stringFrame.contentBegin, dollarPos - stringFrame.contentBegin));
+            }
+            return nextToken();
+        }
+    }
+}
+
 Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
     const char* begin = currentFilePosition;
     const char* end = begin + 2;
@@ -88,6 +204,10 @@ Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
 
     while (true) {
         auto ch = readChar();
+
+        if (ch == '\0') {
+            ERROR(getCurrentLocation(), "unterminated " << toString(literalKind));
+        }
 
         if (escape) {
             escape = false;
@@ -99,6 +219,39 @@ Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
             Location newlineLocation = firstLocation;
             newlineLocation.column += end - begin - 1;
             ERROR(newlineLocation, "newline inside " << toString(literalKind));
+        } else if (delimiter == '"' && ch == '$') {
+            char next = readChar();
+
+            if (next == '$') {
+                end += 2;
+                continue;
+            }
+
+            if (next != '{' && !std::isalpha(next) && next != '_') {
+                unreadChar(next);
+                end++;
+                continue;
+            }
+
+            // Interpolation trigger: suspend with a flag and return the
+            // chunk before '$'. Chunks exclude quotes; the parser builds
+            // them without quote-stripping (unlike plain literals below).
+            const char* dollarPos = currentFilePosition - 1;
+            unreadChar(next);
+            unreadChar('$');
+            pendingInterpStart = true;
+            pendingInterpBraceForm = (next == '{');
+
+            LexFrame frame;
+            frame.isCode = false;
+            frame.stringFrame.delimiter = delimiter;
+            frame.stringFrame.quotePos = begin;
+            frameStack.push_back(frame);
+
+            if (dollarPos > begin + 1) {
+                return Token(literalKind, getCurrentLocation(), llvm::StringRef(begin + 1, dollarPos - (begin + 1)));
+            }
+            return nextToken();
         }
 
         end++;
@@ -263,7 +416,7 @@ static const llvm::StringMap<Token::Kind> keywords = {
     {"while", Token::While},         {"#if", Token::HashIf},    {"#else", Token::HashElse}, {"#endif", Token::HashEndif},
 };
 
-Token Lexer::nextToken() {
+Token Lexer::lexToken() {
     while (true) {
         char ch = readChar();
         firstLocation.line = lastLocation.line;

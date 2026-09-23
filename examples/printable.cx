@@ -3,7 +3,7 @@ struct Point: Printable {
     int x;
     int y;
 
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         stream.append("(");
         x.print(stream);
         stream.append(", ");

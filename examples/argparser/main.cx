@@ -14,7 +14,7 @@ void loadTasks(string content, List<Task>& tasks) {
             continue;
         }
         var rest = line.substr(2);
-        var sp = rest.find(' ');
+        var sp = rest.indexOf(' ');
         if sp >= rest.size() {
             continue;
         }
@@ -131,8 +131,8 @@ int main(string[] argv) {
 
     var tasks = List<Task>();
     var content = readFile(parser.option("db"));
-    if content {
-        loadTasks(content.substr(0), tasks);
+    if content == Ok {
+        loadTasks(unwrap(content).substr(0), tasks);
     }
 
     var cmd = parser.matchedCommand();

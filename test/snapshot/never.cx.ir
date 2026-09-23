@@ -5,7 +5,7 @@ never _EN4main1fE() {
 }
 
 never _EN4main1gE() {
-    never _0 = call abort()
+    never _0 = call _EN3std12abortWrapperE()
     unreachable
 }
 

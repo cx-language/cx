@@ -1,66 +1,17 @@
-// TODO: Convert these to static members of the corresponding integer type:
-/// Largest value of type int.
-const int int_max = 2147483647;
-/// Largest value of type int8.
-const int8 int8_max = 127;
-/// Largest value of type int16.
-const int16 int16_max = 32767;
-/// Largest value of type int32.
-const int32 int32_max = 2147483647;
-/// Largest value of type int64.
-const int64 int64_max = 9223372036854775807;
-
-/// Smallest value of type int.
-const int int_min = -2147483648;
-/// Smallest value of type int8.
-const int8 int8_min = -128;
-/// Smallest value of type int16.
-const int16 int16_min = -32768;
-/// Smallest value of type int32.
-const int32 int32_min = -2147483648;
-/// Smallest value of type int64.
-const int64 int64_min = -9223372036854775808;
-
-/// Largest value of type uint.
-const uint uint_max = 4294967295;
-/// Largest value of type uint8.
-const uint8 uint8_max = 255;
-/// Largest value of type byte.
-const byte byte_max = 255;
-/// Largest value of type uint16.
-const uint16 uint16_max = 65535;
-/// Largest value of type uint32.
-const uint32 uint32_max = 4294967295;
-/// Largest value of type uint64.
-const uint64 uint64_max = 18446744073709551615;
-
-/// Smallest value of type uint.
-const uint uint_min = 0;
-/// Smallest value of type uint8.
-const uint8 uint8_min = 0;
-/// Smallest value of type byte.
-const byte byte_min = 0;
-/// Smallest value of type uint16.
-const uint16 uint16_min = 0;
-/// Smallest value of type uint32.
-const uint32 uint32_min = 0;
-/// Smallest value of type uint64.
-const uint64 uint64_min = 0;
-
 // TODO: Remove code duplication by declaring an 'Integer' interface that implements the 'compare'
 // function for all integer types.
 
-private void printSigned(int64 value, StringBuffer& stream) {
+private void printSigned(int64 value, OutputStream& stream) {
     if value < 0 {
         stream.append('-');
-        // Negate via value + 1 so that int64_min doesn't overflow.
+        // Negate via value + 1 so that int64.min doesn't overflow.
         printUnsigned(uint64(-(value + 1)) + uint64(1), stream);
     } else {
         printUnsigned(uint64(value), stream);
     }
 }
 
-private void printUnsigned(uint64 value, StringBuffer& stream) {
+private void printUnsigned(uint64 value, OutputStream& stream) {
     char[20] digits = undefined;
     var count = 0;
 
@@ -81,14 +32,19 @@ private void printUnsigned(uint64 value, StringBuffer& stream) {
 }
 
 /// A signed integer.
-struct int: Copyable, Comparable, Printable, Hashable {
+struct int: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const int max = 2147483647;
+    /// Smallest value of this type.
+    const int min = -2147483648;
+
     /// Compares this value to another.
     Ordering compare(int& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printSigned(int64(this), stream);
     }
 
@@ -99,14 +55,19 @@ struct int: Copyable, Comparable, Printable, Hashable {
 }
 
 /// An 8-bit signed integer.
-struct int8: Copyable, Comparable, Printable, Hashable {
+struct int8: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const int8 max = 127;
+    /// Smallest value of this type.
+    const int8 min = -128;
+
     /// Compares this value to another.
     Ordering compare(int8& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printSigned(int64(this), stream);
     }
 
@@ -117,14 +78,19 @@ struct int8: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 16-bit signed integer.
-struct int16: Copyable, Comparable, Printable, Hashable {
+struct int16: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const int16 max = 32767;
+    /// Smallest value of this type.
+    const int16 min = -32768;
+
     /// Compares this value to another.
     Ordering compare(int16& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printSigned(int64(this), stream);
     }
 
@@ -135,14 +101,19 @@ struct int16: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 32-bit signed integer.
-struct int32: Copyable, Comparable, Printable, Hashable {
+struct int32: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const int32 max = 2147483647;
+    /// Smallest value of this type.
+    const int32 min = -2147483648;
+
     /// Compares this value to another.
     Ordering compare(int32& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printSigned(int64(this), stream);
     }
 
@@ -153,14 +124,19 @@ struct int32: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 64-bit signed integer.
-struct int64: Copyable, Comparable, Printable, Hashable {
+struct int64: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const int64 max = 9223372036854775807;
+    /// Smallest value of this type.
+    const int64 min = -9223372036854775808;
+
     /// Compares this value to another.
     Ordering compare(int64& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printSigned(this, stream);
     }
 
@@ -180,14 +156,19 @@ struct int128: Copyable, Comparable {
 }
 
 /// An unsigned integer.
-struct uint: Copyable, Comparable, Printable, Hashable {
+struct uint: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const uint max = 4294967295;
+    /// Smallest value of this type.
+    const uint min = 0;
+
     /// Compares this value to another.
     Ordering compare(uint& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -198,14 +179,19 @@ struct uint: Copyable, Comparable, Printable, Hashable {
 }
 
 /// An 8-bit unsigned integer.
-struct uint8: Copyable, Comparable, Printable, Hashable {
+struct uint8: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const uint8 max = 255;
+    /// Smallest value of this type.
+    const uint8 min = 0;
+
     /// Compares this value to another.
     Ordering compare(uint8& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -216,14 +202,19 @@ struct uint8: Copyable, Comparable, Printable, Hashable {
 }
 
 /// An 8-bit unsigned integer.
-struct byte: Copyable, Comparable, Printable, Hashable {
+struct byte: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const byte max = 255;
+    /// Smallest value of this type.
+    const byte min = 0;
+
     /// Compares this value to another.
     Ordering compare(byte& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -234,14 +225,19 @@ struct byte: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 16-bit unsigned integer.
-struct uint16: Copyable, Comparable, Printable, Hashable {
+struct uint16: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const uint16 max = 65535;
+    /// Smallest value of this type.
+    const uint16 min = 0;
+
     /// Compares this value to another.
     Ordering compare(uint16& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -252,14 +248,19 @@ struct uint16: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 32-bit unsigned integer.
-struct uint32: Copyable, Comparable, Printable, Hashable {
+struct uint32: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const uint32 max = 4294967295;
+    /// Smallest value of this type.
+    const uint32 min = 0;
+
     /// Compares this value to another.
     Ordering compare(uint32& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printUnsigned(uint64(this), stream);
     }
 
@@ -270,14 +271,19 @@ struct uint32: Copyable, Comparable, Printable, Hashable {
 }
 
 /// A 64-bit unsigned integer.
-struct uint64: Copyable, Comparable, Printable, Hashable {
+struct uint64: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const uint64 max = 18446744073709551615;
+    /// Smallest value of this type.
+    const uint64 min = 0;
+
     /// Compares this value to another.
     Ordering compare(uint64& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
     /// Writes this value to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printUnsigned(this, stream);
     }
 

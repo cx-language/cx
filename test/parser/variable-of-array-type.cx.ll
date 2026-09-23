@@ -28,5 +28,5 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 8, column: 12, scope: !4)
-!8 = distinct !DISubprogram(name: "hash", linkageName: "_EN3std3int4hashE", scope: !9, file: !9, line: 96, type: !5, scopeLine: 96, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "hash", linkageName: "_EN3std3int4hashE", scope: !9, file: !9, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
 !9 = !DIFile(filename: "integers.cx")

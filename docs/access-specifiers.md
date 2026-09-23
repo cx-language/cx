@@ -2,7 +2,9 @@
 
 Declarations are public by default: any file in the same module, or any file
 that imports the module, can use them.
-Marking a declaration `private` restricts its use to the file it's declared in.
+Marking a declaration `private` restricts its use to the module it's declared in:
+any file in the same module can use it, but a file that merely imports the
+module gets a warning when using it.
 `private` can be applied to struct members, functions, global variables, and types.
 
 ```cs
@@ -21,7 +23,7 @@ void main() {
 }
 ```
 
-Using a `private` declaration from another file produces a warning, not an error:
+Using a `private` declaration from another module produces a warning, not an error:
 `private` marks an implementation detail, but nothing stops you from using it
 if you really need to.
 

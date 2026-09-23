@@ -1,5 +1,4 @@
 import "SDL3/SDL.h";
-import "stdio.h";
 
 const width = 640;
 const height = 480;
@@ -12,7 +11,7 @@ bool isKeyDown(SDL_Scancode key) {
 
 void main() {
     if !SDL_Init(SDL_INIT_VIDEO) {
-        puts(SDL_GetError()!);
+        println(SDL_GetError()!);
         return;
     }
     defer SDL_Quit();
@@ -21,7 +20,7 @@ void main() {
         int(width), int(height), 0);
 
     if window == null {
-        puts(SDL_GetError()!);
+        println(SDL_GetError()!);
         return;
     }
 
@@ -30,7 +29,7 @@ void main() {
     var renderer = SDL_CreateRenderer(window, null);
 
     if renderer == null {
-        puts(SDL_GetError()!);
+        println(SDL_GetError()!);
         return;
     }
 

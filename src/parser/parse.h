@@ -95,6 +95,7 @@ private:
     VarExpr* parseVarExpr();
     VarExpr* parseThis();
     StringLiteralExpr* parseStringLiteral();
+    Expr* parseInterpolationRest(Expr* acc);
     CharacterLiteralExpr* parseCharacterLiteral();
     IntLiteralExpr* parseIntLiteral();
     FloatLiteralExpr* parseFloatLiteral();

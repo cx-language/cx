@@ -275,6 +275,8 @@ const char* cx::toString(Token::Kind tokenKind) {
         "float literal",
         "string literal",
         "character literal",
+        "interpolation start",
+        "interpolation end",
         "break",
         "case",
         "const",
