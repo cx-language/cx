@@ -42,6 +42,7 @@ struct FieldDecl;
 struct VarDecl;
 struct FunctionDecl;
 struct EnumDecl;
+struct TypeAliasDecl;
 
 enum class DeclKind {
     GenericParamDecl,
@@ -52,6 +53,7 @@ enum class DeclKind {
     FunctionTemplate,
     TypeDecl,
     TypeTemplate,
+    TypeAliasDecl,
     EnumDecl,
     EnumCase,
     VarDecl,
@@ -91,6 +93,7 @@ struct Decl {
     bool isFunctionTemplate() const { return kind == DeclKind::FunctionTemplate; }
     bool isTypeDecl() const { return kind == DeclKind::TypeDecl || kind == DeclKind::EnumDecl; }
     bool isTypeTemplate() const { return kind == DeclKind::TypeTemplate; }
+    bool isTypeAliasDecl() const { return kind == DeclKind::TypeAliasDecl; }
     bool isEnumDecl() const { return kind == DeclKind::EnumDecl; }
     bool isEnumCaseDecl() const { return kind == DeclKind::EnumCase; }
     bool isVarDecl() const { return kind == DeclKind::VarDecl; }
@@ -345,6 +348,21 @@ struct TypeTemplate : Decl {
     std::vector<GenericParamDecl> genericParams;
     TypeDecl* typeDecl;
     std::unordered_map<std::vector<GenericArg>, TypeDecl*> instantiations;
+};
+
+struct TypeAliasDecl : Decl {
+    TypeAliasDecl(std::string&& name, Type aliasedType, AccessLevel accessLevel, Module& module, Location location)
+    : Decl(DeclKind::TypeAliasDecl, accessLevel), name(std::move(name)), aliasedType(aliasedType), location(location), module(module) {}
+    llvm::StringRef getName() const override { return name; }
+    Module* getModule() const override { return &module; }
+    Location getLocation() const override { return location; }
+    static bool classof(const Decl* d) { return d->kind == DeclKind::TypeAliasDecl; }
+
+    std::string name;
+    Type aliasedType;
+    Location location;
+    Module& module;
+    bool cycleReported = false;
 };
 
 struct EnumCase : VariableDecl {

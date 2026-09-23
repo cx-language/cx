@@ -160,7 +160,7 @@ def parse_file(path):
             types.append(current)
             doc = []
         elif depth == 0 and current is None:
-            if code.startswith(("extern", "const", "typealias")) or "(" in code:
+            if code.startswith(("extern", "const", "using")) or "(" in code:
                 add_free(code.split("{", 1)[0].rstrip(), doc, lineno)
             doc = []
         elif depth == 1 and current is not None and "(" in code:

@@ -211,6 +211,9 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
         }
     }
 
+    currentModule = &module;
+    canonicalizeTypeAliases();
+
     // Typecheck implemented interfaces so that inherited methods and fields are added to the implementing type before they're referenced.
     for (auto& sourceFile : module.sourceFiles) {
         for (auto& decl : sourceFile.topLevelDecls) {
