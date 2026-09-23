@@ -1,0 +1,8 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: test-marker-on-extern.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+// CHECK: [[@LINE+1]]:6: error: test functions must have a body
+test extern void f();
+
+// CHECK-NOT: test-marker-on-extern.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

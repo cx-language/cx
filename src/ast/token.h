@@ -50,6 +50,7 @@ struct Token {
         Sizeof,
         Struct,
         Switch,
+        Test,
         Then,
         This,
         True,

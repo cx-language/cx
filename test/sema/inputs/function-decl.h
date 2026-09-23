@@ -1,3 +1,3 @@
 #pragma once
 
-void test(void);
+void duplicateImportProbe(void);

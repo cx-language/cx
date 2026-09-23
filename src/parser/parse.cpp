@@ -1762,6 +1762,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             accessLevel = AccessLevel::Private;
             consumeToken();
             goto start;
+        case Token::Test:
+            ERROR(getCurrentLocation(), "only top-level functions can be marked as tests");
         case Token::Tilde:
             if (accessLevel != AccessLevel::Default) {
                 WARN(lookAhead(-1).location, "destructors cannot be " << accessLevel);
@@ -1857,6 +1859,9 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     while (currentToken() != Token::RightBrace) {
         AccessLevel accessLevel = AccessLevel::Default;
+        if (currentToken() == Token::Test) {
+            ERROR(getCurrentLocation(), "only top-level functions can be marked as tests");
+        }
         while (currentToken() == Token::Private) {
             if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
             accessLevel = AccessLevel::Private;
@@ -2026,6 +2031,7 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
 /// @throws CompileError
 Decl* Parser::parseTopLevelDecl(bool addToSymbolTable) {
     AccessLevel accessLevel = AccessLevel::Default;
+    bool isTest = false;
     Decl* decl = nullptr;
 
 start:
@@ -2035,11 +2041,18 @@ start:
         accessLevel = AccessLevel::Private;
         consumeToken();
         goto start;
+    case Token::Test:
+        if (isTest) WARN(getCurrentLocation(), "duplicate test specifier");
+        isTest = true;
+        consumeToken();
+        goto start;
     case Token::Extern:
+        if (isTest) ERROR(getCurrentLocation(), "test functions must have a body");
         consumeToken();
         return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel);
     case Token::Struct:
     case Token::Interface:
+        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
         if (lookAhead(2) == Token::Less) {
             decl = parseTypeTemplate(accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
@@ -2049,6 +2062,7 @@ start:
         }
         break;
     case Token::Enum:
+        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
         if (lookAhead(2) == Token::Less) {
             decl = parseEnumTemplate(accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
@@ -2059,6 +2073,7 @@ start:
         break;
     case Token::Var:
     case Token::Const:
+        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
         // Determine if this is a constant declaration or if the const is part of a type.
         if (currentToken() == Token::Const && lookAhead(2) != Token::Assignment) {
             return parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
@@ -2067,12 +2082,24 @@ start:
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
         break;
     case Token::Import:
+        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
         if (accessLevel != AccessLevel::Default) {
             WARN(lookAhead(-1).location, "imports cannot have access specifiers");
         }
         return parseImportDecl();
-    default:
-        return parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
+    default: {
+        decl = parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
+        if (isTest) {
+            if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
+                functionDecl->isTest = true;
+            } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
+                functionTemplate->functionDecl->isTest = true;
+            } else {
+                ERROR(decl->getLocation(), "only functions can be marked as tests");
+            }
+        }
+        return decl;
+    }
     }
 
     return decl;
