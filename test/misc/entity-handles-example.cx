@@ -1,0 +1,12 @@
+// RUN: %cx run -Werror %S/../../examples/entity-handles.cx 2>&1 | %FileCheck -match-full-lines %s
+// RUN: %cx run -Werror --backend=c %S/../../examples/entity-handles.cx 2>&1 | %FileCheck -match-full-lines %s
+
+// CHECK-NOT: entity-handles.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK: alice: 100
+// CHECK-NEXT: stale after destroy: true
+// CHECK-NEXT: same slot: true
+// CHECK-NEXT: new generation: true
+// CHECK-NEXT: stale after reuse: true
+// CHECK-NEXT: bob: 75
+// CHECK-NEXT: stale destroy ignored: true
+// CHECK-NOT: entity-handles.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
