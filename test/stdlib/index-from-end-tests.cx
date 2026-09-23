@@ -3,7 +3,7 @@
 void main() {
     testList();
     testListAssign();
-    testArrayRef();
+    testSliceRef();
     testString();
     testStringBuffer();
     testStringBufferAssign();
@@ -33,11 +33,11 @@ void testListAssign() {
     assert(list[1] == 20);
 }
 
-void testArrayRef() {
+void testSliceRef() {
     var list = List<int>();
     list.push(10);
     list.push(20);
-    var ref = ArrayRef(&list);
+    var ref = Slice(&list);
     assert(ref[-1] == 20);
     assert(ref[-2] == 10);
 }
