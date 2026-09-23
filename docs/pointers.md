@@ -15,6 +15,10 @@ To dereference a pointer, the `*` operator is used.
 Comparing two pointers compares the stored memory addresses.
 Comparing a pointer against a value compares the pointed-to value instead.
 
+When a value is expected, a pointer to a copyable type dereferences implicitly
+(copying the pointee). Moving out of a pointer to a non-copyable type requires
+an explicit `*`, so moves are visible at the use site.
+
 ```cs
 void main() {
     int i = 6;
