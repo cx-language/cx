@@ -1020,6 +1020,30 @@ Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
         return emitAnonymousStructElementAccess(expr);
     }
 
+    // Array swizzles (`vec.x`, `vec.xy`, `vec.rgba`, etc.): emit element
+    // extracts, building a new array for multi-char swizzles.
+    if (!expr.swizzleIndices.empty()) {
+        auto* baseValue = emitExpr(*expr.base);
+        Value* basePtr = baseValue->getType()->isPointerType() ? baseValue : createTempAlloca(baseValue);
+        auto emitSwizzleElement = [&](int index) -> Value* {
+            auto* zero = createConstantInt(Type::getInt(), 0);
+            auto* idx = createConstantInt(Type::getInt(), index);
+            auto* gep = createGEP(basePtr, {zero, idx});
+            return createLoad(gep);
+        };
+        if (expr.swizzleIndices.size() == 1) {
+            return emitSwizzleElement(expr.swizzleIndices[0]);
+        } else {
+            auto* arrayIRType = getIRType(expr.type);
+            Value* result = createUndefined(arrayIRType);
+            for (size_t i = 0; i < expr.swizzleIndices.size(); ++i) {
+                Value* elem = emitSwizzleElement(expr.swizzleIndices[i]);
+                result = createInsertValue(result, elem, static_cast<int>(i));
+            }
+            return result;
+        }
+    }
+
     return emitMemberAccess(emitLvalueExpr(*expr.base), llvm::cast<FieldDecl>(expr.decl), &expr);
 }
 

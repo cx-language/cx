@@ -1,0 +1,55 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+
+void main() {
+    testSingle();
+    testMulti();
+    testRgba();
+    testReorderDuplicate();
+}
+
+void testSingle() {
+    float[3] v = [1.0, 2.0, 3.0];
+    assert(v.x == 1.0);
+    assert(v.y == 2.0);
+    assert(v.z == 3.0);
+    assert(v.r == 1.0);
+    assert(v.g == 2.0);
+    assert(v.b == 3.0);
+}
+
+void testMulti() {
+    float[3] v = [1.0, 2.0, 3.0];
+    float[2] xy = v.xy;
+    assert(xy[0] == 1.0);
+    assert(xy[1] == 2.0);
+
+    float[3] xyz = v.xyz;
+    assert(xyz[0] == 1.0);
+    assert(xyz[1] == 2.0);
+    assert(xyz[2] == 3.0);
+}
+
+void testRgba() {
+    float[4] w = [1.0, 2.0, 3.0, 4.0];
+    assert(w.w == 4.0);
+    assert(w.a == 4.0);
+    float[2] ra = w.ra;
+    assert(ra[0] == 1.0);
+    assert(ra[1] == 4.0);
+    float[4] wzyx = w.wzyx;
+    assert(wzyx[0] == 4.0);
+    assert(wzyx[3] == 1.0);
+}
+
+void testReorderDuplicate() {
+    float[3] v = [1.0, 2.0, 3.0];
+    float[3] zyx = v.zyx;
+    assert(zyx[0] == 3.0);
+    assert(zyx[1] == 2.0);
+    assert(zyx[2] == 1.0);
+
+    float[2] xx = v.xx;
+    assert(xx[0] == 1.0);
+    assert(xx[1] == 1.0);
+}

@@ -2942,6 +2942,95 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         if (llvm::is_contained({"count", "length", "size"}, expr.member)) {
             ERROR_RANGE(expr.location, expr.endLocation, "use the '.size()' member function to get the number of elements in an array");
         }
+        // Swizzles (`vec.xy`, `vec.xyz`, `vec.rgba`, etc.): 1-4 chars from
+        // xyzw, rgba, or stpq (one set per swizzle), mapping to indices.
+        // Single-char returns the element; multi-char returns a new array.
+        // Read-only for now (returns a value, not an lvalue).
+        if (baseType.isConstantArray() && expr.member.size() >= 1 && expr.member.size() <= 4) {
+            auto swizzleIndex = [](char c) -> int {
+                switch (c) {
+                case 'x':
+                case 'r':
+                case 's':
+                    return 0;
+                case 'y':
+                case 'g':
+                case 't':
+                    return 1;
+                case 'z':
+                case 'b':
+                case 'p':
+                    return 2;
+                case 'w':
+                case 'a':
+                case 'q':
+                    return 3;
+                default:
+                    return -1;
+                }
+            };
+            auto swizzleSet = [](char c) -> int {
+                if (c == 'x' || c == 'y' || c == 'z' || c == 'w') return 0;
+                if (c == 'r' || c == 'g' || c == 'b' || c == 'a') return 1;
+                if (c == 's' || c == 't' || c == 'p' || c == 'q') return 2;
+                return -1;
+            };
+            bool isSwizzle = true;
+            int firstSet = -1;
+            std::vector<int> indices;
+            for (char c : expr.member) {
+                int idx = swizzleIndex(c);
+                int set = swizzleSet(c);
+                if (idx < 0 || set < 0) {
+                    isSwizzle = false;
+                    break;
+                }
+                if (firstSet < 0) firstSet = set;
+                // GLSL forbids mixing sets in one swizzle (e.g. `xyr`); enforce for 2+ chars.
+                // Single-char swizzles (e.g. `v.x`) are unambiguous, so allow any set.
+                if (expr.member.size() > 1 && set != firstSet) {
+                    isSwizzle = false;
+                    break;
+                }
+                if (idx >= baseType.getArraySize()) {
+                    isSwizzle = false;
+                    break;
+                }
+                indices.push_back(idx);
+            }
+            // Only treat as swizzle if all chars valid, in range, and same set.
+            // Otherwise fall through to the normal "no member" error below, which
+            // is clearer than a swizzle-specific message for typos like `vec.foo`.
+            // Note: single-char `v.x` on arrays is a swizzle (returns element);
+            // it does not conflict with struct fields since arrays have no fields.
+            if (isSwizzle && !indices.empty()) {
+                Type elementType = baseType.getElementType();
+                expr.swizzleIndices.clear();
+                for (int idx : indices) {
+                    expr.swizzleIndices.push_back(idx);
+                }
+                if (indices.size() == 1) {
+                    return elementType.withMutability(baseType.mutability);
+                } else {
+                    return ArrayType::get(elementType, static_cast<int64_t>(indices.size()), expr.location);
+                }
+            }
+            // If member looks like a swizzle but indices out of range (e.g. `float[2].z`),
+            // report a specific error instead of generic "no member".
+            bool looksLikeSwizzle = expr.member.size() >= 1 && expr.member.size() <= 4;
+            if (looksLikeSwizzle) {
+                bool allSwizzleChars = true;
+                for (char c : expr.member) {
+                    if (swizzleIndex(c) < 0) {
+                        allSwizzleChars = false;
+                        break;
+                    }
+                }
+                if (allSwizzleChars) {
+                    ERROR_RANGE(expr.location, expr.endLocation, "swizzle '" << expr.member << "' indexes out of bounds for '" << baseType << "'");
+                }
+            }
+        }
     } else if (baseType.isAnonymousStructType()) {
         for (auto& element : baseType.getAnonymousStructElements()) {
             if (element.name == expr.member) {
