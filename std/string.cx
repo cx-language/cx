@@ -220,8 +220,8 @@ struct string: Copyable, Comparable, Hashable, Printable {
             }
         }
 
-        // Accumulate a negative value so that int_min itself doesn't overflow.
-        var limit = negative ? int_min : -int_max;
+        // Accumulate a negative value so that int.min itself doesn't overflow.
+        var limit = negative ? int.min : -int.max;
         var multmin = limit / base;
         var result = 0;
         var digits = 0;
@@ -289,7 +289,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     /// Writes this string to the given stream.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         stream.append(this);
     }
 
