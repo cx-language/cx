@@ -48,7 +48,7 @@ struct Slice<Element>: Copyable {
     /// Offset 1 is the last element; offsets outside 1..size() abort.
     Element* operator[-](int index) {
         if index < 1 || index > size() indexOutOfBounds("operator[-]", index);
-        return data[size() - index];
+        return &data[size() - index];
     }
 
     /// Returns a pointer to the first element.
