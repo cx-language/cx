@@ -1,28 +1,31 @@
 
 int main() {
-    E* e = alloca E
+    E* inner = alloca E
     E* enum = alloca E
     S<E>* _0 = alloca S<E>
+    E* e = alloca E
     E* enum_0 = alloca E
     S<E>* _1 = alloca S<E>
     int* tag = getelementptr enum, 0
     store int 0 to tag
-    int* tag_0 = getelementptr enum_0, 0
-    store int 0 to tag_0
-    void _2 = call _EN4main1SI1EE4initEOP1E(S<E>* _1, E* null)
-    S<E> .load = load _1
+    void _2 = call _EN4main1SI1EE4initEOP1E(S<E>* _0, E* null)
+    S<E> .load = load _0
     struct { S<E> } _3 = insertvalue struct { S<E> } undefined, 0, .load
-    union { struct { S<E> }, struct { int[12] } }* associatedValue = getelementptr enum_0, 1
+    union { struct { S<E> }, struct { int[12] } }* associatedValue = getelementptr enum, 1
     struct { S<E> }* _4 = cast associatedValue to struct { S<E> }*
     store _3 to _4
-    void _5 = call _EN4main1SI1EE4initEOP1E(S<E>* _0, E* enum_0)
-    S<E> .load_0 = load _0
+    E enum.load = load enum
+    store enum.load to inner
+    int* tag_0 = getelementptr enum_0, 0
+    store int 0 to tag_0
+    void _5 = call _EN4main1SI1EE4initEOP1E(S<E>* _1, E* inner)
+    S<E> .load_0 = load _1
     struct { S<E> } _6 = insertvalue struct { S<E> } undefined, 0, .load_0
-    union { struct { S<E> }, struct { int[12] } }* associatedValue_0 = getelementptr enum, 1
+    union { struct { S<E> }, struct { int[12] } }* associatedValue_0 = getelementptr enum_0, 1
     struct { S<E> }* _7 = cast associatedValue_0 to struct { S<E> }*
     store _6 to _7
-    E enum.load = load enum
-    store enum.load to e
+    E enum.load_0 = load enum_0
+    store enum.load_0 to e
     return int 0
 }
 

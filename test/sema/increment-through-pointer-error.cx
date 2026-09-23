@@ -1,7 +1,17 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: increment-through-pointer-error.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void f(bool* a) {
     var p = a;
-    // CHECK: [[@LINE+1]]:6: error: cannot increment 'bool'
+    // CHECK: [[@LINE+1]]:6: error: cannot increment pointer of type 'bool*'; dereference it explicitly (e.g. '(*p)++')
     p++;
+    // CHECK: [[@LINE+1]]:6: error: cannot decrement pointer of type 'bool*'; dereference it explicitly (e.g. '(*p)--')
+    p--;
 }
+
+void g(int* a) {
+    (*a)++;
+    (*a)--;
+}
+
+// CHECK-NOT: increment-through-pointer-error.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -1,0 +1,33 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:true
+// CHECK-NEXT:true
+// CHECK-NEXT:42
+// CHECK-NEXT:0
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+
+void main() {
+    int x = 42;
+    int* p = &x;
+
+    uint64 addr = cast<uint64>(p);
+    println(addr != 0);
+
+    int* q = cast<int*>(addr);
+    println(q == p);
+    println(*q);
+
+    int*? n = null;
+    println(cast<uint64>(n));
+
+    int[3] a = [1, 2, 3];
+    int[*] s = a;
+    println(cast<uint64>(s) != 0);
+    println(cast<uint64>(s) == cast<uint64>(&a[0]));
+
+    uint32 narrow = cast<uint32>(p);
+    println(narrow == uint32(addr));
+}

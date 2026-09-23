@@ -1,0 +1,17 @@
+// RUN: %cx run %s | %FileCheck %s
+// RUN: %cx run --backend=c %s | %FileCheck %s
+// CHECK: true
+
+struct A: Copyable {
+    int value;
+}
+
+bool operator==(A* a, A* b) {
+    return a.value == b.value;
+}
+
+void main() {
+    var a = A(1);
+    var b = A(1);
+    println(a == b);
+}

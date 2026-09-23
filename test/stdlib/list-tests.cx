@@ -138,17 +138,17 @@ void testListEnumeratedIterator() {
 
     assert(iterator.hasValue());
     assert(iterator.value().index == 0);
-    assert(iterator.value().value == 9000);
+    assert(*iterator.value().value == 9000);
 
     iterator.increment();
     assert(iterator.hasValue());
     assert(iterator.value().index == 1);
-    assert(iterator.value().value == -1234);
+    assert(*iterator.value().value == -1234);
 
     iterator.increment();
     assert(iterator.hasValue());
     assert(iterator.value().index == 2);
-    assert(iterator.value().value == 0xcafe);
+    assert(*iterator.value().value == 0xcafe);
 
     iterator.increment();
     assert(iterator.value().index == 3);
@@ -166,9 +166,9 @@ void testFind() {
     var a = List<int>();
     assert(a.find(x => x == 1) == null);
     a.push(1);
-    assert(a.find(x => x == 1)! == 1); // TODO: '!' shouldn't be required
+    assert(*a.find(x => x == 1)! == 1); // TODO: '!' shouldn't be required
     a.push(2);
-    assert(a.find(x => x == 2)! == 2); // TODO: '!' shouldn't be required
+    assert(*a.find(x => x == 2)! == 2); // TODO: '!' shouldn't be required
     assert(a.find(x => x == 3) == null);
 }
 

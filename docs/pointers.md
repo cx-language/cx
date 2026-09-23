@@ -7,23 +7,21 @@ cx pointers are mostly like C/C++ pointers, with the following differences:
 - They cannot be null by default.
   To create nullable pointers, they need to be marked as [nullable](nullable-types).
 - They don't support pointer arithmetic. For pointer arithmetic, array pointers have to be used, see below.
+- There is no implicit conversion from a pointer to a value: dereference it with `*p`
+  where a value is expected. Member access and indexing remain direct through a pointer.
 - Forming one from a value needs an explicit `&`.
-  For the implicit form, see [Borrowed parameters](#borrowed-parameters).
+  Borrow parameters (`T&`) borrow values implicitly; they do not form a stored `T*`.
 
-To form a pointer, the `&` operator is used.
+To form a pointer, the `&` operator is used. Its operand must be an lvalue.
 To dereference a pointer, the `*` operator is used.
 Comparing two pointers compares the stored memory addresses.
-Comparing a pointer against a value compares the pointed-to value instead.
-
-When a value is expected, a pointer to a copyable type dereferences implicitly
-(copying the pointee). Moving out of a pointer to a non-copyable type requires
-an explicit `*`, so moves are visible at the use site.
+To compare pointed-to values, dereference the pointers first.
 
 ```cs
 void main() {
     int i = 6;
     int* p = &i; // Make p point to i
-    println(p); // Prints 6
+    println(*p); // Prints 6
 
     int* q = p; // Copy p to q, both point to i now
     println(p == q); // Prints true because both pointers point to the same memory address
@@ -31,7 +29,7 @@ void main() {
     int j = 6;
     p = &j; // Change p to point to j
     println(p == q); // Prints false because pointers point to different memory addresses
-    println(p == 6); // Prints true because the pointed-to value is compared
+    println(*p == 6); // Prints true because the pointed-to value is compared
 
     *p = 7; // Change the value of j
     println(*p + *q); // Sums the values pointed to by p and q, prints 13
@@ -45,7 +43,7 @@ Functions that only use a value for the duration of the call take it by borrow, 
 Callers pass values as usual; the compiler borrows them automatically.
 Temporaries and literals can be borrowed too; they live until the end of the call.
 Passing a stored `T*` where a `T&` is expected reborrows it.
-Inside the function, member access works directly, and `*` reads or writes through the borrow.
+Inside the function, member access and operators use the borrowed value directly; `*` writes through the borrow or moves a value out explicitly.
 Member functions use a `T&` borrow for `this`; use `&this` to obtain a storable `T*`.
 
 Unlike pointers, borrows cannot be stored: `T&` may only appear as a function parameter type,

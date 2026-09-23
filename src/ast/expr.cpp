@@ -350,12 +350,31 @@ bool Expr::getConstantBoolValue() const {
 
 bool Expr::isLvalue() const {
     switch (kind) {
-    case ExprKind::VarExpr:
-    case ExprKind::MemberExpr:
-    case ExprKind::IndexExpr:
-        return true;
+    case ExprKind::VarExpr: {
+        auto* var = llvm::cast<VarExpr>(this);
+        return !var->decl || !llvm::isa<EnumCase>(var->decl);
+    }
+    case ExprKind::MemberExpr: {
+        auto& member = llvm::cast<MemberExpr>(*this);
+        if (!member.decl) return true;
+        if (llvm::isa<EnumCase>(member.decl)) return false;
+        if (member.base->type.removeOptional().isPointerType()) return true;
+        return member.base->isLvalue();
+    }
+    case ExprKind::IndexExpr: {
+        auto& index = llvm::cast<IndexExpr>(*this);
+        if (index.calleeDecl) {
+            auto* function = llvm::dyn_cast<FunctionDecl>(index.calleeDecl);
+            return function && function->getReturnType().isPointerType();
+        }
+        auto baseType = index.getBase()->type.removeOptional();
+        if (baseType.isPointerType() || baseType.isUnsizedArrayPointer()) return true;
+        return index.getBase()->isLvalue();
+    }
     case ExprKind::UnaryExpr:
         return llvm::cast<UnaryExpr>(this)->op == Token::Star;
+    case ExprKind::UnwrapExpr:
+        return false;
     default:
         return false;
     }
