@@ -10,6 +10,7 @@ Usage:
 """
 
 import pathlib
+import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -30,7 +31,27 @@ SKIP_DIRS = {"lib", "build", ".generated"}
 SCAN_FILES = ["README.md", "AGENTS.md"]
 
 
+def tracked_files():
+    """Return tracked paths relative to ROOT, or None if git is unavailable."""
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return {
+        p for p in result.stdout.decode("utf-8", errors="surrogateescape").split("\0") if p
+    }
+
+
 def iter_files():
+    tracked = tracked_files()
     for entry in SCAN_DIRS:
         base = ROOT / entry
         if not base.is_dir():
@@ -38,12 +59,17 @@ def iter_files():
         for path in sorted(base.rglob("*")):
             if not path.is_file():
                 continue
-            if any(part in SKIP_DIRS for part in path.relative_to(ROOT).parts):
+            rel = path.relative_to(ROOT)
+            if any(part in SKIP_DIRS for part in rel.parts):
+                continue
+            if tracked is not None and rel.as_posix() not in tracked:
                 continue
             yield path
     for entry in SCAN_FILES:
         path = ROOT / entry
         if path.is_file():
+            if tracked is not None and pathlib.Path(entry).as_posix() not in tracked:
+                continue
             yield path
 
 
