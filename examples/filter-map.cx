@@ -4,6 +4,6 @@ void main() {
     println(doubled); // [0, 4, 8]
 }
 
-bool isEven(int n) {
+bool isEven(int& n) {
     return n % 2 == 0;
 }

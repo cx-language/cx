@@ -9,7 +9,7 @@ void main() {
 
 int chainCalls = 0;
 
-int countChain(int x) {
+int countChain(int& x) {
     chainCalls++;
     return x;
 }
