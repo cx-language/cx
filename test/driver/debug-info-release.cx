@@ -1,0 +1,15 @@
+// RUN: %cx -print-llvm --release %s 2>&1 | %FileCheck %s
+// CHECK-NOT: debug-info-release.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void callee() {}
+
+void main() {
+    callee();
+}
+
+// CHECK: define void @_EN4main6calleeE() #{{[0-9]+}} {
+// CHECK: define i32 @main() #{{[0-9]+}} {
+// CHECK-NOT: !DICompileUnit
+// CHECK-NOT: !DISubprogram
+// CHECK-NOT: !dbg
+// CHECK-NOT: debug-info-release.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
