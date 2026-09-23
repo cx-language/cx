@@ -435,6 +435,7 @@ def test_completion_members(cx_lsp, path):
         details
         == [
             "void StringBuffer.append(RepeatIterator<string> repetitions)",
+            "void StringBuffer.append(T* value)",
             "void StringBuffer.append(char c)",
             "void StringBuffer.append(string s)",
         ],

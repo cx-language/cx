@@ -59,7 +59,7 @@ void main() {
 
     switch (x) {
         case Some value:
-            println(value.value); // prints 1
+            println(value); // prints 1
         case None:
             println("x is null");
     }

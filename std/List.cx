@@ -213,8 +213,8 @@ struct List<Element> {
 
     /// Returns an iterator over the elements.
     ArrayIterator<Element> iterator() {
-        // TODO: When implicit constructors have been implemented, remove the ArrayRef() call below.
-        return ArrayIterator(ArrayRef(this));
+        // TODO: When implicit constructors have been implemented, remove the Slice() call below.
+        return ArrayIterator(Slice(this));
     }
 
     /// Returns an iterator over the elements with their indices.
@@ -271,5 +271,5 @@ struct List<Element> {
 
 /// Returns true if both lists have equal elements.
 bool operator==<T>(List<T>* a, List<T>* b) {
-    return ArrayRef(a) == ArrayRef(b);
+    return Slice(a) == Slice(b);
 }

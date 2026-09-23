@@ -31,11 +31,11 @@ void main() {
 }
 ```
 
-## Array reference
+## Slice
 
-The normal way to pass an array or `List` into a function is by an array reference,
+The normal way to pass an array or `List` into a function is by slice,
 written `T[]` where `T` is the element type.
-Under the hood, an array reference is a pointer to the array and a size.
+Under the hood, a slice is a pointer to the array and a size.
 It is known in other languages by the name slice, span, or array view.
 
 <!-- TODO: Show that calculateSum also works with a List when implicit conversions are implemented -->

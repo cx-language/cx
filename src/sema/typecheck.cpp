@@ -212,7 +212,7 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
             currentSourceFile = &sourceFile;
 
             if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-                llvm::StringMap<Type> genericArgs = {{"This", typeDecl->getType()}};
+                llvm::StringMap<GenericArg> genericArgs = {{"This", GenericArg(typeDecl->getType())}};
 
                 for (Type interface : typeDecl->interfaces) {
                     try {

@@ -1,0 +1,6 @@
+
+void _EN4main3fooEP5SliceI3intE(Slice<int>* a) {
+    Slice<int>** a_0 = alloca Slice<int>*
+    store a to a_0
+    return void
+}

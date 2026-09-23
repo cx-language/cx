@@ -8,7 +8,7 @@ enum E {
 
     int tag() {
         switch this {
-            case A a: return 10 + a.x;
+            case A a: return 10 + a;
             case B: return 20;
         }
     }
@@ -39,7 +39,7 @@ enum Maybe<T> {
 
     T unwrapOr(T fallback) {
         switch this {
-            case Value v: return v.value;
+            case Value v: return v;
             case Empty: return fallback;
         }
     }
@@ -53,7 +53,7 @@ enum P: Printable {
         switch this {
             case Ok c:
                 stream.append("Ok(");
-                c.code.print(stream);
+                c.print(stream);
                 stream.append(")");
             case Fail: stream.append("Fail");
         }

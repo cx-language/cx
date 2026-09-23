@@ -43,11 +43,15 @@ static void mangleIdentifier(llvm::raw_string_ostream& stream, llvm::StringRef n
     stream << name;
 }
 
-static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<Type> genericArgs) {
+static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<GenericArg> genericArgs) {
     if (!genericArgs.empty()) {
         stream << 'I';
-        for (Type genericArg : genericArgs) {
-            mangleType(stream, genericArg);
+        for (GenericArg genericArg : genericArgs) {
+            if (genericArg.isInt()) {
+                stream << 'N' << genericArg.getInt() << '_';
+            } else {
+                mangleType(stream, genericArg.type);
+            }
         }
         stream << 'E';
     }

@@ -1,6 +1,6 @@
 
-%string = type { %"ArrayRef<char>" }
-%"ArrayRef<char>" = type { ptr, i32 }
+%string = type { %"Slice<char>" }
+%"Slice<char>" = type { ptr, i32 }
 
 @0 = private unnamed_addr constant [4 x i8] c"bar\00", align 1
 

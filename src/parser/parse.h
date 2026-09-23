@@ -104,7 +104,7 @@ private:
     ArrayLiteralExpr* parseArrayLiteral();
     Expr* parseTupleLiteralOrParenExpr();
     std::vector<Type> parseNonEmptyTypeList();
-    std::vector<Type> parseGenericArgumentList();
+    std::vector<GenericArg> parseGenericArgumentList();
     Type parseArrayType(Type elementType);
     Type parseSimpleType(Mutability mutability);
     Type parseTupleType();
