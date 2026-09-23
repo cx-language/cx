@@ -353,14 +353,14 @@ struct Finder {
         }
         switch (type.getKind()) {
         case TypeKind::BasicType:
-            for (Type arg : type.getGenericArgs())
-                visitType(arg, depth + 1);
+            for (GenericArg arg : type.getGenericArgs())
+                if (arg.isType()) visitType(arg.type, depth + 1);
             break;
         case TypeKind::ArrayType:
             visitType(type.getElementType(), depth + 1);
             break;
-        case TypeKind::TupleType:
-            for (auto& element : type.getTupleElements())
+        case TypeKind::AnonymousStructType:
+            for (auto& element : type.getAnonymousStructElements())
                 visitType(element.type, depth + 1);
             break;
         case TypeKind::FunctionType:
@@ -417,9 +417,9 @@ void Finder::visitExpr(Expr* expr, int depth) {
             visitExpr(el, depth + 1);
         return;
     }
-    case ExprKind::TupleExpr: {
-        auto* tuple = llvm::cast<TupleExpr>(expr);
-        for (auto& el : tuple->elements)
+    case ExprKind::AnonymousStructExpr: {
+        auto* anonymousStruct = llvm::cast<AnonymousStructExpr>(expr);
+        for (auto& el : anonymousStruct->elements)
             visitExpr(el.value, depth + 1);
         return;
     }
@@ -585,8 +585,8 @@ void Finder::visitDecl(Decl* decl, int depth) {
         auto* typeDecl = llvm::cast<TypeDecl>(decl);
         for (Type interface : typeDecl->interfaces)
             visitType(interface, depth + 1);
-        for (Type arg : typeDecl->genericArgs)
-            visitType(arg, depth + 1);
+        for (GenericArg arg : typeDecl->genericArgs)
+            if (arg.isType()) visitType(arg.type, depth + 1);
         for (auto& field : typeDecl->fields) {
             consider(&field, field.getLocation(), field.getName().size(), nullptr, true, depth + 1);
             visitType(field.type, depth + 1);
@@ -637,14 +637,14 @@ struct ReferenceCollector {
         if (type.getDecl() == target) locations.emplace_back(type.location, type.toString().size());
         switch (type.getKind()) {
         case TypeKind::BasicType:
-            for (Type arg : type.getGenericArgs())
-                visitType(arg);
+            for (GenericArg arg : type.getGenericArgs())
+                if (arg.isType()) visitType(arg.type);
             break;
         case TypeKind::ArrayType:
             visitType(type.getElementType());
             break;
-        case TypeKind::TupleType:
-            for (auto& element : type.getTupleElements())
+        case TypeKind::AnonymousStructType:
+            for (auto& element : type.getAnonymousStructElements())
                 visitType(element.type);
             break;
         case TypeKind::FunctionType:
@@ -699,8 +699,8 @@ void ReferenceCollector::visitExpr(Expr* expr) {
         for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
             visitExpr(el);
         return;
-    case ExprKind::TupleExpr:
-        for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+    case ExprKind::AnonymousStructExpr:
+        for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
             visitExpr(el.value);
         return;
     case ExprKind::UnwrapExpr:
@@ -849,8 +849,8 @@ void ReferenceCollector::visitDecl(Decl* decl) {
         auto* typeDecl = llvm::cast<TypeDecl>(decl);
         for (Type interface : typeDecl->interfaces)
             visitType(interface);
-        for (Type arg : typeDecl->genericArgs)
-            visitType(arg);
+        for (GenericArg arg : typeDecl->genericArgs)
+            if (arg.isType()) visitType(arg.type);
         for (auto& field : typeDecl->fields) {
             if (&field == target) locations.emplace_back(field.getLocation(), field.getName().size());
             visitType(field.type);
@@ -935,11 +935,12 @@ const char* tokenTypeForDecl(const Decl& decl) {
 void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>& out) {
     // Mirrors the keyword table in lex.cpp; hash-directives highlight as macros.
     static const llvm::StringMap<const char*> keywords = {
-        {"break", "keyword"},     {"case", "keyword"},   {"const", "keyword"},     {"continue", "keyword"}, {"default", "keyword"}, {"defer", "keyword"},
-        {"else", "keyword"},      {"enum", "keyword"},   {"extern", "keyword"},    {"false", "keyword"},    {"for", "keyword"},     {"if", "keyword"},
-        {"import", "keyword"},    {"in", "keyword"},     {"interface", "keyword"}, {"null", "keyword"},     {"private", "keyword"}, {"public", "keyword"},
-        {"return", "keyword"},    {"sizeof", "keyword"}, {"struct", "keyword"},    {"switch", "keyword"},   {"this", "keyword"},    {"true", "keyword"},
-        {"undefined", "keyword"}, {"var", "keyword"},    {"while", "keyword"},     {"#if", "macro"},        {"#else", "macro"},     {"#endif", "macro"},
+        {"break", "keyword"},  {"case", "keyword"},      {"const", "keyword"},     {"continue", "keyword"}, {"default", "keyword"}, {"defer", "keyword"},
+        {"else", "keyword"},   {"enum", "keyword"},      {"extern", "keyword"},    {"false", "keyword"},    {"for", "keyword"},     {"if", "keyword"},
+        {"import", "keyword"}, {"in", "keyword"},        {"interface", "keyword"}, {"is", "keyword"},       {"null", "keyword"},    {"private", "keyword"},
+        {"public", "keyword"}, {"return", "keyword"},    {"sizeof", "keyword"},    {"struct", "keyword"},   {"switch", "keyword"},  {"this", "keyword"},
+        {"true", "keyword"},   {"undefined", "keyword"}, {"var", "keyword"},       {"while", "keyword"},    {"#if", "macro"},       {"#else", "macro"},
+        {"#endif", "macro"},
     };
     auto emit = [&](int line, int start, int length, const char* type) {
         if (length <= 0) return;
@@ -1117,13 +1118,13 @@ struct SemanticCollector {
         if (!type) return;
         switch (type.getKind()) {
         case TypeKind::BasicType: {
-            // Optional (`T?`) and ArrayRef (`T[]`) wrappers are synthesized: the
+            // Optional (`T?`) and Slice (`T[]`) wrappers are synthesized: the
             // location points at the sugar or is invalid, so only the wrapped
             // type highlights. The direct generic args (not getWrappedType())
             // preserve the inner locations.
-            if ((type.isOptionalType() || type.isArrayRef()) && !type.getGenericArgs().empty()) {
-                for (Type arg : type.getGenericArgs())
-                    visitType(arg);
+            if ((type.isOptionalType() || type.isSlice()) && !type.getGenericArgs().empty()) {
+                for (GenericArg arg : type.getGenericArgs())
+                    if (arg.isType()) visitType(arg.type);
                 return;
             }
             if (TypeDecl* typeDecl = type.getDecl()) {
@@ -1134,15 +1135,15 @@ struct SemanticCollector {
                 // Builtins without decls (`void`) and unresolved names.
                 emit(type.location, type.getName(), "type", false);
             }
-            for (Type arg : type.getGenericArgs())
-                visitType(arg);
+            for (GenericArg arg : type.getGenericArgs())
+                if (arg.isType()) visitType(arg.type);
             return;
         }
         case TypeKind::ArrayType:
             visitType(llvm::cast<ArrayType>(type.typeBase)->elementType);
             return;
-        case TypeKind::TupleType:
-            for (auto& element : llvm::cast<TupleType>(type.typeBase)->elements)
+        case TypeKind::AnonymousStructType:
+            for (auto& element : llvm::cast<AnonymousStructType>(type.typeBase)->elements)
                 visitType(element.type);
             return;
         case TypeKind::FunctionType: {
@@ -1199,16 +1200,16 @@ void SemanticCollector::visitExpr(Expr* expr) {
         }
         for (auto& arg : call->args)
             visitExpr(arg.value);
-        for (Type arg : call->genericArgs)
-            visitType(arg);
+        for (GenericArg arg : call->genericArgs)
+            if (arg.isType()) visitType(arg.type);
         return;
     }
     case ExprKind::ArrayLiteralExpr:
         for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
             visitExpr(el);
         return;
-    case ExprKind::TupleExpr:
-        for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+    case ExprKind::AnonymousStructExpr:
+        for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
             visitExpr(el.value);
         return;
     case ExprKind::UnwrapExpr:
@@ -1366,8 +1367,8 @@ void SemanticCollector::visitDecl(Decl* decl) {
         auto* typeDecl = llvm::cast<TypeDecl>(decl);
         for (Type interface : typeDecl->interfaces)
             visitType(interface);
-        for (Type arg : typeDecl->genericArgs)
-            visitType(arg);
+        for (GenericArg arg : typeDecl->genericArgs)
+            if (arg.isType()) visitType(arg.type);
         for (auto& field : typeDecl->fields) {
             emitDecl(&field, true);
             visitType(field.type);
@@ -1527,8 +1528,8 @@ struct MemberExprCollector {
             for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
                 visitExpr(el);
             return;
-        case ExprKind::TupleExpr:
-            for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+        case ExprKind::AnonymousStructExpr:
+            for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
                 visitExpr(el.value);
             return;
         case ExprKind::UnwrapExpr:
@@ -1774,8 +1775,8 @@ std::vector<CompletionItem> membersForType(Type type) {
         out.push_back({"iterator", "method", "ArrayIterator<" + elemName + "> iterator()"});
         return out;
     }
-    if (t.isTupleType()) {
-        for (auto& el : t.getTupleElements()) {
+    if (t.isAnonymousStructType()) {
+        for (auto& el : t.getAnonymousStructElements()) {
             CompletionItem item;
             item.label = el.name;
             item.kind = "field";
@@ -2140,9 +2141,9 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
     }
 
     std::vector<CompletionItem> items;
-    static const char* keywords[] = {"break",  "case",   "const",  "continue", "default", "defer",     "else",      "enum",    "extern",
-                                     "false",  "for",    "if",     "import",   "in",      "interface", "null",      "private", "public",
-                                     "return", "sizeof", "struct", "switch",   "this",    "true",      "undefined", "var",     "while"};
+    static const char* keywords[] = {"break",  "case",   "const",  "continue", "default",   "defer",     "else", "enum",    "extern", "false",
+                                     "for",    "if",     "import", "in",       "interface", "is",        "null", "private", "public", "return",
+                                     "sizeof", "struct", "switch", "this",     "true",      "undefined", "var",  "while"};
     for (auto* kw : keywords)
         items.push_back({kw, "keyword", "keyword"});
 
@@ -2212,8 +2213,8 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                 for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
                     visitExpr(el);
                 return;
-            case ExprKind::TupleExpr:
-                for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+            case ExprKind::AnonymousStructExpr:
+                for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
                     visitExpr(el.value);
                 return;
             case ExprKind::UnwrapExpr:

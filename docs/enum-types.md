@@ -90,7 +90,7 @@ enum Outcome<T> {
 
     T unwrapOr(T fallback) {
         switch this {
-            case Ok v: return v.value;
+            case Ok v: return v;
             case Err: return fallback;
         }
     }

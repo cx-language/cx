@@ -92,8 +92,8 @@ IRType* cx::getIRType(Type astType) {
         }
         break;
     }
-    case TypeKind::TupleType: {
-        auto fields = map(astType.getTupleElements(), [](const TupleElement& e) { return IRField{getIRType(e.type), e.name}; });
+    case TypeKind::AnonymousStructType: {
+        auto fields = map(astType.getAnonymousStructElements(), [](const AnonymousStructElement& e) { return IRField{getIRType(e.type), e.name}; });
         irType = new IRStructType{IRTypeKind::IRStructType, std::move(fields), std::string(), std::string(), false, false};
         break;
     }

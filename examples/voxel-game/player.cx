@@ -12,23 +12,23 @@ struct Input: Copyable {
 }
 
 struct Player: Copyable {
-    Vec3 pos;
-    Vec3 vel;
+    Vector3<float> pos;
+    Vector3<float> vel;
     float yaw;
     float pitch;
     bool onGround;
 }
 
-Vec3 lookDir(Player& p) {
+Vector3<float> lookDir(Player& p) {
     var cp = cos(p.pitch);
-    return Vec3(sin(p.yaw) * cp, sin(p.pitch), -cos(p.yaw) * cp);
+    return Vector3(sin(p.yaw) * cp, sin(p.pitch), -cos(p.yaw) * cp);
 }
 
-Vec3 eyePos(Player& p) {
-    return Vec3(p.pos.x, p.pos.y + 1.6, p.pos.z);
+Vector3<float> eyePos(Player& p) {
+    return Vector3(p.pos.x, p.pos.y + 1.6, p.pos.z);
 }
 
-bool boxCollides(World& w, Vec3 pos) {
+bool boxCollides(World& w, Vector3<float> pos) {
     var eps = 0.001;
     var x0 = int(floor(pos.x - 0.3 + eps));
     var x1 = int(floor(pos.x + 0.3 - eps));
@@ -125,9 +125,9 @@ void updatePlayer(World& w, Player& p, Input& input, float dt) {
         p.pitch = -1.55;
     }
 
-    var fwd = Vec3(sin(p.yaw), 0.0, -cos(p.yaw));
-    var right = Vec3(cos(p.yaw), 0.0, sin(p.yaw));
-    var wish = Vec3(0.0, 0.0, 0.0);
+    var fwd = Vector3(sin(p.yaw), 0.0, -cos(p.yaw));
+    var right = Vector3(cos(p.yaw), 0.0, sin(p.yaw));
+    var wish = Vector3(0.0, 0.0, 0.0);
     if input.forward {
         wish = wish + fwd;
     }
@@ -180,7 +180,7 @@ void updatePlayer(World& w, Player& p, Input& input, float dt) {
 
 // Amanatides and Woo voxel traversal. Returns the hit cell and the
 // previously visited (empty) cell for placement.
-(bool hit, int x, int y, int z, int px, int py, int pz) raycastVoxel(World& w, Vec3 origin, Vec3 dir, float maxDist) {
+(bool hit, int x, int y, int z, int px, int py, int pz) raycastVoxel(World& w, Vector3<float> origin, Vector3<float> dir, float maxDist) {
     var x = int(floor(origin.x));
     var y = int(floor(origin.y));
     var z = int(floor(origin.z));

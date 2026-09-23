@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/IRBuilder.h>
 #pragma warning(pop)
 #include "ir.h"
@@ -49,6 +50,9 @@ struct LLVMGenerator {
     llvm::Function* getFunction(const Function* function);
     void codegenFunction(const Function* function);
     void codegenFunctionBody(const Function* function, llvm::Function* llvmFunction);
+    llvm::DIFile* getDebugFile(llvm::StringRef path);
+    llvm::DILocation* getDebugLocation(Location location);
+    llvm::DISubprogram* createDebugSubprogram(const Function* function, llvm::Function* llvmFunction);
     llvm::Type* getLLVMType(IRType* type, bool* isSret = nullptr);
     bool shouldUseSret(llvm::Type* returnType);
     bool shouldPassIndirectly(llvm::Type* type);
@@ -57,6 +61,10 @@ struct LLVMGenerator {
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getStructType(IRStructType* type);
 
+    // False in release modes: skip DWARF emission entirely. Frame pointers
+    // are still kept so backtrace() unwinds past cx frames.
+    bool emitDebugInfo = true;
+
     llvm::LLVMContext ctx;
     llvm::IRBuilder<> builder{ctx};
     llvm::Module* module = nullptr;
@@ -64,6 +72,10 @@ struct LLVMGenerator {
     std::unordered_map<const Value*, llvm::Value*> generatedValues;
     std::unordered_map<IRType*, llvm::StructType*> structs;
     bool isCurrentFunctionSret;
+    std::unique_ptr<llvm::DIBuilder> debugBuilder;
+    llvm::DISubprogram* currentDebugSubprogram = nullptr;
+    Location currentDebugFunctionLocation;
+    std::unordered_map<std::string, llvm::DIFile*> debugFiles;
 };
 
 } // namespace cx

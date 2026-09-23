@@ -56,10 +56,9 @@ switch.case.1:
 
 switch.case.2:
     union { struct { bool, int }, struct { int } }* _8 = getelementptr e, 1
-    struct { int }* eb_0 = cast _8 to struct { int }*
-    int* j = getelementptr eb_0, 0
-    int j.load = load j
-    return j.load
+    int* eb_0 = cast _8 to int*
+    int eb.load = load eb_0
+    return eb.load
 
 switch.default:
     void _9 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'E' at enum-associated-values.cx:14:13

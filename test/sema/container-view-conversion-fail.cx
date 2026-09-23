@@ -1,13 +1,13 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 // CHECK-NOT: container-view-conversion-fail.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
-void takesIntRef(ArrayRef<int> values) {}
+void takesIntRef(Slice<int> values) {}
 
 void main() {
     var ints = List<int>();
     takesIntRef(ints);
     var strings = List<string>();
-    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'List<string>' to 'takesIntRef', expected 'ArrayRef<int>'
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'List<string>' to 'takesIntRef', expected 'Slice<int>'
     takesIntRef(strings);
 }
 

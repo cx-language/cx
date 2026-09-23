@@ -16,7 +16,7 @@ Outcome<int> parseDigit(char c) {
 int unwrapOr(Outcome<int>& outcome, int defaultValue) {
     switch (*outcome) {
         case Ok value:
-            return value.value;
+            return value;
         case Err:
             return defaultValue;
     }
@@ -49,7 +49,7 @@ void main() {
     Outcome<Outcome<int> > nested = Ok(Err(500));
     switch (nested) {
         case Ok inner:
-            assert(unwrapOr(inner.value, -2) == -2);
+            assert(unwrapOr(inner, -2) == -2);
         case Err:
             assert(false);
     }

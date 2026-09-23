@@ -31,7 +31,7 @@ enum class ExprKind {
     NullLiteralExpr,
     UndefinedLiteralExpr,
     ArrayLiteralExpr,
-    TupleExpr,
+    AnonymousStructExpr,
     UnaryExpr,
     BinaryExpr,
     CallExpr,
@@ -59,7 +59,7 @@ struct Expr {
     bool isNullLiteralExpr() const { return kind == ExprKind::NullLiteralExpr; }
     bool isUndefinedLiteralExpr() const { return kind == ExprKind::UndefinedLiteralExpr; }
     bool isArrayLiteralExpr() const { return kind == ExprKind::ArrayLiteralExpr; }
-    bool isTupleExpr() const { return kind == ExprKind::TupleExpr; }
+    bool isAnonymousStructExpr() const { return kind == ExprKind::AnonymousStructExpr; }
     bool isUnaryExpr() const { return kind == ExprKind::UnaryExpr; }
     bool isBinaryExpr() const { return kind == ExprKind::BinaryExpr; }
     bool isCallExpr() const { return kind == ExprKind::CallExpr; }
@@ -89,7 +89,7 @@ struct Expr {
     llvm::APSInt getConstantIntegerValue() const;
     bool getConstantBoolValue() const;
     bool isLvalue() const;
-    Expr* instantiate(const llvm::StringMap<Type>& genericArgs) const;
+    Expr* instantiate(const llvm::StringMap<GenericArg>& genericArgs) const;
     FieldDecl* getFieldDecl() const;
     const Expr* withoutImplicitCast() const;
     bool isThis() const;
@@ -98,6 +98,9 @@ struct Expr {
     Type type;
     Type assignableType;
     Location location;
+    // One past the last source character of the expression. Invalid for
+    // synthesized expressions, which render as a point at location.
+    Location endLocation;
 
 protected:
     Expr(ExprKind kind, Location location) : kind(kind), location(location) {}
@@ -175,16 +178,16 @@ struct NamedValue {
     Location location;
 };
 
-struct TupleExpr : Expr {
-    TupleExpr(std::vector<NamedValue>&& elements, Location location) : Expr(ExprKind::TupleExpr, location), elements(std::move(elements)) {}
+struct AnonymousStructExpr : Expr {
+    AnonymousStructExpr(std::vector<NamedValue>&& elements, Location location) : Expr(ExprKind::AnonymousStructExpr, location), elements(std::move(elements)) {}
     const Expr* getElementByName(llvm::StringRef name) const;
-    static bool classof(const Expr* e) { return e->kind == ExprKind::TupleExpr; }
+    static bool classof(const Expr* e) { return e->kind == ExprKind::AnonymousStructExpr; }
 
     std::vector<NamedValue> elements;
 };
 
 struct CallExpr : Expr {
-    CallExpr(Expr* callee, std::vector<NamedValue>&& args, std::vector<Type>&& genericArgs, Location location)
+    CallExpr(Expr* callee, std::vector<NamedValue>&& args, std::vector<GenericArg>&& genericArgs, Location location)
     : Expr(ExprKind::CallExpr, location), callee(callee), args(std::move(args)), genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
     llvm::StringRef getFunctionName() const;
@@ -210,7 +213,7 @@ struct CallExpr : Expr {
 
     Expr* callee;
     std::vector<NamedValue> args;
-    std::vector<Type> genericArgs;
+    std::vector<GenericArg> genericArgs;
     Type receiverType;
     Decl* calleeDecl;
     // Maps each arg to its parameter index, or -1 for variadic extras. Filled by typechecking.
@@ -250,13 +253,13 @@ struct BinaryExpr : CallExpr {
     bool lhsIsMoved = false;
     // True when the operator is derived from its counterpart (e.g. != from ==) and the result must be negated.
     bool negateResult = false;
-    // For tuple `==`/`!=`: elementwise lowering over compiler-generated temporaries.
+    // For anonymous struct `==`/`!=`: elementwise lowering over compiler-generated temporaries.
     // Codegen binds the temporaries to the operand values, so operands with side
     // effects evaluate once no matter how many elements are compared. Null when
     // the comparison wasn't lowered this way (e.g. in global initializers).
-    VarDecl* tupleTempLHS = nullptr;
-    VarDecl* tupleTempRHS = nullptr;
-    Expr* tupleComparisonLowering = nullptr;
+    VarDecl* anonymousStructTempLHS = nullptr;
+    VarDecl* anonymousStructTempRHS = nullptr;
+    Expr* anonymousStructComparisonLowering = nullptr;
 };
 
 bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);
@@ -281,8 +284,8 @@ struct MemberExpr : Expr {
 
 /// An element access expression using the element's index in brackets: 'base[index]'.
 struct IndexExpr : CallExpr {
-    IndexExpr(Expr* base, Expr* index, Location location)
-    : CallExpr(ExprKind::IndexExpr, makeAST<MemberExpr>(base, "[]", location), {NamedValue("", index)}, location) {}
+    IndexExpr(Expr* base, Expr* index, Location location, bool fromEnd = false)
+    : CallExpr(ExprKind::IndexExpr, makeAST<MemberExpr>(base, fromEnd ? "[-]" : "[]", location), {NamedValue("", index)}, location), fromEnd(fromEnd) {}
     const Expr* getBase() const { return getReceiver(); }
     const Expr* getIndex() const { return args[0].value; }
     Expr* getBase() { return getReceiver(); }
@@ -290,14 +293,19 @@ struct IndexExpr : CallExpr {
     void setIndex(Expr* expr) { args[0].value = NOTNULL(expr); }
     static bool classof(const Expr* e) { return e->kind == ExprKind::IndexExpr; }
 
+    // True for 'base[-index]', which indexes from the end without a runtime sign check.
+    bool fromEnd;
+
 protected:
-    IndexExpr(Expr* base, Expr* index, Expr* value, Location location)
-    : CallExpr(ExprKind::IndexAssignmentExpr, makeAST<MemberExpr>(base, "[]=", location), {NamedValue("", index), NamedValue("", value)}, location) {}
+    IndexExpr(Expr* base, Expr* index, Expr* value, Location location, bool fromEnd = false)
+    : CallExpr(ExprKind::IndexAssignmentExpr, makeAST<MemberExpr>(base, fromEnd ? "[-]=" : "[]=", location), {NamedValue("", index), NamedValue("", value)},
+               location),
+      fromEnd(fromEnd) {}
 };
 
 /// An assignment to an indexed access: 'base[index] = value'.
 struct IndexAssignmentExpr : IndexExpr {
-    IndexAssignmentExpr(Expr* base, Expr* index, Expr* value, Location location) : IndexExpr(base, index, value, location) {}
+    IndexAssignmentExpr(Expr* base, Expr* index, Expr* value, Location location, bool fromEnd = false) : IndexExpr(base, index, value, location, fromEnd) {}
     const Expr* getValue() const { return args[1].value; }
     Expr* getValue() { return args[1].value; }
     void setValue(Expr* expr) { args[1].value = NOTNULL(expr); }
@@ -360,6 +368,7 @@ struct ImplicitCastExpr : Expr {
     ImplicitCastExpr(Expr* operand, Type targetType, Kind kind) : Expr(ExprKind::ImplicitCastExpr, operand->location), operand(operand), castKind(kind) {
         type = NOTNULL(targetType);
         assignableType = NOTNULL(targetType);
+        endLocation = operand->endLocation;
     }
     static bool classof(const Expr* e) { return e->kind == ExprKind::ImplicitCastExpr; }
 

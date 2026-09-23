@@ -13,7 +13,7 @@ int takeTwo(int a, int b) { return a + b; }
 void main() {
     var a = 1;
 
-    // A parenthesized `id = value` is a tuple, not an assignment.
+    // A parenthesized `id = value` is an anonymous struct, not an assignment.
     // CHECK: [[@LINE+1]]:7: error: cannot assign '(int a)' to 'int'
     a = (a = 2);
 

@@ -1,0 +1,68 @@
+
+int main() {
+    Array<int, 3>* a = alloca Array<int, 3>
+    int[3] _0 = insertvalue int[3] undefined, 0, int 10
+    int[3] _1 = insertvalue _0, 1, int 20
+    int[3] _2 = insertvalue _1, 2, int 30
+    void _3 = call _EN3std5ArrayI3intN3_E4initEA3_3int(Array<int, 3>* a, int[3] _2)
+    int _4 = call _EN3std5ArrayI3intN3_E4sizeE(Array<int, 3>* a)
+    int* _5 = call _EN3std5ArrayI3intN3_EixE3int(Array<int, 3>* a, int 0)
+    int .load = load _5
+    int64 _6 = cast _4 to int64
+    int64 _7 = cast .load to int64
+    int64 _8 = _6 + _7
+    int _9 = cast _8 to int
+    int64 _10 = cast _9 to int64
+    bool _11 = _8 != _10
+    bool _12 = !_11
+    bool overflow.condition = _12 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    void _13 = call _EN3std10assertFailEP4char(char* "integer overflow at array-generic.cx:5:21
+")
+    unreachable
+
+overflow.success:
+    int* _14 = call _EN3std5ArrayI3intN3_EixE3int(Array<int, 3>* a, int 2)
+    int .load_0 = load _14
+    int64 _15 = cast _9 to int64
+    int64 _16 = cast .load_0 to int64
+    int64 _17 = _15 + _16
+    int _18 = cast _17 to int
+    int64 _19 = cast _18 to int64
+    bool _20 = _17 != _19
+    bool _21 = !_20
+    bool overflow.condition_0 = _21 == bool false
+    br overflow.condition_0, overflow.fail, overflow.success
+
+overflow.fail_0:
+    void _22 = call _EN3std10assertFailEP4char(char* "integer overflow at array-generic.cx:5:28
+")
+    unreachable
+
+overflow.success_0:
+    return _18
+}
+
+void _EN3std5ArrayI3intN3_E4initEA3_3int(Array<int, 3>* this, int[3] elements) {
+    int[3]* elements_0 = alloca int[3]
+    store elements to elements_0
+    int[3]* elements_1 = getelementptr this, 0
+    int[3] elements.load = load elements_0
+    store elements.load to elements_1
+    return void
+}
+
+int _EN3std5ArrayI3intN3_E4sizeE(Array<int, 3>* this) {
+    return int 3
+}
+
+int* _EN3std5ArrayI3intN3_EixE3int(Array<int, 3>* this, int index) {
+    int* index_0 = alloca int
+    store index to index_0
+    int[3]* elements = getelementptr this, 0
+    int index.load = load index_0
+    int* _0 = getelementptr elements, int 0, index.load
+    return _0
+}

@@ -53,8 +53,9 @@ static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::Small
         return containsItselfByValue(type.getElementType(), target, visiting);
     }
 
-    if (type.isTupleType()) {
-        return llvm::any_of(type.getTupleElements(), [&](const TupleElement& element) { return containsItselfByValue(element.type, target, visiting); });
+    if (type.isAnonymousStructType()) {
+        return llvm::any_of(type.getAnonymousStructElements(),
+                            [&](const AnonymousStructElement& element) { return containsItselfByValue(element.type, target, visiting); });
     }
 
     if (type.isOptionalType()) {
@@ -79,7 +80,7 @@ static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::Small
 // contain a reference: the use-site spelling was already validated, so the reference arrived
 // through substitution rather than being written in a stored position.
 static bool allowsSubstitutedReference(const TypeDecl& typeDecl) {
-    return typeDecl.instantiatedFrom != nullptr && llvm::any_of(typeDecl.genericArgs, [](Type arg) { return arg.containsReference(); });
+    return typeDecl.instantiatedFrom != nullptr && llvm::any_of(typeDecl.genericArgs, [](GenericArg arg) { return arg.isType() && arg.type.containsReference(); });
 }
 
 static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> memberTypes) {
@@ -112,21 +113,21 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
                 bool nestedAllowReference = allowReference && type.isOptionalType();
                 for (auto genericArg : basicType->genericArgs) {
-                    typecheckType(genericArg.withLocation(type.location), userAccessLevel, true, nestedAllowReference);
+                    if (genericArg.isType()) typecheckType(genericArg.type.withLocation(type.location), userAccessLevel, true, nestedAllowReference);
                 }
             }
         } else {
             if (basicType->name.empty()) break; // Nothing to type-check.
 
             if (!type.isOptionalType() && type.isBuiltinType()) {
-                validateGenericArgCount(0, type.getGenericArgs(), type.getName(), type.location);
+                validateGenericArgs({}, type.getGenericArgs(), type.getName(), type.location);
                 break;
             }
 
             // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
             bool nestedAllowReference = allowReference && type.isOptionalType();
             for (auto genericArg : basicType->genericArgs) {
-                typecheckType(genericArg, userAccessLevel, true, nestedAllowReference);
+                if (genericArg.isType()) typecheckType(genericArg.type, userAccessLevel, true, nestedAllowReference);
             }
 
             auto decls = findDecls(basicType->getQualifiedName());
@@ -141,6 +142,9 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));
                 decl = typeTemplate;
                 ASSERT(!basicType->genericArgs.empty());
+                if (!validateGenericArgs(typeTemplate->genericParams, basicType->genericArgs, basicType->name, type.location)) {
+                    throw CompileError::dependentError();
+                }
                 auto instantiation = typeTemplate->instantiate(basicType->genericArgs);
                 currentModule->addToSymbolTable(*instantiation);
                 deferTypechecking(instantiation);
@@ -154,7 +158,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         }
 
         if (decl->isTypeTemplate()) {
-            validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->genericParams.size(), basicType->genericArgs, basicType->name, type.location);
+            validateGenericArgs(llvm::cast<TypeTemplate>(decl)->genericParams, basicType->genericArgs, basicType->name, type.location);
         } else if (!decl->isTypeDecl()) {
             ERROR(type.location, "'" << type << "' is not a type");
         }
@@ -163,12 +167,17 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         break;
     }
     case TypeKind::ArrayType:
+        if (!type.getArraySizeParam().empty()) {
+            // Symbolic sizes only resolve during instantiation; encountering one here means
+            // it names nothing generic, so it must be a constant like any other size.
+            ERROR(type.location, "array size must be a constant integer expression");
+        }
         typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
         break;
-    case TypeKind::TupleType:
-        // Tuples are transparent to the placement rule like Optional: elements of a tuple in
-        // borrowed position are borrowed too.
-        for (auto& element : type.getTupleElements()) {
+    case TypeKind::AnonymousStructType:
+        // Anonymous structs are transparent to the placement rule like Optional: elements of
+        // a struct in borrowed position are borrowed too.
+        for (auto& element : type.getAnonymousStructElements()) {
             typecheckType(element.type, userAccessLevel, recheckGenericArgs, allowReference);
         }
         break;
@@ -299,6 +308,20 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
             ERROR_WITH_NOTES(genericParam.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << genericParam.getName() << "'");
         }
 
+        if (genericParam.isValueParam) {
+            try {
+                const int errorsBefore = errors;
+                typecheckType(genericParam.valueType, userAccessLevel);
+
+                if (errors == errorsBefore && !genericParam.valueType.isInteger()) {
+                    ERROR(genericParam.valueType.location, "integer generic parameter '" << genericParam.getName() << "' must have integer type");
+                }
+            } catch (const CompileError& error) {
+                error.report();
+            }
+            continue;
+        }
+
         for (Type constraint : genericParam.constraints) {
             try {
                 const int errorsBefore = errors;
@@ -329,7 +352,7 @@ static void checkMainSignature(const FunctionDecl& decl) {
 
     auto params = decl.getParams();
     bool validParams = params.empty();
-    if (params.size() == 1 && params[0].type.isArrayRef()) {
+    if (params.size() == 1 && params[0].type.isSlice()) {
         Type elementType = params[0].type.getElementType();
         validParams = elementType.isBasicType() && elementType.getName() == "string";
     }

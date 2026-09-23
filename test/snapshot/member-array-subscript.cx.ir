@@ -9,29 +9,29 @@ int main() {
     int[5] _6 = insertvalue _5, 4, int 4
     store _6 to _1
     int* _7 = getelementptr _1, 0
-    ArrayRef<int> _8 = insertvalue ArrayRef<int> undefined, 0, _7
-    ArrayRef<int> _9 = insertvalue _8, 1, int 5
-    void _10 = call _EN4main1C4initE8ArrayRefI3intE(C* _0, ArrayRef<int> _9)
+    Slice<int> _8 = insertvalue Slice<int> undefined, 0, _7
+    Slice<int> _9 = insertvalue _8, 1, int 5
+    void _10 = call _EN4main1C4initE5SliceI3intE(C* _0, Slice<int> _9)
     void _11 = call _EN4main1C3fooE(C* _0)
     return int 0
 }
 
 void _EN4main1C3fooE(C* this) {
-    ArrayRef<int>* a = getelementptr this, 0
-    int* _0 = call _EN3std8ArrayRefI3intEixE3int(ArrayRef<int>* a, int 4)
+    Slice<int>* a = getelementptr this, 0
+    int* _0 = call _EN3std5SliceI3intEixE3int(Slice<int>* a, int 4)
     return void
 }
 
-void _EN4main1C4initE8ArrayRefI3intE(C* this, ArrayRef<int> a) {
-    ArrayRef<int>* a_0 = alloca ArrayRef<int>
+void _EN4main1C4initE5SliceI3intE(C* this, Slice<int> a) {
+    Slice<int>* a_0 = alloca Slice<int>
     store a to a_0
-    ArrayRef<int>* a_1 = getelementptr this, 0
-    ArrayRef<int> a.load = load a_0
+    Slice<int>* a_1 = getelementptr this, 0
+    Slice<int> a.load = load a_0
     store a.load to a_1
     return void
 }
 
-int* _EN3std8ArrayRefI3intEixE3int(ArrayRef<int>* this, int index) {
+int* _EN3std5SliceI3intEixE3int(Slice<int>* this, int index) {
     int* index_0 = alloca int
     string* __str = alloca string
     store index to index_0
@@ -41,7 +41,7 @@ int* _EN3std8ArrayRefI3intEixE3int(ArrayRef<int>* this, int index) {
 
 or.rhs:
     int index.load_0 = load index_0
-    int _1 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this)
+    int _1 = call _EN3std5SliceI3intE4sizeE(Slice<int>* this)
     bool _2 = index.load_0 >= _1
     br or.end(_2)
 
@@ -52,7 +52,7 @@ if.then:
     void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "operator[]", int 10)
     string __str.load = load __str
     int index.load_1 = load index_0
-    void _4 = call _EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ArrayRef<int>* this, string __str.load, int index.load_1)
+    void _4 = call _EN3std5SliceI3intE16indexOutOfBoundsE6string3int(Slice<int>* this, string __str.load, int index.load_1)
     br if.end
 
 if.else:
@@ -66,13 +66,13 @@ if.end:
     return _5
 }
 
-int _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this) {
+int _EN3std5SliceI3intE4sizeE(Slice<int>* this) {
     int* size = getelementptr this, 1
     int size.load = load size
     return size.load
 }
 
-void _EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ArrayRef<int>* this, string function, int index) {
+void _EN3std5SliceI3intE16indexOutOfBoundsE6string3int(Slice<int>* this, string function, int index) {
     string* function_0 = alloca string
     int* index_0 = alloca int
     string* __str = alloca string
@@ -81,10 +81,10 @@ void _EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ArrayRef<int>* this, s
     int* _0 = alloca int
     store function to function_0
     store index to index_0
-    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "ArrayRef.", int 9)
+    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "Slice.", int 6)
     void _2 = call _EN3std6string4initEP4char3int(string* __str_0, char* ": index ", int 8)
     void _3 = call _EN3std6string4initEP4char3int(string* __str_1, char* " is out of bounds, size is ", int 27)
-    int _4 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this)
+    int _4 = call _EN3std5SliceI3intE4sizeE(Slice<int>* this)
     store _4 to _0
     never _5 = call _EN3std5abortI6string6string6string3int6string3intEVER6stringR6stringR6stringR3intR6stringR3int(string* __str, string* function_0, string* __str_0, int* index_0, string* __str_1, int* _0)
     return void

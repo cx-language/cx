@@ -55,6 +55,36 @@ custom conditions are enabled with `-D` flags: `cx build -DEXTRA`.
 `-D`, `-I`, `-L`, `-l`, and `-framework` flags can also be passed directly
 for one-off overrides.
 
+## Unit tests
+
+Mark a top-level function with `test` to make it a unit test,
+then run them all with `cx test`:
+
+```cs {.noRun}
+int add(int a, int b) {
+    return a + b;
+}
+
+test void testAdd() {
+    assert(add(2, 3) == 5);
+}
+```
+
+```sh
+$ cx test
+ok testAdd
+```
+
+`cx test` builds the current project (or the files named on the command
+line) with a generated runner that calls every test function in order and
+prints `ok <name>` after each passing test. A failing `assert` aborts the
+run with a nonzero exit status, so tests after the failure don't execute.
+A `main` function in the project, if any, is left out of the run.
+
+Test functions must be top-level, take no parameters, and return void.
+Generic and private test functions are rejected. `cx test` accepts the same
+build flags as `cx build` (including `--backend=c` and `-Werror`).
+
 ## Build modes
 
 `cx build` and `cx run` build in debug mode by default: unoptimized for fast
@@ -66,6 +96,13 @@ compilation, safety checks enabled. Two flags select optimized release builds:
 Safety checks abort the program with an error on integer overflow and similar
 traps; `--release` drops them for maximum speed, so arithmetic overflow
 wraps instead.
+
+Debug builds (the default) embed debug info: aborts print a stack trace
+naming the cx functions involved, and the binary loads in a debugger
+(`lldb`, `gdb`). Release builds omit debug info but keep symbol names,
+so stack traces still name cx functions where the platform allows it.
+On macOS the debug info for `cx build` output is collected into a `.dSYM`
+bundle next to the binary.
 
 ## Installing dependencies
 

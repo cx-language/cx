@@ -3,7 +3,7 @@
 @1 = private unnamed_addr constant [48 x i8] c"integer overflow at compound-assignment.cx:6:7\0A\00", align 1
 @2 = private unnamed_addr constant [48 x i8] c"integer overflow at compound-assignment.cx:7:7\0A\00", align 1
 
-define i32 @main() {
+define i32 @main() #0 !dbg !4 {
   %i = alloca i32, align 4
   store i32 0, ptr %i, align 4
   %i.load = load i32, ptr %i, align 4
@@ -17,7 +17,7 @@ define i32 @main() {
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @0)
+  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -33,7 +33,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition2, label %overflow.fail3, label %overflow.success4
 
 overflow.fail3:                                   ; preds = %overflow.success
-  call void @_EN3std10assertFailEP4char(ptr @1)
+  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !7
   unreachable
 
 overflow.success4:                                ; preds = %overflow.success
@@ -49,7 +49,7 @@ overflow.success4:                                ; preds = %overflow.success
   br i1 %overflow.condition6, label %overflow.fail7, label %overflow.success8
 
 overflow.fail7:                                   ; preds = %overflow.success4
-  call void @_EN3std10assertFailEP4char(ptr @2)
+  call void @_EN3std10assertFailEP4char(ptr @2), !dbg !7
   unreachable
 
 overflow.success8:                                ; preds = %overflow.success4
@@ -75,4 +75,18 @@ overflow.success8:                                ; preds = %overflow.success4
   ret i32 0
 }
 
-declare void @_EN3std10assertFailEP4char(ptr)
+declare void @_EN3std10assertFailEP4char(ptr) #0
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "compound-assignment.cx")
+!4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 3, column: 6, scope: !4)

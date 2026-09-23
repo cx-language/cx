@@ -40,6 +40,7 @@ struct Token {
         Import,
         In,
         Interface,
+        Is,
         Null,
         Private,
         Public,
@@ -47,6 +48,7 @@ struct Token {
         Sizeof,
         Struct,
         Switch,
+        Test,
         Then,
         This,
         True,
@@ -111,20 +113,26 @@ struct Token {
     };
 
     Token(Token::Kind kind, Location location, llvm::StringRef string = {});
-    Token(Location location, uint64_t val);
+    Token(Location location, uint64_t val, int length);
     operator Token::Kind() const { return kind; }
     llvm::StringRef getString() const { return src.string; }
     bool is(Token::Kind kind) const { return this->kind == kind; }
     bool is(llvm::ArrayRef<Token::Kind> kinds) const;
     llvm::APSInt getIntegerValue() const;
+    int getIntegerLength() const { return src.integer.length; }
     llvm::APFloat getFloatingPointValue() const;
 
     Token::Kind kind;
 
 private:
+    struct IntegerValue {
+        uint64_t value; ///< The parsed integer literal value (only valid if this is an IntegerLiteral token).
+        int length; ///< The length of the literal in the source code.
+    };
+
     union {
         llvm::StringRef string; ///< The substring in the source code representing this token.
-        uint64_t integer; ///< The parsed integer literal value (only valid if this is a IntegerLiteral token)
+        IntegerValue integer; ///< The parsed integer literal value (only valid if this is an IntegerLiteral token).
     } src;
 
 public:
@@ -162,6 +170,8 @@ inline Token::Kind withoutCompoundEqSuffix(Token::Kind tokenKind) {
 }
 
 const char* toString(Token::Kind tokenKind);
+/// Returns the source location just past the token.
+Location getTokenEndLocation(const Token& token);
 std::ostream& operator<<(std::ostream& stream, Token::Kind tokenKind);
 llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, Token::Kind tokenKind);
 

@@ -65,13 +65,13 @@ Modern type system features for convenience and performance:
   parameters are still allowed for flexibility.
 - Arrays are first-class values that can be returned and passed by value. Arrays know their own size, either statically
   or at runtime.
-- First-class tuples to allow e.g. returning multiple values or storing pairs of values in a container using a
+- First-class anonymous structs to allow e.g. returning multiple values or storing pairs of values in a container using a
   lightweight syntax.
 
 ## Standard library covers common use cases better
 
 - More string manipulation functions, e.g. case-insensitive comparison, `split`, `join`, `startsWith`, `endsWith`.
-- String and array slice types: `StringRef` and `ArrayRef`.
+- String and array slice types: `StringRef` and `Slice`.
 - Unicode-correct string type in addition to a raw byte string type.
 - Algorithms take range objects instead of iterator pairs for ease of use.
 - Iterable types in the standard library provide `map`, `filter`, `reduce`, etc. as member functions.

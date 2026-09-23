@@ -10,7 +10,7 @@ enum Outcome {
 // CHECK-NOT: error:
 int nonExhaustive(Outcome* o) {
     return switch *o {
-        case Ok value: value.value
+        case Ok value: value
         case Err: -1
     };
 }
