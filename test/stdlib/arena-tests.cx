@@ -1,0 +1,115 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx run -Werror --release %s
+// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx run -Werror --release --backend=c %s
+
+var destroyed = 0;
+
+struct Tracked {
+    ~Tracked() {
+        destroyed++;
+    }
+}
+
+void main() {
+    testAllocations();
+    testGrowthAndStablePointers();
+    testZeroCount();
+    testOverflow();
+    testExplicitDeinit();
+    testMoveOwnership();
+}
+
+void testAllocations() {
+    var arena = Arena(chunkSize = 32);
+
+    var single = arena.allocate<int>();
+    assert(single != null);
+    single.init(7);
+    assert(*single! == 7);
+
+    var initialized = arena.allocate(11);
+    assert(initialized != null);
+    assert(*initialized! == 11);
+
+    var array = arena.allocateArray<uint64>(4);
+    assert(array != null);
+    for i in 0..4 {
+        array[i] = uint64(i * 17);
+    }
+    assert(array[3] == 51);
+}
+
+void testGrowthAndStablePointers() {
+    var arena = Arena(chunkSize = 16);
+    var first = arena.allocate<int>();
+    assert(first != null);
+    first.init(1234);
+
+    var array = arena.allocateArray<int>(3);
+    assert(array != null);
+    array[0] = 10;
+    array[1] = 20;
+    array[2] = 30;
+
+    for _ in 0..64 {
+        var item = arena.allocate<int>();
+        assert(item != null);
+    }
+
+    assert(*first! == 1234);
+    assert(array[0] == 10 && array[2] == 30);
+}
+
+void testZeroCount() {
+    var arena = Arena(chunkSize = 0);
+    var first = arena.allocateArray<int>(0);
+    assert(first != null);
+
+    var second = arena.allocateArray<int>(0);
+    assert(second != null);
+    assert(first == second);
+}
+
+void testOverflow() {
+    var arena = Arena(chunkSize = 32);
+
+    var huge = uint64(1) << 63;
+    var hugeElements = uint64(1) << 61;
+    assert(arena.allocateArray<int>(huge) == null);
+    assert(arena.allocateArray<uint64>(hugeElements) == null);
+
+    var recovered = arena.allocate<int>();
+    assert(recovered != null);
+    recovered.init(17);
+    assert(*recovered! == 17);
+
+    var oversized = Arena(chunkSize = huge);
+    assert(oversized.allocateArray<uint8>(huge) == null);
+}
+
+void testExplicitDeinit() {
+    var arena = Arena(chunkSize = 8);
+    var value = arena.allocate(Tracked());
+    assert(value != null);
+    value!.deinit();
+    assert(destroyed == 1);
+
+    arena.deinit();
+}
+
+Arena makeArena() {
+    var arena = Arena(chunkSize = 8);
+    var value = arena.allocate<int>();
+    assert(value != null);
+    value.init(5);
+    return arena;
+}
+
+void testMoveOwnership() {
+    var arena = makeArena();
+    var value = arena.allocate<int>();
+    assert(value != null);
+    value.init(9);
+    assert(*value! == 9);
+}

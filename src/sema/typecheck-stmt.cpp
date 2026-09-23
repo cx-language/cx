@@ -467,8 +467,7 @@ EnumCase* Typechecker::typecheckSwitchCaseValue(Expr*& value, Type conditionType
             auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
             if (enumDecl->getCaseByName(varExpr->identifier)) {
                 // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
-                value = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumDecl->getName()), varExpr->location), std::string(varExpr->identifier),
-                                            varExpr->location);
+                value = makeAST<MemberExpr>(makeAST<VarExpr>(enumDecl->getName(), varExpr->location), varExpr->identifier, varExpr->location);
             }
         }
     }
@@ -608,8 +607,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
                 auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
                 if (enumDecl->getCaseByName(varExpr->identifier)) {
                     // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
-                    switchCase.value = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumDecl->getName()), varExpr->location),
-                                                           std::string(varExpr->identifier), varExpr->location);
+                    switchCase.value = makeAST<MemberExpr>(makeAST<VarExpr>(enumDecl->getName(), varExpr->location), varExpr->identifier, varExpr->location);
                 }
             }
         }

@@ -255,7 +255,7 @@ bool cx::isBitwiseOperator(Token::Kind tokenKind) {
     }
 }
 
-std::string cx::getFunctionName(Token::Kind tokenKind) {
+llvm::StringRef cx::getFunctionName(Token::Kind tokenKind) {
     switch (tokenKind) {
     case Token::DotDot:
         return "Range";

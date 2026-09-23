@@ -199,7 +199,7 @@ struct CToCxConverter final : clang::ASTConsumer {
 
     std::optional<FieldDecl> toCx(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
         if (decl.getName().empty()) return std::nullopt;
-        return FieldDecl(toCx(decl.getType()), decl.getNameAsString(), nullptr, typeDecl, AccessLevel::Default, Location());
+        return FieldDecl(toCx(decl.getType()), decl.getName(), nullptr, typeDecl, AccessLevel::Default, Location());
     }
 
     TypeDecl* toCx(const clang::RecordDecl& recordDecl) {
@@ -212,8 +212,8 @@ struct CToCxConverter final : clang::ASTConsumer {
         auto it = importedRecordDecls.find(canonical);
         if (it == importedRecordDecls.end()) {
             auto tag = recordDecl.isUnion() ? TypeTag::Union : TypeTag::Struct;
-            auto* typeDecl = makeAST<TypeDecl>(tag, getName(recordDecl).str(), std::vector<GenericArg>(), std::vector<Type>(), AccessLevel::Default, module,
-                                               nullptr, Location());
+            auto* typeDecl =
+                makeAST<TypeDecl>(tag, getName(recordDecl), std::vector<GenericArg>(), std::vector<Type>(), AccessLevel::Default, module, nullptr, Location());
             it = importedRecordDecls.emplace(canonical, typeDecl).first;
 
             // Add to symbol table before type-checking so that type-checker finds the struct decl.
@@ -256,14 +256,14 @@ struct CToCxConverter final : clang::ASTConsumer {
     }
 
     VarDecl* toCx(const clang::VarDecl& decl) {
-        return makeAST<VarDecl>(toCx(decl.getType()), decl.getNameAsString(), nullptr, nullptr, AccessLevel::Default, module, toCx(decl.getLocation()));
+        return makeAST<VarDecl>(toCx(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, module, toCx(decl.getLocation()));
     }
 
     void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType) {
         auto initializer = makeAST<IntLiteralExpr>(std::move(value), Location());
         auto type = toCx(qualType).withMutability(Mutability::Const);
         initializer->type = type;
-        auto* varDecl = makeAST<VarDecl>(type, name.str(), initializer, nullptr, AccessLevel::Default, module, Location());
+        auto* varDecl = makeAST<VarDecl>(type, name, initializer, nullptr, AccessLevel::Default, module, Location());
         module.addToSymbolTable(varDecl);
         module.sourceFiles.front().topLevelDecls.push_back(varDecl);
     }
@@ -272,7 +272,7 @@ struct CToCxConverter final : clang::ASTConsumer {
         auto initializer = makeAST<FloatLiteralExpr>(std::move(value), Location());
         auto type = Type::getFloat64(Mutability::Const);
         initializer->type = type;
-        auto* varDecl = makeAST<VarDecl>(type, name.str(), initializer, nullptr, AccessLevel::Default, module, Location());
+        auto* varDecl = makeAST<VarDecl>(type, name, initializer, nullptr, AccessLevel::Default, module, Location());
         module.addToSymbolTable(varDecl);
         module.sourceFiles.front().topLevelDecls.push_back(varDecl);
     }
@@ -385,14 +385,14 @@ struct CToCxConverter final : clang::ASTConsumer {
                         auto enumeratorName = enumerator->getName();
                         auto value = enumerator->getInitVal();
                         auto valueExpr = makeAST<IntLiteralExpr>(value, Location());
-                        cases.push_back(EnumCase(enumeratorName.str(), valueExpr, Type(), AccessLevel::Default, Location()));
+                        cases.push_back(EnumCase(enumeratorName, valueExpr, Type(), AccessLevel::Default, Location()));
                         auto type = isAnonymous ? enumDecl.getIntegerType()
                                                 : astContext->getTagType(clang::ElaboratedTypeKeyword::None, clang::NestedNameSpecifier(), &enumDecl, false);
                         addIntegerConstantToSymbolTable(enumeratorName, value, type);
                     }
 
                     auto* cxEnumDecl =
-                        makeAST<EnumDecl>(getName(enumDecl).str(), std::move(cases), std::vector<Type>(), AccessLevel::Default, module, nullptr, Location());
+                        makeAST<EnumDecl>(getName(enumDecl), std::move(cases), std::vector<Type>(), AccessLevel::Default, module, nullptr, Location());
                     module.addToSymbolTable(cxEnumDecl);
                     module.sourceFiles.front().topLevelDecls.push_back(cxEnumDecl);
                     break;
@@ -412,7 +412,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                     auto underlyingType = toCx(typedefDecl.getUnderlyingType());
                     if (underlyingType.isBasicType()) {
                         // HACK: This defines a type alias in a hacky way
-                        llvm::cast<BasicType>(BasicType::get(typedefDecl.getName(), {}).typeBase)->name = underlyingType.getName().str();
+                        llvm::cast<BasicType>(BasicType::get(typedefDecl.getName(), {}).typeBase)->name = underlyingType.getName();
                     } else {
                         // TODO: Import non-BasicType typedefs from C headers.
                     }
@@ -437,10 +437,9 @@ struct CToCxConverter final : clang::ASTConsumer {
     }
 
     FunctionDecl* toCx(const clang::FunctionDecl& decl) {
-        auto params =
-            map(decl.parameters(), [&](clang::ParmVarDecl* param) { return ParamDecl(toCx(param->getType()), param->getNameAsString(), false, Location()); });
+        auto params = map(decl.parameters(), [&](clang::ParmVarDecl* param) { return ParamDecl(toCx(param->getType()), param->getName(), false, Location()); });
 
-        FunctionProto proto(decl.getName().str(), std::move(params), toCx(decl.getReturnType()), decl.isVariadic(), true);
+        FunctionProto proto(decl.getName(), std::move(params), toCx(decl.getReturnType()), decl.isVariadic(), true);
         if (auto asmLabelAttr = decl.getAttr<clang::AsmLabelAttr>()) {
             proto.asmLabel = asmLabelAttr->getLabel().str();
         }
@@ -449,7 +448,7 @@ struct CToCxConverter final : clang::ASTConsumer {
 
     Location toCx(clang::SourceLocation location) {
         auto presumedLocation = sourceManager.getPresumedLoc(location);
-        return Location(strdup(presumedLocation.getFilename()), presumedLocation.getLine(), presumedLocation.getColumn());
+        return Location(internString(presumedLocation.getFilename()).data(), presumedLocation.getLine(), presumedLocation.getColumn());
     }
 
 private:
