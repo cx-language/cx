@@ -19,6 +19,7 @@
 #include "../ast/stmt.h"
 #include "../ast/type.h"
 #include "../build/config.h"
+#include "../build/dependencies.h"
 #include "../driver/driver.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
@@ -142,12 +143,15 @@ std::string readLineFromDisk(const std::string& filePath, int line1Based) {
     return line;
 }
 
-/// Finds the build root containing filePath by walking up from parentDir
-/// looking for a build.cx file, or nullopt if the file stands alone.
-/// Only locates the target root (mirroring `cx build` without running it);
+/// Finds the build root governing filePath by walking up from parentDir to the
+/// outermost directory whose build.cx target roots contain the file, or nullopt
+/// if the file stands alone. Outermost wins to mirror `cx build`, which runs at
+/// the project root and compiles nested build.cx files as ordinary sources;
 /// dependencies are still resolved via import search paths, never fetched.
-std::optional<std::string> findBuildRoot(const std::string& filePath, const std::string& parentDir) {
+/// When found, buildDir receives the directory holding that build.cx file.
+std::optional<std::string> findBuildRoot(const std::string& filePath, const std::string& parentDir, std::string* buildDir = nullptr) {
     std::string dir = parentDir;
+    std::optional<std::string> outermost;
     while (true) {
         std::string buildFilePath = dir + "/" + BuildConfig::buildFileName;
         bool isFile = false;
@@ -157,13 +161,14 @@ std::optional<std::string> findBuildRoot(const std::string& filePath, const std:
                 // Either separator: file paths may use backslashes on Windows
                 // while roots built from URIs use forward slashes.
                 if (filePath == root || llvm::StringRef(filePath).starts_with(root + "/") || llvm::StringRef(filePath).starts_with(root + "\\")) {
-                    return root;
+                    outermost = root;
+                    if (buildDir) *buildDir = dir;
+                    break;
                 }
             }
-            return std::nullopt;
         }
         llvm::StringRef parent = llvm::sys::path::parent_path(dir);
-        if (parent == dir) return std::nullopt; // Filesystem root reached.
+        if (parent == dir) return outermost; // Filesystem root reached.
         dir = parent.str();
     }
 }
@@ -1873,25 +1878,25 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         // so the OS reclaims everything - just like a normal `cx` invocation.
         Module* module = new Module("main");
 
-        CompileOptions options;
-        options.noUnusedWarnings = true; // unused warnings are noisy during editing
-        options.defines = query.defines;
-        // Import search paths: file's directory first, then workspace folders,
-        // then explicit extras, then the distribution root (for std/) and system paths.
+        CompileOptions baseOptions;
+        baseOptions.noUnusedWarnings = true; // unused warnings are noisy during editing
+        baseOptions.defines = query.defines;
+        // Shared search paths: workspace folders, then explicit extras, then the
+        // distribution root (for std/) and system paths. The file's directory
+        // joins the main module's options below, not dependencies'.
         std::string parentDir = llvm::sys::path::parent_path(filePath).str();
-        if (!parentDir.empty()) options.importSearchPaths.push_back(parentDir);
         for (auto& folder : query.workspaceFolders)
-            options.importSearchPaths.push_back(folder);
+            baseOptions.importSearchPaths.push_back(folder);
         for (auto& path : query.importSearchPaths)
-            options.importSearchPaths.push_back(path);
+            baseOptions.importSearchPaths.push_back(path);
         if (auto rootDir = getCxRootDir(); !rootDir.empty()) {
-            options.importSearchPaths.push_back(std::move(rootDir));
+            baseOptions.importSearchPaths.push_back(std::move(rootDir));
         }
 #ifdef CLANG_BUILTIN_INCLUDE_PATH
-        options.importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
+        baseOptions.importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
 #endif
-        options.importSearchPaths.push_back("/usr/include");
-        options.importSearchPaths.push_back("/usr/local/include");
+        baseOptions.importSearchPaths.push_back("/usr/include");
+        baseOptions.importSearchPaths.push_back("/usr/local/include");
         // Same bonus search paths as `cx build` (see driver.cpp). Unlike the
         // driver, queries don't probe the external C compiler for its header
         // paths - C-header imports relying on those need explicit
@@ -1901,14 +1906,22 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
                 llvm::SmallVector<llvm::StringRef, 16> split;
                 llvm::StringRef(*paths).split(split, llvm::sys::EnvPathSeparator, -1, false);
                 for (llvm::StringRef path : split)
-                    options.importSearchPaths.push_back(path.str());
+                    baseOptions.importSearchPaths.push_back(path.str());
             }
+        }
+
+        // Import search paths: file's directory first, then the shared paths.
+        // Vendored packages are imported by name (see driver.cpp).
+        CompileOptions options = baseOptions;
+        if (!parentDir.empty()) {
+            options.importSearchPaths.insert(options.importSearchPaths.begin(), {parentDir, (llvm::StringRef(parentDir) + "/vendor").str()});
         }
 
         // Determine which files form the open file's module: an importable
         // package (registered below so the import resolves to it), a
         // build.cx target root, or just the file itself when standalone.
         std::optional<std::string> moduleDir;
+        std::string buildDir;
         bool registerAsStd = false;
         if (!parentDir.empty()) {
             for (llvm::StringRef searchPath : options.importSearchPaths) {
@@ -1920,18 +1933,43 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
                 }
             }
             if (!registerAsStd) {
-                moduleDir = findBuildRoot(filePath, parentDir);
+                moduleDir = findBuildRoot(filePath, parentDir, &buildDir);
             }
         }
 
+        // The project build file contributes its settings to the main module;
+        // dependencies bring theirs through the closure. pkg-config is never
+        // queried here: no subprocesses during editing.
+        BuildConfig projectConfig{buildDir.empty() ? std::string() : std::string(buildDir), query.defines};
+        if (!buildDir.empty()) {
+            for (auto& define : projectConfig.defines) {
+                options.defines.push_back(define);
+            }
+            // The project root's vendor/ holds importable packages. The file's
+            // own directory contributes its vendor/ above; a multitarget file
+            // under src/foo needs both (see driver.cpp addConfigBuildFlags).
+            options.importSearchPaths.push_back(buildDir + "/vendor");
+            for (auto& path : projectConfig.headerSearchPaths) {
+                options.importSearchPaths.push_back(absolutizePackagePath(buildDir, path));
+            }
+            resolveDependencyClosure(projectConfig, baseOptions, /*fetchMissing=*/false);
+        }
+
         // Main file from memory, siblings from disk or the openDocs overlay.
-        // Build files are config, not source, so never load them as code.
+        // Only the project root's build.cx is config, not source; a build.cx
+        // anywhere else is an ordinary source file. Vendored packages are
+        // likewise excluded: they join the module via `import`.
         std::vector<std::string> siblingPaths;
         if (moduleDir) {
+            std::string moduleVendor = *moduleDir + "/vendor";
+            if (buildDir.empty() || moduleVendor != buildDir + "/vendor") {
+                options.importSearchPaths.push_back(std::move(moduleVendor));
+            }
+            std::string exclusionRoot = buildDir.empty() ? *moduleDir : buildDir;
             std::error_code ec;
             for (llvm::sys::fs::recursive_directory_iterator it(*moduleDir, ec), end; it != end && !ec; it.increment(ec)) {
-                if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath
-                    && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName) {
+                if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath && !isVendoredPath(it->path())
+                    && !isRootBuildFile(it->path(), exclusionRoot)) {
                     siblingPaths.push_back(it->path());
                 }
             }
@@ -1966,11 +2004,11 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             Module::getAllImportedModulesMap()["std"] = module;
         }
 
-        Typechecker typechecker(options);
+        Typechecker typechecker(options, buildDir.empty() ? nullptr : &projectConfig.resolvedDependencies);
         for (auto* imported : module->getImportedModules()) {
-            typechecker.typecheckModule(*imported, nullptr);
+            typechecker.typecheckModule(*imported, options);
         }
-        typechecker.typecheckModule(*module, nullptr);
+        typechecker.typecheckModule(*module, options);
         typechecker.checkUnusedDecls(*module);
 
         result.mainModule = module;

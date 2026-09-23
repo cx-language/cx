@@ -100,6 +100,9 @@ struct Expr {
     Location location;
     // True when this expression was explicitly parenthesized in source.
     bool parenthesized = false;
+    // One past the last source character of the expression. Invalid for
+    // synthesized expressions, which render as a point at location.
+    Location endLocation;
 
 protected:
     Expr(ExprKind kind, Location location) : kind(kind), location(location) {}
@@ -283,8 +286,8 @@ struct MemberExpr : Expr {
 
 /// An element access expression using the element's index in brackets: 'base[index]'.
 struct IndexExpr : CallExpr {
-    IndexExpr(Expr* base, Expr* index, Location location)
-    : CallExpr(ExprKind::IndexExpr, makeAST<MemberExpr>(base, "[]", location), {NamedValue("", index)}, location) {}
+    IndexExpr(Expr* base, Expr* index, Location location, bool fromEnd = false)
+    : CallExpr(ExprKind::IndexExpr, makeAST<MemberExpr>(base, fromEnd ? "[-]" : "[]", location), {NamedValue("", index)}, location), fromEnd(fromEnd) {}
     const Expr* getBase() const { return getReceiver(); }
     const Expr* getIndex() const { return args[0].value; }
     Expr* getBase() { return getReceiver(); }
@@ -292,14 +295,19 @@ struct IndexExpr : CallExpr {
     void setIndex(Expr* expr) { args[0].value = NOTNULL(expr); }
     static bool classof(const Expr* e) { return e->kind == ExprKind::IndexExpr; }
 
+    // True for 'base[-index]', which indexes from the end without a runtime sign check.
+    bool fromEnd;
+
 protected:
-    IndexExpr(Expr* base, Expr* index, Expr* value, Location location)
-    : CallExpr(ExprKind::IndexAssignmentExpr, makeAST<MemberExpr>(base, "[]=", location), {NamedValue("", index), NamedValue("", value)}, location) {}
+    IndexExpr(Expr* base, Expr* index, Expr* value, Location location, bool fromEnd = false)
+    : CallExpr(ExprKind::IndexAssignmentExpr, makeAST<MemberExpr>(base, fromEnd ? "[-]=" : "[]=", location), {NamedValue("", index), NamedValue("", value)},
+               location),
+      fromEnd(fromEnd) {}
 };
 
 /// An assignment to an indexed access: 'base[index] = value'.
 struct IndexAssignmentExpr : IndexExpr {
-    IndexAssignmentExpr(Expr* base, Expr* index, Expr* value, Location location) : IndexExpr(base, index, value, location) {}
+    IndexAssignmentExpr(Expr* base, Expr* index, Expr* value, Location location, bool fromEnd = false) : IndexExpr(base, index, value, location, fromEnd) {}
     const Expr* getValue() const { return args[1].value; }
     Expr* getValue() { return args[1].value; }
     void setValue(Expr* expr) { args[1].value = NOTNULL(expr); }
@@ -361,6 +369,7 @@ struct ImplicitCastExpr : Expr {
     ImplicitCastExpr(Expr* operand, Type targetType, Kind kind) : Expr(ExprKind::ImplicitCastExpr, operand->location), operand(operand), castKind(kind) {
         type = NOTNULL(targetType);
         assignableType = NOTNULL(targetType);
+        endLocation = operand->endLocation;
     }
     static bool classof(const Expr* e) { return e->kind == ExprKind::ImplicitCastExpr; }
 

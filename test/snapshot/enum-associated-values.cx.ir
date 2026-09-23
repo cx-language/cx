@@ -75,6 +75,3 @@ switch.end:
     bool _11 = e.tag.load_1 == int 1
     return int 0
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

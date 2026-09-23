@@ -96,8 +96,14 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
 
     mkdir -p "build/$(dirname "$outpath")"
     # markdown-smart: pandoc would otherwise reintroduce curly quotes,
-    # ellipsis, and em/en dashes into the generated HTML.
-    pandoc -f markdown-smart "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
+    # ellipsis, and em/en dashes into the generated HTML. The front page is
+    # raw HTML, not Markdown: forcing the Markdown reader on it escapes its
+    # indented blocks into code listings.
+    case "$file" in
+        *.md) from="markdown-smart" ;;
+        *) from="html" ;;
+    esac
+    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting

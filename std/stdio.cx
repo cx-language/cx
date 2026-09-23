@@ -28,6 +28,13 @@ void print<T: Printable>(T value) {
     value.print(stream);
 }
 
+/// Prints the repetition without allocating a temporary.
+void print(RepeatIterator<string> repetitions) {
+    for chunk in repetitions {
+        printf("%.*s", chunk.size(), chunk.data());
+    }
+}
+
 /// Prints the given value without allocating.
 void print<T: Printable>(T* value) {
     var stream = OutputStream();

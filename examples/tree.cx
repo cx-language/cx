@@ -13,7 +13,8 @@ void listdir(string name, int indent) {
             continue;
 
         var path = name + '/' + entry.d_name;
-        println(" ".repeat(indent), path);
+        print(" ".repeat(indent));
+        println(string(&path));
 
         if entry.d_type == DT_DIR {
             listdir(string(path), indent + 4);

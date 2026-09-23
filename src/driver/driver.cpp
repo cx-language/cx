@@ -175,18 +175,18 @@ static int exec(const char* command, std::string& output) {
     return WEXITSTATUS(status);
 }
 
-static void addHeaderSearchPathsFromEnvVar(const char* name) {
+static void addHeaderSearchPathsFromEnvVar(const char* name, std::vector<std::string>& paths) {
     if (auto pathList = llvm::sys::Process::GetEnv(name)) {
-        llvm::SmallVector<llvm::StringRef, 16> paths;
-        llvm::StringRef(*pathList).split(paths, llvm::sys::EnvPathSeparator, -1, false);
+        llvm::SmallVector<llvm::StringRef, 16> splitPaths;
+        llvm::StringRef(*pathList).split(splitPaths, llvm::sys::EnvPathSeparator, -1, false);
 
-        for (llvm::StringRef path : paths) {
-            importSearchPaths.push_back(path.str());
+        for (llvm::StringRef path : splitPaths) {
+            paths.push_back(path.str());
         }
     }
 }
 
-static void addHeaderSearchPathsFromCCompilerOutput() {
+static void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& paths) {
     auto cCompilerPath = findExternalCCompiler();
     if (!cCompilerPath) return;
 
@@ -201,10 +201,27 @@ static void addHeaderSearchPathsFromCCompilerOutput() {
         for (auto line : lines) {
             auto path = line.trim();
             if (llvm::sys::fs::is_directory(path)) {
-                importSearchPaths.push_back(path.str());
+                paths.push_back(path.str());
             }
         }
     }
+}
+
+// Standard search paths shared by every package: the caller adds its own
+// source directories and package settings on top.
+static void appendSystemImportSearchPaths(std::vector<std::string>& paths) {
+    // The standard library root is resolved at runtime (see getCxRootDir) so
+    // a compiler built on one machine works when distributed to another.
+    if (auto rootDir = getCxRootDir(); !rootDir.empty()) {
+        paths.push_back(std::move(rootDir));
+    }
+    paths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
+    paths.push_back("/usr/include");
+    paths.push_back("/usr/local/include");
+    addHeaderSearchPathsFromEnvVar("CPATH", paths);
+    addHeaderSearchPathsFromEnvVar("C_INCLUDE_PATH", paths);
+    addHeaderSearchPathsFromEnvVar("INCLUDE", paths);
+    addHeaderSearchPathsFromCCompilerOutput(paths);
 }
 
 static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFiles) {
@@ -218,20 +235,12 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
 
     for (auto& keyValue : relativeImportSearchPaths) {
         importSearchPaths.push_back(keyValue.getKey().str());
+        // Vendored packages are imported by name, so each source directory's
+        // vendor/ subdirectory is a package container: `import foo` finds vendor/foo.
+        importSearchPaths.push_back((keyValue.getKey() + "/vendor").str());
     }
 
-    // The standard library root is resolved at runtime (see getCxRootDir) so
-    // a compiler built on one machine works when distributed to another.
-    if (auto rootDir = getCxRootDir(); !rootDir.empty()) {
-        importSearchPaths.push_back(std::move(rootDir));
-    }
-    importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
-    importSearchPaths.push_back("/usr/include");
-    importSearchPaths.push_back("/usr/local/include");
-    addHeaderSearchPathsFromEnvVar("CPATH");
-    addHeaderSearchPathsFromEnvVar("C_INCLUDE_PATH");
-    addHeaderSearchPathsFromEnvVar("INCLUDE");
-    addHeaderSearchPathsFromCCompilerOutput();
+    appendSystemImportSearchPaths(importSearchPaths);
 }
 
 static llvm::TargetMachine* createTargetMachine(llvm::Module& module, llvm::Reloc::Model relocModel, BuildMode mode) {
@@ -247,6 +256,11 @@ static llvm::TargetMachine* createTargetMachine(llvm::Module& module, llvm::Relo
     if (!target) ABORT(errorMessage);
 
     llvm::TargetOptions options;
+#ifdef __APPLE__
+    // Tune debug info for LLDB so object files carry the STABS entries
+    // dsymutil needs to collect DWARF into .dSYM bundles.
+    options.DebuggerTuning = llvm::DebuggerKind::LLDB;
+#endif
     auto optLevel = mode == BuildMode::Debug ? llvm::CodeGenOptLevel::Default : llvm::CodeGenOptLevel::Aggressive;
     auto* targetMachine = target->createTargetMachine(triple, "generic", "", options, relocModel, std::nullopt, optLevel);
     module.setDataLayout(targetMachine->createDataLayout());
@@ -344,11 +358,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     if (parse) return errors ? 1 : 0;
 
-    Typechecker typechecker(options);
+    Typechecker typechecker(options, buildParams.config ? &buildParams.config->resolvedDependencies : nullptr);
     for (auto& importedModule : mainModule.getImportedModules()) {
-        typechecker.typecheckModule(*importedModule, nullptr);
+        typechecker.typecheckModule(*importedModule, options);
     }
-    typechecker.typecheckModule(mainModule, buildParams.config);
+    typechecker.typecheckModule(mainModule, options);
     typechecker.checkUnusedDecls(mainModule);
 
     if (errors) return 1;
@@ -587,6 +601,13 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (!isMSVC) {
         // The standard library uses the C math library.
         ccArgs.push_back("-lm");
+        // Emit debug info so stack traces and debuggers show cx functions.
+        ccArgs.push_back("-g");
+#ifndef __APPLE__
+        // Export symbols so backtrace() resolves cx function names (macOS
+        // resolves them from the static symbol table instead).
+        ccArgs.push_back("-rdynamic");
+#endif
     }
 
     if (isMSVC) {
@@ -614,8 +635,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         ccRedirects = {std::nullopt, ccStdoutLog.str(), std::nullopt};
     }
     int ccExitStatus = useExternalCCompiler ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, std::nullopt, ccRedirects) : invokeClang(ccArgs);
-    llvm::sys::fs::remove(tempIntermediateFilePath);
     if (ccExitStatus != 0) {
+        llvm::sys::fs::remove(tempIntermediateFilePath);
         if (captureCcOutput) {
             if (auto output = llvm::MemoryBuffer::getFile(ccStdoutLog)) {
                 llvm::errs() << (*output)->getBuffer();
@@ -637,6 +658,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         std::string output;
         int executableExitStatus = exec(command.c_str(), output);
         llvm::outs() << output;
+        llvm::sys::fs::remove(tempIntermediateFilePath);
         llvm::sys::fs::remove(tempOutputFilePath);
 
         if (isMSVC) {
@@ -688,11 +710,25 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         }
     }
 
+#ifdef __APPLE__
+    // Collect DWARF from the object files into a .dSYM bundle so debuggers
+    // show cx functions with file and line info (the linker leaves it behind).
+    if (!buildParams.createSharedLib) {
+        std::string dsymutilCommand = "xcrun dsymutil " + shellEscape(outputPath.str()) + " 2>/dev/null";
+        std::string dsymutilOutput;
+        if (exec(dsymutilCommand.c_str(), dsymutilOutput) != 0) {
+            llvm::errs() << "warning: couldn't collect debug info ('" << dsymutilCommand << "' failed)\n";
+        }
+    }
+#endif
+    llvm::sys::fs::remove(tempIntermediateFilePath);
+
     return 0;
 }
 
-static void addPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
-    if (packages.empty()) return;
+static PkgConfigSplit queryPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
+    PkgConfigSplit split;
+    if (packages.empty()) return split;
 
     auto pkgConfig = llvm::sys::findProgramByName("pkg-config");
     if (!pkgConfig) {
@@ -716,20 +752,46 @@ static void addPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
     for (size_t i = 0; i < tokens.size(); ++i) {
         llvm::StringRef token = tokens[i];
         if (token.starts_with("-D")) {
-            defines.push_back(token.drop_front(2).str());
+            split.defines.push_back(token.drop_front(2).str());
         } else if (token.starts_with("-I")) {
-            importSearchPaths.push_back(token.drop_front(2).str());
+            split.headerSearchPaths.push_back(token.drop_front(2).str());
         } else if (token.starts_with("-L")) {
-            librarySearchPaths.push_back(token.drop_front(2).str());
+            split.librarySearchPaths.push_back(token.drop_front(2).str());
         } else if (token.starts_with("-l")) {
-            libraries.push_back(token.drop_front(2).str());
+            split.libraries.push_back(token.drop_front(2).str());
         } else if (token.starts_with("-F")) {
-            frameworkSearchPaths.push_back(token.drop_front(2).str());
+            split.frameworkSearchPaths.push_back(token.drop_front(2).str());
         } else if (token == "-framework" && i + 1 < tokens.size()) {
-            frameworks.push_back(tokens[++i].str());
+            split.frameworks.push_back(tokens[++i].str());
         } else {
-            cflags.push_back(token.str());
+            split.cflags.push_back(token.str());
         }
+    }
+    return split;
+}
+
+static void addPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
+    auto split = queryPkgConfigFlags(packages);
+    for (auto& define : split.defines) {
+        defines.push_back(define);
+    }
+    for (auto& path : split.headerSearchPaths) {
+        importSearchPaths.push_back(path);
+    }
+    for (auto& path : split.librarySearchPaths) {
+        librarySearchPaths.push_back(path);
+    }
+    for (auto& library : split.libraries) {
+        libraries.push_back(library);
+    }
+    for (auto& path : split.frameworkSearchPaths) {
+        frameworkSearchPaths.push_back(path);
+    }
+    for (auto& framework : split.frameworks) {
+        frameworks.push_back(framework);
+    }
+    for (auto& flag : split.cflags) {
+        cflags.push_back(flag);
     }
 }
 
@@ -737,14 +799,17 @@ static void addConfigBuildFlags(const BuildConfig& config) {
     for (auto& define : config.defines) {
         defines.push_back(define);
     }
+    // The project root's vendor/ holds importable packages (multitarget builds
+    // compile sources under src/, whose parents never include the root).
+    importSearchPaths.push_back((llvm::StringRef(config.rootDirectory) + "/vendor").str());
     for (auto& path : config.headerSearchPaths) {
-        importSearchPaths.push_back(path);
+        importSearchPaths.push_back(absolutizePackagePath(config.rootDirectory, path));
     }
     for (auto& path : config.librarySearchPaths) {
-        librarySearchPaths.push_back(path);
+        librarySearchPaths.push_back(absolutizePackagePath(config.rootDirectory, path));
     }
     for (auto& library : config.libraries) {
-        libraries.push_back(library);
+        libraries.push_back(absolutizeLibraryPath(config.rootDirectory, library));
     }
     for (auto& framework : config.frameworks) {
         frameworks.push_back(framework);
@@ -764,7 +829,63 @@ static std::string getDefaultOutputFileName(llvm::StringRef targetRootDir) {
 
 static int buildDirectory(llvm::StringRef directory, const char* argv0) {
     BuildConfig config(directory.str(), {defines.begin(), defines.end()});
-    fetchDependencies(config);
+
+    // Snapshot invocation flags before project settings merge: dependencies
+    // compose their options from these, isolated from the main project.
+    CompileOptions baseOptions;
+    baseOptions.mode = buildMode;
+    baseOptions.noUnusedWarnings = noUnusedWarnings;
+    baseOptions.warnUndefinedMacros = warnUndefinedMacros;
+    baseOptions.warnUnusedResult = warnUnusedResult;
+    baseOptions.importSearchPaths = importSearchPaths;
+    baseOptions.frameworkSearchPaths = frameworkSearchPaths;
+    baseOptions.defines = defines;
+    baseOptions.cflags = cflags;
+    appendSystemImportSearchPaths(baseOptions.importSearchPaths);
+
+    resolveDependencyClosure(config, baseOptions, /*fetchMissing=*/true);
+
+    // Route each dependency's pkg-config output and union its link
+    // contributions. Defines, search paths, and cflags stay package-scoped in
+    // the closure records; there is one binary, so linking is global.
+    for (auto& record : config.resolvedDependencies) {
+        auto split = queryPkgConfigFlags(record.pkgConfigDependencies);
+        for (auto& define : split.defines) {
+            record.options.defines.push_back(define);
+        }
+        for (auto& path : split.headerSearchPaths) {
+            record.options.importSearchPaths.push_back(absolutizePackagePath(record.rootDirectory, path));
+        }
+        for (auto& path : split.frameworkSearchPaths) {
+            record.options.frameworkSearchPaths.push_back(absolutizePackagePath(record.rootDirectory, path));
+            record.frameworkSearchPaths.push_back(absolutizePackagePath(record.rootDirectory, path));
+        }
+        for (auto& flag : split.cflags) {
+            record.options.cflags.push_back(flag);
+        }
+        for (auto& path : split.librarySearchPaths) {
+            librarySearchPaths.push_back(absolutizePackagePath(record.rootDirectory, path));
+        }
+        for (auto& library : split.libraries) {
+            libraries.push_back(library);
+        }
+        for (auto& framework : split.frameworks) {
+            frameworks.push_back(framework);
+        }
+        for (auto& path : record.librarySearchPaths) {
+            librarySearchPaths.push_back(path);
+        }
+        for (auto& library : record.libraries) {
+            libraries.push_back(library);
+        }
+        for (auto& framework : record.frameworks) {
+            frameworks.push_back(framework);
+        }
+        for (auto& path : record.frameworkSearchPaths) {
+            frameworkSearchPaths.push_back(path);
+        }
+    }
+
     addConfigBuildFlags(config);
 
     for (auto& targetRootDir : config.getTargetRootDirectories()) {
@@ -774,7 +895,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0) {
         } else {
             outputFileName = config.name;
         }
-        auto sourceFiles = getSourceFiles(targetRootDir);
+        auto sourceFiles = getSourceFiles(targetRootDir, config.rootDirectory);
         // TODO: Add support for library packages.
         int exitStatus = buildModuleFromFiles({
             .filePaths = sourceFiles,
@@ -809,7 +930,7 @@ static void addPlatformCompileOptions() {
 }
 
 int cx::driverMain(int argc, const char** argv) {
-    llvm::setBugReportMsg("Please submit a bug report to https://github.com/emillaine/cx/issues and include the crash backtrace.\n");
+    llvm::setBugReportMsg("Please submit a bug report to https://github.com/cx-language/cx/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
     // Like cargo and npm, everything after '--' is passed to the executed program by 'run'.
     // Split it off before option parsing so it is never mistaken for input files or flags.

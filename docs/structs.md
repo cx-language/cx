@@ -10,31 +10,20 @@ struct Person {
     string name;
     int age;
     Person*? friend;
-    // Specify default values so we don't have to specify them when we instantiate Person
-    float x = 0;
-    float y = 0;
 
-    void moveLeft() {
-        // Members may be accessed via 'this'
-        this.x -= 0.1;
-    }
-
-    void moveRight() {
-        // Or without 'this'
-        x += 0.1;
+    void introduce() {
+        // Members may be accessed via 'this' or directly.
+        println(this.name, " is ", age, " years old");
     }
 }
 
 void main() {
-    var foo = Person(name = "Foo", age = 42, friend = null);
-    var bar = Person(name = "Bar", age = 42, friend = foo);
-    foo.friend = bar;
+    var alice = Person(name = "Alice", age = 30, friend = null);
+    var bob = Person(name = "Bob", age = 25, friend = alice);
+    alice.friend = bob;
 
-    foo.moveLeft(); // foo.x is now -0.1
-    bar.moveRight();  // bar.x is now 0.1
-
-    println(foo.x);
-    println(bar.x);
+    alice.introduce(); // prints "Alice is 30 years old"
+    bob.introduce(); // prints "Bob is 25 years old"
 }
 ```
 

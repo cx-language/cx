@@ -1,38 +1,61 @@
 
 %X = type {}
 
-define i32 @_EN4main1gE() {
+define i32 @_EN4main1gE() #0 !dbg !4 {
   ret i32 0
 }
 
-define i1 @_EN4main1hE() {
+define i1 @_EN4main1hE() #0 !dbg !7 {
   ret i1 false
 }
 
-define i32 @main() {
+define i32 @main() #0 !dbg !8 {
   %x = alloca %X, align 8
-  call void @_EN4main1X4initE(ptr %x)
-  %1 = call i32 @_EN4main1X1fI3intEEF_3int(ptr %x, ptr @_EN4main1gE)
-  %2 = call i1 @_EN4main1X1fI4boolEEF_4bool(ptr %x, ptr @_EN4main1hE)
+  call void @_EN4main1X4initE(ptr %x), !dbg !9
+  %1 = call i32 @_EN4main1X1fI3intEEF_3int(ptr %x, ptr @_EN4main1gE), !dbg !10
+  %2 = call i1 @_EN4main1X1fI4boolEEF_4bool(ptr %x, ptr @_EN4main1hE), !dbg !11
   ret i32 0
 }
 
-define void @_EN4main1X4initE(ptr %this) {
+define void @_EN4main1X4initE(ptr %this) #0 !dbg !12 {
   ret void
 }
 
-define i32 @_EN4main1X1fI3intEEF_3int(ptr %this, ptr %t) {
+define i32 @_EN4main1X1fI3intEEF_3int(ptr %this, ptr %t) #0 !dbg !13 {
   %t1 = alloca ptr, align 8
   store ptr %t, ptr %t1, align 8
   %t.load = load ptr, ptr %t1, align 8
-  %1 = call i32 %t.load()
+  %1 = call i32 %t.load(), !dbg !14
   ret i32 %1
 }
 
-define i1 @_EN4main1X1fI4boolEEF_4bool(ptr %this, ptr %t) {
+define i1 @_EN4main1X1fI4boolEEF_4bool(ptr %this, ptr %t) #0 !dbg !15 {
   %t1 = alloca ptr, align 8
   store ptr %t, ptr %t1, align 8
   %t.load = load ptr, ptr %t1, align 8
-  %1 = call i1 %t.load()
+  %1 = call i1 %t.load(), !dbg !16
   ret i1 %1
 }
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "generic-method.cx")
+!4 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = distinct !DISubprogram(name: "h", linkageName: "_EN4main1hE", scope: !3, file: !3, line: 10, type: !5, scopeLine: 10, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
+!9 = !DILocation(line: 13, column: 13, scope: !8)
+!10 = !DILocation(line: 14, column: 7, scope: !8)
+!11 = !DILocation(line: 15, column: 7, scope: !8)
+!12 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1X4initE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1X1fI3intEEF_3int", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
+!14 = !DILocation(line: 5, column: 16, scope: !13)
+!15 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1X1fI4boolEEF_4bool", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
+!16 = !DILocation(line: 5, column: 16, scope: !15)

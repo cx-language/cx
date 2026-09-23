@@ -51,11 +51,11 @@ void buildCrosshairMesh(Mesh* m) {
     var normals = List<float>();
     var colors = List<float>();
     var uvs = List<float>();
-    var white = Vec3(1.0, 1.0, 1.0);
-    pushLine(positions, normals, Vec3(-0.02, 0.0, 0.0), Vec3(0.02, 0.0, 0.0));
+    var white = Vector3(1.0, 1.0, 1.0);
+    pushLine(positions, normals, Vector3(-0.02, 0.0, 0.0), Vector3(0.02, 0.0, 0.0));
     pushLineColor(colors, white);
     pushLineUV(uvs);
-    pushLine(positions, normals, Vec3(0.0, -0.02, 0.0), Vec3(0.0, 0.02, 0.0));
+    pushLine(positions, normals, Vector3(0.0, -0.02, 0.0), Vector3(0.0, 0.02, 0.0));
     pushLineColor(colors, white);
     pushLineUV(uvs);
     initMesh(m, positions, normals, colors, uvs);
@@ -66,15 +66,15 @@ void buildHighlightMesh(Mesh* m, int x, int y, int z) {
     var normals = List<float>();
     var colors = List<float>();
     var uvs = List<float>();
-    var black = Vec3(0.0, 0.0, 0.0);
+    var black = Vector3(0.0, 0.0, 0.0);
     var x0 = float(x) - 0.01;
     var y0 = float(y) - 0.01;
     var z0 = float(z) - 0.01;
     var x1 = float(x) + 1.01;
     var y1 = float(y) + 1.01;
     var z1 = float(z) + 1.01;
-    Vec3[8] c = [Vec3(x0, y0, z0), Vec3(x1, y0, z0), Vec3(x1, y0, z1), Vec3(x0, y0, z1),
-        Vec3(x0, y1, z0), Vec3(x1, y1, z0), Vec3(x1, y1, z1), Vec3(x0, y1, z1)];
+    Vector3<float>[8] c = [Vector3(x0, y0, z0), Vector3(x1, y0, z0), Vector3(x1, y0, z1), Vector3(x0, y0, z1),
+        Vector3(x0, y1, z0), Vector3(x1, y1, z0), Vector3(x1, y1, z1), Vector3(x0, y1, z1)];
     int[24] e = [0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7];
     for i in 0..12 {
         pushLine(positions, normals, c[e[i * 2]], c[e[i * 2 + 1]]);
@@ -123,7 +123,7 @@ int runGame(bool debug) {
     int tz = 0;
 
     var spawnH = terrainHeight(64, 64);
-    var player = Player(pos = Vec3(64.5, float(spawnH) + 2.0, 64.5), vel = Vec3(0.0, 0.0, 0.0),
+    var player = Player(pos = Vector3(64.5, float(spawnH) + 2.0, 64.5), vel = Vector3(0.0, 0.0, 0.0),
         yaw = 0.0, pitch = 0.0, onGround = false);
     var selected = blockGrass;
 
@@ -235,7 +235,7 @@ int runGame(bool debug) {
 
         var eye = eyePos(player);
         var proj = mat4Perspective(radians(75.0), float(width) / float(height), 0.1, 500.0);
-        var view = mat4LookAt(eye, eye + lookDir(player), Vec3(0.0, 1.0, 0.0));
+        var view = mat4LookAt(eye, eye + lookDir(player), Vector3(0.0, 1.0, 0.0));
         var mvp = proj * view;
         glUseProgram(program);
         setMat4(uniforms.mvp, mvp);

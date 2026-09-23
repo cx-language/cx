@@ -20,7 +20,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 STD_DIR = ROOT / "std"
 STAGING_DIR = ROOT / "website" / ".generated"
-SOURCE_URL = "https://github.com/emillaine/cx/blob/main/std"
+SOURCE_URL = "https://github.com/cx-language/cx/blob/main/std"
 
 OPERATOR_SLUGS = {
     "==": "eq",
@@ -32,10 +32,12 @@ OPERATOR_SLUGS = {
     "+": "plus",
     "[]=": "index-assign",
     "[]": "index",
+    "[-]=": "index-from-end-assign",
+    "[-]": "index-from-end",
 }
 
 TYPE_RE = re.compile(r"(struct|interface|enum)\s+(.+?)\s*\{")
-FUNC_RE = re.compile(r"(operator(?:\[\]=?|==|!=|<=|>=|<|>|\+)|~?\w+)\s*(?:<[^;({>]*>)?\s*\(")
+FUNC_RE = re.compile(r"(operator(?:\[-?\]=?|==|!=|<=|>=|<|>|\+)|~?\w+)\s*(?:<[^;({>]*>)?\s*\(")
 FIELD_RE = re.compile(r"(.+?)\s+(\w+)\s*;$")
 CONST_RE = re.compile(r"const\s+(?:.*\s)?(\w+)\s*=")
 VARIANT_RE = re.compile(r"(\w+),?$")
@@ -289,8 +291,8 @@ def render_index(title, pages):
     out = [
         f"# {title}",
         "",
-        "Auto-generated from the [standard library sources](https://github.com/emillaine/cx/tree/main/std)",
-        "by [generate_std_docs.py](https://github.com/emillaine/cx/blob/main/website/generate_std_docs.py).",
+        "Auto-generated from the [standard library sources](https://github.com/cx-language/cx/tree/main/std)",
+        "by [generate_std_docs.py](https://github.com/cx-language/cx/blob/main/website/generate_std_docs.py).",
         "",
     ]
     for relpath, types, functions, constants, _ in pages:

@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: :{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+struct Point: Copyable {
+    int x;
+    int y;
+}
+void main() {
+    var p = Point(x = 1, y = 2);
+    println(p.z);
+}
+// CHECK: [[@LINE-2]]:15: error: no member named 'z' in 'Point'
+// CHECK-NEXT: println(p.z);
+// CHECK-NEXT: ~
+// CHECK-NOT: :{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

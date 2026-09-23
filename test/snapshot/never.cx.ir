@@ -9,9 +9,6 @@ never _EN4main1gE() {
     unreachable
 }
 
-never _EN3std12abortWrapperE() {
-}
-
 never _EN4main1hE() {
     unreachable
 }

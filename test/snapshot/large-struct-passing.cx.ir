@@ -171,6 +171,3 @@ void _EN4main4Wide4initE6int1286int128(Wide* this, int128 a, int128 b) {
     store b.load to b_1
     return void
 }
-
-void _EN3std10assertFailEP4char(char* message) {
-}

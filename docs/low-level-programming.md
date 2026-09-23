@@ -28,7 +28,7 @@ To import a header, write an import declaration with the header file name:
 import "stdio.h";
 
 void main() {
-    printf("foo bar");
+    printf("hello, world\n");
 }
 ```
 
@@ -39,9 +39,8 @@ Memory allocation functions work the same way:
 import "stdlib.h";
 
 void main() {
-    var buffer = malloc(1);
-    buffer = realloc(buffer, 4);
-    free(buffer);
+    var numbers = malloc(sizeof(int) * 3);
+    free(numbers);
 }
 ```
 
@@ -53,7 +52,7 @@ to give common C functions more precise cx types:
 extern int putchar(int ch);
 
 void main() {
-    putchar(102);
+    putchar('f'); // prints "f"
 }
 ```
 

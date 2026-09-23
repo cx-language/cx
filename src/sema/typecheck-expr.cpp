@@ -228,7 +228,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         }
     }
 
-    auto* decl = findDecl(expr.identifier, expr.location);
+    auto* decl = findDecl(expr.identifier, expr.location, expr.endLocation);
     checkHasAccess(*decl, expr.location, AccessLevel::None);
     decl->referenced = true;
     expr.decl = decl;
@@ -242,7 +242,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         auto* varDecl = llvm::cast<VarDecl>(decl);
         if (!useIsWriteOnly) checkNotMoved(*decl, expr);
         if (!useIsWriteOnly && !varDecl->isGlobal() && !varDecl->initializer && !definitelyAssignedDecls.count(decl)) {
-            ERROR(expr.location, "use of uninitialized variable '" << expr.identifier << "'");
+            ERROR_RANGE(expr.location, expr.endLocation, "use of uninitialized variable '" << expr.identifier << "'");
         }
         if (!useIsWriteOnly) {
             if (auto narrowed = narrowedTypes.find(decl); narrowed != narrowedTypes.end()) return narrowed->second;
@@ -259,19 +259,19 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
     case DeclKind::MethodDecl:
         return Type(llvm::cast<FunctionDecl>(decl)->getFunctionType(), Mutability::Mutable, Location());
     case DeclKind::GenericParamDecl:
-        ERROR(expr.location, "cannot refer to generic parameter '" << expr.identifier << "' as a value");
+        ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to generic parameter '" << expr.identifier << "' as a value");
     case DeclKind::ConstructorDecl:
-        ERROR(expr.location, "cannot refer to constructor '" << expr.identifier << "' as a value");
+        ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to constructor '" << expr.identifier << "' as a value");
     case DeclKind::DestructorDecl:
-        ERROR(expr.location, "cannot refer to destructor '" << expr.identifier << "' as a value");
+        ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to destructor '" << expr.identifier << "' as a value");
     case DeclKind::FunctionTemplate:
-        ERROR(expr.location, "cannot refer to generic function '" << expr.identifier << "' without specifying type arguments");
+        ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to generic function '" << expr.identifier << "' without specifying type arguments");
     case DeclKind::TypeDecl:
         return llvm::cast<TypeDecl>(decl)->getType();
     case DeclKind::TypeTemplate:
-        ERROR(expr.location, "'" << expr.identifier << "' is not a variable");
+        ERROR_RANGE(expr.location, expr.endLocation, "'" << expr.identifier << "' is not a variable");
     case DeclKind::EnumDecl:
-        ERROR(expr.location, "'" << expr.identifier << "' is not a variable");
+        ERROR_RANGE(expr.location, expr.endLocation, "'" << expr.identifier << "' is not a variable");
     case DeclKind::EnumCase:
         return llvm::cast<EnumCase>(decl)->type;
     case DeclKind::FieldDecl: {
@@ -281,7 +281,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         return llvm::cast<FieldDecl>(decl)->type;
     }
     case DeclKind::ImportDecl:
-        ERROR(expr.location, "cannot refer to import '" << expr.identifier << "' as a value");
+        ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to import '" << expr.identifier << "' as a value");
     }
     llvm_unreachable("all cases handled");
 }
@@ -302,7 +302,7 @@ static Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
     } else if (expr.value.isIntN(64)) {
         return Type::getUInt64();
     }
-    ERROR(expr.location, "integer literal is too large");
+    ERROR_RANGE(expr.location, expr.endLocation, "integer literal is too large");
 }
 
 static Type typecheckFloatLiteralExpr(FloatLiteralExpr&) {
@@ -362,13 +362,14 @@ Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
     return TupleType::get(std::move(elements));
 }
 
-void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, bool positive) {
+void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, Location endLocation, bool positive) {
     if (!type.removePointer().isBool() && !type.removePointer().isOptionalType()) {
         if (type.isImplementedAsPointer()) {
-            WARN(location, "type '" << type << "' " << (positive ? "is always non-null" : "cannot be null") << "; to declare it nullable, use '"
-                                    << OptionalType::get(type) << "'");
+            WARN_RANGE(location, endLocation,
+                       "type '" << type << "' " << (positive ? "is always non-null" : "cannot be null") << "; to declare it nullable, use '"
+                                << OptionalType::get(type) << "'");
         } else {
-            ERROR(location, "type '" << type << "' is not convertible to boolean");
+            ERROR_RANGE(location, endLocation, "type '" << type << "' is not convertible to boolean");
         }
     }
 }
@@ -378,7 +379,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
 
     switch (expr.op) {
     case Token::Not:
-        typecheckImplicitlyBoolConvertibleExpr(operandType, expr.getOperand().location, false);
+        typecheckImplicitlyBoolConvertibleExpr(operandType, expr.getOperand().location, expr.getOperand().endLocation, false);
         return Type::getBool();
 
     case Token::Star: // Dereference operation
@@ -388,7 +389,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             return operandType.removeOptional().getElementType();
         }
 
-        ERROR(expr.location, "cannot dereference non-pointer type '" << operandType << "'");
+        ERROR_RANGE(expr.location, expr.endLocation, "cannot dereference non-pointer type '" << operandType << "'");
 
     case Token::And: // Address-of operation
         unnarrow(expr.getOperand());
@@ -403,9 +404,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         operandType = operandType.removePointer();
 
         if (!operandType.isMutable()) {
-            ERROR(expr.location, "cannot increment immutable value of type '" << operandType << "'");
+            ERROR_RANGE(expr.location, expr.endLocation, "cannot increment immutable value of type '" << operandType << "'");
         } else if (!operandType.isIncrementable()) {
-            ERROR(expr.location, "cannot increment '" << operandType << "'");
+            ERROR_RANGE(expr.location, expr.endLocation, "cannot increment '" << operandType << "'");
         }
 
         return Type::getVoid();
@@ -414,9 +415,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         operandType = operandType.removePointer();
 
         if (!operandType.isMutable()) {
-            ERROR(expr.location, "cannot decrement immutable value of type '" << operandType << "'");
+            ERROR_RANGE(expr.location, expr.endLocation, "cannot decrement immutable value of type '" << operandType << "'");
         } else if (!operandType.isDecrementable()) {
-            ERROR(expr.location, "cannot decrement '" << operandType << "'");
+            ERROR_RANGE(expr.location, expr.endLocation, "cannot decrement '" << operandType << "'");
         }
 
         return Type::getVoid();
@@ -441,7 +442,8 @@ static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind
         hint = "";
     }
 
-    ERROR(expr.location, "invalid operands '" << expr.getLHS().type << "' and '" << expr.getRHS().type << "' to '" << toString(op) << "'" << hint);
+    ERROR_RANGE(expr.location, expr.endLocation,
+                "invalid operands '" << expr.getLHS().type << "' and '" << expr.getRHS().type << "' to '" << toString(op) << "'" << hint);
 }
 
 static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* currentFunction) {
@@ -598,7 +600,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         if (rightPointeeType.isUnsizedArrayPointer()) rightPointeeType = rightPointeeType.getElementType();
 
         if (!leftPointeeType.equalsIgnoreTopLevelMutable(rightPointeeType)) {
-            ERROR(expr.location, "comparison of distinct pointer types ('" << leftType << "' and '" << rightType << "')");
+            ERROR_RANGE(expr.location, expr.endLocation, "comparison of distinct pointer types ('" << leftType << "' and '" << rightType << "')");
         }
     } else if (isBitwiseOperator(op) && (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
         throwInvalidOperandsToBinaryExpr(expr, op);
@@ -726,7 +728,7 @@ static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, b
     if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(width, isUnsigned)) < 0
         || llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(width, isUnsigned)) > 0) {
         if (!diagnoseOutOfRange) return false;
-        ERROR(expr.location, value << " is out of range for type '" << type << "'");
+        ERROR_RANGE(expr.location, expr.endLocation, value << " is out of range for type '" << type << "'");
     }
     return true;
 }
@@ -1586,13 +1588,13 @@ llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
 
 Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
     if (expr.args.size() != 1) {
-        ERROR(expr.location, "expected single argument to converting constructor");
+        ERROR_RANGE(expr.location, expr.endLocation, "expected single argument to converting constructor");
     }
     if (!expr.genericArgs.empty()) {
-        ERROR(expr.location, "expected no generic arguments to converting constructor");
+        ERROR_RANGE(expr.location, expr.endLocation, "expected no generic arguments to converting constructor");
     }
     if (!expr.args.front().name.empty()) {
-        ERROR(expr.location, "expected unnamed argument to converting constructor");
+        ERROR_RANGE(expr.location, expr.endLocation, "expected unnamed argument to converting constructor");
     }
 
     auto sourceType = typecheckExpr(*expr.args.front().value);
@@ -1784,7 +1786,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             if (functionTemplate->functionDecl->hasPack()) {
                 if (!expr.genericArgs.empty()) {
                     if (decls.size() == 1) {
-                        ERROR(expr.location, "cannot specify generic arguments explicitly for variadic function '" << expr.getFunctionName() << "'");
+                        ERROR_RANGE(expr.location, expr.endLocation,
+                                    "cannot specify generic arguments explicitly for variadic function '" << expr.getFunctionName() << "'");
                     }
                     continue;
                 }
@@ -2138,7 +2141,7 @@ std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm:
 
 Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     if (!expr.callsNamedFunction()) {
-        ERROR(expr.location, "anonymous function calls not implemented yet");
+        ERROR_RANGE(expr.location, expr.endLocation, "anonymous function calls not implemented yet");
     }
 
     if (Type::isBuiltinScalar(expr.getFunctionName())) {
@@ -2416,7 +2419,8 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             if (Expr* converted = convert(defaultArg, param.type, true)) {
                 defaultArg = converted;
             } else {
-                ERROR(expr.location, "cannot assign '" << defaultArg->type << "' to '" << param.type << "'" << narrowingHint(defaultArg->type, param.type));
+                ERROR_RANGE(expr.location, expr.endLocation,
+                            "cannot assign '" << defaultArg->type << "' to '" << param.type << "'" << narrowingHint(defaultArg->type, param.type));
             }
             argToParam.push_back(int(j));
             expr.args.emplace_back(std::string(param.getName()), defaultArg, expr.location);
@@ -2604,7 +2608,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
 
     if (baseType.isArrayType()) {
         if (llvm::is_contained({"count", "length", "size"}, expr.member)) {
-            ERROR(expr.location, "use the '.size()' member function to get the number of elements in an array");
+            ERROR_RANGE(expr.location, expr.endLocation, "use the '.size()' member function to get the number of elements in an array");
         }
     } else if (baseType.isTupleType()) {
         for (auto& element : baseType.getTupleElements()) {
@@ -2640,7 +2644,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         }
     }
 
-    ERROR(expr.location, "no member named '" << expr.member << "' in '" << baseType << "'");
+    ERROR_RANGE(expr.location, expr.endLocation, "no member named '" << expr.member << "' in '" << baseType << "'");
 }
 
 Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
@@ -2652,21 +2656,49 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
     } else if (lhsType.isPointerType() && lhsType.getPointee().isArrayType()) {
         arrayType = lhsType.getPointee();
     } else if (lhsType.removeOptional().removePointer().isBuiltinType()) {
-        ERROR(expr.location, "'" << lhsType << "' doesn't provide an index operator");
+        ERROR_RANGE(expr.location, expr.endLocation, "'" << lhsType << "' doesn't provide an index operator");
     } else {
         return typecheckCallExpr(expr).removePointer();
     }
 
     Expr* indexExpr = expr.getIndex();
-    Type indexType = typecheckExpr(*indexExpr);
+    bool indexChecked = false;
 
-    if (auto converted = convert(indexExpr, ArrayType::getIndexType())) {
-        expr.setIndex(converted);
-        indexExpr = converted;
-    } else if (!indexType.isInteger()) {
-        ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
+    // A from-end index 'base[-offset]' accesses 'base[size - offset]'.
+    // Desugar constant-size arrays here while the offset is still unchecked,
+    // so it is checked exactly once as part of the difference. Other types
+    // resolve the operator[-] call built by the parser. (Non-array types
+    // returned above, so arrayType is always set here.)
+    if (expr.fromEnd) {
+        if (!arrayType.isConstantArray()) {
+            ERROR_RANGE(indexExpr->location, indexExpr->endLocation, "from-end index '[-]' is not supported for arrays of unknown size");
+        }
+        llvm::APSInt sizeValue(64, false);
+        sizeValue = arrayType.getArraySize();
+        auto* sizeLiteral = makeAST<IntLiteralExpr>(std::move(sizeValue), indexExpr->location);
+        sizeLiteral->endLocation = indexExpr->location;
+        auto* difference = makeAST<BinaryExpr>(BinaryOperator(Token::Minus), sizeLiteral, indexExpr, indexExpr->location);
+        difference->endLocation = indexExpr->endLocation;
+        typecheckExpr(*difference);
+        expr.setIndex(difference);
+        indexExpr = difference;
+        // Clear so re-checks (e.g. overload probing checking arguments per
+        // candidate) see a plain index instead of desugaring again.
+        expr.fromEnd = false;
+        indexChecked = true;
     }
-    // Wider integer indexes pass through unconverted; both backends accept any integer index type.
+
+    if (!indexChecked) {
+        Type indexType = typecheckExpr(*indexExpr);
+
+        if (auto converted = convert(indexExpr, ArrayType::getIndexType())) {
+            expr.setIndex(converted);
+            indexExpr = converted;
+        } else if (!indexType.isInteger()) {
+            ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
+        }
+        // Wider integer indexes pass through unconverted; both backends accept any integer index type.
+    }
 
     if (arrayType.isConstantArray()) {
         if (indexExpr->isConstant()) {
@@ -2833,12 +2865,12 @@ Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
         return leftType;
     }
 
-    ERROR(expr.location, "incompatible operand types ('" << leftType << "' and '" << rightType << "')");
+    ERROR_RANGE(expr.location, expr.endLocation, "incompatible operand types ('" << leftType << "' and '" << rightType << "')");
 }
 
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto conditionType = typecheckExpr(*expr.condition);
-    typecheckImplicitlyBoolConvertibleExpr(conditionType, expr.condition->location);
+    typecheckImplicitlyBoolConvertibleExpr(conditionType, expr.condition->location, expr.condition->endLocation);
     auto outerNarrowings = narrowedTypes;
     auto outerAssignedDecls = definitelyAssignedDecls;
     applyNarrowings(*expr.condition, true);
@@ -2869,7 +2901,7 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
         expr.thenExpr = convertedThen;
         return elseType;
     } else {
-        ERROR(expr.location, "incompatible operand types ('" << thenType << "' and '" << elseType << "')");
+        ERROR_RANGE(expr.location, expr.endLocation, "incompatible operand types ('" << thenType << "' and '" << elseType << "')");
     }
 }
 
@@ -3037,7 +3069,7 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
             for (auto* staticConst : enumDecl->staticConsts) {
                 if (staticConst->getName() == memberExpr->member) return nullptr;
             }
-            ERROR(expr.location, "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->member << "'");
+            ERROR_RANGE(expr.location, expr.endLocation, "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->member << "'");
         }
         return enumCase;
     }
@@ -3182,6 +3214,6 @@ void Typechecker::setMoved(Expr* expr, bool isMoved) {
 
 void Typechecker::checkNotMoved(const Decl& decl, const VarExpr& expr) {
     if (movedDecls.count(&decl)) {
-        ERROR(expr.location, "use of moved value '" << expr.identifier << "'");
+        ERROR_RANGE(expr.location, expr.endLocation, "use of moved value '" << expr.identifier << "'");
     }
 }

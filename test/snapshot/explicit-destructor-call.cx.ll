@@ -1,24 +1,41 @@
 
-define void @_EN4main1fEP1A(ptr %a) {
+define void @_EN4main1fEP1A(ptr %a) #0 !dbg !4 {
   %a1 = alloca ptr, align 8
   store ptr %a, ptr %a1, align 8
   %a.load = load ptr, ptr %a1, align 8
-  call void @_EN4main1A6deinitE(ptr %a.load)
+  call void @_EN4main1A6deinitE(ptr %a.load), !dbg !7
   ret void
 }
 
-define void @_EN4main1A6deinitE(ptr %this) {
+define void @_EN4main1A6deinitE(ptr %this) #0 !dbg !8 {
   ret void
 }
 
-define void @_EN4main1gEP1B(ptr %b) {
+define void @_EN4main1gEP1B(ptr %b) #0 !dbg !9 {
   %b1 = alloca ptr, align 8
   store ptr %b, ptr %b1, align 8
   ret void
 }
 
-define void @_EN4main1hEP4char(ptr %c) {
+define void @_EN4main1hEP4char(ptr %c) #0 !dbg !10 {
   %c1 = alloca ptr, align 8
   store ptr %c, ptr %c1, align 8
   ret void
 }
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "explicit-destructor-call.cx")
+!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fEP1A", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 8, column: 7, scope: !4)
+!8 = distinct !DISubprogram(name: "deinit", linkageName: "_EN4main1A6deinitE", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
+!9 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gEP1B", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "h", linkageName: "_EN4main1hEP4char", scope: !3, file: !3, line: 17, type: !5, scopeLine: 17, spFlags: DISPFlagDefinition, unit: !2)

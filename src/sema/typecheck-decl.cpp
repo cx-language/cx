@@ -7,6 +7,7 @@
 #pragma warning(pop)
 #include "../ast/arena.h"
 #include "../ast/module.h"
+#include "../build/dependencies.h"
 #include "../driver/driver.h"
 #include "c-import.h"
 
@@ -792,14 +793,21 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     }
 }
 
-void Typechecker::typecheckImportDecl(ImportDecl& decl, const BuildConfig* config) {
+void Typechecker::typecheckImportDecl(ImportDecl& decl) {
     if (decl.target.ends_with(".h")) {
         const int errorsBefore = errors;
         if (!importCHeader(*currentSourceFile, decl, *this) && errors == errorsBefore) {
             REPORT_ERROR(decl.getLocation(), "couldn't import C header file '" << decl.target << "'");
         }
     } else {
-        auto module = importModule(currentSourceFile, config, decl.target);
+        if (dependencies) {
+            auto resolution = resolveDependency(*dependencies, decl.target);
+            if (resolution.ambiguous) {
+                REPORT_ERROR(decl.getLocation(), resolution.ambiguityDetail);
+                return;
+            }
+        }
+        auto module = importModule(currentSourceFile, decl.target);
         if (!module) {
             if (module.getError() == std::make_error_code(std::errc::no_such_file_or_directory)) {
                 REPORT_ERROR(decl.getLocation(), "couldn't find module '" << decl.target << "' in the following locations:\n"
@@ -811,7 +819,7 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const BuildConfig* confi
     }
 }
 
-void Typechecker::typecheckTopLevelDecl(Decl& decl, const BuildConfig* config) {
+void Typechecker::typecheckTopLevelDecl(Decl& decl) {
     switch (decl.kind) {
     case DeclKind::ParamDecl:
         llvm_unreachable("no top-level parameter declarations");
@@ -846,7 +854,7 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const BuildConfig* config) {
     case DeclKind::FieldDecl:
         llvm_unreachable("no top-level field declarations");
     case DeclKind::ImportDecl:
-        typecheckImportDecl(llvm::cast<ImportDecl>(decl), config);
+        typecheckImportDecl(llvm::cast<ImportDecl>(decl));
         break;
     }
 }

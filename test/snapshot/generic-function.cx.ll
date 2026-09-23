@@ -4,44 +4,44 @@
 
 @0 = private unnamed_addr constant [4 x i8] c"bar\00", align 1
 
-define i32 @main() {
+define i32 @main() #0 !dbg !4 {
   %b = alloca %string, align 8
   %__str = alloca %string, align 8
   %five = alloca i32, align 4
-  call void @_EN4main3fooI3intEE3int(i32 1)
-  call void @_EN4main3fooI4boolEE4bool(i1 false)
-  call void @_EN4main3fooI4boolEE4bool(i1 true)
-  call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @0, i32 3)
+  call void @_EN4main3fooI3intEE3int(i32 1), !dbg !7
+  call void @_EN4main3fooI4boolEE4bool(i1 false), !dbg !8
+  call void @_EN4main3fooI4boolEE4bool(i1 true), !dbg !9
+  call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @0, i32 3), !dbg !10
   %__str.load = load %string, ptr %__str, align 8
-  %1 = call %string @_EN4main3barI6stringEE6string(%string %__str.load)
+  %1 = call %string @_EN4main3barI6stringEE6string(%string %__str.load), !dbg !11
   store %string %1, ptr %b, align 8
-  %2 = call i32 @_EN4main3quxI3intEE3int(i32 -5)
+  %2 = call i32 @_EN4main3quxI3intEE3int(i32 -5), !dbg !12
   store i32 %2, ptr %five, align 4
   ret i32 0
 }
 
-define void @_EN4main3fooI3intEE3int(i32 %t) {
+define void @_EN4main3fooI3intEE3int(i32 %t) #0 !dbg !13 {
   %t1 = alloca i32, align 4
   store i32 %t, ptr %t1, align 4
   ret void
 }
 
-define void @_EN4main3fooI4boolEE4bool(i1 %t) {
+define void @_EN4main3fooI4boolEE4bool(i1 %t) #0 !dbg !14 {
   %t1 = alloca i1, align 1
   store i1 %t, ptr %t1, align 1
   ret void
 }
 
-declare void @_EN3std6string4initEP4char3int(ptr, ptr, i32)
+declare void @_EN3std6string4initEP4char3int(ptr, ptr, i32) #0
 
-define %string @_EN4main3barI6stringEE6string(%string %t) {
+define %string @_EN4main3barI6stringEE6string(%string %t) #0 !dbg !15 {
   %t1 = alloca %string, align 8
   store %string %t, ptr %t1, align 8
   %t.load = load %string, ptr %t1, align 8
   ret %string %t.load
 }
 
-define i32 @_EN4main3quxI3intEE3int(i32 %t) {
+define i32 @_EN4main3quxI3intEE3int(i32 %t) #0 !dbg !16 {
   %t1 = alloca i32, align 4
   store i32 %t, ptr %t1, align 4
   %t.load = load i32, ptr %t1, align 4
@@ -60,3 +60,26 @@ if.end:                                           ; preds = %if.else
   %t.load3 = load i32, ptr %t1, align 4
   ret i32 %t.load3
 }
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "generic-function.cx")
+!4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 13, column: 5, scope: !4)
+!8 = !DILocation(line: 14, column: 5, scope: !4)
+!9 = !DILocation(line: 15, column: 5, scope: !4)
+!10 = !DILocation(line: 12, column: 6, scope: !4)
+!11 = !DILocation(line: 16, column: 13, scope: !4)
+!12 = !DILocation(line: 17, column: 16, scope: !4)
+!13 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooI3intEE3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!14 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooI4boolEE4bool", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!15 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main3barI6stringEE6string", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!16 = distinct !DISubprogram(name: "qux", linkageName: "_EN4main3quxI3intEE3int", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)

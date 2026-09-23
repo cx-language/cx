@@ -13,6 +13,8 @@
 #include "../ast/decl.h"
 #include "../ast/expr.h"
 #include "../ast/stmt.h"
+#include "../build/config.h"
+#include "../driver/driver.h"
 
 namespace llvm {
 class StringRef;
@@ -24,11 +26,9 @@ template<typename T> class Optional;
 namespace cx {
 
 struct Module;
-struct BuildConfig;
 struct SourceFile;
 struct Location;
 struct Type;
-struct CompileOptions;
 
 struct ArgumentValidation {
     enum Error { None, TooFew, TooMany, InvalidName, DuplicateName, InvalidType };
@@ -62,16 +62,16 @@ struct VariadicGenericArgs {
 using NarrowMap = llvm::DenseMap<Decl*, Type>;
 
 struct Typechecker {
-    Typechecker(const CompileOptions& options)
+    Typechecker(const CompileOptions& options, const std::vector<BuildConfig::ResolvedDependency>* dependencies = nullptr)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
-      isPostProcessing(false), options(options) {}
-    void typecheckModule(Module& module, const BuildConfig* config);
+      isPostProcessing(false), options(options), dependencies(dependencies) {}
+    void typecheckModule(Module& module, const CompileOptions& packageOptions);
     void checkUnusedDecls(const Module& mainModule);
 
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
     void typecheckVarDecl(VarDecl& decl);
     void typecheckFieldDecl(FieldDecl& decl);
-    void typecheckTopLevelDecl(Decl& decl, const BuildConfig* config);
+    void typecheckTopLevelDecl(Decl& decl);
     void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);
     void typecheckFunctionDecl(FunctionDecl& decl);
     void typecheckFunctionTemplate(FunctionTemplate& decl);
@@ -97,7 +97,7 @@ struct Typechecker {
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
     void typecheckEnumDecl(EnumDecl& decl);
-    void typecheckImportDecl(ImportDecl& decl, const BuildConfig* config);
+    void typecheckImportDecl(ImportDecl& decl);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType);
     Type typecheckNullLiteralExpr(NullLiteralExpr& expr, Type expectedType);
@@ -130,11 +130,11 @@ struct Typechecker {
                                  std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr, bool diagnoseOutOfRange = true) const;
     /// Inner conversions for pointer reinterpretation must preserve the value representation.
     bool isReinterpretible(const Expr* expr, Type source, Type target, bool diagnoseOutOfRange = true) const;
-    void typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, bool positive = true);
+    void typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, Location endLocation, bool positive = true);
     Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam);
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                 Type expectedType);
-    Decl* findDecl(llvm::StringRef name, Location location) const;
+    Decl* findDecl(llvm::StringRef name, Location location, Location endLocation = {}) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false) const;
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry = true);
@@ -158,7 +158,7 @@ struct Typechecker {
     bool inSameModule(const Decl& decl, Location location) const;
     Module* findModuleForFile(const char* file) const;
     void maybeCaptureVariable(VariableDecl& variableDecl);
-    llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const BuildConfig* config, llvm::StringRef moduleName);
+    llvm::ErrorOr<const Module&> importModule(SourceFile* importer, llvm::StringRef moduleName);
     void deferTypechecking(Decl* decl);
     void postProcess();
 
@@ -182,7 +182,8 @@ struct Typechecker {
     llvm::SmallPtrSet<Decl*, 32> definitelyAssignedDecls;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
-    const CompileOptions& options;
+    CompileOptions options; // Active package's options; switched per module.
+    const std::vector<BuildConfig::ResolvedDependency>* dependencies; // Closure, or null without a project.
 };
 
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location);

@@ -3,6 +3,8 @@
 `cx build` builds a cx project with no configuration:
 run it in the project directory and it compiles every `.cx` file there, recursively,
 into an executable named after the directory.
+The only exception is the `build.cx` file in the project directory itself,
+which holds build settings instead of source code (see below).
 
 ```sh
 myproject/
@@ -65,6 +67,11 @@ Safety checks abort the program with an error on integer overflow and similar
 traps; `--release` drops them for maximum speed, so arithmetic overflow
 wraps instead.
 
+Builds embed debug info: aborts print a stack trace naming the cx functions
+involved, and the binary loads in a debugger (`lldb`, `gdb`).
+On macOS the debug info for `cx build` output is collected into a `.dSYM`
+bundle next to the binary.
+
 ## Installing dependencies
 
 Dependencies are cx libraries hosted in Git repositories.
@@ -87,11 +94,50 @@ import shapes;
 There is no package registry: dependencies are just Git repositories nominated by URL,
 with no central index or publishing step.
 
+### Transitive dependencies
+
+Each dependency's own `build.cx` applies to that dependency: its `defines`,
+`headerSearchPaths`, `librarySearchPaths`, `libraries`, `frameworks`, and
+`pkgConfigDependencies` are used when compiling it, and its `dependencies`
+are fetched and imported the same way, recursively. Paths in a dependency's
+settings resolve against that dependency's directory. Only `name`,
+`outputDirectory`, and `multitarget` stay with the main project.
+
+A package required at two versions, or both vendored and fetched, is an
+error at the importing `import`: remove or unify the duplicate source.
+Command-line `-D`, `-I`, `-L`, `-l`, and `--cflags` flags apply to every
+package; a dependency's `#if` conditions see those plus its own `defines`.
+
+Passing files directly (`cx main.cx`) skips dependency build files: sources
+still resolve, but their settings don't apply. Use `cx build` for projects
+with dependencies.
+
 ### Vendoring
 
 If you'd rather not fetch over the network, you can vendor dependencies instead:
-copy the library sources into your project (for example under `vendor/`),
-and `cx build` compiles them as part of it, with no `import` or `build.cx` entry needed.
+copy each library into its own directory under `vendor/`,
+with the directory name matching the `package` name you'd import,
+and `import` it by that name:
+
+```sh
+myproject/
+├── build.cx
+├── main.cx         # contains: import shapes;
+└── vendor/
+    └── shapes/
+        └── shape.cx
+```
+
+```cx
+import shapes;
+```
+
+`cx build` runs at the project root and only reads the `build.cx` there.
+The `build.cx` at an imported package's root applies to that package as above.
+A `build.cx` anywhere else is an ordinary source file and compiles as usual.
+Everything else under `vendor/` is only reachable via `import`.
+Because vendored code compiles as an imported module rather than as part of
+your project, unused functions in it don't produce warnings.
 Sources kept outside the project can likewise be used with `-I` plus `import`.
 
 Vendored C libraries work the same way: point `headerSearchPaths` at their headers

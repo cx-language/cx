@@ -12,7 +12,7 @@ and the currently implemented features are subject to change, and there are bugs
 
 To learn more about the language, visit the website:
 
-> [emillaine.github.io/cx](https://emillaine.github.io/cx/)
+> [cx-language.github.io/cx](https://cx-language.github.io/cx/)
 
 For more code samples, see [`examples`](examples).
 

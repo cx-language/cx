@@ -3,5 +3,3 @@ int main() {
     void _0 = call test()
     return int 0
 }
-
-extern void test()

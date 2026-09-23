@@ -30,10 +30,14 @@ exponent introduced by `e` or `E` with an optional sign, or both:
 
 ```cs
 void main() {
-    println(100.0);
-    println(1e10);
-    println(1.5e-3);
-    println(2E+2);
+    println(1_000_000); // prints 1000000
+    println(0xFF); // prints 255
+    println(0o17); // prints 15
+    println(0b101); // prints 5
+    println(100.0); // prints 100
+    println(1e10); // prints 1e+10
+    println(1.5e-3); // prints 0.0015
+    println(2E+2); // prints 200
 }
 ```
 

@@ -25,6 +25,10 @@ for file in os.listdir("."):
         output = os.path.splitext(file)[0] + (".exe" if platform.system() == "Windows" else "")
         exit_status = subprocess.call([args.cx, file, "-o", output, "-Werror"] + cx_args)
         os.remove(output)
+        # macOS builds also emit a .dSYM bundle next to the binary.
+        shutil.rmtree(output + ".dSYM", ignore_errors=True)
+    elif file.endswith(".dSYM"):
+        continue
     elif file not in ignored_dirs and os.path.isdir(file):
         extra_args = ["-Wno-unused"] if file in no_unused_dirs else []
         before = set(os.listdir(file))
