@@ -1,0 +1,12 @@
+// RUN: %not %cx test %s 2>&1 | %FileCheck %s
+
+test void testPass() {
+    assert(1 == 1);
+}
+
+test void testFail() {
+    assert(1 == 2);
+}
+
+// CHECK:Assertion failed
+// CHECK:ok testPass

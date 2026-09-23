@@ -1,0 +1,8 @@
+// RUN: cd %S && %cx test | %FileCheck -match-full-lines %s
+// RUN: cd %S && %cx test --backend=c | %FileCheck -match-full-lines %s
+// CHECK:ok testAdd
+// CHECK-NEXT:ok testAddNegative
+
+void main() {
+    println("not under test");
+}
