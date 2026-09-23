@@ -4,8 +4,8 @@
 
 cx keeps the language small so there is less to learn and less that can surprise you.
 There is only one composite value type (`struct`) instead of separate struct and class concepts,
-a single pointer type instead of parallel pointers and references, and member access always
-uses `.`, never `->`. Fewer overlapping concepts means a C++ programmer is productive immediately,
+member functions receive `this` as a non-null `T&` borrow, and member access always uses `.`,
+never `->`. Fewer overlapping concepts means a C++ programmer is productive immediately,
 without relearning which of several similar tools fits each situation.
 
 Control flow follows the same principle. Switch cases break automatically, so a missing `break`

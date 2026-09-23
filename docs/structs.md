@@ -2,7 +2,8 @@
 
 A `struct` is a user-defined data type used to group variables into a single type.
 Additionally, structs may define member functions, that can be called on instances of the struct.
-Inside member functions, `this` is a pointer to the instance that the function was called on.
+Inside member functions, `this` is a non-null reference (`T&`) to the instance that the function was called on.
+Use `&this` when a storable `T*` is required.
 Member functions must be defined inside the struct or enum body.
 
 ```cs

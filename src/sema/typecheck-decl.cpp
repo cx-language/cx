@@ -411,7 +411,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         llvm::SaveAndRestore setInitializedFields(currentInitializedFields, &initializedFields);
 
         if (receiverTypeDecl) {
-            Type thisType = receiverTypeDecl->getTypeForPassing();
+            Type thisType = PointerType::get(receiverTypeDecl->getType(), PointerKind::Reference).withLocation(receiverTypeDecl->getLocation());
             auto* varDecl = makeAST<VarDecl>(thisType, "this", nullptr, &decl, AccessLevel::None, *currentModule, decl.getLocation());
             currentModule->addToSymbolTable(varDecl);
             definitelyAssignedDecls.insert(varDecl);

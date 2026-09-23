@@ -6,15 +6,15 @@ interface Interface {
     This* foo(This* a);
 
     This* bar() {
-        return foo(foo(this));
+        return foo(foo(&this));
     }
 }
 
 struct S: Interface {
-    S() { that = this; }
+    S() { that = &this; }
 
     S* foo(S* a) {
-        return this;
+        return &this;
     }
 }
 

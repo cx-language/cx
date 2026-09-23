@@ -49,7 +49,7 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Undefined, undefined)
 bool Type::isImplicitlyCopyable() const {
     switch (getKind()) {
     case TypeKind::BasicType:
-        return !getDecl() || getDecl()->passByValue();
+        return !getDecl() || getDecl()->isStoredByValue();
     case TypeKind::ArrayType:
         return !isConstantArray() || getElementType().isImplicitlyCopyable();
     case TypeKind::AnonymousStructType:

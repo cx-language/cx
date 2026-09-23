@@ -362,14 +362,19 @@ Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
     return AnonymousStructType::get(std::move(elements));
 }
 
-void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, Location endLocation, bool positive) {
+void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool positive) {
+    if (expr->type.isReferenceType()) {
+        expr = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
+    }
+
+    Type type = expr->type;
     if (!type.removePointer().isBool() && !type.removePointer().isOptionalType()) {
         if (type.isImplementedAsPointer()) {
-            WARN_RANGE(location, endLocation,
+            WARN_RANGE(expr->location, expr->endLocation,
                        "type '" << type << "' " << (positive ? "is always non-null" : "cannot be null") << "; to declare it nullable, use '"
                                 << OptionalType::get(type) << "'");
         } else {
-            ERROR_RANGE(location, endLocation, "type '" << type << "' is not convertible to boolean");
+            ERROR_RANGE(expr->location, expr->endLocation, "type '" << type << "' is not convertible to boolean");
         }
     }
 }
@@ -378,9 +383,11 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
     switch (expr.op) {
-    case Token::Not:
-        typecheckImplicitlyBoolConvertibleExpr(operandType, expr.getOperand().location, expr.getOperand().endLocation, false);
+    case Token::Not: {
+        auto* operand = &expr.getOperand();
+        typecheckImplicitlyBoolConvertibleExpr(operand, false);
         return Type::getBool();
+    }
 
     case Token::Star: // Dereference operation
         if (operandType.removeOptional().isPointerType()) {
@@ -521,13 +528,14 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (op == Token::Is) {
         Type leftType = typecheckExpr(expr.getLHS());
-        if (!leftType.isEnumType()) {
+        Type enumType = leftType.removeReference();
+        if (!enumType.isEnumType()) {
             ERROR(expr.getLHS().location, "left side of 'is' must be an enum, got '" << leftType << "'");
         }
-        typecheckExpr(expr.getRHS(), false, leftType);
+        typecheckExpr(expr.getRHS(), false, enumType);
         auto* enumCase = getIsEnumCase(expr.getRHS());
-        if (!enumCase || enumCase->getEnumDecl() != leftType.getDecl()) {
-            ERROR(expr.getRHS().location, "right side of 'is' must be a case of enum '" << leftType << "'");
+        if (!enumCase || enumCase->getEnumDecl() != enumType.getDecl()) {
+            ERROR(expr.getRHS().location, "right side of 'is' must be a case of enum '" << enumType << "'");
         }
         return Type::getBool();
     }
@@ -537,7 +545,15 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         auto outerNarrowings = narrowedTypes;
         auto afterLHSAssignedDecls = definitelyAssignedDecls;
         applyNarrowings(expr.getLHS(), op == Token::AndAnd);
+        if (leftType.isReferenceType() && (leftType.getPointee().isBool() || leftType.getPointee().isOptionalType())) {
+            expr.setLHS(makeAST<ImplicitCastExpr>(&expr.getLHS(), leftType.getPointee(), ImplicitCastExpr::AutoDereference));
+            leftType = leftType.getPointee();
+        }
         Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
+        if (rightType.isReferenceType() && (rightType.getPointee().isBool() || rightType.getPointee().isOptionalType())) {
+            expr.setRHS(makeAST<ImplicitCastExpr>(&expr.getRHS(), rightType.getPointee(), ImplicitCastExpr::AutoDereference));
+            rightType = rightType.getPointee();
+        }
         // The right side may not execute (short-circuit), so only narrowings valid on both paths survive.
         intersectNarrowings(outerNarrowings);
         definitelyAssignedDecls = afterLHSAssignedDecls;
@@ -835,6 +851,9 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     if (!lhs->isLvalue()) {
         ERROR(lhs->location, "cannot assign to expression of type '" << lhs->type << "'");
     }
+    if (lhs->isThis()) {
+        ERROR(lhs->location, "cannot assign to 'this'");
+    }
     Type lhsType = lhs->assignableType;
     Type rhsType = typecheckExpr(*rhs, false, lhsType);
 
@@ -968,6 +987,11 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
 }
 
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange) const {
+    if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !type.removeOptional().isPointerType()) {
+        auto* dereferenced = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
+        return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange);
+    }
+
     std::optional<ImplicitCastExpr::Kind> implicitCastKind;
     if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind, diagnoseOutOfRange)) {
         if (implicitCastKind) {
@@ -1091,6 +1115,10 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         && (source.getPointee().isMutable() || !target.getPointee().isMutable())
         && (isReinterpretible(source.getPointee(), target.getPointee()) || target.getPointee().isVoid())) {
         return source;
+    }
+
+    if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !target.removeOptional().isPointerType()) {
+        return isImplicitlyConvertible(expr, source.getPointee(), target, allowPointerToTemporary, implicitCastKind, diagnoseOutOfRange);
     }
 
     if (source.isOptionalType() && target.isOptionalType() && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable())) {
@@ -1745,8 +1773,11 @@ void cx::diagnoseClosureConversion(Type source, Type target, Location location) 
 }
 
 std::string cx::narrowingHint(Type source, Type target) {
-    if (target.removeOptional().isPointerType() && !target.removeOptional().isReferenceType()
-        && source.equalsIgnoreTopLevelMutable(target.removeOptional().getPointee())) {
+    Type unwrappedSource = source.removeOptional();
+    Type unwrappedTarget = target.removeOptional();
+    if (unwrappedTarget.isPointerType() && !unwrappedTarget.isReferenceType()
+        && (source.equalsIgnoreTopLevelMutable(unwrappedTarget.getPointee())
+            || (unwrappedSource.isReferenceType() && unwrappedSource.getPointee().equalsIgnoreTopLevelMutable(unwrappedTarget.getPointee())))) {
         return " (use '&' to take the address explicitly)";
     }
     if (source.removeOptional().isPointerType() && source.removeOptional().getPointee().equalsIgnoreTopLevelMutable(target.removeOptional())) {
@@ -3295,8 +3326,8 @@ Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
 }
 
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {
-    auto conditionType = typecheckExpr(*expr.condition);
-    typecheckImplicitlyBoolConvertibleExpr(conditionType, expr.condition->location, expr.condition->endLocation);
+    typecheckExpr(*expr.condition);
+    typecheckImplicitlyBoolConvertibleExpr(expr.condition);
     auto outerNarrowings = narrowedTypes;
     auto outerAssignedDecls = definitelyAssignedDecls;
     applyNarrowings(*expr.condition, true);
@@ -3438,10 +3469,11 @@ static bool enumTemplateMatchesExpectedType(TypeTemplate& typeTemplate, Type exp
 }
 
 // Returns the expected type to take generic arguments from: the expected type itself,
-// or the type it wraps if the expected type is an optional of another instantiation.
-// The latter lets e.g. `Opt<int>? x = Opt.None` resolve through the outer optional.
+// or the type it wraps or borrows. This lets optional and reference contexts resolve
+// through an outer wrapper to the matching enum instantiation.
 static Type matchEnumTemplateExpectedType(TypeTemplate& typeTemplate, Type expectedType) {
-    Type candidates[] = {expectedType, expectedType ? expectedType.removeOptional() : Type()};
+    Type candidates[] = {expectedType, expectedType ? expectedType.removeOptional() : Type(),
+                         expectedType ? expectedType.removeOptional().removeReference() : Type()};
     for (Type candidate : candidates) {
         if (candidate && candidate.isBasicType() && !candidate.getGenericArgs().empty()
             && llvm::none_of(candidate.getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.type.isUnresolvedType(); })
@@ -3455,7 +3487,7 @@ static Type matchEnumTemplateExpectedType(TypeTemplate& typeTemplate, Type expec
 // If the expected type names an enum with a case called `name`, returns that case.
 EnumCase* Typechecker::getExpectedEnumCase(llvm::StringRef name, Type expectedType) {
     if (!expectedType) return nullptr;
-    Type candidates[] = {expectedType, expectedType.removeOptional()};
+    Type candidates[] = {expectedType, expectedType.removeOptional(), expectedType.removeOptional().removeReference()};
     for (Type candidate : candidates) {
         if (candidate.isEnumType()) {
             if (auto* enumCase = llvm::cast<EnumDecl>(candidate.getDecl())->getCaseByName(name)) {
