@@ -40,6 +40,6 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 12, column: 5, scope: !4)
-!8 = !DILocation(line: 12, column: 10, scope: !4)
+!8 = !DILocation(line: 12, column: 11, scope: !4)
 !9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1S4initEP3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !10 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main1S3fooE", scope: !3, file: !3, line: 6, type: !5, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !2)
