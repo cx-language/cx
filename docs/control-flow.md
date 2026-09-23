@@ -90,7 +90,7 @@ enum Outcome {
     Err(string error),
 }
 
-string describe(Outcome* outcome) {
+string describe(Outcome& outcome) {
     if *outcome is Err e {
         return e;
     }
