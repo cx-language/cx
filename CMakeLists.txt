@@ -143,7 +143,12 @@ add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --parallel ${CHECK_PARALLEL_JOBS} -C $<CONFIG>
     USES_TERMINAL)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
-add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config test_rename)
+add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config test_rename test_string_interner)
+
+add_executable(test_string_interner test/ast/test-string-interner.cpp)
+target_include_directories(test_string_interner PRIVATE src)
+target_link_libraries(test_string_interner libcx)
+add_test(NAME string-interner COMMAND test_string_interner)
 
 # Tests for the in-memory compilation API (also used by the WebAssembly build).
 add_executable(test_compile_api test/compile-api/test-compile-api.cpp src/wasm/api.cpp)

@@ -35,6 +35,7 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt16, uint16)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt32, uint32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt64, uint64)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt128, uint128)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CSizeT, c_size_t)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Byte, byte)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float, float)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float32, float32)
@@ -77,7 +78,7 @@ bool Type::isUnsizedArrayPointer() const {
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
     return llvm::StringSwitch<bool>(typeName)
         .Cases({"int", "int8", "int16", "int32", "int64", "int128"}, true)
-        .Cases({"uint", "uint8", "uint16", "uint32", "uint64", "uint128", "byte"}, true)
+        .Cases({"uint", "uint8", "uint16", "uint32", "uint64", "uint128", "byte", "c_size_t"}, true)
         .Cases({"float", "float32", "float64", "float80", "bool", "char"}, true)
         .Default(false);
 }
@@ -113,7 +114,7 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
             if (auto it = replacements.find(sizeParam); it != replacements.end() && it->second.isInt()) {
                 return ArrayType::get(elementType, it->second.getInt(), location);
             }
-            return ArrayType::get(elementType, sizeParam.str(), location);
+            return ArrayType::get(elementType, sizeParam, location);
         }
         return ArrayType::get(elementType, getArraySize(), location);
     }
@@ -158,8 +159,8 @@ Type ArrayType::get(Type elementType, int64_t size, Location location) {
     return getType(ArrayType(elementType, size), elementType.mutability, location);
 }
 
-Type ArrayType::get(Type elementType, std::string sizeParam, Location location) {
-    return getType(ArrayType(elementType, /*size=*/0, std::move(sizeParam)), elementType.mutability, location);
+Type ArrayType::get(Type elementType, llvm::StringRef sizeParam, Location location) {
+    return getType(ArrayType(elementType, /*size=*/0, sizeParam), elementType.mutability, location);
 }
 
 Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Mutability mutability, Location location) {
@@ -230,7 +231,7 @@ std::vector<ParamDecl> FunctionType::getParamDecls(Location location) const {
 }
 
 constexpr auto signedInts = {"int", "int8", "int16", "int32", "int64"};
-constexpr auto unsignedInts = {"uint", "uint8", "uint16", "uint32", "uint64", "byte"};
+constexpr auto unsignedInts = {"uint", "uint8", "uint16", "uint32", "uint64", "byte", "c_size_t"};
 
 bool Type::isInteger() const {
     if (!isBasicType()) return false;
@@ -249,6 +250,11 @@ bool Type::isUnsigned() const {
 
 int Type::getIntegerBitWidth() const {
     ASSERT(isInteger());
+    // c_size_t matches C's size_t, which is pointer-sized: 32-bit on wasm32,
+    // 64-bit on the 64-bit native targets. The frontend runs on the same
+    // width as its target (native host, or wasm32 under Emscripten), so the
+    // host pointer width is the target width. (There is no cross-compilation.)
+    if (isCSizeT()) return static_cast<int>(sizeof(void*) * 8);
     return llvm::StringSwitch<int>(getName())
         .Cases({"int", "uint"}, 32)
         .Cases({"int8", "uint8", "byte"}, 8)

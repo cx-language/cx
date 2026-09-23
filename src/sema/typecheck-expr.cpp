@@ -219,7 +219,7 @@ static std::optional<ArgumentValidation> computeArgParamMapping(llvm::ArrayRef<N
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType) {
     if (findDecls(expr.identifier).empty()) {
         if (auto* enumCase = getExpectedEnumCase(expr.identifier, expectedType)) {
-            MemberExpr qualified(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), expr.location), std::string(expr.identifier), expr.location);
+            MemberExpr qualified(makeAST<VarExpr>(enumCase->getEnumDecl()->getName(), expr.location), expr.identifier, expr.location);
             if (auto* resolvedCase = getEnumCase(qualified, expectedType)) {
                 checkHasAccess(*resolvedCase->getEnumDecl(), expr.location, AccessLevel::None);
                 expr.decl = resolvedCase;
@@ -454,7 +454,7 @@ static std::string mixedPointerOperandHint(const BinaryExpr& expr) {
         if (!valueSide.isConstant() || (!valueSide.type.isInteger() && !valueSide.type.isChar()) || !pointee.isInteger()) return "";
         if (!checkRange(valueSide, valueSide.getConstantIntegerValue(), pointee, false)) return "";
         if (auto* var = llvm::dyn_cast<VarExpr>(&ptrSide)) {
-            return " (to compare the pointed-to value, dereference '*" + var->identifier + "')";
+            return (" (to compare the pointed-to value, dereference '*" + var->identifier + "')").str();
         }
         return " (to compare the pointed-to value, dereference the pointer operand with '*')";
     };
@@ -620,13 +620,13 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                 // the operand values before emitting the lowering.
                 definitelyAssignedDecls.insert(lhsTemp);
                 definitelyAssignedDecls.insert(rhsTemp);
-                lhsBase = makeAST<VarExpr>(std::string(lhsTemp->getName()), expr.location);
-                rhsBase = makeAST<VarExpr>(std::string(rhsTemp->getName()), expr.location);
+                lhsBase = makeAST<VarExpr>(lhsTemp->getName(), expr.location);
+                rhsBase = makeAST<VarExpr>(rhsTemp->getName(), expr.location);
             }
             Expr* result = nullptr;
             for (size_t i = 0; i < leftElements.size(); ++i) {
-                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(lhsBase, std::string(leftElements[i].name), expr.location),
-                                                       makeAST<MemberExpr>(rhsBase, std::string(rightElements[i].name), expr.location), expr.location);
+                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(lhsBase, leftElements[i].name, expr.location),
+                                                       makeAST<MemberExpr>(rhsBase, rightElements[i].name, expr.location), expr.location);
                 result = result ? makeAST<BinaryExpr>(combiner, result, comparison, expr.location) : comparison;
             }
             ASSERT(result);
@@ -641,6 +641,120 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             expr.anonymousStructComparisonLowering = result;
             return Type::getBool();
         }
+    }
+
+    // Array programming (e.g. `float[3] + float[3]`, `float[3] * 2.0`):
+    // element-wise ops over fixed-size arrays, like Odin. Both operands must
+    // be constant-size arrays for array-array ops (sizes must match), or one
+    // array + one scalar convertible to the element type for broadcast.
+    // Lowered to an array literal of element-wise ops over temporaries, so
+    // operands with side effects evaluate once. Returns the array type for
+    // arithmetic, bool for ==/!= (all-equal semantics).
+    {
+        bool leftIsArray = leftType.isArrayType() && leftType.isConstantArray();
+        bool rightIsArray = rightType.isArrayType() && rightType.isConstantArray();
+        bool isArrayOp = (leftIsArray || rightIsArray)
+                      && (op == Token::Plus || op == Token::Minus || op == Token::Star || op == Token::Slash || op == Token::Modulo
+                          || op == Token::PositiveModulo || op == Token::Equal || op == Token::NotEqual);
+        // Bitwise ops on integer arrays are also element-wise.
+        if ((leftIsArray || rightIsArray) && (op == Token::And || op == Token::Or || op == Token::Xor || op == Token::LeftShift || op == Token::RightShift)) {
+            isArrayOp = true;
+        }
+        if (isArrayOp) {
+            Type arrayType;
+            Type elementType;
+            Type scalarType;
+            bool isBroadcast = false;
+            bool scalarOnLeft = false;
+            int64_t arraySize = 0;
+
+            if (leftIsArray && rightIsArray) {
+                if (leftType.getArraySize() != rightType.getArraySize()) {
+                    ERROR_RANGE(expr.location, expr.endLocation,
+                                "array sizes must match for element-wise '" << toString(op) << "' (got '" << leftType << "' and '" << rightType << "')");
+                }
+                // Element types must match (after conversions handled below per-element).
+                // For now require same element type modulo mutability; per-element
+                // conversions (e.g. int literal to float) are handled when
+                // typechecking each element op below.
+                arraySize = leftType.getArraySize();
+                arrayType = leftType;
+                elementType = leftType.getElementType();
+                // Verify right element type is compatible at a high level; detailed
+                // checking happens per-element below.
+                if (!rightType.getElementType().equalsIgnoreTopLevelMutable(elementType)) {
+                    // Allow if elements are mutually convertible via builtin ops;
+                    // per-element typechecking below will diagnose precisely.
+                }
+            } else if (leftIsArray) {
+                isBroadcast = true;
+                arrayType = leftType;
+                elementType = leftType.getElementType();
+                scalarType = rightType;
+                arraySize = leftType.getArraySize();
+            } else {
+                isBroadcast = true;
+                scalarOnLeft = true;
+                arrayType = rightType;
+                elementType = rightType.getElementType();
+                scalarType = leftType;
+                arraySize = rightType.getArraySize();
+            }
+
+            // Only fixed-size arrays with known size lower via unrolling.
+            // Symbolic sizes (generic N) cannot unroll; fall through to normal
+            // handling (which will error appropriately, since no overload exists).
+            // For size mismatches, error directly (no overload could reasonably
+            // handle different-sized builtin arrays element-wise).
+            if (!arrayType.isConstantArray()) {
+                // Fall through; normal handling will error (no builtin op for arrays).
+                goto not_array_programming;
+            }
+
+            // For element type mismatches or non-builtin element ops, fall through
+            // to overload resolution (e.g. `char[N] == string` uses string overloads,
+            // not element-wise). Only proceed with builtin array programming when
+            // element types match exactly and op is builtin for elements.
+            // This preserves backward compatibility for existing array comparisons
+            // via overloads while enabling element-wise ops for matching numerics.
+            if (leftIsArray && rightIsArray) {
+                Type leftElem = leftType.getElementType();
+                Type rightElem = rightType.getElementType();
+                if (!leftElem.equalsIgnoreTopLevelMutable(rightElem)) {
+                    goto not_array_programming;
+                }
+                if (!isBuiltinOp(op, leftElem, rightElem)) {
+                    goto not_array_programming;
+                }
+            } else {
+                // Broadcast: require exact scalar-element match and builtin op;
+                // otherwise fall through to overloads (or standard invalid-operands error).
+                if (!scalarType.equalsIgnoreTopLevelMutable(elementType)) {
+                    goto not_array_programming;
+                }
+                if (!isBuiltinOp(op, elementType, scalarType)) {
+                    goto not_array_programming;
+                }
+            }
+
+            // Comparison returns bool (all elements equal for ==, any different for !=).
+            // IRGen emits element-wise directly (see emitBinaryExpr); no lowering
+            // AST is created here to avoid synthesized-node IRGen issues.
+            // Operands evaluate once in IRGen (emitted once, reused for elements).
+            bool isComparison = (op == Token::Equal || op == Token::NotEqual);
+
+            if (isComparison) {
+                // `a == b` validates above; IRGen emits `(a[0]==b[0]) & ...`.
+                return Type::getBool();
+            } else {
+                // Arithmetic returns the array type. IRGen emits element-wise.
+                // Validate sizes match (done above) and element op is plausible.
+                // Detailed element typechecking happens in IRGen or is deferred
+                // to per-element ops at codegen time; return array type now.
+                return arrayType;
+            }
+        }
+    not_array_programming:;
     }
 
     if (!isBuiltinOp(op, leftType, rightType)) {
@@ -1093,7 +1207,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if (source.isPointerType() && source.getPointee() == target && expr && !expr->isReferenceExpr()) {
+    if (source.isPointerType() && source.getPointee() == target && expr && !expr->isReferenceExpr() && target.isImplicitlyCopyable()) {
+        // Implicit dereference copies the pointee; moving out of a pointer
+        // requires an explicit '*' so moves are visible at the use site.
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoDereference;
         return target;
     }
@@ -1643,6 +1759,9 @@ std::string cx::narrowingHint(Type source, Type target) {
         && source.equalsIgnoreTopLevelMutable(target.removeOptional().getPointee())) {
         return " (use '&' to take the address explicitly)";
     }
+    if (source.removeOptional().isPointerType() && source.removeOptional().getPointee().equalsIgnoreTopLevelMutable(target.removeOptional())) {
+        return " (use '*' to dereference explicitly)";
+    }
     auto isNumeric = [](Type type) { return type.isInteger() || type.isFloatingPoint() || type.isChar(); };
     if (!isNumeric(source) || !isNumeric(target)) return "";
     return " (use '" + target.toString() + "(...)' to convert explicitly)";
@@ -1675,7 +1794,7 @@ static std::string addressOfHintForCall(const CallExpr& expr, llvm::ArrayRef<Dec
 
         if (firstAddressArg) {
             if (auto* var = llvm::dyn_cast<VarExpr>(firstAddressArg)) {
-                return " (did you mean '&" + var->identifier + "'?)";
+                return (" (did you mean '&" + var->identifier + "'?)").str();
             }
         }
         return " (use '&' to pass arguments by pointer)";
@@ -2259,7 +2378,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     auto savedOp = binaryExpr->op;
                     auto savedCallee = calleeVar->identifier;
                     binaryExpr->op = derivedOp;
-                    calleeVar->identifier = getFunctionName(derivedOp);
+                    calleeVar->identifier = internString(getFunctionName(derivedOp));
                     if (swapOperands) std::swap(expr.args[0], expr.args[1]);
                     try {
                         auto derivedCallee = std::string(expr.getFunctionName());
@@ -2483,8 +2602,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.callee)) {
                 if (auto* enumCase = getExpectedEnumCase(varExpr->identifier, expectedType)) {
                     // An unqualified `Ok(...)` mirrors the qualified `Result.Ok(...)`, so desugar to it.
-                    expr.callee = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), varExpr->location),
-                                                      std::string(varExpr->identifier), varExpr->location);
+                    expr.callee =
+                        makeAST<MemberExpr>(makeAST<VarExpr>(enumCase->getEnumDecl()->getName(), varExpr->location), varExpr->identifier, varExpr->location);
                     return typecheckCallExpr(expr, expectedType);
                 }
             }
@@ -2515,7 +2634,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     } else {
         auto type = llvm::cast<EnumCase>(decl)->associatedType;
         if (type) {
-            params = map(type.getAnonymousStructElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
+            params = map(type.getAnonymousStructElements(), [&](auto& e) { return ParamDecl(e.type, e.name, false, decl->getLocation()); });
         }
         validateAndConvertArguments(expr, params, false, decl->getName(), expr.location);
     }
@@ -2868,6 +2987,95 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         if (llvm::is_contained({"count", "length", "size"}, expr.member)) {
             ERROR_RANGE(expr.location, expr.endLocation, "use the '.size()' member function to get the number of elements in an array");
         }
+        // Swizzles (`vec.xy`, `vec.xyz`, `vec.rgba`, etc.): 1-4 chars from
+        // xyzw, rgba, or stpq (one set per swizzle), mapping to indices.
+        // Single-char returns the element; multi-char returns a new array.
+        // Read-only for now (returns a value, not an lvalue).
+        if (baseType.isConstantArray() && expr.member.size() >= 1 && expr.member.size() <= 4) {
+            auto swizzleIndex = [](char c) -> int {
+                switch (c) {
+                case 'x':
+                case 'r':
+                case 's':
+                    return 0;
+                case 'y':
+                case 'g':
+                case 't':
+                    return 1;
+                case 'z':
+                case 'b':
+                case 'p':
+                    return 2;
+                case 'w':
+                case 'a':
+                case 'q':
+                    return 3;
+                default:
+                    return -1;
+                }
+            };
+            auto swizzleSet = [](char c) -> int {
+                if (c == 'x' || c == 'y' || c == 'z' || c == 'w') return 0;
+                if (c == 'r' || c == 'g' || c == 'b' || c == 'a') return 1;
+                if (c == 's' || c == 't' || c == 'p' || c == 'q') return 2;
+                return -1;
+            };
+            bool isSwizzle = true;
+            int firstSet = -1;
+            std::vector<int> indices;
+            for (char c : expr.member) {
+                int idx = swizzleIndex(c);
+                int set = swizzleSet(c);
+                if (idx < 0 || set < 0) {
+                    isSwizzle = false;
+                    break;
+                }
+                if (firstSet < 0) firstSet = set;
+                // GLSL forbids mixing sets in one swizzle (e.g. `xyr`); enforce for 2+ chars.
+                // Single-char swizzles (e.g. `v.x`) are unambiguous, so allow any set.
+                if (expr.member.size() > 1 && set != firstSet) {
+                    isSwizzle = false;
+                    break;
+                }
+                if (idx >= baseType.getArraySize()) {
+                    isSwizzle = false;
+                    break;
+                }
+                indices.push_back(idx);
+            }
+            // Only treat as swizzle if all chars valid, in range, and same set.
+            // Otherwise fall through to the normal "no member" error below, which
+            // is clearer than a swizzle-specific message for typos like `vec.foo`.
+            // Note: single-char `v.x` on arrays is a swizzle (returns element);
+            // it does not conflict with struct fields since arrays have no fields.
+            if (isSwizzle && !indices.empty()) {
+                Type elementType = baseType.getElementType();
+                expr.swizzleIndices.clear();
+                for (int idx : indices) {
+                    expr.swizzleIndices.push_back(idx);
+                }
+                if (indices.size() == 1) {
+                    return elementType.withMutability(baseType.mutability);
+                } else {
+                    return ArrayType::get(elementType, static_cast<int64_t>(indices.size()), expr.location);
+                }
+            }
+            // If member looks like a swizzle but indices out of range (e.g. `float[2].z`),
+            // report a specific error instead of generic "no member".
+            bool looksLikeSwizzle = expr.member.size() >= 1 && expr.member.size() <= 4;
+            if (looksLikeSwizzle) {
+                bool allSwizzleChars = true;
+                for (char c : expr.member) {
+                    if (swizzleIndex(c) < 0) {
+                        allSwizzleChars = false;
+                        break;
+                    }
+                }
+                if (allSwizzleChars) {
+                    ERROR_RANGE(expr.location, expr.endLocation, "swizzle '" << expr.member << "' indexes out of bounds for '" << baseType << "'");
+                }
+            }
+        }
     } else if (baseType.isAnonymousStructType()) {
         for (auto& element : baseType.getAnonymousStructElements()) {
             if (element.name == expr.member) {
@@ -3072,7 +3280,7 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
     }
 
     for (auto* captured : expr.functionDecl->captures) {
-        VarExpr use(captured->getName().str(), expr.location);
+        VarExpr use(captured->getName(), expr.location);
         checkNotMoved(*captured, use);
         if (!captured->type.isImplicitlyCopyable()) {
             movedDecls.insert(captured);
@@ -3419,9 +3627,8 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
     } else if (matchedExpectedType) {
         genericArgTypes = matchedExpectedType.getGenericArgs();
     } else if (call && templateCase->associatedType) {
-        auto params = map(templateCase->associatedType.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
-            return ParamDecl(element.type, std::string(element.name), false, templateCase->getLocation());
-        });
+        auto params = map(templateCase->associatedType.getAnonymousStructElements(),
+                          [&](const AnonymousStructElement& element) { return ParamDecl(element.type, element.name, false, templateCase->getLocation()); });
         if (call->args.size() != params.size()) {
             // Report the count error; inference can't proceed without matching arguments.
             validateAndConvertArguments(*call, params, false, templateCase->getName(), call->location);

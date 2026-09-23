@@ -13,6 +13,7 @@
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 #include "../support/utility.h"
+#include "arena.h"
 
 namespace cx {
 
@@ -89,6 +90,7 @@ struct Type {
     bool isUInt32() const;
     bool isUInt64() const;
     bool isUInt128() const;
+    bool isCSizeT() const;
     bool isByte() const;
     bool isFloat() const;
     bool isFloat32() const;
@@ -154,6 +156,7 @@ struct Type {
     static Type getUInt32(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt128(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCSizeT(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getByte(Mutability mutability = Mutability::Mutable, Location location = Location());
     // TODO: Return correct uintptr type by checking target platform pointer size.
     static Type getUIntPtr(Mutability mutability = Mutability::Mutable, Location location = Location()) { return getUInt64(mutability, location); }
@@ -207,10 +210,10 @@ struct BasicType : TypeBase {
 
 private:
     BasicType(llvm::StringRef name, std::vector<GenericArg>&& genericArgs)
-    : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)), decl(nullptr) {}
+    : TypeBase(TypeKind::BasicType), name(internString(name)), genericArgs(std::move(genericArgs)), decl(nullptr) {}
 
 public:
-    std::string name; // Can be empty for anonymous types imported from C.
+    llvm::StringRef name; // Can be empty for anonymous types imported from C.
     std::vector<GenericArg> genericArgs;
     TypeDecl* decl;
 };
@@ -220,21 +223,23 @@ struct ArrayType : TypeBase {
     static const int64_t UnknownSize = -1;
     static Type get(Type type, int64_t size, Location location = Location());
     // A symbolic size names an integer generic parameter; resolved at instantiation.
-    static Type get(Type type, std::string sizeParam, Location location = Location());
+    static Type get(Type type, llvm::StringRef sizeParam, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayType; }
 
 private:
-    ArrayType(Type type, int64_t size, std::string sizeParam = "")
-    : TypeBase(TypeKind::ArrayType), elementType(type), size(size), sizeParam(std::move(sizeParam)) {}
+    ArrayType(Type type, int64_t size, llvm::StringRef sizeParam = "")
+    : TypeBase(TypeKind::ArrayType), elementType(type), size(size), sizeParam(internString(sizeParam)) {}
 
 public:
     Type elementType;
     int64_t size;
-    std::string sizeParam;
+    llvm::StringRef sizeParam;
 };
 
 struct AnonymousStructElement {
-    std::string name;
+    AnonymousStructElement(llvm::StringRef name, Type type) : name(internString(name)), type(type) {}
+
+    llvm::StringRef name;
     Type type;
 };
 

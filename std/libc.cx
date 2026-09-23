@@ -1,6 +1,6 @@
 // stdlib.h
 /// Allocates size bytes of memory.
-private extern void*? malloc(uint64 size);
+private extern void*? malloc(c_size_t size);
 /// Frees memory allocated by malloc.
 private extern void free(void*? ptr);
 /// Aborts the program immediately.
@@ -42,9 +42,9 @@ private extern FILE*? fdopen(int fd, const char* mode);
 /// Reads a character from the file.
 private extern int fgetc(FILE* file);
 /// Reads elements from the file.
-private extern uint64 fread(void* data, uint64 size, uint64 count, FILE* file);
+private extern c_size_t fread(void* data, c_size_t size, c_size_t count, FILE* file);
 /// Writes elements to the file.
-private extern void fwrite(const void* data, uint64 size, uint64 count, FILE* file);
+private extern c_size_t fwrite(const void* data, c_size_t size, c_size_t count, FILE* file);
 /// Moves the file position.
 private extern void fseek(FILE* file, int64 offset, int origin);
 /// Returns the current file position.
@@ -83,7 +83,9 @@ private const SEEK_END = 2;
 
 // string.h
 /// Returns the length of the string.
-private extern uint64 strlen(const char* string);
+private extern c_size_t strlen(const char* string);
+/// Copies n bytes from src to dest. The regions must not overlap.
+private extern void* memcpy(void* dest, const void* src, c_size_t n);
 
 // ctype.h
 /// Returns true if the character is alphanumeric.

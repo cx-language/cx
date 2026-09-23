@@ -13,6 +13,7 @@ Type      | Meaning
 `uint16`  | 16-bit unsigned integer
 `uint32`  | 32-bit unsigned integer
 `uint64`  | 64-bit unsigned integer
+`c_size_t` | C `size_t` type (pointer-sized unsigned integer: 32-bit on wasm32, 64-bit on 64-bit targets)
 `float`   | 32-bit floating-point number, default type for floating-point literals
 `float32` | 32-bit floating-point number
 `float64` | 64-bit floating-point number

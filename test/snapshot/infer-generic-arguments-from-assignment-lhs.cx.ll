@@ -5,8 +5,8 @@
 %"RangeIterator<int>" = type { i32, i32 }
 %"Range<int>" = type { i32, i32 }
 
-@0 = private unnamed_addr constant [39 x i8] c"integer overflow at allocate.cx:36:46\0A\00", align 1
-@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
+@0 = private unnamed_addr constant [39 x i8] c"integer overflow at allocate.cx:36:55\0A\00", align 1
+@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:71\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
   %i = alloca %"List<int>", align 8
@@ -332,9 +332,9 @@ attributes #0 = { "frame-pointer"="all" }
 !16 = distinct !DISubprogram(name: "deinit", linkageName: "_EN3std4ListI3intE6deinitE", scope: !12, file: !12, line: 43, type: !5, scopeLine: 43, spFlags: DISPFlagDefinition, unit: !2)
 !17 = !DILocation(line: 45, column: 13, scope: !16)
 !18 = !DILocation(line: 48, column: 13, scope: !16)
-!19 = distinct !DISubprogram(name: "iterator", linkageName: "_EN3std4ListI3intE8iteratorE", scope: !12, file: !12, line: 226, type: !5, scopeLine: 226, spFlags: DISPFlagDefinition, unit: !2)
-!20 = !DILocation(line: 228, column: 30, scope: !19)
-!21 = !DILocation(line: 228, column: 16, scope: !19)
+!19 = distinct !DISubprogram(name: "iterator", linkageName: "_EN3std4ListI3intE8iteratorE", scope: !12, file: !12, line: 227, type: !5, scopeLine: 227, spFlags: DISPFlagDefinition, unit: !2)
+!20 = !DILocation(line: 229, column: 30, scope: !19)
+!21 = !DILocation(line: 229, column: 16, scope: !19)
 !22 = distinct !DISubprogram(name: "hasValue", linkageName: "_EN3std13ArrayIteratorI3intE8hasValueE", scope: !23, file: !23, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
 !23 = !DIFile(filename: "ArrayIterator.cx")
 !24 = distinct !DISubprogram(name: "value", linkageName: "_EN3std13ArrayIteratorI3intE5valueE", scope: !23, file: !23, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
@@ -342,11 +342,11 @@ attributes #0 = { "frame-pointer"="all" }
 !26 = distinct !DISubprogram(name: "deallocate", linkageName: "_EN3std10deallocateIAU_3intEEAU_3int", scope: !27, file: !27, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
 !27 = !DIFile(filename: "allocate.cx")
 !28 = !DILocation(line: 53, column: 5, scope: !26)
-!29 = distinct !DISubprogram(name: "reserve", linkageName: "_EN3std4ListI3intE7reserveE3int", scope: !12, file: !12, line: 140, type: !5, scopeLine: 140, spFlags: DISPFlagDefinition, unit: !2)
-!30 = !DILocation(line: 142, column: 29, scope: !29)
-!31 = !DILocation(line: 144, column: 27, scope: !29)
-!32 = !DILocation(line: 144, column: 13, scope: !29)
-!33 = !DILocation(line: 151, column: 17, scope: !29)
+!29 = distinct !DISubprogram(name: "reserve", linkageName: "_EN3std4ListI3intE7reserveE3int", scope: !12, file: !12, line: 141, type: !5, scopeLine: 141, spFlags: DISPFlagDefinition, unit: !2)
+!30 = !DILocation(line: 143, column: 29, scope: !29)
+!31 = !DILocation(line: 145, column: 27, scope: !29)
+!32 = !DILocation(line: 145, column: 13, scope: !29)
+!33 = !DILocation(line: 152, column: 17, scope: !29)
 !34 = distinct !DISubprogram(name: "init", linkageName: "_EN3std5SliceI3intE4initER4ListI3intE", scope: !35, file: !35, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
 !35 = !DIFile(filename: "Slice.cx")
 !36 = !DILocation(line: 14, column: 21, scope: !34)

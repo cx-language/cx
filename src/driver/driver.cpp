@@ -360,27 +360,23 @@ static bool synthesizeTestMain(Module& mainModule) {
     // as an ordinary (uncalled) function so test files can live next to it.
     for (Decl* decl : mainModule.symbolTable.findInTopLevelScope("main")) {
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
-            functionDecl->proto.name = "__cx_test_user_main";
+            functionDecl->proto.name = internString("__cx_test_user_main");
             functionDecl->referenced = true;
         }
     }
 
-    FunctionProto proto;
-    proto.name = "main";
-    proto.returnType = Type::getVoid();
-    proto.varArg = false;
-    proto.external = false;
+    FunctionProto proto("main", {}, Type::getVoid());
     auto* mainDecl = makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), AccessLevel::Default, mainModule,
                                            tests.empty() ? Location() : tests.front()->getLocation());
     std::vector<Stmt*> body;
     for (FunctionDecl* test : tests) {
-        body.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(makeAST<VarExpr>(std::string(test->getName()), test->getLocation()), std::vector<NamedValue>(),
+        body.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(makeAST<VarExpr>(test->getName(), test->getLocation()), std::vector<NamedValue>(),
                                                            std::vector<GenericArg>(), test->getLocation())));
         std::vector<NamedValue> printArgs;
         printArgs.emplace_back(makeAST<StringLiteralExpr>(std::string("ok "), test->getLocation()));
         printArgs.emplace_back(makeAST<StringLiteralExpr>(std::string(test->getName()), test->getLocation()));
-        body.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(makeAST<VarExpr>(std::string("println"), test->getLocation()), std::move(printArgs),
-                                                           std::vector<GenericArg>(), test->getLocation())));
+        body.push_back(makeAST<ExprStmt>(
+            makeAST<CallExpr>(makeAST<VarExpr>("println", test->getLocation()), std::move(printArgs), std::vector<GenericArg>(), test->getLocation())));
     }
     mainDecl->body = std::move(body);
     mainModule.sourceFiles.front().topLevelDecls.push_back(mainDecl);

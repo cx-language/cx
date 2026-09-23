@@ -467,8 +467,7 @@ EnumCase* Typechecker::typecheckSwitchCaseValue(Expr*& value, Type conditionType
             auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
             if (enumDecl->getCaseByName(varExpr->identifier)) {
                 // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
-                value = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumDecl->getName()), varExpr->location), std::string(varExpr->identifier),
-                                            varExpr->location);
+                value = makeAST<MemberExpr>(makeAST<VarExpr>(enumDecl->getName(), varExpr->location), varExpr->identifier, varExpr->location);
             }
         }
     }
@@ -517,12 +516,12 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
         Type pointeeType = conditionType.getPointee();
         // Automatically dereference pointers to switchable values. Enums with associated values are excluded;
         // they need the address for tag/associated-value access, so dereference those explicitly (e.g. `switch (*p)`).
+        // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees
+        // (moving out of a pointer elsewhere requires an explicit '*').
         bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
         if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
-            if (auto dereferenced = convert(condition, pointeeType)) {
-                condition = dereferenced;
-                conditionType = pointeeType;
-            }
+            condition = makeAST<ImplicitCastExpr>(condition, pointeeType, ImplicitCastExpr::AutoDereference);
+            conditionType = pointeeType;
         }
     }
 
@@ -551,6 +550,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         Type pointeeType = pointerType.getPointee();
         // Automatically dereference pointers to switchable values. Enums with associated values are excluded;
         // they need the address for tag/associated-value access, so dereference those explicitly (e.g. `switch (*p)`).
+        // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees.
         bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
         if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
             if (conditionType.isOptionalType() && hasNullCase) {
@@ -563,7 +563,10 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
                         conditionType = pointerType;
                     }
                 }
-                if (auto dereferenced = convert(stmt.condition, pointeeType)) {
+                if (conditionType.isPointerType() && conditionType.getPointee() == pointeeType) {
+                    stmt.condition = makeAST<ImplicitCastExpr>(stmt.condition, pointeeType, ImplicitCastExpr::AutoDereference);
+                    conditionType = pointeeType;
+                } else if (auto dereferenced = convert(stmt.condition, pointeeType)) {
                     stmt.condition = dereferenced;
                     conditionType = pointeeType;
                 }
@@ -608,8 +611,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
                 auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
                 if (enumDecl->getCaseByName(varExpr->identifier)) {
                     // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
-                    switchCase.value = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumDecl->getName()), varExpr->location),
-                                                           std::string(varExpr->identifier), varExpr->location);
+                    switchCase.value = makeAST<MemberExpr>(makeAST<VarExpr>(enumDecl->getName(), varExpr->location), varExpr->identifier, varExpr->location);
                 }
             }
         }
