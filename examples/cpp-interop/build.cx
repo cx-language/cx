@@ -1,0 +1,3 @@
+var name = "cpp-interop"
+var libraries = ["cpp-interop-math", "c++"]
+var librarySearchPaths = ["."]
