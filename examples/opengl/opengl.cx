@@ -85,9 +85,10 @@ int main() {
 
 void LoadShader(GLuint shaderID, string path) {
     StringBuffer shaderSource = readFile(path)!;
-    const char* shaderSourcePointer = shaderSource.cString();
+    char* shaderSourcePointer = shaderSource.cString();
 
-    glShaderSource(shaderID, 1, &shaderSourcePointer, null);
+    // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
+    glShaderSource(shaderID, 1, cast<const char*?*>(&shaderSourcePointer), null);
     glCompileShader(shaderID);
 
     GLint infoLogLength = 0;

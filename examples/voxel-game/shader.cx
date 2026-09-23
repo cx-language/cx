@@ -7,7 +7,8 @@ uint compileShader(string path, uint kind) {
     }
     var shader = glCreateShader(kind);
     var cstr = source.cString();
-    glShaderSource(shader, 1, &cstr, null);
+    // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
+    glShaderSource(shader, 1, cast<const char*?*>(&cstr), null);
     glCompileShader(shader);
     int status = undefined;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
