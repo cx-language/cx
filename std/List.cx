@@ -81,7 +81,7 @@ struct List<Element> {
             indexOutOfBounds(index);
         }
 
-        return buffer[size - index];
+        return &buffer[size - index];
     }
 
     /// Sets the element at the given index.
@@ -234,12 +234,12 @@ struct List<Element> {
     }
 
     /// Lazily transforms the elements. Collect the results with toList().
-    MappedIterator<Output, Element, ArrayIterator<Element>> map<Output>(Output(Element&) transform) {
+    MappedIterator<Output, Element, ArrayIterator<Element>> map<Output>(Output(Element) transform) {
         return MappedIterator(iterator(), transform);
     }
 
     /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
-    FilterIterator<Element, ArrayIterator<Element>> filter(bool(Element&) include) {
+    FilterIterator<Element, ArrayIterator<Element>> filter(bool(Element) include) {
         return FilterIterator(iterator(), include);
     }
 
