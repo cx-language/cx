@@ -426,14 +426,6 @@ Type TypeDecl::getType(Mutability mutability) const {
     return BasicType::get(name, genericArgs, mutability, location);
 }
 
-Type TypeDecl::getTypeForPassing() const {
-    if ((tag == TypeTag::Struct && !isCopyable()) || tag == TypeTag::Interface) {
-        return PointerType::get(getType()).withLocation(location);
-    } else {
-        return getType();
-    }
-}
-
 unsigned TypeDecl::getFieldIndex(const FieldDecl* field) const {
     for (const auto& p : llvm::enumerate(fields)) {
         if (&p.value() == field) {

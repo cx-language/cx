@@ -619,6 +619,9 @@ llvm::APSInt UnaryExpr::getConstantIntegerValue() const {
 }
 
 bool cx::isBuiltinOp(Token::Kind op, Type left, Type right) {
+    left = left.removeReference();
+    right = right.removeReference();
+
     if (op == Token::Assignment) return true;
     if (op == Token::DotDot || op == Token::DotDotDot) return false;
     // Optionals keep resolving to the stdlib operators rather than builtin tag comparisons.

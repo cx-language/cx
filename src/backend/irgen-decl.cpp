@@ -32,7 +32,9 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     }
 
     if (decl.isMethodDecl()) {
-        params.insert(params.begin(), Parameter{ValueKind::Parameter, getIRType(decl.getTypeDecl()->getType().getPointerTo()), "this"});
+        // Method receivers are always T&; both lower to a pointer.
+        params.insert(params.begin(),
+                      Parameter{ValueKind::Parameter, getIRType(PointerType::get(decl.getTypeDecl()->getType(), PointerKind::Reference)), "this"});
     }
 
     auto returnType = getIRType(decl.isMain() ? Type::getInt() : decl.getReturnType());

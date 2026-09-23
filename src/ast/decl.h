@@ -125,14 +125,11 @@ struct VariableDecl : Decl {
     Decl* parent;
     Type type;
 
-    /// The implicit `this` is a pointer at runtime even with a by-value declared type
-    /// (Copyable struct or union receiver), so capturing it carries the pointer.
     bool isReferenceCapture() const { return getName() == "this"; }
     /// The closure field and hidden parameter type when capturing this variable.
     Type getCaptureType() const {
         // Capturing a borrow stores the address like capturing a pointer; the closure never owns the value.
-        if (type.isReferenceType()) return type.getPointee().getPointerTo();
-        return isReferenceCapture() ? type.removePointer().getPointerTo() : type;
+        return type.isReferenceType() ? type.getPointee().getPointerTo() : type;
     }
 
 protected:
@@ -310,8 +307,9 @@ struct TypeDecl : Decl {
     DestructorDecl* getDestructor() const;
     Type getType(Mutability mutability = Mutability::Mutable) const;
     bool isClosure() const { return isStruct() && getName().starts_with("__closure"); }
-    Type getTypeForPassing() const;
-    bool passByValue() const { return ((isStruct() || tag == TypeTag::Enum) && isCopyable()) || isUnion(); }
+    // Whether values of this type are copied rather than moved. Independent of
+    // receiver passing: method receivers are always T&.
+    bool isStoredByValue() const { return ((isStruct() || tag == TypeTag::Enum) && isCopyable()) || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isInterface() const { return tag == TypeTag::Interface; }
     bool isUnion() const { return tag == TypeTag::Union; }
