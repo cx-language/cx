@@ -1,6 +1,6 @@
 // RUN: %cx run %s | %FileCheck %s
 
-bool isEven(int n) {
+bool isEven(int& n) {
     return n % 2 == 0;
 }
 

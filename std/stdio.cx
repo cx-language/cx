@@ -61,7 +61,7 @@ StringBuffer join<T: Printable>(Slice<T> array, string separator) {
 }
 
 /// Joins the list elements into a string with the given separator.
-StringBuffer join<T: Printable>(List<T>* list, string separator) {
+StringBuffer join<T: Printable>(List<T>& list, string separator) {
     return join(Slice(list), separator);
 }
 
@@ -80,7 +80,7 @@ T sum<T: Addable>(Slice<T> array) {
 }
 
 /// Returns the sum of the list elements, aborting on empty lists.
-T sum<T: Addable>(List<T>* list) {
+T sum<T: Addable>(List<T>& list) {
     return sum(Slice(list));
 }
 

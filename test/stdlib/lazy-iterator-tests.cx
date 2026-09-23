@@ -3,12 +3,12 @@
 int transformCalls = 0;
 int filterCalls = 0;
 
-int countTransform(int x) {
+int countTransform(int& x) {
     transformCalls++;
     return x * 2;
 }
 
-bool countFilter(int x) {
+bool countFilter(int& x) {
     filterCalls++;
     return x % 2 == 0;
 }
