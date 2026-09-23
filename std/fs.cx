@@ -12,7 +12,13 @@ private extern int _chdir(const char* path);
 private extern int access(const char* path, int mode);
 private extern int mkdir(const char* path, int mode);
 private extern int rmdir(const char* path);
+#if wasm
+// wasm32 size_t is 32-bit, unlike the 64-bit native targets: declare the
+// matching width so the generated call validates against xcc's headers.
+private extern char*? getcwd(char*? buffer, uint size);
+#else
 private extern char*? getcwd(char*? buffer, uint64 size);
+#endif
 private extern int chdir(const char* path);
 #endif
 private extern int rename(const char* oldName, const char* newName);
