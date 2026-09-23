@@ -2,7 +2,7 @@
 //
 // All functions treat '/' and '\' as separators, so Windows-style paths
 // work without preprocessing. Functions returning `string` return views
-// into their argument; functions returning `StringBuffer` return owned values.
+// into their argument; functions returning `StringBuf` return owned values.
 
 /// Returns true for '/' and '\'.
 bool isSeparator(char c) {
@@ -126,18 +126,18 @@ string stem(string path) {
 }
 
 /// Returns the path without its last extension.
-StringBuffer stripExtension(string path) {
-    return StringBuffer(splitExtension(path).root);
+StringBuf stripExtension(string path) {
+    return StringBuf(splitExtension(path).root);
 }
 
 /// Returns the path with its last extension replaced.
 ///
 /// The new extension may be given with or without the dot, and ""
 /// strips the extension.
-StringBuffer withExtension(string path, string newExt) {
+StringBuf withExtension(string path, string newExt) {
     var root = splitExtension(path).root;
     if newExt.empty() {
-        return StringBuffer(root);
+        return StringBuf(root);
     }
     if newExt[0] == '.' {
         return root + newExt;
@@ -162,29 +162,29 @@ bool isHidden(string path) {
 /// A rooted b wins, keeping a's drive when b has none; a b with a
 /// different drive also wins. Empty a yields b, and empty b yields a
 /// with a trailing slash.
-StringBuffer join(string a, string b) {
+StringBuf join(string a, string b) {
     if b.empty() {
         if a.empty() {
-            return StringBuffer();
+            return StringBuf();
         }
         if isSeparator(a[a.size() - 1]) {
-            return StringBuffer(a);
+            return StringBuf(a);
         }
         return a + "/";
     }
     if a.empty() {
-        return StringBuffer(b);
+        return StringBuf(b);
     }
     var splitA = splitDrive(a);
     var splitB = splitDrive(b);
     if splitB.drive.size() > 0 && splitB.drive != splitA.drive {
-        return StringBuffer(b);
+        return StringBuf(b);
     }
     if splitB.rest.size() > 0 && isSeparator(splitB.rest[0]) {
         if splitB.drive.size() == 0 && splitA.drive.size() > 0 {
             return splitA.drive + splitB.rest;
         }
-        return StringBuffer(b);
+        return StringBuf(b);
     }
     var restA = a;
     var prefix = "";
@@ -207,14 +207,14 @@ StringBuffer join(string a, string b) {
         if restA.size() > 0 {
             return restA + b;
         }
-        return StringBuffer(b);
+        return StringBuf(b);
     }
     return prefix + head + "/" + b;
 }
 
 /// Folds join over the parts.
-StringBuffer joinAll(string[] parts) {
-    var result = StringBuffer();
+StringBuf joinAll(string[] parts) {
+    var result = StringBuf();
     for part in parts {
         result = join(string(&result), part);
     }
@@ -222,8 +222,8 @@ StringBuffer joinAll(string[] parts) {
 }
 
 /// Folds join over a list; handy for rejoining components() output.
-StringBuffer joinAll(List<string>& parts) {
-    var result = StringBuffer();
+StringBuf joinAll(List<string>& parts) {
+    var result = StringBuf();
     for part in parts {
         result = join(string(&result), part);
     }
@@ -231,8 +231,8 @@ StringBuffer joinAll(List<string>& parts) {
 }
 
 /// Replaces '\' with '/'.
-StringBuffer toPosixSeparators(string path) {
-    var result = StringBuffer(path);
+StringBuf toPosixSeparators(string path) {
+    var result = StringBuf(path);
     var i = 0;
     while i < result.size() {
         if result[i] == '\\' {
@@ -248,7 +248,7 @@ StringBuffer toPosixSeparators(string path) {
 ///
 /// Going above the root stays at the root; leading ".." is preserved
 /// in relative paths. The drive prefix is preserved, and "" becomes ".".
-StringBuffer normalize(string path) {
+StringBuf normalize(string path) {
     var drive = splitDrive(path);
     var rest = drive.rest;
     var rooted = rest.size() > 0 && isSeparator(rest[0]);
@@ -273,7 +273,7 @@ StringBuffer normalize(string path) {
         }
         i++;
     }
-    var result = StringBuffer();
+    var result = StringBuf();
     var d = 0;
     while d < drive.drive.size() {
         if drive.drive[d] == '\\' {
@@ -304,7 +304,7 @@ StringBuffer normalize(string path) {
 ///
 /// When the drives differ or exactly one side is absolute, returns
 /// the normalized `to`.
-StringBuffer relativePath(string from, string to) {
+StringBuf relativePath(string from, string to) {
     var nfrom = normalize(from);
     var nto = normalize(to);
     var sfrom = string(&nfrom);
@@ -329,7 +329,7 @@ StringBuffer relativePath(string from, string to) {
             && fromParts[common] == toParts[common] {
         common++;
     }
-    var result = StringBuffer();
+    var result = StringBuf();
     var u = 0;
     while u < fromParts.size() - common {
         if u > 0 {

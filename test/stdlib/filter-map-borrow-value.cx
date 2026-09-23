@@ -18,7 +18,7 @@ int doubleRef(int& n) {
     return *n * 2;
 }
 
-bool isLongRef(StringBuffer& s) {
+bool isLongRef(StringBuf& s) {
     return s.size() > 1;
 }
 
@@ -44,7 +44,7 @@ void main() {
     assert(numbers.all(isEvenRef) == false);
     assert(numbers.all(n => n >= 0) == true);
 
-    var buffers = List([StringBuffer("a"), StringBuffer("bb"), StringBuffer("ccc")]);
+    var buffers = List([StringBuf("a"), StringBuf("bb"), StringBuf("ccc")]);
     assert(buffers.filter(isLongRef).toList().size() == 2);
     assert(buffers.size() == 3);
     assert(buffers.filter(s => s.size() > 1).toList().size() == 2);

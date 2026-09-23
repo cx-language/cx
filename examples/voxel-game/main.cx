@@ -223,7 +223,7 @@ int runGame(bool debug) {
             frameMax = dt;
         }
         if now - fpsStart >= 1.0 {
-            var title = StringBuffer("voxel-game - ");
+            var title = StringBuf("voxel-game - ");
             title.append(fpsFrames);
             title.append(" FPS (");
             title.append(int(frameMax * 1000.0));

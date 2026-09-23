@@ -18,8 +18,8 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     /// Initializes a string viewing the given buffer.
-    string(StringBuffer& stringBuffer) {
-        characters = Slice(stringBuffer.data(), stringBuffer.size());
+    string(StringBuf& stringBuf) {
+        characters = Slice(stringBuf.data(), stringBuf.size());
     }
 
     /// Returns true if the string has no characters.
@@ -265,8 +265,8 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     // TODO: return iterator instead of eagerly allocating?
     /// Returns the string with special characters escaped.
-    StringBuffer escape() {
-        var result = StringBuffer();
+    StringBuf escape() {
+        var result = StringBuf();
 
         for c in this {
             switch c {
