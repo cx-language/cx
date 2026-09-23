@@ -121,10 +121,10 @@ This is how containers destroy their elements:
 
 ```cs
 void main() {
-    var buffer = allocateArray<StringBuffer>(1);
+    var buffer = allocateArray<StringBuf>(1);
 
     var slot = &buffer[0];
-    slot.init(StringBuffer("hi"));
+    slot.init(StringBuf("hi"));
     println(buffer[0]); // prints "hi"
 
     buffer[0].deinit(); // destroys the element; nothing will destroy it again

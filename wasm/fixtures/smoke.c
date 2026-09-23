@@ -45,7 +45,7 @@ struct _4ListI4charE {
     int capacity;
 };
 
-struct _12StringBuffer {
+struct _9StringBuf {
     struct _4ListI4charE characters;
 };
 
@@ -93,40 +93,40 @@ struct _16OutputFileStream _EN3std6stdoutE(void);
 void _EN3std16OutputFileStream4initE14fileDescriptor3int(struct _16OutputFileStream* this, int fileDescriptor);
 struct _16OutputFileStream _EN3std6stderrE(void);
 int _EN3std11convertHashE6uint64(uint64_t hash);
-struct _12StringBuffer _EN3stdplE6string6string(struct _6string a, struct _6string b);
-void _EN3std12StringBuffer6deinitE(struct _12StringBuffer* this);
-void _EN3std12StringBuffer4initE(struct _12StringBuffer* this);
+struct _9StringBuf _EN3stdplE6string6string(struct _6string a, struct _6string b);
+void _EN3std9StringBuf6deinitE(struct _9StringBuf* this);
+void _EN3std9StringBuf4initE(struct _9StringBuf* this);
 struct _14StringIterator _EN3std6string8iteratorE(struct _6string* this);
 _Bool _EN3std14StringIterator8hasValueE(struct _14StringIterator* this);
 char _EN3std14StringIterator5valueE(struct _14StringIterator* this);
-void _EN3std12StringBuffer4pushE4char(struct _12StringBuffer* this, char c);
+void _EN3std9StringBuf4pushE4char(struct _9StringBuf* this, char c);
 void _EN3std14StringIterator9incrementE(struct _14StringIterator* this);
-struct _12StringBuffer _EN3stdplE6string4char(struct _6string a, char b);
+struct _9StringBuf _EN3stdplE6string4char(struct _6string a, char b);
 void _EN3std6string4initEP4char3int(struct _6string* this, char* pointer, int length);
-struct _12StringBuffer _EN3stdplE6stringAU_4char(struct _6string a, char* b);
+struct _9StringBuf _EN3stdplE6stringAU_4char(struct _6string a, char* b);
 void _EN3std6string4initEP4char(struct _6string* this, char* cString);
-struct _12StringBuffer _EN3stdplE12StringBuffer6string(struct _12StringBuffer a, struct _6string b);
-struct _12StringBuffer _EN3stdplE12StringBuffer4char(struct _12StringBuffer a, char b);
-struct _12StringBuffer _EN3stdplE12StringBufferAU_4char(struct _12StringBuffer a, char* b);
-_Bool _EN3stdeqEP12StringBufferP12StringBuffer(struct _12StringBuffer* a, struct _12StringBuffer* b);
+struct _9StringBuf _EN3stdplE9StringBuf6string(struct _9StringBuf a, struct _6string b);
+struct _9StringBuf _EN3stdplE9StringBuf4char(struct _9StringBuf a, char b);
+struct _9StringBuf _EN3stdplE9StringBufAU_4char(struct _9StringBuf a, char* b);
+_Bool _EN3stdeqEP9StringBufP9StringBuf(struct _9StringBuf* a, struct _9StringBuf* b);
 _Bool _EN3stdeqE6string6string(struct _6string a, struct _6string b);
-void _EN3std6string4initEP12StringBuffer(struct _6string* this, struct _12StringBuffer* stringBuffer);
-_Bool _EN3stdeqEP12StringBuffer6string(struct _12StringBuffer* a, struct _6string b);
-_Bool _EN3stdneEP12StringBuffer6string(struct _12StringBuffer* a, struct _6string b);
+void _EN3std6string4initEP9StringBuf(struct _6string* this, struct _9StringBuf* stringBuf);
+_Bool _EN3stdeqEP9StringBuf6string(struct _9StringBuf* a, struct _6string b);
+_Bool _EN3stdneEP9StringBuf6string(struct _9StringBuf* a, struct _6string b);
 _Bool _EN3stdneI6stringEEP6stringP6string(struct _6string* a, struct _6string* b);
-_Bool _EN3stdeqE6stringP12StringBuffer(struct _6string a, struct _12StringBuffer* b);
-_Bool _EN3stdneE6stringP12StringBuffer(struct _6string a, struct _12StringBuffer* b);
-_Bool _EN3stdeqEAU_4charP12StringBuffer(char* a, struct _12StringBuffer* b);
-_Bool _EN3stdneEAU_4charP12StringBuffer(char* a, struct _12StringBuffer* b);
-_Bool _EN3stdeqEP12StringBufferAU_4char(struct _12StringBuffer* a, char* b);
-_Bool _EN3stdneEP12StringBufferAU_4char(struct _12StringBuffer* a, char* b);
+_Bool _EN3stdeqE6stringP9StringBuf(struct _6string a, struct _9StringBuf* b);
+_Bool _EN3stdneE6stringP9StringBuf(struct _6string a, struct _9StringBuf* b);
+_Bool _EN3stdeqEAU_4charP9StringBuf(char* a, struct _9StringBuf* b);
+_Bool _EN3stdneEAU_4charP9StringBuf(char* a, struct _9StringBuf* b);
+_Bool _EN3stdeqEP9StringBufAU_4char(struct _9StringBuf* a, char* b);
+_Bool _EN3stdneEP9StringBufAU_4char(struct _9StringBuf* a, char* b);
 void _EN3std12abortWrapperE(void);
 void _EN3std15printStackTraceE(void);
 void _EN3std16setAbortBehaviorE(void);
-void _EN3std10printFloatE7float64P12StringBuffer(double value, struct _12StringBuffer* stream);
-_Bool _EN3std12StringBuffer5writeE6string(struct _12StringBuffer* this, struct _6string s);
-void _EN3std11printSignedE5int64P12StringBuffer(int64_t value, struct _12StringBuffer* stream);
-void _EN3std13printUnsignedE6uint64P12StringBuffer(uint64_t value, struct _12StringBuffer* stream);
+void _EN3std10printFloatE7float64P9StringBuf(double value, struct _9StringBuf* stream);
+_Bool _EN3std9StringBuf5writeE6string(struct _9StringBuf* this, struct _6string s);
+void _EN3std11printSignedE5int64P9StringBuf(int64_t value, struct _9StringBuf* stream);
+void _EN3std13printUnsignedE6uint64P9StringBuf(uint64_t value, struct _9StringBuf* stream);
 int backtrace(void** array, int size);
 char** backtrace_symbols(void** array, int size);
 struct _13RangeIteratorI3intE _EN3std5RangeI3intE8iteratorE(struct _5RangeI3intE* this);
@@ -137,13 +137,13 @@ void _EN3std13RangeIteratorI3intE9incrementE(struct _13RangeIteratorI3intE* this
 void _EN3std7printlnEOAU_4char(char const* value);
 void _EN3std5printEOAU_4char(char const* cString);
 void _EN3std5printI4charEE4char(char value);
-struct _12StringBuffer _EN3std8readLineE(void);
-struct _12StringBuffer _EN3std8readFileE6string(struct _6string path);
-char* _EN3std12StringBuffer7cStringE(struct _12StringBuffer* this);
-void _EN3std12StringBuffer4initE6string(struct _12StringBuffer* this, struct _6string s);
+struct _9StringBuf _EN3std8readLineE(void);
+struct _9StringBuf _EN3std8readFileE6string(struct _6string path);
+char* _EN3std9StringBuf7cStringE(struct _9StringBuf* this);
+void _EN3std9StringBuf4initE6string(struct _9StringBuf* this, struct _6string s);
 void _EN3std10assertFailEP4char(char const* message);
-void _EN3std12StringBuffer4initE17uninitializedSize3int(struct _12StringBuffer* this, int uninitializedSize);
-char* _EN3std12StringBuffer4dataE(struct _12StringBuffer* this);
+void _EN3std9StringBuf4initE17uninitializedSize3int(struct _9StringBuf* this, int uninitializedSize);
+char* _EN3std9StringBuf4dataE(struct _9StringBuf* this);
 _Bool _EN3std9writeFileE6string6string(struct _6string path, struct _6string content);
 char* _EN3std6string4dataE(struct _6string* this);
 int _EN3std6string4sizeE(struct _6string* this);
@@ -158,11 +158,11 @@ void _EN3std4ListI4charE4initE(struct _4ListI4charE* this);
 void _EN3std4ListI4charE4pushE4char(struct _4ListI4charE* this, char element);
 void _EN3std14StringIterator4initE6string(struct _14StringIterator* this, struct _6string s);
 void _EN3std4ListI4charEixaE3int4char(struct _4ListI4charE* this, int index, char element);
-int _EN3std12StringBuffer4sizeE(struct _12StringBuffer* this);
+int _EN3std9StringBuf4sizeE(struct _9StringBuf* this);
 void _EN3std5SliceI4charE4initEP4char3int(struct _5SliceI4charE* this, char* data, int size);
 int _EN3std6string7compareEP6string(struct _6string* this, struct _6string* other);
 void _EN3std13RangeIteratorI3intE4initE5RangeI3intE(struct _13RangeIteratorI3intE* this, struct _5RangeI3intE range);
-struct _12StringBuffer _EN3std4char8toStringE(char* this);
+struct _9StringBuf _EN3std4char8toStringE(char* this);
 void _EN3std4ListI4charE4initE8capacity3int(struct _4ListI4charE* this, int capacity);
 void _EN3std4ListI4charE4initE17uninitializedSize3int(struct _4ListI4charE* this, int uninitializedSize);
 char* _EN3std4ListI4charE4dataE(struct _4ListI4charE* this);
@@ -181,17 +181,17 @@ int _EN3std4ListI4charE4sizeE(struct _4ListI4charE* this);
 int* _EN3std3minI3intEEP3intP3int(int* a, int* b);
 int _EN3std5RangeI3intE5startE(struct _5RangeI3intE* this);
 int _EN3std5RangeI3intE3endE(struct _5RangeI3intE* this);
-void _EN3std4char5printEP12StringBuffer(char* this, struct _12StringBuffer* stream);
+void _EN3std4char5printEP9StringBuf(char* this, struct _9StringBuf* stream);
 void _EN3std4ListI4charE7reserveE3int(struct _4ListI4charE* this, int minimumCapacity);
 char* _EN3std13allocateArrayI4charEE3int(int size);
 void _EN3std5SliceI4charE16indexOutOfBoundsE6string3int(struct _5SliceI4charE* this, struct _6string function, int index);
-struct _12StringBuffer _EN3std6string8toStringE(struct _6string* this);
-struct _12StringBuffer _EN3std3int8toStringE(int* this);
+struct _9StringBuf _EN3std6string8toStringE(struct _6string* this);
+struct _9StringBuf _EN3std3int8toStringE(int* this);
 void _EN3std13ArrayIteratorI4charE4initE5SliceI4charE(struct _13ArrayIteratorI4charE* this, struct _5SliceI4charE array);
 void _EN3std5SliceI4charE4initEP4ListI4charE(struct _5SliceI4charE* this, struct _4ListI4charE* list);
 void _EN3std5abortI6string6string6string3int6string3intEEP6stringP6stringP6stringP3intP6stringP3int(struct _6string* _0, struct _6string* _1, struct _6string* _2, int* _3, struct _6string* _4, int* _5);
-void _EN3std6string5printEP12StringBuffer(struct _6string* this, struct _12StringBuffer* stream);
-void _EN3std3int5printEP12StringBuffer(int* this, struct _12StringBuffer* stream);
+void _EN3std6string5printEP9StringBuf(struct _6string* this, struct _9StringBuf* stream);
+void _EN3std3int5printEP9StringBuf(int* this, struct _9StringBuf* stream);
 void _EN3std16OutputFileStream5writeI6stringEEP6string(struct _16OutputFileStream* this, struct _6string* value);
 void _EN3std16OutputFileStream5writeI3intEEP3int(struct _16OutputFileStream* this, int* value);
 void _EN3std16OutputFileStream5writeI4charEEP4char(struct _16OutputFileStream* this, char* value);
@@ -293,8 +293,8 @@ int _EN3std11convertHashE6uint64(uint64_t hash) {
     }
 }
 
-struct _12StringBuffer _EN3stdplE6string6string(struct _6string a, struct _6string b) {
-    struct _12StringBuffer result0;
+struct _9StringBuf _EN3stdplE6string6string(struct _6string a, struct _6string b) {
+    struct _9StringBuf result0;
     struct _14StringIterator __iterator1;
     struct _6string _alloca2;
     char ch3;
@@ -309,12 +309,12 @@ struct _12StringBuffer _EN3stdplE6string6string(struct _6string a, struct _6stri
     _Bool _call12;
     char _call13;
     char _load14;
-    struct _12StringBuffer _load15;
+    struct _9StringBuf _load15;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std12StringBuffer4initE((&result0));
+    _EN3std9StringBuf4initE((&result0));
     *(&_alloca2) = a;
     _call7 = _EN3std6string8iteratorE((&_alloca2));
     *(&__iterator1) = _call7;
@@ -334,7 +334,7 @@ struct _12StringBuffer _EN3stdplE6string6string(struct _6string a, struct _6stri
     _call9 = _EN3std14StringIterator5valueE((&__iterator1));
     *(&ch3) = _call9;
     _load10 = *(&ch3);
-    _EN3std12StringBuffer4pushE4char((&result0), _load10);
+    _EN3std9StringBuf4pushE4char((&result0), _load10);
     _cx_pc = 3;
     break;
         }
@@ -363,7 +363,7 @@ struct _12StringBuffer _EN3stdplE6string6string(struct _6string a, struct _6stri
     _call13 = _EN3std14StringIterator5valueE((&__iterator4));
     *(&ch6) = _call13;
     _load14 = *(&ch6);
-    _EN3std12StringBuffer4pushE4char((&result0), _load14);
+    _EN3std9StringBuf4pushE4char((&result0), _load14);
     _cx_pc = 7;
     break;
         }
@@ -381,7 +381,7 @@ struct _12StringBuffer _EN3stdplE6string6string(struct _6string a, struct _6stri
     }
 }
 
-void _EN3std12StringBuffer6deinitE(struct _12StringBuffer* this) {
+void _EN3std9StringBuf6deinitE(struct _9StringBuf* this) {
     struct _4ListI4charE* _const_get_element_ptr0;
     int _cx_pc = 0;
     while (1) {
@@ -396,7 +396,7 @@ void _EN3std12StringBuffer6deinitE(struct _12StringBuffer* this) {
     }
 }
 
-void _EN3std12StringBuffer4initE(struct _12StringBuffer* this) {
+void _EN3std9StringBuf4initE(struct _9StringBuf* this) {
     struct _4ListI4charE _alloca0;
     struct _4ListI4charE* _const_get_element_ptr1;
     struct _4ListI4charE _load2;
@@ -476,7 +476,7 @@ char _EN3std14StringIterator5valueE(struct _14StringIterator* this) {
     }
 }
 
-void _EN3std12StringBuffer4pushE4char(struct _12StringBuffer* this, char c) {
+void _EN3std9StringBuf4pushE4char(struct _9StringBuf* this, char c) {
     struct _4ListI4charE* _const_get_element_ptr0;
     int _call1;
     struct _4ListI4charE* _const_get_element_ptr2;
@@ -485,7 +485,7 @@ void _EN3std12StringBuffer4pushE4char(struct _12StringBuffer* this, char c) {
         switch (_cx_pc) {
         case 0: {
     _const_get_element_ptr0 = &this->characters;
-    _call1 = _EN3std12StringBuffer4sizeE(this);
+    _call1 = _EN3std9StringBuf4sizeE(this);
     _EN3std4ListI4charEixaE3int4char(_const_get_element_ptr0, _call1, c);
     _const_get_element_ptr2 = &this->characters;
     _EN3std4ListI4charE4pushE4char(_const_get_element_ptr2, 0);
@@ -515,11 +515,11 @@ void _EN3std14StringIterator9incrementE(struct _14StringIterator* this) {
     }
 }
 
-struct _12StringBuffer _EN3stdplE6string4char(struct _6string a, char b) {
+struct _9StringBuf _EN3stdplE6string4char(struct _6string a, char b) {
     struct _6string _alloca0;
     char _alloca1;
     struct _6string _load2;
-    struct _12StringBuffer _call3;
+    struct _9StringBuf _call3;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
@@ -554,10 +554,10 @@ void _EN3std6string4initEP4char3int(struct _6string* this, char* pointer, int le
     }
 }
 
-struct _12StringBuffer _EN3stdplE6stringAU_4char(struct _6string a, char* b) {
+struct _9StringBuf _EN3stdplE6stringAU_4char(struct _6string a, char* b) {
     struct _6string _alloca0;
     struct _6string _load1;
-    struct _12StringBuffer _call2;
+    struct _9StringBuf _call2;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
@@ -595,8 +595,8 @@ void _EN3std6string4initEP4char(struct _6string* this, char* cString) {
     }
 }
 
-struct _12StringBuffer _EN3stdplE12StringBuffer6string(struct _12StringBuffer a, struct _6string b) {
-    struct _12StringBuffer result0;
+struct _9StringBuf _EN3stdplE9StringBuf6string(struct _9StringBuf a, struct _6string b) {
+    struct _9StringBuf result0;
     struct _14StringIterator __iterator1;
     struct _6string _alloca2;
     char ch3;
@@ -604,7 +604,7 @@ struct _12StringBuffer _EN3stdplE12StringBuffer6string(struct _12StringBuffer a,
     _Bool _call5;
     char _call6;
     char _load7;
-    struct _12StringBuffer _load8;
+    struct _9StringBuf _load8;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
@@ -629,7 +629,7 @@ struct _12StringBuffer _EN3stdplE12StringBuffer6string(struct _12StringBuffer a,
     _call6 = _EN3std14StringIterator5valueE((&__iterator1));
     *(&ch3) = _call6;
     _load7 = *(&ch3);
-    _EN3std12StringBuffer4pushE4char((&result0), _load7);
+    _EN3std9StringBuf4pushE4char((&result0), _load7);
     _cx_pc = 3;
     break;
         }
@@ -647,15 +647,15 @@ struct _12StringBuffer _EN3stdplE12StringBuffer6string(struct _12StringBuffer a,
     }
 }
 
-struct _12StringBuffer _EN3stdplE12StringBuffer4char(struct _12StringBuffer a, char b) {
-    struct _12StringBuffer result0;
-    struct _12StringBuffer _load1;
+struct _9StringBuf _EN3stdplE9StringBuf4char(struct _9StringBuf a, char b) {
+    struct _9StringBuf result0;
+    struct _9StringBuf _load1;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
     *(&result0) = a;
-    _EN3std12StringBuffer4pushE4char((&result0), b);
+    _EN3std9StringBuf4pushE4char((&result0), b);
     _load1 = *(&result0);
     return _load1;
         }
@@ -664,17 +664,17 @@ struct _12StringBuffer _EN3stdplE12StringBuffer4char(struct _12StringBuffer a, c
     }
 }
 
-struct _12StringBuffer _EN3stdplE12StringBufferAU_4char(struct _12StringBuffer a, char* b) {
+struct _9StringBuf _EN3stdplE9StringBufAU_4char(struct _9StringBuf a, char* b) {
     struct _6string _alloca0;
     struct _6string _load1;
-    struct _12StringBuffer _call2;
+    struct _9StringBuf _call2;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
     _EN3std6string4initEP4char((&_alloca0), b);
     _load1 = *(&_alloca0);
-    _call2 = _EN3stdplE12StringBuffer6string(a, _load1);
+    _call2 = _EN3stdplE9StringBuf6string(a, _load1);
     return _call2;
         }
         default: abort();
@@ -682,7 +682,7 @@ struct _12StringBuffer _EN3stdplE12StringBufferAU_4char(struct _12StringBuffer a
     }
 }
 
-_Bool _EN3stdeqEP12StringBufferP12StringBuffer(struct _12StringBuffer* a, struct _12StringBuffer* b) {
+_Bool _EN3stdeqEP9StringBufP9StringBuf(struct _9StringBuf* a, struct _9StringBuf* b) {
     struct _6string _alloca0;
     struct _6string _alloca1;
     struct _6string _load2;
@@ -692,9 +692,9 @@ _Bool _EN3stdeqEP12StringBufferP12StringBuffer(struct _12StringBuffer* a, struct
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std6string4initEP12StringBuffer((&_alloca0), a);
+    _EN3std6string4initEP9StringBuf((&_alloca0), a);
     _load2 = *(&_alloca0);
-    _EN3std6string4initEP12StringBuffer((&_alloca1), b);
+    _EN3std6string4initEP9StringBuf((&_alloca1), b);
     _load3 = *(&_alloca1);
     _call4 = _EN3stdeqE6string6string(_load2, _load3);
     return _call4;
@@ -807,7 +807,7 @@ _Bool _EN3stdeqE6string6string(struct _6string a, struct _6string b) {
     }
 }
 
-void _EN3std6string4initEP12StringBuffer(struct _6string* this, struct _12StringBuffer* stringBuffer) {
+void _EN3std6string4initEP9StringBuf(struct _6string* this, struct _9StringBuf* stringBuf) {
     struct _5SliceI4charE _alloca0;
     struct _5SliceI4charE* _const_get_element_ptr1;
     char* _call2;
@@ -818,8 +818,8 @@ void _EN3std6string4initEP12StringBuffer(struct _6string* this, struct _12String
         switch (_cx_pc) {
         case 0: {
     _const_get_element_ptr1 = &this->characters;
-    _call2 = _EN3std12StringBuffer4dataE(stringBuffer);
-    _call3 = _EN3std12StringBuffer4sizeE(stringBuffer);
+    _call2 = _EN3std9StringBuf4dataE(stringBuf);
+    _call3 = _EN3std9StringBuf4sizeE(stringBuf);
     _EN3std5SliceI4charE4initEP4char3int((&_alloca0), _call2, _call3);
     _load4 = *(&_alloca0);
     *_const_get_element_ptr1 = _load4;
@@ -830,7 +830,7 @@ void _EN3std6string4initEP12StringBuffer(struct _6string* this, struct _12String
     }
 }
 
-_Bool _EN3stdeqEP12StringBuffer6string(struct _12StringBuffer* a, struct _6string b) {
+_Bool _EN3stdeqEP9StringBuf6string(struct _9StringBuf* a, struct _6string b) {
     struct _6string _alloca0;
     struct _6string _load1;
     _Bool _call2;
@@ -838,7 +838,7 @@ _Bool _EN3stdeqEP12StringBuffer6string(struct _12StringBuffer* a, struct _6strin
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std6string4initEP12StringBuffer((&_alloca0), a);
+    _EN3std6string4initEP9StringBuf((&_alloca0), a);
     _load1 = *(&_alloca0);
     _call2 = _EN3stdeqE6string6string(_load1, b);
     return _call2;
@@ -848,7 +848,7 @@ _Bool _EN3stdeqEP12StringBuffer6string(struct _12StringBuffer* a, struct _6strin
     }
 }
 
-_Bool _EN3stdneEP12StringBuffer6string(struct _12StringBuffer* a, struct _6string b) {
+_Bool _EN3stdneEP9StringBuf6string(struct _9StringBuf* a, struct _6string b) {
     struct _6string _alloca0;
     struct _6string _alloca1;
     _Bool _call2;
@@ -856,7 +856,7 @@ _Bool _EN3stdneEP12StringBuffer6string(struct _12StringBuffer* a, struct _6strin
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std6string4initEP12StringBuffer((&_alloca0), a);
+    _EN3std6string4initEP9StringBuf((&_alloca0), a);
     *(&_alloca1) = b;
     _call2 = _EN3stdneI6stringEEP6stringP6string((&_alloca0), (&_alloca1));
     return _call2;
@@ -882,7 +882,7 @@ _Bool _EN3stdneI6stringEEP6stringP6string(struct _6string* a, struct _6string* b
     }
 }
 
-_Bool _EN3stdeqE6stringP12StringBuffer(struct _6string a, struct _12StringBuffer* b) {
+_Bool _EN3stdeqE6stringP9StringBuf(struct _6string a, struct _9StringBuf* b) {
     struct _6string _alloca0;
     struct _6string _load1;
     _Bool _call2;
@@ -890,7 +890,7 @@ _Bool _EN3stdeqE6stringP12StringBuffer(struct _6string a, struct _12StringBuffer
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std6string4initEP12StringBuffer((&_alloca0), b);
+    _EN3std6string4initEP9StringBuf((&_alloca0), b);
     _load1 = *(&_alloca0);
     _call2 = _EN3stdeqE6string6string(a, _load1);
     return _call2;
@@ -900,7 +900,7 @@ _Bool _EN3stdeqE6stringP12StringBuffer(struct _6string a, struct _12StringBuffer
     }
 }
 
-_Bool _EN3stdneE6stringP12StringBuffer(struct _6string a, struct _12StringBuffer* b) {
+_Bool _EN3stdneE6stringP9StringBuf(struct _6string a, struct _9StringBuf* b) {
     struct _6string _alloca0;
     struct _6string _alloca1;
     _Bool _call2;
@@ -909,7 +909,7 @@ _Bool _EN3stdneE6stringP12StringBuffer(struct _6string a, struct _12StringBuffer
         switch (_cx_pc) {
         case 0: {
     *(&_alloca0) = a;
-    _EN3std6string4initEP12StringBuffer((&_alloca1), b);
+    _EN3std6string4initEP9StringBuf((&_alloca1), b);
     _call2 = _EN3stdneI6stringEEP6stringP6string((&_alloca0), (&_alloca1));
     return _call2;
         }
@@ -918,7 +918,7 @@ _Bool _EN3stdneE6stringP12StringBuffer(struct _6string a, struct _12StringBuffer
     }
 }
 
-_Bool _EN3stdeqEAU_4charP12StringBuffer(char* a, struct _12StringBuffer* b) {
+_Bool _EN3stdeqEAU_4charP9StringBuf(char* a, struct _9StringBuf* b) {
     struct _6string _alloca0;
     struct _6string _alloca1;
     struct _6string _load2;
@@ -930,7 +930,7 @@ _Bool _EN3stdeqEAU_4charP12StringBuffer(char* a, struct _12StringBuffer* b) {
         case 0: {
     _EN3std6string4initEP4char((&_alloca0), a);
     _load2 = *(&_alloca0);
-    _EN3std6string4initEP12StringBuffer((&_alloca1), b);
+    _EN3std6string4initEP9StringBuf((&_alloca1), b);
     _load3 = *(&_alloca1);
     _call4 = _EN3stdeqE6string6string(_load2, _load3);
     return _call4;
@@ -940,7 +940,7 @@ _Bool _EN3stdeqEAU_4charP12StringBuffer(char* a, struct _12StringBuffer* b) {
     }
 }
 
-_Bool _EN3stdneEAU_4charP12StringBuffer(char* a, struct _12StringBuffer* b) {
+_Bool _EN3stdneEAU_4charP9StringBuf(char* a, struct _9StringBuf* b) {
     struct _6string _alloca0;
     struct _6string _alloca1;
     _Bool _call2;
@@ -949,7 +949,7 @@ _Bool _EN3stdneEAU_4charP12StringBuffer(char* a, struct _12StringBuffer* b) {
         switch (_cx_pc) {
         case 0: {
     _EN3std6string4initEP4char((&_alloca0), a);
-    _EN3std6string4initEP12StringBuffer((&_alloca1), b);
+    _EN3std6string4initEP9StringBuf((&_alloca1), b);
     _call2 = _EN3stdneI6stringEEP6stringP6string((&_alloca0), (&_alloca1));
     return _call2;
         }
@@ -958,7 +958,7 @@ _Bool _EN3stdneEAU_4charP12StringBuffer(char* a, struct _12StringBuffer* b) {
     }
 }
 
-_Bool _EN3stdeqEP12StringBufferAU_4char(struct _12StringBuffer* a, char* b) {
+_Bool _EN3stdeqEP9StringBufAU_4char(struct _9StringBuf* a, char* b) {
     struct _6string _alloca0;
     struct _6string _alloca1;
     struct _6string _load2;
@@ -968,7 +968,7 @@ _Bool _EN3stdeqEP12StringBufferAU_4char(struct _12StringBuffer* a, char* b) {
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std6string4initEP12StringBuffer((&_alloca0), a);
+    _EN3std6string4initEP9StringBuf((&_alloca0), a);
     _load2 = *(&_alloca0);
     _EN3std6string4initEP4char((&_alloca1), b);
     _load3 = *(&_alloca1);
@@ -980,7 +980,7 @@ _Bool _EN3stdeqEP12StringBufferAU_4char(struct _12StringBuffer* a, char* b) {
     }
 }
 
-_Bool _EN3stdneEP12StringBufferAU_4char(struct _12StringBuffer* a, char* b) {
+_Bool _EN3stdneEP9StringBufAU_4char(struct _9StringBuf* a, char* b) {
     struct _6string _alloca0;
     struct _6string _alloca1;
     _Bool _call2;
@@ -988,7 +988,7 @@ _Bool _EN3stdneEP12StringBufferAU_4char(struct _12StringBuffer* a, char* b) {
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std6string4initEP12StringBuffer((&_alloca0), a);
+    _EN3std6string4initEP9StringBuf((&_alloca0), a);
     _EN3std6string4initEP4char((&_alloca1), b);
     _call2 = _EN3stdneI6stringEEP6stringP6string((&_alloca0), (&_alloca1));
     return _call2;
@@ -1121,7 +1121,7 @@ void _EN3std16setAbortBehaviorE(void) {
     }
 }
 
-void _EN3std10printFloatE7float64P12StringBuffer(double value, struct _12StringBuffer* stream) {
+void _EN3std10printFloatE7float64P9StringBuf(double value, struct _9StringBuf* stream) {
     char result0[1080];
     struct _6string _alloca1;
     char* _cast2;
@@ -1138,7 +1138,7 @@ void _EN3std10printFloatE7float64P12StringBuffer(double value, struct _12StringB
     _cast4 = (char*) (&result0);
     _EN3std6string4initEP4char((&_alloca1), _cast4);
     _load5 = *(&_alloca1);
-    _call6 = _EN3std12StringBuffer5writeE6string(stream, _load5);
+    _call6 = _EN3std9StringBuf5writeE6string(stream, _load5);
     return;
         }
         default: abort();
@@ -1146,7 +1146,7 @@ void _EN3std10printFloatE7float64P12StringBuffer(double value, struct _12StringB
     }
 }
 
-_Bool _EN3std12StringBuffer5writeE6string(struct _12StringBuffer* this, struct _6string s) {
+_Bool _EN3std9StringBuf5writeE6string(struct _9StringBuf* this, struct _6string s) {
     struct _14StringIterator __iterator0;
     struct _6string _alloca1;
     char ch2;
@@ -1177,7 +1177,7 @@ _Bool _EN3std12StringBuffer5writeE6string(struct _12StringBuffer* this, struct _
     _call5 = _EN3std14StringIterator5valueE((&__iterator0));
     *(&ch2) = _call5;
     _load6 = *(&ch2);
-    _EN3std12StringBuffer4pushE4char(this, _load6);
+    _EN3std9StringBuf4pushE4char(this, _load6);
     _cx_pc = 3;
     break;
         }
@@ -1194,7 +1194,7 @@ _Bool _EN3std12StringBuffer5writeE6string(struct _12StringBuffer* this, struct _
     }
 }
 
-void _EN3std11printSignedE5int64P12StringBuffer(int64_t value, struct _12StringBuffer* stream) {
+void _EN3std11printSignedE5int64P9StringBuf(int64_t value, struct _9StringBuf* stream) {
     char result0[22];
     struct _6string _alloca1;
     char* _cast2;
@@ -1211,7 +1211,7 @@ void _EN3std11printSignedE5int64P12StringBuffer(int64_t value, struct _12StringB
     _cast4 = (char*) (&result0);
     _EN3std6string4initEP4char((&_alloca1), _cast4);
     _load5 = *(&_alloca1);
-    _call6 = _EN3std12StringBuffer5writeE6string(stream, _load5);
+    _call6 = _EN3std9StringBuf5writeE6string(stream, _load5);
     return;
         }
         default: abort();
@@ -1219,7 +1219,7 @@ void _EN3std11printSignedE5int64P12StringBuffer(int64_t value, struct _12StringB
     }
 }
 
-void _EN3std13printUnsignedE6uint64P12StringBuffer(uint64_t value, struct _12StringBuffer* stream) {
+void _EN3std13printUnsignedE6uint64P9StringBuf(uint64_t value, struct _9StringBuf* stream) {
     char result0[22];
     struct _6string _alloca1;
     char* _cast2;
@@ -1236,7 +1236,7 @@ void _EN3std13printUnsignedE6uint64P12StringBuffer(uint64_t value, struct _12Str
     _cast4 = (char*) (&result0);
     _EN3std6string4initEP4char((&_alloca1), _cast4);
     _load5 = *(&_alloca1);
-    _call6 = _EN3std12StringBuffer5writeE6string(stream, _load5);
+    _call6 = _EN3std9StringBuf5writeE6string(stream, _load5);
     return;
         }
         default: abort();
@@ -1386,9 +1386,9 @@ void _EN3std5printEOAU_4char(char const* cString) {
 }
 
 void _EN3std5printI4charEE4char(char value) {
-    struct _12StringBuffer s0;
+    struct _9StringBuf s0;
     char _alloca1;
-    struct _12StringBuffer _call2;
+    struct _9StringBuf _call2;
     int _call3;
     char* _call4;
     int _call5;
@@ -1399,10 +1399,10 @@ void _EN3std5printI4charEE4char(char value) {
     *(&_alloca1) = value;
     _call2 = _EN3std4char8toStringE((&_alloca1));
     *(&s0) = _call2;
-    _call3 = _EN3std12StringBuffer4sizeE((&s0));
-    _call4 = _EN3std12StringBuffer4dataE((&s0));
+    _call3 = _EN3std9StringBuf4sizeE((&s0));
+    _call4 = _EN3std9StringBuf4dataE((&s0));
     _call5 = printf("%.*s", _call3, _call4);
-    _EN3std12StringBuffer6deinitE((&s0));
+    _EN3std9StringBuf6deinitE((&s0));
     return;
         }
         default: abort();
@@ -1410,14 +1410,14 @@ void _EN3std5printI4charEE4char(char value) {
     }
 }
 
-struct _12StringBuffer _EN3std8readLineE(void) {
+struct _9StringBuf _EN3std8readLineE(void) {
     _Bool _cxp_or;
-    struct _12StringBuffer line0;
+    struct _9StringBuf line0;
     int c1;
     int _call2;
     int _load3;
     _Bool _binary_op4;
-    struct _12StringBuffer _load5;
+    struct _9StringBuf _load5;
     int _load6;
     _Bool _binary_op7;
     int _load8;
@@ -1426,7 +1426,7 @@ struct _12StringBuffer _EN3std8readLineE(void) {
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std12StringBuffer4initE((&line0));
+    _EN3std9StringBuf4initE((&line0));
     _cx_pc = 1;
     break;
         }
@@ -1481,7 +1481,7 @@ struct _12StringBuffer _EN3std8readLineE(void) {
         case 8: {
     _load8 = *(&c1);
     _cast9 = (char) _load8;
-    _EN3std12StringBuffer4pushE4char((&line0), _cast9);
+    _EN3std9StringBuf4pushE4char((&line0), _cast9);
     _cx_pc = 1;
     break;
         }
@@ -1490,17 +1490,17 @@ struct _12StringBuffer _EN3std8readLineE(void) {
     }
 }
 
-struct _12StringBuffer _EN3std8readFileE6string(struct _6string path) {
+struct _9StringBuf _EN3std8readFileE6string(struct _6string path) {
     struct _4FILE* file0;
-    struct _12StringBuffer _alloca1;
-    struct _12StringBuffer _alloca2;
+    struct _9StringBuf _alloca1;
+    struct _9StringBuf _alloca2;
     int64_t size3;
-    struct _12StringBuffer content4;
+    struct _9StringBuf content4;
     char* _call5;
     struct _4FILE* _call6;
     struct _4FILE* _load7;
     _Bool _binary_op8;
-    struct _12StringBuffer _load9;
+    struct _9StringBuf _load9;
     struct _4FILE* _load10;
     _Bool _binary_op11;
     struct _4FILE* _load12;
@@ -1520,13 +1520,13 @@ struct _12StringBuffer _EN3std8readFileE6string(struct _6string path) {
     struct _4FILE* _load26;
     _Bool _binary_op27;
     int _call28;
-    struct _12StringBuffer _load29;
+    struct _9StringBuf _load29;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std12StringBuffer4initE6string((&_alloca1), path);
-    _call5 = _EN3std12StringBuffer7cStringE((&_alloca1));
+    _EN3std9StringBuf4initE6string((&_alloca1), path);
+    _call5 = _EN3std9StringBuf7cStringE((&_alloca1));
     _call6 = fopen(_call5, "rb");
     *(&file0) = _call6;
     _load7 = *(&file0);
@@ -1539,7 +1539,7 @@ struct _12StringBuffer _EN3std8readFileE6string(struct _6string path) {
     break;
         }
         case 1: {
-    _EN3std12StringBuffer4initE((&_alloca2));
+    _EN3std9StringBuf4initE((&_alloca2));
     _load9 = *(&_alloca2);
     return _load9;
         }
@@ -1599,8 +1599,8 @@ struct _12StringBuffer _EN3std8readFileE6string(struct _6string path) {
     fseek(_load15, 0, 0);
     _load17 = *(&size3);
     _cast18 = (int) _load17;
-    _EN3std12StringBuffer4initE17uninitializedSize3int((&content4), _cast18);
-    _call19 = _EN3std12StringBuffer4dataE((&content4));
+    _EN3std9StringBuf4initE17uninitializedSize3int((&content4), _cast18);
+    _call19 = _EN3std9StringBuf4dataE((&content4));
     _cast20 = (void*) _call19;
     _load21 = *(&size3);
     _cast22 = (uint64_t) _load21;
@@ -1644,13 +1644,13 @@ struct _12StringBuffer _EN3std8readFileE6string(struct _6string path) {
     }
 }
 
-char* _EN3std12StringBuffer7cStringE(struct _12StringBuffer* this) {
+char* _EN3std9StringBuf7cStringE(struct _9StringBuf* this) {
     char* _call0;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _call0 = _EN3std12StringBuffer4dataE(this);
+    _call0 = _EN3std9StringBuf4dataE(this);
     return _call0;
         }
         default: abort();
@@ -1658,7 +1658,7 @@ char* _EN3std12StringBuffer7cStringE(struct _12StringBuffer* this) {
     }
 }
 
-void _EN3std12StringBuffer4initE6string(struct _12StringBuffer* this, struct _6string s) {
+void _EN3std9StringBuf4initE6string(struct _9StringBuf* this, struct _6string s) {
     struct _4ListI4charE _alloca0;
     struct _6string _alloca1;
     struct _14StringIterator __iterator2;
@@ -1799,7 +1799,7 @@ void _EN3std10assertFailEP4char(char const* message) {
     }
 }
 
-void _EN3std12StringBuffer4initE17uninitializedSize3int(struct _12StringBuffer* this, int uninitializedSize) {
+void _EN3std9StringBuf4initE17uninitializedSize3int(struct _9StringBuf* this, int uninitializedSize) {
     struct _4ListI4charE _alloca0;
     struct _4ListI4charE* _const_get_element_ptr1;
     int _binary_op2;
@@ -1823,7 +1823,7 @@ void _EN3std12StringBuffer4initE17uninitializedSize3int(struct _12StringBuffer* 
     }
 }
 
-char* _EN3std12StringBuffer4dataE(struct _12StringBuffer* this) {
+char* _EN3std9StringBuf4dataE(struct _9StringBuf* this) {
     struct _4ListI4charE* _const_get_element_ptr0;
     char* _call1;
     int _cx_pc = 0;
@@ -1841,7 +1841,7 @@ char* _EN3std12StringBuffer4dataE(struct _12StringBuffer* this) {
 
 _Bool _EN3std9writeFileE6string6string(struct _6string path, struct _6string content) {
     struct _4FILE* file0;
-    struct _12StringBuffer _alloca1;
+    struct _9StringBuf _alloca1;
     struct _6string _alloca2;
     struct _6string _alloca3;
     char* _call4;
@@ -1861,8 +1861,8 @@ _Bool _EN3std9writeFileE6string6string(struct _6string path, struct _6string con
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std12StringBuffer4initE6string((&_alloca1), path);
-    _call4 = _EN3std12StringBuffer7cStringE((&_alloca1));
+    _EN3std9StringBuf4initE6string((&_alloca1), path);
+    _call4 = _EN3std9StringBuf7cStringE((&_alloca1));
     _call5 = fopen(_call4, "wb");
     *(&file0) = _call5;
     _load6 = *(&file0);
@@ -2261,7 +2261,7 @@ void _EN3std4ListI4charEixaE3int4char(struct _4ListI4charE* this, int index, cha
     }
 }
 
-int _EN3std12StringBuffer4sizeE(struct _12StringBuffer* this) {
+int _EN3std9StringBuf4sizeE(struct _9StringBuf* this) {
     struct _4ListI4charE* _const_get_element_ptr0;
     int _call1;
     int _binary_op2;
@@ -2472,15 +2472,15 @@ void _EN3std13RangeIteratorI3intE4initE5RangeI3intE(struct _13RangeIteratorI3int
     }
 }
 
-struct _12StringBuffer _EN3std4char8toStringE(char* this) {
-    struct _12StringBuffer result0;
-    struct _12StringBuffer _load1;
+struct _9StringBuf _EN3std4char8toStringE(char* this) {
+    struct _9StringBuf result0;
+    struct _9StringBuf _load1;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std12StringBuffer4initE((&result0));
-    _EN3std4char5printEP12StringBuffer(this, (&result0));
+    _EN3std9StringBuf4initE((&result0));
+    _EN3std4char5printEP9StringBuf(this, (&result0));
     _load1 = *(&result0);
     return _load1;
         }
@@ -2635,8 +2635,8 @@ char* _EN3std5SliceI4charEixE3int(struct _5SliceI4charE* this, int index) {
 }
 
 void _EN3std5printI6stringEEP6string(struct _6string* value) {
-    struct _12StringBuffer s0;
-    struct _12StringBuffer _call1;
+    struct _9StringBuf s0;
+    struct _9StringBuf _call1;
     int _call2;
     char* _call3;
     int _call4;
@@ -2646,10 +2646,10 @@ void _EN3std5printI6stringEEP6string(struct _6string* value) {
         case 0: {
     _call1 = _EN3std6string8toStringE(value);
     *(&s0) = _call1;
-    _call2 = _EN3std12StringBuffer4sizeE((&s0));
-    _call3 = _EN3std12StringBuffer4dataE((&s0));
+    _call2 = _EN3std9StringBuf4sizeE((&s0));
+    _call3 = _EN3std9StringBuf4dataE((&s0));
     _call4 = printf("%.*s", _call2, _call3);
-    _EN3std12StringBuffer6deinitE((&s0));
+    _EN3std9StringBuf6deinitE((&s0));
     return;
         }
         default: abort();
@@ -2658,8 +2658,8 @@ void _EN3std5printI6stringEEP6string(struct _6string* value) {
 }
 
 void _EN3std5printI3intEEP3int(int* value) {
-    struct _12StringBuffer s0;
-    struct _12StringBuffer _call1;
+    struct _9StringBuf s0;
+    struct _9StringBuf _call1;
     int _call2;
     char* _call3;
     int _call4;
@@ -2669,10 +2669,10 @@ void _EN3std5printI3intEEP3int(int* value) {
         case 0: {
     _call1 = _EN3std3int8toStringE(value);
     *(&s0) = _call1;
-    _call2 = _EN3std12StringBuffer4sizeE((&s0));
-    _call3 = _EN3std12StringBuffer4dataE((&s0));
+    _call2 = _EN3std9StringBuf4sizeE((&s0));
+    _call3 = _EN3std9StringBuf4dataE((&s0));
     _call4 = printf("%.*s", _call2, _call3);
-    _EN3std12StringBuffer6deinitE((&s0));
+    _EN3std9StringBuf6deinitE((&s0));
     return;
         }
         default: abort();
@@ -2895,7 +2895,7 @@ int _EN3std5RangeI3intE3endE(struct _5RangeI3intE* this) {
     }
 }
 
-void _EN3std4char5printEP12StringBuffer(char* this, struct _12StringBuffer* stream) {
+void _EN3std4char5printEP9StringBuf(char* this, struct _9StringBuf* stream) {
     struct _6string _alloca0;
     struct _6string _load1;
     _Bool _call2;
@@ -2905,7 +2905,7 @@ void _EN3std4char5printEP12StringBuffer(char* this, struct _12StringBuffer* stre
         case 0: {
     _EN3std6string4initEP4char3int((&_alloca0), this, 1);
     _load1 = *(&_alloca0);
-    _call2 = _EN3std12StringBuffer5writeE6string(stream, _load1);
+    _call2 = _EN3std9StringBuf5writeE6string(stream, _load1);
     return;
         }
         default: abort();
@@ -3110,15 +3110,15 @@ void _EN3std5SliceI4charE16indexOutOfBoundsE6string3int(struct _5SliceI4charE* t
     }
 }
 
-struct _12StringBuffer _EN3std6string8toStringE(struct _6string* this) {
-    struct _12StringBuffer result0;
-    struct _12StringBuffer _load1;
+struct _9StringBuf _EN3std6string8toStringE(struct _6string* this) {
+    struct _9StringBuf result0;
+    struct _9StringBuf _load1;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std12StringBuffer4initE((&result0));
-    _EN3std6string5printEP12StringBuffer(this, (&result0));
+    _EN3std9StringBuf4initE((&result0));
+    _EN3std6string5printEP9StringBuf(this, (&result0));
     _load1 = *(&result0);
     return _load1;
         }
@@ -3127,15 +3127,15 @@ struct _12StringBuffer _EN3std6string8toStringE(struct _6string* this) {
     }
 }
 
-struct _12StringBuffer _EN3std3int8toStringE(int* this) {
-    struct _12StringBuffer result0;
-    struct _12StringBuffer _load1;
+struct _9StringBuf _EN3std3int8toStringE(int* this) {
+    struct _9StringBuf result0;
+    struct _9StringBuf _load1;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std12StringBuffer4initE((&result0));
-    _EN3std3int5printEP12StringBuffer(this, (&result0));
+    _EN3std9StringBuf4initE((&result0));
+    _EN3std3int5printEP9StringBuf(this, (&result0));
     _load1 = *(&result0);
     return _load1;
         }
@@ -3248,7 +3248,7 @@ void _EN3std5abortI6string6string6string3int6string3intEEP6stringP6stringP6strin
     }
 }
 
-void _EN3std6string5printEP12StringBuffer(struct _6string* this, struct _12StringBuffer* stream) {
+void _EN3std6string5printEP9StringBuf(struct _6string* this, struct _9StringBuf* stream) {
     struct _6string _load0;
     _Bool _call1;
     int _cx_pc = 0;
@@ -3256,7 +3256,7 @@ void _EN3std6string5printEP12StringBuffer(struct _6string* this, struct _12Strin
         switch (_cx_pc) {
         case 0: {
     _load0 = *this;
-    _call1 = _EN3std12StringBuffer5writeE6string(stream, _load0);
+    _call1 = _EN3std9StringBuf5writeE6string(stream, _load0);
     return;
         }
         default: abort();
@@ -3264,7 +3264,7 @@ void _EN3std6string5printEP12StringBuffer(struct _6string* this, struct _12Strin
     }
 }
 
-void _EN3std3int5printEP12StringBuffer(int* this, struct _12StringBuffer* stream) {
+void _EN3std3int5printEP9StringBuf(int* this, struct _9StringBuf* stream) {
     int _load0;
     int64_t _cast1;
     int _cx_pc = 0;
@@ -3273,7 +3273,7 @@ void _EN3std3int5printEP12StringBuffer(int* this, struct _12StringBuffer* stream
         case 0: {
     _load0 = *this;
     _cast1 = (int64_t) _load0;
-    _EN3std11printSignedE5int64P12StringBuffer(_cast1, stream);
+    _EN3std11printSignedE5int64P9StringBuf(_cast1, stream);
     return;
         }
         default: abort();
@@ -3282,8 +3282,8 @@ void _EN3std3int5printEP12StringBuffer(int* this, struct _12StringBuffer* stream
 }
 
 void _EN3std16OutputFileStream5writeI6stringEEP6string(struct _16OutputFileStream* this, struct _6string* value) {
-    struct _12StringBuffer s0;
-    struct _12StringBuffer _call1;
+    struct _9StringBuf s0;
+    struct _9StringBuf _call1;
     struct _4FILE** _const_get_element_ptr2;
     struct _4FILE* _load3;
     _Bool _binary_op4;
@@ -3316,8 +3316,8 @@ void _EN3std16OutputFileStream5writeI6stringEEP6string(struct _16OutputFileStrea
     break;
         }
         case 2: {
-    _call5 = _EN3std12StringBuffer4sizeE((&s0));
-    _call6 = _EN3std12StringBuffer4dataE((&s0));
+    _call5 = _EN3std9StringBuf4sizeE((&s0));
+    _call6 = _EN3std9StringBuf4dataE((&s0));
     _call7 = fprintf(_load3, "%.*s", _call5, _call6);
     _const_get_element_ptr8 = &this->file;
     _load9 = *_const_get_element_ptr8;
@@ -3336,7 +3336,7 @@ void _EN3std16OutputFileStream5writeI6stringEEP6string(struct _16OutputFileStrea
         }
         case 4: {
     _call11 = fflush(_load9);
-    _EN3std12StringBuffer6deinitE((&s0));
+    _EN3std9StringBuf6deinitE((&s0));
     return;
         }
         default: abort();
@@ -3345,8 +3345,8 @@ void _EN3std16OutputFileStream5writeI6stringEEP6string(struct _16OutputFileStrea
 }
 
 void _EN3std16OutputFileStream5writeI3intEEP3int(struct _16OutputFileStream* this, int* value) {
-    struct _12StringBuffer s0;
-    struct _12StringBuffer _call1;
+    struct _9StringBuf s0;
+    struct _9StringBuf _call1;
     struct _4FILE** _const_get_element_ptr2;
     struct _4FILE* _load3;
     _Bool _binary_op4;
@@ -3379,8 +3379,8 @@ void _EN3std16OutputFileStream5writeI3intEEP3int(struct _16OutputFileStream* thi
     break;
         }
         case 2: {
-    _call5 = _EN3std12StringBuffer4sizeE((&s0));
-    _call6 = _EN3std12StringBuffer4dataE((&s0));
+    _call5 = _EN3std9StringBuf4sizeE((&s0));
+    _call6 = _EN3std9StringBuf4dataE((&s0));
     _call7 = fprintf(_load3, "%.*s", _call5, _call6);
     _const_get_element_ptr8 = &this->file;
     _load9 = *_const_get_element_ptr8;
@@ -3399,7 +3399,7 @@ void _EN3std16OutputFileStream5writeI3intEEP3int(struct _16OutputFileStream* thi
         }
         case 4: {
     _call11 = fflush(_load9);
-    _EN3std12StringBuffer6deinitE((&s0));
+    _EN3std9StringBuf6deinitE((&s0));
     return;
         }
         default: abort();
@@ -3408,8 +3408,8 @@ void _EN3std16OutputFileStream5writeI3intEEP3int(struct _16OutputFileStream* thi
 }
 
 void _EN3std16OutputFileStream5writeI4charEEP4char(struct _16OutputFileStream* this, char* value) {
-    struct _12StringBuffer s0;
-    struct _12StringBuffer _call1;
+    struct _9StringBuf s0;
+    struct _9StringBuf _call1;
     struct _4FILE** _const_get_element_ptr2;
     struct _4FILE* _load3;
     _Bool _binary_op4;
@@ -3442,8 +3442,8 @@ void _EN3std16OutputFileStream5writeI4charEEP4char(struct _16OutputFileStream* t
     break;
         }
         case 2: {
-    _call5 = _EN3std12StringBuffer4sizeE((&s0));
-    _call6 = _EN3std12StringBuffer4dataE((&s0));
+    _call5 = _EN3std9StringBuf4sizeE((&s0));
+    _call6 = _EN3std9StringBuf4dataE((&s0));
     _call7 = fprintf(_load3, "%.*s", _call5, _call6);
     _const_get_element_ptr8 = &this->file;
     _load9 = *_const_get_element_ptr8;
@@ -3462,7 +3462,7 @@ void _EN3std16OutputFileStream5writeI4charEEP4char(struct _16OutputFileStream* t
         }
         case 4: {
     _call11 = fflush(_load9);
-    _EN3std12StringBuffer6deinitE((&s0));
+    _EN3std9StringBuf6deinitE((&s0));
     return;
         }
         default: abort();
@@ -3480,10 +3480,10 @@ int* _EN3std13ArrayIteratorI3intE5valueE(struct _13ArrayIteratorI3intE* this);
 void _EN3std13ArrayIteratorI3intE9incrementE(struct _13ArrayIteratorI3intE* this);
 void _EN3std5printI3intEE3int(int value);
 void _EN3std5printI4charEE4char(char value);
-void _EN3std12StringBuffer6deinitE(struct _12StringBuffer* this);
-struct _12StringBuffer _EN3std3int8toStringE(int* this);
-int _EN3std12StringBuffer4sizeE(struct _12StringBuffer* this);
-char* _EN3std12StringBuffer4dataE(struct _12StringBuffer* this);
+void _EN3std9StringBuf6deinitE(struct _9StringBuf* this);
+struct _9StringBuf _EN3std3int8toStringE(int* this);
+int _EN3std9StringBuf4sizeE(struct _9StringBuf* this);
+char* _EN3std9StringBuf4dataE(struct _9StringBuf* this);
 
 // Module 'main' definitions
 
@@ -3762,9 +3762,9 @@ void _EN3std13ArrayIteratorI3intE9incrementE(struct _13ArrayIteratorI3intE* this
 }
 
 void _EN3std5printI3intEE3int(int value) {
-    struct _12StringBuffer s0;
+    struct _9StringBuf s0;
     int _alloca1;
-    struct _12StringBuffer _call2;
+    struct _9StringBuf _call2;
     int _call3;
     char* _call4;
     int _call5;
@@ -3775,10 +3775,10 @@ void _EN3std5printI3intEE3int(int value) {
     *(&_alloca1) = value;
     _call2 = _EN3std3int8toStringE((&_alloca1));
     *(&s0) = _call2;
-    _call3 = _EN3std12StringBuffer4sizeE((&s0));
-    _call4 = _EN3std12StringBuffer4dataE((&s0));
+    _call3 = _EN3std9StringBuf4sizeE((&s0));
+    _call4 = _EN3std9StringBuf4dataE((&s0));
     _call5 = printf("%.*s", _call3, _call4);
-    _EN3std12StringBuffer6deinitE((&s0));
+    _EN3std9StringBuf6deinitE((&s0));
     return;
         }
         default: abort();

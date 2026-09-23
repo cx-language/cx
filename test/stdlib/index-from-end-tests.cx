@@ -5,8 +5,8 @@ void main() {
     testListAssign();
     testSliceRef();
     testString();
-    testStringBuffer();
-    testStringBufferAssign();
+    testStringBuf();
+    testStringBufAssign();
     testStaticArray();
     testStaticArrayAssign();
     testSlice();
@@ -48,14 +48,14 @@ void testString() {
     assert(s[-5] == 'h');
 }
 
-void testStringBuffer() {
-    var s = StringBuffer("hello");
+void testStringBuf() {
+    var s = StringBuf("hello");
     assert(s[-1] == 'o');
     assert(s[-5] == 'h');
 }
 
-void testStringBufferAssign() {
-    var s = StringBuffer("hello");
+void testStringBufAssign() {
+    var s = StringBuf("hello");
     s[-1] = '!';
     assert(string(&s) == "hell!");
 }
