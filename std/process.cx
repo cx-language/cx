@@ -1,0 +1,66 @@
+// Process management: environment variables and running subprocesses.
+
+private extern char*? getenv(const char* name);
+#if Windows
+private extern int _putenv(const char* nameEqualsValue);
+#else
+private extern int setenv(const char* name, const char* value, int overwrite);
+#endif
+
+/// Returns the value of the environment variable, or null if it's not set.
+string? getenv(string name) {
+    var value = getenv(StringBuffer(name).cString());
+    if !value return null;
+    return string(value);
+}
+
+#if Windows
+/// Sets the environment variable, aborting on failure.
+void setenv(string name, string value) {
+    var assignment = StringBuffer(name) + "=" + value;
+    if _putenv(assignment.cString()) != 0 abort("setenv failed for ", name);
+}
+#else
+/// Sets the environment variable, aborting on failure.
+void setenv(string name, string value) {
+    if setenv(StringBuffer(name).cString(), StringBuffer(value).cString(), 1) != 0 abort("setenv failed for ", name);
+}
+#endif
+
+/// The exit code and standard output of a finished subprocess.
+struct ProcessResult {
+    int status;
+    StringBuffer output;
+}
+
+/// Runs the command in a shell, returning its exit code and standard output.
+///
+/// Standard error is inherited, not captured. Status is -1 if the process
+/// was killed by a signal.
+ProcessResult run(string command) {
+    var pipe = popen(StringBuffer(command).cString(), "r");
+    if !pipe abort("run failed for command: ", command);
+
+    var output = StringBuffer();
+    while true {
+        var c = fgetc(pipe);
+        if c < 0 break;
+        output.append(char(c));
+    }
+
+    return ProcessResult(status = decodeStatus(pclose(pipe)), output = output);
+}
+
+// pclose reports the raw wait status, mirroring the WIFEXITED/WEXITSTATUS
+// C macros: a normally exited process has zeros in the low 7 bits and the
+// code in the next 8. Windows reports the exit code directly.
+#if Windows
+private int decodeStatus(int raw) {
+    return raw;
+}
+#else
+private int decodeStatus(int raw) {
+    if raw & 0x7F == 0 return (raw >> 8) & 0xFF;
+    return -1;
+}
+#endif

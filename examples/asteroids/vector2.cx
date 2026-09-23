@@ -1,40 +1,19 @@
-struct Vector2: Copyable {
-    float x;
-    float y;
+// 2D vector helpers built on the standard Vector2 type.
 
-    Vector2(float x, float y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    Vector2(float angle) {
-        x = cos(angle);
-        y = sin(angle);
-    }
-
-    Vector2 rotated(Vector2 origin, float angle) {
-        var dx = x - origin.x;
-        var dy = y - origin.y;
-        var c = cos(angle);
-        var s = sin(angle);
-        return Vector2(c * dx - s * dy + origin.x, s * dx + c * dy + origin.y);
-    }
-
-    float distance(Vector2 other) {
-        var dx = x - other.x;
-        var dy = y - other.y;
-        return sqrt(dx * dx + dy * dy);
-    }
+Vector2<float> vectorFromAngle(float angle) {
+    return Vector2(cos(angle), sin(angle));
 }
 
-Vector2 operator+(Vector2 a, Vector2 b) {
-    return Vector2(a.x + b.x, a.y + b.y);
+Vector2<float> rotated(Vector2<float> v, public Vector2<float> origin, public float angle) {
+    var dx = v.x - origin.x;
+    var dy = v.y - origin.y;
+    var c = cos(angle);
+    var s = sin(angle);
+    return Vector2(c * dx - s * dy + origin.x, s * dx + c * dy + origin.y);
 }
 
-Vector2 operator-(Vector2 a, Vector2 b) {
-    return Vector2(a.x - b.x, a.y - b.y);
-}
-
-Vector2 operator*(Vector2 a, float b) {
-    return Vector2(a.x * b, a.y * b);
+float distance(Vector2<float> a, Vector2<float> b) {
+    var dx = a.x - b.x;
+    var dy = a.y - b.y;
+    return sqrt(dx * dx + dy * dy);
 }

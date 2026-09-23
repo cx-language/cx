@@ -2,10 +2,14 @@
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringSwitch.h>
+#include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/CFG.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
+#include <llvm/Support/SaveAndRestore.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/TargetParser/Host.h>
@@ -182,6 +186,11 @@ llvm::Function* LLVMGenerator::getFunction(const Function* function) {
     auto llvmFunctionType = llvm::cast<llvm::FunctionType>(getLLVMType(function->getType()->getPointee(), &isSret));
     auto* llvmFunction = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage, function->mangledName, module);
 
+    // Keep frame pointers so stack traces can always unwind past cx frames.
+    // (Matches what Apple Clang emits; without this, backtrace() stops at
+    // the first cx frame on platforms using compact unwind tables.)
+    llvmFunction->addFnAttr("frame-pointer", "all");
+
     auto arg = llvmFunction->arg_begin(), argsEnd = llvmFunction->arg_end();
     if (isSret) {
         arg->setName("sret.arg");
@@ -260,6 +269,15 @@ void LLVMGenerator::codegenFunction(const Function* function) {
     auto llvmFunction = getFunction(function);
 
     if (!function->isExtern && llvmFunction->empty()) {
+        // Functions without a body are references defined in another module;
+        // they stay declarations, so they get no subprogram (a declaration
+        // with debug info fails verification). Functions without a location
+        // get none either: calls inside couldn't carry locations, which the
+        // verifier forbids in functions with debug info.
+        const Location& location = function->location;
+        bool skipDebugInfo = !emitDebugInfo || function->body.empty() || !location.file || !*location.file || !location.isValid();
+        llvm::SaveAndRestore saveSubprogram(currentDebugSubprogram, skipDebugInfo ? nullptr : createDebugSubprogram(function, llvmFunction));
+        llvm::SaveAndRestore saveLocation(currentDebugFunctionLocation, function->location);
         codegenFunctionBody(function, llvmFunction);
     }
 
@@ -415,6 +433,19 @@ llvm::Value* LLVMGenerator::codegenExtract(const ExtractInst* inst) {
 }
 
 llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
+    // Calls carry their source location so stack traces attribute frames.
+    // The guard restores any enclosing location afterwards for correct nesting.
+    struct DebugLocationGuard {
+        DebugLocationGuard(llvm::IRBuilder<>& builder, llvm::DILocation* location) : builder(builder), previous(builder.getCurrentDebugLocation()) {
+            builder.SetCurrentDebugLocation(location);
+        }
+        ~DebugLocationGuard() { builder.SetCurrentDebugLocation(previous); }
+        llvm::IRBuilder<>& builder;
+        llvm::DebugLoc previous;
+    };
+    llvm::DILocation* location = getDebugLocation(inst->expr ? inst->expr->location : Location());
+    DebugLocationGuard debugLocationGuard(builder, location);
+
     auto function = getValue(inst->function);
     auto cxFunctionType = inst->function->getType();
     if (cxFunctionType->isPointerType()) cxFunctionType = cxFunctionType->getPointee();
@@ -735,6 +766,26 @@ llvm::Module& LLVMGenerator::codegenModule(const IRModule& sourceModule) {
     module->setTargetTriple(llvm::Triple(llvm::sys::getDefaultTargetTriple()));
     module->setDataLayout(getHostDataLayout());
 
+    debugFiles.clear();
+    // The compile unit file only anchors module-level metadata; functions
+    // carry their own files. Without any located function there is nothing
+    // to attribute, so skip debug info entirely (an empty filename fails
+    // verification).
+    const char* unitPath = nullptr;
+    for (auto* function : sourceModule.functions) {
+        if (function->location.file && *function->location.file) {
+            unitPath = function->location.file;
+            break;
+        }
+    }
+    if (unitPath && emitDebugInfo) {
+        debugBuilder = std::make_unique<llvm::DIBuilder>(*module);
+        module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 4);
+        module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
+        llvm::DIFile* unitFile = getDebugFile(unitPath);
+        debugBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, unitFile, "cx", /* isOptimized */ false, /* Flags */ "", /* RV */ 0);
+    }
+
     for (auto* globalVariable : sourceModule.globalVariables) {
         getValue(globalVariable);
     }
@@ -743,8 +794,48 @@ llvm::Module& LLVMGenerator::codegenModule(const IRModule& sourceModule) {
         codegenFunction(function);
     }
 
+    if (debugBuilder) {
+        debugBuilder->finalize();
+        debugBuilder.reset();
+    }
+    debugFiles.clear();
+    currentDebugSubprogram = nullptr;
+    currentDebugFunctionLocation = Location();
+
     ASSERT(!llvm::verifyModule(*module, &llvm::errs()));
     generatedModules.push_back(module);
     module = nullptr;
     return *generatedModules.back();
+}
+
+/// Returns the debug file for the path. The directory must be non-empty:
+/// Apple's linker only emits debug-map entries for compile units with
+/// DW_AT_comp_dir, and without those dsymutil collects nothing.
+llvm::DIFile* LLVMGenerator::getDebugFile(llvm::StringRef path) {
+    std::string key = path.str();
+    auto it = debugFiles.find(key);
+    if (it != debugFiles.end()) return it->second;
+    llvm::SmallString<128> directory = llvm::sys::path::parent_path(path);
+    if (directory.empty() && llvm::sys::fs::current_path(directory)) directory = ".";
+    auto* file = debugBuilder->createFile(llvm::sys::path::filename(path), directory);
+    debugFiles.emplace(std::move(key), file);
+    return file;
+}
+
+llvm::DISubprogram* LLVMGenerator::createDebugSubprogram(const Function* function, llvm::Function* llvmFunction) {
+    llvm::DIFile* file = getDebugFile(function->location.file ? function->location.file : "");
+    unsigned line = function->location.isValid() ? static_cast<unsigned>(function->location.line) : 0;
+    auto* subroutineType = debugBuilder->createSubroutineType(debugBuilder->getOrCreateTypeArray({}));
+    auto* subprogram = debugBuilder->createFunction(file, function->name, function->mangledName, file, line, subroutineType, line, llvm::DINode::FlagZero,
+                                                    llvm::DISubprogram::SPFlagDefinition);
+    llvmFunction->setSubprogram(subprogram);
+    return subprogram;
+}
+
+llvm::DILocation* LLVMGenerator::getDebugLocation(Location location) {
+    // Synthesized calls without a location inherit their function's, so every
+    // call in a function with debug info carries one (required by the verifier).
+    if (!location.isValid()) location = currentDebugFunctionLocation;
+    if (!currentDebugSubprogram || !location.isValid()) return nullptr;
+    return llvm::DILocation::get(ctx, static_cast<unsigned>(location.line), static_cast<unsigned>(location.column), currentDebugSubprogram);
 }

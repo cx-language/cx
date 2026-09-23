@@ -11,14 +11,14 @@ int main() {
 
     switch (a) {
         case Opt.Some some:
-            b = Opt.Some(value = some.value + 1);
+            b = Opt.Some(value = some + 1);
         case Opt.None:
             b = Opt.None;
     }
 
     switch (b) {
         case Opt.Some some:
-            return some.value;
+            return some;
         case Opt.None:
             return 0;
     }

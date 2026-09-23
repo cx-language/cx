@@ -1,0 +1,52 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: is-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+enum Outcome {
+    Ok(int value),
+    Err(int code),
+    Pending,
+}
+
+enum Color {
+    Red,
+    Green,
+}
+
+void nonEnumCondition() {
+    var x = 5;
+    // CHECK: [[@LINE+1]]:8: error: left side of 'is' must be an enum, got 'int'
+    if x is 5 {
+    }
+}
+
+void nonCaseRhs() {
+    var o = Outcome.Ok(value = 1);
+    // CHECK: [[@LINE+1]]:13: error: right side of 'is' must be a case of enum 'Outcome'
+    if o is 5 {
+    }
+}
+
+void unitCaseBinding() {
+    var o = Outcome.Pending;
+    // CHECK: [[@LINE+1]]:21: error: enum case 'Pending' has no associated values to bind
+    if o is Pending p {
+    }
+    _ = o;
+}
+
+void crossEnumCase() {
+    var o = Outcome.Ok(value = 1);
+    // CHECK: [[@LINE+1]]:19: error: right side of 'is' must be a case of enum 'Outcome'
+    if o is Color.Red {
+    }
+}
+
+void main() {
+    nonEnumCondition();
+    nonCaseRhs();
+    unitCaseBinding();
+    crossEnumCase();
+}
+
+// CHECK-NOT: is-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

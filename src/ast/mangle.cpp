@@ -33,6 +33,8 @@ static const char* operatorName(const FunctionDecl& functionDecl) {
         .Case("--", "mm")
         .Case("[]", "ix")
         .Case("[]=", "ixa")
+        .Case("[-]", "ixm")
+        .Case("[-]=", "ixma")
         .Default(nullptr);
 }
 
@@ -41,11 +43,15 @@ static void mangleIdentifier(llvm::raw_string_ostream& stream, llvm::StringRef n
     stream << name;
 }
 
-static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<Type> genericArgs) {
+static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<GenericArg> genericArgs) {
     if (!genericArgs.empty()) {
         stream << 'I';
-        for (Type genericArg : genericArgs) {
-            mangleType(stream, genericArg);
+        for (GenericArg genericArg : genericArgs) {
+            if (genericArg.isInt()) {
+                stream << 'N' << genericArg.getInt() << '_';
+            } else {
+                mangleType(stream, genericArg.type);
+            }
         }
         stream << 'E';
     }
@@ -76,9 +82,9 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
         stream << '_';
         mangleType(stream, type.getElementType());
         break;
-    case TypeKind::TupleType:
+    case TypeKind::AnonymousStructType:
         stream << 'T';
-        for (auto& element : type.getTupleElements()) {
+        for (auto& element : type.getAnonymousStructElements()) {
             mangleType(stream, element.type);
         }
         // Terminates the element list so adjacent types can't merge into it.

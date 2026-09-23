@@ -7,7 +7,7 @@ enum E {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:21: error: too many generic arguments to 'E', expected 0
+    // CHECK: [[@LINE+1]]:15: error: too many generic arguments to 'E', expected 0
     var x = E.A<int>(a = 1);
 }
 

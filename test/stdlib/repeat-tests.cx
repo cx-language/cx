@@ -1,0 +1,52 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    testEquals();
+    testConcat();
+    testAppend();
+    testIterate();
+    testToList();
+    testEmpty();
+}
+
+void testEquals() {
+    assert("abc".repeat(3) == "abcabcabc");
+    assert("1".repeat(5) == "11111");
+    assert("".repeat(3) == "");
+    assert("abc".repeat(0) == "");
+    assert("abc".repeat(1) == "abc");
+    assert(!("abc".repeat(3) == "abcabcab"));
+    assert(!("abc".repeat(3) == "abcabcabca"));
+    assert("abc".repeat(-2) == "");
+}
+
+void testConcat() {
+    assert("[".repeat(3) + "]" == "[[[]");
+    assert("a" + "bc".repeat(2) == "abcbc");
+}
+
+void testAppend() {
+    var buf = StringBuffer("x");
+    buf.append("ab".repeat(2));
+    assert(string(&buf) == "xabab");
+}
+
+void testIterate() {
+    var count = 0;
+    for chunk in "ab".repeat(3) {
+        assert(chunk == "ab");
+        count++;
+    }
+    assert(count == 3);
+}
+
+void testToList() {
+    var chunks = "ab".repeat(2).toList();
+    assert(chunks.size() == 2);
+    assert(chunks[0] == "ab" && chunks[1] == "ab");
+}
+
+void testEmpty() {
+    var empty = "ab".repeat(0).toList();
+    assert(empty.size() == 0);
+}

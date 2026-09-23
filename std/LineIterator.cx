@@ -21,8 +21,22 @@ struct LineIterator: Copyable, Iterator<string> {
 
     /// Advances to the next line.
     void increment() {
-        stream = stream.substr(end + 1);
+        if end >= stream.size() {
+            stream = "";
+        } else {
+            stream = stream.substr(end + 1);
+        }
         end = stream.find('\n');
+    }
+
+    /// Collects the remaining lines into a list.
+    List<string> toList() {
+        var output = List<string>();
+        while hasValue() {
+            output.push(value());
+            increment();
+        }
+        return output;
     }
 
     /// Returns itself.

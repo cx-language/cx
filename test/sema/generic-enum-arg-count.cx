@@ -8,7 +8,7 @@ enum Outcome<T> {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:23: error: too few arguments to 'Ok', expected 1
+    // CHECK: [[@LINE+1]]:21: error: too few arguments to 'Ok', expected 1
     var x = Outcome.Ok();
 }
 

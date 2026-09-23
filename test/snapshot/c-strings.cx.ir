@@ -20,8 +20,8 @@ int main() {
     int* _9 = getelementptr _7, 1
     int .load_0 = load _9
     int _10 = .load_0 - int 1
-    ArrayRef<char> _11 = insertvalue ArrayRef<char> undefined, 0, .load
-    ArrayRef<char> _12 = insertvalue _11, 1, _10
+    Slice<char> _11 = insertvalue Slice<char> undefined, 0, .load
+    Slice<char> _12 = insertvalue _11, 1, _10
     string _13 = insertvalue string undefined, 0, _12
     bool _14 = call _EN3stdeqEP4char6string(char* _4, string _13)
     bool _15 = !_14

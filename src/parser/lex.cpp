@@ -250,42 +250,17 @@ end:
     }
 
     if (isFloat) return Token(Token::FloatLiteral, getCurrentLocation(), llvm::StringRef(begin, end - begin));
-    return Token(getCurrentLocation(), intValue);
+    return Token(getCurrentLocation(), intValue, int(end - begin));
 }
 
 static const llvm::StringMap<Token::Kind> keywords = {
-    {"break", Token::Break},
-    {"case", Token::Case},
-    {"const", Token::Const},
-    {"continue", Token::Continue},
-    {"default", Token::Default},
-    {"defer", Token::Defer},
-    {"do", Token::Do},
-    {"else", Token::Else},
-    {"enum", Token::Enum},
-    {"extern", Token::Extern},
-    {"false", Token::False},
-    {"for", Token::For},
-    {"if", Token::If},
-    {"import", Token::Import},
-    {"in", Token::In},
-    {"interface", Token::Interface},
-    {"null", Token::Null},
-    {"private", Token::Private},
-    {"public", Token::Public},
-    {"return", Token::Return},
-    {"sizeof", Token::Sizeof},
-    {"struct", Token::Struct},
-    {"switch", Token::Switch},
-    {"then", Token::Then},
-    {"this", Token::This},
-    {"true", Token::True},
-    {"undefined", Token::Undefined},
-    {"var", Token::Var},
-    {"while", Token::While},
-    {"#if", Token::HashIf},
-    {"#else", Token::HashElse},
-    {"#endif", Token::HashEndif},
+    {"break", Token::Break},         {"case", Token::Case},     {"const", Token::Const},    {"continue", Token::Continue},   {"default", Token::Default},
+    {"defer", Token::Defer},         {"do", Token::Do},         {"else", Token::Else},      {"enum", Token::Enum},           {"extern", Token::Extern},
+    {"false", Token::False},         {"for", Token::For},       {"if", Token::If},          {"import", Token::Import},       {"in", Token::In},
+    {"interface", Token::Interface}, {"is", Token::Is},         {"null", Token::Null},      {"private", Token::Private},     {"public", Token::Public},
+    {"return", Token::Return},       {"sizeof", Token::Sizeof}, {"struct", Token::Struct},  {"switch", Token::Switch},       {"test", Token::Test},
+    {"then", Token::Then},           {"this", Token::This},     {"true", Token::True},      {"undefined", Token::Undefined}, {"var", Token::Var},
+    {"while", Token::While},         {"#if", Token::HashIf},    {"#else", Token::HashElse}, {"#endif", Token::HashEndif},
 };
 
 Token Lexer::nextToken() {

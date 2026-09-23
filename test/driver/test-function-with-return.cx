@@ -1,0 +1,15 @@
+// RUN: %not %cx test %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: test-function-with-return.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+test int testWithReturn() {
+    return 1;
+}
+
+// CHECK: [[@LINE-4]]:10: error: test function 'testWithReturn' must take no parameters and return void
+
+void main() {
+    _ = testWithReturn();
+}
+
+// CHECK-NOT: test-function-with-return.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

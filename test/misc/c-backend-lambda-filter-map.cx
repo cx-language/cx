@@ -11,12 +11,12 @@
 // temporary produces uncompilable C.
 
 void main() {
-    var doubled = List([0, 1, 2, 3, 4]).filter(n => n % 2 == 0).map(n => n * 2);
+    var doubled = List([0, 1, 2, 3, 4]).filter(n => n % 2 == 0).map(n => n * 2).toList();
     println(doubled);
 
-    var filtered = List([0, 1, 2, 3, 4, 5, 6]).filter(n => n % 2 == 0).filter(n => n > 2);
+    var filtered = List([0, 1, 2, 3, 4, 5, 6]).filter(n => n % 2 == 0 && n > 2).toList();
     println(filtered);
 
-    var even = List([0, 1, 2, 3, 4]).filter(n => n % 2 == 0);
+    var even = List([0, 1, 2, 3, 4]).filter(n => n % 2 == 0).toList();
     println(even);
 }

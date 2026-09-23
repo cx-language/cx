@@ -38,7 +38,7 @@ void plain(Color c) {
 void bound(Shape s) {
     switch (s) {
     case Circle c:
-        println("circle ", c.radius);
+        println("circle ", c);
     case Rect r:
         println("rect ", r.width, " ", r.height);
     }

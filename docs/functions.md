@@ -15,34 +15,34 @@ int sum(int a, int b) {
 Functions may be overloaded on parameter types:
 
 ```cs
-void foo(int i) {
-    println("int");
+void printValue(int value) {
+    println("integer: ", value);
 }
 
-void foo(bool b) {
-    println("bool");
+void printValue(bool value) {
+    println("boolean: ", value);
 }
 
 void main() {
-    foo(42); // prints "int"
-    foo(false); // prints "bool"
+    printValue(42); // prints "integer: 42"
+    printValue(false); // prints "boolean: false"
 }
 ```
 
 Functions may be overloaded on parameter names:
 
 ```cs
-void foo(public int a) {
-    println("a");
+void move(public int x) {
+    println("x: ", x);
 }
 
-void foo(public int b) {
-    println("b");
+void move(public int y) {
+    println("y: ", y);
 }
 
 void main() {
-    foo(a = 42); // prints "a"
-    foo(b = 42); // prints "b"
+    move(x = 3); // prints "x: 3"
+    move(y = 4); // prints "y: 4"
 }
 ```
 
@@ -76,17 +76,17 @@ void main() {
 }
 ```
 
-Functions can return multiple values using tuples:
+Functions can return multiple values using anonymous structs:
 
 ```cs
-(int a, bool b) foo() {
-    return (a = 42, b = true);
+(int quotient, int remainder) divmod(int a, int b) {
+    return (quotient = a / b, remainder = a % b);
 }
 
 void main() {
-    var result = foo();
-    println(result.a); // prints 42
-    println(result.b); // prints true
+    var result = divmod(7, 2);
+    println(result.quotient); // prints 3
+    println(result.remainder); // prints 1
 }
 ```
 
@@ -111,4 +111,4 @@ void main() {
 ## Planned features
 
 - Destructuring for multiple return values
-- Tuples with anonymous members
+- Anonymous structs with unnamed members

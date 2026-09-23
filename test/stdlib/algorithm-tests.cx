@@ -13,7 +13,7 @@ void testAllAnyNone() {
     assert("abc".any(x => x == 'c'));
     assert(!StringBuffer("abc").any(x => x == 'd'));
     assert(List([0,1,2,3]).none(x => x > 3));
-    assert(ArrayRef<int>().none(x => true));
+    assert(Slice<int>().none(x => true));
 }
 
 void testInsertionSort() {
@@ -29,7 +29,7 @@ void testInsertionSort() {
 
     sort(a);
 
-    assert(ArrayRef(a) == ArrayRef(real));
+    assert(Slice(a) == Slice(real));
 }
 
 void testQuickSort() {
@@ -47,7 +47,7 @@ void testQuickSort() {
 
     sort(a);
 
-    assert(ArrayRef(a) == ArrayRef(real));
+    assert(Slice(a) == Slice(real));
 }
 
 void testMax() {

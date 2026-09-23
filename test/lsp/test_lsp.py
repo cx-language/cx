@@ -393,10 +393,10 @@ def test_completion_members(cx_lsp, path):
     items = labels_for(content, (5, 10))
     check("query-completion-member-enum", set(items) == {"Red", "Green"}, json.dumps(sorted(items))[:300])
 
-    # Tuple value: only its element names.
+    # Anonymous struct value: only its field names.
     content = "void main() {\n    var t = (a = 1, b = 2);\n    t.\n}\n"
     items = labels_for(content, (2, 6))
-    check("query-completion-member-tuple", set(items) == {"a", "b"}, json.dumps(sorted(items))[:300])
+    check("query-completion-member-anonymous-struct", set(items) == {"a", "b"}, json.dumps(sorted(items))[:300])
 
     # Array value: only its member functions.
     content = "void main() {\n    var arr = [1, 2, 3];\n    arr.\n}\n"
@@ -432,7 +432,13 @@ def test_completion_members(cx_lsp, path):
     details = sorted(item["detail"] for item in result.get("items", []) if item["label"] == "append")
     check(
         "query-completion-member-overloads",
-        details == ["void StringBuffer.append(char c)", "void StringBuffer.append(string s)"],
+        details
+        == [
+            "void StringBuffer.append(RepeatIterator<string> repetitions)",
+            "void StringBuffer.append(T* value)",
+            "void StringBuffer.append(char c)",
+            "void StringBuffer.append(string s)",
+        ],
         json.dumps(details)[:300],
     )
     flags = {}
@@ -440,7 +446,7 @@ def test_completion_members(cx_lsp, path):
         flags.setdefault(item["label"], []).append(item.get("hasParams"))
     check(
         "query-completion-member-has-params",
-        flags.get("append") == [True, True] and flags.get("empty") == [False],
+        flags.get("append") == [True, True, True, True] and flags.get("empty") == [False],
         json.dumps({k: flags.get(k) for k in ("append", "empty")})[:300],
     )
 
@@ -792,7 +798,7 @@ def test_server(command, path, label):
     appends = [item for item in response["result"] if item["label"] == "append"]
     check(
         f"{label}-completion-member-call-parens",
-        sorted(item.get("insertText", "") for item in appends) == ["append(", "append("]
+        sorted(item.get("insertText", "") for item in appends) == ["append(", "append(", "append(", "append("]
         and all("insertTextFormat" not in item for item in appends),
         json.dumps(appends)[:300],
     )

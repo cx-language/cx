@@ -36,6 +36,7 @@ struct BuildParams {
     llvm::StringRef outputDirectory = {};
     std::string outputFileName = {};
     bool createSharedLib = false;
+    bool runTests = false;
 };
 
 int driverMain(int argc, const char** argv);

@@ -69,7 +69,7 @@ struct CGenerator {
     void resetValueNaming(const Function* function);
     const std::string& getTempName(const Value* inst, llvm::StringRef prefix);
     // Returns the C name for a struct or union type, generating and registering
-    // one for anonymous types (tuples, enum payload unions) on first use.
+    // one for anonymous types (anonymous structs, enum payload unions) on first use.
     const std::string& getOrCreateTypeName(IRType* type, const std::string& name, llvm::StringRef prefix);
     // Returns the (sanitized) C name for a basic block parameter, registering
     // and declaring it on first use. Block parameters are compiler-generated

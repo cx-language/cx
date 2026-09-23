@@ -1,0 +1,17 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: is-while-binding.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+enum Outcome {
+    Ok(int value),
+}
+
+void main() {
+    var o = Outcome.Ok(value = 1);
+    // CHECK: [[@LINE+1]]:19: error: an 'is' binding is only allowed in if statements, not while loops
+    while o is Ok v {
+        break;
+    }
+}
+
+// CHECK-NOT: is-while-binding.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

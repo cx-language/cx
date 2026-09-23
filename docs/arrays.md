@@ -10,6 +10,7 @@ void main() {
 
     println(numbers[0]); // prints the first element, 1
     println(numbers.size()); // prints 3
+    println(numbers[-1]); // prints the last element, 3
 
     numbers[0] = 42;
     println(numbers[0]); // prints 42
@@ -22,6 +23,9 @@ void main() {
 
 Out-of-bounds accesses are caught: constant indices are checked at compile time,
 and the index operator does bounds checks in debug builds.
+
+A minus inside the brackets indexes from the end with no runtime overhead:
+`numbers[-1]` is the last element and `numbers[-numbers.size()]` is the first.
 
 `data()` returns a pointer to the first element, for passing the contents
 to C functions or doing pointer arithmetic:

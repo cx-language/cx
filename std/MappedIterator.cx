@@ -1,0 +1,55 @@
+// Lazily transforms the elements of another iterator.
+// Get one from map(); collect the results with toList().
+struct MappedIterator<Output, Input, It>: Iterator<Output*> {
+    private It source;
+    private Output(Input) transform;
+    private Output current;
+
+    /// Initializes an iterator transforming the source's elements.
+    MappedIterator(It source, Output(Input) transform) {
+        this.source = source;
+        this.transform = transform;
+        this.current = undefined;
+    }
+
+    /// Returns true if there are more elements.
+    bool hasValue() {
+        return source.hasValue();
+    }
+
+    /// Returns the next transformed element.
+    Output* value() {
+        current = transform(*source.value());
+        return &current;
+    }
+
+    /// Advances to the next element.
+    void increment() {
+        source.increment();
+    }
+
+    /// Lazily transforms the elements.
+    MappedIterator<Output2, Output, MappedIterator<Output, Input, It>> map<Output2>(Output2(Output) transform) {
+        return MappedIterator(*this, transform);
+    }
+
+    /// Lazily keeps the elements satisfying the predicate.
+    FilterIterator<Output, MappedIterator<Output, Input, It>> filter(bool(Output) include) {
+        return FilterIterator(*this, include);
+    }
+
+    /// Lazily appends another iterator's elements.
+    ChainIterator<Output, MappedIterator<Output, Input, It>, Other> chain<Other>(Other other) {
+        return ChainIterator(*this, other);
+    }
+
+    /// Collects the remaining elements into a list.
+    List<Output> toList() {
+        var output = List<Output>();
+        while hasValue() {
+            output.push(*value());
+            increment();
+        }
+        return output;
+    }
+}

@@ -46,8 +46,8 @@ C f(bool b) {
 void main() {
     var r = parse("\"hello\"");
     switch (r) {
-        case Ok s: println("[", s.value, "]");
-        case Err e: println("err: ", e.error);
+        case Ok s: println("[", s, "]");
+        case Err e: println("err: ", e);
     }
 
     var t = f(true);
