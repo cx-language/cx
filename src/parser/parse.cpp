@@ -1560,6 +1560,10 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
             if (currentToken() == Token::Colon) {
                 consumeToken();
                 genericParams.back().constraints = {parseType()};
+                while (currentToken() == Token::Plus) {
+                    consumeToken();
+                    genericParams.back().constraints.push_back(parseType());
+                }
             }
         }
 

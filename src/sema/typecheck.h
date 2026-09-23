@@ -170,6 +170,9 @@ struct Typechecker {
     void applyNarrowings(const Expr& condition, bool polarity);
     void intersectNarrowings(const NarrowMap& other);
     void dropNarrowingsForNames(const llvm::StringSet<>& names);
+    bool genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg);
+    bool validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
+                                    Location location);
     bool validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
     bool genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs);
 

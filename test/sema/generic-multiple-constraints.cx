@@ -1,0 +1,52 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: generic-multiple-constraints.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+interface A {
+    void a();
+}
+
+interface B {
+    void b();
+}
+
+struct Both: A, B {
+    void a() {}
+    void b() {}
+}
+
+struct OnlyA: A {
+    void a() {}
+}
+
+struct OnlyB: B {
+    void b() {}
+}
+
+void f<T: A + B>(T* x) {
+    x.a();
+    x.b();
+}
+
+struct PairBox<T: A + B> {
+    T value;
+}
+
+void main() {
+    var both = Both();
+    f(&both);
+
+    var a = OnlyA();
+    // CHECK: [[@LINE+1]]:5: error: type 'OnlyA' doesn't implement interface 'B' for generic parameter 'T' of 'f'
+    f(&a);
+
+    var b = OnlyB();
+    // CHECK: [[@LINE+1]]:5: error: type 'OnlyB' doesn't implement interface 'A' for generic parameter 'T' of 'f'
+    f(&b);
+
+    // CHECK: [[@LINE+1]]:5: error: type 'OnlyA' doesn't implement interface 'B' for generic parameter 'T' of 'f'
+    f<OnlyA>(&a);
+    // CHECK: [[@LINE+1]]:5: error: type 'OnlyA' doesn't implement interface 'B' for generic parameter 'T' of 'PairBox'
+    PairBox<OnlyA> invalid = undefined;
+}
+
+// CHECK-NOT: generic-multiple-constraints.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

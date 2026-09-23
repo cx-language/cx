@@ -1570,24 +1570,10 @@ std::vector<GenericArg> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef
     ASSERT(genericParams.size() == inferredGenericArgs.size());
 
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, inferredGenericArgs)) {
-        if (genericParam.isValueParam) continue;
-        if (!genericParam.constraints.empty()) {
-            ASSERT(genericParam.constraints.size() == 1, "cannot have multiple generic constraints yet");
-            auto* interface = getTypeDecl(*llvm::cast<BasicType>(genericParam.constraints[0].typeBase));
-
-            if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase)) {
-                auto* typeDecl = getTypeDecl(*basicType);
-                if (typeDecl && typeDecl->hasInterface(*interface)) {
-                    continue;
-                }
-            }
-
-            if (returnOnError) {
-                return {};
-            } else {
-                ERROR(call.location, "type '" << genericArg << "' doesn't implement interface '" << interface->getName() << "'");
-            }
-        }
+        if (genericParam.isValueParam || genericArgSatisfiesConstraints(genericParam, genericArg)) continue;
+        if (returnOnError) return {};
+        validateGenericConstraints({genericParam}, {genericArg}, call.getFunctionName(), call.location);
+        throw CompileError::dependentError();
     }
 
     return inferredGenericArgs;
@@ -1738,17 +1724,25 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
     }
 
     auto checkConstraint = [&](const GenericParamDecl& genericParam, GenericArg genericArg) -> bool {
-        if (genericParam.isValueParam || genericParam.constraints.empty()) return true;
-        ASSERT(genericParam.constraints.size() == 1, "cannot have multiple generic constraints yet");
-        auto* interface = getTypeDecl(*llvm::cast<BasicType>(genericParam.constraints[0].typeBase));
+        if (genericParam.isValueParam) return true;
+        for (Type constraint : genericParam.constraints) {
+            auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
 
-        if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase)) {
-            auto* typeDecl = getTypeDecl(*basicType);
-            if (typeDecl && typeDecl->hasInterface(*interface)) return true;
+            // Pack arguments are heterogeneous: a pointer pack argument (e.g. `println("x", &value)`)
+            // dispatches to the pointer overloads once the loop is unrolled. Pointers are always copyable.
+            if (genericArg.type.removeOptional().isPointerType() && !genericArg.type.removeOptional().isReferenceType() && interface->getName() == "Copyable") {
+                continue;
+            }
+
+            if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase)) {
+                auto* typeDecl = getTypeDecl(*basicType);
+                if (typeDecl && typeDecl->hasInterface(*interface)) continue;
+            }
+
+            if (returnOnError) return false;
+            ERROR(call.location, "type '" << genericArg << "' doesn't implement interface '" << interface->getName() << "'");
         }
-
-        if (returnOnError) return false;
-        ERROR(call.location, "type '" << genericArg << "' doesn't implement interface '" << interface->getName() << "'");
+        return true;
     };
 
     for (auto* genericParam : fixedGenerics) {
@@ -1860,6 +1854,55 @@ bool Typechecker::genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParam
     return true;
 }
 
+bool Typechecker::genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg) {
+    if (genericParam.isValueParam) return genericArg.isInt();
+    if (!genericArg || genericArg.isInt()) return false;
+    if (genericArg.type.isUnresolvedType()) return true;
+
+    for (Type constraint : genericParam.constraints) {
+        if (!constraint.isBasicType()) return false;
+        if (constraint.getName() == "Copyable"
+            && ((genericArg.type.removeOptional().isPointerType() && !genericArg.type.removeOptional().isReferenceType())
+                || genericArg.type.isUnsizedArrayPointer())) {
+            continue;
+        }
+
+        auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
+        auto* basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase);
+        auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
+        if (!typeDecl || !interface || !typeDecl->hasInterface(*interface)) return false;
+    }
+    return true;
+}
+
+bool Typechecker::validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
+                                             Location location) {
+    bool valid = true;
+    for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
+        if (genericParam.isValueParam || !genericArg || genericArg.isInt() || genericArg.type.isUnresolvedType()) continue;
+        for (Type constraint : genericParam.constraints) {
+            bool satisfies = false;
+            if (constraint.isBasicType() && constraint.getName() == "Copyable"
+                && ((genericArg.type.removeOptional().isPointerType() && !genericArg.type.removeOptional().isReferenceType())
+                    || genericArg.type.isUnsizedArrayPointer())) {
+                satisfies = true;
+            } else if (constraint.isBasicType()) {
+                auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
+                auto* basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase);
+                auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
+                satisfies = typeDecl && interface && typeDecl->hasInterface(*interface);
+            }
+            if (satisfies) continue;
+            valid = false;
+            if (constraint.isBasicType()) {
+                REPORT_ERROR(location, "type '" << genericArg << "' doesn't implement interface '" << constraint.getName() << "' for generic parameter '"
+                                                << genericParam.getName() << "' of '" << name << "'");
+            }
+        }
+    }
+    return valid;
+}
+
 bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
                                       Location location) {
     if (genericArgs.size() < genericParams.size()) {
@@ -1882,6 +1925,7 @@ bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericPa
             valid = false;
         }
     }
+    if (valid) valid = validateGenericConstraints(genericParams, genericArgs, name, location);
     return valid;
 }
 
@@ -1930,6 +1974,20 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
         }
         if (!genericArgsMatch(genericParams, call.genericArgs)) return {};
         genericArgTypes = call.genericArgs;
+    }
+
+    if (genericArgTypes.size() != genericParams.size()) {
+        if (!returnOnError) validateGenericArgs(genericParams, genericArgTypes, decl->getName(), call.location);
+        return {};
+    }
+    bool constraintsValid = llvm::all_of(llvm::zip(genericParams, genericArgTypes), [&](auto&& pair) {
+        auto&& [genericParam, genericArg] = pair;
+        return genericArgSatisfiesConstraints(genericParam, genericArg);
+    });
+    if (!constraintsValid) {
+        if (returnOnError) return {};
+        validateGenericConstraints(genericParams, genericArgTypes, decl->getName(), call.location);
+        throw CompileError::dependentError();
     }
 
     llvm::StringMap<GenericArg> genericArgs;
@@ -2175,7 +2233,10 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             }
 
             if (!expr.genericArgs.empty() && decls.size() == 1) {
-                if (!validateGenericArgs(genericParams, expr.genericArgs, expr.getFunctionName(), expr.location)) continue;
+                if (expr.genericArgs.size() != genericParams.size() || !genericArgsMatch(genericParams, expr.genericArgs)) {
+                    validateGenericArgs(genericParams, expr.genericArgs, expr.getFunctionName(), expr.location);
+                    continue;
+                }
             } else if (!expr.genericArgs.empty() && expr.genericArgs.size() != genericParams.size()) {
                 continue;
             }
