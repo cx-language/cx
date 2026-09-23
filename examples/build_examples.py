@@ -20,6 +20,10 @@ no_unused_dirs = ["embedding"]
 # The cpp-interop example links a small C++ static library; build it first
 # so `cx build` finds libcpp-interop-math.a via build.cx.
 def build_cpp_interop_lib():
+    # The example is skipped on Windows (see the loop below), so its
+    # library is not needed there either.
+    if platform.system() == "Windows":
+        return
     directory = "cpp-interop"
     if not os.path.isdir(directory):
         return
@@ -39,7 +43,10 @@ def build_cpp_interop_lib():
 build_cpp_interop_lib()
 
 for file in os.listdir("."):
-    if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl", "voxel-game"]:
+    # tree.cx, asteroids, opengl, and voxel-game need SDL3 or GLFW, which
+    # Windows CI lacks; cpp-interop needs a Unix C++ toolchain (c++/ar)
+    # and libstdc++.
+    if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl", "voxel-game", "cpp-interop"]:
         continue
 
     if file.endswith(".cx"):
