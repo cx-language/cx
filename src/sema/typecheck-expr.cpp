@@ -1083,7 +1083,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if (source.isPointerType() && source.getPointee() == target && expr && !expr->isReferenceExpr()) {
+    if (source.isPointerType() && source.getPointee() == target && expr && !expr->isReferenceExpr() && target.isImplicitlyCopyable()) {
+        // Implicit dereference copies the pointee; moving out of a pointer
+        // requires an explicit '*' so moves are visible at the use site.
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoDereference;
         return target;
     }
@@ -1632,6 +1634,9 @@ std::string cx::narrowingHint(Type source, Type target) {
     if (target.removeOptional().isPointerType() && !target.removeOptional().isReferenceType()
         && source.equalsIgnoreTopLevelMutable(target.removeOptional().getPointee())) {
         return " (use '&' to take the address explicitly)";
+    }
+    if (source.removeOptional().isPointerType() && source.removeOptional().getPointee().equalsIgnoreTopLevelMutable(target.removeOptional())) {
+        return " (use '*' to dereference explicitly)";
     }
     auto isNumeric = [](Type type) { return type.isInteger() || type.isFloatingPoint() || type.isChar(); };
     if (!isNumeric(source) || !isNumeric(target)) return "";
