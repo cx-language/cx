@@ -24,6 +24,16 @@ bool all<T, I>(I& it, bool(T&) predicate) {
     return true;
 }
 
+/// Returns true if all remaining elements satisfy the predicate.
+bool all<T: Copyable, I>(I& it, bool(T) predicate) {
+    for ; it.hasValue(); it.increment() {
+        if !predicate(it.value()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /// Returns true if any remaining element satisfies the predicate.
 bool any<T, I>(I& it, bool(T&) predicate) {
     for ; it.hasValue(); it.increment() {
@@ -34,8 +44,28 @@ bool any<T, I>(I& it, bool(T&) predicate) {
     return false;
 }
 
+/// Returns true if any remaining element satisfies the predicate.
+bool any<T: Copyable, I>(I& it, bool(T) predicate) {
+    for ; it.hasValue(); it.increment() {
+        if predicate(it.value()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /// Returns true if no remaining element satisfies the predicate.
 bool none<T, I>(I& it, bool(T&) predicate) {
+    for ; it.hasValue(); it.increment() {
+        if predicate(it.value()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/// Returns true if no remaining element satisfies the predicate.
+bool none<T: Copyable, I>(I& it, bool(T) predicate) {
     for ; it.hasValue(); it.increment() {
         if predicate(it.value()) {
             return false;
