@@ -1,7 +1,7 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-int sum(int a, int b) { return a + b; }
+int add(int a, int b) { return a + b; }
 
-// CHECK: [[@LINE+1]]:25: error: too many arguments to 'sum', expected 2
-void main() { var foo = sum(1, 2, 3); }
-// CHECK: 3:5: note: 'sum' declared here
+// CHECK: [[@LINE+1]]:25: error: too many arguments to 'add', expected 2
+void main() { var foo = add(1, 2, 3); }
+// CHECK: 3:5: note: 'add' declared here

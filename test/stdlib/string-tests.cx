@@ -6,8 +6,8 @@ void main() {
     assert("abc" < "bcd");
 
     testStringIterator();
-    testFind();
-    testFindString();
+    testIndexOf();
+    testIndexOfString();
     testSubstr();
     testSplit();
     testOtherSplit();
@@ -34,30 +34,30 @@ void testStringIterator() {
     assert(!iterator.hasValue());
 }
 
-void testFind() {
+void testIndexOf() {
     var s = StringBuffer("word");
 
     // Start from beginning
-    assert(s.find('w') == 0);
-    assert(s.find('o') == 1);
-    assert(s.find('r') == 2);
-    assert(s.find('d') == 3);
+    assert(s.indexOf('w') == 0);
+    assert(s.indexOf('o') == 1);
+    assert(s.indexOf('r') == 2);
+    assert(s.indexOf('d') == 3);
 
     // Start from index
-    assert(s.find('w', 1) == s.size());
-    assert(s.find('d', 2) == 3);
+    assert(s.indexOf('w', 1) == s.size());
+    assert(s.indexOf('d', 2) == 3);
 }
 
-void testFindString() {
+void testIndexOfString() {
     string s = "hello world";
 
-    assert(s.find("hello") == 0);
-    assert(s.find("world") == 6);
-    assert(s.find("o") == 4);
-    assert(s.find("z") == s.size());
-    assert(s.find("") == 0);
-    assert(s.find("o", 5) == 7);
-    assert(s.find("hello", 1) == s.size());
+    assert(s.indexOf("hello") == 0);
+    assert(s.indexOf("world") == 6);
+    assert(s.indexOf("o") == 4);
+    assert(s.indexOf("z") == s.size());
+    assert(s.indexOf("") == 0);
+    assert(s.indexOf("o", 5) == 7);
+    assert(s.indexOf("hello", 1) == s.size());
 
     assert(s.contains("world"));
     assert(!s.contains("z"));
@@ -184,7 +184,7 @@ void testParseInt() {
     assert("0o18".parseInt() == null);
     assert("0o".parseInt() == null);
     assert("2147483648".parseInt() == null);
-    assert("-2147483648".parseInt()! == int_min);
+    assert("-2147483648".parseInt()! == int.min);
     assert("-2147483649".parseInt() == null);
     assert("0x7fffffff".parseInt() == 2147483647);
     assert("0x80000000".parseInt() == null);

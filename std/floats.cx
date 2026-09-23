@@ -1,7 +1,7 @@
 // TODO: Remove code duplication by declaring a 'FloatingPoint' interface that implements the
 // 'compare' function for all floating-point types.
 
-private void printFloat(float64 value, StringBuffer& stream) {
+private void printFloat(float64 value, OutputStream& stream) {
     // NaN has an implementation-defined sign; print all NaNs the same.
     if value != value {
         stream.append("nan");
@@ -26,7 +26,7 @@ private void printFloat(float64 value, StringBuffer& stream) {
     stream.append(string(result));
 }
 
-private void printFloat32(float32 value, StringBuffer& stream) {
+private void printFloat32(float32 value, OutputStream& stream) {
     // NaN has an implementation-defined sign; print all NaNs the same.
     if value != value {
         stream.append("nan");
@@ -50,7 +50,7 @@ private void printFloat32(float32 value, StringBuffer& stream) {
 }
 
 /// A floating-point number.
-struct float: Copyable, Comparable, Printable {
+struct float: Copyable, Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(float& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -58,13 +58,13 @@ struct float: Copyable, Comparable, Printable {
 
     /// Writes this value to the given stream, using the shortest
     /// representation that parses back to the same value.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printFloat32(this, stream);
     }
 }
 
 /// A 32-bit floating-point number.
-struct float32: Copyable, Comparable, Printable {
+struct float32: Copyable, Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(float32& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -72,13 +72,13 @@ struct float32: Copyable, Comparable, Printable {
 
     /// Writes this value to the given stream, using the shortest
     /// representation that parses back to the same value.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printFloat32(this, stream);
     }
 }
 
 /// A 64-bit floating-point number.
-struct float64: Copyable, Comparable, Printable {
+struct float64: Copyable, Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(float64& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -86,7 +86,7 @@ struct float64: Copyable, Comparable, Printable {
 
     /// Writes this value to the given stream, using the shortest
     /// representation that parses back to the same value.
-    void print(StringBuffer& stream) {
+    void print(OutputStream& stream) {
         printFloat(this, stream);
     }
 }

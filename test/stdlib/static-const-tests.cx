@@ -1,0 +1,28 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// CHECK-NOT: static-const-tests.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct Point {
+    const origin_x = 0;
+    const int origin_y = 0;
+    int x;
+    int y;
+}
+
+enum Level {
+    Low,
+    High,
+    const count = 2;
+}
+
+void main() {
+    assert(Point.origin_x == 0);
+    assert(Point.origin_y == 0);
+    assert(Level.count == 2);
+    assert(int.max == 2147483647);
+    assert(int.min == -2147483648);
+    assert(int64.min == -9223372036854775808);
+    assert(uint64.max == 18446744073709551615);
+    var p = Point(x = 3, y = 4);
+    assert(p.origin_x == 0);
+    println("ok");
+}

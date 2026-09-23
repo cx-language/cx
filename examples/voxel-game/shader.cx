@@ -2,11 +2,11 @@ import "GLFW/glfw3.h";
 
 uint compileShader(string path, uint kind) {
     var source = readFile(path);
-    if source == null {
+    if source == Err {
         abort("cannot read shader file: ", path);
     }
     var shader = glCreateShader(kind);
-    var cstr = source.cString();
+    var cstr = unwrap(source).cString();
     // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
     glShaderSource(shader, 1, cast<const char*?*>(&cstr), null);
     glCompileShader(shader);

@@ -19,12 +19,40 @@
 using namespace cx;
 
 void Typechecker::checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel) {
-    // FIXME: Compare SourceFile objects instead of file path strings.
-    if (decl.accessLevel == AccessLevel::Private && strcmp(decl.getLocation().file, location.file) != 0) {
+    // Access warnings for members of generic instantiations are suppressed:
+    // the use-site type expression is already checked with the use location
+    // (see the generic-argument rechecking in typecheckType), so checks with
+    // template-definition locations would only produce duplicate noise.
+    if (suppressAccessWarnings) return;
+    if (decl.accessLevel == AccessLevel::Private && !inSameModule(decl, location)) {
         WARN(location, "'" << decl.getName() << "' is private");
     } else if (userAccessLevel != AccessLevel::None && decl.accessLevel < userAccessLevel) {
         WARN(location, "using " << decl.accessLevel << " type '" << decl.getName() << "' in " << userAccessLevel << " declaration");
     }
+}
+
+bool Typechecker::inSameModule(const Decl& decl, Location location) const {
+    if (Module* declModule = decl.getModule()) {
+        if (Module* useModule = findModuleForFile(location.file)) return declModule == useModule;
+    }
+    // Fall back to comparing file paths for declarations without module information.
+    const char* declFile = decl.getLocation().file;
+    return declFile && location.file && strcmp(declFile, location.file) == 0;
+}
+
+Module* Typechecker::findModuleForFile(const char* file) const {
+    if (!file) return nullptr;
+    auto matches = [&](const Module* module) {
+        for (auto& sourceFile : module->sourceFiles) {
+            if (sourceFile.filePath == file) return true;
+        }
+        return false;
+    };
+    if (currentModule && matches(currentModule)) return currentModule;
+    for (Module* module : Module::getAllImportedModules()) {
+        if (matches(module)) return module;
+    }
+    return nullptr;
 }
 
 void Typechecker::maybeCaptureVariable(VariableDecl& variableDecl) {
@@ -1880,8 +1908,11 @@ static bool isCHeaderDecl(const Match& match) {
 }
 
 static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, const CallExpr& call) {
-    if (llvm::count_if(matches, isStdlibDecl) == 1 && llvm::all_of(matches, [](auto& match) { return isStdlibDecl(match) || isCHeaderDecl(match); })) {
-        return llvm::find_if(matches, isStdlibDecl);
+    // An explicitly imported C header takes precedence over the implicit prelude:
+    // importing a header must actually provide its declarations, including for
+    // names the standard library also declares (those are module-private).
+    if (llvm::count_if(matches, isCHeaderDecl) == 1 && llvm::all_of(matches, [](auto& match) { return isStdlibDecl(match) || isCHeaderDecl(match); })) {
+        return llvm::find_if(matches, isCHeaderDecl);
     } else if (llvm::all_of(matches, isCHeaderDecl)) {
         // Redeclarations in multiple C headers are considered the same declaration, so just return one of them.
         return &matches[0];
@@ -2783,6 +2814,12 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         return enumCase->type;
     }
 
+    if (VarDecl* staticConst = getStaticConst(expr)) {
+        checkHasAccess(*staticConst, expr.location, AccessLevel::None);
+        expr.decl = staticConst;
+        return staticConst->type;
+    }
+
     Type baseType = typecheckExpr(*expr.base, useIsWriteOnly);
     if (!expr.base->isThis()) baseType = baseType.removeOptional();
     baseType = baseType.removePointer();
@@ -2798,11 +2835,29 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
             }
         }
     } else if (auto* baseDecl = baseType.getDecl()) {
+        // Instance fields cannot be accessed via the type name (e.g. `S.x`);
+        // only static constants are. Without this, field access via a type
+        // would typecheck but crash codegen which expects an instance.
+        bool baseIsType = false;
+        if (auto* varBase = llvm::dyn_cast<VarExpr>(expr.base)) {
+            baseIsType = varBase->decl && (varBase->decl->isTypeDecl() || varBase->decl->kind == DeclKind::TypeTemplate);
+        } else if (auto* memberBase = llvm::dyn_cast<MemberExpr>(expr.base)) {
+            baseIsType = memberBase->decl && (memberBase->decl->isTypeDecl() || memberBase->decl->kind == DeclKind::TypeTemplate);
+        }
         for (auto& field : baseDecl->fields) {
             if (field.getName() == expr.member) {
+                if (baseIsType) break;
                 checkHasAccess(field, expr.location, AccessLevel::None);
                 expr.decl = &field;
                 return field.type.withMutability(baseType.mutability);
+            }
+        }
+
+        for (auto* staticConst : baseDecl->staticConsts) {
+            if (staticConst->getName() == expr.member) {
+                checkHasAccess(*staticConst, expr.location, AccessLevel::None);
+                expr.decl = staticConst;
+                return staticConst->type;
             }
         }
     }
@@ -3231,6 +3286,9 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
         if (call) validateGenericArgCount(0, call->genericArgs, enumDecl->getName(), call->location);
         auto* enumCase = enumDecl->getCaseByName(memberExpr->member);
         if (!enumCase) {
+            for (auto* staticConst : enumDecl->staticConsts) {
+                if (staticConst->getName() == memberExpr->member) return nullptr;
+            }
             ERROR_RANGE(expr.location, expr.endLocation, "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->member << "'");
         }
         return enumCase;
@@ -3241,6 +3299,40 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
         return instantiateEnumCase(*typeTemplate, memberExpr->member, *memberExpr, call, expectedType);
     }
 
+    return nullptr;
+}
+
+VarDecl* Typechecker::getStaticConst(const Expr& expr) {
+    auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr);
+    if (!memberExpr) return nullptr;
+    auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
+    if (!varExpr) return nullptr;
+    auto decls = findDecls(varExpr->identifier);
+
+    Decl* typeDeclOrNull = nullptr;
+    if (decls.size() == 1) {
+        typeDeclOrNull = decls.front();
+    } else {
+        // A same-named type doesn't prevent static access, but a same-named variable takes precedence.
+        for (Decl* decl : decls) {
+            if (decl->isTypeDecl()) {
+                if (typeDeclOrNull) return nullptr; // Ambiguous.
+                typeDeclOrNull = decl;
+            } else if (decl->kind != DeclKind::TypeTemplate && decl->kind != DeclKind::FunctionDecl && decl->kind != DeclKind::FunctionTemplate) {
+                return nullptr;
+            }
+        }
+        if (!typeDeclOrNull) return nullptr;
+    }
+
+    auto* typeDecl = llvm::dyn_cast<TypeDecl>(typeDeclOrNull);
+    if (!typeDecl) return nullptr;
+
+    for (auto* staticConst : typeDecl->staticConsts) {
+        if (staticConst->getName() == memberExpr->member) {
+            return staticConst;
+        }
+    }
     return nullptr;
 }
 

@@ -39,6 +39,7 @@ namespace cx {
 struct Module;
 struct TypeDecl;
 struct FieldDecl;
+struct VarDecl;
 struct FunctionDecl;
 struct EnumDecl;
 
@@ -323,6 +324,8 @@ struct TypeDecl : Decl {
     std::vector<Type> interfaces;
     std::vector<FieldDecl> fields;
     std::vector<Decl*> methods;
+    // Constants scoped under the type name, accessed as `Type.constant`.
+    std::vector<VarDecl*> staticConsts;
     Location location;
     Module& module;
     const TypeDecl* instantiatedFrom;

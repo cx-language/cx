@@ -93,7 +93,7 @@ struct Program {
                         pc = bracketMap[pc]!;
 
                 case '.':
-                    printf("%c", char(tape.value()));
+                    print(char(tape.value()));
             }
 
             pc++;
@@ -102,6 +102,6 @@ struct Program {
 }
 
 void main() {
-    var text = readFile("inputs/mandel.b");
-    Program(string(text!)).run();
+    var text = unwrap(readFile("inputs/mandel.b"));
+    Program(string(text)).run();
 }

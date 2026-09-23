@@ -9,12 +9,12 @@ void testReadWriteFile() {
     var text = "The quick brown fox jumps over the lazy dog\n";
     bool success = writeFile("test.txt", text);
     assert(success);
-    var content = readFile("test.txt");
-    remove("test.txt");
-    assert(string(content!) == text);
+    var content = unwrap(readFile("test.txt"));
+    removeFile("test.txt");
+    assert(string(content) == text);
 }
 
 void testReadNonExistentFile() {
     var content = readFile("dog.txt");
-    assert(content == null);
+    assert(content == Err);
 }

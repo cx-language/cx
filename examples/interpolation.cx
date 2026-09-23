@@ -1,0 +1,6 @@
+// String interpolation embeds values and expressions in string literals.
+void main() {
+    var name = "world";
+    println("hello $name!");
+    println("1 + 2 = ${1 + 2}");
+}

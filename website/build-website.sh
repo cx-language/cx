@@ -137,6 +137,8 @@ showcase = [
     ("Filter and map", "filter-map.cx"),
     ("Tagged unions", "tagged-union.cx"),
     ("Null safety", "null-safety.cx"),
+    ("String interpolation", "interpolation.cx"),
+    ("Result", "result.cx"),
     ("Printable", "printable.cx"),
     ("Structs", "structs.cx"),
     ("Ranges and loops", "ranges.cx"),

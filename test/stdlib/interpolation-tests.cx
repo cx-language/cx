@@ -1,0 +1,30 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines %s
+
+struct Point: Printable {
+    int x;
+    int y;
+
+    void print(OutputStream& stream) {
+        stream.append("(");
+        x.print(stream);
+        stream.append(", ");
+        y.print(stream);
+        stream.append(")");
+    }
+}
+
+void main() {
+    var name = "world";
+    var p = Point(x = 3, y = 4);
+    var x = 42;
+    println("hello $name!"); // CHECK: hello world!
+    println("$name"); // CHECK-NEXT: world
+    println("1 + 2 = ${1 + 2}"); // CHECK-NEXT: 1 + 2 = 3
+    println("$p"); // CHECK-NEXT: (3, 4)
+    println("point: $p!"); // CHECK-NEXT: point: (3, 4)!
+    println("nested: ${"inner $p"}"); // CHECK-NEXT: nested: inner (3, 4)
+    println("a$"); // CHECK-NEXT: a$
+    println("$$p"); // CHECK-NEXT: $p
+    println("$5"); // CHECK-NEXT: $5
+    println("$p$x"); // CHECK-NEXT: (3, 4)42
+}

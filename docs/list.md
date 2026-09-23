@@ -38,8 +38,6 @@ written `T[]` where `T` is the element type.
 Under the hood, a slice is a pointer to the array and a size.
 It is known in other languages by the name slice, span, or array view.
 
-<!-- TODO: Show that calculateSum also works with a List when implicit conversions are implemented -->
-
 ```cs
 // Function to calculate the sum of an array's elements.
 int calculateSum(int[] array) {
@@ -54,6 +52,8 @@ int calculateSum(int[] array) {
 
 void main() {
     println(calculateSum([1, 2, 3]));
+    // A List converts to an array reference implicitly.
+    println(calculateSum(List([4, 5, 6])));
 }
 ```
 

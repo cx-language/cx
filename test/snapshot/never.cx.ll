@@ -7,11 +7,11 @@ define %never @_EN4main1fE() #0 !dbg !4 {
 }
 
 define %never @_EN4main1gE() #0 !dbg !8 {
-  %1 = call %never @abort(), !dbg !9
+  %1 = call %never @_EN3std12abortWrapperE(), !dbg !9
   unreachable
 }
 
-declare %never @abort() #0
+declare %never @_EN3std12abortWrapperE() #0
 
 define %never @_EN4main1hE() #0 !dbg !10 {
   unreachable
