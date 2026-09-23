@@ -4,7 +4,7 @@ interface H {
     int h();
 }
 
-struct R: Copyable {
+struct R: Copyable, H {
     int i;
 
     int h() {
