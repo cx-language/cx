@@ -5,5 +5,5 @@ import "inputs/indirect-include.h";
 
 void main() {
     // CHECK-NOT: ambiguous reference
-    test();
+    duplicateImportProbe();
 }

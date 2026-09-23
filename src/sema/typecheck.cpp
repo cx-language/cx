@@ -158,6 +158,12 @@ static void checkUnusedDeclsInModule(const Module& module) {
 
             if (decl->isFunctionDecl() || decl->isFunctionTemplate()) {
                 if (decl->isMain()) continue;
+                // Test functions are entry points for `cx test`, like main is for `cx run`.
+                if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl); functionDecl && functionDecl->isTest) continue;
+                if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl);
+                    functionTemplate && functionTemplate->functionDecl->isTest) {
+                    continue;
+                }
                 WARN(decl->getLocation(), "unused declaration '" << decl->getName() << "'");
             }
         }
