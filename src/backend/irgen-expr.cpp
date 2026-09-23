@@ -482,6 +482,75 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
         return result;
     }
 
+    // Array programming (`float[3] + float[3]`, `float[3] * 2.0`, etc.):
+    // element-wise ops over fixed-size arrays. Typechecking validated sizes
+    // and returns array (arithmetic) or bool (==/!=); emit directly here.
+    // Skip when an overload was selected (calleeDecl set, e.g. `char[N] == string`
+    // via string overloads); only builtin element-wise ops reach here.
+    if (expr.calleeDecl == nullptr) {
+        Type leftT = expr.getLHS().type.removeOptional().removePointer();
+        Type rightT = expr.getRHS().type.removeOptional().removePointer();
+        bool leftIsArray = leftT.isArrayType() && leftT.isConstantArray();
+        bool rightIsArray = rightT.isArrayType() && rightT.isConstantArray();
+        bool isArrayOp = (leftIsArray || rightIsArray)
+                      && (expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star || expr.op == Token::Slash || expr.op == Token::Modulo
+                          || expr.op == Token::PositiveModulo || expr.op == Token::Equal || expr.op == Token::NotEqual || expr.op == Token::And
+                          || expr.op == Token::Or || expr.op == Token::Xor || expr.op == Token::LeftShift || expr.op == Token::RightShift);
+        if (isArrayOp && (leftIsArray || rightIsArray)) {
+            Type arrayT = leftIsArray ? leftT : rightT;
+            int64_t arraySize = arrayT.getArraySize();
+            auto* lhsValue = emitExpr(expr.getLHS());
+            auto* rhsValue = emitExpr(expr.getRHS());
+            Value* lhsPtr = nullptr;
+            Value* rhsPtr = nullptr;
+            Value* lhsScalar = nullptr;
+            Value* rhsScalar = nullptr;
+            if (leftIsArray) {
+                lhsPtr = lhsValue->getType()->isPointerType() ? lhsValue : createTempAlloca(lhsValue);
+            } else {
+                lhsScalar = lhsValue;
+            }
+            if (rightIsArray) {
+                rhsPtr = rhsValue->getType()->isPointerType() ? rhsValue : createTempAlloca(rhsValue);
+            } else {
+                rhsScalar = rhsValue;
+            }
+
+            auto emitArrayElement = [&](Value* arrayPtr, int64_t index) -> Value* {
+                auto* zero = createConstantInt(Type::getInt(), 0);
+                auto* idx = createConstantInt(Type::getInt(), static_cast<int>(index));
+                auto* gep = createGEP(arrayPtr, {zero, idx});
+                return createLoad(gep);
+            };
+
+            bool isComparison = (expr.op == Token::Equal || expr.op == Token::NotEqual);
+            if (isComparison) {
+                // `a == b` lowers to `(a[0]==b[0]) & (a[1]==b[1]) & ...` (bitwise
+                // AND on bools, eager; equivalent to && for pure comparisons).
+                // `!=` uses `|` (OR). Broadcast compares each element to the scalar.
+                Token::Kind combiner = expr.op == Token::Equal ? Token::And : Token::Or;
+                Value* result = nullptr;
+                for (int64_t i = 0; i < arraySize; ++i) {
+                    Value* lhsElem = leftIsArray ? emitArrayElement(lhsPtr, i) : lhsScalar;
+                    Value* rhsElem = rightIsArray ? emitArrayElement(rhsPtr, i) : rhsScalar;
+                    Value* cmp = createBinaryOp(expr.op, lhsElem, rhsElem, &expr);
+                    result = result ? createBinaryOp(combiner, result, cmp, &expr) : cmp;
+                }
+                return result;
+            } else {
+                auto* arrayIRType = getIRType(arrayT);
+                Value* result = createUndefined(arrayIRType);
+                for (int64_t i = 0; i < arraySize; ++i) {
+                    Value* lhsElem = leftIsArray ? emitArrayElement(lhsPtr, i) : lhsScalar;
+                    Value* rhsElem = rightIsArray ? emitArrayElement(rhsPtr, i) : rhsScalar;
+                    Value* elem = createBinaryOp(expr.op, lhsElem, rhsElem, &expr);
+                    result = createInsertValue(result, elem, static_cast<int>(i));
+                }
+                return result;
+            }
+        }
+    }
+
     if (expr.calleeDecl != nullptr) {
         auto* value = emitCallExpr(expr);
         if (expr.negateResult) value = createNot(value);

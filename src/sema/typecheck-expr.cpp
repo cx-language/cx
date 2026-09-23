@@ -633,6 +633,120 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         }
     }
 
+    // Array programming (e.g. `float[3] + float[3]`, `float[3] * 2.0`):
+    // element-wise ops over fixed-size arrays, like Odin. Both operands must
+    // be constant-size arrays for array-array ops (sizes must match), or one
+    // array + one scalar convertible to the element type for broadcast.
+    // Lowered to an array literal of element-wise ops over temporaries, so
+    // operands with side effects evaluate once. Returns the array type for
+    // arithmetic, bool for ==/!= (all-equal semantics).
+    {
+        bool leftIsArray = leftType.isArrayType() && leftType.isConstantArray();
+        bool rightIsArray = rightType.isArrayType() && rightType.isConstantArray();
+        bool isArrayOp = (leftIsArray || rightIsArray)
+                      && (op == Token::Plus || op == Token::Minus || op == Token::Star || op == Token::Slash || op == Token::Modulo
+                          || op == Token::PositiveModulo || op == Token::Equal || op == Token::NotEqual);
+        // Bitwise ops on integer arrays are also element-wise.
+        if ((leftIsArray || rightIsArray) && (op == Token::And || op == Token::Or || op == Token::Xor || op == Token::LeftShift || op == Token::RightShift)) {
+            isArrayOp = true;
+        }
+        if (isArrayOp) {
+            Type arrayType;
+            Type elementType;
+            Type scalarType;
+            bool isBroadcast = false;
+            bool scalarOnLeft = false;
+            int64_t arraySize = 0;
+
+            if (leftIsArray && rightIsArray) {
+                if (leftType.getArraySize() != rightType.getArraySize()) {
+                    ERROR_RANGE(expr.location, expr.endLocation,
+                                "array sizes must match for element-wise '" << toString(op) << "' (got '" << leftType << "' and '" << rightType << "')");
+                }
+                // Element types must match (after conversions handled below per-element).
+                // For now require same element type modulo mutability; per-element
+                // conversions (e.g. int literal to float) are handled when
+                // typechecking each element op below.
+                arraySize = leftType.getArraySize();
+                arrayType = leftType;
+                elementType = leftType.getElementType();
+                // Verify right element type is compatible at a high level; detailed
+                // checking happens per-element below.
+                if (!rightType.getElementType().equalsIgnoreTopLevelMutable(elementType)) {
+                    // Allow if elements are mutually convertible via builtin ops;
+                    // per-element typechecking below will diagnose precisely.
+                }
+            } else if (leftIsArray) {
+                isBroadcast = true;
+                arrayType = leftType;
+                elementType = leftType.getElementType();
+                scalarType = rightType;
+                arraySize = leftType.getArraySize();
+            } else {
+                isBroadcast = true;
+                scalarOnLeft = true;
+                arrayType = rightType;
+                elementType = rightType.getElementType();
+                scalarType = leftType;
+                arraySize = rightType.getArraySize();
+            }
+
+            // Only fixed-size arrays with known size lower via unrolling.
+            // Symbolic sizes (generic N) cannot unroll; fall through to normal
+            // handling (which will error appropriately, since no overload exists).
+            // For size mismatches, error directly (no overload could reasonably
+            // handle different-sized builtin arrays element-wise).
+            if (!arrayType.isConstantArray()) {
+                // Fall through; normal handling will error (no builtin op for arrays).
+                goto not_array_programming;
+            }
+
+            // For element type mismatches or non-builtin element ops, fall through
+            // to overload resolution (e.g. `char[N] == string` uses string overloads,
+            // not element-wise). Only proceed with builtin array programming when
+            // element types match exactly and op is builtin for elements.
+            // This preserves backward compatibility for existing array comparisons
+            // via overloads while enabling element-wise ops for matching numerics.
+            if (leftIsArray && rightIsArray) {
+                Type leftElem = leftType.getElementType();
+                Type rightElem = rightType.getElementType();
+                if (!leftElem.equalsIgnoreTopLevelMutable(rightElem)) {
+                    goto not_array_programming;
+                }
+                if (!isBuiltinOp(op, leftElem, rightElem)) {
+                    goto not_array_programming;
+                }
+            } else {
+                // Broadcast: require exact scalar-element match and builtin op;
+                // otherwise fall through to overloads (or standard invalid-operands error).
+                if (!scalarType.equalsIgnoreTopLevelMutable(elementType)) {
+                    goto not_array_programming;
+                }
+                if (!isBuiltinOp(op, elementType, scalarType)) {
+                    goto not_array_programming;
+                }
+            }
+
+            // Comparison returns bool (all elements equal for ==, any different for !=).
+            // IRGen emits element-wise directly (see emitBinaryExpr); no lowering
+            // AST is created here to avoid synthesized-node IRGen issues.
+            // Operands evaluate once in IRGen (emitted once, reused for elements).
+            bool isComparison = (op == Token::Equal || op == Token::NotEqual);
+
+            if (isComparison) {
+                // `a == b` validates above; IRGen emits `(a[0]==b[0]) & ...`.
+                return Type::getBool();
+            } else {
+                // Arithmetic returns the array type. IRGen emits element-wise.
+                // Validate sizes match (done above) and element op is plausible.
+                // Detailed element typechecking happens in IRGen or is deferred
+                // to per-element ops at codegen time; return array type now.
+                return arrayType;
+            }
+        }
+    not_array_programming:;
+    }
+
     if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
     }

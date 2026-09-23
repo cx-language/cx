@@ -262,6 +262,10 @@ struct BinaryExpr : CallExpr {
     VarDecl* anonymousStructTempLHS = nullptr;
     VarDecl* anonymousStructTempRHS = nullptr;
     Expr* anonymousStructComparisonLowering = nullptr;
+    // NOTE: Array programming (`float[3] + float[3]`, etc.) does NOT use lowering
+    // AST fields; typechecking validates and returns the type directly, and IRGen
+    // emits element-wise directly (see emitBinaryExpr). No temporaries needed
+    // since IRGen emits operands once and reuses values for elements.
 };
 
 bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);
