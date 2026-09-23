@@ -1738,7 +1738,7 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
         }
     } else {
         for (GenericArg arg : call.genericArgs) {
-            if (arg.isType() && arg.type.containsReference()) {
+            if (arg.isType() && arg.type.storesBorrow()) {
                 ERROR(arg.location, "reference type '" << arg.type << "' may only appear as a function parameter type");
             }
         }
@@ -1871,29 +1871,6 @@ static const Match* findMatchWithMostExactArgs(llvm::ArrayRef<Match> matches, co
     return result;
 }
 
-// Returns the only candidate instantiated from the fewest generic arguments,
-// or null when tied. Prefers more specialized templates when both match
-// exactly. Scoped to `map`, whose borrow (`map<Output>`) and value
-// (`map<Output, T>`) overloads are both templates; other ambiguities
-// (e.g. Box constructor) must stay ambiguous.
-static const Match* findMatchWithFewestGenericArgs(llvm::ArrayRef<Match> matches) {
-    const Match* result = nullptr;
-    auto bestCount = size_t(-1);
-
-    for (auto& match : matches) {
-        if (!llvm::isa<FunctionDecl>(match.decl)) return nullptr;
-        size_t count = llvm::cast<FunctionDecl>(match.decl)->genericArgs.size();
-        if (!result || count < bestCount) {
-            bestCount = count;
-            result = &match;
-        } else if (count == bestCount) {
-            result = nullptr;
-        }
-    }
-
-    return result;
-}
-
 static bool isStdlibDecl(const Match& match) {
     return match.decl->getModule() && match.decl->getModule()->name == "std";
 }
@@ -1918,10 +1895,6 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
         return llvm::find_if(matches, [](auto& match) { return match.didWrapOptional == false; });
     } else if (auto match = findMatchWithMostExactArgs(matches, call)) {
         return match;
-    } else if (call.getFunctionName() == "map") {
-        if (auto match = findMatchWithFewestGenericArgs(matches)) return match;
-        if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) return match;
-        return nullptr;
     } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) {
         return match;
     } else {

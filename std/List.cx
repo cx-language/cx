@@ -175,7 +175,7 @@ struct List<Element> {
     }
 
     /// Removes the first element satisfying the given condition and returns it, or null if none matches.
-    Element? removeFirst<T>(bool(T) shouldRemove) {
+    Element? removeFirst<T: Copyable>(bool(T) shouldRemove) {
         for index in 0..size {
             if shouldRemove(this[index]) {
                 return unsafeRemoveAt(index);
@@ -245,7 +245,7 @@ struct List<Element> {
     }
 
     /// Returns the first element satisfying the predicate, or null.
-    Element*? find<T>(bool(T) predicate) {
+    Element*? find<T: Copyable>(bool(T) predicate) {
         for i in 0..size() {
             if predicate(this[i]) {
                 return &this[i];
@@ -256,23 +256,23 @@ struct List<Element> {
     }
 
     /// Lazily transforms the elements. Collect the results with toList().
-    MappedIterator<Output, Element, ArrayIterator<Element>> map<Output>(Output(Element&) transform) {
-        return MappedIterator(iterator(), transform);
+    MappedIterator<Output, Element, ArrayIterator<Element>, Output(Element&)> map<Output>(Output(Element&) transform) {
+        return MappedIterator<Output, Element, ArrayIterator<Element>, Output(Element&)>(iterator(), transform);
     }
 
     /// Lazily transforms the elements. Collect the results with toList().
-    MappedValueIterator<Output, Element, ArrayIterator<Element>> map<Output, T>(Output(T) transform) {
-        return MappedValueIterator(iterator(), transform);
+    MappedIterator<Output, Element, ArrayIterator<Element>, Output(T)> map<Output, T: Copyable>(Output(T) transform) {
+        return MappedIterator<Output, Element, ArrayIterator<Element>, Output(T)>(iterator(), transform);
     }
 
     /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
-    FilterIterator<Element, ArrayIterator<Element>> filter(bool(Element&) include) {
-        return FilterIterator(iterator(), include);
+    FilterIterator<Element, ArrayIterator<Element>, bool(Element&)> filter(bool(Element&) include) {
+        return FilterIterator<Element, ArrayIterator<Element>, bool(Element&)>(iterator(), include);
     }
 
     /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
-    FilterValueIterator<Element, ArrayIterator<Element>> filter<T>(bool(T) include) {
-        return FilterValueIterator(iterator(), include);
+    FilterIterator<Element, ArrayIterator<Element>, bool(T)> filter<T: Copyable>(bool(T) include) {
+        return FilterIterator<Element, ArrayIterator<Element>, bool(T)>(iterator(), include);
     }
 
     /// Lazily appends another iterator's elements. Collect the results with toList().
@@ -284,15 +284,15 @@ struct List<Element> {
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element&) predicate) { return all(iterator(), predicate); }
     /// Returns true if all elements satisfy the predicate.
-    bool all<T>(bool(T) predicate) { return all(iterator(), predicate); }
+    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
     /// Returns true if any element satisfies the predicate.
     bool any(bool(Element&) predicate) { return any(iterator(), predicate); }
     /// Returns true if any element satisfies the predicate.
-    bool any<T>(bool(T) predicate) { return any(iterator(), predicate); }
+    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
     /// Returns true if no element satisfies the predicate.
     bool none(bool(Element&) predicate) { return none(iterator(), predicate); }
     /// Returns true if no element satisfies the predicate.
-    bool none<T>(bool(T) predicate) { return none(iterator(), predicate); }
+    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
 
     private void grow() {
         if capacity == 0 {

@@ -39,13 +39,13 @@ struct Range<T>: Copyable {
     /// Returns true if all values satisfy the predicate.
     bool all(bool(T&) predicate) { return all(iterator(), predicate); }
     /// Returns true if all values satisfy the predicate.
-    bool all<U>(bool(U) predicate) { return all(iterator(), predicate); }
+    bool all<U: Copyable>(bool(U) predicate) { return all(iterator(), predicate); }
     /// Returns true if any value satisfies the predicate.
     bool any(bool(T&) predicate) { return any(iterator(), predicate); }
     /// Returns true if any value satisfies the predicate.
-    bool any<U>(bool(U) predicate) { return any(iterator(), predicate); }
+    bool any<U: Copyable>(bool(U) predicate) { return any(iterator(), predicate); }
     /// Returns true if no value satisfies the predicate.
     bool none(bool(T&) predicate) { return none(iterator(), predicate); }
     /// Returns true if no value satisfies the predicate.
-    bool none<U>(bool(U) predicate) { return none(iterator(), predicate); }
+    bool none<U: Copyable>(bool(U) predicate) { return none(iterator(), predicate); }
 }
