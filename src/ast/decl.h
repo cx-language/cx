@@ -212,6 +212,8 @@ struct FunctionDecl : Decl {
     Module& module;
     bool typechecked;
     bool isPackInstantiation = false;
+    // Set by the `test` marker; collected and run by `cx test`.
+    bool isTest = false;
     // Enclosing function for lambdas, null otherwise. Set during typechecking.
     FunctionDecl* parentFunction = nullptr;
     // Outer locals and parameters captured by value, in first-use order. Only lambdas capture.

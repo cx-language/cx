@@ -299,6 +299,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "sizeof",
         "struct",
         "switch",
+        "test",
         "then",
         "this",
         "true",
