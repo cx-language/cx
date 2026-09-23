@@ -1,0 +1,52 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// Callbacks accept Copyable types by value or by borrow; untyped lambdas
+// borrow. Borrowed callbacks must not consume non-Copyable elements.
+
+bool isEvenVal(int n) {
+    return n % 2 == 0;
+}
+
+bool isEvenRef(int& n) {
+    return *n % 2 == 0;
+}
+
+int doubleVal(int n) {
+    return n * 2;
+}
+
+int doubleRef(int& n) {
+    return *n * 2;
+}
+
+bool isLongRef(StringBuffer& s) {
+    return s.size() > 1;
+}
+
+void main() {
+    var numbers = List([0, 1, 2, 3, 4]);
+
+    assert(numbers.filter(isEvenVal).toList() == List([0, 2, 4]));
+    assert(numbers.filter(isEvenRef).toList() == List([0, 2, 4]));
+    assert(numbers.filter(n => n % 2 == 0).toList() == List([0, 2, 4]));
+    assert(numbers.filter((int n) => n % 2 == 0).toList() == List([0, 2, 4]));
+    assert(numbers.filter((int& n) => *n % 2 == 0).toList() == List([0, 2, 4]));
+
+    assert(numbers.map(doubleVal).toList() == List([0, 2, 4, 6, 8]));
+    assert(numbers.map(doubleRef).toList() == List([0, 2, 4, 6, 8]));
+    assert(numbers.map(n => n * 2).toList() == List([0, 2, 4, 6, 8]));
+
+    assert(List([0, 1, 2, 3, 4]).filter(isEvenVal).map(n => n * 2).toList() == List([0, 4, 8]));
+    assert(List([0, 1, 2, 3, 4]).filter(isEvenRef).map(doubleVal).toList() == List([0, 4, 8]));
+
+    assert(numbers.find(isEvenVal)! == 0);
+    assert(numbers.find(isEvenRef)! == 0);
+    assert(numbers.all(isEvenVal) == false);
+    assert(numbers.all(isEvenRef) == false);
+    assert(numbers.all(n => n >= 0) == true);
+
+    var buffers = List([StringBuffer("a"), StringBuffer("bb"), StringBuffer("ccc")]);
+    assert(buffers.filter(isLongRef).toList().size() == 2);
+    assert(buffers.size() == 3);
+    assert(buffers.filter(s => s.size() > 1).toList().size() == 2);
+    assert(buffers.size() == 3);
+}

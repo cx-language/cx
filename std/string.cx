@@ -305,11 +305,17 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     /// Returns true if all characters satisfy the predicate.
-    bool all(bool(char) predicate) { return all(iterator(), predicate); }
+    bool all(bool(char&) predicate) { return all(iterator(), predicate); }
+    /// Returns true if all characters satisfy the predicate.
+    bool all<T>(bool(T) predicate) { return all(iterator(), predicate); }
     /// Returns true if any character satisfies the predicate.
-    bool any(bool(char) predicate) { return any(iterator(), predicate); }
+    bool any(bool(char&) predicate) { return any(iterator(), predicate); }
+    /// Returns true if any character satisfies the predicate.
+    bool any<T>(bool(T) predicate) { return any(iterator(), predicate); }
     /// Returns true if no character satisfies the predicate.
-    bool none(bool(char) predicate) { return none(iterator(), predicate); }
+    bool none(bool(char&) predicate) { return none(iterator(), predicate); }
+    /// Returns true if no character satisfies the predicate.
+    bool none<T>(bool(T) predicate) { return none(iterator(), predicate); }
 
     private void indexOutOfBounds(string function, int index) {
         abort("string.", function, ": index ", index, " is out of bounds, size is ", size());
