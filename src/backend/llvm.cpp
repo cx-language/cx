@@ -16,6 +16,7 @@
 #pragma warning(pop)
 
 #include "ir.h"
+#include "../ast/expr.h"
 
 using namespace cx;
 
