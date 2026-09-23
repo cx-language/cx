@@ -3,10 +3,12 @@
 // CHECK:9
 // CHECK-NEXT:6
 // CHECK-NEXT:21
+// CHECK-NEXT:5
+// CHECK-NEXT:4
 
 // Exercises fixed-size array struct fields (which the C backend addresses as
-// pointers to arrays) and `undefined` call arguments through both C code
-// generation modes.
+// pointers to arrays), nested arrays, arrays in anonymous structs, and
+// `undefined` call arguments through both C code generation modes.
 
 struct Particle {
     float[3] pos;
@@ -35,4 +37,10 @@ void main() {
 
     var r = Particle([1, 2, 3], [4, 5, 6]);
     println(sum(&r));
+
+    int[2][2] m = [[1, 2], [3, 4]];
+    println(m[0][1] + m[1][0]);
+
+    var t = (a = [1, 2, 3]);
+    println(t.a[0] + t.a[2]);
 }

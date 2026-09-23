@@ -241,6 +241,25 @@ void CGenerator::codegenInsert(const InsertInst* inst) {
         codegenInst(inst->aggregate);
         stream << ", sizeof(" << name << ")); ";
     }
+    if (inst->value->getType()->isArrayType()) {
+        // C arrays are not assignable; copy element-wise like codegenStore.
+        stream << "memcpy(&" << name;
+        if (type->isArrayType()) {
+            stream << "[" << inst->index << "]";
+        } else {
+            stream << "." << getFieldName(type, inst->index);
+        }
+        stream << ", &";
+        codegenInst(inst->value);
+        stream << ", sizeof(" << name;
+        if (type->isArrayType()) {
+            stream << "[" << inst->index << "]";
+        } else {
+            stream << "." << getFieldName(type, inst->index);
+        }
+        stream << "));\n";
+        return;
+    }
     stream << name;
     if (type->isArrayType()) {
         stream << "[" << inst->index << "] = ";
@@ -389,8 +408,8 @@ void CGenerator::codegenGEP(const GEPInst* inst) {
         // The declaration is hoisted (see codegenFunctionDispatch).
         stream << name << " = &(";
     } else {
-        codegenType(stream, inst->getType(), true);
-        stream << " " << name << " = &(";
+        codegenTempDeclarationForType(inst->getType(), name);
+        stream << " = &(";
     }
     codegenInst(inst->pointer);
     for (auto* index : inst->indexes) {
@@ -1096,6 +1115,7 @@ void CGenerator::codegenTypeSuffix(llvm::raw_string_ostream& stream, IRType* typ
         // MSVC rejects zero-size arrays (C2466); over-allocate one dummy
         // element instead. It is never accessed: indexing is bounds-checked.
         stream << "[" << (arrayType->size == 0 ? 1 : arrayType->size) << "]";
+        codegenTypeSuffix(stream, arrayType->elementType, false);
         break;
     }
     case IRTypeKind::IRFunctionType: {
