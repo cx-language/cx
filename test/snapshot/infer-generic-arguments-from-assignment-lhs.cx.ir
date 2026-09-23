@@ -243,23 +243,24 @@ overflow.end(bool overflowed):
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _6 = call _EN3std10assertFailEP4char(char* "integer overflow at allocate.cx:36:46
+    void _6 = call _EN3std10assertFailEP4char(char* "integer overflow at allocate.cx:36:55
 ")
     unreachable
 
 overflow.success:
-    void* _7 = call malloc(uint64 _1)
-    bool assert.condition = _7 == void* null
+    c_size_t _7 = cast _1 to c_size_t
+    void* _8 = call malloc(c_size_t _7)
+    bool assert.condition = _8 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _8 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+    void _9 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:71
 ")
     unreachable
 
 assert.success:
-    int* _9 = cast _7 to int*
-    return _9
+    int* _10 = cast _8 to int*
+    return _10
 }
 
 int* _EN3std5SliceI3intE4dataE(Slice<int>* this) {

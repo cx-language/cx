@@ -5,8 +5,8 @@
 %"RangeIterator<int>" = type { i32, i32 }
 %"Range<int>" = type { i32, i32 }
 
-@0 = private unnamed_addr constant [39 x i8] c"integer overflow at allocate.cx:36:46\0A\00", align 1
-@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
+@0 = private unnamed_addr constant [39 x i8] c"integer overflow at allocate.cx:36:55\0A\00", align 1
+@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:71\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
   %i = alloca %"List<int>", align 8

@@ -89,6 +89,7 @@ struct Type {
     bool isUInt32() const;
     bool isUInt64() const;
     bool isUInt128() const;
+    bool isCSizeT() const;
     bool isByte() const;
     bool isFloat() const;
     bool isFloat32() const;
@@ -154,6 +155,7 @@ struct Type {
     static Type getUInt32(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt128(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCSizeT(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getByte(Mutability mutability = Mutability::Mutable, Location location = Location());
     // TODO: Return correct uintptr type by checking target platform pointer size.
     static Type getUIntPtr(Mutability mutability = Mutability::Mutable, Location location = Location()) { return getUInt64(mutability, location); }

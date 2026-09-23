@@ -36,6 +36,8 @@ static const llvm::DataLayout& getHostDataLayout() {
 }
 
 llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
+    // c_size_t matches C's size_t (pointer-sized); host width is target width.
+    if (name == "c_size_t") return sizeof(void*) == 8 ? llvm::Type::getInt64Ty(ctx) : llvm::Type::getInt32Ty(ctx);
     return llvm::StringSwitch<llvm::Type*>(name)
         .Case("void", llvm::Type::getVoidTy(ctx))
         .Case("bool", llvm::Type::getInt1Ty(ctx))

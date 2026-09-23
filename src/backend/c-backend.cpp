@@ -1039,6 +1039,7 @@ void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, boo
                                     .Case("uint32", "uint32_t")
                                     .Case("uint64", "uint64_t")
                                     .Case("uint128", "unsigned __int128")
+                                    .Case("c_size_t", "size_t")
                                     .Case("float", "float")
                                     .Case("float32", "float")
                                     .Case("float64", "double")

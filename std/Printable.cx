@@ -28,7 +28,7 @@ struct OutputStream {
         if buffer {
             buffer.append(s);
         } else if file {
-            fwrite(s.data(), sizeof(char), uint64(s.size()), file);
+            fwrite(s.data(), sizeof(char), c_size_t(s.size()), file);
         } else {
             printf("%.*s", s.size(), s.data());
         }

@@ -293,6 +293,27 @@ struct uint64: Copyable, Comparable, Printable, Hashable, Addable {
     }
 }
 
+/// C's `size_t` type: a pointer-sized unsigned integer, 32-bit on wasm32 and
+/// 64-bit on the 64-bit native targets. Use it for C externs that take
+/// `size_t` (e.g. `getcwd`) so the generated call matches the C headers on
+/// every target. (No `max`/`min`: the largest value depends on the target.)
+struct c_size_t: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Compares this value to another.
+    Ordering compare(c_size_t& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printUnsigned(uint64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
 // Not Printable or Hashable for now.
 /// A 128-bit unsigned integer.
 struct uint128: Copyable, Comparable {
