@@ -1,7 +1,6 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:42
 // CHECK-NEXT:43
-// CHECK-NEXT:43
 
 void bar(int*?* pp) {
     int*? p = *pp;
@@ -21,8 +20,6 @@ void fooAddr(int*? p) {
 }
 
 void fooAddrPlain(int* p) {
-    // int** converts to int*?* when taking the address explicitly.
-    bar(&p);
     barPlain(&p);
 }
 

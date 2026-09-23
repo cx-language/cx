@@ -883,10 +883,13 @@ static bool isSafeNumericWidening(Type source, Type target) {
     return false;
 }
 
-bool Typechecker::isReinterpretible(const Expr* expr, Type source, Type target, bool diagnoseOutOfRange) const {
-    std::optional<ImplicitCastExpr::Kind> innerKind;
-    // Widening changes the value representation, so pointers to it can't be reinterpreted.
-    return isImplicitlyConvertible(expr, source, target, false, &innerKind, diagnoseOutOfRange) && innerKind != ImplicitCastExpr::NumericWiden;
+// True when viewing source bits as target needs no conversion: the types must match
+// exactly, except that const may be added (nothing can be written through a const
+// target, so narrowing the uses is safe). Anything else, even representation-preserving
+// widening like `int*` to `int*?`, would let writes through the reinterpreted pointer
+// break the source invariant, so pointers to it can't be reinterpreted.
+static bool isReinterpretible(Type source, Type target) {
+    return source == target || (!target.isMutable() && source.equalsIgnoreTopLevelMutable(target));
 }
 
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
@@ -919,7 +922,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     if (source.isPointerType() && target.isPointerType() && source.isReferenceType() == target.isReferenceType()
         && (source.getPointee().isMutable() || !target.getPointee().isMutable())
-        && (isReinterpretible(nullptr, source.getPointee(), target.getPointee(), diagnoseOutOfRange) || target.getPointee().isVoid())) {
+        && (isReinterpretible(source.getPointee(), target.getPointee()) || target.getPointee().isVoid())) {
         return source;
     }
 
@@ -1045,8 +1048,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if (source.isArrayType() && target.removeOptional().isPointerType()
-        && isReinterpretible(nullptr, source.getElementType(), target.removeOptional().getPointee(), diagnoseOutOfRange)) {
+    if (source.isArrayType() && target.removeOptional().isPointerType() && isReinterpretible(source.getElementType(), target.removeOptional().getPointee())) {
         return source;
     }
 
@@ -1056,7 +1058,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && source.getPointee().isArrayType() && target.removeOptional().isPointerType()
-        && isReinterpretible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee(), diagnoseOutOfRange)) {
+        && isReinterpretible(source.getPointee().getElementType(), target.removeOptional().getPointee())) {
         return source;
     }
 
