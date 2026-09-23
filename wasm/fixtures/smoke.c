@@ -49,13 +49,13 @@ struct _12StringBuffer {
     struct _4ListI4charE characters;
 };
 
-struct _8ArrayRefI4charE {
+struct _5SliceI4charE {
     char* data;
     int size;
 };
 
 struct _6string {
-    struct _8ArrayRefI4charE characters;
+    struct _5SliceI4charE characters;
 };
 
 struct _14StringIterator {
@@ -159,16 +159,16 @@ void _EN3std4ListI4charE4pushE4char(struct _4ListI4charE* this, char element);
 void _EN3std14StringIterator4initE6string(struct _14StringIterator* this, struct _6string s);
 void _EN3std4ListI4charEixaE3int4char(struct _4ListI4charE* this, int index, char element);
 int _EN3std12StringBuffer4sizeE(struct _12StringBuffer* this);
-void _EN3std8ArrayRefI4charE4initEP4char3int(struct _8ArrayRefI4charE* this, char* data, int size);
+void _EN3std5SliceI4charE4initEP4char3int(struct _5SliceI4charE* this, char* data, int size);
 int _EN3std6string7compareEP6string(struct _6string* this, struct _6string* other);
 void _EN3std13RangeIteratorI3intE4initE5RangeI3intE(struct _13RangeIteratorI3intE* this, struct _5RangeI3intE range);
 struct _12StringBuffer _EN3std4char8toStringE(char* this);
 void _EN3std4ListI4charE4initE8capacity3int(struct _4ListI4charE* this, int capacity);
 void _EN3std4ListI4charE4initE17uninitializedSize3int(struct _4ListI4charE* this, int uninitializedSize);
 char* _EN3std4ListI4charE4dataE(struct _4ListI4charE* this);
-char* _EN3std8ArrayRefI4charE4dataE(struct _8ArrayRefI4charE* this);
-int _EN3std8ArrayRefI4charE4sizeE(struct _8ArrayRefI4charE* this);
-char* _EN3std8ArrayRefI4charEixE3int(struct _8ArrayRefI4charE* this, int index);
+char* _EN3std5SliceI4charE4dataE(struct _5SliceI4charE* this);
+int _EN3std5SliceI4charE4sizeE(struct _5SliceI4charE* this);
+char* _EN3std5SliceI4charEixE3int(struct _5SliceI4charE* this, int index);
 void _EN3std5printI6stringEEP6string(struct _6string* value);
 void _EN3std5printI3intEEP3int(int* value);
 struct _13ArrayIteratorI4charE _EN3std4ListI4charE8iteratorE(struct _4ListI4charE* this);
@@ -184,11 +184,11 @@ int _EN3std5RangeI3intE3endE(struct _5RangeI3intE* this);
 void _EN3std4char5printEP12StringBuffer(char* this, struct _12StringBuffer* stream);
 void _EN3std4ListI4charE7reserveE3int(struct _4ListI4charE* this, int minimumCapacity);
 char* _EN3std13allocateArrayI4charEE3int(int size);
-void _EN3std8ArrayRefI4charE16indexOutOfBoundsE6string3int(struct _8ArrayRefI4charE* this, struct _6string function, int index);
+void _EN3std5SliceI4charE16indexOutOfBoundsE6string3int(struct _5SliceI4charE* this, struct _6string function, int index);
 struct _12StringBuffer _EN3std6string8toStringE(struct _6string* this);
 struct _12StringBuffer _EN3std3int8toStringE(int* this);
-void _EN3std13ArrayIteratorI4charE4initE8ArrayRefI4charE(struct _13ArrayIteratorI4charE* this, struct _8ArrayRefI4charE array);
-void _EN3std8ArrayRefI4charE4initEP4ListI4charE(struct _8ArrayRefI4charE* this, struct _4ListI4charE* list);
+void _EN3std13ArrayIteratorI4charE4initE5SliceI4charE(struct _13ArrayIteratorI4charE* this, struct _5SliceI4charE array);
+void _EN3std5SliceI4charE4initEP4ListI4charE(struct _5SliceI4charE* this, struct _4ListI4charE* list);
 void _EN3std5abortI6string6string6string3int6string3intEEP6stringP6stringP6stringP3intP6stringP3int(struct _6string* _0, struct _6string* _1, struct _6string* _2, int* _3, struct _6string* _4, int* _5);
 void _EN3std6string5printEP12StringBuffer(struct _6string* this, struct _12StringBuffer* stream);
 void _EN3std3int5printEP12StringBuffer(int* this, struct _12StringBuffer* stream);
@@ -536,15 +536,15 @@ struct _12StringBuffer _EN3stdplE6string4char(struct _6string a, char b) {
 }
 
 void _EN3std6string4initEP4char3int(struct _6string* this, char* pointer, int length) {
-    struct _8ArrayRefI4charE _alloca0;
-    struct _8ArrayRefI4charE* _const_get_element_ptr1;
-    struct _8ArrayRefI4charE _load2;
+    struct _5SliceI4charE _alloca0;
+    struct _5SliceI4charE* _const_get_element_ptr1;
+    struct _5SliceI4charE _load2;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
     _const_get_element_ptr1 = &this->characters;
-    _EN3std8ArrayRefI4charE4initEP4char3int((&_alloca0), pointer, length);
+    _EN3std5SliceI4charE4initEP4char3int((&_alloca0), pointer, length);
     _load2 = *(&_alloca0);
     *_const_get_element_ptr1 = _load2;
     return;
@@ -573,11 +573,11 @@ struct _12StringBuffer _EN3stdplE6stringAU_4char(struct _6string a, char* b) {
 }
 
 void _EN3std6string4initEP4char(struct _6string* this, char* cString) {
-    struct _8ArrayRefI4charE _alloca0;
-    struct _8ArrayRefI4charE* _const_get_element_ptr1;
+    struct _5SliceI4charE _alloca0;
+    struct _5SliceI4charE* _const_get_element_ptr1;
     uint64_t _call2;
     int _cast3;
-    struct _8ArrayRefI4charE _load4;
+    struct _5SliceI4charE _load4;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
@@ -585,7 +585,7 @@ void _EN3std6string4initEP4char(struct _6string* this, char* cString) {
     _const_get_element_ptr1 = &this->characters;
     _call2 = strlen(cString);
     _cast3 = (int) _call2;
-    _EN3std8ArrayRefI4charE4initEP4char3int((&_alloca0), cString, _cast3);
+    _EN3std5SliceI4charE4initEP4char3int((&_alloca0), cString, _cast3);
     _load4 = *(&_alloca0);
     *_const_get_element_ptr1 = _load4;
     return;
@@ -808,11 +808,11 @@ _Bool _EN3stdeqE6string6string(struct _6string a, struct _6string b) {
 }
 
 void _EN3std6string4initEP12StringBuffer(struct _6string* this, struct _12StringBuffer* stringBuffer) {
-    struct _8ArrayRefI4charE _alloca0;
-    struct _8ArrayRefI4charE* _const_get_element_ptr1;
+    struct _5SliceI4charE _alloca0;
+    struct _5SliceI4charE* _const_get_element_ptr1;
     char* _call2;
     int _call3;
-    struct _8ArrayRefI4charE _load4;
+    struct _5SliceI4charE _load4;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
@@ -820,7 +820,7 @@ void _EN3std6string4initEP12StringBuffer(struct _6string* this, struct _12String
     _const_get_element_ptr1 = &this->characters;
     _call2 = _EN3std12StringBuffer4dataE(stringBuffer);
     _call3 = _EN3std12StringBuffer4sizeE(stringBuffer);
-    _EN3std8ArrayRefI4charE4initEP4char3int((&_alloca0), _call2, _call3);
+    _EN3std5SliceI4charE4initEP4char3int((&_alloca0), _call2, _call3);
     _load4 = *(&_alloca0);
     *_const_get_element_ptr1 = _load4;
     return;
@@ -1928,14 +1928,14 @@ _Bool _EN3std9writeFileE6string6string(struct _6string path, struct _6string con
 }
 
 char* _EN3std6string4dataE(struct _6string* this) {
-    struct _8ArrayRefI4charE* _const_get_element_ptr0;
+    struct _5SliceI4charE* _const_get_element_ptr0;
     char* _call1;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
     _const_get_element_ptr0 = &this->characters;
-    _call1 = _EN3std8ArrayRefI4charE4dataE(_const_get_element_ptr0);
+    _call1 = _EN3std5SliceI4charE4dataE(_const_get_element_ptr0);
     return _call1;
         }
         default: abort();
@@ -1944,14 +1944,14 @@ char* _EN3std6string4dataE(struct _6string* this) {
 }
 
 int _EN3std6string4sizeE(struct _6string* this) {
-    struct _8ArrayRefI4charE* _const_get_element_ptr0;
+    struct _5SliceI4charE* _const_get_element_ptr0;
     int _call1;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
     _const_get_element_ptr0 = &this->characters;
-    _call1 = _EN3std8ArrayRefI4charE4sizeE(_const_get_element_ptr0);
+    _call1 = _EN3std5SliceI4charE4sizeE(_const_get_element_ptr0);
     return _call1;
         }
         default: abort();
@@ -1960,7 +1960,7 @@ int _EN3std6string4sizeE(struct _6string* this) {
 }
 
 char _EN3std6stringixE3int(struct _6string* this, int index) {
-    struct _8ArrayRefI4charE* _const_get_element_ptr0;
+    struct _5SliceI4charE* _const_get_element_ptr0;
     char* _call1;
     char _load2;
     int _cx_pc = 0;
@@ -1968,7 +1968,7 @@ char _EN3std6stringixE3int(struct _6string* this, int index) {
         switch (_cx_pc) {
         case 0: {
     _const_get_element_ptr0 = &this->characters;
-    _call1 = _EN3std8ArrayRefI4charEixE3int(_const_get_element_ptr0, index);
+    _call1 = _EN3std5SliceI4charEixE3int(_const_get_element_ptr0, index);
     _load2 = *_call1;
     return _load2;
         }
@@ -2279,7 +2279,7 @@ int _EN3std12StringBuffer4sizeE(struct _12StringBuffer* this) {
     }
 }
 
-void _EN3std8ArrayRefI4charE4initEP4char3int(struct _8ArrayRefI4charE* this, char* data, int size) {
+void _EN3std5SliceI4charE4initEP4char3int(struct _5SliceI4charE* this, char* data, int size) {
     char** _const_get_element_ptr0;
     int* _const_get_element_ptr1;
     int _cx_pc = 0;
@@ -2542,7 +2542,7 @@ char* _EN3std4ListI4charE4dataE(struct _4ListI4charE* this) {
     }
 }
 
-char* _EN3std8ArrayRefI4charE4dataE(struct _8ArrayRefI4charE* this) {
+char* _EN3std5SliceI4charE4dataE(struct _5SliceI4charE* this) {
     char** _const_get_element_ptr0;
     char* _load1;
     int _cx_pc = 0;
@@ -2558,7 +2558,7 @@ char* _EN3std8ArrayRefI4charE4dataE(struct _8ArrayRefI4charE* this) {
     }
 }
 
-int _EN3std8ArrayRefI4charE4sizeE(struct _8ArrayRefI4charE* this) {
+int _EN3std5SliceI4charE4sizeE(struct _5SliceI4charE* this) {
     int* _const_get_element_ptr0;
     int _load1;
     int _cx_pc = 0;
@@ -2574,7 +2574,7 @@ int _EN3std8ArrayRefI4charE4sizeE(struct _8ArrayRefI4charE* this) {
     }
 }
 
-char* _EN3std8ArrayRefI4charEixE3int(struct _8ArrayRefI4charE* this, int index) {
+char* _EN3std5SliceI4charEixE3int(struct _5SliceI4charE* this, int index) {
     _Bool _cxp_or;
     struct _6string __str0;
     _Bool _binary_op1;
@@ -2598,7 +2598,7 @@ char* _EN3std8ArrayRefI4charEixE3int(struct _8ArrayRefI4charE* this, int index) 
     break;
         }
         case 1: {
-    _call2 = _EN3std8ArrayRefI4charE4sizeE(this);
+    _call2 = _EN3std5SliceI4charE4sizeE(this);
     _binary_op3 = index >= _call2;
     _cxp_or = _binary_op3; // branch argument
     _cx_pc = 2;
@@ -2615,7 +2615,7 @@ char* _EN3std8ArrayRefI4charEixE3int(struct _8ArrayRefI4charE* this, int index) 
         case 3: {
     _EN3std6string4initEP4char3int((&__str0), "operator[]", 10);
     _load4 = *(&__str0);
-    _EN3std8ArrayRefI4charE16indexOutOfBoundsE6string3int(this, _load4, index);
+    _EN3std5SliceI4charE16indexOutOfBoundsE6string3int(this, _load4, index);
     _cx_pc = 5;
     break;
         }
@@ -2682,16 +2682,16 @@ void _EN3std5printI3intEEP3int(int* value) {
 
 struct _13ArrayIteratorI4charE _EN3std4ListI4charE8iteratorE(struct _4ListI4charE* this) {
     struct _13ArrayIteratorI4charE _alloca0;
-    struct _8ArrayRefI4charE _alloca1;
-    struct _8ArrayRefI4charE _load2;
+    struct _5SliceI4charE _alloca1;
+    struct _5SliceI4charE _load2;
     struct _13ArrayIteratorI4charE _load3;
     int _cx_pc = 0;
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std8ArrayRefI4charE4initEP4ListI4charE((&_alloca1), this);
+    _EN3std5SliceI4charE4initEP4ListI4charE((&_alloca1), this);
     _load2 = *(&_alloca1);
-    _EN3std13ArrayIteratorI4charE4initE8ArrayRefI4charE((&_alloca0), _load2);
+    _EN3std13ArrayIteratorI4charE4initE5SliceI4charE((&_alloca0), _load2);
     _load3 = *(&_alloca0);
     return _load3;
         }
@@ -3083,7 +3083,7 @@ char* _EN3std13allocateArrayI4charEE3int(int size) {
     }
 }
 
-void _EN3std8ArrayRefI4charE16indexOutOfBoundsE6string3int(struct _8ArrayRefI4charE* this, struct _6string function, int index) {
+void _EN3std5SliceI4charE16indexOutOfBoundsE6string3int(struct _5SliceI4charE* this, struct _6string function, int index) {
     struct _6string __str0;
     struct _6string _alloca1;
     struct _6string __str2;
@@ -3095,12 +3095,12 @@ void _EN3std8ArrayRefI4charE16indexOutOfBoundsE6string3int(struct _8ArrayRefI4ch
     while (1) {
         switch (_cx_pc) {
         case 0: {
-    _EN3std6string4initEP4char3int((&__str0), "ArrayRef.", 9);
+    _EN3std6string4initEP4char3int((&__str0), "Slice.", 9);
     *(&_alloca1) = function;
     _EN3std6string4initEP4char3int((&__str2), ": index ", 8);
     *(&_alloca3) = index;
     _EN3std6string4initEP4char3int((&__str4), " is out of bounds, size is ", 27);
-    _call6 = _EN3std8ArrayRefI4charE4sizeE(this);
+    _call6 = _EN3std5SliceI4charE4sizeE(this);
     *(&_alloca5) = _call6;
     _EN3std5abortI6string6string6string3int6string3intEEP6stringP6stringP6stringP3intP6stringP3int((&__str0), (&_alloca1), (&__str2), (&_alloca3), (&__str4), (&_alloca5));
     return;
@@ -3144,10 +3144,10 @@ struct _12StringBuffer _EN3std3int8toStringE(int* this) {
     }
 }
 
-void _EN3std13ArrayIteratorI4charE4initE8ArrayRefI4charE(struct _13ArrayIteratorI4charE* this, struct _8ArrayRefI4charE array) {
-    struct _8ArrayRefI4charE _alloca0;
-    struct _8ArrayRefI4charE _alloca1;
-    struct _8ArrayRefI4charE _alloca2;
+void _EN3std13ArrayIteratorI4charE4initE5SliceI4charE(struct _13ArrayIteratorI4charE* this, struct _5SliceI4charE array) {
+    struct _5SliceI4charE _alloca0;
+    struct _5SliceI4charE _alloca1;
+    struct _5SliceI4charE _alloca2;
     char** _const_get_element_ptr3;
     char* _call4;
     char** _const_get_element_ptr5;
@@ -3160,13 +3160,13 @@ void _EN3std13ArrayIteratorI4charE4initE8ArrayRefI4charE(struct _13ArrayIterator
         case 0: {
     _const_get_element_ptr3 = &this->current;
     *(&_alloca0) = array;
-    _call4 = _EN3std8ArrayRefI4charE4dataE((&_alloca0));
+    _call4 = _EN3std5SliceI4charE4dataE((&_alloca0));
     *_const_get_element_ptr3 = _call4;
     _const_get_element_ptr5 = &this->end;
     *(&_alloca1) = array;
-    _call6 = _EN3std8ArrayRefI4charE4dataE((&_alloca1));
+    _call6 = _EN3std5SliceI4charE4dataE((&_alloca1));
     *(&_alloca2) = array;
-    _call7 = _EN3std8ArrayRefI4charE4sizeE((&_alloca2));
+    _call7 = _EN3std5SliceI4charE4sizeE((&_alloca2));
     _get_element_ptr8 = &(_call6[_call7]);
     *_const_get_element_ptr5 = _get_element_ptr8;
     return;
@@ -3176,7 +3176,7 @@ void _EN3std13ArrayIteratorI4charE4initE8ArrayRefI4charE(struct _13ArrayIterator
     }
 }
 
-void _EN3std8ArrayRefI4charE4initEP4ListI4charE(struct _8ArrayRefI4charE* this, struct _4ListI4charE* list) {
+void _EN3std5SliceI4charE4initEP4ListI4charE(struct _5SliceI4charE* this, struct _4ListI4charE* list) {
     char** _const_get_element_ptr0;
     char* _call1;
     int* _const_get_element_ptr2;

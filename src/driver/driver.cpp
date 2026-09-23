@@ -451,6 +451,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
         if (printOpts.isSet(PrintOpt::LLVM) || printOpts.isSet(PrintOpt::LLVMAll)) {
             LLVMGenerator printLLVMGenerator;
+            printLLVMGenerator.emitDebugInfo = options.mode == BuildMode::Debug;
             for (auto* irModule : irGenerator.generatedModules) {
                 printLLVMGenerator.codegenModule(*irModule);
             }
@@ -472,6 +473,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     }
     case Backend::LLVM:
         LLVMGenerator llvmGenerator;
+        llvmGenerator.emitDebugInfo = options.mode == BuildMode::Debug;
         for (auto* irModule : irGenerator.generatedModules) {
             llvmGenerator.codegenModule(*irModule);
         }
@@ -601,8 +603,9 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (!isMSVC) {
         // The standard library uses the C math library.
         ccArgs.push_back("-lm");
-        // Emit debug info so stack traces and debuggers show cx functions.
-        ccArgs.push_back("-g");
+        // Debug info is Debug-only; release stack traces resolve names
+        // through the symbol table instead.
+        if (options.mode == BuildMode::Debug) ccArgs.push_back("-g");
 #ifndef __APPLE__
         // Export symbols so backtrace() resolves cx function names (macOS
         // resolves them from the static symbol table instead).
@@ -713,7 +716,9 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 #ifdef __APPLE__
     // Collect DWARF from the object files into a .dSYM bundle so debuggers
     // show cx functions with file and line info (the linker leaves it behind).
-    if (!buildParams.createSharedLib) {
+    // Debug-only: release builds emit no DWARF, so there is nothing to collect
+    // (and a failed dsymutil would warn spuriously).
+    if (!buildParams.createSharedLib && options.mode == BuildMode::Debug) {
         std::string dsymutilCommand = "xcrun dsymutil " + shellEscape(outputPath.str()) + " 2>/dev/null";
         std::string dsymutilOutput;
         if (exec(dsymutilCommand.c_str(), dsymutilOutput) != 0) {

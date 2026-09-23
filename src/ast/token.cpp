@@ -31,6 +31,7 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     case Token::Equal:
     case Token::NotEqual:
         return PrecedenceGroup::Comparison;
+    case Token::Is:
     case Token::Less:
     case Token::LessOrEqual:
     case Token::Greater:
@@ -82,6 +83,7 @@ bool cx::isBinaryOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
     case Token::Equal:
     case Token::NotEqual:
+    case Token::Is:
     case Token::Less:
     case Token::LessOrEqual:
     case Token::Greater:
@@ -291,6 +293,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "import",
         "in",
         "interface",
+        "is",
         "null",
         "private",
         "public",

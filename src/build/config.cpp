@@ -30,8 +30,8 @@ static std::vector<std::string> getStringList(Decl* decl) {
     return map(array->elements, [](Expr* element) { return llvm::cast<StringLiteralExpr>(element)->value; });
 }
 
-static const StringLiteralExpr* getRequiredString(const TupleExpr* tuple, llvm::StringRef name) {
-    auto* element = tuple->getElementByName(name);
+static const StringLiteralExpr* getRequiredString(const AnonymousStructExpr* anonymousStruct, llvm::StringRef name) {
+    auto* element = anonymousStruct->getElementByName(name);
     if (!element) {
         ABORT("dependency is missing required '" << name << "' field (expected '(package = ..., url = ..., version = ...)')");
     }
@@ -64,10 +64,10 @@ BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> d
     if (auto* dependencies = symbols.findOne("dependencies")) {
         auto* array = llvm::cast<ArrayLiteralExpr>(llvm::cast<VarDecl>(dependencies)->initializer);
         for (auto& element : array->elements) {
-            auto* tuple = llvm::cast<TupleExpr>(&*element);
-            auto* package = getRequiredString(tuple, "package");
-            auto* url = getRequiredString(tuple, "url");
-            auto* version = getRequiredString(tuple, "version");
+            auto* anonymousStruct = llvm::cast<AnonymousStructExpr>(&*element);
+            auto* package = getRequiredString(anonymousStruct, "package");
+            auto* url = getRequiredString(anonymousStruct, "url");
+            auto* version = getRequiredString(anonymousStruct, "version");
             declaredDependencies.push_back(Dependency(std::string(package->value), std::string(url->value), std::string(version->value)));
         }
     }

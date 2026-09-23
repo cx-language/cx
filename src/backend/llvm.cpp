@@ -275,7 +275,7 @@ void LLVMGenerator::codegenFunction(const Function* function) {
         // get none either: calls inside couldn't carry locations, which the
         // verifier forbids in functions with debug info.
         const Location& location = function->location;
-        bool skipDebugInfo = function->body.empty() || !location.file || !*location.file || !location.isValid();
+        bool skipDebugInfo = !emitDebugInfo || function->body.empty() || !location.file || !*location.file || !location.isValid();
         llvm::SaveAndRestore saveSubprogram(currentDebugSubprogram, skipDebugInfo ? nullptr : createDebugSubprogram(function, llvmFunction));
         llvm::SaveAndRestore saveLocation(currentDebugFunctionLocation, function->location);
         codegenFunctionBody(function, llvmFunction);
@@ -778,7 +778,7 @@ llvm::Module& LLVMGenerator::codegenModule(const IRModule& sourceModule) {
             break;
         }
     }
-    if (unitPath) {
+    if (unitPath && emitDebugInfo) {
         debugBuilder = std::make_unique<llvm::DIBuilder>(*module);
         module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 4);
         module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);

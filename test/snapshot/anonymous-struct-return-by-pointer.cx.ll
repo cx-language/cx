@@ -40,7 +40,7 @@ attributes #0 = { "frame-pointer"="all" }
 !0 = !{i32 2, !"Dwarf Version", i32 4}
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
-!3 = !DIFile(filename: "tuple-return-by-pointer.cx")
+!3 = !DIFile(filename: "anonymous-struct-return-by-pointer.cx")
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}

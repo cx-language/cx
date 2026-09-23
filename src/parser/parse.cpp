@@ -252,7 +252,7 @@ Expr* Parser::parseInterpolationRest(Expr* acc) {
         Expr* value = parseExpr();
         Token endToken = parse(Token::InterpEnd);
         auto* member = makeAST<MemberExpr>(value, std::string("toString"), value->location);
-        auto* stringified = makeAST<CallExpr>(member, std::vector<NamedValue>(), std::vector<Type>(), value->location);
+        auto* stringified = makeAST<CallExpr>(member, std::vector<NamedValue>(), std::vector<GenericArg>(), value->location);
         Expr* piece = stringified;
         acc = acc ? makeAST<BinaryExpr>(Token::Plus, acc, piece, interpLocation) : piece;
 
@@ -338,11 +338,11 @@ ArrayLiteralExpr* Parser::parseArrayLiteral() {
     return makeExpr<ArrayLiteralExpr>(std::move(elements), location);
 }
 
-/// tuple-literal ::= '(' tuple-literal-elements ')'
-/// tuple-literal-elements ::= tuple-literal-element | tuple-literal-elements ',' tuple-literal-element
-/// tuple-literal-element ::= (id '=')? expr
+/// anonymous-struct-literal ::= '(' anonymous-struct-literal-elements ')'
+/// anonymous-struct-literal-elements ::= anonymous-struct-literal-element | anonymous-struct-literal-elements ',' anonymous-struct-literal-element
+/// anonymous-struct-literal-element ::= (id '=')? expr
 /// paren-expr ::= '(' expr ')'
-Expr* Parser::parseTupleLiteralOrParenExpr() {
+Expr* Parser::parseAnonymousStructLiteralOrParenExpr() {
     ASSERT(currentToken() == Token::LeftParen);
     auto location = getCurrentLocation();
     auto elements = parseArgumentList(false);
@@ -360,7 +360,7 @@ Expr* Parser::parseTupleLiteralOrParenExpr() {
         }
     }
 
-    return makeExpr<TupleExpr>(std::move(elements), location);
+    return makeExpr<AnonymousStructExpr>(std::move(elements), location);
 }
 
 /// non-empty-type-list ::= type | type ',' non-empty-type-list
@@ -382,13 +382,40 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
     }
 }
 
-/// generic-argument-list ::= '<' non-empty-type-list '>'
-std::vector<Type> Parser::parseGenericArgumentList() {
+/// generic-argument-list ::= '<' generic-arg (',' generic-arg)* '>'
+/// generic-arg ::= type | integer-literal
+std::vector<GenericArg> Parser::parseGenericArgumentList() {
     ASSERT(currentToken() == Token::Less);
     consumeToken();
-    std::vector<Type> genericArgs = parseNonEmptyTypeList();
-    parse(Token::Greater);
-    return genericArgs;
+    std::vector<GenericArg> genericArgs;
+
+    while (true) {
+        if (currentToken() == Token::IntegerLiteral) {
+            auto location = getCurrentLocation();
+            llvm::APSInt value = currentToken().getIntegerValue();
+            consumeToken();
+            if (value.isNegative()) {
+                ERROR(location, "integer generic argument must be non-negative");
+            }
+            if (value.getActiveBits() > 63) {
+                ERROR(location, "integer generic argument is too large");
+            }
+            genericArgs.push_back(GenericArg::fromInt(value.getSExtValue(), location));
+        } else {
+            genericArgs.push_back(parseType());
+        }
+
+        if (currentToken() == Token::Comma) {
+            consumeToken();
+        } else {
+            if (currentToken() == Token::RightShift) {
+                tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().location);
+                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().location.nextColumn()));
+            }
+            parse(Token::Greater);
+            return genericArgs;
+        }
+    }
 }
 
 // Rejects zero divisors and out-of-range shift amounts in an array bound
@@ -430,7 +457,7 @@ Type Parser::parseArrayType(Type elementType) {
     switch (currentToken()) {
     case Token::RightBracket:
         consumeToken();
-        return BasicType::get("ArrayRef", elementType, Mutability::Mutable, elementType.location);
+        return BasicType::get("Slice", GenericArg(elementType), Mutability::Mutable, elementType.location);
 
     case Token::Star:
         consumeToken();
@@ -440,6 +467,10 @@ Type Parser::parseArrayType(Type elementType) {
     default: {
         const Expr* sizeExpr = parseExpr();
         parse(Token::RightBracket);
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(sizeExpr)) {
+            // A bare identifier may name an integer generic parameter; validated during typechecking.
+            return ArrayType::get(elementType, varExpr->identifier, elementType.location);
+        }
         checkArraySizeDivisors(*sizeExpr);
         if (!sizeExpr->isFoldableIntConstant()) {
             ERROR(sizeExpr->location, "array size must be a constant integer expression");
@@ -459,7 +490,7 @@ Type Parser::parseArrayType(Type elementType) {
 /// simple-type ::= id | id generic-argument-list | id '[' (const-int-expr | '*')? ']'
 Type Parser::parseSimpleType(Mutability mutability) {
     auto identifier = parse(Token::Identifier);
-    std::vector<Type> genericArgs;
+    std::vector<GenericArg> genericArgs;
 
     switch (currentToken()) {
     case Token::Less:
@@ -472,14 +503,14 @@ Type Parser::parseSimpleType(Mutability mutability) {
     }
 }
 
-/// tuple-type ::= '(' tuple-type-elements ')'
-/// tuple-type-elements ::= tuple-type-element | tuple-type-elements ',' tuple-type-element
-/// tuple-type-element ::= type id?
-Type Parser::parseTupleType() {
+/// anonymous-struct-type ::= '(' anonymous-struct-type-elements ')'
+/// anonymous-struct-type-elements ::= anonymous-struct-type-element | anonymous-struct-type-elements ',' anonymous-struct-type-element
+/// anonymous-struct-type-element ::= type id?
+Type Parser::parseAnonymousStructType() {
     ASSERT(currentToken() == Token::LeftParen);
     auto location = getCurrentLocation();
     consumeToken();
-    std::vector<TupleElement> elements;
+    std::vector<AnonymousStructElement> elements;
 
     while (currentToken() != Token::RightParen) {
         auto type = parseType();
@@ -489,7 +520,7 @@ Type Parser::parseTupleType() {
     }
 
     consumeToken();
-    return TupleType::get(std::move(elements), Mutability::Mutable, location);
+    return AnonymousStructType::get(std::move(elements), Mutability::Mutable, location);
 }
 
 /// function-type ::= type '(' param-types ')'
@@ -508,7 +539,7 @@ Type Parser::parseFunctionType(Type returnType) {
     return FunctionType::get(returnType, std::move(paramTypes), false, Mutability::Mutable, returnType.location);
 }
 
-/// type ::= simple-type | 'const' simple-type | type '*' | type '?' | function-type | tuple-type
+/// type ::= simple-type | 'const' simple-type | type '*' | type '?' | function-type | anonymous-struct-type
 Type Parser::parseType() {
     Type type;
     auto location = getCurrentLocation();
@@ -522,7 +553,7 @@ Type Parser::parseType() {
         type = parseSimpleType(Mutability::Const);
         break;
     case Token::LeftParen:
-        type = parseTupleType();
+        type = parseAnonymousStructType();
         break;
     default:
         ERROR(getCurrentLocation(), "expected type, got " << quote(currentToken()));
@@ -616,7 +647,7 @@ UnwrapExpr* Parser::parseUnwrapExpr(Expr* operand) {
 
 /// call-expr ::= expr generic-argument-list? argument-list
 CallExpr* Parser::parseCallExpr(Expr* callee) {
-    std::vector<Type> genericArgs;
+    std::vector<GenericArg> genericArgs;
     if (currentToken() == Token::Less) {
         genericArgs = parseGenericArgumentList();
     }
@@ -680,6 +711,9 @@ IfExpr* Parser::parseIfThenElseExpr() {
     {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExpr();
+    }
+    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+        ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not if expressions");
     }
     parse(Token::Then);
     auto thenExpr = parseExpr();
@@ -805,7 +839,7 @@ bool Parser::lambdaAfterParentheses() {
 
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
-///                  paren-expr | array-literal | tuple-literal | index-expr | index-assignment-expr
+///                  paren-expr | array-literal | anonymous-struct-literal | index-expr | index-assignment-expr
 ///                  member-expr | unwrap-expr | lambda-expr | sizeof-expr
 Expr* Parser::parsePostfixExpr() {
     Expr* expr;
@@ -869,7 +903,7 @@ Expr* Parser::parsePostfixExpr() {
         if (lambdaAfterParentheses()) {
             expr = parseLambdaExpr();
         } else {
-            expr = parseTupleLiteralOrParenExpr();
+            expr = parseAnonymousStructLiteralOrParenExpr();
         }
         break;
     case Token::LeftBracket:
@@ -1121,12 +1155,29 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
     Expr* condition;
+    VarDecl* isBinding = nullptr;
     {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExprOrVarDecl(parent);
-        if (parens) parse(Token::RightParen);
+        if (parens) {
+            if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+                auto name = parse(Token::Identifier);
+                isBinding = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+            }
+            parse(Token::RightParen);
+        }
+    }
+    // A trailing identifier after an `is` check binds the matched payload in the then-branch.
+    if (!isBinding) {
+        if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+            auto name = parse(Token::Identifier);
+            isBinding = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+        }
     }
     if (currentToken() == Token::Then) {
+        if (isBinding) {
+            ERROR(isBinding->location, "an 'is' binding is only allowed in if statements, not if expressions");
+        }
         if (condition->isVarDeclExpr()) {
             ERROR(condition->location, "variable declaration conditions are not supported in if expressions");
         }
@@ -1150,7 +1201,9 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
             WARN(innerIf->elseLocation, "add explicit braces to avoid dangling else");
         }
     }
-    return makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts), elseLocation);
+    auto* ifStmt = makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts), elseLocation);
+    ifStmt->isBinding = isBinding;
+    return ifStmt;
 }
 
 /// while-stmt ::= 'while' (expr | var-decl) block-or-stmt
@@ -1163,7 +1216,13 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExprOrVarDecl(parent);
+        if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+            ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
+        }
         if (parens) parse(Token::RightParen);
+    }
+    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+        ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
     }
     auto body = parseBlockOrStmt(parent);
     return makeAST<WhileStmt>(condition, std::move(body), location);
@@ -1181,7 +1240,13 @@ DoWhileStmt* Parser::parseDoWhileStmt(Decl* parent) {
     {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExpr();
+        if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+            ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
+        }
         if (parens) parse(Token::RightParen);
+    }
+    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+        ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
     }
     parseStmtTerminator();
     return makeAST<DoWhileStmt>(condition, std::move(body), location);
@@ -1477,11 +1542,19 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
     parse(Token::Less);
     while (true) {
         auto genericParamName = parse(Token::Identifier);
-        genericParams.emplace_back(genericParamName.getString().str(), genericParamName.location);
+        if (currentToken() == Token::Identifier) {
+            // An integer generic parameter, declared like a function parameter (e.g. `int N`).
+            auto valueParamName = parse(Token::Identifier);
+            auto& param = genericParams.emplace_back(valueParamName.getString().str(), valueParamName.location);
+            param.isValueParam = true;
+            param.valueType = BasicType::get(genericParamName.getString(), {}, Mutability::Mutable, genericParamName.location);
+        } else {
+            genericParams.emplace_back(genericParamName.getString().str(), genericParamName.location);
 
-        if (currentToken() == Token::Colon) {
-            consumeToken();
-            genericParams.back().constraints = {parseType()};
+            if (currentToken() == Token::Colon) {
+                consumeToken();
+                genericParams.back().constraints = {parseType()};
+            }
         }
 
         if (currentToken() == Token::Greater) break;
@@ -1546,9 +1619,9 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
     FunctionProto proto(name.str(), std::move(params), returnType, isVariadic, isExtern);
 
     if (receiverTypeDecl) {
-        return makeAST<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<Type>(), accessLevel, location);
+        return makeAST<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<GenericArg>(), accessLevel, location);
     } else {
-        return makeAST<FunctionDecl>(std::move(proto), std::vector<Type>(), accessLevel, *currentModule, location);
+        return makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), accessLevel, *currentModule, location);
     }
 }
 
@@ -1669,8 +1742,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     std::vector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
-    auto typeDecl = makeAST<TypeDecl>(tag, typeName.getString().str(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
-                                      typeName.location);
+    auto typeDecl = makeAST<TypeDecl>(tag, typeName.getString().str(), std::vector<GenericArg>(), std::move(interfaces), typeAccessLevel, *currentModule,
+                                      nullptr, typeName.location);
     bool hasConstructor = false;
     parse(Token::LeftBrace);
 
@@ -1768,7 +1841,7 @@ TypeTemplate* Parser::parseEnumTemplate(AccessLevel accessLevel) {
 }
 
 /// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' (enum-case-decl | member-decl)* '}' ';'?
-/// enum-case-decl ::= id tuple-type? (',' | '\n' | ';')
+/// enum-case-decl ::= id anonymous-struct-type? (',' | '\n' | ';')
 /// member-decl ::= function-decl | function-template-decl | const-decl
 EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     ASSERT(currentToken() == Token::Enum);
@@ -1816,7 +1889,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             Type associatedType;
 
             if (currentToken() == Token::LeftParen) {
-                associatedType = parseTupleType();
+                associatedType = parseAnonymousStructType();
             }
 
             auto value = makeAST<IntLiteralExpr>(valueCounter, caseName.location);

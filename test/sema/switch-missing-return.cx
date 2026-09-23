@@ -11,7 +11,7 @@ enum Outcome {
 int missingCase(Outcome* outcome) {
     switch (*outcome) {
         case Ok value:
-            return value.value;
+            return value;
         case Err:
             return -1;
     }
@@ -22,7 +22,7 @@ int missingCase(Outcome* outcome) {
 int fallingCase(Outcome* outcome) {
     switch (*outcome) {
         case Ok value:
-            return value.value;
+            return value;
         case Err:
             println("oops");
         case Pending:

@@ -1,6 +1,6 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 
-int sum(ArrayRef<int> values) {
+int sum(Slice<int> values) {
     int total = 0;
     for x in values { total += x; }
     return total;
@@ -8,13 +8,13 @@ int sum(ArrayRef<int> values) {
 
 int stringSize(string s) { return s.size(); }
 
-ArrayRef<int> asRef(List<int>* list) { return *list; }
+Slice<int> asRef(List<int>* list) { return *list; }
 
 void main() {
     var list = List<int>();
     list.push(10);
     list.push(20);
-    ArrayRef<int> ref = list;
+    Slice<int> ref = list;
     // CHECK:2
     println(ref.size());
     // CHECK-NEXT:30

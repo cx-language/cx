@@ -1,23 +1,23 @@
 /// A non-owning reference to a contiguous array of elements.
-struct ArrayRef<Element>: Copyable {
+struct Slice<Element>: Copyable {
     private Element[*] data;
     private int size;
 
-    /// Initializes an ArrayRef referring to an empty array.
-    ArrayRef() {
+    /// Initializes a Slice referring to an empty array.
+    Slice() {
         data = undefined;
         size = 0;
     }
 
-    /// Initializes an ArrayRef referring to the elements of the given List.
-    ArrayRef(List<Element>* list) {
+    /// Initializes a Slice referring to the elements of the given List.
+    Slice(List<Element>* list) {
         data = list.data();
         size = list.size();
     }
 
-    /// Initializes an ArrayRef referring to an array of the given size located at the given memory
+    /// Initializes a Slice referring to an array of the given size located at the given memory
     /// address.
-    ArrayRef(Element* data, int size) {
+    Slice(Element* data, int size) {
         this.data = data;
         this.size = size;
     }
@@ -81,12 +81,12 @@ struct ArrayRef<Element>: Copyable {
     bool none(bool(Element*) predicate) { return none(iterator(), predicate); }
 
     private void indexOutOfBounds(string function, int index) {
-        abort("ArrayRef.", function, ": index ", index, " is out of bounds, size is ", size());
+        abort("Slice.", function, ": index ", index, " is out of bounds, size is ", size());
     }
 }
 
 /// Returns true if both arrays have equal elements.
-bool operator==<T>(ArrayRef<T> a, ArrayRef<T> b) {
+bool operator==<T>(Slice<T> a, Slice<T> b) {
     if a.size() != b.size() {
         return false;
     }

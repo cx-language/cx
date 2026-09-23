@@ -53,9 +53,9 @@ struct Match {
 };
 
 struct VariadicGenericArgs {
-    llvm::StringMap<Type> fixedArgs;
-    std::vector<llvm::StringMap<Type>> packArgs;
-    std::vector<Type> cacheKey;
+    llvm::StringMap<GenericArg> fixedArgs;
+    std::vector<llvm::StringMap<GenericArg>> packArgs;
+    std::vector<GenericArg> cacheKey;
 };
 
 // Variables proven non-null by an enclosing null check, mapped to their unwrapped type.
@@ -102,7 +102,7 @@ struct Typechecker {
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType);
     Type typecheckNullLiteralExpr(NullLiteralExpr& expr, Type expectedType);
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr, Type expectedType = Type());
-    Type typecheckTupleExpr(TupleExpr& expr);
+    Type typecheckAnonymousStructExpr(AnonymousStructExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
     Type typecheckNullCoalescingExpr(BinaryExpr& expr);
@@ -131,15 +131,15 @@ struct Typechecker {
     /// Inner conversions for pointer reinterpretation must preserve the value representation.
     bool isReinterpretible(const Expr* expr, Type source, Type target, bool diagnoseOutOfRange = true) const;
     void typecheckImplicitlyBoolConvertibleExpr(Type type, Location location, Location endLocation, bool positive = true);
-    Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam);
-    llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
-                                                Type expectedType);
+    GenericArg findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam);
+    llvm::StringMap<GenericArg> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
+                                                      Type expectedType);
     Decl* findDecl(llvm::StringRef name, Location location, Location endLocation = {}) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false) const;
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry = true);
-    std::vector<Type> inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
-                                                   bool returnOnError);
+    std::vector<GenericArg> inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
+                                                         bool returnOnError);
     std::optional<VariadicGenericArgs> inferVariadicGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                                 llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     ArgumentValidation getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic);
@@ -168,6 +168,8 @@ struct Typechecker {
     void applyNarrowings(const Expr& condition, bool polarity);
     void intersectNarrowings(const NarrowMap& other);
     void dropNarrowingsForNames(const llvm::StringSet<>& names);
+    bool validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
+    bool genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs);
 
     Module* currentModule;
     SourceFile* currentSourceFile;
@@ -186,7 +188,9 @@ struct Typechecker {
     const std::vector<BuildConfig::ResolvedDependency>* dependencies; // Closure, or null without a project.
 };
 
-void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location);
+void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
+// Returns the enum case tested by an `is` expression's right side, or null when it isn't one.
+EnumCase* getIsEnumCase(Expr& expr);
 bool containsGenericParam(Type type, llvm::StringRef genericParam);
 void diagnoseClosureConversion(Type source, Type target, Location location);
 // Suggests an explicit conversion when a value of one numeric type is used where another is expected.

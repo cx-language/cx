@@ -1,14 +1,14 @@
 
-%0 = type { { %"ArrayRef<int8>" } }
-%"Optional<ArrayRef<int8>>" = type { i32, %0 }
-%"ArrayRef<int8>" = type { ptr, i32 }
+%0 = type { { %"Slice<int8>" } }
+%"Optional<Slice<int8>>" = type { i32, %0 }
+%"Slice<int8>" = type { ptr, i32 }
 
 define i32 @main() #0 !dbg !4 {
-  %a = alloca %"Optional<ArrayRef<int8>>", align 8
-  %enum = alloca %"Optional<ArrayRef<int8>>", align 8
-  %tag = getelementptr inbounds %"Optional<ArrayRef<int8>>", ptr %enum, i32 0, i32 0
+  %a = alloca %"Optional<Slice<int8>>", align 8
+  %enum = alloca %"Optional<Slice<int8>>", align 8
+  %tag = getelementptr inbounds %"Optional<Slice<int8>>", ptr %enum, i32 0, i32 0
   store i32 0, ptr %tag, align 4
-  %enum.load = alloca %"Optional<ArrayRef<int8>>", align 8
+  %enum.load = alloca %"Optional<Slice<int8>>", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %enum.load, ptr align 8 %enum, i64 24, i1 false)
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %a, ptr align 8 %enum.load, i64 24, i1 false)
   ret i32 0

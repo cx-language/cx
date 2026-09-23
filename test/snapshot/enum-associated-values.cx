@@ -17,7 +17,7 @@ int main() {
             e = E.C(j = eb.i);
             return eb.i;
         case E.C eb:
-            return eb.j;
+            return eb;
     }
 
     _ = e == E.A;

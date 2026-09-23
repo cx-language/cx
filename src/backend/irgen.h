@@ -27,6 +27,10 @@ struct IRGenScope {
         Function* function;
         Value* value;
         const Decl* decl;
+        // Non-empty for anonymous struct elements: GEP indexes from the
+        // variable alloca to the destructible element, applied at scope end
+        // so the GEPs dominate the destructor call.
+        std::vector<int> indexes;
     };
 
     llvm::SmallVector<const Expr*, 8> deferredExprs;
@@ -41,7 +45,7 @@ struct IRGenerator {
     void emitFunctionBody(const FunctionDecl& decl, Function& function);
     void createDestructorCall(Function* destructor, Value* receiver);
     /// 'decl' is null if this is the 'this' value.
-    void setLocalValue(Value* value, const VariableDecl* decl);
+    void setLocalValue(Value* value, const VariableDecl* decl, bool deferDestructor = true);
     Value* getValueOrNull(const Decl* decl);
     Value* getValue(const Decl* decl);
     Value* getThis(IRType* targetType = nullptr);
@@ -64,7 +68,7 @@ struct IRGenerator {
     Value* emitNullLiteralExpr(const NullLiteralExpr& expr);
     Value* emitUndefinedLiteralExpr(const UndefinedLiteralExpr& expr);
     Value* emitArrayLiteralExpr(const ArrayLiteralExpr& expr);
-    Value* emitTupleExpr(const TupleExpr& expr);
+    Value* emitAnonymousStructExpr(const AnonymousStructExpr& expr);
     Value* emitAggregateElements(Type type, llvm::ArrayRef<NamedValue> elements);
     Value* emitImplicitNullComparison(Value* operand, BinaryOperator op = Token::NotEqual);
     Value* emitNot(const UnaryExpr& expr);
@@ -92,7 +96,7 @@ struct IRGenerator {
     Value* emitSizeofExpr(const SizeofExpr& expr);
     Value* emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr = nullptr);
     Value* emitMemberExpr(const MemberExpr& expr);
-    Value* emitTupleElementAccess(const MemberExpr& expr);
+    Value* emitAnonymousStructElementAccess(const MemberExpr& expr);
     Value* emitMainArgv(Value* argc, Value* argv, Type argvType, Location location);
     Value* emitIndexedAccess(const Expr& base, const Expr& index);
     Value* emitIndexExpr(const IndexExpr& expr);
@@ -239,6 +243,11 @@ struct IRGenerator {
     void deferEvaluationOf(const Expr& expr);
     DestructorDecl* getDefaultDestructor(TypeDecl& typeDecl);
     void deferDestructorCall(Value* receiver, const VariableDecl* decl);
+    bool anonymousStructNeedsDestruction(Type type);
+    bool anonymousStructHasExplicitDestruction(Type type);
+    bool typeNeedsDestruction(Type type);
+    void deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes = {});
+    void destroyExplicitElementsForAssignment(Value* base, Type type);
     IRGenScope& globalScope() { return scopes.front(); }
     void setInsertPoint(BasicBlock* block);
 
