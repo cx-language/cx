@@ -110,7 +110,7 @@ struct Arena {
             return null;
         }
 
-        var memory = malloc(dataOffset + capacity);
+        var memory = malloc(c_size_t(dataOffset + capacity));
         if memory == null {
             return null;
         }
