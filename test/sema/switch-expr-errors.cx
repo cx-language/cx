@@ -39,3 +39,12 @@ int incompatibleArms(int n) {
         default: "many"
     };
 }
+
+// CHECK: [[@LINE+3]]:19: error: switch condition must have integer, char, or enum type, got 'int*'; dereference it explicitly (e.g. 'switch (*p)')
+// CHECK-NOT: error:
+int switchOnPointer(int* p) {
+    return switch p {
+        case 0: 1
+        default: 2
+    };
+}

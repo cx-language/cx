@@ -17,6 +17,9 @@ interface Iterator<Element> {
 A `for` loop like `for element in collection` is shorthand for
 calling `iterator()` on the collection, then repeatedly checking `hasValue()`,
 reading the current element with `value()`, and advancing with `increment()`.
+When `value()` returns a pointer, direct uses of the result need `*` to read or
+write the pointee. A `for` loop copies pointer results whose element type is
+`Copyable`, while non-copyable results remain pointers for in-place mutation.
 
 ## How to create a custom iterator
 

@@ -87,15 +87,30 @@ struct Slice<Element>: Copyable {
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element&) predicate) { return all(iterator(), predicate); }
     /// Returns true if all elements satisfy the predicate.
-    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
+    bool all<T: Copyable>(bool(T) predicate) {
+        for index in 0..size() {
+            if !predicate(this[index]) return false;
+        }
+        return true;
+    }
     /// Returns true if any element satisfies the predicate.
     bool any(bool(Element&) predicate) { return any(iterator(), predicate); }
     /// Returns true if any element satisfies the predicate.
-    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
+    bool any<T: Copyable>(bool(T) predicate) {
+        for index in 0..size() {
+            if predicate(this[index]) return true;
+        }
+        return false;
+    }
     /// Returns true if no element satisfies the predicate.
     bool none(bool(Element&) predicate) { return none(iterator(), predicate); }
     /// Returns true if no element satisfies the predicate.
-    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
+    bool none<T: Copyable>(bool(T) predicate) {
+        for index in 0..size() {
+            if predicate(this[index]) return false;
+        }
+        return true;
+    }
 
     private void indexOutOfBounds(string function, int index) {
         abort("Slice.", function, ": index ", index, " is out of bounds, size is ", size());

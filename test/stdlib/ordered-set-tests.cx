@@ -111,12 +111,12 @@ void testLowerAndHigher() {
 
     assert(m.lower(0) == null);
     for i in 1..100 {
-        assert(m.lower(i)! == i-1);
+        assert(*m.lower(i)! == i-1);
     }
 
     assert(m.higher(99) == null);
     for i in 0..99 {
-        assert(m.higher(i)! == i+1);
+        assert(*m.higher(i)! == i+1);
     }
 }
 
@@ -128,8 +128,8 @@ void testFirstLast() {
     s.insert(1);
     s.insert(53);
 
-    assert(s.first()! == 1);
-    assert(s.last()! == 69);
+    assert(*s.first()! == 1);
+    assert(*s.last()! == 69);
 }
 
 void testEmptyOrderedSetFunctions() {

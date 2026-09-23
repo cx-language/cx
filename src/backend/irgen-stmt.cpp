@@ -97,24 +97,7 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
     auto* insertBlockBackup = insertBlock;
     auto caseIndex = 0;
 
-    // A `case null` on an optional pointer keeps the condition optional. Switch instructions
-    // can't match null, so branch on null first and switch on the dereferenced value.
-    BasicBlock* nullCaseBlock = nullptr;
-    Type conditionType = switchStmt.condition->type;
-    if (conditionType.isOptionalType() && conditionType.getWrappedType().isPointerType()) {
-        auto* switchBlock = new BasicBlock("switch.nonnull", function);
-        nullCaseBlock = new BasicBlock("switch.case.null", function);
-        createCondBr(emitImplicitNullComparison(condition, Token::Equal), nullCaseBlock, switchBlock);
-        setInsertPoint(switchBlock);
-        insertBlockBackup = switchBlock;
-        condition = createLoad(condition);
-    }
-
     auto cases = map(switchStmt.cases, [&](const SwitchCase& switchCase) {
-        if (switchCase.value->isNullLiteralExpr()) {
-            ASSERT(nullCaseBlock);
-            return std::make_pair((Value*)nullptr, nullCaseBlock);
-        }
         auto* value = emitExprOrEnumTag(*switchCase.value, nullptr);
         auto* block = new BasicBlock("switch.case." + std::to_string(caseIndex++), function);
         return std::make_pair(value, block);
@@ -140,8 +123,7 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
         }
 
         emitBlock(switchCase.stmts, end);
-        // The null case is routed by the null check, not the switch instruction.
-        if (value) switchInst->cases.emplace_back(value, block);
+        switchInst->cases.emplace_back(value, block);
         ++casesIterator;
     }
 

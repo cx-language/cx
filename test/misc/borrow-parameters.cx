@@ -86,13 +86,13 @@ void main() {
     assert(less(x, z));
     assert(!less(z, x));
 
-    // Mixed pointer/value comparison compares the pointed-to value,
-    // even when the types don't match exactly; two pointers compare addresses.
+    // Dereference explicitly when comparing a pointer with a value;
+    // two pointers compare addresses.
     var u = uint(4);
     uint* q = &u;
-    assert(q == 4);
-    assert(q == u);
-    assert(p == x);
+    assert(*q == 4);
+    assert(*q == u);
+    assert(*p == x);
     var w = 4;
     int* r = &w;
     assert(!(p == r));

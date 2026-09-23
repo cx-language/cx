@@ -1,6 +1,15 @@
 /// Public members
 
-/// Gives the maximum of the two elements
+/// Gives the maximum of the two elements.
+/// `T` must also be Comparable.
+T max<T: Copyable + Comparable>(T a, T b) {
+    if a >= b {
+        return a;
+    }
+    return b;
+}
+
+/// Gives a pointer to the maximum of the two elements.
 T* max<T>(T* a, T* b) {
     if *a >= *b {
         return a;
@@ -8,7 +17,16 @@ T* max<T>(T* a, T* b) {
     return b;
 }
 
-/// Gives the minimum of the two elements
+/// Gives the minimum of the two elements.
+/// `T` must also be Comparable.
+T min<T: Copyable + Comparable>(T a, T b) {
+    if a < b {
+        return a;
+    }
+    return b;
+}
+
+/// Gives a pointer to the minimum of the two elements.
 T* min<T>(T* a, T* b) {
     if *a < *b {
         return a;
@@ -18,7 +36,7 @@ T* min<T>(T* a, T* b) {
 
 /// Swaps two items in place
 void swap<E>(E& a, E& b) {
-    var t = *a;
+    var t = a;
     *a = *b;
     *b = t;
 }
@@ -41,7 +59,7 @@ private int partition<E: Comparable>(List<E>& arr, int low, int high) {
     var i = low - 1;
 
     for j in low..high {
-        if arr[j] < pivot {
+        if arr[j] < *pivot {
             i++;
             swap(arr[i], arr[j]);
         }

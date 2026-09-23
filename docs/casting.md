@@ -44,11 +44,25 @@ void main() {
 }
 ```
 
+`cast` also converts between pointers and integers in both directions.
+This supports a `uintptr_t`-style round trip for inspecting an address; prefer
+`c_size_t` when the integer must hold a pointer-sized value:
+
+```cs
+void main() {
+    int x = 42;
+    int* p = &x;
+    c_size_t address = cast<c_size_t>(p);
+    int* q = cast<int*>(address);
+    println(q == p); // prints true
+}
+```
+
 Casts that don't make sense are rejected at compile time, for example `cast<int**>(false)`.
 Dropping `const` is rejected too: `cast<int*>` accepts `int*` and `void*`,
 but not `const int*`.
 Conversions that are always safe need no syntax at all:
 integer literals convert to the expected numeric type automatically,
-pointers are dereferenced automatically when a value is expected,
 and values bind to `T&` borrow parameters automatically.
-Forming a `T*` pointer needs an explicit `&` (see [Pointers](pointers)).
+Forming a `T*` pointer needs an explicit `&`, and reading one needs an explicit `*`
+(see [Pointers](pointers)).

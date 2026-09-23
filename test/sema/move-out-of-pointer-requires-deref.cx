@@ -24,6 +24,6 @@ void h(S s) {}
 void k() {
     var a = S(1);
     S* q = &a;
-    h(q);
+    h(*q);
     S b = *q;
 }

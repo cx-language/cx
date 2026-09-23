@@ -6,6 +6,15 @@ never abortWrapper() {
 }
 
 /// Aborts the program, printing the given values to stderr.
+never abort<T: Printable + Copyable>(T... args) {
+    for arg in args {
+        stderr().write(arg);
+    }
+    stderr().write('\n');
+    abortWrapper();
+}
+
+/// Aborts the program, borrowing values that cannot be copied.
 never abort<T: Printable>(T&... args) {
     for arg in args {
         stderr().write(arg);

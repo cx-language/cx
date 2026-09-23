@@ -1,10 +1,13 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: pointer-invalid-binary-op.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     int a = 2;
     int b = 3;
     int* p = &a;
     int* q = &b;
-    // CHECK: [[@LINE+1]]:15: error: invalid operands 'int*' and 'int*' to '*'
+    // CHECK: [[@LINE+1]]:15: error: invalid operands 'int*' and 'int*' to '*'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     int c = p * q;
 }
+
+// CHECK-NOT: pointer-invalid-binary-op.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

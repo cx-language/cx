@@ -1,6 +1,7 @@
 extern global int my_global
 
 int main() {
-    void _0 = call _EN3std5printI3intEER3int(int* my_global)
+    int my_global.load = load my_global
+    void _0 = call _EN3std5printI3intEE3int(int my_global.load)
     return int 0
 }

@@ -117,7 +117,7 @@ struct OrderedMap<Key, Value> {
         if n == null {
             return -1;
         }
-        return 1 + *max(&height(n.left), &height(n.right));
+        return 1 + max(height(n.left), height(n.right));
     }
 
     private void setBalance(AVLnode<Key, Value>* n) {

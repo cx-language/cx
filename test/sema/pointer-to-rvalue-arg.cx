@@ -1,0 +1,27 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: pointer-to-rvalue-arg.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct A: Copyable {
+    int i;
+    A() { i = 0; }
+}
+
+struct B {
+    int i;
+    B() { i = 0; }
+}
+
+void f(A* a) {}
+void f(B* b) {}
+void f(int* i) {}
+
+void main() {
+    // CHECK: [[@LINE+1]]:5: error: no matching function 'f(A)'
+    f(A());
+    // CHECK: [[@LINE+1]]:5: error: no matching function 'f(B)'
+    f(B());
+    // CHECK: [[@LINE+1]]:5: error: no matching function 'f(int)'
+    f(0);
+}
+
+// CHECK-NOT: pointer-to-rvalue-arg.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

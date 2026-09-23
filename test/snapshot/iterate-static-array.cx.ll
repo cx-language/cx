@@ -78,11 +78,10 @@ define ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %this) #0 !dbg !13 {
 
 define void @_EN3std7printlnI3intEE3int(i32 %value) #0 !dbg !14 {
   %value1 = alloca i32, align 4
-  %1 = alloca i8, align 1
   store i32 %value, ptr %value1, align 4
-  call void @_EN3std5printI3intEER3int(ptr %value1), !dbg !16
-  store i8 10, ptr %1, align 1
-  call void @_EN3std5printI4charEER4char(ptr %1), !dbg !17
+  %value.load = load i32, ptr %value1, align 4
+  call void @_EN3std5printI3intEE3int(i32 %value.load), !dbg !16
+  call void @_EN3std5printI4charEE4char(i8 10), !dbg !17
   ret void
 }
 
@@ -94,9 +93,9 @@ define void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %this) #0 !dbg !18 {
   ret void
 }
 
-declare void @_EN3std5printI3intEER3int(ptr) #0
+declare void @_EN3std5printI3intEE3int(i32) #0
 
-declare void @_EN3std5printI4charEER4char(ptr) #0
+declare void @_EN3std5printI4charEE4char(i8) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

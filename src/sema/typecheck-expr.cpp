@@ -403,6 +403,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         ERROR_RANGE(expr.location, expr.endLocation, "cannot dereference non-pointer type '" << operandType << "'");
 
     case Token::And: // Address-of operation
+        if (!expr.getOperand().isLvalue()) {
+            ERROR(expr.getOperand().location, "cannot take address of rvalue of type '" << operandType << "'");
+        }
         unnarrow(expr.getOperand());
         operandType = expr.getOperand().type;
         // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
@@ -413,6 +416,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         return PointerType::get(operandType.removeReference());
 
     case Token::Increment:
+        if (operandType.removeOptional().isPointerType()) {
+            ERROR(expr.location, "cannot increment pointer of type '" << operandType << "'; dereference it explicitly (e.g. '(*p)++')");
+        }
         operandType = operandType.removePointer();
 
         if (!operandType.isMutable()) {
@@ -424,6 +430,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         return Type::getVoid();
 
     case Token::Decrement:
+        if (operandType.removeOptional().isPointerType()) {
+            ERROR(expr.location, "cannot decrement pointer of type '" << operandType << "'; dereference it explicitly (e.g. '(*p)--')");
+        }
         operandType = operandType.removePointer();
 
         if (!operandType.isMutable()) {
@@ -435,6 +444,10 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         return Type::getVoid();
 
     default:
+        if (operandType.removeOptional().isPointerType() || operandType.removeOptional().isUnsizedArrayPointer()) {
+            ERROR(expr.location, "cannot apply unary '" << toString(expr.op) << "' to pointer of type '" << operandType
+                                                        << "'; dereference it explicitly (e.g. '" << toString(expr.op) << "*p')");
+        }
         return operandType;
     }
 }
@@ -477,7 +490,21 @@ static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind
         }
         hint += "' cannot be null)";
     } else {
-        hint = mixedPointerOperandHint(expr);
+        auto isPointerOperand = [](Type type) {
+            type = type.removeOptional();
+            return type.isPointerType() || type.isUnsizedArrayPointer();
+        };
+        if (isPointerOperand(expr.getLHS().type) || isPointerOperand(expr.getRHS().type)) {
+            if (isComparisonOperator(op)) {
+                hint = "; to compare the pointed-to value, dereference with '*'";
+            } else if (isBitwiseOperator(op)) {
+                hint = "; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value";
+            } else {
+                hint = "; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value";
+            }
+        } else {
+            hint = mixedPointerOperandHint(expr);
+        }
     }
 
     ERROR_RANGE(expr.location, expr.endLocation,
@@ -731,6 +758,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             // element types match exactly and op is builtin for elements.
             // This preserves backward compatibility for existing array comparisons
             // via overloads while enabling element-wise ops for matching numerics.
+            auto isPointerElement = [](Type type) {
+                type = type.removeOptional();
+                return type.isPointerType() || type.isUnsizedArrayPointer();
+            };
             if (leftIsArray && rightIsArray) {
                 Type leftElem = leftType.getElementType();
                 Type rightElem = rightType.getElementType();
@@ -740,6 +771,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                 if (!isBuiltinOp(op, leftElem, rightElem)) {
                     goto not_array_programming;
                 }
+                if (!isComparisonOperator(op) && (isPointerElement(leftElem) || isPointerElement(rightElem))) {
+                    goto not_array_programming;
+                }
             } else {
                 // Broadcast: require exact scalar-element match and builtin op;
                 // otherwise fall through to overloads (or standard invalid-operands error).
@@ -747,6 +781,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                     goto not_array_programming;
                 }
                 if (!isBuiltinOp(op, elementType, scalarType)) {
+                    goto not_array_programming;
+                }
+                if (!isComparisonOperator(op) && (isPointerElement(elementType) || isPointerElement(scalarType))) {
                     goto not_array_programming;
                 }
             }
@@ -771,24 +808,23 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     not_array_programming:;
     }
 
+    if (!isComparisonOperator(op) && (leftType.removeOptional().isUnsizedArrayPointer() || rightType.removeOptional().isUnsizedArrayPointer())) {
+        throwInvalidOperandsToBinaryExpr(expr, op);
+    }
+
     if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
     }
 
-    // Operators auto-deref: unless both operands are raw pointers (an address comparison),
-    // deref any pointer or borrow operand so the operation applies to the pointed-to values.
-    // Derefing up front lets the conversions below handle inexact matches, e.g. 'uint*' against
-    // an 'int' constant. Optional and unsized-array-pointer operands are excluded: they keep
-    // the conversions below (null-aware identity, pointer-to-array decay). Null literals are
-    // excluded so 'p == null' still reports the pointer type.
-    bool bothRawPointers = leftType.isPointerType() && rightType.isPointerType() && !leftType.isReferenceType() && !rightType.isReferenceType();
+    // Borrow operands retain their implicit dereference for builtin operators. Raw pointers never do:
+    // their operands must use '*' explicitly, while member access and indexing remain direct.
     bool eitherSpecial = leftType.isOptionalType() || rightType.isOptionalType() || leftType.isUnsizedArrayPointer() || rightType.isUnsizedArrayPointer();
-    if (!bothRawPointers && !eitherSpecial) {
-        if (leftType.isPointerType() && !leftType.getPointee().isVoid() && !expr.getRHS().isNullLiteralExpr()) {
+    if ((leftType.isReferenceType() || rightType.isReferenceType()) && !eitherSpecial) {
+        if (leftType.isReferenceType() && !expr.getRHS().isNullLiteralExpr()) {
             expr.setLHS(makeAST<ImplicitCastExpr>(&expr.getLHS(), leftType.getPointee(), ImplicitCastExpr::AutoDereference));
             leftType = leftType.getPointee();
         }
-        if (rightType.isPointerType() && !rightType.getPointee().isVoid() && !expr.getLHS().isNullLiteralExpr()) {
+        if (rightType.isReferenceType() && !expr.getLHS().isNullLiteralExpr()) {
             expr.setRHS(makeAST<ImplicitCastExpr>(&expr.getRHS(), rightType.getPointee(), ImplicitCastExpr::AutoDereference));
             rightType = rightType.getPointee();
         }
@@ -994,20 +1030,21 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     return true;
 }
 
-Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange) const {
+Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange, bool allowOperatorBorrow) const {
     if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !type.removeOptional().isPointerType()) {
         auto* dereferenced = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
-        return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange);
+        return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow);
     }
 
     std::optional<ImplicitCastExpr::Kind> implicitCastKind;
-    if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind, diagnoseOutOfRange)) {
+    if (Type convertedType =
+            isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind, diagnoseOutOfRange, allowOperatorBorrow)) {
         if (implicitCastKind) {
             if (*implicitCastKind == ImplicitCastExpr::OptionalWrap && expr->type != convertedType.getWrappedType()) {
                 // One wrap node constructs a single level, so convert the operand to the wrapped
                 // type first (e.g. `int` to `int?` when wrapping to `int??`). Each recursion
                 // strips one optional level, so this terminates.
-                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange);
+                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow);
                 if (!expr) return nullptr;
             }
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
@@ -1021,17 +1058,18 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
             expr->type = convertedType;
 
             if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-                if (Expr* convertedThen = convert(ifExpr->thenExpr, convertedType, allowPointerToTemporary)) {
+                if (Expr* convertedThen = convert(ifExpr->thenExpr, convertedType, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow)) {
                     ifExpr->thenExpr = convertedThen;
                 }
-                if (Expr* convertedElse = convert(ifExpr->elseExpr, convertedType, allowPointerToTemporary)) {
+                if (Expr* convertedElse = convert(ifExpr->elseExpr, convertedType, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow)) {
                     ifExpr->elseExpr = convertedElse;
                 }
             }
 
             if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(expr); arrayLiteral && convertedType.isConstantArray()) {
                 for (auto& element : arrayLiteral->elements) {
-                    if (Expr* convertedElement = convert(element, convertedType.getElementType(), allowPointerToTemporary)) {
+                    if (Expr* convertedElement =
+                            convert(element, convertedType.getElementType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow)) {
                         element = convertedElement;
                     }
                 }
@@ -1040,7 +1078,8 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
             if (auto* anonymousStructExpr = llvm::dyn_cast<AnonymousStructExpr>(expr); anonymousStructExpr && convertedType.isAnonymousStructType()) {
                 auto targetElements = convertedType.getAnonymousStructElements();
                 for (size_t i = 0; i < anonymousStructExpr->elements.size(); ++i) {
-                    if (Expr* convertedElement = convert(anonymousStructExpr->elements[i].value, targetElements[i].type, allowPointerToTemporary)) {
+                    if (Expr* convertedElement = convert(anonymousStructExpr->elements[i].value, targetElements[i].type, allowPointerToTemporary,
+                                                         diagnoseOutOfRange, allowOperatorBorrow)) {
                         anonymousStructExpr->elements[i].value = convertedElement;
                     }
                 }
@@ -1092,7 +1131,7 @@ static bool isReinterpretible(Type source, Type target) {
 }
 
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
-                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange) const {
+                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange, bool allowOperatorBorrow) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
@@ -1133,7 +1172,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // Only a no-op when the wrapped conversion needs no cast; nesting changes (e.g. `int?` to `int??`)
         // fall through to the wrap rule below.
         std::optional<ImplicitCastExpr::Kind> wrappedCastKind;
-        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind, diagnoseOutOfRange)
+        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind, diagnoseOutOfRange, allowOperatorBorrow)
             && !wrappedCastKind) {
             return source;
         }
@@ -1147,8 +1186,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange)
-                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange)) {
+            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow)
+                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow)) {
                 return target;
             }
         }
@@ -1157,7 +1196,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         if ((expr->type.isInteger() || expr->type.isChar() || (expr->type.isEnumType() && !llvm::cast<EnumDecl>(expr->type.getDecl())->hasAssociatedValues()))
             && expr->isConstant()) {
             auto value = expr->getConstantIntegerValue();
-            // Convert e.g. int literal to uint when binding to uint&; raw pointer parameters require an explicit '&'.
+            // Convert e.g. int literal to uint when binding to uint&; raw pointer parameters require an explicit '&'
+            // outside operator context.
             auto adjustedTarget = allowPointerToTemporary ? target.removeReference() : target;
 
             if (adjustedTarget.isInteger()) {
@@ -1191,7 +1231,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         if (expr->isArrayLiteralExpr() && target.isConstantArray()) {
             auto arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(expr);
             bool isConvertible = llvm::all_of(arrayLiteralExpr->elements, [&](Expr* element) {
-                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), false, nullptr, diagnoseOutOfRange);
+                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), false, nullptr, diagnoseOutOfRange,
+                                               allowOperatorBorrow);
             });
 
             if (isConvertible) {
@@ -1208,7 +1249,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     // Bind values to borrow parameters implicitly. Borrowing never copies, moves, or stores, and requires
     // an exact type match: the backend passes the operand's address as is, so no representation change
-    // (wrapping, view conversion) may happen underneath the borrow. Raw pointer parameters require '&'.
+    // (wrapping, view conversion) may happen underneath the borrow. Raw pointer parameters require '&'
+    // outside operator context.
     if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.isReferenceType() &&
         // Allow forming mutable borrows of constants. This is safe because constants will be inlined at the usage site.
         (source.isMutable() || (expr && expr->isConstant()) || !target.getPointee().isMutable()) && source.equalsIgnoreTopLevelMutable(target.getPointee())) {
@@ -1233,15 +1275,24 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if (source.isPointerType() && source.getPointee() == target && expr && !expr->isReferenceExpr() && target.isImplicitlyCopyable()) {
-        // Implicit dereference copies the pointee; moving out of a pointer
-        // requires an explicit '*' so moves are visible at the use site.
+    // Borrows read through implicitly; raw pointers require explicit '*'. Copying out of a
+    // borrow is implicit, moving out requires explicit '*' so moves stay visible.
+    if (source.isReferenceType() && expr && !expr->isReferenceExpr() && target.isImplicitlyCopyable()
+        && source.getPointee().equalsIgnoreTopLevelMutable(target)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoDereference;
         return target;
     }
 
+    // Operator overloads use pointer parameters as non-escaping borrows. Keep ordinary pointer
+    // arguments explicit, but let an lvalue operand supply its address in operator context.
+    if (allowOperatorBorrow && target.isPointerType() && !target.isReferenceType() && expr && expr->isLvalue()
+        && (source.isMutable() || !target.getPointee().isMutable()) && source.equalsIgnoreTopLevelMutable(target.getPointee())) {
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
+        return target;
+    }
+
     if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr())
-        && isImplicitlyConvertible(expr, source, target.getWrappedType(), allowPointerToTemporary, nullptr, diagnoseOutOfRange)) {
+        && isImplicitlyConvertible(expr, source, target.getWrappedType(), allowPointerToTemporary, nullptr, diagnoseOutOfRange, allowOperatorBorrow)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalWrap;
         return target;
     }
@@ -1293,7 +1344,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
             auto* elementValue = anonymousStructExpr ? anonymousStructExpr->elements[i].value : nullptr;
 
-            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange)) {
+            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange,
+                                         allowOperatorBorrow)) {
                 return Type();
             }
         }
@@ -2751,6 +2803,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 }
 
+static bool isOperatorCall(const CallExpr& expr) {
+    return llvm::isa<BinaryExpr>(&expr) || llvm::isa<UnaryExpr>(&expr) || llvm::isa<IndexExpr>(&expr) || llvm::isa<IndexAssignmentExpr>(&expr);
+}
+
 ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic) {
     std::vector<int> argToParam, paramToArg;
     if (auto mappingError = computeArgParamMapping(expr.args, params, isVariadic, argToParam, paramToArg)) return *mappingError;
@@ -2779,7 +2835,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         bool invalidType = false;
         std::optional<ImplicitCastExpr::Kind> implicitCastKind;
         // Probing: other overload candidates are still untried, so don't diagnose yet.
-        if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param.type, true, &implicitCastKind, false)) {
+        if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param.type, true, &implicitCastKind, false, isOperatorCall(expr))) {
             didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
             didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
             didWrapOptional = didWrapOptional || implicitCastKind == ImplicitCastExpr::OptionalWrap || arg.value->isNullLiteralExpr();
@@ -2816,6 +2872,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& callee
 
 void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, Location location,
                                               const Decl* calleeDecl) {
+    bool allowOperatorBorrow = isOperatorCall(expr);
     auto result = getArgumentValidationResult(expr, params, isVariadic);
 
     std::vector<int> argToParam, paramToArg;
@@ -2842,7 +2899,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
     case ArgumentValidation::None: {
         for (size_t i = 0; i < expr.args.size(); ++i) {
             int paramIndex = argToParam[i];
-            if (paramIndex != -1) expr.args[i].value = convert(expr.args[i].value, params[size_t(paramIndex)].type, true);
+            if (paramIndex != -1) expr.args[i].value = convert(expr.args[i].value, params[size_t(paramIndex)].type, true, true, allowOperatorBorrow);
         }
         for (size_t j = 0; j < params.size(); ++j) {
             if (paramToArg[j] != -1) continue;
@@ -2893,7 +2950,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         // Validation probed without diagnosing; re-run once so an out-of-range literal still
         // reports the range instead of a generic mismatch. This either throws or returns null,
         // since probing already failed, so discarding the result is safe.
-        (void)convert(arg.value, param.type, true);
+        (void)convert(arg.value, param.type, true, true, allowOperatorBorrow);
         ERROR_WITH_NOTES(arg.location, std::move(declNote),
                          "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type
                                               << "'" << narrowingHint(arg.value->type, param.type));
@@ -2941,11 +2998,17 @@ static bool isValidCast(Type sourceType, Type targetType) {
             if (!targetType.getElementType().isMutable() || sourcePointee.isMutable()) {
                 return true;
             }
+        } else if (targetType.isInteger()) {
+            return true;
         }
 
         return false;
     }
     case TypeKind::ArrayType: {
+        if (sourceType.isUnsizedArrayPointer() && targetType.isInteger()) {
+            return true;
+        }
+
         if (targetType.isPointerType()) {
             Type targetPointee = targetType.getPointee();
 
