@@ -10,7 +10,7 @@
 @3 = private unnamed_addr constant [47 x i8] c"integer overflow at lambda-capturing.cx:13:30\0A\00", align 1
 @4 = private unnamed_addr constant [47 x i8] c"integer overflow at lambda-capturing.cx:13:34\0A\00", align 1
 
-define void @_EN4main13capturesParamE3int(i32 %p) {
+define void @_EN4main13capturesParamE3int(i32 %p) #0 !dbg !4 {
   %p1 = alloca i32, align 4
   %d = alloca i32, align 4
   %b = alloca %__closure0, align 8
@@ -25,11 +25,11 @@ define void @_EN4main13capturesParamE3int(i32 %p) {
   %3 = extractvalue %__closure0 %b.load, 0
   %4 = extractvalue %__closure0 %b.load, 1
   %5 = extractvalue %__closure0 %b.load, 2
-  %6 = call i32 %3(i32 %4, i32 %5, i32 1)
+  %6 = call i32 %3(i32 %4, i32 %5, i32 1), !dbg !7
   ret void
 }
 
-define i32 @_EN4main9__lambda0E3int(i32 %__capture_p, i32 %__capture_d, i32 %c) {
+define i32 @_EN4main9__lambda0E3int(i32 %__capture_p, i32 %__capture_d, i32 %c) #0 !dbg !8 {
   %__capture_p1 = alloca i32, align 4
   %__capture_d2 = alloca i32, align 4
   %c3 = alloca i32, align 4
@@ -49,7 +49,7 @@ define i32 @_EN4main9__lambda0E3int(i32 %__capture_p, i32 %__capture_d, i32 %c) 
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @0)
+  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -65,22 +65,22 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
 
 overflow.fail5:                                   ; preds = %overflow.success
-  call void @_EN3std10assertFailEP4char(ptr @1)
+  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !9
   unreachable
 
 overflow.success6:                                ; preds = %overflow.success
   ret i32 %11
 }
 
-declare void @_EN3std10assertFailEP4char(ptr)
+declare void @_EN3std10assertFailEP4char(ptr) #0
 
-define i32 @main() {
+define i32 @main() #0 !dbg !10 {
   %s = alloca %S, align 8
   %a = alloca i32, align 4
   %b = alloca %__closure2, align 8
-  call void @_EN4main13capturesParamE3int(i32 100)
-  call void @_EN4main1S4initE3int(ptr %s, i32 5)
-  %1 = call i32 @_EN4main1S3getE3int(ptr %s, i32 1)
+  call void @_EN4main13capturesParamE3int(i32 100), !dbg !11
+  call void @_EN4main1S4initE3int(ptr %s, i32 5), !dbg !12
+  %1 = call i32 @_EN4main1S3getE3int(ptr %s, i32 1), !dbg !13
   store i32 1, ptr %a, align 4
   %a.load = load i32, ptr %a, align 4
   %2 = insertvalue %__closure2 { ptr @_EN4main9__lambda2E3int, i32 undef }, i32 %a.load, 1
@@ -88,11 +88,11 @@ define i32 @main() {
   %b.load = load %__closure2, ptr %b, align 8
   %3 = extractvalue %__closure2 %b.load, 0
   %4 = extractvalue %__closure2 %b.load, 1
-  %5 = call i32 %3(i32 %4, i32 2)
+  %5 = call i32 %3(i32 %4, i32 2), !dbg !14
   ret i32 0
 }
 
-define void @_EN4main1S4initE3int(ptr %this, i32 %d) {
+define void @_EN4main1S4initE3int(ptr %this, i32 %d) #0 !dbg !15 {
   %d1 = alloca i32, align 4
   store i32 %d, ptr %d1, align 4
   %d2 = getelementptr inbounds %S, ptr %this, i32 0, i32 0
@@ -101,7 +101,7 @@ define void @_EN4main1S4initE3int(ptr %this, i32 %d) {
   ret void
 }
 
-define i32 @_EN4main1S3getE3int(ptr %this, i32 %c) {
+define i32 @_EN4main1S3getE3int(ptr %this, i32 %c) #0 !dbg !16 {
   %c1 = alloca i32, align 4
   %b = alloca %__closure1, align 8
   store i32 %c, ptr %c1, align 4
@@ -123,11 +123,11 @@ define i32 @_EN4main1S3getE3int(ptr %this, i32 %c) {
   %4 = load i32, ptr %3, align 4
   %5 = getelementptr inbounds %__closure1, ptr %b.load, i32 0, i32 2
   %6 = load ptr, ptr %5, align 8
-  %7 = call i32 %2(i32 %4, ptr %6, i32 1)
+  %7 = call i32 %2(i32 %4, ptr %6, i32 1), !dbg !17
   ret i32 %7
 }
 
-define i32 @_EN4main9__lambda2E3int(i32 %__capture_a, i32 %c) {
+define i32 @_EN4main9__lambda2E3int(i32 %__capture_a, i32 %c) #0 !dbg !18 {
   %__capture_a1 = alloca i32, align 4
   %c2 = alloca i32, align 4
   store i32 %__capture_a, ptr %__capture_a1, align 4
@@ -145,14 +145,14 @@ define i32 @_EN4main9__lambda2E3int(i32 %__capture_a, i32 %c) {
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @2)
+  call void @_EN3std10assertFailEP4char(ptr @2), !dbg !19
   unreachable
 
 overflow.success:                                 ; preds = %0
   ret i32 %4
 }
 
-define i32 @_EN4main9__lambda1E3int(i32 %__capture_c, ptr %__capture_this, i32 %x) {
+define i32 @_EN4main9__lambda1E3int(i32 %__capture_c, ptr %__capture_this, i32 %x) #0 !dbg !20 {
   %__capture_c1 = alloca i32, align 4
   %x2 = alloca i32, align 4
   store i32 %__capture_c, ptr %__capture_c1, align 4
@@ -170,7 +170,7 @@ define i32 @_EN4main9__lambda1E3int(i32 %__capture_c, ptr %__capture_this, i32 %
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @3)
+  call void @_EN3std10assertFailEP4char(ptr @3), !dbg !21
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -187,7 +187,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition3, label %overflow.fail4, label %overflow.success5
 
 overflow.fail4:                                   ; preds = %overflow.success
-  call void @_EN3std10assertFailEP4char(ptr @4)
+  call void @_EN3std10assertFailEP4char(ptr @4), !dbg !21
   unreachable
 
 overflow.success5:                                ; preds = %overflow.success
@@ -195,6 +195,33 @@ overflow.success5:                                ; preds = %overflow.success
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #0
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
 
-attributes #0 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+attributes #0 = { "frame-pointer"="all" }
+attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "lambda-capturing.cx")
+!4 = distinct !DISubprogram(name: "capturesParam", linkageName: "_EN4main13capturesParamE3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 6, column: 9, scope: !4)
+!8 = distinct !DISubprogram(name: "__lambda0", linkageName: "_EN4main9__lambda0E3int", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!9 = !DILocation(line: 5, column: 13, scope: !8)
+!10 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!11 = !DILocation(line: 19, column: 5, scope: !10)
+!12 = !DILocation(line: 20, column: 13, scope: !10)
+!13 = !DILocation(line: 21, column: 11, scope: !10)
+!14 = !DILocation(line: 24, column: 9, scope: !10)
+!15 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1S4initE3int", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!16 = distinct !DISubprogram(name: "get", linkageName: "_EN4main1S3getE3int", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
+!17 = !DILocation(line: 14, column: 16, scope: !16)
+!18 = distinct !DISubprogram(name: "__lambda2", linkageName: "_EN4main9__lambda2E3int", scope: !3, file: !3, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
+!19 = !DILocation(line: 23, column: 13, scope: !18)
+!20 = distinct !DISubprogram(name: "__lambda1", linkageName: "_EN4main9__lambda1E3int", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!21 = !DILocation(line: 13, column: 17, scope: !20)

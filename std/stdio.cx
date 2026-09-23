@@ -28,6 +28,13 @@ void print<T: Printable>(T value) {
     printf("%.*s", s.size(), s.data());
 }
 
+/// Prints the repetition without allocating a temporary.
+void print(RepeatIterator<string> repetitions) {
+    for chunk in repetitions {
+        printf("%.*s", chunk.size(), chunk.data());
+    }
+}
+
 /// Prints the given value.
 void print<T: Printable>(T* value) {
     var s = value.toString();
@@ -36,11 +43,11 @@ void print<T: Printable>(T* value) {
 
 /// Prints the given value.
 void print<T: Printable>(List<T>* list) {
-    print(ArrayRef(list));
+    print(Slice(list));
 }
 
 /// Prints the given value.
-void print<T: Printable>(ArrayRef<T> array) {
+void print<T: Printable>(Slice<T> array) {
     print('[');
 
     for index in 0..array.size() {

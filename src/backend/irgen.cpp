@@ -29,20 +29,13 @@ IRGenerator::IRGenerator(const CompileOptions& options) : options(options) {
     scopes.push_back(IRGenScope(*this));
 }
 
-void IRGenerator::setLocalValue(Value* value, const VariableDecl* decl) {
+void IRGenerator::setLocalValue(Value* value, const VariableDecl* decl, bool deferDestructor) {
     auto it = scopes.back().valuesByDecl.try_emplace(decl, value);
     ASSERT(it.second);
 
-    if (decl) {
+    if (decl && deferDestructor) {
         deferDestructorCall(value, decl);
     }
-}
-
-// Binds a switch associated value, which borrows the enum payload storage and
-// must not be destroyed (the payload is owned by the switched enum value).
-void IRGenerator::setBorrowedValue(Value* value, const VariableDecl* decl) {
-    auto it = scopes.back().valuesByDecl.try_emplace(decl, value);
-    ASSERT(it.second);
 }
 
 Value* IRGenerator::getValueOrNull(const Decl* decl) {

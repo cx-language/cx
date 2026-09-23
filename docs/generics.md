@@ -86,6 +86,26 @@ struct MapEntry<Key: Hashable, Value> {
 }
 ```
 
+## Integer parameters
+
+Generic parameters can also take integer values instead of types.
+An integer parameter is declared like a function parameter, with an integer
+type and a name (e.g. `int N`). It can then size an array (`T[N]`) within
+the declaration. Integer arguments are given explicitly or inferred from
+matching array sizes. The standard library uses this for fixed-size arrays:
+
+```cs
+void main() {
+    var a = Array<int, 3>(elements = [10, 20, 30]);
+    println(a.size()); // prints 3
+    println(a[2]); // prints 30
+}
+```
+
+Only non-negative integer literals (and references to other integer
+parameters) are accepted as integer arguments. An integer parameter cannot
+be used as a value, only as an array size.
+
 ## Generic interfaces
 
 Interfaces can also take type parameters.

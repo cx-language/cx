@@ -1,0 +1,32 @@
+/// A fixed-size array holding N elements of type T.
+///
+/// Unlike `List`, the size is part of the type, so arrays of different sizes
+/// are different types. Array literals convert to arrays when the size matches.
+struct Array<T, int N> {
+    T[N] elements;
+
+    /// Returns the number of elements.
+    int size() {
+        return elements.size();
+    }
+
+    /// Returns a pointer to the first element.
+    T[*] data() {
+        return elements.data();
+    }
+
+    /// Returns a reference to the element at the given index.
+    T* operator[](int index) {
+        return elements[index];
+    }
+
+    /// Sets the element at the given index.
+    void operator[]=(int index, T value) {
+        elements[index] = value;
+    }
+
+    /// Returns an iterator over the elements.
+    ArrayIterator<T> iterator() {
+        return ArrayIterator(elements);
+    }
+}

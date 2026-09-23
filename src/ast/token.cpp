@@ -18,8 +18,8 @@ enum class PrecedenceGroup {
     NullCoalescing,
     LogicalOr,
     LogicalAnd,
-    Bitwise,
     Comparison,
+    Bitwise,
     Range,
     AddSub,
     MulDiv,
@@ -31,6 +31,7 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     case Token::Equal:
     case Token::NotEqual:
         return PrecedenceGroup::Comparison;
+    case Token::Is:
     case Token::Less:
     case Token::LessOrEqual:
     case Token::Greater:
@@ -73,15 +74,16 @@ Token::Token(Token::Kind kind, Location location, llvm::StringRef string) : kind
     ASSERT(location.isValid());
 }
 
-Token::Token(Location location, uint64_t val) : kind(Token::IntegerLiteral), src{""}, location(location) {
+Token::Token(Location location, uint64_t val, int length) : kind(Token::IntegerLiteral), src{""}, location(location) {
     ASSERT(location.isValid());
-    src.integer = val;
+    src.integer = IntegerValue{val, length};
 }
 
 bool cx::isBinaryOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
     case Token::Equal:
     case Token::NotEqual:
+    case Token::Is:
     case Token::Less:
     case Token::LessOrEqual:
     case Token::Greater:
@@ -178,9 +180,32 @@ bool Token::is(llvm::ArrayRef<Token::Kind> kinds) const {
 llvm::APSInt Token::getIntegerValue() const {
     // Avoid overflow with very large values by adding an extra
     // storage bit if the high bit in the source value is set
-    llvm::APSInt value(64 + !!(src.integer & (1ULL << 63)), false);
-    value = src.integer;
+    llvm::APSInt value(64 + !!(src.integer.value & (1ULL << 63)), false);
+    value = src.integer.value;
     return value;
+}
+
+Location cx::getTokenEndLocation(const Token& token) {
+    Location end = token.location;
+    if (!end.isValid()) return end;
+
+    if (token.kind == Token::IntegerLiteral) {
+        end.column += token.getIntegerLength();
+        return end;
+    }
+
+    llvm::StringRef text = token.getString();
+    if (text.empty()) text = toString(token.kind);
+
+    for (char ch : text) {
+        if (ch == '\n') {
+            end.line++;
+            end.column = 1;
+        } else {
+            end.column++;
+        }
+    }
+    return end;
 }
 
 llvm::APFloat Token::getFloatingPointValue() const {
@@ -266,6 +291,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "import",
         "in",
         "interface",
+        "is",
         "null",
         "private",
         "public",

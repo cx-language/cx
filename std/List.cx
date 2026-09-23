@@ -67,16 +67,38 @@ struct List<Element> {
     /// Returns the element at the given index.
     /// Returns the element at the given index.
     Element* operator[](int index) {
-        if index >= size {
+        if index < 0 || index >= size {
             indexOutOfBounds(index);
         }
 
         return buffer[index];
     }
 
+    /// Returns a reference to the element at the given offset from the end.
+    /// Offset 1 is the last element; offsets outside 1..size() abort.
+    Element* operator[-](int index) {
+        if index < 1 || index > size {
+            indexOutOfBounds(index);
+        }
+
+        return buffer[size - index];
+    }
+
     /// Sets the element at the given index.
     void operator[]=(int index, Element element) {
+        if index < 0 || index >= size {
+            indexOutOfBounds(index);
+        }
         buffer[index] = element;
+    }
+
+    /// Sets the element at the given offset from the end.
+    /// Offset 1 is the last element; offsets outside 1..size() abort.
+    void operator[-]=(int index, Element element) {
+        if index < 1 || index > size {
+            indexOutOfBounds(index);
+        }
+        buffer[size - index] = element;
     }
 
     /// Returns the first element.
@@ -169,7 +191,7 @@ struct List<Element> {
     /// Removes the element at the given index from the list and returns it.
     /// Elements following the removed element are moved towards the beginning of the list by one index.
     Element removeAt(int index) {
-        if index >= size {
+        if index < 0 || index >= size {
             indexOutOfBounds(index);
         }
 
@@ -191,8 +213,8 @@ struct List<Element> {
 
     /// Returns an iterator over the elements.
     ArrayIterator<Element> iterator() {
-        // TODO: When implicit constructors have been implemented, remove the ArrayRef() call below.
-        return ArrayIterator(ArrayRef(this));
+        // TODO: When implicit constructors have been implemented, remove the Slice() call below.
+        return ArrayIterator(Slice(this));
     }
 
     /// Returns an iterator over the elements with their indices.
@@ -211,52 +233,19 @@ struct List<Element> {
         return null;
     }
 
-    /// Returns a list of the transformed elements.
-    List<Output> map<Output>(Output(Element*) transform) {
-        var output = List<Output>(capacity = this.size);
-
-        for element in this {
-            output.push(transform(element));
-        }
-
-        return output;
+    /// Lazily transforms the elements. Collect the results with toList().
+    MappedIterator<Output, Element, ArrayIterator<Element>> map<Output>(Output(Element) transform) {
+        return MappedIterator(iterator(), transform);
     }
 
-    /// Returns a list of the transformed elements.
-    List<Output> map<Output>(Output(Element) transform) {
-        var output = List<Output>(capacity = this.size);
-
-        for element in this {
-            output.push(transform(element));
-        }
-
-        return output;
+    /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
+    FilterIterator<Element, ArrayIterator<Element>> filter(bool(Element) include) {
+        return FilterIterator(iterator(), include);
     }
 
-    /// Returns a list of the elements to include.
-    List<Element> filter(bool(Element*) include) {
-        var output = List<Element>();
-
-        for element in this {
-            if include(element) {
-                output.push(element);
-            }
-        }
-
-        return output;
-    }
-
-    /// Returns a list of the elements to include.
-    List<Element> filter(bool(Element) include) {
-        var output = List<Element>();
-
-        for element in this {
-            if include(element) {
-                output.push(element);
-            }
-        }
-
-        return output;
+    /// Lazily appends another iterator's elements. Collect the results with toList().
+    ChainIterator<Element, ArrayIterator<Element>, Other> chain<Other>(Other other) {
+        return ChainIterator(iterator(), other);
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
@@ -282,5 +271,5 @@ struct List<Element> {
 
 /// Returns true if both lists have equal elements.
 bool operator==<T>(List<T>* a, List<T>* b) {
-    return ArrayRef(a) == ArrayRef(b);
+    return Slice(a) == Slice(b);
 }

@@ -1,0 +1,93 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    testList();
+    testListAssign();
+    testArrayRef();
+    testString();
+    testStringBuffer();
+    testStringBufferAssign();
+    testStaticArray();
+    testStaticArrayAssign();
+    testSlice();
+    testExpressionOffset();
+}
+
+void testList() {
+    var list = List<int>();
+    list.push(10);
+    list.push(20);
+    list.push(30);
+    assert(list[-1] == 30);
+    assert(list[-2] == 20);
+    assert(list[-3] == 10);
+}
+
+void testListAssign() {
+    var list = List<int>();
+    list.push(1);
+    list.push(2);
+    list[-1] = 20;
+    list[-2] = 10;
+    assert(list[0] == 10);
+    assert(list[1] == 20);
+}
+
+void testArrayRef() {
+    var list = List<int>();
+    list.push(10);
+    list.push(20);
+    var ref = ArrayRef(&list);
+    assert(ref[-1] == 20);
+    assert(ref[-2] == 10);
+}
+
+void testString() {
+    var s = "hello";
+    assert(s[-1] == 'o');
+    assert(s[-5] == 'h');
+}
+
+void testStringBuffer() {
+    var s = StringBuffer("hello");
+    assert(s[-1] == 'o');
+    assert(s[-5] == 'h');
+}
+
+void testStringBufferAssign() {
+    var s = StringBuffer("hello");
+    s[-1] = '!';
+    assert(string(&s) == "hell!");
+}
+
+void testStaticArray() {
+    int[3] numbers = [10, 20, 30];
+    assert(numbers[-1] == 30);
+    assert(numbers[-3] == 10);
+}
+
+void testStaticArrayAssign() {
+    int[3] numbers = [10, 20, 30];
+    numbers[-1] = 300;
+    assert(numbers[-1] == 300);
+    assert(numbers[2] == 300);
+}
+
+void testExpressionOffset() {
+    var list = List<int>();
+    list.push(10);
+    list.push(20);
+    list.push(30);
+    var k = 2;
+    assert(list[-k] == 20);
+    assert(list[-(1 + 1)] == 20);
+}
+
+int last(int[] numbers) {
+    return numbers[-1];
+}
+
+void testSlice() {
+    assert(last([10, 20, 30]) == 30);
+    assert(last([7, 8]) == 8);
+}

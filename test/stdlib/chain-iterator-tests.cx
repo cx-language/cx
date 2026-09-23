@@ -1,0 +1,51 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    testChainLists();
+    testChainIsLazy();
+    testChainAdaptors();
+    testChainMapFilter();
+}
+
+int chainCalls = 0;
+
+int countChain(int x) {
+    chainCalls++;
+    return x;
+}
+
+void testChainLists() {
+    var a = List([1, 2]);
+    var b = List([3, 4, 5]);
+    var result = a.chain(b.iterator()).toList();
+    assert(result.size() == 5);
+    assert(result[0] == 1 && result[2] == 3 && result[4] == 5);
+}
+
+void testChainIsLazy() {
+    var a = List([1, 2]);
+    var b = List([3]);
+    var chained = a.chain(b.iterator());
+    var first = chained.value();
+    assert(*first == 1);
+    chained.increment();
+    chained.increment();
+    assert(*chained.value() == 3);
+}
+
+void testChainAdaptors() {
+    var a = List([1, 2]);
+    var b = List([3, 4]);
+    var result = a.chain(b.iterator()).map(countChain).toList();
+    assert(chainCalls == 4);
+    assert(result.size() == 4);
+    assert(result[0] == 1 && result[3] == 4);
+}
+
+void testChainMapFilter() {
+    var a = List([1, 2]);
+    var b = List([3, 4]);
+    var result = a.chain(b.iterator()).filter(n => n % 2 == 0).map(n => n * 10).toList();
+    assert(result.size() == 2);
+    assert(result[0] == 20 && result[1] == 40);
+}

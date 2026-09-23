@@ -71,7 +71,7 @@ Modern type system features for convenience and performance:
 ## Standard library covers common use cases better
 
 - More string manipulation functions, e.g. case-insensitive comparison, `split`, `join`, `startsWith`, `endsWith`.
-- String and array slice types: `StringRef` and `ArrayRef`.
+- String and array slice types: `StringRef` and `Slice`.
 - Unicode-correct string type in addition to a raw byte string type.
 - Algorithms take range objects instead of iterator pairs for ease of use.
 - Iterable types in the standard library provide `map`, `filter`, `reduce`, etc. as member functions.

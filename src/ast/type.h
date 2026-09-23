@@ -20,6 +20,7 @@ struct ParamDecl;
 struct TypeDecl;
 struct DestructorDecl;
 struct AnonymousStructElement;
+struct GenericArg;
 
 enum class Mutability { Mutable, Const };
 
@@ -61,7 +62,7 @@ struct Type {
     bool isBuiltinType() const { return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull() || isVoid(); }
     bool isImplicitlyCopyable() const;
     bool isConstantArray() const;
-    bool isArrayRef() const;
+    bool isSlice() const;
     bool isUnsizedArrayPointer() const;
     bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
@@ -92,7 +93,7 @@ struct Type {
     bool isUndefined() const;
     bool isNeverType() const { return isBasicType() && getName() == "never"; }
 
-    Type resolve(const llvm::StringMap<Type>& replacements) const;
+    Type resolve(const llvm::StringMap<GenericArg>& replacements) const;
     bool isInteger() const;
     bool isSigned() const;
     bool isUnsigned() const;
@@ -121,8 +122,9 @@ struct Type {
     std::string getQualifiedTypeName() const;
     Type getElementType() const;
     int64_t getArraySize() const;
+    llvm::StringRef getArraySizeParam() const;
     llvm::ArrayRef<AnonymousStructElement> getAnonymousStructElements() const;
-    llvm::ArrayRef<Type> getGenericArgs() const;
+    llvm::ArrayRef<GenericArg> getGenericArgs() const;
     Type getReturnType() const;
     llvm::ArrayRef<Type> getParamTypes() const;
     Type getPointee() const;
@@ -161,21 +163,45 @@ struct Type {
     Location location;
 };
 
-void appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> genericArgs);
-std::string getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs);
+// A generic argument: either a type or an integer value.
+struct GenericArg {
+    GenericArg() = default;
+    GenericArg(Type type) : type(type), location(type.location) {}
+    static GenericArg fromInt(int64_t value, Location location) {
+        GenericArg arg;
+        arg.intValue = value;
+        arg.location = location;
+        return arg;
+    }
+    explicit operator bool() const { return type || intValue.has_value(); }
+    bool isType() const { return type && !intValue.has_value(); }
+    bool isInt() const { return intValue.has_value(); }
+    int64_t getInt() const { return *intValue; }
+    std::string toString() const;
+    GenericArg resolve(const llvm::StringMap<GenericArg>& replacements) const;
+
+    Type type;
+    std::optional<int64_t> intValue;
+    Location location;
+};
+
+bool operator==(const GenericArg&, const GenericArg&);
+
+void appendGenericArgs(std::string& typeName, llvm::ArrayRef<GenericArg> genericArgs);
+std::string getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<GenericArg> genericArgs);
 
 struct BasicType : TypeBase {
     std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }
-    static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs, Mutability mutability = Mutability::Mutable, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::BasicType; }
 
 private:
-    BasicType(llvm::StringRef name, std::vector<Type>&& genericArgs)
+    BasicType(llvm::StringRef name, std::vector<GenericArg>&& genericArgs)
     : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)), decl(nullptr) {}
 
 public:
     std::string name; // Can be empty for anonymous types imported from C.
-    std::vector<Type> genericArgs;
+    std::vector<GenericArg> genericArgs;
     TypeDecl* decl;
 };
 
@@ -183,14 +209,18 @@ struct ArrayType : TypeBase {
     static Type getIndexType() { return Type::getInt(); }
     static const int64_t UnknownSize = -1;
     static Type get(Type type, int64_t size, Location location = Location());
+    // A symbolic size names an integer generic parameter; resolved at instantiation.
+    static Type get(Type type, std::string sizeParam, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayType; }
 
 private:
-    ArrayType(Type type, int64_t size) : TypeBase(TypeKind::ArrayType), elementType(type), size(size) {}
+    ArrayType(Type type, int64_t size, std::string sizeParam = "")
+    : TypeBase(TypeKind::ArrayType), elementType(type), size(size), sizeParam(std::move(sizeParam)) {}
 
 public:
     Type elementType;
     int64_t size;
+    std::string sizeParam;
 };
 
 struct AnonymousStructElement {
@@ -256,5 +286,11 @@ bool operator==(Type, Type);
 bool operator!=(Type, Type);
 std::ostream& operator<<(std::ostream&, Type);
 llvm::raw_ostream& operator<<(llvm::raw_ostream&, Type);
+inline std::ostream& operator<<(std::ostream& stream, GenericArg arg) {
+    return stream << arg.toString();
+}
+inline llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, GenericArg arg) {
+    return stream << arg.toString();
+}
 
 } // namespace cx

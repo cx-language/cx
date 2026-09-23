@@ -212,7 +212,7 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
             currentSourceFile = &sourceFile;
 
             if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-                llvm::StringMap<Type> genericArgs = {{"This", typeDecl->getType()}};
+                llvm::StringMap<GenericArg> genericArgs = {{"This", GenericArg(typeDecl->getType())}};
 
                 for (Type interface : typeDecl->interfaces) {
                     try {
@@ -340,7 +340,7 @@ static Decl* findDeclInModules(llvm::StringRef name, Location location, llvm::Ar
     }
 }
 
-Decl* Typechecker::findDecl(llvm::StringRef name, Location location) const {
+Decl* Typechecker::findDecl(llvm::StringRef name, Location location, Location endLocation) const {
     ASSERT(!name.empty());
 
     if (Decl* match = findDeclInModules(name, location, currentModule)) {
@@ -365,7 +365,7 @@ Decl* Typechecker::findDecl(llvm::StringRef name, Location location) const {
         return match;
     }
 
-    ERROR(location, "unknown identifier '" << name << "'");
+    ERROR_RANGE(location, endLocation, "unknown identifier '" << name << "'");
 }
 
 static void appendUnique(std::vector<Decl*>& target, llvm::ArrayRef<Decl*> source) {

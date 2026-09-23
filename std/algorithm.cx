@@ -23,7 +23,7 @@ void swap<E>(E* a, E* b) {
     *b = t;
 }
 
-// TODO: Use ArrayRef instead of List.
+// TODO: Use Slice instead of List.
 /// Sorts a array. Uses insertion sort if the array is small enough, and quickSort otherwise.
 void sort<E: Comparable>(List<E>* array) {
     if array.size() <= 32 {
@@ -35,7 +35,7 @@ void sort<E: Comparable>(List<E>* array) {
 
 /// Private members
 
-// TODO: Use ArrayRef instead of List.
+// TODO: Use Slice instead of List.
 private int partition<E: Comparable>(List<E>* arr, int low, int high) {
     var pivot = &arr[high];
     var i = low - 1;
@@ -52,7 +52,7 @@ private int partition<E: Comparable>(List<E>* arr, int low, int high) {
     return i + 1;
 }
 
-// TODO: Use ArrayRef instead of List.
+// TODO: Use Slice instead of List.
 // Not stable.
 private void quickSort<E: Comparable>(List<E>* arr, int low, int high) {
     if low < high {
@@ -67,7 +67,7 @@ private void quickSort<E: Comparable>(List<E>* arr, int low, int high) {
     }
 }
 
-// TODO: Use ArrayRef instead of List.
+// TODO: Use Slice instead of List.
 // Good for small arrays.
 private void insertionSort<E: Comparable>(List<E>* arr) {
     var i = 1;
