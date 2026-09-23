@@ -38,23 +38,23 @@ struct ChainIterator<Element, First, Second>: Iterator<Element*> {
     }
 
     /// Lazily transforms the elements.
-    MappedIterator<Output, Element, ChainIterator<Element, First, Second>> map<Output>(Output(Element&) transform) {
-        return MappedIterator(*this, transform);
+    MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Output(Element&)> map<Output>(Output(Element&) transform) {
+        return MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Output(Element&)>(*this, transform);
     }
 
     /// Lazily transforms the elements.
-    MappedValueIterator<Output, Element, ChainIterator<Element, First, Second>> map<Output, T>(Output(T) transform) {
-        return MappedValueIterator(*this, transform);
+    MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Output(T)> map<Output, T: Copyable>(Output(T) transform) {
+        return MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Output(T)>(*this, transform);
     }
 
     /// Lazily keeps the elements satisfying the predicate.
-    FilterIterator<Element, ChainIterator<Element, First, Second>> filter(bool(Element&) include) {
-        return FilterIterator(*this, include);
+    FilterIterator<Element, ChainIterator<Element, First, Second>, bool(Element&)> filter(bool(Element&) include) {
+        return FilterIterator<Element, ChainIterator<Element, First, Second>, bool(Element&)>(*this, include);
     }
 
     /// Lazily keeps the elements satisfying the predicate.
-    FilterValueIterator<Element, ChainIterator<Element, First, Second>> filter<T>(bool(T) include) {
-        return FilterValueIterator(*this, include);
+    FilterIterator<Element, ChainIterator<Element, First, Second>, bool(T)> filter<T: Copyable>(bool(T) include) {
+        return FilterIterator<Element, ChainIterator<Element, First, Second>, bool(T)>(*this, include);
     }
 
     /// Collects the remaining elements into a list.
