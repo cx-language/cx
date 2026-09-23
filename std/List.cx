@@ -174,6 +174,17 @@ struct List<Element> {
         return null;
     }
 
+    /// Removes the first element satisfying the given condition and returns it, or null if none matches.
+    Element? removeFirst<T>(bool(T) shouldRemove) {
+        for index in 0..size {
+            if shouldRemove(this[index]) {
+                return unsafeRemoveAt(index);
+            }
+        }
+
+        return null;
+    }
+
     /// Removes the last element from the list.
     void removeLast() {
         if size == 0 abort("Called removeLast() on empty List\n");
@@ -233,14 +244,35 @@ struct List<Element> {
         return null;
     }
 
+    /// Returns the first element satisfying the predicate, or null.
+    Element*? find<T>(bool(T) predicate) {
+        for i in 0..size() {
+            if predicate(this[i]) {
+                return &this[i];
+            }
+        }
+
+        return null;
+    }
+
     /// Lazily transforms the elements. Collect the results with toList().
-    MappedIterator<Output, Element, ArrayIterator<Element>> map<Output>(Output(Element) transform) {
+    MappedIterator<Output, Element, ArrayIterator<Element>> map<Output>(Output(Element&) transform) {
         return MappedIterator(iterator(), transform);
     }
 
+    /// Lazily transforms the elements. Collect the results with toList().
+    MappedValueIterator<Output, Element, ArrayIterator<Element>> map<Output, T>(Output(T) transform) {
+        return MappedValueIterator(iterator(), transform);
+    }
+
     /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
-    FilterIterator<Element, ArrayIterator<Element>> filter(bool(Element) include) {
+    FilterIterator<Element, ArrayIterator<Element>> filter(bool(Element&) include) {
         return FilterIterator(iterator(), include);
+    }
+
+    /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
+    FilterValueIterator<Element, ArrayIterator<Element>> filter<T>(bool(T) include) {
+        return FilterValueIterator(iterator(), include);
     }
 
     /// Lazily appends another iterator's elements. Collect the results with toList().
@@ -251,10 +283,16 @@ struct List<Element> {
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element&) predicate) { return all(iterator(), predicate); }
+    /// Returns true if all elements satisfy the predicate.
+    bool all<T>(bool(T) predicate) { return all(iterator(), predicate); }
     /// Returns true if any element satisfies the predicate.
     bool any(bool(Element&) predicate) { return any(iterator(), predicate); }
+    /// Returns true if any element satisfies the predicate.
+    bool any<T>(bool(T) predicate) { return any(iterator(), predicate); }
     /// Returns true if no element satisfies the predicate.
     bool none(bool(Element&) predicate) { return none(iterator(), predicate); }
+    /// Returns true if no element satisfies the predicate.
+    bool none<T>(bool(T) predicate) { return none(iterator(), predicate); }
 
     private void grow() {
         if capacity == 0 {

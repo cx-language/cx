@@ -1,11 +1,12 @@
 // Lazily keeps the elements of another iterator that satisfy a predicate.
 // Get one from filter(); collect the results with toList().
-struct FilterIterator<Input, It>: Iterator<Input*> {
+// Takes the predicate by value; for borrows use FilterIterator.
+struct FilterValueIterator<Input, It>: Iterator<Input*> {
     private It source;
-    private bool(Input&) include;
+    private bool(Input) include;
 
     /// Initializes an iterator keeping the source's matching elements.
-    FilterIterator(It source, bool(Input&) include) {
+    FilterValueIterator(It source, bool(Input) include) {
         this.source = source;
         this.include = include;
     }
@@ -32,17 +33,17 @@ struct FilterIterator<Input, It>: Iterator<Input*> {
     }
 
     /// Lazily transforms the elements.
-    MappedIterator<Output, Input, FilterIterator<Input, It>> map<Output>(Output(Input&) transform) {
+    MappedIterator<Output, Input, FilterValueIterator<Input, It>> map<Output>(Output(Input&) transform) {
         return MappedIterator(*this, transform);
     }
 
     /// Lazily transforms the elements.
-    MappedValueIterator<Output, Input, FilterIterator<Input, It>> map<Output, T>(Output(T) transform) {
+    MappedValueIterator<Output, Input, FilterValueIterator<Input, It>> map<Output, T>(Output(T) transform) {
         return MappedValueIterator(*this, transform);
     }
 
     /// Lazily appends another iterator's elements.
-    ChainIterator<Input, FilterIterator<Input, It>, Other> chain<Other>(Other other) {
+    ChainIterator<Input, FilterValueIterator<Input, It>, Other> chain<Other>(Other other) {
         return ChainIterator(*this, other);
     }
 
