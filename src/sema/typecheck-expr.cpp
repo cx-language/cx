@@ -219,7 +219,7 @@ static std::optional<ArgumentValidation> computeArgParamMapping(llvm::ArrayRef<N
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType) {
     if (findDecls(expr.identifier).empty()) {
         if (auto* enumCase = getExpectedEnumCase(expr.identifier, expectedType)) {
-            MemberExpr qualified(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), expr.location), std::string(expr.identifier), expr.location);
+            MemberExpr qualified(makeAST<VarExpr>(enumCase->getEnumDecl()->getName(), expr.location), expr.identifier, expr.location);
             if (auto* resolvedCase = getEnumCase(qualified, expectedType)) {
                 checkHasAccess(*resolvedCase->getEnumDecl(), expr.location, AccessLevel::None);
                 expr.decl = resolvedCase;
@@ -444,7 +444,7 @@ static std::string mixedPointerOperandHint(const BinaryExpr& expr) {
         if (!valueSide.isConstant() || (!valueSide.type.isInteger() && !valueSide.type.isChar()) || !pointee.isInteger()) return "";
         if (!checkRange(valueSide, valueSide.getConstantIntegerValue(), pointee, false)) return "";
         if (auto* var = llvm::dyn_cast<VarExpr>(&ptrSide)) {
-            return " (to compare the pointed-to value, dereference '*" + var->identifier + "')";
+            return (" (to compare the pointed-to value, dereference '*" + var->identifier + "')").str();
         }
         return " (to compare the pointed-to value, dereference the pointer operand with '*')";
     };
@@ -610,13 +610,13 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                 // the operand values before emitting the lowering.
                 definitelyAssignedDecls.insert(lhsTemp);
                 definitelyAssignedDecls.insert(rhsTemp);
-                lhsBase = makeAST<VarExpr>(std::string(lhsTemp->getName()), expr.location);
-                rhsBase = makeAST<VarExpr>(std::string(rhsTemp->getName()), expr.location);
+                lhsBase = makeAST<VarExpr>(lhsTemp->getName(), expr.location);
+                rhsBase = makeAST<VarExpr>(rhsTemp->getName(), expr.location);
             }
             Expr* result = nullptr;
             for (size_t i = 0; i < leftElements.size(); ++i) {
-                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(lhsBase, std::string(leftElements[i].name), expr.location),
-                                                       makeAST<MemberExpr>(rhsBase, std::string(rightElements[i].name), expr.location), expr.location);
+                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(lhsBase, leftElements[i].name, expr.location),
+                                                       makeAST<MemberExpr>(rhsBase, rightElements[i].name, expr.location), expr.location);
                 result = result ? makeAST<BinaryExpr>(combiner, result, comparison, expr.location) : comparison;
             }
             ASSERT(result);
@@ -1665,7 +1665,7 @@ static std::string addressOfHintForCall(const CallExpr& expr, llvm::ArrayRef<Dec
 
         if (firstAddressArg) {
             if (auto* var = llvm::dyn_cast<VarExpr>(firstAddressArg)) {
-                return " (did you mean '&" + var->identifier + "'?)";
+                return (" (did you mean '&" + var->identifier + "'?)").str();
             }
         }
         return " (use '&' to pass arguments by pointer)";
@@ -2248,7 +2248,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     auto savedOp = binaryExpr->op;
                     auto savedCallee = calleeVar->identifier;
                     binaryExpr->op = derivedOp;
-                    calleeVar->identifier = getFunctionName(derivedOp);
+                    calleeVar->identifier = internString(getFunctionName(derivedOp));
                     if (swapOperands) std::swap(expr.args[0], expr.args[1]);
                     try {
                         auto derivedCallee = std::string(expr.getFunctionName());
@@ -2444,8 +2444,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.callee)) {
                 if (auto* enumCase = getExpectedEnumCase(varExpr->identifier, expectedType)) {
                     // An unqualified `Ok(...)` mirrors the qualified `Result.Ok(...)`, so desugar to it.
-                    expr.callee = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumCase->getEnumDecl()->getName()), varExpr->location),
-                                                      std::string(varExpr->identifier), varExpr->location);
+                    expr.callee =
+                        makeAST<MemberExpr>(makeAST<VarExpr>(enumCase->getEnumDecl()->getName(), varExpr->location), varExpr->identifier, varExpr->location);
                     return typecheckCallExpr(expr, expectedType);
                 }
             }
@@ -2476,7 +2476,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     } else {
         auto type = llvm::cast<EnumCase>(decl)->associatedType;
         if (type) {
-            params = map(type.getAnonymousStructElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
+            params = map(type.getAnonymousStructElements(), [&](auto& e) { return ParamDecl(e.type, e.name, false, decl->getLocation()); });
         }
         validateAndConvertArguments(expr, params, false, decl->getName(), expr.location);
     }
@@ -3032,7 +3032,7 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
     }
 
     for (auto* captured : expr.functionDecl->captures) {
-        VarExpr use(captured->getName().str(), expr.location);
+        VarExpr use(captured->getName(), expr.location);
         checkNotMoved(*captured, use);
         if (!captured->type.isImplicitlyCopyable()) {
             movedDecls.insert(captured);
@@ -3356,9 +3356,8 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
     } else if (matchedExpectedType) {
         genericArgTypes = matchedExpectedType.getGenericArgs();
     } else if (call && templateCase->associatedType) {
-        auto params = map(templateCase->associatedType.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
-            return ParamDecl(element.type, std::string(element.name), false, templateCase->getLocation());
-        });
+        auto params = map(templateCase->associatedType.getAnonymousStructElements(),
+                          [&](const AnonymousStructElement& element) { return ParamDecl(element.type, element.name, false, templateCase->getLocation()); });
         if (call->args.size() != params.size()) {
             // Report the count error; inference can't proceed without matching arguments.
             validateAndConvertArguments(*call, params, false, templateCase->getName(), call->location);

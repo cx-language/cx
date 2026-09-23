@@ -1,0 +1,89 @@
+// Entity handles remain safe to copy after their entity is removed. Reused
+// indices receive a new generation, so old handles cannot resolve to the new
+// entity.
+
+struct EntityHandle: Copyable {
+    int index;
+    int generation;
+}
+
+struct EntitySlot {
+    int generation;
+    int score;
+    bool alive;
+}
+
+struct EntityStore {
+    private List<EntitySlot> slots;
+    private List<int> freeIndices;
+
+    EntityStore() {
+        slots = List<EntitySlot>();
+        freeIndices = List<int>();
+    }
+
+    EntityHandle create(int score) {
+        if freeIndices.empty() {
+            int index = slots.size();
+            slots.push(EntitySlot(generation = 0, score = score, alive = true));
+            return EntityHandle(index = index, generation = 0);
+        }
+
+        int index = freeIndices.pop();
+        var slot = &slots[index];
+        slot.score = score;
+        slot.alive = true;
+        return EntityHandle(index = index, generation = slot.generation);
+    }
+
+    int*? resolve(EntityHandle& handle) {
+        if !isCurrent(handle) return null;
+        return &slots[handle.index].score;
+    }
+
+    void destroy(EntityHandle& handle) {
+        if !isCurrent(handle) return;
+
+        int index = handle.index;
+        var slot = &slots[index];
+        slot.alive = false;
+
+        // Retiring the slot prevents an old handle from becoming valid when
+        // the generation wraps around.
+        if slot.generation < int.max {
+            slot.generation++;
+            freeIndices.push(index);
+        }
+    }
+
+    private bool isCurrent(EntityHandle& handle) {
+        int index = handle.index;
+        if index < 0 || index >= slots.size() return false;
+
+        var slot = &slots[index];
+        return slot.alive && slot.generation == handle.generation;
+    }
+}
+
+void main() {
+    var store = EntityStore();
+
+    var alice = store.create(100);
+    var savedAlice = alice;
+    var aliceScore = store.resolve(alice)!;
+    println("alice: ", *aliceScore);
+
+    store.destroy(alice);
+    println("stale after destroy: ", store.resolve(savedAlice) == null);
+
+    var bob = store.create(75);
+    println("same slot: ", bob.index == savedAlice.index);
+    println("new generation: ", bob.generation != savedAlice.generation);
+    println("stale after reuse: ", store.resolve(savedAlice) == null);
+
+    var bobScore = store.resolve(bob)!;
+    println("bob: ", *bobScore);
+
+    store.destroy(savedAlice);
+    println("stale destroy ignored: ", store.resolve(bob) != null);
+}

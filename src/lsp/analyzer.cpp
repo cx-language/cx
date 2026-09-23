@@ -1778,9 +1778,9 @@ std::vector<CompletionItem> membersForType(Type type) {
     if (t.isAnonymousStructType()) {
         for (auto& el : t.getAnonymousStructElements()) {
             CompletionItem item;
-            item.label = el.name;
+            item.label = el.name.str();
             item.kind = "field";
-            item.detail = (el.type ? el.type.toString() + " " : "") + el.name;
+            item.detail = ((el.type ? el.type.toString() + " " : "") + el.name).str();
             out.push_back(std::move(item));
         }
         return out;

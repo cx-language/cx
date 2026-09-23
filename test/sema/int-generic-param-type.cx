@@ -2,7 +2,7 @@
 
 // CHECK-NOT: int-generic-param-type.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
-// CHECK: [[@LINE+1]]:13: error: integer generic parameter 'S' must have integer type
+// CHECK: [[@LINE+1]]:13: error: generic parameters must be types or integers
 struct B<T, string S> {
     T value;
 }

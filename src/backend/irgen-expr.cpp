@@ -1028,7 +1028,7 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     if (insertBlockBackup) setInsertPoint(insertBlockBackup);
 
     if (functionDecl->captures.empty()) {
-        VarExpr varExpr(functionDecl->getName().str(), functionDecl->getLocation());
+        VarExpr varExpr(functionDecl->getName(), functionDecl->getLocation());
         varExpr.decl = functionDecl;
         varExpr.type = expr.type;
         return emitVarExpr(varExpr);

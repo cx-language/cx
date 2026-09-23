@@ -113,7 +113,7 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
             if (auto it = replacements.find(sizeParam); it != replacements.end() && it->second.isInt()) {
                 return ArrayType::get(elementType, it->second.getInt(), location);
             }
-            return ArrayType::get(elementType, sizeParam.str(), location);
+            return ArrayType::get(elementType, sizeParam, location);
         }
         return ArrayType::get(elementType, getArraySize(), location);
     }
@@ -158,8 +158,8 @@ Type ArrayType::get(Type elementType, int64_t size, Location location) {
     return getType(ArrayType(elementType, size), elementType.mutability, location);
 }
 
-Type ArrayType::get(Type elementType, std::string sizeParam, Location location) {
-    return getType(ArrayType(elementType, /*size=*/0, std::move(sizeParam)), elementType.mutability, location);
+Type ArrayType::get(Type elementType, llvm::StringRef sizeParam, Location location) {
+    return getType(ArrayType(elementType, /*size=*/0, sizeParam), elementType.mutability, location);
 }
 
 Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Mutability mutability, Location location) {
