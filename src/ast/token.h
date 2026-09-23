@@ -163,7 +163,7 @@ bool isComparisonOperator(Token::Kind tokenKind);
 bool isBitwiseOperator(Token::Kind tokenKind);
 bool isOverloadable(Token::Kind tokenKind);
 int getPrecedence(Token::Kind tokenKind);
-std::string getFunctionName(Token::Kind tokenKind);
+llvm::StringRef getFunctionName(Token::Kind tokenKind);
 
 /// Strips the trailing '=' from a compound assignment operator.
 /// E.g. given '+=', returns '+', and so on.
