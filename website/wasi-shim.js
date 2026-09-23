@@ -144,6 +144,56 @@
         return ERRNO_SUCCESS;
     };
 
+    FileSystem.prototype.rename = function (oldPath, newPath) {
+        oldPath = normalizePath(oldPath);
+        newPath = normalizePath(newPath);
+        var entry = this.entries.get(oldPath);
+        if (!entry) return ERRNO_NOENT;
+        if (oldPath === newPath) return ERRNO_SUCCESS;
+        var newParent = this.entries.get(dirname(newPath));
+        if (!newParent) return ERRNO_NOENT;
+        if (newParent.type !== "dir") return ERRNO_NOTDIR;
+        var existing = this.entries.get(newPath);
+        if (existing) {
+            var removed = this.unlink(newPath);
+            if (removed !== ERRNO_SUCCESS) return removed;
+        }
+        this.entries.delete(oldPath);
+        var oldParent = this.entries.get(dirname(oldPath));
+        if (oldParent && oldParent.type === "dir") {
+            oldParent.children.delete(oldPath);
+        }
+        if (entry.type === "dir") {
+            // Move descendants: remap every key under the old prefix, then
+            // rebuild the children sets (which store full child paths).
+            var prefix = oldPath === "/" ? "/" : oldPath + "/";
+            var newPrefix = newPath === "/" ? "/" : newPath + "/";
+            var moved = [];
+            this.entries.forEach(function (e, p) {
+                if (p.indexOf(prefix) === 0) {
+                    moved.push([p, newPrefix + p.slice(prefix.length)]);
+                }
+            });
+            for (var i = 0; i < moved.length; i++) {
+                var e2 = this.entries.get(moved[i][0]);
+                this.entries.delete(moved[i][0]);
+                this.entries.set(moved[i][1], e2);
+            }
+            this.entries.set(newPath, entry);
+            var self2 = this;
+            this.entries.forEach(function (e, p) {
+                if (e.type === "dir") e.children.clear();
+            });
+            this.entries.forEach(function (e, p) {
+                if (p !== "/") self2._addToParent(p);
+            });
+        } else {
+            this.entries.set(newPath, entry);
+            this._addToParent(newPath);
+        }
+        return ERRNO_SUCCESS;
+    };
+
     FileSystem.prototype.readdir = function (path) {
         path = normalizePath(path);
         var entry = this.entries.get(path);
@@ -409,6 +459,24 @@
                 path_unlink_file: function (fd, pathPtr, pathLen) {
                     var path = normalizePath(self._readString(pathPtr, pathLen));
                     return self.fs.unlink(path);
+                },
+                path_create_directory: function (fd, pathPtr, pathLen) {
+                    var path = normalizePath(self._readString(pathPtr, pathLen));
+                    var existing = self.fs.entries.get(path);
+                    if (existing) return ERRNO_EXIST;
+                    return self.fs.mkdir(path);
+                },
+                path_remove_directory: function (fd, pathPtr, pathLen) {
+                    var path = normalizePath(self._readString(pathPtr, pathLen));
+                    var entry = self.fs.entries.get(path);
+                    if (!entry) return ERRNO_NOENT;
+                    if (entry.type !== "dir") return ERRNO_NOTDIR;
+                    return self.fs.unlink(path);
+                },
+                path_rename: function (oldFd, oldPathPtr, oldPathLen, newFd, newPathPtr, newPathLen) {
+                    var oldPath = normalizePath(self._readString(oldPathPtr, oldPathLen));
+                    var newPath = normalizePath(self._readString(newPathPtr, newPathLen));
+                    return self.fs.rename(oldPath, newPath);
                 },
                 fd_fdstat_get: function (fd, bufPtr) {
                     if (fd <= 2 || self.fds.has(fd)) {

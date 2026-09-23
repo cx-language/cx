@@ -520,7 +520,7 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
                 typecheckType(genericParam.valueType, userAccessLevel);
 
                 if (errors == errorsBefore && !genericParam.valueType.isInteger()) {
-                    ERROR(genericParam.valueType.location, "integer generic parameter '" << genericParam.getName() << "' must have integer type");
+                    ERROR(genericParam.valueType.location, "generic parameters must be types or integers");
                 }
             } catch (const CompileError& error) {
                 error.report();

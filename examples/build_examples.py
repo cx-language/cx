@@ -17,8 +17,36 @@ ignored_dirs = ["inputs"]
 # declarations are expected there; all other warnings are still errors.
 no_unused_dirs = ["embedding"]
 
+# The cpp-interop example links a small C++ static library; build it first
+# so `cx build` finds libcpp-interop-math.a via build.cx.
+def build_cpp_interop_lib():
+    # The example is skipped on Windows (see the loop below), so its
+    # library is not needed there either.
+    if platform.system() == "Windows":
+        return
+    directory = "cpp-interop"
+    if not os.path.isdir(directory):
+        return
+    cxx = shutil.which("c++") or shutil.which("clang++") or shutil.which("g++")
+    if not cxx:
+        print("warning: no C++ compiler found, skipping cpp-interop C++ library build")
+        return
+    for src, obj in [("mathlib.cpp", "mathlib.o"), ("wrapper.cpp", "wrapper.o")]:
+        result = subprocess.call([cxx, "-std=c++20", "-O2", "-c", src, "-o", obj], cwd=directory)
+        if result != 0:
+            sys.exit(result)
+    result = subprocess.call(["ar", "rcs", "libcpp-interop-math.a", "mathlib.o", "wrapper.o"], cwd=directory)
+    if result != 0:
+        sys.exit(result)
+
+
+build_cpp_interop_lib()
+
 for file in os.listdir("."):
-    if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl", "voxel-game"]:
+    # tree.cx, asteroids, opengl, and voxel-game need SDL3 or GLFW, which
+    # Windows CI lacks; cpp-interop needs a Unix C++ toolchain (c++/ar)
+    # and libstdc++.
+    if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl", "voxel-game", "cpp-interop"]:
         continue
 
     if file.endswith(".cx"):
@@ -44,5 +72,13 @@ for file in os.listdir("."):
 
     if exit_status != 0:
         sys.exit(1)
+
+# Clean the intermediate C++ objects for cpp-interop (built before the loop,
+# so the per-directory before/after cleanup above does not see them).
+for artifact in ["mathlib.o", "wrapper.o", "libcpp-interop-math.a"]:
+    try:
+        os.remove(os.path.join("cpp-interop", artifact))
+    except FileNotFoundError:
+        pass
 
 print("All examples built successfully.")

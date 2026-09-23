@@ -145,17 +145,17 @@ std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
     }
 
     while (true) {
-        std::string name;
+        llvm::StringRef name;
         Location location = Location();
         if (lookAhead(1) == Token::Assignment) {
             auto result = parse(Token::Identifier);
-            name = result.getString().str();
+            name = result.getString();
             location = result.location;
             consumeToken();
         }
         auto value = parseExpr();
         if (!location.isValid()) location = value->location;
-        args.push_back({std::move(name), value, location});
+        args.push_back({name, value, location});
 
         if (parse({Token::Comma, Token::RightParen}) == Token::RightParen) return args;
         // Allow trailing comma (e.g. `foo(a, b,)`).
@@ -170,7 +170,7 @@ std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
 VarExpr* Parser::parseVarExpr() {
     ASSERT(currentToken() == Token::Identifier);
     auto id = consumeToken();
-    return makeExpr<VarExpr>(id.getString().str(), id.location);
+    return makeExpr<VarExpr>(id.getString(), id.location);
 }
 
 VarExpr* Parser::parseThis() {
@@ -251,7 +251,7 @@ Expr* Parser::parseInterpolationRest(Expr* acc) {
         consumeToken();
         Expr* value = parseExpr();
         Token endToken = parse(Token::InterpEnd);
-        auto* member = makeAST<MemberExpr>(value, std::string("toString"), value->location);
+        auto* member = makeAST<MemberExpr>(value, "toString", value->location);
         auto* stringified = makeAST<CallExpr>(member, std::vector<NamedValue>(), std::vector<GenericArg>(), value->location);
         Expr* piece = stringified;
         acc = acc ? makeAST<BinaryExpr>(Token::Plus, acc, piece, interpLocation) : piece;
@@ -514,8 +514,8 @@ Type Parser::parseAnonymousStructType() {
 
     while (currentToken() != Token::RightParen) {
         auto type = parseType();
-        std::string name = currentToken() == Token::Identifier ? consumeToken().getString().str() : "";
-        elements.push_back({std::move(name), type});
+        llvm::StringRef name = currentToken() == Token::Identifier ? consumeToken().getString() : "";
+        elements.push_back({name, type});
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
 
@@ -607,7 +607,7 @@ SizeofExpr* Parser::parseSizeofExpr() {
 MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
     auto location = getCurrentLocation();
     auto member = parse(Token::Identifier);
-    return makeExpr<MemberExpr>(lhs, member.getString().str(), location);
+    return makeExpr<MemberExpr>(lhs, member.getString(), location);
 }
 
 /// index-expr ::= expr '[' expr ']'
@@ -667,7 +667,7 @@ LambdaExpr* Parser::parseLambdaExpr() {
 
     if (currentToken() == Token::Identifier) {
         auto paramName = consumeToken();
-        params.push_back(ParamDecl(Type(), paramName.getString().str(), false, paramName.location));
+        params.push_back(ParamDecl(Type(), paramName.getString(), false, paramName.location));
     } else {
         params = parseParamList(nullptr, false);
         for (auto& param : params) {
@@ -1102,7 +1102,7 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     }
 
     if (requireTerminator) parseStmtTerminator();
-    return makeAST<VarDecl>(type, name.str(), initializer, parent, accessLevel, *currentModule, nameLocation);
+    return makeAST<VarDecl>(type, name, initializer, parent, accessLevel, *currentModule, nameLocation);
 }
 
 /// var-stmt ::= var-decl (',' id ('=' initializer)?)*
@@ -1168,7 +1168,7 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
         if (parens) {
             if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
                 auto name = parse(Token::Identifier);
-                isBinding = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+                isBinding = makeAST<VarDecl>(Type(), name.getString(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
             }
             parse(Token::RightParen);
         }
@@ -1177,7 +1177,7 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
     if (!isBinding) {
         if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
             auto name = parse(Token::Identifier);
-            isBinding = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+            isBinding = makeAST<VarDecl>(Type(), name.getString(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
         }
     }
     if (currentToken() == Token::Then) {
@@ -1274,7 +1274,7 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         if (parens) {
             ERROR(location, "for-each loop header must not be parenthesized, write 'for " << name.getString() << " in ...'");
         }
-        auto* varDecl = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+        auto* varDecl = makeAST<VarDecl>(Type(), name.getString(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
         parse(Token::In);
         Expr* range;
         {
@@ -1324,7 +1324,7 @@ std::pair<Expr*, VarDecl*> Parser::parseSwitchCaseHeader(Decl* parent) {
     VarDecl* associatedValue = nullptr;
     if (currentToken() == Token::Identifier) {
         auto name = parse(Token::Identifier);
-        associatedValue = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+        associatedValue = makeAST<VarDecl>(Type(), name.getString(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
     }
 
     parse(Token::Colon);
@@ -1505,7 +1505,7 @@ ParamDecl Parser::parseParam(bool requireType) {
     }
 
     auto name = parse(Token::Identifier);
-    ParamDecl param(type, name.getString().str(), isPublic, name.location);
+    ParamDecl param(type, name.getString(), isPublic, name.location);
     param.isPack = isPack;
     if (currentToken() == Token::Assignment) {
         if (isPack) {
@@ -1551,11 +1551,11 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
         if (currentToken() == Token::Identifier) {
             // An integer generic parameter, declared like a function parameter (e.g. `int N`).
             auto valueParamName = parse(Token::Identifier);
-            auto& param = genericParams.emplace_back(valueParamName.getString().str(), valueParamName.location);
+            auto& param = genericParams.emplace_back(valueParamName.getString(), valueParamName.location);
             param.isValueParam = true;
             param.valueType = BasicType::get(genericParamName.getString(), {}, Mutability::Mutable, genericParamName.location);
         } else {
-            genericParams.emplace_back(genericParamName.getString().str(), genericParamName.location);
+            genericParams.emplace_back(genericParamName.getString(), genericParamName.location);
 
             if (currentToken() == Token::Colon) {
                 consumeToken();
@@ -1622,7 +1622,7 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
                                                                   << "' is not allowed in extern functions, use a bare '...' (C-style varargs) instead");
         }
     }
-    FunctionProto proto(name.str(), std::move(params), returnType, isVariadic, isExtern);
+    FunctionProto proto(name, std::move(params), returnType, isVariadic, isExtern);
 
     if (receiverTypeDecl) {
         return makeAST<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<GenericArg>(), accessLevel, location);
@@ -1704,7 +1704,7 @@ FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Ty
     }
 
     parseStmtTerminator();
-    return FieldDecl(type, name.str(), defaultValue, typeDecl, accessLevel, location);
+    return FieldDecl(type, name, defaultValue, typeDecl, accessLevel, location);
 }
 
 /// type-alias-decl ::= 'using' id '=' type ('\n' | ';')
@@ -1760,8 +1760,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     std::vector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
-    auto typeDecl = makeAST<TypeDecl>(tag, typeName.getString().str(), std::vector<GenericArg>(), std::move(interfaces), typeAccessLevel, *currentModule,
-                                      nullptr, typeName.location);
+    auto typeDecl = makeAST<TypeDecl>(tag, typeName.getString(), std::vector<GenericArg>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
+                                      typeName.location);
     bool hasConstructor = false;
     parse(Token::LeftBrace);
 
@@ -1805,8 +1805,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 parse(Token::Assignment);
                 auto* initializer = parseExpr();
                 parseStmtTerminator();
-                typeDecl->staticConsts.push_back(makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString().str(), initializer, nullptr,
-                                                                  accessLevel, *currentModule, name.location));
+                typeDecl->staticConsts.push_back(makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString(), initializer, nullptr, accessLevel,
+                                                                  *currentModule, name.location));
                 break;
             }
             LLVM_FALLTHROUGH;
@@ -1832,7 +1832,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                     consumeToken();
                     auto* initializer = parseExpr();
                     parseStmtTerminator();
-                    typeDecl->staticConsts.push_back(makeAST<VarDecl>(type, name.str(), initializer, nullptr, accessLevel, *currentModule, location));
+                    typeDecl->staticConsts.push_back(makeAST<VarDecl>(type, name, initializer, nullptr, accessLevel, *currentModule, location));
                     break;
                 }
                 typeDecl->addField(parseFieldDecl(*typeDecl, accessLevel, type, name, location));
@@ -1870,7 +1870,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
     std::vector<Type> interfaces;
     auto name = parseTypeHeader(interfaces, genericParams);
     auto* enumDecl =
-        makeAST<EnumDecl>(name.getString().str(), std::vector<EnumCase>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr, name.location);
+        makeAST<EnumDecl>(name.getString(), std::vector<EnumCase>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr, name.location);
 
     parse(Token::LeftBrace);
     auto valueCounter = llvm::APSInt::get(0);
@@ -1896,8 +1896,8 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             parse(Token::Assignment);
             auto* initializer = parseExpr();
             parseStmtTerminator();
-            enumDecl->staticConsts.push_back(makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString().str(), initializer, nullptr,
-                                                              accessLevel, *currentModule, name.location));
+            enumDecl->staticConsts.push_back(
+                makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString(), initializer, nullptr, accessLevel, *currentModule, name.location));
             continue;
         }
 
@@ -1916,7 +1916,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             }
 
             auto value = makeAST<IntLiteralExpr>(valueCounter, caseName.location);
-            enumDecl->addCase(EnumCase(caseName.getString().str(), value, associatedType, typeAccessLevel, caseName.location));
+            enumDecl->addCase(EnumCase(caseName.getString(), value, associatedType, typeAccessLevel, caseName.location));
             ++valueCounter;
 
             if (currentToken() == Token::Comma) {
@@ -1940,7 +1940,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 consumeToken();
                 auto* initializer = parseExpr();
                 parseStmtTerminator();
-                enumDecl->staticConsts.push_back(makeAST<VarDecl>(type, methodName.str(), initializer, nullptr, accessLevel, *currentModule, location));
+                enumDecl->staticConsts.push_back(makeAST<VarDecl>(type, methodName, initializer, nullptr, accessLevel, *currentModule, location));
                 continue;
             }
 

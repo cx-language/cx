@@ -1,0 +1,151 @@
+/// A bump allocator that keeps allocations stable until the arena is destroyed.
+struct Arena {
+    private uint64 chunkSize;
+    private ArenaChunk*? chunks;
+    private ArenaChunk*? current;
+
+    /// Creates an arena whose chunks have the given minimum capacity.
+    Arena(uint64 chunkSize = 4096) {
+        this.chunkSize = chunkSize;
+        chunks = null;
+        current = null;
+    }
+
+    /// Frees all chunks owned by the arena.
+    ~Arena() {
+        while chunks != null {
+            var chunk = chunks;
+            chunks = chunk.next;
+            free(chunk);
+        }
+        current = null;
+    }
+
+    /// Allocates uninitialized storage for one value, or returns null on overflow or allocation failure.
+    T*? allocate<T>() {
+        var storage = reserve(sizeof(T));
+        if storage == null {
+            return null;
+        }
+        return cast<T*>(storage);
+    }
+
+    /// Moves the given value into arena-owned storage, or returns null on overflow or allocation failure.
+    T*? allocate<T>(T value) {
+        var allocation = this.allocate<T>();
+        if allocation == null {
+            return null;
+        }
+        allocation.init(value);
+        return allocation;
+    }
+
+    /// Allocates uninitialized storage for count values, or returns null on overflow or allocation failure.
+    T[*]? allocateArray<T>(uint64 count) {
+        var size = uint64(0);
+        if !this.checkedSize<T>(count, size) {
+            return null;
+        }
+
+        var storage = reserve(size);
+        if storage == null {
+            return null;
+        }
+        return cast<T[*]>(storage);
+    }
+
+    private bool checkedSize<T>(uint64 count, uint64& size) {
+        var elementSize = sizeof(T);
+        if count != 0 && elementSize > uint64(-1) / count {
+            return false;
+        }
+        *size = elementSize * count;
+        return true;
+    }
+
+    private uint8*? reserve(uint64 size) {
+        var chunk = current;
+        if size == 0 {
+            if chunk != null {
+                var start = uint64(0);
+                if alignUp(chunk.used, start) && start <= chunk.capacity {
+                    return &chunk.data[start];
+                }
+            }
+
+            var emptyChunk = addChunk(1);
+            if emptyChunk == null {
+                return null;
+            }
+            return &emptyChunk.data[0];
+        }
+
+        if chunk != null {
+            var start = uint64(0);
+            if alignUp(chunk.used, start) && start <= chunk.capacity && size <= chunk.capacity - start {
+                chunk.used = start + size;
+                return &chunk.data[start];
+            }
+        }
+
+        var capacity = chunkSize;
+        if capacity < size {
+            capacity = size;
+        }
+        var newChunk = addChunk(capacity);
+        if newChunk == null {
+            return null;
+        }
+        newChunk.used = size;
+        return &newChunk.data[0];
+    }
+
+    private ArenaChunk*? addChunk(uint64 capacity) {
+        if capacity == 0 {
+            capacity = 1;
+        }
+
+        var dataOffset = uint64(0);
+        if !alignUp(sizeof(ArenaChunk), dataOffset) || capacity > uint64(-1) - dataOffset {
+            return null;
+        }
+
+        var memory = malloc(c_size_t(dataOffset + capacity));
+        if memory == null {
+            return null;
+        }
+
+        // Keep metadata and payload in one allocation; `chunk` is the malloc base.
+        var block = cast<uint8[*]>(memory);
+        var chunk = cast<ArenaChunk*>(memory);
+        chunk.init(ArenaChunk(
+            data = cast<uint8[*]>(&block[dataOffset]),
+            capacity = capacity,
+            used = 0,
+            next = chunks
+        ));
+        chunks = chunk;
+        current = chunk;
+        return chunk;
+    }
+
+    private bool alignUp(uint64 value, uint64& result) {
+        var quotient = value / 16;
+        var remainder = value % 16;
+        if quotient == (uint64(1) << 60) - 1 && remainder != 0 {
+            return false;
+        }
+        if remainder != 0 {
+            quotient++;
+        }
+        *result = quotient * 16;
+        return true;
+    }
+}
+
+private struct ArenaChunk {
+    uint8[*] data;
+    uint64 capacity;
+    uint64 used;
+    ArenaChunk*? next;
+}

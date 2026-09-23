@@ -176,7 +176,7 @@ Result<StringBuffer, FileError> readFile(string path) {
     fseek(file, 0, SEEK_SET);
 
     var content = StringBuffer(uninitializedSize = int(size));
-    fread(content.data(), sizeof(char), uint64(size), file);
+    fread(content.data(), sizeof(char), c_size_t(size), file);
 
     return Ok(content);
 }
@@ -187,7 +187,7 @@ bool writeFile(string path, string content) {
     if !file return false;
     defer fclose(file);
 
-    fwrite(content.data(), sizeof(char), uint64(content.size()), file);
+    fwrite(content.data(), sizeof(char), c_size_t(content.size()), file);
     return true;
 }
 

@@ -1,0 +1,18 @@
+// Calls C++ from cx through extern "C" wrappers.
+//
+// The C++ class Calculator is used via an opaque handle (see wrapper.h);
+// free functions are called directly. Build the C++ side first (see
+// README.md), then `cx build` links the static library.
+
+import "wrapper.h";
+
+void main() {
+    var calc = calculator_create(10);
+    defer calculator_destroy(calc);
+
+    calculator_add(calc, 5);
+    calculator_multiply(calc, 2);
+    println(calculator_result(calc)); // prints 30
+
+    println(math_factorial(5)); // prints 120
+}
