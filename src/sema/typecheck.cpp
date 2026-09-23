@@ -31,7 +31,9 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     ASSERT(decls.size() == 1);
     auto instantiation = llvm::cast<TypeTemplate>(decls[0])->instantiate(type.genericArgs);
     currentModule->addToSymbolTable(*instantiation);
-    deferTypechecking(instantiation);
+    // Array is a builtin-backed declaration. Resolve its methods on demand so
+    // using one array operation does not typecheck every Array method.
+    if (type.name != "Array") deferTypechecking(instantiation);
     return instantiation;
 }
 
@@ -160,8 +162,7 @@ static void checkUnusedDeclsInModule(const Module& module) {
                 if (decl->isMain()) continue;
                 // Test functions are entry points for `cx test`, like main is for `cx run`.
                 if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl); functionDecl && functionDecl->isTest) continue;
-                if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl);
-                    functionTemplate && functionTemplate->functionDecl->isTest) {
+                if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl); functionTemplate && functionTemplate->functionDecl->isTest) {
                     continue;
                 }
                 WARN(decl->getLocation(), "unused declaration '" << decl->getName() << "'");

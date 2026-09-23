@@ -10,58 +10,62 @@ int main() {
     int[3] _2 = insertvalue _1, 1, int 2
     int[3] _3 = insertvalue _2, 2, int 3
     store _3 to _0
-    int* _4 = getelementptr _0, 0
-    int* _5 = getelementptr _4, int 3
-    ArrayIterator<int> _6 = insertvalue ArrayIterator<int> undefined, 0, _4
-    ArrayIterator<int> _7 = insertvalue _6, 1, _5
-    store _7 to __iterator
+    ArrayIterator<int> _4 = call _EN3std5ArrayI3intN3_E8iteratorE(int[3]* _0)
+    store _4 to __iterator
     br loop.condition
 
 loop.condition:
-    bool _8 = call _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* __iterator)
-    br _8, loop.body, loop.end
+    bool _5 = call _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* __iterator)
+    br _5, loop.body, loop.end
 
 loop.body:
-    int* _9 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator)
-    int .load = load _9
+    int* _6 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator)
+    int .load = load _6
     store .load to e
     int e.load = load e
-    void _10 = call _EN3std7printlnI3intEE3int(int e.load)
+    void _7 = call _EN3std7printlnI3intEE3int(int e.load)
     br loop.increment
 
 loop.increment:
-    void _11 = call _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* __iterator)
+    void _8 = call _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* __iterator)
     br loop.condition
 
 loop.end:
-    int[2] _12 = insertvalue int[2] undefined, 0, int 4
-    int[2] _13 = insertvalue _12, 1, int 5
-    store _13 to a
-    int* _14 = getelementptr a, 0
-    int* _15 = getelementptr _14, int 2
-    ArrayIterator<int> _16 = insertvalue ArrayIterator<int> undefined, 0, _14
-    ArrayIterator<int> _17 = insertvalue _16, 1, _15
-    store _17 to __iterator_0
+    int[2] _9 = insertvalue int[2] undefined, 0, int 4
+    int[2] _10 = insertvalue _9, 1, int 5
+    store _10 to a
+    ArrayIterator<int> _11 = call _EN3std5ArrayI3intN2_E8iteratorE(int[2]* a)
+    store _11 to __iterator_0
     br loop.condition_0
 
 loop.condition_0:
-    bool _18 = call _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* __iterator_0)
-    br _18, loop.body, loop.end
+    bool _12 = call _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* __iterator_0)
+    br _12, loop.body, loop.end
 
 loop.body_0:
-    int* _19 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator_0)
-    int .load_0 = load _19
+    int* _13 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator_0)
+    int .load_0 = load _13
     store .load_0 to e_0
     int e.load_0 = load e_0
-    void _20 = call _EN3std7printlnI3intEE3int(int e.load_0)
+    void _14 = call _EN3std7printlnI3intEE3int(int e.load_0)
     br loop.increment_0
 
 loop.increment_0:
-    void _21 = call _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* __iterator_0)
+    void _15 = call _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* __iterator_0)
     br loop.condition_0
 
 loop.end_0:
     return int 0
+}
+
+ArrayIterator<int> _EN3std5ArrayI3intN3_E8iteratorE(int[3]* this) {
+    ArrayIterator<int>* _0 = alloca ArrayIterator<int>
+    int* _1 = getelementptr this, 0
+    Slice<int> _2 = insertvalue Slice<int> undefined, 0, _1
+    Slice<int> _3 = insertvalue _2, 1, int 3
+    void _4 = call _EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ArrayIterator<int>* _0, Slice<int> _3)
+    ArrayIterator<int> .load = load _0
+    return .load
 }
 
 bool _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* this) {
@@ -95,4 +99,40 @@ void _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* this) {
     int* _0 = getelementptr current.load, int 1
     store _0 to current
     return void
+}
+
+ArrayIterator<int> _EN3std5ArrayI3intN2_E8iteratorE(int[2]* this) {
+    ArrayIterator<int>* _0 = alloca ArrayIterator<int>
+    int* _1 = getelementptr this, 0
+    Slice<int> _2 = insertvalue Slice<int> undefined, 0, _1
+    Slice<int> _3 = insertvalue _2, 1, int 2
+    void _4 = call _EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ArrayIterator<int>* _0, Slice<int> _3)
+    ArrayIterator<int> .load = load _0
+    return .load
+}
+
+void _EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ArrayIterator<int>* this, Slice<int> array) {
+    Slice<int>* array_0 = alloca Slice<int>
+    store array to array_0
+    int** current = getelementptr this, 0
+    int* _0 = call _EN3std5SliceI3intE4dataE(Slice<int>* array_0)
+    store _0 to current
+    int** end = getelementptr this, 1
+    int* _1 = call _EN3std5SliceI3intE4dataE(Slice<int>* array_0)
+    int _2 = call _EN3std5SliceI3intE4sizeE(Slice<int>* array_0)
+    int* _3 = getelementptr _1, _2
+    store _3 to end
+    return void
+}
+
+int* _EN3std5SliceI3intE4dataE(Slice<int>* this) {
+    int** data = getelementptr this, 0
+    int* data.load = load data
+    return data.load
+}
+
+int _EN3std5SliceI3intE4sizeE(Slice<int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
 }

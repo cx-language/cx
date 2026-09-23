@@ -150,8 +150,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
 
     bool byValue = false;
     if (rangeBaseType.isArrayType()) {
-        // Arrays iterate via the hardcoded ArrayIterator, whose value() always
-        // yields a pointer to the element type.
+        // Arrays use ArrayIterator, whose value() yields a pointer to the element type.
         byValue = rangeBaseType.getElementType().isImplicitlyCopyable();
     } else if (rangeTypeDecl) {
         TypeDecl* iteratorDecl = nullptr;

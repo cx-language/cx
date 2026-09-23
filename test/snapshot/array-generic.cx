@@ -1,6 +1,6 @@
 // RUN: check-snapshots
 
 int main() {
-    var a = Array<int, 3>(elements = [10, 20, 30]);
+    int[3] a = [10, 20, 30];
     return a.size() + a[0] + a[2];
 }

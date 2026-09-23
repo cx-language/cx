@@ -827,9 +827,7 @@ void CGenerator::codegenFunctionPrototype(const Function* function) {
         stream << "void";
     }
     for (auto& param : function->params) {
-        codegenType(stream, param.type, !function->isExtern);
-        stream << ' ' << param.name;
-        codegenTypeSuffix(stream, param.type, !function->isExtern);
+        codegenTempDeclarationForType(param.type, param.name);
         if (&param != &function->params.back()) stream << ", ";
     }
     if (function->isVariadic) stream << ", ...";

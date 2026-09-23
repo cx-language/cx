@@ -1271,6 +1271,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
     switch (type.getKind()) {
     case TypeKind::BasicType:
+        // Covers Array<T, N> too: element and symbolic size are generic args.
         for (GenericArg genericArg : type.getGenericArgs()) {
             if (genericArg.isType() && containsGenericParam(genericArg.type, genericParam)) {
                 return true;
@@ -1279,7 +1280,7 @@ bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
         return type.getName() == genericParam;
 
     case TypeKind::ArrayType:
-        return type.getArraySizeParam() == genericParam || containsGenericParam(type.getElementType(), genericParam);
+        return containsGenericParam(type.getElementType(), genericParam);
 
     case TypeKind::AnonymousStructType:
         return llvm::any_of(type.getAnonymousStructElements(),
@@ -1327,6 +1328,8 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         if (!argType.getGenericArgs().empty() && paramType.isBasicType() && paramType.getName() == argType.getName()) {
             ASSERT(argType.getGenericArgs().size() == paramType.getGenericArgs().size());
             for (auto&& [argTypeGenericArg, paramTypeGenericArg] : llvm::zip_first(argType.getGenericArgs(), paramType.getGenericArgs())) {
+                // Matches both type params (T) and integer params (N in Array<T, N>):
+                // a placeholder Type("N") in param position returns the arg (int or type).
                 if (paramTypeGenericArg.isType() && paramTypeGenericArg.type.isBasicType() && paramTypeGenericArg.type.getName() == genericParam) {
                     return argTypeGenericArg;
                 }
@@ -1340,10 +1343,7 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         break;
 
     case TypeKind::ArrayType:
-        if (paramType.isArrayType()) {
-            if (paramType.getArraySizeParam() == genericParam && argType.isConstantArray()) {
-                return GenericArg::fromInt(argType.getArraySize(), argType.location);
-            }
+        if (paramType.getKind() == TypeKind::ArrayType) {
             return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
         }
         break;
@@ -1405,6 +1405,7 @@ static Type replaceUnresolvedGenericParamsWithPlaceholders(Type type, llvm::Arra
 static bool containsUnresolvedType(Type type) {
     switch (type.getKind()) {
     case TypeKind::BasicType:
+        // Covers Array<T, N>: element and symbolic size are generic args.
         for (GenericArg genericArg : type.getGenericArgs()) {
             if (genericArg.isType() && containsUnresolvedType(genericArg.type)) {
                 return true;
@@ -1413,7 +1414,6 @@ static bool containsUnresolvedType(Type type) {
         return false;
 
     case TypeKind::ArrayType:
-        if (!type.getArraySizeParam().empty()) return true;
         return containsUnresolvedType(type.getElementType());
 
     case TypeKind::AnonymousStructType:
@@ -2508,26 +2508,15 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
         expr.receiverType = receiverType;
 
-        if (receiverType.removeOptional().removePointer().isArrayType()) {
-            // TODO: Move these member functions to a 'struct Array' declaration in stdlib.
-            if (expr.getFunctionName() == "data") {
-                validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.location);
-                validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
-                return ArrayType::get(receiverType.removePointer().getElementType(), ArrayType::UnknownSize);
-            }
-            if (expr.getFunctionName() == "size") {
-                validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.location);
-                validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
-                return ArrayType::getIndexType();
-            }
-            if (expr.getFunctionName() == "iterator") {
-                validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.location);
-                validateGenericArgCount(0, expr.genericArgs, expr.getFunctionName(), expr.location);
-                return BasicType::get("ArrayIterator", GenericArg(receiverType.removePointer().getElementType()));
-            }
+        // T[*] is a pointer view rather than an Array<T, N> value. Its data()
+        // operation is the identity; fixed arrays use the stdlib declaration.
+        if (receiverType.removeOptional().isArrayType() && !receiverType.removeOptional().isBasicArrayType() && expr.getFunctionName() == "data") {
+            validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.location);
+            validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
+            return receiverType.removeOptional();
+        }
 
-            ERROR(expr.getReceiver()->location, "type '" << receiverType.removePointer() << "' has no member function '" << expr.getFunctionName() << "'");
-        } else if (receiverType.removeOptional().removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
+        if (receiverType.removeOptional().removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
         }
 
@@ -2544,6 +2533,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
         auto callee = expr.getQualifiedFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
+
+        if (decls.empty() && receiverType.removeOptional().removePointer().isBasicArrayType()) {
+            ERROR(expr.getReceiver()->location, "type '" << receiverType.removePointer() << "' has no member function '" << expr.getFunctionName() << "'");
+        }
 
         if (decls.empty() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
@@ -2579,6 +2572,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             maybeCaptureVariable(*varDecl);
             expr.receiverType = varDecl->type;
         }
+    }
+
+    if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
+        functionDecl && functionDecl->isMethodDecl() && !functionDecl->typechecked && functionDecl->getTypeDecl()->getName() == "Array") {
+        deferTypechecking(functionDecl);
     }
 
     checkHasAccess(*decl, expr.callee->location, AccessLevel::None);
@@ -2821,8 +2819,23 @@ static bool isValidCast(Type sourceType, Type targetType) {
             return true;
         }
 
+        // Arrays decay to void pointers (e.g. passing T[N] to void* C params).
+        if (sourceType.isArrayType() && targetType.isPointerType()) {
+            Type targetPointee = targetType.getPointee();
+            if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourceType.getElementType().isMutable())) {
+                return true;
+            }
+        }
+
         return false;
 
+    case TypeKind::ArrayType: {
+        if (targetType.isPointerType()) {
+            Type targetPointee = targetType.getPointee();
+            if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourceType.getElementType().isMutable())) return true;
+        }
+        return false;
+    }
     case TypeKind::AnonymousStructType:
     case TypeKind::FunctionType:
         return false;
@@ -2839,17 +2852,6 @@ static bool isValidCast(Type sourceType, Type targetType) {
             }
         } else if (targetType.isUnsizedArrayPointer()) {
             if (!targetType.getElementType().isMutable() || sourcePointee.isMutable()) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-    case TypeKind::ArrayType: {
-        if (targetType.isPointerType()) {
-            Type targetPointee = targetType.getPointee();
-
-            if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourceType.getElementType().isMutable())) {
                 return true;
             }
         }

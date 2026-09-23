@@ -695,6 +695,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
 
     // Handle implicit conversions to type 'T[*]'.
     if (expr.type.removePointer().isConstantArray() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
+        if (expr.type.removePointer().getArraySize() == 0) return createConstantNull(targetType);
         return createCast(loadThroughStorageAddress(emitLvalueExpr(expr), expr.type), targetType);
     }
 
@@ -847,17 +848,9 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
         return emitEnumCaseCall(*enumCase, expr);
     }
 
-    if (expr.getReceiver() && expr.receiverType.removePointer().isArrayType()) {
-        if (expr.getFunctionName() == "size") {
-            return getArrayLength(*expr.getReceiver(), expr.receiverType.removePointer());
-        }
-        if (expr.getFunctionName() == "data") {
-            return getArrayData(*expr.getReceiver(), expr.receiverType.removePointer());
-        }
-        if (expr.getFunctionName() == "iterator") {
-            return getArrayIterator(*expr.getReceiver(), expr.receiverType.removePointer());
-        }
-        llvm_unreachable("unknown array member function");
+    if (expr.getReceiver() && expr.receiverType.removeOptional().isArrayType() && !expr.receiverType.removeOptional().isBasicArrayType()
+        && expr.getFunctionName() == "data") {
+        return emitExpr(*expr.getReceiver());
     }
 
     if (expr.isMoveInit()) {
@@ -973,41 +966,6 @@ Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, c
         auto index = baseTypeDecl->isUnion() ? 0 : baseTypeDecl->getFieldIndex(field);
         return createExtractValue(baseValue, index, field->getName());
     }
-}
-
-Value* IRGenerator::getArrayLength(const Expr&, Type objectType) {
-    return createConstantInt(Type::getInt(), objectType.getArraySize());
-}
-
-Value* IRGenerator::getArrayData(const Expr& object, Type objectType) {
-    if (objectType.isUnsizedArrayPointer()) {
-        return emitExpr(object);
-    }
-    // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
-    auto* value = object.type.isPointerType() ? emitExpr(object) : emitExprAsPointer(object);
-    ASSERT(value->getType()->getPointee()->isArrayType());
-    if (objectType.getArraySize() == 0) {
-        return createConstantNull(value->getType()->getPointee()->getElementType()->getPointerTo());
-    }
-    return createGEP(value, 0);
-}
-
-Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
-    auto type = BasicType::get("ArrayIterator", GenericArg(objectType.getElementType()));
-    if (objectType.getArraySize() == 0) {
-        auto* irType = getIRType(type);
-        auto fields = irType->getFields();
-        ASSERT(fields.size() == 2);
-        auto* iterator = createInsertValue(createUndefined(type), createConstantNull(fields[0].type), 0);
-        return createInsertValue(iterator, createConstantNull(fields[1].type), 1);
-    }
-    // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
-    auto* value = object.type.isPointerType() ? emitExpr(object) : emitExprAsPointer(object);
-    auto* elementPtr = createGEP(value, 0);
-    auto* size = getArrayLength(object, objectType);
-    auto* end = createGEP(elementPtr, {size});
-    auto* iterator = createInsertValue(createUndefined(type), elementPtr, 0);
-    return createInsertValue(iterator, end, 1);
 }
 
 Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {

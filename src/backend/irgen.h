@@ -235,9 +235,6 @@ struct IRGenerator {
     }
     void createUnreachable() { insertBlock->add(new UnreachableInst{ValueKind::UnreachableInst}); }
     void createReturn(Value* value) { insertBlock->add(new ReturnInst{ValueKind::ReturnInst, value}); }
-    Value* getArrayLength(const Expr& object, Type objectType);
-    Value* getArrayData(const Expr& object, Type objectType);
-    Value* getArrayIterator(const Expr& object, Type objectType);
     void beginScope();
     void endScope();
     void deferEvaluationOf(const Expr& expr);

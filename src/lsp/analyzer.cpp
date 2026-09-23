@@ -353,6 +353,7 @@ struct Finder {
         }
         switch (type.getKind()) {
         case TypeKind::BasicType:
+            // Covers Array<T, N>: element is a generic arg.
             for (GenericArg arg : type.getGenericArgs())
                 if (arg.isType()) visitType(arg.type, depth + 1);
             break;
@@ -1140,7 +1141,7 @@ struct SemanticCollector {
             return;
         }
         case TypeKind::ArrayType:
-            visitType(llvm::cast<ArrayType>(type.typeBase)->elementType);
+            visitType(type.getElementType());
             return;
         case TypeKind::AnonymousStructType:
             for (auto& element : llvm::cast<AnonymousStructType>(type.typeBase)->elements)
@@ -1767,14 +1768,6 @@ std::vector<CompletionItem> membersForType(Type type) {
     std::vector<CompletionItem> out;
     if (!type) return out;
     Type t = type.removeOptional().removePointer();
-    if (t.isArrayType()) {
-        Type elem = t.getElementType();
-        std::string elemName = elem ? elem.toString() : "T";
-        out.push_back({"data", "method", elemName + "[] data()"});
-        out.push_back({"size", "method", "int size()"});
-        out.push_back({"iterator", "method", "ArrayIterator<" + elemName + "> iterator()"});
-        return out;
-    }
     if (t.isAnonymousStructType()) {
         for (auto& el : t.getAnonymousStructElements()) {
             CompletionItem item;
@@ -1786,6 +1779,13 @@ std::vector<CompletionItem> membersForType(Type type) {
         return out;
     }
     TypeDecl* decl = t.getDecl();
+    if (!decl && t.isBasicArrayType()) {
+        if (auto* std = Module::getStdlibModule()) {
+            if (auto* array = llvm::dyn_cast_or_null<TypeTemplate>(std->symbolTable.findOne("Array"))) {
+                decl = array->instantiate(t.getGenericArgs());
+            }
+        }
+    }
     if (!decl || decl->isEnumDecl()) return out;
     for (auto& field : decl->fields) {
         if (field.getName().empty()) continue;

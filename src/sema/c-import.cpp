@@ -169,7 +169,10 @@ struct CToCxConverter final : clang::ASTConsumer {
             if (!constantArrayType.getSize().isIntN(64)) {
                 ERROR(Location(), "array is too large");
             }
-            return ArrayType::get(toCx(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue());
+            std::vector<GenericArg> args;
+            args.emplace_back(toCx(constantArrayType.getElementType()));
+            args.push_back(GenericArg::fromInt(constantArrayType.getSize().getLimitedValue(), Location()));
+            return BasicType::get("Array", args, mutability);
         }
         case clang::Type::IncompleteArray:
             return ArrayType::get(toCx(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::UnknownSize);
@@ -189,7 +192,10 @@ struct CToCxConverter final : clang::ASTConsumer {
         }
         case clang::Type::Vector: {
             auto& vectorType = llvm::cast<clang::VectorType>(type);
-            return ArrayType::get(toCx(vectorType.getElementType()), vectorType.getNumElements());
+            std::vector<GenericArg> args;
+            args.emplace_back(toCx(vectorType.getElementType()));
+            args.push_back(GenericArg::fromInt(vectorType.getNumElements(), Location()));
+            return BasicType::get("Array", args, mutability);
         }
         default:
             WARN(Location(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualType.getAsString() << "')");

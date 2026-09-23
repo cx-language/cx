@@ -26,6 +26,14 @@ IRType* cx::getIRType(Type astType) {
 
     switch (astType.getKind()) {
     case TypeKind::BasicType: {
+        // Fixed-size arrays ("T[N]") lower to LLVM array types, not to the
+        // fieldless stdlib Array struct layout.
+        if (astType.isBasicArrayType()) {
+            ASSERT(astType.isConstantArray() || !astType.getArraySizeParam().empty());
+            auto elementType = getIRType(astType.getElementType());
+            irType = new IRArrayType{IRTypeKind::IRArrayType, elementType, static_cast<int>(astType.getArraySize())};
+            break;
+        }
         if (astType.isVoid() || Type::isBuiltinScalar(astType.getName())) {
             irType = new IRBasicType{IRTypeKind::IRBasicType, astType.getName().str()};
         } else if (astType.isOptionalType() && astType.isImplementedAsPointer()) {
@@ -82,16 +90,10 @@ IRType* cx::getIRType(Type astType) {
         }
         break;
     }
-    case TypeKind::ArrayType: {
-        if (astType.isConstantArray()) {
-            auto elementType = getIRType(astType.getElementType());
-            irType = new IRArrayType{IRTypeKind::IRArrayType, elementType, static_cast<int>(astType.getArraySize())};
-        } else {
-            ASSERT(astType.isUnsizedArrayPointer());
-            irType = getIRType(astType.getElementType().getPointerTo());
-        }
+    case TypeKind::ArrayType:
+        ASSERT(astType.isUnsizedArrayPointer());
+        irType = getIRType(astType.getElementType().getPointerTo());
         break;
-    }
     case TypeKind::AnonymousStructType: {
         auto fields = map(astType.getAnonymousStructElements(), [](const AnonymousStructElement& e) { return IRField{getIRType(e.type), e.name.str()}; });
         irType = new IRStructType{IRTypeKind::IRStructType, std::move(fields), std::string(), std::string(), false, false};

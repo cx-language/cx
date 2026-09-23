@@ -12,21 +12,21 @@ void main() {
 }
 
 void testConstruction() {
-    var a = Array<int, 3>(elements = [10, 20, 30]);
+    int[3] a = [10, 20, 30];
     assert(a.size() == 3);
     assert(a[0] == 10);
     assert(a[2] == 30);
 }
 
 void testSize() {
-    var one = Array(elements = [1]);
+    int[1] one = [1];
     assert(one.size() == 1);
-    var five = Array<int, 5>(elements = [1, 2, 3, 4, 5]);
+    int[5] five = [1, 2, 3, 4, 5];
     assert(five.size() == 5);
 }
 
 void testIndex() {
-    var a = Array<int, 3>(elements = [10, 20, 30]);
+    int[3] a = [10, 20, 30];
     a[1] = 99;
     assert(a[1] == 99);
     assert(a.data()[0] == 10);
@@ -34,7 +34,7 @@ void testIndex() {
 }
 
 void testIteration() {
-    var a = Array<int, 3>(elements = [10, 20, 30]);
+    int[3] a = [10, 20, 30];
     var total = 0;
     for x in a {
         total += x;
@@ -43,14 +43,14 @@ void testIteration() {
 }
 
 void testDistinctSizes() {
-    var two = Array<int, 2>(elements = [1, 2]);
-    var three = Array<int, 3>(elements = [1, 2, 3]);
+    int[2] two = [1, 2];
+    int[3] three = [1, 2, 3];
     assert(two.size() == 2);
     assert(three.size() == 3);
 }
 
 void testNested() {
-    var m = Array<Array<int, 2>, 2>(elements = [Array(elements = [1, 2]), Array(elements = [3, 4])]);
+    int[2][2] m = [[1, 2], [3, 4]];
     assert(m.size() == 2);
     assert(m[0][1] == 2);
     assert(m[1][0] == 3);
@@ -58,13 +58,15 @@ void testNested() {
 
 int sumArray<T, int N>(Array<T, N> a) {
     var total = 0;
-    for x in a.elements {
+    for x in a {
         total += x;
     }
     return total;
 }
 
 void testInference() {
-    assert(sumArray(Array<int, 3>(elements = [10, 20, 30])) == 60);
-    assert(sumArray(Array<int, 2>(elements = [1, 2])) == 3);
+    int[3] a3 = [10, 20, 30];
+    int[2] a2 = [1, 2];
+    assert(sumArray(a3) == 60);
+    assert(sumArray(a2) == 3);
 }

@@ -237,7 +237,7 @@ std::string cx::getQualifiedFunctionName(Type receiver, llvm::StringRef name, ll
     std::string result;
 
     if (receiver) {
-        result = receiver.toString();
+        result = receiver.getQualifiedTypeName();
         result += '.';
     }
 
@@ -427,6 +427,9 @@ Type TypeDecl::getType(Mutability mutability) const {
 }
 
 Type TypeDecl::getTypeForPassing() const {
+    // Array is a fieldless builtin-backed struct. Its methods operate on the
+    // array value represented by the hidden this pointer, like scalar methods.
+    if (isStruct() && getName() == "Array" && fields.empty()) return getType();
     if ((tag == TypeTag::Struct && !isCopyable()) || tag == TypeTag::Interface) {
         return PointerType::get(getType()).withLocation(location);
     } else {

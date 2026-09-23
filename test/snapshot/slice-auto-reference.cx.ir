@@ -15,11 +15,11 @@ int main() {
     Slice<int> _4 = insertvalue Slice<int> undefined, 0, _3
     Slice<int> _5 = insertvalue _4, 1, int 3
     void _6 = call _EN4main3fooE5SliceI3intE(Slice<int> _5)
-    void _7 = call _EN4main3bazEPA3_3int(int[3]* a)
+    void _7 = call _EN4main3bazEP5ArrayI3intN3_E(int[3]* a)
     return int 0
 }
 
-void _EN4main3bazEPA3_3int(int[3]* b) {
+void _EN4main3bazEP5ArrayI3intN3_E(int[3]* b) {
     int[3]** b_0 = alloca int[3]*
     store b to b_0
     return void

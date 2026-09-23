@@ -366,8 +366,19 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     case ExprKind::VarExpr: {
         auto* varExpr = llvm::cast<VarExpr>(this);
         auto it = genericArgs.find(varExpr->identifier);
-        llvm::StringRef identifier = it != genericArgs.end() && it->second.isType() ? it->second.type.getName() : varExpr->identifier;
-        auto* newExpr = makeAST<VarExpr>(identifier, varExpr->location);
+        if (it != genericArgs.end()) {
+            if (it->second.isInt()) {
+                auto* newExpr = makeAST<IntLiteralExpr>(llvm::APSInt::get(it->second.getInt()), varExpr->location);
+                newExpr->endLocation = varExpr->endLocation;
+                return newExpr;
+            }
+            if (it->second.isType()) {
+                auto* newExpr = makeAST<VarExpr>(it->second.type.getName(), varExpr->location);
+                newExpr->endLocation = varExpr->endLocation;
+                return newExpr;
+            }
+        }
+        auto* newExpr = makeAST<VarExpr>(varExpr->identifier, varExpr->location);
         newExpr->endLocation = varExpr->endLocation;
         return newExpr;
     }

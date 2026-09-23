@@ -80,7 +80,8 @@ static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::Small
 // contain a reference: the use-site spelling was already validated, so the reference arrived
 // through substitution rather than being written in a stored position.
 static bool allowsSubstitutedReference(const TypeDecl& typeDecl) {
-    return typeDecl.instantiatedFrom != nullptr && llvm::any_of(typeDecl.genericArgs, [](GenericArg arg) { return arg.isType() && arg.type.containsReference(); });
+    return typeDecl.instantiatedFrom != nullptr
+        && llvm::any_of(typeDecl.genericArgs, [](GenericArg arg) { return arg.isType() && arg.type.containsReference(); });
 }
 
 static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> memberTypes) {
@@ -99,6 +100,19 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
+        // Fixed arrays are a builtin-backed BasicType. Keep declaration
+        // binding lazy: getTypeDecl resolves the stdlib methods only when a
+        // member is actually looked up.
+        if (type.isBasicArrayType()) {
+            if (!type.getArraySizeParam().empty()) {
+                ERROR(type.location, "array size must be a constant integer expression");
+            }
+            if (!type.getGenericArgs()[0].isType()) {
+                ERROR(type.location, "array element type must be a type, not an integer");
+            }
+            typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
+            break;
+        }
         Decl* decl;
         auto* basicType = llvm::cast<BasicType>(type.typeBase);
         if (basicType->decl) {
@@ -167,11 +181,6 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         break;
     }
     case TypeKind::ArrayType:
-        if (!type.getArraySizeParam().empty()) {
-            // Symbolic sizes only resolve during instantiation; encountering one here means
-            // it names nothing generic, so it must be a constant like any other size.
-            ERROR(type.location, "array size must be a constant integer expression");
-        }
         typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
         break;
     case TypeKind::AnonymousStructType:

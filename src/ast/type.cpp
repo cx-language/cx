@@ -49,6 +49,7 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Undefined, undefined)
 bool Type::isImplicitlyCopyable() const {
     switch (getKind()) {
     case TypeKind::BasicType:
+        if (isBasicArrayType()) return !isConstantArray() || getElementType().isImplicitlyCopyable();
         return !getDecl() || getDecl()->passByValue();
     case TypeKind::ArrayType:
         return !isConstantArray() || getElementType().isImplicitlyCopyable();
@@ -64,7 +65,7 @@ bool Type::isImplicitlyCopyable() const {
 }
 
 bool Type::isConstantArray() const {
-    return isArrayType() && getArraySize() >= 0;
+    return isBasicArrayType() && getArraySize() >= 0;
 }
 
 bool Type::isSlice() const {
@@ -72,7 +73,7 @@ bool Type::isSlice() const {
 }
 
 bool Type::isUnsizedArrayPointer() const {
-    return isArrayType() && getArraySize() == ArrayType::UnknownSize;
+    return getKind() == TypeKind::ArrayType && getArraySize() == ArrayType::UnknownSize;
 }
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
@@ -156,11 +157,21 @@ Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs
 }
 
 Type ArrayType::get(Type elementType, int64_t size, Location location) {
-    return getType(ArrayType(elementType, size), elementType.mutability, location);
+    if (size == UnknownSize) return getType(ArrayType(elementType, size), elementType.mutability, location);
+
+    std::vector<GenericArg> args;
+    args.emplace_back(elementType);
+    args.push_back(GenericArg::fromInt(size, location));
+    return BasicType::get("Array", args, elementType.mutability, location);
 }
 
 Type ArrayType::get(Type elementType, llvm::StringRef sizeParam, Location location) {
-    return getType(ArrayType(elementType, /*size=*/0, sizeParam), elementType.mutability, location);
+    // A symbolic size names an integer generic parameter; store it as a type
+    // placeholder resolved at instantiation (see Type::resolve above).
+    std::vector<GenericArg> args;
+    args.emplace_back(elementType);
+    args.emplace_back(BasicType::get(sizeParam, {}, elementType.mutability, location));
+    return BasicType::get("Array", args, elementType.mutability, location);
 }
 
 Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Mutability mutability, Location location) {
@@ -283,19 +294,35 @@ llvm::StringRef Type::getName() const {
 }
 
 std::string Type::getQualifiedTypeName() const {
+    if (!isBasicType()) return toString();
     return llvm::cast<BasicType>(typeBase)->getQualifiedName();
 }
 
 Type Type::getElementType() const {
     if (isSlice()) return getGenericArgs()[0].type;
+    if (isBasicArrayType()) return getGenericArgs()[0].type.withLocation(location);
+    ASSERT(getKind() == TypeKind::ArrayType);
     return llvm::cast<ArrayType>(typeBase)->elementType.withLocation(location);
 }
 
 int64_t Type::getArraySize() const {
+    if (isBasicArrayType()) {
+        auto& sizeArg = getGenericArgs()[1];
+        if (sizeArg.isInt()) return sizeArg.getInt();
+        // Symbolic size: no concrete size yet; callers check getArraySizeParam first.
+        return 0;
+    }
+    ASSERT(getKind() == TypeKind::ArrayType);
     return llvm::cast<ArrayType>(typeBase)->size;
 }
 
 llvm::StringRef Type::getArraySizeParam() const {
+    if (isBasicArrayType()) {
+        auto& sizeArg = getGenericArgs()[1];
+        if (sizeArg.isType() && sizeArg.type.isBasicType()) return sizeArg.type.getName();
+        return llvm::StringRef();
+    }
+    ASSERT(getKind() == TypeKind::ArrayType);
     return llvm::cast<ArrayType>(typeBase)->sizeParam;
 }
 
@@ -389,7 +416,7 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
         // TODO: Should probably compare the referenced decl instead of just the name.
         return other.isBasicType() && getName() == other.getName() && getGenericArgs() == other.getGenericArgs();
     case TypeKind::ArrayType:
-        return other.isArrayType() && getElementType() == other.getElementType() && getArraySize() == other.getArraySize()
+        return other.getKind() == TypeKind::ArrayType && getElementType() == other.getElementType() && getArraySize() == other.getArraySize()
             && getArraySizeParam() == other.getArraySizeParam();
     case TypeKind::AnonymousStructType:
         return other.isAnonymousStructType() && getAnonymousStructElements() == other.getAnonymousStructElements();
@@ -410,6 +437,8 @@ bool cx::operator!=(Type lhs, Type rhs) {
 bool Type::containsUnresolvedPlaceholder() const {
     switch (getKind()) {
     case TypeKind::BasicType:
+        // A symbolic array size (Array<T, N> with N a placeholder) is unresolved.
+        if (isBasicArrayType() && !getArraySizeParam().empty()) return true;
         for (GenericArg genericArg : getGenericArgs()) {
             if (genericArg.isType() && genericArg.type.containsUnresolvedPlaceholder()) {
                 return true;
@@ -418,7 +447,6 @@ bool Type::containsUnresolvedPlaceholder() const {
         return false;
 
     case TypeKind::ArrayType:
-        if (!getArraySizeParam().empty()) return true;
         return getElementType().containsUnresolvedPlaceholder();
 
     case TypeKind::AnonymousStructType:
@@ -487,6 +515,20 @@ void Type::printTo(std::ostream& stream) const {
 
     switch (typeBase->kind) {
     case TypeKind::BasicType: {
+        if (isBasicArrayType()) {
+            // Fixed arrays are represented as BasicType("Array", {T, N}), but
+            // diagnostics keep the source-level T[N] spelling.
+            if (!isMutable()) stream << "const ";
+            getElementType().printTo(stream);
+            stream << "[";
+            if (!getArraySizeParam().empty()) {
+                stream << getArraySizeParam();
+            } else {
+                stream << getArraySize();
+            }
+            stream << "]";
+            break;
+        }
         if (isClosureType()) {
             stream << "(";
             for (const Type& paramType : getClosureParamTypes()) {
@@ -529,15 +571,11 @@ void Type::printTo(std::ostream& stream) const {
         stream << "[";
         if (!getArraySizeParam().empty()) {
             stream << getArraySizeParam();
-        } else
-            switch (getArraySize()) {
-            case ArrayType::UnknownSize:
-                stream << "*";
-                break;
-            default:
-                stream << getArraySize();
-                break;
-            }
+        } else if (getArraySize() == ArrayType::UnknownSize) {
+            stream << "*";
+        } else {
+            stream << getArraySize();
+        }
         stream << "]";
         break;
     case TypeKind::AnonymousStructType:

@@ -15,8 +15,8 @@
 #include <llvm/TargetParser/Host.h>
 #pragma warning(pop)
 
-#include "ir.h"
 #include "../ast/expr.h"
+#include "ir.h"
 
 using namespace cx;
 

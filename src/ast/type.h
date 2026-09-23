@@ -57,7 +57,10 @@ struct Type {
 
     // TODO: Remove 'Type' suffix from these methods
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
-    bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
+    // Fixed-size arrays are BasicType("Array", {T, N}); unsized array pointers
+    // ("T[*]") keep the dedicated ArrayType representation.
+    bool isBasicArrayType() const { return isBasicType() && getName() == "Array" && getGenericArgs().size() == 2; }
+    bool isArrayType() const { return getKind() == TypeKind::ArrayType || isBasicArrayType(); }
     bool isRangeType() const { return isBasicType() && (getName() == "Range" || getName() == "ClosedRange"); }
     bool isAnonymousStructType() const { return getKind() == TypeKind::AnonymousStructType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
@@ -218,17 +221,19 @@ public:
     TypeDecl* decl;
 };
 
+// Fixed-size arrays ("T[N]") are represented as BasicType("Array", {T, N}).
+// The dedicated ArrayType remains for incomplete array pointers ("T[*]").
 struct ArrayType : TypeBase {
     static Type getIndexType() { return Type::getInt(); }
     static const int64_t UnknownSize = -1;
-    static Type get(Type type, int64_t size, Location location = Location());
+    static Type get(Type elementType, int64_t size, Location location = Location());
     // A symbolic size names an integer generic parameter; resolved at instantiation.
-    static Type get(Type type, llvm::StringRef sizeParam, Location location = Location());
+    static Type get(Type elementType, llvm::StringRef sizeParam, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayType; }
 
 private:
-    ArrayType(Type type, int64_t size, llvm::StringRef sizeParam = "")
-    : TypeBase(TypeKind::ArrayType), elementType(type), size(size), sizeParam(internString(sizeParam)) {}
+    ArrayType(Type elementType, int64_t size, llvm::StringRef sizeParam = "")
+    : TypeBase(TypeKind::ArrayType), elementType(elementType), size(size), sizeParam(internString(sizeParam)) {}
 
 public:
     Type elementType;
