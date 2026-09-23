@@ -1,0 +1,29 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+struct T {}
+
+void f(T t) {}
+
+void g() {
+    var x = T();
+    T* p = &x;
+    // CHECK: [[@LINE+1]]:7: error: invalid argument #1 type 'T*' to 'f', expected 'T' (use '*' to dereference explicitly)
+    f(p);
+    f(*p);
+    // CHECK: [[@LINE+1]]:11: error: cannot assign 'T*' to 'T' (use '*' to dereference explicitly)
+    T y = p;
+    T z = *p;
+}
+
+struct S: Copyable {
+    int v;
+}
+
+void h(S s) {}
+
+void k() {
+    var a = S(1);
+    S* q = &a;
+    h(q);
+    S b = *q;
+}
