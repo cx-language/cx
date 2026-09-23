@@ -286,6 +286,9 @@ struct MemberExpr : Expr {
     Expr* base;
     std::string member;
     Decl* decl = nullptr;
+    // For array swizzles (`vec.xy`, `vec.rgba`, etc.): element indices, empty when not a swizzle.
+    // Set by typechecking; IRGen emits element extracts + array build from these.
+    std::vector<int> swizzleIndices;
 };
 
 /// An element access expression using the element's index in brackets: 'base[index]'.

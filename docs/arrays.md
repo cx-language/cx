@@ -97,5 +97,34 @@ Sizes must match; mismatched sizes are a compile error. Only arrays of
 known (constant) size support element-wise ops; generic sizes (`T[N]` with
 symbolic `N`) cannot unroll and are rejected with a clear error.
 
+## Swizzles
+
+Arrays of up to 4 numeric elements support GLSL-style swizzles:
+1–4 characters from `xyzw`, `rgba`, or `stpq` (one set per swizzle),
+mapping to indices 0–3 (`x`/`r`/`s` → 0, `y`/`g`/`t` → 1, `z`/`b`/`p` → 2,
+`w`/`a`/`q` → 3). A single character returns the element; multiple
+characters return a new array. Out-of-bounds swizzles are compile errors.
+Swizzles are read-only for now.
+
+```cs
+void main() {
+    float[3] v = [1.0, 2.0, 3.0];
+    println(v.x); // prints 1, same as v[0]
+    println(v.z); // prints 3
+
+    float[2] xy = v.xy; // [1.0, 2.0]
+    float[3] zyx = v.zyx; // [3.0, 2.0, 1.0]
+    float[2] rg = v.rg; // [1.0, 2.0], rgba set works too
+    println(xy[0]); // prints 1
+    println(zyx[0]); // prints 3
+    println(rg[1]); // prints 2
+
+    float[4] w = [1.0, 2.0, 3.0, 4.0];
+    println(w.w); // prints 4
+    float[2] ra = w.ra; // [1.0, 4.0]
+    println(ra[1]); // prints 4
+}
+```
+
 See [List](list) for a resizable array, and [Pointers](pointers)
 for array pointers and pointer arithmetic.
