@@ -53,6 +53,7 @@ namespace cx {
 
 cl::SubCommand build("build", "Build a cx project");
 cl::SubCommand run("run", "Build and run a cx executable (program arguments follow '--')");
+cl::SubCommand testSubcommand("test", "Build and run the unit tests in a cx project");
 
 cl::OptionCategory dependencyCategory("Dependency Options");
 cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(cl::SubCommand::getAll()), cl::cat(dependencyCategory));
@@ -322,6 +323,73 @@ static int buildModuleFromFiles(BuildParams buildParams) {
     return buildModule(mainModule, std::move(buildParams));
 }
 
+// Collects top-level test functions and synthesizes a main that runs them.
+// Returns false after reporting an error.
+static bool synthesizeTestMain(Module& mainModule) {
+    std::vector<FunctionDecl*> tests;
+    for (auto& sourceFile : mainModule.sourceFiles) {
+        for (Decl* decl : sourceFile.topLevelDecls) {
+            FunctionDecl* functionDecl = nullptr;
+            if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
+                if (!functionTemplate->functionDecl->isTest) continue;
+                REPORT_ERROR(decl->getLocation(), "generic test functions are not supported");
+                return false;
+            } else if (auto* function = llvm::dyn_cast<FunctionDecl>(decl)) {
+                if (!function->isTest) continue;
+                functionDecl = function;
+            } else {
+                continue;
+            }
+            if (!functionDecl->getParams().empty() || !functionDecl->getReturnType().isVoid()) {
+                REPORT_ERROR(functionDecl->getLocation(), "test function '" << functionDecl->getName() << "' must take no parameters and return void");
+                return false;
+            }
+            if (functionDecl->accessLevel == AccessLevel::Private) {
+                REPORT_ERROR(functionDecl->getLocation(), "test function '" << functionDecl->getName() << "' cannot be private");
+                return false;
+            }
+            tests.push_back(functionDecl);
+        }
+    }
+
+    if (tests.empty()) {
+        llvm::outs() << "no tests found\n";
+    }
+
+    // The synthesized main takes the entry point; a user-defined main is kept
+    // as an ordinary (uncalled) function so test files can live next to it.
+    for (Decl* decl : mainModule.symbolTable.findInTopLevelScope("main")) {
+        if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
+            functionDecl->proto.name = "__cx_test_user_main";
+            functionDecl->referenced = true;
+        }
+    }
+
+    FunctionProto proto;
+    proto.name = "main";
+    proto.returnType = Type::getVoid();
+    proto.varArg = false;
+    proto.external = false;
+    auto* mainDecl = makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), AccessLevel::Default, mainModule,
+                                           tests.empty() ? Location() : tests.front()->getLocation());
+    std::vector<Stmt*> body;
+    for (FunctionDecl* test : tests) {
+        body.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(makeAST<VarExpr>(std::string(test->getName()), test->getLocation()), std::vector<NamedValue>(),
+                                                           std::vector<GenericArg>(), test->getLocation())));
+        std::vector<NamedValue> printArgs;
+        printArgs.emplace_back(makeAST<StringLiteralExpr>(std::string("ok "), test->getLocation()));
+        printArgs.emplace_back(makeAST<StringLiteralExpr>(std::string(test->getName()), test->getLocation()));
+        body.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(makeAST<VarExpr>(std::string("println"), test->getLocation()), std::move(printArgs),
+                                                           std::vector<GenericArg>(), test->getLocation())));
+    }
+    mainDecl->body = std::move(body);
+    mainModule.sourceFiles.front().topLevelDecls.push_back(mainDecl);
+    // Added directly to skip the duplicate check: a renamed user main may
+    // still be keyed under "main", but it no longer matches by prototype.
+    mainModule.symbolTable.addGlobal("main", mainDecl);
+    return true;
+}
+
 int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (mainModule.fileBuffers.empty()) {
         ABORT("no input files");
@@ -357,6 +425,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     }
 
     if (parse) return errors ? 1 : 0;
+
+    if (buildParams.runTests && !synthesizeTestMain(mainModule)) return 1;
 
     Typechecker typechecker(options, buildParams.config ? &buildParams.config->resolvedDependencies : nullptr);
     for (auto& importedModule : mainModule.getImportedModules()) {
@@ -629,7 +699,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     // don't pollute the executed program's stdout. Stderr stays visible, and
     // the captured output is shown if compilation fails.
     llvm::SmallString<128> ccStdoutLog;
-    bool captureCcOutput = run && useExternalCCompiler && !llvm::sys::fs::createTemporaryFile("cx-cc-stdout", "log", ccStdoutLog);
+    bool captureCcOutput = (run || testSubcommand) && useExternalCCompiler && !llvm::sys::fs::createTemporaryFile("cx-cc-stdout", "log", ccStdoutLog);
     std::vector<std::optional<llvm::StringRef>> ccRedirects;
     if (captureCcOutput) {
         ccRedirects = {std::nullopt, ccStdoutLog.str(), std::nullopt};
@@ -649,7 +719,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         llvm::sys::fs::remove(ccStdoutLog);
     }
 
-    if (run) {
+    if (run || testSubcommand) {
         std::string command = tempOutputFilePath.str().str();
         for (const auto& arg : programArgs) {
             command += " " + shellEscape(arg);
@@ -827,7 +897,7 @@ static std::string getDefaultOutputFileName(llvm::StringRef targetRootDir) {
     return filename.str();
 }
 
-static int buildDirectory(llvm::StringRef directory, const char* argv0) {
+static int buildDirectory(llvm::StringRef directory, const char* argv0, bool runTests = false) {
     BuildConfig config(directory.str(), {defines.begin(), defines.end()});
 
     // Snapshot invocation flags before project settings merge: dependencies
@@ -903,6 +973,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0) {
             .argv0 = argv0,
             .outputDirectory = config.outputDirectory,
             .outputFileName = outputFileName,
+            .runTests = runTests,
         });
         if (exitStatus != 0) return exitStatus;
     }
@@ -965,11 +1036,14 @@ int cx::driverMain(int argc, const char** argv) {
             .argv0 = argv[0],
             .outputDirectory = ".",
             .outputFileName = "",
+            .runTests = bool(testSubcommand),
         });
     } else if (build || run) {
         // Build the current directory by relative path so diagnostics show
         // relative paths.
         return buildDirectory(".", argv[0]);
+    } else if (testSubcommand) {
+        return buildDirectory(".", argv[0], true);
     } else if (lspSubcommand) {
         // The server lives in the cx-lsp binary so that every compilation it
         // triggers runs in a fresh process (see src/lsp/). Forward stdio.

@@ -1,0 +1,14 @@
+// RUN: %not %cx test %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: test-function-with-params.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+test void testWithParams(int x) {
+}
+
+// CHECK: [[@LINE-3]]:11: error: test function 'testWithParams' must take no parameters and return void
+
+void main() {
+    testWithParams(1);
+}
+
+// CHECK-NOT: test-function-with-params.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
