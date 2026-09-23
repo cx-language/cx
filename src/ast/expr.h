@@ -111,11 +111,11 @@ protected:
 inline Expr::~Expr() {}
 
 struct VarExpr : Expr {
-    VarExpr(std::string&& identifier, Location location) : Expr(ExprKind::VarExpr, location), decl(nullptr), identifier(std::move(identifier)) {}
+    VarExpr(llvm::StringRef identifier, Location location) : Expr(ExprKind::VarExpr, location), decl(nullptr), identifier(internString(identifier)) {}
     static bool classof(const Expr* e) { return e->kind == ExprKind::VarExpr; }
 
     Decl* decl;
-    std::string identifier;
+    llvm::StringRef identifier;
 };
 
 struct StringLiteralExpr : Expr {
@@ -172,10 +172,10 @@ struct ArrayLiteralExpr : Expr {
 
 struct NamedValue {
     NamedValue(Expr* value) : NamedValue("", NOTNULL(value)) {}
-    NamedValue(std::string&& name, Expr* value, Location location = Location())
-    : name(std::move(name)), value(value), location(location.isValid() ? location : this->value->location) {}
+    NamedValue(llvm::StringRef name, Expr* value, Location location = Location())
+    : name(internString(name)), value(value), location(location.isValid() ? location : this->value->location) {}
 
-    std::string name; // Empty if no name specified.
+    llvm::StringRef name; // Empty if no name specified.
     Expr* value;
     Location location;
 };
@@ -276,11 +276,11 @@ struct SizeofExpr : Expr {
 
 /// A member access expression using the dot syntax, such as 'a.b'.
 struct MemberExpr : Expr {
-    MemberExpr(Expr* base, std::string&& member, Location location) : Expr(ExprKind::MemberExpr, location), base(base), member(std::move(member)) {}
+    MemberExpr(Expr* base, llvm::StringRef member, Location location) : Expr(ExprKind::MemberExpr, location), base(base), member(internString(member)) {}
     static bool classof(const Expr* e) { return e->kind == ExprKind::MemberExpr; }
 
     Expr* base;
-    std::string member;
+    llvm::StringRef member;
     Decl* decl = nullptr;
 };
 

@@ -366,8 +366,8 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     case ExprKind::VarExpr: {
         auto* varExpr = llvm::cast<VarExpr>(this);
         auto it = genericArgs.find(varExpr->identifier);
-        auto identifier = it != genericArgs.end() && it->second.isType() ? it->second.type.getName().str() : varExpr->identifier;
-        auto* newExpr = makeAST<VarExpr>(std::move(identifier), varExpr->location);
+        llvm::StringRef identifier = it != genericArgs.end() && it->second.isType() ? it->second.type.getName() : varExpr->identifier;
+        auto* newExpr = makeAST<VarExpr>(identifier, varExpr->location);
         newExpr->endLocation = varExpr->endLocation;
         return newExpr;
     }
@@ -422,8 +422,8 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     }
     case ExprKind::AnonymousStructExpr: {
         auto* anonymousStructExpr = llvm::cast<AnonymousStructExpr>(this);
-        auto elements = map(anonymousStructExpr->elements,
-                            [&](const NamedValue& element) { return NamedValue(std::string(element.name), element.value->instantiate(genericArgs)); });
+        auto elements =
+            map(anonymousStructExpr->elements, [&](const NamedValue& element) { return NamedValue(element.name, element.value->instantiate(genericArgs)); });
         auto* newExpr = makeAST<AnonymousStructExpr>(std::move(elements), anonymousStructExpr->location);
         newExpr->endLocation = anonymousStructExpr->endLocation;
         return newExpr;
@@ -447,7 +447,7 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     case ExprKind::CallExpr: {
         auto* callExpr = llvm::cast<CallExpr>(this);
         auto callee = callExpr->callee->instantiate(genericArgs);
-        auto args = map(callExpr->args, [&](auto& arg) { return NamedValue(std::string(arg.name), arg.value->instantiate(genericArgs)); });
+        auto args = map(callExpr->args, [&](auto& arg) { return NamedValue(arg.name, arg.value->instantiate(genericArgs)); });
         auto callGenericArgs = map(callExpr->genericArgs, [&](GenericArg arg) { return arg.resolve(genericArgs); });
         auto* newExpr = makeAST<CallExpr>(callee, std::move(args), std::move(callGenericArgs), callExpr->location);
         newExpr->endLocation = callExpr->endLocation;
@@ -463,7 +463,7 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     case ExprKind::MemberExpr: {
         auto* memberExpr = llvm::cast<MemberExpr>(this);
         auto base = memberExpr->base->instantiate(genericArgs);
-        auto* newExpr = makeAST<MemberExpr>(base, std::string(memberExpr->member), memberExpr->location);
+        auto* newExpr = makeAST<MemberExpr>(base, memberExpr->member, memberExpr->location);
         newExpr->endLocation = memberExpr->endLocation;
         return newExpr;
     }

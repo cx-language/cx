@@ -49,7 +49,7 @@ IRType* cx::getIRType(Type astType) {
                 std::vector<IRField> associatedTypes;
                 for (auto& enumCase : enumDecl->cases) {
                     if (enumCase.associatedType) {
-                        associatedTypes.push_back(IRField{getIRType(enumCase.associatedType), enumCase.name});
+                        associatedTypes.push_back(IRField{getIRType(enumCase.associatedType), enumCase.name.str()});
                     }
                 }
                 unionType->fields = std::move(associatedTypes);
@@ -62,7 +62,7 @@ IRType* cx::getIRType(Type astType) {
                 auto unionType = new IRUnionType{IRTypeKind::IRUnionType, {}, astType.getQualifiedTypeName()};
                 irTypes.emplace(astType.typeBase, unionType);
                 // Fields are set late to handle recursive types.
-                unionType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name}; });
+                unionType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name.str()}; });
                 return unionType;
             } else {
                 bool isImportedFromC = decl->module.isCHeaderImport;
@@ -74,7 +74,7 @@ IRType* cx::getIRType(Type astType) {
                                                    isImportedFromC};
                 irTypes.emplace(astType.typeBase, structType);
                 // Fields are set late to handle recursive types.
-                structType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name}; });
+                structType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name.str()}; });
                 return structType;
             }
         } else {
@@ -93,7 +93,7 @@ IRType* cx::getIRType(Type astType) {
         break;
     }
     case TypeKind::AnonymousStructType: {
-        auto fields = map(astType.getAnonymousStructElements(), [](const AnonymousStructElement& e) { return IRField{getIRType(e.type), e.name}; });
+        auto fields = map(astType.getAnonymousStructElements(), [](const AnonymousStructElement& e) { return IRField{getIRType(e.type), e.name.str()}; });
         irType = new IRStructType{IRTypeKind::IRStructType, std::move(fields), std::string(), std::string(), false, false};
         break;
     }

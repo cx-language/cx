@@ -173,20 +173,20 @@ Stmt* ForEachStmt::lower(int nestLevel) {
         iteratorValue = makeAST<CallExpr>(iteratorMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
     }
 
-    auto iteratorVarDecl = makeAST<VarDecl>(Type(nullptr, Mutability::Mutable, location), std::string(iteratorVariableName), iteratorValue, variable->parent,
+    auto iteratorVarDecl = makeAST<VarDecl>(Type(nullptr, Mutability::Mutable, location), iteratorVariableName, iteratorValue, variable->parent,
                                             AccessLevel::None, *variable->getModule(), location);
     auto iteratorVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{iteratorVarDecl});
 
-    auto iteratorVarExpr = makeAST<VarExpr>(std::string(iteratorVariableName), location);
+    auto iteratorVarExpr = makeAST<VarExpr>(iteratorVariableName, location);
     auto hasValueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr, "hasValue", location);
     auto hasValueCallExpr = makeAST<CallExpr>(hasValueMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
 
-    auto iteratorVarExpr2 = makeAST<VarExpr>(std::string(iteratorVariableName), location);
+    auto iteratorVarExpr2 = makeAST<VarExpr>(iteratorVariableName, location);
     auto valueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr2, "value", location);
     auto valueCallExpr = makeAST<CallExpr>(valueMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
     Expr* loopInit = byValue ? makeAST<UnaryExpr>(Token::Star, valueCallExpr, location) : valueCallExpr;
-    auto loopVariableVarDecl = makeAST<VarDecl>(variable->type, variable->getName().str(), loopInit, variable->parent, AccessLevel::None,
-                                                *variable->getModule(), variable->getLocation());
+    auto loopVariableVarDecl =
+        makeAST<VarDecl>(variable->type, variable->getName(), loopInit, variable->parent, AccessLevel::None, *variable->getModule(), variable->getLocation());
     auto loopVariableVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{loopVariableVarDecl});
 
     std::vector<Stmt*> forBody;
@@ -196,7 +196,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
         forBody.push_back(stmt);
     }
 
-    auto iteratorVarExpr3 = makeAST<VarExpr>(std::string(iteratorVariableName), location);
+    auto iteratorVarExpr3 = makeAST<VarExpr>(iteratorVariableName, location);
     auto incrementMemberExpr = makeAST<MemberExpr>(iteratorVarExpr3, "increment", location);
     auto incrementCallExpr = makeAST<CallExpr>(incrementMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
     return makeAST<ForStmt>(iteratorVarStmt, hasValueCallExpr, incrementCallExpr, std::move(forBody), location);
