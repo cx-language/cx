@@ -7,7 +7,7 @@ enum Outcome {
     Pending,
 }
 
-string describe(Outcome* o) {
+string describe(Outcome& o) {
     if *o is Err e {
         return e;
     }
@@ -17,7 +17,7 @@ string describe(Outcome* o) {
     return "pending";
 }
 
-bool isOk(Outcome* o) {
+bool isOk(Outcome& o) {
     return *o is Ok;
 }
 
