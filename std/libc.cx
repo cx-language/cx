@@ -84,6 +84,8 @@ private const SEEK_END = 2;
 // string.h
 /// Returns the length of the string.
 private extern c_size_t strlen(const char* string);
+/// Copies n bytes from src to dest. The regions must not overlap.
+private extern void* memcpy(void* dest, const void* src, c_size_t n);
 
 // ctype.h
 /// Returns true if the character is alphanumeric.

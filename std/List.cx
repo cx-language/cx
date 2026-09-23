@@ -131,9 +131,10 @@ struct List<Element> {
 
     /// Adds all elements from the given array to the end of the list.
     void append(Element[] elements) {
-        for element in elements {
-            push(element);
-        }
+        if elements.empty() return;
+        reserve(size + elements.size());
+        memcpy(&buffer[size], elements.data(), c_size_t(sizeof(Element) * uint64(elements.size())));
+        size += elements.size();
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
