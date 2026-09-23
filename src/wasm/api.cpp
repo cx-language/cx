@@ -73,10 +73,6 @@ std::string cxCompileToC(const std::string& source, const std::string& importSea
     try {
         cx::CompileToCOptions options;
         options.importSearchPaths.push_back(importSearchPath);
-        // The playground targets wasm32, where size_t is 32-bit (unlike the
-        // 64-bit native targets). The stdlib uses this to declare size_t
-        // externs such as getcwd with the matching width.
-        options.defines.push_back("wasm");
         // The playground's in-browser C toolchain can't handle arbitrary
         // gotos, so always generate goto-free dispatch code.
         options.dispatchMode = true;
