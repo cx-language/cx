@@ -43,11 +43,11 @@ void print<T: Printable>(T* value) {
 
 /// Prints the given value.
 void print<T: Printable>(List<T>* list) {
-    print(ArrayRef(list));
+    print(Slice(list));
 }
 
 /// Joins the array elements into a string with the given separator.
-StringBuffer join<T: Printable>(ArrayRef<T> array, string separator) {
+StringBuffer join<T: Printable>(Slice<T> array, string separator) {
     var result = StringBuffer();
 
     for index in 0..array.size() {
@@ -62,11 +62,11 @@ StringBuffer join<T: Printable>(ArrayRef<T> array, string separator) {
 
 /// Joins the list elements into a string with the given separator.
 StringBuffer join<T: Printable>(List<T>* list, string separator) {
-    return join(ArrayRef(list), separator);
+    return join(Slice(list), separator);
 }
 
 /// Returns the sum of the array elements, aborting on empty arrays.
-T sum<T: Addable>(ArrayRef<T> array) {
+T sum<T: Addable>(Slice<T> array) {
     if array.empty() {
         abort("Called sum() on empty array");
     }
@@ -81,11 +81,11 @@ T sum<T: Addable>(ArrayRef<T> array) {
 
 /// Returns the sum of the list elements, aborting on empty lists.
 T sum<T: Addable>(List<T>* list) {
-    return sum(ArrayRef(list));
+    return sum(Slice(list));
 }
 
 /// Prints the given value.
-void print<T: Printable>(ArrayRef<T> array) {
+void print<T: Printable>(Slice<T> array) {
     print('[');
 
     for index in 0..array.size() {

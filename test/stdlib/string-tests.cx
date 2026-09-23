@@ -17,6 +17,7 @@ void main() {
     testEscape();
     testRepeat();
     testStartsEndsWith();
+    testAppendPrintable();
 }
 
 void testStringIterator() {
@@ -219,4 +220,21 @@ void testStartsEndsWith() {
     assert(!("abc".endsWith("zabc")));
     assert(!("".endsWith("c")));
     assert("".endsWith(""));
+}
+
+void testAppendPrintable() {
+    var b = StringBuffer();
+    b.append(0);
+    assert(b == "0");
+    b.append(-35);
+    assert(b == "0-35");
+    b.append(4.5);
+    assert(b == "0-354.5");
+    b.append('!');
+    assert(b == "0-354.5!");
+    b.append(" done");
+    assert(b == "0-354.5! done");
+    var s = StringBuffer();
+    s.append("abc");
+    assert(s == "abc");
 }

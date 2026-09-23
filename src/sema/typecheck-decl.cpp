@@ -53,8 +53,9 @@ static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::Small
         return containsItselfByValue(type.getElementType(), target, visiting);
     }
 
-    if (type.isTupleType()) {
-        return llvm::any_of(type.getTupleElements(), [&](const TupleElement& element) { return containsItselfByValue(element.type, target, visiting); });
+    if (type.isAnonymousStructType()) {
+        return llvm::any_of(type.getAnonymousStructElements(),
+                            [&](const AnonymousStructElement& element) { return containsItselfByValue(element.type, target, visiting); });
     }
 
     if (type.isOptionalType()) {
@@ -98,19 +99,19 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
             // the nested types start where the outer type starts (e.g. 'A' in 'A*?').
             if (recheckGenericArgs) {
                 for (auto genericArg : basicType->genericArgs) {
-                    typecheckType(genericArg.withLocation(type.location), userAccessLevel);
+                    if (genericArg.isType()) typecheckType(genericArg.type.withLocation(type.location), userAccessLevel);
                 }
             }
         } else {
             if (basicType->name.empty()) break; // Nothing to type-check.
 
             if (!type.isOptionalType() && type.isBuiltinType()) {
-                validateGenericArgCount(0, type.getGenericArgs(), type.getName(), type.location);
+                validateGenericArgs({}, type.getGenericArgs(), type.getName(), type.location);
                 break;
             }
 
             for (auto genericArg : basicType->genericArgs) {
-                typecheckType(genericArg, userAccessLevel);
+                if (genericArg.isType()) typecheckType(genericArg.type, userAccessLevel);
             }
 
             auto decls = findDecls(basicType->getQualifiedName());
@@ -125,6 +126,9 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));
                 decl = typeTemplate;
                 ASSERT(!basicType->genericArgs.empty());
+                if (!validateGenericArgs(typeTemplate->genericParams, basicType->genericArgs, basicType->name, type.location)) {
+                    throw CompileError::dependentError();
+                }
                 auto instantiation = typeTemplate->instantiate(basicType->genericArgs);
                 currentModule->addToSymbolTable(*instantiation);
                 deferTypechecking(instantiation);
@@ -138,7 +142,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         }
 
         if (decl->isTypeTemplate()) {
-            validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->genericParams.size(), basicType->genericArgs, basicType->name, type.location);
+            validateGenericArgs(llvm::cast<TypeTemplate>(decl)->genericParams, basicType->genericArgs, basicType->name, type.location);
         } else if (!decl->isTypeDecl()) {
             ERROR(type.location, "'" << type << "' is not a type");
         }
@@ -147,10 +151,15 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         break;
     }
     case TypeKind::ArrayType:
+        if (!type.getArraySizeParam().empty()) {
+            // Symbolic sizes only resolve during instantiation; encountering one here means
+            // it names nothing generic, so it must be a constant like any other size.
+            ERROR(type.location, "array size must be a constant integer expression");
+        }
         typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
         break;
-    case TypeKind::TupleType:
-        for (auto& element : type.getTupleElements()) {
+    case TypeKind::AnonymousStructType:
+        for (auto& element : type.getAnonymousStructElements()) {
             typecheckType(element.type, userAccessLevel, recheckGenericArgs);
         }
         break;
@@ -277,6 +286,20 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
             ERROR_WITH_NOTES(genericParam.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << genericParam.getName() << "'");
         }
 
+        if (genericParam.isValueParam) {
+            try {
+                const int errorsBefore = errors;
+                typecheckType(genericParam.valueType, userAccessLevel);
+
+                if (errors == errorsBefore && !genericParam.valueType.isInteger()) {
+                    ERROR(genericParam.valueType.location, "integer generic parameter '" << genericParam.getName() << "' must have integer type");
+                }
+            } catch (const CompileError& error) {
+                error.report();
+            }
+            continue;
+        }
+
         for (Type constraint : genericParam.constraints) {
             try {
                 const int errorsBefore = errors;
@@ -307,7 +330,7 @@ static void checkMainSignature(const FunctionDecl& decl) {
 
     auto params = decl.getParams();
     bool validParams = params.empty();
-    if (params.size() == 1 && params[0].type.isArrayRef()) {
+    if (params.size() == 1 && params[0].type.isSlice()) {
         Type elementType = params[0].type.getElementType();
         validParams = elementType.isBasicType() && elementType.getName() == "string";
     }

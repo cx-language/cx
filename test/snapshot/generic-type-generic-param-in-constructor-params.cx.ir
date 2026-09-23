@@ -7,14 +7,14 @@ int main() {
     int[3] _3 = insertvalue _2, 2, int 3
     store _3 to b
     int* _4 = getelementptr b, 0
-    ArrayRef<int> _5 = insertvalue ArrayRef<int> undefined, 0, _4
-    ArrayRef<int> _6 = insertvalue _5, 1, int 3
-    void _7 = call _EN4main1MI3intE4initE8ArrayRefI3intE(M<int>* _0, ArrayRef<int> _6)
+    Slice<int> _5 = insertvalue Slice<int> undefined, 0, _4
+    Slice<int> _6 = insertvalue _5, 1, int 3
+    void _7 = call _EN4main1MI3intE4initE5SliceI3intE(M<int>* _0, Slice<int> _6)
     return int 0
 }
 
-void _EN4main1MI3intE4initE8ArrayRefI3intE(M<int>* this, ArrayRef<int> a) {
-    ArrayRef<int>* a_0 = alloca ArrayRef<int>
+void _EN4main1MI3intE4initE5SliceI3intE(M<int>* this, Slice<int> a) {
+    Slice<int>* a_0 = alloca Slice<int>
     store a to a_0
     return void
 }

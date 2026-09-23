@@ -74,8 +74,8 @@ Result<int, string> fetch(bool ok) {
 
 void main() {
     switch fetch(true) {
-        case Ok value: println(value.value);
-        case Err error: println(error.error);
+        case Ok value: println(value);
+        case Err error: println(error);
     }
 }
 ```
@@ -84,7 +84,8 @@ Generic code constrains its parameters with `interface`s (cx's equivalent of C++
 so instantiating a template with an unsuitable type reports which requirement failed instead
 of pages of substitution errors. Unconstrained parameters stay available for flexibility.
 Arrays are first-class values with a known size that can be returned and passed by value,
-and tuples provide lightweight syntax for grouping values.
+and anonymous structs provide lightweight syntax for grouping values. Tagged unions allow
+runtime polymorphism without dynamic allocation and virtual function calls.
 
 ## Standard library covers common use cases better
 
@@ -109,13 +110,18 @@ void main() {
 }
 ```
 
-Math support includes constants such as Pi:
+Math support includes constants such as Pi, and math functions can be evaluated at
+compile time:
 
 ```cs
 void main() {
     println(pi);
 }
 ```
+
+Beyond that, the standard library covers file system access and process control, offers
+both a Unicode-correct string type and a raw byte string type, and its algorithms take
+range objects instead of iterator pairs for ease of use.
 
 ## Improved syntax
 
@@ -193,8 +199,8 @@ use, so dispatching on a result reads linearly instead of nesting accessors:
 void main() {
     Result<int, string> r = Result.Ok(value = 42);
     switch r {
-        case Ok value: println(value.value);
-        case Err error: println(error.error);
+        case Ok value: println(value);
+        case Err error: println(error);
     }
 }
 ```

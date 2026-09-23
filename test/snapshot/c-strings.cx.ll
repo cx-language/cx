@@ -1,7 +1,7 @@
 
 %S = type { [1024 x i8] }
-%string = type { %"ArrayRef<char>" }
-%"ArrayRef<char>" = type { ptr, i32 }
+%string = type { %"Slice<char>" }
+%"Slice<char>" = type { ptr, i32 }
 %StringBuffer = type { %"List<char>" }
 %"List<char>" = type { ptr, i32, i32 }
 
@@ -27,9 +27,9 @@ define i32 @main() #0 !dbg !4 {
   %5 = getelementptr inbounds %"List<char>", ptr %3, i32 0, i32 1
   %.load4 = load i32, ptr %5, align 4
   %6 = sub i32 %.load4, 1
-  %7 = insertvalue %"ArrayRef<char>" undef, ptr %.load, 0
-  %8 = insertvalue %"ArrayRef<char>" %7, i32 %6, 1
-  %9 = insertvalue %string undef, %"ArrayRef<char>" %8, 0
+  %7 = insertvalue %"Slice<char>" undef, ptr %.load, 0
+  %8 = insertvalue %"Slice<char>" %7, i32 %6, 1
+  %9 = insertvalue %string undef, %"Slice<char>" %8, 0
   %10 = call i1 @_EN3stdeqEP4char6string(ptr %a2, %string %9), !dbg !10
   %11 = xor i1 %10, true
   ret i32 0

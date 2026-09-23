@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+void bar() {
+    const var t = (a = 1, b = 2);
+    // CHECK: [[@LINE+1]]:9: error: cannot assign to immutable variable 'a' of type 'const int'
+    t.a = 42;
+}

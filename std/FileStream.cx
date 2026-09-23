@@ -32,6 +32,15 @@ struct OutputFileStream {
         value.print(stream);
         fflush(file);
     }
+
+    /// Writes the given values to the file, followed by a newline.
+    /// Each write is flushed, unlike println, so output appears live when redirected.
+    void writeln<T: Printable>(T*... args) {
+        for arg in args {
+            this.write(arg);
+        }
+        this.write("\n");
+    }
 }
 
 private FILE*? stdoutFile = null;

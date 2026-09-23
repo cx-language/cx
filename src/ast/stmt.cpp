@@ -30,7 +30,7 @@ bool Stmt::isContinuable() const {
     }
 }
 
-Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
+Stmt* Stmt::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     switch (kind) {
     case StmtKind::ReturnStmt: {
         auto* returnStmt = llvm::cast<ReturnStmt>(this);
@@ -170,7 +170,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
         iteratorValue = range;
     } else {
         auto iteratorMemberExpr = makeAST<MemberExpr>(range, "iterator", location);
-        iteratorValue = makeAST<CallExpr>(iteratorMemberExpr, std::vector<NamedValue>(), std::vector<Type>(), location);
+        iteratorValue = makeAST<CallExpr>(iteratorMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
     }
 
     auto iteratorVarDecl = makeAST<VarDecl>(Type(nullptr, Mutability::Mutable, location), std::string(iteratorVariableName), iteratorValue, variable->parent,
@@ -179,11 +179,11 @@ Stmt* ForEachStmt::lower(int nestLevel) {
 
     auto iteratorVarExpr = makeAST<VarExpr>(std::string(iteratorVariableName), location);
     auto hasValueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr, "hasValue", location);
-    auto hasValueCallExpr = makeAST<CallExpr>(hasValueMemberExpr, std::vector<NamedValue>(), std::vector<Type>(), location);
+    auto hasValueCallExpr = makeAST<CallExpr>(hasValueMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
 
     auto iteratorVarExpr2 = makeAST<VarExpr>(std::string(iteratorVariableName), location);
     auto valueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr2, "value", location);
-    auto valueCallExpr = makeAST<CallExpr>(valueMemberExpr, std::vector<NamedValue>(), std::vector<Type>(), location);
+    auto valueCallExpr = makeAST<CallExpr>(valueMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
     Expr* loopInit = byValue ? makeAST<UnaryExpr>(Token::Star, valueCallExpr, location) : valueCallExpr;
     auto loopVariableVarDecl = makeAST<VarDecl>(variable->type, variable->getName().str(), loopInit, variable->parent, AccessLevel::None,
                                                 *variable->getModule(), variable->getLocation());
@@ -198,6 +198,6 @@ Stmt* ForEachStmt::lower(int nestLevel) {
 
     auto iteratorVarExpr3 = makeAST<VarExpr>(std::string(iteratorVariableName), location);
     auto incrementMemberExpr = makeAST<MemberExpr>(iteratorVarExpr3, "increment", location);
-    auto incrementCallExpr = makeAST<CallExpr>(incrementMemberExpr, std::vector<NamedValue>(), std::vector<Type>(), location);
+    auto incrementCallExpr = makeAST<CallExpr>(incrementMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
     return makeAST<ForStmt>(iteratorVarStmt, hasValueCallExpr, incrementCallExpr, std::move(forBody), location);
 }

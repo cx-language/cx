@@ -8,8 +8,8 @@ enum Result<T, E> {
 /// Returns the success value, aborting with the error if the result is `Err`.
 T unwrap<T, E: Printable>(Result<T, E>* result) {
     return switch *result {
-        case Ok value: value.value,
-        case Err error: abort("called unwrap() on Err: ", error.error),
+        case Ok value: value,
+        case Err error: abort("called unwrap() on Err: ", error),
     };
 }
 
@@ -18,11 +18,11 @@ void print<T: Printable, E: Printable>(Result<T, E>* result) {
     switch *result {
         case Ok value:
             print("Ok(");
-            print(value.value);
+            print(value);
             print(")");
         case Err error:
             print("Err(");
-            print(error.error);
+            print(error);
             print(")");
     }
 }

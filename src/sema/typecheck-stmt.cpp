@@ -107,8 +107,8 @@ static void collectAssignedNames(const Expr& expr, llvm::StringSet<>& names) {
         for (auto& element : llvm::cast<ArrayLiteralExpr>(expr).elements)
             collectAssignedNames(*element, names);
         return;
-    case ExprKind::TupleExpr:
-        for (auto& element : llvm::cast<TupleExpr>(expr).elements)
+    case ExprKind::AnonymousStructExpr:
+        for (auto& element : llvm::cast<AnonymousStructExpr>(expr).elements)
             collectAssignedNames(*element.value, names);
         return;
     case ExprKind::UnaryExpr:
@@ -362,6 +362,11 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, true);
+        if (ifStmt.isBinding) {
+            auto* isExpr = llvm::cast<BinaryExpr>(ifStmt.condition);
+            ASSERT(isExpr->op == Token::Is);
+            typecheckSwitchCaseBinding(ifStmt.isBinding, getIsEnumCase(isExpr->getRHS()));
+        }
         for (auto& stmt : ifStmt.thenBody) {
             typecheckStmt(stmt);
         }
@@ -485,7 +490,11 @@ void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase*
     if (!enumCase->associatedType) {
         ERROR(associatedValue->location, "enum case '" << enumCase->getName() << "' has no associated values to bind");
     }
-    associatedValue->type = NOTNULL(enumCase->associatedType);
+    Type associatedType = NOTNULL(enumCase->associatedType);
+    if (associatedType.isAnonymousStructType() && associatedType.getAnonymousStructElements().size() == 1) {
+        associatedType = associatedType.getAnonymousStructElements().front().type;
+    }
+    associatedValue->type = associatedType;
     typecheckVarDecl(*associatedValue);
     definitelyAssignedDecls.insert(associatedValue);
 }

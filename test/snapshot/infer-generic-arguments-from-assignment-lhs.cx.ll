@@ -1,7 +1,7 @@
 
 %"List<int>" = type { ptr, i32, i32 }
 %"ArrayIterator<int>" = type { ptr, ptr }
-%"ArrayRef<int>" = type { ptr, i32 }
+%"Slice<int>" = type { ptr, i32 }
 %"RangeIterator<int>" = type { i32, i32 }
 %"Range<int>" = type { i32, i32 }
 
@@ -81,10 +81,10 @@ loop.end:                                         ; preds = %loop.condition
 
 define %"ArrayIterator<int>" @_EN3std4ListI3intE8iteratorE(ptr %this) #0 !dbg !19 {
   %1 = alloca %"ArrayIterator<int>", align 8
-  %2 = alloca %"ArrayRef<int>", align 8
-  call void @_EN3std8ArrayRefI3intE4initEP4ListI3intE(ptr %2, ptr %this), !dbg !20
-  %.load = load %"ArrayRef<int>", ptr %2, align 8
-  call void @_EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ptr %1, %"ArrayRef<int>" %.load), !dbg !21
+  %2 = alloca %"Slice<int>", align 8
+  call void @_EN3std5SliceI3intE4initEP4ListI3intE(ptr %2, ptr %this), !dbg !20
+  %.load = load %"Slice<int>", ptr %2, align 8
+  call void @_EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ptr %1, %"Slice<int>" %.load), !dbg !21
   %.load1 = load %"ArrayIterator<int>", ptr %1, align 8
   ret %"ArrayIterator<int>" %.load1
 }
@@ -203,29 +203,29 @@ if.end10:                                         ; preds = %if.else9, %if.then6
   br label %if.end
 }
 
-define void @_EN3std8ArrayRefI3intE4initEP4ListI3intE(ptr %this, ptr %list) #0 !dbg !34 {
+define void @_EN3std5SliceI3intE4initEP4ListI3intE(ptr %this, ptr %list) #0 !dbg !34 {
   %list1 = alloca ptr, align 8
   store ptr %list, ptr %list1, align 8
-  %data = getelementptr inbounds %"ArrayRef<int>", ptr %this, i32 0, i32 0
+  %data = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 0
   %list.load = load ptr, ptr %list1, align 8
   %1 = call ptr @_EN3std4ListI3intE4dataE(ptr %list.load), !dbg !36
   store ptr %1, ptr %data, align 8
-  %size = getelementptr inbounds %"ArrayRef<int>", ptr %this, i32 0, i32 1
+  %size = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 1
   %list.load2 = load ptr, ptr %list1, align 8
   %2 = call i32 @_EN3std4ListI3intE4sizeE(ptr %list.load2), !dbg !37
   store i32 %2, ptr %size, align 4
   ret void
 }
 
-define void @_EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ptr %this, %"ArrayRef<int>" %array) #0 !dbg !38 {
-  %array1 = alloca %"ArrayRef<int>", align 8
-  store %"ArrayRef<int>" %array, ptr %array1, align 8
+define void @_EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ptr %this, %"Slice<int>" %array) #0 !dbg !38 {
+  %array1 = alloca %"Slice<int>", align 8
+  store %"Slice<int>" %array, ptr %array1, align 8
   %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
-  %1 = call ptr @_EN3std8ArrayRefI3intE4dataE(ptr %array1), !dbg !39
+  %1 = call ptr @_EN3std5SliceI3intE4dataE(ptr %array1), !dbg !39
   store ptr %1, ptr %current, align 8
   %end = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 1
-  %2 = call ptr @_EN3std8ArrayRefI3intE4dataE(ptr %array1), !dbg !40
-  %3 = call i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %array1), !dbg !41
+  %2 = call ptr @_EN3std5SliceI3intE4dataE(ptr %array1), !dbg !40
+  %3 = call i32 @_EN3std5SliceI3intE4sizeE(ptr %array1), !dbg !41
   %4 = getelementptr inbounds i32, ptr %2, i32 %3
   store ptr %4, ptr %end, align 8
   ret void
@@ -280,14 +280,14 @@ declare i32 @_EN3std13RangeIteratorI3intE5valueE(ptr) #0
 
 declare void @_EN3std13RangeIteratorI3intE9incrementE(ptr) #0
 
-define ptr @_EN3std8ArrayRefI3intE4dataE(ptr %this) #0 !dbg !45 {
-  %data = getelementptr inbounds %"ArrayRef<int>", ptr %this, i32 0, i32 0
+define ptr @_EN3std5SliceI3intE4dataE(ptr %this) #0 !dbg !45 {
+  %data = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 0
   %data.load = load ptr, ptr %data, align 8
   ret ptr %data.load
 }
 
-define i32 @_EN3std8ArrayRefI3intE4sizeE(ptr %this) #0 !dbg !46 {
-  %size = getelementptr inbounds %"ArrayRef<int>", ptr %this, i32 0, i32 1
+define i32 @_EN3std5SliceI3intE4sizeE(ptr %this) #0 !dbg !46 {
+  %size = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 1
   %size.load = load i32, ptr %size, align 4
   ret i32 %size.load
 }
@@ -347,18 +347,18 @@ attributes #0 = { "frame-pointer"="all" }
 !31 = !DILocation(line: 144, column: 27, scope: !29)
 !32 = !DILocation(line: 144, column: 13, scope: !29)
 !33 = !DILocation(line: 151, column: 17, scope: !29)
-!34 = distinct !DISubprogram(name: "init", linkageName: "_EN3std8ArrayRefI3intE4initEP4ListI3intE", scope: !35, file: !35, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
-!35 = !DIFile(filename: "ArrayRef.cx")
+!34 = distinct !DISubprogram(name: "init", linkageName: "_EN3std5SliceI3intE4initEP4ListI3intE", scope: !35, file: !35, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!35 = !DIFile(filename: "Slice.cx")
 !36 = !DILocation(line: 14, column: 21, scope: !34)
 !37 = !DILocation(line: 15, column: 21, scope: !34)
-!38 = distinct !DISubprogram(name: "init", linkageName: "_EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE", scope: !23, file: !23, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!38 = distinct !DISubprogram(name: "init", linkageName: "_EN3std13ArrayIteratorI3intE4initE5SliceI3intE", scope: !23, file: !23, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
 !39 = !DILocation(line: 8, column: 25, scope: !38)
 !40 = !DILocation(line: 9, column: 22, scope: !38)
 !41 = !DILocation(line: 9, column: 35, scope: !38)
 !42 = distinct !DISubprogram(name: "allocateArray", linkageName: "_EN3std13allocateArrayI3intEE3int", scope: !27, file: !27, line: 35, type: !5, scopeLine: 35, spFlags: DISPFlagDefinition, unit: !2)
 !43 = !DILocation(line: 35, column: 9, scope: !42)
 !44 = !DILocation(line: 36, column: 26, scope: !42)
-!45 = distinct !DISubprogram(name: "data", linkageName: "_EN3std8ArrayRefI3intE4dataE", scope: !35, file: !35, line: 55, type: !5, scopeLine: 55, spFlags: DISPFlagDefinition, unit: !2)
-!46 = distinct !DISubprogram(name: "size", linkageName: "_EN3std8ArrayRefI3intE4sizeE", scope: !35, file: !35, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
+!45 = distinct !DISubprogram(name: "data", linkageName: "_EN3std5SliceI3intE4dataE", scope: !35, file: !35, line: 55, type: !5, scopeLine: 55, spFlags: DISPFlagDefinition, unit: !2)
+!46 = distinct !DISubprogram(name: "size", linkageName: "_EN3std5SliceI3intE4sizeE", scope: !35, file: !35, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
 !47 = distinct !DISubprogram(name: "data", linkageName: "_EN3std4ListI3intE4dataE", scope: !12, file: !12, line: 117, type: !5, scopeLine: 117, spFlags: DISPFlagDefinition, unit: !2)
 !48 = distinct !DISubprogram(name: "size", linkageName: "_EN3std4ListI3intE4sizeE", scope: !12, file: !12, line: 53, type: !5, scopeLine: 53, spFlags: DISPFlagDefinition, unit: !2)
