@@ -32,10 +32,12 @@ OPERATOR_SLUGS = {
     "+": "plus",
     "[]=": "index-assign",
     "[]": "index",
+    "[-]=": "index-from-end-assign",
+    "[-]": "index-from-end",
 }
 
 TYPE_RE = re.compile(r"(struct|interface|enum)\s+(.+?)\s*\{")
-FUNC_RE = re.compile(r"(operator(?:\[\]=?|==|!=|<=|>=|<|>|\+)|~?\w+)\s*(?:<[^;({>]*>)?\s*\(")
+FUNC_RE = re.compile(r"(operator(?:\[-?\]=?|==|!=|<=|>=|<|>|\+)|~?\w+)\s*(?:<[^;({>]*>)?\s*\(")
 FIELD_RE = re.compile(r"(.+?)\s+(\w+)\s*;$")
 CONST_RE = re.compile(r"const\s+(?:.*\s)?(\w+)\s*=")
 VARIANT_RE = re.compile(r"(\w+),?$")
@@ -315,7 +317,8 @@ STD_CATEGORIES = [
     (
         "Containers",
         [
-            "ArrayRef.cx",
+            "Array.cx",
+            "Slice.cx",
             "Box.cx",
             "List.cx",
             "Map.cx",

@@ -4,23 +4,23 @@
 
 @0 = private unnamed_addr constant [38 x i8] c"integer overflow at for-loop.cx:6:13\0A\00", align 1
 
-define i32 @main() {
+define i32 @main() #0 !dbg !4 {
   %sum = alloca i32, align 4
   %__iterator = alloca %"ClosedRangeIterator<int>", align 8
   %1 = alloca %"ClosedRange<int>", align 8
   %i = alloca i32, align 4
   store i32 0, ptr %sum, align 4
-  call void @_EN3std11ClosedRangeI3intE4initE3int3int(ptr %1, i32 68, i32 75)
-  %2 = call %"ClosedRangeIterator<int>" @_EN3std11ClosedRangeI3intE8iteratorE(ptr %1)
+  call void @_EN3std11ClosedRangeI3intE4initE3int3int(ptr %1, i32 68, i32 75), !dbg !7
+  %2 = call %"ClosedRangeIterator<int>" @_EN3std11ClosedRangeI3intE8iteratorE(ptr %1), !dbg !8
   store %"ClosedRangeIterator<int>" %2, ptr %__iterator, align 4
   br label %loop.condition
 
 loop.condition:                                   ; preds = %loop.increment, %0
-  %3 = call i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(ptr %__iterator)
+  %3 = call i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(ptr %__iterator), !dbg !8
   br i1 %3, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %4 = call i32 @_EN3std19ClosedRangeIteratorI3intE5valueE(ptr %__iterator)
+  %4 = call i32 @_EN3std19ClosedRangeIteratorI3intE5valueE(ptr %__iterator), !dbg !8
   store i32 %4, ptr %i, align 4
   %sum.load = load i32, ptr %sum, align 4
   %i.load = load i32, ptr %i, align 4
@@ -35,14 +35,14 @@ loop.body:                                        ; preds = %loop.condition
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 loop.increment:                                   ; preds = %overflow.success
-  call void @_EN3std19ClosedRangeIteratorI3intE9incrementE(ptr %__iterator)
+  call void @_EN3std19ClosedRangeIteratorI3intE9incrementE(ptr %__iterator), !dbg !8
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
   ret i32 0
 
 overflow.fail:                                    ; preds = %loop.body
-  call void @_EN3std10assertFailEP4char(ptr @0)
+  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %loop.body
@@ -50,7 +50,7 @@ overflow.success:                                 ; preds = %loop.body
   br label %loop.increment
 }
 
-define void @_EN3std11ClosedRangeI3intE4initE3int3int(ptr %this, i32 %start, i32 %end) {
+define void @_EN3std11ClosedRangeI3intE4initE3int3int(ptr %this, i32 %start, i32 %end) #0 !dbg !10 {
   %start1 = alloca i32, align 4
   %end2 = alloca i32, align 4
   store i32 %start, ptr %start1, align 4
@@ -64,15 +64,15 @@ define void @_EN3std11ClosedRangeI3intE4initE3int3int(ptr %this, i32 %start, i32
   ret void
 }
 
-define %"ClosedRangeIterator<int>" @_EN3std11ClosedRangeI3intE8iteratorE(ptr %this) {
+define %"ClosedRangeIterator<int>" @_EN3std11ClosedRangeI3intE8iteratorE(ptr %this) #0 !dbg !12 {
   %1 = alloca %"ClosedRangeIterator<int>", align 8
   %this.load = load %"ClosedRange<int>", ptr %this, align 4
-  call void @_EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ptr %1, %"ClosedRange<int>" %this.load)
+  call void @_EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ptr %1, %"ClosedRange<int>" %this.load), !dbg !13
   %.load = load %"ClosedRangeIterator<int>", ptr %1, align 4
   ret %"ClosedRangeIterator<int>" %.load
 }
 
-define i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(ptr %this) {
+define i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(ptr %this) #0 !dbg !14 {
   %current = getelementptr inbounds %"ClosedRangeIterator<int>", ptr %this, i32 0, i32 0
   %current.load = load i32, ptr %current, align 4
   %end = getelementptr inbounds %"ClosedRangeIterator<int>", ptr %this, i32 0, i32 1
@@ -81,13 +81,13 @@ define i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(ptr %this) {
   ret i1 %1
 }
 
-define i32 @_EN3std19ClosedRangeIteratorI3intE5valueE(ptr %this) {
+define i32 @_EN3std19ClosedRangeIteratorI3intE5valueE(ptr %this) #0 !dbg !16 {
   %current = getelementptr inbounds %"ClosedRangeIterator<int>", ptr %this, i32 0, i32 0
   %current.load = load i32, ptr %current, align 4
   ret i32 %current.load
 }
 
-define void @_EN3std19ClosedRangeIteratorI3intE9incrementE(ptr %this) {
+define void @_EN3std19ClosedRangeIteratorI3intE9incrementE(ptr %this) #0 !dbg !17 {
   %current = getelementptr inbounds %"ClosedRangeIterator<int>", ptr %this, i32 0, i32 0
   %current.load = load i32, ptr %current, align 4
   %1 = add i32 %current.load, 1
@@ -95,28 +95,57 @@ define void @_EN3std19ClosedRangeIteratorI3intE9incrementE(ptr %this) {
   ret void
 }
 
-declare void @_EN3std10assertFailEP4char(ptr)
+declare void @_EN3std10assertFailEP4char(ptr) #0
 
-define void @_EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ptr %this, %"ClosedRange<int>" %range) {
+define void @_EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ptr %this, %"ClosedRange<int>" %range) #0 !dbg !18 {
   %range1 = alloca %"ClosedRange<int>", align 8
   store %"ClosedRange<int>" %range, ptr %range1, align 4
   %current = getelementptr inbounds %"ClosedRangeIterator<int>", ptr %this, i32 0, i32 0
-  %1 = call i32 @_EN3std11ClosedRangeI3intE5startE(ptr %range1)
+  %1 = call i32 @_EN3std11ClosedRangeI3intE5startE(ptr %range1), !dbg !19
   store i32 %1, ptr %current, align 4
   %end = getelementptr inbounds %"ClosedRangeIterator<int>", ptr %this, i32 0, i32 1
-  %2 = call i32 @_EN3std11ClosedRangeI3intE3endE(ptr %range1)
+  %2 = call i32 @_EN3std11ClosedRangeI3intE3endE(ptr %range1), !dbg !20
   store i32 %2, ptr %end, align 4
   ret void
 }
 
-define i32 @_EN3std11ClosedRangeI3intE5startE(ptr %this) {
+define i32 @_EN3std11ClosedRangeI3intE5startE(ptr %this) #0 !dbg !21 {
   %start = getelementptr inbounds %"ClosedRange<int>", ptr %this, i32 0, i32 0
   %start.load = load i32, ptr %start, align 4
   ret i32 %start.load
 }
 
-define i32 @_EN3std11ClosedRangeI3intE3endE(ptr %this) {
+define i32 @_EN3std11ClosedRangeI3intE3endE(ptr %this) #0 !dbg !22 {
   %end = getelementptr inbounds %"ClosedRange<int>", ptr %this, i32 0, i32 1
   %end.load = load i32, ptr %end, align 4
   ret i32 %end.load
 }
+
+attributes #0 = { "frame-pointer"="all" }
+
+!llvm.module.flags = !{!0, !1}
+!llvm.dbg.cu = !{!2}
+
+!0 = !{i32 2, !"Dwarf Version", i32 4}
+!1 = !{i32 2, !"Debug Info Version", i32 3}
+!2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!3 = !DIFile(filename: "for-loop.cx")
+!4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!5 = !DISubroutineType(types: !6)
+!6 = !{}
+!7 = !DILocation(line: 5, column: 16, scope: !4)
+!8 = !DILocation(line: 5, column: 5, scope: !4)
+!9 = !DILocation(line: 3, column: 6, scope: !4)
+!10 = distinct !DISubprogram(name: "init", linkageName: "_EN3std11ClosedRangeI3intE4initE3int3int", scope: !11, file: !11, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!11 = !DIFile(filename: "ClosedRange.cx")
+!12 = distinct !DISubprogram(name: "iterator", linkageName: "_EN3std11ClosedRangeI3intE8iteratorE", scope: !11, file: !11, line: 34, type: !5, scopeLine: 34, spFlags: DISPFlagDefinition, unit: !2)
+!13 = !DILocation(line: 35, column: 16, scope: !12)
+!14 = distinct !DISubprogram(name: "hasValue", linkageName: "_EN3std19ClosedRangeIteratorI3intE8hasValueE", scope: !15, file: !15, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!15 = !DIFile(filename: "ClosedRangeIterator.cx")
+!16 = distinct !DISubprogram(name: "value", linkageName: "_EN3std19ClosedRangeIteratorI3intE5valueE", scope: !15, file: !15, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!17 = distinct !DISubprogram(name: "increment", linkageName: "_EN3std19ClosedRangeIteratorI3intE9incrementE", scope: !15, file: !15, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
+!18 = distinct !DISubprogram(name: "init", linkageName: "_EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE", scope: !15, file: !15, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!19 = !DILocation(line: 8, column: 25, scope: !18)
+!20 = !DILocation(line: 9, column: 21, scope: !18)
+!21 = distinct !DISubprogram(name: "start", linkageName: "_EN3std11ClosedRangeI3intE5startE", scope: !11, file: !11, line: 24, type: !5, scopeLine: 24, spFlags: DISPFlagDefinition, unit: !2)
+!22 = distinct !DISubprogram(name: "end", linkageName: "_EN3std11ClosedRangeI3intE3endE", scope: !11, file: !11, line: 29, type: !5, scopeLine: 29, spFlags: DISPFlagDefinition, unit: !2)

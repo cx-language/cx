@@ -67,6 +67,13 @@ Safety checks abort the program with an error on integer overflow and similar
 traps; `--release` drops them for maximum speed, so arithmetic overflow
 wraps instead.
 
+Debug builds (the default) embed debug info: aborts print a stack trace
+naming the cx functions involved, and the binary loads in a debugger
+(`lldb`, `gdb`). Release builds omit debug info but keep symbol names,
+so stack traces still name cx functions where the platform allows it.
+On macOS the debug info for `cx build` output is collected into a `.dSYM`
+bundle next to the binary.
+
 ## Installing dependencies
 
 Dependencies are cx libraries hosted in Git repositories.

@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: :{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+int take(int x) {
+    return x;
+}
+void main() {
+    while (take(
+        1)) {
+    }
+}
+// CHECK: [[@LINE-4]]:12: error: type 'int' is not convertible to boolean
+// CHECK-NEXT: while (take(
+// CHECK-NEXT: ~~~~~
+// CHECK-NOT: :{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -212,8 +212,8 @@ struct CToCxConverter final : clang::ASTConsumer {
         auto it = importedRecordDecls.find(canonical);
         if (it == importedRecordDecls.end()) {
             auto tag = recordDecl.isUnion() ? TypeTag::Union : TypeTag::Struct;
-            auto* typeDecl =
-                makeAST<TypeDecl>(tag, getName(recordDecl).str(), std::vector<Type>(), std::vector<Type>(), AccessLevel::Default, module, nullptr, Location());
+            auto* typeDecl = makeAST<TypeDecl>(tag, getName(recordDecl).str(), std::vector<GenericArg>(), std::vector<Type>(), AccessLevel::Default, module,
+                                               nullptr, Location());
             it = importedRecordDecls.emplace(canonical, typeDecl).first;
 
             // Add to symbol table before type-checking so that type-checker finds the struct decl.
@@ -444,7 +444,7 @@ struct CToCxConverter final : clang::ASTConsumer {
         if (auto asmLabelAttr = decl.getAttr<clang::AsmLabelAttr>()) {
             proto.asmLabel = asmLabelAttr->getLabel().str();
         }
-        return makeAST<FunctionDecl>(std::move(proto), std::vector<Type>(), AccessLevel::Default, module, toCx(decl.getLocation()));
+        return makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), AccessLevel::Default, module, toCx(decl.getLocation()));
     }
 
     Location toCx(clang::SourceLocation location) {

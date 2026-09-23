@@ -346,7 +346,7 @@ void Typechecker::typecheckVarStmt(VarStmt& stmt) {
 
 void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     Type conditionType = typecheckExpr(*ifStmt.condition);
-    typecheckImplicitlyBoolConvertibleExpr(conditionType, ifStmt.condition->location);
+    typecheckImplicitlyBoolConvertibleExpr(conditionType, ifStmt.condition->location, ifStmt.condition->endLocation);
     currentControlStmts.push_back(&ifStmt);
 
     // A value moved in every branch is moved after the if statement. Moves from only one
@@ -362,6 +362,11 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, true);
+        if (ifStmt.isBinding) {
+            auto* isExpr = llvm::cast<BinaryExpr>(ifStmt.condition);
+            ASSERT(isExpr->op == Token::Is);
+            typecheckSwitchCaseBinding(ifStmt.isBinding, getIsEnumCase(isExpr->getRHS()));
+        }
         for (auto& stmt : ifStmt.thenBody) {
             typecheckStmt(stmt);
         }
@@ -485,7 +490,11 @@ void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase*
     if (!enumCase->associatedType) {
         ERROR(associatedValue->location, "enum case '" << enumCase->getName() << "' has no associated values to bind");
     }
-    associatedValue->type = NOTNULL(enumCase->associatedType);
+    Type associatedType = NOTNULL(enumCase->associatedType);
+    if (associatedType.isAnonymousStructType() && associatedType.getAnonymousStructElements().size() == 1) {
+        associatedType = associatedType.getAnonymousStructElements().front().type;
+    }
+    associatedValue->type = associatedType;
     typecheckVarDecl(*associatedValue);
     definitelyAssignedDecls.insert(associatedValue);
 }
@@ -849,7 +858,7 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
 
     if (forStmt.condition) {
         Type conditionType = typecheckExpr(*forStmt.condition);
-        typecheckImplicitlyBoolConvertibleExpr(conditionType, forStmt.condition->location);
+        typecheckImplicitlyBoolConvertibleExpr(conditionType, forStmt.condition->location, forStmt.condition->endLocation);
     }
 
     // The body and increment may not execute, so assignments there don't hold after the loop.
@@ -894,7 +903,7 @@ void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
     currentControlStmts.pop_back();
 
     Type conditionType = typecheckExpr(*doWhileStmt.condition);
-    typecheckImplicitlyBoolConvertibleExpr(conditionType, doWhileStmt.condition->location);
+    typecheckImplicitlyBoolConvertibleExpr(conditionType, doWhileStmt.condition->location, doWhileStmt.condition->endLocation);
 
     narrowedTypes = outerNarrowings;
     dropNarrowingsForNames(assignedNames);

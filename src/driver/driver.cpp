@@ -256,6 +256,11 @@ static llvm::TargetMachine* createTargetMachine(llvm::Module& module, llvm::Relo
     if (!target) ABORT(errorMessage);
 
     llvm::TargetOptions options;
+#ifdef __APPLE__
+    // Tune debug info for LLDB so object files carry the STABS entries
+    // dsymutil needs to collect DWARF into .dSYM bundles.
+    options.DebuggerTuning = llvm::DebuggerKind::LLDB;
+#endif
     auto optLevel = mode == BuildMode::Debug ? llvm::CodeGenOptLevel::Default : llvm::CodeGenOptLevel::Aggressive;
     auto* targetMachine = target->createTargetMachine(triple, "generic", "", options, relocModel, std::nullopt, optLevel);
     module.setDataLayout(targetMachine->createDataLayout());
@@ -446,6 +451,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
         if (printOpts.isSet(PrintOpt::LLVM) || printOpts.isSet(PrintOpt::LLVMAll)) {
             LLVMGenerator printLLVMGenerator;
+            printLLVMGenerator.emitDebugInfo = options.mode == BuildMode::Debug;
             for (auto* irModule : irGenerator.generatedModules) {
                 printLLVMGenerator.codegenModule(*irModule);
             }
@@ -467,6 +473,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     }
     case Backend::LLVM:
         LLVMGenerator llvmGenerator;
+        llvmGenerator.emitDebugInfo = options.mode == BuildMode::Debug;
         for (auto* irModule : irGenerator.generatedModules) {
             llvmGenerator.codegenModule(*irModule);
         }
@@ -596,6 +603,14 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (!isMSVC) {
         // The standard library uses the C math library.
         ccArgs.push_back("-lm");
+        // Debug info is Debug-only; release stack traces resolve names
+        // through the symbol table instead.
+        if (options.mode == BuildMode::Debug) ccArgs.push_back("-g");
+#ifndef __APPLE__
+        // Export symbols so backtrace() resolves cx function names (macOS
+        // resolves them from the static symbol table instead).
+        ccArgs.push_back("-rdynamic");
+#endif
     }
 
     if (isMSVC) {
@@ -623,8 +638,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         ccRedirects = {std::nullopt, ccStdoutLog.str(), std::nullopt};
     }
     int ccExitStatus = useExternalCCompiler ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, std::nullopt, ccRedirects) : invokeClang(ccArgs);
-    llvm::sys::fs::remove(tempIntermediateFilePath);
     if (ccExitStatus != 0) {
+        llvm::sys::fs::remove(tempIntermediateFilePath);
         if (captureCcOutput) {
             if (auto output = llvm::MemoryBuffer::getFile(ccStdoutLog)) {
                 llvm::errs() << (*output)->getBuffer();
@@ -646,6 +661,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         std::string output;
         int executableExitStatus = exec(command.c_str(), output);
         llvm::outs() << output;
+        llvm::sys::fs::remove(tempIntermediateFilePath);
         llvm::sys::fs::remove(tempOutputFilePath);
 
         if (isMSVC) {
@@ -696,6 +712,21 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
             renameFile(path, outputPath);
         }
     }
+
+#ifdef __APPLE__
+    // Collect DWARF from the object files into a .dSYM bundle so debuggers
+    // show cx functions with file and line info (the linker leaves it behind).
+    // Debug-only: release builds emit no DWARF, so there is nothing to collect
+    // (and a failed dsymutil would warn spuriously).
+    if (!buildParams.createSharedLib && options.mode == BuildMode::Debug) {
+        std::string dsymutilCommand = "xcrun dsymutil " + shellEscape(outputPath.str()) + " 2>/dev/null";
+        std::string dsymutilOutput;
+        if (exec(dsymutilCommand.c_str(), dsymutilOutput) != 0) {
+            llvm::errs() << "warning: couldn't collect debug info ('" << dsymutilCommand << "' failed)\n";
+        }
+    }
+#endif
+    llvm::sys::fs::remove(tempIntermediateFilePath);
 
     return 0;
 }

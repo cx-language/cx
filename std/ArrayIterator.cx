@@ -23,4 +23,14 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
     void increment() {
         current++;
     }
+
+    /// Collects the remaining elements into a list.
+    List<Element> toList() {
+        var output = List<Element>();
+        while hasValue() {
+            output.push(*value());
+            increment();
+        }
+        return output;
+    }
 }

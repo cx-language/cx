@@ -30,12 +30,12 @@ int runScreenshot(string path) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     var ground = terrainHeight(64, 64);
-    var player = Player(pos = Vec3(64.5, float(ground) + 1.0, 64.5), vel = Vec3(0.0, 0.0, 0.0),
+    var player = Player(pos = Vector3(64.5, float(ground) + 1.0, 64.5), vel = Vector3(0.0, 0.0, 0.0),
         yaw = 0.7, pitch = -0.05, onGround = true);
     var eye = eyePos(player);
     var dir = lookDir(player);
     var proj = mat4Perspective(radians(75.0), 640.0 / 480.0, 0.1, 500.0);
-    var view = mat4LookAt(eye, eye + dir * 10.0, Vec3(0.0, 1.0, 0.0));
+    var view = mat4LookAt(eye, eye + dir * 10.0, Vector3(0.0, 1.0, 0.0));
     var mvp = proj * view;
     var uniforms = getBlockUniforms(program);
     setMat4(uniforms.mvp, mvp);

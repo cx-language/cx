@@ -9,7 +9,7 @@ enum Outcome {
 
 int exhaustive(Outcome* o) {
     return switch *o {
-        case Ok value: value.value,
+        case Ok value: value,
         case Err: -1,
         case Pending: 0,
     };
@@ -17,8 +17,8 @@ int exhaustive(Outcome* o) {
 
 int withNever(Outcome* o) {
     return switch *o {
-        case Ok value: value.value,
-        case Err error: abort("code ", error.code),
+        case Ok value: value,
+        case Err error: abort("code ", error),
         case Pending: 0,
     };
 }
@@ -39,7 +39,7 @@ string classify(int n) {
 
 int nested(Outcome* o) {
     return switch *o {
-        case Ok value: switch value.value {
+        case Ok value: switch value {
             case 0: 100,
             default: 200,
         },
@@ -51,7 +51,7 @@ int nested(Outcome* o) {
 // The commas after the arm expressions are optional.
 int? orNull(Outcome* o) {
     return switch *o {
-        case Ok value: value.value
+        case Ok value: value
         case Err: null
         case Pending: null
     };
@@ -95,7 +95,7 @@ void main() {
     assert(u == -1);
 
     var v = switch a {
-        case Ok value: value.value,
+        case Ok value: value,
         case Err: null,
         case Pending: null,
     };

@@ -1,0 +1,163 @@
+// File system operations: existence checks, directories, renaming,
+// the current directory, and directory listing.
+// Lexical path manipulation without file system access lives in path.cx.
+
+#if Windows
+private extern int _access(const char* path, int mode);
+private extern int _mkdir(const char* path);
+private extern int _rmdir(const char* path);
+private extern char*? _getcwd(char*? buffer, uint64 size);
+private extern int _chdir(const char* path);
+#else
+private extern int access(const char* path, int mode);
+private extern int mkdir(const char* path, int mode);
+private extern int rmdir(const char* path);
+private extern char*? getcwd(char*? buffer, uint64 size);
+private extern int chdir(const char* path);
+#endif
+private extern int rename(const char* oldName, const char* newName);
+
+#if Windows
+private bool pathExists(const char* path) { return _access(path, 0) == 0; }
+#else
+// The mode 0 is F_OK: check for existence without checking permissions.
+private bool pathExists(const char* path) { return access(path, 0) == 0; }
+#endif
+
+/// Returns true if a file or directory exists at the path.
+bool exists(string path) {
+    return pathExists(StringBuffer(path).cString());
+}
+
+#if Windows
+/// Creates a single directory, returning true on success.
+bool createDirectory(string path) {
+    return _mkdir(StringBuffer(path).cString()) == 0;
+}
+/// Removes an empty directory, returning true on success.
+bool removeDirectory(string path) {
+    return _rmdir(StringBuffer(path).cString()) == 0;
+}
+#else
+/// Creates a single directory, returning true on success.
+bool createDirectory(string path) {
+    return mkdir(StringBuffer(path).cString(), 493) == 0; // 493 is 0o755.
+}
+/// Removes an empty directory, returning true on success.
+bool removeDirectory(string path) {
+    return rmdir(StringBuffer(path).cString()) == 0;
+}
+#endif
+
+/// Removes the file, returning true on success.
+bool remove(string path) {
+    return remove(StringBuffer(path).cString()) == 0;
+}
+
+/// Renames a file or directory, returning true on success.
+bool rename(string oldPath, string newPath) {
+    return rename(StringBuffer(oldPath).cString(), StringBuffer(newPath).cString()) == 0;
+}
+
+#if Windows
+/// Returns the current working directory.
+StringBuffer currentDirectory() {
+    var buffer = _getcwd(null, 0);
+    if !buffer abort("couldn't get the current directory");
+    defer free(cast<void*>(buffer));
+    return StringBuffer(buffer);
+}
+/// Changes the current working directory, returning true on success.
+bool changeDirectory(string path) {
+    return _chdir(StringBuffer(path).cString()) == 0;
+}
+#else
+/// Returns the current working directory.
+StringBuffer currentDirectory() {
+    var buffer = getcwd(null, 0);
+    if !buffer abort("couldn't get the current directory");
+    defer free(cast<void*>(buffer));
+    return StringBuffer(buffer);
+}
+/// Changes the current working directory, returning true on success.
+bool changeDirectory(string path) {
+    return chdir(StringBuffer(path).cString()) == 0;
+}
+#endif
+
+/// Returns the size of the file, or null if it can't be opened.
+int64? fileSize(string path) {
+    var file = fopen(StringBuffer(path).cString(), "rb");
+    if !file return null;
+    defer fclose(file);
+
+    fseek(file, 0, SEEK_END);
+    var size = ftell(file);
+    if size < 0 return null;
+    return size;
+}
+
+#if Windows
+/// Returns the names in the directory, sorted, or an empty list if it can't be opened.
+///
+/// Names come from the shell, so a name containing a line break is split in two.
+List<StringBuffer> listDirectory(string path) {
+    return readDirectoryListing(StringBuffer("dir /b ") + quotedPath(path) + " 2>nul", true);
+}
+#else
+/// Returns the names in the directory, sorted, or an empty list if it can't be opened.
+///
+/// Names come from the shell, so a name containing a line break is split in two.
+List<StringBuffer> listDirectory(string path) {
+    return readDirectoryListing(StringBuffer("ls -1 -- ") + quotedPath(path) + " 2>/dev/null", false);
+}
+#endif
+
+#if Windows
+private StringBuffer quotedPath(string path) {
+    return StringBuffer("\"") + path + "\"";
+}
+#else
+// Single-quote for POSIX shells so double quotes, dollar signs, and backticks
+// in the path are passed literally. A single quote in the path closes the
+// quoting, adds an escaped quote, and reopens it.
+private StringBuffer quotedPath(string path) {
+    var result = StringBuffer("'");
+    for ch in path {
+        if ch == '\'' {
+            result += "'\\''";
+        } else {
+            result += ch;
+        }
+    }
+    result += "'";
+    return result;
+}
+#endif
+
+private List<StringBuffer> readDirectoryListing(StringBuffer command, bool stripCarriageReturns) {
+    var pipe = popen(command.cString(), "r");
+    if !pipe return List<StringBuffer>();
+    defer pclose(pipe);
+
+    var result = List<StringBuffer>();
+    var current = StringBuffer();
+    while true {
+        var c = fgetc(pipe);
+        if c < 0 || c == '\n' {
+            if stripCarriageReturns && !current.empty() && current[current.size() - 1] == '\r' {
+                current.removeLast();
+            }
+            if !current.empty() {
+                result.push(StringBuffer(string(&current)));
+            }
+            current = StringBuffer();
+            if c < 0 break;
+        } else {
+            current.append(char(c));
+        }
+    }
+
+    sort(result);
+    return result;
+}

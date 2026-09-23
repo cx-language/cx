@@ -43,9 +43,9 @@ Result<int, string> parseDigit(char c) {
 void main() {
     switch (parseDigit('7')) {
         case Ok value:
-            println(value.value); // prints 7
+            println(value); // prints 7
         case Err error:
-            println(error.error);
+            println(error);
     }
 }
 ```

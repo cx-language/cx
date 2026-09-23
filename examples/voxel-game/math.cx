@@ -1,47 +1,5 @@
 // 3D math: vectors, matrices, and transforms (column-major matrices).
-
-struct Vec3: Copyable {
-    float x;
-    float y;
-    float z;
-
-    float length() {
-        return sqrt(x * x + y * y + z * z);
-    }
-
-    Vec3 normalized() {
-        var len = length();
-        return Vec3(x / len, y / len, z / len);
-    }
-
-    float dot(Vec3 other) {
-        return x * other.x + y * other.y + z * other.z;
-    }
-
-    Vec3 cross(Vec3 other) {
-        return Vec3(
-            y * other.z - z * other.y,
-            z * other.x - x * other.z,
-            x * other.y - y * other.x
-        );
-    }
-}
-
-Vec3 operator+(Vec3 a, Vec3 b) {
-    return Vec3(a.x + b.x, a.y + b.y, a.z + b.z);
-}
-
-Vec3 operator-(Vec3 a, Vec3 b) {
-    return Vec3(a.x - b.x, a.y - b.y, a.z - b.z);
-}
-
-Vec3 operator*(Vec3 v, float s) {
-    return Vec3(v.x * s, v.y * s, v.z * s);
-}
-
-Vec3 operator*(float s, Vec3 v) {
-    return Vec3(v.x * s, v.y * s, v.z * s);
-}
+// Vectors come from the standard library (Vector3).
 
 struct Mat4: Copyable {
     float[16] m;
@@ -82,7 +40,7 @@ Mat4 mat4Perspective(float fovY, float aspect, float near, float far) {
     return result;
 }
 
-Mat4 mat4LookAt(Vec3 eye, Vec3 center, Vec3 up) {
+Mat4 mat4LookAt(Vector3<float> eye, Vector3<float> center, Vector3<float> up) {
     var f = (center - eye).normalized();
     var s = f.cross(up).normalized();
     var u = s.cross(f);

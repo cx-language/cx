@@ -20,7 +20,7 @@
         var keywords = {
             "break": true, "case": true, "cast": true, "catch": true, "class": true, "const": true, "continue": true, "default": true,
             "defer": true, "deinit": true, "do": true, "else": true, "enum": true, "extern": true, "fallthrough": true, "for": true,
-            "if": true, "import": true, "in": true, "init": true, "interface": true, "operator": true, "private": true, "public": true, "return": true,
+            "if": true, "import": true, "in": true, "init": true, "interface": true, "is": true, "operator": true, "private": true, "public": true, "return": true,
             "sizeof": true, "static": true, "struct": true, "switch": true, "this": true, "throw": true, "throws": true, "try": true, "typealias": true,
             "undefined": true, "var": true, "while": true, "bool": true, "float": true, "float32": true, "float64": true,
             "float80": true, "int8": true, "int16": true, "int32": true, "int64": true, "uint8": true, "uint16": true, "uint32": true,

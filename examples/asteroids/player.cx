@@ -6,15 +6,15 @@ const deceleration = 0.002;
 const playerSize = 10;
 
 struct Player {
-    Vector2 position;
-    Vector2 velocity;
+    Vector2<float> position;
+    Vector2<float> velocity;
     float direction;
     List<Missile> missiles;
     float timeSinceLastMissileShot;
 
     Player() {
-        position = Vector2(width / 2, height / 2);
-        velocity = Vector2(0, 0);
+        position = Vector2(width / 2.0, height / 2.0);
+        velocity = Vector2(0.0, 0.0);
         direction = 0;
         missiles = List();
         timeSinceLastMissileShot = 0;
@@ -25,9 +25,9 @@ struct Player {
         var b = Vector2(position.x - playerSize, position.y + playerSize);
         var c = Vector2(position.x + playerSize + playerSize, position.y);
 
-        a = a.rotated(origin = position, angle = direction);
-        b = b.rotated(origin = position, angle = direction);
-        c = c.rotated(origin = position, angle = direction);
+        a = rotated(a, origin = position, angle = direction);
+        b = rotated(b, origin = position, angle = direction);
+        c = rotated(c, origin = position, angle = direction);
 
         for i in -1...1 {
             for j in -1...1 {
@@ -84,7 +84,7 @@ struct Player {
 
     void shootMissile() {
         if timeSinceLastMissileShot > missileCooldown {
-            var position = this.position + Vector2(direction) * playerSize * 2 + Vector2(direction) * missileSize;
+            var position = this.position + vectorFromAngle(direction) * float(playerSize) * 2.0 + vectorFromAngle(direction) * float(missileSize);
             missiles.push(Missile(position, direction));
             timeSinceLastMissileShot = 0;
         }
