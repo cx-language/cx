@@ -58,5 +58,44 @@ void main() {
 }
 ```
 
+## Array programming
+
+Fixed-size arrays support element-wise arithmetic, like Odin: `float[3]`
+can be used directly as a 3D vector, with no wrapper struct needed.
+Both operands must have the same size; element types must match exactly
+(use explicit conversions and float literals for float arrays).
+
+```cs
+void main() {
+    float[3] a = [1.0, 2.0, 3.0];
+    float[3] b = [4.0, 5.0, 6.0];
+
+    float[3] c = a + b; // [5.0, 7.0, 9.0]
+    float[3] d = a * 2.0; // [2.0, 4.0, 6.0], scalar broadcasts
+    float[3] e = 10.0 - b; // [6.0, 5.0, 4.0], scalar on either side
+
+    println(c[0]); // prints 5
+    println(d[2]); // prints 6
+    println(e[0]); // prints 6
+}
+```
+
+Supported element-wise ops: `+ - * / %` (and `%%`), bitwise `& | ^ << >>`
+for integer elements, and `== !=` (which return `bool`: `==` is true when
+all elements are equal, `!=` when any differ).
+
+```cs
+void main() {
+    float[3] a = [1.0, 2.0, 3.0];
+    float[3] b = [1.0, 2.0, 3.0];
+    println(a == b); // prints true
+    println(a == [1.0, 2.0, 4.0]); // prints false
+}
+```
+
+Sizes must match; mismatched sizes are a compile error. Only arrays of
+known (constant) size support element-wise ops; generic sizes (`T[N]` with
+symbolic `N`) cannot unroll and are rejected with a clear error.
+
 See [List](list) for a resizable array, and [Pointers](pointers)
 for array pointers and pointer arithmetic.
