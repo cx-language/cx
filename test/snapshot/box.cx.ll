@@ -2,8 +2,8 @@
 %"Box<Box<int>>" = type { ptr }
 %"Box<int>" = type { ptr }
 
-@0 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:54\0A\00", align 1
-@1 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:54\0A\00", align 1
+@0 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:64\0A\00", align 1
+@1 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:64\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
   %p = alloca %"Box<Box<int>>", align 8

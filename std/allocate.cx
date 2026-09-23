@@ -6,7 +6,7 @@
 /// undefined behavior (when compiled in unchecked mode).
 ///
 Type* allocate<Type>(Type value) {
-    var allocation = cast<Type*>(malloc(sizeof(Type))!);
+    var allocation = cast<Type*>(malloc(c_size_t(sizeof(Type)))!);
     allocation.init(value);
     return allocation;
 }
@@ -18,7 +18,7 @@ Type* allocate<Type>(Type value) {
 /// If the memory allocation fails, null is returned.
 ///
 Type*? safeAllocate<Type>(Type value) {
-    var allocation = cast<Type*?>(malloc(sizeof(Type)));
+    var allocation = cast<Type*?>(malloc(c_size_t(sizeof(Type))));
     if allocation != null {
         allocation.init(value);
     }
@@ -33,7 +33,7 @@ Type*? safeAllocate<Type>(Type value) {
 /// undefined behavior (when compiled in unchecked mode).
 ///
 Type[*] allocateArray<Type>(int size) {
-    return cast<Type[*]>(malloc(sizeof(Type) * uint64(size))!);
+    return cast<Type[*]>(malloc(c_size_t(sizeof(Type) * uint64(size)))!);
 }
 
 /// Allocates a block of dynamic memory to hold an array with the given element type and size, and
@@ -43,7 +43,7 @@ Type[*] allocateArray<Type>(int size) {
 /// If the memory allocation fails, null is returned.
 ///
 Type[*]? safeAllocateArray<Type>(int size) {
-    return cast<Type[*]?>(malloc(sizeof(Type) * uint64(size)));
+    return cast<Type[*]?>(malloc(c_size_t(sizeof(Type) * uint64(size))));
 }
 
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,

@@ -1,6 +1,6 @@
 // RUN: check_exit_status 42 %cx run %s
 
-extern void* calloc(uint64 count, uint64 size);
+extern void* calloc(c_size_t count, c_size_t size);
 
 int main() {
     var buffer = cast<int*>(calloc(1, 8));
