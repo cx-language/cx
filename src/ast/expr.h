@@ -262,6 +262,10 @@ struct BinaryExpr : CallExpr {
     VarDecl* anonymousStructTempLHS = nullptr;
     VarDecl* anonymousStructTempRHS = nullptr;
     Expr* anonymousStructComparisonLowering = nullptr;
+    // NOTE: Array programming (`float[3] + float[3]`, etc.) does NOT use lowering
+    // AST fields; typechecking validates and returns the type directly, and IRGen
+    // emits element-wise directly (see emitBinaryExpr). No temporaries needed
+    // since IRGen emits operands once and reuses values for elements.
 };
 
 bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);
@@ -282,6 +286,9 @@ struct MemberExpr : Expr {
     Expr* base;
     llvm::StringRef member;
     Decl* decl = nullptr;
+    // For array swizzles (`vec.xy`, `vec.rgba`, etc.): element indices, empty when not a swizzle.
+    // Set by typechecking; IRGen emits element extracts + array build from these.
+    std::vector<int> swizzleIndices;
 };
 
 /// An element access expression using the element's index in brackets: 'base[index]'.
