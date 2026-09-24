@@ -40,12 +40,6 @@
 #include "../support/utility.h"
 #include "clang.h"
 
-#ifdef _MSC_VER
-#define popen _popen
-#define pclose _pclose
-#define WEXITSTATUS(x) x
-#endif
-
 using namespace cx;
 namespace cl = llvm::cl;
 
@@ -158,26 +152,6 @@ static std::string shellEscape(llvm::StringRef arg) {
 #endif
 }
 
-static int exec(const char* command, std::string& output) {
-    FILE* pipe = popen(command, "r");
-    if (!pipe) {
-        ABORT("failed to execute '" << command << "'");
-    }
-
-    try {
-        char buffer[128];
-        while (fgets(buffer, sizeof buffer, pipe)) {
-            output += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw;
-    }
-
-    int status = pclose(pipe);
-    return WEXITSTATUS(status);
-}
-
 static void addHeaderSearchPathsFromEnvVar(const char* name, std::vector<std::string>& paths) {
     if (auto pathList = llvm::sys::Process::GetEnv(name)) {
         llvm::SmallVector<llvm::StringRef, 16> splitPaths;
@@ -185,27 +159,6 @@ static void addHeaderSearchPathsFromEnvVar(const char* name, std::vector<std::st
 
         for (llvm::StringRef path : splitPaths) {
             paths.push_back(path.str());
-        }
-    }
-}
-
-static void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& paths) {
-    auto cCompilerPath = findExternalCCompiler();
-    if (!cCompilerPath) return;
-
-    if (llvm::sys::path::filename(*cCompilerPath) != "cl.exe") {
-        std::string command = "echo | " + *cCompilerPath + " -E -v - 2>&1 | grep '^ /'";
-        std::string output;
-        exec(command.c_str(), output);
-
-        llvm::SmallVector<llvm::StringRef, 8> lines;
-        llvm::SplitString(output, lines, "\n");
-
-        for (auto line : lines) {
-            auto path = line.trim();
-            if (llvm::sys::fs::is_directory(path)) {
-                paths.push_back(path.str());
-            }
         }
     }
 }
@@ -224,7 +177,8 @@ static void appendSystemImportSearchPaths(std::vector<std::string>& paths) {
     addHeaderSearchPathsFromEnvVar("CPATH", paths);
     addHeaderSearchPathsFromEnvVar("C_INCLUDE_PATH", paths);
     addHeaderSearchPathsFromEnvVar("INCLUDE", paths);
-    addHeaderSearchPathsFromCCompilerOutput(paths);
+    // Compiler-reported header paths are queried lazily on first C import
+    // (see getCCompilerSearchPaths): most builds never import C headers.
 }
 
 static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFiles) {

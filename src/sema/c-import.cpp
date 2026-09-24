@@ -25,6 +25,7 @@
 #include <clang/Sema/Sema.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/SaveAndRestore.h>
 #include <llvm/TargetParser/Host.h>
@@ -554,6 +555,10 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     ci.getHeaderSearchOpts().AddPath(path::parent_path(importerDirectory), clang::frontend::Quoted, false, true);
 
     for (llvm::StringRef includePath : typechecker.options.importSearchPaths) {
+        ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, true);
+        ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
+    }
+    for (llvm::StringRef includePath : getCCompilerSearchPaths()) {
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, true);
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
     }

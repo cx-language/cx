@@ -167,6 +167,14 @@ void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<No
 
 std::optional<std::string> findExternalCCompiler();
 
+/// Runs a shell command, capturing stdout into `output`. Returns the exit status.
+int exec(const char* command, std::string& output);
+
+/// Header search paths reported by the external C compiler (`cc -E -v`),
+/// queried once on first use. Most builds never import C headers, so eager
+/// querying would waste ~25ms per invocation.
+const std::vector<std::string>& getCCompilerSearchPaths();
+
 /// Locates the directory containing the `std/` standard-library directory.
 /// `CX_ROOT` wins, then directories relative to the running executable are
 /// probed (installed `<prefix>/bin` + `<prefix>/share/cx` layouts and in-tree
