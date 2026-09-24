@@ -184,7 +184,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         checkHasAccess(*decl, type.location, userAccessLevel);
         break;
     }
-    case TypeKind::ArrayType:
+    case TypeKind::ArrayPointerType:
         typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
         break;
     case TypeKind::AnonymousStructType:

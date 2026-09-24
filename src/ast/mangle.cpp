@@ -70,11 +70,11 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
             mangleGenericArgs(stream, type.getGenericArgs());
         }
         break;
-    case TypeKind::ArrayType:
+    case TypeKind::ArrayPointerType:
         if (!type.isMutable()) stream << 'K';
         stream << 'A';
         switch (type.getArraySize()) {
-        case ArrayType::UnknownSize:
+        case ArrayPointerType::UnknownSize:
             stream << 'U';
             break;
         default:

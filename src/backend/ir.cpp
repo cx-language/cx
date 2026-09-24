@@ -21,7 +21,7 @@ static std::unordered_map<TypeBase*, IRType*> irTypes = {{nullptr, nullptr}};
 IRType* cx::getIRType(Type astType) {
     // Incomplete-array wrappers can share a TypeBase while differing in
     // mutability. Their pointer result must retain that distinction for C.
-    bool cacheable = astType.getKind() != TypeKind::ArrayType;
+    bool cacheable = astType.getKind() != TypeKind::ArrayPointerType;
     if (cacheable) {
         auto it = irTypes.find(astType.typeBase);
         if (it != irTypes.end()) return it->second;
@@ -95,7 +95,7 @@ IRType* cx::getIRType(Type astType) {
         }
         break;
     }
-    case TypeKind::ArrayType:
+    case TypeKind::ArrayPointerType:
         ASSERT(astType.isUnsizedArrayPointer());
         irType = getIRType(astType.getElementType().getPointerTo());
         break;

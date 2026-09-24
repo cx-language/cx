@@ -349,7 +349,7 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
         }
     }
 
-    return ArrayType::get(firstType, int64_t(array.elements.size()));
+    return ArrayPointerType::get(firstType, int64_t(array.elements.size()));
 }
 
 Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
@@ -1298,7 +1298,7 @@ bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
         }
         return type.getName() == genericParam;
 
-    case TypeKind::ArrayType:
+    case TypeKind::ArrayPointerType:
         return containsGenericParam(type.getElementType(), genericParam);
 
     case TypeKind::AnonymousStructType:
@@ -1342,7 +1342,7 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         return findGenericArg(FunctionType::get(argType.getClosureReturnType(), std::move(paramTypes), false), paramType, genericParam, inFunctionType);
     }
 
-    if (argType.isBasicArrayType() && paramType.getKind() == TypeKind::ArrayType) {
+    if (argType.isBasicArrayType() && paramType.getKind() == TypeKind::ArrayPointerType) {
         return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
     }
 
@@ -1367,8 +1367,8 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         }
         break;
 
-    case TypeKind::ArrayType:
-        if (paramType.getKind() == TypeKind::ArrayType) {
+    case TypeKind::ArrayPointerType:
+        if (paramType.getKind() == TypeKind::ArrayPointerType) {
             return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
         }
         break;
@@ -1438,7 +1438,7 @@ static bool containsUnresolvedType(Type type) {
         }
         return false;
 
-    case TypeKind::ArrayType:
+    case TypeKind::ArrayPointerType:
         return containsUnresolvedType(type.getElementType());
 
     case TypeKind::AnonymousStructType:
@@ -2582,7 +2582,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
         Type arrayReceiverType = receiverType.removeOptional().removePointer();
         if (arrayReceiverType.isBasicArrayType() && !arrayReceiverType.isMutable() && expr.getFunctionName() == "data") {
-            returnTypeOverride = ArrayType::get(arrayReceiverType.getElementType(), ArrayType::UnknownSize, arrayReceiverType.location);
+            returnTypeOverride = ArrayPointerType::get(arrayReceiverType.getElementType(), ArrayPointerType::UnknownSize, arrayReceiverType.location);
         }
 
         // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
@@ -2870,7 +2870,7 @@ static bool isValidCast(Type sourceType, Type targetType) {
 
         return false;
 
-    case TypeKind::ArrayType: {
+    case TypeKind::ArrayPointerType: {
         if (targetType.isPointerType()) {
             Type targetPointee = targetType.getPointee();
             if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourceType.getElementType().isMutable())) return true;
@@ -3060,7 +3060,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
                 if (indices.size() == 1) {
                     return elementType.withMutability(baseType.mutability);
                 } else {
-                    return ArrayType::get(elementType, static_cast<int64_t>(indices.size()), expr.location);
+                    return ArrayPointerType::get(elementType, static_cast<int64_t>(indices.size()), expr.location);
                 }
             }
             // If member looks like a swizzle but indices out of range (e.g. `float[2].z`),
@@ -3160,11 +3160,11 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
     if (!indexChecked) {
         Type indexType = typecheckExpr(*indexExpr);
 
-        if (auto converted = convert(indexExpr, ArrayType::getIndexType())) {
+        if (auto converted = convert(indexExpr, ArrayPointerType::getIndexType())) {
             expr.setIndex(converted);
             indexExpr = converted;
         } else if (!indexType.isInteger()) {
-            ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
+            ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected '" << ArrayPointerType::getIndexType() << "'");
         }
         // Wider integer indexes pass through unconverted; both backends accept any integer index type.
     }

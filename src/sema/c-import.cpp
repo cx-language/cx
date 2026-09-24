@@ -175,7 +175,7 @@ struct CToCxConverter final : clang::ASTConsumer {
             return BasicType::get("Array", args, mutability);
         }
         case clang::Type::IncompleteArray:
-            return ArrayType::get(toCx(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::UnknownSize);
+            return ArrayPointerType::get(toCx(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayPointerType::UnknownSize);
         case clang::Type::Attributed:
             return toCx(llvm::cast<clang::AttributedType>(type).getEquivalentType());
         case clang::Type::Decayed:

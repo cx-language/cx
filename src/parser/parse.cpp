@@ -462,7 +462,7 @@ Type Parser::parseArrayType(Type elementType) {
     case Token::Star:
         consumeToken();
         parse(Token::RightBracket);
-        return ArrayType::get(elementType, ArrayType::UnknownSize, elementType.location);
+        return ArrayPointerType::get(elementType, ArrayPointerType::UnknownSize, elementType.location);
 
     default: {
         if (currentToken() == Token::Identifier && lookAhead(1) == Token::RightBracket) {

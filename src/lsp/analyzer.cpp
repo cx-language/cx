@@ -357,7 +357,7 @@ struct Finder {
             for (GenericArg arg : type.getGenericArgs())
                 if (arg.isType()) visitType(arg.type, depth + 1);
             break;
-        case TypeKind::ArrayType:
+        case TypeKind::ArrayPointerType:
             visitType(type.getElementType(), depth + 1);
             break;
         case TypeKind::AnonymousStructType:
@@ -641,7 +641,7 @@ struct ReferenceCollector {
             for (GenericArg arg : type.getGenericArgs())
                 if (arg.isType()) visitType(arg.type);
             break;
-        case TypeKind::ArrayType:
+        case TypeKind::ArrayPointerType:
             visitType(type.getElementType());
             break;
         case TypeKind::AnonymousStructType:
@@ -1140,7 +1140,7 @@ struct SemanticCollector {
                 if (arg.isType()) visitType(arg.type);
             return;
         }
-        case TypeKind::ArrayType:
+        case TypeKind::ArrayPointerType:
             visitType(type.getElementType());
             return;
         case TypeKind::AnonymousStructType:
