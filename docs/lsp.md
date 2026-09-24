@@ -20,7 +20,8 @@ lsp` (which forwards stdio to `cx-lsp` found next to `cx` or on `PATH`).
 Token types: `comment`, `string`, `number`, `keyword`, `macro` (`#if`/`#else`/`#endif`),
 `type`, `struct`, `enum`, `interface`, `typeParameter`, `parameter`, `variable`,
 `property` (fields), `enumMember`, `function`, `method`. Definitions carry the
-`definition` modifier. Keywords, strings, numbers, comments and macros highlight
+`definition` modifier, and immutable variables and parameters carry `readonly`.
+Keywords, strings, numbers, comments and macros highlight
 even when the file doesn't compile.
 
 Positions assume UTF-8/ASCII source (one byte per character).

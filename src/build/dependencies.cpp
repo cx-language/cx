@@ -1,4 +1,5 @@
 #include "dependencies.h"
+#include <cstdio>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -13,6 +14,11 @@
 #pragma warning(pop)
 #include "../support/utility.h"
 #include "config.h"
+
+#ifdef _MSC_VER
+#define popen _popen
+#define pclose _pclose
+#endif
 
 using namespace cx;
 
@@ -197,6 +203,58 @@ bool cx::isVendoredPath(llvm::StringRef path) {
         if (*it == "vendor") return true;
     }
     return false;
+}
+
+static std::optional<std::string> runCommand(const std::string& command) {
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe) return std::nullopt;
+    std::string output;
+    char buffer[128];
+    while (fgets(buffer, sizeof buffer, pipe)) {
+        output += buffer;
+    }
+    if (pclose(pipe) != 0) return std::nullopt;
+    return output;
+}
+
+std::optional<PkgConfigSplit> cx::queryPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
+    PkgConfigSplit split;
+    if (packages.empty()) return split;
+
+    auto pkgConfig = llvm::sys::findProgramByName("pkg-config");
+    if (!pkgConfig) return std::nullopt;
+
+    std::string command = *pkgConfig + " --cflags --libs";
+    for (llvm::StringRef package : packages) {
+        command += " ";
+        command += package;
+    }
+
+    auto output = runCommand(command);
+    if (!output) return std::nullopt;
+
+    llvm::SmallVector<llvm::StringRef, 16> tokens;
+    llvm::StringRef(*output).trim().split(tokens, ' ', -1, false);
+
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        llvm::StringRef token = tokens[i];
+        if (token.starts_with("-D")) {
+            split.defines.push_back(token.drop_front(2).str());
+        } else if (token.starts_with("-I")) {
+            split.headerSearchPaths.push_back(token.drop_front(2).str());
+        } else if (token.starts_with("-L")) {
+            split.librarySearchPaths.push_back(token.drop_front(2).str());
+        } else if (token.starts_with("-l")) {
+            split.libraries.push_back(token.drop_front(2).str());
+        } else if (token.starts_with("-F")) {
+            split.frameworkSearchPaths.push_back(token.drop_front(2).str());
+        } else if (token == "-framework" && i + 1 < tokens.size()) {
+            split.frameworks.push_back(tokens[++i].str());
+        } else {
+            split.cflags.push_back(token.str());
+        }
+    }
+    return split;
 }
 
 bool cx::isRootBuildFile(llvm::StringRef path, llvm::StringRef rootDirectory) {

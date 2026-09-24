@@ -143,6 +143,7 @@ struct SemanticToken {
     int length = 0;
     std::string type; // LSP token type name, e.g. "keyword" (see semanticTokenTypes()).
     bool definition = false; // Definition site (maps to the "definition" modifier).
+    bool readonly = false; // Immutable binding (maps to the "readonly" modifier).
 };
 
 /// The semantic-tokens legend: token type and modifier names indexed by the

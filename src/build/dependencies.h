@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
@@ -31,6 +32,10 @@ struct PkgConfigSplit {
     std::vector<std::string> libraries;
     std::vector<std::string> frameworks;
 };
+// Queries `pkg-config --cflags --libs` for the given packages, splitting the
+// output. Returns nullopt when pkg-config is missing or the query fails; the
+// driver aborts, the language server degrades to no pkg-config paths.
+std::optional<PkgConfigSplit> queryPkgConfigFlags(llvm::ArrayRef<std::string> packages);
 struct DependencyResolution {
     const BuildConfig::ResolvedDependency* dependency = nullptr;
     bool ambiguous = false; // Several distinct sources provide the package.

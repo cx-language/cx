@@ -165,6 +165,36 @@ var f = /* unterminated;
 
 TOKENS_CRLF_SOURCE = "int add(int x, int y) {\r\n    return x;\r\n}\r\n"
 
+GENERIC_DEF_SOURCE = """\
+struct Box<T> {
+    T value;
+    T get() {
+        return value;
+    }
+}
+void main() {
+    var b = Box<int>(value = 1);
+    println(b.get());
+    println(first(42));
+}
+
+T first<T>(T x) {
+    return x;
+}
+"""
+
+TOKENS_READONLY_SOURCE = """\
+void show(const int p) {
+    println(p);
+}
+void main() {
+    show(1);
+    var mutable = 1;
+    const constant = 2;
+    println(mutable + constant);
+}
+"""
+
 
 def base_query(method, path, content, position=None):
     query = {
@@ -386,6 +416,41 @@ def test_query_modes(cx_lsp, path):
     proc = subprocess.run([cx_lsp, "--query"], input=b"not json", capture_output=True, timeout=60)
     envelope = json.loads(proc.stdout.decode())
     check("query-malformed", proc.returncode == 0 and envelope.get("ok") is False)
+
+
+def test_generic_symbols(cx_lsp, path):
+    # `value` in the generic method body (line 3) resolves to the field (line 1).
+    result = run_query(cx_lsp, base_query("definition", path, GENERIC_DEF_SOURCE, (3, 16)))
+    check(
+        "query-definition-generic-method",
+        result.get("found") is True and result.get("range", {}).get("start") == {"line": 1, "character": 6},
+        json.dumps(result)[:300],
+    )
+
+    result = run_query(cx_lsp, base_query("hover", path, GENERIC_DEF_SOURCE, (3, 16)))
+    check("query-hover-generic-method", "int Box<int>.value" in result.get("hover", ""), result.get("hover", "")[:200])
+
+    # `x` in the generic function body (line 13) resolves to the parameter (line 12).
+    result = run_query(cx_lsp, base_query("definition", path, GENERIC_DEF_SOURCE, (13, 11)))
+    check(
+        "query-definition-generic-function",
+        result.get("found") is True and result.get("range", {}).get("start") == {"line": 12, "character": 13},
+        json.dumps(result)[:300],
+    )
+
+    result = run_query(cx_lsp, base_query("hover", path, GENERIC_DEF_SOURCE, (13, 11)))
+    check("query-hover-generic-function", "int x" in result.get("hover", ""), result.get("hover", "")[:200])
+
+
+def test_readonly_tokens(cx_lsp, path):
+    result = run_query(cx_lsp, base_query("semanticTokens", path, TOKENS_READONLY_SOURCE))
+    tokens = {(t["line"], t["start"], t["length"], t["type"]): t["modifiers"] for t in result.get("tokens", [])}
+    check("query-tokens-const-param-def", tokens.get((0, 20, 1, "parameter")) == ["definition", "readonly"])
+    check("query-tokens-const-param-ref", tokens.get((1, 12, 1, "parameter")) == ["readonly"])
+    check("query-tokens-var-def", tokens.get((5, 8, 7, "variable")) == ["definition"])
+    check("query-tokens-const-def", tokens.get((6, 10, 8, "variable")) == ["definition", "readonly"])
+    check("query-tokens-var-ref", tokens.get((7, 12, 7, "variable")) == [])
+    check("query-tokens-const-ref", tokens.get((7, 22, 8, "variable")) == ["readonly"])
 
 
 def test_completion_members(cx_lsp, path):
@@ -672,6 +737,70 @@ def test_fetched_dependency(cx_lsp):
             )
 
 
+def test_pkg_config_headers(cx_lsp):
+    # Header search paths from build.cx pkg-config dependencies apply to
+    # C-header imports, like in the driver. Runs serially: it swaps the
+    # process-global PKG_CONFIG_PATH.
+    import shutil
+
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "proj")
+        includedir = os.path.join(root, "include")
+        os.makedirs(os.path.join(includedir, "mypkg"))
+        with open(os.path.join(includedir, "mypkg", "widget.h"), "w") as file:
+            file.write("int widgetValue();\n")
+        pcdir = os.path.join(root, "pc")
+        os.makedirs(pcdir)
+        with open(os.path.join(pcdir, "mypkg.pc"), "w") as file:
+            file.write(
+                "prefix="
+                + root.replace(os.sep, "/")
+                + "\n"
+                + "includedir=${prefix}/include\n"
+                + "Name: mypkg\n"
+                + "Description: fake pkg for LSP test\n"
+                + "Version: 1.0\n"
+                + "Cflags: -I${includedir}\n"
+            )
+        build_path = os.path.join(root, "build.cx")
+        main_path = os.path.join(root, "main.cx")
+        main_content = 'import "mypkg/widget.h";\nvoid main() {\n    println(widgetValue());\n}\n'
+        with open(main_path, "w") as file:
+            file.write(main_content)
+
+        # A failing pkg-config query degrades to unresolved headers, not a crash.
+        with open(build_path, "w") as file:
+            file.write('var name = "pkgtest"\nvar pkgConfigDependencies = ["definitely-not-a-real-package"]\n')
+        result = run_query(cx_lsp, base_query("check", main_path, main_content))
+        messages = [d["message"] for d in result["diagnostics"]]
+        check(
+            "query-pkg-config-failure-degrades",
+            any("couldn't find C header file" in m for m in messages),
+            json.dumps(messages)[:500],
+        )
+
+        if shutil.which("pkg-config") is None:
+            print("SKIP query-pkg-config-headers (no pkg-config)")
+            return
+
+        with open(build_path, "w") as file:
+            file.write('var name = "pkgtest"\nvar pkgConfigDependencies = ["mypkg"]\n')
+        old_path = os.environ.get("PKG_CONFIG_PATH")
+        os.environ["PKG_CONFIG_PATH"] = pcdir + (os.pathsep + old_path if old_path else "")
+        try:
+            result = run_query(cx_lsp, base_query("check", main_path, main_content))
+        finally:
+            if old_path is None:
+                del os.environ["PKG_CONFIG_PATH"]
+            else:
+                os.environ["PKG_CONFIG_PATH"] = old_path
+        check(
+            "query-pkg-config-headers",
+            result["diagnostics"] == [],
+            json.dumps(result["diagnostics"])[:500],
+        )
+
+
 class LspSession:
     def __init__(self, command):
         self.proc = subprocess.Popen(
@@ -744,7 +873,9 @@ def test_server(command, path, label):
     legend = capabilities.get("semanticTokensProvider", {}).get("legend", {})
     check(
         f"{label}-semantic-legend",
-        "keyword" in legend.get("tokenTypes", []) and "function" in legend.get("tokenTypes", []),
+        "keyword" in legend.get("tokenTypes", [])
+        and "function" in legend.get("tokenTypes", [])
+        and "readonly" in legend.get("tokenModifiers", []),
         json.dumps(legend)[:300],
     )
 
@@ -1075,6 +1206,8 @@ def main():
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
             groups = [
                 ("query-modes", lambda: test_query_modes(args.cx_lsp, path)),
+                ("generic-symbols", lambda: test_generic_symbols(args.cx_lsp, path)),
+                ("readonly-tokens", lambda: test_readonly_tokens(args.cx_lsp, path)),
                 ("completion-members", lambda: test_completion_members(args.cx_lsp, path)),
                 ("package-dedup", lambda: test_package_dedup(args.cx_lsp)),
                 ("build-file-modes", lambda: test_build_file_modes(args.cx_lsp)),
@@ -1087,6 +1220,7 @@ def main():
             # failure summary: record it and let the rest finish.
             list(executor.map(lambda group: run_group(*group), groups))
         test_fetched_dependency(args.cx_lsp)
+        test_pkg_config_headers(args.cx_lsp)
 
     if FAILURES:
         print(f"\n{len(FAILURES)} failure(s): {', '.join(FAILURES)}")

@@ -797,52 +797,18 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     return 0;
 }
 
-static PkgConfigSplit queryPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
-    PkgConfigSplit split;
-    if (packages.empty()) return split;
-
-    auto pkgConfig = llvm::sys::findProgramByName("pkg-config");
-    if (!pkgConfig) {
-        ABORT("couldn't find 'pkg-config'");
+static PkgConfigSplit queryPkgConfigFlagsOrAbort(llvm::ArrayRef<std::string> packages) {
+    if (auto split = queryPkgConfigFlags(packages)) return std::move(*split);
+    std::string joined;
+    for (auto& package : packages) {
+        if (!joined.empty()) joined += " ";
+        joined += package;
     }
-
-    std::string command = *pkgConfig + " --cflags --libs";
-    for (llvm::StringRef package : packages) {
-        command += " ";
-        command += package;
-    }
-
-    std::string output;
-    if (exec(command.c_str(), output) != 0) {
-        ABORT("'" << command << "' failed");
-    }
-
-    llvm::SmallVector<llvm::StringRef, 16> tokens;
-    llvm::StringRef(output).trim().split(tokens, ' ', -1, false);
-
-    for (size_t i = 0; i < tokens.size(); ++i) {
-        llvm::StringRef token = tokens[i];
-        if (token.starts_with("-D")) {
-            split.defines.push_back(token.drop_front(2).str());
-        } else if (token.starts_with("-I")) {
-            split.headerSearchPaths.push_back(token.drop_front(2).str());
-        } else if (token.starts_with("-L")) {
-            split.librarySearchPaths.push_back(token.drop_front(2).str());
-        } else if (token.starts_with("-l")) {
-            split.libraries.push_back(token.drop_front(2).str());
-        } else if (token.starts_with("-F")) {
-            split.frameworkSearchPaths.push_back(token.drop_front(2).str());
-        } else if (token == "-framework" && i + 1 < tokens.size()) {
-            split.frameworks.push_back(tokens[++i].str());
-        } else {
-            split.cflags.push_back(token.str());
-        }
-    }
-    return split;
+    ABORT("couldn't query pkg-config for '" << joined << "'");
 }
 
 static void addPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
-    auto split = queryPkgConfigFlags(packages);
+    auto split = queryPkgConfigFlagsOrAbort(packages);
     for (auto& define : split.defines) {
         defines.push_back(define);
     }
@@ -920,7 +886,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
     // contributions. Defines, search paths, and cflags stay package-scoped in
     // the closure records; there is one binary, so linking is global.
     for (auto& record : config.resolvedDependencies) {
-        auto split = queryPkgConfigFlags(record.pkgConfigDependencies);
+        auto split = queryPkgConfigFlagsOrAbort(record.pkgConfigDependencies);
         for (auto& define : split.defines) {
             record.options.defines.push_back(define);
         }
