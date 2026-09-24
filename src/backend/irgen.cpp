@@ -318,6 +318,19 @@ IRModule& IRGenerator::emitModule(const Module& sourceModule) {
         }
     }
 
+    // Methods aren't top-level declarations, so visit referenced ones explicitly: they land
+    // in their home module instead of the first module that references them. Unreferenced
+    // methods stay unemitted like before. Runs after top-level decls to preserve order.
+    for (auto& sourceFile : sourceModule.sourceFiles) {
+        for (auto& decl : sourceFile.topLevelDecls) {
+            if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                for (auto* method : typeDecl->methods) {
+                    if (method->referenced) emitDecl(*method);
+                }
+            }
+        }
+    }
+
     for (size_t i = 0; i < functionInstantiations.size(); ++i) {
         auto& instantiation = functionInstantiations[i];
 

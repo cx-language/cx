@@ -11,22 +11,3 @@ int main() {
     void _3 = call _EN3std9StringBuf6deinitE(StringBuf* a)
     return int 0
 }
-
-void _EN3std9StringBuf4initE(StringBuf* this) {
-    List<char>* _0 = alloca List<char>
-    List<char>* characters = getelementptr this, 0
-    void _1 = call _EN3std4ListI4charE4initE(List<char>* _0)
-    List<char> .load = load _0
-    store .load to characters
-    List<char>* characters_0 = getelementptr this, 0
-    char* _2 = call _EN3std4ListI4charE4pushE4char(List<char>* characters_0, char 0)
-    return void
-}
-
-void _EN3std4ListI4charE4initE(List<char>* this) {
-    int* size = getelementptr this, 1
-    store int 0 to size
-    int* capacity = getelementptr this, 2
-    store int 0 to capacity
-    return void
-}
