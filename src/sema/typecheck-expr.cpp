@@ -403,7 +403,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         ERROR_RANGE(expr.location, expr.endLocation, "cannot dereference non-pointer type '" << operandType << "'");
 
     case Token::And: // Address-of operation
-        if (!expr.getOperand().isLvalue()) {
+        // A borrow designates an object with an address, so `&` also accepts expressions
+        // of borrow type (e.g. `&list.first()`), not just lvalues.
+        if (!expr.getOperand().isLvalue() && !operandType.isReferenceType()) {
             ERROR(expr.getOperand().location, "cannot take address of rvalue of type '" << operandType << "'");
         }
         unnarrow(expr.getOperand());

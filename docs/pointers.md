@@ -12,7 +12,8 @@ cx pointers are mostly like C/C++ pointers, with the following differences:
 - Forming one from a value needs an explicit `&`.
   Borrow parameters (`T&`) borrow values implicitly; they do not form a stored `T*`.
 
-To form a pointer, the `&` operator is used. Its operand must be an lvalue.
+To form a pointer, the `&` operator is used. Its operand must be an lvalue or a borrow,
+so the address of a returned reference can be taken directly (e.g. `&list.front()`).
 To dereference a pointer, the `*` operator is used.
 Comparing two pointers compares the stored memory addresses.
 To compare pointed-to values, dereference the pointers first.

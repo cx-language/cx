@@ -515,14 +515,10 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
     Type conditionType = typecheckExpr(*condition);
 
     if (conditionType.isReferenceType()) {
-        // Borrows read through implicitly; dereference to the switchable value. Switching only reads
-        // the value, so dereferencing is allowed even for non-copyable pointees.
-        Type pointeeType = conditionType.getPointee();
-        bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
-        if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
-            condition = makeAST<ImplicitCastExpr>(condition, pointeeType, ImplicitCastExpr::AutoDereference);
-            conditionType = pointeeType;
-        }
+        // Borrows read through implicitly (e.g. `switch this`, where receivers are borrows).
+        // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees.
+        condition = makeAST<ImplicitCastExpr>(condition, conditionType.getPointee(), ImplicitCastExpr::AutoDereference);
+        conditionType = conditionType.getPointee();
     }
 
     if ((conditionType.removeOptional().isPointerType() && !conditionType.removeOptional().isReferenceType())
@@ -543,14 +539,10 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(*stmt.condition);
 
     if (conditionType.isReferenceType()) {
-        // Borrows read through implicitly; dereference to the switchable value. Switching only reads
-        // the value, so dereferencing is allowed even for non-copyable pointees.
-        Type pointeeType = conditionType.getPointee();
-        bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
-        if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
-            stmt.condition = makeAST<ImplicitCastExpr>(stmt.condition, pointeeType, ImplicitCastExpr::AutoDereference);
-            conditionType = pointeeType;
-        }
+        // Borrows read through implicitly (e.g. `switch this`, where receivers are borrows).
+        // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees.
+        stmt.condition = makeAST<ImplicitCastExpr>(stmt.condition, conditionType.getPointee(), ImplicitCastExpr::AutoDereference);
+        conditionType = conditionType.getPointee();
     }
 
     if ((conditionType.removeOptional().isPointerType() && !conditionType.removeOptional().isReferenceType())

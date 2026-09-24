@@ -30,6 +30,11 @@ void main() {
 
     var point = Point(1, 2);
     int* ok4 = &point.x;
+
+    // Calls returning borrows designate an object, so their address can be taken.
+    var list = List([1, 2, 3]);
+    int* ok5 = &list.first();
+    int* ok6 = &list.push(4);
 }
 
 // CHECK-NOT: address-of-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

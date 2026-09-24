@@ -522,8 +522,7 @@ struct ArgParser {
     // Configure each command before adding the next one: the returned
     // pointer is invalidated by later addCommand calls.
     CommandSpec* addCommand(string name, string help) {
-        commands.push(CommandSpec(name = name, help = help));
-        return &commands[commands.size() - 1];
+        return &commands.push(CommandSpec(name = name, help = help));
     }
 
     CommandSpec*? findCommand(string name) {

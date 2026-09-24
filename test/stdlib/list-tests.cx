@@ -21,7 +21,20 @@ void main() {
     testFilter();
     testRemoveFirstByPredicate();
     testRemovalReturnValues();
+    testAddressOfBorrowResult();
     testElementDestruction();
+}
+
+void testAddressOfBorrowResult() {
+    var a = List([1, 2, 3]);
+    var p = &a.first();
+    *p = 99;
+    assert(a[0] == 99);
+    assert(a.first() == 99);
+    *a.first() = 7;
+    assert(a[0] == 7);
+    *a.first() += 8;
+    assert(a[0] == 15);
 }
 
 void testListInsertionAndRemoval() {
