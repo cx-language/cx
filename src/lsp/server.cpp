@@ -417,7 +417,10 @@ std::optional<JsonValue> runQuerySubprocess(ServerState& state, JsonObject query
 
     std::string errorMessage;
     bool executionFailed = false;
-    int status = llvm::sys::ExecuteAndWait(program, args, std::nullopt, redirects, 30, 0, &errorMessage, &executionFailed);
+    // Hang guard, not a performance assertion: unoptimized Debug binaries on
+    // heavily loaded runners (parallel test suites oversubscribing few cores)
+    // can take a minute per query, so allow generous headroom.
+    int status = llvm::sys::ExecuteAndWait(program, args, std::nullopt, redirects, 120, 0, &errorMessage, &executionFailed);
     if (executionFailed || status != 0) {
         logMessage("query process failed (status " + std::to_string(status) + "): " + errorMessage);
         llvm::sys::fs::remove(queryPath);
