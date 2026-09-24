@@ -8,31 +8,31 @@ void main() {
     // CHECK-NEXT:-128
     println(sbyte.min);
     // CHECK-NEXT:32767
-    short b = short.max;
+    int16 b = int16.max;
     println(b);
     // CHECK-NEXT:-32768
-    println(short.min);
+    println(int16.min);
     // CHECK-NEXT:65535
-    ushort c = ushort.max;
+    uint16 c = uint16.max;
     println(c);
     // CHECK-NEXT:0
-    println(ushort.min);
+    println(uint16.min);
     // CHECK-NEXT:9223372036854775807
-    long d = long.max;
+    int64 d = int64.max;
     println(d);
     // CHECK-NEXT:-9223372036854775808
-    println(long.min);
+    println(int64.min);
     // CHECK-NEXT:18446744073709551615
-    ulong e = ulong.max;
+    uint64 e = uint64.max;
     println(e);
     // CHECK-NEXT:0
-    println(ulong.min);
+    println(uint64.min);
     // CHECK-NEXT:2
-    println(sizeof(short));
+    println(sizeof(int16));
     // CHECK-NEXT:8
-    println(sizeof(long));
+    println(sizeof(int64));
     // CHECK-NEXT:8
-    println(sizeof(ulong));
+    println(sizeof(uint64));
     // CHECK-NEXT:8
     println(sizeof(double));
     // CHECK-NEXT:1.5
@@ -44,7 +44,7 @@ void main() {
     int8 g = sbyte(-5);
     println(g);
     // CHECK-NEXT:70000
-    int64 h = long(70000);
+    int64 h = int64(70000);
     println(h);
     // CHECK-NEXT:0.5
     float64 i = double(0.5);

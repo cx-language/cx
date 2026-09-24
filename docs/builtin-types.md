@@ -6,18 +6,14 @@ Type      | Meaning
 `int8`    | 8-bit signed integer
 `sbyte`   | alias of `int8`
 `int16`   | 16-bit signed integer
-`short`   | alias of `int16`
 `int32`   | 32-bit signed integer
 `int64`   | 64-bit signed integer
-`long`    | alias of `int64`
 `uint`    | alias of `uint32`
 `uint8`   | 8-bit unsigned integer
 `byte`    | alias of `uint8`
 `uint16`  | 16-bit unsigned integer
-`ushort`  | alias of `uint16`
 `uint32`  | 32-bit unsigned integer
 `uint64`  | 64-bit unsigned integer
-`ulong`   | alias of `uint64`
 `c_size_t` | C `size_t` type (pointer-sized unsigned integer: 32-bit on wasm32, 64-bit on 64-bit targets)
 `float`   | alias of `float32`, default type for floating-point literals
 `float32` | 32-bit floating-point number

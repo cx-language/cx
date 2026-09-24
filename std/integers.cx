@@ -257,18 +257,6 @@ struct uint128: Copyable, Comparable {
 /// An 8-bit signed integer.
 using sbyte = int8;
 
-/// A 16-bit signed integer.
-using short = int16;
-
-/// A 16-bit unsigned integer.
-using ushort = uint16;
-
-/// A 64-bit signed integer.
-using long = int64;
-
-/// A 64-bit unsigned integer.
-using ulong = uint64;
-
 /// A 32-bit signed integer, the default type for integer literals.
 using int = int32;
 

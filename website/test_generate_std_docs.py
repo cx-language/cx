@@ -230,8 +230,8 @@ class BraceLiteralTest(unittest.TestCase):
 
 
 ALIAS_FIXTURE = """\
-/// A 64-bit signed integer.
-using long = int64;
+/// An 8-bit signed integer.
+using sbyte = int8;
 
 using Callback = void(int);
 """
