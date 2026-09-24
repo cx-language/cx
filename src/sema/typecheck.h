@@ -96,10 +96,15 @@ struct Typechecker {
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
     void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true, bool allowReference = false);
+    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel = AccessLevel::None);
+    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving);
+    TypeAliasDecl* findTypeAlias(Type type) const;
+    void canonicalizeTypeAliases();
     void typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel);
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel);
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
+    void typecheckTypeAliasDecl(TypeAliasDecl& decl);
     void typecheckEnumDecl(EnumDecl& decl);
     void typecheckImportDecl(ImportDecl& decl);
 
@@ -112,7 +117,7 @@ struct Typechecker {
     Type typecheckNullCoalescingExpr(BinaryExpr& expr);
     void typecheckAssignment(BinaryExpr& expr, Location location);
     Type typecheckCallExpr(CallExpr& expr, Type expectedType = Type());
-    Type typecheckBuiltinConversion(CallExpr& expr);
+    Type typecheckBuiltinConversion(CallExpr& expr, Type targetType = Type());
     Type typecheckBuiltinCast(CallExpr& expr);
     Type typecheckSizeofExpr(SizeofExpr& expr);
     Type typecheckMemberExpr(MemberExpr& expr, Type expectedType = Type(), bool useIsWriteOnly = false);
