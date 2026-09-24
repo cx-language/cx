@@ -2,11 +2,12 @@
 @my_global = external global i32
 
 define i32 @main() #0 !dbg !4 {
-  call void @_EN3std5printI3intEER3int(ptr @my_global), !dbg !7
+  %my_global.load = load i32, ptr @my_global, align 4
+  call void @_EN3std5printI3intEE3int(i32 %my_global.load), !dbg !7
   ret i32 0
 }
 
-declare void @_EN3std5printI3intEER3int(ptr) #0
+declare void @_EN3std5printI3intEE3int(i32) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

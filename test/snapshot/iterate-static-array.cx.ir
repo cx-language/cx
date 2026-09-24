@@ -2,10 +2,10 @@
 int main() {
     ArrayIterator<int>* __iterator = alloca ArrayIterator<int>
     int[3]* _0 = alloca int[3]
-    int* e = alloca int
+    int** e = alloca int*
     int[2]* a = alloca int[2]
     ArrayIterator<int>* __iterator_0 = alloca ArrayIterator<int>
-    int* e_0 = alloca int
+    int** e_0 = alloca int*
     int[3] _1 = insertvalue int[3] undefined, 0, int 1
     int[3] _2 = insertvalue _1, 1, int 2
     int[3] _3 = insertvalue _2, 2, int 3
@@ -23,10 +23,9 @@ loop.condition:
 
 loop.body:
     int* _9 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator)
-    int .load = load _9
-    store .load to e
-    int e.load = load e
-    void _10 = call _EN3std7printlnI3intEE3int(int e.load)
+    store _9 to e
+    int* e.load = load e
+    void _10 = call _EN3std7printlnI3intEER3int(int* e.load)
     br loop.increment
 
 loop.increment:
@@ -50,10 +49,9 @@ loop.condition_0:
 
 loop.body_0:
     int* _19 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator_0)
-    int .load_0 = load _19
-    store .load_0 to e_0
-    int e.load_0 = load e_0
-    void _20 = call _EN3std7printlnI3intEE3int(int e.load_0)
+    store _19 to e_0
+    int* e.load_0 = load e_0
+    void _20 = call _EN3std7printlnI3intEER3int(int* e.load_0)
     br loop.increment_0
 
 loop.increment_0:
@@ -79,13 +77,12 @@ int* _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* this) {
     return current.load
 }
 
-void _EN3std7printlnI3intEE3int(int value) {
-    int* value_0 = alloca int
-    char* _0 = alloca char
+void _EN3std7printlnI3intEER3int(int* value) {
+    int** value_0 = alloca int*
     store value to value_0
-    void _1 = call _EN3std5printI3intEER3int(int* value_0)
-    store char 10 to _0
-    void _2 = call _EN3std5printI4charEER4char(char* _0)
+    int* value.load = load value_0
+    void _0 = call _EN3std5printI3intEER3int(int* value.load)
+    void _1 = call _EN3std5printI4charEE4char(char 10)
     return void
 }
 
@@ -94,5 +91,15 @@ void _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* this) {
     int* current.load = load current
     int* _0 = getelementptr current.load, int 1
     store _0 to current
+    return void
+}
+
+void _EN3std5printI3intEER3int(int* value) {
+    int** value_0 = alloca int*
+    OutputStream* stream = alloca OutputStream
+    store value to value_0
+    void _0 = call _EN3std12OutputStream4initE(OutputStream* stream)
+    int* value.load = load value_0
+    void _1 = call _EN3std3int5printER12OutputStream(int* value.load, OutputStream* stream)
     return void
 }

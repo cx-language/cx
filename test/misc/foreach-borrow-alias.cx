@@ -3,14 +3,17 @@
 struct CopyablePoint: Copyable { int x; }
 struct PlainPoint { int x; }
 
+// The for-loop element variable has whatever type the iterator value() returns.
+// ArrayIterator yields borrows, so the variable aliases the element and writes
+// through it are visible in the container, for copyable and non-copyable alike.
 void main() {
     var copies = [CopyablePoint(x = 1), CopyablePoint(x = 2)];
     for p in copies {
         p.x = 99;
     }
-    // CHECK:1
+    // CHECK:99
     println(copies[0].x);
-    // CHECK-NEXT:2
+    // CHECK-NEXT:99
     println(copies[1].x);
 
     var refs = [PlainPoint(x = 1), PlainPoint(x = 2)];
@@ -27,12 +30,11 @@ void main() {
     for p in list {
         p.x = 99;
     }
-    // CHECK-NEXT:3
+    // CHECK-NEXT:99
     println(list[0].x);
 
-    var found = list.find(predicate = (p) => p.x == 3);
-    if (found != null) {
-        found.x = 7;
+    if list.find(predicate = (p) => p.x == 99) != null {
+        list.find(predicate = (p) => p.x == 99)!.x = 7;
     }
     // CHECK-NEXT:7
     println(list[0].x);

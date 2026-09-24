@@ -13,7 +13,7 @@ void main() {
     testListInitWithRepeatedValue();
     testArrayIterator();
     testListMutatingIteration();
-    testListValueIteration();
+    testListIntMutation();
     testListEnumeratedIterator();
     testEmpty();
     testFind();
@@ -21,7 +21,20 @@ void main() {
     testFilter();
     testRemoveFirstByPredicate();
     testRemovalReturnValues();
+    testAddressOfBorrowResult();
     testElementDestruction();
+}
+
+void testAddressOfBorrowResult() {
+    var a = List([1, 2, 3]);
+    var p = &a.first();
+    *p = 99;
+    assert(a[0] == 99);
+    assert(a.first() == 99);
+    *a.first() = 7;
+    assert(a[0] == 7);
+    *a.first() += 8;
+    assert(a[0] == 15);
 }
 
 void testListInsertionAndRemoval() {
@@ -113,19 +126,19 @@ void testListMutatingIteration() {
     assert(a[2].i == 4);
 }
 
-void testListValueIteration() {
+void testListIntMutation() {
     var a = List<int>();
     a.push(1);
     a.push(2);
     a.push(3);
 
     for e in a {
-        e++;
+        (*e)++;
     }
 
-    assert(a[0] == 1);
-    assert(a[1] == 2);
-    assert(a[2] == 3);
+    assert(a[0] == 2);
+    assert(a[1] == 3);
+    assert(a[2] == 4);
 }
 
 void testListEnumeratedIterator() {
@@ -138,17 +151,17 @@ void testListEnumeratedIterator() {
 
     assert(iterator.hasValue());
     assert(iterator.value().index == 0);
-    assert(iterator.value().value == 9000);
+    assert(*iterator.value().value == 9000);
 
     iterator.increment();
     assert(iterator.hasValue());
     assert(iterator.value().index == 1);
-    assert(iterator.value().value == -1234);
+    assert(*iterator.value().value == -1234);
 
     iterator.increment();
     assert(iterator.hasValue());
     assert(iterator.value().index == 2);
-    assert(iterator.value().value == 0xcafe);
+    assert(*iterator.value().value == 0xcafe);
 
     iterator.increment();
     assert(iterator.value().index == 3);
@@ -226,7 +239,7 @@ void testRemovalReturnValues() {
     var a = List([10, 20, 30]);
 
     var pushed = a.push(40);
-    assert(*pushed == 40 && a.size() == 4);
+    assert(pushed == 40 && a.size() == 4);
 
     assert(a.removeAt(0) == 10);
     assert(a == List([20, 30, 40]));

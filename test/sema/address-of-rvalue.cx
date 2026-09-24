@@ -1,0 +1,40 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: address-of-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+int foo() { return 42; }
+
+struct Point: Copyable {
+    int x;
+    int y;
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:15: error: cannot take address of rvalue of type 'int'
+    int* a = &foo();
+    // CHECK: [[@LINE+1]]:15: error: cannot take address of rvalue of type 'int'
+    int* b = &42;
+    // CHECK: [[@LINE+1]]:18: error: cannot take address of rvalue of type 'int'
+    int* c = &(1 + 2);
+    // CHECK: [[@LINE+1]]:29: error: cannot take address of rvalue of type 'int'
+    int* badArray = &([1, 2][0]);
+
+    var i = 0;
+    int* ok1 = &i;
+    int* ok2 = &*ok1;
+    int*? nullable = &i;
+    // CHECK: [[@LINE+1]]:33: error: cannot take address of rvalue of type 'int*'
+    int** badUnwrap = &(nullable!);
+
+    int[3] numbers = [1, 2, 3];
+    int* ok3 = &numbers[1];
+
+    var point = Point(1, 2);
+    int* ok4 = &point.x;
+
+    // Calls returning borrows designate an object, so their address can be taken.
+    var list = List([1, 2, 3]);
+    int* ok5 = &list.first();
+    int* ok6 = &list.push(4);
+}
+
+// CHECK-NOT: address-of-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

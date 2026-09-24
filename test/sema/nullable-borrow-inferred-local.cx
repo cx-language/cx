@@ -3,7 +3,7 @@
 // CHECK-NOT: nullable-borrow-inferred-local.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void f(int&? o) {
-    // CHECK: [[@LINE+1]]:9: error: reference type 'int&?' may only appear as a function parameter type
+    // CHECK: [[@LINE+1]]:9: error: reference type 'int&?' may only appear as a function parameter, return type, or interface argument
     var r = o;
 }
 

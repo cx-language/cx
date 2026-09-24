@@ -45,7 +45,7 @@ void testFileSize() {
 void testCurrentAndChangeDirectory() {
     assert(createDirectory("cx_fs_test_cwd_dir"));
     assert(changeDirectory("cx_fs_test_cwd_dir"));
-    assert(string(&currentDirectory()).endsWith("cx_fs_test_cwd_dir"));
+    assert(string(currentDirectory()).endsWith("cx_fs_test_cwd_dir"));
     assert(changeDirectory(".."));
     assert(removeDirectory("cx_fs_test_cwd_dir"));
 }

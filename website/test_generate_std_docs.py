@@ -337,29 +337,31 @@ class StdlibTest(unittest.TestCase):
         self.assertIn("os/windows.cx", self.by_path)
 
     def test_known_entries(self):
+        # Smoke test: the real List.cx parses and renders. Only pin structure
+        # derived from member names, which survives signature, prose, and line
+        # number changes. Exact rendering is covered by the fixture tests above.
         page = self.rendered["List.cx"]
         base = "https://github.com/cx-language/cx/blob/main/std/List.cx"
         for snippet in [
             f'# [List]({base}){{target="_blank"}}',
-            f'## [struct List\\<Element\\>]({base}#L2){{target="_blank"}} {{#type-List}}',
-            f'### [push]({base}#L122){{target="_blank"}} {{#List-push}}',
-            f'### [operator\\[\\]]({base}#L69){{target="_blank"}} {{#List-operator-index}}',
-            f'### [operator\\[-\\]]({base}#L79){{target="_blank"}} {{#List-operator-index-from-end}}',
-            f'### [operator\\[-\\]=]({base}#L97){{target="_blank"}} {{#List-operator-index-from-end-assign}}',
-            fenced("Element* push(Element element)"),
-            "Adds the given element to the end of the list, returning a pointer to it.",
+            "## [struct List\\<Element\\>]",
+            "{#type-List}",
+            "{#List-push}",
+            "{#List-operator-index}",
+            "{#List-find}",
         ]:
             self.assertIn(snippet, page)
+        push_signature = re.search(r"```cs \{\.noRun\}\n\S.* push\(Element element\)\n```", page)
+        self.assertIsNotNone(push_signature)
 
     def test_overloads_grouped(self):
         stdio = self.rendered["stdio.cx"]
-        self.assertEqual(
-            stdio.count(
-                "## [println](https://github.com/cx-language/cx/blob/main/std/stdio.cx#L2)"
-                '{target="_blank"} {#fn-println}'
-            ),
-            1,
+        println_heading = re.findall(
+            r"## \[println\]\(https://github\.com/cx-language/cx/blob/main/std/stdio\.cx#L\d+\)"
+            r'\{target="_blank"\} \{#fn-println\}',
+            stdio,
         )
+        self.assertEqual(len(println_heading), 1)
         self.assertGreater(len(self.by_path["stdio.cx"][1]["println"].declarations), 1)
 
     def test_private_declarations_omitted(self):

@@ -1,4 +1,5 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: illegal-cast.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     // CHECK: [[@LINE+1]]:13: error: illegal cast from 'bool' to 'int**'
@@ -6,4 +7,13 @@ void main() {
     var cp = cast<const int*>(0);
     // CHECK: [[@LINE+1]]:13: error: illegal cast from 'const int*' to 'uint*'
     var p = cast<uint*>(cp);
+
+    int x = 1;
+    int* q = &x;
+    // CHECK: [[@LINE+1]]:13: error: illegal cast from 'int*' to 'float64'
+    var f = cast<float64>(q);
+    // CHECK: [[@LINE+1]]:13: error: illegal cast from 'int*' to 'int?'
+    var o = cast<int?>(q);
 }
+
+// CHECK-NOT: illegal-cast.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

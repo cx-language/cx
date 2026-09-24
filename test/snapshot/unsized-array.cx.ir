@@ -100,14 +100,17 @@ void _EN3std5SliceI3intE16indexOutOfBoundsE6string3int(Slice<int>* this, string 
     string* __str = alloca string
     string* __str_0 = alloca string
     string* __str_1 = alloca string
-    int* _0 = alloca int
     store function to function_0
     store index to index_0
-    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "Slice.", int 6)
-    void _2 = call _EN3std6string4initEP4char3int(string* __str_0, char* ": index ", int 8)
-    void _3 = call _EN3std6string4initEP4char3int(string* __str_1, char* " is out of bounds, size is ", int 27)
-    int _4 = call _EN3std5SliceI3intE4sizeE(Slice<int>* this)
-    store _4 to _0
-    never _5 = call _EN3std5abortI6string6string6string3int6string3intEVER6stringR6stringR6stringR3intR6stringR3int(string* __str, string* function_0, string* __str_0, int* index_0, string* __str_1, int* _0)
+    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "Slice.", int 6)
+    string __str.load = load __str
+    string function.load = load function_0
+    void _1 = call _EN3std6string4initEP4char3int(string* __str_0, char* ": index ", int 8)
+    string __str.load_0 = load __str_0
+    int index.load = load index_0
+    void _2 = call _EN3std6string4initEP4char3int(string* __str_1, char* " is out of bounds, size is ", int 27)
+    string __str.load_1 = load __str_1
+    int _3 = call _EN3std5SliceI3intE4sizeE(Slice<int>* this)
+    never _4 = call _EN3std5abortI6string6string6string3int6string3intEVE6string6string6string3int6string3int(string __str.load, string function.load, string __str.load_0, int index.load, string __str.load_1, int _3)
     return void
 }

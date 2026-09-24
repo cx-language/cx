@@ -1,7 +1,9 @@
 // RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx run --backend=c -Werror %s
 
 void main() {
     testFind();
+    testEquality();
 }
 
 void testFind() {
@@ -12,4 +14,20 @@ void testFind() {
     a.push(2);
     assert(Slice(a).find(x => x == 2)! == 2); // TODO: '!' shouldn't be required
     assert(Slice(a).find(x => x == 3) == null);
+}
+
+void testEquality() {
+    var x = List([1, 2, 3]);
+    var y = List([1, 2, 3]);
+    var rx = Slice(x);
+    var ry = Slice(y);
+
+    assert(rx == ry);
+    assert(!(rx != ry));
+    assert(x == y);
+
+    y[0] = 99;
+    assert(rx != ry);
+    assert(!(rx == ry));
+    assert(x != y);
 }

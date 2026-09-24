@@ -4,28 +4,32 @@
 %"S<E>" = type { ptr }
 
 define i32 @main() #0 !dbg !4 {
-  %e = alloca %E, align 8
+  %inner = alloca %E, align 8
   %enum = alloca %E, align 8
   %1 = alloca %"S<E>", align 8
+  %e = alloca %E, align 8
   %enum1 = alloca %E, align 8
   %2 = alloca %"S<E>", align 8
   %tag = getelementptr inbounds %E, ptr %enum, i32 0, i32 0
   store i32 0, ptr %tag, align 4
-  %tag2 = getelementptr inbounds %E, ptr %enum1, i32 0, i32 0
-  store i32 0, ptr %tag2, align 4
-  call void @_EN4main1SI1EE4initEOP1E(ptr %2, ptr null), !dbg !7
-  %.load = load %"S<E>", ptr %2, align 8
+  call void @_EN4main1SI1EE4initEOP1E(ptr %1, ptr null), !dbg !7
+  %.load = load %"S<E>", ptr %1, align 8
   %3 = insertvalue { %"S<E>" } undef, %"S<E>" %.load, 0
-  %associatedValue = getelementptr inbounds %E, ptr %enum1, i32 0, i32 1
+  %associatedValue = getelementptr inbounds %E, ptr %enum, i32 0, i32 1
   store { %"S<E>" } %3, ptr %associatedValue, align 8
-  call void @_EN4main1SI1EE4initEOP1E(ptr %1, ptr %enum1), !dbg !8
-  %.load3 = load %"S<E>", ptr %1, align 8
-  %4 = insertvalue { %"S<E>" } undef, %"S<E>" %.load3, 0
-  %associatedValue4 = getelementptr inbounds %E, ptr %enum, i32 0, i32 1
-  store { %"S<E>" } %4, ptr %associatedValue4, align 8
   %enum.load = alloca %E, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 4 %enum.load, ptr align 4 %enum, i64 52, i1 false)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 4 %e, ptr align 4 %enum.load, i64 52, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 4 %inner, ptr align 4 %enum.load, i64 52, i1 false)
+  %tag2 = getelementptr inbounds %E, ptr %enum1, i32 0, i32 0
+  store i32 0, ptr %tag2, align 4
+  call void @_EN4main1SI1EE4initEOP1E(ptr %2, ptr %inner), !dbg !8
+  %.load3 = load %"S<E>", ptr %2, align 8
+  %4 = insertvalue { %"S<E>" } undef, %"S<E>" %.load3, 0
+  %associatedValue4 = getelementptr inbounds %E, ptr %enum1, i32 0, i32 1
+  store { %"S<E>" } %4, ptr %associatedValue4, align 8
+  %enum.load5 = alloca %E, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 4 %enum.load5, ptr align 4 %enum1, i64 52, i1 false)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 4 %e, ptr align 4 %enum.load5, i64 52, i1 false)
   ret i32 0
 }
 
@@ -54,6 +58,6 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
-!7 = !DILocation(line: 13, column: 25, scope: !4)
-!8 = !DILocation(line: 13, column: 15, scope: !4)
+!7 = !DILocation(line: 13, column: 21, scope: !4)
+!8 = !DILocation(line: 14, column: 15, scope: !4)
 !9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1SI1EE4initEOP1E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)

@@ -1,12 +1,18 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: switch-on-unsupported-pointer.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 enum E {
     A,
     B(int i)
 }
 
+enum Color {
+    Red,
+    Green
+}
+
 void doublePointer(int** p) {
-    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int**'
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int**'; dereference it explicitly (e.g. 'switch (*p)')
     switch (p) {
     default:
         break;
@@ -14,9 +20,51 @@ void doublePointer(int** p) {
 }
 
 void associatedValueEnumPointer(E* e) {
-    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'E*'
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'E*'; dereference it explicitly (e.g. 'switch (*p)')
     switch (e) {
     default:
         break;
     }
 }
+
+void intPointer(int* p) {
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int*'; dereference it explicitly (e.g. 'switch (*p)')
+    switch (p) {
+    default:
+        break;
+    }
+}
+
+void optionalIntPointer(int*? p) {
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int*?'; dereference it explicitly (e.g. 'switch (*p)')
+    switch (p) {
+    default:
+        break;
+    }
+}
+
+void charPointer(char* p) {
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'char*'; dereference it explicitly (e.g. 'switch (*p)')
+    switch (p) {
+    default:
+        break;
+    }
+}
+
+void plainEnumPointer(Color* p) {
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'Color*'; dereference it explicitly (e.g. 'switch (*p)')
+    switch (p) {
+    default:
+        break;
+    }
+}
+
+void unsizedArrayPointer(int[*] p) {
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int[*]'; dereference it explicitly (e.g. 'switch (*p)')
+    switch (p) {
+    default:
+        break;
+    }
+}
+
+// CHECK-NOT: switch-on-unsupported-pointer.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

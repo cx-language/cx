@@ -1,8 +1,0 @@
-// RUN: check-snapshots
-
-void main() {
-    int a = 0;
-    int* p = &a;
-    a += p;
-    a = a * p;
-}

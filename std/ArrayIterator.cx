@@ -1,5 +1,5 @@
 /// Iterates over the elements of an array.
-struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
+struct ArrayIterator<Element>: Copyable, Iterator<Element&> {
     private Element[*] current;
     private Element[*] end;
 
@@ -15,8 +15,8 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
     }
 
     /// Returns the current element.
-    Element* value() {
-        return current;
+    Element& value() {
+        return *current;
     }
 
     /// Advances to the next element.

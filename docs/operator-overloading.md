@@ -2,7 +2,10 @@
 
 Operators can be overloaded for user-defined types by declaring a function
 named `operator` followed by the operator. Binary operators are overloaded
-with non-member functions taking two parameters:
+with non-member functions taking two parameters. Operator operands can be
+borrowed implicitly: `T&` parameters accept values as usual, and lvalues can
+also fill `T*` parameters without an explicit `&`. Ordinary function calls
+still require `&` for a `T*` parameter. Value parameters copy their operands.
 
 ```cs
 struct Vec2: Copyable {
