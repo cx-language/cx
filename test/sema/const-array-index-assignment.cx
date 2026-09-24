@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: const-array-index-assignment.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    const int[2] a = [1, 2];
+    // CHECK: [[@LINE+1]]:6: error: cannot assign to immutable array of type 'const int[2]'
+    a[0] = 3;
+}

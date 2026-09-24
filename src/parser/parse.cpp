@@ -462,15 +462,21 @@ Type Parser::parseArrayType(Type elementType) {
     case Token::Star:
         consumeToken();
         parse(Token::RightBracket);
-        return ArrayType::get(elementType, ArrayType::UnknownSize, elementType.location);
+        return ArrayPointerType::get(elementType, elementType.location);
 
     default: {
+        if (currentToken() == Token::Identifier && lookAhead(1) == Token::RightBracket) {
+            // A bare identifier may name an integer generic parameter; parse it
+            // as the type-shaped placeholder used by Array<T, N>.
+            std::vector<GenericArg> args;
+            args.emplace_back(elementType);
+            args.emplace_back(parseType());
+            parse(Token::RightBracket);
+            return BasicType::get("Array", args, elementType.mutability, elementType.location);
+        }
+
         const Expr* sizeExpr = parseExpr();
         parse(Token::RightBracket);
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(sizeExpr)) {
-            // A bare identifier may name an integer generic parameter; validated during typechecking.
-            return ArrayType::get(elementType, varExpr->identifier, elementType.location);
-        }
         checkArraySizeDivisors(*sizeExpr);
         if (!sizeExpr->isFoldableIntConstant()) {
             ERROR(sizeExpr->location, "array size must be a constant integer expression");
@@ -482,7 +488,7 @@ Type Parser::parseArrayType(Type elementType) {
         if (size.getActiveBits() > 63) {
             ERROR(sizeExpr->location, "array size is too large");
         }
-        return ArrayType::get(elementType, size.getSExtValue(), elementType.location);
+        return BasicType::getArray(elementType, size.getSExtValue(), elementType.location);
     }
     }
 }

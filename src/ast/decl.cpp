@@ -237,7 +237,7 @@ std::string cx::getQualifiedFunctionName(Type receiver, llvm::StringRef name, ll
     std::string result;
 
     if (receiver) {
-        result = receiver.toString();
+        result = receiver.getQualifiedTypeName();
         result += '.';
     }
 

@@ -1,5 +1,6 @@
 #include "typecheck.h"
 #include <algorithm>
+#include <limits>
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/StringExtras.h>
@@ -53,7 +54,7 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
 // Returns true if values of the given type transitively contain the target type declaration without pointer indirection,
 // meaning the target type would have infinite size. `visiting` holds the declarations on the current search path.
 static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::SmallPtrSetImpl<const TypeDecl*>& visiting) {
-    // Pointers, unsized arrays, and functions are pointer-sized (see getIRType), as are builtins.
+    // Pointers, array pointers, and functions are pointer-sized (see getIRType), as are builtins.
     if (!type || type.isBuiltinType() || type.isFunctionType() || type.isImplementedAsPointer()) return false;
 
     if (type.isArrayType()) {
@@ -166,11 +167,10 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
 
         return BasicType::get(basicType->name, genericArgs, type.mutability, type.location);
     }
-    case TypeKind::ArrayType: {
+    case TypeKind::ArrayPointerType: {
         auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving);
         if (elementType == type.getElementType()) return type;
-        Type resolved = type.getArraySizeParam().empty() ? ArrayType::get(elementType, type.getArraySize(), type.location)
-                                                         : ArrayType::get(elementType, type.getArraySizeParam().str(), type.location);
+        Type resolved = ArrayPointerType::get(elementType, type.location);
         return resolved.withMutability(type.mutability).withLocation(type.location);
     }
     case TypeKind::AnonymousStructType: {
@@ -314,6 +314,22 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
+        // Fixed arrays are a builtin-backed BasicType. Keep declaration
+        // binding lazy: getTypeDecl resolves the stdlib methods only when a
+        // member is actually looked up.
+        if (type.isFixedArray()) {
+            if (!type.getArraySizeParam().empty()) {
+                ERROR(type.location, "array size must be a constant integer expression");
+            }
+            if (type.getGenericArgs()[1].isInt() && type.getArraySize() > std::numeric_limits<int>::max()) {
+                ERROR(type.location, "array size is too large");
+            }
+            if (!type.getGenericArgs()[0].isType()) {
+                ERROR(type.location, "array element type must be a type, not an integer");
+            }
+            typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
+            break;
+        }
         Decl* decl;
         auto* basicType = llvm::cast<BasicType>(type.typeBase);
         if (basicType->decl) {
@@ -387,12 +403,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         checkHasAccess(*decl, type.location, userAccessLevel);
         break;
     }
-    case TypeKind::ArrayType:
-        if (!type.getArraySizeParam().empty()) {
-            // Symbolic sizes only resolve during instantiation; encountering one here means
-            // it names nothing generic, so it must be a constant like any other size.
-            ERROR(type.location, "array size must be a constant integer expression");
-        }
+    case TypeKind::ArrayPointerType:
         typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
         break;
     case TypeKind::AnonymousStructType:
@@ -1046,7 +1057,15 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
             ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation");
         }
 
-        decl.type = NOTNULL(initializerType.withMutability(decl.type.mutability));
+        // An array pointer is a pointer view, not a value copy. Preserve its
+        // pointee constness when inferring a variable; making a const view mutable
+        // would allow the view to drop that guarantee.
+        if (initializerType.isArrayPointer()) {
+            auto mutability = !initializerType.getElementType().isMutable() || !decl.type.isMutable() ? Mutability::Const : Mutability::Mutable;
+            decl.type = NOTNULL(initializerType.withMutability(mutability));
+        } else {
+            decl.type = NOTNULL(initializerType.withMutability(decl.type.mutability));
+        }
     }
 
     // A borrow can't be named: read the value out (copying or moving it) instead of aliasing it.

@@ -14,11 +14,11 @@ define i32 @main() #0 !dbg !7 {
   %2 = insertvalue %"Slice<int>" undef, ptr %1, 0
   %3 = insertvalue %"Slice<int>" %2, i32 3, 1
   call void @_EN4main3fooE5SliceI3intE(%"Slice<int>" %3), !dbg !8
-  call void @_EN4main3bazEPA3_3int(ptr %a), !dbg !9
+  call void @_EN4main3bazEP5ArrayI3intN3_E(ptr %a), !dbg !9
   ret i32 0
 }
 
-define void @_EN4main3bazEPA3_3int(ptr %b) #0 !dbg !10 {
+define void @_EN4main3bazEP5ArrayI3intN3_E(ptr %b) #0 !dbg !10 {
   %b1 = alloca ptr, align 8
   store ptr %b, ptr %b1, align 8
   ret void
@@ -39,4 +39,4 @@ attributes #0 = { "frame-pointer"="all" }
 !7 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !8 = !DILocation(line: 7, column: 5, scope: !7)
 !9 = !DILocation(line: 8, column: 5, scope: !7)
-!10 = distinct !DISubprogram(name: "baz", linkageName: "_EN4main3bazEPA3_3int", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "baz", linkageName: "_EN4main3bazEP5ArrayI3intN3_E", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)

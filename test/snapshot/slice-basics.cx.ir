@@ -12,7 +12,7 @@ int main() {
     Slice<int> _4 = insertvalue Slice<int> undefined, 0, _3
     Slice<int> _5 = insertvalue _4, 1, int 3
     void _6 = call _EN4main3fooE5SliceI3intE(Slice<int> _5)
-    void _7 = call _EN4main3barEPA3_3int(int[3]* three)
+    void _7 = call _EN4main3barEP5ArrayI3intN3_E(int[3]* three)
     store int 3 to b
     int* _8 = getelementptr three, 0
     Slice<int> _9 = insertvalue Slice<int> undefined, 0, _8
@@ -39,7 +39,7 @@ void _EN4main3fooE5SliceI3intE(Slice<int> ints) {
     return void
 }
 
-void _EN4main3barEPA3_3int(int[3]* ints) {
+void _EN4main3barEP5ArrayI3intN3_E(int[3]* ints) {
     int[3]** ints_0 = alloca int[3]*
     int* b = alloca int
     Slice<int>* ref = alloca Slice<int>

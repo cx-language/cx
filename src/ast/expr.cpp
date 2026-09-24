@@ -368,7 +368,7 @@ bool Expr::isLvalue() const {
             return function && function->getReturnType().isPointerType();
         }
         auto baseType = index.getBase()->type.removeOptional();
-        if (baseType.isPointerType() || baseType.isUnsizedArrayPointer()) return true;
+        if (baseType.isPointerType() || baseType.isArrayPointer()) return true;
         return index.getBase()->isLvalue();
     }
     case ExprKind::UnaryExpr:
@@ -385,6 +385,13 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     case ExprKind::VarExpr: {
         auto* varExpr = llvm::cast<VarExpr>(this);
         auto it = genericArgs.find(varExpr->identifier);
+        if (it != genericArgs.end() && it->second.isInt()) {
+            // Integer generic parameters used as values (e.g. N in Array.size())
+            // instantiate to literals.
+            auto* newExpr = makeAST<IntLiteralExpr>(llvm::APSInt::get(it->second.getInt()), varExpr->location);
+            newExpr->endLocation = varExpr->endLocation;
+            return newExpr;
+        }
         llvm::StringRef identifier = it != genericArgs.end() && it->second.isType() ? it->second.getType().getName() : varExpr->identifier;
         auto* newExpr = makeAST<VarExpr>(identifier, varExpr->location);
         newExpr->endLocation = varExpr->endLocation;

@@ -9,7 +9,7 @@ define ptr @_EN4main3fooE() #0 !dbg !4 {
   %1 = alloca %A, align 8
   %b = alloca ptr, align 8
   %2 = alloca %B, align 8
-  call void @_EN4main1A4initEA2_4bool(ptr %1, [2 x i1] [i1 false, i1 true]), !dbg !7
+  call void @_EN4main1A4initE5ArrayI4boolN2_E(ptr %1, [2 x i1] [i1 false, i1 true]), !dbg !7
   %3 = call ptr @_EN4main1A2ffE(ptr %1), !dbg !8
   store ptr %3, ptr %a, align 8
   call void @_EN4main1B4initE4char(ptr %2, i8 97), !dbg !9
@@ -18,7 +18,7 @@ define ptr @_EN4main3fooE() #0 !dbg !4 {
   ret ptr @i
 }
 
-define void @_EN4main1A4initEA2_4bool(ptr %this, [2 x i1] %b) #0 !dbg !11 {
+define void @_EN4main1A4initE5ArrayI4boolN2_E(ptr %this, [2 x i1] %b) #0 !dbg !11 {
   %b1 = alloca [2 x i1], align 1
   store [2 x i1] %b, ptr %b1, align 1
   %b2 = getelementptr inbounds %A, ptr %this, i32 0, i32 0
@@ -63,7 +63,7 @@ attributes #0 = { "frame-pointer"="all" }
 !8 = !DILocation(line: 6, column: 29, scope: !4)
 !9 = !DILocation(line: 7, column: 13, scope: !4)
 !10 = !DILocation(line: 7, column: 20, scope: !4)
-!11 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1A4initEA2_4bool", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)
+!11 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1A4initE5ArrayI4boolN2_E", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)
 !12 = distinct !DISubprogram(name: "ff", linkageName: "_EN4main1A2ffE", scope: !3, file: !3, line: 14, type: !5, scopeLine: 14, spFlags: DISPFlagDefinition, unit: !2)
 !13 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1B4initE4char", scope: !3, file: !3, line: 19, type: !5, scopeLine: 19, spFlags: DISPFlagDefinition, unit: !2)
 !14 = distinct !DISubprogram(name: "gg", linkageName: "_EN4main1B2ggE", scope: !3, file: !3, line: 22, type: !5, scopeLine: 22, spFlags: DISPFlagDefinition, unit: !2)

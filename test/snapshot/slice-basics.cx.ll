@@ -19,7 +19,7 @@ define i32 @main() #0 !dbg !4 {
   %2 = insertvalue %"Slice<int>" undef, ptr %1, 0
   %3 = insertvalue %"Slice<int>" %2, i32 3, 1
   call void @_EN4main3fooE5SliceI3intE(%"Slice<int>" %3), !dbg !7
-  call void @_EN4main3barEPA3_3int(ptr %three), !dbg !8
+  call void @_EN4main3barEP5ArrayI3intN3_E(ptr %three), !dbg !8
   store i32 3, ptr %b, align 4
   %4 = getelementptr inbounds [3 x i32], ptr %three, i32 0, i32 0
   %5 = insertvalue %"Slice<int>" undef, ptr %4, 0
@@ -46,7 +46,7 @@ define void @_EN4main3fooE5SliceI3intE(%"Slice<int>" %ints) #0 !dbg !10 {
   ret void
 }
 
-define void @_EN4main3barEPA3_3int(ptr %ints) #0 !dbg !13 {
+define void @_EN4main3barEP5ArrayI3intN3_E(ptr %ints) #0 !dbg !13 {
   %ints1 = alloca ptr, align 8
   %b = alloca i32, align 4
   %ref = alloca %"Slice<int>", align 8
@@ -135,7 +135,7 @@ attributes #0 = { "frame-pointer"="all" }
 !0 = !{i32 2, !"Dwarf Version", i32 4}
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
-!3 = !DIFile(filename: "unsized-array.cx")
+!3 = !DIFile(filename: "slice-basics.cx")
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
@@ -145,7 +145,7 @@ attributes #0 = { "frame-pointer"="all" }
 !10 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooE5SliceI3intE", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
 !11 = !DILocation(line: 13, column: 17, scope: !10)
 !12 = !DILocation(line: 14, column: 18, scope: !10)
-!13 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main3barEPA3_3int", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main3barEP5ArrayI3intN3_E", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
 !14 = distinct !DISubprogram(name: "size", linkageName: "_EN3std5SliceI3intE4sizeE", scope: !15, file: !15, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
 !15 = !DIFile(filename: "Slice.cx")
 !16 = distinct !DISubprogram(name: "[]", linkageName: "_EN3std5SliceI3intEixE3int", scope: !15, file: !15, line: 42, type: !5, scopeLine: 42, spFlags: DISPFlagDefinition, unit: !2)

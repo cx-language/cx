@@ -119,15 +119,15 @@ matching array sizes. The standard library uses this for fixed-size arrays:
 
 ```cs
 void main() {
-    var a = Array<int, 3>(elements = [10, 20, 30]);
+    int[3] a = [10, 20, 30];
     println(a.size()); // prints 3
     println(a[2]); // prints 30
 }
 ```
 
 Only non-negative integer literals (and references to other integer
-parameters) are accepted as integer arguments. An integer parameter cannot
-be used as a value, only as an array size.
+parameters) are accepted as integer arguments. Integer parameters can be used
+as compile-time values, including as an array size.
 
 ## Generic interfaces
 

@@ -78,15 +78,21 @@ void CGenerator::codegenAlloca(const AllocaInst* inst) {
         return;
     }
     stream.indent(4);
-    codegenType(stream, inst->allocatedType, true);
-    stream << ' ';
-    stream << name;
-    codegenTypeSuffix(stream, inst->allocatedType, true);
+    codegenDeclaration(stream, inst->allocatedType, name, true);
     stream << ";\n";
     emittedValues.insert({inst, "(&" + std::move(name) + ")"});
 }
 
 void CGenerator::codegenReturn(const ReturnInst* inst) {
+    auto* function = inst->parent && inst->parent->parent ? inst->parent->parent : nullptr;
+    if (function && function->returnType->isArrayType()) {
+        stream.indent(4) << "memcpy(_cx_return, &";
+        codegenInst(inst->value);
+        stream << ", sizeof(*_cx_return));\n";
+        stream.indent(4) << "return _cx_return;\n";
+        return;
+    }
+
     stream.indent(4);
     stream << "return";
     if (inst->value) {
@@ -99,8 +105,7 @@ void CGenerator::codegenReturn(const ReturnInst* inst) {
 void CGenerator::codegenArgument(const Value* value) {
     if (value->kind == ValueKind::Undefined) {
         stream << "(";
-        codegenType(stream, value->getType(), true);
-        codegenTypeSuffix(stream, value->getType(), true);
+        codegenTypeExpression(stream, value->getType(), true);
         stream << "){0}";
     } else {
         codegenInst(value);
@@ -231,15 +236,32 @@ void CGenerator::codegenInsert(const InsertInst* inst) {
     if (dispatchMode) {
         // The declaration is hoisted (see codegenFunctionDispatch).
     } else {
-        codegenType(stream, type, true);
-        stream << " " << name;
-        codegenTypeSuffix(stream, type, true);
+        codegenDeclaration(stream, type, name, true);
         stream << "; ";
     }
     if (inst->aggregate->kind != ValueKind::Undefined) {
         stream << "memcpy(&" << name << ", &";
         codegenInst(inst->aggregate);
         stream << ", sizeof(" << name << ")); ";
+    }
+    if (inst->value->getType()->isArrayType()) {
+        // C arrays are not assignable; copy element-wise like codegenStore.
+        stream << "memcpy(&" << name;
+        if (type->isArrayType()) {
+            stream << "[" << inst->index << "]";
+        } else {
+            stream << "." << getFieldName(type, inst->index);
+        }
+        stream << ", &";
+        codegenInst(inst->value);
+        stream << ", sizeof(" << name;
+        if (type->isArrayType()) {
+            stream << "[" << inst->index << "]";
+        } else {
+            stream << "." << getFieldName(type, inst->index);
+        }
+        stream << "));\n";
+        return;
     }
     stream << name;
     if (type->isArrayType()) {
@@ -263,18 +285,33 @@ void CGenerator::codegenExtract(const ExtractInst* inst) {
 
 void CGenerator::codegenCall(const CallInst* inst) {
     stream.indent(4);
+    auto* returnType = inst->function->getType()->getPointee()->getReturnType();
+    bool returnsArray = returnType->isArrayType();
+    std::string returnName;
     if (hasReturnValue(inst)) {
         const std::string& name = getOrCreateTempName(inst, "_call");
-        if (dispatchMode) {
+        if (returnsArray) returnName = name;
+        if (returnsArray) {
+            if (!dispatchMode) {
+                codegenTempDeclarationForType(returnType, name);
+                stream << ";\n";
+            }
+        } else if (dispatchMode) {
             // The declaration is hoisted (see codegenFunctionDispatch).
             stream << name << " = ";
         } else {
-            codegenTempDeclarationForType(inst->function->getType()->getPointee()->getReturnType(), name);
+            codegenTempDeclarationForType(returnType, name);
             stream << " = ";
         }
     }
     codegenInst(inst->function);
     stream << '(';
+    if (returnsArray) {
+        // Array-returning functions use the hidden result pointer declared by codegenFunctionPrototype.
+        ASSERT(!returnName.empty());
+        stream << "(&" << returnName << ")";
+        if (!inst->args.empty()) stream << ", ";
+    }
     for (size_t i = 0; i < inst->args.size(); ++i) {
         codegenArgument(inst->args[i]);
         if (i + 1 < inst->args.size()) stream << ", ";
@@ -389,8 +426,8 @@ void CGenerator::codegenGEP(const GEPInst* inst) {
         // The declaration is hoisted (see codegenFunctionDispatch).
         stream << name << " = &(";
     } else {
-        codegenType(stream, inst->getType(), true);
-        stream << " " << name << " = &(";
+        codegenTempDeclarationForType(inst->getType(), name);
+        stream << " = &(";
     }
     codegenInst(inst->pointer);
     for (auto* index : inst->indexes) {
@@ -425,7 +462,7 @@ void CGenerator::codegenCast(const CastInst* inst) {
     codegenTempDeclaration(inst, name);
     stream << " = ";
     stream << "(";
-    codegenType(stream, inst->type, true);
+    codegenTypeExpression(stream, inst->type, true);
     stream << ") ";
     codegenInst(inst->value);
     stream << ";\n";
@@ -453,7 +490,7 @@ void CGenerator::codegenUnreachable(const UnreachableInst* inst) {
 
 void CGenerator::codegenSizeof(const SizeofInst* inst) {
     stream << "sizeof(";
-    codegenType(stream, inst->type, true);
+    codegenTypeExpression(stream, inst->type, true);
     stream << ")";
 }
 
@@ -467,27 +504,61 @@ void CGenerator::codegenTempDeclaration(const Value* value, const std::string& n
     codegenTempDeclarationForType(value->getType(), name);
 }
 
-void CGenerator::codegenTempDeclarationForType(IRType* type, const std::string& name) {
-    if (type->isPointerType() && type->getPointee()->isArrayType()) {
-        // A pointer to an array needs parenthesized declarator syntax:
-        // `int* name[4]` would declare an array of pointers instead.
-        IRType* elementType = type->getPointee();
-        std::vector<int> dimensions;
-        while (auto* arrayType = llvm::dyn_cast<IRArrayType>(elementType)) {
-            dimensions.push_back(arrayType->getArraySize());
-            elementType = arrayType->getElementType();
-        }
-        codegenType(stream, elementType, true);
-        stream << " (*" << name << ")";
-        for (int size : dimensions) {
-            // See codegenTypeSuffix: MSVC rejects zero-size arrays.
-            stream << "[" << (size == 0 ? 1 : size) << "]";
-        }
-        return;
+// The split prefix/suffix type printer cannot express a pointer to an array. Keep
+// the array dimensions after a parenthesized pointer declarator instead.
+void CGenerator::codegenTypeExpression(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition) {
+    std::vector<IRPointerType*> pointers;
+    IRType* arrayType = type;
+    while (auto* pointerType = llvm::dyn_cast<IRPointerType>(arrayType)) {
+        pointers.push_back(pointerType);
+        arrayType = pointerType->pointee;
     }
-    codegenType(stream, type, true);
+    if (!pointers.empty()) {
+        if (auto* array = llvm::dyn_cast<IRArrayType>(arrayType)) {
+            codegenType(stream, array->elementType, needsTypeDefinition);
+            stream << " (";
+            for (auto* pointerType : llvm::reverse(pointers)) {
+                stream << '*';
+                if (!pointerType->mutablePointee) stream << " const";
+            }
+            stream << "*)";
+            codegenTypeSuffix(stream, array, needsTypeDefinition);
+            return;
+        }
+    }
+
+    codegenType(stream, type, needsTypeDefinition);
+    codegenTypeSuffix(stream, type, needsTypeDefinition);
+}
+
+void CGenerator::codegenDeclaration(llvm::raw_string_ostream& stream, IRType* type, llvm::StringRef name, bool needsTypeDefinition) {
+    std::vector<IRPointerType*> pointers;
+    IRType* arrayType = type;
+    while (auto* pointerType = llvm::dyn_cast<IRPointerType>(arrayType)) {
+        pointers.push_back(pointerType);
+        arrayType = pointerType->pointee;
+    }
+    if (!pointers.empty()) {
+        if (auto* array = llvm::dyn_cast<IRArrayType>(arrayType)) {
+            codegenType(stream, array->elementType, needsTypeDefinition);
+            stream << " (";
+            for (auto* pointerType : llvm::reverse(pointers)) {
+                stream << '*';
+                if (!pointerType->mutablePointee) stream << " const";
+            }
+            stream << name << ")";
+            codegenTypeSuffix(stream, array, needsTypeDefinition);
+            return;
+        }
+    }
+
+    codegenType(stream, type, needsTypeDefinition);
     stream << ' ' << name;
-    codegenTypeSuffix(stream, type, true);
+    codegenTypeSuffix(stream, type, needsTypeDefinition);
+}
+
+void CGenerator::codegenTempDeclarationForType(IRType* type, const std::string& name) {
+    codegenDeclaration(stream, type, name, true);
 }
 
 void CGenerator::codegenBasicBlock(const BasicBlock* block) {
@@ -501,9 +572,7 @@ void CGenerator::codegenBasicBlock(const BasicBlock* block) {
 }
 
 void CGenerator::codegenGlobalVariable(const GlobalVariable* inst) {
-    codegenType(stream, inst->type, true);
-    stream << ' ' << inst->name;
-    codegenTypeSuffix(stream, inst->type, true);
+    codegenDeclaration(stream, inst->type, inst->name, true);
     if (inst->value) {
         stream << " = ";
         codegenGlobalInitializer(inst->value);
@@ -721,6 +790,7 @@ void CGenerator::resetValueNaming(const Function* function) {
     for (auto& param : function->params) {
         usedValueNames.insert(param.name);
     }
+    if (function->returnType->isArrayType()) usedValueNames.insert("_cx_return");
 }
 
 const std::string& CGenerator::getOrCreateTypeName(IRType* type, const std::string& name, llvm::StringRef prefix) {
@@ -820,19 +890,60 @@ void CGenerator::codegenInstImpl(const Value* value) {
 }
 
 void CGenerator::codegenFunctionPrototype(const Function* function) {
+    bool returnsArray = function->returnType->isArrayType();
+    auto emitParameters = [&] {
+        if (returnsArray) {
+            codegenTempDeclarationForType(function->returnType->getPointerTo(), "_cx_return");
+            if (!function->params.empty() || function->isVariadic) stream << ", ";
+        } else if (function->params.empty() && !function->isVariadic) {
+            // An empty parameter list means "unspecified arguments" in C, so spell out 'void' instead.
+            stream << "void";
+        }
+        for (auto& param : function->params) {
+            codegenTempDeclarationForType(param.type, param.name);
+            if (&param != &function->params.back()) stream << ", ";
+        }
+        if (function->isVariadic) stream << ", ...";
+    };
+
+    if (returnsArray) {
+        // C has no array return type. Use the usual hidden result pointer ABI and
+        // keep the cx-level return value as a normal array at call sites.
+        auto* array = llvm::cast<IRArrayType>(function->returnType);
+        codegenType(stream, array->elementType, !function->isExtern);
+        stream << " (*" << getCFunctionName(function) << '(';
+        emitParameters();
+        stream << "))";
+        codegenTypeSuffix(stream, array, !function->isExtern);
+        return;
+    }
+
+    std::vector<IRPointerType*> returnPointers;
+    IRType* returnArray = function->returnType;
+    while (auto* pointerType = llvm::dyn_cast<IRPointerType>(returnArray)) {
+        returnPointers.push_back(pointerType);
+        returnArray = pointerType->pointee;
+    }
+
+    if (!returnPointers.empty()) {
+        if (auto* array = llvm::dyn_cast<IRArrayType>(returnArray)) {
+            codegenType(stream, array->elementType, !function->isExtern);
+            stream << " (";
+            for (auto* pointerType : llvm::reverse(returnPointers)) {
+                stream << '*';
+                if (!pointerType->mutablePointee) stream << " const";
+            }
+            stream << getCFunctionName(function) << '(';
+            emitParameters();
+            stream << "))";
+            codegenTypeSuffix(stream, array, !function->isExtern);
+            return;
+        }
+    }
+
     codegenType(stream, function->returnType, !function->isExtern);
     stream << ' ' << getCFunctionName(function) << '(';
-    if (function->params.empty() && !function->isVariadic) {
-        // An empty parameter list means "unspecified arguments" in C, so spell out 'void' instead.
-        stream << "void";
-    }
-    for (auto& param : function->params) {
-        codegenType(stream, param.type, !function->isExtern);
-        stream << ' ' << param.name;
-        codegenTypeSuffix(stream, param.type, !function->isExtern);
-        if (&param != &function->params.back()) stream << ", ";
-    }
-    if (function->isVariadic) stream << ", ...";
+    emitParameters();
     stream << ')';
     codegenTypeSuffix(stream, function->returnType, !function->isExtern);
 }
@@ -893,9 +1004,7 @@ void CGenerator::collectBlockParams(const Function* function) {
         if (block->parameter && !emittedValues.contains(block->parameter)) {
             const std::string& name = getBlockParamName(block->parameter);
             stream.indent(4);
-            codegenType(stream, block->parameter->type, true);
-            stream << ' ' << name;
-            codegenTypeSuffix(stream, block->parameter->type, true);
+            codegenDeclaration(stream, block->parameter->type, name, true);
             stream << ";\n";
         }
     }
@@ -908,9 +1017,7 @@ void CGenerator::copyArrayParams(const Function* function) {
         while (!usedValueNames.insert(copyName).second)
             copyName += "_";
         stream.indent(4);
-        codegenType(stream, param.type, true);
-        stream << ' ' << copyName;
-        codegenTypeSuffix(stream, param.type, true);
+        codegenDeclaration(stream, param.type, copyName, true);
         stream << ";\n";
         stream.indent(4) << "memcpy(" << copyName << ", " << param.name << ", sizeof(" << copyName << "));\n";
         emittedValues[&param] = copyName;
@@ -938,9 +1045,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
                 auto* alloca = llvm::cast<AllocaInst>(inst);
                 auto name = claimSuffixedName(!alloca->name.empty() ? alloca->name : "_alloca");
                 stream.indent(4);
-                codegenType(stream, alloca->allocatedType, true);
-                stream << ' ' << name;
-                codegenTypeSuffix(stream, alloca->allocatedType, true);
+                codegenDeclaration(stream, alloca->allocatedType, name, true);
                 stream << ";\n";
                 emittedValues.insert({inst, "(&" + std::move(name) + ")"});
                 break;
@@ -976,9 +1081,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
                 auto* type = insert->aggregate->getType();
                 auto name = claimSuffixedName("_insert");
                 stream.indent(4);
-                codegenType(stream, type, true);
-                stream << ' ' << name;
-                codegenTypeSuffix(stream, type, true);
+                codegenDeclaration(stream, type, name, true);
                 stream << ";\n";
                 emittedValues.insert({inst, std::move(name)});
                 break;
@@ -1098,6 +1201,7 @@ void CGenerator::codegenTypeSuffix(llvm::raw_string_ostream& stream, IRType* typ
         // MSVC rejects zero-size arrays (C2466); over-allocate one dummy
         // element instead. It is never accessed: indexing is bounds-checked.
         stream << "[" << (arrayType->size == 0 ? 1 : arrayType->size) << "]";
+        codegenTypeSuffix(stream, arrayType->elementType, false);
         break;
     }
     case IRTypeKind::IRFunctionType: {
@@ -1170,9 +1274,7 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
             stream.indent(4);
             // Pointer members only need their pointee declared, which also keeps in-progress
             // ancestor types from being re-entered here; by-value members need full definitions.
-            codegenType(stream, field.type, !field.type->isPointerType());
-            stream << " " << field.name;
-            codegenTypeSuffix(stream, field.type, true);
+            codegenDeclaration(stream, field.type, field.name, !field.type->isPointerType());
             stream << ";\n";
         }
         stream << "};\n";
@@ -1198,9 +1300,7 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
             stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << " {\n";
             for (auto& field : unionType->fields) {
                 stream.indent(4);
-                codegenType(stream, field.type, !field.type->isPointerType());
-                stream << " " << field.name;
-                codegenTypeSuffix(stream, field.type, true);
+                codegenDeclaration(stream, field.type, field.name, !field.type->isPointerType());
                 stream << ";\n";
             }
             stream << "};\n";

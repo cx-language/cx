@@ -1,0 +1,6 @@
+// RUN: check-snapshots
+
+void main() {
+    int[3] a = [1, 2, 3];
+    println(a.size());
+}

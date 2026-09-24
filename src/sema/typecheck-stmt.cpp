@@ -523,7 +523,7 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
     }
 
     if ((conditionType.removeOptional().isPointerType() && !conditionType.removeOptional().isReferenceType())
-        || conditionType.removeOptional().isUnsizedArrayPointer()) {
+        || conditionType.removeOptional().isArrayPointer()) {
         ERROR(condition->location,
               "switch condition must have integer, char, or enum type, got '" << conditionType << "'; dereference it explicitly (e.g. 'switch (*p)')");
     }
@@ -547,7 +547,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     }
 
     if ((conditionType.removeOptional().isPointerType() && !conditionType.removeOptional().isReferenceType())
-        || conditionType.removeOptional().isUnsizedArrayPointer()) {
+        || conditionType.removeOptional().isArrayPointer()) {
         ERROR(stmt.condition->location,
               "switch condition must have integer, char, string, or enum type, got '" << conditionType << "'; dereference it explicitly (e.g. 'switch (*p)')");
     }

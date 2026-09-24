@@ -50,6 +50,7 @@ static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<G
             if (genericArg.isInt()) {
                 stream << 'N' << genericArg.getInt() << '_';
             } else {
+                if (!genericArg.getType().isMutable()) stream << 'K';
                 mangleType(stream, genericArg.getType());
             }
         }
@@ -65,21 +66,13 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
             mangleType(stream, type.getWrappedType());
         } else {
             mangleIdentifier(stream, type.getName());
+            if (type.isFixedArray() && !type.isMutable()) stream << 'K';
             mangleGenericArgs(stream, type.getGenericArgs());
         }
         break;
-    case TypeKind::ArrayType:
-        stream << 'A';
-        switch (type.getArraySize()) {
-        case ArrayType::UnknownSize:
-            stream << 'U';
-            break;
-        default:
-            ASSERT(type.getArraySize() > 0);
-            stream << type.getArraySize();
-            break;
-        }
-        stream << '_';
+    case TypeKind::ArrayPointerType:
+        if (!type.isMutable()) stream << 'K';
+        stream << "AU_";
         mangleType(stream, type.getElementType());
         break;
     case TypeKind::AnonymousStructType:

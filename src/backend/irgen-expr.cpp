@@ -19,7 +19,7 @@ Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
 
 Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
     if ((expr.type.removeOptional().isPointerType() && expr.type.removeOptional().getPointee().isChar())
-        || (expr.type.removeOptional().isUnsizedArrayPointer() && expr.type.removeOptional().getElementType().isChar())) {
+        || (expr.type.removeOptional().isArrayPointer() && expr.type.removeOptional().getElementType().isChar())) {
         return createGlobalStringPtr(expr.value);
     }
 
@@ -493,8 +493,8 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     if (expr.calleeDecl == nullptr) {
         Type leftT = expr.getLHS().type.removeOptional().removePointer();
         Type rightT = expr.getRHS().type.removeOptional().removePointer();
-        bool leftIsArray = leftT.isArrayType() && leftT.isConstantArray();
-        bool rightIsArray = rightT.isArrayType() && rightT.isConstantArray();
+        bool leftIsArray = leftT.isArrayType() && leftT.isConcreteArray();
+        bool rightIsArray = rightT.isArrayType() && rightT.isConcreteArray();
         bool isArrayOp = (leftIsArray || rightIsArray)
                       && (expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star || expr.op == Token::Slash || expr.op == Token::Modulo
                           || expr.op == Token::PositiveModulo || expr.op == Token::Equal || expr.op == Token::NotEqual || expr.op == Token::And
@@ -528,6 +528,7 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
 
             bool isComparison = (expr.op == Token::Equal || expr.op == Token::NotEqual);
             if (isComparison) {
+                if (arraySize == 0) return createConstantBool(expr.op == Token::Equal);
                 // `a == b` lowers to `(a[0]==b[0]) & (a[1]==b[1]) & ...` (bitwise
                 // AND on bools, eager; equivalent to && for pure comparisons).
                 // `!=` uses `|` (OR). Broadcast compares each element to the scalar.
@@ -631,7 +632,12 @@ Value* IRGenerator::emitAssignment(const BinaryExpr& expr) {
 }
 
 static bool isBuiltinArrayToSliceConversion(Type sourceType, IRType* targetType) {
-    return sourceType.removePointer().isConstantArray() && targetType->isStruct() && targetType->getName().starts_with("Slice<");
+    return sourceType.removePointer().isConcreteArray() && targetType->isStruct() && targetType->getName().starts_with("Slice<");
+}
+
+static bool isEmptyArrayLiteral(const Expr& expr) {
+    auto* array = llvm::dyn_cast<ArrayLiteralExpr>(&expr);
+    return array && array->elements.empty();
 }
 
 static bool isListToSliceConversion(Type sourceType, IRType* targetType) {
@@ -643,9 +649,13 @@ static bool isStringBufToStringConversion(Type sourceType, IRType* targetType) {
 }
 
 Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
+    if (isEmptyArrayLiteral(expr) && targetType && targetType->isPointerType()) {
+        return createConstantNull(targetType);
+    }
+
     if (!targetType) {
         // In variadic calls, arrays decay to pointers to their first element (as in C).
-        if (expr.type.isConstantArray()) {
+        if (expr.type.isConcreteArray()) {
             auto* value = emitExprAsPointer(expr);
             ASSERT(value->getType()->getPointee()->isArrayType());
             if (expr.type.getArraySize() == 0) {
@@ -659,7 +669,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     // TODO: Handle implicit conversions in a separate function.
 
     if (isBuiltinArrayToSliceConversion(expr.type, targetType)) {
-        ASSERT(expr.type.removePointer().isConstantArray());
+        ASSERT(expr.type.removePointer().isConcreteArray());
         // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
         auto* value = expr.type.isPointerType() ? emitExpr(expr) : emitExprAsPointer(expr);
         Value* elementPtr;
@@ -694,8 +704,10 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     }
 
     // Handle implicit conversions to type 'T[*]'.
-    if (expr.type.removePointer().isConstantArray() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
-        return createCast(loadThroughStorageAddress(emitLvalueExpr(expr), expr.type), targetType);
+    if (expr.type.removePointer().isConcreteArray() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
+        if (expr.type.removePointer().getArraySize() == 0) return createConstantNull(targetType);
+        auto* value = expr.type.isPointerType() ? loadThroughStorageAddress(emitLvalueExpr(expr), expr.type) : emitExprAsPointer(expr);
+        return createCast(value, targetType);
     }
 
     // Handle implicit conversions to void pointer, and to base type pointer.
@@ -847,17 +859,22 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
         return emitEnumCaseCall(*enumCase, expr);
     }
 
-    if (expr.getReceiver() && expr.receiverType.removePointer().isArrayType()) {
-        if (expr.getFunctionName() == "size") {
-            return getArrayLength(*expr.getReceiver(), expr.receiverType.removePointer());
+    if (expr.getReceiver() && expr.receiverType.removeOptional().isArrayType() && !expr.receiverType.removeOptional().isFixedArray()
+        && expr.getFunctionName() == "data") {
+        return emitExpr(*expr.getReceiver());
+    }
+
+    // Array.size() is known from the type; emit the constant instead of a call
+    // that only folds away after inlining. Symbolic sizes still call the method.
+    if (expr.getFunctionName() == "size" && expr.getReceiver()) {
+        if (auto* functionDecl = llvm::dyn_cast_or_null<FunctionDecl>(expr.calleeDecl)) {
+            if (functionDecl->getTypeDecl() && functionDecl->getTypeDecl()->getName() == "Array") {
+                Type receiverType = expr.receiverType.removeOptional().removePointer();
+                if (receiverType.isConcreteArray()) {
+                    return createConstantInt(ArrayPointerType::getIndexType(), receiverType.getArraySize());
+                }
+            }
         }
-        if (expr.getFunctionName() == "data") {
-            return getArrayData(*expr.getReceiver(), expr.receiverType.removePointer());
-        }
-        if (expr.getFunctionName() == "iterator") {
-            return getArrayIterator(*expr.getReceiver(), expr.receiverType.removePointer());
-        }
-        llvm_unreachable("unknown array member function");
     }
 
     if (expr.isMoveInit()) {
@@ -975,41 +992,6 @@ Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, c
     }
 }
 
-Value* IRGenerator::getArrayLength(const Expr&, Type objectType) {
-    return createConstantInt(Type::getInt(), objectType.getArraySize());
-}
-
-Value* IRGenerator::getArrayData(const Expr& object, Type objectType) {
-    if (objectType.isUnsizedArrayPointer()) {
-        return emitExpr(object);
-    }
-    // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
-    auto* value = object.type.isPointerType() ? emitExpr(object) : emitExprAsPointer(object);
-    ASSERT(value->getType()->getPointee()->isArrayType());
-    if (objectType.getArraySize() == 0) {
-        return createConstantNull(value->getType()->getPointee()->getElementType()->getPointerTo());
-    }
-    return createGEP(value, 0);
-}
-
-Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
-    auto type = BasicType::get("ArrayIterator", GenericArg(objectType.getElementType()));
-    if (objectType.getArraySize() == 0) {
-        auto* irType = getIRType(type);
-        auto fields = irType->getFields();
-        ASSERT(fields.size() == 2);
-        auto* iterator = createInsertValue(createUndefined(type), createConstantNull(fields[0].type), 0);
-        return createInsertValue(iterator, createConstantNull(fields[1].type), 1);
-    }
-    // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
-    auto* value = object.type.isPointerType() ? emitExpr(object) : emitExprAsPointer(object);
-    auto* elementPtr = createGEP(value, 0);
-    auto* size = getArrayLength(object, objectType);
-    auto* end = createGEP(elementPtr, {size});
-    auto* iterator = createInsertValue(createUndefined(type), elementPtr, 0);
-    return createInsertValue(iterator, end, 1);
-}
-
 Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
     if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(expr.decl)) {
         return emitEnumCase(*enumCase, {});
@@ -1075,12 +1057,18 @@ Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
     if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() && value->getType()->getPointee()->equals(getIRType(base.type))) {
         value = createLoad(value);
     }
+    if (!value->getType()->isPointerType()) value = createTempAlloca(value);
 
-    if (base.type.removeOptional().isUnsizedArrayPointer()) {
-        return createGEP(value, {emitExpr(index)});
+    Value* gep;
+    if (base.type.removeOptional().isArrayPointer()) {
+        gep = createGEP(value, {emitExpr(index)});
     } else {
-        return createGEP(value, {createConstantInt(Type::getInt(), 0), emitExpr(index)});
+        gep = createGEP(value, {createConstantInt(Type::getInt(), 0), emitExpr(index)});
     }
+    if (auto* call = llvm::dyn_cast<CallExpr>(&base); call && call->isMethodCall() && call->getFunctionName() == "data") {
+        llvm::cast<GEPInst>(gep)->expr = &base;
+    }
+    return gep;
 }
 
 Value* IRGenerator::emitIndexExpr(const IndexExpr& expr) {
@@ -1251,6 +1239,9 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
     switch (expr.castKind) {
     case ImplicitCastExpr::OptionalWrap:
         if (expr.type.getWrappedType().isImplementedAsPointer()) {
+            if (expr.type.getWrappedType().isArrayPointer() && (expr.operand->type.removePointer().isConcreteArray() || isEmptyArrayLiteral(*expr.operand))) {
+                return emitExprForPassing(*expr.operand, getIRType(expr.type.getWrappedType()));
+            }
             if (expr.type.getWrappedType().isReferenceType() && !expr.operand->type.isReferenceType()) {
                 // Borrowing through the wrap: the operand is a value, so take the address-preserving
                 // path and materialize temporaries the way argument passing does. (An operand that is

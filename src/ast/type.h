@@ -32,7 +32,7 @@ enum class PointerKind {
 
 enum class TypeKind {
     BasicType,
-    ArrayType,
+    ArrayPointerType,
     AnonymousStructType,
     FunctionType,
     PointerType,
@@ -57,7 +57,9 @@ struct Type {
 
     // TODO: Remove 'Type' suffix from these methods
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
-    bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
+    // Matches the stdlib Array declaration by name; user code must not declare its own Array type.
+    bool isFixedArray() const { return isBasicType() && getName() == "Array" && getGenericArgs().size() == 2; }
+    bool isArrayType() const { return getKind() == TypeKind::ArrayPointerType || isFixedArray(); }
     bool isRangeType() const { return isBasicType() && (getName() == "Range" || getName() == "ClosedRange"); }
     bool isAnonymousStructType() const { return getKind() == TypeKind::AnonymousStructType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
@@ -68,14 +70,14 @@ struct Type {
     bool isOptionalType() const { return isBasicType() && getName() == "Optional"; }
     bool isBuiltinType() const { return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull() || isVoid(); }
     bool isImplicitlyCopyable() const;
-    bool isConstantArray() const;
+    bool isConcreteArray() const;
     bool isSlice() const;
-    bool isUnsizedArrayPointer() const;
+    bool isArrayPointer() const;
     bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
-    bool isIncrementable() const { return isInteger() || isFloatingPoint() || isUnsizedArrayPointer(); }
-    bool isDecrementable() const { return isInteger() || isFloatingPoint() || isUnsizedArrayPointer(); }
+    bool isIncrementable() const { return isInteger() || isFloatingPoint() || isArrayPointer(); }
+    bool isDecrementable() const { return isInteger() || isFloatingPoint() || isArrayPointer(); }
     bool isVoid() const;
     bool isBool() const;
     bool isInt() const;
@@ -219,10 +221,12 @@ bool operator==(const GenericArg&, const GenericArg&);
 
 void appendGenericArgs(std::string& typeName, llvm::ArrayRef<GenericArg> genericArgs);
 std::string getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<GenericArg> genericArgs);
+Type getArrayTypeForReceiver(Type type);
 
 struct BasicType : TypeBase {
     std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }
     static Type get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs, Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getArray(Type elementType, int64_t size, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::BasicType; }
 
 private:
@@ -235,22 +239,17 @@ public:
     TypeDecl* decl;
 };
 
-struct ArrayType : TypeBase {
+struct ArrayPointerType : TypeBase {
     static Type getIndexType() { return Type::getInt(); }
     static const int64_t UnknownSize = -1;
-    static Type get(Type type, int64_t size, Location location = Location());
-    // A symbolic size names an integer generic parameter; resolved at instantiation.
-    static Type get(Type type, llvm::StringRef sizeParam, Location location = Location());
-    static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayType; }
+    static Type get(Type elementType, Location location = Location());
+    static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayPointerType; }
 
 private:
-    ArrayType(Type type, int64_t size, llvm::StringRef sizeParam = "")
-    : TypeBase(TypeKind::ArrayType), elementType(type), size(size), sizeParam(internString(sizeParam)) {}
+    explicit ArrayPointerType(Type elementType) : TypeBase(TypeKind::ArrayPointerType), elementType(elementType) {}
 
 public:
     Type elementType;
-    int64_t size;
-    llvm::StringRef sizeParam;
 };
 
 struct AnonymousStructElement {
