@@ -71,12 +71,12 @@ struct Type {
     bool isImplicitlyCopyable() const;
     bool isConcreteArray() const;
     bool isSlice() const;
-    bool isUnsizedArrayPointer() const;
+    bool isArrayPointer() const;
     bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
-    bool isIncrementable() const { return isInteger() || isFloatingPoint() || isUnsizedArrayPointer(); }
-    bool isDecrementable() const { return isInteger() || isFloatingPoint() || isUnsizedArrayPointer(); }
+    bool isIncrementable() const { return isInteger() || isFloatingPoint() || isArrayPointer(); }
+    bool isDecrementable() const { return isInteger() || isFloatingPoint() || isArrayPointer(); }
     bool isVoid() const;
     bool isBool() const;
     bool isInt() const;

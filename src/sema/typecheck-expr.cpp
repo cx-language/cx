@@ -396,7 +396,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     case Token::Star: // Dereference operation
         if (operandType.removeOptional().isPointerType()) {
             return operandType.removeOptional().getPointee();
-        } else if (operandType.removeOptional().isUnsizedArrayPointer()) {
+        } else if (operandType.removeOptional().isArrayPointer()) {
             return operandType.removeOptional().getElementType();
         }
 
@@ -786,11 +786,11 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     // Operators auto-deref: unless both operands are raw pointers (an address comparison),
     // deref any pointer or borrow operand so the operation applies to the pointed-to values.
     // Derefing up front lets the conversions below handle inexact matches, e.g. 'uint*' against
-    // an 'int' constant. Optional and unsized-array-pointer operands are excluded: they keep
+    // an 'int' constant. Optional and array-pointer operands are excluded: they keep
     // the conversions below (null-aware identity, pointer-to-array decay). Null literals are
     // excluded so 'p == null' still reports the pointer type.
     bool bothRawPointers = leftType.isPointerType() && rightType.isPointerType() && !leftType.isReferenceType() && !rightType.isReferenceType();
-    bool eitherSpecial = leftType.isOptionalType() || rightType.isOptionalType() || leftType.isUnsizedArrayPointer() || rightType.isUnsizedArrayPointer();
+    bool eitherSpecial = leftType.isOptionalType() || rightType.isOptionalType() || leftType.isArrayPointer() || rightType.isArrayPointer();
     if (!bothRawPointers && !eitherSpecial) {
         if (leftType.isPointerType() && !leftType.getPointee().isVoid() && !expr.getRHS().isNullLiteralExpr()) {
             expr.setLHS(makeAST<ImplicitCastExpr>(&expr.getLHS(), leftType.getPointee(), ImplicitCastExpr::AutoDereference));
@@ -809,8 +809,8 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
         auto leftPointeeType = leftType.removeOptional().removePointer();
         auto rightPointeeType = rightType.removeOptional().removePointer();
-        if (leftPointeeType.isUnsizedArrayPointer()) leftPointeeType = leftPointeeType.getElementType();
-        if (rightPointeeType.isUnsizedArrayPointer()) rightPointeeType = rightPointeeType.getElementType();
+        if (leftPointeeType.isArrayPointer()) leftPointeeType = leftPointeeType.getElementType();
+        if (rightPointeeType.isArrayPointer()) rightPointeeType = rightPointeeType.getElementType();
 
         if (!leftPointeeType.equalsIgnoreTopLevelMutable(rightPointeeType)) {
             ERROR_RANGE(expr.location, expr.endLocation, "comparison of distinct pointer types ('" << leftType << "' and '" << rightType << "')");
@@ -1009,7 +1009,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
     // take this path; other borrows keep the dereference-then-convert behavior.
     Type unwrappedTarget = type.removeOptional();
     bool decaysToView =
-        expr->type.isReferenceType() && expr->type.getPointee().isConcreteArray() && (unwrappedTarget.isUnsizedArrayPointer() || unwrappedTarget.isSlice());
+        expr->type.isReferenceType() && expr->type.getPointee().isConcreteArray() && (unwrappedTarget.isArrayPointer() || unwrappedTarget.isSlice());
     if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !type.removeOptional().isPointerType() && !decaysToView) {
         auto* dereferenced = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
         return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange);
@@ -1123,7 +1123,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         if (target.isArrayType() && source.getArraySize() == target.getArraySize() && source.getArraySizeParam() == target.getArraySizeParam()) {
             return target.isConcreteArray() ? target : source;
         }
-        if (source.isConcreteArray() && (target.isUnsizedArrayPointer() || target.isSlice())) return source;
+        if (source.isConcreteArray() && (target.isArrayPointer() || target.isSlice())) return source;
     }
 
     if (source.isBasicType() && target.isSlice() && source.getName() == "List" && source.getGenericArgs() == target.getGenericArgs()) {
@@ -1150,8 +1150,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     Type unwrappedTarget = target.removeOptional();
-    bool decaysToView =
-        source.isReferenceType() && source.getPointee().isConcreteArray() && (unwrappedTarget.isUnsizedArrayPointer() || unwrappedTarget.isSlice());
+    bool decaysToView = source.isReferenceType() && source.getPointee().isConcreteArray() && (unwrappedTarget.isArrayPointer() || unwrappedTarget.isSlice());
     if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !target.removeOptional().isPointerType() && !decaysToView) {
         return isImplicitlyConvertible(expr, source.getPointee(), target, allowPointerToTemporary, implicitCastKind, diagnoseOutOfRange);
     }
@@ -1210,7 +1209,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // Special case: allow passing string literals as C-strings (const char* or const char[*]).
         if (expr->isStringLiteralExpr() && !target.removeOptional().isReferenceType()
             && ((target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() && !target.removeOptional().getPointee().isMutable())
-                || (target.removeOptional().isUnsizedArrayPointer() && target.removeOptional().getElementType().isChar()
+                || (target.removeOptional().isArrayPointer() && target.removeOptional().getElementType().isChar()
                     && !target.removeOptional().getElementType().isMutable()))) {
             return target;
         }
@@ -1285,7 +1284,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isPointerType() && source.getPointee().isConcreteArray() && (target.isSlice() || target.isUnsizedArrayPointer())
+    if (source.isPointerType() && source.getPointee().isConcreteArray() && (target.isSlice() || target.isArrayPointer())
         && (source.getPointee().getElementType().isMutable() || !target.getElementType().isMutable())
         && isReinterpretible(source.getPointee().getElementType(), target.getElementType())) {
         return source;
@@ -1297,12 +1296,12 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     // Allow conversion from T[*]? to T* and void*
-    if (source.removeOptional().isUnsizedArrayPointer() && target.isPointerType()
+    if (source.removeOptional().isArrayPointer() && target.isPointerType()
         && (source.removeOptional().getElementType() == target.getPointee() || target.getPointee().isVoid())) {
         return source;
     }
 
-    if (target.isUnsizedArrayPointer() && source.isPointerType() && target.getElementType() == source.getPointee()) {
+    if (target.isArrayPointer() && source.isPointerType() && target.getElementType() == source.getPointee()) {
         return source;
     }
 
@@ -2940,7 +2939,7 @@ static bool isValidCast(Type sourceType, Type targetType) {
             if (!targetPointee.isMutable() || sourcePointee.isMutable()) {
                 return true;
             }
-        } else if (targetType.isUnsizedArrayPointer()) {
+        } else if (targetType.isArrayPointer()) {
             if (!targetType.getElementType().isMutable() || sourcePointee.isMutable()) {
                 return true;
             }

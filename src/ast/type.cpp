@@ -72,7 +72,7 @@ bool Type::isSlice() const {
     return isBasicType() && getName() == "Slice";
 }
 
-bool Type::isUnsizedArrayPointer() const {
+bool Type::isArrayPointer() const {
     return getKind() == TypeKind::ArrayPointerType;
 }
 
@@ -405,7 +405,7 @@ bool Type::storesBorrow() const {
 
 bool Type::isImplementedAsPointer() const {
     auto unwrapped = removeOptional();
-    return unwrapped.isPointerType() || unwrapped.isUnsizedArrayPointer() || unwrapped.isFunctionType();
+    return unwrapped.isPointerType() || unwrapped.isArrayPointer() || unwrapped.isFunctionType();
 }
 
 Type Type::getWrappedType() const {

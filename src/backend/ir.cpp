@@ -19,7 +19,7 @@ BasicBlock::BasicBlock(std::string name, cx::Function* parent) : Value{ValueKind
 static std::unordered_map<TypeBase*, IRType*> irTypes = {{nullptr, nullptr}};
 
 IRType* cx::getIRType(Type astType) {
-    // Incomplete-array wrappers can share a TypeBase while differing in
+    // Array-pointer wrappers can share a TypeBase while differing in
     // mutability. Their pointer result must retain that distinction for C.
     bool cacheable = astType.getKind() != TypeKind::ArrayPointerType;
     if (cacheable) {
@@ -96,7 +96,7 @@ IRType* cx::getIRType(Type astType) {
         break;
     }
     case TypeKind::ArrayPointerType:
-        ASSERT(astType.isUnsizedArrayPointer());
+        ASSERT(astType.isArrayPointer());
         irType = getIRType(astType.getElementType().getPointerTo());
         break;
     case TypeKind::AnonymousStructType: {

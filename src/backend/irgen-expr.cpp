@@ -19,7 +19,7 @@ Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
 
 Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
     if ((expr.type.removeOptional().isPointerType() && expr.type.removeOptional().getPointee().isChar())
-        || (expr.type.removeOptional().isUnsizedArrayPointer() && expr.type.removeOptional().getElementType().isChar())) {
+        || (expr.type.removeOptional().isArrayPointer() && expr.type.removeOptional().getElementType().isChar())) {
         return createGlobalStringPtr(expr.value);
     }
 
@@ -1047,7 +1047,7 @@ Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
     if (!value->getType()->isPointerType()) value = createTempAlloca(value);
 
     Value* gep;
-    if (base.type.removeOptional().isUnsizedArrayPointer()) {
+    if (base.type.removeOptional().isArrayPointer()) {
         gep = createGEP(value, {emitExpr(index)});
     } else {
         gep = createGEP(value, {createConstantInt(Type::getInt(), 0), emitExpr(index)});
@@ -1226,8 +1226,7 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
     switch (expr.castKind) {
     case ImplicitCastExpr::OptionalWrap:
         if (expr.type.getWrappedType().isImplementedAsPointer()) {
-            if (expr.type.getWrappedType().isUnsizedArrayPointer()
-                && (expr.operand->type.removePointer().isConcreteArray() || isEmptyArrayLiteral(*expr.operand))) {
+            if (expr.type.getWrappedType().isArrayPointer() && (expr.operand->type.removePointer().isConcreteArray() || isEmptyArrayLiteral(*expr.operand))) {
                 return emitExprForPassing(*expr.operand, getIRType(expr.type.getWrappedType()));
             }
             if (expr.type.getWrappedType().isReferenceType() && !expr.operand->type.isReferenceType()) {

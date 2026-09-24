@@ -46,7 +46,7 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
 // Returns true if values of the given type transitively contain the target type declaration without pointer indirection,
 // meaning the target type would have infinite size. `visiting` holds the declarations on the current search path.
 static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::SmallPtrSetImpl<const TypeDecl*>& visiting) {
-    // Pointers, unsized arrays, and functions are pointer-sized (see getIRType), as are builtins.
+    // Pointers, array pointers, and functions are pointer-sized (see getIRType), as are builtins.
     if (!type || type.isBuiltinType() || type.isFunctionType() || type.isImplementedAsPointer()) return false;
 
     if (type.isArrayType()) {
@@ -824,10 +824,10 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
             ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation");
         }
 
-        // An unsized array is a pointer view, not a value copy. Preserve its
+        // An array pointer is a pointer view, not a value copy. Preserve its
         // pointee constness when inferring a variable; making a const view mutable
         // would allow the view to drop that guarantee.
-        if (initializerType.isUnsizedArrayPointer()) {
+        if (initializerType.isArrayPointer()) {
             auto mutability = !initializerType.getElementType().isMutable() || !decl.type.isMutable() ? Mutability::Const : Mutability::Mutable;
             decl.type = NOTNULL(initializerType.withMutability(mutability));
         } else {
