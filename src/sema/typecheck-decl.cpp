@@ -104,7 +104,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         // Fixed arrays are a builtin-backed BasicType. Keep declaration
         // binding lazy: getTypeDecl resolves the stdlib methods only when a
         // member is actually looked up.
-        if (type.isBasicArrayType()) {
+        if (type.isFixedArray()) {
             if (!type.getArraySizeParam().empty()) {
                 ERROR(type.location, "array size must be a constant integer expression");
             }

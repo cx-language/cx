@@ -493,8 +493,8 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     if (expr.calleeDecl == nullptr) {
         Type leftT = expr.getLHS().type.removeOptional().removePointer();
         Type rightT = expr.getRHS().type.removeOptional().removePointer();
-        bool leftIsArray = leftT.isArrayType() && leftT.isConstantArray();
-        bool rightIsArray = rightT.isArrayType() && rightT.isConstantArray();
+        bool leftIsArray = leftT.isArrayType() && leftT.isConcreteArray();
+        bool rightIsArray = rightT.isArrayType() && rightT.isConcreteArray();
         bool isArrayOp = (leftIsArray || rightIsArray)
                       && (expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star || expr.op == Token::Slash || expr.op == Token::Modulo
                           || expr.op == Token::PositiveModulo || expr.op == Token::Equal || expr.op == Token::NotEqual || expr.op == Token::And
@@ -632,7 +632,7 @@ Value* IRGenerator::emitAssignment(const BinaryExpr& expr) {
 }
 
 static bool isBuiltinArrayToSliceConversion(Type sourceType, IRType* targetType) {
-    return sourceType.removePointer().isConstantArray() && targetType->isStruct() && targetType->getName().starts_with("Slice<");
+    return sourceType.removePointer().isConcreteArray() && targetType->isStruct() && targetType->getName().starts_with("Slice<");
 }
 
 static bool isEmptyArrayLiteral(const Expr& expr) {
@@ -655,7 +655,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
 
     if (!targetType) {
         // In variadic calls, arrays decay to pointers to their first element (as in C).
-        if (expr.type.isConstantArray()) {
+        if (expr.type.isConcreteArray()) {
             auto* value = emitExprAsPointer(expr);
             ASSERT(value->getType()->getPointee()->isArrayType());
             if (expr.type.getArraySize() == 0) {
@@ -669,7 +669,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     // TODO: Handle implicit conversions in a separate function.
 
     if (isBuiltinArrayToSliceConversion(expr.type, targetType)) {
-        ASSERT(expr.type.removePointer().isConstantArray());
+        ASSERT(expr.type.removePointer().isConcreteArray());
         // Pointer-typed lvalues (e.g. spilled parameters) point at the pointer variable; load the pointer itself.
         auto* value = expr.type.isPointerType() ? emitExpr(expr) : emitExprAsPointer(expr);
         Value* elementPtr;
@@ -704,7 +704,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     }
 
     // Handle implicit conversions to type 'T[*]'.
-    if (expr.type.removePointer().isConstantArray() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
+    if (expr.type.removePointer().isConcreteArray() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
         if (expr.type.removePointer().getArraySize() == 0) return createConstantNull(targetType);
         auto* value = expr.type.isPointerType() ? loadThroughStorageAddress(emitLvalueExpr(expr), expr.type) : emitExprAsPointer(expr);
         return createCast(value, targetType);
@@ -859,7 +859,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
         return emitEnumCaseCall(*enumCase, expr);
     }
 
-    if (expr.getReceiver() && expr.receiverType.removeOptional().isArrayType() && !expr.receiverType.removeOptional().isBasicArrayType()
+    if (expr.getReceiver() && expr.receiverType.removeOptional().isArrayType() && !expr.receiverType.removeOptional().isFixedArray()
         && expr.getFunctionName() == "data") {
         return emitExpr(*expr.getReceiver());
     }
@@ -1227,7 +1227,7 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
     case ImplicitCastExpr::OptionalWrap:
         if (expr.type.getWrappedType().isImplementedAsPointer()) {
             if (expr.type.getWrappedType().isUnsizedArrayPointer()
-                && (expr.operand->type.removePointer().isConstantArray() || isEmptyArrayLiteral(*expr.operand))) {
+                && (expr.operand->type.removePointer().isConcreteArray() || isEmptyArrayLiteral(*expr.operand))) {
                 return emitExprForPassing(*expr.operand, getIRType(expr.type.getWrappedType()));
             }
             if (expr.type.getWrappedType().isReferenceType() && !expr.operand->type.isReferenceType()) {

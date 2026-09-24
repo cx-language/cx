@@ -665,9 +665,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     // operands with side effects evaluate once. Returns the array type for
     // arithmetic, bool for ==/!= (all-equal semantics).
     {
-        auto isSymbolicArray = [](Type type) { return type.isBasicArrayType() && !type.getArraySizeParam().empty(); };
-        bool leftIsArray = leftType.isArrayType() && leftType.isConstantArray();
-        bool rightIsArray = rightType.isArrayType() && rightType.isConstantArray();
+        auto isSymbolicArray = [](Type type) { return type.isFixedArray() && !type.getArraySizeParam().empty(); };
+        bool leftIsArray = leftType.isArrayType() && leftType.isConcreteArray();
+        bool rightIsArray = rightType.isArrayType() && rightType.isConcreteArray();
         bool leftIsArrayLike = leftIsArray || isSymbolicArray(leftType);
         bool rightIsArrayLike = rightIsArray || isSymbolicArray(rightType);
         bool hasSymbolicArray = isSymbolicArray(leftType) || isSymbolicArray(rightType);
@@ -725,7 +725,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             // handling (which will error appropriately, since no overload exists).
             // For size mismatches, error directly (no overload could reasonably
             // handle different-sized builtin arrays element-wise).
-            if (!arrayType.isConstantArray()) {
+            if (!arrayType.isConcreteArray()) {
                 if (isSymbolicArray(arrayType)) {
                     ERROR_RANGE(expr.location, expr.endLocation, "array operations require a constant size");
                 }
@@ -1009,7 +1009,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
     // take this path; other borrows keep the dereference-then-convert behavior.
     Type unwrappedTarget = type.removeOptional();
     bool decaysToView =
-        expr->type.isReferenceType() && expr->type.getPointee().isConstantArray() && (unwrappedTarget.isUnsizedArrayPointer() || unwrappedTarget.isSlice());
+        expr->type.isReferenceType() && expr->type.getPointee().isConcreteArray() && (unwrappedTarget.isUnsizedArrayPointer() || unwrappedTarget.isSlice());
     if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !type.removeOptional().isPointerType() && !decaysToView) {
         auto* dereferenced = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
         return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange);
@@ -1044,7 +1044,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
                 }
             }
 
-            if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(expr); arrayLiteral && convertedType.isConstantArray()) {
+            if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(expr); arrayLiteral && convertedType.isConcreteArray()) {
                 for (auto& element : arrayLiteral->elements) {
                     if (Expr* convertedElement = convert(element, convertedType.getElementType(), allowPointerToTemporary)) {
                         element = convertedElement;
@@ -1105,7 +1105,7 @@ static bool isSafeNumericWidening(Type source, Type target) {
 static bool isReinterpretible(Type source, Type target) {
     if (source.isArrayType() && target.isArrayType()) {
         if (target.isMutable() && !source.isMutable()) return false;
-        if (source.isBasicArrayType() != target.isBasicArrayType()) return false;
+        if (source.isFixedArray() != target.isFixedArray()) return false;
         return source.getArraySize() == target.getArraySize() && source.getArraySizeParam() == target.getArraySizeParam()
             && isReinterpretible(source.getElementType(), target.getElementType());
     }
@@ -1121,9 +1121,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     if (source.isArrayType() && (target.isArrayType() || target.isSlice()) && (source.getElementType().isMutable() || !target.getElementType().isMutable())
         && isReinterpretible(source.getElementType(), target.getElementType())) {
         if (target.isArrayType() && source.getArraySize() == target.getArraySize() && source.getArraySizeParam() == target.getArraySizeParam()) {
-            return target.isConstantArray() ? target : source;
+            return target.isConcreteArray() ? target : source;
         }
-        if (source.isConstantArray() && (target.isUnsizedArrayPointer() || target.isSlice())) return source;
+        if (source.isConcreteArray() && (target.isUnsizedArrayPointer() || target.isSlice())) return source;
     }
 
     if (source.isBasicType() && target.isSlice() && source.getName() == "List" && source.getGenericArgs() == target.getGenericArgs()) {
@@ -1151,7 +1151,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     Type unwrappedTarget = target.removeOptional();
     bool decaysToView =
-        source.isReferenceType() && source.getPointee().isConstantArray() && (unwrappedTarget.isUnsizedArrayPointer() || unwrappedTarget.isSlice());
+        source.isReferenceType() && source.getPointee().isConcreteArray() && (unwrappedTarget.isUnsizedArrayPointer() || unwrappedTarget.isSlice());
     if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !target.removeOptional().isPointerType() && !decaysToView) {
         return isImplicitlyConvertible(expr, source.getPointee(), target, allowPointerToTemporary, implicitCastKind, diagnoseOutOfRange);
     }
@@ -1215,7 +1215,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             return target;
         }
 
-        if (expr->isArrayLiteralExpr() && target.isConstantArray()) {
+        if (expr->isArrayLiteralExpr() && target.isConcreteArray()) {
             auto arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(expr);
             if (arrayLiteralExpr->elements.size() != static_cast<size_t>(target.getArraySize())) return Type();
             bool isConvertible = llvm::all_of(arrayLiteralExpr->elements, [&](Expr* element) {
@@ -1285,7 +1285,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isPointerType() && source.getPointee().isConstantArray() && (target.isSlice() || target.isUnsizedArrayPointer())
+    if (source.isPointerType() && source.getPointee().isConcreteArray() && (target.isSlice() || target.isUnsizedArrayPointer())
         && (source.getPointee().getElementType().isMutable() || !target.getElementType().isMutable())
         && isReinterpretible(source.getPointee().getElementType(), target.getElementType())) {
         return source;
@@ -1388,7 +1388,7 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         return findGenericArg(FunctionType::get(argType.getClosureReturnType(), std::move(paramTypes), false), paramType, genericParam, inFunctionType);
     }
 
-    if (argType.isBasicArrayType() && paramType.getKind() == TypeKind::ArrayPointerType) {
+    if (argType.isFixedArray() && paramType.getKind() == TypeKind::ArrayPointerType) {
         return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
     }
 
@@ -1401,7 +1401,7 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
                 // Matches both type params (T) and integer params (N in Array<T, N>):
                 // a placeholder Type("N") in param position returns the arg (int or type).
                 if (paramTypeGenericArg.isType() && paramTypeGenericArg.type.isBasicType() && paramTypeGenericArg.type.getName() == genericParam) {
-                    return isFirstGenericArg && argType.isBasicArrayType() ? GenericArg(argType.getElementType()) : argTypeGenericArg;
+                    return isFirstGenericArg && argType.isFixedArray() ? GenericArg(argType.getElementType()) : argTypeGenericArg;
                 }
                 if (argTypeGenericArg.isType() && paramTypeGenericArg.isType()) {
                     if (GenericArg arg = findGenericArg(argTypeGenericArg.type, paramTypeGenericArg.type, genericParam, inFunctionType)) {
@@ -1925,7 +1925,7 @@ bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericPa
 // must additionally mention a generic parameter; a concrete return type carries no information about the callee's parameters.
 static bool canInferFromExpectedType(llvm::ArrayRef<GenericParamDecl> genericParams, FunctionDecl* decl, Type expectedType) {
     Type concreteExpectedType = expectedType ? expectedType.removeOptional() : Type();
-    if (concreteExpectedType && concreteExpectedType.isBasicArrayType() && concreteExpectedType.isConstantArray() && decl->isConstructorDecl()
+    if (concreteExpectedType && concreteExpectedType.isFixedArray() && concreteExpectedType.isConcreteArray() && decl->isConstructorDecl()
         && decl->getTypeDecl()->getName() == "Array") {
         return true;
     }
@@ -2595,7 +2595,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
         // T[*] is a pointer view rather than an Array<T, N> value. Its data()
         // operation is the identity; fixed arrays use the stdlib declaration.
-        if (receiverType.removeOptional().isArrayType() && !receiverType.removeOptional().isBasicArrayType() && expr.getFunctionName() == "data") {
+        if (receiverType.removeOptional().isArrayType() && !receiverType.removeOptional().isFixedArray() && expr.getFunctionName() == "data") {
             validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.location);
             validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
             return receiverType;
@@ -2619,7 +2619,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         auto callee = expr.getQualifiedFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
 
-        if (decls.empty() && receiverType.removeOptional().removePointer().isBasicArrayType()) {
+        if (decls.empty() && receiverType.removeOptional().removePointer().isFixedArray()) {
             ERROR(expr.getReceiver()->location, "type '" << receiverType.removePointer() << "' has no member function '" << expr.getFunctionName() << "'");
         }
 
@@ -2630,7 +2630,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         decl = resolveOverload(decls, expr, callee, expectedType);
 
         Type arrayReceiverType = receiverType.removeOptional().removePointer();
-        if (arrayReceiverType.isBasicArrayType() && !arrayReceiverType.isMutable() && expr.getFunctionName() == "data") {
+        if (arrayReceiverType.isFixedArray() && !arrayReceiverType.isMutable() && expr.getFunctionName() == "data") {
             returnTypeOverride = ArrayPointerType::get(arrayReceiverType.getElementType(), arrayReceiverType.location);
         }
 
@@ -3043,7 +3043,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         // xyzw, rgba, or stpq (one set per swizzle), mapping to indices.
         // Single-char returns the element; multi-char returns a new array.
         // Read-only for now (returns a value, not an lvalue).
-        if (baseType.isConstantArray() && expr.member.size() >= 1 && expr.member.size() <= 4) {
+        if (baseType.isConcreteArray() && expr.member.size() >= 1 && expr.member.size() <= 4) {
             auto swizzleIndex = [](char c) -> int {
                 switch (c) {
                 case 'x':
@@ -3188,7 +3188,7 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
     // resolve the operator[-] call built by the parser. (Non-array types
     // returned above, so arrayType is always set here.)
     if (expr.fromEnd) {
-        if (!arrayType.isConstantArray()) {
+        if (!arrayType.isConcreteArray()) {
             ERROR_RANGE(indexExpr->location, indexExpr->endLocation, "from-end index '[-]' is not supported for arrays of unknown size");
         }
         llvm::APSInt sizeValue(64, false);
@@ -3218,7 +3218,7 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
         // Wider integer indexes pass through unconverted; both backends accept any integer index type.
     }
 
-    if (arrayType.isConstantArray()) {
+    if (arrayType.isConcreteArray()) {
         if (indexExpr->isConstant()) {
             auto index = indexExpr->getConstantIntegerValue();
 

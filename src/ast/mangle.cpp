@@ -66,7 +66,7 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
             mangleType(stream, type.getWrappedType());
         } else {
             mangleIdentifier(stream, type.getName());
-            if (type.isBasicArrayType() && !type.isMutable()) stream << 'K';
+            if (type.isFixedArray() && !type.isMutable()) stream << 'K';
             mangleGenericArgs(stream, type.getGenericArgs());
         }
         break;

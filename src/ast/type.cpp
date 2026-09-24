@@ -49,10 +49,10 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Undefined, undefined)
 bool Type::isImplicitlyCopyable() const {
     switch (getKind()) {
     case TypeKind::BasicType:
-        if (isBasicArrayType()) return !isConstantArray() || getElementType().isImplicitlyCopyable();
+        if (isFixedArray()) return !isConcreteArray() || getElementType().isImplicitlyCopyable();
         return !getDecl() || getDecl()->isStoredByValue();
     case TypeKind::ArrayPointerType:
-        return !isConstantArray() || getElementType().isImplicitlyCopyable();
+        return !isConcreteArray() || getElementType().isImplicitlyCopyable();
     case TypeKind::AnonymousStructType:
         return llvm::all_of(llvm::cast<AnonymousStructType>(typeBase)->elements, [&](auto& element) { return element.type.isImplicitlyCopyable(); });
     case TypeKind::FunctionType:
@@ -64,8 +64,8 @@ bool Type::isImplicitlyCopyable() const {
     llvm_unreachable("all cases handled");
 }
 
-bool Type::isConstantArray() const {
-    return isBasicArrayType() && getGenericArgs()[1].isInt() && getArraySize() >= 0;
+bool Type::isConcreteArray() const {
+    return isFixedArray() && getGenericArgs()[1].isInt() && getArraySize() >= 0;
 }
 
 bool Type::isSlice() const {
@@ -236,7 +236,7 @@ std::string cx::getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Ge
 }
 
 Type cx::getArrayTypeForReceiver(Type type) {
-    if (!type || !type.isBasicArrayType() || type.isMutable()) return type;
+    if (!type || !type.isFixedArray() || type.isMutable()) return type;
 
     auto genericArgs = std::vector<GenericArg>(type.getGenericArgs().begin(), type.getGenericArgs().end());
     genericArgs[0] = GenericArg(type.getElementType());
@@ -307,7 +307,7 @@ std::string Type::getQualifiedTypeName() const {
 
 Type Type::getElementType() const {
     if (isSlice()) return getGenericArgs()[0].type;
-    if (isBasicArrayType()) {
+    if (isFixedArray()) {
         Type elementType = getGenericArgs()[0].type.withLocation(location);
         return isMutable() ? elementType : elementType.withMutability(Mutability::Const);
     }
@@ -317,7 +317,7 @@ Type Type::getElementType() const {
 }
 
 int64_t Type::getArraySize() const {
-    if (isBasicArrayType()) {
+    if (isFixedArray()) {
         auto& sizeArg = getGenericArgs()[1];
         if (sizeArg.isInt()) return sizeArg.getInt();
         // Symbolic size: no concrete size yet; callers check getArraySizeParam first.
@@ -328,7 +328,7 @@ int64_t Type::getArraySize() const {
 }
 
 llvm::StringRef Type::getArraySizeParam() const {
-    if (isBasicArrayType()) {
+    if (isFixedArray()) {
         auto& sizeArg = getGenericArgs()[1];
         if (sizeArg.isType() && sizeArg.type.isBasicType()) return sizeArg.type.getName();
         return llvm::StringRef();
@@ -448,7 +448,7 @@ bool Type::containsUnresolvedPlaceholder() const {
     switch (getKind()) {
     case TypeKind::BasicType:
         // A symbolic array size (Array<T, N> with N a placeholder) is unresolved.
-        if (isBasicArrayType() && !getArraySizeParam().empty()) return true;
+        if (isFixedArray() && !getArraySizeParam().empty()) return true;
         for (GenericArg genericArg : getGenericArgs()) {
             if (genericArg.isType() && genericArg.type.containsUnresolvedPlaceholder()) {
                 return true;
@@ -525,7 +525,7 @@ void Type::printTo(std::ostream& stream) const {
 
     switch (typeBase->kind) {
     case TypeKind::BasicType: {
-        if (isBasicArrayType()) {
+        if (isFixedArray()) {
             // Fixed arrays are represented as BasicType("Array", {T, N}), but
             // diagnostics keep the source-level T[N] spelling. The array's
             // constness also constrains its elements, so print that qualifier once.

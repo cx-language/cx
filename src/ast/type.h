@@ -57,8 +57,8 @@ struct Type {
 
     // TODO: Remove 'Type' suffix from these methods
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
-    bool isBasicArrayType() const { return isBasicType() && getName() == "Array" && getGenericArgs().size() == 2; }
-    bool isArrayType() const { return getKind() == TypeKind::ArrayPointerType || isBasicArrayType(); }
+    bool isFixedArray() const { return isBasicType() && getName() == "Array" && getGenericArgs().size() == 2; }
+    bool isArrayType() const { return getKind() == TypeKind::ArrayPointerType || isFixedArray(); }
     bool isRangeType() const { return isBasicType() && (getName() == "Range" || getName() == "ClosedRange"); }
     bool isAnonymousStructType() const { return getKind() == TypeKind::AnonymousStructType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
@@ -69,7 +69,7 @@ struct Type {
     bool isOptionalType() const { return isBasicType() && getName() == "Optional"; }
     bool isBuiltinType() const { return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull() || isVoid(); }
     bool isImplicitlyCopyable() const;
-    bool isConstantArray() const;
+    bool isConcreteArray() const;
     bool isSlice() const;
     bool isUnsizedArrayPointer() const;
     bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }

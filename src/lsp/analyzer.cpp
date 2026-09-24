@@ -1779,7 +1779,7 @@ std::vector<CompletionItem> membersForType(Type type) {
         return out;
     }
     TypeDecl* decl = t.getDecl();
-    if (!decl && t.isBasicArrayType()) {
+    if (!decl && t.isFixedArray()) {
         if (auto* std = Module::getStdlibModule()) {
             if (auto* array = llvm::dyn_cast_or_null<TypeTemplate>(std->symbolTable.findOne("Array"))) {
                 decl = array->instantiate(t.getGenericArgs());
