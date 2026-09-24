@@ -118,10 +118,23 @@ target_link_libraries(libcx ${LLVM_LIBS})
 add_executable(example_embedding examples/embedding/embedding.cpp)
 target_include_directories(example_embedding PRIVATE src)
 target_link_libraries(example_embedding libcx)
+include(ProcessorCount)
+ProcessorCount(CHECK_PARALLEL_JOBS)
+if(CHECK_PARALLEL_JOBS EQUAL 0)
+    set(CHECK_PARALLEL_JOBS 4)
+endif()
+# Inner parallelism for the snippet suites: CTest already parallelizes across
+# tests, so a full core count here oversubscribes (two suites times N threads
+# plus lit shards). Cap at 4, fewer on small machines. Direct script runs keep
+# the higher default for fast iteration.
+set(SNIPPET_JOBS 4)
+if(CHECK_PARALLEL_JOBS LESS 4)
+    set(SNIPPET_JOBS ${CHECK_PARALLEL_JOBS})
+endif()
 add_test(NAME examples COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>")
 add_test(NAME examples-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
-add_test(NAME docs-snippets COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>")
-add_test(NAME docs-snippets-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
+add_test(NAME docs-snippets COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--jobs=${SNIPPET_JOBS}")
+add_test(NAME docs-snippets-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--backend=c" "--jobs=${SNIPPET_JOBS}")
 add_test(NAME docs-stdlib-unit COMMAND python3 "${PROJECT_SOURCE_DIR}/website/test_generate_std_docs.py")
 add_test(NAME prose COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_prose.py")
 # Language server end-to-end tests (query subprocess + stdio server session).
