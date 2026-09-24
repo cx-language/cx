@@ -99,7 +99,7 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         auto it = replacements.find(getName());
         if (it != replacements.end() && it->second.isType()) {
             // TODO: Handle generic arguments for type placeholders.
-            Type resolved = it->second.type.withMutability(mutability);
+            Type resolved = it->second.getType().withMutability(mutability);
             resolved.location = location;
             return resolved;
         }
@@ -197,17 +197,27 @@ bool cx::operator==(const AnonymousStructElement& a, const AnonymousStructElemen
 }
 
 bool cx::operator==(const GenericArg& a, const GenericArg& b) {
-    if (a.isInt() || b.isInt()) return a.intValue == b.intValue;
-    return a.type == b.type;
+    if (a.kind != b.kind) return false;
+    switch (a.kind) {
+    case GenericArg::Kind::Type:
+        return a.getType() == b.getType();
+    case GenericArg::Kind::Int:
+        return a.getInt() == b.getInt();
+    case GenericArg::Kind::Null:
+        return true;
+    }
+    llvm_unreachable("all cases handled");
 }
 
 std::string GenericArg::toString() const {
     if (isInt()) return std::to_string(getInt());
-    return type.toString();
+    if (isType()) return getType().toString();
+    return "NULL";
 }
 
 GenericArg GenericArg::resolve(const llvm::StringMap<GenericArg>& replacements) const {
-    if (isInt()) return *this;
+    if (!isType()) return *this;
+    Type type = getType();
     if (type.isBasicType()) {
         if (auto it = replacements.find(type.getName()); it != replacements.end()) {
             return it->second;
@@ -306,9 +316,9 @@ std::string Type::getQualifiedTypeName() const {
 }
 
 Type Type::getElementType() const {
-    if (isSlice()) return getGenericArgs()[0].type;
+    if (isSlice()) return getGenericArgs()[0].getType();
     if (isFixedArray()) {
-        Type elementType = getGenericArgs()[0].type.withLocation(location);
+        Type elementType = getGenericArgs()[0].getType().withLocation(location);
         return isMutable() ? elementType : elementType.withMutability(Mutability::Const);
     }
     ASSERT(getKind() == TypeKind::ArrayPointerType);
@@ -368,7 +378,7 @@ PointerKind Type::getPointerKind() const {
 bool Type::containsReference() const {
     switch (getKind()) {
     case TypeKind::BasicType:
-        return llvm::any_of(getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.type.containsReference(); });
+        return llvm::any_of(getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.getType().containsReference(); });
     case TypeKind::ArrayPointerType:
         return getElementType().containsReference();
     case TypeKind::AnonymousStructType:
@@ -388,7 +398,7 @@ bool Type::containsReference() const {
 bool Type::storesBorrow() const {
     switch (getKind()) {
     case TypeKind::BasicType:
-        return llvm::any_of(getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.type.storesBorrow(); });
+        return llvm::any_of(getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.getType().storesBorrow(); });
     case TypeKind::ArrayPointerType:
         return getElementType().storesBorrow();
     case TypeKind::AnonymousStructType:
@@ -410,7 +420,7 @@ bool Type::isImplementedAsPointer() const {
 
 Type Type::getWrappedType() const {
     ASSERT(isOptionalType());
-    return getGenericArgs().front().type.withLocation(location);
+    return getGenericArgs().front().getType().withLocation(location);
 }
 
 bool cx::operator==(Type lhs, Type rhs) {
@@ -450,7 +460,7 @@ bool Type::containsUnresolvedPlaceholder() const {
         // A symbolic array size (Array<T, N> with N a placeholder) is unresolved.
         if (isFixedArray() && !getArraySizeParam().empty()) return true;
         for (GenericArg genericArg : getGenericArgs()) {
-            if (genericArg.isType() && genericArg.type.containsUnresolvedPlaceholder()) {
+            if (genericArg.isType() && genericArg.getType().containsUnresolvedPlaceholder()) {
                 return true;
             }
         }
@@ -572,7 +582,7 @@ void Type::printTo(std::ostream& stream) const {
                 if (arg.isInt()) {
                     stream << arg.getInt();
                 } else {
-                    arg.type.printTo(stream);
+                    arg.getType().printTo(stream);
                 }
                 if (&arg != &genericArgs.back()) stream << ", ";
             }

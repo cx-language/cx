@@ -90,7 +90,7 @@ static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::Small
 // through substitution rather than being written in a stored position.
 static bool allowsSubstitutedReference(const TypeDecl& typeDecl) {
     return typeDecl.instantiatedFrom != nullptr
-        && llvm::any_of(typeDecl.genericArgs, [](GenericArg arg) { return arg.isType() && arg.type.containsReference(); });
+        && llvm::any_of(typeDecl.genericArgs, [](GenericArg arg) { return arg.isType() && arg.getType().containsReference(); });
 }
 
 static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> memberTypes) {
@@ -344,7 +344,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
                 bool nestedAllowReference = allowReference && (type.isOptionalType() || allowsBorrowArgs(decl));
                 for (auto genericArg : basicType->genericArgs) {
-                    if (genericArg.isType()) typecheckType(genericArg.type.withLocation(type.location), userAccessLevel, true, nestedAllowReference);
+                    if (genericArg.isType()) typecheckType(genericArg.getType().withLocation(type.location), userAccessLevel, true, nestedAllowReference);
                 }
             }
         } else {
@@ -364,7 +364,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 nestedAllowReference = llvm::any_of(findDecls(basicType->name), allowsBorrowArgs);
             }
             for (auto genericArg : basicType->genericArgs) {
-                if (genericArg.isType()) typecheckType(genericArg.type, userAccessLevel, true, nestedAllowReference);
+                if (genericArg.isType()) typecheckType(genericArg.getType(), userAccessLevel, true, nestedAllowReference);
             }
 
             auto decls = findDecls(basicType->getQualifiedName());

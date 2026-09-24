@@ -138,7 +138,14 @@ jobs:
         shell: bash
         run: cmake --build . --config ${{ matrix.build_type }}
 
+      # Full test runs stay on Release legs only: unoptimized Debug
+      # binaries are several-fold slower per compiler invocation, and the
+      # suites spawn thousands of them (26-29min Test steps). Assertions
+      # are enabled in all configurations (NDEBUG is stripped in
+      # CMakeLists.txt), so Release legs already check them; Debug legs
+      # only verify the build compiles.
       - name: Test
+        if: matrix.build_type != 'Debug'
         working-directory: ${{runner.workspace}}/build
         shell: bash
         run: |

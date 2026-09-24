@@ -50,8 +50,8 @@ static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<G
             if (genericArg.isInt()) {
                 stream << 'N' << genericArg.getInt() << '_';
             } else {
-                if (!genericArg.type.isMutable()) stream << 'K';
-                mangleType(stream, genericArg.type);
+                if (!genericArg.getType().isMutable()) stream << 'K';
+                mangleType(stream, genericArg.getType());
             }
         }
         stream << 'E';

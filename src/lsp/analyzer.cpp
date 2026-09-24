@@ -362,7 +362,7 @@ struct Finder {
         case TypeKind::BasicType:
             // Covers Array<T, N>: element is a generic arg.
             for (GenericArg arg : type.getGenericArgs())
-                if (arg.isType()) visitType(arg.type, depth + 1);
+                if (arg.isType()) visitType(arg.getType(), depth + 1);
             break;
         case TypeKind::ArrayPointerType:
             visitType(type.getElementType(), depth + 1);
@@ -594,7 +594,7 @@ void Finder::visitDecl(Decl* decl, int depth) {
         for (Type interface : typeDecl->interfaces)
             visitType(interface, depth + 1);
         for (GenericArg arg : typeDecl->genericArgs)
-            if (arg.isType()) visitType(arg.type, depth + 1);
+            if (arg.isType()) visitType(arg.getType(), depth + 1);
         for (auto& field : typeDecl->fields) {
             consider(&field, field.getLocation(), field.getName().size(), nullptr, true, depth + 1);
             visitType(field.type, depth + 1);
@@ -649,7 +649,7 @@ struct ReferenceCollector {
         switch (type.getKind()) {
         case TypeKind::BasicType:
             for (GenericArg arg : type.getGenericArgs())
-                if (arg.isType()) visitType(arg.type);
+                if (arg.isType()) visitType(arg.getType());
             break;
         case TypeKind::ArrayPointerType:
             visitType(type.getElementType());
@@ -861,7 +861,7 @@ void ReferenceCollector::visitDecl(Decl* decl) {
         for (Type interface : typeDecl->interfaces)
             visitType(interface);
         for (GenericArg arg : typeDecl->genericArgs)
-            if (arg.isType()) visitType(arg.type);
+            if (arg.isType()) visitType(arg.getType());
         for (auto& field : typeDecl->fields) {
             if (&field == target) locations.emplace_back(field.getLocation(), field.getName().size());
             visitType(field.type);
@@ -1140,7 +1140,7 @@ struct SemanticCollector {
             // preserve the inner locations.
             if ((type.isOptionalType() || type.isSlice()) && !type.getGenericArgs().empty()) {
                 for (GenericArg arg : type.getGenericArgs())
-                    if (arg.isType()) visitType(arg.type);
+                    if (arg.isType()) visitType(arg.getType());
                 return;
             }
             if (TypeDecl* typeDecl = type.getDecl()) {
@@ -1152,7 +1152,7 @@ struct SemanticCollector {
                 emit(type.location, type.getName(), "type", false);
             }
             for (GenericArg arg : type.getGenericArgs())
-                if (arg.isType()) visitType(arg.type);
+                if (arg.isType()) visitType(arg.getType());
             return;
         }
         case TypeKind::ArrayPointerType:
@@ -1217,7 +1217,7 @@ void SemanticCollector::visitExpr(Expr* expr) {
         for (auto& arg : call->args)
             visitExpr(arg.value);
         for (GenericArg arg : call->genericArgs)
-            if (arg.isType()) visitType(arg.type);
+            if (arg.isType()) visitType(arg.getType());
         return;
     }
     case ExprKind::ArrayLiteralExpr:
@@ -1384,7 +1384,7 @@ void SemanticCollector::visitDecl(Decl* decl) {
         for (Type interface : typeDecl->interfaces)
             visitType(interface);
         for (GenericArg arg : typeDecl->genericArgs)
-            if (arg.isType()) visitType(arg.type);
+            if (arg.isType()) visitType(arg.getType());
         for (auto& field : typeDecl->fields) {
             emitDecl(&field, true);
             visitType(field.type);

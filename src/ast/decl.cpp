@@ -357,7 +357,7 @@ bool TypeDecl::hasInterface(const TypeDecl& interface) const {
 }
 
 bool TypeDecl::isCopyable() const {
-    if (name == "Optional") return genericArgs.front().type.isImplicitlyCopyable();
+    if (name == "Optional") return genericArgs.front().getType().isImplicitlyCopyable();
     return llvm::any_of(interfaces, [&](Type type) { return type.getName() == "Copyable"; });
 }
 
