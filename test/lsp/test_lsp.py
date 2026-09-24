@@ -421,6 +421,11 @@ def test_completion_members(cx_lsp, path):
     items = labels_for(content, (2, 8))
     check("query-completion-member-array", set(items) == {"data", "size", "iterator"}, json.dumps(sorted(items))[:300])
 
+    # Array pointer: only the compiler-known data() method.
+    content = "void main() {\n    int[*] p = [1, 2, 3];\n    p.\n}\n"
+    items = labels_for(content, (2, 6))
+    check("query-completion-member-array-pointer", set(items) == {"data"}, json.dumps(sorted(items))[:300])
+
     # Pointer and optional receivers unwrap to the pointee/wrapped members.
     content = POINT + "void main() {\n    Point p = Point(0, 0);\n    Point* ptr = &p;\n    ptr.\n}\n"
     items = labels_for(content, (8, 8))

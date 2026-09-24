@@ -488,10 +488,7 @@ Type Parser::parseArrayType(Type elementType) {
         if (size.getActiveBits() > 63) {
             ERROR(sizeExpr->location, "array size is too large");
         }
-        std::vector<GenericArg> args;
-        args.emplace_back(elementType);
-        args.push_back(GenericArg::fromInt(size.getSExtValue(), sizeExpr->location));
-        return BasicType::get("Array", args, elementType.mutability, elementType.location);
+        return BasicType::getArray(elementType, size.getSExtValue(), elementType.location);
     }
     }
 }

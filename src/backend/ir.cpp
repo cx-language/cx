@@ -34,7 +34,7 @@ IRType* cx::getIRType(Type astType) {
         // Fixed-size arrays ("T[N]") lower to LLVM array types, not to the
         // fieldless stdlib Array struct layout.
         if (astType.isFixedArray()) {
-            ASSERT(astType.isConcreteArray() || !astType.getArraySizeParam().empty());
+            ASSERT(astType.isConcreteArray());
             auto elementType = getIRType(astType.getElementType());
             irType = new IRArrayType{IRTypeKind::IRArrayType, elementType, static_cast<int>(astType.getArraySize())};
             break;

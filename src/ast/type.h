@@ -57,6 +57,7 @@ struct Type {
 
     // TODO: Remove 'Type' suffix from these methods
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
+    // Matches the stdlib Array declaration by name; user code must not declare its own Array type.
     bool isFixedArray() const { return isBasicType() && getName() == "Array" && getGenericArgs().size() == 2; }
     bool isArrayType() const { return getKind() == TypeKind::ArrayPointerType || isFixedArray(); }
     bool isRangeType() const { return isBasicType() && (getName() == "Range" || getName() == "ClosedRange"); }

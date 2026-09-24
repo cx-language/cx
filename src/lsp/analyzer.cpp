@@ -1810,6 +1810,15 @@ std::vector<CompletionItem> membersForType(Type type) {
             }
         }
     }
+    if (!decl && t.isArrayPointer()) {
+        // Array pointers have no declaration; their only method is the
+        // compiler-known data() identity.
+        CompletionItem item;
+        item.label = "data";
+        item.kind = "method";
+        out.push_back(std::move(item));
+        return out;
+    }
     if (!decl || decl->isEnumDecl()) return out;
     for (auto& field : decl->fields) {
         if (field.getName().empty()) continue;
