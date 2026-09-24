@@ -32,6 +32,9 @@ void main() {
 }
 ```
 
+Names starting with `_` suppress the unused-variable warning,
+for placeholders that are declared but deliberately never read.
+
 ## Reserved words
 
 The following words are reserved and cannot be used as identifiers

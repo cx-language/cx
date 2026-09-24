@@ -109,7 +109,8 @@ void main() {
 ## switch
 
 Unlike in most C-based languages, the case bodies don't fall through to the next by default,
-so you don't have to manually `break` after each case.
+so you don't have to manually `break` after each case. Variables can be declared directly in
+a case body without wrapping it in a block.
 
 ```cs
 void main() {

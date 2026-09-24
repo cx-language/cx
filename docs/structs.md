@@ -74,7 +74,9 @@ default values. Argument expressions always evaluate in the order written.
 
 To customize construction, declare a constructor: a member function
 with the same name as the struct. It must initialize every field,
-using `this.` to refer to fields shadowed by parameters:
+using `this.` to refer to fields shadowed by parameters.
+Constructors are never implicit: a single-parameter constructor does not convert
+its argument type, so pass `Wrapper(5)` explicitly instead of a bare `5`:
 
 ```cs
 struct Counter: Copyable {

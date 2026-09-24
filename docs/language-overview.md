@@ -50,9 +50,9 @@ void main() {
 
 The compiler also warns when a variable might be read before initialization, for example when
 passing it as an out parameter to a C function. Assigning the keyword `undefined` to the
-variable suppresses the warning when the programmer knows it is safe. Ignored return values
-produce a warning as well; assigning to `_` marks a result as deliberately unused instead of
-casting to void.
+variable suppresses the warning when the programmer knows it is safe. With `--Wunused-result`,
+ignored return values produce a warning as well; assigning to `_` marks a result as deliberately
+unused instead of casting to void.
 
 ## Improved type system
 
@@ -110,8 +110,7 @@ void main() {
 }
 ```
 
-Math support includes constants such as Pi, and math functions can be evaluated at
-compile time:
+Math support includes constants such as Pi:
 
 ```cs
 void main() {
@@ -119,9 +118,8 @@ void main() {
 }
 ```
 
-Beyond that, the standard library covers file system access and process control, offers
-both a Unicode-correct string type and a raw byte string type, and its algorithms take
-range objects instead of iterator pairs for ease of use.
+Beyond that, the standard library covers file system access and process control, and its
+algorithms take range objects instead of iterator pairs for ease of use.
 
 ## Improved syntax
 

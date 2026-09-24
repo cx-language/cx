@@ -55,6 +55,27 @@ custom conditions are enabled with `-D` flags: `cx build -DEXTRA`.
 `-D`, `-I`, `-L`, `-l`, and `-framework` flags can also be passed directly
 for one-off overrides.
 
+## Conditional compilation
+
+The same `#if` conditions work in source files, selecting top-level declarations
+per platform or configuration. A condition tests a single define, optionally
+negated with `!`, and `hasInclude` tests for a C header instead:
+
+```cx
+#if Windows
+var pathSeparator = "\\";
+#else
+var pathSeparator = "/";
+#endif
+
+#if hasInclude("unwind.h")
+import "unwind.h";
+#endif
+```
+
+Defines come from `-D` flags, the project's `defines` setting, and `pkg-config`
+dependencies; `Windows` and `macOS` are predefined on those platforms.
+
 ## Unit tests
 
 Mark a top-level function with `test` to make it a unit test,
