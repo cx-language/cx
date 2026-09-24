@@ -3,39 +3,39 @@
 int64 g = 5;
 
 struct S {
-    // CHECK: [[@LINE+1]]:13: error: cannot assign 'int64' to 'int32' (use 'int32(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'int64' to 'int' (use 'int(...)' to convert explicitly)
     int x = g;
 }
 
 void main() {
     int64 a = 5;
-    // CHECK: [[@LINE+1]]:13: error: cannot assign 'int64' to 'int32' (use 'int32(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'int64' to 'int' (use 'int(...)' to convert explicitly)
     int b = a;
 
     uint32 c = 5;
-    // CHECK: [[@LINE+1]]:13: error: cannot assign 'uint32' to 'int32' (use 'int32(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'uint32' to 'int' (use 'int(...)' to convert explicitly)
     int d = c;
 
     int e = 5;
-    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int32' to 'uint32' (use 'uint32(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int' to 'uint' (use 'uint(...)' to convert explicitly)
     uint f = e;
 
     float fl = 1.5;
-    // CHECK: [[@LINE+1]]:13: error: cannot assign 'float32' to 'int32' (use 'int32(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'float' to 'int' (use 'int(...)' to convert explicitly)
     int h = fl;
 
     int8 i = 1;
     // CHECK: [[@LINE+1]]:16: error: cannot assign 'int8' to 'int64*'
     int64* p = i;
 
-    // CHECK: [[@LINE+1]]:7: error: cannot assign 'int64' to 'int32' (use 'int32(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:7: error: cannot assign 'int64' to 'int' (use 'int(...)' to convert explicitly)
     b = a;
 
     int[2] arr = [0, 0];
-    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int64' to 'int32' (use 'int32(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int64' to 'int' (use 'int(...)' to convert explicitly)
     arr[0] = a;
 
-    // CHECK: [[@LINE+1]]:13: error: invalid argument #1 type 'int64' to 'takeInt', expected 'int32' (use 'int32(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:13: error: invalid argument #1 type 'int64' to 'takeInt', expected 'int' (use 'int(...)' to convert explicitly)
     takeInt(a);
     // CHECK: {{[0-9]+}}:6: note: 'takeInt' declared here
 
@@ -48,6 +48,6 @@ void takeInt(int x) {
 
 int retInt() {
     int64 a = 5;
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int64', expected 'int32' (use 'int32(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int64', expected 'int' (use 'int(...)' to convert explicitly)
     return a;
 }

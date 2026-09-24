@@ -2,27 +2,27 @@
 // CHECK-NOT: pointer-arithmetic-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void f(int* p, int* q, int[*] s, int[*] t, int x) {
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int32*' and 'int32' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     _ = p + 1;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int32' and 'int32*' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int' and 'int*' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     _ = 1 + p;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int32*' and 'int32*' to '-'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int*' to '-'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     _ = p - q;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int32*' and 'int32' to '&'; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int' to '&'; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value
     _ = p & x;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int32*' and 'int32' to '<<'; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int' to '<<'; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value
     _ = p << 1;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int32[*]' and 'int32[*]' to '-'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int[*]' and 'int[*]' to '-'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     _ = s - t;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int32*' and 'int32' to '=='; to compare the pointed-to value, dereference with '*'
+    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int' to '=='; to compare the pointed-to value, dereference with '*'
     _ = p == 1;
-    // CHECK: [[@LINE+1]]:7: error: invalid operands 'int32*' and 'int32' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:7: error: invalid operands 'int*' and 'int' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     p += 1;
 }
 
 void pointerArray(int* p, int* q) {
     int*[2] values = [p, q];
-    // CHECK: [[@LINE+1]]:16: error: no matching operator '+' with arguments 'int32*[2]' and 'int32*[2]'
+    // CHECK: [[@LINE+1]]:16: error: no matching operator '+' with arguments 'int*[2]' and 'int*[2]'
     _ = values + values;
 }
 

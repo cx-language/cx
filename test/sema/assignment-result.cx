@@ -4,7 +4,7 @@ void rvalue() {
     var a = 1;
     var b = 2;
 
-    // CHECK: [[@LINE+1]]:7: error: cannot assign to expression of type 'int32'
+    // CHECK: [[@LINE+1]]:7: error: cannot assign to expression of type 'int'
     a + b = 3;
 }
 
@@ -14,7 +14,7 @@ void main() {
     var a = 1;
 
     // A parenthesized `id = value` is an anonymous struct, not an assignment.
-    // CHECK: [[@LINE+1]]:7: error: cannot assign '(int32 a)' to 'int32'
+    // CHECK: [[@LINE+1]]:7: error: cannot assign '(int a)' to 'int'
     a = (a = 2);
 
     // Assignments evaluate to void.
@@ -24,25 +24,25 @@ void main() {
 
 void callArg() {
     var arr = [1, 2];
-    // CHECK: [[@LINE+1]]:16: error: invalid argument #1 type 'void' to 'takeTwo', expected 'int32'
+    // CHECK: [[@LINE+1]]:16: error: invalid argument #1 type 'void' to 'takeTwo', expected 'int'
     takeTwo(arr[0] = 3, 4);
 }
 
 void varInit() {
     var b = 4;
-    // CHECK: [[@LINE+1]]:15: error: cannot assign 'void' to 'int32'
+    // CHECK: [[@LINE+1]]:15: error: cannot assign 'void' to 'int'
     int z = b += 5;
 }
 
 int returnAssign() {
     var b = 4;
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'void', expected 'int32'
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'void', expected 'int'
     return b += 5;
 }
 
 void chained() {
     var a = 0;
     var b = 0;
-    // CHECK: [[@LINE+1]]:7: error: cannot assign 'void' to 'int32'
+    // CHECK: [[@LINE+1]]:7: error: cannot assign 'void' to 'int'
     a = b = 1;
 }

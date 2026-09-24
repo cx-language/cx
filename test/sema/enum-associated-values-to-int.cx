@@ -11,7 +11,7 @@ void main() {
     // Calling a unit case with empty parentheses constructs it.
     var unit = E.A();
     // Only tag-only enums convert to their tag type.
-    // CHECK: [[@LINE+1]]:15: error: cannot assign 'E' to 'int32'
+    // CHECK: [[@LINE+1]]:15: error: cannot assign 'E' to 'int'
     int x = E.B(x = 5);
 }
 

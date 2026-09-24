@@ -4,7 +4,7 @@
 
 void main() {
     // Optional is an enum; construct values with Optional.Some/Optional.None instead.
-    // CHECK: [[@LINE+1]]:14: error: no matching constructor 'Optional(int32)'
+    // CHECK: [[@LINE+1]]:14: error: no matching constructor 'Optional(int)'
     int? x = Optional(2);
 }
 

@@ -2,7 +2,7 @@
 // CHECK-NOT: reference-local-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 var g = 1;
-// CHECK: [[@LINE+1]]:1: error: reference type 'int32&' may only appear as a function parameter, return type, local variable, or interface argument
+// CHECK: [[@LINE+1]]:1: error: reference type 'int&' may only appear as a function parameter, return type, local variable, or interface argument
 int& gr = g;
 
 void missingInitializer() {
@@ -14,13 +14,13 @@ void rebindLocal() {
     var x = 1;
     var y = 2;
     int& r = x;
-    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int32&' (use '*' to write through it explicitly)
+    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
     r = y;
 }
 
 void bindTemporary() {
     var x = 1;
-    // CHECK: [[@LINE+1]]:16: error: cannot assign 'int32' to 'int32&'
+    // CHECK: [[@LINE+1]]:16: error: cannot assign 'int' to 'int&'
     int& r = x + 1;
 }
 

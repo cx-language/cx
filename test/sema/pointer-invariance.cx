@@ -23,24 +23,24 @@ void barPlain(int** pp) {
 void nullabilityWidening() {
     int x = 42;
     int* p = &x;
-    // CHECK: [[@LINE+1]]:9: error: invalid argument #1 type 'int32**' to 'bar', expected 'int32*?*'
+    // CHECK: [[@LINE+1]]:9: error: invalid argument #1 type 'int**' to 'bar', expected 'int*?*'
     bar(&p);
-    // CHECK: [[@LINE+1]]:16: error: cannot assign 'int32**' to 'int32*?*'
+    // CHECK: [[@LINE+1]]:16: error: cannot assign 'int**' to 'int*?*'
     int*?* q = &p;
 }
 
 void constUnderPointer() {
     int x = 42;
     int* p = &x;
-    // CHECK: [[@LINE+1]]:14: error: invalid argument #1 type 'int32**' to 'barConst', expected 'const int32**'
+    // CHECK: [[@LINE+1]]:14: error: invalid argument #1 type 'int**' to 'barConst', expected 'const int**'
     barConst(&p);
 }
 
 void arrayElementWidening() {
     int[4] a = [1, 2, 3, 4];
-    // CHECK: [[@LINE+1]]:12: error: invalid argument #1 type 'int32[4]' to 'barArr', expected 'int32?*'
+    // CHECK: [[@LINE+1]]:12: error: invalid argument #1 type 'int[4]' to 'barArr', expected 'int?*'
     barArr(a);
-    // CHECK: [[@LINE+1]]:12: error: invalid argument #1 type 'int32[4]*' to 'barArr', expected 'int32?*'
+    // CHECK: [[@LINE+1]]:12: error: invalid argument #1 type 'int[4]*' to 'barArr', expected 'int?*'
     barArr(&a);
 }
 

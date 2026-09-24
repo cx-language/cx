@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void main() {
-    // CHECK: [[@LINE+1]]:9: error: type 'int32' is not convertible to boolean
+    // CHECK: [[@LINE+1]]:9: error: type 'int' is not convertible to boolean
     if (0) {}
 }

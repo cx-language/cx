@@ -1,7 +1,7 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 struct A<T> {
-    // CHECK: 5:16: error: no member named 'd' in 'A<int32>'
+    // CHECK: 5:16: error: no member named 'd' in 'A<int>'
     A() { this.d = 3 }
 }
 

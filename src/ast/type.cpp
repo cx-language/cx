@@ -90,6 +90,13 @@ bool Type::isEnumType() const {
 Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
     if (!typeBase) return Type(nullptr, mutability, location);
 
+    // Substitution rebuilds the type; keep this use site's spelling when it has one.
+    // A bare placeholder has none, so replacement spellings survive that path.
+    auto preserveSpelling = [this](Type resolved) {
+        if (!aliasSpelling.empty()) resolved.aliasSpelling = aliasSpelling;
+        return resolved;
+    };
+
     switch (getKind()) {
     case TypeKind::BasicType: {
         auto it = replacements.find(getName());
@@ -97,12 +104,12 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
             // TODO: Handle generic arguments for type placeholders.
             Type resolved = it->second.getType().withMutability(mutability);
             resolved.location = location;
-            return resolved;
+            return preserveSpelling(resolved);
         }
         // An integer parameter reference isn't a type; leave it for the use site to diagnose.
 
         auto genericArgs = map(getGenericArgs(), [&](GenericArg arg) { return arg.resolve(replacements); });
-        return BasicType::get(getName(), std::move(genericArgs), mutability, location);
+        return preserveSpelling(BasicType::get(getName(), std::move(genericArgs), mutability, location));
     }
     case TypeKind::ArrayPointerType: {
         Type elementType = llvm::cast<ArrayPointerType>(typeBase)->elementType;
@@ -118,23 +125,65 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         } else {
             elementType = elementType.resolve(replacements);
         }
-        return ArrayPointerType::get(elementType, location);
+        return preserveSpelling(ArrayPointerType::get(elementType, location));
     }
 
     case TypeKind::AnonymousStructType: {
         auto elements =
             map(getAnonymousStructElements(), [&](auto& element) { return AnonymousStructElement{element.name, element.type.resolve(replacements)}; });
-        return AnonymousStructType::get(std::move(elements), mutability, location);
+        return preserveSpelling(AnonymousStructType::get(std::move(elements), mutability, location));
     }
     case TypeKind::FunctionType: {
         auto paramTypes = map(getParamTypes(), [&](Type t) { return t.resolve(replacements); });
-        return FunctionType::get(getReturnType().resolve(replacements), std::move(paramTypes), llvm::cast<FunctionType>(typeBase)->isVariadic, mutability,
-                                 location);
+        return preserveSpelling(FunctionType::get(getReturnType().resolve(replacements), std::move(paramTypes), llvm::cast<FunctionType>(typeBase)->isVariadic,
+                                                  mutability, location));
     }
     case TypeKind::PointerType:
-        return PointerType::get(getPointee().resolve(replacements), getPointerKind(), mutability, location);
+        return preserveSpelling(PointerType::get(getPointee().resolve(replacements), getPointerKind(), mutability, location));
     case TypeKind::UnresolvedType:
         llvm_unreachable("invalid unresolved type");
+    }
+    llvm_unreachable("all cases handled");
+}
+
+// Spellings are per-use display names stored in nested Type values. Interning must not
+// merge types that differ only in spelling; otherwise, first-creator spelling would leak
+// into unrelated diagnostics. Shapes are known to match (checked structurally first).
+static bool spellingsEqual(Type a, Type b) {
+    if (a.aliasSpelling != b.aliasSpelling) return false;
+    switch (a.getKind()) {
+    case TypeKind::BasicType: {
+        auto argsA = a.getGenericArgs(), argsB = b.getGenericArgs();
+        for (size_t i = 0; i < argsA.size(); ++i) {
+            if (argsA[i].isInt() != argsB[i].isInt()) return false;
+            if (argsA[i].isInt()) {
+                if (argsA[i].getInt() != argsB[i].getInt()) return false;
+            } else if (!spellingsEqual(argsA[i].getType(), argsB[i].getType())) {
+                return false;
+            }
+        }
+        return true;
+    }
+    case TypeKind::ArrayPointerType:
+        return spellingsEqual(a.getElementType(), b.getElementType());
+    case TypeKind::AnonymousStructType: {
+        auto elementsA = a.getAnonymousStructElements(), elementsB = b.getAnonymousStructElements();
+        for (size_t i = 0; i < elementsA.size(); ++i) {
+            if (!spellingsEqual(elementsA[i].type, elementsB[i].type)) return false;
+        }
+        return true;
+    }
+    case TypeKind::FunctionType: {
+        auto paramsA = a.getParamTypes(), paramsB = b.getParamTypes();
+        for (size_t i = 0; i < paramsA.size(); ++i) {
+            if (!spellingsEqual(paramsA[i], paramsB[i])) return false;
+        }
+        return spellingsEqual(a.getReturnType(), b.getReturnType());
+    }
+    case TypeKind::PointerType:
+        return spellingsEqual(a.getPointee(), b.getPointee());
+    case TypeKind::UnresolvedType:
+        return true;
     }
     llvm_unreachable("all cases handled");
 }
@@ -142,14 +191,18 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
 template<typename T> static Type getType(T&& typeBase, Mutability mutability, Location location) {
     Type newType(&typeBase, mutability, location);
 
+    // typeBases is creation-ordered, so the first structural match is the earliest twin.
+    TypeBase* firstTwin = nullptr;
     for (auto* existingTypeBase : typeBases) {
         Type existingType(existingTypeBase, mutability, location);
         if (existingType.equalsIgnoreTopLevelMutable(newType)) {
-            return existingType;
+            if (spellingsEqual(existingType, newType)) return existingType;
+            if (!firstTwin) firstTwin = existingTypeBase;
         }
     }
 
     typeBases.push_back(makeAST<T>(std::forward<T>(typeBase)));
+    typeBases.back()->firstTwin = firstTwin;
     return Type(typeBases.back(), mutability, location);
 }
 
@@ -211,6 +264,12 @@ std::string GenericArg::toString() const {
     return "NULL";
 }
 
+std::string GenericArg::toCanonicalString() const {
+    if (isInt()) return std::to_string(getInt());
+    if (isType()) return getType().toCanonicalString();
+    return "NULL";
+}
+
 GenericArg GenericArg::resolve(const llvm::StringMap<GenericArg>& replacements) const {
     if (!isType()) return *this;
     Type type = getType();
@@ -229,7 +288,7 @@ void cx::appendGenericArgs(std::string& typeName, llvm::ArrayRef<GenericArg> gen
 
     typeName += '<';
     for (const GenericArg& genericArg : genericArgs) {
-        typeName += genericArg.toString();
+        typeName += genericArg.toCanonicalString();
         if (&genericArg != &genericArgs.back()) typeName += ", ";
     }
     typeName += '>';
@@ -238,6 +297,19 @@ void cx::appendGenericArgs(std::string& typeName, llvm::ArrayRef<GenericArg> gen
 std::string cx::getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<GenericArg> genericArgs) {
     std::string result = typeName.str();
     appendGenericArgs(result, genericArgs);
+    return result;
+}
+
+std::string cx::getDisplayTypeName(llvm::StringRef typeName, llvm::ArrayRef<GenericArg> genericArgs) {
+    std::string result = typeName.str();
+    if (!genericArgs.empty()) {
+        result += '<';
+        for (const GenericArg& genericArg : genericArgs) {
+            result += genericArg.toString();
+            if (&genericArg != &genericArgs.back()) result += ", ";
+        }
+        result += '>';
+    }
     return result;
 }
 
@@ -306,8 +378,15 @@ llvm::StringRef Type::getName() const {
 
 std::string Type::getQualifiedTypeName() const {
     Type receiverType = getArrayTypeForReceiver(*this);
-    if (!receiverType.isBasicType()) return receiverType.toString();
+    if (!receiverType.isBasicType()) return receiverType.toCanonicalString();
     return llvm::cast<BasicType>(receiverType.typeBase)->getQualifiedName();
+}
+
+std::string Type::getDisplayName() const {
+    Type receiverType = getArrayTypeForReceiver(*this);
+    if (!receiverType.isBasicType()) return receiverType.toString();
+    auto* basicType = llvm::cast<BasicType>(receiverType.typeBase);
+    return getDisplayTypeName(basicType->name, basicType->genericArgs);
 }
 
 Type Type::getElementType() const {
@@ -514,7 +593,25 @@ Type Type::getClosureReturnType() const {
 
 TypeDecl* Type::getDecl() const {
     auto* basicType = llvm::dyn_cast<BasicType>(typeBase);
-    return basicType ? basicType->decl : nullptr;
+    if (!basicType || basicType->decl) return basicType ? basicType->decl : nullptr;
+    // Spelling twins share one declaration, but it may be registered on any of them
+    // (e.g. an instantiation built from spelled inference args), so resolve lazily
+    // and cache. A miss caches nothing, so later registrations are still found.
+    Type self(typeBase, mutability, location);
+    for (auto* existingTypeBase : typeBases) {
+        if (auto* twin = llvm::dyn_cast<BasicType>(existingTypeBase)) {
+            if (twin->decl && self.equalsIgnoreTopLevelMutable(Type(existingTypeBase, mutability, location))) {
+                basicType->decl = twin->decl;
+                break;
+            }
+        }
+    }
+    return basicType->decl;
+}
+
+Type Type::canonicalTwin() const {
+    if (!typeBase || !typeBase->firstTwin) return *this;
+    return Type(typeBase->firstTwin, mutability, location, aliasSpelling);
 }
 
 DestructorDecl* Type::getDestructor() const {
@@ -522,9 +619,14 @@ DestructorDecl* Type::getDestructor() const {
     return typeDecl ? typeDecl->getDestructor() : nullptr;
 }
 
-void Type::printTo(std::ostream& stream) const {
+void Type::printTo(std::ostream& stream, bool canonical) const {
     if (!typeBase) {
         stream << "NULL";
+        return;
+    }
+    if (!canonical && !aliasSpelling.empty()) {
+        if (!isMutable()) stream << "const ";
+        stream << aliasSpelling;
         return;
     }
 
@@ -539,7 +641,7 @@ void Type::printTo(std::ostream& stream) const {
                 stream << "const ";
                 elementType = elementType.withMutability(Mutability::Mutable);
             }
-            elementType.printTo(stream);
+            elementType.printTo(stream, canonical);
             stream << "[";
             if (!getArraySizeParam().empty()) {
                 stream << getArraySizeParam();
@@ -552,16 +654,16 @@ void Type::printTo(std::ostream& stream) const {
         if (isClosureType()) {
             stream << "(";
             for (const Type& paramType : getClosureParamTypes()) {
-                stream << paramType;
+                paramType.printTo(stream, canonical);
                 if (&paramType != &getClosureParamTypes().back()) stream << ", ";
             }
             stream << ") => ";
-            getClosureReturnType().printTo(stream);
+            getClosureReturnType().printTo(stream, canonical);
             break;
         }
 
         if (isOptionalType()) {
-            getWrappedType().printTo(stream);
+            getWrappedType().printTo(stream, canonical);
             if (!isMutable()) stream << " const";
             stream << '?';
             break;
@@ -577,7 +679,7 @@ void Type::printTo(std::ostream& stream) const {
                 if (arg.isInt()) {
                     stream << arg.getInt();
                 } else {
-                    arg.getType().printTo(stream);
+                    arg.getType().printTo(stream, canonical);
                 }
                 if (&arg != &genericArgs.back()) stream << ", ";
             }
@@ -587,29 +689,29 @@ void Type::printTo(std::ostream& stream) const {
         break;
     }
     case TypeKind::ArrayPointerType:
-        getElementType().printTo(stream);
+        getElementType().printTo(stream, canonical);
         stream << "[*]";
         break;
     case TypeKind::AnonymousStructType:
         stream << "(";
         for (auto& element : getAnonymousStructElements()) {
-            element.type.printTo(stream);
+            element.type.printTo(stream, canonical);
             stream << " " << element.name;
             if (&element != &getAnonymousStructElements().back()) stream << ", ";
         }
         stream << ")";
         break;
     case TypeKind::FunctionType:
-        getReturnType().printTo(stream);
+        getReturnType().printTo(stream, canonical);
         stream << "(";
         for (const Type& paramType : getParamTypes()) {
-            stream << paramType;
+            paramType.printTo(stream, canonical);
             if (&paramType != &getParamTypes().back()) stream << ", ";
         }
         stream << ")";
         break;
     case TypeKind::PointerType:
-        getPointee().printTo(stream);
+        getPointee().printTo(stream, canonical);
         if (!isMutable()) stream << " const";
         stream << (isReferenceType() ? '&' : '*');
         break;
@@ -622,6 +724,12 @@ void Type::printTo(std::ostream& stream) const {
 std::string Type::toString() const {
     std::ostringstream stream;
     printTo(stream);
+    return stream.str();
+}
+
+std::string Type::toCanonicalString() const {
+    std::ostringstream stream;
+    printTo(stream, true);
     return stream.str();
 }
 

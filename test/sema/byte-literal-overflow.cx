@@ -2,7 +2,7 @@
 // CHECK-NOT: uint8-literal-overflow.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
-    // CHECK: [[@LINE+1]]:14: error: 300 is out of range for type 'uint8'
+    // CHECK: [[@LINE+1]]:14: error: 300 is out of range for type 'byte'
     byte b = 300;
 }
 

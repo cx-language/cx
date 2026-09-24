@@ -16,7 +16,7 @@ void main() {
 
 void badType() {
     greet("ok", 1);
-    // CHECK: [[@LINE+1]]:16: error: invalid argument #2 type 'string' to 'greet', expected 'int32'
+    // CHECK: [[@LINE+1]]:16: error: invalid argument #2 type 'string' to 'greet', expected 'int'
     greet("x", "y");
     // CHECK: 4:6: note: 'greet' declared here
 }

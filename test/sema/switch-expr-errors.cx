@@ -15,7 +15,7 @@ int nonExhaustive(Outcome* o) {
     };
 }
 
-// CHECK: [[@LINE+3]]:12: error: switch expression on 'int32' must have a default case
+// CHECK: [[@LINE+3]]:12: error: switch expression on 'int' must have a default case
 // CHECK-NOT: error:
 int intWithoutDefault(int n) {
     return switch n {
@@ -32,7 +32,7 @@ void voidArms(int n) {
     };
 }
 
-// CHECK: [[@LINE+2]]:12: error: incompatible arm types ('int32' and 'string')
+// CHECK: [[@LINE+2]]:12: error: incompatible arm types ('int' and 'string')
 int incompatibleArms(int n) {
     return switch n {
         case 0: 1
@@ -40,7 +40,7 @@ int incompatibleArms(int n) {
     };
 }
 
-// CHECK: [[@LINE+3]]:19: error: switch condition must have integer, char, or enum type, got 'int32*'; dereference it explicitly (e.g. 'switch (*p)')
+// CHECK: [[@LINE+3]]:19: error: switch condition must have integer, char, or enum type, got 'int*'; dereference it explicitly (e.g. 'switch (*p)')
 // CHECK-NOT: error:
 int switchOnPointer(int* p) {
     return switch p {

@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void main() {
-    // CHECK: [[@LINE+1]]:13: error: cannot assign 'bool' to 'int32'
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'bool' to 'int'
     int i = false;
 }

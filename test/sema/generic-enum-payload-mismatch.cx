@@ -8,7 +8,7 @@ enum Outcome<T> {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:33: error: invalid argument #1 type 'string' to 'Ok', expected 'int32'
+    // CHECK: [[@LINE+1]]:33: error: invalid argument #1 type 'string' to 'Ok', expected 'int'
     Outcome<int> r = Outcome.Ok(value = "s");
 }
 

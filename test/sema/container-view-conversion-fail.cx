@@ -7,7 +7,7 @@ void main() {
     var ints = List<int>();
     takesIntRef(ints);
     var strings = List<string>();
-    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'List<string>' to 'takesIntRef', expected 'Slice<int32>'
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'List<string>' to 'takesIntRef', expected 'Slice<int>'
     takesIntRef(strings);
 }
 

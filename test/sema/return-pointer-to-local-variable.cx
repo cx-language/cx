@@ -8,7 +8,7 @@ int* f0() {
 
 int* f1() {
     var a = 3;
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int32', expected 'int32*' (use '&' to take the address explicitly)
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
     return a;
 }
 
@@ -21,7 +21,7 @@ struct S: Copyable {
     }
 
     int* f3() {
-        // CHECK: [[@LINE+1]]:9: error: mismatching return type 'int32', expected 'int32*' (use '&' to take the address explicitly)
+        // CHECK: [[@LINE+1]]:9: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
         return i;
     }
 }
@@ -32,7 +32,7 @@ int* f4(int a) {
 }
 
 int* f5(int a) {
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int32', expected 'int32*' (use '&' to take the address explicitly)
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
     return a;
 }
 
@@ -47,7 +47,7 @@ int** f7(int* a) {
 }
 
 int** f8(int* a) {
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int32*', expected 'int32**' (use '&' to take the address explicitly)
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int*', expected 'int**' (use '&' to take the address explicitly)
     return a;
 }
 

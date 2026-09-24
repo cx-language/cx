@@ -228,7 +228,7 @@ def test_query_modes(cx_lsp, path):
 
     # `add` in `add(1, 2)` sits at 0-based line 5, characters 17-19.
     result = run_query(cx_lsp, base_query("hover", path, GOOD_SOURCE, (5, 18)))
-    check("query-hover", "int32 add(int32 x, int32 y)" in result.get("hover", ""), result.get("hover", "")[:200])
+    check("query-hover", "int add(int x, int y)" in result.get("hover", ""), result.get("hover", "")[:200])
 
     result = run_query(cx_lsp, base_query("definition", path, GOOD_SOURCE, (5, 18)))
     check("query-definition-found", result.get("found") is True, json.dumps(result)[:300])
@@ -428,7 +428,7 @@ def test_generic_symbols(cx_lsp, path):
     )
 
     result = run_query(cx_lsp, base_query("hover", path, GENERIC_DEF_SOURCE, (3, 16)))
-    check("query-hover-generic-method", "int32 Box<int32>.value" in result.get("hover", ""), result.get("hover", "")[:200])
+    check("query-hover-generic-method", "int Box<int>.value" in result.get("hover", ""), result.get("hover", "")[:200])
 
     # `x` in the generic function body (line 13) resolves to the parameter (line 12).
     result = run_query(cx_lsp, base_query("definition", path, GENERIC_DEF_SOURCE, (13, 11)))
@@ -439,7 +439,7 @@ def test_generic_symbols(cx_lsp, path):
     )
 
     result = run_query(cx_lsp, base_query("hover", path, GENERIC_DEF_SOURCE, (13, 11)))
-    check("query-hover-generic-function", "int32 x" in result.get("hover", ""), result.get("hover", "")[:200])
+    check("query-hover-generic-function", "int x" in result.get("hover", ""), result.get("hover", "")[:200])
 
 
 def test_readonly_tokens(cx_lsp, path):
@@ -544,7 +544,7 @@ def test_completion_members(cx_lsp, path):
     details = sorted(item["detail"] for item in result.get("items", []) if item["label"] == "add")
     check(
         "query-completion-overloads",
-        details == ["int32 add(int32 x)", "int32 add(int32 x, int32 y)"],
+        details == ["int add(int x)", "int add(int x, int y)"],
         json.dumps(details)[:300],
     )
     adds = [item.get("hasParams") for item in result.get("items", []) if item["label"] == "add"]
@@ -636,7 +636,7 @@ def test_build_file_modes(cx_lsp):
         )
 
         result = run_query(cx_lsp, base_query("hover", nested_path, nested_content, (1, 12)))
-        check("query-build-file-hover", "int32 answer()" in result.get("hover", ""), result.get("hover", "")[:200])
+        check("query-build-file-hover", "int answer()" in result.get("hover", ""), result.get("hover", "")[:200])
 
     with tempfile.TemporaryDirectory() as directory:
         with open(os.path.join(directory, "c.cx"), "w") as file:
@@ -907,7 +907,7 @@ def test_server(command, path, label):
     response = session.read()
     check(
         f"{label}-hover",
-        "int32 add(int32 x, int32 y)" in response["result"]["contents"]["value"],
+        "int add(int x, int y)" in response["result"]["contents"]["value"],
         json.dumps(response)[:300],
     )
 

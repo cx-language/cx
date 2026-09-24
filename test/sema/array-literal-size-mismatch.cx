@@ -2,8 +2,8 @@
 // CHECK-NOT: array-literal-size-mismatch.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
-    // CHECK: [[@LINE+1]]:22: error: cannot assign 'int32[3]' to 'int32[2]'
+    // CHECK: [[@LINE+1]]:22: error: cannot assign 'int[3]' to 'int[2]'
     int[2] tooMany = [1, 2, 3];
-    // CHECK: [[@LINE+1]]:21: error: cannot assign 'int32[1]' to 'int32[2]'
+    // CHECK: [[@LINE+1]]:21: error: cannot assign 'int[1]' to 'int[2]'
     int[2] tooFew = [1];
 }

@@ -16,7 +16,7 @@ struct S {
 
 int(int) returnsFn() {
     var a = 1;
-    // CHECK: [[@LINE+1]]:5: error: cannot convert capturing lambda '(int32) => int32' to function type 'int32(int32)'
+    // CHECK: [[@LINE+1]]:5: error: cannot convert capturing lambda '(int) => int' to function type 'int(int)'
     return (int c) => c + a;
 }
 
@@ -24,12 +24,12 @@ void main() {
     takesFn((int c) => c);
     takesGeneric((int c) => c);
     var a = 1;
-    // CHECK: [[@LINE+1]]:13: error: cannot convert capturing lambda '(int32) => int32' to function type 'int32(int32)'
+    // CHECK: [[@LINE+1]]:13: error: cannot convert capturing lambda '(int) => int' to function type 'int(int)'
     takesFn((int c) => c + a);
-    // CHECK: [[@LINE+1]]:18: error: cannot convert capturing lambda '(int32) => int32' to function type 'int32(int32)'
+    // CHECK: [[@LINE+1]]:18: error: cannot convert capturing lambda '(int) => int' to function type 'int(int)'
     takesGeneric((int c) => c + a);
     var s = S(cb = (int c) => c);
-    // CHECK: [[@LINE+1]]:10: error: cannot convert capturing lambda '(int32) => int32' to function type 'int32(int32)'
+    // CHECK: [[@LINE+1]]:10: error: cannot convert capturing lambda '(int) => int' to function type 'int(int)'
     s.cb = (int c) => c + a;
     _ = returnsFn();
 }

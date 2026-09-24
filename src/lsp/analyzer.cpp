@@ -230,9 +230,30 @@ std::string declKindLabel(const Decl& decl) {
     return "declaration";
 }
 
+static std::string displayName(const FunctionDecl& decl) {
+    std::string result;
+    if (decl.getTypeDecl()) {
+        result = decl.getTypeDecl()->getType().getDisplayName();
+        result += '.';
+    }
+    result += decl.getName();
+    if (!decl.genericArgs.empty()) {
+        result = getDisplayTypeName(result, decl.genericArgs);
+    }
+    return result;
+}
+
+static std::string displayName(const TypeDecl& decl) {
+    return getDisplayTypeName(decl.getName(), decl.genericArgs);
+}
+
+static std::string displayName(const FieldDecl& decl) {
+    return (displayName(llvm::cast<TypeDecl>(*decl.getParentDecl())) + "." + decl.getName()).str();
+}
+
 std::string formatFunctionSignature(const FunctionDecl& decl) {
     std::ostringstream out;
-    out << decl.getReturnType().toString() << " " << decl.getQualifiedName() << "(";
+    out << decl.getReturnType().toString() << " " << displayName(decl) << "(";
     auto params = decl.getParams();
     for (size_t i = 0; i < params.size(); ++i) {
         if (i != 0) out << ", ";
@@ -272,7 +293,7 @@ std::string hoverForDecl(const Decl& decl) {
             out << "interface ";
         else if (typeDecl.isUnion())
             out << "union ";
-        out << typeDecl.getQualifiedName();
+        out << displayName(typeDecl);
         break;
     }
     case DeclKind::TypeTemplate: {
@@ -306,7 +327,7 @@ std::string hoverForDecl(const Decl& decl) {
     }
     case DeclKind::FieldDecl: {
         auto& field = llvm::cast<FieldDecl>(decl);
-        out << (field.type ? field.type.toString() + " " : "") << field.getQualifiedName();
+        out << (field.type ? field.type.toString() + " " : "") << displayName(field);
         break;
     }
     case DeclKind::ParamDecl: {

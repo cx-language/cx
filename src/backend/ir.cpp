@@ -19,6 +19,9 @@ BasicBlock::BasicBlock(std::string name, cx::Function* parent) : Value{ValueKind
 static std::unordered_map<TypeBase*, IRType*> irTypes = {{nullptr, nullptr}};
 
 IRType* cx::getIRType(Type astType) {
+    // Spelling twins are distinct bases sharing one identity; normalize so the
+    // type cache below yields a single IR type per structure.
+    astType = astType.canonicalTwin();
     // Array-pointer wrappers can share a TypeBase while differing in
     // mutability. Their pointer result must retain that distinction for C.
     bool cacheable = astType.getKind() != TypeKind::ArrayPointerType;

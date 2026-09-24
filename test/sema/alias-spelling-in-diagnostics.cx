@@ -1,0 +1,32 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: alias-spelling-in-diagnostics.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+using MyInt = int;
+using Ints = List<int>;
+
+int foo() {
+    return 1;
+}
+
+int32 bar() {
+    return 2;
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int' to 'bool'
+    bool a = foo();
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int' to 'bool'
+    bool b = 1;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int32' to 'bool'
+    bool c = bar();
+    // CHECK: [[@LINE+1]]:15: error: cannot assign 'bool' to 'MyInt'
+    MyInt d = true;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int' to 'Ints'
+    Ints e = 0;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int' to 'bool'
+    bool f = int(1);
+    // CHECK: [[@LINE+1]]:19: error: cannot assign 'int' to 'List<int>'
+    List<int> g = 0;
+}
+
+// CHECK-NOT: alias-spelling-in-diagnostics.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

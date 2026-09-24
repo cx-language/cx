@@ -3,6 +3,6 @@
 
 void main() {
     const int[2] a = [1, 2];
-    // CHECK: [[@LINE+1]]:6: error: cannot assign to immutable array of type 'const int32[2]'
+    // CHECK: [[@LINE+1]]:6: error: cannot assign to immutable array of type 'const int[2]'
     a[0] = 3;
 }

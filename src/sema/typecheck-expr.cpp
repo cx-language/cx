@@ -274,6 +274,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         typecheckType(aliasedType, AccessLevel::None);
         if (TypeDecl* typeDecl = aliasedType.getDecl()) {
             expr.decl = typeDecl;
+            aliasedType.aliasSpelling = alias->getName();
             return aliasedType;
         }
         ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to type alias '" << expr.identifier << "' as a value");
@@ -306,7 +307,10 @@ static Type typecheckCharacterLiteralExpr(CharacterLiteralExpr&) {
 
 static Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
     if (expr.value.isSignedIntN(32)) {
-        return Type::getInt32();
+        // 'int' is the default spelling for 32-bit integer literals.
+        Type type = Type::getInt32();
+        type.aliasSpelling = internString("int");
+        return type;
     } else if (expr.value.isSignedIntN(64)) {
         return Type::getInt64();
     } else if (expr.value.isIntN(64)) {
@@ -2729,6 +2733,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         if (TypeAliasDecl* alias = findTypeAlias(calleeType)) {
             Type aliasedType = resolveTypeAliases(alias->aliasedType);
             if (Type::isBuiltinScalar(aliasedType.getName())) {
+                aliasedType.aliasSpelling = alias->getName();
                 return typecheckBuiltinConversion(expr, aliasedType);
             }
         }

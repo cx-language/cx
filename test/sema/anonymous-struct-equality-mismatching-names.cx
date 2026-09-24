@@ -3,6 +3,6 @@
 void main() {
     var t1 = (a = 1, b = 2);
     var t2 = (a = 1, c = 2);
-    // CHECK: [[@LINE+1]]:16: error: no matching operator '==' with arguments '(int32 a, int32 b)' and '(int32 a, int32 c)'
+    // CHECK: [[@LINE+1]]:16: error: no matching operator '==' with arguments '(int a, int b)' and '(int a, int c)'
     println(t1 == t2);
 }

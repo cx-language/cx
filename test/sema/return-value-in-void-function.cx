@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void foo(int a, int b) {
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int32', expected 'void'
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int', expected 'void'
     return a * b;
 }

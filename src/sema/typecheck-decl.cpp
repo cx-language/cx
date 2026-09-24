@@ -153,7 +153,11 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
             if (!type.isMutable() && resolved.isMutable()) {
                 resolved = resolved.withMutability(Mutability::Const);
             }
-            return resolved.withLocation(type.location);
+            // Outermost alias wins: inner resolution already attached its own
+            // spelling, so this overwrites it with the name used at this site.
+            resolved = resolved.withLocation(type.location);
+            resolved.aliasSpelling = alias->getName();
+            return resolved;
         }
 
         if (basicType->genericArgs.empty()) return type;

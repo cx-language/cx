@@ -2,7 +2,7 @@
 // CHECK-NOT: generic-const-array-index-assignment.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void mutate<T, int N>(T[N] a) {
-    // CHECK: [[@LINE+1]]:6: error: cannot assign to immutable array of type 'const int32[2]'
+    // CHECK: [[@LINE+1]]:6: error: cannot assign to immutable array of type 'const int[2]'
     a[0] = a[0];
 }
 

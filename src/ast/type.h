@@ -43,6 +43,9 @@ struct TypeBase {
     virtual ~TypeBase() = 0;
 
     const TypeKind kind;
+    // Earliest-created base with equal structure ignoring spelling (null when none).
+    // Spelling twins share one identity; see Type::canonicalTwin().
+    TypeBase* firstTwin = nullptr;
 
 protected:
     TypeBase(TypeKind kind) : kind(kind) {}
@@ -53,7 +56,7 @@ inline TypeBase::~TypeBase() {}
 struct Type {
     TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
-    Type withLocation(Location location) const { return Type(typeBase, mutability, location); }
+    Type withLocation(Location location) const { return Type(typeBase, mutability, location, aliasSpelling); }
 
     // TODO: Remove 'Type' suffix from these methods
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
@@ -109,7 +112,7 @@ struct Type {
     // Size in bytes for types with target-independent layout, null otherwise.
     std::optional<uint64_t> getSizeInBytes() const;
     bool isMutable() const { return mutability == Mutability::Mutable; }
-    Type withMutability(Mutability m) const { return Type(typeBase, m, location); }
+    Type withMutability(Mutability m) const { return Type(typeBase, m, location, aliasSpelling); }
     Type getPointerTo() const;
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeReference() const { return isReferenceType() ? getPointee() : *this; }
@@ -119,16 +122,21 @@ struct Type {
     llvm::ArrayRef<Type> getClosureParamTypes() const;
     Type getClosureReturnType() const;
     TypeDecl* getDecl() const;
+    // Same type with its base replaced by the earliest-created structural twin.
+    // Identity-keyed maps must use this; all twins agree on the answer.
+    Type canonicalTwin() const;
     DestructorDecl* getDestructor() const;
     bool equalsIgnoreTopLevelMutable(Type) const;
     bool containsUnresolvedPlaceholder() const;
     bool containsReference() const;
     bool storesBorrow() const;
-    void printTo(std::ostream& stream) const;
+    void printTo(std::ostream& stream, bool canonical = false) const;
     std::string toString() const;
+    std::string toCanonicalString() const;
 
     llvm::StringRef getName() const;
     std::string getQualifiedTypeName() const;
+    std::string getDisplayName() const;
     Type getElementType() const;
     int64_t getArraySize() const;
     llvm::StringRef getArraySizeParam() const;
@@ -168,6 +176,9 @@ struct Type {
     Mutability mutability = Mutability::Mutable;
     // TODO: Add a dedicated class hierarchy for storing source locations with types, like TypeLoc in Clang and Swift.
     Location location;
+    // Alias name used at this type's source spelling, for diagnostics. Empty when spelled
+    // canonically. Ignored by equality; identity strings use toCanonicalString() instead.
+    llvm::StringRef aliasSpelling;
 };
 
 // A generic argument: either a type or an integer value.
@@ -199,6 +210,7 @@ struct GenericArg {
         return intValue;
     }
     std::string toString() const;
+    std::string toCanonicalString() const;
     GenericArg resolve(const llvm::StringMap<GenericArg>& replacements) const;
 
     Kind kind = Kind::Null;
@@ -213,6 +225,9 @@ bool operator==(const GenericArg&, const GenericArg&);
 
 void appendGenericArgs(std::string& typeName, llvm::ArrayRef<GenericArg> genericArgs);
 std::string getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<GenericArg> genericArgs);
+// Display variant of getQualifiedTypeName using source spellings. Diagnostics and
+// IDE hover only; never for lookup, mangling, or symbol keys.
+std::string getDisplayTypeName(llvm::StringRef typeName, llvm::ArrayRef<GenericArg> genericArgs);
 Type getArrayTypeForReceiver(Type type);
 
 struct BasicType : TypeBase {
