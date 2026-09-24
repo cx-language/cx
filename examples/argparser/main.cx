@@ -23,7 +23,7 @@ void loadTasks(string content, List<Task>& tasks) {
 }
 
 bool saveTasks(string path, List<Task>& tasks) {
-    var buf = StringBuffer();
+    var buf = StringBuf();
     for i in 0..tasks.size() {
         if tasks[i].done {
             buf.append("1 ");

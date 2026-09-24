@@ -1098,7 +1098,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isBasicType() && source.getName() == "StringBuffer" && target.isBasicType() && target.getName() == "string") {
+    if (source.isBasicType() && source.getName() == "StringBuf" && target.isBasicType() && target.getName() == "string") {
         return source;
     }
 

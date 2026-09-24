@@ -1,7 +1,7 @@
 // Help text generation for argparser. See argparser.cx for the API overview.
 
-private StringBuffer flagLeftCell(FlagSpec& spec) {
-    var cell = StringBuffer("  ");
+private StringBuf flagLeftCell(FlagSpec& spec) {
+    var cell = StringBuf("  ");
     if spec.shortName.size() > 0 {
         cell.append("-");
         cell.append(spec.shortName);
@@ -12,22 +12,22 @@ private StringBuffer flagLeftCell(FlagSpec& spec) {
     return cell;
 }
 
-private StringBuffer optionLeftCell(OptionSpec& spec) {
+private StringBuf optionLeftCell(OptionSpec& spec) {
     var cell = flagLeftCellFor(spec.shortName, spec.name);
     cell.append(" ");
     cell.append(spec.valueName);
     return cell;
 }
 
-private StringBuffer intOptionLeftCell(IntOptionSpec& spec) {
+private StringBuf intOptionLeftCell(IntOptionSpec& spec) {
     var cell = flagLeftCellFor(spec.shortName, spec.name);
     cell.append(" ");
     cell.append(spec.valueName);
     return cell;
 }
 
-private StringBuffer flagLeftCellFor(string shortName, string name) {
-    var cell = StringBuffer("  ");
+private StringBuf flagLeftCellFor(string shortName, string name) {
+    var cell = StringBuf("  ");
     if shortName.size() > 0 {
         cell.append("-");
         cell.append(shortName);
@@ -43,7 +43,7 @@ private bool setHasOptions(OptionSet& set) {
 }
 
 // Appends "[options]", "<REQ>", "[OPT]" fragments for the set to buf.
-private void writeUsageArgs(StringBuffer& buf, OptionSet& set) {
+private void writeUsageArgs(StringBuf& buf, OptionSet& set) {
     if setHasOptions(set) {
         buf.append(" [options]");
     }
@@ -85,14 +85,14 @@ private int optionSectionWidth(OptionSet& set) {
     return width;
 }
 
-private void writePaddedRow(StringBuffer& buf, string left, string help, int width) {
+private void writePaddedRow(StringBuf& buf, string left, string help, int width) {
     buf.append(left);
     buf.append(" ".repeat(width - left.size() + 2));
     buf.append(help);
     buf.append("\n");
 }
 
-private void writeOptionsSection(StringBuffer& buf, OptionSet& set) {
+private void writeOptionsSection(StringBuf& buf, OptionSet& set) {
     buf.append("Options:\n");
     var width = optionSectionWidth(set);
     for i in 0..set.flags.size() {
@@ -110,7 +110,7 @@ private void writeOptionsSection(StringBuffer& buf, OptionSet& set) {
     writePaddedRow(buf, "  -h, --help", "Show this help message and exit.", width);
 }
 
-private void writeArgumentsSection(StringBuffer& buf, OptionSet& set) {
+private void writeArgumentsSection(StringBuf& buf, OptionSet& set) {
     if set.positionals.size() == 0 {
         return;
     }
@@ -123,19 +123,19 @@ private void writeArgumentsSection(StringBuffer& buf, OptionSet& set) {
         }
     }
     for i in 0..set.positionals.size() {
-        var left = StringBuffer("  ") + set.positionals[i].name;
+        var left = StringBuf("  ") + set.positionals[i].name;
         if set.positionals[i].required {
             writePaddedRow(buf, left.substr(0), set.positionals[i].help, width);
         } else {
-            var help = StringBuffer(set.positionals[i].help) + " (optional)";
+            var help = StringBuf(set.positionals[i].help) + " (optional)";
             writePaddedRow(buf, left.substr(0), help.substr(0), width);
         }
     }
 }
 
 // Full help text for the program: usage, description, commands, options.
-StringBuffer helpText(ArgParser& parser) {
-    var buf = StringBuffer("Usage: ");
+StringBuf helpText(ArgParser& parser) {
+    var buf = StringBuf("Usage: ");
     buf.append(parser.name);
     if parser.commands.size() > 0 {
         buf.append(" [options] <command> [<args>]");
@@ -158,7 +158,7 @@ StringBuffer helpText(ArgParser& parser) {
             }
         }
         for i in 0..parser.commands.size() {
-            var left = StringBuffer("  ") + parser.commands[i].name;
+            var left = StringBuf("  ") + parser.commands[i].name;
             writePaddedRow(buf, left.substr(0), parser.commands[i].help, width);
         }
         buf.append("\nRun '");
@@ -172,8 +172,8 @@ StringBuffer helpText(ArgParser& parser) {
 }
 
 // Help text for one subcommand.
-StringBuffer commandHelpText(ArgParser& parser, CommandSpec& cmd) {
-    var buf = StringBuffer("Usage: ");
+StringBuf commandHelpText(ArgParser& parser, CommandSpec& cmd) {
+    var buf = StringBuf("Usage: ");
     buf.append(parser.name);
     buf.append(" ");
     buf.append(cmd.name);

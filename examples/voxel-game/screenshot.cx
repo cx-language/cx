@@ -70,7 +70,7 @@ int runScreenshot(string path) {
         }
     }
     var body = string(cast<char*>(&flipped[0]), 640 * 480 * 3);
-    var out = StringBuffer("P6\n640 480\n255\n");
+    var out = StringBuf("P6\n640 480\n255\n");
     out.append(body);
     if !writeFile(path, string(out)) {
         abort("screenshot: cannot write file");

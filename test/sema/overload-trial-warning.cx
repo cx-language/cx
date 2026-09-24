@@ -3,7 +3,7 @@
 void main() {
     var content = unwrap(readFile("definitely-not-here-12345"));
     // CHECK-NOT: overload-trial-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
-    // CHECK: [[@LINE+1]]:27: warning: unwrapping non-optional type 'StringBuffer' has no effect
+    // CHECK: [[@LINE+1]]:27: warning: unwrapping non-optional type 'StringBuf' has no effect
     println(string(content!));
     // CHECK-NOT: overload-trial-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 }

@@ -142,7 +142,7 @@ void testPlayer() {
 }
 
 void checkAppendPrintable(int value, string want) {
-    var b = StringBuffer();
+    var b = StringBuf();
     b.append(value);
     if !(b == want) {
         abort("self-test: append failed");
@@ -156,7 +156,7 @@ void testAppendPrintable() {
     checkAppendPrintable(120, "120");
     checkAppendPrintable(1000, "1000");
     checkAppendPrintable(-35, "-35");
-    var b = StringBuffer("fps=");
+    var b = StringBuf("fps=");
     b.append(60);
     if !(b == "fps=60") {
         abort("self-test: append suffix failed");

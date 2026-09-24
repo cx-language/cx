@@ -37,10 +37,10 @@ void testGetter() {
 }
 
 void testResize() {
-    var map = Map<StringBuffer, int>();
+    var map = Map<StringBuf, int>();
 
     for i in 0..255 {
-        var lol = StringBuffer();
+        var lol = StringBuf();
 
         for _ in 0..(i+1) {
             lol.append('a');

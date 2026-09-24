@@ -4,7 +4,7 @@
 import "dirent.h";
 
 void listdir(string name, int indent) {
-    var dir = opendir(StringBuffer(name).cString());
+    var dir = opendir(StringBuf(name).cString());
     if !dir return;
     defer closedir(dir);
 

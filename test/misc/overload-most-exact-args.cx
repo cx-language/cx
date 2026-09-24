@@ -1,10 +1,10 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 
 string pick(string a, int[*] b) { return "converted"; }
-string pick(StringBuffer a, int[*] b) { return "exact"; }
+string pick(StringBuf a, int[*] b) { return "exact"; }
 
 void main() {
-    var sb = StringBuffer("x");
+    var sb = StringBuf("x");
     int[3] arr = [1, 2, 3];
     // CHECK:exact
     println(pick(sb, arr));

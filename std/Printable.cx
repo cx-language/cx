@@ -2,9 +2,9 @@
 /// to a file, or to standard output.
 ///
 /// Writing to a file or standard output never allocates; buffering into a
-/// `StringBuffer` allocates only to grow the buffer itself.
+/// `StringBuf` allocates only to grow the buffer itself.
 struct OutputStream {
-    private StringBuffer*? buffer;
+    private StringBuf*? buffer;
     private FILE*? file;
 
     /// Writes to standard output.
@@ -13,7 +13,7 @@ struct OutputStream {
         file = null;
     }
 
-    OutputStream(public StringBuffer* buffer) {
+    OutputStream(public StringBuf* buffer) {
         this.buffer = buffer;
         file = null;
     }
@@ -52,8 +52,8 @@ interface Printable {
     void print(OutputStream& stream);
 
     /// Returns this value rendered as a string.
-    StringBuffer toString() {
-        var result = StringBuffer();
+    StringBuf toString() {
+        var result = StringBuf();
         var stream = OutputStream(&result);
         this.print(stream);
         return result;
