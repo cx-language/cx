@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import concurrent.futures
 import os
 import platform
 import shutil
@@ -9,6 +10,8 @@ import argparse
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--cx", help="path to cx compiler executable", default="cx")
+arg_parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4,
+                        help="number of examples to build in parallel")
 args, cx_args = arg_parser.parse_known_args()
 
 os.chdir(os.path.dirname(__file__))
@@ -42,21 +45,27 @@ def build_cpp_interop_lib():
 
 build_cpp_interop_lib()
 
-for file in os.listdir("."):
-    # tree.cx, asteroids, opengl, and voxel-game need SDL3 or GLFW, which
-    # Windows CI lacks; cpp-interop needs a Unix C++ toolchain (c++/ar)
-    # and libstdc++.
-    if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl", "voxel-game", "cpp-interop"]:
-        continue
+is_windows = platform.system() == "Windows"
+
+
+def build_example(file):
+    # Returns the file on failure, None on success. Each example builds in
+    # its own directory with its own output files, so examples are
+    # independent and can build in parallel worker threads.
+    if is_windows and file in ["tree.cx", "asteroids", "opengl", "voxel-game", "cpp-interop"]:
+        return None
 
     if file.endswith(".cx"):
-        output = os.path.splitext(file)[0] + (".exe" if platform.system() == "Windows" else "")
+        output = os.path.splitext(file)[0] + (".exe" if is_windows else "")
         exit_status = subprocess.call([args.cx, file, "-o", output, "-Werror"] + cx_args)
-        os.remove(output)
+        try:
+            os.remove(output)
+        except FileNotFoundError:
+            pass
         # macOS builds also emit a .dSYM bundle next to the binary.
         shutil.rmtree(output + ".dSYM", ignore_errors=True)
     elif file.endswith(".dSYM"):
-        continue
+        return None
     elif file not in ignored_dirs and os.path.isdir(file):
         extra_args = ["-Wno-unused"] if file in no_unused_dirs else []
         before = set(os.listdir(file))
@@ -68,10 +77,17 @@ for file in os.listdir("."):
             else:
                 os.remove(path)
     else:
-        continue
+        return None
 
-    if exit_status != 0:
-        sys.exit(1)
+    return file if exit_status != 0 else None
+
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
+    failures = [failure for failure in executor.map(build_example, os.listdir(".")) if failure is not None]
+
+if failures:
+    print(f"failed to build: {', '.join(sorted(failures))}")
+    sys.exit(1)
 
 # Clean the intermediate C++ objects for cpp-interop (built before the loop,
 # so the per-directory before/after cleanup above does not see them).

@@ -10,21 +10,25 @@ Usage:
 """
 
 import argparse
+import concurrent.futures
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import threading
 
 FAILURES = []
+FAILURES_LOCK = threading.Lock()
 
 
 def check(name, condition, detail=""):
-    if condition:
-        print(f"PASS {name}")
-    else:
-        print(f"FAIL {name} {detail}")
-        FAILURES.append(name)
+    with FAILURES_LOCK:
+        if condition:
+            print(f"PASS {name}")
+        else:
+            print(f"FAIL {name} {detail}")
+            FAILURES.append(name)
 
 
 def run_query(cx_lsp, query):
@@ -1038,21 +1042,35 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cx-lsp", required=True)
     parser.add_argument("--cx", required=True)
+    parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4,
+                        help="number of test groups to run in parallel")
     args = parser.parse_args()
 
     with tempfile.TemporaryDirectory() as directory:
         path = os.path.join(directory, "main.cx")
         with open(path, "w") as file:
             file.write(GOOD_SOURCE)
-        test_query_modes(args.cx_lsp, path)
-        test_completion_members(args.cx_lsp, path)
-        test_package_dedup(args.cx_lsp)
-        test_build_file_modes(args.cx_lsp)
+        # Every group drives its own compiler/server subprocesses. The
+        # --query groups share only the read-only main.cx above (each query
+        # carries its own content; the main file is analyzed from memory and
+        # excluded from sibling loading), and each server session is a
+        # separate process, so the groups are independent and can run in
+        # parallel worker threads. check() serializes result reporting.
+        # test_fetched_dependency stays serial: it swaps the process-global
+        # HOME, which concurrent compiler subprocesses would inherit.
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
+            groups = [
+                lambda: test_query_modes(args.cx_lsp, path),
+                lambda: test_completion_members(args.cx_lsp, path),
+                lambda: test_package_dedup(args.cx_lsp),
+                lambda: test_build_file_modes(args.cx_lsp),
+                lambda: test_server([args.cx_lsp], path, "server"),
+                lambda: test_server([args.cx, "lsp"], path, "cx-lsp-subcommand"),
+                lambda: test_server_no_snippets([args.cx_lsp], "server-nosnippet"),
+                lambda: test_server_no_snippets([args.cx, "lsp"], "cx-lsp-subcommand-nosnippet"),
+            ]
+            list(executor.map(lambda group: group(), groups))
         test_fetched_dependency(args.cx_lsp)
-        test_server([args.cx_lsp], path, "server")
-        test_server([args.cx, "lsp"], path, "cx-lsp-subcommand")
-        test_server_no_snippets([args.cx_lsp], "server-nosnippet")
-        test_server_no_snippets([args.cx, "lsp"], "cx-lsp-subcommand-nosnippet")
 
     if FAILURES:
         print(f"\n{len(FAILURES)} failure(s): {', '.join(FAILURES)}")
