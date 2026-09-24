@@ -230,28 +230,42 @@ foreach(shard RANGE ${LIT_SHARD_MAX})
         -Dllvm_version=${LLVM_VERSION_MAJOR})
 endforeach()
 
-# Download the LLVM FileCheck utility for tests.
-set(FILECHECK_SRC_PATH "llvmorg-${LLVM_PACKAGE_VERSION}/llvm/utils/FileCheck/FileCheck.cpp")
-set(FILECHECK_SRC_URL "https://raw.githubusercontent.com/llvm/llvm-project/${FILECHECK_SRC_PATH}")
-set(FILECHECK_SRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${FILECHECK_SRC_PATH}")
-if(NOT EXISTS "${FILECHECK_SRC_FILE}")
-    message(STATUS "Downloading LLVM FileCheck source from ${FILECHECK_SRC_URL}")
-    file(DOWNLOAD "${FILECHECK_SRC_URL}" "${FILECHECK_SRC_FILE}")
+# FileCheck for tests: the LLVM distribution's CMake config already exports
+# an imported FileCheck target when it ships the binary; otherwise import
+# the binary from the distribution, or download the source and build it.
+if(NOT TARGET FileCheck)
+    find_program(LLVM_FILECHECK_EXE FileCheck PATHS "${LLVM_TOOLS_BINARY_DIR}" NO_DEFAULT_PATH)
+    if(LLVM_FILECHECK_EXE)
+        message(STATUS "Using FileCheck from the LLVM distribution: ${LLVM_FILECHECK_EXE}")
+        add_executable(FileCheck IMPORTED GLOBAL)
+        set_property(TARGET FileCheck PROPERTY IMPORTED_LOCATION "${LLVM_FILECHECK_EXE}")
+    endif()
 endif()
 if(NOT TARGET FileCheck)
+    set(FILECHECK_SRC_PATH "llvmorg-${LLVM_PACKAGE_VERSION}/llvm/utils/FileCheck/FileCheck.cpp")
+    set(FILECHECK_SRC_URL "https://raw.githubusercontent.com/llvm/llvm-project/${FILECHECK_SRC_PATH}")
+    set(FILECHECK_SRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${FILECHECK_SRC_PATH}")
+    if(NOT EXISTS "${FILECHECK_SRC_FILE}")
+        message(STATUS "Downloading LLVM FileCheck source from ${FILECHECK_SRC_URL}")
+        file(DOWNLOAD "${FILECHECK_SRC_URL}" "${FILECHECK_SRC_FILE}")
+    endif()
     string(REGEX REPLACE "/RTC[^ ]*" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}") # Remove /RTC flags, they conflict with /O2.
     add_executable(FileCheck ${FILECHECK_SRC_FILE})
     llvm_map_components_to_libnames(FILECHECK_NEEDED_LIBS filecheck support)
     target_link_libraries(FileCheck ${FILECHECK_NEEDED_LIBS})
+    # Optimize test utilities by default.
+    if(MSVC)
+        set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} /w /O2 /GL /MT")
+    else()
+        set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
+    endif()
 endif()
 
-# Optimize test utilities by default.
+# Optimize test utilities by default (FileCheck flags already set above
+# when it is built from source; nothing to compile for the imported one).
 if(MSVC)
-    set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} /w /O2 /GL /MT")
     set_target_properties(libcx PROPERTIES COMPILE_FLAGS "/MT")
     set_target_properties(cx PROPERTIES COMPILE_FLAGS "/MT")
-else()
-    set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
 endif()
 
 add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" --check
