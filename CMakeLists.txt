@@ -136,9 +136,9 @@ ProcessorCount(CHECK_PARALLEL_JOBS)
 if(CHECK_PARALLEL_JOBS EQUAL 0)
     set(CHECK_PARALLEL_JOBS 4)
 endif()
-# Two extra slots so the serial long-pole suites (docs, examples, lsp)
-# don't starve the lit shards of workers.
-math(EXPR CHECK_PARALLEL_JOBS "${CHECK_PARALLEL_JOBS} + 2")
+# Run one test per processor. The suites are CPU-bound (each lit shard,
+# docs/examples run, and LSP run is effectively serial), so extra CTest
+# slots oversubscribe slower Debug runners and trigger test timeouts.
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --parallel ${CHECK_PARALLEL_JOBS} -C $<CONFIG>
     USES_TERMINAL)
