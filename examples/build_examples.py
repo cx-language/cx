@@ -10,8 +10,9 @@ import argparse
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--cx", help="path to cx compiler executable", default="cx")
-arg_parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4,
-                        help="number of examples to build in parallel")
+arg_parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 4, 4),
+                        help="number of examples to build in parallel (capped so parallel CTest "
+                             "suites don't oversubscribe shared CI runners; override as needed)")
 args, cx_args = arg_parser.parse_known_args()
 
 os.chdir(os.path.dirname(__file__))
