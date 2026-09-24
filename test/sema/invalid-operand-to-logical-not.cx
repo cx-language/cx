@@ -1,7 +1,17 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
+// CHECK-NOT: invalid-operand-to-logical-not.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
 void main() {
     var foo = 42;
     // CHECK: [[@LINE+1]]:10: error: type 'int' is not convertible to boolean
     if (!foo) { }
+    checkBorrow(foo);
 }
+
+void checkBorrow(int& value) {
+    // CHECK: [[@LINE+1]]:10: error: type 'int&' is not convertible to boolean
+    if (!value) { }
+}
+
+// CHECK-NOT: invalid-operand-to-logical-not.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

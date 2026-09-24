@@ -11,7 +11,7 @@ void testAllAnyNone() {
     assert((0...3).all(x => x < 4));
     assert(!(0..3).all(x => x != 2));
     assert("abc".any(x => x == 'c'));
-    assert(!StringBuffer("abc").any(x => x == 'd'));
+    assert(!StringBuf("abc").any(x => x == 'd'));
     assert(List([0,1,2,3]).none(x => x > 3));
     assert(Slice<int>().none(x => true));
 }

@@ -25,7 +25,7 @@ void main() {
     // CHECK-NEXT:2
     println(asRef(&list).size());
 
-    StringBuffer buffer = StringBuffer("hello");
+    StringBuf buffer = StringBuf("hello");
     string s = buffer;
     // CHECK-NEXT:5
     println(s.size());

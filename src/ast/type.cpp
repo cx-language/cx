@@ -50,7 +50,7 @@ bool Type::isImplicitlyCopyable() const {
     switch (getKind()) {
     case TypeKind::BasicType:
         if (isBasicArrayType()) return !isConstantArray() || getElementType().isImplicitlyCopyable();
-        return !getDecl() || getDecl()->passByValue();
+        return !getDecl() || getDecl()->isStoredByValue();
     case TypeKind::ArrayPointerType:
         return !isConstantArray() || getElementType().isImplicitlyCopyable();
     case TypeKind::AnonymousStructType:

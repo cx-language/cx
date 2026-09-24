@@ -1,5 +1,5 @@
 
-%StringBuffer = type { %"List<char>" }
+%StringBuf = type { %"List<char>" }
 %"List<char>" = type { ptr, i32, i32 }
 %string = type { %"Slice<char>" }
 %"Slice<char>" = type { ptr, i32 }
@@ -7,25 +7,25 @@
 @0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
 
 define i32 @main() #0 !dbg !4 {
-  %a = alloca %StringBuffer, align 8
+  %a = alloca %StringBuf, align 8
   %__str = alloca %string, align 8
-  call void @_EN3std12StringBuffer4initE(ptr %a), !dbg !7
-  %a.load = load %StringBuffer, ptr %a, align 8
+  call void @_EN3std9StringBuf4initE(ptr %a), !dbg !7
+  %a.load = load %StringBuf, ptr %a, align 8
   call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @0, i32 0), !dbg !8
   %__str.load = load %string, ptr %__str, align 8
-  %1 = call %StringBuffer @_EN3stdplE12StringBuffer6string(%StringBuffer %a.load, %string %__str.load), !dbg !9
-  store %StringBuffer %1, ptr %a, align 8
-  call void @_EN3std12StringBuffer6deinitE(ptr %a), !dbg !8
+  %1 = call %StringBuf @_EN3stdplE9StringBuf6string(%StringBuf %a.load, %string %__str.load), !dbg !9
+  store %StringBuf %1, ptr %a, align 8
+  call void @_EN3std9StringBuf6deinitE(ptr %a), !dbg !8
   ret i32 0
 }
 
-declare void @_EN3std12StringBuffer4initE(ptr) #0
+declare void @_EN3std9StringBuf4initE(ptr) #0
 
 declare void @_EN3std6string4initEP4char3int(ptr, ptr, i32) #0
 
-declare %StringBuffer @_EN3stdplE12StringBuffer6string(%StringBuffer, %string) #0
+declare %StringBuf @_EN3stdplE9StringBuf6string(%StringBuf, %string) #0
 
-declare void @_EN3std12StringBuffer6deinitE(ptr) #0
+declare void @_EN3std9StringBuf6deinitE(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

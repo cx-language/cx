@@ -1,22 +1,22 @@
 /// A resizable string buffer.
-struct StringBuffer: Comparable, Hashable, Printable {
+struct StringBuf: Comparable, Hashable, Printable {
     // Stored characters, including a trailing null.
     private List<char> characters;
 
     /// Initializes an empty string.
-    StringBuffer() {
+    StringBuf() {
         characters = List();
         characters.push('\0');
     }
 
     /// Initializes an empty string with pre-allocated capacity.
-    StringBuffer(public int capacity) {
+    StringBuf(public int capacity) {
         init();
         characters.reserve(capacity);
     }
 
     /// Initializes a string with the contents of the given string.
-    StringBuffer(string s) {
+    StringBuf(string s) {
         characters = List(capacity = s.size() + 1);
 
         for ch in s {
@@ -27,7 +27,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     /// Initializes a string with the characters from a character array of known length.
-    StringBuffer(char* pointer, int length) {
+    StringBuf(char* pointer, int length) {
         init(string(pointer, length));
     }
 
@@ -35,14 +35,14 @@ struct StringBuffer: Comparable, Hashable, Printable {
     ///
     /// __Note:__ This constructor has a time complexity of O(n) because it has to calculate the
     /// length of the argument string. If you know the length beforehand, consider using
-    /// `StringBuffer(char* pointer, int length)` instead.
+    /// `StringBuf(char* pointer, int length)` instead.
     ///
-    StringBuffer(char* cString) {
+    StringBuf(char* cString) {
         init(string(cString, int(strlen(cString))));
     }
 
     /// Initializes the buffer to contain the given number of uninitialized bytes.
-    StringBuffer(public int uninitializedSize) {
+    StringBuf(public int uninitializedSize) {
         characters = List(uninitializedSize = uninitializedSize + 1);
         characters[uninitializedSize] = '\0';
     }
@@ -110,7 +110,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Appends the printed form of the given value.
     void append<T: Printable>(T& value) {
-        value.print(OutputStream(this));
+        value.print(OutputStream(&this));
     }
 
     /// Appends the repetition without allocating a temporary.
@@ -214,7 +214,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     /// Returns the string with special characters escaped.
-    StringBuffer escape() {
+    StringBuf escape() {
         return string(this).escape();
     }
 
@@ -224,7 +224,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     /// Compares this string to another.
-    Ordering compare(StringBuffer& other) {
+    Ordering compare(StringBuf& other) {
         return string(this).compare(string(other));
     }
 
@@ -237,13 +237,13 @@ struct StringBuffer: Comparable, Hashable, Printable {
     bool none(bool(char&) predicate) { return none(iterator(), predicate); }
 
     private void indexOutOfBounds(string function, int index) {
-        abort("StringBuffer.", function, ": index ", index, " is out of bounds, size is ", size());
+        abort("StringBuf.", function, ": index ", index, " is out of bounds, size is ", size());
     }
 }
 
 /// Concatenates the two strings.
-StringBuffer operator+(string a, string b) {
-    var result = StringBuffer();
+StringBuf operator+(string a, string b) {
+    var result = StringBuf();
 
     for ch in a {
         result.append(ch);
@@ -257,17 +257,17 @@ StringBuffer operator+(string a, string b) {
 }
 
 /// Concatenates the string and the character.
-StringBuffer operator+(string a, char b) {
+StringBuf operator+(string a, char b) {
     return a + string(&b, 1);
 }
 
 /// Concatenates the two strings.
-StringBuffer operator+(string a, char[*] b) {
+StringBuf operator+(string a, char[*] b) {
     return a + string(b);
 }
 
 /// Concatenates the two strings.
-StringBuffer operator+(StringBuffer a, string b) {
+StringBuf operator+(StringBuf a, string b) {
     var result = a; // TODO: Workaround until parameters can be mutated.
 
     for ch in b {
@@ -278,8 +278,8 @@ StringBuffer operator+(StringBuffer a, string b) {
 }
 
 /// Concatenates the two strings.
-StringBuffer operator+(string a, StringBuffer b) {
-    var result = StringBuffer(a);
+StringBuf operator+(string a, StringBuf b) {
+    var result = StringBuf(a);
 
     for ch in b {
         result.append(ch);
@@ -289,7 +289,7 @@ StringBuffer operator+(string a, StringBuffer b) {
 }
 
 /// Concatenates the two strings.
-StringBuffer operator+(StringBuffer a, StringBuffer b) {
+StringBuf operator+(StringBuf a, StringBuf b) {
     var result = a; // TODO: Workaround until parameters can be mutated.
 
     for ch in b {
@@ -300,20 +300,20 @@ StringBuffer operator+(StringBuffer a, StringBuffer b) {
 }
 
 /// Concatenates the string and the character.
-StringBuffer operator+(StringBuffer a, char b) {
+StringBuf operator+(StringBuf a, char b) {
     var result = a; // TODO: Workaround until parameters can be mutated.
     result.append(b);
     return result;
 }
 
 /// Concatenates the two strings.
-StringBuffer operator+(StringBuffer a, char[*] b) {
+StringBuf operator+(StringBuf a, char[*] b) {
     return a + string(b);
 }
 
 /// Concatenates the repetition and the string.
-StringBuffer operator+(RepeatIterator<string> a, string b) {
-    var result = StringBuffer();
+StringBuf operator+(RepeatIterator<string> a, string b) {
+    var result = StringBuf();
     for chunk in a {
         result.append(chunk);
     }
@@ -322,8 +322,8 @@ StringBuffer operator+(RepeatIterator<string> a, string b) {
 }
 
 /// Concatenates the string and the repetition.
-StringBuffer operator+(string a, RepeatIterator<string> b) {
-    var result = StringBuffer(a);
+StringBuf operator+(string a, RepeatIterator<string> b) {
+    var result = StringBuf(a);
     for chunk in b {
         result.append(chunk);
     }
@@ -331,8 +331,8 @@ StringBuffer operator+(string a, RepeatIterator<string> b) {
 }
 
 /// Concatenates two repetitions.
-StringBuffer operator+(RepeatIterator<string> a, RepeatIterator<string> b) {
-    var result = StringBuffer();
+StringBuf operator+(RepeatIterator<string> a, RepeatIterator<string> b) {
+    var result = StringBuf();
     for chunk in a {
         result.append(chunk);
     }
@@ -343,26 +343,26 @@ StringBuffer operator+(RepeatIterator<string> a, RepeatIterator<string> b) {
 }
 
 /// Returns true if both strings are equal.
-bool operator==(StringBuffer& a, StringBuffer& b) {
+bool operator==(StringBuf& a, StringBuf& b) {
     return string(a) == string(b);
 }
 
 /// Returns true if both strings are equal.
-bool operator==(StringBuffer& a, string b) {
+bool operator==(StringBuf& a, string b) {
     return string(a) == b;
 }
 
 /// Returns true if both strings are equal.
-bool operator==(string a, StringBuffer& b) {
+bool operator==(string a, StringBuf& b) {
     return a == string(b);
 }
 
 /// Returns true if both strings are equal.
-bool operator==(char[*] a, StringBuffer& b) {
+bool operator==(char[*] a, StringBuf& b) {
     return string(a) == string(b);
 }
 
 /// Returns true if both strings are equal.
-bool operator==(StringBuffer& a, char[*] b) {
+bool operator==(StringBuf& a, char[*] b) {
     return string(a) == string(b);
 }

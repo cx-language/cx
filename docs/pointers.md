@@ -46,6 +46,7 @@ Callers pass values as usual; the compiler borrows them automatically.
 Temporaries and literals can be borrowed too; they live until the end of the call.
 Passing a stored `T*` where a `T&` is expected reborrows it.
 Inside the function, member access works directly, and `*` reads or writes through the borrow.
+Member functions use a `T&` borrow for `this`; use `&this` to obtain a storable `T*`.
 
 Unlike pointers, borrows cannot be stored: `T&` may only appear as a function parameter type,
 and reading a borrow into a variable copies the value out.

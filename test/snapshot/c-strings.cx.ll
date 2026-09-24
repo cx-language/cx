@@ -2,7 +2,7 @@
 %S = type { [1024 x i8] }
 %string = type { %"Slice<char>" }
 %"Slice<char>" = type { ptr, i32 }
-%StringBuffer = type { %"List<char>" }
+%StringBuf = type { %"List<char>" }
 %"List<char>" = type { ptr, i32, i32 }
 
 @0 = private unnamed_addr constant [2 x i8] c"x\00", align 1
@@ -11,7 +11,7 @@
 define i32 @main() #0 !dbg !4 {
   %s = alloca %S, align 8
   %__str = alloca %string, align 8
-  %1 = alloca %StringBuffer, align 8
+  %1 = alloca %StringBuf, align 8
   %__str1 = alloca %string, align 8
   %a = getelementptr inbounds %S, ptr %s, i32 0, i32 0
   call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @0, i32 1), !dbg !7
@@ -20,8 +20,8 @@ define i32 @main() #0 !dbg !4 {
   %a2 = getelementptr inbounds %S, ptr %s, i32 0, i32 0
   call void @_EN3std6string4initEP4char3int(ptr %__str1, ptr @1, i32 1), !dbg !7
   %__str.load3 = load %string, ptr %__str1, align 8
-  call void @_EN3std12StringBuffer4initE6string(ptr %1, %string %__str.load3), !dbg !9
-  %3 = getelementptr inbounds %StringBuffer, ptr %1, i32 0, i32 0
+  call void @_EN3std9StringBuf4initE6string(ptr %1, %string %__str.load3), !dbg !9
+  %3 = getelementptr inbounds %StringBuf, ptr %1, i32 0, i32 0
   %4 = getelementptr inbounds %"List<char>", ptr %3, i32 0, i32 0
   %.load = load ptr, ptr %4, align 8
   %5 = getelementptr inbounds %"List<char>", ptr %3, i32 0, i32 1
@@ -39,7 +39,7 @@ declare void @_EN3std6string4initEP4char3int(ptr, ptr, i32) #0
 
 declare i1 @_EN3stdeqEP4char6string(ptr, %string) #0
 
-declare void @_EN3std12StringBuffer4initE6string(ptr, %string) #0
+declare void @_EN3std9StringBuf4initE6string(ptr, %string) #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -56,4 +56,4 @@ attributes #0 = { "frame-pointer"="all" }
 !7 = !DILocation(line: 7, column: 6, scope: !4)
 !8 = !DILocation(line: 9, column: 9, scope: !4)
 !9 = !DILocation(line: 10, column: 5, scope: !4)
-!10 = !DILocation(line: 10, column: 23, scope: !4)
+!10 = !DILocation(line: 10, column: 20, scope: !4)

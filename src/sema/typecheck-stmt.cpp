@@ -279,6 +279,8 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     }
 
     if (auto varExpr = llvm::dyn_cast<VarExpr>(operand)) {
+        if (varExpr->isThis()) return;
+
         switch (varExpr->decl->kind) {
         case DeclKind::VarDecl: {
             auto* varDecl = llvm::cast<VarDecl>(varExpr->decl);
@@ -354,8 +356,8 @@ void Typechecker::typecheckVarStmt(VarStmt& stmt) {
 }
 
 void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
-    Type conditionType = typecheckExpr(*ifStmt.condition);
-    typecheckImplicitlyBoolConvertibleExpr(conditionType, ifStmt.condition->location, ifStmt.condition->endLocation);
+    typecheckExpr(*ifStmt.condition);
+    typecheckImplicitlyBoolConvertibleExpr(ifStmt.condition);
     currentControlStmts.push_back(&ifStmt);
 
     // A value moved in every branch is moved after the if statement. Moves from only one
@@ -514,12 +516,12 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
 
     if (conditionType.isPointerType()) {
         Type pointeeType = conditionType.getPointee();
-        // Automatically dereference pointers to switchable values. Enums with associated values are excluded;
-        // they need the address for tag/associated-value access, so dereference those explicitly (e.g. `switch (*p)`).
+        // Automatically dereference pointers and borrows to switchable values. Raw pointers to enums with associated
+        // values are excluded because they need the address for tag/associated-value access (e.g. `switch (*p)`).
         // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees
         // (moving out of a pointer elsewhere requires an explicit '*').
         bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
-        if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
+        if (conditionType.isReferenceType() || pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
             condition = makeAST<ImplicitCastExpr>(condition, pointeeType, ImplicitCastExpr::AutoDereference);
             conditionType = pointeeType;
         }
@@ -548,11 +550,14 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
     if (pointerType.isPointerType()) {
         Type pointeeType = pointerType.getPointee();
-        // Automatically dereference pointers to switchable values. Enums with associated values are excluded;
-        // they need the address for tag/associated-value access, so dereference those explicitly (e.g. `switch (*p)`).
+        // Automatically dereference pointers and borrows to switchable values. Raw pointers to enums with associated
+        // values are excluded because they need the address for tag/associated-value access (e.g. `switch (*p)`).
         // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees.
+        // Only a plain borrow always dereferences: an optional borrow (T&?) intentionally falls through to the
+        // pointee checks below, so only null-routable pointees (int/char/plain enum) take the optional path,
+        // mirroring raw optional pointers. String and payload-enum optional borrows are rejected like the raw forms.
         bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
-        if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
+        if (conditionType.isReferenceType() || pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
             if (conditionType.isOptionalType() && hasNullCase) {
                 nullRoutedOptional = true;
             } else {
@@ -868,8 +873,8 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
     dropNarrowingsForNames(assignedNames);
 
     if (forStmt.condition) {
-        Type conditionType = typecheckExpr(*forStmt.condition);
-        typecheckImplicitlyBoolConvertibleExpr(conditionType, forStmt.condition->location, forStmt.condition->endLocation);
+        typecheckExpr(*forStmt.condition);
+        typecheckImplicitlyBoolConvertibleExpr(forStmt.condition);
     }
 
     // The body and increment may not execute, so assignments there don't hold after the loop.
@@ -913,8 +918,8 @@ void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
 
     currentControlStmts.pop_back();
 
-    Type conditionType = typecheckExpr(*doWhileStmt.condition);
-    typecheckImplicitlyBoolConvertibleExpr(conditionType, doWhileStmt.condition->location, doWhileStmt.condition->endLocation);
+    typecheckExpr(*doWhileStmt.condition);
+    typecheckImplicitlyBoolConvertibleExpr(doWhileStmt.condition);
 
     narrowedTypes = outerNarrowings;
     dropNarrowingsForNames(assignedNames);

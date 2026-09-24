@@ -2,7 +2,8 @@
 
 A `struct` is a user-defined data type used to group variables into a single type.
 Additionally, structs may define member functions, that can be called on instances of the struct.
-Inside member functions, `this` is a pointer to the instance that the function was called on.
+Inside member functions, `this` is a non-null reference (`T&`) to the instance that the function was called on.
+Use `&this` when a storable `T*` is required.
 Member functions must be defined inside the struct or enum body.
 
 ```cs
@@ -121,10 +122,10 @@ This is how containers destroy their elements:
 
 ```cs
 void main() {
-    var buffer = allocateArray<StringBuffer>(1);
+    var buffer = allocateArray<StringBuf>(1);
 
     var slot = &buffer[0];
-    slot.init(StringBuffer("hi"));
+    slot.init(StringBuf("hi"));
     println(buffer[0]); // prints "hi"
 
     buffer[0].deinit(); // destroys the element; nothing will destroy it again

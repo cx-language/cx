@@ -1,7 +1,7 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 interface Printable {
-    void print(StringBuffer* stream);
+    void print(StringBuf* stream);
 }
 
 void main() {

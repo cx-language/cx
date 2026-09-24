@@ -4,7 +4,7 @@
 /// overlarge numbers parse as `Number`. Objects preserve insertion order and
 /// allow duplicate keys.
 enum JsonValue : Printable {
-    String(StringBuffer value),
+    String(StringBuf value),
     Integer(int64 value),
     Number(float64 value),
     Boolean(bool value),
@@ -24,8 +24,8 @@ enum JsonValue : Printable {
     ///
     /// Numbers print in the shortest form that parses back to the same value.
     /// Non-finite `Number` values abort; JSON has no spelling for them.
-    StringBuffer toString(bool pretty) {
-        var out = StringBuffer();
+    StringBuf toString(bool pretty) {
+        var out = StringBuf();
         var stream = OutputStream(&out);
         writeJson(stream, &this, 0, pretty);
         return out;
@@ -35,7 +35,7 @@ enum JsonValue : Printable {
 /// One key-value pair of a JSON object.
 struct JsonMember {
     /// The member's key.
-    StringBuffer key;
+    StringBuf key;
     /// The member's value.
     JsonValue value;
 }
@@ -241,9 +241,9 @@ private struct JsonParser {
         assert(false);
     }
 
-    Result<StringBuffer, JsonError> parseString() {
+    Result<StringBuf, JsonError> parseString() {
         pos++; // opening quote
-        var out = StringBuffer();
+        var out = StringBuf();
         while true {
             if pos >= input.size() {
                 return Err(JsonError.UnterminatedString(pos));
@@ -391,7 +391,7 @@ private struct JsonParser {
                 return Ok(JsonValue.Integer(integer));
             }
         }
-        var text = StringBuffer(lexeme);
+        var text = StringBuf(lexeme);
         float64 value = strtod(text.cString(), null);
         // Only infinite values equal their own half.
         if value != 0.0 && value / 2.0 == value {
@@ -420,7 +420,7 @@ private int hexValue(char c) {
     return -1;
 }
 
-private void pushUtf8(StringBuffer& out, int code) {
+private void pushUtf8(StringBuf& out, int code) {
     if code < 0x80 {
         out.append(char(code));
     } else if code < 0x800 {
@@ -446,7 +446,7 @@ private void writeIndent(OutputStream& out, int count) {
     }
 }
 
-private void writeQuoted(OutputStream& out, StringBuffer* s) {
+private void writeQuoted(OutputStream& out, StringBuf* s) {
     out.append('"');
     for i in 0..s.size() {
         int code = byteValue((*s)[i]);
