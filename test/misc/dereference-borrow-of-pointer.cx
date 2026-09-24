@@ -1,0 +1,38 @@
+// RUN: %cx run %s | %FileCheck %s
+// RUN: %cx run --backend=c %s | %FileCheck %s
+// CHECK: 41
+// CHECK-NEXT: 41
+// CHECK-NEXT: true
+// CHECK-NEXT: 42
+
+// Dereferencing a borrow of a pointer peels one level: `*p` is the pointer,
+// `**p` is the pointee.
+int readTwice(int*& p) {
+    return **p;
+}
+
+int readPointer(int*& p) {
+    int* q = *p;
+    return *q;
+}
+
+// Writing through peels the borrow, reseating the borrowed pointer itself.
+void reseat(int*& p, int* q) {
+    *p = q;
+}
+
+// A borrow designates an object, so its address can be taken.
+int** addressOf(int*& p) {
+    return &p;
+}
+
+void main() {
+    var a = 41;
+    var b = 42;
+    int* p = &a;
+    println(readTwice(p));
+    println(readPointer(p));
+    println(addressOf(p) == &p);
+    reseat(p, &b);
+    println(*p);
+}

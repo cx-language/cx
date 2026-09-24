@@ -1,0 +1,10 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: nested-reference-spaced.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+// Separated by a space, `& &` lexes as two borrows instead of one `&&` token;
+// it is rejected all the same.
+// CHECK: [[@LINE+1]]:13: error: nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value
+void g(int& &x) {}
+
+// CHECK-NOT: nested-reference-spaced.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

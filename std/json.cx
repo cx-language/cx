@@ -526,7 +526,7 @@ private void writeJson(OutputStream& out, JsonValue* value, int level, bool inde
                         out.append('\n');
                         writeIndent(out, (level + 1) * 2);
                     }
-                    writeJson(out, element, level + 1, indented);
+                    writeJson(out, &element, level + 1, indented);
                 }
                 if indented {
                     out.append('\n');

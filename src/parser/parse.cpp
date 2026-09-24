@@ -581,6 +581,11 @@ Type Parser::parseType() {
             type = parseArrayType(type);
             break;
         case Token::And:
+            // The lexer only produces AndAnd for adjacent `&&`, so `T& &` arrives here as two
+            // separate borrows; reject it the same way rather than building a reference to a reference.
+            if (type.isReferenceType()) {
+                ERROR(getCurrentLocation(), "nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
+            }
             type = PointerType::get(type, PointerKind::Reference, Mutability::Mutable, location);
             consumeToken();
             break;
@@ -1560,6 +1565,10 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
             if (currentToken() == Token::Colon) {
                 consumeToken();
                 genericParams.back().constraints = {parseType()};
+                while (currentToken() == Token::Plus) {
+                    consumeToken();
+                    genericParams.back().constraints.push_back(parseType());
+                }
             }
         }
 

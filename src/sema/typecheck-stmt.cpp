@@ -274,7 +274,7 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     Type localVariableType;
     const Expr* operand = returnValue;
 
-    if (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(returnValue)) {
+    while (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(operand)) {
         operand = implicitCastExpr->operand;
     }
 
@@ -284,7 +284,8 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
         switch (varExpr->decl->kind) {
         case DeclKind::VarDecl: {
             auto* varDecl = llvm::cast<VarDecl>(varExpr->decl);
-            if (varDecl->parent && varDecl->parent->isFunctionDecl()) {
+            // A for-loop element aliases the iterated container, not its own slot.
+            if (varDecl->parent && varDecl->parent->isFunctionDecl() && !(varDecl->isForLoopElement && varDecl->type.isReferenceType())) {
                 localVariableType = varDecl->type;
             }
             break;
@@ -510,21 +511,21 @@ void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase*
 }
 
 // Switch expressions lower directly to a switch instruction, so unlike switch statements
-// they accept neither string conditions nor `case null` on optional pointers.
+// they accept neither string conditions nor null cases.
 Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
     Type conditionType = typecheckExpr(*condition);
 
-    if (conditionType.isPointerType()) {
-        Type pointeeType = conditionType.getPointee();
-        // Automatically dereference pointers and borrows to switchable values. Raw pointers to enums with associated
-        // values are excluded because they need the address for tag/associated-value access (e.g. `switch (*p)`).
-        // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees
-        // (moving out of a pointer elsewhere requires an explicit '*').
-        bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
-        if (conditionType.isReferenceType() || pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
-            condition = makeAST<ImplicitCastExpr>(condition, pointeeType, ImplicitCastExpr::AutoDereference);
-            conditionType = pointeeType;
-        }
+    if (conditionType.isReferenceType()) {
+        // Borrows read through implicitly (e.g. `switch this`, where receivers are borrows).
+        // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees.
+        condition = makeAST<ImplicitCastExpr>(condition, conditionType.getPointee(), ImplicitCastExpr::AutoDereference);
+        conditionType = conditionType.getPointee();
+    }
+
+    if ((conditionType.removeOptional().isPointerType() && !conditionType.removeOptional().isReferenceType())
+        || conditionType.removeOptional().isUnsizedArrayPointer()) {
+        ERROR(condition->location,
+              "switch condition must have integer, char, or enum type, got '" << conditionType << "'; dereference it explicitly (e.g. 'switch (*p)')");
     }
 
     // Pointer-implemented optionals have no tag to switch on.
@@ -537,52 +538,24 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
 
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(*stmt.condition);
-    bool hasNullCase = llvm::any_of(stmt.cases, [](const SwitchCase& switchCase) { return switchCase.value->isNullLiteralExpr(); });
 
-    Type pointerType = conditionType;
-    if (pointerType.isOptionalType() && pointerType.getWrappedType().isPointerType()) {
-        pointerType = pointerType.getWrappedType();
+    if (conditionType.isReferenceType()) {
+        // Borrows read through implicitly (e.g. `switch this`, where receivers are borrows).
+        // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees.
+        stmt.condition = makeAST<ImplicitCastExpr>(stmt.condition, conditionType.getPointee(), ImplicitCastExpr::AutoDereference);
+        conditionType = conditionType.getPointee();
     }
 
-    // A `case null` on an optional pointer keeps the condition optional; codegen branches
-    // on null first and switches on the dereferenced value, instead of trapping on null.
-    bool nullRoutedOptional = false;
-
-    if (pointerType.isPointerType()) {
-        Type pointeeType = pointerType.getPointee();
-        // Automatically dereference pointers and borrows to switchable values. Raw pointers to enums with associated
-        // values are excluded because they need the address for tag/associated-value access (e.g. `switch (*p)`).
-        // Switching only reads the value, so dereferencing is allowed even for non-copyable pointees.
-        // Only a plain borrow always dereferences: an optional borrow (T&?) intentionally falls through to the
-        // pointee checks below, so only null-routable pointees (int/char/plain enum) take the optional path,
-        // mirroring raw optional pointers. String and payload-enum optional borrows are rejected like the raw forms.
-        bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
-        if (conditionType.isReferenceType() || pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
-            if (conditionType.isOptionalType() && hasNullCase) {
-                nullRoutedOptional = true;
-            } else {
-                // Like other implicit unwraps, switching on an optional pointer unwraps it, trapping on null.
-                if (conditionType.isOptionalType()) {
-                    if (auto unwrapped = convert(stmt.condition, pointerType)) {
-                        stmt.condition = unwrapped;
-                        conditionType = pointerType;
-                    }
-                }
-                if (conditionType.isPointerType() && conditionType.getPointee() == pointeeType) {
-                    stmt.condition = makeAST<ImplicitCastExpr>(stmt.condition, pointeeType, ImplicitCastExpr::AutoDereference);
-                    conditionType = pointeeType;
-                } else if (auto dereferenced = convert(stmt.condition, pointeeType)) {
-                    stmt.condition = dereferenced;
-                    conditionType = pointeeType;
-                }
-            }
-        }
+    if ((conditionType.removeOptional().isPointerType() && !conditionType.removeOptional().isReferenceType())
+        || conditionType.removeOptional().isUnsizedArrayPointer()) {
+        ERROR(stmt.condition->location,
+              "switch condition must have integer, char, string, or enum type, got '" << conditionType << "'; dereference it explicitly (e.g. 'switch (*p)')");
     }
 
     // Pointer-implemented optionals have no tag to switch on.
     bool isSwitchableEnum = conditionType.isEnumType() && !(conditionType.isOptionalType() && conditionType.isImplementedAsPointer());
     bool isString = conditionType.isBasicType() && conditionType.getName() == "string";
-    if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum && !nullRoutedOptional && !isString) {
+    if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum && !isString) {
         ERROR(stmt.condition->location, "switch condition must have integer, char, string, or enum type, got '" << conditionType << "'");
     }
 
@@ -603,14 +576,9 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
     currentControlStmts.push_back(&stmt);
 
-    // Cases of a null-routed optional switch match the dereferenced value; codegen unwraps before switching.
-    Type caseTargetType = nullRoutedOptional ? conditionType.getWrappedType().getPointee() : conditionType;
-    bool seenNullCase = false;
     std::vector<llvm::SmallPtrSet<Decl*, 32>> bodyAssignedDecls;
 
     for (auto& switchCase : stmt.cases) {
-        // Null-routed switches match against the dereferenced type and accept `case null`,
-        // so statements inline this instead of sharing typecheckSwitchCaseValue with expressions.
         if (conditionType.isEnumType()) {
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(switchCase.value)) {
                 auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
@@ -621,32 +589,23 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             }
         }
 
-        Type caseType = typecheckExpr(*switchCase.value, false, caseTargetType);
+        Type caseType = typecheckExpr(*switchCase.value, false, conditionType);
 
         auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
         auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
 
         if (switchCase.value->isNullLiteralExpr()) {
-            // Only optional-pointer conditions route null; anything else can't match it.
-            // (The null literal adopts an optional condition type, so compare before converting.)
-            if (!nullRoutedOptional) {
-                ERROR(switchCase.value->location, "case value type 'null' doesn't match switch condition type '" << conditionType << "'");
-            }
-            if (seenNullCase) {
-                ERROR(switchCase.value->location, "duplicate 'case null'");
-            }
-            seenNullCase = true;
-        } else if (auto converted = convert(switchCase.value, caseTargetType)) {
+            ERROR(switchCase.value->location, "case value type 'null' doesn't match switch condition type '" << conditionType << "'");
+        } else if (auto converted = convert(switchCase.value, conditionType)) {
             switchCase.value = converted;
             // Conversions can wrap the value, hiding the enum case from the checks below.
             memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
             enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
         } else {
-            ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << caseTargetType << "'");
+            ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
         }
 
-        if (!nullRoutedOptional && conditionType.isOptionalType() && !conditionType.getWrappedType().isPointerType() && !enumCase
-            && caseType != conditionType) {
+        if (conditionType.isOptionalType() && !conditionType.getWrappedType().isPointerType() && !enumCase && caseType != conditionType) {
             // Value-optional conditions (e.g. int?) only match enum cases (Some/None); a wrapped
             // value has no case representation, so don't silently wrap to the optional type.
             ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");

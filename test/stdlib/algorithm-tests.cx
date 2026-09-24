@@ -5,6 +5,7 @@ void main() {
     testInsertionSort();
     testQuickSort();
     testMax();
+    testMin();
 }
 
 void testAllAnyNone() {
@@ -51,5 +52,15 @@ void testQuickSort() {
 }
 
 void testMax() {
-    assert(*max(&7, &9) == 9);
+    var a = 7;
+    var b = 9;
+    assert(max(a, b) == 9);
+    assert(*max(&a, &b) == 9);
+}
+
+void testMin() {
+    var a = 7;
+    var b = 9;
+    assert(min(a, b) == 7);
+    assert(*min(&a, &b) == 7);
 }

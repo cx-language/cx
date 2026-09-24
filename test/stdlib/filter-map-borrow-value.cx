@@ -7,7 +7,7 @@ bool isEvenVal(int n) {
 }
 
 bool isEvenRef(int& n) {
-    return *n % 2 == 0;
+    return n % 2 == 0;
 }
 
 int doubleVal(int n) {
@@ -15,7 +15,7 @@ int doubleVal(int n) {
 }
 
 int doubleRef(int& n) {
-    return *n * 2;
+    return n * 2;
 }
 
 bool isLongRef(StringBuf& s) {
@@ -29,7 +29,7 @@ void main() {
     assert(numbers.filter(isEvenRef).toList() == List([0, 2, 4]));
     assert(numbers.filter(n => n % 2 == 0).toList() == List([0, 2, 4]));
     assert(numbers.filter((int n) => n % 2 == 0).toList() == List([0, 2, 4]));
-    assert(numbers.filter((int& n) => *n % 2 == 0).toList() == List([0, 2, 4]));
+    assert(numbers.filter((int& n) => n % 2 == 0).toList() == List([0, 2, 4]));
 
     assert(numbers.map(doubleVal).toList() == List([0, 2, 4, 6, 8]));
     assert(numbers.map(doubleRef).toList() == List([0, 2, 4, 6, 8]));

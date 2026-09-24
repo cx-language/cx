@@ -9,17 +9,16 @@ declare i32 @plain(i32) #0
 
 define void @_EN3std7printlnI3intEE3int(i32 %value) #0 !dbg !9 {
   %value1 = alloca i32, align 4
-  %1 = alloca i8, align 1
   store i32 %value, ptr %value1, align 4
-  call void @_EN3std5printI3intEER3int(ptr %value1), !dbg !11
-  store i8 10, ptr %1, align 1
-  call void @_EN3std5printI4charEER4char(ptr %1), !dbg !12
+  %value.load = load i32, ptr %value1, align 4
+  call void @_EN3std5printI3intEE3int(i32 %value.load), !dbg !11
+  call void @_EN3std5printI4charEE4char(i8 10), !dbg !12
   ret void
 }
 
-declare void @_EN3std5printI3intEER3int(ptr) #0
+declare void @_EN3std5printI3intEE3int(i32) #0
 
-declare void @_EN3std5printI4charEER4char(ptr) #0
+declare void @_EN3std5printI4charEE4char(i8) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

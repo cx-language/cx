@@ -295,7 +295,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     /// Compares this string to another.
     Ordering compare(string& other) {
-        for index in 0..min(&size(), &other.size()) {
+        for index in 0..min(size(), other.size()) {
             if this[index] < other[index] { return Ordering.Less; }
             if this[index] > other[index] { return Ordering.Greater; }
         }

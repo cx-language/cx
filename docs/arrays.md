@@ -39,7 +39,7 @@ void main() {
 ```
 
 Arrays are values: assigning an array copies its elements.
-To pass an array to a function without copying, take it by an array reference (`T[]`),
+To pass an array to a function without copying, take it by a slice view (`T[]`),
 which refers to the caller's elements in place:
 
 ```cs

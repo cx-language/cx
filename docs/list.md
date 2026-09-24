@@ -52,7 +52,7 @@ int calculateSum(int[] array) {
 
 void main() {
     println(calculateSum([1, 2, 3]));
-    // A List converts to an array reference implicitly.
+    // A List converts to a slice view implicitly.
     println(calculateSum(List([4, 5, 6])));
 }
 ```

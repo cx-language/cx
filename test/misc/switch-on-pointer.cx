@@ -17,7 +17,7 @@ enum Color {
 }
 
 void foo(Color* c) {
-    switch (c) {
+    switch (*c) {
     case Color.Red:
         println("red");
     case Color.Green:
@@ -28,7 +28,7 @@ void foo(Color* c) {
 }
 
 void bar(int* i) {
-    switch (i) {
+    switch (*i) {
     case 1:
         println(1);
     default:
@@ -37,7 +37,7 @@ void bar(int* i) {
 }
 
 void baz(char* c) {
-    switch (c) {
+    switch (*c) {
     case 'a':
         println("a");
     default:
@@ -46,7 +46,7 @@ void baz(char* c) {
 }
 
 void qux(int*? i) {
-    switch (i) {
+    switch (*i!) {
     case 1:
         println("one");
     default:
@@ -59,7 +59,7 @@ void quux(char*? c) {
         println("null");
         return;
     }
-    switch (c) {
+    switch (*c) {
     case 'b':
         println("b");
     default:
@@ -68,9 +68,11 @@ void quux(char*? c) {
 }
 
 void quuz(int*? i) {
-    switch (i) {
-    case null:
+    if (i == null) {
         println("null");
+        return;
+    }
+    switch (*i) {
     case 1:
         println("one");
     default:
