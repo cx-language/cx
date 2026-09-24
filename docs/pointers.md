@@ -47,10 +47,22 @@ Passing a stored `T*` where a `T&` is expected reborrows it.
 Inside the function, member access and operators use the borrowed value directly; `*` writes through the borrow or moves a value out explicitly.
 Member functions use a `T&` borrow for `this`; use `&this` to obtain a storable `T*`.
 
-Unlike pointers, borrows cannot be stored: `T&` may only appear as a function parameter, return type,
-or interface argument, and reading a borrow into a variable copies the value out.
+Unlike pointers, borrows cannot be stored in fields or globals: besides function parameters,
+return types, and interface arguments, `T&` may only appear as a local variable type. A reference
+local aliases its referent in place; it must be initialized with an lvalue, since a temporary
+would dangle. Reading a borrow into a plain `var` still copies the value out.
 Unlike pointers, borrows cannot be reseated by assignment either: assigning to a borrow would rebind
 it, so the compiler rejects it; write through it with `*` instead.
+
+```cs
+void main() {
+    var i = 41;
+    int& r = i;
+    *r += 1;
+    println(i); // prints 42
+    println(r); // prints 42
+}
+```
 
 A borrow can be nullable, written `T&?`, for parameters that may or may not receive a value.
 It accepts everything a `T&` accepts, plus `null` and nullable pointers.

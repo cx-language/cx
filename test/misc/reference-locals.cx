@@ -1,0 +1,45 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK-NOT: reference-locals.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct PlainPoint { int x; }
+
+void bump(int& x) {
+    *x += 1;
+}
+
+void main() {
+    var x = 5;
+    int& r = x;
+    // CHECK:5
+    println(r);
+    *r = 6;
+    // CHECK-NEXT:6
+    println(x);
+    // CHECK-NEXT:6
+    println(r);
+    bump(r);
+    // CHECK-NEXT:7
+    println(x);
+
+    // Reference locals alias without copying or moving, so non-copyable
+    // referents stay usable.
+    var p = PlainPoint(x = 1);
+    PlainPoint& pr = p;
+    pr.x = 99;
+    // CHECK-NEXT:99
+    println(p.x);
+    // CHECK-NEXT:99
+    println(pr.x);
+
+    // A reference local can alias another borrow, such as a container element.
+    var list = List([10, 20]);
+    int& e = list[0];
+    *e = 11;
+    // CHECK-NEXT:11
+    println(list[0]);
+    int& e2 = e;
+    // CHECK-NEXT:11
+    println(e2);
+}
+// CHECK-NOT: reference-locals.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -3,7 +3,7 @@
 // CHECK-NOT: reference-type-restrictions.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct S {
-    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter, return type, or interface argument
+    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter, return type, local variable, or interface argument
     int& field;
 }
 
@@ -20,13 +20,16 @@ int& returnsBorrow() {
 void optionalBorrow(int&? o) {
 }
 
+// Locals may declare reference types; they alias the referent in place.
 void localBorrow() {
     var x = 1;
-    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter, return type, or interface argument
+    // CHECK-NOT: [[@LINE+1]]:{{[0-9]+}}: {{(warning|error)}}:
     int& r = x;
+    // CHECK-NOT: [[@LINE+1]]:{{[0-9]+}}: {{(warning|error)}}:
+    *r = 2;
 }
 
 // CHECK: 12:6: warning: unused declaration 'returnsBorrow'
 // CHECK: 20:6: warning: unused declaration 'optionalBorrow'
-// CHECK: 23:6: warning: unused declaration 'localBorrow'
+// CHECK: 24:6: warning: unused declaration 'localBorrow'
 // CHECK-NOT: reference-type-restrictions.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

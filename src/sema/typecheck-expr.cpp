@@ -2088,7 +2088,8 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
     } else {
         for (GenericArg arg : call.genericArgs) {
             if (arg.isType() && arg.getType().storesBorrow()) {
-                ERROR(arg.location, "reference type '" << arg.getType() << "' may only appear as a function parameter, return type, or interface argument");
+                ERROR(arg.location,
+                      "reference type '" << arg.getType() << "' may only appear as a function parameter, return type, local variable, or interface argument");
             }
         }
         if (!genericArgsMatch(genericParams, call.genericArgs)) return {};

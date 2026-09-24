@@ -310,7 +310,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     if (!allowReference && type.storesBorrow()) {
         // Report the outermost type (e.g. 'int&?' rather than the nested 'int&')
         // so the diagnostic matches what the user wrote.
-        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface argument");
+        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
@@ -422,7 +422,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         break;
     case TypeKind::PointerType: {
         if (type.isReferenceType() && !allowReference) {
-            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface argument");
+            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
         }
         typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
@@ -1008,7 +1008,10 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 
     Type declaredType = decl.type;
     if (declaredType) {
-        typecheckType(declaredType, !decl.isGlobal() ? AccessLevel::None : decl.accessLevel);
+        // Locals may declare plain reference types ('int& r = x;'). Other borrow-storing
+        // types ('int&?', containers of borrows) stay rejected, as do all borrows in globals.
+        bool allowReference = !decl.isGlobal() && declaredType.isReferenceType();
+        typecheckType(declaredType, !decl.isGlobal() ? AccessLevel::None : decl.accessLevel, true, allowReference);
     }
 
     if (decl.initializer) {
@@ -1024,6 +1027,9 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     if (!decl.initializer) {
         if (!declaredType) {
             ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation or initializer");
+        }
+        if (declaredType.isReferenceType() && !decl.isGlobal()) {
+            ERROR(decl.getLocation(), "reference variable '" << decl.getName() << "' must be initialized (borrows cannot be rebound)");
         }
         if (decl.isGlobal()) {
             WARN(decl.getLocation(), "missing initializer");
@@ -1068,14 +1074,17 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         }
     }
 
-    // A borrow can't be named: read the value out (copying or moving it) instead of aliasing it.
-    // For-loop element variables are exempt for plain borrows; they alias the yielded element
-    // in place. Optional borrows stay rejected: naming one cannot unwrap it.
-    if (decl.type.isReferenceType() && !decl.isForLoopElement) {
+    // An inferred borrow can't be named: read the value out (copying or moving it) instead of
+    // aliasing it. Explicitly declared reference locals and for-loop element variables are exempt
+    // for plain borrows; they alias the referent in place. Optional borrows stay rejected:
+    // naming one cannot unwrap it.
+    bool explicitLocalReference = declaredType && declaredType.isReferenceType() && !decl.isGlobal();
+    if (decl.type.isReferenceType() && !decl.isForLoopElement && !explicitLocalReference) {
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
-    } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType())) {
-        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter, return type, or interface argument");
+    } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType()) && !explicitLocalReference) {
+        ERROR(decl.getLocation(),
+              "reference type '" << decl.type << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }
 
     if (!decl.type.isImplicitlyCopyable()) {

@@ -284,8 +284,8 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
         switch (varExpr->decl->kind) {
         case DeclKind::VarDecl: {
             auto* varDecl = llvm::cast<VarDecl>(varExpr->decl);
-            // A for-loop element aliases the iterated container, not its own slot.
-            if (varDecl->parent && varDecl->parent->isFunctionDecl() && !(varDecl->isForLoopElement && varDecl->type.isReferenceType())) {
+            // The address of a borrow is the referent's address, not the variable slot.
+            if (varDecl->parent && varDecl->parent->isFunctionDecl() && !varDecl->type.isReferenceType()) {
                 localVariableType = varDecl->type;
             }
             break;

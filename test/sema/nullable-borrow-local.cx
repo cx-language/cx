@@ -4,7 +4,7 @@
 
 void main() {
     var x = 1;
-    // CHECK: [[@LINE+1]]:5: error: reference type 'int&?' may only appear as a function parameter, return type, or interface argument
+    // CHECK: [[@LINE+1]]:5: error: reference type 'int&?' may only appear as a function parameter, return type, local variable, or interface argument
     int&? r = x;
 }
 
