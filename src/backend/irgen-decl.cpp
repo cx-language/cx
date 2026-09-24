@@ -280,6 +280,7 @@ void IRGenerator::emitDecl(const Decl& decl) {
         break;
     }
     case DeclKind::TypeDecl:
+    case DeclKind::TypeAliasDecl:
     case DeclKind::FunctionTemplate:
     case DeclKind::TypeTemplate:
     case DeclKind::EnumDecl:

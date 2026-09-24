@@ -78,6 +78,11 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Decl& decl) {
         stream << "TypeTemplate";
         break;
     }
+    case DeclKind::TypeAliasDecl: {
+        auto& typeAlias = llvm::cast<TypeAliasDecl>(decl);
+        stream << "TypeAliasDecl " << typeAlias.getName() << " = " << typeAlias.aliasedType;
+        break;
+    }
     case DeclKind::EnumDecl: {
         //            auto& enumDecl = llvm::cast<EnumDecl>(decl);
         stream << "EnumDecl";

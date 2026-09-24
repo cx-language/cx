@@ -58,6 +58,10 @@ void Module::addToSymbolTable(TypeDecl& decl) {
     }
 }
 
+void Module::addToSymbolTable(TypeAliasDecl& decl) {
+    addToSymbolTableWithName(decl, decl.getName());
+}
+
 void Module::addToSymbolTable(EnumDecl& decl) {
     llvm::cast<BasicType>(decl.getType().typeBase)->decl = &decl;
     if (addToSymbolTableWithName(decl, decl.getQualifiedName())) return;

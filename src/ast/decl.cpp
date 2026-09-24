@@ -566,6 +566,9 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
     case DeclKind::TypeTemplate:
         llvm_unreachable("handled via TypeTemplate::instantiate()");
 
+    case DeclKind::TypeAliasDecl:
+        llvm_unreachable("type aliases resolve to their aliased type");
+
     case DeclKind::EnumDecl: {
         auto* enumDecl = llvm::cast<EnumDecl>(this);
         std::vector<EnumCase> cases;
