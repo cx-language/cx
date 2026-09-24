@@ -528,6 +528,7 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
 
             bool isComparison = (expr.op == Token::Equal || expr.op == Token::NotEqual);
             if (isComparison) {
+                if (arraySize == 0) return createConstantBool(expr.op == Token::Equal);
                 // `a == b` lowers to `(a[0]==b[0]) & (a[1]==b[1]) & ...` (bitwise
                 // AND on bools, eager; equivalent to && for pure comparisons).
                 // `!=` uses `|` (OR). Broadcast compares each element to the scalar.
@@ -634,6 +635,11 @@ static bool isBuiltinArrayToSliceConversion(Type sourceType, IRType* targetType)
     return sourceType.removePointer().isConstantArray() && targetType->isStruct() && targetType->getName().starts_with("Slice<");
 }
 
+static bool isEmptyArrayLiteral(const Expr& expr) {
+    auto* array = llvm::dyn_cast<ArrayLiteralExpr>(&expr);
+    return array && array->elements.empty();
+}
+
 static bool isListToSliceConversion(Type sourceType, IRType* targetType) {
     return sourceType.isBasicType() && sourceType.getName() == "List" && targetType->isStruct() && targetType->getName().starts_with("Slice<");
 }
@@ -643,6 +649,10 @@ static bool isStringBufferToStringConversion(Type sourceType, IRType* targetType
 }
 
 Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
+    if (isEmptyArrayLiteral(expr) && targetType && targetType->isPointerType()) {
+        return createConstantNull(targetType);
+    }
+
     if (!targetType) {
         // In variadic calls, arrays decay to pointers to their first element (as in C).
         if (expr.type.isConstantArray()) {
@@ -696,7 +706,8 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     // Handle implicit conversions to type 'T[*]'.
     if (expr.type.removePointer().isConstantArray() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
         if (expr.type.removePointer().getArraySize() == 0) return createConstantNull(targetType);
-        return createCast(loadThroughStorageAddress(emitLvalueExpr(expr), expr.type), targetType);
+        auto* value = expr.type.isPointerType() ? loadThroughStorageAddress(emitLvalueExpr(expr), expr.type) : emitExprAsPointer(expr);
+        return createCast(value, targetType);
     }
 
     // Handle implicit conversions to void pointer, and to base type pointer.
@@ -1033,12 +1044,18 @@ Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
     if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() && value->getType()->getPointee()->equals(getIRType(base.type))) {
         value = createLoad(value);
     }
+    if (!value->getType()->isPointerType()) value = createTempAlloca(value);
 
+    Value* gep;
     if (base.type.removeOptional().isUnsizedArrayPointer()) {
-        return createGEP(value, {emitExpr(index)});
+        gep = createGEP(value, {emitExpr(index)});
     } else {
-        return createGEP(value, {createConstantInt(Type::getInt(), 0), emitExpr(index)});
+        gep = createGEP(value, {createConstantInt(Type::getInt(), 0), emitExpr(index)});
     }
+    if (auto* call = llvm::dyn_cast<CallExpr>(&base); call && call->isMethodCall() && call->getFunctionName() == "data") {
+        llvm::cast<GEPInst>(gep)->expr = &base;
+    }
+    return gep;
 }
 
 Value* IRGenerator::emitIndexExpr(const IndexExpr& expr) {
@@ -1209,6 +1226,10 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
     switch (expr.castKind) {
     case ImplicitCastExpr::OptionalWrap:
         if (expr.type.getWrappedType().isImplementedAsPointer()) {
+            if (expr.type.getWrappedType().isUnsizedArrayPointer()
+                && (expr.operand->type.removePointer().isConstantArray() || isEmptyArrayLiteral(*expr.operand))) {
+                return emitExprForPassing(*expr.operand, getIRType(expr.type.getWrappedType()));
+            }
             if (expr.type.getWrappedType().isReferenceType() && !expr.operand->type.isReferenceType()) {
                 // Borrowing through the wrap: the operand is a value, so take the address-preserving
                 // path and materialize temporaries the way argument passing does. (An operand that is

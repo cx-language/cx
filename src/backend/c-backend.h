@@ -51,6 +51,8 @@ struct CGenerator {
     void codegenFunction(const Function* function);
     void codegenFunctionDispatch(const Function* function);
     void codegenType(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition);
+    void codegenTypeExpression(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition);
+    void codegenDeclaration(llvm::raw_string_ostream& stream, IRType* type, llvm::StringRef name, bool needsTypeDefinition);
     void codegenTypeSuffix(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition);
     // Emits a forward declaration for a struct or union type, plus the full definition when `define` is true.
     // Dependencies behind pointers only need declarations; by-value dependencies need full definitions.

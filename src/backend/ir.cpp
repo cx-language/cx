@@ -19,8 +19,13 @@ BasicBlock::BasicBlock(std::string name, cx::Function* parent) : Value{ValueKind
 static std::unordered_map<TypeBase*, IRType*> irTypes = {{nullptr, nullptr}};
 
 IRType* cx::getIRType(Type astType) {
-    auto it = irTypes.find(astType.typeBase);
-    if (it != irTypes.end()) return it->second;
+    // Incomplete-array wrappers can share a TypeBase while differing in
+    // mutability. Their pointer result must retain that distinction for C.
+    bool cacheable = astType.getKind() != TypeKind::ArrayType;
+    if (cacheable) {
+        auto it = irTypes.find(astType.typeBase);
+        if (it != irTypes.end()) return it->second;
+    }
 
     IRType* irType = nullptr;
 
@@ -120,7 +125,7 @@ IRType* cx::getIRType(Type astType) {
         llvm_unreachable("cannot convert unresolved type to IR");
     }
 
-    irTypes.emplace(astType.typeBase, irType);
+    if (cacheable) irTypes.emplace(astType.typeBase, irType);
     return irType;
 }
 

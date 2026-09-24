@@ -205,6 +205,7 @@ bool operator==(const GenericArg&, const GenericArg&);
 
 void appendGenericArgs(std::string& typeName, llvm::ArrayRef<GenericArg> genericArgs);
 std::string getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<GenericArg> genericArgs);
+Type getArrayTypeForReceiver(Type type);
 
 struct BasicType : TypeBase {
     std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }

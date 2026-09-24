@@ -190,6 +190,15 @@ void NullAnalyzer::analyze(Value* value) {
         }
         break;
     }
+    case ValueKind::GEPInst: {
+        auto gep = llvm::cast<GEPInst>(value);
+        auto* call = gep->expr ? llvm::dyn_cast<CallExpr>(gep->expr) : nullptr;
+        if (call && call->isMethodCall() && call->getFunctionName() == "data" && call->type.isOptionalType()
+            && analyzeNullability(gep->pointer, gep) == Nullability::DefinitelyNullable) {
+            WARN(call->location, "value may be null; unwrap it with a postfix '!' to silence this warning");
+        }
+        break;
+    }
     case ValueKind::ConstGEPInst: {
         auto gep = llvm::cast<ConstGEPInst>(value);
         if (gep->expr) {

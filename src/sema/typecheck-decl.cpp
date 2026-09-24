@@ -1,5 +1,6 @@
 #include "typecheck.h"
 #include <algorithm>
+#include <limits>
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/StringExtras.h>
@@ -106,6 +107,9 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         if (type.isBasicArrayType()) {
             if (!type.getArraySizeParam().empty()) {
                 ERROR(type.location, "array size must be a constant integer expression");
+            }
+            if (type.getGenericArgs()[1].isInt() && type.getArraySize() > std::numeric_limits<int>::max()) {
+                ERROR(type.location, "array size is too large");
             }
             if (!type.getGenericArgs()[0].isType()) {
                 ERROR(type.location, "array element type must be a type, not an integer");
@@ -820,7 +824,15 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
             ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation");
         }
 
-        decl.type = NOTNULL(initializerType.withMutability(decl.type.mutability));
+        // An unsized array is a pointer view, not a value copy. Preserve its
+        // pointee constness when inferring a variable; making a const view mutable
+        // would allow the view to drop that guarantee.
+        if (initializerType.isUnsizedArrayPointer()) {
+            auto mutability = !initializerType.getElementType().isMutable() || !decl.type.isMutable() ? Mutability::Const : Mutability::Mutable;
+            decl.type = NOTNULL(initializerType.withMutability(mutability));
+        } else {
+            decl.type = NOTNULL(initializerType.withMutability(decl.type.mutability));
+        }
     }
 
     if (decl.type.isReferenceType()) {

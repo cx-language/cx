@@ -65,7 +65,7 @@ bool Type::isImplicitlyCopyable() const {
 }
 
 bool Type::isConstantArray() const {
-    return isBasicArrayType() && getArraySize() >= 0;
+    return isBasicArrayType() && getGenericArgs()[1].isInt() && getArraySize() >= 0;
 }
 
 bool Type::isSlice() const {
@@ -109,7 +109,19 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         return BasicType::get(getName(), std::move(genericArgs), mutability, location);
     }
     case TypeKind::ArrayType: {
-        Type elementType = getElementType().resolve(replacements);
+        Type elementType = llvm::cast<ArrayType>(typeBase)->elementType;
+        if (elementType.isBasicType()) {
+            if (auto it = replacements.find(elementType.getName()); it != replacements.end() && it->second.isType()) {
+                elementType = it->second.type;
+                if (!llvm::cast<ArrayType>(typeBase)->elementType.isMutable()) {
+                    elementType = elementType.withMutability(Mutability::Const);
+                }
+            } else {
+                elementType = elementType.resolve(replacements);
+            }
+        } else {
+            elementType = elementType.resolve(replacements);
+        }
         if (llvm::StringRef sizeParam = getArraySizeParam(); !sizeParam.empty()) {
             // A missing or mistyped substitution leaves the size symbolic; the use site reports it.
             if (auto it = replacements.find(sizeParam); it != replacements.end() && it->second.isInt()) {
@@ -237,6 +249,14 @@ std::string cx::getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Ge
     return result;
 }
 
+Type cx::getArrayTypeForReceiver(Type type) {
+    if (!type || !type.isBasicArrayType() || type.isMutable()) return type;
+
+    auto genericArgs = std::vector<GenericArg>(type.getGenericArgs().begin(), type.getGenericArgs().end());
+    genericArgs[0] = GenericArg(type.getElementType());
+    return BasicType::get("Array", genericArgs, type.mutability, type.location);
+}
+
 std::vector<ParamDecl> FunctionType::getParamDecls(Location location) const {
     return map(paramTypes, [&](Type paramType) { return ParamDecl(paramType, "", false, location); });
 }
@@ -294,15 +314,20 @@ llvm::StringRef Type::getName() const {
 }
 
 std::string Type::getQualifiedTypeName() const {
-    if (!isBasicType()) return toString();
-    return llvm::cast<BasicType>(typeBase)->getQualifiedName();
+    Type receiverType = getArrayTypeForReceiver(*this);
+    if (!receiverType.isBasicType()) return receiverType.toString();
+    return llvm::cast<BasicType>(receiverType.typeBase)->getQualifiedName();
 }
 
 Type Type::getElementType() const {
     if (isSlice()) return getGenericArgs()[0].type;
-    if (isBasicArrayType()) return getGenericArgs()[0].type.withLocation(location);
+    if (isBasicArrayType()) {
+        Type elementType = getGenericArgs()[0].type.withLocation(location);
+        return isMutable() ? elementType : elementType.withMutability(Mutability::Const);
+    }
     ASSERT(getKind() == TypeKind::ArrayType);
-    return llvm::cast<ArrayType>(typeBase)->elementType.withLocation(location);
+    Type elementType = llvm::cast<ArrayType>(typeBase)->elementType.withLocation(location);
+    return isMutable() ? elementType : elementType.withMutability(Mutability::Const);
 }
 
 int64_t Type::getArraySize() const {
@@ -517,9 +542,14 @@ void Type::printTo(std::ostream& stream) const {
     case TypeKind::BasicType: {
         if (isBasicArrayType()) {
             // Fixed arrays are represented as BasicType("Array", {T, N}), but
-            // diagnostics keep the source-level T[N] spelling.
-            if (!isMutable()) stream << "const ";
-            getElementType().printTo(stream);
+            // diagnostics keep the source-level T[N] spelling. The array's
+            // constness also constrains its elements, so print that qualifier once.
+            Type elementType = getGenericArgs()[0].type.withLocation(location);
+            if (!isMutable()) {
+                stream << "const ";
+                elementType = elementType.withMutability(Mutability::Mutable);
+            }
+            elementType.printTo(stream);
             stream << "[";
             if (!getArraySizeParam().empty()) {
                 stream << getArraySizeParam();

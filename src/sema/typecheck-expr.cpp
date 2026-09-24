@@ -641,13 +641,18 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     // operands with side effects evaluate once. Returns the array type for
     // arithmetic, bool for ==/!= (all-equal semantics).
     {
+        auto isSymbolicArray = [](Type type) { return type.isBasicArrayType() && !type.getArraySizeParam().empty(); };
         bool leftIsArray = leftType.isArrayType() && leftType.isConstantArray();
         bool rightIsArray = rightType.isArrayType() && rightType.isConstantArray();
-        bool isArrayOp = (leftIsArray || rightIsArray)
+        bool leftIsArrayLike = leftIsArray || isSymbolicArray(leftType);
+        bool rightIsArrayLike = rightIsArray || isSymbolicArray(rightType);
+        bool hasSymbolicArray = isSymbolicArray(leftType) || isSymbolicArray(rightType);
+        bool isArrayOp = (leftIsArray || rightIsArray || hasSymbolicArray)
                       && (op == Token::Plus || op == Token::Minus || op == Token::Star || op == Token::Slash || op == Token::Modulo
                           || op == Token::PositiveModulo || op == Token::Equal || op == Token::NotEqual);
         // Bitwise ops on integer arrays are also element-wise.
-        if ((leftIsArray || rightIsArray) && (op == Token::And || op == Token::Or || op == Token::Xor || op == Token::LeftShift || op == Token::RightShift)) {
+        if ((leftIsArray || rightIsArray || hasSymbolicArray)
+            && (op == Token::And || op == Token::Or || op == Token::Xor || op == Token::LeftShift || op == Token::RightShift)) {
             isArrayOp = true;
         }
         if (isArrayOp) {
@@ -658,7 +663,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             bool scalarOnLeft = false;
             int64_t arraySize = 0;
 
-            if (leftIsArray && rightIsArray) {
+            if (leftIsArrayLike && rightIsArrayLike) {
                 if (leftType.getArraySize() != rightType.getArraySize()) {
                     ERROR_RANGE(expr.location, expr.endLocation,
                                 "array sizes must match for element-wise '" << toString(op) << "' (got '" << leftType << "' and '" << rightType << "')");
@@ -697,6 +702,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             // For size mismatches, error directly (no overload could reasonably
             // handle different-sized builtin arrays element-wise).
             if (!arrayType.isConstantArray()) {
+                if (isSymbolicArray(arrayType)) {
+                    ERROR_RANGE(expr.location, expr.endLocation, "array operations require a constant size");
+                }
                 // Fall through; normal handling will error (no builtin op for arrays).
                 goto not_array_programming;
             }
@@ -707,7 +715,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             // element types match exactly and op is builtin for elements.
             // This preserves backward compatibility for existing array comparisons
             // via overloads while enabling element-wise ops for matching numerics.
-            if (leftIsArray && rightIsArray) {
+            if (leftIsArrayLike && rightIsArrayLike) {
                 Type leftElem = leftType.getElementType();
                 Type rightElem = rightType.getElementType();
                 if (!leftElem.equalsIgnoreTopLevelMutable(rightElem)) {
@@ -1056,6 +1064,12 @@ static bool isSafeNumericWidening(Type source, Type target) {
 // widening like `int*` to `int*?`, would let writes through the reinterpreted pointer
 // break the source invariant, so pointers to it can't be reinterpreted.
 static bool isReinterpretible(Type source, Type target) {
+    if (source.isArrayType() && target.isArrayType()) {
+        if (target.isMutable() && !source.isMutable()) return false;
+        if (source.isBasicArrayType() != target.isBasicArrayType()) return false;
+        return source.getArraySize() == target.getArraySize() && source.getArraySizeParam() == target.getArraySizeParam()
+            && isReinterpretible(source.getElementType(), target.getElementType());
+    }
     return source == target || (!target.isMutable() && source.equalsIgnoreTopLevelMutable(target));
 }
 
@@ -1065,8 +1079,11 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isArrayType() && (target.isArrayType() || target.isSlice()) && source.getElementType() == target.getElementType()) {
-        if (target.isArrayType() && source.getArraySize() == target.getArraySize()) return source;
+    if (source.isArrayType() && (target.isArrayType() || target.isSlice()) && (source.getElementType().isMutable() || !target.getElementType().isMutable())
+        && isReinterpretible(source.getElementType(), target.getElementType())) {
+        if (target.isArrayType() && source.getArraySize() == target.getArraySize() && source.getArraySizeParam() == target.getArraySizeParam()) {
+            return target.isConstantArray() ? target : source;
+        }
         if (source.isConstantArray() && (target.isUnsizedArrayPointer() || target.isSlice())) return source;
     }
 
@@ -1154,6 +1171,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
         if (expr->isArrayLiteralExpr() && target.isConstantArray()) {
             auto arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(expr);
+            if (arrayLiteralExpr->elements.size() != static_cast<size_t>(target.getArraySize())) return Type();
             bool isConvertible = llvm::all_of(arrayLiteralExpr->elements, [&](Expr* element) {
                 return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), false, nullptr, diagnoseOutOfRange);
             });
@@ -1222,7 +1240,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && source.getPointee().isConstantArray() && (target.isSlice() || target.isUnsizedArrayPointer())
-        && source.getPointee().getElementType() == target.getElementType()) {
+        && (source.getPointee().getElementType().isMutable() || !target.getElementType().isMutable())
+        && isReinterpretible(source.getPointee().getElementType(), target.getElementType())) {
         return source;
     }
 
@@ -1323,21 +1342,27 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         return findGenericArg(FunctionType::get(argType.getClosureReturnType(), std::move(paramTypes), false), paramType, genericParam, inFunctionType);
     }
 
+    if (argType.isBasicArrayType() && paramType.getKind() == TypeKind::ArrayType) {
+        return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
+    }
+
     switch (argType.getKind()) {
     case TypeKind::BasicType:
         if (!argType.getGenericArgs().empty() && paramType.isBasicType() && paramType.getName() == argType.getName()) {
-            ASSERT(argType.getGenericArgs().size() == paramType.getGenericArgs().size());
+            if (argType.getGenericArgs().size() != paramType.getGenericArgs().size()) break;
+            bool isFirstGenericArg = true;
             for (auto&& [argTypeGenericArg, paramTypeGenericArg] : llvm::zip_first(argType.getGenericArgs(), paramType.getGenericArgs())) {
                 // Matches both type params (T) and integer params (N in Array<T, N>):
                 // a placeholder Type("N") in param position returns the arg (int or type).
                 if (paramTypeGenericArg.isType() && paramTypeGenericArg.type.isBasicType() && paramTypeGenericArg.type.getName() == genericParam) {
-                    return argTypeGenericArg;
+                    return isFirstGenericArg && argType.isBasicArrayType() ? GenericArg(argType.getElementType()) : argTypeGenericArg;
                 }
                 if (argTypeGenericArg.isType() && paramTypeGenericArg.isType()) {
                     if (GenericArg arg = findGenericArg(argTypeGenericArg.type, paramTypeGenericArg.type, genericParam, inFunctionType)) {
                         return arg;
                     }
                 }
+                isFirstGenericArg = false;
             }
         }
         break;
@@ -1850,6 +1875,11 @@ bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericPa
 // as the expected type, or to the template pattern it was instantiated from. For non-constructor calls the return type
 // must additionally mention a generic parameter; a concrete return type carries no information about the callee's parameters.
 static bool canInferFromExpectedType(llvm::ArrayRef<GenericParamDecl> genericParams, FunctionDecl* decl, Type expectedType) {
+    Type concreteExpectedType = expectedType ? expectedType.removeOptional() : Type();
+    if (concreteExpectedType && concreteExpectedType.isBasicArrayType() && concreteExpectedType.isConstantArray() && decl->isConstructorDecl()
+        && decl->getTypeDecl()->getName() == "Array") {
+        return true;
+    }
     if (!expectedType || !expectedType.isBasicType() || expectedType.getGenericArgs().empty()
         || llvm::any_of(expectedType.getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.type.isUnresolvedType(); })) {
         return false;
@@ -1873,7 +1903,7 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
 
     if (call.genericArgs.empty()) {
         if (canInferFromExpectedType(genericParams, decl, expectedType)) {
-            genericArgTypes = expectedType.getGenericArgs();
+            genericArgTypes = expectedType.removeOptional().getGenericArgs();
         } else if (call.args.empty()) {
             if (returnOnError) return {};
             ERROR(call.location, "can't infer generic parameters, please specify them explicitly");
@@ -2005,7 +2035,10 @@ static const Match* findMatchWithMostExactArgs(llvm::ArrayRef<Match> matches, co
 
         int count = 0;
         for (size_t i = 0; i < call.args.size(); ++i) {
-            if (params[size_t(argToParam[i])].type == call.args[i].value->type) ++count;
+            Type paramType = params[size_t(argToParam[i])].type;
+            Type argType = call.args[i].value->type;
+            // Optional wrapping changes nullability only. Prefer the overload whose wrapped type matches exactly.
+            if (paramType == argType || (paramType.isOptionalType() && !argType.isOptionalType() && paramType.removeOptional() == argType)) ++count;
         }
         if (count > bestCount) {
             bestCount = count;
@@ -2461,9 +2494,11 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
 std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee) {
     TypeDecl* receiverTypeDecl;
+    Type receiverType = expr.receiverType ? expr.receiverType.removePointer() : Type();
+    receiverType = getArrayTypeForReceiver(receiverType);
 
-    if (expr.receiverType && expr.receiverType.removePointer().isBasicType()) {
-        receiverTypeDecl = getTypeDecl(*llvm::cast<BasicType>(expr.receiverType.removePointer().typeBase));
+    if (receiverType && receiverType.isBasicType()) {
+        receiverTypeDecl = getTypeDecl(*llvm::cast<BasicType>(receiverType.typeBase));
     } else {
         receiverTypeDecl = nullptr;
     }
@@ -2500,6 +2535,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     Decl* decl;
+    Type returnTypeOverride;
 
     if (auto* enumCase = getEnumCase(*expr.callee, expectedType, &expr)) {
         decl = enumCase;
@@ -2513,7 +2549,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         if (receiverType.removeOptional().isArrayType() && !receiverType.removeOptional().isBasicArrayType() && expr.getFunctionName() == "data") {
             validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.location);
             validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
-            return receiverType.removeOptional();
+            return receiverType;
         }
 
         if (receiverType.removeOptional().removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
@@ -2543,6 +2579,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         decl = resolveOverload(decls, expr, callee, expectedType);
+
+        Type arrayReceiverType = receiverType.removeOptional().removePointer();
+        if (arrayReceiverType.isBasicArrayType() && !arrayReceiverType.isMutable() && expr.getFunctionName() == "data") {
+            returnTypeOverride = ArrayType::get(arrayReceiverType.getElementType(), ArrayType::UnknownSize, arrayReceiverType.location);
+        }
 
         // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
         if (llvm::isa<DestructorDecl>(decl)) {
@@ -2638,7 +2679,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
         return llvm::cast<ConstructorDecl>(decl)->getTypeDecl()->getType();
     } else if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
-        return functionDecl->getFunctionType()->returnType;
+        return returnTypeOverride ? returnTypeOverride : functionDecl->getFunctionType()->returnType;
     } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
         if (variableDecl->type.isClosureType()) {
             return variableDecl->type.getClosureReturnType();
@@ -3143,6 +3184,11 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
 
 Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
     auto elementType = typecheckIndexExpr(expr, true);
+
+    Type baseType = expr.getBase()->type.removeOptional().removePointer();
+    if (baseType.isArrayType() && (!baseType.isMutable() || !elementType.isMutable())) {
+        ERROR(expr.location, "cannot assign to immutable array of type '" << baseType << "'");
+    }
 
     if (!expr.getBase()->type.removeOptional().removePointer().isArrayType()) {
         if (auto* baseVarExpr = getAssignmentBaseVarExpr(*expr.getBase())) {

@@ -9,6 +9,7 @@ void main() {
     testDistinctSizes();
     testNested();
     testInference();
+    testValueConstruction();
 }
 
 void testConstruction() {
@@ -64,9 +65,59 @@ int sumArray<T, int N>(Array<T, N> a) {
     return total;
 }
 
+int firstElement<T>(T[*] a) {
+    return a[0];
+}
+
+int genericSize<T, int N>(T[N] a) {
+    return a.size() + a[0];
+}
+
+int[2] makeArray() {
+    return [10, 20];
+}
+
+int firstOrNegative(int[*]? p) {
+    if (p == null) return -1;
+    return p[0];
+}
+
 void testInference() {
     int[3] a3 = [10, 20, 30];
     int[2] a2 = [1, 2];
     assert(sumArray(a3) == 60);
     assert(sumArray(a2) == 3);
+    assert(firstElement(a3) == 10);
+    assert(firstElement(a2) == 1);
+    assert(genericSize(a3) == 13);
+    assert(genericSize(a2) == 3);
+    assert(makeArray()[1] == 20);
+}
+
+void testValueConstruction() {
+    int[3] constructed = Array();
+    assert(constructed.size() == 3);
+
+    int[*] p = [4, 5, 6];
+    assert(p[1] == 5);
+
+    int[*]? optional = [8, 9];
+    if (optional != null) assert(optional[0] == 8);
+    assert(firstOrNegative([]) == -1);
+
+    int[0] empty = [];
+    assert(empty == empty);
+    assert(!(empty != 1));
+
+    int[2] source = [7, 8];
+    const int[2] destination = source;
+    assert(destination[1] == 8);
+    const int[*] constData = source;
+    assert(constData[1] == 8);
+
+    const int[2] c = [1, 2];
+    assert(c.data()[0] == 1);
+    int[2] m = [3, 4];
+    m.data()[0] = 5;
+    assert(m[0] == 5);
 }

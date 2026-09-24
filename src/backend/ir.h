@@ -267,6 +267,7 @@ struct GEPInst : Instruction {
     Value* pointer;
     std::vector<Value*> indexes;
     std::string name;
+    const Expr* expr = nullptr;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::GEPInst; }
 };
