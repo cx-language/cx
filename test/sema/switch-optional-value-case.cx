@@ -4,7 +4,7 @@
 void main() {
     int? o = 1;
     switch (o) {
-        // CHECK: [[@LINE+1]]:14: error: case value type 'int' doesn't match switch condition type 'int?'
+        // CHECK: [[@LINE+1]]:14: error: case value type 'int32' doesn't match switch condition type 'int32?'
         case 1: break;
     }
 }

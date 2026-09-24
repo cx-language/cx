@@ -1,19 +1,19 @@
 
-int main() {
-    int[3]* a = alloca int[3]
-    int[3] _0 = insertvalue int[3] undefined, 0, int 1
-    int[3] _1 = insertvalue _0, 1, int 2
-    int[3] _2 = insertvalue _1, 2, int 3
+int32 main() {
+    int32[3]* a = alloca int32[3]
+    int32[3] _0 = insertvalue int32[3] undefined, 0, int32 1
+    int32[3] _1 = insertvalue _0, 1, int32 2
+    int32[3] _2 = insertvalue _1, 2, int32 3
     store _2 to a
-    void _3 = call _EN3std7printlnI3intEE3int(int 3)
-    return int 0
+    void _3 = call _EN3std7printlnI5int32EE5int32(int32 3)
+    return int32 0
 }
 
-void _EN3std7printlnI3intEE3int(int value) {
-    int* value_0 = alloca int
+void _EN3std7printlnI5int32EE5int32(int32 value) {
+    int32* value_0 = alloca int32
     store value to value_0
-    int value.load = load value_0
-    void _0 = call _EN3std5printI3intEE3int(int value.load)
+    int32 value.load = load value_0
+    void _0 = call _EN3std5printI5int32EE5int32(int32 value.load)
     void _1 = call _EN3std5printI4charEE4char(char 10)
     return void
 }

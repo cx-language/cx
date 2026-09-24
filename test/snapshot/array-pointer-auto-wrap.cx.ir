@@ -1,8 +1,8 @@
 
-int main() {
-    int** p = alloca int*
-    int** o = alloca int*
-    int* p.load = load p
+int32 main() {
+    int32** p = alloca int32*
+    int32** o = alloca int32*
+    int32* p.load = load p
     store p.load to o
-    return int 0
+    return int32 0
 }

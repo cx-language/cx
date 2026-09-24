@@ -1,17 +1,17 @@
 
-void _EN4main3fooEOP3int(int* p) {
-    int** p_0 = alloca int*
+void _EN4main3fooEOP5int32(int32* p) {
+    int32** p_0 = alloca int32*
     store p to p_0
     return void
 }
 
-int main() {
-    int* i = alloca int
-    int** x = alloca int*
-    store int 42 to i
+int32 main() {
+    int32* i = alloca int32
+    int32** x = alloca int32*
+    store int32 42 to i
     store i to x
-    int* x.load = load x
-    void _0 = call _EN4main3fooEOP3int(int* x.load)
-    void _1 = call _EN4main3fooEOP3int(int* i)
-    return int 0
+    int32* x.load = load x
+    void _0 = call _EN4main3fooEOP5int32(int32* x.load)
+    void _1 = call _EN4main3fooEOP5int32(int32* i)
+    return int32 0
 }

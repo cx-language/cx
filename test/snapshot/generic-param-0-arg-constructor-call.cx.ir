@@ -1,8 +1,8 @@
 
-int main() {
+int32 main() {
     A<C>* a = alloca A<C>
     void _0 = call _EN4main1AI1CE4initE(A<C>* a)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1AI1CE4initE(A<C>* this) {
@@ -12,7 +12,7 @@ void _EN4main1AI1CE4initE(A<C>* this) {
 }
 
 void _EN4main1C4initE(C* this) {
-    int* i = getelementptr this, 0
-    store int 0 to i
+    int32* i = getelementptr this, 0
+    store int32 0 to i
     return void
 }

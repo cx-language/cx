@@ -1,5 +1,5 @@
 
-%"X<int>" = type {}
+%"X<int32>" = type {}
 
 define i32 @_EN4main1gE4bool(i1 %i) #0 !dbg !4 {
   %i1 = alloca i1, align 1
@@ -10,17 +10,17 @@ define i32 @_EN4main1gE4bool(i1 %i) #0 !dbg !4 {
 }
 
 define i32 @main() #0 !dbg !7 {
-  %x = alloca %"X<int>", align 8
-  call void @_EN4main1XI3intE4initE(ptr %x), !dbg !8
-  call void @_EN4main1XI3intE1fI4boolEEF4bool_3int(ptr %x, ptr @_EN4main1gE4bool), !dbg !9
+  %x = alloca %"X<int32>", align 8
+  call void @_EN4main1XI5int32E4initE(ptr %x), !dbg !8
+  call void @_EN4main1XI5int32E1fI4boolEEF4bool_5int32(ptr %x, ptr @_EN4main1gE4bool), !dbg !9
   ret i32 0
 }
 
-define void @_EN4main1XI3intE4initE(ptr %this) #0 !dbg !10 {
+define void @_EN4main1XI5int32E4initE(ptr %this) #0 !dbg !10 {
   ret void
 }
 
-define void @_EN4main1XI3intE1fI4boolEEF4bool_3int(ptr %this, ptr %u) #0 !dbg !11 {
+define void @_EN4main1XI5int32E1fI4boolEEF4bool_5int32(ptr %this, ptr %u) #0 !dbg !11 {
   %u1 = alloca ptr, align 8
   store ptr %u, ptr %u1, align 8
   ret void
@@ -41,5 +41,5 @@ attributes #0 = { "frame-pointer"="all" }
 !7 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
 !8 = !DILocation(line: 10, column: 13, scope: !7)
 !9 = !DILocation(line: 11, column: 7, scope: !7)
-!10 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1XI3intE4initE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
-!11 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1XI3intE1fI4boolEEF4bool_3int", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1XI5int32E4initE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!11 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1XI5int32E1fI4boolEEF4bool_5int32", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)

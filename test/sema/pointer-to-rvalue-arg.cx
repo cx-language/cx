@@ -20,7 +20,7 @@ void main() {
     f(A());
     // CHECK: [[@LINE+1]]:5: error: no matching function 'f(B)'
     f(B());
-    // CHECK: [[@LINE+1]]:5: error: no matching function 'f(int)'
+    // CHECK: [[@LINE+1]]:5: error: no matching function 'f(int32)'
     f(0);
 }
 

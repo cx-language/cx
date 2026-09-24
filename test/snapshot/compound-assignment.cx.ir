@@ -1,12 +1,12 @@
 
-int main() {
-    int* i = alloca int
-    store int 0 to i
-    int i.load = load i
+int32 main() {
+    int32* i = alloca int32
+    store int32 0 to i
+    int32 i.load = load i
     int64 _0 = cast i.load to int64
-    int64 _1 = cast int 1 to int64
+    int64 _1 = cast int32 1 to int64
     int64 _2 = _0 + _1
-    int _3 = cast _2 to int
+    int32 _3 = cast _2 to int32
     int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
@@ -20,11 +20,11 @@ overflow.fail:
 
 overflow.success:
     store _3 to i
-    int i.load_0 = load i
+    int32 i.load_0 = load i
     int64 _8 = cast i.load_0 to int64
-    int64 _9 = cast int 1 to int64
+    int64 _9 = cast int32 1 to int64
     int64 _10 = _8 - _9
-    int _11 = cast _10 to int
+    int32 _11 = cast _10 to int32
     int64 _12 = cast _11 to int64
     bool _13 = _10 != _12
     bool _14 = !_13
@@ -38,11 +38,11 @@ overflow.fail_0:
 
 overflow.success_0:
     store _11 to i
-    int i.load_1 = load i
+    int32 i.load_1 = load i
     int64 _16 = cast i.load_1 to int64
-    int64 _17 = cast int 1 to int64
+    int64 _17 = cast int32 1 to int64
     int64 _18 = _16 * _17
-    int _19 = cast _18 to int
+    int32 _19 = cast _18 to int32
     int64 _20 = cast _19 to int64
     bool _21 = _18 != _20
     bool _22 = !_21
@@ -56,23 +56,23 @@ overflow.fail_1:
 
 overflow.success_1:
     store _19 to i
-    int i.load_2 = load i
-    int _24 = i.load_2 / int 1
+    int32 i.load_2 = load i
+    int32 _24 = i.load_2 / int32 1
     store _24 to i
-    int i.load_3 = load i
-    int _25 = i.load_3 & int 1
+    int32 i.load_3 = load i
+    int32 _25 = i.load_3 & int32 1
     store _25 to i
-    int i.load_4 = load i
-    int _26 = i.load_4 | int 1
+    int32 i.load_4 = load i
+    int32 _26 = i.load_4 | int32 1
     store _26 to i
-    int i.load_5 = load i
-    int _27 = i.load_5 ^ int 1
+    int32 i.load_5 = load i
+    int32 _27 = i.load_5 ^ int32 1
     store _27 to i
-    int i.load_6 = load i
-    int _28 = i.load_6 << int 1
+    int32 i.load_6 = load i
+    int32 _28 = i.load_6 << int32 1
     store _28 to i
-    int i.load_7 = load i
-    int _29 = i.load_7 >> int 1
+    int32 i.load_7 = load i
+    int32 _29 = i.load_7 >> int32 1
     store _29 to i
-    return int 0
+    return int32 0
 }

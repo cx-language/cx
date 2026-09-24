@@ -1,13 +1,13 @@
 
-int main() {
+int32 main() {
     Foo* f = alloca Foo
-    uint* bar = alloca uint
-    int _0 = call puts(char* "foo bar")
-    int* bar_0 = getelementptr f, 0
-    store int 47 to bar_0
+    uint32* bar = alloca uint32
+    int32 _0 = call puts(char* "foo bar")
+    int32* bar_0 = getelementptr f, 0
+    store int32 47 to bar_0
     char** baz = getelementptr f, 1
     store char* "foo" to baz
-    uint _1 = call getBar(Foo* f)
+    uint32 _1 = call getBar(Foo* f)
     store _1 to bar
-    return int 0
+    return int32 0
 }

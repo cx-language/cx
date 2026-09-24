@@ -1,19 +1,19 @@
 
 %0 = type { { i32 } }
-%"Optional<int>" = type { i32, %0 }
+%"Optional<int32>" = type { i32, %0 }
 
-define %"Optional<int>" @_EN4main1fE() #0 !dbg !4 {
+define %"Optional<int32>" @_EN4main1fE() #0 !dbg !4 {
   %i = alloca i32, align 4
-  %enum = alloca %"Optional<int>", align 8
+  %enum = alloca %"Optional<int32>", align 8
   store i32 1, ptr %i, align 4
-  %tag = getelementptr inbounds %"Optional<int>", ptr %enum, i32 0, i32 0
+  %tag = getelementptr inbounds %"Optional<int32>", ptr %enum, i32 0, i32 0
   store i32 1, ptr %tag, align 4
   %i.load = load i32, ptr %i, align 4
   %1 = insertvalue { i32 } undef, i32 %i.load, 0
-  %associatedValue = getelementptr inbounds %"Optional<int>", ptr %enum, i32 0, i32 1
+  %associatedValue = getelementptr inbounds %"Optional<int32>", ptr %enum, i32 0, i32 1
   store { i32 } %1, ptr %associatedValue, align 4
-  %enum.load = load %"Optional<int>", ptr %enum, align 4
-  ret %"Optional<int>" %enum.load
+  %enum.load = load %"Optional<int32>", ptr %enum, align 4
+  ret %"Optional<int32>" %enum.load
 }
 
 attributes #0 = { "frame-pointer"="all" }

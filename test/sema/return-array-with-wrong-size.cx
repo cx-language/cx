@@ -2,6 +2,6 @@
 
 int[1] foo() {
     int[2] buffer = undefined;
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int[2]', expected 'int[1]'
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int32[2]', expected 'int32[1]'
     return buffer;
 }

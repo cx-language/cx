@@ -1,27 +1,27 @@
 
-%"Range<int>" = type { i32, i32 }
+%"Range<int32>" = type { i32, i32 }
 
-define void @_EN4main1fE5RangeI3intE(%"Range<int>" %r) #0 !dbg !4 {
-  %r1 = alloca %"Range<int>", align 8
-  store %"Range<int>" %r, ptr %r1, align 4
+define void @_EN4main1fE5RangeI5int32E(%"Range<int32>" %r) #0 !dbg !4 {
+  %r1 = alloca %"Range<int32>", align 8
+  store %"Range<int32>" %r, ptr %r1, align 4
   ret void
 }
 
 define i32 @main() #0 !dbg !7 {
   %foo = alloca i32, align 4
   %bar = alloca i32, align 4
-  %1 = alloca %"Range<int>", align 8
+  %1 = alloca %"Range<int32>", align 8
   store i32 0, ptr %foo, align 4
   store i32 0, ptr %bar, align 4
   %foo.load = load i32, ptr %foo, align 4
   %bar.load = load i32, ptr %bar, align 4
-  call void @_EN3std5RangeI3intE4initE3int3int(ptr %1, i32 %foo.load, i32 %bar.load), !dbg !8
-  %.load = load %"Range<int>", ptr %1, align 4
-  call void @_EN4main1fE5RangeI3intE(%"Range<int>" %.load), !dbg !9
+  call void @_EN3std5RangeI5int32E4initE5int325int32(ptr %1, i32 %foo.load, i32 %bar.load), !dbg !8
+  %.load = load %"Range<int32>", ptr %1, align 4
+  call void @_EN4main1fE5RangeI5int32E(%"Range<int32>" %.load), !dbg !9
   ret i32 0
 }
 
-declare void @_EN3std5RangeI3intE4initE3int3int(ptr, i32, i32) #0
+declare void @_EN3std5RangeI5int32E4initE5int325int32(ptr, i32, i32) #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -32,7 +32,7 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "infer-generic-args-forget-mutable.cx")
-!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE5RangeI3intE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE5RangeI5int32E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)

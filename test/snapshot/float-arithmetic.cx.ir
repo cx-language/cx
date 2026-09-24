@@ -1,17 +1,17 @@
 
-int main() {
-    float* a = alloca float
-    float* b = alloca float
-    store float 1 to a
-    float a.load = load a
-    float _0 = -a.load
-    float _1 = float 2 * _0
+int32 main() {
+    float32* a = alloca float32
+    float32* b = alloca float32
+    store float32 1 to a
+    float32 a.load = load a
+    float32 _0 = -a.load
+    float32 _1 = float32 2 * _0
     store _1 to b
-    float b.load = load b
-    float _2 = b.load + float 1
+    float32 b.load = load b
+    float32 _2 = b.load + float32 1
     store _2 to b
-    float b.load_0 = load b
-    float _3 = b.load_0 + float -1
+    float32 b.load_0 = load b
+    float32 _3 = b.load_0 + float32 -1
     store _3 to b
-    return int 0
+    return int32 0
 }

@@ -1,9 +1,9 @@
 
-float _EN4main1fE5float(float b) {
-    float* b_0 = alloca float
+float32 _EN4main1fE7float32(float32 b) {
+    float32* b_0 = alloca float32
     store b to b_0
-    float b.load = load b_0
-    float _0 = float 4 * float 2
-    float _1 = b.load * _0
+    float32 b.load = load b_0
+    float32 _0 = float32 4 * float32 2
+    float32 _1 = b.load * _0
     return _1
 }

@@ -1,14 +1,14 @@
 
-int main() {
-    uint* u = alloca uint
-    uint u.load = load u
-    void _0 = call _EN4main1fI4uintEE4uint4uint(uint 0, uint u.load)
-    return int 0
+int32 main() {
+    uint32* u = alloca uint32
+    uint32 u.load = load u
+    void _0 = call _EN4main1fI6uint32EE6uint326uint32(uint32 0, uint32 u.load)
+    return int32 0
 }
 
-void _EN4main1fI4uintEE4uint4uint(uint a, uint b) {
-    uint* a_0 = alloca uint
-    uint* b_0 = alloca uint
+void _EN4main1fI6uint32EE6uint326uint32(uint32 a, uint32 b) {
+    uint32* a_0 = alloca uint32
+    uint32* b_0 = alloca uint32
     store a to a_0
     store b to b_0
     return void

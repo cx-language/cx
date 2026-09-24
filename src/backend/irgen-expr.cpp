@@ -36,18 +36,18 @@ Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
         ASSERT(dataField != arrayRefFields.end() && sizeField != arrayRefFields.end());
 
         auto* arrayRef = createInsertValue(createUndefined(charactersField->type), createGlobalStringPtr(expr.value), dataField - arrayRefFields.begin());
-        arrayRef = createInsertValue(arrayRef, createConstantInt(Type::getInt(), expr.value.size()), sizeField - arrayRefFields.begin());
+        arrayRef = createInsertValue(arrayRef, createConstantInt(Type::getInt32(), expr.value.size()), sizeField - arrayRefFields.begin());
         return createInsertValue(createUndefined(stringType), arrayRef, charactersField - stringFields.begin());
     }
 
     auto* stringPtr = createGlobalStringPtr(expr.value);
-    auto* size = createConstantInt(Type::getInt(), expr.value.size());
+    auto* size = createConstantInt(Type::getInt32(), expr.value.size());
     auto* alloca = createEntryBlockAlloca(BasicType::get("string", {}), "__str");
     Function* stringConstructor = nullptr;
 
     for (auto* decl : Module::getStdlibModule()->symbolTable.findInTopLevelScope("string.init")) {
         auto params = llvm::cast<ConstructorDecl>(decl)->getParams();
-        if (params.size() == 2 && params[0].type.isPointerType() && params[1].type.isInt()) {
+        if (params.size() == 2 && params[0].type.isPointerType() && params[1].type.isInt32()) {
             stringConstructor = getFunction(*llvm::cast<ConstructorDecl>(decl));
             break;
         }
@@ -120,7 +120,7 @@ Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Expr* arg) {
 
 Value* IRGenerator::emitOptionalHasValueTest(Value* enumValue) {
     auto* tag = createExtractValue(enumValue, optionalTagFieldIndex);
-    return createBinaryOp(Token::Equal, tag, createConstantInt(Type::getInt(), getOptionalSomeTag()), nullptr);
+    return createBinaryOp(Token::Equal, tag, createConstantInt(Type::getInt32(), getOptionalSomeTag()), nullptr);
 }
 
 Value* IRGenerator::emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType) {
@@ -247,7 +247,7 @@ Value* IRGenerator::emitConstantIncrement(const UnaryExpr& expr, int increment) 
     if (value->getType()->isInteger()) {
         result = createBinaryOp(Token::Plus, value, createConstantInt(value->getType(), increment), &expr);
     } else if (value->getType()->isPointerType()) {
-        result = createGEP(value, {createConstantInt(Type::getInt(), increment)});
+        result = createGEP(value, {createConstantInt(Type::getInt32(), increment)});
     } else if (value->getType()->isFloatingPoint()) {
         result = createBinaryOp(Token::Plus, value, createConstantFP(value->getType(), increment), &expr);
     } else {
@@ -345,9 +345,9 @@ static int getIntegerBitWidth(IRType* type) {
     // the target width (native host, or wasm32 under Emscripten).
     if (llvm::cast<IRBasicType>(type)->name == "c_size_t") return static_cast<int>(sizeof(void*) * 8);
     return llvm::StringSwitch<int>(llvm::cast<IRBasicType>(type)->name)
-        .Cases({"int8", "uint8", "byte"}, 8)
+        .Cases({"int8", "uint8"}, 8)
         .Cases({"int16", "uint16"}, 16)
-        .Cases({"int", "int32", "uint", "uint32"}, 32)
+        .Cases({"int32", "uint32"}, 32)
         .Cases({"int64", "uint64"}, 64)
         .Cases({"int128", "uint128"}, 128)
         .Default(0);
@@ -360,7 +360,7 @@ static Type getUnsignedIntegerType(int width) {
     case 16:
         return Type::getUInt16();
     case 32:
-        return Type::getUInt();
+        return Type::getUInt32();
     case 64:
         return Type::getUInt64();
     case 128:
@@ -413,7 +413,7 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
             auto* y = createBinaryOp(Token::Xor, op == Token::Plus ? b : a, r, &expr);
             // Cast the 1 up from 32 bits: the C backend prints integer constants without a type,
             // so a bare 1 would shift as a C int.
-            auto* one = createCast(createConstantInt(Type::getUInt(), 1), unsignedType);
+            auto* one = createCast(createConstantInt(Type::getUInt32(), 1), unsignedType);
             auto* signBit = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
             auto* signBitSet = createBinaryOp(Token::And, createBinaryOp(Token::And, x, y, &expr), signBit, &expr);
             overflowed = createBinaryOp(Token::NotEqual, signBitSet, createConstantInt(unsignedType, 0), &expr);
@@ -437,7 +437,7 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
         setInsertPoint(checkBlock);
         if (isSigned) {
             auto* minusOne = createConstantInt(type, -1);
-            auto* one = createCast(createConstantInt(Type::getUInt(), 1), unsignedType);
+            auto* one = createCast(createConstantInt(Type::getUInt32(), 1), unsignedType);
             auto* minValue = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
             auto* min = createCast(minValue, type);
             auto* leftIsMinusOne = createBinaryOp(Token::Equal, left, minusOne, &expr);
@@ -520,8 +520,8 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
             }
 
             auto emitArrayElement = [&](Value* arrayPtr, int64_t index) -> Value* {
-                auto* zero = createConstantInt(Type::getInt(), 0);
-                auto* idx = createConstantInt(Type::getInt(), static_cast<int>(index));
+                auto* zero = createConstantInt(Type::getInt32(), 0);
+                auto* idx = createConstantInt(Type::getInt32(), static_cast<int>(index));
                 auto* gep = createGEP(arrayPtr, {zero, idx});
                 return createLoad(gep);
             };
@@ -679,7 +679,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
             elementPtr = createGEP(value, 0);
         }
         auto* arrayRef = createInsertValue(createUndefined(targetType), elementPtr, 0);
-        auto size = createConstantInt(Type::getInt(), expr.type.removePointer().getArraySize());
+        auto size = createConstantInt(Type::getInt32(), expr.type.removePointer().getArraySize());
         return createInsertValue(arrayRef, size, 1);
     }
 
@@ -1011,8 +1011,8 @@ Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
         auto* baseValue = emitExpr(*expr.base);
         Value* basePtr = baseValue->getType()->isPointerType() ? baseValue : createTempAlloca(baseValue);
         auto emitSwizzleElement = [&](int index) -> Value* {
-            auto* zero = createConstantInt(Type::getInt(), 0);
-            auto* idx = createConstantInt(Type::getInt(), index);
+            auto* zero = createConstantInt(Type::getInt32(), 0);
+            auto* idx = createConstantInt(Type::getInt32(), index);
             auto* gep = createGEP(basePtr, {zero, idx});
             return createLoad(gep);
         };
@@ -1063,7 +1063,7 @@ Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
     if (base.type.removeOptional().isArrayPointer()) {
         gep = createGEP(value, {emitExpr(index)});
     } else {
-        gep = createGEP(value, {createConstantInt(Type::getInt(), 0), emitExpr(index)});
+        gep = createGEP(value, {createConstantInt(Type::getInt32(), 0), emitExpr(index)});
     }
     if (auto* call = llvm::dyn_cast<CallExpr>(&base); call && call->isMethodCall() && call->getFunctionName() == "data") {
         llvm::cast<GEPInst>(gep)->expr = &base;

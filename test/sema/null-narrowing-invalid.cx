@@ -5,7 +5,7 @@ void takesInt(int i) {}
 // CHECK-NOT: {{(warning|error)}}:
 void redundantUnwrap(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:18: warning: unwrapping non-optional type 'int' has no effect
+        // CHECK: [[@LINE+1]]:18: warning: unwrapping non-optional type 'int32' has no effect
         var x = v!;
     }
 }
@@ -13,7 +13,7 @@ void redundantUnwrap(int? v) {
 // CHECK-NOT: {{(warning|error)}}:
 void redundantNullCheck(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
+        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int32' and 'null' to '==' (non-optional type 'int32' cannot be null)
         if v == null {
         }
     }
@@ -22,7 +22,7 @@ void redundantNullCheck(int? v) {
 // CHECK-NOT: {{(warning|error)}}:
 void redundantNegation(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:13: error: type 'int' is not convertible to boolean
+        // CHECK: [[@LINE+1]]:13: error: type 'int32' is not convertible to boolean
         if !v {
         }
     }
@@ -32,7 +32,7 @@ void redundantNegation(int? v) {
 void useAfterNullAssignment(int? v) {
     if v {
         v = null;
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int32?)'
         println("x: ", v);
     }
 }
@@ -41,7 +41,7 @@ void useAfterNullAssignment(int? v) {
 void useAfterOptionalAssignment(int? v, int? w) {
     if v {
         v = w;
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int32?)'
         println("x: ", v);
     }
 }
@@ -52,7 +52,7 @@ void useAfterBranchAssignment(int? v, bool c) {
         if c {
             v = null;
         }
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int32?)'
         println("x: ", v);
     }
 }
@@ -61,7 +61,7 @@ void useAfterBranchAssignment(int? v, bool c) {
 void inferredVarIsNonOptional(int? v) {
     if v {
         var c = v;
-        // CHECK: [[@LINE+1]]:11: error: cannot assign 'null' to 'int'
+        // CHECK: [[@LINE+1]]:11: error: cannot assign 'null' to 'int32'
         c = null;
     }
 }
@@ -70,11 +70,11 @@ void inferredVarIsNonOptional(int? v) {
 void useAfterLoopAssignment(int? v, bool c) {
     if v {
         while c {
-            // CHECK: [[@LINE+1]]:13: error: no matching function 'println(string, int?)'
+            // CHECK: [[@LINE+1]]:13: error: no matching function 'println(string, int32?)'
             println("x: ", v);
             v = null;
         }
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int32?)'
         println("x: ", v);
     }
 }
@@ -86,7 +86,7 @@ void useAfterSwitchAssignment(int? v, int c) {
         case 1:
             v = null;
         }
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int32?)'
         println("x: ", v);
     }
 }
@@ -94,14 +94,14 @@ void useAfterSwitchAssignment(int? v, int c) {
 // CHECK-NOT: {{(warning|error)}}:
 void useAfterLogicalAnd(int? v, bool y) {
     var b = v != null && y;
-    // CHECK: [[@LINE+1]]:5: error: no matching function 'println(string, int?)'
+    // CHECK: [[@LINE+1]]:5: error: no matching function 'println(string, int32?)'
     println("x: ", v);
 }
 
 // CHECK-NOT: {{(warning|error)}}:
 void useInDefer(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:15: error: no matching function 'println(string, int?)'
+        // CHECK: [[@LINE+1]]:15: error: no matching function 'println(string, int32?)'
         defer println("x: ", v);
     }
 }
@@ -109,10 +109,10 @@ void useInDefer(int? v) {
 // CHECK-NOT: {{(warning|error)}}:
 void redundantNullCheckAfterNotEqual(int? v) {
     if (v != null) {
-        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
+        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int32' and 'null' to '==' (non-optional type 'int32' cannot be null)
         if v == null {
         }
-        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int' and 'null' to '!=' (non-optional type 'int' cannot be null)
+        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int32' and 'null' to '!=' (non-optional type 'int32' cannot be null)
         if v != null {
         }
     }

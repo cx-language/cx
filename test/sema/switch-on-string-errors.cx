@@ -14,7 +14,7 @@ void nonConstantCase() {
 void mismatchedCase() {
     string s = "a";
     switch (s) {
-        // CHECK: [[@LINE+1]]:14: error: case value type 'int' doesn't match switch condition type 'string'
+        // CHECK: [[@LINE+1]]:14: error: case value type 'int32' doesn't match switch condition type 'string'
         case 1: println("one"); break;
         default: break;
     }

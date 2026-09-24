@@ -1,7 +1,7 @@
 
 extern bool foo()
 
-int main() {
+int32 main() {
     br loop.condition
 
 loop.condition:
@@ -13,5 +13,5 @@ loop.body:
     br loop.condition
 
 loop.end:
-    return int 0
+    return int32 0
 }

@@ -1,17 +1,17 @@
 
-int main() {
-    int* foo = alloca int
-    uint* bar = alloca uint
+int32 main() {
+    int32* foo = alloca int32
+    uint32* bar = alloca uint32
     uint64* qux = alloca uint64
     int8* qux2 = alloca int8
-    int* qux3 = alloca int
-    int* qux4 = alloca int
-    store int -1 to foo
-    store uint 0 to bar
+    int32* qux3 = alloca int32
+    int32* qux4 = alloca int32
+    store int32 -1 to foo
+    store uint32 0 to bar
     store uint64 0 to qux
     store int8 0 to qux2
-    store int 18446744073709551615 to qux3
-    int qux3.load = load qux3
+    store int32 18446744073709551615 to qux3
+    int32 qux3.load = load qux3
     store qux3.load to qux4
-    return int 0
+    return int32 0
 }

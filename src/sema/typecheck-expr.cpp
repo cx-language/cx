@@ -306,7 +306,7 @@ static Type typecheckCharacterLiteralExpr(CharacterLiteralExpr&) {
 
 static Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
     if (expr.value.isSignedIntN(32)) {
-        return Type::getInt();
+        return Type::getInt32();
     } else if (expr.value.isSignedIntN(64)) {
         return Type::getInt64();
     } else if (expr.value.isIntN(64)) {
@@ -316,7 +316,7 @@ static Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
 }
 
 static Type typecheckFloatLiteralExpr(FloatLiteralExpr&) {
-    return Type::getFloat();
+    return Type::getFloat32();
 }
 
 static Type typecheckBoolLiteralExpr(BoolLiteralExpr&) {

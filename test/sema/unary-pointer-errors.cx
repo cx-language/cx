@@ -2,13 +2,13 @@
 // CHECK-NOT: unary-pointer-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void f(int* p, int[*] s) {
-    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to pointer of type 'int*'; dereference it explicitly (e.g. '-*p')
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to pointer of type 'int32*'; dereference it explicitly (e.g. '-*p')
     _ = -p;
-    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '+' to pointer of type 'int*'; dereference it explicitly (e.g. '+*p')
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '+' to pointer of type 'int32*'; dereference it explicitly (e.g. '+*p')
     _ = +p;
-    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '~' to pointer of type 'int*'; dereference it explicitly (e.g. '~*p')
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '~' to pointer of type 'int32*'; dereference it explicitly (e.g. '~*p')
     _ = ~p;
-    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to pointer of type 'int[*]'; dereference it explicitly (e.g. '-*p')
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to pointer of type 'int32[*]'; dereference it explicitly (e.g. '-*p')
     _ = -s;
 }
 

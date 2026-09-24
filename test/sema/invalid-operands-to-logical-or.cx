@@ -3,6 +3,6 @@
 void main() {
     var foo = false;
     var bar = 0;
-    // CHECK: [[@LINE+1]]:13: error: invalid operands 'bool' and 'int' to '||'
+    // CHECK: [[@LINE+1]]:13: error: invalid operands 'bool' and 'int32' to '||'
     if (foo || bar) { }
 }

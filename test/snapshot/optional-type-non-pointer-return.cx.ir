@@ -1,15 +1,15 @@
 
-Optional<int> _EN4main1fE() {
-    int* i = alloca int
-    Optional<int>* enum = alloca Optional<int>
-    store int 1 to i
-    int* tag = getelementptr enum, 0
-    store int 1 to tag
-    int i.load = load i
-    struct { int } _0 = insertvalue struct { int } undefined, 0, i.load
-    union { struct { int } }* associatedValue = getelementptr enum, 1
-    struct { int }* _1 = cast associatedValue to struct { int }*
+Optional<int32> _EN4main1fE() {
+    int32* i = alloca int32
+    Optional<int32>* enum = alloca Optional<int32>
+    store int32 1 to i
+    int32* tag = getelementptr enum, 0
+    store int32 1 to tag
+    int32 i.load = load i
+    struct { int32 } _0 = insertvalue struct { int32 } undefined, 0, i.load
+    union { struct { int32 } }* associatedValue = getelementptr enum, 1
+    struct { int32 }* _1 = cast associatedValue to struct { int32 }*
     store _0 to _1
-    Optional<int> enum.load = load enum
+    Optional<int32> enum.load = load enum
     return enum.load
 }

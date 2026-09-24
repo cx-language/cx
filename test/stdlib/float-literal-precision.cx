@@ -8,5 +8,5 @@ void main() {
     // Narrower targets still get correctly rounded values.
     float32 c = 0.5;
     assert(c == 0.5);
-    assert(float32(0.1) == float32(0.10000000149011612));
+    assert(0.1 == 0.10000000149011612);
 }

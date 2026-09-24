@@ -6,7 +6,7 @@ void main() {
     int b = 3;
     int* p = &a;
     int* q = &b;
-    // CHECK: [[@LINE+1]]:15: error: invalid operands 'int*' and 'int*' to '*'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:15: error: invalid operands 'int32*' and 'int32*' to '*'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     int c = p * q;
 }
 

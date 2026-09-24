@@ -1,21 +1,21 @@
 
-int* _EN4main3fooE() {
-    return int* null
+int32* _EN4main3fooE() {
+    return int32* null
 }
 
-int main() {
+int32 main() {
     bool* isNull = alloca bool
     bool* isNonNull = alloca bool
-    int** ptr = alloca int*
+    int32** ptr = alloca int32*
     bool** ptr2 = alloca bool*
-    int* _0 = call _EN4main3fooE()
-    bool _1 = _0 == int* null
+    int32* _0 = call _EN4main3fooE()
+    bool _1 = _0 == int32* null
     store _1 to isNull
-    int* _2 = call _EN4main3fooE()
-    bool _3 = _2 != int* null
+    int32* _2 = call _EN4main3fooE()
+    bool _3 = _2 != int32* null
     store _3 to isNonNull
-    int* _4 = call _EN4main3fooE()
+    int32* _4 = call _EN4main3fooE()
     store _4 to ptr
     store bool* null to ptr2
-    return int 0
+    return int32 0
 }

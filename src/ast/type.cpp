@@ -23,21 +23,17 @@ static std::vector<TypeBase*> typeBases;
 
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Void, void)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Bool, bool)
-DEFINE_BUILTIN_TYPE_GET_AND_IS(Int, int)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Int8, int8)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Int16, int16)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Int32, int32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Int64, int64)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Int128, int128)
-DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt, uint)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt8, uint8)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt16, uint16)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt32, uint32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt64, uint64)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt128, uint128)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(CSizeT, c_size_t)
-DEFINE_BUILTIN_TYPE_GET_AND_IS(Byte, byte)
-DEFINE_BUILTIN_TYPE_GET_AND_IS(Float, float)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float32, float32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float64, float64)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float80, float80)
@@ -78,9 +74,9 @@ bool Type::isArrayPointer() const {
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
     return llvm::StringSwitch<bool>(typeName)
-        .Cases({"int", "int8", "int16", "int32", "int64", "int128"}, true)
-        .Cases({"uint", "uint8", "uint16", "uint32", "uint64", "uint128", "byte", "c_size_t"}, true)
-        .Cases({"float", "float32", "float64", "float80", "bool", "char"}, true)
+        .Cases({"int8", "int16", "int32", "int64", "int128"}, true)
+        .Cases({"uint8", "uint16", "uint32", "uint64", "uint128", "c_size_t"}, true)
+        .Cases({"float32", "float64", "float80", "bool", "char"}, true)
         .Default(false);
 }
 
@@ -257,8 +253,8 @@ std::vector<ParamDecl> FunctionType::getParamDecls(Location location) const {
     return map(paramTypes, [&](Type paramType) { return ParamDecl(paramType, "", false, location); });
 }
 
-constexpr auto signedInts = {"int", "int8", "int16", "int32", "int64"};
-constexpr auto unsignedInts = {"uint", "uint8", "uint16", "uint32", "uint64", "byte", "c_size_t"};
+constexpr auto signedInts = {"int8", "int16", "int32", "int64"};
+constexpr auto unsignedInts = {"uint8", "uint16", "uint32", "uint64", "c_size_t"};
 
 bool Type::isInteger() const {
     if (!isBasicType()) return false;
@@ -283,8 +279,7 @@ int Type::getIntegerBitWidth() const {
     // host pointer width is the target width. (There is no cross-compilation.)
     if (isCSizeT()) return static_cast<int>(sizeof(void*) * 8);
     return llvm::StringSwitch<int>(getName())
-        .Cases({"int", "uint"}, 32)
-        .Cases({"int8", "uint8", "byte"}, 8)
+        .Cases({"int8", "uint8"}, 8)
         .Cases({"int16", "uint16"}, 16)
         .Cases({"int32", "uint32"}, 32)
         .Cases({"int64", "uint64"}, 64);
@@ -296,7 +291,7 @@ std::optional<uint64_t> Type::getSizeInBytes() const {
     if (isInteger()) return getIntegerBitWidth() / 8;
     if (isInt128() || isUInt128()) return 16;
     if (isChar() || isBool()) return 1;
-    if (isFloat() || isFloat32()) return 4;
+    if (isFloat32()) return 4;
     if (isFloat64()) return 8;
     return std::nullopt;
 }

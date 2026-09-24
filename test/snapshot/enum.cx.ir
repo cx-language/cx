@@ -1,10 +1,10 @@
-global x = int 0
+global x = int32 0
 
-int main() {
-    int* foo = alloca int
-    store int 2 to foo
-    int foo.load = load foo
-    bool _0 = foo.load == int 1
+int32 main() {
+    int32* foo = alloca int32
+    store int32 2 to foo
+    int32 foo.load = load foo
+    bool _0 = foo.load == int32 1
     br _0, if.then, if.else
 
 if.then:
@@ -14,8 +14,8 @@ if.else:
     br if.end
 
 if.end:
-    int foo.load_0 = load foo
-    bool _1 = foo.load_0 != int 0
+    int32 foo.load_0 = load foo
+    bool _1 = foo.load_0 != int32 0
     br _1, if.then, if.else
 
 if.then_0:
@@ -25,21 +25,21 @@ if.else_0:
     br if.end_0
 
 if.end_0:
-    int foo.load_1 = load foo
+    int32 foo.load_1 = load foo
     switch foo.load_1 {
-        int 0 -> switch.case.0
-        int 1 -> switch.case.1
-        int 2 -> switch.case.2
+        int32 0 -> switch.case.0
+        int32 1 -> switch.case.1
+        int32 2 -> switch.case.2
     }
 
 switch.case.0:
-    return int 0
+    return int32 0
 
 switch.case.1:
-    return int 0
+    return int32 0
 
 switch.case.2:
-    return int 0
+    return int32 0
 
 switch.default:
     void _2 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'A' at enum.cx:11:13
@@ -47,5 +47,5 @@ switch.default:
     unreachable
 
 switch.end:
-    return int 0
+    return int32 0
 }

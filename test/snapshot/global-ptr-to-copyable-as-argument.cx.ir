@@ -1,9 +1,9 @@
 global sp = S* null
 
-int main() {
+int32 main() {
     S* sp.load = load sp
     void _0 = call _EN4main3fooEOP1S(S* sp.load)
-    return int 0
+    return int32 0
 }
 
 void _EN4main3fooEOP1S(S* p) {

@@ -1,9 +1,9 @@
 
-int main() {
+int32 main() {
     C<bool>* c = alloca C<bool>
     void _0 = call _EN4main1CI4boolE4initE(C<bool>* c)
     void _1 = call _EN4main1CI4boolE1fE(C<bool>* c)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1CI4boolE4initE(C<bool>* this) {

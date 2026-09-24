@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void main() {
-    // CHECK: [[@LINE+1]]:23: error: mixed element types in array literal (expected 'int', found 'null')
+    // CHECK: [[@LINE+1]]:23: error: mixed element types in array literal (expected 'int32', found 'null')
     var a = [1, 2, 3, null];
 }

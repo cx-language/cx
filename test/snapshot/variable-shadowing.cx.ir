@@ -1,25 +1,25 @@
-global i = int 0
+global i = int32 0
 
-int main() {
-    int* i_0 = alloca int
+int32 main() {
+    int32* i_0 = alloca int32
     S* s = alloca S
-    store int 0 to i_0
-    void _0 = call _EN4main1S4initE3int(S* s, int 0)
+    store int32 0 to i_0
+    void _0 = call _EN4main1S4initE5int32(S* s, int32 0)
     void _1 = call _EN4main1S1fE(S* s)
-    return int 0
+    return int32 0
 }
 
-void _EN4main1S4initE3int(S* this, int i_0) {
-    int* i_1 = alloca int
+void _EN4main1S4initE5int32(S* this, int32 i_0) {
+    int32* i_1 = alloca int32
     store i_0 to i_1
-    int* i_2 = getelementptr this, 0
-    int i.load = load i_1
+    int32* i_2 = getelementptr this, 0
+    int32 i.load = load i_1
     store i.load to i_2
     return void
 }
 
 void _EN4main1S1fE(S* this) {
-    int* i_0 = alloca int
-    store int 0 to i_0
+    int32* i_0 = alloca int32
+    store int32 0 to i_0
     return void
 }

@@ -1,30 +1,30 @@
 
-int main() {
+int32 main() {
     Foo* foo = alloca Foo
-    int* i = alloca int
+    int32* i = alloca int32
     void _0 = call _EN4main3Foo4initE(Foo* foo)
     void _1 = call _EN4main3Foo3barE(Foo* foo)
-    int _2 = call _EN4main3Foo3quxE(Foo* foo)
+    int32 _2 = call _EN4main3Foo3quxE(Foo* foo)
     store _2 to i
-    return int 0
+    return int32 0
 }
 
 void _EN4main3Foo4initE(Foo* this) {
-    int* baz = getelementptr this, 0
-    store int 42 to baz
+    int32* baz = getelementptr this, 0
+    store int32 42 to baz
     return void
 }
 
 void _EN4main3Foo3barE(Foo* this) {
-    int* baz = getelementptr this, 0
-    int baz.load = load baz
-    int _0 = baz.load + int 1
+    int32* baz = getelementptr this, 0
+    int32 baz.load = load baz
+    int32 _0 = baz.load + int32 1
     store _0 to baz
     return void
 }
 
-int _EN4main3Foo3quxE(Foo* this) {
-    int* baz = getelementptr this, 0
-    int baz.load = load baz
+int32 _EN4main3Foo3quxE(Foo* this) {
+    int32* baz = getelementptr this, 0
+    int32 baz.load = load baz
     return baz.load
 }

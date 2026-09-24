@@ -19,23 +19,23 @@ void _EN4main3Bar3barE(Bar* this) {
     return void
 }
 
-int main() {
+int32 main() {
     Foo* f = alloca Foo
     Bar* b = alloca Bar
     void _0 = call _EN4main3Foo4initE(Foo* f)
     void _1 = call _EN4main3Bar4initE(Bar* b)
     void _2 = call _EN4main3quxEP3FooP3Bar(Foo* f, Bar* b)
-    return int 0
+    return int32 0
 }
 
 void _EN4main3Foo4initE(Foo* this) {
-    int* i = getelementptr this, 0
-    store int 0 to i
+    int32* i = getelementptr this, 0
+    store int32 0 to i
     return void
 }
 
 void _EN4main3Bar4initE(Bar* this) {
-    int* i = getelementptr this, 0
-    store int 0 to i
+    int32* i = getelementptr this, 0
+    store int32 0 to i
     return void
 }

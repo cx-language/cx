@@ -1,27 +1,27 @@
 
-int main() {
-    Optional<int>* a = alloca Optional<int>
-    Optional<int>* enum = alloca Optional<int>
-    int* _0 = alloca int
-    int* tag = getelementptr enum, 0
-    store int 0 to tag
-    Optional<int> enum.load = load enum
+int32 main() {
+    Optional<int32>* a = alloca Optional<int32>
+    Optional<int32>* enum = alloca Optional<int32>
+    int32* _0 = alloca int32
+    int32* tag = getelementptr enum, 0
+    store int32 0 to tag
+    Optional<int32> enum.load = load enum
     store enum.load to a
-    store int 1 to _0
-    bool _1 = call _EN3stdeqI3intEERO3intR3int(Optional<int>* a, int* _0)
-    return int 0
+    store int32 1 to _0
+    bool _1 = call _EN3stdeqI5int32EERO5int32R5int32(Optional<int32>* a, int32* _0)
+    return int32 0
 }
 
-bool _EN3stdeqI3intEERO3intR3int(Optional<int>* a, int* b) {
-    Optional<int>** a_0 = alloca Optional<int>*
-    int** b_0 = alloca int*
-    Optional<int>* _0 = alloca Optional<int>
+bool _EN3stdeqI5int32EERO5int32R5int32(Optional<int32>* a, int32* b) {
+    Optional<int32>** a_0 = alloca Optional<int32>*
+    int32** b_0 = alloca int32*
+    Optional<int32>* _0 = alloca Optional<int32>
     store a to a_0
     store b to b_0
-    Optional<int>* a.load = load a_0
-    Optional<int> a.load.load = load a.load
-    int _1 = extractvalue a.load.load, 0
-    bool _2 = _1 == int 1
+    Optional<int32>* a.load = load a_0
+    Optional<int32> a.load.load = load a.load
+    int32 _1 = extractvalue a.load.load, 0
+    bool _2 = _1 == int32 1
     bool _3 = !_2
     br _3, if.then, if.else
 
@@ -32,10 +32,10 @@ if.else:
     br if.end
 
 if.end:
-    Optional<int>* a.load_0 = load a_0
-    Optional<int> a.load.load_0 = load a.load_0
-    int _4 = extractvalue a.load.load_0, 0
-    bool _5 = _4 == int 1
+    Optional<int32>* a.load_0 = load a_0
+    Optional<int32> a.load.load_0 = load a.load_0
+    int32 _4 = extractvalue a.load.load_0, 0
+    bool _5 = _4 == int32 1
     bool assert.condition = _5 == bool false
     br assert.condition, assert.fail, assert.success
 
@@ -46,11 +46,11 @@ assert.fail:
 
 assert.success:
     store a.load.load_0 to _0
-    union { struct { int } }* _7 = getelementptr _0, 1
-    int* _8 = cast _7 to int*
-    int .load = load _8
-    int* b.load = load b_0
-    int b.load.load = load b.load
+    union { struct { int32 } }* _7 = getelementptr _0, 1
+    int32* _8 = cast _7 to int32*
+    int32 .load = load _8
+    int32* b.load = load b_0
+    int32 b.load.load = load b.load
     bool _9 = .load == b.load.load
     return _9
 }

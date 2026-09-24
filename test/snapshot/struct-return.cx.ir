@@ -30,12 +30,12 @@ void _EN4main2S24initE7float647float647float647float64(S2* this, float64 x, floa
     return void
 }
 
-int main() {
+int32 main() {
     S* s = alloca S
     S2* s2 = alloca S2
     S _0 = call returnsLargeStruct()
     store _0 to s
     S2 _1 = call _EN4main19returnsLargeStruct2E()
     store _1 to s2
-    return int 0
+    return int32 0
 }

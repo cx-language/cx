@@ -2,6 +2,6 @@
 
 void bar() {
     const var t = (a = 1, b = 2);
-    // CHECK: [[@LINE+1]]:9: error: cannot assign to immutable variable 'a' of type 'const int'
+    // CHECK: [[@LINE+1]]:9: error: cannot assign to immutable variable 'a' of type 'const int32'
     t.a = 42;
 }

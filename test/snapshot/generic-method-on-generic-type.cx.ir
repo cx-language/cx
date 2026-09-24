@@ -1,25 +1,25 @@
 
-int _EN4main1gE4bool(bool i) {
+int32 _EN4main1gE4bool(bool i) {
     bool* i_0 = alloca bool
     store i to i_0
     bool i.load = load i_0
-    int _0 = cast i.load to int
+    int32 _0 = cast i.load to int32
     return _0
 }
 
-int main() {
-    X<int>* x = alloca X<int>
-    void _0 = call _EN4main1XI3intE4initE(X<int>* x)
-    void _1 = call _EN4main1XI3intE1fI4boolEEF4bool_3int(X<int>* x, int(bool)* _EN4main1gE4bool)
-    return int 0
+int32 main() {
+    X<int32>* x = alloca X<int32>
+    void _0 = call _EN4main1XI5int32E4initE(X<int32>* x)
+    void _1 = call _EN4main1XI5int32E1fI4boolEEF4bool_5int32(X<int32>* x, int32(bool)* _EN4main1gE4bool)
+    return int32 0
 }
 
-void _EN4main1XI3intE4initE(X<int>* this) {
+void _EN4main1XI5int32E4initE(X<int32>* this) {
     return void
 }
 
-void _EN4main1XI3intE1fI4boolEEF4bool_3int(X<int>* this, int(bool)* u) {
-    int(bool)** u_0 = alloca int(bool)*
+void _EN4main1XI5int32E1fI4boolEEF4bool_5int32(X<int32>* this, int32(bool)* u) {
+    int32(bool)** u_0 = alloca int32(bool)*
     store u to u_0
     return void
 }

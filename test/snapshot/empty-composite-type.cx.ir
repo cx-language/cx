@@ -1,6 +1,6 @@
 
-int main() {
+int32 main() {
     S* s = alloca S
     C* c = alloca C
-    return int 0
+    return int32 0
 }

@@ -1,28 +1,28 @@
 
-int main() {
-    int* a = alloca int
-    int* b = alloca int
-    uint* c = alloca uint
-    uint* d = alloca uint
-    int a.load = load a
-    int b.load = load b
-    int _0 = a.load & b.load
-    int a.load_0 = load a
-    int b.load_0 = load b
-    int _1 = a.load_0 | b.load_0
-    int a.load_1 = load a
-    int b.load_1 = load b
-    int _2 = a.load_1 ^ b.load_1
-    int a.load_2 = load a
-    int b.load_2 = load b
-    int _3 = a.load_2 << b.load_2
-    int a.load_3 = load a
-    int b.load_3 = load b
-    int _4 = a.load_3 >> b.load_3
-    uint c.load = load c
-    uint d.load = load d
-    uint _5 = c.load >> d.load
-    int a.load_4 = load a
+int32 main() {
+    int32* a = alloca int32
+    int32* b = alloca int32
+    uint32* c = alloca uint32
+    uint32* d = alloca uint32
+    int32 a.load = load a
+    int32 b.load = load b
+    int32 _0 = a.load & b.load
+    int32 a.load_0 = load a
+    int32 b.load_0 = load b
+    int32 _1 = a.load_0 | b.load_0
+    int32 a.load_1 = load a
+    int32 b.load_1 = load b
+    int32 _2 = a.load_1 ^ b.load_1
+    int32 a.load_2 = load a
+    int32 b.load_2 = load b
+    int32 _3 = a.load_2 << b.load_2
+    int32 a.load_3 = load a
+    int32 b.load_3 = load b
+    int32 _4 = a.load_3 >> b.load_3
+    uint32 c.load = load c
+    uint32 d.load = load d
+    uint32 _5 = c.load >> d.load
+    int32 a.load_4 = load a
     bool _6 = !a.load_4
-    return int 0
+    return int32 0
 }

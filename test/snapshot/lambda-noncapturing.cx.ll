@@ -6,15 +6,15 @@
 @4 = private unnamed_addr constant [50 x i8] c"integer overflow at lambda-noncapturing.cx:18:19\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
-  call void @_EN4main3fooI3intEEF3int3int_3int(ptr @_EN4main9__lambda0E3int3int), !dbg !7
-  call void @_EN4main3fooI3intEEF3int3int_3int(ptr @_EN4main9__lambda1E3int3int), !dbg !8
-  call void @_EN4main3fooI3intEEF3int3int_3int(ptr @_EN4main9__lambda2E3int3int), !dbg !9
-  call void @_EN4main3fooI3intEEF3int3int_3int(ptr @_EN4main9__lambda3E3int3int), !dbg !10
-  call void @_EN4main3fooI4voidEEF3int3int_4void(ptr @_EN4main9__lambda4E3int3int), !dbg !11
+  call void @_EN4main3fooI5int32EEF5int325int32_5int32(ptr @_EN4main9__lambda0E5int325int32), !dbg !7
+  call void @_EN4main3fooI5int32EEF5int325int32_5int32(ptr @_EN4main9__lambda1E5int325int32), !dbg !8
+  call void @_EN4main3fooI5int32EEF5int325int32_5int32(ptr @_EN4main9__lambda2E5int325int32), !dbg !9
+  call void @_EN4main3fooI5int32EEF5int325int32_5int32(ptr @_EN4main9__lambda3E5int325int32), !dbg !10
+  call void @_EN4main3fooI4voidEEF5int325int32_4void(ptr @_EN4main9__lambda4E5int325int32), !dbg !11
   ret i32 0
 }
 
-define void @_EN4main3fooI3intEEF3int3int_3int(ptr %a) #0 !dbg !12 {
+define void @_EN4main3fooI5int32EEF5int325int32_5int32(ptr %a) #0 !dbg !12 {
   %a1 = alloca ptr, align 8
   store ptr %a, ptr %a1, align 8
   %a.load = load ptr, ptr %a1, align 8
@@ -22,7 +22,7 @@ define void @_EN4main3fooI3intEEF3int3int_3int(ptr %a) #0 !dbg !12 {
   ret void
 }
 
-define i32 @_EN4main9__lambda0E3int3int(i32 %a, i32 %b) #0 !dbg !14 {
+define i32 @_EN4main9__lambda0E5int325int32(i32 %a, i32 %b) #0 !dbg !14 {
   %a1 = alloca i32, align 4
   %b2 = alloca i32, align 4
   store i32 %a, ptr %a1, align 4
@@ -47,7 +47,7 @@ overflow.success:                                 ; preds = %0
   ret i32 %4
 }
 
-define i32 @_EN4main9__lambda1E3int3int(i32 %a, i32 %b) #0 !dbg !16 {
+define i32 @_EN4main9__lambda1E5int325int32(i32 %a, i32 %b) #0 !dbg !16 {
   %a1 = alloca i32, align 4
   %b2 = alloca i32, align 4
   store i32 %a, ptr %a1, align 4
@@ -72,7 +72,7 @@ overflow.success:                                 ; preds = %0
   ret i32 %4
 }
 
-define i32 @_EN4main9__lambda2E3int3int(i32 %a, i32 %b) #0 !dbg !18 {
+define i32 @_EN4main9__lambda2E5int325int32(i32 %a, i32 %b) #0 !dbg !18 {
   %a1 = alloca i32, align 4
   %b2 = alloca i32, align 4
   store i32 %a, ptr %a1, align 4
@@ -126,7 +126,7 @@ overflow.success9:                                ; preds = %if.else
   ret i32 %12
 }
 
-define i32 @_EN4main9__lambda3E3int3int(i32 %a, i32 %b) #0 !dbg !20 {
+define i32 @_EN4main9__lambda3E5int325int32(i32 %a, i32 %b) #0 !dbg !20 {
   %a1 = alloca i32, align 4
   %b2 = alloca i32, align 4
   %x = alloca i32, align 4
@@ -154,7 +154,7 @@ overflow.success:                                 ; preds = %0
   ret i32 %x.load
 }
 
-define void @_EN4main3fooI4voidEEF3int3int_4void(ptr %a) #0 !dbg !22 {
+define void @_EN4main3fooI4voidEEF5int325int32_4void(ptr %a) #0 !dbg !22 {
   %a1 = alloca ptr, align 8
   store ptr %a, ptr %a1, align 8
   %a.load = load ptr, ptr %a1, align 8
@@ -162,7 +162,7 @@ define void @_EN4main3fooI4voidEEF3int3int_4void(ptr %a) #0 !dbg !22 {
   ret void
 }
 
-define void @_EN4main9__lambda4E3int3int(i32 %a, i32 %b) #0 !dbg !24 {
+define void @_EN4main9__lambda4E5int325int32(i32 %a, i32 %b) #0 !dbg !24 {
   %a1 = alloca i32, align 4
   %b2 = alloca i32, align 4
   store i32 %a, ptr %a1, align 4
@@ -201,16 +201,16 @@ attributes #0 = { "frame-pointer"="all" }
 !9 = !DILocation(line: 10, column: 5, scope: !4)
 !10 = !DILocation(line: 17, column: 5, scope: !4)
 !11 = !DILocation(line: 21, column: 5, scope: !4)
-!12 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooI3intEEF3int3int_3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!12 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooI5int32EEF5int325int32_5int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !13 = !DILocation(line: 4, column: 9, scope: !12)
-!14 = distinct !DISubprogram(name: "__lambda0", linkageName: "_EN4main9__lambda0E3int3int", scope: !3, file: !3, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
+!14 = distinct !DISubprogram(name: "__lambda0", linkageName: "_EN4main9__lambda0E5int325int32", scope: !3, file: !3, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
 !15 = !DILocation(line: 8, column: 9, scope: !14)
-!16 = distinct !DISubprogram(name: "__lambda1", linkageName: "_EN4main9__lambda1E3int3int", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!16 = distinct !DISubprogram(name: "__lambda1", linkageName: "_EN4main9__lambda1E5int325int32", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
 !17 = !DILocation(line: 9, column: 9, scope: !16)
-!18 = distinct !DISubprogram(name: "__lambda2", linkageName: "_EN4main9__lambda2E3int3int", scope: !3, file: !3, line: 10, type: !5, scopeLine: 10, spFlags: DISPFlagDefinition, unit: !2)
+!18 = distinct !DISubprogram(name: "__lambda2", linkageName: "_EN4main9__lambda2E5int325int32", scope: !3, file: !3, line: 10, type: !5, scopeLine: 10, spFlags: DISPFlagDefinition, unit: !2)
 !19 = !DILocation(line: 10, column: 9, scope: !18)
-!20 = distinct !DISubprogram(name: "__lambda3", linkageName: "_EN4main9__lambda3E3int3int", scope: !3, file: !3, line: 17, type: !5, scopeLine: 17, spFlags: DISPFlagDefinition, unit: !2)
+!20 = distinct !DISubprogram(name: "__lambda3", linkageName: "_EN4main9__lambda3E5int325int32", scope: !3, file: !3, line: 17, type: !5, scopeLine: 17, spFlags: DISPFlagDefinition, unit: !2)
 !21 = !DILocation(line: 17, column: 9, scope: !20)
-!22 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooI4voidEEF3int3int_4void", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!22 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooI4voidEEF5int325int32_4void", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !23 = !DILocation(line: 4, column: 9, scope: !22)
-!24 = distinct !DISubprogram(name: "__lambda4", linkageName: "_EN4main9__lambda4E3int3int", scope: !3, file: !3, line: 21, type: !5, scopeLine: 21, spFlags: DISPFlagDefinition, unit: !2)
+!24 = distinct !DISubprogram(name: "__lambda4", linkageName: "_EN4main9__lambda4E5int325int32", scope: !3, file: !3, line: 21, type: !5, scopeLine: 21, spFlags: DISPFlagDefinition, unit: !2)

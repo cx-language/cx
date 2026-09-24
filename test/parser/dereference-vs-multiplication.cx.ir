@@ -1,26 +1,26 @@
 
-int _EN4main1gE() {
-    return int 1
+int32 _EN4main1gE() {
+    return int32 1
 }
 
-void _EN4main1fEP3int3int(int* a, int b) {
-    int** a_0 = alloca int*
-    int* b_0 = alloca int
-    int* m = alloca int
-    int* n = alloca int
+void _EN4main1fEP5int325int32(int32* a, int32 b) {
+    int32** a_0 = alloca int32*
+    int32* b_0 = alloca int32
+    int32* m = alloca int32
+    int32* n = alloca int32
     store a to a_0
     store b to b_0
-    int _0 = call _EN4main1gE()
+    int32 _0 = call _EN4main1gE()
     store _0 to m
-    int* a.load = load a_0
-    int b.load = load b_0
+    int32* a.load = load a_0
+    int32 b.load = load b_0
     store b.load to a.load
-    int _1 = call _EN4main1gE()
-    int b.load_0 = load b_0
+    int32 _1 = call _EN4main1gE()
+    int32 b.load_0 = load b_0
     int64 _2 = cast _1 to int64
     int64 _3 = cast b.load_0 to int64
     int64 _4 = _2 * _3
-    int _5 = cast _4 to int
+    int32 _5 = cast _4 to int32
     int64 _6 = cast _5 to int64
     bool _7 = _4 != _6
     bool _8 = !_7

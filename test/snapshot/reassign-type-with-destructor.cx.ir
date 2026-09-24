@@ -1,5 +1,5 @@
 
-int main() {
+int32 main() {
     X* x = alloca X
     X* _0 = alloca X
     void _1 = call _EN4main1X4initE(X* x)
@@ -8,7 +8,7 @@ int main() {
     X .load = load _0
     store .load to x
     void _4 = call _EN4main1X6deinitE(X* x)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1X6deinitE(X* this) {

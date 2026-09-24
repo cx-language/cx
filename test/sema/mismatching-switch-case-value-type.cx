@@ -2,7 +2,7 @@
 
 void main() {
     switch (1) {
-        // CHECK: [[@LINE+1]]:14: error: case value type 'bool' doesn't match switch condition type 'int'
+        // CHECK: [[@LINE+1]]:14: error: case value type 'bool' doesn't match switch condition type 'int32'
         case false: break;
     }
 }

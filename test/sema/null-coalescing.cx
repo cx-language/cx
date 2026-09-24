@@ -3,7 +3,7 @@
 
 void main() {
     int a = 1;
-    // CHECK: [[@LINE+1]]:13: error: left operand of '??' must be an optional, got 'int'
+    // CHECK: [[@LINE+1]]:13: error: left operand of '??' must be an optional, got 'int32'
     println(a ?? 2);
 
     // CHECK: [[@LINE+1]]:13: error: left operand of '??' must be an optional, got 'null'
@@ -11,10 +11,10 @@ void main() {
 
     int? o = null;
     float? f = null;
-    // CHECK: [[@LINE+1]]:15: error: incompatible operand types ('int?' and 'float?')
+    // CHECK: [[@LINE+1]]:15: error: incompatible operand types ('int32?' and 'float32?')
     println(o ?? f);
 
-    // CHECK: [[@LINE+1]]:15: error: incompatible operand types ('int?' and 'string')
+    // CHECK: [[@LINE+1]]:15: error: incompatible operand types ('int32?' and 'string')
     println(o ?? "s");
 }
 

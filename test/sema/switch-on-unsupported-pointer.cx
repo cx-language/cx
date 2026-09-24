@@ -12,7 +12,7 @@ enum Color {
 }
 
 void doublePointer(int** p) {
-    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int**'; dereference it explicitly (e.g. 'switch (*p)')
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int32**'; dereference it explicitly (e.g. 'switch (*p)')
     switch (p) {
     default:
         break;
@@ -28,7 +28,7 @@ void associatedValueEnumPointer(E* e) {
 }
 
 void intPointer(int* p) {
-    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int*'; dereference it explicitly (e.g. 'switch (*p)')
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int32*'; dereference it explicitly (e.g. 'switch (*p)')
     switch (p) {
     default:
         break;
@@ -36,7 +36,7 @@ void intPointer(int* p) {
 }
 
 void optionalIntPointer(int*? p) {
-    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int*?'; dereference it explicitly (e.g. 'switch (*p)')
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int32*?'; dereference it explicitly (e.g. 'switch (*p)')
     switch (p) {
     default:
         break;
@@ -60,7 +60,7 @@ void plainEnumPointer(Color* p) {
 }
 
 void unsizedArrayPointer(int[*] p) {
-    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int[*]'; dereference it explicitly (e.g. 'switch (*p)')
+    // CHECK: [[@LINE+1]]:13: error: switch condition must have integer, char, string, or enum type, got 'int32[*]'; dereference it explicitly (e.g. 'switch (*p)')
     switch (p) {
     default:
         break;

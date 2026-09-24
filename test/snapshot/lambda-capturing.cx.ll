@@ -10,14 +10,14 @@
 @3 = private unnamed_addr constant [47 x i8] c"integer overflow at lambda-capturing.cx:13:30\0A\00", align 1
 @4 = private unnamed_addr constant [47 x i8] c"integer overflow at lambda-capturing.cx:13:34\0A\00", align 1
 
-define void @_EN4main13capturesParamE3int(i32 %p) #0 !dbg !4 {
+define void @_EN4main13capturesParamE5int32(i32 %p) #0 !dbg !4 {
   %p1 = alloca i32, align 4
   %d = alloca i32, align 4
   %b = alloca %__closure0, align 8
   store i32 %p, ptr %p1, align 4
   store i32 3, ptr %d, align 4
   %p.load = load i32, ptr %p1, align 4
-  %1 = insertvalue %__closure0 { ptr @_EN4main9__lambda0E3int, i32 undef, i32 undef }, i32 %p.load, 1
+  %1 = insertvalue %__closure0 { ptr @_EN4main9__lambda0E5int32, i32 undef, i32 undef }, i32 %p.load, 1
   %d.load = load i32, ptr %d, align 4
   %2 = insertvalue %__closure0 %1, i32 %d.load, 2
   store %__closure0 %2, ptr %b, align 8
@@ -29,7 +29,7 @@ define void @_EN4main13capturesParamE3int(i32 %p) #0 !dbg !4 {
   ret void
 }
 
-define i32 @_EN4main9__lambda0E3int(i32 %__capture_p, i32 %__capture_d, i32 %c) #0 !dbg !8 {
+define i32 @_EN4main9__lambda0E5int32(i32 %__capture_p, i32 %__capture_d, i32 %c) #0 !dbg !8 {
   %__capture_p1 = alloca i32, align 4
   %__capture_d2 = alloca i32, align 4
   %c3 = alloca i32, align 4
@@ -78,12 +78,12 @@ define i32 @main() #0 !dbg !10 {
   %s = alloca %S, align 8
   %a = alloca i32, align 4
   %b = alloca %__closure2, align 8
-  call void @_EN4main13capturesParamE3int(i32 100), !dbg !11
-  call void @_EN4main1S4initE3int(ptr %s, i32 5), !dbg !12
-  %1 = call i32 @_EN4main1S3getE3int(ptr %s, i32 1), !dbg !13
+  call void @_EN4main13capturesParamE5int32(i32 100), !dbg !11
+  call void @_EN4main1S4initE5int32(ptr %s, i32 5), !dbg !12
+  %1 = call i32 @_EN4main1S3getE5int32(ptr %s, i32 1), !dbg !13
   store i32 1, ptr %a, align 4
   %a.load = load i32, ptr %a, align 4
-  %2 = insertvalue %__closure2 { ptr @_EN4main9__lambda2E3int, i32 undef }, i32 %a.load, 1
+  %2 = insertvalue %__closure2 { ptr @_EN4main9__lambda2E5int32, i32 undef }, i32 %a.load, 1
   store %__closure2 %2, ptr %b, align 8
   %b.load = load %__closure2, ptr %b, align 8
   %3 = extractvalue %__closure2 %b.load, 0
@@ -92,7 +92,7 @@ define i32 @main() #0 !dbg !10 {
   ret i32 0
 }
 
-define void @_EN4main1S4initE3int(ptr %this, i32 %d) #0 !dbg !15 {
+define void @_EN4main1S4initE5int32(ptr %this, i32 %d) #0 !dbg !15 {
   %d1 = alloca i32, align 4
   store i32 %d, ptr %d1, align 4
   %d2 = getelementptr inbounds %S, ptr %this, i32 0, i32 0
@@ -101,13 +101,13 @@ define void @_EN4main1S4initE3int(ptr %this, i32 %d) #0 !dbg !15 {
   ret void
 }
 
-define i32 @_EN4main1S3getE3int(ptr %this, i32 %c) #0 !dbg !16 {
+define i32 @_EN4main1S3getE5int32(ptr %this, i32 %c) #0 !dbg !16 {
   %c1 = alloca i32, align 4
   %b = alloca %__closure1, align 8
   store i32 %c, ptr %c1, align 4
   %c.load = load i32, ptr %c1, align 4
   %insert.alloca = alloca %__closure1, align 8
-  store %__closure1 { ptr @_EN4main9__lambda1E3int, i32 undef, ptr undef }, ptr %insert.alloca, align 8
+  store %__closure1 { ptr @_EN4main9__lambda1E5int32, i32 undef, ptr undef }, ptr %insert.alloca, align 8
   %insert.gep = getelementptr inbounds %__closure1, ptr %insert.alloca, i32 0, i32 1
   store i32 %c.load, ptr %insert.gep, align 4
   %insert.alloca2 = alloca %__closure1, align 8
@@ -127,7 +127,7 @@ define i32 @_EN4main1S3getE3int(ptr %this, i32 %c) #0 !dbg !16 {
   ret i32 %7
 }
 
-define i32 @_EN4main9__lambda2E3int(i32 %__capture_a, i32 %c) #0 !dbg !18 {
+define i32 @_EN4main9__lambda2E5int32(i32 %__capture_a, i32 %c) #0 !dbg !18 {
   %__capture_a1 = alloca i32, align 4
   %c2 = alloca i32, align 4
   store i32 %__capture_a, ptr %__capture_a1, align 4
@@ -152,7 +152,7 @@ overflow.success:                                 ; preds = %0
   ret i32 %4
 }
 
-define i32 @_EN4main9__lambda1E3int(i32 %__capture_c, ptr %__capture_this, i32 %x) #0 !dbg !20 {
+define i32 @_EN4main9__lambda1E5int32(i32 %__capture_c, ptr %__capture_this, i32 %x) #0 !dbg !20 {
   %__capture_c1 = alloca i32, align 4
   %x2 = alloca i32, align 4
   store i32 %__capture_c, ptr %__capture_c1, align 4
@@ -207,21 +207,21 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "lambda-capturing.cx")
-!4 = distinct !DISubprogram(name: "capturesParam", linkageName: "_EN4main13capturesParamE3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "capturesParam", linkageName: "_EN4main13capturesParamE5int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 6, column: 9, scope: !4)
-!8 = distinct !DISubprogram(name: "__lambda0", linkageName: "_EN4main9__lambda0E3int", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "__lambda0", linkageName: "_EN4main9__lambda0E5int32", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !9 = !DILocation(line: 5, column: 13, scope: !8)
 !10 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
 !11 = !DILocation(line: 19, column: 5, scope: !10)
 !12 = !DILocation(line: 20, column: 13, scope: !10)
 !13 = !DILocation(line: 21, column: 11, scope: !10)
 !14 = !DILocation(line: 24, column: 9, scope: !10)
-!15 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1S4initE3int", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
-!16 = distinct !DISubprogram(name: "get", linkageName: "_EN4main1S3getE3int", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
+!15 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1S4initE5int32", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!16 = distinct !DISubprogram(name: "get", linkageName: "_EN4main1S3getE5int32", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
 !17 = !DILocation(line: 14, column: 16, scope: !16)
-!18 = distinct !DISubprogram(name: "__lambda2", linkageName: "_EN4main9__lambda2E3int", scope: !3, file: !3, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
+!18 = distinct !DISubprogram(name: "__lambda2", linkageName: "_EN4main9__lambda2E5int32", scope: !3, file: !3, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
 !19 = !DILocation(line: 23, column: 13, scope: !18)
-!20 = distinct !DISubprogram(name: "__lambda1", linkageName: "_EN4main9__lambda1E3int", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!20 = distinct !DISubprogram(name: "__lambda1", linkageName: "_EN4main9__lambda1E5int32", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
 !21 = !DILocation(line: 13, column: 17, scope: !20)

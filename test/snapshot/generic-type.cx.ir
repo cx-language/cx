@@ -1,6 +1,6 @@
 
-int main() {
-    A<int>* a = alloca A<int>
+int32 main() {
+    A<int32>* a = alloca A<int32>
     A<A<A<bool>>>* aaa = alloca A<A<A<bool>>>
-    return int 0
+    return int32 0
 }

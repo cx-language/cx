@@ -1,37 +1,37 @@
 
-void _EN4main13capturesParamE3int(int p) {
-    int* p_0 = alloca int
-    int* d = alloca int
+void _EN4main13capturesParamE5int32(int32 p) {
+    int32* p_0 = alloca int32
+    int32* d = alloca int32
     __closure0* b = alloca __closure0
     store p to p_0
-    store int 3 to d
-    __closure0 _0 = insertvalue __closure0 undefined, 0, _EN4main9__lambda0E3int
-    int p.load = load p_0
+    store int32 3 to d
+    __closure0 _0 = insertvalue __closure0 undefined, 0, _EN4main9__lambda0E5int32
+    int32 p.load = load p_0
     __closure0 _1 = insertvalue _0, 1, p.load
-    int d.load = load d
+    int32 d.load = load d
     __closure0 _2 = insertvalue _1, 2, d.load
     store _2 to b
     __closure0 b.load = load b
-    int(int, int, int)* _3 = extractvalue b.load, 0
-    int _4 = extractvalue b.load, 1
-    int _5 = extractvalue b.load, 2
-    int _6 = call _3(int _4, int _5, int 1)
+    int32(int32, int32, int32)* _3 = extractvalue b.load, 0
+    int32 _4 = extractvalue b.load, 1
+    int32 _5 = extractvalue b.load, 2
+    int32 _6 = call _3(int32 _4, int32 _5, int32 1)
     return void
 }
 
-int _EN4main9__lambda0E3int(int __capture_p, int __capture_d, int c) {
-    int* __capture_p_0 = alloca int
-    int* __capture_d_0 = alloca int
-    int* c_0 = alloca int
+int32 _EN4main9__lambda0E5int32(int32 __capture_p, int32 __capture_d, int32 c) {
+    int32* __capture_p_0 = alloca int32
+    int32* __capture_d_0 = alloca int32
+    int32* c_0 = alloca int32
     store __capture_p to __capture_p_0
     store __capture_d to __capture_d_0
     store c to c_0
-    int c.load = load c_0
-    int __capture_p.load = load __capture_p_0
+    int32 c.load = load c_0
+    int32 __capture_p.load = load __capture_p_0
     int64 _0 = cast c.load to int64
     int64 _1 = cast __capture_p.load to int64
     int64 _2 = _0 + _1
-    int _3 = cast _2 to int
+    int32 _3 = cast _2 to int32
     int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
@@ -44,11 +44,11 @@ overflow.fail:
     unreachable
 
 overflow.success:
-    int __capture_d.load = load __capture_d_0
+    int32 __capture_d.load = load __capture_d_0
     int64 _8 = cast _3 to int64
     int64 _9 = cast __capture_d.load to int64
     int64 _10 = _8 + _9
-    int _11 = cast _10 to int
+    int32 _11 = cast _10 to int32
     int64 _12 = cast _11 to int64
     bool _13 = _10 != _12
     bool _14 = !_13
@@ -64,62 +64,62 @@ overflow.success_0:
     return _11
 }
 
-int main() {
+int32 main() {
     S* s = alloca S
-    int* a = alloca int
+    int32* a = alloca int32
     __closure2* b = alloca __closure2
-    void _0 = call _EN4main13capturesParamE3int(int 100)
-    void _1 = call _EN4main1S4initE3int(S* s, int 5)
-    int _2 = call _EN4main1S3getE3int(S* s, int 1)
-    store int 1 to a
-    __closure2 _3 = insertvalue __closure2 undefined, 0, _EN4main9__lambda2E3int
-    int a.load = load a
+    void _0 = call _EN4main13capturesParamE5int32(int32 100)
+    void _1 = call _EN4main1S4initE5int32(S* s, int32 5)
+    int32 _2 = call _EN4main1S3getE5int32(S* s, int32 1)
+    store int32 1 to a
+    __closure2 _3 = insertvalue __closure2 undefined, 0, _EN4main9__lambda2E5int32
+    int32 a.load = load a
     __closure2 _4 = insertvalue _3, 1, a.load
     store _4 to b
     __closure2 b.load = load b
-    int(int, int)* _5 = extractvalue b.load, 0
-    int _6 = extractvalue b.load, 1
-    int _7 = call _5(int _6, int 2)
-    return int 0
+    int32(int32, int32)* _5 = extractvalue b.load, 0
+    int32 _6 = extractvalue b.load, 1
+    int32 _7 = call _5(int32 _6, int32 2)
+    return int32 0
 }
 
-void _EN4main1S4initE3int(S* this, int d) {
-    int* d_0 = alloca int
+void _EN4main1S4initE5int32(S* this, int32 d) {
+    int32* d_0 = alloca int32
     store d to d_0
-    int* d_1 = getelementptr this, 0
-    int d.load = load d_0
+    int32* d_1 = getelementptr this, 0
+    int32 d.load = load d_0
     store d.load to d_1
     return void
 }
 
-int _EN4main1S3getE3int(S* this, int c) {
-    int* c_0 = alloca int
+int32 _EN4main1S3getE5int32(S* this, int32 c) {
+    int32* c_0 = alloca int32
     __closure1* b = alloca __closure1
     store c to c_0
-    __closure1 _0 = insertvalue __closure1 undefined, 0, _EN4main9__lambda1E3int
-    int c.load = load c_0
+    __closure1 _0 = insertvalue __closure1 undefined, 0, _EN4main9__lambda1E5int32
+    int32 c.load = load c_0
     __closure1 _1 = insertvalue _0, 1, c.load
     __closure1 _2 = insertvalue _1, 2, this
     store _2 to b
     __closure1 b.load = load b
-    int(int, S*, int)* _3 = extractvalue b.load, 0
-    int _4 = extractvalue b.load, 1
+    int32(int32, S*, int32)* _3 = extractvalue b.load, 0
+    int32 _4 = extractvalue b.load, 1
     S* _5 = extractvalue b.load, 2
-    int _6 = call _3(int _4, S* _5, int 1)
+    int32 _6 = call _3(int32 _4, S* _5, int32 1)
     return _6
 }
 
-int _EN4main9__lambda2E3int(int __capture_a, int c) {
-    int* __capture_a_0 = alloca int
-    int* c_0 = alloca int
+int32 _EN4main9__lambda2E5int32(int32 __capture_a, int32 c) {
+    int32* __capture_a_0 = alloca int32
+    int32* c_0 = alloca int32
     store __capture_a to __capture_a_0
     store c to c_0
-    int c.load = load c_0
-    int __capture_a.load = load __capture_a_0
+    int32 c.load = load c_0
+    int32 __capture_a.load = load __capture_a_0
     int64 _0 = cast c.load to int64
     int64 _1 = cast __capture_a.load to int64
     int64 _2 = _0 + _1
-    int _3 = cast _2 to int
+    int32 _3 = cast _2 to int32
     int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
@@ -135,17 +135,17 @@ overflow.success:
     return _3
 }
 
-int _EN4main9__lambda1E3int(int __capture_c, S* __capture_this, int x) {
-    int* __capture_c_0 = alloca int
-    int* x_0 = alloca int
+int32 _EN4main9__lambda1E5int32(int32 __capture_c, S* __capture_this, int32 x) {
+    int32* __capture_c_0 = alloca int32
+    int32* x_0 = alloca int32
     store __capture_c to __capture_c_0
     store x to x_0
-    int x.load = load x_0
-    int __capture_c.load = load __capture_c_0
+    int32 x.load = load x_0
+    int32 __capture_c.load = load __capture_c_0
     int64 _0 = cast x.load to int64
     int64 _1 = cast __capture_c.load to int64
     int64 _2 = _0 + _1
-    int _3 = cast _2 to int
+    int32 _3 = cast _2 to int32
     int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
@@ -158,12 +158,12 @@ overflow.fail:
     unreachable
 
 overflow.success:
-    int* d = getelementptr __capture_this, 0
-    int d.load = load d
+    int32* d = getelementptr __capture_this, 0
+    int32 d.load = load d
     int64 _8 = cast _3 to int64
     int64 _9 = cast d.load to int64
     int64 _10 = _8 + _9
-    int _11 = cast _10 to int
+    int32 _11 = cast _10 to int32
     int64 _12 = cast _11 to int64
     bool _13 = _10 != _12
     bool _14 = !_13

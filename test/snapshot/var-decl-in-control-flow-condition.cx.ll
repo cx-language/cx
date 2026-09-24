@@ -36,7 +36,7 @@ __implicit_unwrap.fail:                           ; preds = %loop.body
   unreachable
 
 __implicit_unwrap.success:                        ; preds = %loop.body
-  call void @_EN4main1jEP3int(ptr %c.load2), !dbg !10
+  call void @_EN4main1jEP5int32(ptr %c.load2), !dbg !10
   br label %loop.condition
 
 if.then:                                          ; preds = %loop.end
@@ -55,7 +55,7 @@ __implicit_unwrap.fail6:                          ; preds = %if.then
   unreachable
 
 __implicit_unwrap.success7:                       ; preds = %if.then
-  call void @_EN4main1jEP3int(ptr %c.load4), !dbg !11
+  call void @_EN4main1jEP5int32(ptr %c.load4), !dbg !11
   br label %if.end
 }
 
@@ -65,7 +65,7 @@ define ptr @_EN4main1hE() #0 !dbg !12 {
 
 declare void @_EN3std10assertFailEP4char(ptr) #0
 
-define void @_EN4main1jEP3int(ptr %i) #0 !dbg !13 {
+define void @_EN4main1jEP5int32(ptr %i) #0 !dbg !13 {
   %i1 = alloca ptr, align 8
   store ptr %i, ptr %i1, align 8
   ret void
@@ -103,7 +103,7 @@ __implicit_unwrap.fail:                           ; preds = %loop.body
   unreachable
 
 __implicit_unwrap.success:                        ; preds = %loop.body
-  call void @_EN4main1jEP3int(ptr %c1.load1), !dbg !18
+  call void @_EN4main1jEP5int32(ptr %c1.load1), !dbg !18
   br label %loop.condition
 
 if.then:                                          ; preds = %loop.end
@@ -122,7 +122,7 @@ __implicit_unwrap.fail4:                          ; preds = %if.then
   unreachable
 
 __implicit_unwrap.success5:                       ; preds = %if.then
-  call void @_EN4main1jEP3int(ptr %c2.load2), !dbg !19
+  call void @_EN4main1jEP5int32(ptr %c2.load2), !dbg !19
   br label %if.end
 
 loop.condition6:                                  ; preds = %__implicit_unwrap.success12, %if.end
@@ -149,7 +149,7 @@ __implicit_unwrap.fail11:                         ; preds = %loop.body7
   unreachable
 
 __implicit_unwrap.success12:                      ; preds = %loop.body7
-  call void @_EN4main1jEP3int(ptr %c3.load8), !dbg !22
+  call void @_EN4main1jEP5int32(ptr %c3.load8), !dbg !22
   br label %loop.condition6
 
 if.then13:                                        ; preds = %loop.end10
@@ -172,7 +172,7 @@ __implicit_unwrap.fail18:                         ; preds = %if.then13
   unreachable
 
 __implicit_unwrap.success19:                      ; preds = %if.then13
-  call void @_EN4main1jEP3int(ptr %c4.load14), !dbg !24
+  call void @_EN4main1jEP5int32(ptr %c4.load14), !dbg !24
   br label %if.end17
 
 if.then20:                                        ; preds = %if.end17
@@ -191,7 +191,7 @@ __implicit_unwrap.fail25:                         ; preds = %if.then20
   unreachable
 
 __implicit_unwrap.success26:                      ; preds = %if.then20
-  call void @_EN4main1jEP3int(ptr %c5.load21), !dbg !25
+  call void @_EN4main1jEP5int32(ptr %c5.load21), !dbg !25
   br label %if.end24
 }
 
@@ -213,7 +213,7 @@ attributes #0 = { "frame-pointer"="all" }
 !10 = !DILocation(line: 5, column: 9, scope: !4)
 !11 = !DILocation(line: 9, column: 9, scope: !4)
 !12 = distinct !DISubprogram(name: "h", linkageName: "_EN4main1hE", scope: !3, file: !3, line: 35, type: !5, scopeLine: 35, spFlags: DISPFlagDefinition, unit: !2)
-!13 = distinct !DISubprogram(name: "j", linkageName: "_EN4main1jEP3int", scope: !3, file: !3, line: 39, type: !5, scopeLine: 39, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "j", linkageName: "_EN4main1jEP5int32", scope: !3, file: !3, line: 39, type: !5, scopeLine: 39, spFlags: DISPFlagDefinition, unit: !2)
 !14 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
 !15 = !DILocation(line: 14, column: 20, scope: !14)
 !16 = !DILocation(line: 18, column: 17, scope: !14)

@@ -1,16 +1,16 @@
 
-int main() {
-    X<int>* x = alloca X<int>
-    void _0 = call _EN4main1XI3intE4initE(X<int>* x)
-    void _1 = call _EN4main1XI3intE6deinitE(X<int>* x)
-    return int 0
+int32 main() {
+    X<int32>* x = alloca X<int32>
+    void _0 = call _EN4main1XI5int32E4initE(X<int32>* x)
+    void _1 = call _EN4main1XI5int32E6deinitE(X<int32>* x)
+    return int32 0
 }
 
-void _EN4main1XI3intE6deinitE(X<int>* this) {
-    int* a = alloca int
-    Y<int>** y = getelementptr this, 0
-    Y<int>* y.load = load y
-    bool assert.condition = y.load == Y<int>* null
+void _EN4main1XI5int32E6deinitE(X<int32>* this) {
+    int32* a = alloca int32
+    Y<int32>** y = getelementptr this, 0
+    Y<int32>* y.load = load y
+    bool assert.condition = y.load == Y<int32>* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
@@ -19,14 +19,14 @@ assert.fail:
     unreachable
 
 assert.success:
-    int* a_0 = getelementptr y.load, 0
-    int a.load = load a_0
+    int32* a_0 = getelementptr y.load, 0
+    int32 a.load = load a_0
     store a.load to a
     return void
 }
 
-void _EN4main1XI3intE4initE(X<int>* this) {
-    Y<int>** y = getelementptr this, 0
-    store Y<int>* null to y
+void _EN4main1XI5int32E4initE(X<int32>* this) {
+    Y<int32>** y = getelementptr this, 0
+    store Y<int32>* null to y
     return void
 }

@@ -1,14 +1,14 @@
 
-int main() {
-    int** p = alloca int*
-    int** cp = alloca int*
+int32 main() {
+    int32** p = alloca int32*
+    int32** cp = alloca int32*
     void** v = alloca void*
     int8** b = alloca int8*
-    int* i = alloca int
-    int* p.load = load p
+    int32* i = alloca int32
+    int32* p.load = load p
     void* _0 = cast p.load to void*
     store _0 to v
-    int* p.load_0 = load p
+    int32* p.load_0 = load p
     void* _1 = cast p.load_0 to void*
     void _2 = call _EN4main3barEP4void(void* _1)
     void* v.load = load v
@@ -19,13 +19,13 @@ int main() {
     int8* b.load = load b
     void* _5 = cast b.load to void*
     store _5 to v
-    int* cp.load = load cp
+    int32* cp.load = load cp
     void* _6 = cast cp.load to void*
     void _7 = call _EN4main3bazEOP4void(void* _6)
-    store int 0 to i
+    store int32 0 to i
     void* _8 = cast i to void*
     void _9 = call _EN4main3bazEOP4void(void* _8)
-    return int 0
+    return int32 0
 }
 
 void _EN4main3barEP4void(void* p) {

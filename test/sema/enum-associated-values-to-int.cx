@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: enum-associated-values-to-int.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK-NOT: enum-associated-values-to-int32.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 enum E {
     A,
@@ -11,8 +11,8 @@ void main() {
     // Calling a unit case with empty parentheses constructs it.
     var unit = E.A();
     // Only tag-only enums convert to their tag type.
-    // CHECK: [[@LINE+1]]:15: error: cannot assign 'E' to 'int'
+    // CHECK: [[@LINE+1]]:15: error: cannot assign 'E' to 'int32'
     int x = E.B(x = 5);
 }
 
-// CHECK-NOT: enum-associated-values-to-int.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK-NOT: enum-associated-values-to-int32.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

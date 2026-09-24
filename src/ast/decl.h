@@ -400,7 +400,7 @@ struct EnumDecl : TypeDecl {
     bool hasAssociatedValues() const;
     EnumCase* getCaseByName(llvm::StringRef name);
     // TODO: Select tag type to be able to hold all enum values.
-    Type getTagType() const { return Type::getInt(); }
+    Type getTagType() const { return Type::getInt32(); }
     static bool classof(const Decl* d) { return d->kind == DeclKind::EnumDecl; }
 
     std::vector<EnumCase> cases;

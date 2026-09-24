@@ -236,6 +236,11 @@ void Typechecker::canonicalizeTypeAliases() {
         for (auto* staticConst : type.staticConsts) {
             resolveType(staticConst->type, std::min(staticConst->accessLevel, accessLevel));
         }
+        if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(&type)) {
+            for (auto& enumCase : enumDecl->cases) {
+                resolveType(enumCase.associatedType, std::min(enumCase.accessLevel, accessLevel));
+            }
+        }
         for (auto* method : type.methods) {
             if (auto* function = llvm::dyn_cast<FunctionDecl>(method)) {
                 resolveFunction(*function, std::min(method->accessLevel, accessLevel));
@@ -274,14 +279,9 @@ void Typechecker::canonicalizeTypeAliases() {
                 resolveTypeDecl(*typeTemplate.typeDecl, typeTemplate.accessLevel);
                 break;
             }
-            case DeclKind::EnumDecl: {
-                auto& enumDecl = *llvm::cast<EnumDecl>(decl);
-                resolveTypeDecl(enumDecl, decl->accessLevel);
-                for (auto& enumCase : enumDecl.cases) {
-                    resolveType(enumCase.associatedType, std::min(enumCase.accessLevel, decl->accessLevel));
-                }
+            case DeclKind::EnumDecl:
+                resolveTypeDecl(*llvm::cast<EnumDecl>(decl), decl->accessLevel);
                 break;
-            }
             case DeclKind::ImportDecl:
                 break;
             case DeclKind::ParamDecl:
@@ -578,7 +578,7 @@ void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, Acces
 // 'main' lowers directly to the C entry point, so only signatures the compiler
 // can materialize from argc/argv are accepted.
 static void checkMainSignature(const FunctionDecl& decl) {
-    if (!decl.getReturnType().isVoid() && !decl.getReturnType().isInt()) {
+    if (!decl.getReturnType().isVoid() && !decl.getReturnType().isInt32()) {
         ERROR(decl.getLocation(), "'main' must return 'void' or 'int'");
     }
 

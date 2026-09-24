@@ -9,20 +9,20 @@ struct Point: Copyable {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:15: error: cannot take address of rvalue of type 'int'
+    // CHECK: [[@LINE+1]]:15: error: cannot take address of rvalue of type 'int32'
     int* a = &foo();
-    // CHECK: [[@LINE+1]]:15: error: cannot take address of rvalue of type 'int'
+    // CHECK: [[@LINE+1]]:15: error: cannot take address of rvalue of type 'int32'
     int* b = &42;
-    // CHECK: [[@LINE+1]]:18: error: cannot take address of rvalue of type 'int'
+    // CHECK: [[@LINE+1]]:18: error: cannot take address of rvalue of type 'int32'
     int* c = &(1 + 2);
-    // CHECK: [[@LINE+1]]:29: error: cannot take address of rvalue of type 'int'
+    // CHECK: [[@LINE+1]]:29: error: cannot take address of rvalue of type 'int32'
     int* badArray = &([1, 2][0]);
 
     var i = 0;
     int* ok1 = &i;
     int* ok2 = &*ok1;
     int*? nullable = &i;
-    // CHECK: [[@LINE+1]]:33: error: cannot take address of rvalue of type 'int*'
+    // CHECK: [[@LINE+1]]:33: error: cannot take address of rvalue of type 'int32*'
     int** badUnwrap = &(nullable!);
 
     int[3] numbers = [1, 2, 3];

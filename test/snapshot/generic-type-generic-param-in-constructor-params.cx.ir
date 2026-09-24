@@ -1,20 +1,20 @@
 
-int main() {
-    int[3]* b = alloca int[3]
-    M<int>* _0 = alloca M<int>
-    int[3] _1 = insertvalue int[3] undefined, 0, int 1
-    int[3] _2 = insertvalue _1, 1, int 2
-    int[3] _3 = insertvalue _2, 2, int 3
+int32 main() {
+    int32[3]* b = alloca int32[3]
+    M<int32>* _0 = alloca M<int32>
+    int32[3] _1 = insertvalue int32[3] undefined, 0, int32 1
+    int32[3] _2 = insertvalue _1, 1, int32 2
+    int32[3] _3 = insertvalue _2, 2, int32 3
     store _3 to b
-    int* _4 = getelementptr b, 0
-    Slice<int> _5 = insertvalue Slice<int> undefined, 0, _4
-    Slice<int> _6 = insertvalue _5, 1, int 3
-    void _7 = call _EN4main1MI3intE4initE5SliceI3intE(M<int>* _0, Slice<int> _6)
-    return int 0
+    int32* _4 = getelementptr b, 0
+    Slice<int32> _5 = insertvalue Slice<int32> undefined, 0, _4
+    Slice<int32> _6 = insertvalue _5, 1, int32 3
+    void _7 = call _EN4main1MI5int32E4initE5SliceI5int32E(M<int32>* _0, Slice<int32> _6)
+    return int32 0
 }
 
-void _EN4main1MI3intE4initE5SliceI3intE(M<int>* this, Slice<int> a) {
-    Slice<int>* a_0 = alloca Slice<int>
+void _EN4main1MI5int32E4initE5SliceI5int32E(M<int32>* this, Slice<int32> a) {
+    Slice<int32>* a_0 = alloca Slice<int32>
     store a to a_0
     return void
 }

@@ -1,6 +1,6 @@
 
-int main() {
-    int* foo = alloca int
-    store int 35044 to foo
-    return int 0
+int32 main() {
+    int32* foo = alloca int32
+    store int32 35044 to foo
+    return int32 0
 }

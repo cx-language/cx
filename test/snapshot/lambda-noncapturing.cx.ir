@@ -1,32 +1,32 @@
 
-int main() {
-    void _0 = call _EN4main3fooI3intEEF3int3int_3int(int(int, int)* _EN4main9__lambda0E3int3int)
-    void _1 = call _EN4main3fooI3intEEF3int3int_3int(int(int, int)* _EN4main9__lambda1E3int3int)
-    void _2 = call _EN4main3fooI3intEEF3int3int_3int(int(int, int)* _EN4main9__lambda2E3int3int)
-    void _3 = call _EN4main3fooI3intEEF3int3int_3int(int(int, int)* _EN4main9__lambda3E3int3int)
-    void _4 = call _EN4main3fooI4voidEEF3int3int_4void(void(int, int)* _EN4main9__lambda4E3int3int)
-    return int 0
+int32 main() {
+    void _0 = call _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* _EN4main9__lambda0E5int325int32)
+    void _1 = call _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* _EN4main9__lambda1E5int325int32)
+    void _2 = call _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* _EN4main9__lambda2E5int325int32)
+    void _3 = call _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* _EN4main9__lambda3E5int325int32)
+    void _4 = call _EN4main3fooI4voidEEF5int325int32_4void(void(int32, int32)* _EN4main9__lambda4E5int325int32)
+    return int32 0
 }
 
-void _EN4main3fooI3intEEF3int3int_3int(int(int, int)* a) {
-    int(int, int)** a_0 = alloca int(int, int)*
+void _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* a) {
+    int32(int32, int32)** a_0 = alloca int32(int32, int32)*
     store a to a_0
-    int(int, int)* a.load = load a_0
-    int _0 = call a.load(int 1, int 2)
+    int32(int32, int32)* a.load = load a_0
+    int32 _0 = call a.load(int32 1, int32 2)
     return void
 }
 
-int _EN4main9__lambda0E3int3int(int a, int b) {
-    int* a_0 = alloca int
-    int* b_0 = alloca int
+int32 _EN4main9__lambda0E5int325int32(int32 a, int32 b) {
+    int32* a_0 = alloca int32
+    int32* b_0 = alloca int32
     store a to a_0
     store b to b_0
-    int a.load = load a_0
-    int b.load = load b_0
+    int32 a.load = load a_0
+    int32 b.load = load b_0
     int64 _0 = cast a.load to int64
     int64 _1 = cast b.load to int64
     int64 _2 = _0 + _1
-    int _3 = cast _2 to int
+    int32 _3 = cast _2 to int32
     int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
@@ -42,17 +42,17 @@ overflow.success:
     return _3
 }
 
-int _EN4main9__lambda1E3int3int(int a, int b) {
-    int* a_0 = alloca int
-    int* b_0 = alloca int
+int32 _EN4main9__lambda1E5int325int32(int32 a, int32 b) {
+    int32* a_0 = alloca int32
+    int32* b_0 = alloca int32
     store a to a_0
     store b to b_0
-    int a.load = load a_0
-    int b.load = load b_0
+    int32 a.load = load a_0
+    int32 b.load = load b_0
     int64 _0 = cast a.load to int64
     int64 _1 = cast b.load to int64
     int64 _2 = _0 + _1
-    int _3 = cast _2 to int
+    int32 _3 = cast _2 to int32
     int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
@@ -68,23 +68,23 @@ overflow.success:
     return _3
 }
 
-int _EN4main9__lambda2E3int3int(int a, int b) {
-    int* a_0 = alloca int
-    int* b_0 = alloca int
+int32 _EN4main9__lambda2E5int325int32(int32 a, int32 b) {
+    int32* a_0 = alloca int32
+    int32* b_0 = alloca int32
     store a to a_0
     store b to b_0
-    int a.load = load a_0
-    int b.load = load b_0
+    int32 a.load = load a_0
+    int32 b.load = load b_0
     bool _0 = a.load > b.load
     br _0, if.then, if.else
 
 if.then:
-    int a.load_0 = load a_0
-    int b.load_0 = load b_0
+    int32 a.load_0 = load a_0
+    int32 b.load_0 = load b_0
     int64 _1 = cast a.load_0 to int64
     int64 _2 = cast b.load_0 to int64
     int64 _3 = _1 + _2
-    int _4 = cast _3 to int
+    int32 _4 = cast _3 to int32
     int64 _5 = cast _4 to int64
     bool _6 = _3 != _5
     bool _7 = !_6
@@ -92,12 +92,12 @@ if.then:
     br overflow.condition, overflow.fail, overflow.success
 
 if.else:
-    int a.load_1 = load a_0
-    int b.load_1 = load b_0
+    int32 a.load_1 = load a_0
+    int32 b.load_1 = load b_0
     int64 _8 = cast a.load_1 to int64
     int64 _9 = cast b.load_1 to int64
     int64 _10 = _8 - _9
-    int _11 = cast _10 to int
+    int32 _11 = cast _10 to int32
     int64 _12 = cast _11 to int64
     bool _13 = _10 != _12
     bool _14 = !_13
@@ -124,18 +124,18 @@ overflow.success_0:
     return _11
 }
 
-int _EN4main9__lambda3E3int3int(int a, int b) {
-    int* a_0 = alloca int
-    int* b_0 = alloca int
-    int* x = alloca int
+int32 _EN4main9__lambda3E5int325int32(int32 a, int32 b) {
+    int32* a_0 = alloca int32
+    int32* b_0 = alloca int32
+    int32* x = alloca int32
     store a to a_0
     store b to b_0
-    int a.load = load a_0
-    int b.load = load b_0
+    int32 a.load = load a_0
+    int32 b.load = load b_0
     int64 _0 = cast a.load to int64
     int64 _1 = cast b.load to int64
     int64 _2 = _0 + _1
-    int _3 = cast _2 to int
+    int32 _3 = cast _2 to int32
     int64 _4 = cast _3 to int64
     bool _5 = _2 != _4
     bool _6 = !_5
@@ -149,25 +149,25 @@ overflow.fail:
 
 overflow.success:
     store _3 to x
-    int x.load = load x
+    int32 x.load = load x
     return x.load
 }
 
-void _EN4main3fooI4voidEEF3int3int_4void(void(int, int)* a) {
-    void(int, int)** a_0 = alloca void(int, int)*
+void _EN4main3fooI4voidEEF5int325int32_4void(void(int32, int32)* a) {
+    void(int32, int32)** a_0 = alloca void(int32, int32)*
     store a to a_0
-    void(int, int)* a.load = load a_0
-    void _0 = call a.load(int 1, int 2)
+    void(int32, int32)* a.load = load a_0
+    void _0 = call a.load(int32 1, int32 2)
     return void
 }
 
-void _EN4main9__lambda4E3int3int(int a, int b) {
-    int* a_0 = alloca int
-    int* b_0 = alloca int
+void _EN4main9__lambda4E5int325int32(int32 a, int32 b) {
+    int32* a_0 = alloca int32
+    int32* b_0 = alloca int32
     store a to a_0
     store b to b_0
-    int a.load = load a_0
-    int b.load = load b_0
+    int32 a.load = load a_0
+    int32 b.load = load b_0
     bool _0 = a.load == b.load
     br _0, if.then, if.else
 

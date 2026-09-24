@@ -20,7 +20,7 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
 
     if (decl.isMain() && !decl.isMethodDecl() && !decl.getParams().empty()) {
         // The OS passes argc/argv; the declared args array is materialized from them in emitFunctionBody.
-        params = {Parameter{ValueKind::Parameter, getIRType(Type::getInt()), "argc"},
+        params = {Parameter{ValueKind::Parameter, getIRType(Type::getInt32()), "argc"},
                   Parameter{ValueKind::Parameter, getIRType(BasicType::get("char", {}).getPointerTo().getPointerTo()), "argv"}};
     }
 
@@ -37,7 +37,7 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
                       Parameter{ValueKind::Parameter, getIRType(PointerType::get(decl.getTypeDecl()->getType(), PointerKind::Reference)), "this"});
     }
 
-    auto returnType = getIRType(decl.isMain() ? Type::getInt() : decl.getReturnType());
+    auto returnType = getIRType(decl.isMain() ? Type::getInt32() : decl.getReturnType());
 
     // Definitions are emitted once per program: a function referenced from several
     // modules reuses the first module's object, so later modules call it as an
@@ -128,7 +128,7 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
     if (insertBlock->body.empty() || !llvm::isa<ReturnInst>(insertBlock->body.back())) {
         if (decl.getReturnType().isVoid()) {
-            createReturn(decl.isMain() ? createConstantInt(Type::getInt(), 0) : nullptr);
+            createReturn(decl.isMain() ? createConstantInt(Type::getInt32(), 0) : nullptr);
         } else {
             createUnreachable();
         }
@@ -145,7 +145,7 @@ Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Locati
     Value* storage = createCall(mallocFunction, allocSize, nullptr);
     // malloc(0) may return null, but no storage is needed when there are no arguments.
     Value* hasStorage = createBinaryOp(Token::NotEqual, storage, createConstantNull(storage->getType()), nullptr);
-    Value* noArgs = createBinaryOp(Token::Equal, argc, createConstantInt(Type::getInt(), 0), nullptr);
+    Value* noArgs = createBinaryOp(Token::Equal, argc, createConstantInt(Type::getInt32(), 0), nullptr);
     emitAssert(createBinaryOp(Token::Or, hasStorage, noArgs, nullptr), nullptr, location, "Out of memory", "argv");
 
     Function* stringInit = nullptr;
@@ -159,8 +159,8 @@ Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Locati
     ASSERT(stringInit);
 
     Value* elements = createCast(storage, stringType.getPointerTo(), "argv.elements");
-    auto* indexAlloca = createEntryBlockAlloca(Type::getInt(), "argv_i");
-    createStore(createConstantInt(Type::getInt(), 0), indexAlloca);
+    auto* indexAlloca = createEntryBlockAlloca(Type::getInt32(), "argv_i");
+    createStore(createConstantInt(Type::getInt32(), 0), indexAlloca);
 
     auto* cond = new BasicBlock("argv.cond");
     auto* body = new BasicBlock("argv.body");
@@ -174,7 +174,7 @@ Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Locati
     setInsertPoint(body);
     Value* cString = createLoad(createGEP(argv, {index}));
     createCall(stringInit, {createGEP(elements, {index}), cString}, nullptr);
-    createStore(createBinaryOp(Token::Plus, index, createConstantInt(Type::getInt(), 1), nullptr), indexAlloca);
+    createStore(createBinaryOp(Token::Plus, index, createConstantInt(Type::getInt32(), 1), nullptr), indexAlloca);
     createBr(cond);
 
     setInsertPoint(end);

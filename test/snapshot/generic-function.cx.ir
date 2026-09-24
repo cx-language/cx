@@ -1,22 +1,22 @@
 
-int main() {
+int32 main() {
     string* b = alloca string
     string* __str = alloca string
-    int* five = alloca int
-    void _0 = call _EN4main3fooI3intEE3int(int 1)
+    int32* five = alloca int32
+    void _0 = call _EN4main3fooI5int32EE5int32(int32 1)
     void _1 = call _EN4main3fooI4boolEE4bool(bool false)
     void _2 = call _EN4main3fooI4boolEE4bool(bool true)
-    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "bar", int 3)
+    void _3 = call _EN3std6string4initEP4char5int32(string* __str, char* "bar", int32 3)
     string __str.load = load __str
     string _4 = call _EN4main3barI6stringEE6string(string __str.load)
     store _4 to b
-    int _5 = call _EN4main3quxI3intEE3int(int -5)
+    int32 _5 = call _EN4main3quxI5int32EE5int32(int32 -5)
     store _5 to five
-    return int 0
+    return int32 0
 }
 
-void _EN4main3fooI3intEE3int(int t) {
-    int* t_0 = alloca int
+void _EN4main3fooI5int32EE5int32(int32 t) {
+    int32* t_0 = alloca int32
     store t to t_0
     return void
 }
@@ -34,22 +34,22 @@ string _EN4main3barI6stringEE6string(string t) {
     return t.load
 }
 
-int _EN4main3quxI3intEE3int(int t) {
-    int* t_0 = alloca int
+int32 _EN4main3quxI5int32EE5int32(int32 t) {
+    int32* t_0 = alloca int32
     store t to t_0
-    int t.load = load t_0
-    bool _0 = t.load < int 0
+    int32 t.load = load t_0
+    bool _0 = t.load < int32 0
     br _0, if.then, if.else
 
 if.then:
-    int t.load_0 = load t_0
-    int _1 = -t.load_0
+    int32 t.load_0 = load t_0
+    int32 _1 = -t.load_0
     return _1
 
 if.else:
     br if.end
 
 if.end:
-    int t.load_1 = load t_0
+    int32 t.load_1 = load t_0
     return t.load_1
 }

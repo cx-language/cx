@@ -1,11 +1,11 @@
 
-int main() {
+int32 main() {
     Foo* f = alloca Foo
     Foo** rf = alloca Foo*
     store f to rf
     Foo* rf.load = load rf
     void _0 = call _EN4main3Foo3barE(Foo* rf.load)
-    return int 0
+    return int32 0
 }
 
 void _EN4main3Foo3barE(Foo* this) {

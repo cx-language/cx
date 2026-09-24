@@ -1,40 +1,40 @@
 
-int main() {
-    Optional<int>* a = alloca Optional<int>
-    Optional<int>* enum = alloca Optional<int>
-    Optional<int>* b = alloca Optional<int>
-    Optional<int>* enum_0 = alloca Optional<int>
-    Optional<int>* c = alloca Optional<int>
-    Optional<int>* enum_1 = alloca Optional<int>
-    Optional<int>* d = alloca Optional<int>
-    Optional<int>* enum_2 = alloca Optional<int>
-    int* tag = getelementptr enum, 0
-    store int 0 to tag
-    Optional<int> enum.load = load enum
+int32 main() {
+    Optional<int32>* a = alloca Optional<int32>
+    Optional<int32>* enum = alloca Optional<int32>
+    Optional<int32>* b = alloca Optional<int32>
+    Optional<int32>* enum_0 = alloca Optional<int32>
+    Optional<int32>* c = alloca Optional<int32>
+    Optional<int32>* enum_1 = alloca Optional<int32>
+    Optional<int32>* d = alloca Optional<int32>
+    Optional<int32>* enum_2 = alloca Optional<int32>
+    int32* tag = getelementptr enum, 0
+    store int32 0 to tag
+    Optional<int32> enum.load = load enum
     store enum.load to a
-    int* tag_0 = getelementptr enum_0, 0
-    store int 1 to tag_0
-    struct { int } _0 = insertvalue struct { int } undefined, 0, int 2
-    union { struct { int } }* associatedValue = getelementptr enum_0, 1
-    struct { int }* _1 = cast associatedValue to struct { int }*
+    int32* tag_0 = getelementptr enum_0, 0
+    store int32 1 to tag_0
+    struct { int32 } _0 = insertvalue struct { int32 } undefined, 0, int32 2
+    union { struct { int32 } }* associatedValue = getelementptr enum_0, 1
+    struct { int32 }* _1 = cast associatedValue to struct { int32 }*
     store _0 to _1
-    Optional<int> enum.load_0 = load enum_0
+    Optional<int32> enum.load_0 = load enum_0
     store enum.load_0 to b
-    int* tag_1 = getelementptr enum_1, 0
-    store int 1 to tag_1
-    struct { int } _2 = insertvalue struct { int } undefined, 0, int 3
-    union { struct { int } }* associatedValue_0 = getelementptr enum_1, 1
-    struct { int }* _3 = cast associatedValue_0 to struct { int }*
+    int32* tag_1 = getelementptr enum_1, 0
+    store int32 1 to tag_1
+    struct { int32 } _2 = insertvalue struct { int32 } undefined, 0, int32 3
+    union { struct { int32 } }* associatedValue_0 = getelementptr enum_1, 1
+    struct { int32 }* _3 = cast associatedValue_0 to struct { int32 }*
     store _2 to _3
-    Optional<int> enum.load_1 = load enum_1
+    Optional<int32> enum.load_1 = load enum_1
     store enum.load_1 to c
-    int* tag_2 = getelementptr enum_2, 0
-    store int 0 to tag_2
-    Optional<int> enum.load_2 = load enum_2
+    int32* tag_2 = getelementptr enum_2, 0
+    store int32 0 to tag_2
+    Optional<int32> enum.load_2 = load enum_2
     store enum.load_2 to d
-    Optional<int> d.load = load d
-    int _4 = extractvalue d.load, 0
-    bool _5 = _4 == int 1
+    Optional<int32> d.load = load d
+    int32 _4 = extractvalue d.load, 0
+    bool _5 = _4 == int32 1
     bool _6 = !_5
     br _6, if.then, if.else
 
@@ -45,9 +45,9 @@ if.else:
     br if.end
 
 if.end:
-    Optional<int> d.load_0 = load d
-    int _7 = extractvalue d.load_0, 0
-    bool _8 = _7 == int 1
+    Optional<int32> d.load_0 = load d
+    int32 _7 = extractvalue d.load_0, 0
+    bool _8 = _7 == int32 1
     br _8, if.then, if.else
 
 if.then_0:
@@ -57,9 +57,9 @@ if.else_0:
     br if.end_0
 
 if.end_0:
-    Optional<int> d.load_1 = load d
-    int _9 = extractvalue d.load_1, 0
-    bool _10 = _9 == int 1
+    Optional<int32> d.load_1 = load d
+    int32 _9 = extractvalue d.load_1, 0
+    bool _10 = _9 == int32 1
     bool _11 = !_10
     br _11, if.then, if.else
 
@@ -70,9 +70,9 @@ if.else_1:
     br if.end_1
 
 if.end_1:
-    Optional<int> d.load_2 = load d
-    int _12 = extractvalue d.load_2, 0
-    bool _13 = _12 == int 1
+    Optional<int32> d.load_2 = load d
+    int32 _12 = extractvalue d.load_2, 0
+    bool _13 = _12 == int32 1
     br _13, if.then, if.else
 
 if.then_2:
@@ -82,9 +82,9 @@ if.else_2:
     br if.end_2
 
 if.end_2:
-    Optional<int> d.load_3 = load d
-    int _14 = extractvalue d.load_3, 0
-    bool _15 = _14 == int 1
+    Optional<int32> d.load_3 = load d
+    int32 _14 = extractvalue d.load_3, 0
+    bool _15 = _14 == int32 1
     br _15, if.then, if.else
 
 if.then_3:
@@ -94,9 +94,9 @@ if.else_3:
     br if.end_3
 
 if.end_3:
-    Optional<int> d.load_4 = load d
-    int _16 = extractvalue d.load_4, 0
-    bool _17 = _16 == int 1
+    Optional<int32> d.load_4 = load d
+    int32 _16 = extractvalue d.load_4, 0
+    bool _17 = _16 == int32 1
     bool _18 = !_17
     br _18, if.then, if.else
 
@@ -107,63 +107,63 @@ if.else_4:
     br if.end_4
 
 if.end_4:
-    return int 0
+    return int32 0
 }
 
 void _EN4main1fE() {
-    Optional<int>* a = alloca Optional<int>
-    Optional<int>* enum = alloca Optional<int>
-    Optional<int>* b = alloca Optional<int>
-    Optional<int>* enum_0 = alloca Optional<int>
-    Optional<int>* c = alloca Optional<int>
-    Optional<int>* enum_1 = alloca Optional<int>
-    Optional<int>* d = alloca Optional<int>
-    Optional<int>* enum_2 = alloca Optional<int>
-    Optional<int>* enum_3 = alloca Optional<int>
-    int* x = alloca int
-    Optional<int>* enum_4 = alloca Optional<int>
-    Optional<int>* _0 = alloca Optional<int>
-    int* tag = getelementptr enum, 0
-    store int 0 to tag
-    Optional<int> enum.load = load enum
+    Optional<int32>* a = alloca Optional<int32>
+    Optional<int32>* enum = alloca Optional<int32>
+    Optional<int32>* b = alloca Optional<int32>
+    Optional<int32>* enum_0 = alloca Optional<int32>
+    Optional<int32>* c = alloca Optional<int32>
+    Optional<int32>* enum_1 = alloca Optional<int32>
+    Optional<int32>* d = alloca Optional<int32>
+    Optional<int32>* enum_2 = alloca Optional<int32>
+    Optional<int32>* enum_3 = alloca Optional<int32>
+    int32* x = alloca int32
+    Optional<int32>* enum_4 = alloca Optional<int32>
+    Optional<int32>* _0 = alloca Optional<int32>
+    int32* tag = getelementptr enum, 0
+    store int32 0 to tag
+    Optional<int32> enum.load = load enum
     store enum.load to a
-    int* tag_0 = getelementptr enum_0, 0
-    store int 1 to tag_0
-    struct { int } _1 = insertvalue struct { int } undefined, 0, int 2
-    union { struct { int } }* associatedValue = getelementptr enum_0, 1
-    struct { int }* _2 = cast associatedValue to struct { int }*
+    int32* tag_0 = getelementptr enum_0, 0
+    store int32 1 to tag_0
+    struct { int32 } _1 = insertvalue struct { int32 } undefined, 0, int32 2
+    union { struct { int32 } }* associatedValue = getelementptr enum_0, 1
+    struct { int32 }* _2 = cast associatedValue to struct { int32 }*
     store _1 to _2
-    Optional<int> enum.load_0 = load enum_0
+    Optional<int32> enum.load_0 = load enum_0
     store enum.load_0 to b
-    int* tag_1 = getelementptr enum_1, 0
-    store int 1 to tag_1
-    struct { int } _3 = insertvalue struct { int } undefined, 0, int 3
-    union { struct { int } }* associatedValue_0 = getelementptr enum_1, 1
-    struct { int }* _4 = cast associatedValue_0 to struct { int }*
+    int32* tag_1 = getelementptr enum_1, 0
+    store int32 1 to tag_1
+    struct { int32 } _3 = insertvalue struct { int32 } undefined, 0, int32 3
+    union { struct { int32 } }* associatedValue_0 = getelementptr enum_1, 1
+    struct { int32 }* _4 = cast associatedValue_0 to struct { int32 }*
     store _3 to _4
-    Optional<int> enum.load_1 = load enum_1
+    Optional<int32> enum.load_1 = load enum_1
     store enum.load_1 to c
-    int* tag_2 = getelementptr enum_2, 0
-    store int 0 to tag_2
-    Optional<int> enum.load_2 = load enum_2
+    int32* tag_2 = getelementptr enum_2, 0
+    store int32 0 to tag_2
+    Optional<int32> enum.load_2 = load enum_2
     store enum.load_2 to d
-    int* tag_3 = getelementptr enum_3, 0
-    store int 0 to tag_3
-    Optional<int> enum.load_3 = load enum_3
+    int32* tag_3 = getelementptr enum_3, 0
+    store int32 0 to tag_3
+    Optional<int32> enum.load_3 = load enum_3
     store enum.load_3 to c
-    Optional<int> c.load = load c
-    int _5 = extractvalue c.load, 0
-    bool _6 = _5 == int 1
+    Optional<int32> c.load = load c
+    int32 _5 = extractvalue c.load, 0
+    bool _6 = _5 == int32 1
     br _6, if.then, if.else
 
 if.then:
-    union { struct { int } }* _7 = getelementptr c, 1
-    int* _8 = cast _7 to int*
-    int .load = load _8
+    union { struct { int32 } }* _7 = getelementptr c, 1
+    int32* _8 = cast _7 to int32*
+    int32 .load = load _8
     int64 _9 = cast .load to int64
-    int64 _10 = cast int 1 to int64
+    int64 _10 = cast int32 1 to int64
     int64 _11 = _9 + _10
-    int _12 = cast _11 to int
+    int32 _12 = cast _11 to int32
     int64 _13 = cast _12 to int64
     bool _14 = _11 != _13
     bool _15 = !_14
@@ -174,9 +174,9 @@ if.else:
     br if.end
 
 if.end:
-    Optional<int> c.load_0 = load c
-    int _16 = extractvalue c.load_0, 0
-    bool _17 = _16 == int 1
+    Optional<int32> c.load_0 = load c
+    int32 _16 = extractvalue c.load_0, 0
+    bool _17 = _16 == int32 1
     br _17, if.then, if.else
 
 overflow.fail:
@@ -186,13 +186,13 @@ overflow.fail:
 
 overflow.success:
     store _12 to x
-    union { struct { int } }* _19 = getelementptr c, 1
-    int* _20 = cast _19 to int*
-    int .load_0 = load _20
-    int64 _21 = cast int 1 to int64
+    union { struct { int32 } }* _19 = getelementptr c, 1
+    int32* _20 = cast _19 to int32*
+    int32 .load_0 = load _20
+    int64 _21 = cast int32 1 to int64
     int64 _22 = cast .load_0 to int64
     int64 _23 = _21 + _22
-    int _24 = cast _23 to int
+    int32 _24 = cast _23 to int32
     int64 _25 = cast _24 to int64
     bool _26 = _23 != _25
     bool _27 = !_26
@@ -205,25 +205,25 @@ overflow.fail_0:
     unreachable
 
 overflow.success_0:
-    int* tag_4 = getelementptr enum_4, 0
-    store int 1 to tag_4
-    union { struct { int } }* _29 = getelementptr c, 1
-    int* _30 = cast _29 to int*
-    int .load_1 = load _30
-    int _31 = -.load_1
-    struct { int } _32 = insertvalue struct { int } undefined, 0, _31
-    union { struct { int } }* associatedValue_1 = getelementptr enum_4, 1
-    struct { int }* _33 = cast associatedValue_1 to struct { int }*
+    int32* tag_4 = getelementptr enum_4, 0
+    store int32 1 to tag_4
+    union { struct { int32 } }* _29 = getelementptr c, 1
+    int32* _30 = cast _29 to int32*
+    int32 .load_1 = load _30
+    int32 _31 = -.load_1
+    struct { int32 } _32 = insertvalue struct { int32 } undefined, 0, _31
+    union { struct { int32 } }* associatedValue_1 = getelementptr enum_4, 1
+    struct { int32 }* _33 = cast associatedValue_1 to struct { int32 }*
     store _32 to _33
-    Optional<int> enum.load_4 = load enum_4
+    Optional<int32> enum.load_4 = load enum_4
     store enum.load_4 to c
     br if.end
 
 if.then_0:
-    union { struct { int } }* _34 = getelementptr c, 1
-    int* _35 = cast _34 to int*
-    int .load_2 = load _35
-    int _36 = .load_2 + int 1
+    union { struct { int32 } }* _34 = getelementptr c, 1
+    int32* _35 = cast _34 to int32*
+    int32 .load_2 = load _35
+    int32 _36 = .load_2 + int32 1
     store _36 to _35
     br if.end_0
 
@@ -231,9 +231,9 @@ if.else_0:
     br if.end_0
 
 if.end_0:
-    Optional<int> c.load_1 = load c
-    int _37 = extractvalue c.load_1, 0
-    bool _38 = _37 == int 1
+    Optional<int32> c.load_1 = load c
+    int32 _37 = extractvalue c.load_1, 0
+    bool _38 = _37 == int32 1
     bool __implicit_unwrap.condition = _38 == bool false
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
@@ -244,20 +244,20 @@ __implicit_unwrap.fail:
 
 __implicit_unwrap.success:
     store c.load_1 to _0
-    union { struct { int } }* _40 = getelementptr _0, 1
-    int* _41 = cast _40 to int*
-    int .load_3 = load _41
-    void _42 = call _EN4main12takesNonNullE3int(int .load_3)
-    Optional<int> c.load_2 = load c
-    int _43 = extractvalue c.load_2, 0
-    bool _44 = _43 == int 1
+    union { struct { int32 } }* _40 = getelementptr _0, 1
+    int32* _41 = cast _40 to int32*
+    int32 .load_3 = load _41
+    void _42 = call _EN4main12takesNonNullE5int32(int32 .load_3)
+    Optional<int32> c.load_2 = load c
+    int32 _43 = extractvalue c.load_2, 0
+    bool _44 = _43 == int32 1
     br _44, if.then, if.else
 
 if.then_1:
-    union { struct { int } }* _45 = getelementptr c, 1
-    int* _46 = cast _45 to int*
-    int .load_4 = load _46
-    void _47 = call _EN4main12takesNonNullE3int(int .load_4)
+    union { struct { int32 } }* _45 = getelementptr c, 1
+    int32* _46 = cast _45 to int32*
+    int32 .load_4 = load _46
+    void _47 = call _EN4main12takesNonNullE5int32(int32 .load_4)
     br if.end_1
 
 if.else_1:
@@ -267,8 +267,8 @@ if.end_1:
     return void
 }
 
-void _EN4main12takesNonNullE3int(int i) {
-    int* i_0 = alloca int
+void _EN4main12takesNonNullE5int32(int32 i) {
+    int32* i_0 = alloca int32
     store i to i_0
     return void
 }

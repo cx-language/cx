@@ -1,22 +1,22 @@
 
-int main() {
+int32 main() {
     X* x = alloca X
-    void _0 = call _EN4main1X4initE3int3int(X* x, int 4, int 2)
-    return int 0
+    void _0 = call _EN4main1X4initE5int325int32(X* x, int32 4, int32 2)
+    return int32 0
 }
 
-void _EN4main1X4initE3int3int(X* this, int a, int b) {
-    int* a_0 = alloca int
-    int* b_0 = alloca int
+void _EN4main1X4initE5int325int32(X* this, int32 a, int32 b) {
+    int32* a_0 = alloca int32
+    int32* b_0 = alloca int32
     store a to a_0
     store b to b_0
-    int a.load = load a_0
-    void _0 = call _EN4main1X4initE3int(X* this, int a.load)
+    int32 a.load = load a_0
+    void _0 = call _EN4main1X4initE5int32(X* this, int32 a.load)
     return void
 }
 
-void _EN4main1X4initE3int(X* this, int a) {
-    int* a_0 = alloca int
+void _EN4main1X4initE5int32(X* this, int32 a) {
+    int32* a_0 = alloca int32
     store a to a_0
     void _0 = call _EN4main1X4initE(X* this)
     return void

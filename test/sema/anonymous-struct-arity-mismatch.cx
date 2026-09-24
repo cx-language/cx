@@ -2,7 +2,7 @@
 // CHECK-NOT: anonymous-struct-arity-mismatch.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 (int? a, int b) make() {
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type '(int a, int b, int c)', expected '(int? a, int b)'
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type '(int32 a, int32 b, int32 c)', expected '(int32? a, int32 b)'
     return (a = 1, b = 2, c = 3);
 }
 

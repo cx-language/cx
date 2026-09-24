@@ -3,12 +3,12 @@ define i32 @main() #0 !dbg !4 {
   %foo = alloca i64, align 8
   %1 = alloca i32, align 4
   store i32 0, ptr %1, align 4
-  %2 = call i64 @_EN3std3int4hashE(ptr %1), !dbg !7
+  %2 = call i64 @_EN3std5int324hashE(ptr %1), !dbg !7
   store i64 %2, ptr %foo, align 8
   ret i32 0
 }
 
-define i64 @_EN3std3int4hashE(ptr %this) #0 !dbg !8 {
+define i64 @_EN3std5int324hashE(ptr %this) #0 !dbg !8 {
   %this.load = load i32, ptr %this, align 4
   %1 = sext i32 %this.load to i64
   ret i64 %1
@@ -27,5 +27,5 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 4, column: 17, scope: !4)
-!8 = distinct !DISubprogram(name: "hash", linkageName: "_EN3std3int4hashE", scope: !9, file: !9, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "hash", linkageName: "_EN3std5int324hashE", scope: !9, file: !9, line: 98, type: !5, scopeLine: 98, spFlags: DISPFlagDefinition, unit: !2)
 !9 = !DIFile(filename: "integers.cx")

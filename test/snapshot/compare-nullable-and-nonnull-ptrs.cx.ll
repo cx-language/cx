@@ -1,5 +1,5 @@
 
-define void @_EN4main1fEP3intOP3int(ptr %foo, ptr %bar) #0 !dbg !4 {
+define void @_EN4main1fEP5int32OP5int32(ptr %foo, ptr %bar) #0 !dbg !4 {
   %foo1 = alloca ptr, align 8
   %bar2 = alloca ptr, align 8
   store ptr %foo, ptr %foo1, align 8
@@ -28,6 +28,6 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "compare-nullable-and-nonnull-ptrs.cx")
-!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fEP3intOP3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fEP5int32OP5int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}

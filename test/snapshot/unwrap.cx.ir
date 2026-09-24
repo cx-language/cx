@@ -1,7 +1,7 @@
 
 extern void* f()
 
-int main() {
+int32 main() {
     uint8** byte = alloca uint8*
     uint8[1]** ptr = alloca uint8[1]*
     void* _0 = call f()
@@ -29,7 +29,7 @@ assert.fail_0:
     unreachable
 
 assert.success_0:
-    uint8* _6 = getelementptr ptr.load, int 0, int 0
+    uint8* _6 = getelementptr ptr.load, int32 0, int32 0
     store uint8 1 to _6
-    return int 0
+    return int32 0
 }

@@ -1,21 +1,21 @@
 
-int main() {
-    int[3]* a = alloca int[3]
-    int** p = alloca int*
-    int* t = alloca int
-    int[3] _0 = insertvalue int[3] undefined, 0, int 1
-    int[3] _1 = insertvalue _0, 1, int 2
-    int[3] _2 = insertvalue _1, 2, int 3
+int32 main() {
+    int32[3]* a = alloca int32[3]
+    int32** p = alloca int32*
+    int32* t = alloca int32
+    int32[3] _0 = insertvalue int32[3] undefined, 0, int32 1
+    int32[3] _1 = insertvalue _0, 1, int32 2
+    int32[3] _2 = insertvalue _1, 2, int32 3
     store _2 to a
-    int* _3 = getelementptr a, int 0, int 0
+    int32* _3 = getelementptr a, int32 0, int32 0
     store _3 to p
-    int* _4 = cast a to int*
+    int32* _4 = cast a to int32*
     store _4 to p
-    int* _5 = cast a to int*
+    int32* _5 = cast a to int32*
     store _5 to p
-    int* p.load = load p
-    int* _6 = getelementptr p.load, int 1
-    int .load = load _6
+    int32* p.load = load p
+    int32* _6 = getelementptr p.load, int32 1
+    int32 .load = load _6
     store .load to t
-    return int 0
+    return int32 0
 }

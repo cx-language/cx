@@ -1,20 +1,20 @@
 // RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
 void f(int* p) {
-    // CHECK: [[@LINE+1]]:9: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'
+    // CHECK: [[@LINE+1]]:9: warning: type 'int32*' is always non-null; to declare it nullable, use 'int32*?'
     if (p) {}
-    // CHECK: [[@LINE+1]]:10: warning: type 'int*' cannot be null; to declare it nullable, use 'int*?'
+    // CHECK: [[@LINE+1]]:10: warning: type 'int32*' cannot be null; to declare it nullable, use 'int32*?'
     if (!p) {}
-    // CHECK: [[@LINE+1]]:12: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'
+    // CHECK: [[@LINE+1]]:12: warning: type 'int32*' is always non-null; to declare it nullable, use 'int32*?'
     while (p) {}
-    // CHECK: [[@LINE+1]]:13: warning: type 'int*' cannot be null; to declare it nullable, use 'int*?'
+    // CHECK: [[@LINE+1]]:13: warning: type 'int32*' cannot be null; to declare it nullable, use 'int32*?'
     while (!p) {}
-    // CHECK: [[@LINE+1]]:11: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'
+    // CHECK: [[@LINE+1]]:11: warning: type 'int32*' is always non-null; to declare it nullable, use 'int32*?'
     for (;p; (*p)++) {}
-    // CHECK: [[@LINE+1]]:12: warning: type 'int*' cannot be null; to declare it nullable, use 'int*?'
+    // CHECK: [[@LINE+1]]:12: warning: type 'int32*' cannot be null; to declare it nullable, use 'int32*?'
     for (;!p; (*p)++) {}
-    // CHECK: [[@LINE+1]]:9: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'
+    // CHECK: [[@LINE+1]]:9: warning: type 'int32*' is always non-null; to declare it nullable, use 'int32*?'
     _ = p ? 1 : 0
-    // CHECK: [[@LINE+1]]:10: warning: type 'int*' cannot be null; to declare it nullable, use 'int*?'
+    // CHECK: [[@LINE+1]]:10: warning: type 'int32*' cannot be null; to declare it nullable, use 'int32*?'
     _ = !p ? 1 : 0
 }

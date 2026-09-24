@@ -1,72 +1,72 @@
 
-%"Box<Box<int>>" = type { ptr }
-%"Box<int>" = type { ptr }
+%"Box<Box<int32>>" = type { ptr }
+%"Box<int32>" = type { ptr }
 
 @0 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:64\0A\00", align 1
 @1 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:64\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
-  %p = alloca %"Box<Box<int>>", align 8
-  %1 = alloca %"Box<int>", align 8
-  %q = alloca %"Box<int>", align 8
-  %r = alloca %"Box<int>", align 8
-  call void @_EN3std3BoxI3intE4initE3int(ptr %1, i32 42), !dbg !7
-  %.load = load %"Box<int>", ptr %1, align 8
-  call void @_EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(ptr %p, %"Box<int>" %.load), !dbg !8
-  call void @_EN3std3BoxI3intE4initE3int(ptr %q, i32 42), !dbg !9
-  call void @_EN3std3BoxI3intE4initE3int(ptr %r, i32 42), !dbg !10
-  %2 = call ptr @_EN3std3BoxI3intE3getE(ptr %q), !dbg !11
+  %p = alloca %"Box<Box<int32>>", align 8
+  %1 = alloca %"Box<int32>", align 8
+  %q = alloca %"Box<int32>", align 8
+  %r = alloca %"Box<int32>", align 8
+  call void @_EN3std3BoxI5int32E4initE5int32(ptr %1, i32 42), !dbg !7
+  %.load = load %"Box<int32>", ptr %1, align 8
+  call void @_EN3std3BoxI3BoxI5int32EE4initE3BoxI5int32E(ptr %p, %"Box<int32>" %.load), !dbg !8
+  call void @_EN3std3BoxI5int32E4initE5int32(ptr %q, i32 42), !dbg !9
+  call void @_EN3std3BoxI5int32E4initE5int32(ptr %r, i32 42), !dbg !10
+  %2 = call ptr @_EN3std3BoxI5int32E3getE(ptr %q), !dbg !11
   store i32 0, ptr %2, align 4
-  %3 = call ptr @_EN3std3BoxI3intE3getE(ptr %r), !dbg !12
-  call void @_EN3std3BoxI3intE6deinitE(ptr %q), !dbg !13
-  %r.load = load %"Box<int>", ptr %r, align 8
-  store %"Box<int>" %r.load, ptr %q, align 8
-  call void @_EN3std3BoxI3intE6deinitE(ptr %q), !dbg !13
-  call void @_EN3std3BoxI3BoxI3intEE6deinitE(ptr %p), !dbg !13
+  %3 = call ptr @_EN3std3BoxI5int32E3getE(ptr %r), !dbg !12
+  call void @_EN3std3BoxI5int32E6deinitE(ptr %q), !dbg !13
+  %r.load = load %"Box<int32>", ptr %r, align 8
+  store %"Box<int32>" %r.load, ptr %q, align 8
+  call void @_EN3std3BoxI5int32E6deinitE(ptr %q), !dbg !13
+  call void @_EN3std3BoxI3BoxI5int32EE6deinitE(ptr %p), !dbg !13
   ret i32 0
 }
 
-define void @_EN3std3BoxI3intE4initE3int(ptr %this, i32 %value) #0 !dbg !14 {
+define void @_EN3std3BoxI5int32E4initE5int32(ptr %this, i32 %value) #0 !dbg !14 {
   %value1 = alloca i32, align 4
   store i32 %value, ptr %value1, align 4
-  %pointer = getelementptr inbounds %"Box<int>", ptr %this, i32 0, i32 0
+  %pointer = getelementptr inbounds %"Box<int32>", ptr %this, i32 0, i32 0
   %value.load = load i32, ptr %value1, align 4
-  %1 = call ptr @_EN3std8allocateI3intEE3int(i32 %value.load), !dbg !16
+  %1 = call ptr @_EN3std8allocateI5int32EE5int32(i32 %value.load), !dbg !16
   store ptr %1, ptr %pointer, align 8
   ret void
 }
 
-define void @_EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(ptr %this, %"Box<int>" %value) #0 !dbg !17 {
-  %value1 = alloca %"Box<int>", align 8
-  store %"Box<int>" %value, ptr %value1, align 8
-  %pointer = getelementptr inbounds %"Box<Box<int>>", ptr %this, i32 0, i32 0
-  %value.load = load %"Box<int>", ptr %value1, align 8
-  %1 = call ptr @_EN3std8allocateI3BoxI3intEEE3BoxI3intE(%"Box<int>" %value.load), !dbg !18
+define void @_EN3std3BoxI3BoxI5int32EE4initE3BoxI5int32E(ptr %this, %"Box<int32>" %value) #0 !dbg !17 {
+  %value1 = alloca %"Box<int32>", align 8
+  store %"Box<int32>" %value, ptr %value1, align 8
+  %pointer = getelementptr inbounds %"Box<Box<int32>>", ptr %this, i32 0, i32 0
+  %value.load = load %"Box<int32>", ptr %value1, align 8
+  %1 = call ptr @_EN3std8allocateI3BoxI5int32EEE3BoxI5int32E(%"Box<int32>" %value.load), !dbg !18
   store ptr %1, ptr %pointer, align 8
   ret void
 }
 
-define ptr @_EN3std3BoxI3intE3getE(ptr %this) #0 !dbg !19 {
-  %pointer = getelementptr inbounds %"Box<int>", ptr %this, i32 0, i32 0
+define ptr @_EN3std3BoxI5int32E3getE(ptr %this) #0 !dbg !19 {
+  %pointer = getelementptr inbounds %"Box<int32>", ptr %this, i32 0, i32 0
   %pointer.load = load ptr, ptr %pointer, align 8
   ret ptr %pointer.load
 }
 
-define void @_EN3std3BoxI3intE6deinitE(ptr %this) #0 !dbg !20 {
-  %pointer = getelementptr inbounds %"Box<int>", ptr %this, i32 0, i32 0
+define void @_EN3std3BoxI5int32E6deinitE(ptr %this) #0 !dbg !20 {
+  %pointer = getelementptr inbounds %"Box<int32>", ptr %this, i32 0, i32 0
   %pointer.load = load ptr, ptr %pointer, align 8
-  call void @_EN3std10deallocateIP3intEEP3int(ptr %pointer.load), !dbg !21
+  call void @_EN3std10deallocateIP5int32EEP5int32(ptr %pointer.load), !dbg !21
   ret void
 }
 
-define void @_EN3std3BoxI3BoxI3intEE6deinitE(ptr %this) #0 !dbg !22 {
-  %pointer = getelementptr inbounds %"Box<Box<int>>", ptr %this, i32 0, i32 0
+define void @_EN3std3BoxI3BoxI5int32EE6deinitE(ptr %this) #0 !dbg !22 {
+  %pointer = getelementptr inbounds %"Box<Box<int32>>", ptr %this, i32 0, i32 0
   %pointer.load = load ptr, ptr %pointer, align 8
-  call void @_EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(ptr %pointer.load), !dbg !23
+  call void @_EN3std10deallocateIP3BoxI5int32EEEP3BoxI5int32E(ptr %pointer.load), !dbg !23
   ret void
 }
 
-define void @_EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(ptr %allocation) #0 !dbg !24 {
+define void @_EN3std10deallocateIP3BoxI5int32EEEP3BoxI5int32E(ptr %allocation) #0 !dbg !24 {
   %allocation1 = alloca ptr, align 8
   store ptr %allocation, ptr %allocation1, align 8
   %allocation.load = load ptr, ptr %allocation1, align 8
@@ -74,11 +74,11 @@ define void @_EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(ptr %allocation) #0 !d
   ret void
 }
 
-define ptr @_EN3std8allocateI3BoxI3intEEE3BoxI3intE(%"Box<int>" %value) #0 !dbg !27 {
-  %value1 = alloca %"Box<int>", align 8
+define ptr @_EN3std8allocateI3BoxI5int32EEE3BoxI5int32E(%"Box<int32>" %value) #0 !dbg !27 {
+  %value1 = alloca %"Box<int32>", align 8
   %allocation = alloca ptr, align 8
-  store %"Box<int>" %value, ptr %value1, align 8
-  %1 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (%"Box<int>", ptr null, i32 1) to i64)), !dbg !28
+  store %"Box<int32>" %value, ptr %value1, align 8
+  %1 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (%"Box<int32>", ptr null, i32 1) to i64)), !dbg !28
   %assert.condition = icmp eq ptr %1, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
@@ -89,13 +89,13 @@ assert.fail:                                      ; preds = %0
 assert.success:                                   ; preds = %0
   store ptr %1, ptr %allocation, align 8
   %allocation.load = load ptr, ptr %allocation, align 8
-  %value.load = load %"Box<int>", ptr %value1, align 8
-  store %"Box<int>" %value.load, ptr %allocation.load, align 8
+  %value.load = load %"Box<int32>", ptr %value1, align 8
+  store %"Box<int32>" %value.load, ptr %allocation.load, align 8
   %allocation.load2 = load ptr, ptr %allocation, align 8
   ret ptr %allocation.load2
 }
 
-define ptr @_EN3std8allocateI3intEE3int(i32 %value) #0 !dbg !30 {
+define ptr @_EN3std8allocateI5int32EE5int32(i32 %value) #0 !dbg !30 {
   %value1 = alloca i32, align 4
   %allocation = alloca ptr, align 8
   store i32 %value, ptr %value1, align 4
@@ -116,7 +116,7 @@ assert.success:                                   ; preds = %0
   ret ptr %allocation.load2
 }
 
-define void @_EN3std10deallocateIP3intEEP3int(ptr %allocation) #0 !dbg !33 {
+define void @_EN3std10deallocateIP5int32EEP5int32(ptr %allocation) #0 !dbg !33 {
   %allocation1 = alloca ptr, align 8
   store ptr %allocation, ptr %allocation1, align 8
   %allocation.load = load ptr, ptr %allocation1, align 8
@@ -149,24 +149,24 @@ attributes #0 = { "frame-pointer"="all" }
 !11 = !DILocation(line: 7, column: 8, scope: !4)
 !12 = !DILocation(line: 8, column: 7, scope: !4)
 !13 = !DILocation(line: 3, column: 6, scope: !4)
-!14 = distinct !DISubprogram(name: "init", linkageName: "_EN3std3BoxI3intE4initE3int", scope: !15, file: !15, line: 6, type: !5, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !2)
+!14 = distinct !DISubprogram(name: "init", linkageName: "_EN3std3BoxI5int32E4initE5int32", scope: !15, file: !15, line: 6, type: !5, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !2)
 !15 = !DIFile(filename: "Box.cx")
 !16 = !DILocation(line: 7, column: 24, scope: !14)
-!17 = distinct !DISubprogram(name: "init", linkageName: "_EN3std3BoxI3BoxI3intEE4initE3BoxI3intE", scope: !15, file: !15, line: 6, type: !5, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !2)
+!17 = distinct !DISubprogram(name: "init", linkageName: "_EN3std3BoxI3BoxI5int32EE4initE3BoxI5int32E", scope: !15, file: !15, line: 6, type: !5, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !2)
 !18 = !DILocation(line: 7, column: 24, scope: !17)
-!19 = distinct !DISubprogram(name: "get", linkageName: "_EN3std3BoxI3intE3getE", scope: !15, file: !15, line: 20, type: !5, scopeLine: 20, spFlags: DISPFlagDefinition, unit: !2)
-!20 = distinct !DISubprogram(name: "deinit", linkageName: "_EN3std3BoxI3intE6deinitE", scope: !15, file: !15, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
+!19 = distinct !DISubprogram(name: "get", linkageName: "_EN3std3BoxI5int32E3getE", scope: !15, file: !15, line: 20, type: !5, scopeLine: 20, spFlags: DISPFlagDefinition, unit: !2)
+!20 = distinct !DISubprogram(name: "deinit", linkageName: "_EN3std3BoxI5int32E6deinitE", scope: !15, file: !15, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
 !21 = !DILocation(line: 16, column: 9, scope: !20)
-!22 = distinct !DISubprogram(name: "deinit", linkageName: "_EN3std3BoxI3BoxI3intEE6deinitE", scope: !15, file: !15, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
+!22 = distinct !DISubprogram(name: "deinit", linkageName: "_EN3std3BoxI3BoxI5int32EE6deinitE", scope: !15, file: !15, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
 !23 = !DILocation(line: 16, column: 9, scope: !22)
-!24 = distinct !DISubprogram(name: "deallocate", linkageName: "_EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE", scope: !25, file: !25, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
+!24 = distinct !DISubprogram(name: "deallocate", linkageName: "_EN3std10deallocateIP3BoxI5int32EEEP3BoxI5int32E", scope: !25, file: !25, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
 !25 = !DIFile(filename: "allocate.cx")
 !26 = !DILocation(line: 53, column: 5, scope: !24)
-!27 = distinct !DISubprogram(name: "allocate", linkageName: "_EN3std8allocateI3BoxI3intEEE3BoxI3intE", scope: !25, file: !25, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
+!27 = distinct !DISubprogram(name: "allocate", linkageName: "_EN3std8allocateI3BoxI5int32EEE3BoxI5int32E", scope: !25, file: !25, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
 !28 = !DILocation(line: 9, column: 34, scope: !27)
 !29 = !DILocation(line: 8, column: 7, scope: !27)
-!30 = distinct !DISubprogram(name: "allocate", linkageName: "_EN3std8allocateI3intEE3int", scope: !25, file: !25, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
+!30 = distinct !DISubprogram(name: "allocate", linkageName: "_EN3std8allocateI5int32EE5int32", scope: !25, file: !25, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
 !31 = !DILocation(line: 9, column: 34, scope: !30)
 !32 = !DILocation(line: 8, column: 7, scope: !30)
-!33 = distinct !DISubprogram(name: "deallocate", linkageName: "_EN3std10deallocateIP3intEEP3int", scope: !25, file: !25, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
+!33 = distinct !DISubprogram(name: "deallocate", linkageName: "_EN3std10deallocateIP5int32EEP5int32", scope: !25, file: !25, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
 !34 = !DILocation(line: 53, column: 5, scope: !33)

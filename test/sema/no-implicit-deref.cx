@@ -11,17 +11,17 @@ int borrowPassthrough(int& r) {
 }
 
 int derefRequired(int* p) {
-    // CHECK: [[@LINE+1]]:13: error: cannot assign 'int*' to 'int' (use '*' to dereference explicitly)
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'int32*' to 'int32' (use '*' to dereference explicitly)
     int a = p;
-    // CHECK: [[@LINE+1]]:13: error: invalid argument #1 type 'int*' to 'takeInt', expected 'int' (use '*' to dereference explicitly)
+    // CHECK: [[@LINE+1]]:13: error: invalid argument #1 type 'int32*' to 'takeInt', expected 'int32' (use '*' to dereference explicitly)
     takeInt(p);
-    // CHECK: [[@LINE+1]]:7: error: invalid operands 'int' and 'int*' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:7: error: invalid operands 'int32' and 'int32*' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     a += p;
-    // CHECK: [[@LINE+1]]:15: error: invalid operands 'int' and 'int*' to '*'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:15: error: invalid operands 'int32' and 'int32*' to '*'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     int b = a * p;
-    // CHECK: [[@LINE+1]]:16: error: invalid operands 'int*' and 'int' to '<'; to compare the pointed-to value, dereference with '*'
+    // CHECK: [[@LINE+1]]:16: error: invalid operands 'int32*' and 'int32' to '<'; to compare the pointed-to value, dereference with '*'
     bool c = p < a;
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int*', expected 'int'
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int32*', expected 'int32'
     return p;
 }
 

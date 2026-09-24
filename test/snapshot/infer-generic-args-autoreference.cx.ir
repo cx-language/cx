@@ -1,13 +1,13 @@
 
-int main() {
-    int* i = alloca int
-    store int 42 to i
-    void _0 = call _EN4main1fI3intEER3int(int* i)
-    return int 0
+int32 main() {
+    int32* i = alloca int32
+    store int32 42 to i
+    void _0 = call _EN4main1fI5int32EER5int32(int32* i)
+    return int32 0
 }
 
-void _EN4main1fI3intEER3int(int* p) {
-    int** p_0 = alloca int*
+void _EN4main1fI5int32EER5int32(int32* p) {
+    int32** p_0 = alloca int32*
     store p to p_0
     return void
 }

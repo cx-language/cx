@@ -22,7 +22,7 @@ define void @_EN4main1iE() #0 !dbg !11 {
   ret void
 }
 
-define i32 @_EN4main1iE3int(i32 %x) #0 !dbg !13 {
+define i32 @_EN4main1iE5int32(i32 %x) #0 !dbg !13 {
   %x1 = alloca i32, align 4
   store i32 %x, ptr %x1, align 4
   %x.load = load i32, ptr %x1, align 4
@@ -59,5 +59,5 @@ attributes #0 = { "frame-pointer"="all" }
 !10 = distinct !DISubprogram(name: "h", linkageName: "_EN4main1hE", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)
 !11 = distinct !DISubprogram(name: "i", linkageName: "_EN4main1iE", scope: !3, file: !3, line: 14, type: !5, scopeLine: 14, spFlags: DISPFlagDefinition, unit: !2)
 !12 = !DILocation(line: 14, column: 12, scope: !11)
-!13 = distinct !DISubprogram(name: "i", linkageName: "_EN4main1iE3int", scope: !3, file: !3, line: 17, type: !5, scopeLine: 17, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "i", linkageName: "_EN4main1iE5int32", scope: !3, file: !3, line: 17, type: !5, scopeLine: 17, spFlags: DISPFlagDefinition, unit: !2)
 !14 = !DILocation(line: 20, column: 18, scope: !13)

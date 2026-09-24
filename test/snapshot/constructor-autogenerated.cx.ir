@@ -1,32 +1,32 @@
 
-int main() {
-    int* b = alloca int
+int32 main() {
+    int32* b = alloca int32
     X* x = alloca X
     X* y = alloca X
     Empty* e = alloca Empty
-    Generic<float>* g = alloca Generic<float>
+    Generic<float32>* g = alloca Generic<float32>
     Generic<Empty>* h = alloca Generic<Empty>
-    store int 2 to b
-    void _0 = call _EN4main1X4initE3intP3int(X* x, int 4, int* b)
-    void _1 = call _EN4main1X4initE3intP3int(X* y, int 4, int* b)
+    store int32 2 to b
+    void _0 = call _EN4main1X4initE5int32P5int32(X* x, int32 4, int32* b)
+    void _1 = call _EN4main1X4initE5int32P5int32(X* y, int32 4, int32* b)
     void _2 = call _EN4main5Empty4initE(Empty* e)
-    void _3 = call _EN4main7GenericI5floatE4initE5float(Generic<float>* g, float 4.5)
+    void _3 = call _EN4main7GenericI7float32E4initE7float32(Generic<float32>* g, float32 4.5)
     Empty e.load = load e
     void _4 = call _EN4main7GenericI5EmptyE4initE5Empty(Generic<Empty>* h, Empty e.load)
     void _5 = call _EN4main7GenericI5EmptyE6deinitE(Generic<Empty>* h)
-    return int 0
+    return int32 0
 }
 
-void _EN4main1X4initE3intP3int(X* this, int a, int* b) {
-    int* a_0 = alloca int
-    int** b_0 = alloca int*
+void _EN4main1X4initE5int32P5int32(X* this, int32 a, int32* b) {
+    int32* a_0 = alloca int32
+    int32** b_0 = alloca int32*
     store a to a_0
     store b to b_0
-    int* a_1 = getelementptr this, 0
-    int a.load = load a_0
+    int32* a_1 = getelementptr this, 0
+    int32 a.load = load a_0
     store a.load to a_1
-    int** b_1 = getelementptr this, 1
-    int* b.load = load b_0
+    int32** b_1 = getelementptr this, 1
+    int32* b.load = load b_0
     store b.load to b_1
     return void
 }
@@ -39,11 +39,11 @@ void _EN4main5Empty4initE(Empty* this) {
     return void
 }
 
-void _EN4main7GenericI5floatE4initE5float(Generic<float>* this, float i) {
-    float* i_0 = alloca float
+void _EN4main7GenericI7float32E4initE7float32(Generic<float32>* this, float32 i) {
+    float32* i_0 = alloca float32
     store i to i_0
-    float* i_1 = getelementptr this, 0
-    float i.load = load i_0
+    float32* i_1 = getelementptr this, 0
+    float32 i.load = load i_0
     store i.load to i_1
     return void
 }

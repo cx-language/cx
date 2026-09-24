@@ -22,17 +22,17 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr no
 define void @_EN4main9makeOuterE(ptr sret(%Outer) align 4 %sret.arg) #0 !dbg !7 {
   %1 = alloca %Outer, align 8
   %2 = alloca %Big, align 8
-  call void @_EN4main3Big4initE3int3int3int3int3int(ptr %2, i32 1, i32 2, i32 3, i32 4, i32 5), !dbg !8
+  call void @_EN4main3Big4initE5int325int325int325int325int32(ptr %2, i32 1, i32 2, i32 3, i32 4, i32 5), !dbg !8
   %.load = alloca %Big, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 4 %.load, ptr align 4 %2, i64 20, i1 false)
-  call void @_EN4main5Outer4initE3Big3int(ptr %1, ptr byval(%Big) align 4 %.load, i32 7), !dbg !9
+  call void @_EN4main5Outer4initE3Big5int32(ptr %1, ptr byval(%Big) align 4 %.load, i32 7), !dbg !9
   %.load1 = alloca %Outer, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 4 %.load1, ptr align 4 %1, i64 24, i1 false)
   call void @llvm.memcpy.p0.p0.i64(ptr align 4 %sret.arg, ptr align 4 %.load1, i64 24, i1 false)
   ret void
 }
 
-define void @_EN4main3Big4initE3int3int3int3int3int(ptr %this, i32 %a, i32 %b, i32 %c, i32 %d, i32 %e) #0 !dbg !10 {
+define void @_EN4main3Big4initE5int325int325int325int325int32(ptr %this, i32 %a, i32 %b, i32 %c, i32 %d, i32 %e) #0 !dbg !10 {
   %a1 = alloca i32, align 4
   %b2 = alloca i32, align 4
   %c3 = alloca i32, align 4
@@ -61,7 +61,7 @@ define void @_EN4main3Big4initE3int3int3int3int3int(ptr %this, i32 %a, i32 %b, i
   ret void
 }
 
-define void @_EN4main5Outer4initE3Big3int(ptr %this, ptr byval(%Big) align 4 %item, i32 %tag) #0 !dbg !11 {
+define void @_EN4main5Outer4initE3Big5int32(ptr %this, ptr byval(%Big) align 4 %item, i32 %tag) #0 !dbg !11 {
   %item1 = alloca %Big, align 8
   %tag2 = alloca i32, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 4 %item1, ptr align 4 %item, i64 20, i1 false)
@@ -92,7 +92,7 @@ define i32 @main() #0 !dbg !13 {
   %d = alloca %Big, align 8
   %w = alloca %Wide, align 16
   %v = alloca %Wide, align 16
-  call void @_EN4main3Big4initE3int3int3int3int3int(ptr %b, i32 1, i32 2, i32 3, i32 4, i32 5), !dbg !14
+  call void @_EN4main3Big4initE5int325int325int325int325int32(ptr %b, i32 1, i32 2, i32 3, i32 4, i32 5), !dbg !14
   %b.load = alloca %Big, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 4 %b.load, ptr align 4 %b, i64 20, i1 false)
   %sret.alloca = alloca %Big, align 8, !dbg !15
@@ -217,8 +217,8 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !7 = distinct !DISubprogram(name: "makeOuter", linkageName: "_EN4main9makeOuterE", scope: !3, file: !3, line: 25, type: !5, scopeLine: 25, spFlags: DISPFlagDefinition, unit: !2)
 !8 = !DILocation(line: 26, column: 18, scope: !7)
 !9 = !DILocation(line: 26, column: 12, scope: !7)
-!10 = distinct !DISubprogram(name: "init", linkageName: "_EN4main3Big4initE3int3int3int3int3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
-!11 = distinct !DISubprogram(name: "init", linkageName: "_EN4main5Outer4initE3Big3int", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "init", linkageName: "_EN4main3Big4initE5int325int325int325int325int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!11 = distinct !DISubprogram(name: "init", linkageName: "_EN4main5Outer4initE3Big5int32", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)
 !12 = distinct !DISubprogram(name: "identWide", linkageName: "_EN4main9identWideE4Wide", scope: !3, file: !3, line: 29, type: !5, scopeLine: 29, spFlags: DISPFlagDefinition, unit: !2)
 !13 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 33, type: !5, scopeLine: 33, spFlags: DISPFlagDefinition, unit: !2)
 !14 = !DILocation(line: 34, column: 13, scope: !13)

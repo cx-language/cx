@@ -1,5 +1,5 @@
 
-int main() {
+int32 main() {
     S* s = alloca S
     uint8* a = getelementptr s, 0
     store uint8 171 to a
@@ -17,5 +17,5 @@ assert.fail:
     unreachable
 
 assert.success:
-    return int 0
+    return int32 0
 }

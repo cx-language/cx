@@ -1,9 +1,9 @@
 
-int main() {
+int32 main() {
     br bool false, if.then, if.else
 
 if.then:
-    return int 1
+    return int32 1
 
 if.else:
     br if.end
@@ -12,11 +12,11 @@ if.end:
     br bool true, if.then, if.else
 
 if.then_0:
-    return int 2
+    return int32 2
 
 if.else_0:
     br if.end_0
 
 if.end_0:
-    return int 3
+    return int32 3
 }

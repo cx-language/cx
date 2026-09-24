@@ -3,7 +3,7 @@ define void @_EN4main3barE() #0 !dbg !4 {
   ret void
 }
 
-define void @_EN4main3fooE3int(i32 %bar) #0 !dbg !7 {
+define void @_EN4main3fooE5int32(i32 %bar) #0 !dbg !7 {
   %bar1 = alloca i32, align 4
   store i32 %bar, ptr %bar1, align 4
   call void @_EN4main3barE(), !dbg !8
@@ -22,5 +22,5 @@ attributes #0 = { "frame-pointer"="all" }
 !4 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main3barE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
-!7 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooE3int", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
+!7 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooE5int32", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
 !8 = !DILocation(line: 5, column: 5, scope: !7)

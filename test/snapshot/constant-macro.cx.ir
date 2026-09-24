@@ -1,10 +1,10 @@
 
-void _EN4main3fooE3int(int i) {
-    int* i_0 = alloca int
+void _EN4main3fooE5int32(int32 i) {
+    int32* i_0 = alloca int32
     store i to i_0
-    int i.load = load i_0
+    int32 i.load = load i_0
     switch i.load {
-        int 42 -> switch.case.0
+        int32 42 -> switch.case.0
     }
 
 switch.case.0:

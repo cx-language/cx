@@ -6,7 +6,7 @@ int compute() { return 42; }
 void doWork() {}
 
 void main() {
-    // CHECK: [[@LINE+1]]:5: warning: unused result of type 'int'
+    // CHECK: [[@LINE+1]]:5: warning: unused result of type 'int32'
     compute();
     doWork();
     int x = 1;
@@ -15,10 +15,10 @@ void main() {
     x += 2;
     int[2] a = [1, 2];
     a[0] = 9;
-    // CHECK: [[@LINE+1]]:7: warning: unused result of type 'int'
+    // CHECK: [[@LINE+1]]:7: warning: unused result of type 'int32'
     x + 1;
     _ = compute();
-    // CHECK: [[@LINE+1]]:11: warning: unused result of type 'int'
+    // CHECK: [[@LINE+1]]:11: warning: unused result of type 'int32'
     defer compute();
     todo();
     println(x);

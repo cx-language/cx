@@ -1,4 +1,4 @@
 
-int main() {
-    return int 0
+int32 main() {
+    return int32 0
 }

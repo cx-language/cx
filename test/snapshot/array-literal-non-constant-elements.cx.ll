@@ -4,7 +4,7 @@
 @2 = private unnamed_addr constant [65 x i8] c"integer overflow at array-literal-non-constant-elements.cx:8:18\0A\00", align 1
 @3 = private unnamed_addr constant [65 x i8] c"integer overflow at array-literal-non-constant-elements.cx:8:29\0A\00", align 1
 
-define [2 x i32] @_EN4main1fE3int3int(i32 %foo, i32 %bar) #0 !dbg !4 {
+define [2 x i32] @_EN4main1fE5int325int32(i32 %foo, i32 %bar) #0 !dbg !4 {
   %foo1 = alloca i32, align 4
   %bar2 = alloca i32, align 4
   store i32 %foo, ptr %foo1, align 4
@@ -50,7 +50,7 @@ overflow.success7:                                ; preds = %overflow.success
 
 declare void @_EN3std10assertFailEP4char(ptr) #0
 
-define [2 x i32] @_EN4main1gE3int3int(i32 %foo, i32 %bar) #0 !dbg !8 {
+define [2 x i32] @_EN4main1gE5int325int32(i32 %foo, i32 %bar) #0 !dbg !8 {
   %foo1 = alloca i32, align 4
   %bar2 = alloca i32, align 4
   %c = alloca [2 x i32], align 4
@@ -106,9 +106,9 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "array-literal-non-constant-elements.cx")
-!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE3int3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE5int325int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 3, column: 8, scope: !4)
-!8 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE3int3int", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE5int325int32", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
 !9 = !DILocation(line: 7, column: 8, scope: !8)

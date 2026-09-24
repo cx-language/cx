@@ -1,6 +1,6 @@
-global i = int 42
+global i = int32 42
 
-int* _EN4main3fooE() {
+int32* _EN4main3fooE() {
     bool** a = alloca bool*
     A* _0 = alloca A
     char** b = alloca char*
@@ -18,7 +18,7 @@ int* _EN4main3fooE() {
 
 bool* _EN4main1A2ffE(A* this) {
     bool[2]* b = getelementptr this, 0
-    bool* _0 = getelementptr b, int 0, int 1
+    bool* _0 = getelementptr b, int32 0, int32 1
     return _0
 }
 

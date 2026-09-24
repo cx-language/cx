@@ -1,19 +1,19 @@
 
-int main() {
+int32 main() {
     Foo* f = alloca Foo
-    void _0 = call _EN4main3Foo4initE3int(Foo* f, int 5)
+    void _0 = call _EN4main3Foo4initE5int32(Foo* f, int32 5)
     void _1 = call _EN4main3Foo6deinitE(Foo* f)
-    return int 0
+    return int32 0
 }
 
 void _EN4main3Foo6deinitE(Foo* this) {
     return void
 }
 
-void _EN4main3Foo4initE3int(Foo* this, int i) {
-    int* i_0 = alloca int
+void _EN4main3Foo4initE5int32(Foo* this, int32 i) {
+    int32* i_0 = alloca int32
     store i to i_0
-    float* f = getelementptr this, 0
-    store float 0 to f
+    float32* f = getelementptr this, 0
+    store float32 0 to f
     return void
 }

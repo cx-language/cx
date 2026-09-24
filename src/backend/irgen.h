@@ -157,7 +157,7 @@ struct IRGenerator {
         if (type->isBasicType()) {
             auto name = llvm::cast<IRBasicType>(type)->name;
             const llvm::fltSemantics* semantics = nullptr;
-            if (name == "float" || name == "float32") {
+            if (name == "float32") {
                 semantics = &llvm::APFloat::IEEEsingle();
             } else if (name == "float80") {
                 semantics = &llvm::APFloat::x87DoubleExtended();

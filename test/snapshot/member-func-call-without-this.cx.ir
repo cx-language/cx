@@ -1,13 +1,13 @@
 
-int main() {
+int32 main() {
     S* s = alloca S
-    Foo<int>* t = alloca Foo<int>
+    Foo<int32>* t = alloca Foo<int32>
     void _0 = call _EN4main1S4initE(S* s)
     void _1 = call _EN4main1S3fooE(S* s)
-    void _2 = call _EN4main3FooI3intE4initE(Foo<int>* t)
-    void _3 = call _EN4main3FooI3intE3bazE(Foo<int>* t)
-    void _4 = call _EN4main3FooI3intE6deinitE(Foo<int>* t)
-    return int 0
+    void _2 = call _EN4main3FooI5int32E4initE(Foo<int32>* t)
+    void _3 = call _EN4main3FooI5int32E3bazE(Foo<int32>* t)
+    void _4 = call _EN4main3FooI5int32E6deinitE(Foo<int32>* t)
+    return int32 0
 }
 
 void _EN4main1S4initE(S* this) {
@@ -19,18 +19,18 @@ void _EN4main1S3fooE(S* this) {
     return void
 }
 
-void _EN4main3FooI3intE6deinitE(Foo<int>* this) {
-    void _0 = call _EN4main3FooI3intE3bazE(Foo<int>* this)
+void _EN4main3FooI5int32E6deinitE(Foo<int32>* this) {
+    void _0 = call _EN4main3FooI5int32E3bazE(Foo<int32>* this)
     return void
 }
 
-void _EN4main3FooI3intE4initE(Foo<int>* this) {
-    void _0 = call _EN4main3FooI3intE3bazE(Foo<int>* this)
+void _EN4main3FooI5int32E4initE(Foo<int32>* this) {
+    void _0 = call _EN4main3FooI5int32E3bazE(Foo<int32>* this)
     return void
 }
 
-void _EN4main3FooI3intE3bazE(Foo<int>* this) {
-    void _0 = call _EN4main3FooI3intE3quxE(Foo<int>* this)
+void _EN4main3FooI5int32E3bazE(Foo<int32>* this) {
+    void _0 = call _EN4main3FooI5int32E3quxE(Foo<int32>* this)
     return void
 }
 
@@ -38,6 +38,6 @@ void _EN4main1S3barE(S* this) {
     return void
 }
 
-void _EN4main3FooI3intE3quxE(Foo<int>* this) {
+void _EN4main3FooI5int32E3quxE(Foo<int32>* this) {
     return void
 }

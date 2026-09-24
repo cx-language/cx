@@ -1,22 +1,22 @@
 
-void _EN4main3fooE3int(int i) {
-    int* i_0 = alloca int
+void _EN4main3fooE5int32(int32 i) {
+    int32* i_0 = alloca int32
     store i to i_0
-    int i.load = load i_0
+    int32 i.load = load i_0
     switch i.load {
-        int 0 -> switch.case.0
-        int -1 -> switch.case.1
-        int 42 -> switch.case.2
+        int32 0 -> switch.case.0
+        int32 -1 -> switch.case.1
+        int32 42 -> switch.case.2
     }
 
 switch.case.0:
     br switch.end
 
 switch.case.1:
-    int i.load_0 = load i_0
-    void _0 = call _EN4main3fooE3int(int i.load_0)
-    int i.load_1 = load i_0
-    void _1 = call _EN4main3fooE3int(int i.load_1)
+    int32 i.load_0 = load i_0
+    void _0 = call _EN4main3fooE5int32(int32 i.load_0)
+    int32 i.load_1 = load i_0
+    void _1 = call _EN4main3fooE5int32(int32 i.load_1)
     br switch.end
 
 switch.case.2:
@@ -26,38 +26,38 @@ switch.default:
     br switch.end
 
 switch.end:
-    int i.load_2 = load i_0
+    int32 i.load_2 = load i_0
     switch i.load_2 {
-        int 0 -> switch.case.0
+        int32 0 -> switch.case.0
     }
 
 switch.case.0_0:
     br switch.end_0
 
 switch.default_0:
-    int i.load_3 = load i_0
-    void _2 = call _EN4main3fooE3int(int i.load_3)
+    int32 i.load_3 = load i_0
+    void _2 = call _EN4main3fooE5int32(int32 i.load_3)
     br switch.end_0
 
 switch.end_0:
     return void
 }
 
-int _EN4main1fEP1S(S* s) {
+int32 _EN4main1fEP1S(S* s) {
     S** s_0 = alloca S*
     store s to s_0
     S* s.load = load s_0
-    int* i = getelementptr s.load, 0
-    int i.load = load i
+    int32* i = getelementptr s.load, 0
+    int32 i.load = load i
     switch i.load {
-        int 0 -> switch.case.0
+        int32 0 -> switch.case.0
     }
 
 switch.case.0:
-    return int 0
+    return int32 0
 
 switch.default:
-    return int 1
+    return int32 1
 
 switch.end:
     unreachable

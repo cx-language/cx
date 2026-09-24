@@ -1,10 +1,10 @@
 
-int main() {
-    int _0 = call _EN4main3fooE()
+int32 main() {
+    int32 _0 = call _EN4main3fooE()
     return _0
 }
 
-int _EN4main3fooE() {
-    int _0 = call _EN4main3fooE()
-    return int 42
+int32 _EN4main3fooE() {
+    int32 _0 = call _EN4main3fooE()
+    return int32 42
 }

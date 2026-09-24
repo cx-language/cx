@@ -1,40 +1,40 @@
 
-int main() {
-    Opt<int>* a = alloca Opt<int>
-    Opt<int>* enum = alloca Opt<int>
-    Opt<int>* b = alloca Opt<int>
-    Opt<int>* enum_0 = alloca Opt<int>
-    Opt<int>* enum_1 = alloca Opt<int>
-    Opt<int>* enum_2 = alloca Opt<int>
-    int* tag = getelementptr enum, 0
-    store int 0 to tag
-    struct { int } _0 = insertvalue struct { int } undefined, 0, int 1
-    union { struct { int } }* associatedValue = getelementptr enum, 1
-    struct { int }* _1 = cast associatedValue to struct { int }*
+int32 main() {
+    Opt<int32>* a = alloca Opt<int32>
+    Opt<int32>* enum = alloca Opt<int32>
+    Opt<int32>* b = alloca Opt<int32>
+    Opt<int32>* enum_0 = alloca Opt<int32>
+    Opt<int32>* enum_1 = alloca Opt<int32>
+    Opt<int32>* enum_2 = alloca Opt<int32>
+    int32* tag = getelementptr enum, 0
+    store int32 0 to tag
+    struct { int32 } _0 = insertvalue struct { int32 } undefined, 0, int32 1
+    union { struct { int32 } }* associatedValue = getelementptr enum, 1
+    struct { int32 }* _1 = cast associatedValue to struct { int32 }*
     store _0 to _1
-    Opt<int> enum.load = load enum
+    Opt<int32> enum.load = load enum
     store enum.load to a
-    int* tag_0 = getelementptr enum_0, 0
-    store int 1 to tag_0
-    Opt<int> enum.load_0 = load enum_0
+    int32* tag_0 = getelementptr enum_0, 0
+    store int32 1 to tag_0
+    Opt<int32> enum.load_0 = load enum_0
     store enum.load_0 to b
-    int* a.tag = getelementptr a, 0
-    int a.tag.load = load a.tag
+    int32* a.tag = getelementptr a, 0
+    int32 a.tag.load = load a.tag
     switch a.tag.load {
-        int 0 -> switch.case.0
-        int 1 -> switch.case.1
+        int32 0 -> switch.case.0
+        int32 1 -> switch.case.1
     }
 
 switch.case.0:
-    union { struct { int } }* _2 = getelementptr a, 1
-    int* some = cast _2 to int*
-    int* tag_1 = getelementptr enum_1, 0
-    store int 0 to tag_1
-    int some.load = load some
+    union { struct { int32 } }* _2 = getelementptr a, 1
+    int32* some = cast _2 to int32*
+    int32* tag_1 = getelementptr enum_1, 0
+    store int32 0 to tag_1
+    int32 some.load = load some
     int64 _3 = cast some.load to int64
-    int64 _4 = cast int 1 to int64
+    int64 _4 = cast int32 1 to int64
     int64 _5 = _3 + _4
-    int _6 = cast _5 to int
+    int32 _6 = cast _5 to int32
     int64 _7 = cast _6 to int64
     bool _8 = _5 != _7
     bool _9 = !_8
@@ -42,9 +42,9 @@ switch.case.0:
     br overflow.condition, overflow.fail, overflow.success
 
 switch.case.1:
-    int* tag_2 = getelementptr enum_2, 0
-    store int 1 to tag_2
-    Opt<int> enum.load_1 = load enum_2
+    int32* tag_2 = getelementptr enum_2, 0
+    store int32 1 to tag_2
+    Opt<int32> enum.load_1 = load enum_2
     store enum.load_1 to b
     br switch.end
 
@@ -54,11 +54,11 @@ switch.default:
     unreachable
 
 switch.end:
-    int* b.tag = getelementptr b, 0
-    int b.tag.load = load b.tag
+    int32* b.tag = getelementptr b, 0
+    int32 b.tag.load = load b.tag
     switch b.tag.load {
-        int 0 -> switch.case.0
-        int 1 -> switch.case.1
+        int32 0 -> switch.case.0
+        int32 1 -> switch.case.1
     }
 
 overflow.fail:
@@ -67,22 +67,22 @@ overflow.fail:
     unreachable
 
 overflow.success:
-    struct { int } _12 = insertvalue struct { int } undefined, 0, _6
-    union { struct { int } }* associatedValue_0 = getelementptr enum_1, 1
-    struct { int }* _13 = cast associatedValue_0 to struct { int }*
+    struct { int32 } _12 = insertvalue struct { int32 } undefined, 0, _6
+    union { struct { int32 } }* associatedValue_0 = getelementptr enum_1, 1
+    struct { int32 }* _13 = cast associatedValue_0 to struct { int32 }*
     store _12 to _13
-    Opt<int> enum.load_2 = load enum_1
+    Opt<int32> enum.load_2 = load enum_1
     store enum.load_2 to b
     br switch.end
 
 switch.case.0_0:
-    union { struct { int } }* _14 = getelementptr b, 1
-    int* some_0 = cast _14 to int*
-    int some.load_0 = load some_0
+    union { struct { int32 } }* _14 = getelementptr b, 1
+    int32* some_0 = cast _14 to int32*
+    int32 some.load_0 = load some_0
     return some.load_0
 
 switch.case.1_0:
-    return int 0
+    return int32 0
 
 switch.default_0:
     void _15 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
@@ -90,5 +90,5 @@ switch.default_0:
     unreachable
 
 switch.end_0:
-    return int 0
+    return int32 0
 }

@@ -1,21 +1,21 @@
 
-int main() {
+int32 main() {
     Foo** f = alloca Foo*
-    int* a = alloca int
-    int** b = alloca int*
-    int** c = alloca int*
+    int32* a = alloca int32
+    int32** b = alloca int32*
+    int32** c = alloca int32*
     store Foo* null to f
     Foo* f.load = load f
-    int* i = getelementptr f.load, 0
+    int32* i = getelementptr f.load, 0
     Foo* f.load_0 = load f
-    int* i_0 = getelementptr f.load_0, 0
-    int i.load = load i_0
+    int32* i_0 = getelementptr f.load_0, 0
+    int32 i.load = load i_0
     store i.load to a
     Foo* f.load_1 = load f
-    int* i_1 = getelementptr f.load_1, 0
+    int32* i_1 = getelementptr f.load_1, 0
     store i_1 to b
     Foo* f.load_2 = load f
-    int* i_2 = getelementptr f.load_2, 0
+    int32* i_2 = getelementptr f.load_2, 0
     store i_2 to c
     Foo* f.load_3 = load f
     void _0 = call _EN4main3Foo3barE(Foo* f.load_3)
@@ -23,7 +23,7 @@ int main() {
     Foo* f.load_5 = load f
     Foo f.load.load = load f.load_5
     store f.load.load to f.load_4
-    return int 0
+    return int32 0
 }
 
 void _EN4main3Foo3barE(Foo* this) {

@@ -1,28 +1,28 @@
 
-int main() {
-    int* p = alloca int
-    RangeIterator<int>* __iterator = alloca RangeIterator<int>
-    Range<int>* _0 = alloca Range<int>
-    int* i = alloca int
-    store int 9 to p
-    void _1 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int 3)
-    RangeIterator<int> _2 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+int32 main() {
+    int32* p = alloca int32
+    RangeIterator<int32>* __iterator = alloca RangeIterator<int32>
+    Range<int32>* _0 = alloca Range<int32>
+    int32* i = alloca int32
+    store int32 9 to p
+    void _1 = call _EN3std5RangeI5int32E4initE5int325int32(Range<int32>* _0, int32 0, int32 3)
+    RangeIterator<int32> _2 = call _EN3std5RangeI5int32E8iteratorE(Range<int32>* _0)
     store _2 to __iterator
     br loop.condition
 
 loop.condition:
-    bool _3 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    bool _3 = call _EN3std13RangeIteratorI5int32E8hasValueE(RangeIterator<int32>* __iterator)
     br _3, loop.body, loop.end
 
 loop.body:
-    int _4 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    int32 _4 = call _EN3std13RangeIteratorI5int32E5valueE(RangeIterator<int32>* __iterator)
     store _4 to i
-    int p.load = load p
-    int i.load = load i
+    int32 p.load = load p
+    int32 i.load = load i
     int64 _5 = cast p.load to int64
     int64 _6 = cast i.load to int64
     int64 _7 = _5 - _6
-    int _8 = cast _7 to int
+    int32 _8 = cast _7 to int32
     int64 _9 = cast _8 to int64
     bool _10 = _7 != _9
     bool _11 = !_10
@@ -30,11 +30,11 @@ loop.body:
     br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
-    void _12 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    void _12 = call _EN3std13RangeIteratorI5int32E9incrementE(RangeIterator<int32>* __iterator)
     br loop.condition
 
 loop.end:
-    int p.load_0 = load p
+    int32 p.load_0 = load p
     return p.load_0
 
 overflow.fail:

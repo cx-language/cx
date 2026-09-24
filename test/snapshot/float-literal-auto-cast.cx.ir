@@ -1,9 +1,9 @@
 
-int main() {
-    float* f = alloca float
-    float* g = alloca float
-    store float 42 to f
-    float _0 = -float 42
+int32 main() {
+    float32* f = alloca float32
+    float32* g = alloca float32
+    store float32 42 to f
+    float32 _0 = -float32 42
     store _0 to g
-    return int 0
+    return int32 0
 }

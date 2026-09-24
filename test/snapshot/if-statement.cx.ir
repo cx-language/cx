@@ -3,7 +3,7 @@ extern void foo()
 
 extern void bar()
 
-int main() {
+int32 main() {
     br bool false, if.then, if.else
 
 if.then:
@@ -15,5 +15,5 @@ if.else:
     br if.end
 
 if.end:
-    return int 0
+    return int32 0
 }

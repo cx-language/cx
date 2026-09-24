@@ -1,10 +1,10 @@
 
-int main() {
+int32 main() {
     bool* b = alloca bool
     bool* c = alloca bool
     store bool false to b
     bool b.load = load b
     bool _0 = b.load == bool true
     store _0 to c
-    return int 0
+    return int32 0
 }

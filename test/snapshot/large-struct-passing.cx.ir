@@ -9,52 +9,52 @@ Big _EN4main5identE3Big(Big x) {
 Outer _EN4main9makeOuterE() {
     Outer* _0 = alloca Outer
     Big* _1 = alloca Big
-    void _2 = call _EN4main3Big4initE3int3int3int3int3int(Big* _1, int 1, int 2, int 3, int 4, int 5)
+    void _2 = call _EN4main3Big4initE5int325int325int325int325int32(Big* _1, int32 1, int32 2, int32 3, int32 4, int32 5)
     Big .load = load _1
-    void _3 = call _EN4main5Outer4initE3Big3int(Outer* _0, Big .load, int 7)
+    void _3 = call _EN4main5Outer4initE3Big5int32(Outer* _0, Big .load, int32 7)
     Outer .load_0 = load _0
     return .load_0
 }
 
-void _EN4main5Outer4initE3Big3int(Outer* this, Big item, int tag) {
+void _EN4main5Outer4initE3Big5int32(Outer* this, Big item, int32 tag) {
     Big* item_0 = alloca Big
-    int* tag_0 = alloca int
+    int32* tag_0 = alloca int32
     store item to item_0
     store tag to tag_0
     Big* item_1 = getelementptr this, 0
     Big item.load = load item_0
     store item.load to item_1
-    int* tag_1 = getelementptr this, 1
-    int tag.load = load tag_0
+    int32* tag_1 = getelementptr this, 1
+    int32 tag.load = load tag_0
     store tag.load to tag_1
     return void
 }
 
-void _EN4main3Big4initE3int3int3int3int3int(Big* this, int a, int b, int c, int d, int e) {
-    int* a_0 = alloca int
-    int* b_0 = alloca int
-    int* c_0 = alloca int
-    int* d_0 = alloca int
-    int* e_0 = alloca int
+void _EN4main3Big4initE5int325int325int325int325int32(Big* this, int32 a, int32 b, int32 c, int32 d, int32 e) {
+    int32* a_0 = alloca int32
+    int32* b_0 = alloca int32
+    int32* c_0 = alloca int32
+    int32* d_0 = alloca int32
+    int32* e_0 = alloca int32
     store a to a_0
     store b to b_0
     store c to c_0
     store d to d_0
     store e to e_0
-    int* a_1 = getelementptr this, 0
-    int a.load = load a_0
+    int32* a_1 = getelementptr this, 0
+    int32 a.load = load a_0
     store a.load to a_1
-    int* b_1 = getelementptr this, 1
-    int b.load = load b_0
+    int32* b_1 = getelementptr this, 1
+    int32 b.load = load b_0
     store b.load to b_1
-    int* c_1 = getelementptr this, 2
-    int c.load = load c_0
+    int32* c_1 = getelementptr this, 2
+    int32 c.load = load c_0
     store c.load to c_1
-    int* d_1 = getelementptr this, 3
-    int d.load = load d_0
+    int32* d_1 = getelementptr this, 3
+    int32 d.load = load d_0
     store d.load to d_1
-    int* e_1 = getelementptr this, 4
-    int e.load = load e_0
+    int32* e_1 = getelementptr this, 4
+    int32 e.load = load e_0
     store e.load to e_1
     return void
 }
@@ -66,14 +66,14 @@ Wide _EN4main9identWideE4Wide(Wide x) {
     return x.load
 }
 
-int main() {
+int32 main() {
     Big* b = alloca Big
     Big* c = alloca Big
     bool* flag = alloca bool
     Big* d = alloca Big
     Wide* w = alloca Wide
     Wide* v = alloca Wide
-    void _0 = call _EN4main3Big4initE3int3int3int3int3int(Big* b, int 1, int 2, int 3, int 4, int 5)
+    void _0 = call _EN4main3Big4initE5int325int325int325int325int32(Big* b, int32 1, int32 2, int32 3, int32 4, int32 5)
     Big b.load = load b
     Big _1 = call _EN4main5identE3Big(Big b.load)
     store _1 to c
@@ -91,21 +91,21 @@ if.else:
 
 if.end(Big if.result):
     store if.result to d
-    int128 _2 = cast int 1 to int128
-    int128 _3 = cast int 2 to int128
+    int128 _2 = cast int32 1 to int128
+    int128 _3 = cast int32 2 to int128
     void _4 = call _EN4main4Wide4initE6int1286int128(Wide* w, int128 _2, int128 _3)
     Wide w.load = load w
     Wide _5 = call _EN4main9identWideE4Wide(Wide w.load)
     store _5 to v
-    int* a = getelementptr d, 0
-    int a.load = load a
+    int32* a = getelementptr d, 0
+    int32 a.load = load a
     Outer _6 = call _EN4main9makeOuterE()
     Big item = extractvalue _6, 0
-    int a_0 = extractvalue item, 0
+    int32 a_0 = extractvalue item, 0
     int64 _7 = cast a.load to int64
     int64 _8 = cast a_0 to int64
     int64 _9 = _7 + _8
-    int _10 = cast _9 to int
+    int32 _10 = cast _9 to int32
     int64 _11 = cast _10 to int64
     bool _12 = _9 != _11
     bool _13 = !_12
@@ -119,11 +119,11 @@ overflow.fail:
 
 overflow.success:
     Outer _15 = call _EN4main9makeOuterE()
-    int tag = extractvalue _15, 1
+    int32 tag = extractvalue _15, 1
     int64 _16 = cast _10 to int64
     int64 _17 = cast tag to int64
     int64 _18 = _16 + _17
-    int _19 = cast _18 to int
+    int32 _19 = cast _18 to int32
     int64 _20 = cast _19 to int64
     bool _21 = _18 != _20
     bool _22 = !_21
@@ -138,11 +138,11 @@ overflow.fail_0:
 overflow.success_0:
     int128* a_1 = getelementptr v, 0
     int128 a.load_0 = load a_1
-    int _24 = cast a.load_0 to int
+    int32 _24 = cast a.load_0 to int32
     int64 _25 = cast _19 to int64
     int64 _26 = cast _24 to int64
     int64 _27 = _25 + _26
-    int _28 = cast _27 to int
+    int32 _28 = cast _27 to int32
     int64 _29 = cast _28 to int64
     bool _30 = _27 != _29
     bool _31 = !_30

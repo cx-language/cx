@@ -4,13 +4,13 @@
 
 void main() {
     var foo = 42;
-    // CHECK: [[@LINE+1]]:10: error: type 'int' is not convertible to boolean
+    // CHECK: [[@LINE+1]]:10: error: type 'int32' is not convertible to boolean
     if (!foo) { }
     checkBorrow(foo);
 }
 
 void checkBorrow(int& value) {
-    // CHECK: [[@LINE+1]]:10: error: type 'int&' is not convertible to boolean
+    // CHECK: [[@LINE+1]]:10: error: type 'int32&' is not convertible to boolean
     if (!value) { }
 }
 

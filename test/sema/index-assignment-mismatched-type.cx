@@ -2,6 +2,6 @@
 
 void main() {
     int[3] x = [1,2,3];
-    // CHECK: [[@LINE+1]]:12: error: cannot assign 'bool' to 'int'
+    // CHECK: [[@LINE+1]]:12: error: cannot assign 'bool' to 'int32'
     x[1] = false;
 }

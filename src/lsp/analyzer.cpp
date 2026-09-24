@@ -1120,6 +1120,7 @@ struct SemanticCollector {
     const std::vector<std::string>& lines;
     std::vector<SemanticToken>& out;
     std::vector<std::string> genericParamNames; // In-scope generic parameters, for typeParameter uses.
+    const llvm::StringSet<>* aliasNames = nullptr; // Visible type aliases, for alias-spelled type uses.
 
     void emit(const Location& loc, llvm::StringRef name, const char* type, bool definition, bool readonly = false) {
         if (!loc.isValid() || !loc.file || name.empty()) return;
@@ -1145,6 +1146,27 @@ struct SemanticCollector {
         if (const char* type = tokenTypeForDecl(*decl)) emit(decl->getLocation(), decl->getName(), type, definition, isReadonlyVariable(*decl));
     }
 
+    // The source may spell an alias ("int") where the resolved type has the
+    // canonical name ("int32"); highlight the spelled name then. Only known
+    // alias spellings qualify, so synthesized types at reused locations still
+    // need an exact canonical match (see emit()).
+    void emitTypeName(Type type, const char* tokenType) {
+        const Location& loc = type.location;
+        llvm::StringRef spelling = type.getName();
+        if (aliasNames && loc.isValid() && loc.file && file == loc.file && loc.line >= 1 && loc.line - 1 < static_cast<int>(lines.size()) && loc.column >= 1) {
+            const std::string& lineText = lines[loc.line - 1];
+            size_t start = static_cast<size_t>(loc.column - 1);
+            if (start <= lineText.size()) {
+                size_t end = start;
+                while (end < lineText.size() && (std::isalnum((unsigned char)lineText[end]) || lineText[end] == '_'))
+                    end++;
+                llvm::StringRef ident(lineText.data() + start, end - start);
+                if (!ident.empty() && ident != spelling && aliasNames->contains(ident)) spelling = ident;
+            }
+        }
+        emit(loc, spelling, tokenType, false);
+    }
+
     void visitExpr(Expr* expr);
     void visitStmt(Stmt* stmt);
     void visitDecl(Decl* decl);
@@ -1162,7 +1184,7 @@ struct SemanticCollector {
                 return;
             }
             if (TypeDecl* typeDecl = type.getDecl()) {
-                if (const char* tokenType = tokenTypeForDecl(*typeDecl)) emit(type.location, type.getName(), tokenType, false);
+                if (const char* tokenType = tokenTypeForDecl(*typeDecl)) emitTypeName(type, tokenType);
             } else if (llvm::is_contained(genericParamNames, type.getName())) {
                 emit(type.location, type.getName(), "typeParameter", false);
             } else {
@@ -2598,7 +2620,15 @@ std::vector<SemanticToken> semanticTokensIn(Module* mainModule, const std::strin
             }
         }
         lines.push_back(current);
-        SemanticCollector collector{filePath, lines, tokens, {}};
+        llvm::StringSet<> aliasNames;
+        for (auto* module : allModules(mainModule)) {
+            for (auto& sourceFile : module->sourceFiles) {
+                for (auto* decl : sourceFile.topLevelDecls) {
+                    if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) aliasNames.insert(alias->getName());
+                }
+            }
+        }
+        SemanticCollector collector{filePath, lines, tokens, {}, &aliasNames};
         for (auto& sourceFile : mainModule->sourceFiles) {
             for (auto* decl : sourceFile.topLevelDecls)
                 collector.visitDecl(decl);

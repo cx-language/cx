@@ -1,20 +1,20 @@
 
-void _EN4main1fE5RangeI3intE(Range<int> r) {
-    Range<int>* r_0 = alloca Range<int>
+void _EN4main1fE5RangeI5int32E(Range<int32> r) {
+    Range<int32>* r_0 = alloca Range<int32>
     store r to r_0
     return void
 }
 
-int main() {
-    int* foo = alloca int
-    int* bar = alloca int
-    Range<int>* _0 = alloca Range<int>
-    store int 0 to foo
-    store int 0 to bar
-    int foo.load = load foo
-    int bar.load = load bar
-    void _1 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int foo.load, int bar.load)
-    Range<int> .load = load _0
-    void _2 = call _EN4main1fE5RangeI3intE(Range<int> .load)
-    return int 0
+int32 main() {
+    int32* foo = alloca int32
+    int32* bar = alloca int32
+    Range<int32>* _0 = alloca Range<int32>
+    store int32 0 to foo
+    store int32 0 to bar
+    int32 foo.load = load foo
+    int32 bar.load = load bar
+    void _1 = call _EN3std5RangeI5int32E4initE5int325int32(Range<int32>* _0, int32 foo.load, int32 bar.load)
+    Range<int32> .load = load _0
+    void _2 = call _EN4main1fE5RangeI5int32E(Range<int32> .load)
+    return int32 0
 }

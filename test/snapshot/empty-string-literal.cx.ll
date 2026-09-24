@@ -6,12 +6,12 @@
 
 define i32 @main() #0 !dbg !4 {
   %__str = alloca %string, align 8
-  call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @0, i32 0), !dbg !7
+  call void @_EN3std6string4initEP4char5int32(ptr %__str, ptr @0, i32 0), !dbg !7
   %1 = call i32 @_EN3std6string4sizeE(ptr %__str), !dbg !8
   ret i32 %1
 }
 
-declare void @_EN3std6string4initEP4char3int(ptr, ptr, i32) #0
+declare void @_EN3std6string4initEP4char5int32(ptr, ptr, i32) #0
 
 declare i32 @_EN3std6string4sizeE(ptr) #0
 

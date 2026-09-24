@@ -1,9 +1,9 @@
 
-int main() {
+int32 main() {
     M<S>* m = alloca M<S>
     void _0 = call _EN4main1MI1SE4initE(M<S>* m)
     void _1 = call _EN4main1MI1SE1fE(M<S>* m)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1MI1SE4initE(M<S>* this) {

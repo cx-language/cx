@@ -15,7 +15,7 @@ enum Color {
 
 void nonEnumCondition() {
     var x = 5;
-    // CHECK: [[@LINE+1]]:8: error: left side of 'is' must be an enum, got 'int'
+    // CHECK: [[@LINE+1]]:8: error: left side of 'is' must be an enum, got 'int32'
     if x is 5 {
     }
 }

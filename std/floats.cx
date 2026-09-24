@@ -49,20 +49,6 @@ private void printFloat32(float32 value, OutputStream& stream) {
     stream.append(string(result));
 }
 
-/// A floating-point number.
-struct float: Copyable, Comparable, Printable, Addable {
-    /// Compares this value to another.
-    Ordering compare(float& other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
-    }
-
-    /// Writes this value to the given stream, using the shortest
-    /// representation that parses back to the same value.
-    void print(OutputStream& stream) {
-        printFloat32(this, stream);
-    }
-}
-
 /// A 32-bit floating-point number.
 struct float32: Copyable, Comparable, Printable, Addable {
     /// Compares this value to another.
@@ -101,3 +87,6 @@ struct float80: Copyable, Comparable {
 
 /// A 64-bit floating-point number.
 using double = float64;
+
+/// A 32-bit floating-point number, the default type for floating-point literals.
+using float = float32;

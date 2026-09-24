@@ -1,29 +1,29 @@
 
-int _EN4main1gE() {
-    return int 0
+int32 _EN4main1gE() {
+    return int32 0
 }
 
 bool _EN4main1hE() {
     return bool false
 }
 
-int main() {
+int32 main() {
     X* x = alloca X
     void _0 = call _EN4main1X4initE(X* x)
-    int _1 = call _EN4main1X1fI3intEEF_3int(X* x, int()* _EN4main1gE)
+    int32 _1 = call _EN4main1X1fI5int32EEF_5int32(X* x, int32()* _EN4main1gE)
     bool _2 = call _EN4main1X1fI4boolEEF_4bool(X* x, bool()* _EN4main1hE)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1X4initE(X* this) {
     return void
 }
 
-int _EN4main1X1fI3intEEF_3int(X* this, int()* t) {
-    int()** t_0 = alloca int()*
+int32 _EN4main1X1fI5int32EEF_5int32(X* this, int32()* t) {
+    int32()** t_0 = alloca int32()*
     store t to t_0
-    int()* t.load = load t_0
-    int _0 = call t.load()
+    int32()* t.load = load t_0
+    int32 _0 = call t.load()
     return _0
 }
 

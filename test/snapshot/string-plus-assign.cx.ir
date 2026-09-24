@@ -1,13 +1,13 @@
 
-int main() {
+int32 main() {
     StringBuf* a = alloca StringBuf
     string* __str = alloca string
     void _0 = call _EN3std9StringBuf4initE(StringBuf* a)
     StringBuf a.load = load a
-    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "", int 0)
+    void _1 = call _EN3std6string4initEP4char5int32(string* __str, char* "", int32 0)
     string __str.load = load __str
     StringBuf _2 = call _EN3stdplE9StringBuf6string(StringBuf a.load, string __str.load)
     store _2 to a
     void _3 = call _EN3std9StringBuf6deinitE(StringBuf* a)
-    return int 0
+    return int32 0
 }

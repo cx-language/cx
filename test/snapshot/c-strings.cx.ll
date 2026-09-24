@@ -14,11 +14,11 @@ define i32 @main() #0 !dbg !4 {
   %1 = alloca %StringBuf, align 8
   %__str1 = alloca %string, align 8
   %a = getelementptr inbounds %S, ptr %s, i32 0, i32 0
-  call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @0, i32 1), !dbg !7
+  call void @_EN3std6string4initEP4char5int32(ptr %__str, ptr @0, i32 1), !dbg !7
   %__str.load = load %string, ptr %__str, align 8
   %2 = call i1 @_EN3stdeqEP4char6string(ptr %a, %string %__str.load), !dbg !8
   %a2 = getelementptr inbounds %S, ptr %s, i32 0, i32 0
-  call void @_EN3std6string4initEP4char3int(ptr %__str1, ptr @1, i32 1), !dbg !7
+  call void @_EN3std6string4initEP4char5int32(ptr %__str1, ptr @1, i32 1), !dbg !7
   %__str.load3 = load %string, ptr %__str1, align 8
   call void @_EN3std9StringBuf4initE6string(ptr %1, %string %__str.load3), !dbg !9
   %3 = getelementptr inbounds %StringBuf, ptr %1, i32 0, i32 0
@@ -35,7 +35,7 @@ define i32 @main() #0 !dbg !4 {
   ret i32 0
 }
 
-declare void @_EN3std6string4initEP4char3int(ptr, ptr, i32) #0
+declare void @_EN3std6string4initEP4char5int32(ptr, ptr, i32) #0
 
 declare i1 @_EN3stdeqEP4char6string(ptr, %string) #0
 

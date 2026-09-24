@@ -1,29 +1,29 @@
 
 void _EN4main1fE() {
-    int* index = alloca int
-    X<int>* x = alloca X<int>
-    X<int>* _0 = alloca X<int>
-    store int 0 to index
-    X<int> _1 = call _EN4main1gE()
+    int32* index = alloca int32
+    X<int32>* x = alloca X<int32>
+    X<int32>* _0 = alloca X<int32>
+    store int32 0 to index
+    X<int32> _1 = call _EN4main1gE()
     store _1 to x
-    void _2 = call _EN4main1XI3intE4initE(X<int>* _0)
-    void _3 = call _EN4main1XI3intE1gE(X<int>* _0)
+    void _2 = call _EN4main1XI5int32E4initE(X<int32>* _0)
+    void _3 = call _EN4main1XI5int32E1gE(X<int32>* _0)
     return void
 }
 
-X<int> _EN4main1gE() {
-    X<int>* x = alloca X<int>
-    void _0 = call _EN4main1XI3intE4initE(X<int>* x)
-    X<int> x.load = load x
+X<int32> _EN4main1gE() {
+    X<int32>* x = alloca X<int32>
+    void _0 = call _EN4main1XI5int32E4initE(X<int32>* x)
+    X<int32> x.load = load x
     return x.load
 }
 
-void _EN4main1XI3intE1gE(X<int>* this) {
-    int* index = alloca int
-    store int 0 to index
+void _EN4main1XI5int32E1gE(X<int32>* this) {
+    int32* index = alloca int32
+    store int32 0 to index
     return void
 }
 
-void _EN4main1XI3intE4initE(X<int>* this) {
+void _EN4main1XI5int32E4initE(X<int32>* this) {
     return void
 }

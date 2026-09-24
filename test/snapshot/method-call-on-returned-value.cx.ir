@@ -7,8 +7,8 @@ S _EN4main1sE() {
 }
 
 void _EN4main1S4initE(S* this) {
-    int* i = getelementptr this, 0
-    store int 0 to i
+    int32* i = getelementptr this, 0
+    store int32 0 to i
     return void
 }
 
@@ -20,12 +20,12 @@ C _EN4main1cE() {
 }
 
 void _EN4main1C4initE(C* this) {
-    int* i = getelementptr this, 0
-    store int 0 to i
+    int32* i = getelementptr this, 0
+    store int32 0 to i
     return void
 }
 
-int main() {
+int32 main() {
     S* _0 = alloca S
     C* _1 = alloca C
     S* _2 = alloca S
@@ -40,7 +40,7 @@ int main() {
     void _9 = call _EN4main1S1fE(S* _2)
     void _10 = call _EN4main1C4initE(C* _3)
     void _11 = call _EN4main1C1fE(C* _3)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1S1fE(S* this) {

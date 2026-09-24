@@ -1,6 +1,6 @@
 
-void _EN4main3fooEP5SliceI3intE(Slice<int>* a) {
-    Slice<int>** a_0 = alloca Slice<int>*
+void _EN4main3fooEP5SliceI5int32E(Slice<int32>* a) {
+    Slice<int32>** a_0 = alloca Slice<int32>*
     store a to a_0
     return void
 }

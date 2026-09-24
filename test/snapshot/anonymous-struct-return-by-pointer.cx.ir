@@ -1,32 +1,32 @@
 
-int main() {
+int32 main() {
     S* s = alloca S
-    struct { int }** f = alloca struct { int }*
-    struct { int }** g = alloca struct { int }*
-    struct { int } _0 = insertvalue struct { int } undefined, 0, int 1
-    void _1 = call _EN4main1S4initET3int_(S* s, struct { int } _0)
-    struct { int }* _2 = call _EN4main1S1fE(S* s)
+    struct { int32 }** f = alloca struct { int32 }*
+    struct { int32 }** g = alloca struct { int32 }*
+    struct { int32 } _0 = insertvalue struct { int32 } undefined, 0, int32 1
+    void _1 = call _EN4main1S4initET5int32_(S* s, struct { int32 } _0)
+    struct { int32 }* _2 = call _EN4main1S1fE(S* s)
     store _2 to f
-    struct { int }* _3 = call _EN4main1S1gE(S* s)
+    struct { int32 }* _3 = call _EN4main1S1gE(S* s)
     store _3 to g
-    return int 0
+    return int32 0
 }
 
-void _EN4main1S4initET3int_(S* this, struct { int } t) {
-    struct { int }* t_0 = alloca struct { int }
+void _EN4main1S4initET5int32_(S* this, struct { int32 } t) {
+    struct { int32 }* t_0 = alloca struct { int32 }
     store t to t_0
-    struct { int }* t_1 = getelementptr this, 0
-    struct { int } t.load = load t_0
+    struct { int32 }* t_1 = getelementptr this, 0
+    struct { int32 } t.load = load t_0
     store t.load to t_1
     return void
 }
 
-struct { int }* _EN4main1S1fE(S* this) {
-    struct { int }* t = getelementptr this, 0
+struct { int32 }* _EN4main1S1fE(S* this) {
+    struct { int32 }* t = getelementptr this, 0
     return t
 }
 
-struct { int }* _EN4main1S1gE(S* this) {
-    struct { int }* t = getelementptr this, 0
+struct { int32 }* _EN4main1S1gE(S* this) {
+    struct { int32 }* t = getelementptr this, 0
     return t
 }

@@ -1,13 +1,13 @@
 
-int main() {
-    float _0 = call _EN4main1fI5floatEE5float(float 0)
-    return int 0
+int32 main() {
+    float32 _0 = call _EN4main1fI7float32EE7float32(float32 0)
+    return int32 0
 }
 
-float _EN4main1fI5floatEE5float(float a) {
-    float* a_0 = alloca float
+float32 _EN4main1fI7float32EE7float32(float32 a) {
+    float32* a_0 = alloca float32
     store a to a_0
-    float a.load = load a_0
-    float _0 = -a.load
+    float32 a.load = load a_0
+    float32 _0 = -a.load
     return _0
 }

@@ -8,7 +8,7 @@ void main() {
         1)) {
     }
 }
-// CHECK: [[@LINE-4]]:12: error: type 'int' is not convertible to boolean
+// CHECK: [[@LINE-4]]:12: error: type 'int32' is not convertible to boolean
 // CHECK-NEXT: while (take(
 // CHECK-NEXT: ~~~~~
 // CHECK-NOT: :{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

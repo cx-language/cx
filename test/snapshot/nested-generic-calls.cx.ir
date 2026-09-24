@@ -1,15 +1,15 @@
 
-int main() {
-    void _0 = call _EN4main1gI3intEE3int(int 42)
+int32 main() {
+    void _0 = call _EN4main1gI5int32EE5int32(int32 42)
     void _1 = call _EN4main1gI4boolEE4bool(bool false)
-    return int 0
+    return int32 0
 }
 
-void _EN4main1gI3intEE3int(int t) {
-    int* t_0 = alloca int
+void _EN4main1gI5int32EE5int32(int32 t) {
+    int32* t_0 = alloca int32
     store t to t_0
-    int t.load = load t_0
-    void _0 = call _EN4main1fI3intEE3int(int t.load)
+    int32 t.load = load t_0
+    void _0 = call _EN4main1fI5int32EE5int32(int32 t.load)
     return void
 }
 
@@ -21,8 +21,8 @@ void _EN4main1gI4boolEE4bool(bool t) {
     return void
 }
 
-void _EN4main1fI3intEE3int(int t) {
-    int* t_0 = alloca int
+void _EN4main1fI5int32EE5int32(int32 t) {
+    int32* t_0 = alloca int32
     store t to t_0
     return void
 }

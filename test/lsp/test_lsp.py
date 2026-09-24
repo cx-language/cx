@@ -228,7 +228,7 @@ def test_query_modes(cx_lsp, path):
 
     # `add` in `add(1, 2)` sits at 0-based line 5, characters 17-19.
     result = run_query(cx_lsp, base_query("hover", path, GOOD_SOURCE, (5, 18)))
-    check("query-hover", "int add(int x, int y)" in result.get("hover", ""), result.get("hover", "")[:200])
+    check("query-hover", "int32 add(int32 x, int32 y)" in result.get("hover", ""), result.get("hover", "")[:200])
 
     result = run_query(cx_lsp, base_query("definition", path, GOOD_SOURCE, (5, 18)))
     check("query-definition-found", result.get("found") is True, json.dumps(result)[:300])
@@ -428,7 +428,7 @@ def test_generic_symbols(cx_lsp, path):
     )
 
     result = run_query(cx_lsp, base_query("hover", path, GENERIC_DEF_SOURCE, (3, 16)))
-    check("query-hover-generic-method", "int Box<int>.value" in result.get("hover", ""), result.get("hover", "")[:200])
+    check("query-hover-generic-method", "int32 Box<int32>.value" in result.get("hover", ""), result.get("hover", "")[:200])
 
     # `x` in the generic function body (line 13) resolves to the parameter (line 12).
     result = run_query(cx_lsp, base_query("definition", path, GENERIC_DEF_SOURCE, (13, 11)))
@@ -439,7 +439,7 @@ def test_generic_symbols(cx_lsp, path):
     )
 
     result = run_query(cx_lsp, base_query("hover", path, GENERIC_DEF_SOURCE, (13, 11)))
-    check("query-hover-generic-function", "int x" in result.get("hover", ""), result.get("hover", "")[:200])
+    check("query-hover-generic-function", "int32 x" in result.get("hover", ""), result.get("hover", "")[:200])
 
 
 def test_readonly_tokens(cx_lsp, path):
@@ -544,7 +544,7 @@ def test_completion_members(cx_lsp, path):
     details = sorted(item["detail"] for item in result.get("items", []) if item["label"] == "add")
     check(
         "query-completion-overloads",
-        details == ["int add(int x)", "int add(int x, int y)"],
+        details == ["int32 add(int32 x)", "int32 add(int32 x, int32 y)"],
         json.dumps(details)[:300],
     )
     adds = [item.get("hasParams") for item in result.get("items", []) if item["label"] == "add"]
@@ -564,8 +564,9 @@ def test_package_dedup(cx_lsp):
     with tempfile.TemporaryDirectory() as directory:
         package = os.path.join(directory, "std")
         os.mkdir(package)
+        # Uses `void` so the shadowing package needs no std declarations.
         with open(os.path.join(package, "defs.cx"), "w") as file:
-            file.write("int answer() {\n    return 42;\n}\n")
+            file.write("void answer() {\n}\n")
         use_path = os.path.join(package, "use.cx")
 
         def package_query(method, content, position=None):
@@ -573,17 +574,17 @@ def test_package_dedup(cx_lsp):
             query["importSearchPaths"] = [directory]
             return query
 
-        content = "int doubled() {\n    return answer() * 2;\n}\n"
+        content = "void doubled() {\n    answer();\n}\n"
         with open(use_path, "w") as file:
             file.write(content)
 
         result = run_query(cx_lsp, package_query("check", content))
         check("query-package-clean", result["diagnostics"] == [], json.dumps(result["diagnostics"])[:500])
 
-        result = run_query(cx_lsp, package_query("hover", content, (1, 12)))
-        check("query-package-hover", "int answer()" in result.get("hover", ""), result.get("hover", "")[:200])
+        result = run_query(cx_lsp, package_query("hover", content, (1, 6)))
+        check("query-package-hover", "void answer()" in result.get("hover", ""), result.get("hover", "")[:200])
 
-        result = run_query(cx_lsp, package_query("references", content, (1, 12)))
+        result = run_query(cx_lsp, package_query("references", content, (1, 6)))
         locations = sorted(
             (r["range"]["start"]["line"], r["range"]["start"]["character"]) for r in result.get("references", [])
         )
@@ -593,7 +594,7 @@ def test_package_dedup(cx_lsp):
         files = sorted({r["file"] for r in result.get("references", [])})
         check(
             "query-package-references",
-            locations == [(0, 4), (1, 11)] and files == [defs_path, use_path],
+            locations == [(0, 5), (1, 4)] and files == [defs_path, use_path],
             json.dumps(result.get("references"))[:500],
         )
 
@@ -635,7 +636,7 @@ def test_build_file_modes(cx_lsp):
         )
 
         result = run_query(cx_lsp, base_query("hover", nested_path, nested_content, (1, 12)))
-        check("query-build-file-hover", "int answer()" in result.get("hover", ""), result.get("hover", "")[:200])
+        check("query-build-file-hover", "int32 answer()" in result.get("hover", ""), result.get("hover", "")[:200])
 
     with tempfile.TemporaryDirectory() as directory:
         with open(os.path.join(directory, "c.cx"), "w") as file:
@@ -906,7 +907,7 @@ def test_server(command, path, label):
     response = session.read()
     check(
         f"{label}-hover",
-        "int add(int x, int y)" in response["result"]["contents"]["value"],
+        "int32 add(int32 x, int32 y)" in response["result"]["contents"]["value"],
         json.dumps(response)[:300],
     )
 

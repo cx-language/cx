@@ -1,7 +1,7 @@
 
 extern bool b()
 
-int main() {
+int32 main() {
     bool _0 = call b()
     bool assert.condition = _0 == bool false
     br assert.condition, assert.fail, assert.success
@@ -12,5 +12,5 @@ assert.fail:
     unreachable
 
 assert.success:
-    return int 0
+    return int32 0
 }

@@ -1,5 +1,5 @@
 
-int main() {
+int32 main() {
     void _0 = call foo(char** null)
-    return int 0
+    return int32 0
 }

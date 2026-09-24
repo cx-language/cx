@@ -1,17 +1,17 @@
 
-int main() {
-    A<int>* a = alloca A<int>
-    void _0 = call _EN4main1AI3intE4initE(A<int>* a)
-    void _1 = call _EN4main1AI3intE1aE3int(A<int>* a, int 5)
-    return int 0
+int32 main() {
+    A<int32>* a = alloca A<int32>
+    void _0 = call _EN4main1AI5int32E4initE(A<int32>* a)
+    void _1 = call _EN4main1AI5int32E1aE5int32(A<int32>* a, int32 5)
+    return int32 0
 }
 
-void _EN4main1AI3intE4initE(A<int>* this) {
+void _EN4main1AI5int32E4initE(A<int32>* this) {
     return void
 }
 
-void _EN4main1AI3intE1aE3int(A<int>* this, int n) {
-    int* n_0 = alloca int
+void _EN4main1AI5int32E1aE5int32(A<int32>* this, int32 n) {
+    int32* n_0 = alloca int32
     store n to n_0
     return void
 }

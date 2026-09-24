@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 int foo() {
-    // CHECK: [[@LINE+1]]:5: error: expected return statement to return a value of type 'int'
+    // CHECK: [[@LINE+1]]:5: error: expected return statement to return a value of type 'int32'
     return;
 }

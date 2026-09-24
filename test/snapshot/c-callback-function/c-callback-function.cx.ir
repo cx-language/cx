@@ -1,14 +1,14 @@
 
-int _EN4main1fE3int(int a) {
-    int* a_0 = alloca int
+int32 _EN4main1fE5int32(int32 a) {
+    int32* a_0 = alloca int32
     store a to a_0
-    int a.load = load a_0
+    int32 a.load = load a_0
     return a.load
 }
 
-int main() {
-    void _0 = call foo(int(int)* _EN4main1fE3int)
-    void _1 = call bar(int(int)* _EN4main1fE3int)
-    void _2 = call baz(int(int)* _EN4main1fE3int)
-    return int 0
+int32 main() {
+    void _0 = call foo(int32(int32)* _EN4main1fE5int32)
+    void _1 = call bar(int32(int32)* _EN4main1fE5int32)
+    void _2 = call baz(int32(int32)* _EN4main1fE5int32)
+    return int32 0
 }

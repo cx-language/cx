@@ -1,13 +1,13 @@
 
-int main() {
-    int* foo = alloca int
-    store int 0 to foo
-    int foo.load = load foo
-    int _0 = foo.load + int -1
+int32 main() {
+    int32* foo = alloca int32
+    store int32 0 to foo
+    int32 foo.load = load foo
+    int32 _0 = foo.load + int32 -1
     store _0 to foo
-    store int 666 to foo
-    int foo.load_0 = load foo
-    int _1 = foo.load_0 + int 1
+    store int32 666 to foo
+    int32 foo.load_0 = load foo
+    int32 _1 = foo.load_0 + int32 1
     store _1 to foo
-    return int 0
+    return int32 0
 }

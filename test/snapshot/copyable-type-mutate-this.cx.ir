@@ -1,22 +1,22 @@
 
-int main() {
+int32 main() {
     S* _0 = alloca S
-    void _1 = call _EN4main1S4initE3int(S* _0, int 1)
+    void _1 = call _EN4main1S4initE5int32(S* _0, int32 1)
     void _2 = call _EN4main1S1sE(S* _0)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1S1sE(S* this) {
-    int* i = getelementptr this, 0
-    store int 2 to i
+    int32* i = getelementptr this, 0
+    store int32 2 to i
     return void
 }
 
-void _EN4main1S4initE3int(S* this, int i) {
-    int* i_0 = alloca int
+void _EN4main1S4initE5int32(S* this, int32 i) {
+    int32* i_0 = alloca int32
     store i to i_0
-    int* i_1 = getelementptr this, 0
-    int i.load = load i_0
+    int32* i_1 = getelementptr this, 0
+    int32 i.load = load i_0
     store i.load to i_1
     return void
 }

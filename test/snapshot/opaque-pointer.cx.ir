@@ -1,8 +1,8 @@
 
-int main() {
+int32 main() {
     S* s = alloca S
     void _0 = call _EN16opaque-pointer_h1S4initEOP6Opaque(S* s, Opaque* null)
-    return int 0
+    return int32 0
 }
 
 void _EN16opaque-pointer_h1S4initEOP6Opaque(S* this, Opaque* opaque) {

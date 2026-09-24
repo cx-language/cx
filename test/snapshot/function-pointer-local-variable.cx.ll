@@ -5,7 +5,7 @@ define void @_EN4main3fooE() #0 !dbg !4 {
   ret void
 }
 
-define i32 @_EN4main2f2E3int4bool(i32 %a, i1 %b) #0 !dbg !7 {
+define i32 @_EN4main2f2E5int324bool(i32 %a, i1 %b) #0 !dbg !7 {
   %a1 = alloca i32, align 4
   %b2 = alloca i1, align 1
   store i32 %a, ptr %a1, align 4
@@ -25,7 +25,7 @@ define void @_EN4main1gEF_4void(ptr %p) #0 !dbg !8 {
   ret void
 }
 
-define void @_EN4main2g2EF3int4bool_3int(ptr %p) #0 !dbg !10 {
+define void @_EN4main2g2EF5int324bool_5int32(ptr %p) #0 !dbg !10 {
   %p1 = alloca ptr, align 8
   %p2 = alloca ptr, align 8
   %a = alloca i32, align 4
@@ -60,9 +60,9 @@ define i32 @main() #0 !dbg !13 {
   store ptr @_EN4main3fooE, ptr %lf, align 8
   %lf.load = load ptr, ptr %lf, align 8
   call void @_EN4main1gEF_4void(ptr %lf.load), !dbg !14
-  store ptr @_EN4main2f2E3int4bool, ptr %lf2, align 8
+  store ptr @_EN4main2f2E5int324bool, ptr %lf2, align 8
   %lf2.load = load ptr, ptr %lf2, align 8
-  call void @_EN4main2g2EF3int4bool_3int(ptr %lf2.load), !dbg !15
+  call void @_EN4main2g2EF5int324bool_5int32(ptr %lf2.load), !dbg !15
   ret i32 0
 }
 
@@ -78,10 +78,10 @@ attributes #0 = { "frame-pointer"="all" }
 !4 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
-!7 = distinct !DISubprogram(name: "f2", linkageName: "_EN4main2f2E3int4bool", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!7 = distinct !DISubprogram(name: "f2", linkageName: "_EN4main2f2E5int324bool", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !8 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gEF_4void", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
 !9 = !DILocation(line: 9, column: 5, scope: !8)
-!10 = distinct !DISubprogram(name: "g2", linkageName: "_EN4main2g2EF3int4bool_3int", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "g2", linkageName: "_EN4main2g2EF5int324bool_5int32", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
 !11 = !DILocation(line: 14, column: 13, scope: !10)
 !12 = !DILocation(line: 12, column: 6, scope: !10)
 !13 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 17, type: !5, scopeLine: 17, spFlags: DISPFlagDefinition, unit: !2)

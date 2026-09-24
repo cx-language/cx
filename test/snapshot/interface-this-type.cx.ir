@@ -1,12 +1,12 @@
 
-int main() {
+int32 main() {
     S* a = alloca S
     S* b = alloca S
     void _0 = call _EN4main1S4initE(S* a)
     void _1 = call _EN4main1S4initE(S* b)
     S* _2 = call _EN4main1S3fooEP1S(S* a, S* b)
     void _3 = call _EN4main1fI1SEEP1S(S* _2)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1S4initE(S* this) {

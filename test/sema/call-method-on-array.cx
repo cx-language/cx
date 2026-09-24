@@ -2,6 +2,6 @@
 
 void main() {
     var a = [1, 2, 3];
-    // CHECK: [[@LINE+1]]:5: error: type 'int[3]' has no member function 'foo'
+    // CHECK: [[@LINE+1]]:5: error: type 'int32[3]' has no member function 'foo'
     a.foo();
 }

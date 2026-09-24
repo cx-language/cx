@@ -4,6 +4,6 @@ extern const int* f();
 
 void main() {
     var i = f();
-    // CHECK: [[@LINE+1]]:9: error: cannot increment immutable value of type 'const int'
+    // CHECK: [[@LINE+1]]:9: error: cannot increment immutable value of type 'const int32'
     (*i)++;
 }

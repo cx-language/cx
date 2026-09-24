@@ -1,12 +1,12 @@
 
 extern char** b()
 
-int main() {
+int32 main() {
     char*** s = alloca char**
-    int* i = alloca int
+    int32* i = alloca int32
     char** _0 = call b()
     store _0 to s
-    store int 0 to i
+    store int32 0 to i
     char** s.load = load s
     bool assert.condition = s.load == char** null
     br assert.condition, assert.fail, assert.success
@@ -17,10 +17,10 @@ assert.fail:
     unreachable
 
 assert.success:
-    int i.load = load i
+    int32 i.load = load i
     char** _2 = getelementptr s.load, i.load
     char* .load = load _2
-    int _3 = call printf(char* "%s
+    int32 _3 = call printf(char* "%s
 ", char* .load)
-    return int 0
+    return int32 0
 }

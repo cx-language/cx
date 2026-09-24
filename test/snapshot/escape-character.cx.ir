@@ -1,6 +1,6 @@
 
-int main() {
+int32 main() {
     string* __str = alloca string
-    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "\n", int 2)
-    return int 0
+    void _0 = call _EN3std6string4initEP4char5int32(string* __str, char* "\n", int32 2)
+    return int32 0
 }

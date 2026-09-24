@@ -3,13 +3,13 @@ extern void foo()
 
 extern void bar()
 
-int main() {
+int32 main() {
     br bool false, if.then, if.else
 
 if.then:
     void _0 = call bar()
     void _1 = call foo()
-    return int 0
+    return int32 0
 
 if.else:
     br if.end
@@ -41,7 +41,7 @@ loop.end:
 if.then_1:
     void _5 = call bar()
     void _6 = call foo()
-    return int 0
+    return int32 0
 
 if.else_1:
     br if.end_1
@@ -50,7 +50,7 @@ if.end_1:
     void _7 = call foo()
     void _8 = call bar()
     void _9 = call foo()
-    return int 0
+    return int32 0
 }
 
 void _EN4main13shouldBeEmptyE() {

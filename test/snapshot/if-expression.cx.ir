@@ -9,7 +9,7 @@ extern bool d()
 
 extern bool e()
 
-int main() {
+int32 main() {
     bool* x = alloca bool
     bool _0 = call a()
     br _0, if.then, if.else
@@ -35,5 +35,5 @@ if.end_0(bool if.result):
 
 if.end(bool if.result_0):
     store if.result_0 to x
-    return int 0
+    return int32 0
 }

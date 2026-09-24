@@ -1,16 +1,16 @@
 
-int main() {
-    int[3]* a = alloca int[3]
-    int[3] _0 = insertvalue int[3] undefined, 0, int 10
-    int[3] _1 = insertvalue _0, 1, int 20
-    int[3] _2 = insertvalue _1, 2, int 30
+int32 main() {
+    int32[3]* a = alloca int32[3]
+    int32[3] _0 = insertvalue int32[3] undefined, 0, int32 10
+    int32[3] _1 = insertvalue _0, 1, int32 20
+    int32[3] _2 = insertvalue _1, 2, int32 30
     store _2 to a
-    int* _3 = getelementptr a, int 0, int 0
-    int .load = load _3
-    int64 _4 = cast int 3 to int64
+    int32* _3 = getelementptr a, int32 0, int32 0
+    int32 .load = load _3
+    int64 _4 = cast int32 3 to int64
     int64 _5 = cast .load to int64
     int64 _6 = _4 + _5
-    int _7 = cast _6 to int
+    int32 _7 = cast _6 to int32
     int64 _8 = cast _7 to int64
     bool _9 = _6 != _8
     bool _10 = !_9
@@ -23,12 +23,12 @@ overflow.fail:
     unreachable
 
 overflow.success:
-    int* _12 = getelementptr a, int 0, int 2
-    int .load_0 = load _12
+    int32* _12 = getelementptr a, int32 0, int32 2
+    int32 .load_0 = load _12
     int64 _13 = cast _7 to int64
     int64 _14 = cast .load_0 to int64
     int64 _15 = _13 + _14
-    int _16 = cast _15 to int
+    int32 _16 = cast _15 to int32
     int64 _17 = cast _16 to int64
     bool _18 = _15 != _17
     bool _19 = !_18

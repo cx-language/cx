@@ -3,12 +3,12 @@
 
 define i32 @main() #0 !dbg !4 {
   %f = alloca %Foo, align 8
-  call void @_EN4main3Foo4initE3int(ptr %f, i32 5), !dbg !7
+  call void @_EN4main3Foo4initE5int32(ptr %f, i32 5), !dbg !7
   call void @_EN4main3Foo6deinitE(ptr %f), !dbg !8
   ret i32 0
 }
 
-define void @_EN4main3Foo4initE3int(ptr %this, i32 %i) #0 !dbg !9 {
+define void @_EN4main3Foo4initE5int32(ptr %this, i32 %i) #0 !dbg !9 {
   %i1 = alloca i32, align 4
   store i32 %i, ptr %i1, align 4
   %f = getelementptr inbounds %Foo, ptr %this, i32 0, i32 0
@@ -34,5 +34,5 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 4, column: 13, scope: !4)
 !8 = !DILocation(line: 3, column: 6, scope: !4)
-!9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main3Foo4initE3int", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main3Foo4initE5int32", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
 !10 = distinct !DISubprogram(name: "deinit", linkageName: "_EN4main3Foo6deinitE", scope: !3, file: !3, line: 10, type: !5, scopeLine: 10, spFlags: DISPFlagDefinition, unit: !2)

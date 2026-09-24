@@ -31,29 +31,6 @@ private void printUnsigned(uint64 value, OutputStream& stream) {
     }
 }
 
-/// A signed integer.
-struct int: Copyable, Comparable, Printable, Hashable, Addable {
-    /// Largest value of this type.
-    const int max = 2147483647;
-    /// Smallest value of this type.
-    const int min = -2147483648;
-
-    /// Compares this value to another.
-    Ordering compare(int& other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
-    }
-
-    /// Writes this value to the given stream.
-    void print(OutputStream& stream) {
-        printSigned(int64(this), stream);
-    }
-
-    /// Returns the hash of this value.
-    uint64 hash() {
-        return uint64(this);
-    }
-}
-
 /// An 8-bit signed integer.
 struct int8: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
@@ -155,29 +132,6 @@ struct int128: Copyable, Comparable {
     }
 }
 
-/// An unsigned integer.
-struct uint: Copyable, Comparable, Printable, Hashable, Addable {
-    /// Largest value of this type.
-    const uint max = 4294967295;
-    /// Smallest value of this type.
-    const uint min = 0;
-
-    /// Compares this value to another.
-    Ordering compare(uint& other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
-    }
-
-    /// Writes this value to the given stream.
-    void print(OutputStream& stream) {
-        printUnsigned(uint64(this), stream);
-    }
-
-    /// Returns the hash of this value.
-    uint64 hash() {
-        return uint64(this);
-    }
-}
-
 /// An 8-bit unsigned integer.
 struct uint8: Copyable, Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
@@ -187,29 +141,6 @@ struct uint8: Copyable, Comparable, Printable, Hashable, Addable {
 
     /// Compares this value to another.
     Ordering compare(uint8& other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
-    }
-
-    /// Writes this value to the given stream.
-    void print(OutputStream& stream) {
-        printUnsigned(uint64(this), stream);
-    }
-
-    /// Returns the hash of this value.
-    uint64 hash() {
-        return uint64(this);
-    }
-}
-
-/// An 8-bit unsigned integer.
-struct byte: Copyable, Comparable, Printable, Hashable, Addable {
-    /// Largest value of this type.
-    const byte max = 255;
-    /// Smallest value of this type.
-    const byte min = 0;
-
-    /// Compares this value to another.
-    Ordering compare(byte& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -337,3 +268,12 @@ using long = int64;
 
 /// A 64-bit unsigned integer.
 using ulong = uint64;
+
+/// A 32-bit signed integer, the default type for integer literals.
+using int = int32;
+
+/// A 32-bit unsigned integer.
+using uint = uint32;
+
+/// An 8-bit unsigned integer.
+using byte = uint8;

@@ -1,8 +1,8 @@
 
-int main() {
+int32 main() {
     A* a = alloca A
     void _0 = call _EN4main1A4initE(A* a)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1A4initE(A* this) {

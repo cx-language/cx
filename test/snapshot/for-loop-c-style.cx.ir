@@ -1,23 +1,23 @@
 
-int main() {
-    int* sum = alloca int
-    int* i = alloca int
-    store int 0 to sum
-    store int 3 to i
+int32 main() {
+    int32* sum = alloca int32
+    int32* i = alloca int32
+    store int32 0 to sum
+    store int32 3 to i
     br loop.condition
 
 loop.condition:
-    int i.load = load i
-    bool _0 = i.load < int 9
+    int32 i.load = load i
+    bool _0 = i.load < int32 9
     br _0, loop.body, loop.end
 
 loop.body:
-    int sum.load = load sum
-    int i.load_0 = load i
+    int32 sum.load = load sum
+    int32 i.load_0 = load i
     int64 _1 = cast sum.load to int64
     int64 _2 = cast i.load_0 to int64
     int64 _3 = _1 + _2
-    int _4 = cast _3 to int
+    int32 _4 = cast _3 to int32
     int64 _5 = cast _4 to int64
     bool _6 = _3 != _5
     bool _7 = !_6
@@ -25,13 +25,13 @@ loop.body:
     br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
-    int i.load_1 = load i
-    int _8 = i.load_1 + int 1
+    int32 i.load_1 = load i
+    int32 _8 = i.load_1 + int32 1
     store _8 to i
     br loop.condition
 
 loop.end:
-    return int 0
+    return int32 0
 
 overflow.fail:
     void _9 = call _EN3std10assertFailEP4char(char* "integer overflow at for-loop-c-style.cx:6:13

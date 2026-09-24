@@ -1,11 +1,11 @@
 
-void _EN4main1fEP3intOP3int(int* foo, int* bar) {
-    int** foo_0 = alloca int*
-    int** bar_0 = alloca int*
+void _EN4main1fEP5int32OP5int32(int32* foo, int32* bar) {
+    int32** foo_0 = alloca int32*
+    int32** bar_0 = alloca int32*
     store foo to foo_0
     store bar to bar_0
-    int* foo.load = load foo_0
-    int* bar.load = load bar_0
+    int32* foo.load = load foo_0
+    int32* bar.load = load bar_0
     bool _0 = foo.load == bar.load
     br _0, if.then, if.else
 

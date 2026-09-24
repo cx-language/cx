@@ -1,19 +1,19 @@
 
-int main() {
-    C<int>* i = alloca C<int>
+int32 main() {
+    C<int32>* i = alloca C<int32>
     C<bool>* b = alloca C<bool>
-    void _0 = call _EN4main1CI3intE4initE(C<int>* i)
+    void _0 = call _EN4main1CI5int32E4initE(C<int32>* i)
     void _1 = call _EN4main1CI4boolE4initE(C<bool>* b)
     void _2 = call _EN4main1CI4boolE6deinitE(C<bool>* b)
-    void _3 = call _EN4main1CI3intE6deinitE(C<int>* i)
-    return int 0
+    void _3 = call _EN4main1CI5int32E6deinitE(C<int32>* i)
+    return int32 0
 }
 
-void _EN4main1CI3intE6deinitE(C<int>* this) {
+void _EN4main1CI5int32E6deinitE(C<int32>* this) {
     return void
 }
 
-void _EN4main1CI3intE4initE(C<int>* this) {
+void _EN4main1CI5int32E4initE(C<int32>* this) {
     return void
 }
 

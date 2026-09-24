@@ -1,8 +1,8 @@
 
-int main() {
+int32 main() {
     void _0 = call bar()
     void _1 = call _EN4main3fooE()
-    return int 0
+    return int32 0
 }
 
 extern void bar()

@@ -1,7 +1,7 @@
 
-int main() {
+int32 main() {
     Foo* x = alloca Foo
     Foo x.load = load x
     void _0 = call foo(Foo x.load)
-    return int 0
+    return int32 0
 }

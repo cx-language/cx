@@ -1,15 +1,15 @@
 
-int main() {
-    S<int>* _0 = alloca S<int>
+int32 main() {
+    S<int32>* _0 = alloca S<int32>
     S<bool>* _1 = alloca S<bool>
-    void _2 = call _EN4main1SI3intE4initE(S<int>* _0)
+    void _2 = call _EN4main1SI5int32E4initE(S<int32>* _0)
     void _3 = call _EN4main1SI4boolE4initE(S<bool>* _1)
-    return int 0
+    return int32 0
 }
 
-void _EN4main1SI3intE4initE(S<int>* this) {
-    int** p = getelementptr this, 0
-    store int* null to p
+void _EN4main1SI5int32E4initE(S<int32>* this) {
+    int32** p = getelementptr this, 0
+    store int32* null to p
     return void
 }
 

@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void main() {
-    // CHECK: [[@LINE+1]]:17: error: invalid operands 'float' and 'float' to '&'
+    // CHECK: [[@LINE+1]]:17: error: invalid operands 'float32' and 'float32' to '&'
     var a = 5.0 & 2.0;
 }

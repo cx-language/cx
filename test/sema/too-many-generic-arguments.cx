@@ -3,6 +3,6 @@
 T foo<T>(T a, T b) { return b; }
 
 // CHECK: [[@LINE+3]]:23: error: too many generic arguments to 'foo', expected 1
-// CHECK: [[@LINE+2]]:23: error: no matching function 'foo<int, int>(int, int)'
+// CHECK: [[@LINE+2]]:23: error: no matching function 'foo<int32, int32>(int32, int32)'
 // CHECK: :3:3: note: candidate function:
 void main() { var f = foo<int, int>(1, 2); }

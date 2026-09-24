@@ -1,10 +1,10 @@
 
-int main() {
+int32 main() {
     Optional<Slice<int8>>* a = alloca Optional<Slice<int8>>
     Optional<Slice<int8>>* enum = alloca Optional<Slice<int8>>
-    int* tag = getelementptr enum, 0
-    store int 0 to tag
+    int32* tag = getelementptr enum, 0
+    store int32 0 to tag
     Optional<Slice<int8>> enum.load = load enum
     store enum.load to a
-    return int 0
+    return int32 0
 }

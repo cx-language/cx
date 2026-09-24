@@ -1,47 +1,47 @@
 
-int main() {
+int32 main() {
     C* _0 = alloca C
-    int[5]* _1 = alloca int[5]
-    int[5] _2 = insertvalue int[5] undefined, 0, int 0
-    int[5] _3 = insertvalue _2, 1, int 1
-    int[5] _4 = insertvalue _3, 2, int 2
-    int[5] _5 = insertvalue _4, 3, int 3
-    int[5] _6 = insertvalue _5, 4, int 4
+    int32[5]* _1 = alloca int32[5]
+    int32[5] _2 = insertvalue int32[5] undefined, 0, int32 0
+    int32[5] _3 = insertvalue _2, 1, int32 1
+    int32[5] _4 = insertvalue _3, 2, int32 2
+    int32[5] _5 = insertvalue _4, 3, int32 3
+    int32[5] _6 = insertvalue _5, 4, int32 4
     store _6 to _1
-    int* _7 = getelementptr _1, 0
-    Slice<int> _8 = insertvalue Slice<int> undefined, 0, _7
-    Slice<int> _9 = insertvalue _8, 1, int 5
-    void _10 = call _EN4main1C4initE5SliceI3intE(C* _0, Slice<int> _9)
+    int32* _7 = getelementptr _1, 0
+    Slice<int32> _8 = insertvalue Slice<int32> undefined, 0, _7
+    Slice<int32> _9 = insertvalue _8, 1, int32 5
+    void _10 = call _EN4main1C4initE5SliceI5int32E(C* _0, Slice<int32> _9)
     void _11 = call _EN4main1C3fooE(C* _0)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1C3fooE(C* this) {
-    Slice<int>* a = getelementptr this, 0
-    int* _0 = call _EN3std5SliceI3intEixE3int(Slice<int>* a, int 4)
+    Slice<int32>* a = getelementptr this, 0
+    int32* _0 = call _EN3std5SliceI5int32EixE5int32(Slice<int32>* a, int32 4)
     return void
 }
 
-void _EN4main1C4initE5SliceI3intE(C* this, Slice<int> a) {
-    Slice<int>* a_0 = alloca Slice<int>
+void _EN4main1C4initE5SliceI5int32E(C* this, Slice<int32> a) {
+    Slice<int32>* a_0 = alloca Slice<int32>
     store a to a_0
-    Slice<int>* a_1 = getelementptr this, 0
-    Slice<int> a.load = load a_0
+    Slice<int32>* a_1 = getelementptr this, 0
+    Slice<int32> a.load = load a_0
     store a.load to a_1
     return void
 }
 
-int* _EN3std5SliceI3intEixE3int(Slice<int>* this, int index) {
-    int* index_0 = alloca int
+int32* _EN3std5SliceI5int32EixE5int32(Slice<int32>* this, int32 index) {
+    int32* index_0 = alloca int32
     string* __str = alloca string
     store index to index_0
-    int index.load = load index_0
-    bool _0 = index.load < int 0
+    int32 index.load = load index_0
+    bool _0 = index.load < int32 0
     br _0, or.end(_0), or.rhs(_0)
 
 or.rhs:
-    int index.load_0 = load index_0
-    int _1 = call _EN3std5SliceI3intE4sizeE(Slice<int>* this)
+    int32 index.load_0 = load index_0
+    int32 _1 = call _EN3std5SliceI5int32E4sizeE(Slice<int32>* this)
     bool _2 = index.load_0 >= _1
     br or.end(_2)
 
@@ -49,46 +49,46 @@ or.end(bool or):
     br or, if.then, if.else
 
 if.then:
-    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "operator[]", int 10)
+    void _3 = call _EN3std6string4initEP4char5int32(string* __str, char* "operator[]", int32 10)
     string __str.load = load __str
-    int index.load_1 = load index_0
-    void _4 = call _EN3std5SliceI3intE16indexOutOfBoundsE6string3int(Slice<int>* this, string __str.load, int index.load_1)
+    int32 index.load_1 = load index_0
+    void _4 = call _EN3std5SliceI5int32E16indexOutOfBoundsE6string5int32(Slice<int32>* this, string __str.load, int32 index.load_1)
     br if.end
 
 if.else:
     br if.end
 
 if.end:
-    int** data = getelementptr this, 0
-    int* data.load = load data
-    int index.load_2 = load index_0
-    int* _5 = getelementptr data.load, index.load_2
+    int32** data = getelementptr this, 0
+    int32* data.load = load data
+    int32 index.load_2 = load index_0
+    int32* _5 = getelementptr data.load, index.load_2
     return _5
 }
 
-int _EN3std5SliceI3intE4sizeE(Slice<int>* this) {
-    int* size = getelementptr this, 1
-    int size.load = load size
+int32 _EN3std5SliceI5int32E4sizeE(Slice<int32>* this) {
+    int32* size = getelementptr this, 1
+    int32 size.load = load size
     return size.load
 }
 
-void _EN3std5SliceI3intE16indexOutOfBoundsE6string3int(Slice<int>* this, string function, int index) {
+void _EN3std5SliceI5int32E16indexOutOfBoundsE6string5int32(Slice<int32>* this, string function, int32 index) {
     string* function_0 = alloca string
-    int* index_0 = alloca int
+    int32* index_0 = alloca int32
     string* __str = alloca string
     string* __str_0 = alloca string
     string* __str_1 = alloca string
     store function to function_0
     store index to index_0
-    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "Slice.", int 6)
+    void _0 = call _EN3std6string4initEP4char5int32(string* __str, char* "Slice.", int32 6)
     string __str.load = load __str
     string function.load = load function_0
-    void _1 = call _EN3std6string4initEP4char3int(string* __str_0, char* ": index ", int 8)
+    void _1 = call _EN3std6string4initEP4char5int32(string* __str_0, char* ": index ", int32 8)
     string __str.load_0 = load __str_0
-    int index.load = load index_0
-    void _2 = call _EN3std6string4initEP4char3int(string* __str_1, char* " is out of bounds, size is ", int 27)
+    int32 index.load = load index_0
+    void _2 = call _EN3std6string4initEP4char5int32(string* __str_1, char* " is out of bounds, size is ", int32 27)
     string __str.load_1 = load __str_1
-    int _3 = call _EN3std5SliceI3intE4sizeE(Slice<int>* this)
-    never _4 = call _EN3std5abortI6string6string6string3int6string3intEVE6string6string6string3int6string3int(string __str.load, string function.load, string __str.load_0, int index.load, string __str.load_1, int _3)
+    int32 _3 = call _EN3std5SliceI5int32E4sizeE(Slice<int32>* this)
+    never _4 = call _EN3std5abortI6string6string6string5int326string5int32EVE6string6string6string5int326string5int32(string __str.load, string function.load, string __str.load_0, int32 index.load, string __str.load_1, int32 _3)
     return void
 }

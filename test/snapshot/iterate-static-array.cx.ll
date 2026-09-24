@@ -1,153 +1,153 @@
 
-%"ArrayIterator<int>" = type { ptr, ptr }
-%"Slice<int>" = type { ptr, i32 }
+%"ArrayIterator<int32>" = type { ptr, ptr }
+%"Slice<int32>" = type { ptr, i32 }
 %OutputStream = type { ptr, ptr }
 
 define i32 @main() #0 !dbg !4 {
-  %__iterator = alloca %"ArrayIterator<int>", align 8
+  %__iterator = alloca %"ArrayIterator<int32>", align 8
   %1 = alloca [3 x i32], align 4
   %e = alloca ptr, align 8
   %a = alloca [2 x i32], align 4
-  %__iterator1 = alloca %"ArrayIterator<int>", align 8
+  %__iterator1 = alloca %"ArrayIterator<int32>", align 8
   %e2 = alloca ptr, align 8
   store [3 x i32] [i32 1, i32 2, i32 3], ptr %1, align 4
-  %2 = call %"ArrayIterator<int>" @_EN3std5ArrayI3intN3_E8iteratorE(ptr %1), !dbg !7
-  store %"ArrayIterator<int>" %2, ptr %__iterator, align 8
+  %2 = call %"ArrayIterator<int32>" @_EN3std5ArrayI5int32N3_E8iteratorE(ptr %1), !dbg !7
+  store %"ArrayIterator<int32>" %2, ptr %__iterator, align 8
   br label %loop.condition
 
 loop.condition:                                   ; preds = %loop.increment, %0
-  %3 = call i1 @_EN3std13ArrayIteratorI3intE8hasValueE(ptr %__iterator), !dbg !7
+  %3 = call i1 @_EN3std13ArrayIteratorI5int32E8hasValueE(ptr %__iterator), !dbg !7
   br i1 %3, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %4 = call ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %__iterator), !dbg !7
+  %4 = call ptr @_EN3std13ArrayIteratorI5int32E5valueE(ptr %__iterator), !dbg !7
   store ptr %4, ptr %e, align 8
   %e.load = load ptr, ptr %e, align 8
-  call void @_EN3std7printlnI3intEER3int(ptr %e.load), !dbg !8
+  call void @_EN3std7printlnI5int32EER5int32(ptr %e.load), !dbg !8
   br label %loop.increment
 
 loop.increment:                                   ; preds = %loop.body
-  call void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %__iterator), !dbg !7
+  call void @_EN3std13ArrayIteratorI5int32E9incrementE(ptr %__iterator), !dbg !7
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
   store [2 x i32] [i32 4, i32 5], ptr %a, align 4
-  %5 = call %"ArrayIterator<int>" @_EN3std5ArrayI3intN2_E8iteratorE(ptr %a), !dbg !9
-  store %"ArrayIterator<int>" %5, ptr %__iterator1, align 8
+  %5 = call %"ArrayIterator<int32>" @_EN3std5ArrayI5int32N2_E8iteratorE(ptr %a), !dbg !9
+  store %"ArrayIterator<int32>" %5, ptr %__iterator1, align 8
   br label %loop.condition3
 
 loop.condition3:                                  ; preds = %loop.increment6, %loop.end
-  %6 = call i1 @_EN3std13ArrayIteratorI3intE8hasValueE(ptr %__iterator1), !dbg !9
+  %6 = call i1 @_EN3std13ArrayIteratorI5int32E8hasValueE(ptr %__iterator1), !dbg !9
   br i1 %6, label %loop.body4, label %loop.end7
 
 loop.body4:                                       ; preds = %loop.condition3
-  %7 = call ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %__iterator1), !dbg !9
+  %7 = call ptr @_EN3std13ArrayIteratorI5int32E5valueE(ptr %__iterator1), !dbg !9
   store ptr %7, ptr %e2, align 8
   %e.load5 = load ptr, ptr %e2, align 8
-  call void @_EN3std7printlnI3intEER3int(ptr %e.load5), !dbg !10
+  call void @_EN3std7printlnI5int32EER5int32(ptr %e.load5), !dbg !10
   br label %loop.increment6
 
 loop.increment6:                                  ; preds = %loop.body4
-  call void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %__iterator1), !dbg !9
+  call void @_EN3std13ArrayIteratorI5int32E9incrementE(ptr %__iterator1), !dbg !9
   br label %loop.condition3
 
 loop.end7:                                        ; preds = %loop.condition3
   ret i32 0
 }
 
-define %"ArrayIterator<int>" @_EN3std5ArrayI3intN3_E8iteratorE(ptr %this) #0 !dbg !11 {
-  %1 = alloca %"ArrayIterator<int>", align 8
+define %"ArrayIterator<int32>" @_EN3std5ArrayI5int32N3_E8iteratorE(ptr %this) #0 !dbg !11 {
+  %1 = alloca %"ArrayIterator<int32>", align 8
   %2 = getelementptr inbounds [3 x i32], ptr %this, i32 0, i32 0
-  %3 = insertvalue %"Slice<int>" undef, ptr %2, 0
-  %4 = insertvalue %"Slice<int>" %3, i32 3, 1
-  call void @_EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ptr %1, %"Slice<int>" %4), !dbg !13
-  %.load = load %"ArrayIterator<int>", ptr %1, align 8
-  ret %"ArrayIterator<int>" %.load
+  %3 = insertvalue %"Slice<int32>" undef, ptr %2, 0
+  %4 = insertvalue %"Slice<int32>" %3, i32 3, 1
+  call void @_EN3std13ArrayIteratorI5int32E4initE5SliceI5int32E(ptr %1, %"Slice<int32>" %4), !dbg !13
+  %.load = load %"ArrayIterator<int32>", ptr %1, align 8
+  ret %"ArrayIterator<int32>" %.load
 }
 
-define i1 @_EN3std13ArrayIteratorI3intE8hasValueE(ptr %this) #0 !dbg !14 {
-  %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
+define i1 @_EN3std13ArrayIteratorI5int32E8hasValueE(ptr %this) #0 !dbg !14 {
+  %current = getelementptr inbounds %"ArrayIterator<int32>", ptr %this, i32 0, i32 0
   %current.load = load ptr, ptr %current, align 8
-  %end = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 1
+  %end = getelementptr inbounds %"ArrayIterator<int32>", ptr %this, i32 0, i32 1
   %end.load = load ptr, ptr %end, align 8
   %1 = icmp ne ptr %current.load, %end.load
   ret i1 %1
 }
 
-define ptr @_EN3std13ArrayIteratorI3intE5valueE(ptr %this) #0 !dbg !16 {
-  %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
+define ptr @_EN3std13ArrayIteratorI5int32E5valueE(ptr %this) #0 !dbg !16 {
+  %current = getelementptr inbounds %"ArrayIterator<int32>", ptr %this, i32 0, i32 0
   %current.load = load ptr, ptr %current, align 8
   ret ptr %current.load
 }
 
-define void @_EN3std7printlnI3intEER3int(ptr %value) #0 !dbg !17 {
+define void @_EN3std7printlnI5int32EER5int32(ptr %value) #0 !dbg !17 {
   %value1 = alloca ptr, align 8
   store ptr %value, ptr %value1, align 8
   %value.load = load ptr, ptr %value1, align 8
-  call void @_EN3std5printI3intEER3int(ptr %value.load), !dbg !19
+  call void @_EN3std5printI5int32EER5int32(ptr %value.load), !dbg !19
   call void @_EN3std5printI4charEE4char(i8 10), !dbg !20
   ret void
 }
 
-define void @_EN3std13ArrayIteratorI3intE9incrementE(ptr %this) #0 !dbg !21 {
-  %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
+define void @_EN3std13ArrayIteratorI5int32E9incrementE(ptr %this) #0 !dbg !21 {
+  %current = getelementptr inbounds %"ArrayIterator<int32>", ptr %this, i32 0, i32 0
   %current.load = load ptr, ptr %current, align 8
   %1 = getelementptr inbounds i32, ptr %current.load, i32 1
   store ptr %1, ptr %current, align 8
   ret void
 }
 
-define %"ArrayIterator<int>" @_EN3std5ArrayI3intN2_E8iteratorE(ptr %this) #0 !dbg !22 {
-  %1 = alloca %"ArrayIterator<int>", align 8
+define %"ArrayIterator<int32>" @_EN3std5ArrayI5int32N2_E8iteratorE(ptr %this) #0 !dbg !22 {
+  %1 = alloca %"ArrayIterator<int32>", align 8
   %2 = getelementptr inbounds [2 x i32], ptr %this, i32 0, i32 0
-  %3 = insertvalue %"Slice<int>" undef, ptr %2, 0
-  %4 = insertvalue %"Slice<int>" %3, i32 2, 1
-  call void @_EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ptr %1, %"Slice<int>" %4), !dbg !23
-  %.load = load %"ArrayIterator<int>", ptr %1, align 8
-  ret %"ArrayIterator<int>" %.load
+  %3 = insertvalue %"Slice<int32>" undef, ptr %2, 0
+  %4 = insertvalue %"Slice<int32>" %3, i32 2, 1
+  call void @_EN3std13ArrayIteratorI5int32E4initE5SliceI5int32E(ptr %1, %"Slice<int32>" %4), !dbg !23
+  %.load = load %"ArrayIterator<int32>", ptr %1, align 8
+  ret %"ArrayIterator<int32>" %.load
 }
 
-define void @_EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ptr %this, %"Slice<int>" %array) #0 !dbg !24 {
-  %array1 = alloca %"Slice<int>", align 8
-  store %"Slice<int>" %array, ptr %array1, align 8
-  %current = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 0
-  %1 = call ptr @_EN3std5SliceI3intE4dataE(ptr %array1), !dbg !25
+define void @_EN3std13ArrayIteratorI5int32E4initE5SliceI5int32E(ptr %this, %"Slice<int32>" %array) #0 !dbg !24 {
+  %array1 = alloca %"Slice<int32>", align 8
+  store %"Slice<int32>" %array, ptr %array1, align 8
+  %current = getelementptr inbounds %"ArrayIterator<int32>", ptr %this, i32 0, i32 0
+  %1 = call ptr @_EN3std5SliceI5int32E4dataE(ptr %array1), !dbg !25
   store ptr %1, ptr %current, align 8
-  %end = getelementptr inbounds %"ArrayIterator<int>", ptr %this, i32 0, i32 1
-  %2 = call ptr @_EN3std5SliceI3intE4dataE(ptr %array1), !dbg !26
-  %3 = call i32 @_EN3std5SliceI3intE4sizeE(ptr %array1), !dbg !27
+  %end = getelementptr inbounds %"ArrayIterator<int32>", ptr %this, i32 0, i32 1
+  %2 = call ptr @_EN3std5SliceI5int32E4dataE(ptr %array1), !dbg !26
+  %3 = call i32 @_EN3std5SliceI5int32E4sizeE(ptr %array1), !dbg !27
   %4 = getelementptr inbounds i32, ptr %2, i32 %3
   store ptr %4, ptr %end, align 8
   ret void
 }
 
-define void @_EN3std5printI3intEER3int(ptr %value) #0 !dbg !28 {
+define void @_EN3std5printI5int32EER5int32(ptr %value) #0 !dbg !28 {
   %value1 = alloca ptr, align 8
   %stream = alloca %OutputStream, align 8
   store ptr %value, ptr %value1, align 8
   call void @_EN3std12OutputStream4initE(ptr %stream), !dbg !29
   %value.load = load ptr, ptr %value1, align 8
-  call void @_EN3std3int5printER12OutputStream(ptr %value.load, ptr %stream), !dbg !30
+  call void @_EN3std5int325printER12OutputStream(ptr %value.load, ptr %stream), !dbg !30
   ret void
 }
 
 declare void @_EN3std5printI4charEE4char(i8) #0
 
-define ptr @_EN3std5SliceI3intE4dataE(ptr %this) #0 !dbg !31 {
-  %data = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 0
+define ptr @_EN3std5SliceI5int32E4dataE(ptr %this) #0 !dbg !31 {
+  %data = getelementptr inbounds %"Slice<int32>", ptr %this, i32 0, i32 0
   %data.load = load ptr, ptr %data, align 8
   ret ptr %data.load
 }
 
-define i32 @_EN3std5SliceI3intE4sizeE(ptr %this) #0 !dbg !33 {
-  %size = getelementptr inbounds %"Slice<int>", ptr %this, i32 0, i32 1
+define i32 @_EN3std5SliceI5int32E4sizeE(ptr %this) #0 !dbg !33 {
+  %size = getelementptr inbounds %"Slice<int32>", ptr %this, i32 0, i32 1
   %size.load = load i32, ptr %size, align 4
   ret i32 %size.load
 }
 
 declare void @_EN3std12OutputStream4initE(ptr) #0
 
-declare void @_EN3std3int5printER12OutputStream(ptr, ptr) #0
+declare void @_EN3std5int325printER12OutputStream(ptr, ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -165,26 +165,26 @@ attributes #0 = { "frame-pointer"="all" }
 !8 = !DILocation(line: 9, column: 9, scope: !4)
 !9 = !DILocation(line: 13, column: 5, scope: !4)
 !10 = !DILocation(line: 16, column: 9, scope: !4)
-!11 = distinct !DISubprogram(name: "iterator", linkageName: "_EN3std5ArrayI3intN3_E8iteratorE", scope: !12, file: !12, line: 19, type: !5, scopeLine: 19, spFlags: DISPFlagDefinition, unit: !2)
+!11 = distinct !DISubprogram(name: "iterator", linkageName: "_EN3std5ArrayI5int32N3_E8iteratorE", scope: !12, file: !12, line: 19, type: !5, scopeLine: 19, spFlags: DISPFlagDefinition, unit: !2)
 !12 = !DIFile(filename: "Array.cx")
 !13 = !DILocation(line: 20, column: 16, scope: !11)
-!14 = distinct !DISubprogram(name: "hasValue", linkageName: "_EN3std13ArrayIteratorI3intE8hasValueE", scope: !15, file: !15, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!14 = distinct !DISubprogram(name: "hasValue", linkageName: "_EN3std13ArrayIteratorI5int32E8hasValueE", scope: !15, file: !15, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
 !15 = !DIFile(filename: "ArrayIterator.cx")
-!16 = distinct !DISubprogram(name: "value", linkageName: "_EN3std13ArrayIteratorI3intE5valueE", scope: !15, file: !15, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
-!17 = distinct !DISubprogram(name: "println", linkageName: "_EN3std7printlnI3intEER3int", scope: !18, file: !18, line: 2, type: !5, scopeLine: 2, spFlags: DISPFlagDefinition, unit: !2)
+!16 = distinct !DISubprogram(name: "value", linkageName: "_EN3std13ArrayIteratorI5int32E5valueE", scope: !15, file: !15, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!17 = distinct !DISubprogram(name: "println", linkageName: "_EN3std7printlnI5int32EER5int32", scope: !18, file: !18, line: 2, type: !5, scopeLine: 2, spFlags: DISPFlagDefinition, unit: !2)
 !18 = !DIFile(filename: "stdio.cx")
 !19 = !DILocation(line: 3, column: 5, scope: !17)
 !20 = !DILocation(line: 4, column: 5, scope: !17)
-!21 = distinct !DISubprogram(name: "increment", linkageName: "_EN3std13ArrayIteratorI3intE9incrementE", scope: !15, file: !15, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
-!22 = distinct !DISubprogram(name: "iterator", linkageName: "_EN3std5ArrayI3intN2_E8iteratorE", scope: !12, file: !12, line: 19, type: !5, scopeLine: 19, spFlags: DISPFlagDefinition, unit: !2)
+!21 = distinct !DISubprogram(name: "increment", linkageName: "_EN3std13ArrayIteratorI5int32E9incrementE", scope: !15, file: !15, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
+!22 = distinct !DISubprogram(name: "iterator", linkageName: "_EN3std5ArrayI5int32N2_E8iteratorE", scope: !12, file: !12, line: 19, type: !5, scopeLine: 19, spFlags: DISPFlagDefinition, unit: !2)
 !23 = !DILocation(line: 20, column: 16, scope: !22)
-!24 = distinct !DISubprogram(name: "init", linkageName: "_EN3std13ArrayIteratorI3intE4initE5SliceI3intE", scope: !15, file: !15, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!24 = distinct !DISubprogram(name: "init", linkageName: "_EN3std13ArrayIteratorI5int32E4initE5SliceI5int32E", scope: !15, file: !15, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
 !25 = !DILocation(line: 8, column: 25, scope: !24)
 !26 = !DILocation(line: 9, column: 22, scope: !24)
 !27 = !DILocation(line: 9, column: 35, scope: !24)
-!28 = distinct !DISubprogram(name: "print", linkageName: "_EN3std5printI3intEER3int", scope: !18, file: !18, line: 33, type: !5, scopeLine: 33, spFlags: DISPFlagDefinition, unit: !2)
+!28 = distinct !DISubprogram(name: "print", linkageName: "_EN3std5printI5int32EER5int32", scope: !18, file: !18, line: 33, type: !5, scopeLine: 33, spFlags: DISPFlagDefinition, unit: !2)
 !29 = !DILocation(line: 34, column: 18, scope: !28)
 !30 = !DILocation(line: 35, column: 11, scope: !28)
-!31 = distinct !DISubprogram(name: "data", linkageName: "_EN3std5SliceI3intE4dataE", scope: !32, file: !32, line: 55, type: !5, scopeLine: 55, spFlags: DISPFlagDefinition, unit: !2)
+!31 = distinct !DISubprogram(name: "data", linkageName: "_EN3std5SliceI5int32E4dataE", scope: !32, file: !32, line: 55, type: !5, scopeLine: 55, spFlags: DISPFlagDefinition, unit: !2)
 !32 = !DIFile(filename: "Slice.cx")
-!33 = distinct !DISubprogram(name: "size", linkageName: "_EN3std5SliceI3intE4sizeE", scope: !32, file: !32, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
+!33 = distinct !DISubprogram(name: "size", linkageName: "_EN3std5SliceI5int32E4sizeE", scope: !32, file: !32, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)

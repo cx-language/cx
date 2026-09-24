@@ -1,26 +1,26 @@
 
 void _EN4main1fE() {
-    int** c = alloca int*
-    int** c_0 = alloca int*
+    int32** c = alloca int32*
+    int32** c_0 = alloca int32*
     br loop.condition
 
 loop.condition:
-    int* _0 = call _EN4main1hE()
+    int32* _0 = call _EN4main1hE()
     store _0 to c
-    int* c.load = load c
-    bool _1 = c.load != int* null
+    int32* c.load = load c
+    bool _1 = c.load != int32* null
     br _1, loop.body, loop.end
 
 loop.body:
-    int* c.load_0 = load c
-    bool __implicit_unwrap.condition = c.load_0 == int* null
+    int32* c.load_0 = load c
+    bool __implicit_unwrap.condition = c.load_0 == int32* null
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 loop.end:
-    int* _2 = call _EN4main1hE()
+    int32* _2 = call _EN4main1hE()
     store _2 to c_0
-    int* c.load_1 = load c_0
-    bool _3 = c.load_1 != int* null
+    int32* c.load_1 = load c_0
+    bool _3 = c.load_1 != int32* null
     br _3, if.then, if.else
 
 __implicit_unwrap.fail:
@@ -29,12 +29,12 @@ __implicit_unwrap.fail:
     unreachable
 
 __implicit_unwrap.success:
-    void _5 = call _EN4main1jEP3int(int* c.load_0)
+    void _5 = call _EN4main1jEP5int32(int32* c.load_0)
     br loop.condition
 
 if.then:
-    int* c.load_2 = load c_0
-    bool __implicit_unwrap.condition_0 = c.load_2 == int* null
+    int32* c.load_2 = load c_0
+    bool __implicit_unwrap.condition_0 = c.load_2 == int32* null
     br __implicit_unwrap.condition_0, __implicit_unwrap.fail, __implicit_unwrap.success
 
 if.else:
@@ -49,45 +49,45 @@ __implicit_unwrap.fail_0:
     unreachable
 
 __implicit_unwrap.success_0:
-    void _7 = call _EN4main1jEP3int(int* c.load_2)
+    void _7 = call _EN4main1jEP5int32(int32* c.load_2)
     br if.end
 }
 
-int* _EN4main1hE() {
-    return int* null
+int32* _EN4main1hE() {
+    return int32* null
 }
 
-void _EN4main1jEP3int(int* i) {
-    int** i_0 = alloca int*
+void _EN4main1jEP5int32(int32* i) {
+    int32** i_0 = alloca int32*
     store i to i_0
     return void
 }
 
 void _EN4main1gE() {
-    int** c1 = alloca int*
-    int** c2 = alloca int*
-    int** c3 = alloca int*
-    int** c4 = alloca int*
-    int** c5 = alloca int*
+    int32** c1 = alloca int32*
+    int32** c2 = alloca int32*
+    int32** c3 = alloca int32*
+    int32** c4 = alloca int32*
+    int32** c5 = alloca int32*
     br loop.condition
 
 loop.condition:
-    int* _0 = call _EN4main1hE()
+    int32* _0 = call _EN4main1hE()
     store _0 to c1
-    int* c1.load = load c1
-    bool _1 = c1.load != int* null
+    int32* c1.load = load c1
+    bool _1 = c1.load != int32* null
     br _1, loop.body, loop.end
 
 loop.body:
-    int* c1.load_0 = load c1
-    bool __implicit_unwrap.condition = c1.load_0 == int* null
+    int32* c1.load_0 = load c1
+    bool __implicit_unwrap.condition = c1.load_0 == int32* null
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 loop.end:
-    int* _2 = call _EN4main1hE()
+    int32* _2 = call _EN4main1hE()
     store _2 to c2
-    int* c2.load = load c2
-    bool _3 = c2.load != int* null
+    int32* c2.load = load c2
+    bool _3 = c2.load != int32* null
     br _3, if.then, if.else
 
 __implicit_unwrap.fail:
@@ -96,12 +96,12 @@ __implicit_unwrap.fail:
     unreachable
 
 __implicit_unwrap.success:
-    void _5 = call _EN4main1jEP3int(int* c1.load_0)
+    void _5 = call _EN4main1jEP5int32(int32* c1.load_0)
     br loop.condition
 
 if.then:
-    int* c2.load_0 = load c2
-    bool __implicit_unwrap.condition_0 = c2.load_0 == int* null
+    int32* c2.load_0 = load c2
+    bool __implicit_unwrap.condition_0 = c2.load_0 == int32* null
     br __implicit_unwrap.condition_0, __implicit_unwrap.fail, __implicit_unwrap.success
 
 if.else:
@@ -116,26 +116,26 @@ __implicit_unwrap.fail_0:
     unreachable
 
 __implicit_unwrap.success_0:
-    void _7 = call _EN4main1jEP3int(int* c2.load_0)
+    void _7 = call _EN4main1jEP5int32(int32* c2.load_0)
     br if.end
 
 loop.condition_0:
-    int* _8 = call _EN4main1hE()
+    int32* _8 = call _EN4main1hE()
     store _8 to c3
-    int* c3.load = load c3
-    bool _9 = c3.load != int* null
+    int32* c3.load = load c3
+    bool _9 = c3.load != int32* null
     br _9, loop.body, loop.end
 
 loop.body_0:
-    int* c3.load_0 = load c3
-    bool __implicit_unwrap.condition_1 = c3.load_0 == int* null
+    int32* c3.load_0 = load c3
+    bool __implicit_unwrap.condition_1 = c3.load_0 == int32* null
     br __implicit_unwrap.condition_1, __implicit_unwrap.fail, __implicit_unwrap.success
 
 loop.end_0:
-    int* _10 = call _EN4main1hE()
+    int32* _10 = call _EN4main1hE()
     store _10 to c4
-    int* c4.load = load c4
-    bool _11 = c4.load != int* null
+    int32* c4.load = load c4
+    bool _11 = c4.load != int32* null
     br _11, if.then, if.else
 
 __implicit_unwrap.fail_1:
@@ -144,22 +144,22 @@ __implicit_unwrap.fail_1:
     unreachable
 
 __implicit_unwrap.success_1:
-    void _13 = call _EN4main1jEP3int(int* c3.load_0)
+    void _13 = call _EN4main1jEP5int32(int32* c3.load_0)
     br loop.condition_0
 
 if.then_0:
-    int* c4.load_0 = load c4
-    bool __implicit_unwrap.condition_2 = c4.load_0 == int* null
+    int32* c4.load_0 = load c4
+    bool __implicit_unwrap.condition_2 = c4.load_0 == int32* null
     br __implicit_unwrap.condition_2, __implicit_unwrap.fail, __implicit_unwrap.success
 
 if.else_0:
     br if.end_0
 
 if.end_0:
-    int* _14 = call _EN4main1hE()
+    int32* _14 = call _EN4main1hE()
     store _14 to c5
-    int* c5.load = load c5
-    bool _15 = c5.load != int* null
+    int32* c5.load = load c5
+    bool _15 = c5.load != int32* null
     br _15, if.then, if.else
 
 __implicit_unwrap.fail_2:
@@ -168,12 +168,12 @@ __implicit_unwrap.fail_2:
     unreachable
 
 __implicit_unwrap.success_2:
-    void _17 = call _EN4main1jEP3int(int* c4.load_0)
+    void _17 = call _EN4main1jEP5int32(int32* c4.load_0)
     br if.end_0
 
 if.then_1:
-    int* c5.load_0 = load c5
-    bool __implicit_unwrap.condition_3 = c5.load_0 == int* null
+    int32* c5.load_0 = load c5
+    bool __implicit_unwrap.condition_3 = c5.load_0 == int32* null
     br __implicit_unwrap.condition_3, __implicit_unwrap.fail, __implicit_unwrap.success
 
 if.else_1:
@@ -188,6 +188,6 @@ __implicit_unwrap.fail_3:
     unreachable
 
 __implicit_unwrap.success_3:
-    void _19 = call _EN4main1jEP3int(int* c5.load_0)
+    void _19 = call _EN4main1jEP5int32(int32* c5.load_0)
     br if.end_1
 }

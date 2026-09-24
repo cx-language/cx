@@ -1,12 +1,12 @@
 
-int main() {
-    A<int>* a = alloca A<int>
-    void _0 = call _EN33imported_generic_type_constructor1AI3intE4initE(A<int>* a)
-    return int 0
+int32 main() {
+    A<int32>* a = alloca A<int32>
+    void _0 = call _EN33imported_generic_type_constructor1AI5int32E4initE(A<int32>* a)
+    return int32 0
 }
 
-void _EN33imported_generic_type_constructor1AI3intE4initE(A<int>* this) {
-    int** a = getelementptr this, 0
-    store int* null to a
+void _EN33imported_generic_type_constructor1AI5int32E4initE(A<int32>* this) {
+    int32** a = getelementptr this, 0
+    store int32* null to a
     return void
 }

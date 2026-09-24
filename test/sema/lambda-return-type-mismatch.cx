@@ -5,7 +5,7 @@ void main() {
         if (a > b) {
             return a + b
         } else {
-            // CHECK: [[@LINE+1]]:13: error: mismatching return type 'bool', expected 'int'
+            // CHECK: [[@LINE+1]]:13: error: mismatching return type 'bool', expected 'int32'
             return false
         }
     }

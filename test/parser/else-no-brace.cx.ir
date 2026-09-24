@@ -1,12 +1,12 @@
 
-int main() {
+int32 main() {
     br bool true, if.then, if.else
 
 if.then:
-    return int 1
+    return int32 1
 
 if.else:
-    return int 0
+    return int32 0
 
 if.end:
     unreachable

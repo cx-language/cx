@@ -48,14 +48,14 @@ overflow.fail8:                                   ; preds = %overflow.success
   unreachable
 
 overflow.success9:                                ; preds = %overflow.success
-  call void @_EN4main4vec24initE3int3int(ptr %1, i32 %5, i32 %12), !dbg !8
+  call void @_EN4main4vec24initE5int325int32(ptr %1, i32 %5, i32 %12), !dbg !8
   %.load = load %vec2, ptr %1, align 4
   ret %vec2 %.load
 }
 
 declare void @_EN3std10assertFailEP4char(ptr) #0
 
-define void @_EN4main4vec24initE3int3int(ptr %this, i32 %x, i32 %y) #0 !dbg !9 {
+define void @_EN4main4vec24initE5int325int32(ptr %this, i32 %x, i32 %y) #0 !dbg !9 {
   %x1 = alloca i32, align 4
   %y2 = alloca i32, align 4
   store i32 %x, ptr %x1, align 4
@@ -73,19 +73,19 @@ define i32 @main() #0 !dbg !10 {
   %v = alloca %vec2, align 8
   %1 = alloca %vec2, align 8
   %2 = alloca %vec2, align 8
-  call void @_EN4main4vec24initE3int3int(ptr %v, i32 3, i32 2), !dbg !11
-  call void @_EN4main4vec24initE3int3int(ptr %1, i32 2, i32 4), !dbg !12
+  call void @_EN4main4vec24initE5int325int32(ptr %v, i32 3, i32 2), !dbg !11
+  call void @_EN4main4vec24initE5int325int32(ptr %1, i32 2, i32 4), !dbg !12
   %.load = load %vec2, ptr %1, align 4
   %v.load = load %vec2, ptr %v, align 4
   %3 = call %vec2 @_EN4mainmlE4vec24vec2(%vec2 %.load, %vec2 %v.load), !dbg !13
   store %vec2 %3, ptr %v, align 4
   %v.load1 = load %vec2, ptr %v, align 4
-  call void @_EN4main4vec24initE3int3int(ptr %2, i32 -1, i32 3), !dbg !14
+  call void @_EN4main4vec24initE5int325int32(ptr %2, i32 -1, i32 3), !dbg !14
   %.load2 = load %vec2, ptr %2, align 4
   %4 = call i1 @_EN4maineqE4vec24vec2(%vec2 %v.load1, %vec2 %.load2), !dbg !15
   %x = getelementptr inbounds %vec2, ptr %v, i32 0, i32 0
   %x.load = load i32, ptr %x, align 4
-  %5 = call i32 @_EN4main4vec2ixE3int(ptr %v, i32 %x.load), !dbg !16
+  %5 = call i32 @_EN4main4vec2ixE5int32(ptr %v, i32 %x.load), !dbg !16
   ret i32 0
 }
 
@@ -102,7 +102,7 @@ define i1 @_EN4maineqE4vec24vec2(%vec2 %a, %vec2 %b) #0 !dbg !17 {
   ret i1 %1
 }
 
-define i32 @_EN4main4vec2ixE3int(ptr %this, i32 %index) #0 !dbg !18 {
+define i32 @_EN4main4vec2ixE5int32(ptr %this, i32 %index) #0 !dbg !18 {
   %index1 = alloca i32, align 4
   store i32 %index, ptr %index1, align 4
   %index.load = load i32, ptr %index1, align 4
@@ -123,7 +123,7 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 12, column: 6, scope: !4)
 !8 = !DILocation(line: 13, column: 12, scope: !4)
-!9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main4vec24initE3int3int", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main4vec24initE5int325int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !10 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 16, type: !5, scopeLine: 16, spFlags: DISPFlagDefinition, unit: !2)
 !11 = !DILocation(line: 17, column: 13, scope: !10)
 !12 = !DILocation(line: 18, column: 9, scope: !10)
@@ -132,4 +132,4 @@ attributes #0 = { "frame-pointer"="all" }
 !15 = !DILocation(line: 19, column: 11, scope: !10)
 !16 = !DILocation(line: 20, column: 10, scope: !10)
 !17 = distinct !DISubprogram(name: "==", linkageName: "_EN4maineqE4vec24vec2", scope: !3, file: !3, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
-!18 = distinct !DISubprogram(name: "[]", linkageName: "_EN4main4vec2ixE3int", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!18 = distinct !DISubprogram(name: "[]", linkageName: "_EN4main4vec2ixE5int32", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)

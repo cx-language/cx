@@ -1,145 +1,145 @@
 
-int main() {
-    ArrayIterator<int>* __iterator = alloca ArrayIterator<int>
-    int[3]* _0 = alloca int[3]
-    int** e = alloca int*
-    int[2]* a = alloca int[2]
-    ArrayIterator<int>* __iterator_0 = alloca ArrayIterator<int>
-    int** e_0 = alloca int*
-    int[3] _1 = insertvalue int[3] undefined, 0, int 1
-    int[3] _2 = insertvalue _1, 1, int 2
-    int[3] _3 = insertvalue _2, 2, int 3
+int32 main() {
+    ArrayIterator<int32>* __iterator = alloca ArrayIterator<int32>
+    int32[3]* _0 = alloca int32[3]
+    int32** e = alloca int32*
+    int32[2]* a = alloca int32[2]
+    ArrayIterator<int32>* __iterator_0 = alloca ArrayIterator<int32>
+    int32** e_0 = alloca int32*
+    int32[3] _1 = insertvalue int32[3] undefined, 0, int32 1
+    int32[3] _2 = insertvalue _1, 1, int32 2
+    int32[3] _3 = insertvalue _2, 2, int32 3
     store _3 to _0
-    ArrayIterator<int> _4 = call _EN3std5ArrayI3intN3_E8iteratorE(int[3]* _0)
+    ArrayIterator<int32> _4 = call _EN3std5ArrayI5int32N3_E8iteratorE(int32[3]* _0)
     store _4 to __iterator
     br loop.condition
 
 loop.condition:
-    bool _5 = call _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* __iterator)
+    bool _5 = call _EN3std13ArrayIteratorI5int32E8hasValueE(ArrayIterator<int32>* __iterator)
     br _5, loop.body, loop.end
 
 loop.body:
-    int* _6 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator)
+    int32* _6 = call _EN3std13ArrayIteratorI5int32E5valueE(ArrayIterator<int32>* __iterator)
     store _6 to e
-    int* e.load = load e
-    void _7 = call _EN3std7printlnI3intEER3int(int* e.load)
+    int32* e.load = load e
+    void _7 = call _EN3std7printlnI5int32EER5int32(int32* e.load)
     br loop.increment
 
 loop.increment:
-    void _8 = call _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* __iterator)
+    void _8 = call _EN3std13ArrayIteratorI5int32E9incrementE(ArrayIterator<int32>* __iterator)
     br loop.condition
 
 loop.end:
-    int[2] _9 = insertvalue int[2] undefined, 0, int 4
-    int[2] _10 = insertvalue _9, 1, int 5
+    int32[2] _9 = insertvalue int32[2] undefined, 0, int32 4
+    int32[2] _10 = insertvalue _9, 1, int32 5
     store _10 to a
-    ArrayIterator<int> _11 = call _EN3std5ArrayI3intN2_E8iteratorE(int[2]* a)
+    ArrayIterator<int32> _11 = call _EN3std5ArrayI5int32N2_E8iteratorE(int32[2]* a)
     store _11 to __iterator_0
     br loop.condition_0
 
 loop.condition_0:
-    bool _12 = call _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* __iterator_0)
+    bool _12 = call _EN3std13ArrayIteratorI5int32E8hasValueE(ArrayIterator<int32>* __iterator_0)
     br _12, loop.body, loop.end
 
 loop.body_0:
-    int* _13 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator_0)
+    int32* _13 = call _EN3std13ArrayIteratorI5int32E5valueE(ArrayIterator<int32>* __iterator_0)
     store _13 to e_0
-    int* e.load_0 = load e_0
-    void _14 = call _EN3std7printlnI3intEER3int(int* e.load_0)
+    int32* e.load_0 = load e_0
+    void _14 = call _EN3std7printlnI5int32EER5int32(int32* e.load_0)
     br loop.increment_0
 
 loop.increment_0:
-    void _15 = call _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* __iterator_0)
+    void _15 = call _EN3std13ArrayIteratorI5int32E9incrementE(ArrayIterator<int32>* __iterator_0)
     br loop.condition_0
 
 loop.end_0:
-    return int 0
+    return int32 0
 }
 
-ArrayIterator<int> _EN3std5ArrayI3intN3_E8iteratorE(int[3]* this) {
-    ArrayIterator<int>* _0 = alloca ArrayIterator<int>
-    int* _1 = getelementptr this, 0
-    Slice<int> _2 = insertvalue Slice<int> undefined, 0, _1
-    Slice<int> _3 = insertvalue _2, 1, int 3
-    void _4 = call _EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ArrayIterator<int>* _0, Slice<int> _3)
-    ArrayIterator<int> .load = load _0
+ArrayIterator<int32> _EN3std5ArrayI5int32N3_E8iteratorE(int32[3]* this) {
+    ArrayIterator<int32>* _0 = alloca ArrayIterator<int32>
+    int32* _1 = getelementptr this, 0
+    Slice<int32> _2 = insertvalue Slice<int32> undefined, 0, _1
+    Slice<int32> _3 = insertvalue _2, 1, int32 3
+    void _4 = call _EN3std13ArrayIteratorI5int32E4initE5SliceI5int32E(ArrayIterator<int32>* _0, Slice<int32> _3)
+    ArrayIterator<int32> .load = load _0
     return .load
 }
 
-bool _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* this) {
-    int** current = getelementptr this, 0
-    int* current.load = load current
-    int** end = getelementptr this, 1
-    int* end.load = load end
+bool _EN3std13ArrayIteratorI5int32E8hasValueE(ArrayIterator<int32>* this) {
+    int32** current = getelementptr this, 0
+    int32* current.load = load current
+    int32** end = getelementptr this, 1
+    int32* end.load = load end
     bool _0 = current.load != end.load
     return _0
 }
 
-int* _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* this) {
-    int** current = getelementptr this, 0
-    int* current.load = load current
+int32* _EN3std13ArrayIteratorI5int32E5valueE(ArrayIterator<int32>* this) {
+    int32** current = getelementptr this, 0
+    int32* current.load = load current
     return current.load
 }
 
-void _EN3std7printlnI3intEER3int(int* value) {
-    int** value_0 = alloca int*
+void _EN3std7printlnI5int32EER5int32(int32* value) {
+    int32** value_0 = alloca int32*
     store value to value_0
-    int* value.load = load value_0
-    void _0 = call _EN3std5printI3intEER3int(int* value.load)
+    int32* value.load = load value_0
+    void _0 = call _EN3std5printI5int32EER5int32(int32* value.load)
     void _1 = call _EN3std5printI4charEE4char(char 10)
     return void
 }
 
-void _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* this) {
-    int** current = getelementptr this, 0
-    int* current.load = load current
-    int* _0 = getelementptr current.load, int 1
+void _EN3std13ArrayIteratorI5int32E9incrementE(ArrayIterator<int32>* this) {
+    int32** current = getelementptr this, 0
+    int32* current.load = load current
+    int32* _0 = getelementptr current.load, int32 1
     store _0 to current
     return void
 }
 
-ArrayIterator<int> _EN3std5ArrayI3intN2_E8iteratorE(int[2]* this) {
-    ArrayIterator<int>* _0 = alloca ArrayIterator<int>
-    int* _1 = getelementptr this, 0
-    Slice<int> _2 = insertvalue Slice<int> undefined, 0, _1
-    Slice<int> _3 = insertvalue _2, 1, int 2
-    void _4 = call _EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ArrayIterator<int>* _0, Slice<int> _3)
-    ArrayIterator<int> .load = load _0
+ArrayIterator<int32> _EN3std5ArrayI5int32N2_E8iteratorE(int32[2]* this) {
+    ArrayIterator<int32>* _0 = alloca ArrayIterator<int32>
+    int32* _1 = getelementptr this, 0
+    Slice<int32> _2 = insertvalue Slice<int32> undefined, 0, _1
+    Slice<int32> _3 = insertvalue _2, 1, int32 2
+    void _4 = call _EN3std13ArrayIteratorI5int32E4initE5SliceI5int32E(ArrayIterator<int32>* _0, Slice<int32> _3)
+    ArrayIterator<int32> .load = load _0
     return .load
 }
 
-void _EN3std13ArrayIteratorI3intE4initE5SliceI3intE(ArrayIterator<int>* this, Slice<int> array) {
-    Slice<int>* array_0 = alloca Slice<int>
+void _EN3std13ArrayIteratorI5int32E4initE5SliceI5int32E(ArrayIterator<int32>* this, Slice<int32> array) {
+    Slice<int32>* array_0 = alloca Slice<int32>
     store array to array_0
-    int** current = getelementptr this, 0
-    int* _0 = call _EN3std5SliceI3intE4dataE(Slice<int>* array_0)
+    int32** current = getelementptr this, 0
+    int32* _0 = call _EN3std5SliceI5int32E4dataE(Slice<int32>* array_0)
     store _0 to current
-    int** end = getelementptr this, 1
-    int* _1 = call _EN3std5SliceI3intE4dataE(Slice<int>* array_0)
-    int _2 = call _EN3std5SliceI3intE4sizeE(Slice<int>* array_0)
-    int* _3 = getelementptr _1, _2
+    int32** end = getelementptr this, 1
+    int32* _1 = call _EN3std5SliceI5int32E4dataE(Slice<int32>* array_0)
+    int32 _2 = call _EN3std5SliceI5int32E4sizeE(Slice<int32>* array_0)
+    int32* _3 = getelementptr _1, _2
     store _3 to end
     return void
 }
 
-void _EN3std5printI3intEER3int(int* value) {
-    int** value_0 = alloca int*
+void _EN3std5printI5int32EER5int32(int32* value) {
+    int32** value_0 = alloca int32*
     OutputStream* stream = alloca OutputStream
     store value to value_0
     void _0 = call _EN3std12OutputStream4initE(OutputStream* stream)
-    int* value.load = load value_0
-    void _1 = call _EN3std3int5printER12OutputStream(int* value.load, OutputStream* stream)
+    int32* value.load = load value_0
+    void _1 = call _EN3std5int325printER12OutputStream(int32* value.load, OutputStream* stream)
     return void
 }
 
-int* _EN3std5SliceI3intE4dataE(Slice<int>* this) {
-    int** data = getelementptr this, 0
-    int* data.load = load data
+int32* _EN3std5SliceI5int32E4dataE(Slice<int32>* this) {
+    int32** data = getelementptr this, 0
+    int32* data.load = load data
     return data.load
 }
 
-int _EN3std5SliceI3intE4sizeE(Slice<int>* this) {
-    int* size = getelementptr this, 1
-    int size.load = load size
+int32 _EN3std5SliceI5int32E4sizeE(Slice<int32>* this) {
+    int32* size = getelementptr this, 1
+    int32 size.load = load size
     return size.load
 }

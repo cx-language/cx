@@ -80,9 +80,9 @@ struct CToCxConverter final : clang::ASTConsumer {
         case clang::BuiltinType::UShort:
             return getIntTypeByWidth(targetInfo->getShortWidth(), false);
         case clang::BuiltinType::Int:
-            return Type::getInt();
+            return Type::getInt32();
         case clang::BuiltinType::UInt:
-            return Type::getUInt();
+            return Type::getUInt32();
         case clang::BuiltinType::Long:
             return getIntTypeByWidth(targetInfo->getLongWidth(), true);
         case clang::BuiltinType::ULong:
@@ -96,7 +96,7 @@ struct CToCxConverter final : clang::ASTConsumer {
             ASSERT(false); // Skipped before conversion; float32 as a fallback.
             return Type::getFloat32();
         case clang::BuiltinType::Float:
-            return Type::getFloat();
+            return Type::getFloat32();
         case clang::BuiltinType::Double:
             return Type::getFloat64();
         case clang::BuiltinType::LongDouble:
@@ -107,8 +107,8 @@ struct CToCxConverter final : clang::ASTConsumer {
             return Type::getUInt128();
         default:
             auto name = type.getName(clang::PrintingPolicy({}));
-            WARN(Location(), "unknown C built-in type '" << name << "', defaulting to 'int'");
-            return Type::getInt();
+            WARN(Location(), "unknown C built-in type '" << name << "', defaulting to 'int32'");
+            return Type::getInt32();
         }
     }
 
@@ -199,7 +199,7 @@ struct CToCxConverter final : clang::ASTConsumer {
         }
         default:
             WARN(Location(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualType.getAsString() << "')");
-            return Type::getInt();
+            return Type::getInt32();
         }
     }
 

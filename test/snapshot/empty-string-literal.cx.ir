@@ -1,7 +1,7 @@
 
-int main() {
+int32 main() {
     string* __str = alloca string
-    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "", int 0)
-    int _1 = call _EN3std6string4sizeE(string* __str)
+    void _0 = call _EN3std6string4initEP4char5int32(string* __str, char* "", int32 0)
+    int32 _1 = call _EN3std6string4sizeE(string* __str)
     return _1
 }

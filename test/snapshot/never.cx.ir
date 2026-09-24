@@ -18,16 +18,16 @@ void _EN4main1iE() {
     return void
 }
 
-int _EN4main1iE3int(int x) {
-    int* x_0 = alloca int
+int32 _EN4main1iE5int32(int32 x) {
+    int32* x_0 = alloca int32
     store x to x_0
-    int x.load = load x_0
+    int32 x.load = load x_0
     switch x.load {
-        int 0 -> switch.case.0
+        int32 0 -> switch.case.0
     }
 
 switch.case.0:
-    return int 1
+    return int32 1
 
 switch.default:
     never _0 = call _EN4main1fE()

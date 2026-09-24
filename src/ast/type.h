@@ -73,28 +73,24 @@ struct Type {
     bool isConcreteArray() const;
     bool isSlice() const;
     bool isArrayPointer() const;
-    bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
+    bool isFloatingPoint() const { return isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
     bool isIncrementable() const { return isInteger() || isFloatingPoint() || isArrayPointer(); }
     bool isDecrementable() const { return isInteger() || isFloatingPoint() || isArrayPointer(); }
     bool isVoid() const;
     bool isBool() const;
-    bool isInt() const;
     bool isInt8() const;
     bool isInt16() const;
     bool isInt32() const;
     bool isInt64() const;
     bool isInt128() const;
-    bool isUInt() const;
     bool isUInt8() const;
     bool isUInt16() const;
     bool isUInt32() const;
     bool isUInt64() const;
     bool isUInt128() const;
     bool isCSizeT() const;
-    bool isByte() const;
-    bool isFloat() const;
     bool isFloat32() const;
     bool isFloat64() const;
     bool isFloat80() const;
@@ -146,23 +142,19 @@ struct Type {
 
     static Type getVoid(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getBool(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getInt(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getInt8(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getInt16(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getInt32(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getInt128(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getUInt(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt8(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt16(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt32(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt128(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getCSizeT(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getByte(Mutability mutability = Mutability::Mutable, Location location = Location());
     // TODO: Return correct uintptr type by checking target platform pointer size.
     static Type getUIntPtr(Mutability mutability = Mutability::Mutable, Location location = Location()) { return getUInt64(mutability, location); }
-    static Type getFloat(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getFloat32(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getFloat64(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getFloat80(Mutability mutability = Mutability::Mutable, Location location = Location());
@@ -240,7 +232,7 @@ public:
 };
 
 struct ArrayPointerType : TypeBase {
-    static Type getIndexType() { return Type::getInt(); }
+    static Type getIndexType() { return Type::getInt32(); }
     static const int64_t UnknownSize = -1;
     static Type get(Type elementType, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayPointerType; }

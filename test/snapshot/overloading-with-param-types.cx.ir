@@ -27,7 +27,7 @@ void _EN4mainplE1T1T(T a, T b) {
     return void
 }
 
-int main() {
+int32 main() {
     S* s = alloca S
     T* t = alloca T
     void _0 = call _EN4main1S4initE(S* s)
@@ -42,17 +42,17 @@ int main() {
     T t.load_0 = load t
     T t.load_1 = load t
     void _5 = call _EN4mainplE1T1T(T t.load_0, T t.load_1)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1S4initE(S* this) {
-    int* i = getelementptr this, 0
-    store int 0 to i
+    int32* i = getelementptr this, 0
+    store int32 0 to i
     return void
 }
 
 void _EN4main1T4initE(T* this) {
-    int* i = getelementptr this, 0
-    store int 0 to i
+    int32* i = getelementptr this, 0
+    store int32 0 to i
     return void
 }

@@ -1,42 +1,42 @@
 
-int _EN4main3fooE3int(int a) {
-    int* a_0 = alloca int
+int32 _EN4main3fooE5int32(int32 a) {
+    int32* a_0 = alloca int32
     store a to a_0
-    int a.load = load a_0
+    int32 a.load = load a_0
     return a.load
 }
 
-int main() {
+int32 main() {
     X* x = alloca X
-    void _0 = call _EN4main1X4initEF3int_3int(X* x, int(int)* _EN4main3fooE3int)
-    int(int)** p = getelementptr x, 0
-    int(int)* p.load = load p
-    int _1 = call p.load(int 42)
+    void _0 = call _EN4main1X4initEF5int32_5int32(X* x, int32(int32)* _EN4main3fooE5int32)
+    int32(int32)** p = getelementptr x, 0
+    int32(int32)* p.load = load p
+    int32 _1 = call p.load(int32 42)
     void _2 = call _EN4main1X1fE(X* x)
-    return int 0
+    return int32 0
 }
 
-void _EN4main1X4initEF3int_3int(X* this, int(int)* p) {
-    int(int)** p_0 = alloca int(int)*
+void _EN4main1X4initEF5int32_5int32(X* this, int32(int32)* p) {
+    int32(int32)** p_0 = alloca int32(int32)*
     store p to p_0
-    int(int)** p_1 = getelementptr this, 0
-    int(int)* p.load = load p_0
+    int32(int32)** p_1 = getelementptr this, 0
+    int32(int32)* p.load = load p_0
     store p.load to p_1
     return void
 }
 
 void _EN4main1X1fE(X* this) {
-    int(int)** p2 = alloca int(int)*
-    int(int)** p = getelementptr this, 0
-    int(int)* p.load = load p
-    int _0 = call p.load(int 42)
-    int(int)** p_0 = getelementptr this, 0
-    int(int)* p.load_0 = load p_0
-    int _1 = call p.load_0(int 42)
-    int(int)** p_1 = getelementptr this, 0
-    int(int)* p.load_1 = load p_1
+    int32(int32)** p2 = alloca int32(int32)*
+    int32(int32)** p = getelementptr this, 0
+    int32(int32)* p.load = load p
+    int32 _0 = call p.load(int32 42)
+    int32(int32)** p_0 = getelementptr this, 0
+    int32(int32)* p.load_0 = load p_0
+    int32 _1 = call p.load_0(int32 42)
+    int32(int32)** p_1 = getelementptr this, 0
+    int32(int32)* p.load_1 = load p_1
     store p.load_1 to p2
-    int(int)* p2.load = load p2
-    int _2 = call p2.load(int 42)
+    int32(int32)* p2.load = load p2
+    int32 _2 = call p2.load(int32 42)
     return void
 }

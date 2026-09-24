@@ -1,10 +1,10 @@
 
-int main() {
-    int* i = alloca int
-    int* j = alloca int
-    int* k = alloca int
-    store int 42 to i
-    store int 1 to j
-    store int 105 to k
-    return int 0
+int32 main() {
+    int32* i = alloca int32
+    int32* j = alloca int32
+    int32* k = alloca int32
+    store int32 42 to i
+    store int32 1 to j
+    store int32 105 to k
+    return int32 0
 }

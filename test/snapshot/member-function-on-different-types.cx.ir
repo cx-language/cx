@@ -1,23 +1,23 @@
 
-int main() {
+int32 main() {
     Foo* _0 = alloca Foo
     Bar* _1 = alloca Bar
-    void _2 = call _EN4main3Foo4initE3int(Foo* _0, int 1)
+    void _2 = call _EN4main3Foo4initE5int32(Foo* _0, int32 1)
     void _3 = call _EN4main3Foo7doStuffE(Foo* _0)
-    void _4 = call _EN4main3Bar4initE3int(Bar* _1, int 2)
+    void _4 = call _EN4main3Bar4initE5int32(Bar* _1, int32 2)
     void _5 = call _EN4main3Bar7doStuffE(Bar* _1)
-    return int 0
+    return int32 0
 }
 
 void _EN4main3Foo7doStuffE(Foo* this) {
     return void
 }
 
-void _EN4main3Foo4initE3int(Foo* this, int i) {
-    int* i_0 = alloca int
+void _EN4main3Foo4initE5int32(Foo* this, int32 i) {
+    int32* i_0 = alloca int32
     store i to i_0
-    int* i_1 = getelementptr this, 0
-    int i.load = load i_0
+    int32* i_1 = getelementptr this, 0
+    int32 i.load = load i_0
     store i.load to i_1
     return void
 }
@@ -26,11 +26,11 @@ void _EN4main3Bar7doStuffE(Bar* this) {
     return void
 }
 
-void _EN4main3Bar4initE3int(Bar* this, int i) {
-    int* i_0 = alloca int
+void _EN4main3Bar4initE5int32(Bar* this, int32 i) {
+    int32* i_0 = alloca int32
     store i to i_0
-    int* i_1 = getelementptr this, 0
-    int i.load = load i_0
+    int32* i_1 = getelementptr this, 0
+    int32 i.load = load i_0
     store i.load to i_1
     return void
 }

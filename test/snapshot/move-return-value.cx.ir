@@ -14,10 +14,10 @@ void _EN4main1X4initE(X* this) {
     return void
 }
 
-int main() {
+int32 main() {
     X* a = alloca X
     X _0 = call _EN4main1fE()
     store _0 to a
     void _1 = call _EN4main1X6deinitE(X* a)
-    return int 0
+    return int32 0
 }

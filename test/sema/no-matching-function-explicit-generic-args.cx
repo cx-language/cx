@@ -9,7 +9,7 @@ T foo<T>(T a, T b) {
 }
 
 void main() {
-    // CHECK: [[@LINE+6]]:13: error: no matching function 'foo<int>(bool, int, float)'
+    // CHECK: [[@LINE+6]]:13: error: no matching function 'foo<int32>(bool, int32, float32)'
     // CHECK: 3:3: note: candidate function:
     // CHECK-NEXT: T foo<T>(T a) {
     // CHECK: 7:3: note: candidate function:

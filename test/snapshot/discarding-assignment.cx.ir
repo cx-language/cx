@@ -1,7 +1,7 @@
 
-extern int foo()
+extern int32 foo()
 
-int main() {
-    int _0 = call foo()
-    return int 0
+int32 main() {
+    int32 _0 = call foo()
+    return int32 0
 }

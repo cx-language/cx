@@ -1,14 +1,14 @@
 
 extern bool f()
 
-int main() {
+int32 main() {
     A* a = alloca A
     C* c = alloca C
     void _0 = call _EN4main1A4initE(A* a)
     void _1 = call _EN4main1C4initE(C* c)
     void _2 = call _EN4main1C6deinitE(C* c)
     void _3 = call _EN4main1A6deinitE(A* a)
-    return int 0
+    return int32 0
 }
 
 void _EN4main1A6deinitE(A* this) {

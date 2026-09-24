@@ -49,5 +49,25 @@ void main() {
     // CHECK-NEXT:0.5
     float64 i = double(0.5);
     println(i);
+    // CHECK-NEXT:2147483647
+    int32 i32 = int.max;
+    println(i32);
+    // CHECK-NEXT:-2147483648
+    int j = int32.min;
+    println(j);
+    // CHECK-NEXT:4294967295
+    uint32 u32 = uint.max;
+    println(u32);
+    // CHECK-NEXT:255
+    uint8 u8 = byte.max;
+    println(u8);
+    // CHECK-NEXT:2.5
+    float flt = 2.5;
+    float32 f32 = flt;
+    println(f32);
+    // CHECK-NEXT:3
+    List<int> list = List([1, 2]);
+    List<int32> same = list;
+    println(same.size() + 1);
 }
 // CHECK-NOT: numeric-type-aliases.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

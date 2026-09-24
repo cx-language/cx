@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:14: error: 'int' is not an interface
+// CHECK: [[@LINE+1]]:14: error: 'int32' is not an interface
 struct Z<T>: int {}
 
 void main() {

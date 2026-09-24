@@ -3,12 +3,12 @@ void _EN4main1fE() {
     return void
 }
 
-int _EN4main2f2E3int4bool(int a, bool b) {
-    int* a_0 = alloca int
+int32 _EN4main2f2E5int324bool(int32 a, bool b) {
+    int32* a_0 = alloca int32
     bool* b_0 = alloca bool
     store a to a_0
     store b to b_0
-    int a.load = load a_0
+    int32 a.load = load a_0
     return a.load
 }
 
@@ -20,17 +20,17 @@ void _EN4main1gEF_4void(void()* p) {
     return void
 }
 
-void _EN4main2g2EF3int4bool_3int(int(int, bool)* p) {
-    int(int, bool)** p_0 = alloca int(int, bool)*
-    int* a = alloca int
+void _EN4main2g2EF5int324bool_5int32(int32(int32, bool)* p) {
+    int32(int32, bool)** p_0 = alloca int32(int32, bool)*
+    int32* a = alloca int32
     store p to p_0
-    int(int, bool)* p.load = load p_0
+    int32(int32, bool)* p.load = load p_0
     bool _0 = !bool true
-    int _1 = call p.load(int 42, bool _0)
+    int32 _1 = call p.load(int32 42, bool _0)
     int64 _2 = cast _1 to int64
-    int64 _3 = cast int 1 to int64
+    int64 _3 = cast int32 1 to int64
     int64 _4 = _2 + _3
-    int _5 = cast _4 to int
+    int32 _5 = cast _4 to int32
     int64 _6 = cast _5 to int64
     bool _7 = _4 != _6
     bool _8 = !_7
@@ -47,8 +47,8 @@ overflow.success:
     return void
 }
 
-int main() {
+int32 main() {
     void _0 = call _EN4main1gEF_4void(void()* _EN4main1fE)
-    void _1 = call _EN4main2g2EF3int4bool_3int(int(int, bool)* _EN4main2f2E3int4bool)
-    return int 0
+    void _1 = call _EN4main2g2EF5int324bool_5int32(int32(int32, bool)* _EN4main2f2E5int324bool)
+    return int32 0
 }

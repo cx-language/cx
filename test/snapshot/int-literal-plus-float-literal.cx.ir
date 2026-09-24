@@ -1,10 +1,10 @@
 
-int main() {
-    float* a = alloca float
-    float* b = alloca float
-    float _0 = float 4 + float 4
+int32 main() {
+    float32* a = alloca float32
+    float32* b = alloca float32
+    float32 _0 = float32 4 + float32 4
     store _0 to a
-    float _1 = float 4 + float 4
+    float32 _1 = float32 4 + float32 4
     store _1 to b
-    return int 0
+    return int32 0
 }

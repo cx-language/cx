@@ -1,8 +1,8 @@
 
-int main() {
+int32 main() {
     bool** foo = alloca bool*
     bool* b = alloca bool
-    int* a = alloca int
+    int32* a = alloca int32
     bool* foo.load = load foo
     bool _0 = foo.load == bool* null
     store _0 to b
@@ -33,12 +33,12 @@ loop.end:
     br _3, if.then, if.else
 
 if.then_0:
-    br if.end_0(int 1)
+    br if.end_0(int32 1)
 
 if.else_0:
-    br if.end_0(int 2)
+    br if.end_0(int32 2)
 
-if.end_0(int if.result):
+if.end_0(int32 if.result):
     store if.result to a
-    return int 0
+    return int32 0
 }

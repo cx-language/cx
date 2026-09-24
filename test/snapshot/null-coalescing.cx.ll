@@ -1,10 +1,10 @@
 
 %0 = type { { i32 } }
-%"Optional<int>" = type { i32, %0 }
+%"Optional<int32>" = type { i32, %0 }
 
-declare %"Optional<int>" @a() #0
+declare %"Optional<int32>" @a() #0
 
-declare %"Optional<int>" @b() #0
+declare %"Optional<int32>" @b() #0
 
 declare i32 @c() #0
 
@@ -14,20 +14,20 @@ declare ptr @q() #0
 
 define i32 @main() #0 !dbg !4 {
   %x = alloca i32, align 4
-  %1 = alloca %"Optional<int>", align 8
-  %y = alloca %"Optional<int>", align 8
+  %1 = alloca %"Optional<int32>", align 8
+  %y = alloca %"Optional<int32>", align 8
   %z = alloca i32, align 4
-  %2 = alloca %"Optional<int>", align 8
-  %3 = alloca %"Optional<int>", align 8
+  %2 = alloca %"Optional<int32>", align 8
+  %3 = alloca %"Optional<int32>", align 8
   %w = alloca ptr, align 8
-  %4 = call %"Optional<int>" @a(), !dbg !7
-  %5 = extractvalue %"Optional<int>" %4, 0
+  %4 = call %"Optional<int32>" @a(), !dbg !7
+  %5 = extractvalue %"Optional<int32>" %4, 0
   %6 = icmp eq i32 %5, 1
   br i1 %6, label %coalesce.value, label %coalesce.default
 
 coalesce.value:                                   ; preds = %0
-  store %"Optional<int>" %4, ptr %1, align 4
-  %7 = getelementptr inbounds %"Optional<int>", ptr %1, i32 0, i32 1
+  store %"Optional<int32>" %4, ptr %1, align 4
+  %7 = getelementptr inbounds %"Optional<int32>", ptr %1, i32 0, i32 1
   %.load = load i32, ptr %7, align 4
   br label %coalesce.end
 
@@ -37,8 +37,8 @@ coalesce.default:                                 ; preds = %0
 coalesce.end:                                     ; preds = %coalesce.default, %coalesce.value
   %coalesce = phi i32 [ %.load, %coalesce.value ], [ 0, %coalesce.default ]
   store i32 %coalesce, ptr %x, align 4
-  %8 = call %"Optional<int>" @a(), !dbg !8
-  %9 = extractvalue %"Optional<int>" %8, 0
+  %8 = call %"Optional<int32>" @a(), !dbg !8
+  %9 = extractvalue %"Optional<int32>" %8, 0
   %10 = icmp eq i32 %9, 1
   br i1 %10, label %coalesce.value1, label %coalesce.default2
 
@@ -46,32 +46,32 @@ coalesce.value1:                                  ; preds = %coalesce.end
   br label %coalesce.end3
 
 coalesce.default2:                                ; preds = %coalesce.end
-  %11 = call %"Optional<int>" @b(), !dbg !9
+  %11 = call %"Optional<int32>" @b(), !dbg !9
   br label %coalesce.end3
 
 coalesce.end3:                                    ; preds = %coalesce.default2, %coalesce.value1
-  %coalesce4 = phi %"Optional<int>" [ %8, %coalesce.value1 ], [ %11, %coalesce.default2 ]
-  store %"Optional<int>" %coalesce4, ptr %y, align 4
-  %12 = call %"Optional<int>" @a(), !dbg !10
-  %13 = extractvalue %"Optional<int>" %12, 0
+  %coalesce4 = phi %"Optional<int32>" [ %8, %coalesce.value1 ], [ %11, %coalesce.default2 ]
+  store %"Optional<int32>" %coalesce4, ptr %y, align 4
+  %12 = call %"Optional<int32>" @a(), !dbg !10
+  %13 = extractvalue %"Optional<int32>" %12, 0
   %14 = icmp eq i32 %13, 1
   br i1 %14, label %coalesce.value5, label %coalesce.default7
 
 coalesce.value5:                                  ; preds = %coalesce.end3
-  store %"Optional<int>" %12, ptr %2, align 4
-  %15 = getelementptr inbounds %"Optional<int>", ptr %2, i32 0, i32 1
+  store %"Optional<int32>" %12, ptr %2, align 4
+  %15 = getelementptr inbounds %"Optional<int32>", ptr %2, i32 0, i32 1
   %.load6 = load i32, ptr %15, align 4
   br label %coalesce.end13
 
 coalesce.default7:                                ; preds = %coalesce.end3
-  %16 = call %"Optional<int>" @b(), !dbg !11
-  %17 = extractvalue %"Optional<int>" %16, 0
+  %16 = call %"Optional<int32>" @b(), !dbg !11
+  %17 = extractvalue %"Optional<int32>" %16, 0
   %18 = icmp eq i32 %17, 1
   br i1 %18, label %coalesce.value8, label %coalesce.default10
 
 coalesce.value8:                                  ; preds = %coalesce.default7
-  store %"Optional<int>" %16, ptr %3, align 4
-  %19 = getelementptr inbounds %"Optional<int>", ptr %3, i32 0, i32 1
+  store %"Optional<int32>" %16, ptr %3, align 4
+  %19 = getelementptr inbounds %"Optional<int32>", ptr %3, i32 0, i32 1
   %.load9 = load i32, ptr %19, align 4
   br label %coalesce.end11
 

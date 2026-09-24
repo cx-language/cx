@@ -1,19 +1,19 @@
 
-int main() {
-    S<int>* s = alloca S<int>
-    int* _0 = alloca int
-    void _1 = call _EN4main1SI3intE4initE(S<int>* s)
-    store int 0 to _0
-    void _2 = call _EN4main1SI3intE1fEP3int(S<int>* s, int* _0)
-    return int 0
+int32 main() {
+    S<int32>* s = alloca S<int32>
+    int32* _0 = alloca int32
+    void _1 = call _EN4main1SI5int32E4initE(S<int32>* s)
+    store int32 0 to _0
+    void _2 = call _EN4main1SI5int32E1fEP5int32(S<int32>* s, int32* _0)
+    return int32 0
 }
 
-void _EN4main1SI3intE4initE(S<int>* this) {
+void _EN4main1SI5int32E4initE(S<int32>* this) {
     return void
 }
 
-void _EN4main1SI3intE1fEP3int(S<int>* this, int* t) {
-    int** t_0 = alloca int*
+void _EN4main1SI5int32E1fEP5int32(S<int32>* this, int32* t) {
+    int32** t_0 = alloca int32*
     store t to t_0
     return void
 }

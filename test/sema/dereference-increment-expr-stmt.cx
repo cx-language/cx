@@ -4,7 +4,7 @@
 void f(int* p) {
     var a = p;
 
-    // CHECK: [[@LINE+1]]:8: error: cannot increment pointer of type 'int*'; dereference it explicitly (e.g. '(*p)++')
+    // CHECK: [[@LINE+1]]:8: error: cannot increment pointer of type 'int32*'; dereference it explicitly (e.g. '(*p)++')
     *(a++);
 }
 

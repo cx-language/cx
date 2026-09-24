@@ -1,10 +1,10 @@
 
-int main() {
+int32 main() {
     Foo* f = alloca Foo
     Foo* f2 = alloca Foo
     Bar* b = alloca Bar
     Bar* b2 = alloca Bar
-    int* i = alloca int
+    int32* i = alloca int32
     br bool false, if.then, if.else
 
 if.then:
@@ -24,26 +24,26 @@ loop.body:
     void _1 = call _EN4main3Bar6deinitE(Bar* b2)
     void _2 = call _EN4main3Bar6deinitE(Bar* b)
     void _3 = call _EN4main3Foo6deinitE(Foo* f)
-    return int 0
+    return int32 0
 
 loop.end:
-    store int 1 to i
+    store int32 1 to i
     void _4 = call _EN4main3Bar6deinitE(Bar* b)
     void _5 = call _EN4main3Foo6deinitE(Foo* f)
-    return int 0
+    return int32 0
 }
 
 void _EN4main3Foo6deinitE(Foo* this) {
-    int* i = getelementptr this, 0
-    store int 0 to i
+    int32* i = getelementptr this, 0
+    store int32 0 to i
     void _0 = call _EN4main3Foo1fE(Foo* this)
     void _1 = call _EN4main3Foo1fE(Foo* this)
     return void
 }
 
 void _EN4main3Bar6deinitE(Bar* this) {
-    int* i = getelementptr this, 0
-    store int 0 to i
+    int32* i = getelementptr this, 0
+    store int32 0 to i
     void _0 = call _EN4main3Bar1fE(Bar* this)
     void _1 = call _EN4main3Bar1fE(Bar* this)
     return void

@@ -1,5 +1,5 @@
 
-int main() {
+int32 main() {
     br loop.condition
 
 loop.condition:
@@ -9,7 +9,7 @@ loop.body:
     br bool true, if.then, if.else
 
 loop.end:
-    switch int 1 {
+    switch int32 1 {
     }
 
 if.then:
@@ -25,5 +25,5 @@ switch.default:
     br switch.end
 
 switch.end:
-    return int 0
+    return int32 0
 }

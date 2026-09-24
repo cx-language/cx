@@ -3,8 +3,8 @@ void _EN4main3barE() {
     return void
 }
 
-void _EN4main3fooE3int(int bar) {
-    int* bar_0 = alloca int
+void _EN4main3fooE5int32(int32 bar) {
+    int32* bar_0 = alloca int32
     store bar to bar_0
     void _0 = call _EN4main3barE()
     return void

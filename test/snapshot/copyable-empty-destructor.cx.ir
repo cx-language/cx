@@ -1,8 +1,8 @@
 
-int main() {
+int32 main() {
     Foo* foo = alloca Foo
     void _0 = call _EN4main3Foo6deinitE(Foo* foo)
-    return int 0
+    return int32 0
 }
 
 void _EN4main3Foo6deinitE(Foo* this) {
