@@ -119,7 +119,7 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH="$LLVMDIR${EXTRA_CMAKE_PREFIX:+;$EXTRA_CMAKE_PREFIX}" -DCMAKE_UNITY_BUILD=OFF $EXTRA_CMAKE_ARGS ${DIA_CMAKE_DIR:+-DMSVC_DIA_SDK_DIR="$DIA_CMAKE_DIR"}
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH="$LLVMDIR${EXTRA_CMAKE_PREFIX:+;$EXTRA_CMAKE_PREFIX}" -DCMAKE_UNITY_BUILD=OFF -DCX_TEST_SHARDING=OFF $EXTRA_CMAKE_ARGS ${DIA_CMAKE_DIR:+-DMSVC_DIA_SDK_DIR="$DIA_CMAKE_DIR"}
 
       - name: Build
         working-directory: ${{runner.workspace}}/build

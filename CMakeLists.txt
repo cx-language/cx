@@ -180,20 +180,27 @@ target_include_directories(test_rename PRIVATE src)
 target_link_libraries(test_rename libcx)
 add_test(NAME support-rename COMMAND test_rename)
 
-# Compiler tests, sharded over one CTest test per few files so CTest
-# reports progress as tests complete. A single aggregate lit invocation
-# only reports when the whole suite finishes, since CTest captures each
-# test's output until it completes (which also hides lit's own progress
+# Compiler tests. Locally the suite is sharded over one CTest test per few
+# files so CTest reports progress as tests complete. A single aggregate lit
+# invocation only reports when the whole suite finishes, since CTest captures
+# each test's output until it completes (which also hides lit's own progress
 # bar). Shards amortize lit's startup cost over several files; each shard
 # runs single-threaded (-j1) so CTest remains the only scheduler. Files
 # are dealt round-robin for balance. Declared after the slower suites so
 # those start first on fresh build directories without recorded costs.
+# Sharding optimizes local runs; CI disables it for one serial,
+# easy-to-read lit run (see CX_TEST_SHARDING=OFF in .github/workflows).
+option(CX_TEST_SHARDING "Split the lit suite into parallel CTest shards (disable for a single serial lit run)" ON)
 file(GLOB_RECURSE LIT_TEST_FILES CONFIGURE_DEPENDS
     RELATIVE ${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/test/*.cx)
 list(SORT LIT_TEST_FILES)
 # Mirror lit's `excludes`: helper sources under inputs/ aren't tests.
 list(FILTER LIT_TEST_FILES EXCLUDE REGEX "(^|/)inputs/")
-set(LIT_SHARD_COUNT 128)
+if(CX_TEST_SHARDING)
+    set(LIT_SHARD_COUNT 128)
+else()
+    set(LIT_SHARD_COUNT 1)
+endif()
 set(shard_index 0)
 foreach(lit_test IN LISTS LIT_TEST_FILES)
     math(EXPR shard "${shard_index} % ${LIT_SHARD_COUNT}")
@@ -205,8 +212,17 @@ foreach(shard RANGE ${LIT_SHARD_MAX})
     if(NOT DEFINED LIT_SHARD_${shard})
         continue()
     endif()
-    set(shard_files ${LIT_SHARD_${shard}})
-    add_test(NAME lit/shard-${shard}
+    if(CX_TEST_SHARDING)
+        set(lit_test_name lit/shard-${shard})
+        set(shard_files ${LIT_SHARD_${shard}})
+    else()
+        # Single serial run: let lit discover the suite from the test
+        # directory via test/lit.cfg. Passing every file explicitly would
+        # exceed the Windows command line length limit.
+        set(lit_test_name lit)
+        set(shard_files ${PROJECT_SOURCE_DIR}/test)
+    endif()
+    add_test(NAME ${lit_test_name}
         COMMAND lit --verbose --succinct -j1 ${EXTRA_LIT_FLAGS} ${shard_files}
         -Dcx_path=$<TARGET_FILE:cx>
         -Dfilecheck_path=$<TARGET_FILE:FileCheck>
