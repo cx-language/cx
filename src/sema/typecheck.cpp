@@ -38,6 +38,7 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
 }
 
 static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, const CompileOptions& options) {
+    PhaseTimer timer("parse-" + module.name);
     std::error_code error;
     std::vector<std::string> paths;
 
@@ -74,6 +75,7 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, llv
         return *it->second;
     }
 
+    PhaseTimer timer("import-" + moduleName.str());
     auto module = new Module(moduleName.str());
     std::error_code error = std::make_error_code(std::errc::no_such_file_or_directory);
 
