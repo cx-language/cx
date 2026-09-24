@@ -18,9 +18,15 @@ void bumpForwarded(int& x) {
 }
 
 int copyOut(int& p) {
-    var r = p;
+    int r = p;
     r = 100;
     return r;
+}
+
+int aliasOut(int& p) {
+    var r = p;
+    *r = 100;
+    return *r;
 }
 
 bool equal(int& a, int& b) {
@@ -70,9 +76,12 @@ void main() {
     bumpForwarded(x);
     assert(x == 4);
 
-    // Borrows can't be named: reading one into a variable copies.
+    // An explicit type still copies a borrow out; an inferred `var` aliases it.
     assert(copyOut(x) == 100);
     assert(x == 4);
+    var a = 1;
+    assert(aliasOut(a) == 100);
+    assert(a == 100);
 
     // Taking the address of a borrow exposes the borrowed address.
     assert(borrowAddr(x) == &x);

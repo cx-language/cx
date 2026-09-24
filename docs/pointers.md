@@ -50,7 +50,9 @@ Member functions use a `T&` borrow for `this`; use `&this` to obtain a storable 
 Unlike pointers, borrows cannot be stored in fields or globals: besides function parameters,
 return types, and interface arguments, `T&` may only appear as a local variable type. A reference
 local aliases its referent in place; it must be initialized with an lvalue, since a temporary
-would dangle. Reading a borrow into a plain `var` still copies the value out.
+would dangle. Reading a borrow into an inferred `var` keeps the borrow: `var r = list[0]`
+deduces `Element&` and aliases the element, so `*r = v` writes it back. Name an explicit
+value type (`int r = p;`) to copy the value out instead.
 Unlike pointers, borrows cannot be reseated by assignment either: assigning to a borrow would rebind
 it, so the compiler rejects it; write through it with `*` instead.
 

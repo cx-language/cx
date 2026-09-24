@@ -1074,15 +1074,17 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         }
     }
 
-    // An inferred borrow can't be named: read the value out (copying or moving it) instead of
-    // aliasing it. Explicitly declared reference locals and for-loop element variables are exempt
-    // for plain borrows; they alias the referent in place. Optional borrows stay rejected:
-    // naming one cannot unwrap it.
+    // An inferred local borrow aliases the referent in place: `var x = list[0]` deduces
+    // `Element&`, so writes through `x` affect the element. Globals still read the value
+    // out (copying or moving it) since borrows cannot live in globals. Explicitly declared
+    // reference locals and for-loop element variables are exempt for plain borrows; they
+    // alias the referent in place. Optional borrows stay rejected: naming one cannot unwrap it.
     bool explicitLocalReference = declaredType && declaredType.isReferenceType() && !decl.isGlobal();
-    if (decl.type.isReferenceType() && !decl.isForLoopElement && !explicitLocalReference) {
+    bool inferredPlainBorrow = !declaredType && !decl.isGlobal() && decl.type.isReferenceType();
+    if (decl.type.isReferenceType() && !decl.isForLoopElement && !explicitLocalReference && !inferredPlainBorrow) {
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
-    } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType()) && !explicitLocalReference) {
+    } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType()) && !explicitLocalReference && !inferredPlainBorrow) {
         ERROR(decl.getLocation(),
               "reference type '" << decl.type << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }
