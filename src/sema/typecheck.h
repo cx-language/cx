@@ -96,10 +96,15 @@ struct Typechecker {
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
     void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true, bool allowReference = false);
+    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel = AccessLevel::None);
+    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving);
+    TypeAliasDecl* findTypeAlias(Type type) const;
+    void canonicalizeTypeAliases();
     void typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel);
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel);
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
+    void typecheckTypeAliasDecl(TypeAliasDecl& decl);
     void typecheckEnumDecl(EnumDecl& decl);
     void typecheckImportDecl(ImportDecl& decl);
 
@@ -112,7 +117,7 @@ struct Typechecker {
     Type typecheckNullCoalescingExpr(BinaryExpr& expr);
     void typecheckAssignment(BinaryExpr& expr, Location location);
     Type typecheckCallExpr(CallExpr& expr, Type expectedType = Type());
-    Type typecheckBuiltinConversion(CallExpr& expr);
+    Type typecheckBuiltinConversion(CallExpr& expr, Type targetType = Type());
     Type typecheckBuiltinCast(CallExpr& expr);
     Type typecheckSizeofExpr(SizeofExpr& expr);
     Type typecheckMemberExpr(MemberExpr& expr, Type expectedType = Type(), bool useIsWriteOnly = false);
@@ -128,10 +133,11 @@ struct Typechecker {
     /// Returns the converted expression if the conversion succeeds, or null otherwise.
     /// Probing conversions (where failure falls back to another attempt) pass diagnoseOutOfRange=false
     /// so an out-of-range literal doesn't abort the still-untried alternatives.
-    Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false, bool diagnoseOutOfRange = true) const;
+    Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false, bool diagnoseOutOfRange = true, bool allowOperatorBorrow = false) const;
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
     Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false,
-                                 std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr, bool diagnoseOutOfRange = true) const;
+                                 std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr, bool diagnoseOutOfRange = true,
+                                 bool allowOperatorBorrow = false) const;
     void typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool positive = true);
     GenericArg findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType = false);
     llvm::StringMap<GenericArg> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
@@ -170,6 +176,9 @@ struct Typechecker {
     void applyNarrowings(const Expr& condition, bool polarity);
     void intersectNarrowings(const NarrowMap& other);
     void dropNarrowingsForNames(const llvm::StringSet<>& names);
+    bool genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg);
+    bool validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
+                                    Location location);
     bool validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
     bool genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs);
 

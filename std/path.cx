@@ -260,7 +260,7 @@ StringBuf normalize(string path) {
             if i > start {
                 var part = rest.substr(start..i);
                 if part == ".." {
-                    if parts.size() > 0 && *parts.last() != ".." {
+                    if parts.size() > 0 && parts.last() != ".." {
                         parts.removeLast();
                     } else if !rooted {
                         parts.push(part);

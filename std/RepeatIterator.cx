@@ -1,6 +1,6 @@
 // Lazily repeats a value a number of times without allocating.
 // Get one from repeat(); collect the results with toList().
-struct RepeatIterator<T: Copyable>: Copyable, Iterator<T*> {
+struct RepeatIterator<T: Copyable>: Copyable, Iterator<T&> {
     private T value;
     private int count;
     private int index;
@@ -18,8 +18,8 @@ struct RepeatIterator<T: Copyable>: Copyable, Iterator<T*> {
     }
 
     /// Returns the repeated value.
-    T* value() {
-        return &value;
+    T& value() {
+        return value;
     }
 
     /// Advances to the next repetition.

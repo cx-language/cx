@@ -117,7 +117,7 @@ struct OrderedMap<Key, Value> {
         if n == null {
             return -1;
         }
-        return 1 + *max(&height(n.left), &height(n.right));
+        return 1 + max(height(n.left), height(n.right));
     }
 
     private void setBalance(AVLnode<Key, Value>* n) {
@@ -130,10 +130,10 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the value of the given key, if it exists in the Map. Otherwise, returns null.
-    Value*? operator[](Key& key) {
+    Value&? operator[](Key& key) {
         var found = findNode(key);
         if found != null {
-            return &found.entry.value;
+            return found.entry.value;
         }
         return null;
     }
@@ -216,10 +216,10 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the key-value pair corresponding to `key`, or null if it doesn't exist in the Map
-    MapEntry<Key, Value>*? find(Key& key) {
+    MapEntry<Key, Value>&? find(Key& key) {
         var node = findNode(key);
         if node != null {
-            return &node.entry;
+            return node.entry;
         }
         return null;
     }
@@ -246,7 +246,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the key immediately smaller than the one given,
     /// or null, if `key` is the smallest in the Map.
-    Key*? lowerKey(Key& key) {
+    Key&? lowerKey(Key& key) {
         var found = findNode(key);
         if found == null {
             return null;
@@ -256,7 +256,7 @@ struct OrderedMap<Key, Value> {
         if lower == null {
             return null;
         }
-        return &lower.entry.key;
+        return lower.entry.key;
     }
 
     private AVLnode<Key, Value>* maxInSubtree(AVLnode<Key, Value>* node) {
@@ -294,7 +294,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the key immediately higher than the one given,
     /// or null, if `key` is the largest in the Map.
-    Key*? higherKey(Key& key) {
+    Key&? higherKey(Key& key) {
         var found = findNode(key);
         if found == null {
             return null;
@@ -305,7 +305,7 @@ struct OrderedMap<Key, Value> {
         if higher == null {
             return null;
         }
-        return &higher.entry.key;
+        return higher.entry.key;
     }
 
     /// Returns the node that contains the key immediately larger than the key of the given node,
@@ -326,11 +326,11 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the smallest element in the Map, or null if the Map is empty.
-    Key*? first() {
+    Key&? first() {
         if root == null {
             return null;
         }
-        return &minInSubtree(root).entry.key;
+        return minInSubtree(root).entry.key;
     }
 
     /// Returns the node with the smallest key in the Map, or null if the Map is empty.
@@ -342,11 +342,11 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the largest element in the Map, or null if the map is empty.
-    Key*? last() {
+    Key&? last() {
         if root == null {
             return null;
         }
-        return &maxInSubtree(root).entry.key;
+        return maxInSubtree(root).entry.key;
     }
 
     /// Returns the node with the largest key in the Map, or null if the Map is empty.
@@ -393,7 +393,7 @@ struct AVLnode<Key, Value> {
 }
 
 /// Iterates over the entries of an ordered map, in order.
-struct OrderedMapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
+struct OrderedMapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>&> {
     private AVLnode<Key, Value>*? current;
     private OrderedMap<Key, Value>* map;
 
@@ -409,8 +409,8 @@ struct OrderedMapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*>
     }
 
     /// Returns the current entry.
-    MapEntry<Key, Value>* value() {
-        return &current!.entry;
+    MapEntry<Key, Value>& value() {
+        return current!.entry;
     }
 
     /// Advances to the next entry.

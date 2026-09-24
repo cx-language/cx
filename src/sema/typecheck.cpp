@@ -212,6 +212,9 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
         }
     }
 
+    currentModule = &module;
+    canonicalizeTypeAliases();
+
     // Typecheck implemented interfaces so that inherited methods and fields are added to the implementing type before they're referenced.
     for (auto& sourceFile : module.sourceFiles) {
         for (auto& decl : sourceFile.topLevelDecls) {
@@ -223,7 +226,8 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
 
                 for (Type interface : typeDecl->interfaces) {
                     try {
-                        typecheckType(interface, typeDecl->accessLevel);
+                        // Interfaces constrain but never store, so borrows may appear in them.
+                        typecheckType(interface, typeDecl->accessLevel, true, true);
                     } catch (const CompileError& error) {
                         error.report();
                     }

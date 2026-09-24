@@ -1,6 +1,6 @@
 // Lazily concatenates two iterators: yields all of the first's elements,
 // then all of the second's. Get one from chain(); collect with toList().
-struct ChainIterator<Element, First, Second>: Iterator<Element*> {
+struct ChainIterator<Element, First, Second>: Iterator<Element&> {
     private First first;
     private Second second;
 
@@ -16,7 +16,7 @@ struct ChainIterator<Element, First, Second>: Iterator<Element*> {
     }
 
     /// Returns the next element.
-    Element* value() {
+    Element& value() {
         if first.hasValue() {
             return first.value();
         }

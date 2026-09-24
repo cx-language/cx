@@ -1,15 +1,17 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
 // CHECK-NOT: nullable-borrow-return.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
-// CHECK: [[@LINE+1]]:1: error: reference type 'int&?' may only appear as a function parameter type
+// Borrows may be returned, e.g. find returns an optional borrow into the container.
+// Returning a borrow of a local still warns since the local won't exist after the call.
 int&? returnsNullableBorrow() {
     var x = 1;
+    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable (local variables will not exist after the function returns)
     return x;
 }
 
 void main() {
 }
 
-// CHECK: 6:7: warning: unused declaration 'returnsNullableBorrow'
+// CHECK: 7:7: warning: unused declaration 'returnsNullableBorrow'
 // CHECK-NOT: nullable-borrow-return.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

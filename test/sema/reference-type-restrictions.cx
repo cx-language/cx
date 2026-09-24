@@ -3,13 +3,15 @@
 // CHECK-NOT: reference-type-restrictions.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct S {
-    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter type
+    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter, return type, or interface argument
     int& field;
 }
 
-// CHECK: [[@LINE+1]]:1: error: reference type 'int&' may only appear as a function parameter type
+// Borrows may be returned, e.g. element accessors return borrows into the container.
+// Returning a borrow of a local still warns since the local won't exist after the call.
 int& returnsBorrow() {
     var x = 1;
+    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable (local variables will not exist after the function returns)
     return x;
 }
 
@@ -20,11 +22,11 @@ void optionalBorrow(int&? o) {
 
 void localBorrow() {
     var x = 1;
-    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter type
+    // CHECK: [[@LINE+1]]:5: error: reference type 'int&' may only appear as a function parameter, return type, or interface argument
     int& r = x;
 }
 
-// CHECK: 11:6: warning: unused declaration 'returnsBorrow'
-// CHECK: 18:6: warning: unused declaration 'optionalBorrow'
-// CHECK: 21:6: warning: unused declaration 'localBorrow'
+// CHECK: 12:6: warning: unused declaration 'returnsBorrow'
+// CHECK: 20:6: warning: unused declaration 'optionalBorrow'
+// CHECK: 23:6: warning: unused declaration 'localBorrow'
 // CHECK-NOT: reference-type-restrictions.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

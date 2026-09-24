@@ -23,6 +23,14 @@ static std::vector<Note> getTypeCandidateNotes(llvm::ArrayRef<Decl*> candidates)
     });
 }
 
+// Interfaces constrain but never store, so borrows may appear in their generic arguments
+// (e.g. an iterator conforming to Iterator<Element&>); Optional is likewise transparent.
+static bool allowsBorrowArgs(Decl* decl) {
+    if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) return typeDecl->isInterface();
+    if (auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(decl)) return typeTemplate->typeDecl->isInterface();
+    return false;
+}
+
 // Finds the type template to instantiate for a generic type name. A same-named function
 // doesn't prevent using the type in type position.
 static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*> decls) {
@@ -93,11 +101,216 @@ static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> me
     }
 }
 
+TypeAliasDecl* Typechecker::findTypeAlias(Type type) const {
+    if (!type.isBasicType() || type.isBuiltinType()) return nullptr;
+
+    // Current-module type declarations shadow imported declarations. Keep the
+    // first declaration at the winning scope; multiple imported type names stay
+    // ambiguous and are diagnosed by the normal type lookup path.
+    Decl* firstType = nullptr;
+    for (Decl* decl : findDecls(type.getName())) {
+        if (!decl->isTypeAliasDecl() && !decl->isTypeDecl() && !decl->isTypeTemplate()) continue;
+        if (!firstType) {
+            firstType = decl;
+        } else if (firstType->getModule() != currentModule) {
+            return nullptr;
+        } else if (decl->getModule() != currentModule) {
+            break;
+        }
+    }
+    return firstType && firstType->isTypeAliasDecl() ? llvm::cast<TypeAliasDecl>(firstType) : nullptr;
+}
+
+Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel) {
+    llvm::SmallPtrSet<const TypeAliasDecl*, 8> resolving;
+    return resolveTypeAliases(std::move(type), userAccessLevel, resolving);
+}
+
+Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving) {
+    if (!type) return type;
+
+    switch (type.getKind()) {
+    case TypeKind::BasicType: {
+        auto* basicType = llvm::cast<BasicType>(type.typeBase);
+        if (auto* alias = findTypeAlias(type)) {
+            if (!basicType->genericArgs.empty()) return type;
+            if (!resolving.insert(alias).second) {
+                if (!alias->cycleReported) {
+                    for (auto* resolvingAlias : resolving)
+                        const_cast<TypeAliasDecl*>(resolvingAlias)->cycleReported = true;
+                    REPORT_ERROR(type.location, "cyclic type alias '" << alias->getName() << "'");
+                }
+                return type;
+            }
+
+            checkHasAccess(*alias, type.location, userAccessLevel);
+            alias->referenced = true;
+            Type resolved = resolveTypeAliases(alias->aliasedType, userAccessLevel, resolving);
+            resolving.erase(alias);
+
+            // An alias preserves the aliased type's mutability, while a const
+            // qualification at the use site can only make it more const.
+            if (!type.isMutable() && resolved.isMutable()) {
+                resolved = resolved.withMutability(Mutability::Const);
+            }
+            return resolved.withLocation(type.location);
+        }
+
+        if (basicType->genericArgs.empty()) return type;
+
+        auto genericArgs = map(basicType->genericArgs, [&](GenericArg arg) {
+            if (!arg.isType()) return arg;
+            arg.type = resolveTypeAliases(arg.type, userAccessLevel, resolving);
+            return arg;
+        });
+        if (genericArgs == basicType->genericArgs) return type;
+
+        return BasicType::get(basicType->name, genericArgs, type.mutability, type.location);
+    }
+    case TypeKind::ArrayPointerType: {
+        auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving);
+        if (elementType == type.getElementType()) return type;
+        Type resolved = ArrayPointerType::get(elementType, type.location);
+        return resolved.withMutability(type.mutability).withLocation(type.location);
+    }
+    case TypeKind::AnonymousStructType: {
+        auto elements = map(type.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
+            return AnonymousStructElement{element.name, resolveTypeAliases(element.type, userAccessLevel, resolving)};
+        });
+        if (llvm::equal(elements, type.getAnonymousStructElements())) return type;
+        return AnonymousStructType::get(std::move(elements), type.mutability, type.location);
+    }
+    case TypeKind::FunctionType: {
+        auto returnType = resolveTypeAliases(type.getReturnType(), userAccessLevel, resolving);
+        auto paramTypes = map(type.getParamTypes(), [&](Type paramType) { return resolveTypeAliases(paramType, userAccessLevel, resolving); });
+        if (returnType == type.getReturnType() && llvm::equal(paramTypes, type.getParamTypes())) return type;
+        return FunctionType::get(returnType, std::move(paramTypes), llvm::cast<FunctionType>(type.typeBase)->isVariadic, type.mutability, type.location);
+    }
+    case TypeKind::PointerType: {
+        auto pointeeType = resolveTypeAliases(type.getPointee(), userAccessLevel, resolving);
+        if (pointeeType == type.getPointee()) return type;
+        return PointerType::get(pointeeType, type.getPointerKind(), type.mutability, type.location);
+    }
+    case TypeKind::UnresolvedType:
+        return type;
+    }
+    llvm_unreachable("all cases handled");
+}
+
+void Typechecker::canonicalizeTypeAliases() {
+    auto hasTypeAlias = [](const Module& module) {
+        return llvm::any_of(module.sourceFiles, [](const SourceFile& sourceFile) {
+            return llvm::any_of(sourceFile.topLevelDecls, [](const Decl* decl) { return decl->isTypeAliasDecl(); });
+        });
+    };
+    if (!hasTypeAlias(*currentModule) && llvm::none_of(Module::getAllImportedModules(), [&](const Module* module) { return hasTypeAlias(*module); })) {
+        return;
+    }
+
+    auto resolveType = [&](Type& type, AccessLevel accessLevel) { type = resolveTypeAliases(std::move(type), accessLevel); };
+    auto resolveParams = [&](std::vector<ParamDecl>& params, AccessLevel accessLevel) {
+        for (auto& param : params) {
+            resolveType(param.type, accessLevel);
+        }
+    };
+    auto resolveFunction = [&](FunctionDecl& function, AccessLevel accessLevel) {
+        resolveParams(function.proto.params, accessLevel);
+        resolveType(function.proto.returnType, accessLevel);
+    };
+    auto resolveFunctionTemplate = [&](FunctionTemplate& function, AccessLevel accessLevel) {
+        for (auto& genericParam : function.genericParams) {
+            for (auto& constraint : genericParam.constraints) {
+                resolveType(constraint, accessLevel);
+            }
+            resolveType(genericParam.valueType, accessLevel);
+        }
+        resolveFunction(*function.functionDecl, accessLevel);
+    };
+    auto resolveTypeDecl = [&](TypeDecl& type, AccessLevel accessLevel) {
+        for (auto& interface : type.interfaces) {
+            resolveType(interface, accessLevel);
+        }
+        for (auto& field : type.fields) {
+            resolveType(field.type, std::min(field.accessLevel, accessLevel));
+        }
+        for (auto* staticConst : type.staticConsts) {
+            resolveType(staticConst->type, std::min(staticConst->accessLevel, accessLevel));
+        }
+        for (auto* method : type.methods) {
+            if (auto* function = llvm::dyn_cast<FunctionDecl>(method)) {
+                resolveFunction(*function, std::min(method->accessLevel, accessLevel));
+            } else {
+                resolveFunctionTemplate(*llvm::cast<FunctionTemplate>(method), std::min(method->accessLevel, accessLevel));
+            }
+        }
+    };
+
+    for (auto& sourceFile : currentModule->sourceFiles) {
+        currentSourceFile = &sourceFile;
+        for (Decl* decl : sourceFile.topLevelDecls) {
+            switch (decl->kind) {
+            case DeclKind::TypeAliasDecl:
+                break;
+            case DeclKind::VarDecl:
+                resolveType(llvm::cast<VarDecl>(decl)->type, decl->accessLevel);
+                break;
+            case DeclKind::FunctionDecl:
+                resolveFunction(*llvm::cast<FunctionDecl>(decl), decl->accessLevel);
+                break;
+            case DeclKind::FunctionTemplate:
+                resolveFunctionTemplate(*llvm::cast<FunctionTemplate>(decl), decl->accessLevel);
+                break;
+            case DeclKind::TypeDecl:
+                resolveTypeDecl(*llvm::cast<TypeDecl>(decl), decl->accessLevel);
+                break;
+            case DeclKind::TypeTemplate: {
+                auto& typeTemplate = *llvm::cast<TypeTemplate>(decl);
+                for (auto& genericParam : typeTemplate.genericParams) {
+                    for (auto& constraint : genericParam.constraints) {
+                        resolveType(constraint, typeTemplate.accessLevel);
+                    }
+                    resolveType(genericParam.valueType, typeTemplate.accessLevel);
+                }
+                resolveTypeDecl(*typeTemplate.typeDecl, typeTemplate.accessLevel);
+                break;
+            }
+            case DeclKind::EnumDecl: {
+                auto& enumDecl = *llvm::cast<EnumDecl>(decl);
+                resolveTypeDecl(enumDecl, decl->accessLevel);
+                for (auto& enumCase : enumDecl.cases) {
+                    resolveType(enumCase.associatedType, std::min(enumCase.accessLevel, decl->accessLevel));
+                }
+                break;
+            }
+            case DeclKind::ImportDecl:
+                break;
+            case DeclKind::ParamDecl:
+            case DeclKind::GenericParamDecl:
+            case DeclKind::MethodDecl:
+            case DeclKind::ConstructorDecl:
+            case DeclKind::DestructorDecl:
+            case DeclKind::EnumCase:
+            case DeclKind::FieldDecl:
+                llvm_unreachable("invalid top-level declaration kind");
+            }
+        }
+    }
+}
+
 void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs, bool allowReference) {
+    type = resolveTypeAliases(std::move(type), userAccessLevel);
+    if (auto* alias = findTypeAlias(type)) {
+        if (type.isBasicType() && !type.getGenericArgs().empty()) {
+            ERROR(type.location, "type alias '" << alias->getName() << "' does not take generic arguments");
+        }
+        if (!alias->cycleReported) ERROR(type.location, "cyclic type alias '" << alias->getName() << "'");
+        throw CompileError::dependentError();
+    }
+
     if (!allowReference && type.storesBorrow()) {
         // Report the outermost type (e.g. 'int&?' rather than the nested 'int&')
         // so the diagnostic matches what the user wrote.
-        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter type");
+        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface argument");
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
@@ -129,7 +342,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
             // the nested types start where the outer type starts (e.g. 'A' in 'A*?').
             if (recheckGenericArgs) {
                 // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
-                bool nestedAllowReference = allowReference && type.isOptionalType();
+                bool nestedAllowReference = allowReference && (type.isOptionalType() || allowsBorrowArgs(decl));
                 for (auto genericArg : basicType->genericArgs) {
                     if (genericArg.isType()) typecheckType(genericArg.type.withLocation(type.location), userAccessLevel, true, nestedAllowReference);
                 }
@@ -143,7 +356,13 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
             }
 
             // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
+            // Interfaces likewise constrain but never store, so look them up to decide.
+            // The lookup only runs when some argument actually holds a borrow.
             bool nestedAllowReference = allowReference && type.isOptionalType();
+            if (allowReference && !nestedAllowReference && !basicType->name.empty()
+                && llvm::any_of(basicType->genericArgs, [](GenericArg arg) { return arg.isType() && arg.type.storesBorrow(); })) {
+                nestedAllowReference = llvm::any_of(findDecls(basicType->name), allowsBorrowArgs);
+            }
             for (auto genericArg : basicType->genericArgs) {
                 if (genericArg.isType()) typecheckType(genericArg.type, userAccessLevel, true, nestedAllowReference);
             }
@@ -203,7 +422,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         break;
     case TypeKind::PointerType: {
         if (type.isReferenceType() && !allowReference) {
-            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter type");
+            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface argument");
         }
         typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
@@ -376,6 +595,10 @@ static void checkMainSignature(const FunctionDecl& decl) {
 
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.typechecked) return;
+    for (auto& param : decl.proto.params) {
+        param.type = resolveTypeAliases(param.type, decl.accessLevel);
+    }
+    decl.proto.returnType = resolveTypeAliases(decl.proto.returnType, decl.accessLevel);
     int errorsBefore = errors;
     llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
     // Lambda bodies are checked inline within the enclosing function; moves they record
@@ -397,7 +620,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         typecheckParams(decl.getParams(), decl.accessLevel);
 
         if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
-            typecheckType(decl.getReturnType(), decl.accessLevel);
+            // Element accessors (e.g. List.front, Map.operator[]) return borrows into the container.
+            typecheckType(decl.getReturnType(), decl.accessLevel, true, true);
         }
 
         decl.typechecked = true;
@@ -412,7 +636,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     typecheckParams(decl.getParams(), decl.accessLevel);
 
     if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
-        typecheckType(decl.getReturnType(), decl.accessLevel);
+        // Element accessors (e.g. List.front, Map.operator[]) return borrows into the container.
+        typecheckType(decl.getReturnType(), decl.accessLevel, true, true);
     }
 
     if (decl.isMain() && !decl.isMethodDecl()) {
@@ -539,7 +764,8 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
     // access warnings for them would duplicate the use-site checks, so suppress.
     llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
     for (Type interface : decl.interfaces) {
-        typecheckType(interface, decl.accessLevel);
+        // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
+        typecheckType(interface, decl.accessLevel, true, true);
         auto* interfaceDecl = interface.getDecl();
 
         if (!interfaceDecl->isInterface()) {
@@ -594,12 +820,17 @@ void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
     typecheckGenericParamDecls(decl.genericParams, decl.accessLevel);
 }
 
+void Typechecker::typecheckTypeAliasDecl(TypeAliasDecl& decl) {
+    typecheckType(resolveTypeAliases(decl.aliasedType, decl.accessLevel), decl.accessLevel, true, true);
+}
+
 void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     // Members of generic instantiations carry template-definition locations;
     // access warnings for them would duplicate the use-site checks, so suppress.
     llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
     for (Type interface : decl.interfaces) {
-        typecheckType(interface, decl.accessLevel);
+        // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
+        typecheckType(interface, decl.accessLevel, true, true);
         auto* interfaceDecl = interface.getDecl();
 
         if (!interfaceDecl->isInterface()) {
@@ -627,6 +858,7 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
         typecheckExpr(*enumCase.value);
 
         if (enumCase.associatedType) {
+            enumCase.associatedType = resolveTypeAliases(enumCase.associatedType, enumCase.accessLevel);
             typecheckType(enumCase.associatedType, enumCase.accessLevel, true, allowReference);
         }
     }
@@ -769,6 +1001,7 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
 }
 
 void Typechecker::typecheckVarDecl(VarDecl& decl) {
+    decl.type = resolveTypeAliases(decl.type, decl.isGlobal() ? decl.accessLevel : AccessLevel::None);
     if (!decl.isGlobal()) {
         localVarDecls.push_back(&decl);
     }
@@ -835,12 +1068,14 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         }
     }
 
-    if (decl.type.isReferenceType()) {
-        // A borrow can't be named: read the value out (copying or moving it) instead of aliasing it.
+    // A borrow can't be named: read the value out (copying or moving it) instead of aliasing it.
+    // For-loop element variables are exempt for plain borrows; they alias the yielded element
+    // in place. Optional borrows stay rejected: naming one cannot unwrap it.
+    if (decl.type.isReferenceType() && !decl.isForLoopElement) {
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
-    } else if (decl.type.storesBorrow()) {
-        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter type");
+    } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType())) {
+        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter, return type, or interface argument");
     }
 
     if (!decl.type.isImplicitlyCopyable()) {
@@ -856,6 +1091,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 }
 
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
+    decl.type = resolveTypeAliases(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel));
     bool allowReference = false;
     if (auto* parent = llvm::dyn_cast<TypeDecl>(decl.getParentDecl())) allowReference = allowsSubstitutedReference(*parent);
     typecheckType(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel), true, allowReference);
@@ -920,6 +1156,9 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl) {
         break;
     case DeclKind::TypeTemplate:
         typecheckTypeTemplate(llvm::cast<TypeTemplate>(decl));
+        break;
+    case DeclKind::TypeAliasDecl:
+        typecheckTypeAliasDecl(llvm::cast<TypeAliasDecl>(decl));
         break;
     case DeclKind::EnumDecl:
         typecheckEnumDecl(llvm::cast<EnumDecl>(decl));

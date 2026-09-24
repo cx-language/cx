@@ -41,7 +41,7 @@ struct Set<Key: Hashable> {
 }
 
 /// Iterates over the elements of a set.
-struct SetIterator<Element>: Copyable, Iterator<Element*> {
+struct SetIterator<Element>: Copyable, Iterator<Element&> {
     private MapIterator<Element, bool> iterator;
 
     /// Initializes an iterator over the given set.
@@ -55,8 +55,8 @@ struct SetIterator<Element>: Copyable, Iterator<Element*> {
     }
 
     /// Returns the current element.
-    Element* value() {
-        return &iterator.value().key;
+    Element& value() {
+        return iterator.value().key;
     }
 
     /// Advances to the next element.

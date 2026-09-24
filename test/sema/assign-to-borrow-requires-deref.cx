@@ -1,0 +1,25 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: assign-to-borrow-requires-deref.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void assignToBorrow(int& x) {
+    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    x = 5;
+    var y = 6;
+    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    x = y;
+    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    x += 1;
+    *x = 5;
+}
+
+void g() {
+    var a = List([1, 2, 3]);
+    // CHECK: [[@LINE+1]]:7: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    a.first() = 99;
+    // CHECK: [[@LINE+1]]:7: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    a.first() += 1;
+    *a.first() = 99;
+    *a.first() += 1;
+}
+
+// CHECK-NOT: assign-to-borrow-requires-deref.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

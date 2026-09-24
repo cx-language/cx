@@ -590,6 +590,11 @@ Type Parser::parseType() {
             type = parseArrayType(type);
             break;
         case Token::And:
+            // The lexer only produces AndAnd for adjacent `&&`, so `T& &` arrives here as two
+            // separate borrows; reject it the same way rather than building a reference to a reference.
+            if (type.isReferenceType()) {
+                ERROR(getCurrentLocation(), "nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
+            }
             type = PointerType::get(type, PointerKind::Reference, Mutability::Mutable, location);
             consumeToken();
             break;
@@ -1569,6 +1574,10 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
             if (currentToken() == Token::Colon) {
                 consumeToken();
                 genericParams.back().constraints = {parseType()};
+                while (currentToken() == Token::Plus) {
+                    consumeToken();
+                    genericParams.back().constraints.push_back(parseType());
+                }
             }
         }
 
@@ -1714,6 +1723,18 @@ FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Ty
 
     parseStmtTerminator();
     return FieldDecl(type, name, defaultValue, typeDecl, accessLevel, location);
+}
+
+/// type-alias-decl ::= 'using' id '=' type ('\n' | ';')
+TypeAliasDecl* Parser::parseTypeAliasDecl(AccessLevel accessLevel) {
+    ASSERT(currentToken() == Token::Using);
+    consumeToken();
+
+    auto name = parse(Token::Identifier);
+    parse(Token::Assignment);
+    auto aliasedType = parseType();
+    parseStmtTerminator("in type alias declaration");
+    return makeAST<TypeAliasDecl>(name.getString().str(), aliasedType, accessLevel, *currentModule, name.location);
 }
 
 /// type-template-decl ::= ('struct' | 'interface') id generic-param-list? '{' member-decl* '}' ';'?
@@ -2042,7 +2063,7 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
     consumeToken();
 }
 
-/// top-level-decl ::= function-decl | extern-function-decl | type-decl | enum-decl | import-decl | var-decl
+/// top-level-decl ::= function-decl | extern-function-decl | type-decl | enum-decl | type-alias-decl | import-decl | var-decl
 /// @throws CompileError
 Decl* Parser::parseTopLevelDecl(bool addToSymbolTable) {
     AccessLevel accessLevel = AccessLevel::Default;
@@ -2085,6 +2106,11 @@ start:
             decl = parseEnumDecl(nullptr, accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
         }
+        break;
+    case Token::Using:
+        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
+        decl = parseTypeAliasDecl(accessLevel);
+        if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeAliasDecl>(*decl));
         break;
     case Token::Var:
     case Token::Const:

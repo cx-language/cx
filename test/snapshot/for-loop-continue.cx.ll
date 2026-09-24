@@ -8,7 +8,7 @@
 define i32 @main() #0 !dbg !4 {
   %__iterator = alloca %StringIterator, align 8
   %__str = alloca %string, align 8
-  %ch = alloca i8, align 1
+  %ch = alloca ptr, align 8
   call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @0, i32 3), !dbg !7
   %1 = call %StringIterator @_EN3std6string8iteratorE(ptr %__str), !dbg !8
   store %StringIterator %1, ptr %__iterator, align 8
@@ -19,10 +19,11 @@ loop.condition:                                   ; preds = %loop.increment, %0
   br i1 %2, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %3 = call i8 @_EN3std14StringIterator5valueE(ptr %__iterator), !dbg !8
-  store i8 %3, ptr %ch, align 1
-  %ch.load = load i8, ptr %ch, align 1
-  %4 = icmp eq i8 %ch.load, 98
+  %3 = call ptr @_EN3std14StringIterator5valueE(ptr %__iterator), !dbg !8
+  store ptr %3, ptr %ch, align 8
+  %ch.load = load ptr, ptr %ch, align 8
+  %ch.load.load = load i8, ptr %ch.load, align 1
+  %4 = icmp eq i8 %ch.load.load, 98
   br i1 %4, label %if.then, label %if.else
 
 loop.increment:                                   ; preds = %if.end, %if.then
@@ -48,7 +49,7 @@ declare %StringIterator @_EN3std6string8iteratorE(ptr) #0
 
 declare i1 @_EN3std14StringIterator8hasValueE(ptr) #0
 
-declare i8 @_EN3std14StringIterator5valueE(ptr) #0
+declare ptr @_EN3std14StringIterator5valueE(ptr) #0
 
 declare void @_EN3std14StringIterator9incrementE(ptr) #0
 

@@ -121,25 +121,15 @@ Stmt* WhileStmt::lower() {
     return makeAST<ForStmt>(nullptr, condition, nullptr, std::move(body), location);
 }
 
-static Type getMethodReturnType(TypeDecl* typeDecl, llvm::StringRef name) {
-    FunctionDecl* match = nullptr;
-    for (auto* method : typeDecl->methods) {
-        auto* function = llvm::dyn_cast<FunctionDecl>(method);
-        if (!function || function->getName() != name) continue;
-        if (match) return Type();
-        match = function;
-    }
-    return match ? match->getReturnType() : Type();
-}
-
 // Lowers 'for id in range { ... }' into:
 // for (var __iterator = range.iterator(); __iterator.hasValue(); __iterator.increment()) {
 //     var id = __iterator.value();
 //     ...
 // }
-// When the iterator yields pointers to implicitly copyable elements, the value
-// is dereferenced so the loop variable is a copy; other element types keep the
-// pointer so non-copyable elements can still be mutated in place.
+// The loop variable keeps whatever type value() returns. In particular a borrow is
+// aliased, not copied out, so elements are mutated in place. Method resolution cannot
+// be relied on here (generic contexts leave it unresolved), so the variable is always
+// marked and the typechecker exempts plain borrows from the usual read-out.
 Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVariableName = "__iterator" + (nestLevel > 0 ? std::to_string(nestLevel) : "");
 
@@ -147,23 +137,6 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     Type rangeBaseType = range->type.removePointer();
     auto* rangeTypeDecl = rangeBaseType.getDecl();
     bool isIterator = rangeTypeDecl && llvm::any_of(rangeTypeDecl->interfaces, [](Type interface) { return interface.getName() == "Iterator"; });
-
-    bool byValue = false;
-    if (rangeBaseType.isArrayType()) {
-        // Arrays use ArrayIterator, whose value() yields a pointer to the element type.
-        byValue = rangeBaseType.getElementType().isImplicitlyCopyable();
-    } else if (rangeTypeDecl) {
-        TypeDecl* iteratorDecl = nullptr;
-        if (isIterator) {
-            iteratorDecl = rangeTypeDecl;
-        } else if (Type iteratorType = getMethodReturnType(rangeTypeDecl, "iterator")) {
-            iteratorDecl = iteratorType.getDecl();
-        }
-        if (iteratorDecl) {
-            Type valueType = getMethodReturnType(iteratorDecl, "value");
-            byValue = valueType && valueType.isPointerType() && valueType.getPointee().isImplicitlyCopyable();
-        }
-    }
 
     if (isIterator) {
         iteratorValue = range;
@@ -183,9 +156,9 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVarExpr2 = makeAST<VarExpr>(iteratorVariableName, location);
     auto valueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr2, "value", location);
     auto valueCallExpr = makeAST<CallExpr>(valueMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
-    Expr* loopInit = byValue ? makeAST<UnaryExpr>(Token::Star, valueCallExpr, location) : valueCallExpr;
-    auto loopVariableVarDecl =
-        makeAST<VarDecl>(variable->type, variable->getName(), loopInit, variable->parent, AccessLevel::None, *variable->getModule(), variable->getLocation());
+    auto loopVariableVarDecl = makeAST<VarDecl>(variable->type, variable->getName(), valueCallExpr, variable->parent, AccessLevel::None, *variable->getModule(),
+                                                variable->getLocation());
+    loopVariableVarDecl->isForLoopElement = true;
     auto loopVariableVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{loopVariableVarDecl});
 
     std::vector<Stmt*> forBody;

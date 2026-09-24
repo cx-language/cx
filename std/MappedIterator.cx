@@ -1,6 +1,6 @@
 // Lazily transforms the elements of another iterator.
 // Get one from map(); collect the results with toList().
-struct MappedIterator<Output, Input, It, Transform>: Iterator<Output*> {
+struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&> {
     private It source;
     private Transform transform;
     private Output current;
@@ -18,7 +18,7 @@ struct MappedIterator<Output, Input, It, Transform>: Iterator<Output*> {
     }
 
     /// Returns the next transformed element.
-    Output* value() {
+    Output& value() {
         current = transform(*source.value());
         return &current;
     }

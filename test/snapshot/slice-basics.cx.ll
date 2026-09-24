@@ -117,19 +117,22 @@ define void @_EN3std5SliceI3intE16indexOutOfBoundsE6string3int(ptr %this, %strin
   %__str = alloca %string, align 8
   %__str3 = alloca %string, align 8
   %__str4 = alloca %string, align 8
-  %1 = alloca i32, align 4
   store %string %function, ptr %function1, align 8
   store i32 %index, ptr %index2, align 4
   call void @_EN3std6string4initEP4char3int(ptr %__str, ptr @1, i32 6), !dbg !25
+  %__str.load = load %string, ptr %__str, align 8
+  %function.load = load %string, ptr %function1, align 8
   call void @_EN3std6string4initEP4char3int(ptr %__str3, ptr @2, i32 8), !dbg !25
+  %__str.load5 = load %string, ptr %__str3, align 8
+  %index.load = load i32, ptr %index2, align 4
   call void @_EN3std6string4initEP4char3int(ptr %__str4, ptr @3, i32 27), !dbg !25
-  %2 = call i32 @_EN3std5SliceI3intE4sizeE(ptr %this), !dbg !26
-  store i32 %2, ptr %1, align 4
-  %3 = call %never @_EN3std5abortI6string6string6string3int6string3intEVER6stringR6stringR6stringR3intR6stringR3int(ptr %__str, ptr %function1, ptr %__str3, ptr %index2, ptr %__str4, ptr %1), !dbg !27
+  %__str.load6 = load %string, ptr %__str4, align 8
+  %1 = call i32 @_EN3std5SliceI3intE4sizeE(ptr %this), !dbg !26
+  %2 = call %never @_EN3std5abortI6string6string6string3int6string3intEVE6string6string6string3int6string3int(%string %__str.load, %string %function.load, %string %__str.load5, i32 %index.load, %string %__str.load6, i32 %1), !dbg !27
   ret void
 }
 
-declare %never @_EN3std5abortI6string6string6string3int6string3intEVER6stringR6stringR6stringR3intR6stringR3int(ptr, ptr, ptr, ptr, ptr, ptr) #0
+declare %never @_EN3std5abortI6string6string6string3int6string3intEVE6string6string6string3int6string3int(%string, %string, %string, i32, %string, i32) #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -160,7 +163,7 @@ attributes #0 = { "frame-pointer"="all" }
 !21 = !DILocation(line: 43, column: 34, scope: !20)
 !22 = !DILocation(line: 42, column: 14, scope: !20)
 !23 = !DILocation(line: 43, column: 41, scope: !20)
-!24 = distinct !DISubprogram(name: "indexOutOfBounds", linkageName: "_EN3std5SliceI3intE16indexOutOfBoundsE6string3int", scope: !19, file: !19, line: 100, type: !5, scopeLine: 100, spFlags: DISPFlagDefinition, unit: !2)
-!25 = !DILocation(line: 100, column: 18, scope: !24)
-!26 = !DILocation(line: 101, column: 85, scope: !24)
-!27 = !DILocation(line: 101, column: 9, scope: !24)
+!24 = distinct !DISubprogram(name: "indexOutOfBounds", linkageName: "_EN3std5SliceI3intE16indexOutOfBoundsE6string3int", scope: !19, file: !19, line: 115, type: !5, scopeLine: 115, spFlags: DISPFlagDefinition, unit: !2)
+!25 = !DILocation(line: 115, column: 18, scope: !24)
+!26 = !DILocation(line: 116, column: 85, scope: !24)
+!27 = !DILocation(line: 116, column: 9, scope: !24)

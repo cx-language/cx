@@ -52,8 +52,9 @@ void main() {
 
 ## Generic constraints
 
-A type parameter can be constrained to only accept types that implement a given [interface](interfaces).
-The constraint is written after a colon following the parameter name.
+A type parameter can be constrained to only accept types that implement one or more
+[interfaces](interfaces). Constraints are written after a colon following the
+parameter name, joined with `+`.
 
 ```cs
 interface Fooable {
@@ -73,6 +74,28 @@ void callFoo<T: Fooable>(T& f) {
 void main() {
     var x = X();
     callFoo(x); // prints 42
+}
+```
+
+Multiple constraints are all required:
+
+```cs
+interface Fooable {
+    int foo();
+}
+
+struct Both: Fooable, Hashable {
+    int foo() { return 42; }
+    uint64 hash() { return 0; }
+}
+
+void callBoth<T: Fooable + Hashable>(T& value) {
+    println(value.foo());
+    println(value.hash());
+}
+
+void main() {
+    callBoth(Both());
 }
 ```
 

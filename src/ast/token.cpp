@@ -306,6 +306,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "this",
         "true",
         "undefined",
+        "using",
         "var",
         "while",
         "#if",

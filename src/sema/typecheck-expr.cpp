@@ -268,6 +268,16 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to generic function '" << expr.identifier << "' without specifying type arguments");
     case DeclKind::TypeDecl:
         return llvm::cast<TypeDecl>(decl)->getType();
+    case DeclKind::TypeAliasDecl: {
+        auto* alias = llvm::cast<TypeAliasDecl>(decl);
+        Type aliasedType = resolveTypeAliases(alias->aliasedType);
+        typecheckType(aliasedType, AccessLevel::None);
+        if (TypeDecl* typeDecl = aliasedType.getDecl()) {
+            expr.decl = typeDecl;
+            return aliasedType;
+        }
+        ERROR_RANGE(expr.location, expr.endLocation, "cannot refer to type alias '" << expr.identifier << "' as a value");
+    }
     case DeclKind::TypeTemplate:
         ERROR_RANGE(expr.location, expr.endLocation, "'" << expr.identifier << "' is not a variable");
     case DeclKind::EnumDecl:
@@ -403,6 +413,11 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         ERROR_RANGE(expr.location, expr.endLocation, "cannot dereference non-pointer type '" << operandType << "'");
 
     case Token::And: // Address-of operation
+        // A borrow designates an object with an address, so `&` also accepts expressions
+        // of borrow type (e.g. `&list.first()`), not just lvalues.
+        if (!expr.getOperand().isLvalue() && !operandType.isReferenceType()) {
+            ERROR(expr.getOperand().location, "cannot take address of rvalue of type '" << operandType << "'");
+        }
         unnarrow(expr.getOperand());
         operandType = expr.getOperand().type;
         // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
@@ -413,6 +428,12 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         return PointerType::get(operandType.removeReference());
 
     case Token::Increment:
+        if (operandType.removeOptional().isReferenceType()) {
+            ERROR(expr.location, "cannot increment borrow of type '" << operandType << "'; dereference it explicitly (e.g. '(*x)++')");
+        }
+        if (operandType.removeOptional().isPointerType()) {
+            ERROR(expr.location, "cannot increment pointer of type '" << operandType << "'; dereference it explicitly (e.g. '(*p)++')");
+        }
         operandType = operandType.removePointer();
 
         if (!operandType.isMutable()) {
@@ -424,6 +445,12 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         return Type::getVoid();
 
     case Token::Decrement:
+        if (operandType.removeOptional().isReferenceType()) {
+            ERROR(expr.location, "cannot decrement borrow of type '" << operandType << "'; dereference it explicitly (e.g. '(*x)--')");
+        }
+        if (operandType.removeOptional().isPointerType()) {
+            ERROR(expr.location, "cannot decrement pointer of type '" << operandType << "'; dereference it explicitly (e.g. '(*p)--')");
+        }
         operandType = operandType.removePointer();
 
         if (!operandType.isMutable()) {
@@ -435,6 +462,14 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         return Type::getVoid();
 
     default:
+        if (operandType.removeOptional().isReferenceType()) {
+            ERROR(expr.location, "cannot apply unary '" << toString(expr.op) << "' to borrow of type '" << operandType << "'; dereference it explicitly (e.g. '"
+                                                        << toString(expr.op) << "*x')");
+        }
+        if (operandType.removeOptional().isPointerType() || operandType.removeOptional().isArrayPointer()) {
+            ERROR(expr.location, "cannot apply unary '" << toString(expr.op) << "' to pointer of type '" << operandType
+                                                        << "'; dereference it explicitly (e.g. '" << toString(expr.op) << "*p')");
+        }
         return operandType;
     }
 }
@@ -477,7 +512,21 @@ static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind
         }
         hint += "' cannot be null)";
     } else {
-        hint = mixedPointerOperandHint(expr);
+        auto isPointerOperand = [](Type type) {
+            type = type.removeOptional();
+            return type.isPointerType() || type.isArrayPointer();
+        };
+        if (isPointerOperand(expr.getLHS().type) || isPointerOperand(expr.getRHS().type)) {
+            if (isComparisonOperator(op)) {
+                hint = "; to compare the pointed-to value, dereference with '*'";
+            } else if (isBitwiseOperator(op)) {
+                hint = "; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value";
+            } else {
+                hint = "; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value";
+            }
+        } else {
+            hint = mixedPointerOperandHint(expr);
+        }
     }
 
     ERROR_RANGE(expr.location, expr.endLocation,
@@ -739,6 +788,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             // element types match exactly and op is builtin for elements.
             // This preserves backward compatibility for existing array comparisons
             // via overloads while enabling element-wise ops for matching numerics.
+            auto isPointerElement = [](Type type) {
+                type = type.removeOptional();
+                return type.isPointerType() || type.isArrayPointer();
+            };
             if (leftIsArrayLike && rightIsArrayLike) {
                 Type leftElem = leftType.getElementType();
                 Type rightElem = rightType.getElementType();
@@ -748,6 +801,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                 if (!isBuiltinOp(op, leftElem, rightElem)) {
                     goto not_array_programming;
                 }
+                if (!isComparisonOperator(op) && (isPointerElement(leftElem) || isPointerElement(rightElem))) {
+                    goto not_array_programming;
+                }
             } else {
                 // Broadcast: require exact scalar-element match and builtin op;
                 // otherwise fall through to overloads (or standard invalid-operands error).
@@ -755,6 +811,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                     goto not_array_programming;
                 }
                 if (!isBuiltinOp(op, elementType, scalarType)) {
+                    goto not_array_programming;
+                }
+                if (!isComparisonOperator(op) && (isPointerElement(elementType) || isPointerElement(scalarType))) {
                     goto not_array_programming;
                 }
             }
@@ -779,24 +838,23 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     not_array_programming:;
     }
 
+    if (!isComparisonOperator(op) && (leftType.removeOptional().isArrayPointer() || rightType.removeOptional().isArrayPointer())) {
+        throwInvalidOperandsToBinaryExpr(expr, op);
+    }
+
     if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
     }
 
-    // Operators auto-deref: unless both operands are raw pointers (an address comparison),
-    // deref any pointer or borrow operand so the operation applies to the pointed-to values.
-    // Derefing up front lets the conversions below handle inexact matches, e.g. 'uint*' against
-    // an 'int' constant. Optional and array-pointer operands are excluded: they keep
-    // the conversions below (null-aware identity, pointer-to-array decay). Null literals are
-    // excluded so 'p == null' still reports the pointer type.
-    bool bothRawPointers = leftType.isPointerType() && rightType.isPointerType() && !leftType.isReferenceType() && !rightType.isReferenceType();
+    // Borrow operands retain their implicit dereference for builtin operators. Raw pointers never do:
+    // their operands must use '*' explicitly, while member access and indexing remain direct.
     bool eitherSpecial = leftType.isOptionalType() || rightType.isOptionalType() || leftType.isArrayPointer() || rightType.isArrayPointer();
-    if (!bothRawPointers && !eitherSpecial) {
-        if (leftType.isPointerType() && !leftType.getPointee().isVoid() && !expr.getRHS().isNullLiteralExpr()) {
+    if ((leftType.isReferenceType() || rightType.isReferenceType()) && !eitherSpecial) {
+        if (leftType.isReferenceType() && !expr.getRHS().isNullLiteralExpr()) {
             expr.setLHS(makeAST<ImplicitCastExpr>(&expr.getLHS(), leftType.getPointee(), ImplicitCastExpr::AutoDereference));
             leftType = leftType.getPointee();
         }
-        if (rightType.isPointerType() && !rightType.getPointee().isVoid() && !expr.getLHS().isNullLiteralExpr()) {
+        if (rightType.isReferenceType() && !expr.getLHS().isNullLiteralExpr()) {
             expr.setRHS(makeAST<ImplicitCastExpr>(&expr.getRHS(), rightType.getPointee(), ImplicitCastExpr::AutoDereference));
             rightType = rightType.getPointee();
         }
@@ -864,11 +922,16 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     auto* rhs = &expr.getRHS();
 
     typecheckExpr(*lhs, true);
-    if (!lhs->isLvalue()) {
-        ERROR(lhs->location, "cannot assign to expression of type '" << lhs->type << "'");
-    }
     if (lhs->isThis()) {
         ERROR(lhs->location, "cannot assign to 'this'");
+    }
+    // Assigning to a borrow would rebind it, like reseating a pointer. Borrows cannot be
+    // rebound, so reject every borrow target here, whether or not it is an lvalue.
+    if (lhs->assignableType.isReferenceType()) {
+        ERROR(lhs->location, "cannot rebind borrow of type '" << lhs->assignableType << "' (use '*' to write through it explicitly)");
+    }
+    if (!lhs->isLvalue()) {
+        ERROR(lhs->location, "cannot assign to expression of type '" << lhs->type << "'");
     }
     Type lhsType = lhs->assignableType;
     Type rhsType = typecheckExpr(*rhs, false, lhsType);
@@ -1002,7 +1065,7 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     return true;
 }
 
-Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange) const {
+Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange, bool allowOperatorBorrow) const {
     // Array borrows decay to views without copying: dereferencing first
     // would take the address of a temporary, breaking mutation through data()
     // and dangling slices built from the copy. Only constant-array borrows
@@ -1012,17 +1075,18 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
         expr->type.isReferenceType() && expr->type.getPointee().isConcreteArray() && (unwrappedTarget.isArrayPointer() || unwrappedTarget.isSlice());
     if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !type.removeOptional().isPointerType() && !decaysToView) {
         auto* dereferenced = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
-        return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange);
+        return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow);
     }
 
     std::optional<ImplicitCastExpr::Kind> implicitCastKind;
-    if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind, diagnoseOutOfRange)) {
+    if (Type convertedType =
+            isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind, diagnoseOutOfRange, allowOperatorBorrow)) {
         if (implicitCastKind) {
             if (*implicitCastKind == ImplicitCastExpr::OptionalWrap && expr->type != convertedType.getWrappedType()) {
                 // One wrap node constructs a single level, so convert the operand to the wrapped
                 // type first (e.g. `int` to `int?` when wrapping to `int??`). Each recursion
                 // strips one optional level, so this terminates.
-                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange);
+                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow);
                 if (!expr) return nullptr;
             }
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
@@ -1036,17 +1100,18 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
             expr->type = convertedType;
 
             if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-                if (Expr* convertedThen = convert(ifExpr->thenExpr, convertedType, allowPointerToTemporary)) {
+                if (Expr* convertedThen = convert(ifExpr->thenExpr, convertedType, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow)) {
                     ifExpr->thenExpr = convertedThen;
                 }
-                if (Expr* convertedElse = convert(ifExpr->elseExpr, convertedType, allowPointerToTemporary)) {
+                if (Expr* convertedElse = convert(ifExpr->elseExpr, convertedType, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow)) {
                     ifExpr->elseExpr = convertedElse;
                 }
             }
 
             if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(expr); arrayLiteral && convertedType.isConcreteArray()) {
                 for (auto& element : arrayLiteral->elements) {
-                    if (Expr* convertedElement = convert(element, convertedType.getElementType(), allowPointerToTemporary)) {
+                    if (Expr* convertedElement =
+                            convert(element, convertedType.getElementType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow)) {
                         element = convertedElement;
                     }
                 }
@@ -1055,7 +1120,8 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
             if (auto* anonymousStructExpr = llvm::dyn_cast<AnonymousStructExpr>(expr); anonymousStructExpr && convertedType.isAnonymousStructType()) {
                 auto targetElements = convertedType.getAnonymousStructElements();
                 for (size_t i = 0; i < anonymousStructExpr->elements.size(); ++i) {
-                    if (Expr* convertedElement = convert(anonymousStructExpr->elements[i].value, targetElements[i].type, allowPointerToTemporary)) {
+                    if (Expr* convertedElement = convert(anonymousStructExpr->elements[i].value, targetElements[i].type, allowPointerToTemporary,
+                                                         diagnoseOutOfRange, allowOperatorBorrow)) {
                         anonymousStructExpr->elements[i].value = convertedElement;
                     }
                 }
@@ -1113,7 +1179,7 @@ static bool isReinterpretible(Type source, Type target) {
 }
 
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
-                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange) const {
+                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange, bool allowOperatorBorrow) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
@@ -1159,7 +1225,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // Only a no-op when the wrapped conversion needs no cast; nesting changes (e.g. `int?` to `int??`)
         // fall through to the wrap rule below.
         std::optional<ImplicitCastExpr::Kind> wrappedCastKind;
-        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind, diagnoseOutOfRange)
+        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind, diagnoseOutOfRange, allowOperatorBorrow)
             && !wrappedCastKind) {
             return source;
         }
@@ -1173,8 +1239,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange)
-                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange)) {
+            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow)
+                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow)) {
                 return target;
             }
         }
@@ -1183,7 +1249,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         if ((expr->type.isInteger() || expr->type.isChar() || (expr->type.isEnumType() && !llvm::cast<EnumDecl>(expr->type.getDecl())->hasAssociatedValues()))
             && expr->isConstant()) {
             auto value = expr->getConstantIntegerValue();
-            // Convert e.g. int literal to uint when binding to uint&; raw pointer parameters require an explicit '&'.
+            // Convert e.g. int literal to uint when binding to uint&; raw pointer parameters require an explicit '&'
+            // outside operator context.
             auto adjustedTarget = allowPointerToTemporary ? target.removeReference() : target;
 
             if (adjustedTarget.isInteger()) {
@@ -1218,7 +1285,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             auto arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(expr);
             if (arrayLiteralExpr->elements.size() != static_cast<size_t>(target.getArraySize())) return Type();
             bool isConvertible = llvm::all_of(arrayLiteralExpr->elements, [&](Expr* element) {
-                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), false, nullptr, diagnoseOutOfRange);
+                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), false, nullptr, diagnoseOutOfRange,
+                                               allowOperatorBorrow);
             });
 
             if (isConvertible) {
@@ -1235,7 +1303,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     // Bind values to borrow parameters implicitly. Borrowing never copies, moves, or stores, and requires
     // an exact type match: the backend passes the operand's address as is, so no representation change
-    // (wrapping, view conversion) may happen underneath the borrow. Raw pointer parameters require '&'.
+    // (wrapping, view conversion) may happen underneath the borrow. Raw pointer parameters require '&'
+    // outside operator context.
     if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.isReferenceType() &&
         // Allow forming mutable borrows of constants. This is safe because constants will be inlined at the usage site.
         (source.isMutable() || (expr && expr->isConstant()) || !target.getPointee().isMutable()) && source.equalsIgnoreTopLevelMutable(target.getPointee())) {
@@ -1260,15 +1329,24 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if (source.isPointerType() && source.getPointee() == target && expr && !expr->isReferenceExpr() && target.isImplicitlyCopyable()) {
-        // Implicit dereference copies the pointee; moving out of a pointer
-        // requires an explicit '*' so moves are visible at the use site.
+    // Borrows read through implicitly; raw pointers require explicit '*'. Copying out of a
+    // borrow is implicit, moving out requires explicit '*' so moves stay visible.
+    if (source.isReferenceType() && expr && !expr->isReferenceExpr() && target.isImplicitlyCopyable()
+        && source.getPointee().equalsIgnoreTopLevelMutable(target)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoDereference;
         return target;
     }
 
+    // Operator overloads use pointer parameters as non-escaping borrows. Keep ordinary pointer
+    // arguments explicit, but let an lvalue operand supply its address in operator context.
+    if (allowOperatorBorrow && target.isPointerType() && !target.isReferenceType() && expr && expr->isLvalue()
+        && (source.isMutable() || !target.getPointee().isMutable()) && source.equalsIgnoreTopLevelMutable(target.getPointee())) {
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
+        return target;
+    }
+
     if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr())
-        && isImplicitlyConvertible(expr, source, target.getWrappedType(), allowPointerToTemporary, nullptr, diagnoseOutOfRange)) {
+        && isImplicitlyConvertible(expr, source, target.getWrappedType(), allowPointerToTemporary, nullptr, diagnoseOutOfRange, allowOperatorBorrow)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalWrap;
         return target;
     }
@@ -1321,7 +1399,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
             auto* elementValue = anonymousStructExpr ? anonymousStructExpr->elements[i].value : nullptr;
 
-            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange)) {
+            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange,
+                                         allowOperatorBorrow)) {
                 return Type();
             }
         }
@@ -1604,24 +1683,10 @@ std::vector<GenericArg> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef
     ASSERT(genericParams.size() == inferredGenericArgs.size());
 
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, inferredGenericArgs)) {
-        if (genericParam.isValueParam) continue;
-        if (!genericParam.constraints.empty()) {
-            ASSERT(genericParam.constraints.size() == 1, "cannot have multiple generic constraints yet");
-            auto* interface = getTypeDecl(*llvm::cast<BasicType>(genericParam.constraints[0].typeBase));
-
-            if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase)) {
-                auto* typeDecl = getTypeDecl(*basicType);
-                if (typeDecl && typeDecl->hasInterface(*interface)) {
-                    continue;
-                }
-            }
-
-            if (returnOnError) {
-                return {};
-            } else {
-                ERROR(call.location, "type '" << genericArg << "' doesn't implement interface '" << interface->getName() << "'");
-            }
-        }
+        if (genericParam.isValueParam || genericArgSatisfiesConstraints(genericParam, genericArg)) continue;
+        if (returnOnError) return {};
+        validateGenericConstraints({genericParam}, {genericArg}, call.getFunctionName(), call.location);
+        throw CompileError::dependentError();
     }
 
     return inferredGenericArgs;
@@ -1772,17 +1837,25 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
     }
 
     auto checkConstraint = [&](const GenericParamDecl& genericParam, GenericArg genericArg) -> bool {
-        if (genericParam.isValueParam || genericParam.constraints.empty()) return true;
-        ASSERT(genericParam.constraints.size() == 1, "cannot have multiple generic constraints yet");
-        auto* interface = getTypeDecl(*llvm::cast<BasicType>(genericParam.constraints[0].typeBase));
+        if (genericParam.isValueParam) return true;
+        for (Type constraint : genericParam.constraints) {
+            auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
 
-        if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase)) {
-            auto* typeDecl = getTypeDecl(*basicType);
-            if (typeDecl && typeDecl->hasInterface(*interface)) return true;
+            // Pack arguments are heterogeneous: a pointer pack argument (e.g. `println("x", &value)`)
+            // dispatches to the pointer overloads once the loop is unrolled. Pointers are always copyable.
+            if (genericArg.type.removeOptional().isPointerType() && !genericArg.type.removeOptional().isReferenceType() && interface->getName() == "Copyable") {
+                continue;
+            }
+
+            if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase)) {
+                auto* typeDecl = getTypeDecl(*basicType);
+                if (typeDecl && typeDecl->hasInterface(*interface)) continue;
+            }
+
+            if (returnOnError) return false;
+            ERROR(call.location, "type '" << genericArg << "' doesn't implement interface '" << interface->getName() << "'");
         }
-
-        if (returnOnError) return false;
-        ERROR(call.location, "type '" << genericArg << "' doesn't implement interface '" << interface->getName() << "'");
+        return true;
     };
 
     for (auto* genericParam : fixedGenerics) {
@@ -1894,6 +1967,55 @@ bool Typechecker::genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParam
     return true;
 }
 
+bool Typechecker::genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg) {
+    if (genericParam.isValueParam) return genericArg.isInt();
+    if (!genericArg || genericArg.isInt()) return false;
+    if (genericArg.type.isUnresolvedType()) return true;
+
+    for (Type constraint : genericParam.constraints) {
+        if (!constraint.isBasicType()) return false;
+        if (constraint.getName() == "Copyable"
+            && ((genericArg.type.removeOptional().isPointerType() && !genericArg.type.removeOptional().isReferenceType())
+                || genericArg.type.isArrayPointer())) {
+            continue;
+        }
+
+        auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
+        auto* basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase);
+        auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
+        if (!typeDecl || !interface || !typeDecl->hasInterface(*interface)) return false;
+    }
+    return true;
+}
+
+bool Typechecker::validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
+                                             Location location) {
+    bool valid = true;
+    for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
+        if (genericParam.isValueParam || !genericArg || genericArg.isInt() || genericArg.type.isUnresolvedType()) continue;
+        for (Type constraint : genericParam.constraints) {
+            bool satisfies = false;
+            if (constraint.isBasicType() && constraint.getName() == "Copyable"
+                && ((genericArg.type.removeOptional().isPointerType() && !genericArg.type.removeOptional().isReferenceType())
+                    || genericArg.type.isArrayPointer())) {
+                satisfies = true;
+            } else if (constraint.isBasicType()) {
+                auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
+                auto* basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase);
+                auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
+                satisfies = typeDecl && interface && typeDecl->hasInterface(*interface);
+            }
+            if (satisfies) continue;
+            valid = false;
+            if (constraint.isBasicType()) {
+                REPORT_ERROR(location, "type '" << genericArg << "' doesn't implement interface '" << constraint.getName() << "' for generic parameter '"
+                                                << genericParam.getName() << "' of '" << name << "'");
+            }
+        }
+    }
+    return valid;
+}
+
 bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
                                       Location location) {
     if (genericArgs.size() < genericParams.size()) {
@@ -1916,6 +2038,7 @@ bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericPa
             valid = false;
         }
     }
+    if (valid) valid = validateGenericConstraints(genericParams, genericArgs, name, location);
     return valid;
 }
 
@@ -1964,11 +2087,25 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
     } else {
         for (GenericArg arg : call.genericArgs) {
             if (arg.isType() && arg.type.storesBorrow()) {
-                ERROR(arg.location, "reference type '" << arg.type << "' may only appear as a function parameter type");
+                ERROR(arg.location, "reference type '" << arg.type << "' may only appear as a function parameter, return type, or interface argument");
             }
         }
         if (!genericArgsMatch(genericParams, call.genericArgs)) return {};
         genericArgTypes = call.genericArgs;
+    }
+
+    if (genericArgTypes.size() != genericParams.size()) {
+        if (!returnOnError) validateGenericArgs(genericParams, genericArgTypes, decl->getName(), call.location);
+        return {};
+    }
+    bool constraintsValid = llvm::all_of(llvm::zip(genericParams, genericArgTypes), [&](auto&& pair) {
+        auto&& [genericParam, genericArg] = pair;
+        return genericArgSatisfiesConstraints(genericParam, genericArg);
+    });
+    if (!constraintsValid) {
+        if (returnOnError) return {};
+        validateGenericConstraints(genericParams, genericArgTypes, decl->getName(), call.location);
+        throw CompileError::dependentError();
     }
 
     llvm::StringMap<GenericArg> genericArgs;
@@ -1981,7 +2118,7 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
     return genericArgs;
 }
 
-Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
+Type Typechecker::typecheckBuiltinConversion(CallExpr& expr, Type targetType) {
     if (expr.args.size() != 1) {
         ERROR_RANGE(expr.location, expr.endLocation, "expected single argument to converting constructor");
     }
@@ -1993,7 +2130,8 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
     }
 
     auto sourceType = typecheckExpr(*expr.args.front().value);
-    auto targetType = BasicType::get(expr.getFunctionName(), {});
+    if (!targetType) targetType = BasicType::get(expr.getFunctionName(), {});
+    expr.builtinConversion = true;
 
     if (sourceType.isReferenceType()) {
         // Borrows convert as their referent; builtin conversions always copy into a fresh scalar.
@@ -2217,7 +2355,10 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             }
 
             if (!expr.genericArgs.empty() && decls.size() == 1) {
-                if (!validateGenericArgs(genericParams, expr.genericArgs, expr.getFunctionName(), expr.location)) continue;
+                if (expr.genericArgs.size() != genericParams.size() || !genericArgsMatch(genericParams, expr.genericArgs)) {
+                    validateGenericArgs(genericParams, expr.genericArgs, expr.getFunctionName(), expr.location);
+                    continue;
+                }
             } else if (!expr.genericArgs.empty() && expr.genericArgs.size() != genericParams.size()) {
                 continue;
             }
@@ -2545,6 +2686,24 @@ std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm:
     Type receiverType = expr.receiverType ? expr.receiverType.removePointer() : Type();
     receiverType = getArrayTypeForReceiver(receiverType);
 
+    if (!expr.receiverType && expr.callee->isVarExpr()) {
+        auto decls = findDecls(callee);
+        bool hasAlias = llvm::any_of(decls, [](Decl* decl) { return decl->isTypeAliasDecl(); });
+        if (hasAlias) {
+            std::vector<Decl*> expanded;
+            for (Decl* decl : decls) {
+                if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
+                    Type aliasedType = resolveTypeAliases(alias->aliasedType);
+                    typecheckType(aliasedType, AccessLevel::None);
+                    if (TypeDecl* typeDecl = aliasedType.getDecl()) expanded.push_back(typeDecl);
+                } else {
+                    expanded.push_back(decl);
+                }
+            }
+            return expanded;
+        }
+    }
+
     if (receiverType && receiverType.isBasicType()) {
         receiverTypeDecl = getTypeDecl(*llvm::cast<BasicType>(receiverType.typeBase));
     } else {
@@ -2561,6 +2720,16 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
     if (Type::isBuiltinScalar(expr.getFunctionName())) {
         return typecheckBuiltinConversion(expr);
+    }
+
+    if (expr.callee->isVarExpr()) {
+        Type calleeType = BasicType::get(expr.getFunctionName(), {});
+        if (TypeAliasDecl* alias = findTypeAlias(calleeType)) {
+            Type aliasedType = resolveTypeAliases(alias->aliasedType);
+            if (Type::isBuiltinScalar(aliasedType.getName())) {
+                return typecheckBuiltinConversion(expr, aliasedType);
+            }
+        }
     }
 
     if (expr.isBuiltinCast()) {
@@ -2738,6 +2907,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 }
 
+static bool isOperatorCall(const CallExpr& expr) {
+    return llvm::isa<BinaryExpr>(&expr) || llvm::isa<UnaryExpr>(&expr) || llvm::isa<IndexExpr>(&expr) || llvm::isa<IndexAssignmentExpr>(&expr);
+}
+
 ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic) {
     std::vector<int> argToParam, paramToArg;
     if (auto mappingError = computeArgParamMapping(expr.args, params, isVariadic, argToParam, paramToArg)) return *mappingError;
@@ -2766,7 +2939,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         bool invalidType = false;
         std::optional<ImplicitCastExpr::Kind> implicitCastKind;
         // Probing: other overload candidates are still untried, so don't diagnose yet.
-        if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param.type, true, &implicitCastKind, false)) {
+        if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param.type, true, &implicitCastKind, false, isOperatorCall(expr))) {
             didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
             didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
             didWrapOptional = didWrapOptional || implicitCastKind == ImplicitCastExpr::OptionalWrap || arg.value->isNullLiteralExpr();
@@ -2803,6 +2976,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& callee
 
 void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, Location location,
                                               const Decl* calleeDecl) {
+    bool allowOperatorBorrow = isOperatorCall(expr);
     auto result = getArgumentValidationResult(expr, params, isVariadic);
 
     std::vector<int> argToParam, paramToArg;
@@ -2829,7 +3003,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
     case ArgumentValidation::None: {
         for (size_t i = 0; i < expr.args.size(); ++i) {
             int paramIndex = argToParam[i];
-            if (paramIndex != -1) expr.args[i].value = convert(expr.args[i].value, params[size_t(paramIndex)].type, true);
+            if (paramIndex != -1) expr.args[i].value = convert(expr.args[i].value, params[size_t(paramIndex)].type, true, true, allowOperatorBorrow);
         }
         for (size_t j = 0; j < params.size(); ++j) {
             if (paramToArg[j] != -1) continue;
@@ -2880,7 +3054,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         // Validation probed without diagnosing; re-run once so an out-of-range literal still
         // reports the range instead of a generic mismatch. This either throws or returns null,
         // since probing already failed, so discarding the result is safe.
-        (void)convert(arg.value, param.type, true);
+        (void)convert(arg.value, param.type, true, true, allowOperatorBorrow);
         ERROR_WITH_NOTES(arg.location, std::move(declNote),
                          "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type
                                               << "'" << narrowingHint(arg.value->type, param.type));
@@ -2919,6 +3093,10 @@ static bool isValidCast(Type sourceType, Type targetType) {
         return false;
 
     case TypeKind::ArrayPointerType: {
+        if (sourceType.isArrayPointer() && targetType.isInteger()) {
+            return true;
+        }
+
         if (targetType.isPointerType()) {
             Type targetPointee = targetType.getPointee();
             if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourceType.getElementType().isMutable())) return true;
@@ -2943,6 +3121,8 @@ static bool isValidCast(Type sourceType, Type targetType) {
             if (!targetType.getElementType().isMutable() || sourcePointee.isMutable()) {
                 return true;
             }
+        } else if (targetType.isInteger()) {
+            return true;
         }
 
         return false;
@@ -2973,6 +3153,7 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
 }
 
 Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
+    expr.operandType = resolveTypeAliases(std::move(expr.operandType));
     // `sizeof` accepts a variable as well as a type, e.g. `sizeof(x)`. A type
     // with the same name takes precedence, so previously valid `sizeof(T)`
     // expressions are unaffected even if a variable shadows the type name.
@@ -3428,6 +3609,14 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
 }
 
 Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedType) {
+    expectedType = resolveTypeAliases(std::move(expectedType));
+    if (expr.isCallExpr()) {
+        auto& call = llvm::cast<CallExpr>(expr);
+        for (auto& genericArg : call.genericArgs) {
+            if (genericArg.isType()) genericArg.type = resolveTypeAliases(genericArg.type);
+        }
+    }
+
     Type type;
 
     switch (expr.kind) {
@@ -3505,6 +3694,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         break;
     }
 
+    type = resolveTypeAliases(std::move(type));
     expr.type = type;
     expr.assignableType = type;
 
@@ -3569,6 +3759,13 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
     auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
     if (!varExpr) return nullptr;
     auto decls = findDecls(varExpr->identifier);
+    for (Decl*& decl : decls) {
+        if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
+            Type aliasedType = resolveTypeAliases(alias->aliasedType);
+            typecheckType(aliasedType, AccessLevel::None);
+            if (TypeDecl* typeDecl = aliasedType.getDecl()) decl = typeDecl;
+        }
+    }
 
     Decl* enumDeclOrTemplate = nullptr;
     if (decls.size() == 1) {
@@ -3613,6 +3810,13 @@ VarDecl* Typechecker::getStaticConst(const Expr& expr) {
     auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
     if (!varExpr) return nullptr;
     auto decls = findDecls(varExpr->identifier);
+    for (Decl*& decl : decls) {
+        if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
+            Type aliasedType = resolveTypeAliases(alias->aliasedType);
+            typecheckType(aliasedType, AccessLevel::None);
+            if (TypeDecl* typeDecl = aliasedType.getDecl()) decl = typeDecl;
+        }
+    }
 
     Decl* typeDeclOrNull = nullptr;
     if (decls.size() == 1) {

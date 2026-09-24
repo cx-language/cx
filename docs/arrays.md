@@ -43,7 +43,7 @@ size. A `const` array keeps its data view immutable, so its `data()` result
 cannot be assigned to a mutable pointer or used to mutate an element.
 
 Arrays are values: assigning an array copies its elements.
-To pass an array to a function without copying, take it by an array reference (`T[]`),
+To pass an array to a function without copying, take it by a slice view (`T[]`),
 which refers to the caller's elements in place:
 
 ```cs
