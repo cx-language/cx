@@ -229,6 +229,25 @@ class BraceLiteralTest(unittest.TestCase):
         self.assertEqual(set(self.functions), {"doThing"})
 
 
+ALIAS_FIXTURE = """\
+/// A 64-bit signed integer.
+using long = int64;
+
+using Callback = void(int);
+"""
+
+
+class AliasTest(unittest.TestCase):
+    def test_using_declarations_skipped(self):
+        directory, (types, functions, constants) = parse_fixture(ALIAS_FIXTURE)
+        try:
+            self.assertEqual(types, [])
+            self.assertEqual(functions, {})
+            self.assertEqual(constants, [])
+        finally:
+            directory.cleanup()
+
+
 class ConditionalTest(unittest.TestCase):
     def test_if_marked_conditional(self):
         with tempfile.TemporaryDirectory() as std_dir:

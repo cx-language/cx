@@ -1,0 +1,53 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK-NOT: numeric-type-aliases.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    // CHECK:127
+    sbyte a = sbyte.max;
+    println(a);
+    // CHECK-NEXT:-128
+    println(sbyte.min);
+    // CHECK-NEXT:32767
+    short b = short.max;
+    println(b);
+    // CHECK-NEXT:-32768
+    println(short.min);
+    // CHECK-NEXT:65535
+    ushort c = ushort.max;
+    println(c);
+    // CHECK-NEXT:0
+    println(ushort.min);
+    // CHECK-NEXT:9223372036854775807
+    long d = long.max;
+    println(d);
+    // CHECK-NEXT:-9223372036854775808
+    println(long.min);
+    // CHECK-NEXT:18446744073709551615
+    ulong e = ulong.max;
+    println(e);
+    // CHECK-NEXT:0
+    println(ulong.min);
+    // CHECK-NEXT:2
+    println(sizeof(short));
+    // CHECK-NEXT:8
+    println(sizeof(long));
+    // CHECK-NEXT:8
+    println(sizeof(ulong));
+    // CHECK-NEXT:8
+    println(sizeof(double));
+    // CHECK-NEXT:1.5
+    double f = 1.5;
+    println(f);
+    // CHECK-NEXT:2.5
+    println(double(2) + 0.5);
+    // CHECK-NEXT:-5
+    int8 g = sbyte(-5);
+    println(g);
+    // CHECK-NEXT:70000
+    int64 h = long(70000);
+    println(h);
+    // CHECK-NEXT:0.5
+    float64 i = double(0.5);
+    println(i);
+}
+// CHECK-NOT: numeric-type-aliases.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

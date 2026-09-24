@@ -322,3 +322,18 @@ struct uint128: Copyable, Comparable {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 }
+
+/// An 8-bit signed integer.
+using sbyte = int8;
+
+/// A 16-bit signed integer.
+using short = int16;
+
+/// A 16-bit unsigned integer.
+using ushort = uint16;
+
+/// A 64-bit signed integer.
+using long = int64;
+
+/// A 64-bit unsigned integer.
+using ulong = uint64;

@@ -129,6 +129,9 @@ def parse_file(path):
     doc = []
 
     def add_free(signature, doc_lines, lineno):
+        # Type aliases are documented with their aliased type, not as functions.
+        if signature.startswith("using "):
+            return
         if signature.startswith("const "):
             match = CONST_RE.match(signature)
             if match:

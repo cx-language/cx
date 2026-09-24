@@ -98,3 +98,6 @@ struct float80: Copyable, Comparable {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 }
+
+/// A 64-bit floating-point number.
+using double = float64;
