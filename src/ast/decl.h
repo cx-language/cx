@@ -17,12 +17,18 @@ namespace std {
 template<> struct hash<std::vector<cx::GenericArg>> {
     size_t operator()(llvm::ArrayRef<cx::GenericArg> args) const {
         if (args.empty()) return 0; // Variadic instantiation with an empty pack.
-        size_t hashValue = reinterpret_cast<size_t>(args[0].type.typeBase) ^ static_cast<size_t>(args[0].type.mutability)
-                         ^ (args[0].intValue ? std::hash<int64_t>{}(*args[0].intValue) : 0);
-
-        for (auto arg : args.drop_front()) {
-            hashValue ^= reinterpret_cast<size_t>(arg.type.typeBase) ^ static_cast<size_t>(arg.type.mutability)
-                       ^ (arg.intValue ? std::hash<int64_t>{}(*arg.intValue) : 0);
+        size_t hashValue = 0;
+        for (auto& arg : args) {
+            size_t argHash;
+            if (arg.isType()) {
+                const cx::Type& type = arg.getType();
+                argHash = reinterpret_cast<size_t>(type.typeBase) ^ static_cast<size_t>(type.mutability);
+            } else if (arg.isInt()) {
+                argHash = std::hash<int64_t>{}(arg.getInt());
+            } else {
+                argHash = 0x9e3779b9;
+            }
+            hashValue ^= argHash + 0x9e3779b9 + (hashValue << 6) + (hashValue >> 2);
         }
 
         return hashValue;

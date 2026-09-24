@@ -1387,7 +1387,7 @@ bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
     switch (type.getKind()) {
     case TypeKind::BasicType:
         for (GenericArg genericArg : type.getGenericArgs()) {
-            if (genericArg.isType() && containsGenericParam(genericArg.type, genericParam)) {
+            if (genericArg.isType() && containsGenericParam(genericArg.getType(), genericParam)) {
                 return true;
             }
         }
@@ -1442,11 +1442,11 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         if (!argType.getGenericArgs().empty() && paramType.isBasicType() && paramType.getName() == argType.getName()) {
             ASSERT(argType.getGenericArgs().size() == paramType.getGenericArgs().size());
             for (auto&& [argTypeGenericArg, paramTypeGenericArg] : llvm::zip_first(argType.getGenericArgs(), paramType.getGenericArgs())) {
-                if (paramTypeGenericArg.isType() && paramTypeGenericArg.type.isBasicType() && paramTypeGenericArg.type.getName() == genericParam) {
+                if (paramTypeGenericArg.isType() && paramTypeGenericArg.getType().isBasicType() && paramTypeGenericArg.getType().getName() == genericParam) {
                     return argTypeGenericArg;
                 }
                 if (argTypeGenericArg.isType() && paramTypeGenericArg.isType()) {
-                    if (GenericArg arg = findGenericArg(argTypeGenericArg.type, paramTypeGenericArg.type, genericParam, inFunctionType)) {
+                    if (GenericArg arg = findGenericArg(argTypeGenericArg.getType(), paramTypeGenericArg.getType(), genericParam, inFunctionType)) {
                         return arg;
                     }
                 }
@@ -1521,7 +1521,7 @@ static bool containsUnresolvedType(Type type) {
     switch (type.getKind()) {
     case TypeKind::BasicType:
         for (GenericArg genericArg : type.getGenericArgs()) {
-            if (genericArg.isType() && containsUnresolvedType(genericArg.type)) {
+            if (genericArg.isType() && containsUnresolvedType(genericArg.getType())) {
                 return true;
             }
         }
@@ -1809,11 +1809,12 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
 
             // Pack arguments are heterogeneous: a pointer pack argument (e.g. `println("x", &value)`)
             // dispatches to the pointer overloads once the loop is unrolled. Pointers are always copyable.
-            if (genericArg.type.removeOptional().isPointerType() && !genericArg.type.removeOptional().isReferenceType() && interface->getName() == "Copyable") {
+            if (genericArg.getType().removeOptional().isPointerType() && !genericArg.getType().removeOptional().isReferenceType()
+                && interface->getName() == "Copyable") {
                 continue;
             }
 
-            if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase)) {
+            if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase)) {
                 auto* typeDecl = getTypeDecl(*basicType);
                 if (typeDecl && typeDecl->hasInterface(*interface)) continue;
             }
@@ -1915,7 +1916,7 @@ void cx::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Generi
 // A bare type name may reference an integer parameter of an enclosing template,
 // whose kind can't be checked until instantiation.
 static bool isBareName(GenericArg arg) {
-    return arg.isType() && arg.type.isBasicType() && arg.type.getGenericArgs().empty();
+    return arg.isType() && arg.getType().isBasicType() && arg.getType().getGenericArgs().empty();
 }
 
 // A bare name that denotes a known type or value cannot be an integer parameter reference.
@@ -1925,7 +1926,7 @@ bool Typechecker::genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParam
         if (genericParam.isValueParam) {
             if (genericArg.isInt()) continue;
             if (!isBareName(genericArg)) return false;
-            if (genericArg.type.isBuiltinType() || !findDecls(genericArg.type.getName()).empty()) return false;
+            if (genericArg.getType().isBuiltinType() || !findDecls(genericArg.getType().getName()).empty()) return false;
         } else if (genericArg.isInt()) {
             return false;
         }
@@ -1936,18 +1937,18 @@ bool Typechecker::genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParam
 bool Typechecker::genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg) {
     if (genericParam.isValueParam) return genericArg.isInt();
     if (!genericArg || genericArg.isInt()) return false;
-    if (genericArg.type.isUnresolvedType()) return true;
+    if (genericArg.getType().isUnresolvedType()) return true;
 
     for (Type constraint : genericParam.constraints) {
         if (!constraint.isBasicType()) return false;
         if (constraint.getName() == "Copyable"
-            && ((genericArg.type.removeOptional().isPointerType() && !genericArg.type.removeOptional().isReferenceType())
-                || genericArg.type.isUnsizedArrayPointer())) {
+            && ((genericArg.getType().removeOptional().isPointerType() && !genericArg.getType().removeOptional().isReferenceType())
+                || genericArg.getType().isUnsizedArrayPointer())) {
             continue;
         }
 
         auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
-        auto* basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase);
+        auto* basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase);
         auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
         if (!typeDecl || !interface || !typeDecl->hasInterface(*interface)) return false;
     }
@@ -1958,16 +1959,16 @@ bool Typechecker::validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> ge
                                              Location location) {
     bool valid = true;
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
-        if (genericParam.isValueParam || !genericArg || genericArg.isInt() || genericArg.type.isUnresolvedType()) continue;
+        if (genericParam.isValueParam || !genericArg || genericArg.isInt() || genericArg.getType().isUnresolvedType()) continue;
         for (Type constraint : genericParam.constraints) {
             bool satisfies = false;
             if (constraint.isBasicType() && constraint.getName() == "Copyable"
-                && ((genericArg.type.removeOptional().isPointerType() && !genericArg.type.removeOptional().isReferenceType())
-                    || genericArg.type.isUnsizedArrayPointer())) {
+                && ((genericArg.getType().removeOptional().isPointerType() && !genericArg.getType().removeOptional().isReferenceType())
+                    || genericArg.getType().isUnsizedArrayPointer())) {
                 satisfies = true;
             } else if (constraint.isBasicType()) {
                 auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
-                auto* basicType = llvm::dyn_cast<BasicType>(genericArg.type.typeBase);
+                auto* basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase);
                 auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
                 satisfies = typeDecl && interface && typeDecl->hasInterface(*interface);
             }
@@ -1995,7 +1996,7 @@ bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericPa
     bool valid = true;
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
         if (genericParam.isValueParam && !genericArg.isInt()) {
-            if (!isBareName(genericArg) || genericArg.type.isBuiltinType() || !findDecls(genericArg.type.getName()).empty()) {
+            if (!isBareName(genericArg) || genericArg.getType().isBuiltinType() || !findDecls(genericArg.getType().getName()).empty()) {
                 REPORT_ERROR(genericArg.location, "expected integer generic argument for parameter '" << genericParam.getName() << "' of '" << name << "'");
                 valid = false;
             }
@@ -2013,7 +2014,7 @@ bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericPa
 // must additionally mention a generic parameter; a concrete return type carries no information about the callee's parameters.
 static bool canInferFromExpectedType(llvm::ArrayRef<GenericParamDecl> genericParams, FunctionDecl* decl, Type expectedType) {
     if (!expectedType || !expectedType.isBasicType() || expectedType.getGenericArgs().empty()
-        || llvm::any_of(expectedType.getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.type.isUnresolvedType(); })) {
+        || llvm::any_of(expectedType.getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.getType().isUnresolvedType(); })) {
         return false;
     }
     auto* expectedDecl = expectedType.getDecl();
@@ -2047,8 +2048,8 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
         }
     } else {
         for (GenericArg arg : call.genericArgs) {
-            if (arg.isType() && arg.type.storesBorrow()) {
-                ERROR(arg.location, "reference type '" << arg.type << "' may only appear as a function parameter, return type, or interface argument");
+            if (arg.isType() && arg.getType().storesBorrow()) {
+                ERROR(arg.location, "reference type '" << arg.getType() << "' may only appear as a function parameter, return type, or interface argument");
             }
         }
         if (!genericArgsMatch(genericParams, call.genericArgs)) return {};
@@ -3088,7 +3089,7 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
     if (!expr.genericArgs.front().isType()) {
         ERROR(expr.location, "expected type generic argument for 'cast'");
     }
-    Type targetType = expr.genericArgs.front().type;
+    Type targetType = expr.genericArgs.front().getType();
     ParamDecl param(sourceType, "", false, expr.location);
 
     validateAndConvertArguments(expr, param, false, expr.getFunctionName(), expr.location);
@@ -3556,7 +3557,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
     if (expr.isCallExpr()) {
         auto& call = llvm::cast<CallExpr>(expr);
         for (auto& genericArg : call.genericArgs) {
-            if (genericArg.isType()) genericArg.type = resolveTypeAliases(genericArg.type);
+            if (genericArg.isType()) genericArg.getType() = resolveTypeAliases(genericArg.getType());
         }
     }
 
@@ -3674,7 +3675,7 @@ static Type matchEnumTemplateExpectedType(TypeTemplate& typeTemplate, Type expec
                          expectedType ? expectedType.removeOptional().removeReference() : Type()};
     for (Type candidate : candidates) {
         if (candidate && candidate.isBasicType() && !candidate.getGenericArgs().empty()
-            && llvm::none_of(candidate.getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.type.isUnresolvedType(); })
+            && llvm::none_of(candidate.getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.getType().isUnresolvedType(); })
             && enumTemplateMatchesExpectedType(typeTemplate, candidate)) {
             return candidate;
         }
