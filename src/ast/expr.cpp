@@ -385,7 +385,7 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     case ExprKind::VarExpr: {
         auto* varExpr = llvm::cast<VarExpr>(this);
         auto it = genericArgs.find(varExpr->identifier);
-        llvm::StringRef identifier = it != genericArgs.end() && it->second.isType() ? it->second.type.getName() : varExpr->identifier;
+        llvm::StringRef identifier = it != genericArgs.end() && it->second.isType() ? it->second.getType().getName() : varExpr->identifier;
         auto* newExpr = makeAST<VarExpr>(identifier, varExpr->location);
         newExpr->endLocation = varExpr->endLocation;
         return newExpr;

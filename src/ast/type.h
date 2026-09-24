@@ -178,23 +178,40 @@ struct Type {
 
 // A generic argument: either a type or an integer value.
 struct GenericArg {
-    GenericArg() = default;
-    GenericArg(Type type) : type(type), location(type.location) {}
-    static GenericArg fromInt(int64_t value, Location location) {
+    enum class Kind { Null, Type, Int };
+
+    GenericArg() : kind(Kind::Null) {}
+    GenericArg(Type t) : kind(Kind::Type), location(t.location) { type = t; }
+    static GenericArg fromInt(int64_t intValue, Location location) {
         GenericArg arg;
-        arg.intValue = value;
+        arg.kind = Kind::Int;
+        arg.intValue = intValue;
         arg.location = location;
         return arg;
     }
-    explicit operator bool() const { return type || intValue.has_value(); }
-    bool isType() const { return type && !intValue.has_value(); }
-    bool isInt() const { return intValue.has_value(); }
-    int64_t getInt() const { return *intValue; }
+    explicit operator bool() const { return kind != Kind::Null; }
+    bool isType() const { return kind == Kind::Type; }
+    bool isInt() const { return kind == Kind::Int; }
+    Type& getType() {
+        ASSERT(isType());
+        return type;
+    }
+    const Type& getType() const {
+        ASSERT(isType());
+        return type;
+    }
+    int64_t getInt() const {
+        ASSERT(isInt());
+        return intValue;
+    }
     std::string toString() const;
     GenericArg resolve(const llvm::StringMap<GenericArg>& replacements) const;
 
-    Type type;
-    std::optional<int64_t> intValue;
+    Kind kind = Kind::Null;
+    union {
+        Type type;
+        int64_t intValue;
+    };
     Location location;
 };
 
