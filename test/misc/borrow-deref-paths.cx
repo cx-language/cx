@@ -1,0 +1,124 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:yes
+// CHECK-NEXT:no
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:3
+// CHECK-NEXT:2
+// CHECK-NEXT:1
+// CHECK-NEXT:0
+// CHECK-NEXT:two
+// CHECK-NEXT:green
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+
+// Borrows auto-deref in conditions and switches; &this gives a storable pointer.
+
+string yesNo(bool& value) {
+    if value {
+        return "yes";
+    }
+    return "no";
+}
+
+bool negate(bool& value) {
+    return !value;
+}
+
+bool both(bool& a, bool& b) {
+    return a && b;
+}
+
+void drain(int& remaining) {
+    while remaining > 0 {
+        println(remaining);
+        *remaining = *remaining - 1;
+    }
+}
+
+string describe(int& value) {
+    switch value {
+        case 1: return "one";
+        case 2: return "two";
+        default: return "other";
+    }
+}
+
+enum Color {
+    Red,
+    Green,
+    Blue,
+
+    string name() {
+        switch this {
+            case Red: return "red";
+            case Green: return "green";
+            case Blue: return "blue";
+        }
+    }
+}
+
+enum Outcome {
+    Ok,
+    Fail,
+
+    bool isOk() {
+        return this is Ok;
+    }
+}
+
+enum Request {
+    Found(int code),
+    Missing,
+
+    bool isFound() {
+        return this is Found;
+    }
+}
+
+struct Node: Copyable {
+    int id;
+
+    Node* self() {
+        return &this;
+    }
+
+    bool isSelf(Node* other) {
+        return &this == other;
+    }
+}
+
+void main() {
+    var flag = true;
+    println(yesNo(flag));
+    flag = false;
+    println(yesNo(flag));
+    println(negate(true));
+    println(negate(false));
+    println(both(true, true));
+    println(both(true, false));
+    var fuel = 3;
+    drain(fuel);
+    println(fuel);
+    println(describe(2));
+    var color = Color.Green;
+    println(color.name());
+    println(Outcome.Ok.isOk());
+    println(Outcome.Fail.isOk());
+    var found = Request.Found(200);
+    println(found.isFound());
+    println(Request.Missing.isFound());
+    var node = Node(7);
+    println(node.isSelf(node.self()));
+    println(node.isSelf(&node));
+    var other = Node(8);
+    println(node.isSelf(&other));
+}

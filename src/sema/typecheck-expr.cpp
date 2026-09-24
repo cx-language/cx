@@ -363,18 +363,19 @@ Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
 }
 
 void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool positive) {
-    if (expr->type.isReferenceType()) {
-        expr = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
+    Type originalType = expr->type;
+    if (originalType.isReferenceType()) {
+        expr = makeAST<ImplicitCastExpr>(expr, originalType.getPointee(), ImplicitCastExpr::AutoDereference);
     }
 
     Type type = expr->type;
     if (!type.removePointer().isBool() && !type.removePointer().isOptionalType()) {
         if (type.isImplementedAsPointer()) {
             WARN_RANGE(expr->location, expr->endLocation,
-                       "type '" << type << "' " << (positive ? "is always non-null" : "cannot be null") << "; to declare it nullable, use '"
-                                << OptionalType::get(type) << "'");
+                       "type '" << originalType << "' " << (positive ? "is always non-null" : "cannot be null") << "; to declare it nullable, use '"
+                                << OptionalType::get(originalType) << "'");
         } else {
-            ERROR_RANGE(expr->location, expr->endLocation, "type '" << type << "' is not convertible to boolean");
+            ERROR_RANGE(expr->location, expr->endLocation, "type '" << originalType << "' is not convertible to boolean");
         }
     }
 }
@@ -384,8 +385,11 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
 
     switch (expr.op) {
     case Token::Not: {
-        auto* operand = &expr.getOperand();
+        Expr* operand = &expr.getOperand();
         typecheckImplicitlyBoolConvertibleExpr(operand, false);
+        // Persist the wrap: getOperand() returns a reference, so without this
+        // the AutoDereference would be discarded and codegen would null-test the pointer.
+        expr.args[0].value = NOTNULL(operand);
         return Type::getBool();
     }
 
@@ -531,6 +535,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         Type enumType = leftType.removeReference();
         if (!enumType.isEnumType()) {
             ERROR(expr.getLHS().location, "left side of 'is' must be an enum, got '" << leftType << "'");
+        }
+        if (leftType.isReferenceType()) {
+            // Dereference borrows like switch conditions do; codegen compares the tag value.
+            expr.setLHS(makeAST<ImplicitCastExpr>(&expr.getLHS(), enumType, ImplicitCastExpr::AutoDereference));
         }
         typecheckExpr(expr.getRHS(), false, enumType);
         auto* enumCase = getIsEnumCase(expr.getRHS());
