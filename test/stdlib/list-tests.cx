@@ -166,9 +166,9 @@ void testFind() {
     var a = List<int>();
     assert(a.find(x => x == 1) == null);
     a.push(1);
-    assert(*a.find(x => x == 1)! == 1); // TODO: '!' shouldn't be required
+    assert(a.find(x => x == 1)! == 1); // TODO: '!' shouldn't be required
     a.push(2);
-    assert(*a.find(x => x == 2)! == 2); // TODO: '!' shouldn't be required
+    assert(a.find(x => x == 2)! == 2); // TODO: '!' shouldn't be required
     assert(a.find(x => x == 3) == null);
 }
 
@@ -226,7 +226,7 @@ void testRemovalReturnValues() {
     var a = List([10, 20, 30]);
 
     var pushed = a.push(40);
-    assert(*pushed == 40 && a.size() == 4);
+    assert(pushed == 40 && a.size() == 4);
 
     assert(a.removeAt(0) == 10);
     assert(a == List([20, 30, 40]));

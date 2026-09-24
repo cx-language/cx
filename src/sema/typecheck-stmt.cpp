@@ -274,7 +274,7 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     Type localVariableType;
     const Expr* operand = returnValue;
 
-    if (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(returnValue)) {
+    while (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(operand)) {
         operand = implicitCastExpr->operand;
     }
 

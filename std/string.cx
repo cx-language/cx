@@ -34,7 +34,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     /// Returns the first character.
     char front() {
-        return *characters.front();
+        return characters.front();
     }
 
     /// Returns the character at the given index.

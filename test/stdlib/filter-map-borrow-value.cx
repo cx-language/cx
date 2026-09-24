@@ -38,8 +38,8 @@ void main() {
     assert(List([0, 1, 2, 3, 4]).filter(isEvenVal).map(n => n * 2).toList() == List([0, 4, 8]));
     assert(List([0, 1, 2, 3, 4]).filter(isEvenRef).map(doubleVal).toList() == List([0, 4, 8]));
 
-    assert(*numbers.find(isEvenVal)! == 0);
-    assert(*numbers.find(isEvenRef)! == 0);
+    assert(numbers.find(isEvenVal)! == 0);
+    assert(numbers.find(isEvenRef)! == 0);
     assert(numbers.all(isEvenVal) == false);
     assert(numbers.all(isEvenRef) == false);
     assert(numbers.all(n => n >= 0) == true);
