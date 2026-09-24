@@ -103,7 +103,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     if (!allowReference && type.storesBorrow()) {
         // Report the outermost type (e.g. 'int&?' rather than the nested 'int&')
         // so the diagnostic matches what the user wrote.
-        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface");
+        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface argument");
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
@@ -204,7 +204,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         break;
     case TypeKind::PointerType: {
         if (type.isReferenceType() && !allowReference) {
-            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface");
+            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface argument");
         }
         typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
@@ -839,7 +839,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
     } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType())) {
-        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter, return type, or interface");
+        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter, return type, or interface argument");
     }
 
     if (!decl.type.isImplicitlyCopyable()) {

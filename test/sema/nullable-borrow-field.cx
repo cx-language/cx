@@ -3,7 +3,7 @@
 // CHECK-NOT: nullable-borrow-field.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct S {
-    // CHECK: [[@LINE+1]]:5: error: reference type 'int&?' may only appear as a function parameter, return type, or interface
+    // CHECK: [[@LINE+1]]:5: error: reference type 'int&?' may only appear as a function parameter, return type, or interface argument
     int&? field;
 }
 
