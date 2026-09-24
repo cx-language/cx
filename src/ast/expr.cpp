@@ -628,7 +628,7 @@ bool cx::isBuiltinOp(Token::Kind op, Type left, Type right) {
     if (left.isEnumType() && !left.isOptionalType() && left.equalsIgnoreTopLevelMutable(right)) return true;
     if (left.isEnumType() && !left.isOptionalType() && right.isInteger()) return true;
     if (left.isInteger() && right.isEnumType() && !right.isOptionalType()) return true;
-    if (left.isImplementedAsPointer() && right.isImplementedAsPointer() && !left.isReferenceType() && !right.isReferenceType()) return true;
+    if (left.isImplementedAsPointer() && right.isImplementedAsPointer()) return true;
     return left.isBuiltinType() && right.isBuiltinType();
 }
 
