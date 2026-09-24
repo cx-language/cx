@@ -1054,9 +1054,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cx-lsp", required=True)
     parser.add_argument("--cx", required=True)
-    parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 4, 4),
-                        help="number of test groups to run in parallel (capped so parallel CTest "
-                             "suites don't oversubscribe shared CI runners; override as needed)")
+    parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4,
+                        help="number of test groups to run in parallel (each group spends "
+                             "most of its time waiting on query subprocesses, so matching "
+                             "the core count does not oversubscribe; override as needed)")
     args = parser.parse_args()
 
     with tempfile.TemporaryDirectory() as directory:
