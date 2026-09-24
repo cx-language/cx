@@ -894,11 +894,16 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     auto* rhs = &expr.getRHS();
 
     typecheckExpr(*lhs, true);
-    if (!lhs->isLvalue()) {
-        ERROR(lhs->location, "cannot assign to expression of type '" << lhs->type << "'");
-    }
     if (lhs->isThis()) {
         ERROR(lhs->location, "cannot assign to 'this'");
+    }
+    // Assigning to a borrow would rebind it, like reseating a pointer. Borrows cannot be
+    // rebound, so reject every borrow target here, whether or not it is an lvalue.
+    if (lhs->assignableType.isReferenceType()) {
+        ERROR(lhs->location, "cannot rebind borrow of type '" << lhs->assignableType << "' (use '*' to write through it explicitly)");
+    }
+    if (!lhs->isLvalue()) {
+        ERROR(lhs->location, "cannot assign to expression of type '" << lhs->type << "'");
     }
     Type lhsType = lhs->assignableType;
     Type rhsType = typecheckExpr(*rhs, false, lhsType);

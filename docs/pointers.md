@@ -49,6 +49,8 @@ Member functions use a `T&` borrow for `this`; use `&this` to obtain a storable 
 
 Unlike pointers, borrows cannot be stored: `T&` may only appear as a function parameter or return type,
 and reading a borrow into a variable copies the value out.
+Unlike pointers, borrows cannot be reseated by assignment either: assigning to a borrow would rebind
+it, so the compiler rejects it; write through it with `*` instead.
 
 A borrow can be nullable, written `T&?`, for parameters that may or may not receive a value.
 It accepts everything a `T&` accepts, plus `null` and nullable pointers.
