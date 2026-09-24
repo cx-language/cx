@@ -128,10 +128,15 @@ jobs:
       - name: Create Build Environment
         run: cmake -E make_directory ${{runner.workspace}}/build
 
+      # Unity build for Release legs only: optimized compiles are slow,
+      # so merging translation units saves most there. Debug legs stay
+      # non-unity, which keeps checking for missing includes and ODR
+      # violations. (Switched from the matrix because multi-config
+      # generators ignore CMAKE_BUILD_TYPE at configure time.)
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH="$LLVMDIR${EXTRA_CMAKE_PREFIX:+;$EXTRA_CMAKE_PREFIX}" -DCMAKE_UNITY_BUILD=OFF $EXTRA_CMAKE_ARGS ${DIA_CMAKE_DIR:+-DMSVC_DIA_SDK_DIR="$DIA_CMAKE_DIR"}
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH="$LLVMDIR${EXTRA_CMAKE_PREFIX:+;$EXTRA_CMAKE_PREFIX}" -DCMAKE_UNITY_BUILD=${{ matrix.build_type == 'Debug' && 'OFF' || 'ON' }} $EXTRA_CMAKE_ARGS ${DIA_CMAKE_DIR:+-DMSVC_DIA_SDK_DIR="$DIA_CMAKE_DIR"}
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
