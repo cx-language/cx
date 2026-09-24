@@ -22,6 +22,14 @@ static std::vector<Note> getTypeCandidateNotes(llvm::ArrayRef<Decl*> candidates)
     });
 }
 
+// Interfaces constrain but never store, so borrows may appear in their generic arguments
+// (e.g. an iterator conforming to Iterator<Element&>); Optional is likewise transparent.
+static bool allowsBorrowArgs(Decl* decl) {
+    if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) return typeDecl->isInterface();
+    if (auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(decl)) return typeTemplate->typeDecl->isInterface();
+    return false;
+}
+
 // Finds the type template to instantiate for a generic type name. A same-named function
 // doesn't prevent using the type in type position.
 static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*> decls) {
@@ -95,7 +103,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     if (!allowReference && type.storesBorrow()) {
         // Report the outermost type (e.g. 'int&?' rather than the nested 'int&')
         // so the diagnostic matches what the user wrote.
-        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter or return type");
+        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface");
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
@@ -111,7 +119,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
             // the nested types start where the outer type starts (e.g. 'A' in 'A*?').
             if (recheckGenericArgs) {
                 // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
-                bool nestedAllowReference = allowReference && type.isOptionalType();
+                bool nestedAllowReference = allowReference && (type.isOptionalType() || allowsBorrowArgs(decl));
                 for (auto genericArg : basicType->genericArgs) {
                     if (genericArg.isType()) typecheckType(genericArg.type.withLocation(type.location), userAccessLevel, true, nestedAllowReference);
                 }
@@ -125,7 +133,13 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
             }
 
             // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
+            // Interfaces likewise constrain but never store, so look them up to decide.
+            // The lookup only runs when some argument actually holds a borrow.
             bool nestedAllowReference = allowReference && type.isOptionalType();
+            if (allowReference && !nestedAllowReference && !basicType->name.empty()
+                && llvm::any_of(basicType->genericArgs, [](GenericArg arg) { return arg.isType() && arg.type.storesBorrow(); })) {
+                nestedAllowReference = llvm::any_of(findDecls(basicType->name), allowsBorrowArgs);
+            }
             for (auto genericArg : basicType->genericArgs) {
                 if (genericArg.isType()) typecheckType(genericArg.type, userAccessLevel, true, nestedAllowReference);
             }
@@ -190,7 +204,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         break;
     case TypeKind::PointerType: {
         if (type.isReferenceType() && !allowReference) {
-            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter or return type");
+            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, or interface");
         }
         typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
@@ -528,7 +542,8 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
     // access warnings for them would duplicate the use-site checks, so suppress.
     llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
     for (Type interface : decl.interfaces) {
-        typecheckType(interface, decl.accessLevel);
+        // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
+        typecheckType(interface, decl.accessLevel, true, true);
         auto* interfaceDecl = interface.getDecl();
 
         if (!interfaceDecl->isInterface()) {
@@ -588,7 +603,8 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     // access warnings for them would duplicate the use-site checks, so suppress.
     llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
     for (Type interface : decl.interfaces) {
-        typecheckType(interface, decl.accessLevel);
+        // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
+        typecheckType(interface, decl.accessLevel, true, true);
         auto* interfaceDecl = interface.getDecl();
 
         if (!interfaceDecl->isInterface()) {
@@ -816,12 +832,14 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         decl.type = NOTNULL(initializerType.withMutability(decl.type.mutability));
     }
 
-    if (decl.type.isReferenceType()) {
-        // A borrow can't be named: read the value out (copying or moving it) instead of aliasing it.
+    // A borrow can't be named: read the value out (copying or moving it) instead of aliasing it.
+    // For-loop element variables are exempt for plain borrows; they alias the yielded element
+    // in place. Optional borrows stay rejected: naming one cannot unwrap it.
+    if (decl.type.isReferenceType() && !decl.isForLoopElement) {
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
-    } else if (decl.type.storesBorrow()) {
-        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter or return type");
+    } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType())) {
+        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter, return type, or interface");
     }
 
     if (!decl.type.isImplicitlyCopyable()) {

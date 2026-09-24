@@ -2,7 +2,7 @@
 int main() {
     StringIterator* __iterator = alloca StringIterator
     string* __str = alloca string
-    char* ch = alloca char
+    char** ch = alloca char*
     void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "abc", int 3)
     StringIterator _1 = call _EN3std6string8iteratorE(string* __str)
     store _1 to __iterator
@@ -13,10 +13,11 @@ loop.condition:
     br _2, loop.body, loop.end
 
 loop.body:
-    char _3 = call _EN3std14StringIterator5valueE(StringIterator* __iterator)
+    char* _3 = call _EN3std14StringIterator5valueE(StringIterator* __iterator)
     store _3 to ch
-    char ch.load = load ch
-    bool _4 = ch.load == char 98
+    char* ch.load = load ch
+    char ch.load.load = load ch.load
+    bool _4 = ch.load.load == char 98
     br _4, if.then, if.else
 
 loop.increment:

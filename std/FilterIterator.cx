@@ -1,6 +1,6 @@
 // Lazily keeps the elements of another iterator that satisfy a predicate.
 // Get one from filter(); collect the results with toList().
-struct FilterIterator<Input, It, Predicate>: Iterator<Input*> {
+struct FilterIterator<Input, It, Predicate>: Iterator<Input&> {
     private It source;
     private Predicate include;
 
@@ -22,7 +22,7 @@ struct FilterIterator<Input, It, Predicate>: Iterator<Input*> {
     }
 
     /// Returns the next matching element.
-    Input* value() {
+    Input& value() {
         return source.value();
     }
 

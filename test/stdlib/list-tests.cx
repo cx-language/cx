@@ -13,7 +13,7 @@ void main() {
     testListInitWithRepeatedValue();
     testArrayIterator();
     testListMutatingIteration();
-    testListValueIteration();
+    testListIntMutation();
     testListEnumeratedIterator();
     testEmpty();
     testFind();
@@ -126,19 +126,19 @@ void testListMutatingIteration() {
     assert(a[2].i == 4);
 }
 
-void testListValueIteration() {
+void testListIntMutation() {
     var a = List<int>();
     a.push(1);
     a.push(2);
     a.push(3);
 
     for e in a {
-        e++;
+        (*e)++;
     }
 
-    assert(a[0] == 1);
-    assert(a[1] == 2);
-    assert(a[2] == 3);
+    assert(a[0] == 2);
+    assert(a[1] == 3);
+    assert(a[2] == 4);
 }
 
 void testListEnumeratedIterator() {

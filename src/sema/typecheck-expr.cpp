@@ -418,6 +418,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         return PointerType::get(operandType.removeReference());
 
     case Token::Increment:
+        if (operandType.removeOptional().isReferenceType()) {
+            ERROR(expr.location, "cannot increment borrow of type '" << operandType << "'; dereference it explicitly (e.g. '(*x)++')");
+        }
         if (operandType.removeOptional().isPointerType()) {
             ERROR(expr.location, "cannot increment pointer of type '" << operandType << "'; dereference it explicitly (e.g. '(*p)++')");
         }
@@ -432,6 +435,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         return Type::getVoid();
 
     case Token::Decrement:
+        if (operandType.removeOptional().isReferenceType()) {
+            ERROR(expr.location, "cannot decrement borrow of type '" << operandType << "'; dereference it explicitly (e.g. '(*x)--')");
+        }
         if (operandType.removeOptional().isPointerType()) {
             ERROR(expr.location, "cannot decrement pointer of type '" << operandType << "'; dereference it explicitly (e.g. '(*p)--')");
         }
@@ -446,6 +452,10 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         return Type::getVoid();
 
     default:
+        if (operandType.removeOptional().isReferenceType()) {
+            ERROR(expr.location, "cannot apply unary '" << toString(expr.op) << "' to borrow of type '" << operandType
+                                                        << "'; dereference it explicitly (e.g. '" << toString(expr.op) << "*x')");
+        }
         if (operandType.removeOptional().isPointerType() || operandType.removeOptional().isUnsizedArrayPointer()) {
             ERROR(expr.location, "cannot apply unary '" << toString(expr.op) << "' to pointer of type '" << operandType
                                                         << "'; dereference it explicitly (e.g. '" << toString(expr.op) << "*p')");
@@ -2028,7 +2038,7 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
     } else {
         for (GenericArg arg : call.genericArgs) {
             if (arg.isType() && arg.type.storesBorrow()) {
-                ERROR(arg.location, "reference type '" << arg.type << "' may only appear as a function parameter or return type");
+                ERROR(arg.location, "reference type '" << arg.type << "' may only appear as a function parameter, return type, or interface");
             }
         }
         if (!genericArgsMatch(genericParams, call.genericArgs)) return {};
