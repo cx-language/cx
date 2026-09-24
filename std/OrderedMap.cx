@@ -393,7 +393,7 @@ struct AVLnode<Key, Value> {
 }
 
 /// Iterates over the entries of an ordered map, in order.
-struct OrderedMapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
+struct OrderedMapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>&> {
     private AVLnode<Key, Value>*? current;
     private OrderedMap<Key, Value>* map;
 
@@ -409,8 +409,8 @@ struct OrderedMapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*>
     }
 
     /// Returns the current entry.
-    MapEntry<Key, Value>* value() {
-        return &current!.entry;
+    MapEntry<Key, Value>& value() {
+        return current!.entry;
     }
 
     /// Advances to the next entry.

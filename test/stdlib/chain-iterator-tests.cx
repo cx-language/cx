@@ -26,11 +26,10 @@ void testChainIsLazy() {
     var a = List([1, 2]);
     var b = List([3]);
     var chained = a.chain(b.iterator());
-    var first = chained.value();
-    assert(*first == 1);
+    assert(chained.value() == 1);
     chained.increment();
     chained.increment();
-    assert(*chained.value() == 3);
+    assert(chained.value() == 3);
 }
 
 void testChainAdaptors() {

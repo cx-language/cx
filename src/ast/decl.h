@@ -394,6 +394,9 @@ struct VarDecl : VariableDecl, Movable {
     Expr* initializer;
     Location location;
     Module& module;
+    // True for lowered for-loop element variables yielding a borrow: the variable aliases
+    // the element instead of copying it out, so reference types are preserved, not dereferenced.
+    bool isForLoopElement = false;
 };
 
 struct ImportDecl : Decl {

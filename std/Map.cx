@@ -138,7 +138,7 @@ int convertHash(uint64 hash) {
 }
 
 /// Iterates over the entries of a map.
-struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
+struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>&> {
     private ArrayIterator<List<MapEntry<Key, Value>>> hashTableIterator;
     private MapEntry<Key, Value>[*] current;
 
@@ -155,13 +155,13 @@ struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
     }
 
     /// Returns the current entry.
-    MapEntry<Key, Value>* value() {
-        return current;
+    MapEntry<Key, Value>& value() {
+        return *current;
     }
 
     /// Advances to the next entry.
     void increment() {
-        var slot = hashTableIterator.value();
+        var slot = &hashTableIterator.value();
         var slotEnd = &slot.data()[slot.size()];
         current++;
 
