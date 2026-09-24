@@ -34,6 +34,14 @@ llvm::StringRef getCFunctionName(const Function* function) {
     return function->mangledName;
 }
 
+// The stdlib's opaque 'struct FILE {}' (std/libc.cx) denotes C's FILE. Every use of the
+// name resolves to it, so an empty struct named FILE can only be that type (a C-imported
+// FILE means the same thing). Emit the FILE typedef from stdio.h instead of a conflicting
+// 'struct _4FILE' definition, which would warn on every conversion to and from real FILE*.
+bool isCFileType(const IRStructType* type) {
+    return type->name == "FILE" && type->fields.empty();
+}
+
 } // namespace
 
 void CGenerator::codegenModule(const IRModule& module) {
@@ -1179,6 +1187,8 @@ void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, boo
         auto* irStruct = llvm::cast<IRStructType>(type);
         if (irStruct->name == "never") {
             stream << "void";
+        } else if (isCFileType(irStruct)) {
+            stream << "FILE";
         } else {
             codegenTypeDefinition(preludeStream, type, needsTypeDefinition);
             stream << "struct " << getOrCreateTypeName(type, irStruct->mangledName, "_cx_struct");
@@ -1247,7 +1257,7 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
         break;
     case IRTypeKind::IRStructType: {
         auto* irStruct = llvm::cast<IRStructType>(type);
-        if (irStruct->isImportedFromC || alreadyEmittedTypes.contains(type)) break;
+        if (irStruct->isImportedFromC || isCFileType(irStruct) || alreadyEmittedTypes.contains(type)) break;
         if (!forwardDeclaredTypes.contains(type)) {
             stream << "\nstruct " << getOrCreateTypeName(type, irStruct->mangledName, "_cx_struct") << ";\n";
             forwardDeclaredTypes.insert(type);
