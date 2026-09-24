@@ -1003,7 +1003,14 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
 }
 
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange) const {
-    if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !type.removeOptional().isPointerType()) {
+    // Array borrows decay to views without copying: dereferencing first
+    // would take the address of a temporary, breaking mutation through data()
+    // and dangling slices built from the copy. Only constant-array borrows
+    // take this path; other borrows keep the dereference-then-convert behavior.
+    Type unwrappedTarget = type.removeOptional();
+    bool decaysToView =
+        expr->type.isReferenceType() && expr->type.getPointee().isConstantArray() && (unwrappedTarget.isUnsizedArrayPointer() || unwrappedTarget.isSlice());
+    if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !type.removeOptional().isPointerType() && !decaysToView) {
         auto* dereferenced = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
         return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange);
     }
@@ -1142,7 +1149,10 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !target.removeOptional().isPointerType()) {
+    Type unwrappedTarget = target.removeOptional();
+    bool decaysToView =
+        source.isReferenceType() && source.getPointee().isConstantArray() && (unwrappedTarget.isUnsizedArrayPointer() || unwrappedTarget.isSlice());
+    if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !target.removeOptional().isPointerType() && !decaysToView) {
         return isImplicitlyConvertible(expr, source.getPointee(), target, allowPointerToTemporary, implicitCastKind, diagnoseOutOfRange);
     }
 

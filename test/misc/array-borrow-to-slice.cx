@@ -1,0 +1,27 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK-NOT: array-borrow-to-slice.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK:99
+// CHECK-NEXT:8
+
+void fill(Slice<int> s) {
+    s.data()[0] = 99;
+}
+
+void fillSlice(int[2]& a) {
+    fill(a);
+}
+
+int readThroughView(int*& p) {
+    int[*] q = p;
+    return q[0];
+}
+
+void main() {
+    int[2] a = [8, 9];
+    fillSlice(a);
+    println(a[0]);
+    int i = 8;
+    int* p = &i;
+    println(readThroughView(p));
+}
