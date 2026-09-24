@@ -20,6 +20,23 @@ jobs:
         with:
           python-version: 3.12
 
+      # Cache downloaded .debs (LLVM, SDL build deps, glfw) in a
+      # user-owned dir; the default archive dir is root-owned and the
+      # cache action could not restore into it. Stale entries are safe:
+      # apt re-downloads anything not matching the package index.
+      - name: Cache apt archives (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/cache@v4
+        with:
+          path: /tmp/apt-archives
+          key: apt-archives-llvm-23-sdl-glfw
+
+      - name: Redirect apt archives (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p /tmp/apt-archives/partial
+          echo 'Dir::Cache::Archives "/tmp/apt-archives";' | sudo tee /etc/apt/apt.conf.d/99-ci-cache
+
       - name: Download LLVM (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -27,6 +44,16 @@ jobs:
           chmod +x llvm.sh
           sudo ./llvm.sh 23 all
           echo "/usr/lib/llvm-23/bin" >> $GITHUB_PATH
+
+      # Bottle downloads are content-addressed, so a static key is safe.
+      # Only the fetch is cached; install/link still runs (cheap, and the
+      # full cellar layout is too version-sensitive to restore blindly).
+      - name: Cache Homebrew downloads (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/Homebrew
+          key: homebrew-downloads-llvm-23-sdl3-glfw3
 
       - name: Download LLVM (macOS)
         if: matrix.os == 'macos-latest'
@@ -38,11 +65,27 @@ jobs:
           brew install llvm@23
           echo LLVMDIR=$(brew --prefix llvm@23) >> $GITHUB_ENV
 
+      # Cache the extracted LLVM tree: re-downloading and
+      # double-extracting the tarball costs minutes on every Windows leg.
+      # Bump the key when the URL below changes.
+      - name: Cache LLVM (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/cache@v4
+        with:
+          path: clang+llvm-23.1.1-x86_64-pc-windows-msvc
+          key: llvm-windows-23.1.1
+
       - name: Download LLVM (Windows)
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-          curl -L "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.1/clang+llvm-23.1.1-x86_64-pc-windows-msvc.tar.xz" --output llvm.tar.xz && 7z x llvm.tar.xz && 7z x llvm.tar
+          # Reuse the cached tree only when it is complete; a cache entry
+          # saved from a failed extract must trigger a re-download, not a
+          # build against a corrupt tree.
+          if [ ! -f "clang+llvm-23.1.1-x86_64-pc-windows-msvc/bin/clang.exe" ]; then
+            rm -rf clang+llvm-23.1.1-x86_64-pc-windows-msvc
+            curl -L "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.1/clang+llvm-23.1.1-x86_64-pc-windows-msvc.tar.xz" --output llvm.tar.xz && 7z x llvm.tar.xz && 7z x llvm.tar
+          fi
           # The sed below converts the path to a Windows-style path
           echo LLVMDIR="$(echo "$PWD/clang+llvm-23.1.1-x86_64-pc-windows-msvc" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')" >> $GITHUB_ENV
 
@@ -103,9 +146,32 @@ jobs:
       # searches for with ZLIB_USE_STATIC_LIBS=ON. Similarly, LLVM's Findzstd
       # module only defines zstd::libzstd_static for a library literally named
       # zstd_static.lib, which vcpkg doesn't ship (only zstd.lib), so copy it.
+      # The vcpkg baseline moves with the runner image, so resolve it to
+      # a commit SHA for the cache key. A static key would freeze on the
+      # first binaries saved (actions/cache never re-saves on hit) and
+      # rebuild from source forever after any update. Falls back to a
+      # static key if the install is not a git checkout.
+      - name: Get vcpkg baseline (Windows)
+        if: matrix.os == 'windows-latest'
+        id: vcpkg-baseline
+        shell: bash
+        run: echo "sha=$(git -C \"$VCPKG_INSTALLATION_ROOT\" rev-parse HEAD 2>/dev/null || echo unknown)" >> "$GITHUB_OUTPUT"
+
+      # vcpkg restores the built ports from this binary cache instead of
+      # compiling them; each entry carries an ABI hash, so stale hits are
+      # impossible.
+      - name: Cache vcpkg binaries (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/vcpkg-binary-cache
+          key: vcpkg-${{ steps.vcpkg-baseline.outputs.sha }}-zlib-zstd-static
+
       - name: Install zlib and zstd (Windows)
         if: matrix.os == 'windows-latest'
         shell: bash
+        env:
+          VCPKG_BINARY_SOURCES: "clear;files,${{ runner.temp }}/vcpkg-binary-cache,readwrite"
         run: |
           vcpkg install zlib:x64-windows-static zstd:x64-windows-static
           cp "$VCPKG_INSTALLATION_ROOT/installed/x64-windows-static/lib/zstd.lib" "$VCPKG_INSTALLATION_ROOT/installed/x64-windows-static/lib/zstd_static.lib"
@@ -149,6 +215,16 @@ jobs:
       # are enabled in all configurations (NDEBUG is stripped in
       # CMakeLists.txt), so Release legs already check them; Debug legs
       # only verify the build compiles.
+      # SDL3 is built from source (no libsdl3-dev on Ubuntu 24.04); cache
+      # the clone and build tree so only the install reruns. Bump the key
+      # with the branch below. Release-only, like the Test step that uses it.
+      - name: Cache SDL build (Linux)
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        uses: actions/cache@v4
+        with:
+          path: /tmp/SDL
+          key: sdl-release-3.4.16
+
       - name: Test
         if: matrix.build_type != 'Debug'
         working-directory: ${{runner.workspace}}/build
@@ -157,13 +233,22 @@ jobs:
           pip install "lit==23.*" psutil
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt-get update
-            sudo apt-get install libglfw3-dev
-            # Build dependencies for SDL3, see https://wiki.libsdl.org/SDL3/README-linux
-            # (no libsdl3-dev on Ubuntu 24.04, so build SDL3 from source below).
-            sudo apt-get install -y pkg-config ninja-build libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libthai-dev libusb-1.0-0-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
-            git clone --depth 1 --branch release-3.4.16 https://github.com/libsdl-org/SDL.git /tmp/SDL
-            cmake -S /tmp/SDL -B /tmp/SDL/build -DCMAKE_BUILD_TYPE=Release
-            cmake --build /tmp/SDL/build --parallel
+            # pkg-config installs on every run: the driver shells out to it
+            # at check time (queryPkgConfigFlags aborts without it), so a
+            # cache hit must not skip it.
+            sudo apt-get install -y libglfw3-dev pkg-config
+            # Reuse the cached SDL tree only when the built library is
+            # present; a cache entry saved from a failed build must trigger
+            # a rebuild, not a broken install.
+            if [ ! -f "/tmp/SDL/build/libSDL3.so" ]; then
+              rm -rf /tmp/SDL
+              # Build dependencies for SDL3, see https://wiki.libsdl.org/SDL3/README-linux
+              # (no libsdl3-dev on Ubuntu 24.04, so build SDL3 from source below).
+              sudo apt-get install -y ninja-build libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libthai-dev libusb-1.0-0-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
+              git clone --depth 1 --branch release-3.4.16 https://github.com/libsdl-org/SDL.git /tmp/SDL
+              cmake -S /tmp/SDL -B /tmp/SDL/build -DCMAKE_BUILD_TYPE=Release
+              cmake --build /tmp/SDL/build --parallel
+            fi
             sudo cmake --install /tmp/SDL/build
             sudo ldconfig
           fi
