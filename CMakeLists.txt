@@ -124,9 +124,10 @@ add_test(NAME prose COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_prose.p
 # Language server end-to-end tests (query subprocess + stdio server session).
 add_test(NAME lsp COMMAND python3 "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "--cx-lsp=$<TARGET_FILE:cx-lsp>" "--cx=$<TARGET_FILE:cx>")
 # Bound the stdio session: a framing regression would otherwise block on a
-# pipe read forever instead of failing (takes ~2s locally; 600s is ample
-# even for Windows Debug).
-set_tests_properties(lsp PROPERTIES TIMEOUT 600)
+# pipe read forever instead of failing. Windows Debug runners need far more
+# than 600s (each query spawns a fresh unoptimized compiler build), so allow
+# 1800s; a hung session still fails instead of blocking forever.
+set_tests_properties(lsp PROPERTIES TIMEOUT 1800)
 # The two example suites write the same output files into examples/, so they
 # must not run concurrently with each other now that check runs tests in
 # parallel.
