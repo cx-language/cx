@@ -704,6 +704,13 @@ class LspSession:
         return self.proc.returncode, stderr.decode()[:2000]
 
 
+def run_group(name, group):
+    try:
+        group()
+    except Exception as error:
+        check(f"group-{name}-crashed", False, f"{type(error).__name__}: {error}")
+
+
 def decode_semantic_data(data):
     tokens = []
     line, start = 0, 0
@@ -1042,8 +1049,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cx-lsp", required=True)
     parser.add_argument("--cx", required=True)
-    parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4,
-                        help="number of test groups to run in parallel")
+    parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 4, 4),
+                        help="number of test groups to run in parallel (capped so parallel CTest "
+                             "suites don't oversubscribe shared CI runners; override as needed)")
     args = parser.parse_args()
 
     with tempfile.TemporaryDirectory() as directory:
@@ -1060,16 +1068,18 @@ def main():
         # HOME, which concurrent compiler subprocesses would inherit.
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
             groups = [
-                lambda: test_query_modes(args.cx_lsp, path),
-                lambda: test_completion_members(args.cx_lsp, path),
-                lambda: test_package_dedup(args.cx_lsp),
-                lambda: test_build_file_modes(args.cx_lsp),
-                lambda: test_server([args.cx_lsp], path, "server"),
-                lambda: test_server([args.cx, "lsp"], path, "cx-lsp-subcommand"),
-                lambda: test_server_no_snippets([args.cx_lsp], "server-nosnippet"),
-                lambda: test_server_no_snippets([args.cx, "lsp"], "cx-lsp-subcommand-nosnippet"),
+                ("query-modes", lambda: test_query_modes(args.cx_lsp, path)),
+                ("completion-members", lambda: test_completion_members(args.cx_lsp, path)),
+                ("package-dedup", lambda: test_package_dedup(args.cx_lsp)),
+                ("build-file-modes", lambda: test_build_file_modes(args.cx_lsp)),
+                ("server", lambda: test_server([args.cx_lsp], path, "server")),
+                ("cx-lsp-subcommand", lambda: test_server([args.cx, "lsp"], path, "cx-lsp-subcommand")),
+                ("server-nosnippet", lambda: test_server_no_snippets([args.cx_lsp], "server-nosnippet")),
+                ("cx-lsp-subcommand-nosnippet", lambda: test_server_no_snippets([args.cx, "lsp"], "cx-lsp-subcommand-nosnippet")),
             ]
-            list(executor.map(lambda group: group(), groups))
+            # A crashing group must not abort the others or swallow the
+            # failure summary: record it and let the rest finish.
+            list(executor.map(lambda group: run_group(*group), groups))
         test_fetched_dependency(args.cx_lsp)
 
     if FAILURES:

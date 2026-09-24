@@ -12,8 +12,9 @@ import threading
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--cx", help="path to cx compiler executable", default="cx")
-arg_parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4,
-                        help="number of snippets to compile and run in parallel")
+arg_parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 4, 4),
+                        help="number of snippets to compile and run in parallel (capped so parallel "
+                             "CTest suites don't oversubscribe shared CI runners; override as needed)")
 args, cx_args = arg_parser.parse_known_args()
 
 docs_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "docs"))
