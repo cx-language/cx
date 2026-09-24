@@ -206,5 +206,7 @@ bool containsGenericParam(Type type, llvm::StringRef genericParam);
 void diagnoseClosureConversion(Type source, Type target, Location location);
 // Suggests an explicit conversion when a value of one numeric type is used where another is expected.
 std::string narrowingHint(Type source, Type target);
+// Suggests adding ': Copyable' when a use fails because the value was moved.
+std::string copyableHint(Type type);
 
 } // namespace cx

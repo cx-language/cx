@@ -1904,6 +1904,43 @@ std::string cx::narrowingHint(Type source, Type target) {
     return " (use '" + target.toString() + "(...)' to convert explicitly)";
 }
 
+std::string cx::copyableHint(Type type) {
+    if (!type || type.containsUnresolvedPlaceholder()) return "";
+    if (type.isImplicitlyCopyable()) return "";
+    Type unwrapped = type.removeReference();
+    while (unwrapped.isOptionalType()) {
+        unwrapped = unwrapped.getWrappedType();
+    }
+    while (unwrapped.isBasicArrayType() && unwrapped.isConstantArray()) {
+        unwrapped = unwrapped.getElementType().removeReference();
+        while (unwrapped.isOptionalType()) {
+            unwrapped = unwrapped.getWrappedType();
+        }
+    }
+    if (unwrapped.isAnonymousStructType()) {
+        for (auto& element : unwrapped.getAnonymousStructElements()) {
+            if (!element.type.containsUnresolvedPlaceholder() && !element.type.isImplicitlyCopyable()) return copyableHint(element.type);
+        }
+        return "";
+    }
+    if (unwrapped.isImplicitlyCopyable()) return "";
+    auto* decl = unwrapped.getDecl();
+    if (!decl) return " (type '" + type.toString() + "' is not Copyable)";
+    if (decl->isClosure()) {
+        for (auto& field : decl->fields) {
+            if (field.getName().starts_with("__capture_") && !field.type.containsUnresolvedPlaceholder() && !field.type.isImplicitlyCopyable()) {
+                return copyableHint(field.type);
+            }
+        }
+        return " (closure captures a non-Copyable type; make the captured type Copyable to allow copies)";
+    }
+    if (unwrapped.getName() == "Optional" || unwrapped.getName() == "Array") return " (type '" + unwrapped.toString() + "' is not Copyable)";
+    if (decl->getModule() && (decl->getModule()->name == "std" || decl->getModule()->isCHeaderImport)) {
+        return " (type '" + unwrapped.toString() + "' is not Copyable)";
+    }
+    return " (type '" + unwrapped.toString() + "' is not Copyable; add ': Copyable' to '" + decl->getName().str() + "' to allow copies)";
+}
+
 // Suggests '&' when a call would match a concrete candidate by taking addresses.
 static std::string addressOfHintForCall(const CallExpr& expr, llvm::ArrayRef<Decl*> candidates) {
     for (Decl* candidate : candidates) {
@@ -3931,7 +3968,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved) {
                 auto* parent = variableDecl->parent;
                 if ((variableDecl->kind == DeclKind::VarDecl || variableDecl->kind == DeclKind::ParamDecl) && parent && parent->isFunctionDecl()
                     && parent != currentFunction) {
-                    ERROR(varExpr->location, "cannot move from captured variable '" << varExpr->identifier << "'");
+                    ERROR(varExpr->location, "cannot move from captured variable '" << varExpr->identifier << "'" << copyableHint(varExpr->type));
                 }
             }
         }
@@ -3946,6 +3983,11 @@ void Typechecker::setMoved(Expr* expr, bool isMoved) {
 
 void Typechecker::checkNotMoved(const Decl& decl, const VarExpr& expr) {
     if (movedDecls.count(&decl)) {
-        ERROR_RANGE(expr.location, expr.endLocation, "use of moved value '" << expr.identifier << "'");
+        std::string hint;
+        if (auto* variableDecl = llvm::dyn_cast<VariableDecl>(&decl)) {
+            hint = copyableHint(variableDecl->type);
+        }
+        if (hint.empty() && expr.type) hint = copyableHint(expr.type);
+        ERROR_RANGE(expr.location, expr.endLocation, "use of moved value '" << expr.identifier << "'" << hint);
     }
 }
