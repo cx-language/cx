@@ -119,6 +119,13 @@ struct Decl {
     AccessLevel accessLevel;
     bool referenced;
 
+    // Lazily checked declarations in imported modules transition Unchecked ->
+    // CheckingSignature -> SignatureChecked -> CheckingBody -> Checked. The
+    // in-progress states break re-entrant cycles (recursive types/functions);
+    // the main module is still checked eagerly up front.
+    enum class CheckState : uint8_t { Unchecked, CheckingSignature, SignatureChecked, CheckingBody, Checked };
+    CheckState checkState = CheckState::Unchecked;
+
 protected:
     Decl(DeclKind kind, AccessLevel accessLevel) : kind(kind), accessLevel(accessLevel), referenced(false) {}
 };
@@ -224,7 +231,6 @@ struct FunctionDecl : Decl {
     std::optional<std::vector<Stmt*>> body;
     Location location;
     Module& module;
-    bool typechecked;
     bool isPackInstantiation = false;
     // Set by the `test` marker; collected and run by `cx test`.
     bool isTest = false;
@@ -236,7 +242,7 @@ struct FunctionDecl : Decl {
 
 protected:
     FunctionDecl(DeclKind kind, FunctionProto&& proto, std::vector<GenericArg>&& genericArgs, AccessLevel accessLevel, Module& module, Location location)
-    : Decl(kind, accessLevel), proto(std::move(proto)), genericArgs(std::move(genericArgs)), location(location), module(module), typechecked(false) {}
+    : Decl(kind, accessLevel), proto(std::move(proto)), genericArgs(std::move(genericArgs)), location(location), module(module) {}
 };
 
 struct MethodDecl : FunctionDecl {
@@ -340,6 +346,9 @@ struct TypeDecl : Decl {
     Module& module;
     const TypeDecl* instantiatedFrom;
     bool packed = false;
+    // Interface field/method materialization runs once: the main-module
+    // prepass and lazy use both funnel through ensureInterfaces.
+    bool interfacesEnsured = false;
 };
 
 struct TypeTemplate : Decl {

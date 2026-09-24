@@ -1,0 +1,8 @@
+// RUN: true
+
+void unusedBrokenBody() {
+    undefinedVariable + 1;
+}
+
+void unusedBrokenSig(UnknownType x) {
+}

@@ -112,11 +112,17 @@ done:
     if (error) return error;
     if (importer) importer->addImportedModule(module);
     Module::getAllImportedModulesMap()[module->name] = module;
-    typecheckModule(*module, *packageOptions);
+    typecheckModule(*module, *packageOptions, false);
     return *module;
 }
 
 void Typechecker::deferTypechecking(Decl* decl) {
+    // Fully checked declarations need no work; declarations whose body is
+    // being checked are already on the drain stack (e.g. recursion), so
+    // re-queueing them would ping-pong forever.
+    if (decl->checkState == Decl::CheckState::Checked || decl->checkState == Decl::CheckState::CheckingBody) {
+        return;
+    }
     for (auto existing : declsToTypecheck) {
         if (existing == decl) {
             return;
@@ -125,31 +131,58 @@ void Typechecker::deferTypechecking(Decl* decl) {
     declsToTypecheck.push_back(decl);
 }
 
+void Typechecker::markReferenced(Decl* decl) {
+    decl->referenced = true;
+    // Body-bearing declarations are checked on demand; everything else is
+    // either already checked (globals are prepass roots, locals inline) or
+    // resolved on demand (aliases). Type templates are never queued: there
+    // is no postProcess case for them, and uses instantiate instead.
+    switch (decl->kind) {
+    case DeclKind::FunctionDecl:
+    case DeclKind::MethodDecl:
+    case DeclKind::ConstructorDecl:
+    case DeclKind::DestructorDecl:
+    case DeclKind::FunctionTemplate:
+    case DeclKind::TypeDecl:
+    case DeclKind::EnumDecl:
+        deferTypechecking(decl);
+        break;
+    default:
+        break;
+    }
+}
+
 void Typechecker::postProcess() {
     llvm::SaveAndRestore setPostProcessing(isPostProcessing, true);
 
     while (!declsToTypecheck.empty()) {
         auto currentDeclsToTypecheck = std::move(declsToTypecheck);
 
+        // Each queued declaration reports independently, like the eager loop: one bad
+        // declaration must not abort checking (or diagnostics) of the rest of the queue.
         for (auto* decl : currentDeclsToTypecheck) {
-            switch (decl->kind) {
-            case DeclKind::FunctionDecl:
-            case DeclKind::MethodDecl:
-            case DeclKind::ConstructorDecl:
-            case DeclKind::DestructorDecl:
-                typecheckFunctionDecl(*llvm::cast<FunctionDecl>(decl));
-                break;
-            case DeclKind::FunctionTemplate:
-                typecheckFunctionTemplate(*llvm::cast<FunctionTemplate>(decl));
-                break;
-            case DeclKind::TypeDecl:
-                typecheckTypeDecl(*llvm::cast<TypeDecl>(decl));
-                break;
-            case DeclKind::EnumDecl:
-                typecheckEnumDecl(*llvm::cast<EnumDecl>(decl));
-                break;
-            default:
-                llvm_unreachable("invalid deferred decl");
+            try {
+                switch (decl->kind) {
+                case DeclKind::FunctionDecl:
+                case DeclKind::MethodDecl:
+                case DeclKind::ConstructorDecl:
+                case DeclKind::DestructorDecl:
+                    typecheckFunctionDecl(*llvm::cast<FunctionDecl>(decl));
+                    break;
+                case DeclKind::FunctionTemplate:
+                    typecheckFunctionTemplate(*llvm::cast<FunctionTemplate>(decl));
+                    break;
+                case DeclKind::TypeDecl:
+                    typecheckTypeSignature(*llvm::cast<TypeDecl>(decl));
+                    break;
+                case DeclKind::EnumDecl:
+                    typecheckEnumSignature(*llvm::cast<EnumDecl>(decl));
+                    break;
+                default:
+                    llvm_unreachable("invalid deferred decl");
+                }
+            } catch (const CompileError& error) {
+                error.report();
             }
         }
     }
@@ -181,7 +214,7 @@ void Typechecker::checkUnusedDecls(const Module& mainModule) {
     checkUnusedDeclsInModule(mainModule);
 }
 
-void Typechecker::typecheckModule(Module& module, const CompileOptions& packageOptions) {
+void Typechecker::typecheckModule(Module& module, const CompileOptions& packageOptions, bool isMainModule) {
     llvm::SaveAndRestore restoreModule(currentModule);
     llvm::SaveAndRestore restoreSourceFile(currentSourceFile);
     llvm::SaveAndRestore restoreOptions(options, packageOptions);
@@ -217,73 +250,20 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
     currentModule = &module;
     canonicalizeTypeAliases();
 
-    // Typecheck implemented interfaces so that inherited methods and fields are added to the implementing type before they're referenced.
-    for (auto& sourceFile : module.sourceFiles) {
-        for (auto& decl : sourceFile.topLevelDecls) {
-            currentModule = &module;
-            currentSourceFile = &sourceFile;
+    // The main module is checked eagerly so errors surface even in unused
+    // code. Imported modules only parse here; their declarations check on
+    // first use (globals are still always checked: their initializers run).
+    // --check-all checks everything eagerly, e.g. for validating dependencies.
+    bool checkEagerly = isMainModule || module.isCHeaderImport || options.checkAll;
+    if (checkEagerly) {
+        // Typecheck implemented interfaces so that inherited methods and fields are added to the implementing type before they're referenced.
+        for (auto& sourceFile : module.sourceFiles) {
+            for (auto& decl : sourceFile.topLevelDecls) {
+                currentModule = &module;
+                currentSourceFile = &sourceFile;
 
-            if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-                llvm::StringMap<GenericArg> genericArgs = {{"This", GenericArg(typeDecl->getType())}};
-
-                for (Type interface : typeDecl->interfaces) {
-                    try {
-                        // Interfaces constrain but never store, so borrows may appear in them.
-                        typecheckType(interface, typeDecl->accessLevel, true, true);
-                    } catch (const CompileError& error) {
-                        error.report();
-                    }
-                    if (!interface.getDecl()) continue;
-
-                    // Enums have no fields, so an interface field requirement fails conformance instead.
-                    if (!typeDecl->isEnumDecl()) {
-                        std::vector<FieldDecl> inheritedFields;
-
-                        for (auto& field : interface.getDecl()->fields) {
-                            auto duplicate = llvm::find_if(typeDecl->fields, [&](const FieldDecl& f) { return f.getName() == field.getName(); });
-                            if (duplicate != typeDecl->fields.end()) {
-                                WARN(duplicate->getLocation(),
-                                     "field '" << field.getName() << "' duplicates inherited field from interface '" << interface.getDecl()->getName() << "'");
-                            }
-                            inheritedFields.push_back(field.instantiate(genericArgs, *typeDecl));
-                        }
-
-                        typeDecl->fields.insert(typeDecl->fields.begin(), inheritedFields.begin(), inheritedFields.end());
-                    }
-
-                    for (auto member : interface.getDecl()->methods) {
-                        auto methodDecl = llvm::cast<MethodDecl>(member);
-                        if (methodDecl->body) {
-                            auto copy = methodDecl->instantiate(genericArgs, {}, *typeDecl);
-                            currentModule->addToSymbolTable(*copy);
-                            typeDecl->addMethod(copy);
-                        }
-                    }
-                }
-
-                // The parser-generated constructor misses inherited fields, so
-                // regenerate it now that they're added. Duplicate field names
-                // can't form parameters; leave the parser version in that case.
-                if (typeDecl->isStruct() && !typeDecl->interfaces.empty()) {
-                    llvm::SmallDenseSet<llvm::StringRef, 8> fieldNames;
-                    bool hasDuplicates = false;
-                    for (auto& field : typeDecl->fields) {
-                        if (!fieldNames.insert(field.getName()).second) {
-                            hasDuplicates = true;
-                            break;
-                        }
-                    }
-                    if (!hasDuplicates) {
-                        auto& methods = typeDecl->methods;
-                        auto newEnd = llvm::remove_if(methods, [](Decl* decl) {
-                            auto* ctor = llvm::dyn_cast<ConstructorDecl>(decl);
-                            return ctor && ctor->isAutogenerated;
-                        });
-                        if (newEnd != methods.end()) {
-                            methods.erase(newEnd, methods.end());
-                            typeDecl->addAutogeneratedConstructor();
-                        }
-                    }
+                if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                    ensureInterfaces(*typeDecl);
                 }
             }
         }
@@ -315,20 +295,75 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
         postProcess();
     }
 
-    for (auto& sourceFile : module.sourceFiles) {
-        for (auto& decl : sourceFile.topLevelDecls) {
-            currentModule = &module;
-            currentSourceFile = &sourceFile;
+    if (checkEagerly) {
+        for (auto& sourceFile : module.sourceFiles) {
+            for (auto& decl : sourceFile.topLevelDecls) {
+                currentModule = &module;
+                currentSourceFile = &sourceFile;
 
-            // Imports were already processed in the pre-pass above.
-            if (!decl->isVarDecl() && !decl->isImportDecl()) {
-                try {
-                    typecheckTopLevelDecl(*decl);
-                    postProcess();
-                } catch (const CompileError& error) {
-                    error.report();
+                // Imports were already processed in the pre-pass above.
+                if (!decl->isVarDecl() && !decl->isImportDecl()) {
+                    try {
+                        typecheckTopLevelDecl(*decl);
+                        postProcess();
+                    } catch (const CompileError& error) {
+                        error.report();
+                    }
                 }
             }
+        }
+    }
+
+    // IRGen looks these up directly in the std symbol table, bypassing sema
+    // name resolution, so they would never be demand-checked otherwise. Only
+    // the main module triggers this: it runs after all imports are parsed.
+    if (isMainModule) {
+        try {
+            ensureImplicitRuntimeUses();
+            postProcess();
+        } catch (const CompileError& error) {
+            error.report();
+        }
+    }
+
+    postProcess();
+}
+
+void Typechecker::ensureImplicitRuntimeUses() {
+    auto* stdModule = Module::getStdlibModule();
+    if (!stdModule) return;
+
+    // Single-callee runtime hooks, mirroring the backend lookups in
+    // irgen-decl.cpp (malloc) and irgen-expr.cpp (assertFail). Missing decls
+    // are the backend's error to report, as before.
+    if (Decl* mallocDecl = stdModule->symbolTable.findOne("malloc")) markReferenced(mallocDecl);
+    if (Decl* assertDecl = stdModule->symbolTable.findOne("assertFail")) markReferenced(assertDecl);
+
+    // Overload sets IRGen scans by parameter shape. Signatures first so the shape
+    // predicates below see resolved types, then whole-check only the overloads IRGen
+    // might call. These predicates mirror the backend scans; keep them in sync:
+    // string.init arities live in irgen-decl.cpp (emitMainArgv) and irgen-expr.cpp
+    // (emitStringLiteralExpr), the string == in irgen-stmt.cpp (emitStringSwitchStmt).
+    for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("string.init")) {
+        ensureSignature(*decl);
+    }
+    for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("==")) {
+        ensureSignature(*decl);
+    }
+    for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("string.init")) {
+        auto* ctor = llvm::dyn_cast<ConstructorDecl>(decl);
+        if (!ctor) continue;
+        auto params = ctor->getParams();
+        if (params.size() == 1 && params[0].type.isPointerType() && params[0].type.getPointee().isChar()) markReferenced(decl);
+        if (params.size() == 2 && params[0].type.isPointerType() && params[1].type.isInt()) markReferenced(decl);
+    }
+    for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("==")) {
+        auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
+        if (!functionDecl) continue;
+        auto params = functionDecl->getParams();
+        if (params.size() == 2 && params[0].type.isBasicType() && params[0].type.getName() == "string" && params[1].type.isBasicType()
+            && params[1].type.getName() == "string") {
+            markReferenced(decl);
         }
     }
 }
@@ -361,10 +396,28 @@ static Decl* findDeclInModules(llvm::StringRef name, Location location, llvm::Ar
     }
 }
 
-Decl* Typechecker::findDecl(llvm::StringRef name, Location location, Location endLocation) const {
+void Typechecker::setDeclContext(Decl& decl) {
+    Module* module = decl.getModule();
+    if (!module) return;
+    const char* file = decl.getLocation().file;
+    if (currentModule == module && currentSourceFile && file && currentSourceFile->filePath == file) return;
+    currentModule = module;
+    if (file) {
+        for (auto& sourceFile : module->sourceFiles) {
+            if (sourceFile.filePath == file) {
+                currentSourceFile = &sourceFile;
+                return;
+            }
+        }
+    }
+    // Synthesized declarations carry no file; the caller's file context applies.
+}
+
+Decl* Typechecker::findDecl(llvm::StringRef name, Location location, Location endLocation) {
     ASSERT(!name.empty());
 
     if (Decl* match = findDeclInModules(name, location, currentModule)) {
+        ensureSignature(*match);
         return match;
     }
 
@@ -384,10 +437,12 @@ Decl* Typechecker::findDecl(llvm::StringRef name, Location location, Location en
     }
 
     if (Decl* match = findDeclInModules(name, location, currentSourceFile->importedModules)) {
+        ensureSignature(*match);
         return match;
     }
 
     if (Decl* match = findDeclInModules(name, location, Module::getStdlibModule())) {
+        ensureSignature(*match);
         return match;
     }
 
@@ -404,7 +459,7 @@ static void appendUnique(std::vector<Decl*>& target, llvm::ArrayRef<Decl*> sourc
     }
 }
 
-std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl, bool inAllImportedModules) const {
+std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl, bool inAllImportedModules) {
     ASSERT(!name.empty());
     std::vector<Decl*> decls;
 
@@ -417,10 +472,18 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
         }
     }
 
+    // Member lookup materializes interface-provided members (default method implementations
+    // are copied into the type). This matters for types that are never otherwise ensured,
+    // such as the structs behind builtin types: literals using them perform no lookup.
+    if (receiverTypeDecl) ensureInterfaces(*receiverTypeDecl);
+
     if (receiverTypeDecl) {
         for (auto& decl : receiverTypeDecl->methods) {
             if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
-                if (functionDecl->getName() == name) {
+                // Unqualified for implicit-receiver lookup, qualified for explicit member access.
+                // The qualified match matters when the instantiation's methods were registered in a
+                // different module's symbol table than the one this lookup searches.
+                if (functionDecl->getName() == name || functionDecl->getQualifiedName() == name) {
                     decls.emplace_back(decl);
                 }
             } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
@@ -451,10 +514,26 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
     if (currentSourceFile && !inAllImportedModules) {
         appendUnique(decls, findDeclsInModules(name, currentSourceFile->importedModules));
     } else {
-        appendUnique(decls, findDeclsInModules(name, Module::getAllImportedModules()));
+        // Deferred checking runs after all imports are known, so the global scope would also
+        // find C headers imported by other files. Those shadow stdlib names by design, so only
+        // search the ones this file actually imports.
+        llvm::SmallVector<Module*, 8> modules;
+        for (Module* module : Module::getAllImportedModules()) {
+            if (!module->isCHeaderImport || (currentSourceFile && llvm::is_contained(currentSourceFile->importedModules, module))) {
+                modules.push_back(module);
+            }
+        }
+        appendUnique(decls, findDeclsInModules(name, modules));
     }
 
     appendUnique(decls, findDeclsInModules(name, Module::getStdlibModule()));
+
+    // Overload resolution compares candidate signatures, so all candidates
+    // (including losers) get signature-checked on first lookup. Bodies still
+    // wait for an actual reference.
+    for (Decl* decl : decls) {
+        ensureSignature(*decl);
+    }
 
     return decls;
 }

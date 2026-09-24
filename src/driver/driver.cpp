@@ -108,6 +108,8 @@ cl::opt<bool> warnUndefinedMacros("Wundef", cl::desc("Warn about undefined macro
                                   cl::cat(diagnosticCategory));
 cl::opt<bool> warnUnusedResult("Wunused-result", cl::desc("Warn about unused expression results"), cl::sub(cl::SubCommand::getAll()),
                                cl::cat(diagnosticCategory));
+cl::opt<bool> checkAll("check-all", cl::desc("Typecheck all code in imported modules, not just used code"), cl::sub(cl::SubCommand::getAll()),
+                       cl::cat(diagnosticCategory));
 cl::opt<int> errorLimit("error-limit", cl::desc("Limit the number of reported errors (10 by default, 0 removes limit)"), cl::init(10),
                         cl::sub(cl::SubCommand::getAll()), cl::cat(diagnosticCategory));
 
@@ -397,7 +399,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         addPredefinedImportSearchPaths(buildParams.filePaths);
     }
 
-    CompileOptions options = {buildMode, noUnusedWarnings, warnUndefinedMacros, warnUnusedResult, importSearchPaths, frameworkSearchPaths, defines, cflags};
+    CompileOptions options = {buildMode, noUnusedWarnings, checkAll, warnUndefinedMacros, warnUnusedResult, importSearchPaths, frameworkSearchPaths, defines,
+                              cflags};
     auto remainingPrintOpts = std::popcount(printOpts.getBits());
     bool printSectionDividers = remainingPrintOpts > 1;
 
@@ -435,12 +438,12 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     {
         PhaseTimer timer("typecheck-imports");
         for (auto& importedModule : mainModule.getImportedModules()) {
-            typechecker.typecheckModule(*importedModule, options);
+            typechecker.typecheckModule(*importedModule, options, false);
         }
     }
     {
         PhaseTimer timer("typecheck-main");
-        typechecker.typecheckModule(mainModule, options);
+        typechecker.typecheckModule(mainModule, options, true);
         typechecker.checkUnusedDecls(mainModule);
     }
 
@@ -943,6 +946,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
     CompileOptions baseOptions;
     baseOptions.mode = buildMode;
     baseOptions.noUnusedWarnings = noUnusedWarnings;
+    baseOptions.checkAll = checkAll;
     baseOptions.warnUndefinedMacros = warnUndefinedMacros;
     baseOptions.warnUnusedResult = warnUnusedResult;
     baseOptions.importSearchPaths = importSearchPaths;

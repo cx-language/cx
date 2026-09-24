@@ -9,6 +9,13 @@ void main() {
 
     // CHECK-DAG: [[@LINE+1]]:9: warning: 'A' is private
     a = A();
+
+    // Imported declarations check on use; exercise mod's public API so its
+    // signature warnings (checked in mod/a.cx) still fire.
+    m(undefined);
+    o(null);
+    p();
+    E? _e = null;
 }
 
 // CHECK-DAG: [[@LINE+1]]:8: warning: 'A' is private

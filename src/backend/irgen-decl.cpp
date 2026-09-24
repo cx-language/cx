@@ -263,6 +263,11 @@ void IRGenerator::emitDecl(const Decl& decl) {
     case DeclKind::MethodDecl:
     case DeclKind::ConstructorDecl:
     case DeclKind::DestructorDecl:
+        // Imported modules check lazily, so unreferenced functions never got
+        // past their signature (or were never touched at all); their bodies
+        // are untyped and must not be emitted. Referenced functions emit on
+        // demand through getValue even when skipped here.
+        if (decl.checkState != Decl::CheckState::Checked) return;
         emitFunctionDecl(llvm::cast<FunctionDecl>(decl));
         break;
     case DeclKind::GenericParamDecl:
