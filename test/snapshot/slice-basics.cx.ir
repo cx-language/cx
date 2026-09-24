@@ -13,14 +13,13 @@ int main() {
     Slice<int> _5 = insertvalue _4, 1, int 3
     void _6 = call _EN4main3fooE5SliceI3intE(Slice<int> _5)
     void _7 = call _EN4main3barEP5ArrayI3intN3_E(int[3]* three)
-    int _8 = call _EN3std5ArrayI3intN3_E4sizeE(int[3]* three)
-    store _8 to b
-    int* _9 = getelementptr three, 0
-    Slice<int> _10 = insertvalue Slice<int> undefined, 0, _9
-    Slice<int> _11 = insertvalue _10, 1, int 3
-    store _11 to ref
-    int _12 = call _EN3std5SliceI3intE4sizeE(Slice<int>* ref)
-    store _12 to bb
+    store int 3 to b
+    int* _8 = getelementptr three, 0
+    Slice<int> _9 = insertvalue Slice<int> undefined, 0, _8
+    Slice<int> _10 = insertvalue _9, 1, int 3
+    store _10 to ref
+    int _11 = call _EN3std5SliceI3intE4sizeE(Slice<int>* ref)
+    store _11 to bb
     return int 0
 }
 
@@ -45,19 +44,13 @@ void _EN4main3barEP5ArrayI3intN3_E(int[3]* ints) {
     int* b = alloca int
     Slice<int>* ref = alloca Slice<int>
     store ints to ints_0
+    store int 3 to b
     int[3]* ints.load = load ints_0
-    int _0 = call _EN3std5ArrayI3intN3_E4sizeE(int[3]* ints.load)
-    store _0 to b
-    int[3]* ints.load_0 = load ints_0
-    int* _1 = getelementptr ints.load_0, 0
-    Slice<int> _2 = insertvalue Slice<int> undefined, 0, _1
-    Slice<int> _3 = insertvalue _2, 1, int 3
-    store _3 to ref
+    int* _0 = getelementptr ints.load, 0
+    Slice<int> _1 = insertvalue Slice<int> undefined, 0, _0
+    Slice<int> _2 = insertvalue _1, 1, int 3
+    store _2 to ref
     return void
-}
-
-int _EN3std5ArrayI3intN3_E4sizeE(int[3]* this) {
-    return int 3
 }
 
 int _EN3std5SliceI3intE4sizeE(Slice<int>* this) {

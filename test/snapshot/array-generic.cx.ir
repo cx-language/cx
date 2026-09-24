@@ -5,46 +5,41 @@ int main() {
     int[3] _1 = insertvalue _0, 1, int 20
     int[3] _2 = insertvalue _1, 2, int 30
     store _2 to a
-    int _3 = call _EN3std5ArrayI3intN3_E4sizeE(int[3]* a)
-    int* _4 = getelementptr a, int 0, int 0
-    int .load = load _4
-    int64 _5 = cast _3 to int64
-    int64 _6 = cast .load to int64
-    int64 _7 = _5 + _6
-    int _8 = cast _7 to int
-    int64 _9 = cast _8 to int64
-    bool _10 = _7 != _9
-    bool _11 = !_10
-    bool overflow.condition = _11 == bool false
+    int* _3 = getelementptr a, int 0, int 0
+    int .load = load _3
+    int64 _4 = cast int 3 to int64
+    int64 _5 = cast .load to int64
+    int64 _6 = _4 + _5
+    int _7 = cast _6 to int
+    int64 _8 = cast _7 to int64
+    bool _9 = _6 != _8
+    bool _10 = !_9
+    bool overflow.condition = _10 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _12 = call _EN3std10assertFailEP4char(char* "integer overflow at array-generic.cx:5:21
+    void _11 = call _EN3std10assertFailEP4char(char* "integer overflow at array-generic.cx:5:21
 ")
     unreachable
 
 overflow.success:
-    int* _13 = getelementptr a, int 0, int 2
-    int .load_0 = load _13
-    int64 _14 = cast _8 to int64
-    int64 _15 = cast .load_0 to int64
-    int64 _16 = _14 + _15
-    int _17 = cast _16 to int
-    int64 _18 = cast _17 to int64
-    bool _19 = _16 != _18
-    bool _20 = !_19
-    bool overflow.condition_0 = _20 == bool false
+    int* _12 = getelementptr a, int 0, int 2
+    int .load_0 = load _12
+    int64 _13 = cast _7 to int64
+    int64 _14 = cast .load_0 to int64
+    int64 _15 = _13 + _14
+    int _16 = cast _15 to int
+    int64 _17 = cast _16 to int64
+    bool _18 = _15 != _17
+    bool _19 = !_18
+    bool overflow.condition_0 = _19 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _21 = call _EN3std10assertFailEP4char(char* "integer overflow at array-generic.cx:5:28
+    void _20 = call _EN3std10assertFailEP4char(char* "integer overflow at array-generic.cx:5:28
 ")
     unreachable
 
 overflow.success_0:
-    return _17
-}
-
-int _EN3std5ArrayI3intN3_E4sizeE(int[3]* this) {
-    return int 3
+    return _16
 }

@@ -864,6 +864,19 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
         return emitExpr(*expr.getReceiver());
     }
 
+    // Array.size() is known from the type; emit the constant instead of a call
+    // that only folds away after inlining. Symbolic sizes still call the method.
+    if (expr.getFunctionName() == "size" && expr.getReceiver()) {
+        if (auto* functionDecl = llvm::dyn_cast_or_null<FunctionDecl>(expr.calleeDecl)) {
+            if (functionDecl->getTypeDecl() && functionDecl->getTypeDecl()->getName() == "Array") {
+                Type receiverType = expr.receiverType.removeOptional().removePointer();
+                if (receiverType.isConcreteArray()) {
+                    return createConstantInt(ArrayPointerType::getIndexType(), receiverType.getArraySize());
+                }
+            }
+        }
+    }
+
     if (expr.isMoveInit()) {
         auto* receiverValue = loadThroughStorageAddress(emitExprAsPointer(*expr.getReceiver()), expr.getReceiver()->type);
         auto* argumentValue = emitExpr(*expr.args[0].value);

@@ -15,16 +15,6 @@ struct Array<T, int N> {
         return this;
     }
 
-    /// Returns a reference to the element at the given index.
-    T* operator[](int index) {
-        return &this[index];
-    }
-
-    /// Sets the element at the given index.
-    void operator[]=(int index, T value) {
-        this[index] = value;
-    }
-
     /// Returns an iterator over the elements.
     ArrayIterator<T> iterator() {
         return ArrayIterator(this);
