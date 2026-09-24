@@ -32,12 +32,10 @@ struct Map<Key: Hashable, Value> {
 
     /// Inserts, or updates an existing value.
     void set(Key key, Value value) {
-        var existing = this[key];
-
-        if existing {
-            *existing = value;
-        } else {
+        if this[key] == null {
             insert(key, value);
+        } else {
+            *this[key]! = value;
         }
     }
 
@@ -86,13 +84,13 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Returns the value for the given key, or null.
-    Value*? operator[](Key& e) {
+    Value&? operator[](Key& e) {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = &hashTable[hashValue];
 
         for element in slot {
             if element.key == *e {
-                return &element.value;
+                return element.value;
             }
         }
 

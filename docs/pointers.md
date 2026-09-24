@@ -46,7 +46,7 @@ Passing a stored `T*` where a `T&` is expected reborrows it.
 Inside the function, member access and operators use the borrowed value directly; `*` writes through the borrow or moves a value out explicitly.
 Member functions use a `T&` borrow for `this`; use `&this` to obtain a storable `T*`.
 
-Unlike pointers, borrows cannot be stored: `T&` may only appear as a function parameter type,
+Unlike pointers, borrows cannot be stored: `T&` may only appear as a function parameter or return type,
 and reading a borrow into a variable copies the value out.
 
 A borrow can be nullable, written `T&?`, for parameters that may or may not receive a value.

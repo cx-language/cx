@@ -95,7 +95,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     if (!allowReference && type.storesBorrow()) {
         // Report the outermost type (e.g. 'int&?' rather than the nested 'int&')
         // so the diagnostic matches what the user wrote.
-        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter type");
+        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter or return type");
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
@@ -190,7 +190,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         break;
     case TypeKind::PointerType: {
         if (type.isReferenceType() && !allowReference) {
-            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter type");
+            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter or return type");
         }
         typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
@@ -384,7 +384,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         typecheckParams(decl.getParams(), decl.accessLevel);
 
         if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
-            typecheckType(decl.getReturnType(), decl.accessLevel);
+            // Element accessors (e.g. List.front, Map.operator[]) return borrows into the container.
+            typecheckType(decl.getReturnType(), decl.accessLevel, true, true);
         }
 
         decl.typechecked = true;
@@ -399,7 +400,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     typecheckParams(decl.getParams(), decl.accessLevel);
 
     if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
-        typecheckType(decl.getReturnType(), decl.accessLevel);
+        // Element accessors (e.g. List.front, Map.operator[]) return borrows into the container.
+        typecheckType(decl.getReturnType(), decl.accessLevel, true, true);
     }
 
     if (decl.isMain() && !decl.isMethodDecl()) {
@@ -819,7 +821,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
     } else if (decl.type.storesBorrow()) {
-        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter type");
+        ERROR(decl.getLocation(), "reference type '" << decl.type << "' may only appear as a function parameter or return type");
     }
 
     if (!decl.type.isImplicitlyCopyable()) {

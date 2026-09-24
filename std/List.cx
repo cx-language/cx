@@ -66,22 +66,22 @@ struct List<Element> {
 
     /// Returns the element at the given index.
     /// Returns the element at the given index.
-    Element* operator[](int index) {
+    Element& operator[](int index) {
         if index < 0 || index >= size {
             indexOutOfBounds(index);
         }
 
-        return &buffer[index];
+        return buffer[index];
     }
 
     /// Returns a reference to the element at the given offset from the end.
     /// Offset 1 is the last element; offsets outside 1..size() abort.
-    Element* operator[-](int index) {
+    Element& operator[-](int index) {
         if index < 1 || index > size {
             indexOutOfBounds(index);
         }
 
-        return &buffer[size - index];
+        return buffer[size - index];
     }
 
     /// Sets the element at the given index.
@@ -102,15 +102,15 @@ struct List<Element> {
     }
 
     /// Returns the first element.
-    Element* first() {
+    Element& first() {
         if size == 0 abort("Called first() on empty List\n");
-        return &buffer[0];
+        return buffer[0];
     }
 
     /// Returns the last element.
-    Element* last() {
+    Element& last() {
         if size == 0 abort("Called last() on empty List\n");
-        return &buffer[size - 1];
+        return buffer[size - 1];
     }
 
     /// Returns a pointer to the first element.
@@ -118,15 +118,15 @@ struct List<Element> {
         return buffer;
     }
 
-    /// Adds the given element to the end of the list, returning a pointer to it.
-    Element* push(Element element) {
+    /// Adds the given element to the end of the list, returning a reference to it.
+    Element& push(Element element) {
         if size == capacity {
             grow();
         }
 
         buffer[size].init(element);
         size++;
-        return &buffer[size - 1];
+        return buffer[size - 1];
     }
 
     /// Adds all elements from the given array to the end of the list.
@@ -235,10 +235,10 @@ struct List<Element> {
     }
 
     /// Returns the first element satisfying the predicate, or null.
-    Element*? find(bool(Element&) predicate) {
+    Element&? find(bool(Element&) predicate) {
         for i in 0..size() {
             if predicate(this[i]) {
-                return &this[i];
+                return this[i];
             }
         }
 
@@ -246,10 +246,10 @@ struct List<Element> {
     }
 
     /// Returns the first element satisfying the predicate, or null.
-    Element*? find<T: Copyable>(bool(T) predicate) {
+    Element&? find<T: Copyable>(bool(T) predicate) {
         for i in 0..size() {
             if predicate(this[i]) {
-                return &this[i];
+                return this[i];
             }
         }
 

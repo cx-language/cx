@@ -30,9 +30,8 @@ void main() {
     // CHECK-NEXT:3
     println(list[0].x);
 
-    var found = list.find(predicate = (p) => p.x == 3);
-    if (found != null) {
-        found.x = 7;
+    if list.find(predicate = (p) => p.x == 3) != null {
+        list.find(predicate = (p) => p.x == 3)!.x = 7;
     }
     // CHECK-NEXT:7
     println(list[0].x);
