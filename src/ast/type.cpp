@@ -73,7 +73,7 @@ bool Type::isSlice() const {
 }
 
 bool Type::isUnsizedArrayPointer() const {
-    return getKind() == TypeKind::ArrayPointerType && getArraySize() == ArrayPointerType::UnknownSize;
+    return getKind() == TypeKind::ArrayPointerType;
 }
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
@@ -122,14 +122,7 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         } else {
             elementType = elementType.resolve(replacements);
         }
-        if (llvm::StringRef sizeParam = getArraySizeParam(); !sizeParam.empty()) {
-            // A missing or mistyped substitution leaves the size symbolic; the use site reports it.
-            if (auto it = replacements.find(sizeParam); it != replacements.end() && it->second.isInt()) {
-                return ArrayPointerType::get(elementType, it->second.getInt(), location);
-            }
-            return ArrayPointerType::get(elementType, sizeParam, location);
-        }
-        return ArrayPointerType::get(elementType, getArraySize(), location);
+        return ArrayPointerType::get(elementType, location);
     }
 
     case TypeKind::AnonymousStructType: {
@@ -168,22 +161,15 @@ Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs
     return getType(BasicType(name, genericArgs), mutability, location);
 }
 
-Type ArrayPointerType::get(Type elementType, int64_t size, Location location) {
-    if (size == UnknownSize) return getType(ArrayPointerType(elementType, size), elementType.mutability, location);
-
+Type BasicType::getArray(Type elementType, int64_t size, Location location) {
     std::vector<GenericArg> args;
     args.emplace_back(elementType);
     args.push_back(GenericArg::fromInt(size, location));
     return BasicType::get("Array", args, elementType.mutability, location);
 }
 
-Type ArrayPointerType::get(Type elementType, llvm::StringRef sizeParam, Location location) {
-    // A symbolic size names an integer generic parameter; store it as a type
-    // placeholder resolved at instantiation (see Type::resolve above).
-    std::vector<GenericArg> args;
-    args.emplace_back(elementType);
-    args.emplace_back(BasicType::get(sizeParam, {}, elementType.mutability, location));
-    return BasicType::get("Array", args, elementType.mutability, location);
+Type ArrayPointerType::get(Type elementType, Location location) {
+    return getType(ArrayPointerType(elementType), elementType.mutability, location);
 }
 
 Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Mutability mutability, Location location) {
@@ -338,7 +324,7 @@ int64_t Type::getArraySize() const {
         return 0;
     }
     ASSERT(getKind() == TypeKind::ArrayPointerType);
-    return llvm::cast<ArrayPointerType>(typeBase)->size;
+    return ArrayPointerType::UnknownSize;
 }
 
 llvm::StringRef Type::getArraySizeParam() const {
@@ -348,7 +334,7 @@ llvm::StringRef Type::getArraySizeParam() const {
         return llvm::StringRef();
     }
     ASSERT(getKind() == TypeKind::ArrayPointerType);
-    return llvm::cast<ArrayPointerType>(typeBase)->sizeParam;
+    return llvm::StringRef();
 }
 
 llvm::ArrayRef<AnonymousStructElement> Type::getAnonymousStructElements() const {
@@ -441,8 +427,7 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
         // TODO: Should probably compare the referenced decl instead of just the name.
         return other.isBasicType() && getName() == other.getName() && getGenericArgs() == other.getGenericArgs();
     case TypeKind::ArrayPointerType:
-        return other.getKind() == TypeKind::ArrayPointerType && getElementType() == other.getElementType() && getArraySize() == other.getArraySize()
-            && getArraySizeParam() == other.getArraySizeParam();
+        return other.getKind() == TypeKind::ArrayPointerType && getElementType() == other.getElementType();
     case TypeKind::AnonymousStructType:
         return other.isAnonymousStructType() && getAnonymousStructElements() == other.getAnonymousStructElements();
     case TypeKind::FunctionType:
@@ -598,15 +583,7 @@ void Type::printTo(std::ostream& stream) const {
     }
     case TypeKind::ArrayPointerType:
         getElementType().printTo(stream);
-        stream << "[";
-        if (!getArraySizeParam().empty()) {
-            stream << getArraySizeParam();
-        } else if (getArraySize() == ArrayPointerType::UnknownSize) {
-            stream << "*";
-        } else {
-            stream << getArraySize();
-        }
-        stream << "]";
+        stream << "[*]";
         break;
     case TypeKind::AnonymousStructType:
         stream << "(";

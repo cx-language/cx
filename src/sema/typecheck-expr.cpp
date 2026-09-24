@@ -349,7 +349,7 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
         }
     }
 
-    return ArrayPointerType::get(firstType, int64_t(array.elements.size()));
+    return BasicType::getArray(firstType, int64_t(array.elements.size()));
 }
 
 Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
@@ -2631,7 +2631,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
         Type arrayReceiverType = receiverType.removeOptional().removePointer();
         if (arrayReceiverType.isBasicArrayType() && !arrayReceiverType.isMutable() && expr.getFunctionName() == "data") {
-            returnTypeOverride = ArrayPointerType::get(arrayReceiverType.getElementType(), ArrayPointerType::UnknownSize, arrayReceiverType.location);
+            returnTypeOverride = ArrayPointerType::get(arrayReceiverType.getElementType(), arrayReceiverType.location);
         }
 
         // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
@@ -3109,7 +3109,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
                 if (indices.size() == 1) {
                     return elementType.withMutability(baseType.mutability);
                 } else {
-                    return ArrayPointerType::get(elementType, static_cast<int64_t>(indices.size()), expr.location);
+                    return BasicType::getArray(elementType, static_cast<int64_t>(indices.size()), expr.location);
                 }
             }
             // If member looks like a swizzle but indices out of range (e.g. `float[2].z`),

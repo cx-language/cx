@@ -72,17 +72,7 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
         break;
     case TypeKind::ArrayPointerType:
         if (!type.isMutable()) stream << 'K';
-        stream << 'A';
-        switch (type.getArraySize()) {
-        case ArrayPointerType::UnknownSize:
-            stream << 'U';
-            break;
-        default:
-            ASSERT(type.getArraySize() > 0);
-            stream << type.getArraySize();
-            break;
-        }
-        stream << '_';
+        stream << "AU_";
         mangleType(stream, type.getElementType());
         break;
     case TypeKind::AnonymousStructType:

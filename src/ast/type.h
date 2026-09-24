@@ -208,6 +208,7 @@ Type getArrayTypeForReceiver(Type type);
 struct BasicType : TypeBase {
     std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }
     static Type get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs, Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getArray(Type elementType, int64_t size, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::BasicType; }
 
 private:
@@ -223,19 +224,14 @@ public:
 struct ArrayPointerType : TypeBase {
     static Type getIndexType() { return Type::getInt(); }
     static const int64_t UnknownSize = -1;
-    static Type get(Type elementType, int64_t size, Location location = Location());
-    // A symbolic size names an integer generic parameter; resolved at instantiation.
-    static Type get(Type elementType, llvm::StringRef sizeParam, Location location = Location());
+    static Type get(Type elementType, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayPointerType; }
 
 private:
-    ArrayPointerType(Type elementType, int64_t size, llvm::StringRef sizeParam = "")
-    : TypeBase(TypeKind::ArrayPointerType), elementType(elementType), size(size), sizeParam(internString(sizeParam)) {}
+    explicit ArrayPointerType(Type elementType) : TypeBase(TypeKind::ArrayPointerType), elementType(elementType) {}
 
 public:
     Type elementType;
-    int64_t size;
-    llvm::StringRef sizeParam;
 };
 
 struct AnonymousStructElement {
