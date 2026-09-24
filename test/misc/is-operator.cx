@@ -21,6 +21,16 @@ bool isOk(Outcome& o) {
     return *o is Ok;
 }
 
+string describeBorrow(Outcome& o) {
+    if o is Err e {
+        return e;
+    }
+    if o is Ok {
+        return "ok";
+    }
+    return "pending";
+}
+
 void main() {
     var a = Outcome.Ok(value = 7);
     var b = Outcome.Err(error = "boom");
@@ -29,6 +39,9 @@ void main() {
     assert(describe(a) == "ok");
     assert(describe(b) == "boom");
     assert(describe(c) == "pending");
+    assert(describeBorrow(a) == "ok");
+    assert(describeBorrow(b) == "boom");
+    assert(describeBorrow(c) == "pending");
     assert(isOk(a));
     assert(!isOk(b));
     assert(!isOk(c));
