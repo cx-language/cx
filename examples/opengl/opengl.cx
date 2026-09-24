@@ -42,7 +42,7 @@ int main() {
     GLint infoLogLength = 0;
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
     if infoLogLength > 0 {
-        var infoLog = StringBuffer(uninitializedSize = infoLogLength + 1);
+        var infoLog = StringBuf(uninitializedSize = infoLogLength + 1);
         glGetProgramInfoLog(program, infoLogLength, null, infoLog.data());
         println(infoLog);
     }
@@ -84,7 +84,7 @@ int main() {
 }
 
 void LoadShader(GLuint shaderID, string path) {
-    StringBuffer shaderSource = unwrap(readFile(path));
+    StringBuf shaderSource = unwrap(readFile(path));
     char* shaderSourcePointer = shaderSource.cString();
 
     // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
@@ -94,7 +94,7 @@ void LoadShader(GLuint shaderID, string path) {
     GLint infoLogLength = 0;
     glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
     if infoLogLength > 0 {
-        var infoLog = StringBuffer(uninitializedSize = infoLogLength + 1);
+        var infoLog = StringBuf(uninitializedSize = infoLogLength + 1);
         glGetShaderInfoLog(shaderID, infoLogLength, null, infoLog.data());
         println(infoLog);
     }

@@ -21,7 +21,7 @@
 //           println(helpText(parser));
 //           return 0;
 //       }
-//       var greeting = StringBuffer("Hello, ") + parser.option("name");
+//       var greeting = StringBuf("Hello, ") + parser.option("name");
 //       if parser.flag("loud") {
 //           println("loud!");
 //       } else {
@@ -89,7 +89,7 @@ struct OptionSet {
     List<string> extras = List<string>();
 
     // Parse state.
-    StringBuffer errorMessage = StringBuffer();
+    StringBuf errorMessage = StringBuf();
     bool helpWasRequested = false;
     int nextPositional = 0;
 
@@ -198,7 +198,7 @@ struct OptionSet {
         while extras.size() > 0 {
             extras.removeLast();
         }
-        errorMessage = StringBuffer();
+        errorMessage = StringBuf();
         helpWasRequested = false;
         nextPositional = 0;
     }
@@ -266,7 +266,7 @@ struct OptionSet {
         var flag = findFlag(name);
         if flag {
             if hasValue {
-                errorMessage = StringBuffer("option '--") + name + "' takes no value";
+                errorMessage = StringBuf("option '--") + name + "' takes no value";
                 return -1;
             }
             flag.isSet = true;
@@ -278,7 +278,7 @@ struct OptionSet {
                 opt.value = value;
             } else {
                 if i + 1 >= args.size() {
-                    errorMessage = StringBuffer("option '--") + name + "' requires a value";
+                    errorMessage = StringBuf("option '--") + name + "' requires a value";
                     return -1;
                 }
                 opt.value = args[i + 1];
@@ -292,7 +292,7 @@ struct OptionSet {
             string text = value;
             if !hasValue {
                 if i + 1 >= args.size() {
-                    errorMessage = StringBuffer("option '--") + name + "' requires a value";
+                    errorMessage = StringBuf("option '--") + name + "' requires a value";
                     return -1;
                 }
                 text = args[i + 1];
@@ -300,14 +300,14 @@ struct OptionSet {
             }
             var parsed = text.parseInt();
             if parsed == null {
-                errorMessage = StringBuffer("invalid integer value '") + text + "' for '--" + name + "'";
+                errorMessage = StringBuf("invalid integer value '") + text + "' for '--" + name + "'";
                 return -1;
             }
             intOpt.value = parsed;
             intOpt.isSet = true;
             return i + 1;
         }
-        errorMessage = StringBuffer("unknown option '--") + name + "'";
+        errorMessage = StringBuf("unknown option '--") + name + "'";
         return -1;
     }
 
@@ -333,7 +333,7 @@ struct OptionSet {
                     opt.value = cluster.substr(j + 1);
                 } else {
                     if i + 1 >= args.size() {
-                        errorMessage = StringBuffer("option '-") + c + "' requires a value";
+                        errorMessage = StringBuf("option '-") + c + "' requires a value";
                         return -1;
                     }
                     opt.value = args[i + 1];
@@ -349,7 +349,7 @@ struct OptionSet {
                     text = cluster.substr(j + 1);
                 } else {
                     if i + 1 >= args.size() {
-                        errorMessage = StringBuffer("option '-") + c + "' requires a value";
+                        errorMessage = StringBuf("option '-") + c + "' requires a value";
                         return -1;
                     }
                     text = args[i + 1];
@@ -357,14 +357,14 @@ struct OptionSet {
                 }
                 var parsed = text.parseInt();
                 if parsed == null {
-                    errorMessage = StringBuffer("invalid integer value '") + text + "' for '-" + c + "'";
+                    errorMessage = StringBuf("invalid integer value '") + text + "' for '-" + c + "'";
                     return -1;
                 }
                 intOpt.value = parsed;
                 intOpt.isSet = true;
                 return i + 1;
             }
-            errorMessage = StringBuffer("unknown option '-") + c + "'";
+            errorMessage = StringBuf("unknown option '-") + c + "'";
             return -1;
         }
         return i + 1;
@@ -383,7 +383,7 @@ struct OptionSet {
     bool checkRequired() {
         for i in 0..positionals.size() {
             if positionals[i].required && !positionals[i].isSet {
-                errorMessage = StringBuffer("missing required argument '<") + positionals[i].name + ">'";
+                errorMessage = StringBuf("missing required argument '<") + positionals[i].name + ">'";
                 return false;
             }
         }
@@ -649,8 +649,8 @@ struct ArgParser {
         abort("argparser: unknown command '", name, "'");
     }
 
-    StringBuffer unknownCommandMessage(string name) {
-        var msg = StringBuffer("unknown command '") + name + "'";
+    StringBuf unknownCommandMessage(string name) {
+        var msg = StringBuf("unknown command '") + name + "'";
         if commands.size() > 0 {
             msg.append(" (expected one of: ");
             for i in 0..commands.size() {

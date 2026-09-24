@@ -94,7 +94,7 @@ and rejoining it needs no manual loop:
 
 ```cs
 void main() {
-    var csv = StringBuffer("a,b,c");
+    var csv = StringBuf("a,b,c");
     println(join(csv.split(','), ";"));
 }
 ```

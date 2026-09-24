@@ -7,5 +7,5 @@ struct S {
 void main() {
     S s = undefined;
     s.a == "x";
-    StringBuffer("x") != s.a;
+    StringBuf("x") != s.a;
 }

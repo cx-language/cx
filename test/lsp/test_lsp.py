@@ -101,7 +101,7 @@ int foo() {
 
 INTERFACE_CONSTRUCT_SOURCE = """\
 interface Printable {
-    void print(StringBuffer* stream);
+    void print(StringBuf* stream);
 }
 
 void main() {
@@ -427,17 +427,17 @@ def test_completion_members(cx_lsp, path):
     check("query-completion-member-call", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
 
     # Overloaded methods list every overload, not just the first.
-    content = 'void main() {\n    var buf = StringBuffer("hi");\n    buf.\n}\n'
+    content = 'void main() {\n    var buf = StringBuf("hi");\n    buf.\n}\n'
     result = run_query(cx_lsp, base_query("completion", path, content, (2, 8)))
     details = sorted(item["detail"] for item in result.get("items", []) if item["label"] == "append")
     check(
         "query-completion-member-overloads",
         details
         == [
-            "void StringBuffer.append(RepeatIterator<string> repetitions)",
-            "void StringBuffer.append(T& value)",
-            "void StringBuffer.append(char c)",
-            "void StringBuffer.append(string s)",
+            "void StringBuf.append(RepeatIterator<string> repetitions)",
+            "void StringBuf.append(T& value)",
+            "void StringBuf.append(char c)",
+            "void StringBuf.append(string s)",
         ],
         json.dumps(details)[:300],
     )
@@ -772,7 +772,7 @@ def test_server(command, path, label):
     )
 
     member_uri = uri + ".member.cx"
-    member_content = 'void main() {\n    var buf = StringBuffer("hi");\n    buf.\n}\n'
+    member_content = 'void main() {\n    var buf = StringBuf("hi");\n    buf.\n}\n'
     session.send(
         {
             "jsonrpc": "2.0",
@@ -815,7 +815,7 @@ def test_server(command, path, label):
             "method": "textDocument/didChange",
             "params": {
                 "textDocument": {"uri": member_uri, "version": 2},
-                "contentChanges": [{"text": 'void main() {\n    var buf = StringBuffer("hi");\n    buf.append()\n}\n'}],
+                "contentChanges": [{"text": 'void main() {\n    var buf = StringBuf("hi");\n    buf.append()\n}\n'}],
             },
         }
     )
