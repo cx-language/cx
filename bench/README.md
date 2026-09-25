@@ -1,7 +1,8 @@
 # Benchmarks
 
 Internal performance tracking for the compiler and compiled programs.
-CI appends one JSON record per `main` commit to the `bench-data` branch;
+CI appends one JSON record per `main` commit to the floating `bench-data`
+tag (a tag, not a branch, so GitHub shows no "recent pushes" banner);
 the website renders history graphs at `/bench`.
 
 ## Corpus

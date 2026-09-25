@@ -303,45 +303,47 @@ jobs:
           name: bench-record
           path: bench-record
 
-      - name: Append to bench-data branch
+      - name: Append to bench-data tag
         shell: bash
         run: |
-          append() {
-            cat bench-record/bench.json >> bench.jsonl
-            git add bench.jsonl
-            git commit -m "bench: $sha"
-          }
-          # First run bootstraps the branch; an end-of-file append always
-          # conflicts under rebase, so retries reset and re-append instead.
-          git fetch origin bench-data || true
-          # --orphan keeps the main checkout in the index; drop it so the
-          # branch holds only bench.jsonl. Untracked bench-record/ survives.
-          if ! git checkout bench-data 2>/dev/null; then
-            git checkout --orphan bench-data
-            git rm -rf -q .
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           sha=$(python3 -c "import json; print(json.load(open('bench-record/bench.json'))['sha'])")
-          if grep -q "$sha" bench.jsonl 2>/dev/null; then
-            echo "commit $sha is already recorded"
-            exit 0
-          fi
-          append
+          # History lives on a floating tag, not a branch: GitHub banners
+          # every branch push ("had recent pushes") but never tags. Each run
+          # appends one commit on the tag tip; --force-with-lease keeps
+          # concurrent runs from overwriting each other.
           for _ in 1 2 3 4 5; do
-            if git push origin bench-data; then
+            # Tag fetches never overwrite a local tag, so drop ours first; a
+            # failed push leaves it pointing at the unpushed commit.
+            git tag -d bench-data 2>/dev/null || true
+            git fetch origin tag bench-data || true
+            old=$(git rev-parse --verify -q refs/tags/bench-data || true)
+            if [ -n "$old" ]; then
+              git checkout -q refs/tags/bench-data
+            else
+              # First run: build the root commit on a scratch branch, reused
+              # across retries and never pushed as a branch.
+              git checkout -q bench-data-tmp 2>/dev/null || git checkout -q --orphan bench-data-tmp
+              # --orphan keeps the main checkout in the index; drop it so the
+              # tag tree holds only bench.jsonl. Untracked bench-record/ survives.
+              git rm -rf -q .
+            fi
+            # A failed push may still have landed; never record twice.
+            if grep -q "$sha" bench.jsonl 2>/dev/null; then
+              echo "commit $sha is already recorded"
+              exit 0
+            fi
+            cat bench-record/bench.json >> bench.jsonl
+            git add bench.jsonl
+            git commit -m "bench: $sha"
+            git tag -f bench-data
+            # An empty lease expects the tag to be absent: first-run bootstrap.
+            if git push --force-with-lease=refs/tags/bench-data:"$old" origin refs/tags/bench-data; then
               pushed=1
               break
             fi
             sleep 10
-            git fetch origin bench-data
-            git reset --hard origin/bench-data
-            # A failed push may still have landed; never record twice.
-            if grep -q "$sha" bench.jsonl; then
-              pushed=1
-              break
-            fi
-            append
           done
           [ "${pushed:-0}" = 1 ]
 
@@ -440,12 +442,12 @@ jobs:
 
           touch website/build/.nojekyll
 
-      # History for the /bench graphs. Best-effort: a missing branch or
+      # History for the /bench graphs. Best-effort: a missing tag or
       # record must not fail the deploy; the page shows a stub instead.
       - name: Attach benchmark data
         run: |
-          git fetch origin bench-data --depth 1 || true
-          git show origin/bench-data:bench.jsonl > /tmp/bench.jsonl 2>/dev/null || : > /tmp/bench.jsonl
+          git fetch origin tag bench-data --depth 1 || true
+          git show refs/tags/bench-data:bench.jsonl > /tmp/bench.jsonl 2>/dev/null || : > /tmp/bench.jsonl
           python3 -c "import json; lines = [line for line in open('/tmp/bench.jsonl') if line.strip()]; json.dump([json.loads(line) for line in lines], open('website/build/bench-data.json', 'w'))" || echo '[]' > website/build/bench-data.json
 
       - name: Upload pages artifact
