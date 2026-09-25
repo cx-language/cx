@@ -1,0 +1,26 @@
+// Iterator and closure chains. Workload: lazy map/filter pipelines over a
+// large list plus a capturing closure called in a hot loop.
+// Output must be stable.
+const divisor = 7;
+const factor = 3;
+
+void main() {
+    var numbers = List<int>();
+    numbers.reserve(4000000);
+    for i in 0..4000000 {
+        numbers.push(i);
+    }
+    var total = int64(0);
+    for _ in 0..40 {
+        var selected = numbers.filter(n => n % divisor == 0).map(n => n * factor + 1).filter(n => n % 2 == 0).toList();
+        for x in selected {
+            total += x;
+        }
+    }
+    var offset = 1;
+    var adjust = ((int n) => n * factor + offset);
+    for i in 0..8000000 {
+        total += adjust(i);
+    }
+    println(total);
+}

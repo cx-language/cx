@@ -22,7 +22,7 @@ import tempfile
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CORPUS = ["sieve", "mandelbrot", "fib"]
+CORPUS = ["sieve", "mandelbrot", "fib", "wordcount", "mapfilter", "jsonparse"]
 TIMEOUT = 600
 
 

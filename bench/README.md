@@ -12,6 +12,9 @@ the website renders history graphs at `/bench`.
 | `sieve.cx` | Sieve of Eratosthenes below 1e8 | prime count |
 | `mandelbrot.cx` | Mandelbrot grid, 1000 iterations per point | checksum |
 | `fib.cx` | Naive recursive `fib(40)` | 102334155 |
+| `wordcount.cx` | Word frequencies over 4M pseudo-random words | checksum |
+| `mapfilter.cx` | map/filter chains plus capturing closure calls | checksum |
+| `jsonparse.cx` | Parse a 5000-user JSON document 100 times | checksum |
 
 Each program prints a single deterministic value. The bench script fails
 if runs disagree, since unstable output means a meaningless benchmark.

@@ -1,0 +1,60 @@
+// JSON parse and walk. Workload: a realistic generated document parsed
+// repeatedly with the stdlib JSON parser, checksummed by walking the value
+// tree. Output must be stable.
+int64 checksum(JsonValue& value) {
+    switch (value) {
+        case String s:
+            return s.size();
+        case Integer n:
+            return n;
+        case Number x:
+            return int64(x * 1000.0);
+        case Boolean b:
+            return b ? 1 : 0;
+        case Null:
+            return 0;
+        case Array items:
+            var sum = int64(0);
+            for item in items {
+                sum += checksum(item);
+            }
+            return sum;
+        case Object members:
+            var sum = int64(0);
+            for m in members {
+                sum += m.key.size() + checksum(m.value);
+            }
+            return sum;
+    }
+}
+
+StringBuf makeDocument() {
+    var doc = StringBuf();
+    doc.append("{\"users\":[");
+    for i in 0..5000 {
+        if i > 0 {
+            doc.append(",");
+        }
+        doc.append("{\"id\":");
+        doc.append(i);
+        doc.append(",\"name\":\"user");
+        doc.append(i);
+        doc.append("\",\"score\":");
+        doc.append(float(i) * 1.5);
+        doc.append(",\"active\":");
+        doc.append(i % 2 == 0 ? "true" : "false");
+        doc.append("}");
+    }
+    doc.append("],\"meta\":{\"version\":3,\"tags\":[\"alpha\",\"beta\",\"gamma\"]}}");
+    return doc;
+}
+
+void main() {
+    var text = makeDocument();
+    var total = int64(0);
+    for _ in 0..100 {
+        var parsed = unwrap(parseJson(text));
+        total += checksum(parsed);
+    }
+    println(total);
+}

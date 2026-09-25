@@ -1,0 +1,41 @@
+// Word frequency counter. Workload: string building, hashing, and hash map
+// inserts and lookups over a deterministic pseudo-random word stream.
+// Words live in an owning list; the map holds string views into them.
+// Output must be stable.
+void main() {
+    var syllables = ["al", "be", "cor", "di", "el", "for", "gi", "ha", "il", "jo", "ka", "li", "ma", "no", "or", "pa",
+        "qu", "ra", "si", "ta", "ul", "vi", "wo", "xa", "ya", "zo", "ash", "bel", "cam", "dor", "esh", "fim"];
+    var state = uint64(0x12345678);
+    var words = List<StringBuf>();
+    words.reserve(4000000);
+    var counts = Map<string, int>();
+    for _ in 0..4000000 {
+        // xorshift64: deterministic, with no overflow-checked arithmetic.
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        var a = int(state % uint64(syllables.size()));
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        var b = int(state % uint64(syllables.size()));
+        var word = StringBuf();
+        word.append(syllables[a]);
+        word.append(syllables[b]);
+        words.push(word);
+        var key = string(words[-1]);
+        var count = 0;
+        if counts.contains(key) {
+            count = counts[key]!;
+        }
+        counts.set(key, count + 1);
+    }
+    // Order-independent aggregate: distinct words, total words, sum of squares.
+    var total = int64(0);
+    var sumSquares = int64(0);
+    for entry in counts {
+        total += entry.value;
+        sumSquares += int64(entry.value) * int64(entry.value);
+    }
+    println(int64(counts.size()) * 1000000000000 + total * 1000000 + sumSquares);
+}
