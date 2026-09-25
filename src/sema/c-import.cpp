@@ -23,6 +23,7 @@
 #include <clang/Lex/PreprocessorOptions.h>
 #include <clang/Parse/ParseAST.h>
 #include <clang/Sema/Sema.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/FileSystem.h>
@@ -554,11 +555,7 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     fs::real_path(importer.filePath, importerDirectory);
     ci.getHeaderSearchOpts().AddPath(path::parent_path(importerDirectory), clang::frontend::Quoted, false, true);
 
-    for (llvm::StringRef includePath : typechecker.options.importSearchPaths) {
-        ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, true);
-        ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
-    }
-    for (llvm::StringRef includePath : getCCompilerSearchPaths()) {
+    for (llvm::StringRef includePath : llvm::concat<const std::string>(typechecker.options.importSearchPaths, getCCompilerSearchPaths())) {
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, true);
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
     }

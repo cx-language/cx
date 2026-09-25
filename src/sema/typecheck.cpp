@@ -360,25 +360,16 @@ void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
         if (Decl* assertDecl = stdModule->symbolTable.findOne("assertFail")) markReferenced(assertDecl);
     }
 
-    // Overload sets IRGen scans by parameter shape. Signatures first so the shape
-    // predicates below see resolved types, then whole-check only the overloads IRGen
-    // might call. These predicates mirror the backend scans; keep them in sync:
-    // string.init arities live in irgen-decl.cpp (emitMainArgv) and irgen-expr.cpp
-    // (emitStringLiteralExpr), the string == in irgen-stmt.cpp (emitStringSwitchStmt).
-    // The backend asserts the callees are checked, so a missed implicitUses flag
-    // fails loudly in tests instead of miscompiling.
+    // Overload sets IRGen scans by parameter shape. Ensure each signature before
+    // reading it, then whole-check only the overloads IRGen might call. These
+    // predicates mirror the backend scans; keep them in sync: string.init arities
+    // live in irgen-decl.cpp (emitMainArgv) and irgen-expr.cpp (emitStringLiteralExpr),
+    // the string == in irgen-stmt.cpp (emitStringSwitchStmt). The backend asserts the
+    // callees are checked, so a missed implicitUses flag fails loudly in tests
+    // instead of miscompiling.
     if (usesArgv || implicitUses.stringLiteral) {
         for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("string.init")) {
             ensureSignature(*decl);
-        }
-    }
-    if (implicitUses.stringSwitch) {
-        for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("==")) {
-            ensureSignature(*decl);
-        }
-    }
-    if (usesArgv || implicitUses.stringLiteral) {
-        for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("string.init")) {
             auto* ctor = llvm::dyn_cast<ConstructorDecl>(decl);
             if (!ctor) continue;
             auto params = ctor->getParams();
@@ -388,6 +379,7 @@ void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
     }
     if (implicitUses.stringSwitch) {
         for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("==")) {
+            ensureSignature(*decl);
             auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
             if (!functionDecl) continue;
             auto params = functionDecl->getParams();
