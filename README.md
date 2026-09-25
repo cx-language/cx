@@ -112,6 +112,8 @@ Then invoke the following from the `build` directory:
 cmake --build . --target check
 ```
 
+Configure with `-DCMAKE_BUILD_TYPE=Release` for running tests, since the
+unoptimized compiler is several times slower per test invocation.
 This runs the full suite via CTest: the lit/compiler tests, the example programs (LLVM and C backends),
 the documentation snippets, and the language server end-to-end tests.
 Run a subset from the build directory with e.g. `ctest -R 'docs-snippets'`.
