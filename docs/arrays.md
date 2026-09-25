@@ -101,6 +101,32 @@ Sizes must match; mismatched sizes are a compile error. Only arrays of
 known (constant) size support element-wise ops; generic sizes (`T[N]` with
 symbolic `N`) cannot unroll and are rejected with a clear error.
 
+## Vector operations
+
+Arrays of any size double as vectors: `dot()` returns the dot product,
+`length()` the Euclidean length, and `normalized()` a unit-length copy
+(the receiver is left unchanged). `normalized()` is only meaningful for
+floating-point elements. The free function `cross()` returns the cross
+product of two 3-element arrays.
+
+```cs
+void main() {
+    float[3] a = [1.0, 2.0, 3.0];
+    float[3] b = [4.0, 5.0, 6.0];
+
+    println(a.dot(b)); // prints 32
+    println(a.length()); // prints 3.7416573867739413
+
+    float[3] n = a.normalized();
+    println(n[0]); // prints 0.26726124
+
+    float[3] c = cross(a, b);
+    println(c[0]); // prints -3
+    println(c[1]); // prints 6
+    println(c[2]); // prints -3
+}
+```
+
 ## Swizzles
 
 Arrays of up to 4 numeric elements support GLSL-style swizzles:

@@ -13,15 +13,15 @@ float randomFloat(float a, float b) {
 }
 
 struct Asteroid {
-    Vector2<float> position;
-    Vector2<float> velocity;
+    float[2] position;
+    float[2] velocity;
     float rotation;
     float rotationSpeed;
     float size;
-    Vector2<float>[8] vertices;
+    float[2][8] vertices;
 
     Asteroid() {
-        position = Vector2(randomFloat(0, width), randomFloat(0, height));
+        position = [randomFloat(0, width), randomFloat(0, height)];
         var direction = randomFloat(-pi, pi);
         var speed = randomFloat(minSpeed, maxSpeed);
         velocity = vectorFromAngle(direction) * speed;
@@ -38,20 +38,20 @@ struct Asteroid {
     }
 
     void update(float delta) {
-        position.x += velocity.x * delta;
-        position.y += velocity.y * delta;
+        position[0] += velocity.x * delta;
+        position[1] += velocity.y * delta;
         rotation += rotationSpeed * delta;
 
-        while position.x < 0 position.x += width;
-        while position.y < 0 position.y += height;
-        while position.x >= width position.x -= width;
-        while position.y >= height position.y -= height;
+        while position.x < 0 position[0] += width;
+        while position.y < 0 position[1] += height;
+        while position.x >= width position[0] -= width;
+        while position.y >= height position[1] -= height;
     }
 
     void render(SDL_Renderer* renderer) {
         for i in -1...1 {
             for j in -1...1 {
-                var diff = Vector2(float(i) * width, float(j) * height);
+                var diff = [float(i) * width, float(j) * height];
 
                 for k in 0..vertices.size() {
                     var l = (k + 1) % vertices.size();

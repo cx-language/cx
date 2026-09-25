@@ -1,18 +1,18 @@
-// 2D vector helpers built on the standard Vector2 type.
+// 2D vector helpers built on float[2] arrays.
 
-Vector2<float> vectorFromAngle(float angle) {
-    return Vector2(cos(angle), sin(angle));
+float[2] vectorFromAngle(float angle) {
+    return [cos(angle), sin(angle)];
 }
 
-Vector2<float> rotated(Vector2<float> v, public Vector2<float> origin, public float angle) {
+float[2] rotated(float[2] v, public float[2] origin, public float angle) {
     var dx = v.x - origin.x;
     var dy = v.y - origin.y;
     var c = cos(angle);
     var s = sin(angle);
-    return Vector2(c * dx - s * dy + origin.x, s * dx + c * dy + origin.y);
+    return [c * dx - s * dy + origin.x, s * dx + c * dy + origin.y];
 }
 
-float distance(Vector2<float> a, Vector2<float> b) {
+float distance(float[2] a, float[2] b) {
     var dx = a.x - b.x;
     var dy = a.y - b.y;
     return sqrt(dx * dx + dy * dy);

@@ -749,6 +749,9 @@ bool Parser::shouldParseVarStmt() {
     int offset = 2;
 
     while (true) {
+        // A compound assignment before any '=' or ';' is an expression statement (e.g. 'a[i] += b * c'),
+        // never a declaration; without this the trailing 'b * c' looks like a pointer declarator.
+        if (isCompoundAssignmentOperator(lookAhead(offset))) return false;
         if (lookAhead(offset).is(Token::Assignment)) {
             if (lookAhead(offset - 1).is(Token::Identifier)) {
                 // Walk back over any ', name' pairs of a multi-variable declaration.

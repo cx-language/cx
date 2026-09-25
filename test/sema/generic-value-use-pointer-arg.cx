@@ -1,0 +1,16 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// Calling an Array method that uses its element type as a value with a
+// non-basic element type must fail with a clean error, not crash the compiler.
+
+// CHECK-NOT: generic-value-use-pointer-arg.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK: Array.cx:{{[0-9]+}}:{{[0-9]+}}: error: unknown identifier 'T'
+// CHECK-NOT: error:
+// CHECK-NOT: generic-value-use-pointer-arg.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    var x = 1;
+    var y = 2;
+    int*[2] a = [&x, &y];
+    a.normalized();
+}

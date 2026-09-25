@@ -68,13 +68,13 @@ void destroyMesh(Mesh& mesh) {
     glDeleteBuffers(1, &mesh.uvVbo);
 }
 
-void pushCorner(List<float>& dst, Vector3<float> v) {
+void pushCorner(List<float>& dst, float[3] v) {
     dst.push(v.x);
     dst.push(v.y);
     dst.push(v.z);
 }
 
-void pushTri(List<float>& positions, List<float>& normals, Vector3<float> a, Vector3<float> b, Vector3<float> c, Vector3<float> n) {
+void pushTri(List<float>& positions, List<float>& normals, float[3] a, float[3] b, float[3] c, float[3] n) {
     pushCorner(positions, a);
     pushCorner(positions, b);
     pushCorner(positions, c);
@@ -83,20 +83,20 @@ void pushTri(List<float>& positions, List<float>& normals, Vector3<float> a, Vec
     pushCorner(normals, n);
 }
 
-void pushQuad(List<float>& positions, List<float>& normals, Vector3<float> a, Vector3<float> b, Vector3<float> c, Vector3<float> d, Vector3<float> n) {
+void pushQuad(List<float>& positions, List<float>& normals, float[3] a, float[3] b, float[3] c, float[3] d, float[3] n) {
     pushTri(positions, normals, a, b, c, n);
     pushTri(positions, normals, a, c, d, n);
 }
 
-void pushLine(List<float>& positions, List<float>& normals, Vector3<float> a, Vector3<float> b) {
+void pushLine(List<float>& positions, List<float>& normals, float[3] a, float[3] b) {
     pushCorner(positions, a);
     pushCorner(positions, b);
-    var up = Vector3(0.0, 1.0, 0.0);
+    var up = [0.0, 1.0, 0.0];
     pushCorner(normals, up);
     pushCorner(normals, up);
 }
 
-void pushLineColor(List<float>& colors, Vector3<float> color) {
+void pushLineColor(List<float>& colors, float[3] color) {
     for _ in 0..2 {
         colors.push(color.x);
         colors.push(color.y);

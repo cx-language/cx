@@ -501,7 +501,7 @@ STD_CATEGORIES = [
         ["Addable.cx", "Comparable.cx", "Copyable.cx", "Equatable.cx", "Hashable.cx", "Printable.cx"],
     ),
     ("Input/output", ["stdio.cx", "FileStream.cx"]),
-    ("Math & algorithms", ["math.cx", "Vector.cx", "algorithm.cx"]),
+    ("Math & algorithms", ["math.cx", "algorithm.cx"]),
     ("Memory", ["Arena.cx", "allocate.cx"]),
     ("Errors", ["error.cx", "Result.cx"]),
     ("Filesystem & processes", ["fs.cx", "path.cx", "process.cx"]),

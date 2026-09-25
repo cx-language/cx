@@ -489,7 +489,7 @@ def test_completion_members(cx_lsp, path):
     # Array value: only its member functions.
     content = "void main() {\n    var arr = [1, 2, 3];\n    arr.\n}\n"
     items = labels_for(content, (2, 8))
-    check("query-completion-member-array", set(items) == {"data", "size", "iterator"}, json.dumps(sorted(items))[:300])
+    check("query-completion-member-array", set(items) == {"data", "size", "iterator", "dot", "length", "normalized"}, json.dumps(sorted(items))[:300])
 
     # Array pointer: only the compiler-known data() method.
     content = "void main() {\n    int[*] p = [1, 2, 3];\n    p.\n}\n"

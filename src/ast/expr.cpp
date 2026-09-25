@@ -397,7 +397,14 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
             newExpr->endLocation = varExpr->endLocation;
             return newExpr;
         }
-        llvm::StringRef identifier = it != genericArgs.end() && it->second.isType() ? it->second.getType().getName() : varExpr->identifier;
+        // A type parameter used as a value (e.g. T in T(x)) instantiates to the
+        // argument's name, but only basic types have a usable name; anything else
+        // (e.g. a pointer) keeps the parameter name, producing an "unknown identifier"
+        // error if that method is called with such an argument instead of crashing.
+        llvm::StringRef identifier = varExpr->identifier;
+        if (it != genericArgs.end() && it->second.isType() && it->second.getType().isBasicType()) {
+            identifier = it->second.getType().getName();
+        }
         auto* newExpr = makeAST<VarExpr>(identifier, varExpr->location);
         newExpr->endLocation = varExpr->endLocation;
         return newExpr;

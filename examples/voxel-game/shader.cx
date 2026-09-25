@@ -68,7 +68,7 @@ void setMat4(int location, Mat4& m) {
     glUniformMatrix4fv(location, 1, GL_FALSE, m.m.data());
 }
 
-void setVec3(int location, Vector3<float>& v) {
+void setVec3(int location, float[3]& v) {
     glUniform3f(location, v.x, v.y, v.z);
 }
 
@@ -80,9 +80,9 @@ void setInt(int location, int value) {
     glUniform1i(location, value);
 }
 
-void setBlockFog(BlockUniforms& u, Vector3<float>& eye) {
+void setBlockFog(BlockUniforms& u, float[3]& eye) {
     setVec3(u.cameraPos, eye);
-    var sky = Vector3(0.45, 0.65, 1.0);
+    var sky = [0.45, 0.65, 1.0];
     setVec3(u.fogColor, sky);
     setFloat(u.fogNear, 40.0);
     setFloat(u.fogFar, 160.0);

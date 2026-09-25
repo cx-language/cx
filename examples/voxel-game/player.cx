@@ -12,23 +12,23 @@ struct Input: Copyable {
 }
 
 struct Player: Copyable {
-    Vector3<float> pos;
-    Vector3<float> vel;
+    float[3] pos;
+    float[3] vel;
     float yaw;
     float pitch;
     bool onGround;
 }
 
-Vector3<float> lookDir(Player& p) {
+float[3] lookDir(Player& p) {
     var cp = cos(p.pitch);
-    return Vector3(sin(p.yaw) * cp, sin(p.pitch), -cos(p.yaw) * cp);
+    return [sin(p.yaw) * cp, sin(p.pitch), -cos(p.yaw) * cp];
 }
 
-Vector3<float> eyePos(Player& p) {
-    return Vector3(p.pos.x, p.pos.y + 1.6, p.pos.z);
+float[3] eyePos(Player& p) {
+    return [p.pos.x, p.pos.y + 1.6, p.pos.z];
 }
 
-bool boxCollides(World& w, Vector3<float> pos) {
+bool boxCollides(World& w, float[3] pos) {
     var eps = 0.001;
     var x0 = int(floor(pos.x - 0.3 + eps));
     var x1 = int(floor(pos.x + 0.3 - eps));
@@ -77,11 +77,11 @@ void moveAxis(World& w, Player& p, int axis, float delta) {
         var step = clamp(remaining, -0.3, 0.3);
         var next = p.pos;
         if axis == 0 {
-            next.x += step;
+            next[0] += step;
         } else if axis == 1 {
-            next.y += step;
+            next[1] += step;
         } else {
-            next.z += step;
+            next[2] += step;
         }
         if !boxCollides(w, next) {
             p.pos = next;
@@ -90,26 +90,26 @@ void moveAxis(World& w, Player& p, int axis, float delta) {
         }
         if axis == 0 {
             if step > 0.0 {
-                p.pos.x = floor(next.x + 0.3) - 0.3 - 0.001;
+                p.pos[0] = floor(next.x + 0.3) - 0.3 - 0.001;
             } else {
-                p.pos.x = floor(next.x - 0.3) + 1.0 + 0.3 + 0.001;
+                p.pos[0] = floor(next.x - 0.3) + 1.0 + 0.3 + 0.001;
             }
-            p.vel.x = 0.0;
+            p.vel[0] = 0.0;
         } else if axis == 1 {
             if step > 0.0 {
-                p.pos.y = floor(next.y + 1.8) - 1.8 - 0.001;
+                p.pos[1] = floor(next.y + 1.8) - 1.8 - 0.001;
             } else {
-                p.pos.y = floor(next.y) + 1.0 + 0.001;
+                p.pos[1] = floor(next.y) + 1.0 + 0.001;
                 p.onGround = true;
             }
-            p.vel.y = 0.0;
+            p.vel[1] = 0.0;
         } else {
             if step > 0.0 {
-                p.pos.z = floor(next.z + 0.3) - 0.3 - 0.001;
+                p.pos[2] = floor(next.z + 0.3) - 0.3 - 0.001;
             } else {
-                p.pos.z = floor(next.z - 0.3) + 1.0 + 0.3 + 0.001;
+                p.pos[2] = floor(next.z - 0.3) + 1.0 + 0.3 + 0.001;
             }
-            p.vel.z = 0.0;
+            p.vel[2] = 0.0;
         }
         return;
     }
@@ -125,9 +125,9 @@ void updatePlayer(World& w, Player& p, Input& input, float dt) {
         p.pitch = -1.55;
     }
 
-    var fwd = Vector3(sin(p.yaw), 0.0, -cos(p.yaw));
-    var right = Vector3(cos(p.yaw), 0.0, sin(p.yaw));
-    var wish = Vector3(0.0, 0.0, 0.0);
+    var fwd = [sin(p.yaw), 0.0, -cos(p.yaw)];
+    var right = [cos(p.yaw), 0.0, sin(p.yaw)];
+    var wish = [0.0, 0.0, 0.0];
     if input.forward {
         wish = wish + fwd;
     }
@@ -147,23 +147,23 @@ void updatePlayer(World& w, Player& p, Input& input, float dt) {
     if wish.dot(wish) > 0.0 {
         wish = wish.normalized() * speed;
     }
-    p.vel.x = wish.x;
-    p.vel.z = wish.z;
+    p.vel[0] = wish.x;
+    p.vel[2] = wish.z;
 
     var jumped = input.jump && p.onGround;
     if jumped {
-        p.vel.y = 8.0;
+        p.vel[1] = 8.0;
         p.onGround = false;
     } else if p.onGround {
         // Resting contact holds still instead of integrating gravity:
         // re-falling onto the ground every frame sinks below the
         // collision threshold on short frames and snaps back, which
         // wobbles the camera.
-        p.vel.y = 0.0;
+        p.vel[1] = 0.0;
     } else {
-        p.vel.y -= 22.0 * dt;
+        p.vel[1] -= 22.0 * dt;
         if p.vel.y < -30.0 {
-            p.vel.y = -30.0;
+            p.vel[1] = -30.0;
         }
     }
 
@@ -180,7 +180,7 @@ void updatePlayer(World& w, Player& p, Input& input, float dt) {
 
 // Amanatides and Woo voxel traversal. Returns the hit cell and the
 // previously visited (empty) cell for placement.
-(bool hit, int x, int y, int z, int px, int py, int pz) raycastVoxel(World& w, Vector3<float> origin, Vector3<float> dir, float maxDist) {
+(bool hit, int x, int y, int z, int px, int py, int pz) raycastVoxel(World& w, float[3] origin, float[3] dir, float maxDist) {
     var x = int(floor(origin.x));
     var y = int(floor(origin.y));
     var z = int(floor(origin.z));

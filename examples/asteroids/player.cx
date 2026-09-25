@@ -6,24 +6,24 @@ const deceleration = 0.002;
 const playerSize = 10;
 
 struct Player {
-    Vector2<float> position;
-    Vector2<float> velocity;
+    float[2] position;
+    float[2] velocity;
     float direction;
     List<Missile> missiles;
     float timeSinceLastMissileShot;
 
     Player() {
-        position = Vector2(width / 2.0, height / 2.0);
-        velocity = Vector2(0.0, 0.0);
+        position = [width / 2.0, height / 2.0];
+        velocity = [0.0, 0.0];
         direction = 0;
         missiles = List();
         timeSinceLastMissileShot = 0;
     }
 
     void render(SDL_Renderer* renderer) {
-        var a = Vector2(position.x - playerSize, position.y - playerSize);
-        var b = Vector2(position.x - playerSize, position.y + playerSize);
-        var c = Vector2(position.x + playerSize + playerSize, position.y);
+        var a = [position.x - playerSize, position.y - playerSize];
+        var b = [position.x - playerSize, position.y + playerSize];
+        var c = [position.x + playerSize + playerSize, position.y];
 
         a = rotated(a, origin = position, angle = direction);
         b = rotated(b, origin = position, angle = direction);
@@ -31,7 +31,7 @@ struct Player {
 
         for i in -1...1 {
             for j in -1...1 {
-                var diff = Vector2(float(i) * width, float(j) * height);
+                var diff = [float(i) * width, float(j) * height];
                 var aa = a + diff;
                 var bb = b + diff;
                 var cc = c + diff;
@@ -54,26 +54,26 @@ struct Player {
             direction -= turningSpeed * delta;
         }
         if isKeyDown(SDL_SCANCODE_UP) {
-            velocity.x += cos(direction) * movementSpeed * delta;
-            velocity.y += sin(direction) * movementSpeed * delta;
+            velocity[0] += cos(direction) * movementSpeed * delta;
+            velocity[1] += sin(direction) * movementSpeed * delta;
         }
         if isKeyDown(SDL_SCANCODE_DOWN) {
-            velocity.x -= cos(direction) * movementSpeed * delta;
-            velocity.y -= sin(direction) * movementSpeed * delta;
+            velocity[0] -= cos(direction) * movementSpeed * delta;
+            velocity[1] -= sin(direction) * movementSpeed * delta;
         }
         if isKeyDown(SDL_SCANCODE_SPACE) {
             shootMissile();
         }
 
-        position.x += velocity.x * delta;
-        position.y += velocity.y * delta;
-        velocity.x *= 1 - deceleration * delta;
-        velocity.y *= 1 - deceleration * delta;
+        position[0] += velocity.x * delta;
+        position[1] += velocity.y * delta;
+        velocity[0] *= 1 - deceleration * delta;
+        velocity[1] *= 1 - deceleration * delta;
 
-        while position.x < 0 position.x += width;
-        while position.y < 0 position.y += height;
-        while position.x >= width position.x -= width;
-        while position.y >= height position.y -= height;
+        while position.x < 0 position[0] += width;
+        while position.y < 0 position[1] += height;
+        while position.x >= width position[0] -= width;
+        while position.y >= height position[1] -= height;
 
         timeSinceLastMissileShot += delta;
 

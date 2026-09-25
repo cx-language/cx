@@ -1,5 +1,5 @@
 // 3D math: vectors, matrices, and transforms (column-major matrices).
-// Vectors come from the standard library (Vector3).
+// Vectors are float[3] arrays with the standard dot/cross/length/normalized operations.
 
 struct Mat4: Copyable {
     float[16] m;
@@ -40,10 +40,10 @@ Mat4 mat4Perspective(float fovY, float aspect, float near, float far) {
     return result;
 }
 
-Mat4 mat4LookAt(Vector3<float> eye, Vector3<float> center, Vector3<float> up) {
+Mat4 mat4LookAt(float[3] eye, float[3] center, float[3] up) {
     var f = (center - eye).normalized();
-    var s = f.cross(up).normalized();
-    var u = s.cross(f);
+    var s = cross(f, up).normalized();
+    var u = cross(s, f);
     var result = mat4Identity();
     result.m[0] = s.x;
     result.m[4] = s.y;

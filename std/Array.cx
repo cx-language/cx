@@ -19,4 +19,35 @@ struct Array<T, int N> {
     ArrayIterator<T> iterator() {
         return ArrayIterator(this);
     }
+
+    /// Returns the dot product of this array and `other`.
+    T dot(T[N] other) {
+        T sum = 0;
+        for i in 0..N {
+            sum += this[i] * other[i];
+        }
+        return sum;
+    }
+
+    /// Returns the Euclidean length of this array.
+    float64 length() {
+        return sqrt(float64(dot(this)));
+    }
+
+    /// Returns this array scaled to unit length.
+    /// Only meaningful for floating-point elements.
+    T[N] normalized() {
+        // Inferred `var result = this` would alias the receiver; annotate to copy.
+        T[N] result = this;
+        return result / T(length());
+    }
+}
+
+/// Returns the cross product of two 3-element arrays.
+T[3] cross<T>(T[3] a, T[3] b) {
+    return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ];
 }

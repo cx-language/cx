@@ -1,0 +1,21 @@
+// RUN: %cx -parse %s
+
+struct S {
+    float[2] velocity;
+    void f(float delta, float ms) {
+        velocity[0] += ms * delta;
+        velocity[1] -= ms * delta;
+        velocity[0] *= ms * delta;
+        velocity[1] /= ms * delta;
+        velocity[0] %= ms * delta;
+    }
+}
+
+void g() {
+    float[2] v;
+    int x = 1;
+    int* p = null;
+}
+
+void main() {
+}

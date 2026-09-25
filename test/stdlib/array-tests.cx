@@ -10,6 +10,12 @@ void main() {
     testNested();
     testInference();
     testValueConstruction();
+    testDot();
+    testLength();
+    testNormalized();
+    testCross();
+    testPointerElements();
+    testConst();
 }
 
 void testConstruction() {
@@ -120,4 +126,69 @@ void testValueConstruction() {
     int[2] m = [3, 4];
     m.data()[0] = 5;
     assert(m[0] == 5);
+}
+
+void testDot() {
+    float[2] a = [1.0, 2.0];
+    float[2] b = [3.0, 4.0];
+    assert(a.dot(b) == 11.0);
+    int[2] ai = [1, 2];
+    int[2] bi = [3, 4];
+    assert(ai.dot(bi) == 11);
+    float[3] c = [1.0, 2.0, 3.0];
+    float[3] d = [4.0, 5.0, 6.0];
+    assert(c.dot(d) == 32.0);
+}
+
+void testLength() {
+    float[2] a = [3.0, 4.0];
+    assert(a.length() == 5.0);
+    int[2] ai = [3, 4];
+    assert(ai.length() == 5.0);
+    float[3] b = [1.0, 2.0, 2.0];
+    assert(b.length() == 3.0);
+}
+
+void testNormalized() {
+    float[2] a = [3.0, 4.0];
+    var n = a.normalized();
+    assert(n[0] == 0.6 && n[1] == 0.8);
+    assert(a[0] == 3.0 && a[1] == 4.0);
+    float[3] b = [1.0, 2.0, 2.0];
+    var m = b.normalized();
+    assert(m[2] == m[1] && m[1] == 2.0 * m[0]);
+}
+
+void testCross() {
+    float[3] x = [1.0, 0.0, 0.0];
+    float[3] y = [0.0, 1.0, 0.0];
+    var z = cross(x, y);
+    assert(z[0] == 0.0 && z[1] == 0.0 && z[2] == 1.0);
+    int[3] xi = [1, 0, 0];
+    int[3] yi = [0, 1, 0];
+    var zi = cross(xi, yi);
+    assert(zi[0] == 0 && zi[1] == 0 && zi[2] == 1);
+}
+
+void testPointerElements() {
+    // Instantiating generic Array methods with a non-basic element type must not crash.
+    var x = 1;
+    var y = 2;
+    int*[2] ptrs = [&x, &y];
+    assert(ptrs.size() == 2);
+    assert(ptrs[0] == &x);
+    assert(ptrs[1] == &y);
+}
+
+void testConst() {
+    const float[2] a = [3.0, 4.0];
+    const float[2] b = [1.0, 2.0];
+    assert(a.dot(b) == 11.0);
+    assert(a.length() == 5.0);
+    var n = a.normalized();
+    assert(n[0] == 0.6 && n[1] == 0.8);
+    const float[3] x = [1.0, 0.0, 0.0];
+    const float[3] y = [0.0, 1.0, 0.0];
+    var z = cross(x, y);
+    assert(z[0] == 0.0 && z[1] == 0.0 && z[2] == 1.0);
 }
