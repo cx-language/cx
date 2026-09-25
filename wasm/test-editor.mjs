@@ -6,12 +6,21 @@ import vm from "node:vm";
 const repoRoot = new URL("..", import.meta.url).pathname;
 
 function makeElement(tag) {
+    const classes = [];
     const el = {
         tagName: tag,
         children: [],
         style: {},
         className: "",
-        innerText: "",
+        classList: {
+            add(...names) {
+                classes.push(...names);
+            },
+            contains(name) {
+                return classes.includes(name);
+            },
+        },
+        _text: "",
         disabled: false,
         blurred: false,
         parentNode: null,
@@ -72,7 +81,19 @@ function makeElement(tag) {
             el.onclick && el.onclick();
         },
         attrsId: null,
+        setAttribute() {},
     };
+    // innerText renders the element's children like the real DOM, so the
+    // output container reads back the concatenated stdout/stderr divs.
+    Object.defineProperty(el, "innerText", {
+        get() {
+            return el.children.map((c) => c.innerText).join("") + el._text;
+        },
+        set(v) {
+            el.children = [];
+            el._text = v;
+        },
+    });
     return el;
 }
 
@@ -88,6 +109,7 @@ function check(condition, message) {
 
 // Fake CodeMirror.
 let editorValue = "";
+const widgets = [];
 const fakeEditor = {
     refresh() {},
     getValue() {
@@ -96,7 +118,8 @@ const fakeEditor = {
     setValue(v) {
         editorValue = v;
     },
-    addLineWidget() {
+    addLineWidget(line, node) {
+        widgets.push({ line, text: node.innerText, node });
         return { clear() {} };
     },
 };
@@ -116,6 +139,7 @@ block.innerText = "old code";
 showcase.appendChild(block);
 
 const ranWith = [];
+let scriptedResult = null;
 const sandbox = {
     console,
     setTimeout: (fn) => 0,
@@ -134,7 +158,7 @@ const sandbox = {
         isSupported: () => true,
         run: async (code) => {
             ranWith.push(code);
-            return { stdout: "ran: " + code, stderr: "" };
+            return scriptedResult || { stdout: "ran: " + code, stderr: "" };
         },
     },
     document: {
@@ -146,6 +170,11 @@ const sandbox = {
             return [block];
         },
         createElement: makeElement,
+        createTextNode(text) {
+            const node = makeElement("#text");
+            node.innerText = text;
+            return node;
+        },
     },
 };
 sandbox.globalThis = sandbox;
@@ -175,6 +204,40 @@ await new Promise((resolve) => setTimeout(resolve, 10));
 
 check(editorValue === "sieve code", "keyboard switching sets editor content");
 check(selector.blurred === false, "focus is kept after keyboard selection");
+
+// Diagnostic widgets: the compiler underlines ranges with '~' and points
+// with '^'; both must render without an "undefined" prefix.
+const runButton = showcase.children.find((c) => c.tagName === "button");
+async function runWithStderr(stderr) {
+    widgets.length = 0;
+    scriptedResult = { stdout: "", stderr };
+    runButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    scriptedResult = null;
+}
+
+await runWithStderr(
+    "main.cx:1:42: error: unknown identifier 'isEven'\n" +
+        "void main() { var d = List<int>().filter(isEven); }\n" +
+        "                                         ~~~~~~\n"
+);
+check(widgets.length === 1, "range diagnostic produces one widget");
+check(widgets[0].line === 0, "widget is placed on the error line (0-based)");
+check(
+    widgets[0].text === " ".repeat(41) + "^ error: unknown identifier 'isEven'",
+    "tilde-underlined diagnostic keeps its indent, got: " + JSON.stringify(widgets[0].text)
+);
+check(!widgets[0].text.includes("undefined"), "widget text has no undefined prefix");
+check(widgets[0].node.classList.contains("error"), "error diagnostic gets the error class");
+
+await runWithStderr("main.cx:2:5: warning: unused variable 'x'\n    var x = 1;\n        ^\n");
+check(widgets.length === 1, "caret diagnostic produces one widget");
+check(widgets[0].text === "        ^ warning: unused variable 'x'", "caret diagnostic keeps its indent, got: " + JSON.stringify(widgets[0].text));
+check(widgets[0].node.classList.contains("warning"), "warning diagnostic gets the warning class");
+
+await runWithStderr("main.cx:1:1: error: something broke\n");
+check(widgets.length === 1, "context-less diagnostic produces one widget");
+check(widgets[0].text === "^ error: something broke", "context-less diagnostic has no undefined prefix, got: " + JSON.stringify(widgets[0].text));
 
 if (failures > 0) {
     console.error(failures + " test(s) failed");

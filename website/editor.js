@@ -90,12 +90,14 @@ function initializeCodeEditor(block) {
     var widgets = [];
 
     function highlightError() {
-        var regex = /^main\.cx:(\d+):(\d+): (.*)(?:\n.*\n([ \t]*)\^)?/gm;
+        // The compiler underlines ranges with '~' and points with '^';
+        // diagnostics without source context have neither.
+        var regex = /^main\.cx:(\d+):(\d+): (.*)(?:\n.*\n([ \t]*)[~^])?/gm;
         var match;
         while ((match = regex.exec(output.innerText))) {
             var [, line, column, message, indent] = match;
             var node = document.createElement("div");
-            node.appendChild(document.createTextNode(indent + "^ " + message));
+            node.appendChild(document.createTextNode((indent || "") + "^ " + message));
             node.classList.add("diagnostic", message.startsWith("warning") ? "warning" : "error");
             widgets.push(editor.addLineWidget(line - 1, node, true));
         }
