@@ -162,6 +162,42 @@ def page_links(outpath):
 if "##PAGELINKS##" in template:
     template = template.replace("##PAGELINKS##", page_links(outpath))
 
+
+def docs_order():
+    """Guide reading order: sidebar links backed by a docs/ source file."""
+    toc = open("toc.html").read()
+    ids = re.findall(r'href="\./([^"#]+)"', toc)
+    return [page for page in ids if os.path.isfile("../docs/%s.md" % page)]
+
+
+def page_title(page):
+    with open("../docs/%s.md" % page) as file:
+        for line in file:
+            if line.startswith("# "):
+                return re.sub(r"^\[(.*)\]\(.*", r"\1", line[2:].strip())
+    return page
+
+
+def next_page(outpath):
+    """Next-button for guide pages; API docs and the front page get none."""
+    if "/" in outpath or outpath == "index":
+        return ""
+    order = docs_order()
+    if outpath not in order:
+        return ""
+    following = order[order.index(outpath) + 1 :]
+    if not following:
+        return ""
+    target = following[0]
+    return '<nav class="next-page"><a class="button" href="./%s">Next: %s →</a></nav>' % (
+        target,
+        html.escape(page_title(target)),
+    )
+
+
+if "##NEXTPAGE##" in template:
+    template = template.replace("##NEXTPAGE##", next_page(outpath))
+
 showcase = [
     ("Filter and map", "filter-map.cx"),
     ("Tagged unions", "tagged-union.cx"),

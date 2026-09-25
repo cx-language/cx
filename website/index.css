@@ -663,6 +663,17 @@ button.run:active::before {
     margin-left: 16px;
 }
 
+.next-page {
+    margin: 0 0 48px;
+    text-align: right;
+}
+
+@media screen and (min-width: 768px) {
+    .next-page {
+        grid-column: 2;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         transition: none !important;
