@@ -74,6 +74,7 @@ tests below. xcc is MIT licensed; see its repository for attribution.
 node wasm/test-editor.mjs
 node wasm/test-playground.mjs
 node wasm/test-playground-worker.mjs
+node wasm/test-search.mjs
 
 # Needs an xcc checkout or a dist directory (stages the real cc.wasm):
 node wasm/test-wasi-shim.mjs <xcc-dir-or-dist>
@@ -87,7 +88,8 @@ node wasm/smoke-playground.mjs wasm/dist
 widgets, live checks) with a fake DOM and a mocked playground.
 `test-playground-worker.mjs` covers the worker protocol's compile-only paths
 with a stubbed pipeline, and `test-playground.mjs` covers the main-thread
-run/check timeout behavior with a stubbed worker. `test-wasi-shim.mjs`
+run/check timeout behavior with a stubbed worker. `test-search.mjs` covers
+the site search with a fake DOM and a stubbed index. `test-wasi-shim.mjs`
 compiles the committed fixture (`wasm/fixtures/smoke.c`,
 representative cx output) with the real `cc.wasm` on the real shim and runs
 the result. `test-pipeline.mjs` additionally covers the shared pipeline

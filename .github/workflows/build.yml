@@ -300,6 +300,7 @@ jobs:
           node wasm/test-editor.mjs
           node wasm/test-playground.mjs
           node wasm/test-playground-worker.mjs
+          node wasm/test-search.mjs
           node wasm/test-wasi-shim.mjs wasm/dist
           node wasm/test-pipeline.mjs wasm/dist
           node wasm/smoke-playground.mjs wasm/dist

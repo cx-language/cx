@@ -81,9 +81,11 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
 
     if [ "$relpath" = "index" ]; then
         title="cx Programming Language"
+        body_class="frontpage"
     else
         # The first '# ' heading is the section name (unwrap links: '# [List](...)' -> 'List').
         title="cx - $(sed -n 's/^# //p' "$file" | head -n 1 | sed 's/^\[\(.*\)\](.*/\1/')"
+        body_class=""
     fi
 
     # The std index page lives at std/index.html: build/std.html would be
@@ -103,7 +105,7 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
         *.md) from="markdown-smart" ;;
         *) from="html" ;;
     esac
-    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
+    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title" --metadata body-class="$body_class"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
@@ -235,6 +237,9 @@ if outpath == "index":
         file.write("var CxExamples = " + json.dumps(examples) + ";\n")
 EOF
 done
+
+# Search index over the docs and generated reference sources.
+python3 generate_search_index.py || exit
 
 cp -r *.css *.js lib build
 
