@@ -10,6 +10,10 @@ void main() {
     testIterator();
     testEmptyMapIterator();
     testUnitMapIterator();
+    testRemoveReturnValue();
+    testClear();
+    testReserve();
+    testAllAnyNone();
 }
 
 void testInsert() {
@@ -43,7 +47,7 @@ void testResize() {
         var lol = StringBuf();
 
         for _ in 0..(i+1) {
-            lol.append('a');
+            lol.push('a');
         }
 
         map.insert(lol, i);
@@ -133,4 +137,57 @@ void testUnitMapIterator() {
     }
 
     assert(count == 1);
+}
+
+void testRemoveReturnValue() {
+    var map = Map<string, int>();
+    map.insert("ok", 2);
+
+    assert(map.remove("ok")! == 2);
+    assert(map.size() == 0);
+    assert(map.remove("ok") == null);
+    assert(map.size() == 0);
+}
+
+void testClear() {
+    var map = Map<string, int>();
+    map.insert("a", 1);
+    map.insert("b", 2);
+    var capacity = map.capacity();
+
+    map.clear();
+    assert(map.size() == 0);
+    assert(map.empty());
+    assert(map.capacity() == capacity);
+    assert(!map.contains("a"));
+
+    map.insert("c", 3);
+    assert(map["c"]! == 3);
+}
+
+void testReserve() {
+    var map = Map<string, int>();
+    map.reserve(1000);
+    assert(map.capacity() >= 1000);
+
+    map.insert("a", 1);
+    assert(map["a"]! == 1);
+    assert(map.capacity() >= 1000);
+}
+
+void testAllAnyNone() {
+    var map = Map<string, int>();
+    map.insert("a", 2);
+    map.insert("b", 4);
+
+    assert(map.all(e => e.value % 2 == 0));
+    assert(!map.all(e => e.value > 2));
+    assert(map.any(e => e.key == "b"));
+    assert(!map.any(e => e.key == "z"));
+    assert(map.none(e => e.value % 2 == 1));
+    assert(!map.none(e => e.value == 4));
+
+    assert(map.all((MapEntry<string, int>& e) => e.value > 0));
+    assert(map.any((MapEntry<string, int>& e) => e.key == "a"));
+    assert(map.none((MapEntry<string, int>& e) => e.value < 0));
 }

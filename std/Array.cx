@@ -15,10 +15,107 @@ struct Array<T, int N> {
         return this;
     }
 
+    /// Returns the first element.
+    T& first() {
+        if N == 0 abort("Called first() on empty Array\n");
+        return this[0];
+    }
+
+    /// Returns the last element.
+    T& last() {
+        if N == 0 abort("Called last() on empty Array\n");
+        return this[N - 1];
+    }
+
+    /// Returns true if the array contains an element equal to the given value.
+    bool contains(T& value) {
+        return indexOf(value) != N;
+    }
+
+    /// Returns the index of the first element equal to the given value, or the size if it's not found.
+    int indexOf(T& value) {
+        for i in 0..N {
+            if this[i] == value {
+                return i;
+            }
+        }
+        return N;
+    }
+
     /// Returns an iterator over the elements.
     ArrayIterator<T> iterator() {
         return ArrayIterator(this);
     }
+
+    /// Returns an iterator over the elements with their indices.
+    EnumeratedIterator<T> enumerate() {
+        return EnumeratedIterator(iterator());
+    }
+
+    /// Returns the first element satisfying the predicate, or null.
+    T&? find(bool(T&) predicate) {
+        for i in 0..N {
+            if predicate(this[i]) {
+                return this[i];
+            }
+        }
+
+        return null;
+    }
+
+    /// Returns the first element satisfying the predicate, or null.
+    T&? find<U: Copyable>(bool(U) predicate) {
+        for i in 0..N {
+            if predicate(this[i]) {
+                return this[i];
+            }
+        }
+
+        return null;
+    }
+
+    /// Lazily transforms the elements. Collect the results with toList().
+    MappedIterator<Output, T, ArrayIterator<T>, Output(T&)> map<Output>(Output(T&) transform) {
+        return MappedIterator<Output, T, ArrayIterator<T>, Output(T&)>(iterator(), transform);
+    }
+
+    /// Lazily transforms the elements. Collect the results with toList().
+    MappedIterator<Output, T, ArrayIterator<T>, Output(U)> map<Output, U: Copyable>(Output(U) transform) {
+        return MappedIterator<Output, T, ArrayIterator<T>, Output(U)>(iterator(), transform);
+    }
+
+    /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
+    FilterIterator<T, ArrayIterator<T>, bool(T&)> filter(bool(T&) include) {
+        return FilterIterator<T, ArrayIterator<T>, bool(T&)>(iterator(), include);
+    }
+
+    /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
+    FilterIterator<T, ArrayIterator<T>, bool(U)> filter<U: Copyable>(bool(U) include) {
+        return FilterIterator<T, ArrayIterator<T>, bool(U)>(iterator(), include);
+    }
+
+    /// Lazily appends another iterator's elements. Collect the results with toList().
+    ChainIterator<T, ArrayIterator<T>, Other> chain<Other>(Other other) {
+        return ChainIterator<T, ArrayIterator<T>, Other>(iterator(), other);
+    }
+
+    /// Returns true if all elements satisfy the predicate.
+    bool all(bool(T&) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if all elements satisfy the predicate.
+    bool all<U: Copyable>(bool(U) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if any element satisfies the predicate.
+    bool any(bool(T&) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if any element satisfies the predicate.
+    bool any<U: Copyable>(bool(U) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if no element satisfies the predicate.
+    bool none(bool(T&) predicate) { return none(iterator(), predicate); }
+
+    /// Returns true if no element satisfies the predicate.
+    bool none<U: Copyable>(bool(U) predicate) { return none(iterator(), predicate); }
 
     /// Returns the dot product of this array and `other`.
     T dot(T[N] other) {

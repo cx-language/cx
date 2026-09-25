@@ -14,10 +14,38 @@ struct Set<Key: Hashable> {
         }
     }
 
-    /// Removes an element from the set, if it exists there.
-    void remove(Key& key) {
-        map.remove(key);
+    /// Removes an element from the set, returning true if it was there.
+    bool remove(Key& key) {
+        return map.remove(key) != null;
     }
+
+    /// Removes all elements from the set.
+    void clear() {
+        map.clear();
+    }
+
+    /// Ensures that the bucket count is at least the given number.
+    void reserve(int minimumCapacity) {
+        map.reserve(minimumCapacity);
+    }
+
+    /// Returns true if all elements satisfy the predicate.
+    bool all(bool(Key&) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if all elements satisfy the predicate.
+    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if any element satisfies the predicate.
+    bool any(bool(Key&) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if any element satisfies the predicate.
+    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if no element satisfies the predicate.
+    bool none(bool(Key&) predicate) { return none(iterator(), predicate); }
+
+    /// Returns true if no element satisfies the predicate.
+    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
 
     /// Checks if e is part of the set.
     bool contains(Key& key) {

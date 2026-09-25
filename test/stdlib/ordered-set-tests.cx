@@ -11,6 +11,9 @@ void main() {
     testLowerAndHigher();
     testEmptyOrderedSetFunctions();
     testIteratorOrder();
+    testRemoveReturnValue();
+    testClear();
+    testAllAnyNone();
 }
 
 void testInsert() {
@@ -28,8 +31,9 @@ void testRemoval() {
     s.insert(42);
     assert(s.contains(42));
 
-    s.remove(42);
+    assert(s.remove(42));
     assert(!s.contains(42));
+    assert(!s.remove(42));
 }
 
 void testDuplicates() {
@@ -170,4 +174,47 @@ void testIteratorOrder() {
     }
 
     assert(called == 100);
+}
+
+void testRemoveReturnValue() {
+    var s = OrderedSet<int>();
+    s.insert(1);
+    s.insert(2);
+
+    assert(s.remove(1));
+    assert(s.size() == 1);
+    assert(!s.contains(1));
+    assert(!s.remove(99));
+    assert(s.size() == 1);
+}
+
+void testClear() {
+    var s = OrderedSet<int>();
+    s.insert(1);
+    s.insert(2);
+
+    s.clear();
+    assert(s.size() == 0);
+    assert(s.empty());
+    assert(!s.contains(1));
+
+    s.insert(3);
+    assert(s.contains(3));
+}
+
+void testAllAnyNone() {
+    var s = OrderedSet<int>();
+    s.insert(2);
+    s.insert(4);
+
+    assert(s.all(n => n % 2 == 0));
+    assert(!s.all(n => n > 2));
+    assert(s.any(n => n == 4));
+    assert(!s.any(n => n > 10));
+    assert(s.none(n => n % 2 == 1));
+    assert(!s.none(n => n == 2));
+
+    assert(s.all((int& n) => n > 0));
+    assert(s.any((int& n) => n == 2));
+    assert(s.none((int& n) => n < 0));
 }

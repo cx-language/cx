@@ -146,7 +146,7 @@ private List<StringBuf> readDirectoryListing(StringBuf command, bool stripCarria
         var c = fgetc(pipe);
         if c < 0 || c == '\n' {
             if stripCarriageReturns && !current.empty() && current[current.size() - 1] == '\r' {
-                current.removeLast();
+                current.pop();
             }
             if !current.empty() {
                 result.push(StringBuf(string(&current)));
@@ -154,7 +154,7 @@ private List<StringBuf> readDirectoryListing(StringBuf command, bool stripCarria
             current = StringBuf();
             if c < 0 break;
         } else {
-            current.append(char(c));
+            current.push(char(c));
         }
     }
 

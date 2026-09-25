@@ -33,9 +33,30 @@ struct Slice<Element>: Copyable {
     }
 
     /// Returns the first element in the array.
-    Element& front() {
-        if empty() indexOutOfBounds("front", 0);
+    Element& first() {
+        if empty() indexOutOfBounds("first", 0);
         return data[0];
+    }
+
+    /// Returns the last element in the array.
+    Element& last() {
+        if empty() indexOutOfBounds("last", 0);
+        return data[size() - 1];
+    }
+
+    /// Returns true if the array contains an element equal to the given value.
+    bool contains(Element& value) {
+        return indexOf(value) != size();
+    }
+
+    /// Returns the index of the first element equal to the given value, or the size if it's not found.
+    int indexOf(Element& value) {
+        for i in 0..size() {
+            if data[i] == value {
+                return i;
+            }
+        }
+        return size();
     }
 
     /// Returns a reference to the element at the given index.
@@ -59,6 +80,36 @@ struct Slice<Element>: Copyable {
     /// Returns an iterator over the elements.
     ArrayIterator<Element> iterator() {
         return ArrayIterator(this);
+    }
+
+    /// Returns an iterator over the elements with their indices.
+    EnumeratedIterator<Element> enumerate() {
+        return EnumeratedIterator(iterator());
+    }
+
+    /// Lazily transforms the elements. Collect the results with toList().
+    MappedIterator<Output, Element, ArrayIterator<Element>, Output(Element&)> map<Output>(Output(Element&) transform) {
+        return MappedIterator<Output, Element, ArrayIterator<Element>, Output(Element&)>(iterator(), transform);
+    }
+
+    /// Lazily transforms the elements. Collect the results with toList().
+    MappedIterator<Output, Element, ArrayIterator<Element>, Output(T)> map<Output, T: Copyable>(Output(T) transform) {
+        return MappedIterator<Output, Element, ArrayIterator<Element>, Output(T)>(iterator(), transform);
+    }
+
+    /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
+    FilterIterator<Element, ArrayIterator<Element>, bool(Element&)> filter(bool(Element&) include) {
+        return FilterIterator<Element, ArrayIterator<Element>, bool(Element&)>(iterator(), include);
+    }
+
+    /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
+    FilterIterator<Element, ArrayIterator<Element>, bool(T)> filter<T: Copyable>(bool(T) include) {
+        return FilterIterator<Element, ArrayIterator<Element>, bool(T)>(iterator(), include);
+    }
+
+    /// Lazily appends another iterator's elements. Collect the results with toList().
+    ChainIterator<Element, ArrayIterator<Element>, Other> chain<Other>(Other other) {
+        return ChainIterator<Element, ArrayIterator<Element>, Other>(iterator(), other);
     }
 
     /// Returns the first element satisfying the predicate, or null.
@@ -87,30 +138,15 @@ struct Slice<Element>: Copyable {
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element&) predicate) { return all(iterator(), predicate); }
     /// Returns true if all elements satisfy the predicate.
-    bool all<T: Copyable>(bool(T) predicate) {
-        for index in 0..size() {
-            if !predicate(this[index]) return false;
-        }
-        return true;
-    }
+    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
     /// Returns true if any element satisfies the predicate.
     bool any(bool(Element&) predicate) { return any(iterator(), predicate); }
     /// Returns true if any element satisfies the predicate.
-    bool any<T: Copyable>(bool(T) predicate) {
-        for index in 0..size() {
-            if predicate(this[index]) return true;
-        }
-        return false;
-    }
+    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
     /// Returns true if no element satisfies the predicate.
     bool none(bool(Element&) predicate) { return none(iterator(), predicate); }
     /// Returns true if no element satisfies the predicate.
-    bool none<T: Copyable>(bool(T) predicate) {
-        for index in 0..size() {
-            if predicate(this[index]) return false;
-        }
-        return true;
-    }
+    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
 
     private void indexOutOfBounds(string function, int index) {
         abort("Slice.", function, ": index ", index, " is out of bounds, size is ", size());

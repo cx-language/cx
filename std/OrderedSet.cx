@@ -17,9 +17,9 @@ struct OrderedSet<Element> {
         return map.contains(e);
     }
 
-    /// Removes an element from the Set, if it exists.
-    void remove(Element& e) {
-        map.remove(e);
+    /// Removes an element from the Set, returning true if it was there.
+    bool remove(Element& e) {
+        return map.remove(e) != null;
     }
 
     /// Returns the value immediately lower than `e`, or `null` if
@@ -53,6 +53,29 @@ struct OrderedSet<Element> {
     bool empty() {
         return map.size() == 0;
     }
+
+    /// Removes all elements from the set.
+    void clear() {
+        map.clear();
+    }
+
+    /// Returns true if all elements satisfy the predicate.
+    bool all(bool(Element&) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if all elements satisfy the predicate.
+    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if any element satisfies the predicate.
+    bool any(bool(Element&) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if any element satisfies the predicate.
+    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if no element satisfies the predicate.
+    bool none(bool(Element&) predicate) { return none(iterator(), predicate); }
+
+    /// Returns true if no element satisfies the predicate.
+    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
 
     /// Iterate over the map, in order
     OrderedSetIterator<Element> iterator() {

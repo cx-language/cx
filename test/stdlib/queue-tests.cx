@@ -5,6 +5,7 @@ void main() {
     testEmpty();
     testPushAfterPop();
     testFirst();
+    testClear();
 }
 
 void testPushPop() {
@@ -62,4 +63,19 @@ void testFirst() {
     assert(q.pop() == "foo");
     assert(q.first() == "bar");
     assert(q.pop() == "bar");
+}
+
+void testClear() {
+    var q = Queue<string>();
+    q.push("foo");
+    q.push("bar");
+
+    q.clear();
+    assert(q.size() == 0);
+    assert(q.empty());
+
+    q.push("baz");
+    assert(q.first() == "baz");
+    assert(q.pop() == "baz");
+    assert(q.empty());
 }

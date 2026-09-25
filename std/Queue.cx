@@ -13,11 +13,18 @@ struct Queue<T> {
 
     /// Frees all nodes.
     ~Queue() {
+        clear();
+    }
+
+    /// Removes all elements from the queue.
+    void clear() {
         while !empty() {
             var next = head!.next;
             deallocate(head);
             head = next;
         }
+        tail = null;
+        size = 0;
     }
 
     /// Add to the back of the queue
@@ -37,6 +44,7 @@ struct Queue<T> {
 
     /// Retrieve and remove head of the queue
     T pop() {
+        if empty() abort("Called pop() on empty Queue\n");
         var value = head!.value;
         var next = head.next;
         deallocate(head);
@@ -52,6 +60,7 @@ struct Queue<T> {
 
     /// Access element in the front of the queue
     T& first() {
+        if empty() abort("Called first() on empty Queue\n");
         return head!.value;
     }
 

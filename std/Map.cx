@@ -39,23 +39,54 @@ struct Map<Key: Hashable, Value> {
         }
     }
 
-    /// Removes an element from the map, if it exists there.
-    void remove(Key& e) {
+    /// Removes an element from the map, returning its value, or null if it isn't there.
+    Value? remove(Key& e) {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = &hashTable[hashValue];
 
-        if slot.size() == 0 {
-            return;
-        }
-
         for i in 0..slot.size() {
             if slot[i].key == *e {
-                slot.removeAt(i);
+                var removed = slot.removeAt(i);
                 size--;
-                return;
+                return removed.value;
             }
         }
+
+        return null;
     }
+
+    /// Removes all entries from the map, keeping the allocated buckets.
+    void clear() {
+        for i in 0..hashTable.size() {
+            hashTable[i].clear();
+        }
+        size = 0;
+    }
+
+    /// Ensures that the bucket count is at least the given number.
+    void reserve(int minimumCapacity) {
+        while capacity() < minimumCapacity {
+            resize();
+        }
+    }
+
+    /// Returns true if all entries satisfy the predicate.
+    bool all(bool(MapEntry<Key, Value>&) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if all entries satisfy the predicate.
+    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if any entry satisfies the predicate.
+    bool any(bool(MapEntry<Key, Value>&) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if any entry satisfies the predicate.
+    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if no entry satisfies the predicate.
+    bool none(bool(MapEntry<Key, Value>&) predicate) { return none(iterator(), predicate); }
+
+    /// Returns true if no entry satisfies the predicate.
+    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
 
     /// Returns the number of entries.
     int size() {
@@ -101,10 +132,6 @@ struct Map<Key: Hashable, Value> {
     bool contains(Key& e) {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = &hashTable[hashValue];
-
-        if slot.size() == 0 {
-            return false;
-        }
 
         for element in slot {
             if element.key == *e {

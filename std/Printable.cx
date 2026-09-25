@@ -35,9 +35,9 @@ struct OutputStream {
     }
 
     /// Writes the character without allocating when writing to a file or standard output.
-    void append(char c) {
+    void push(char c) {
         if buffer {
-            buffer.append(c);
+            buffer.push(c);
         } else if file {
             fputc(int(c), file);
         } else {

@@ -2,7 +2,7 @@
 
 void main() {
     var array = List<int>();
-    array.removeLast();
+    array.pop();
 }
 
-// CHECK: Called removeLast() on empty List
+// CHECK: Called pop() on empty List

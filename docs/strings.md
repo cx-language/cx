@@ -17,7 +17,7 @@ void main() {
     var b = StringBuf(a);
     // b holds a copy of "test" that we can mutate
 
-    b.append('!');
+    b.push('!');
     // b now holds "test!", a is unchanged
 
     println(a); // prints "test"

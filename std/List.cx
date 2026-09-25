@@ -186,6 +186,13 @@ struct List<Element> {
         return null;
     }
 
+    /// Removes and returns the last element.
+    Element pop() {
+        if size == 0 abort("Called pop() on empty List\n");
+        size--;
+        return buffer[size];
+    }
+
     /// Removes the last element from the list.
     void removeLast() {
         if size == 0 abort("Called removeLast() on empty List\n");
@@ -193,11 +200,12 @@ struct List<Element> {
         buffer[size].deinit();
     }
 
-    /// Removes and returns the last element.
-    Element pop() {
-        if size == 0 abort("Called pop() on empty List\n");
-        size--;
-        return buffer[size];
+    /// Removes all elements from the list, keeping the allocated buffer.
+    void clear() {
+        for i in 0..size {
+            buffer[i].deinit();
+        }
+        size = 0;
     }
 
     /// Removes the element at the given index from the list and returns it.
@@ -221,6 +229,21 @@ struct List<Element> {
 
         size--;
         return removed;
+    }
+
+    /// Returns true if the list contains an element equal to the given value.
+    bool contains(Element& value) {
+        return indexOf(value) != size;
+    }
+
+    /// Returns the index of the first element equal to the given value, or the size if it's not found.
+    int indexOf(Element& value) {
+        for i in 0..size {
+            if buffer[i] == value {
+                return i;
+            }
+        }
+        return size;
     }
 
     /// Returns an iterator over the elements.
@@ -284,30 +307,15 @@ struct List<Element> {
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element&) predicate) { return all(iterator(), predicate); }
     /// Returns true if all elements satisfy the predicate.
-    bool all<T: Copyable>(bool(T) predicate) {
-        for index in 0..size() {
-            if !predicate(this[index]) return false;
-        }
-        return true;
-    }
+    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
     /// Returns true if any element satisfies the predicate.
     bool any(bool(Element&) predicate) { return any(iterator(), predicate); }
     /// Returns true if any element satisfies the predicate.
-    bool any<T: Copyable>(bool(T) predicate) {
-        for index in 0..size() {
-            if predicate(this[index]) return true;
-        }
-        return false;
-    }
+    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
     /// Returns true if no element satisfies the predicate.
     bool none(bool(Element&) predicate) { return none(iterator(), predicate); }
     /// Returns true if no element satisfies the predicate.
-    bool none<T: Copyable>(bool(T) predicate) {
-        for index in 0..size() {
-            if predicate(this[index]) return false;
-        }
-        return true;
-    }
+    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
 
     private void grow() {
         if capacity == 0 {

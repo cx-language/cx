@@ -4,6 +4,9 @@
 void main() {
     testFind();
     testEquality();
+    testFirstLastContainsIndexOf();
+    testMapFilterChain();
+    testAllAnyNone();
 }
 
 void testFind() {
@@ -30,4 +33,53 @@ void testEquality() {
     assert(rx != ry);
     assert(!(rx == ry));
     assert(x != y);
+}
+
+void testFirstLastContainsIndexOf() {
+    var a = List([10, 20, 30]);
+    var s = Slice(a);
+
+    assert(s.first() == 10);
+    assert(s.last() == 30);
+    assert(s.contains(20));
+    assert(!s.contains(99));
+    assert(s.indexOf(10) == 0);
+    assert(s.indexOf(30) == 2);
+    assert(s.indexOf(99) == s.size());
+}
+
+void testMapFilterChain() {
+    var a = List([0, 1, 2, 3, 4]);
+    var s = Slice(a);
+    var b = List([5, 6]);
+
+    assert(s.map(n => n * 2).toList() == List([0, 2, 4, 6, 8]));
+    assert(s.filter(n => n % 2 == 0).toList() == List([0, 2, 4]));
+    assert(s.map((int& n) => n + 1).toList() == List([1, 2, 3, 4, 5]));
+    assert(s.filter((int& n) => n > 2).toList() == List([3, 4]));
+    assert(s.chain(b.iterator()).toList() == List([0, 1, 2, 3, 4, 5, 6]));
+
+    var iterator = s.enumerate();
+    assert(iterator.hasValue());
+    assert(iterator.value().index == 0);
+    assert(*iterator.value().value == 0);
+    iterator.increment();
+    assert(iterator.value().index == 1);
+    assert(*iterator.value().value == 1);
+}
+
+void testAllAnyNone() {
+    var a = List([2, 4, 6]);
+    var s = Slice(a);
+
+    assert(s.all(n => n % 2 == 0));
+    assert(!s.all(n => n > 4));
+    assert(s.any(n => n == 4));
+    assert(!s.any(n => n > 10));
+    assert(s.none(n => n % 2 == 1));
+    assert(!s.none(n => n == 2));
+
+    assert(s.all((int& n) => n % 2 == 0));
+    assert(s.any((int& n) => n == 6));
+    assert(s.none((int& n) => n < 0));
 }

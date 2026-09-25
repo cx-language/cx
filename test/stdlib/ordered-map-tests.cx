@@ -10,6 +10,9 @@ void main() {
     testEmptyMapIterator();
     testIteratorOrder();
     testUnitMapIterator();
+    testRemoveReturnValue();
+    testClear();
+    testAllAnyNone();
 }
 
 void testInsertAndContains() {
@@ -167,4 +170,49 @@ void testUnitMapIterator() {
     }
 
     assert(count == 1);
+}
+
+void testRemoveReturnValue() {
+    var m = OrderedMap<int, int>();
+    m.insert(1, 10);
+    m.insert(2, 20);
+
+    assert(m.remove(1)! == 10);
+    assert(m.size() == 1);
+    assert(!m.contains(1));
+    assert(m[2]! == 20);
+
+    assert(m.remove(99) == null);
+    assert(m.size() == 1);
+}
+
+void testClear() {
+    var m = OrderedMap<int, int>();
+    m.insert(1, 10);
+    m.insert(2, 20);
+
+    m.clear();
+    assert(m.size() == 0);
+    assert(m.empty());
+    assert(!m.contains(1));
+
+    m.insert(3, 30);
+    assert(m[3]! == 30);
+}
+
+void testAllAnyNone() {
+    var m = OrderedMap<int, int>();
+    m.insert(1, 2);
+    m.insert(2, 4);
+
+    assert(m.all(e => e.value % 2 == 0));
+    assert(!m.all(e => e.value > 2));
+    assert(m.any(e => e.key == 2));
+    assert(!m.any(e => e.key == 9));
+    assert(m.none(e => e.value % 2 == 1));
+    assert(!m.none(e => e.value == 4));
+
+    assert(m.all((MapEntry<int, int>& e) => e.value > 0));
+    assert(m.any((MapEntry<int, int>& e) => e.key == 1));
+    assert(m.none((MapEntry<int, int>& e) => e.value < 0));
 }

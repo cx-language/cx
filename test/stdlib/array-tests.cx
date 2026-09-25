@@ -16,6 +16,10 @@ void main() {
     testCross();
     testPointerElements();
     testConst();
+    testFirstLastContainsIndexOf();
+    testFindMapFilter();
+    testChainEnumerate();
+    testAllAnyNone();
 }
 
 void testConstruction() {
@@ -191,4 +195,59 @@ void testConst() {
     const float[3] y = [0.0, 1.0, 0.0];
     var z = cross(x, y);
     assert(z[0] == 0.0 && z[1] == 0.0 && z[2] == 1.0);
+}
+
+void testFirstLastContainsIndexOf() {
+    int[3] a = [10, 20, 30];
+
+    assert(a.first() == 10);
+    assert(a.last() == 30);
+    assert(a.contains(20));
+    assert(!a.contains(99));
+    assert(a.indexOf(10) == 0);
+    assert(a.indexOf(30) == 2);
+    assert(a.indexOf(99) == a.size());
+}
+
+void testFindMapFilter() {
+    int[5] a = [0, 1, 2, 3, 4];
+
+    assert(a.find(x => x == 2)! == 2); // TODO: '!' shouldn't be required
+    assert(a.find(x => x == 9) == null);
+    assert(a.map(n => n * 2).toList() == List([0, 2, 4, 6, 8]));
+    assert(a.filter(n => n % 2 == 0).toList() == List([0, 2, 4]));
+    assert(a.map((int& n) => n + 1).toList() == List([1, 2, 3, 4, 5]));
+    assert(a.filter((int& n) => n > 2).toList() == List([3, 4]));
+}
+
+void testChainEnumerate() {
+    int[2] a = [1, 2];
+    int[2] b = [3, 4];
+
+    assert(a.chain(b.iterator()).toList() == List([1, 2, 3, 4]));
+
+    var iterator = a.enumerate();
+    assert(iterator.hasValue());
+    assert(iterator.value().index == 0);
+    assert(*iterator.value().value == 1);
+    iterator.increment();
+    assert(iterator.value().index == 1);
+    assert(*iterator.value().value == 2);
+    iterator.increment();
+    assert(!iterator.hasValue());
+}
+
+void testAllAnyNone() {
+    int[3] a = [2, 4, 6];
+
+    assert(a.all(n => n % 2 == 0));
+    assert(!a.all(n => n > 4));
+    assert(a.any(n => n == 4));
+    assert(!a.any(n => n > 10));
+    assert(a.none(n => n % 2 == 1));
+    assert(!a.none(n => n == 2));
+
+    assert(a.all((int& n) => n % 2 == 0));
+    assert(a.any((int& n) => n == 6));
+    assert(a.none((int& n) => n < 0));
 }

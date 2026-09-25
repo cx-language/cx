@@ -23,6 +23,10 @@ void main() {
     testRemovalReturnValues();
     testAddressOfBorrowResult();
     testElementDestruction();
+    testContainsIndexOf();
+    testClear();
+    testAllAnyNone();
+    testChain();
 }
 
 void testAddressOfBorrowResult() {
@@ -49,7 +53,7 @@ void testListInsertionAndRemoval() {
     a.removeAt(1);
     assert(a[0].i == 1 && a[1].i == 3);
 
-    a.removeLast();
+    a.pop();
     a.push(C(4));
     assert(a.size() == 2 && a.capacity() >= 2);
 }
@@ -254,6 +258,9 @@ void testRemovalReturnValues() {
     var missing = a.removeFirst(value => value > 30);
     assert(missing == null);
     assert(a == List([30]));
+
+    assert(a.pop() == 30);
+    assert(a.empty());
 }
 
 var destroyed = 0;
@@ -280,4 +287,52 @@ void testElementDestruction() {
     sink(a.removeFirst());
 
     assert(destroyed == 5);
+}
+
+void testContainsIndexOf() {
+    var a = List([10, 20, 30]);
+
+    assert(a.contains(20));
+    assert(!a.contains(99));
+    assert(a.indexOf(10) == 0);
+    assert(a.indexOf(30) == 2);
+    assert(a.indexOf(99) == a.size());
+
+    var empty = List<int>();
+    assert(!empty.contains(1));
+    assert(empty.indexOf(1) == 0);
+}
+
+void testClear() {
+    var a = List([1, 2, 3]);
+    var capacity = a.capacity();
+
+    a.clear();
+    assert(a.empty() && a.size() == 0);
+    assert(a.capacity() == capacity);
+
+    a.push(4);
+    assert(a == List([4]));
+}
+
+void testAllAnyNone() {
+    var a = List([2, 4, 6]);
+
+    assert(a.all(n => n % 2 == 0));
+    assert(!a.all(n => n > 4));
+    assert(a.any(n => n == 4));
+    assert(!a.any(n => n > 10));
+    assert(a.none(n => n % 2 == 1));
+    assert(!a.none(n => n == 2));
+
+    assert(a.all((int& n) => n % 2 == 0));
+    assert(a.any((int& n) => n == 6));
+    assert(a.none((int& n) => n < 0));
+}
+
+void testChain() {
+    var a = List([1, 2]);
+    var b = List([3, 4]);
+
+    assert(a.chain(b.iterator()).toList() == List([1, 2, 3, 4]));
 }

@@ -18,6 +18,9 @@ void main() {
     testRepeat();
     testStartsEndsWith();
     testAppendPrintable();
+    testFirstLast();
+    testStringBufPushPop();
+    testStringBufClear();
 }
 
 void testStringIterator() {
@@ -230,11 +233,52 @@ void testAppendPrintable() {
     assert(b == "0-35");
     b.append(4.5);
     assert(b == "0-354.5");
-    b.append('!');
+    b.push('!');
     assert(b == "0-354.5!");
     b.append(" done");
     assert(b == "0-354.5! done");
     var s = StringBuf();
     s.append("abc");
     assert(s == "abc");
+}
+
+void testFirstLast() {
+    var s = "hello";
+
+    assert(s.first() == 'h');
+    assert(s.last() == 'o');
+
+    var b = StringBuf("hi");
+    assert(b.first() == 'h');
+    assert(b.last() == 'i');
+}
+
+void testStringBufPushPop() {
+    var b = StringBuf();
+    b.push('a');
+    b.push('b');
+    assert(b == "ab");
+
+    assert(b.pop() == 'b');
+    assert(b == "a");
+    assert(b.removeFirst() == 'a');
+    assert(b.empty());
+}
+
+void testStringBufClear() {
+    var prealloc = StringBuf(capacity = 100);
+    assert(prealloc.capacity() >= 100);
+
+    var b = StringBuf("hello");
+    b.reserve(100);
+    assert(b.capacity() >= 100);
+
+    b.clear();
+    assert(b.empty());
+    assert(b.size() == 0);
+    assert(b.capacity() >= 100);
+    assert(b == "");
+
+    b.push('x');
+    assert(b == "x");
 }

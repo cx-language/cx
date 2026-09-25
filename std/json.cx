@@ -260,21 +260,21 @@ private struct JsonParser {
                 char e = input[pos];
                 pos++;
                 if e == '"' {
-                    out.append('"');
+                    out.push('"');
                 } else if e == '\\' {
-                    out.append('\\');
+                    out.push('\\');
                 } else if e == '/' {
-                    out.append('/');
+                    out.push('/');
                 } else if e == 'b' {
-                    out.append(char(8));
+                    out.push(char(8));
                 } else if e == 'f' {
-                    out.append(char(12));
+                    out.push(char(12));
                 } else if e == 'n' {
-                    out.append('\n');
+                    out.push('\n');
                 } else if e == 'r' {
-                    out.append('\r');
+                    out.push('\r');
                 } else if e == 't' {
-                    out.append('\t');
+                    out.push('\t');
                 } else if e == 'u' {
                     int code = parseHex4();
                     if code < 0 {
@@ -300,7 +300,7 @@ private struct JsonParser {
             } else if byteValue(c) < 32 {
                 return Err(JsonError.UnescapedControlCharacter(pos));
             } else {
-                out.append(c);
+                out.push(c);
                 pos++;
             }
         }
@@ -422,32 +422,32 @@ private int hexValue(char c) {
 
 private void pushUtf8(StringBuf& out, int code) {
     if code < 0x80 {
-        out.append(char(code));
+        out.push(char(code));
     } else if code < 0x800 {
-        out.append(char(0xC0 + (code >> 6)));
-        out.append(char(0x80 + (code & 0x3F)));
+        out.push(char(0xC0 + (code >> 6)));
+        out.push(char(0x80 + (code & 0x3F)));
     } else if code < 0x10000 {
-        out.append(char(0xE0 + (code >> 12)));
-        out.append(char(0x80 + ((code >> 6) & 0x3F)));
-        out.append(char(0x80 + (code & 0x3F)));
+        out.push(char(0xE0 + (code >> 12)));
+        out.push(char(0x80 + ((code >> 6) & 0x3F)));
+        out.push(char(0x80 + (code & 0x3F)));
     } else {
-        out.append(char(0xF0 + (code >> 18)));
-        out.append(char(0x80 + ((code >> 12) & 0x3F)));
-        out.append(char(0x80 + ((code >> 6) & 0x3F)));
-        out.append(char(0x80 + (code & 0x3F)));
+        out.push(char(0xF0 + (code >> 18)));
+        out.push(char(0x80 + ((code >> 12) & 0x3F)));
+        out.push(char(0x80 + ((code >> 6) & 0x3F)));
+        out.push(char(0x80 + (code & 0x3F)));
     }
 }
 
 private void writeIndent(OutputStream& out, int count) {
     int i = 0;
     while i < count {
-        out.append(' ');
+        out.push(' ');
         i++;
     }
 }
 
 private void writeQuoted(OutputStream& out, StringBuf* s) {
-    out.append('"');
+    out.push('"');
     for i in 0..s.size() {
         int code = byteValue((*s)[i]);
         if code == 34 {
@@ -466,13 +466,13 @@ private void writeQuoted(OutputStream& out, StringBuf* s) {
             out.append("\\t");
         } else if code < 32 {
             out.append("\\u00");
-            out.append("0123456789abcdef"[code >> 4]);
-            out.append("0123456789abcdef"[code & 15]);
+            out.push("0123456789abcdef"[code >> 4]);
+            out.push("0123456789abcdef"[code & 15]);
         } else {
-            out.append((*s)[i]);
+            out.push((*s)[i]);
         }
     }
-    out.append('"');
+    out.push('"');
 }
 
 // Renders the shortest spelling that parses back to `value`. 17 significant
@@ -515,52 +515,52 @@ private void writeJson(OutputStream& out, JsonValue* value, int level, bool inde
             if a.empty() {
                 out.append("[]");
             } else {
-                out.append('[');
+                out.push('[');
                 bool first = true;
                 for element in a {
                     if !first {
-                        out.append(',');
+                        out.push(',');
                     }
                     first = false;
                     if indented {
-                        out.append('\n');
+                        out.push('\n');
                         writeIndent(out, (level + 1) * 2);
                     }
                     writeJson(out, &element, level + 1, indented);
                 }
                 if indented {
-                    out.append('\n');
+                    out.push('\n');
                     writeIndent(out, level * 2);
                 }
-                out.append(']');
+                out.push(']');
             }
         case Object o:
             if o.empty() {
                 out.append("{}");
             } else {
-                out.append('{');
+                out.push('{');
                 bool first = true;
                 for member in o {
                     if !first {
-                        out.append(',');
+                        out.push(',');
                     }
                     first = false;
                     if indented {
-                        out.append('\n');
+                        out.push('\n');
                         writeIndent(out, (level + 1) * 2);
                     }
                     writeQuoted(out, &member.key);
-                    out.append(':');
+                    out.push(':');
                     if indented {
-                        out.append(' ');
+                        out.push(' ');
                     }
                     writeJson(out, &member.value, level + 1, indented);
                 }
                 if indented {
-                    out.append('\n');
+                    out.push('\n');
                     writeIndent(out, level * 2);
                 }
-                out.append('}');
+                out.push('}');
             }
     }
 }

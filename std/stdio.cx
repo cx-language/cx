@@ -154,7 +154,7 @@ StringBuf readLine() {
             break;
         }
 
-        line.append(char(c));
+        line.push(char(c));
     }
 
     return line;

@@ -261,7 +261,7 @@ StringBuf normalize(string path) {
                 var part = rest.substr(start..i);
                 if part == ".." {
                     if parts.size() > 0 && parts.last() != ".." {
-                        parts.removeLast();
+                        parts.pop();
                     } else if !rooted {
                         parts.push(part);
                     }
@@ -277,25 +277,25 @@ StringBuf normalize(string path) {
     var d = 0;
     while d < drive.drive.size() {
         if drive.drive[d] == '\\' {
-            result.append('/');
+            result.push('/');
         } else {
-            result.append(drive.drive[d]);
+            result.push(drive.drive[d]);
         }
         d++;
     }
     if rooted {
-        result.append('/');
+        result.push('/');
     }
     var k = 0;
     while k < parts.size() {
         if k > 0 {
-            result.append('/');
+            result.push('/');
         }
         result.append(parts[k]);
         k++;
     }
     if result.empty() {
-        result.append('.');
+        result.push('.');
     }
     return result;
 }
@@ -333,7 +333,7 @@ StringBuf relativePath(string from, string to) {
     var u = 0;
     while u < fromParts.size() - common {
         if u > 0 {
-            result.append('/');
+            result.push('/');
         }
         result.append("..");
         u++;
@@ -341,13 +341,13 @@ StringBuf relativePath(string from, string to) {
     var t = common;
     while t < toParts.size() {
         if u > 0 || t > common {
-            result.append('/');
+            result.push('/');
         }
         result.append(toParts[t]);
         t++;
     }
     if result.empty() {
-        result.append('.');
+        result.push('.');
     }
     return result;
 }

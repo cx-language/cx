@@ -11,10 +11,35 @@ struct OrderedMap<Key, Value> {
 
     /// Frees all nodes.
     ~OrderedMap() {
+        clear();
+    }
+
+    /// Removes all entries from the map.
+    void clear() {
         if root != null {
             root.deallocate();
+            root = null;
         }
+        size = 0;
     }
+
+    /// Returns true if all entries satisfy the predicate.
+    bool all(bool(MapEntry<Key, Value>&) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if all entries satisfy the predicate.
+    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
+
+    /// Returns true if any entry satisfies the predicate.
+    bool any(bool(MapEntry<Key, Value>&) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if any entry satisfies the predicate.
+    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
+
+    /// Returns true if no entry satisfies the predicate.
+    bool none(bool(MapEntry<Key, Value>&) predicate) { return none(iterator(), predicate); }
+
+    /// Returns true if no entry satisfies the predicate.
+    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
 
     /// Returns the size of the Map
     int size() {
@@ -172,10 +197,10 @@ struct OrderedMap<Key, Value> {
         return true;
     }
 
-    /// Removes a key and it's associated value from the Map
-    void remove(Key& key) {
+    /// Removes a key and its associated value from the map, returning the value, or null if it isn't there.
+    Value? remove(Key& key) {
         if root == null {
-            return;
+            return null;
         }
 
         var n = root;
@@ -193,6 +218,7 @@ struct OrderedMap<Key, Value> {
         }
 
         if delNode != null {
+            var removedValue = delNode.entry.value;
             delNode.entry.key = n.entry.key;
             delNode.entry.value = n.entry.value;
 
@@ -211,8 +237,10 @@ struct OrderedMap<Key, Value> {
             }
             n.deinit();
             deallocate(n);
+            size--;
+            return removedValue;
         }
-        size--;
+        return null;
     }
 
     /// Returns the key-value pair corresponding to `key`, or null if it doesn't exist in the Map

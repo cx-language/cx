@@ -489,7 +489,7 @@ def test_completion_members(cx_lsp, path):
     # Array value: only its member functions.
     content = "void main() {\n    var arr = [1, 2, 3];\n    arr.\n}\n"
     items = labels_for(content, (2, 8))
-    check("query-completion-member-array", set(items) == {"data", "size", "iterator", "dot", "length", "normalized"}, json.dumps(sorted(items))[:300])
+    check("query-completion-member-array", set(items) == {"data", "size", "iterator", "dot", "length", "normalized", "first", "last", "contains", "indexOf", "enumerate", "find", "map", "filter", "chain", "all", "any", "none"}, json.dumps(sorted(items))[:300])
 
     # Array pointer: only the compiler-known data() method.
     content = "void main() {\n    int[*] p = [1, 2, 3];\n    p.\n}\n"
@@ -529,7 +529,6 @@ def test_completion_members(cx_lsp, path):
         == [
             "void StringBuf.append(RepeatIterator<string> repetitions)",
             "void StringBuf.append(T& value)",
-            "void StringBuf.append(char c)",
             "void StringBuf.append(string s)",
         ],
         json.dumps(details)[:300],
@@ -539,7 +538,7 @@ def test_completion_members(cx_lsp, path):
         flags.setdefault(item["label"], []).append(item.get("hasParams"))
     check(
         "query-completion-member-has-params",
-        flags.get("append") == [True, True, True, True] and flags.get("empty") == [False],
+        flags.get("append") == [True, True, True] and flags.get("empty") == [False],
         json.dumps({k: flags.get(k) for k in ("append", "empty")})[:300],
     )
 
@@ -965,7 +964,7 @@ def test_server(command, path, label):
     appends = [item for item in response["result"] if item["label"] == "append"]
     check(
         f"{label}-completion-member-call-parens",
-        sorted(item.get("insertText", "") for item in appends) == ["append(", "append(", "append(", "append("]
+        sorted(item.get("insertText", "") for item in appends) == ["append(", "append(", "append("]
         and all("insertTextFormat" not in item for item in appends),
         json.dumps(appends)[:300],
     )

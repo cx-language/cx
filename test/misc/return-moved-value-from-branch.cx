@@ -21,7 +21,7 @@ Result<StringBuf, StringBuf> parse(string input) {
             pos++;
             return Ok(out);
         } else {
-            out.append(c);
+            out.push(c);
             pos++;
         }
     }

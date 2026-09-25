@@ -7,6 +7,8 @@ void main() {
     testIterator();
     testEmptySetIterator();
     testUnitSetIterator();
+    testClear();
+    testAllAnyNone();
 }
 
 void testInsert() {
@@ -25,8 +27,9 @@ void testRemoval() {
     s.insert("ok");
     assert(s.contains("ok"));
 
-    s.remove("ok");
+    assert(s.remove("ok"));
     assert(!s.contains("ok"));
+    assert(!s.remove("ok"));
 }
 
 void testDuplicates() {
@@ -97,4 +100,35 @@ void testUnitSetIterator() {
     }
 
     assert(count == 1);
+}
+
+void testClear() {
+    var s = Set<string>();
+    s.insert("a");
+    s.insert("b");
+
+    s.clear();
+    assert(s.size() == 0);
+    assert(s.empty());
+    assert(!s.contains("a"));
+
+    s.insert("c");
+    assert(s.contains("c"));
+}
+
+void testAllAnyNone() {
+    var s = Set<int>();
+    s.insert(2);
+    s.insert(4);
+
+    assert(s.all(n => n % 2 == 0));
+    assert(!s.all(n => n > 2));
+    assert(s.any(n => n == 4));
+    assert(!s.any(n => n > 10));
+    assert(s.none(n => n % 2 == 1));
+    assert(!s.none(n => n == 2));
+
+    assert(s.all((int& n) => n > 0));
+    assert(s.any((int& n) => n == 2));
+    assert(s.none((int& n) => n < 0));
 }

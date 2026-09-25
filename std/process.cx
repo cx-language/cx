@@ -45,7 +45,7 @@ ProcessResult run(string command) {
     while true {
         var c = fgetc(pipe);
         if c < 0 break;
-        output.append(char(c));
+        output.push(char(c));
     }
 
     return ProcessResult(status = decodeStatus(pclose(pipe)), output = output);

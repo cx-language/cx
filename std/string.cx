@@ -33,8 +33,13 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     /// Returns the first character.
-    char front() {
-        return characters.front();
+    char first() {
+        return characters.first();
+    }
+
+    /// Returns the last character.
+    char last() {
+        return characters.last();
     }
 
     /// Returns the character at the given index.
@@ -56,16 +61,21 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     /// Returns true if the string contains the given character.
     bool contains(char c) {
-        return find(c, 0) != size();
+        return indexOf(c) != size();
+    }
+
+    /// Returns true if the string contains the given substring.
+    bool contains(string needle) {
+        return indexOf(needle) != size();
     }
 
     /// Returns the index of the given character, or the size if it's not found.
-    int find(char c) {
-        return find(c, 0);
+    int indexOf(char c) {
+        return indexOf(c, 0);
     }
 
     /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
-    private int find(char c, int start) {
+    int indexOf(char c, int start) {
         for i in start..size() {
             if characters[i] == c {
                 return i;
@@ -75,43 +85,18 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     /// Returns the index of the given substring, or the size if it's not found.
-    int find(string needle) {
-        return find(needle, 0);
+    int indexOf(string needle) {
+        return indexOf(needle, 0);
     }
 
     /// Returns the index of the given substring, or the size if it's not found. Starts from `start`.
-    int find(string needle, int start) {
+    int indexOf(string needle, int start) {
         for i in start..size() {
             if substr(i).startsWith(needle) {
                 return i;
             }
         }
         return size();
-    }
-
-    /// Returns true if the string contains the given substring.
-    bool contains(string needle) {
-        return find(needle, 0) != size();
-    }
-
-    /// Returns the index of the given character, or the size if it's not found.
-    int indexOf(char c) {
-        return find(c, 0);
-    }
-
-    /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
-    int indexOf(char c, int start) {
-        return find(c, start);
-    }
-
-    /// Returns the index of the given substring, or the size if it's not found.
-    int indexOf(string needle) {
-        return find(needle, 0);
-    }
-
-    /// Returns the index of the given substring, or the size if it's not found. Starts from `start`.
-    int indexOf(string needle, int start) {
-        return find(needle, start);
     }
 
     /// Returns true if the string starts with the given prefix.

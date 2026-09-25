@@ -14,7 +14,7 @@ struct ByteIterator: Copyable, Iterator<uint8> {
 
     /// Returns the current byte.
     uint8 value() {
-        return uint8(stream.front());
+        return uint8(stream.first());
     }
 
     /// Advances to the next byte.
