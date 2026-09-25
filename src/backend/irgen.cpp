@@ -140,6 +140,7 @@ bool IRGenerator::typeNeedsDestruction(Type type) {
 
 void IRGenerator::deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes) {
     if (auto* destructor = type.getDestructor()) {
+        checkImplicitCalleeIsChecked(*destructor, "deinit");
         scopes.back().destructorsToCall.push_back({getFunction(*destructor), base, owner, std::move(indexes)});
     } else if (type.isAnonymousStructType()) {
         int index = 0;
@@ -169,6 +170,7 @@ void IRGenerator::deferDestructorCall(Value* receiver, const VariableDecl* decl)
 // unlike scope-exit destruction, the calls immediately follow in the same block.
 void IRGenerator::destroyExplicitElementsForAssignment(Value* base, Type type) {
     if (auto* destructor = type.getDestructor()) {
+        checkImplicitCalleeIsChecked(*destructor, "deinit");
         createDestructorCall(getFunction(*destructor), base);
     } else if (type.isAnonymousStructType()) {
         int index = 0;
@@ -301,6 +303,12 @@ Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
         }
     default:
         llvm_unreachable("invalid callee decl");
+    }
+}
+
+void cx::checkImplicitCalleeIsChecked(const Decl& decl, const char* name) {
+    if (decl.checkState != Decl::CheckState::Checked) {
+        ABORT("implicit runtime use '" << name << "' was not checked (sema usage tracking missed it)");
     }
 }
 

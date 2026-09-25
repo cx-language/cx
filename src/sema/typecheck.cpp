@@ -319,7 +319,7 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
     // the main module triggers this: it runs after all imports are parsed.
     if (isMainModule) {
         try {
-            ensureImplicitRuntimeUses();
+            ensureImplicitRuntimeUses(module);
             postProcess();
         } catch (const CompileError& error) {
             error.report();
@@ -329,41 +329,72 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
     postProcess();
 }
 
-void Typechecker::ensureImplicitRuntimeUses() {
+void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
     auto* stdModule = Module::getStdlibModule();
     if (!stdModule) return;
+
+    // IRGen materializes argv only for a main with one parameter (see emitMainArgv
+    // in irgen-decl.cpp); any module's main counts since every module is emitted.
+    bool usesArgv = false;
+    auto checkForArgvMain = [&](const Module& module) {
+        for (auto& sourceFile : module.sourceFiles) {
+            for (auto* decl : sourceFile.topLevelDecls) {
+                if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
+                    functionDecl && functionDecl->isMain() && !functionDecl->isMethodDecl() && functionDecl->getParams().size() == 1) {
+                    usesArgv = true;
+                }
+            }
+        }
+    };
+    checkForArgvMain(mainModule);
+    for (auto* importedModule : Module::getAllImportedModules())
+        checkForArgvMain(*importedModule);
 
     // Single-callee runtime hooks, mirroring the backend lookups in
     // irgen-decl.cpp (malloc) and irgen-expr.cpp (assertFail). Missing decls
     // are the backend's error to report, as before.
-    if (Decl* mallocDecl = stdModule->symbolTable.findOne("malloc")) markReferenced(mallocDecl);
-    if (Decl* assertDecl = stdModule->symbolTable.findOne("assertFail")) markReferenced(assertDecl);
+    if (usesArgv) {
+        if (Decl* mallocDecl = stdModule->symbolTable.findOne("malloc")) markReferenced(mallocDecl);
+    }
+    if (usesArgv || implicitUses.assertCall || implicitUses.checkedArithmetic || implicitUses.unwrap || implicitUses.enumSwitch) {
+        if (Decl* assertDecl = stdModule->symbolTable.findOne("assertFail")) markReferenced(assertDecl);
+    }
 
     // Overload sets IRGen scans by parameter shape. Signatures first so the shape
     // predicates below see resolved types, then whole-check only the overloads IRGen
     // might call. These predicates mirror the backend scans; keep them in sync:
     // string.init arities live in irgen-decl.cpp (emitMainArgv) and irgen-expr.cpp
     // (emitStringLiteralExpr), the string == in irgen-stmt.cpp (emitStringSwitchStmt).
-    for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("string.init")) {
-        ensureSignature(*decl);
+    // The backend asserts the callees are checked, so a missed implicitUses flag
+    // fails loudly in tests instead of miscompiling.
+    if (usesArgv || implicitUses.stringLiteral) {
+        for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("string.init")) {
+            ensureSignature(*decl);
+        }
     }
-    for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("==")) {
-        ensureSignature(*decl);
+    if (implicitUses.stringSwitch) {
+        for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("==")) {
+            ensureSignature(*decl);
+        }
     }
-    for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("string.init")) {
-        auto* ctor = llvm::dyn_cast<ConstructorDecl>(decl);
-        if (!ctor) continue;
-        auto params = ctor->getParams();
-        if (params.size() == 1 && params[0].type.isPointerType() && params[0].type.getPointee().isChar()) markReferenced(decl);
-        if (params.size() == 2 && params[0].type.isPointerType() && params[1].type.isInt()) markReferenced(decl);
+    if (usesArgv || implicitUses.stringLiteral) {
+        for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("string.init")) {
+            auto* ctor = llvm::dyn_cast<ConstructorDecl>(decl);
+            if (!ctor) continue;
+            auto params = ctor->getParams();
+            if (usesArgv && params.size() == 1 && params[0].type.isPointerType() && params[0].type.getPointee().isChar()) markReferenced(decl);
+            if (implicitUses.stringLiteral && params.size() == 2 && params[0].type.isPointerType() && params[1].type.isInt()) markReferenced(decl);
+        }
     }
-    for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("==")) {
-        auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
-        if (!functionDecl) continue;
-        auto params = functionDecl->getParams();
-        if (params.size() == 2 && params[0].type.isBasicType() && params[0].type.getName() == "string" && params[1].type.isBasicType()
-            && params[1].type.getName() == "string") {
-            markReferenced(decl);
+    if (implicitUses.stringSwitch) {
+        for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("==")) {
+            auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
+            if (!functionDecl) continue;
+            auto params = functionDecl->getParams();
+            if (params.size() == 2 && params[0].type.isBasicType() && params[0].type.getName() == "string" && params[1].type.isBasicType()
+                && params[1].type.getName() == "string") {
+                markReferenced(decl);
+            }
         }
     }
 }

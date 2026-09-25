@@ -405,8 +405,13 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
 
         // IRGen drops values of destructor types at scope exit without going through
         // name resolution, so the destructor would never be demand-checked otherwise.
-        if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-            if (DestructorDecl* dtor = typeDecl->getDestructor()) markReferenced(dtor);
+        // Skipped for types mentioned in signatures: parameters are marked from the
+        // body instead (see typecheckFunctionDecl), and no other values materialize
+        // from a signature mention.
+        if (!checkingFunctionSignature) {
+            if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                if (DestructorDecl* dtor = typeDecl->getDestructor()) markReferenced(dtor);
+            }
         }
 
         checkHasAccess(*decl, type.location, userAccessLevel);
@@ -607,6 +612,7 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
     decl.checkState = Decl::CheckState::CheckingSignature;
     llvm::SaveAndRestore saveModule(currentModule);
     llvm::SaveAndRestore saveFile(currentSourceFile);
+    llvm::SaveAndRestore setCheckingSignature(checkingFunctionSignature, true);
     setDeclContext(decl);
     try {
         for (auto& param : decl.proto.params) {
@@ -646,6 +652,12 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.isExtern()) {
         decl.checkState = Decl::CheckState::Checked;
         return;
+    }
+    // Value parameters are owned by the body: it drops them at exit, but their
+    // types are only mentioned in the signature, where destructor marking is
+    // skipped (see checkingFunctionSignature).
+    for (auto& param : decl.getParams()) {
+        if (DestructorDecl* dtor = param.type.getDestructor()) markReferenced(dtor);
     }
     decl.checkState = Decl::CheckState::CheckingBody;
     llvm::SaveAndRestore saveModule(currentModule);

@@ -533,6 +533,7 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
     if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum) {
         ERROR(condition->location, "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
     }
+    if (isSwitchableEnum) implicitUses.enumSwitch = true;
     return conditionType;
 }
 
@@ -558,6 +559,8 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum && !isString) {
         ERROR(stmt.condition->location, "switch condition must have integer, char, string, or enum type, got '" << conditionType << "'");
     }
+    if (isString) implicitUses.stringSwitch = true;
+    if (isSwitchableEnum) implicitUses.enumSwitch = true;
 
     // Case values run before every case body, so variables assigned in any value
     // are un-narrowed for the bodies. Bodies may or may not run, so variables

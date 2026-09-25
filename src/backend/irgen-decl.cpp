@@ -137,7 +137,9 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
 Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Location location) {
     Type stringType = BasicType::get("string", {});
-    auto* mallocFunction = getFunction(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("malloc")));
+    auto* mallocDecl = llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("malloc"));
+    checkImplicitCalleeIsChecked(*mallocDecl, "malloc");
+    auto* mallocFunction = getFunction(*mallocDecl);
 
     // Copy the C strings into a heap array of strings that lives for the whole program run.
     Value* count = createCast(argc, Type::getUInt64(), "argv.count");
@@ -152,6 +154,7 @@ Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Locati
     for (auto* decl : Module::getStdlibModule()->symbolTable.findInTopLevelScope("string.init")) {
         auto params = llvm::cast<ConstructorDecl>(decl)->getParams();
         if (params.size() == 1 && params[0].type.isPointerType() && params[0].type.getPointee().isChar()) {
+            checkImplicitCalleeIsChecked(*decl, "string.init");
             stringInit = getFunction(*llvm::cast<ConstructorDecl>(decl));
             break;
         }

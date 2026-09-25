@@ -92,3 +92,68 @@ void _EN3std5SliceI3intE16indexOutOfBoundsE6string3int(Slice<int>* this, string 
     never _4 = call _EN3std5abortI6string6string6string3int6string3intEVE6string6string6string3int6string3int(string __str.load, string function.load, string __str.load_0, int index.load, string __str.load_1, int _3)
     return void
 }
+
+never _EN3std5abortI6string6string6string3int6string3intEVE6string6string6string3int6string3int(string args_0, string args_1, string args_2, int args_3, string args_4, int args_5) {
+    string* args_0_0 = alloca string
+    string* args_1_0 = alloca string
+    string* args_2_0 = alloca string
+    int* args_3_0 = alloca int
+    string* args_4_0 = alloca string
+    int* args_5_0 = alloca int
+    string* arg = alloca string
+    OutputFileStream* _0 = alloca OutputFileStream
+    string* arg_0 = alloca string
+    OutputFileStream* _1 = alloca OutputFileStream
+    string* arg_1 = alloca string
+    OutputFileStream* _2 = alloca OutputFileStream
+    int* arg_2 = alloca int
+    OutputFileStream* _3 = alloca OutputFileStream
+    string* arg_3 = alloca string
+    OutputFileStream* _4 = alloca OutputFileStream
+    int* arg_4 = alloca int
+    OutputFileStream* _5 = alloca OutputFileStream
+    OutputFileStream* _6 = alloca OutputFileStream
+    char* _7 = alloca char
+    store args_0 to args_0_0
+    store args_1 to args_1_0
+    store args_2 to args_2_0
+    store args_3 to args_3_0
+    store args_4 to args_4_0
+    store args_5 to args_5_0
+    string args_0.load = load args_0_0
+    store args_0.load to arg
+    OutputFileStream _8 = call _EN3std6stderrE()
+    store _8 to _0
+    void _9 = call _EN3std16OutputFileStream5writeI6stringEER6string(OutputFileStream* _0, string* arg)
+    string args_1.load = load args_1_0
+    store args_1.load to arg_0
+    OutputFileStream _10 = call _EN3std6stderrE()
+    store _10 to _1
+    void _11 = call _EN3std16OutputFileStream5writeI6stringEER6string(OutputFileStream* _1, string* arg_0)
+    string args_2.load = load args_2_0
+    store args_2.load to arg_1
+    OutputFileStream _12 = call _EN3std6stderrE()
+    store _12 to _2
+    void _13 = call _EN3std16OutputFileStream5writeI6stringEER6string(OutputFileStream* _2, string* arg_1)
+    int args_3.load = load args_3_0
+    store args_3.load to arg_2
+    OutputFileStream _14 = call _EN3std6stderrE()
+    store _14 to _3
+    void _15 = call _EN3std16OutputFileStream5writeI3intEER3int(OutputFileStream* _3, int* arg_2)
+    string args_4.load = load args_4_0
+    store args_4.load to arg_3
+    OutputFileStream _16 = call _EN3std6stderrE()
+    store _16 to _4
+    void _17 = call _EN3std16OutputFileStream5writeI6stringEER6string(OutputFileStream* _4, string* arg_3)
+    int args_5.load = load args_5_0
+    store args_5.load to arg_4
+    OutputFileStream _18 = call _EN3std6stderrE()
+    store _18 to _5
+    void _19 = call _EN3std16OutputFileStream5writeI3intEER3int(OutputFileStream* _5, int* arg_4)
+    OutputFileStream _20 = call _EN3std6stderrE()
+    store _20 to _6
+    store char 10 to _7
+    void _21 = call _EN3std16OutputFileStream5writeI4charEER4char(OutputFileStream* _6, char* _7)
+    never _22 = call _EN3std12abortWrapperE()
+    unreachable
+}

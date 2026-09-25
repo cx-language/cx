@@ -21,7 +21,19 @@ define i32 @main() #0 !dbg !7 {
   ret i32 0
 }
 
-declare void @_EN3std5RangeI3intE4initE3int3int(ptr, i32, i32) #0
+define void @_EN3std5RangeI3intE4initE3int3int(ptr %this, i32 %start, i32 %end) #0 !dbg !10 {
+  %start1 = alloca i32, align 4
+  %end2 = alloca i32, align 4
+  store i32 %start, ptr %start1, align 4
+  store i32 %end, ptr %end2, align 4
+  %start3 = getelementptr inbounds %"Range<int>", ptr %this, i32 0, i32 0
+  %start.load = load i32, ptr %start1, align 4
+  store i32 %start.load, ptr %start3, align 4
+  %end4 = getelementptr inbounds %"Range<int>", ptr %this, i32 0, i32 1
+  %end.load = load i32, ptr %end2, align 4
+  store i32 %end.load, ptr %end4, align 4
+  ret void
+}
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -38,3 +50,5 @@ attributes #0 = { "frame-pointer"="all" }
 !7 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !8 = !DILocation(line: 8, column: 10, scope: !7)
 !9 = !DILocation(line: 8, column: 5, scope: !7)
+!10 = distinct !DISubprogram(name: "init", linkageName: "_EN3std5RangeI3intE4initE3int3int", scope: !11, file: !11, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!11 = !DIFile(filename: "Range.cx")

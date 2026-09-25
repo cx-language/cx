@@ -89,8 +89,9 @@ struct Typechecker {
     void ensureInterfaces(TypeDecl& decl);
     void markReferenced(Decl* decl);
     // Whole-checks std declarations IRGen references without going through
-    // sema name resolution (malloc, assertFail, string.init, operator==).
-    void ensureImplicitRuntimeUses();
+    // sema name resolution (malloc, assertFail, string.init, operator==),
+    // limited to the ones the checked code can actually reach.
+    void ensureImplicitRuntimeUses(const Module& mainModule);
     // Points name resolution at the declaration's own module and file.
     // Lazily checked declarations from imported modules must resolve names
     // in their own scope, not the use site's. Callers save and restore.
@@ -212,6 +213,24 @@ struct Typechecker {
     llvm::SmallPtrSet<Decl*, 32> definitelyAssignedDecls;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
+    // Set while checking function signatures (parameters and return type).
+    // Types mentioned there materialize no values, so their destructors must
+    // not be demand-checked: values are dropped (and their destructors marked)
+    // at bodies, variable declarations, and field declarations instead.
+    bool checkingFunctionSignature = false;
+    // Constructs seen while checking that need implicit runtime declarations
+    // at IRGen (see ensureImplicitRuntimeUses). Set conservatively: a missed
+    // construct would emit a call to an unchecked body, so when in doubt set.
+    // Mutable for const helpers like convert() that also observe them.
+    struct ImplicitUses {
+        bool stringLiteral = false;
+        bool stringSwitch = false;
+        bool enumSwitch = false;
+        bool unwrap = false;
+        bool checkedArithmetic = false;
+        bool assertCall = false;
+    };
+    mutable ImplicitUses implicitUses;
     // Types whose infinite-size error was already reported by the early size check.
     llvm::SmallPtrSet<const TypeDecl*, 16> infiniteSizeReported;
     CompileOptions options; // Active package's options; switched per module.

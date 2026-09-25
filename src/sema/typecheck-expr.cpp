@@ -564,6 +564,10 @@ EnumCase* cx::getIsEnumCase(Expr& expr) {
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.op;
 
+    // Conservative: the backend emits overflow checks for integer +,-,* (see
+    // emitCheckedArithmetic), and compound assignment desugars through here.
+    if (op == Token::Plus || op == Token::Minus || op == Token::Star) implicitUses.checkedArithmetic = true;
+
     if (op == Token::Assignment) {
         typecheckAssignment(expr, expr.location);
         return Type::getVoid();
@@ -1091,6 +1095,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
                 expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow);
                 if (!expr) return nullptr;
             }
+            if (*implicitCastKind == ImplicitCastExpr::OptionalUnwrap) implicitUses.unwrap = true;
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
             if (*implicitCastKind == ImplicitCastExpr::AutoReference && expr->hasAssignableType() && expr->assignableType.isOptionalType()
                 && !expr->assignableType.getWrappedType().isImplementedAsPointer() && expr->type == expr->assignableType.getWrappedType()) {
@@ -2740,6 +2745,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     if (expr.getFunctionName() == "assert") {
+        implicitUses.assertCall = true;
         llvm::SmallVector<ParamDecl, 2> assertParams;
         assertParams.emplace_back(Type::getBool(), "", false, Location());
         assertParams.emplace_back(BasicType::get("string", {}), "message", false, Location());
@@ -2835,7 +2841,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
     }
 
-    if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl); functionDecl && functionDecl->isMethodDecl() && functionDecl->getTypeDecl()->getName() == "Array") {
+    if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
+        functionDecl && functionDecl->isMethodDecl() && functionDecl->getTypeDecl()->getName() == "Array") {
         deferTypechecking(functionDecl);
     }
 
@@ -3457,6 +3464,7 @@ Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
         WARN(expr.location, "unwrapping non-optional type '" << type << "' has no effect");
         return type;
     }
+    implicitUses.unwrap = true;
     return type.getWrappedType();
 }
 
@@ -3627,6 +3635,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         if (!type) throw CompileError::dependentError(); // Variable initializer had an error, don't report uses of that variable as errors.
         break;
     case ExprKind::StringLiteralExpr:
+        implicitUses.stringLiteral = true;
         type = typecheckStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
         break;
     case ExprKind::CharacterLiteralExpr:
