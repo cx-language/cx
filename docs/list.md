@@ -66,7 +66,7 @@ so chained operations only traverse the list once.
 Collect the results into a list with `toList()`.
 
 ```cs
-bool isEven(int& n) {
+bool isEven(int n) {
     return n % 2 == 0;
 }
 
