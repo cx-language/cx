@@ -57,6 +57,9 @@ void main() {
     var lb = List([true]);
     // CHECK: [[@LINE+1]]:16: error: no matching operator '==' with arguments 'List<int>' and 'List<bool>'
     println(la == lb);
+    // Float literals default to 'float', like int literals default to 'int'.
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'float' to 'bool'
+    bool r = 1.5;
 }
 
 // CHECK-NOT: alias-spelling-in-diagnostics.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

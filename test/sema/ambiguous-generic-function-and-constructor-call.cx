@@ -9,7 +9,7 @@ Box<T> Box<T>(T a) {
 }
 
 void main() {
-    // CHECK: 17:13: error: ambiguous reference to 'Box<int32>' constructor
+    // CHECK: 17:13: error: ambiguous reference to 'Box<int>' constructor
     // CHECK: 3:8: note: candidate function:
     // CHECK-NEXT: struct Box<T> {
     // CHECK: 7:8: note: candidate function:

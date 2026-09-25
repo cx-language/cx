@@ -320,7 +320,10 @@ static Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
 }
 
 static Type typecheckFloatLiteralExpr(FloatLiteralExpr&) {
-    return Type::getFloat32();
+    // 'float' is the default spelling for floating-point literals.
+    Type type = Type::getFloat32();
+    type.aliasSpelling = internString("float");
+    return type;
 }
 
 static Type typecheckBoolLiteralExpr(BoolLiteralExpr&) {
@@ -2631,7 +2634,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         }
     }
 
-    auto calleeWithGenericArgs = getQualifiedTypeName(callee, expr.genericArgs);
+    auto calleeWithGenericArgs = getDisplayTypeName(callee, expr.genericArgs);
 
     if (matches.size() > 1) {
         try {
@@ -3907,7 +3910,7 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
     }
     if (!enumDecl) {
         if (!existingDecls.empty()) {
-            ERROR(memberExpr.location, "ambiguous reference to '" << qualifiedName << "'");
+            ERROR(memberExpr.location, "ambiguous reference to '" << getDisplayTypeName(templateDecl->getName(), orderedArgs) << "'");
         }
         enumDecl = llvm::cast<EnumDecl>(typeTemplate.instantiate(genericArgs));
         currentModule->addToSymbolTable(*enumDecl);
