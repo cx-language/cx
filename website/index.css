@@ -285,6 +285,9 @@ th {
     letter-spacing: -0.03em;
     line-height: 1;
     margin: 0;
+    /* Lowercase glyphs sit below the line box center; nudge up so the
+       wordmark looks centered against the nav links. */
+    transform: translateY(-0.08em);
 }
 
 .top-nav h1 a {
