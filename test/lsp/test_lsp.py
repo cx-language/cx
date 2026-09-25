@@ -785,8 +785,8 @@ def test_pkg_config_headers(cx_lsp):
             json.dumps(messages)[:500],
         )
 
-        if shutil.which("pkg-config") is None:
-            print("SKIP query-pkg-config-headers (no pkg-config)")
+        if sys.platform == "win32" or shutil.which("pkg-config") is None:
+            print("SKIP query-pkg-config-headers (no pkg-config on Windows CI)")
             return
 
         with open(build_path, "w") as file:
