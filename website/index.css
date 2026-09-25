@@ -659,7 +659,9 @@ a.button:hover, button:hover {
     padding: 0 4px;
     white-space: pre-wrap;
     font-family: var(--mono);
-    font-size: 12px;
+    /* Inherits the code size: the caret column only lines up when the
+       indent advances match the code lines exactly. */
+    font-size: inherit;
 }
 
 .diagnostic.error {
