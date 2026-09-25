@@ -932,6 +932,10 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
             current = indexAssignExpr->getBase();
             continue;
         }
+        if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(current)) {
+            current = unwrapExpr->operand;
+            continue;
+        }
         return nullptr;
     }
 }

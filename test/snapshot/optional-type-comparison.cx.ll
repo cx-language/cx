@@ -21,15 +21,14 @@ define i32 @main() #0 !dbg !4 {
 define i1 @_CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32(ptr %a, ptr %b) #0 !dbg !8 {
   %a1 = alloca ptr, align 8
   %b2 = alloca ptr, align 8
-  %1 = alloca %"Optional<int32>", align 8
   store ptr %a, ptr %a1, align 8
   store ptr %b, ptr %b2, align 8
   %a.load = load ptr, ptr %a1, align 8
   %a.load.load = load %"Optional<int32>", ptr %a.load, align 4
-  %2 = extractvalue %"Optional<int32>" %a.load.load, 0
-  %3 = icmp eq i32 %2, 1
-  %4 = xor i1 %3, true
-  br i1 %4, label %if.then, label %if.else
+  %1 = extractvalue %"Optional<int32>" %a.load.load, 0
+  %2 = icmp eq i32 %1, 1
+  %3 = xor i1 %2, true
+  br i1 %3, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
   ret i1 false
@@ -40,23 +39,22 @@ if.else:                                          ; preds = %0
 if.end:                                           ; preds = %if.else
   %a.load3 = load ptr, ptr %a1, align 8
   %a.load.load4 = load %"Optional<int32>", ptr %a.load3, align 4
-  %5 = extractvalue %"Optional<int32>" %a.load.load4, 0
-  %6 = icmp eq i32 %5, 1
-  %assert.condition = icmp eq i1 %6, false
+  %4 = extractvalue %"Optional<int32>" %a.load.load4, 0
+  %5 = icmp eq i32 %4, 1
+  %assert.condition = icmp eq i1 %5, false
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %if.end
-  %7 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !10
+  %6 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !10
   unreachable
 
 assert.success:                                   ; preds = %if.end
-  store %"Optional<int32>" %a.load.load4, ptr %1, align 4
-  %8 = getelementptr inbounds %"Optional<int32>", ptr %1, i32 0, i32 1
-  %.load = load i32, ptr %8, align 4
+  %7 = getelementptr inbounds %"Optional<int32>", ptr %a.load3, i32 0, i32 1
+  %.load = load i32, ptr %7, align 4
   %b.load = load ptr, ptr %b2, align 8
   %b.load.load = load i32, ptr %b.load, align 4
-  %9 = icmp eq i32 %.load, %b.load.load
-  ret i1 %9
+  %8 = icmp eq i32 %.load, %b.load.load
+  ret i1 %8
 }
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0

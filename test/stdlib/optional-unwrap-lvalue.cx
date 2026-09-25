@@ -1,0 +1,98 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+
+struct Point {
+    float x;
+    float y;
+}
+
+struct Holder {
+    int? field;
+}
+
+void setTo99(int& v) { *v = 99; }
+
+void main() {
+    testIndexAssign();
+    testPlainAssign();
+    testPointerOptionalAssign();
+    testMemberAssign();
+    testAddressOf();
+    testBorrowParam();
+    testNestedLvalues();
+    testCompoundAssign();
+    testMethodCall();
+    testNestedUnwrap();
+}
+
+void testIndexAssign() {
+    float[2]? opt = [1.0, 2.0];
+    opt![0] = 5.0;
+    assert(opt![0] == 5.0);
+    assert(opt![1] == 2.0);
+}
+
+void testPlainAssign() {
+    int? a = 1;
+    a! = 42;
+    assert(a! == 42);
+}
+
+void testPointerOptionalAssign() {
+    var n = 5;
+    var m = 6;
+    int*? p = &n;
+    p! = &m;
+    assert(*p! == 6);
+}
+
+void testMemberAssign() {
+    Point? pt = Point(1.0, 2.0);
+    pt!.x = 9.0;
+    assert(pt!.x == 9.0 && pt!.y == 2.0);
+}
+
+void testAddressOf() {
+    int? b = 3;
+    var bp = &b!;
+    *bp = 8;
+    assert(b! == 8);
+}
+
+void testBorrowParam() {
+    int? c = 0;
+    setTo99(c!);
+    assert(c! == 99);
+}
+
+void testNestedLvalues() {
+    var h = Holder(1);
+    h.field! = 10;
+    assert(h.field! == 10);
+
+    int?[3] opts = [1, 2, 3];
+    opts[1]! = 20;
+    assert(opts[1]! == 20);
+}
+
+void testCompoundAssign() {
+    int? a = 1;
+    a! += 5;
+    assert(a! == 6);
+
+    int? c = 0;
+    ++c!;
+    assert(c! == 1);
+}
+
+void testMethodCall() {
+    StringBuf? b = StringBuf("hi");
+    b!.push('!');
+    assert(b! == "hi!");
+}
+
+void testNestedUnwrap() {
+    int?? a = 5;
+    a!! = 6;
+    assert(a!! == 6);
+}

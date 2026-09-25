@@ -2,6 +2,7 @@
 // CHECK-NOT: address-of-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 int foo() { return 42; }
+int? getOpt() { return 42; }
 
 struct Point: Copyable {
     int x;
@@ -21,9 +22,11 @@ void main() {
     var i = 0;
     int* ok1 = &i;
     int* ok2 = &*ok1;
+    // CHECK: [[@LINE+1]]:31: error: cannot take address of rvalue of type 'int'
+    int* badUnwrap = &getOpt()!;
+    // Unwrapping an lvalue optional designates the payload, so this is fine.
     int*? nullable = &i;
-    // CHECK: [[@LINE+1]]:33: error: cannot take address of rvalue of type 'int*'
-    int** badUnwrap = &(nullable!);
+    int** okUnwrap = &(nullable!);
 
     int[3] numbers = [1, 2, 3];
     int* ok3 = &numbers[1];

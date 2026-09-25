@@ -29,7 +29,8 @@ assert.fail_0:
     unreachable
 
 assert.success_0:
-    uint8* _6 = getelementptr ptr.load, int32 0, int32 0
+    uint8[1]* ptr.load_0 = load ptr
+    uint8* _6 = getelementptr ptr.load_0, int32 0, int32 0
     store uint8 1 to _6
     return int32 0
 }

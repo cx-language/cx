@@ -29,12 +29,13 @@ __implicit_unwrap.fail:
     unreachable
 
 __implicit_unwrap.success:
-    void _5 = call _CX1N4main1jE4void1_PM3std5int32(int32* c.load_0)
+    int32* c.load_2 = load c
+    void _5 = call _CX1N4main1jE4void1_PM3std5int32(int32* c.load_2)
     br loop.condition
 
 if.then:
-    int32* c.load_2 = load c_0
-    bool __implicit_unwrap.condition_0 = c.load_2 == int32* null
+    int32* c.load_3 = load c_0
+    bool __implicit_unwrap.condition_0 = c.load_3 == int32* null
     br __implicit_unwrap.condition_0, __implicit_unwrap.fail, __implicit_unwrap.success
 
 if.else:
@@ -49,7 +50,8 @@ __implicit_unwrap.fail_0:
     unreachable
 
 __implicit_unwrap.success_0:
-    void _7 = call _CX1N4main1jE4void1_PM3std5int32(int32* c.load_2)
+    int32* c.load_4 = load c_0
+    void _7 = call _CX1N4main1jE4void1_PM3std5int32(int32* c.load_4)
     br if.end
 }
 
@@ -96,7 +98,8 @@ __implicit_unwrap.fail:
     unreachable
 
 __implicit_unwrap.success:
-    void _5 = call _CX1N4main1jE4void1_PM3std5int32(int32* c1.load_0)
+    int32* c1.load_1 = load c1
+    void _5 = call _CX1N4main1jE4void1_PM3std5int32(int32* c1.load_1)
     br loop.condition
 
 if.then:
@@ -116,7 +119,8 @@ __implicit_unwrap.fail_0:
     unreachable
 
 __implicit_unwrap.success_0:
-    void _7 = call _CX1N4main1jE4void1_PM3std5int32(int32* c2.load_0)
+    int32* c2.load_1 = load c2
+    void _7 = call _CX1N4main1jE4void1_PM3std5int32(int32* c2.load_1)
     br if.end
 
 loop.condition_0:
@@ -144,7 +148,8 @@ __implicit_unwrap.fail_1:
     unreachable
 
 __implicit_unwrap.success_1:
-    void _13 = call _CX1N4main1jE4void1_PM3std5int32(int32* c3.load_0)
+    int32* c3.load_1 = load c3
+    void _13 = call _CX1N4main1jE4void1_PM3std5int32(int32* c3.load_1)
     br loop.condition_0
 
 if.then_0:
@@ -168,7 +173,8 @@ __implicit_unwrap.fail_2:
     unreachable
 
 __implicit_unwrap.success_2:
-    void _17 = call _CX1N4main1jE4void1_PM3std5int32(int32* c4.load_0)
+    int32* c4.load_1 = load c4
+    void _17 = call _CX1N4main1jE4void1_PM3std5int32(int32* c4.load_1)
     br if.end_0
 
 if.then_1:
@@ -188,6 +194,7 @@ __implicit_unwrap.fail_3:
     unreachable
 
 __implicit_unwrap.success_3:
-    void _19 = call _CX1N4main1jE4void1_PM3std5int32(int32* c5.load_0)
+    int32* c5.load_1 = load c5
+    void _19 = call _CX1N4main1jE4void1_PM3std5int32(int32* c5.load_1)
     br if.end_1
 }

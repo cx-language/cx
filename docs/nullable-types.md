@@ -47,6 +47,17 @@ void main() {
 }
 ```
 
+Unwrapping preserves the value category of the operand:
+unwrapping a variable (or another lvalue) designates the payload in place,
+so it can be assigned to, while unwrapping a temporary is still an rvalue.
+
+```cs
+void main() {
+    float[2]? opt = [1.0, 2.0];
+    opt![0] = 5.0; // writes through to the payload
+}
+```
+
 ## Switching on nullable values
 
 The `?` suffix is shorthand for the generic `Optional` enum,

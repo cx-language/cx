@@ -384,7 +384,7 @@ bool Expr::isLvalue() const {
     case ExprKind::UnaryExpr:
         return llvm::cast<UnaryExpr>(this)->op == Token::Star;
     case ExprKind::UnwrapExpr:
-        return false;
+        return llvm::cast<UnwrapExpr>(this)->operand->isLvalue();
     default:
         return false;
     }

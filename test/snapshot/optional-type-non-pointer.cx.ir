@@ -122,25 +122,24 @@ void _CX1N4main1fE4void0_() {
     Optional<int32>* enum_3 = alloca Optional<int32>
     int32* x = alloca int32
     Optional<int32>* enum_4 = alloca Optional<int32>
-    Optional<int32>* _0 = alloca Optional<int32>
     int32* tag = getelementptr enum, 0
     store int32 0 to tag
     Optional<int32> enum.load = load enum
     store enum.load to a
     int32* tag_0 = getelementptr enum_0, 0
     store int32 1 to tag_0
-    struct { int32 } _1 = insertvalue struct { int32 } undefined, 0, int32 2
+    struct { int32 } _0 = insertvalue struct { int32 } undefined, 0, int32 2
     union { struct { int32 } }* associatedValue = getelementptr enum_0, 1
-    struct { int32 }* _2 = cast associatedValue to struct { int32 }*
-    store _1 to _2
+    struct { int32 }* _1 = cast associatedValue to struct { int32 }*
+    store _0 to _1
     Optional<int32> enum.load_0 = load enum_0
     store enum.load_0 to b
     int32* tag_1 = getelementptr enum_1, 0
     store int32 1 to tag_1
-    struct { int32 } _3 = insertvalue struct { int32 } undefined, 0, int32 3
+    struct { int32 } _2 = insertvalue struct { int32 } undefined, 0, int32 3
     union { struct { int32 } }* associatedValue_0 = getelementptr enum_1, 1
-    struct { int32 }* _4 = cast associatedValue_0 to struct { int32 }*
-    store _3 to _4
+    struct { int32 }* _3 = cast associatedValue_0 to struct { int32 }*
+    store _2 to _3
     Optional<int32> enum.load_1 = load enum_1
     store enum.load_1 to c
     int32* tag_2 = getelementptr enum_2, 0
@@ -152,22 +151,22 @@ void _CX1N4main1fE4void0_() {
     Optional<int32> enum.load_3 = load enum_3
     store enum.load_3 to c
     Optional<int32> c.load = load c
-    int32 _5 = extractvalue c.load, 0
-    bool _6 = _5 == int32 1
-    br _6, if.then, if.else
+    int32 _4 = extractvalue c.load, 0
+    bool _5 = _4 == int32 1
+    br _5, if.then, if.else
 
 if.then:
-    union { struct { int32 } }* _7 = getelementptr c, 1
-    int32* _8 = cast _7 to int32*
-    int32 .load = load _8
-    int64 _9 = cast .load to int64
-    int64 _10 = cast int32 1 to int64
-    int64 _11 = _9 + _10
-    int32 _12 = cast _11 to int32
-    int64 _13 = cast _12 to int64
-    bool _14 = _11 != _13
-    bool _15 = !_14
-    bool overflow.condition = _15 == bool false
+    union { struct { int32 } }* _6 = getelementptr c, 1
+    int32* _7 = cast _6 to int32*
+    int32 .load = load _7
+    int64 _8 = cast .load to int64
+    int64 _9 = cast int32 1 to int64
+    int64 _10 = _8 + _9
+    int32 _11 = cast _10 to int32
+    int64 _12 = cast _11 to int64
+    bool _13 = _10 != _12
+    bool _14 = !_13
+    bool overflow.condition = _14 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 if.else:
@@ -175,56 +174,56 @@ if.else:
 
 if.end:
     Optional<int32> c.load_0 = load c
-    int32 _16 = extractvalue c.load_0, 0
-    bool _17 = _16 == int32 1
-    br _17, if.then, if.else
+    int32 _15 = extractvalue c.load_0, 0
+    bool _16 = _15 == int32 1
+    br _16, if.then, if.else
 
 overflow.fail:
-    never _18 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:26:19
+    never _17 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:26:19
 ")
     unreachable
 
 overflow.success:
-    store _12 to x
-    union { struct { int32 } }* _19 = getelementptr c, 1
-    int32* _20 = cast _19 to int32*
-    int32 .load_0 = load _20
-    int64 _21 = cast int32 1 to int64
-    int64 _22 = cast .load_0 to int64
-    int64 _23 = _21 + _22
-    int32 _24 = cast _23 to int32
-    int64 _25 = cast _24 to int64
-    bool _26 = _23 != _25
-    bool _27 = !_26
-    bool overflow.condition_0 = _27 == bool false
+    store _11 to x
+    union { struct { int32 } }* _18 = getelementptr c, 1
+    int32* _19 = cast _18 to int32*
+    int32 .load_0 = load _19
+    int64 _20 = cast int32 1 to int64
+    int64 _21 = cast .load_0 to int64
+    int64 _22 = _20 + _21
+    int32 _23 = cast _22 to int32
+    int64 _24 = cast _23 to int64
+    bool _25 = _22 != _24
+    bool _26 = !_25
+    bool overflow.condition_0 = _26 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _28 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:27:15
+    never _27 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:27:15
 ")
     unreachable
 
 overflow.success_0:
     int32* tag_4 = getelementptr enum_4, 0
     store int32 1 to tag_4
-    union { struct { int32 } }* _29 = getelementptr c, 1
-    int32* _30 = cast _29 to int32*
-    int32 .load_1 = load _30
-    int32 _31 = -.load_1
-    struct { int32 } _32 = insertvalue struct { int32 } undefined, 0, _31
+    union { struct { int32 } }* _28 = getelementptr c, 1
+    int32* _29 = cast _28 to int32*
+    int32 .load_1 = load _29
+    int32 _30 = -.load_1
+    struct { int32 } _31 = insertvalue struct { int32 } undefined, 0, _30
     union { struct { int32 } }* associatedValue_1 = getelementptr enum_4, 1
-    struct { int32 }* _33 = cast associatedValue_1 to struct { int32 }*
-    store _32 to _33
+    struct { int32 }* _32 = cast associatedValue_1 to struct { int32 }*
+    store _31 to _32
     Optional<int32> enum.load_4 = load enum_4
     store enum.load_4 to c
     br if.end
 
 if.then_0:
-    union { struct { int32 } }* _34 = getelementptr c, 1
-    int32* _35 = cast _34 to int32*
-    int32 .load_2 = load _35
-    int32 _36 = .load_2 + int32 1
-    store _36 to _35
+    union { struct { int32 } }* _33 = getelementptr c, 1
+    int32* _34 = cast _33 to int32*
+    int32 .load_2 = load _34
+    int32 _35 = .load_2 + int32 1
+    store _35 to _34
     br if.end_0
 
 if.else_0:
@@ -232,32 +231,31 @@ if.else_0:
 
 if.end_0:
     Optional<int32> c.load_1 = load c
-    int32 _37 = extractvalue c.load_1, 0
-    bool _38 = _37 == int32 1
-    bool __implicit_unwrap.condition = _38 == bool false
+    int32 _36 = extractvalue c.load_1, 0
+    bool _37 = _36 == int32 1
+    bool __implicit_unwrap.condition = _37 == bool false
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 __implicit_unwrap.fail:
-    never _39 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
+    never _38 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
 ")
     unreachable
 
 __implicit_unwrap.success:
-    store c.load_1 to _0
-    union { struct { int32 } }* _40 = getelementptr _0, 1
-    int32* _41 = cast _40 to int32*
-    int32 .load_3 = load _41
-    void _42 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_3)
+    union { struct { int32 } }* _39 = getelementptr c, 1
+    int32* _40 = cast _39 to int32*
+    int32 .load_3 = load _40
+    void _41 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_3)
     Optional<int32> c.load_2 = load c
-    int32 _43 = extractvalue c.load_2, 0
-    bool _44 = _43 == int32 1
-    br _44, if.then, if.else
+    int32 _42 = extractvalue c.load_2, 0
+    bool _43 = _42 == int32 1
+    br _43, if.then, if.else
 
 if.then_1:
-    union { struct { int32 } }* _45 = getelementptr c, 1
-    int32* _46 = cast _45 to int32*
-    int32 .load_4 = load _46
-    void _47 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_4)
+    union { struct { int32 } }* _44 = getelementptr c, 1
+    int32* _45 = cast _44 to int32*
+    int32 .load_4 = load _45
+    void _46 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_4)
     br if.end_1
 
 if.else_1:

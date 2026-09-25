@@ -30,8 +30,9 @@ assert.fail:                                      ; preds = %0
   unreachable
 
 assert.success:                                   ; preds = %0
-  %a1 = getelementptr inbounds %"Y<int32>", ptr %y.load, i32 0, i32 0
-  %a.load = load i32, ptr %a1, align 4
+  %y.load1 = load ptr, ptr %y, align 8
+  %a2 = getelementptr inbounds %"Y<int32>", ptr %y.load1, i32 0, i32 0
+  %a.load = load i32, ptr %a2, align 4
   store i32 %a.load, ptr %a, align 4
   ret void
 }

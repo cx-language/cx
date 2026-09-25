@@ -17,8 +17,9 @@ assert.fail:
     unreachable
 
 assert.success:
+    char** s.load_0 = load s
     int32 i.load = load i
-    char** _2 = getelementptr s.load, i.load
+    char** _2 = getelementptr s.load_0, i.load
     char* .load = load _2
     c_int _3 = call printf(char* "%s
 ", char* .load)

@@ -21,8 +21,9 @@ assert.fail:                                      ; preds = %0
   unreachable
 
 assert.success:                                   ; preds = %0
+  %s.load1 = load ptr, ptr %s, align 8
   %i.load = load i32, ptr %i, align 4
-  %3 = getelementptr inbounds ptr, ptr %s.load, i32 %i.load
+  %3 = getelementptr inbounds ptr, ptr %s.load1, i32 %i.load
   %.load = load ptr, ptr %3, align 8
   %4 = call i32 (ptr, ...) @printf(ptr @1, ptr %.load), !dbg !9
   ret i32 0

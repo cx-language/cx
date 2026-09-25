@@ -130,8 +130,20 @@ Value* IRGenerator::emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType) {
 }
 
 Value* IRGenerator::emitOptionalUnwrap(Expr& operand, const Expr& expr, const llvm::Twine& name) {
-    auto* value = emitExpr(operand);
+    auto* value = emitLvalueExpr(operand);
     llvm::StringRef message = "Unwrap failed";
+
+    // An lvalue operand addresses the optional storage, so the unwrap addresses the payload:
+    // address users (assignment, indexing) write through to it, while value users load through
+    // the returned pointer exactly as before.
+    if (value->getType()->isPointerType() && value->getType()->getPointee()->equals(getIRType(operand.type))) {
+        if (operand.type.isImplementedAsPointer()) {
+            emitAssert(createLoad(value), &expr, expr.location, message, name);
+            return value;
+        }
+        emitAssert(emitOptionalHasValueTest(createLoad(value)), &expr, expr.location, message, name);
+        return emitOptionalPayloadPtr(value, operand.type.getWrappedType());
+    }
 
     if (operand.type.isImplementedAsPointer()) {
         emitAssert(value, &expr, expr.location, message, name);

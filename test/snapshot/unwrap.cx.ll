@@ -30,7 +30,8 @@ assert.fail2:                                     ; preds = %assert.success
   unreachable
 
 assert.success3:                                  ; preds = %assert.success
-  %5 = getelementptr inbounds [1 x i8], ptr %ptr.load, i32 0, i32 0
+  %ptr.load4 = load ptr, ptr %ptr, align 8
+  %5 = getelementptr inbounds [1 x i8], ptr %ptr.load4, i32 0, i32 0
   store i8 1, ptr %5, align 1
   ret i32 0
 }

@@ -15,15 +15,14 @@ int32 main() {
 bool _CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32(Optional<int32>* a, int32* b) {
     Optional<int32>** a_0 = alloca Optional<int32>*
     int32** b_0 = alloca int32*
-    Optional<int32>* _0 = alloca Optional<int32>
     store a to a_0
     store b to b_0
     Optional<int32>* a.load = load a_0
     Optional<int32> a.load.load = load a.load
-    int32 _1 = extractvalue a.load.load, 0
-    bool _2 = _1 == int32 1
-    bool _3 = !_2
-    br _3, if.then, if.else
+    int32 _0 = extractvalue a.load.load, 0
+    bool _1 = _0 == int32 1
+    bool _2 = !_1
+    br _2, if.then, if.else
 
 if.then:
     return bool false
@@ -34,23 +33,22 @@ if.else:
 if.end:
     Optional<int32>* a.load_0 = load a_0
     Optional<int32> a.load.load_0 = load a.load_0
-    int32 _4 = extractvalue a.load.load_0, 0
-    bool _5 = _4 == int32 1
-    bool assert.condition = _5 == bool false
+    int32 _3 = extractvalue a.load.load_0, 0
+    bool _4 = _3 == int32 1
+    bool assert.condition = _4 == bool false
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at Optional.cx:17:16
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at Optional.cx:17:16
 ")
     unreachable
 
 assert.success:
-    store a.load.load_0 to _0
-    union { struct { int32 } }* _7 = getelementptr _0, 1
-    int32* _8 = cast _7 to int32*
-    int32 .load = load _8
+    union { struct { int32 } }* _6 = getelementptr a.load_0, 1
+    int32* _7 = cast _6 to int32*
+    int32 .load = load _7
     int32* b.load = load b_0
     int32 b.load.load = load b.load
-    bool _9 = .load == b.load.load
-    return _9
+    bool _8 = .load == b.load.load
+    return _8
 }

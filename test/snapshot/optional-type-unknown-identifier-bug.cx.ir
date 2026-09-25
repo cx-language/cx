@@ -19,7 +19,8 @@ assert.fail:
     unreachable
 
 assert.success:
-    int32* a_0 = getelementptr y.load, 0
+    Y<int32>* y.load_0 = load y
+    int32* a_0 = getelementptr y.load_0, 0
     int32 a.load = load a_0
     store a.load to a
     return void
