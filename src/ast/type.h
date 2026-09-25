@@ -247,7 +247,6 @@ public:
 };
 
 struct ArrayPointerType : TypeBase {
-    static Type getIndexType() { return Type::getInt32(); }
     static const int64_t UnknownSize = -1;
     static Type get(Type elementType, Location location = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayPointerType; }

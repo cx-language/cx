@@ -3399,7 +3399,7 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
     if (!indexChecked) {
         Type indexType = typecheckExpr(*indexExpr);
 
-        if (auto converted = convert(indexExpr, ArrayPointerType::getIndexType())) {
+        if (auto converted = convert(indexExpr, Type::getInt32())) {
             expr.setIndex(converted);
             indexExpr = converted;
         } else if (!indexType.isInteger()) {

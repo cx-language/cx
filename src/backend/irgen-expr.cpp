@@ -871,7 +871,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
             if (functionDecl->getTypeDecl() && functionDecl->getTypeDecl()->getName() == "Array") {
                 Type receiverType = expr.receiverType.removeOptional().removePointer();
                 if (receiverType.isConcreteArray()) {
-                    return createConstantInt(ArrayPointerType::getIndexType(), receiverType.getArraySize());
+                    return createConstantInt(Type::getInt32(), receiverType.getArraySize());
                 }
             }
         }
