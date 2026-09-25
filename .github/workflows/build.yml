@@ -314,7 +314,12 @@ jobs:
           # First run bootstraps the branch; an end-of-file append always
           # conflicts under rebase, so retries reset and re-append instead.
           git fetch origin bench-data || true
-          git checkout bench-data 2>/dev/null || git checkout --orphan bench-data
+          # --orphan keeps the main checkout in the index; drop it so the
+          # branch holds only bench.jsonl. Untracked bench-record/ survives.
+          if ! git checkout bench-data 2>/dev/null; then
+            git checkout --orphan bench-data
+            git rm -rf -q .
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           sha=$(python3 -c "import json; print(json.load(open('bench-record/bench.json'))['sha'])")
