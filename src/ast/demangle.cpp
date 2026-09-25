@@ -149,7 +149,10 @@ std::string DemangleParser::parseType() {
         result = "<anonymous C type #" + parseDecimal() + ">";
         consume('_');
     } else if (kind >= '0' && kind <= '9') {
-        result = formatNamedType(parseIdentifier(), parseGenericArgs());
+        // Sequenced explicitly: argument evaluation order is unspecified, and
+        // parsing generic args before the identifier breaks this case.
+        std::string name = parseIdentifier();
+        result = formatNamedType(name, parseGenericArgs());
     } else {
         ++pos;
         switch (kind) {
