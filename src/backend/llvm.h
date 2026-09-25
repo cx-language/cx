@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <unordered_map>
 #include <vector>
 #pragma warning(push, 0)
@@ -65,7 +66,15 @@ struct LLVMGenerator {
     // are still kept so backtrace() unwinds past cx frames.
     bool emitDebugInfo = true;
 
-    llvm::LLVMContext ctx;
+    // Hands the context to the caller (for JIT execution). The generator must not be used afterwards.
+    std::unique_ptr<llvm::LLVMContext> takeContext() {
+        assert(!debugBuilder && "cannot take context mid-codegen");
+        return std::move(ownedCtx);
+    }
+
+    // Heap-owned so `cx run` can hand the context to LLVM's JIT, which takes owning pointers.
+    std::unique_ptr<llvm::LLVMContext> ownedCtx = std::make_unique<llvm::LLVMContext>();
+    llvm::LLVMContext& ctx = *ownedCtx;
     llvm::IRBuilder<> builder{ctx};
     llvm::Module* module = nullptr;
     std::vector<llvm::Module*> generatedModules;

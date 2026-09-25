@@ -89,6 +89,10 @@ target_precompile_headers(libcx PRIVATE src/pch.h)
 
 add_executable(cx src/cli/main.cpp)
 target_link_libraries(cx libcx)
+if(MSVC)
+    # JITed `cx run` programs execute on this thread; reserve the same 8MB stack the link-and-exec path gives run children.
+    target_link_options(cx PRIVATE "LINKER:/STACK:8388608")
+endif()
 
 # The language server: a thin stdio process that answers every operation by
 # spawning a fresh `cx-lsp --query` subprocess (one compilation per process),
@@ -99,7 +103,7 @@ target_link_libraries(cx-lsp libcx)
 if(LLVM_LINK_LLVM_DYLIB)
     set(LLVM_LIBS LLVM)
 else()
-    llvm_map_components_to_libnames(LLVM_LIBS core native linker passes support)
+    llvm_map_components_to_libnames(LLVM_LIBS core native linker orcjit passes support)
 endif()
 list(APPEND LLVM_LIBS clangAST clangBasic clangFrontend clangLex clangParse clangSema)
 if(LLVM_LINK_LLVM_DYLIB AND TARGET clang-cpp)

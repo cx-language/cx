@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -39,6 +40,7 @@
 #include "../sema/typecheck.h"
 #include "../support/utility.h"
 #include "clang.h"
+#include "jit.h"
 
 using namespace cx;
 namespace cl = llvm::cl;
@@ -537,10 +539,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
         if (printed && !remainingPrintOpts) return 0;
 
-        llvm::Module linkedModule("", llvmGenerator.ctx);
-        llvm::Linker linker(linkedModule);
+        auto linkedModule = std::make_unique<llvm::Module>("", llvmGenerator.ctx);
 
         {
+            // Scoped: the linker holds refs into the linked module, which the JIT path destroys.
+            llvm::Linker linker(*linkedModule);
             PhaseTimer timer("llvm-link");
             for (auto& module : llvmGenerator.generatedModules) {
                 bool error = linker.linkInModule(std::unique_ptr<llvm::Module>(module));
@@ -552,13 +555,22 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         llvm::TargetMachine* targetMachine;
         {
             PhaseTimer timer("llvm-opt");
-            targetMachine = createTargetMachine(linkedModule, relocModel, options.mode);
-            optimizeLLVMModule(linkedModule, options.mode, targetMachine);
+            targetMachine = createTargetMachine(*linkedModule, relocModel, options.mode);
+            optimizeLLVMModule(*linkedModule, options.mode, targetMachine);
         }
 
         if (emitBitcode) {
-            emitLLVMBitcode(linkedModule, "output.bc");
+            emitLLVMBitcode(*linkedModule, "output.bc");
             return 0;
+        }
+
+        // JIT runs the program in-process, skipping object emission, the C compiler link,
+        // and (on macOS) first-execution signature validation of a fresh binary.
+        // Search paths without libraries are inert (macOS always adds framework search paths), so only -l/-framework decline JIT.
+        if ((run || testSubcommand) && !compileOnly && !emitAssembly && libraries.empty() && frameworks.empty() && jitEligible(*linkedModule)) {
+            PhaseTimer timer("jit-run");
+            std::string argv0 = buildParams.filePaths.empty() ? "main" : std::string(buildParams.filePaths.front());
+            return jitRun(std::move(linkedModule), llvmGenerator.takeContext(), argv0, programArgs);
         }
 
         outputFileExtension = emitAssembly ? "s" : isWindows ? "obj" : "o";
@@ -569,7 +581,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         auto fileType = emitAssembly ? llvm::CodeGenFileType::AssemblyFile : llvm::CodeGenFileType::ObjectFile;
         {
             PhaseTimer timer("emit-obj");
-            emitLLVMModuleToMachineCode(linkedModule, *targetMachine, tempIntermediateFilePath, fileType);
+            emitLLVMModuleToMachineCode(*linkedModule, *targetMachine, tempIntermediateFilePath, fileType);
         }
     } break;
     }
