@@ -1,0 +1,10 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: swizzle-duplicate-assign.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+void main() {
+    float[3] v = [1.0, 2.0, 3.0];
+    // CHECK: [[@LINE+1]]:7: error: cannot assign to swizzle 'xx' with duplicate components
+    v.xx = [1.0, 2.0];
+}
+
+// CHECK-NOT: swizzle-duplicate-assign.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

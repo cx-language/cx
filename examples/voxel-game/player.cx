@@ -77,11 +77,11 @@ void moveAxis(World& w, Player& p, int axis, float delta) {
         var step = clamp(remaining, -0.3, 0.3);
         var next = p.pos;
         if axis == 0 {
-            next[0] += step;
+            next.x += step;
         } else if axis == 1 {
-            next[1] += step;
+            next.y += step;
         } else {
-            next[2] += step;
+            next.z += step;
         }
         if !boxCollides(w, next) {
             p.pos = next;
@@ -90,26 +90,26 @@ void moveAxis(World& w, Player& p, int axis, float delta) {
         }
         if axis == 0 {
             if step > 0.0 {
-                p.pos[0] = floor(next.x + 0.3) - 0.3 - 0.001;
+                p.pos.x = floor(next.x + 0.3) - 0.3 - 0.001;
             } else {
-                p.pos[0] = floor(next.x - 0.3) + 1.0 + 0.3 + 0.001;
+                p.pos.x = floor(next.x - 0.3) + 1.0 + 0.3 + 0.001;
             }
-            p.vel[0] = 0.0;
+            p.vel.x = 0.0;
         } else if axis == 1 {
             if step > 0.0 {
-                p.pos[1] = floor(next.y + 1.8) - 1.8 - 0.001;
+                p.pos.y = floor(next.y + 1.8) - 1.8 - 0.001;
             } else {
-                p.pos[1] = floor(next.y) + 1.0 + 0.001;
+                p.pos.y = floor(next.y) + 1.0 + 0.001;
                 p.onGround = true;
             }
-            p.vel[1] = 0.0;
+            p.vel.y = 0.0;
         } else {
             if step > 0.0 {
-                p.pos[2] = floor(next.z + 0.3) - 0.3 - 0.001;
+                p.pos.z = floor(next.z + 0.3) - 0.3 - 0.001;
             } else {
-                p.pos[2] = floor(next.z - 0.3) + 1.0 + 0.3 + 0.001;
+                p.pos.z = floor(next.z - 0.3) + 1.0 + 0.3 + 0.001;
             }
-            p.vel[2] = 0.0;
+            p.vel.z = 0.0;
         }
         return;
     }
@@ -147,23 +147,23 @@ void updatePlayer(World& w, Player& p, Input& input, float dt) {
     if wish.dot(wish) > 0.0 {
         wish = wish.normalized() * speed;
     }
-    p.vel[0] = wish.x;
-    p.vel[2] = wish.z;
+    p.vel.x = wish.x;
+    p.vel.z = wish.z;
 
     var jumped = input.jump && p.onGround;
     if jumped {
-        p.vel[1] = 8.0;
+        p.vel.y = 8.0;
         p.onGround = false;
     } else if p.onGround {
         // Resting contact holds still instead of integrating gravity:
         // re-falling onto the ground every frame sinks below the
         // collision threshold on short frames and snaps back, which
         // wobbles the camera.
-        p.vel[1] = 0.0;
+        p.vel.y = 0.0;
     } else {
-        p.vel[1] -= 22.0 * dt;
+        p.vel.y -= 22.0 * dt;
         if p.vel.y < -30.0 {
-            p.vel[1] = -30.0;
+            p.vel.y = -30.0;
         }
     }
 

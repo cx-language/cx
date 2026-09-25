@@ -6,6 +6,10 @@ void main() {
     testMulti();
     testRgba();
     testReorderDuplicate();
+    testSingleWrite();
+    testMultiWrite();
+    testCompoundWrite();
+    testPointerBase();
 }
 
 void testSingle() {
@@ -52,4 +56,57 @@ void testReorderDuplicate() {
     float[2] xx = v.xx;
     assert(xx[0] == 1.0);
     assert(xx[1] == 1.0);
+}
+
+void testSingleWrite() {
+    float[2] v = [1.0, 2.0];
+    v.x = 5.0;
+    assert(v[0] == 5.0);
+    assert(v[1] == 2.0);
+    v.y = 6.0;
+    assert(v.x == 5.0);
+    assert(v.y == 6.0);
+
+    float* p = &v.x;
+    *p = 7.0;
+    assert(v[0] == 7.0);
+}
+
+void testMultiWrite() {
+    float[3] v = [1.0, 2.0, 3.0];
+    v.xy = [10.0, 20.0];
+    assert(v[0] == 10.0);
+    assert(v[1] == 20.0);
+    assert(v[2] == 3.0);
+
+    v.zyx = [30.0, 20.0, 10.0];
+    assert(v[0] == 10.0);
+    assert(v[1] == 20.0);
+    assert(v[2] == 30.0);
+
+    float[2] w = [7.0, 8.0];
+    v.xy = w.yx;
+    assert(v.x == 8.0);
+    assert(v.y == 7.0);
+}
+
+void testCompoundWrite() {
+    float[3] v = [1.0, 2.0, 3.0];
+    v.x += 5.0;
+    assert(v.x == 6.0);
+    v.xy += [1.0, 2.0];
+    assert(v.x == 7.0);
+    assert(v.y == 4.0);
+    v.z++;
+    assert(v.z == 4.0);
+}
+
+void testPointerBase() {
+    float[3] v = [1.0, 2.0, 3.0];
+    float[3]* q = &v;
+    q.x = 10.0;
+    assert(v[0] == 10.0);
+    q.yz = [20.0, 30.0];
+    assert(v[1] == 20.0);
+    assert(v[2] == 30.0);
 }

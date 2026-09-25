@@ -1,0 +1,26 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: increment-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+float[3] getVec() { return [1.0, 2.0, 3.0]; }
+
+void main() {
+    float[3] v = [1.0, 2.0, 3.0];
+    // CHECK: [[@LINE+1]]:11: error: cannot increment rvalue of type 'float'
+    v.xy.x++;
+    // CHECK: [[@LINE+1]]:12: error: cannot increment rvalue of type 'float'
+    v.xy[0]++;
+    // CHECK: [[@LINE+1]]:16: error: cannot increment rvalue of type 'float'
+    getVec()[0]++;
+    // CHECK: [[@LINE+1]]:15: error: cannot increment rvalue of type 'float'
+    getVec().x++;
+    // CHECK: [[@LINE+1]]:11: error: cannot decrement rvalue of type 'float'
+    v.xy.x--;
+
+    var i = 0;
+    i++;
+    i--;
+    v.x++;
+    v[0]++;
+}
+
+// CHECK-NOT: increment-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

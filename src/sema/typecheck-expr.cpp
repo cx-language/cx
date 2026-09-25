@@ -443,6 +443,10 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
         operandType = operandType.removePointer();
 
+        if (!expr.getOperand().isLvalue()) {
+            ERROR_RANGE(expr.location, expr.endLocation, "cannot increment rvalue of type '" << operandType << "'");
+        }
+
         if (!operandType.isMutable()) {
             ERROR_RANGE(expr.location, expr.endLocation, "cannot increment immutable value of type '" << operandType << "'");
         } else if (!operandType.isIncrementable()) {
@@ -459,6 +463,10 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             ERROR(expr.location, "cannot decrement pointer of type '" << operandType << "'; dereference it explicitly (e.g. '(*p)--')");
         }
         operandType = operandType.removePointer();
+
+        if (!expr.getOperand().isLvalue()) {
+            ERROR_RANGE(expr.location, expr.endLocation, "cannot decrement rvalue of type '" << operandType << "'");
+        }
 
         if (!operandType.isMutable()) {
             ERROR_RANGE(expr.location, expr.endLocation, "cannot decrement immutable value of type '" << operandType << "'");
@@ -941,8 +949,20 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     if (lhs->assignableType.isReferenceType()) {
         ERROR(lhs->location, "cannot rebind borrow of type '" << lhs->assignableType << "' (use '*' to write through it explicitly)");
     }
-    if (!lhs->isLvalue()) {
+    auto* swizzleMember = llvm::dyn_cast<MemberExpr>(lhs);
+    bool isMultiSwizzle = swizzleMember && swizzleMember->swizzleIndices.size() > 1;
+    // Multi-char swizzles are values, but direct assignment writes each element back.
+    if (!(isMultiSwizzle ? swizzleMember->base->isLvalue() : lhs->isLvalue())) {
         ERROR(lhs->location, "cannot assign to expression of type '" << lhs->type << "'");
+    }
+    if (isMultiSwizzle) {
+        int seen = 0;
+        for (int index : swizzleMember->swizzleIndices) {
+            if (seen & (1 << index)) {
+                ERROR(lhs->location, "cannot assign to swizzle '" << swizzleMember->member << "' with duplicate components");
+            }
+            seen |= 1 << index;
+        }
     }
     Type lhsType = lhs->assignableType;
     Type rhsType = typecheckExpr(*rhs, false, lhsType);
@@ -3447,8 +3467,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         }
         // Swizzles (`vec.xy`, `vec.xyz`, `vec.rgba`, etc.): 1-4 chars from
         // xyzw, rgba, or stpq (one set per swizzle), mapping to indices.
-        // Single-char returns the element; multi-char returns a new array.
-        // Read-only for now (returns a value, not an lvalue).
+        // Single-char returns the element (an lvalue when the base is);
+        // multi-char returns a new array, writable only by direct assignment.
         if (baseType.isConcreteArray() && expr.member.size() >= 1 && expr.member.size() <= 4) {
             auto swizzleIndex = [](char c) -> int {
                 switch (c) {
@@ -3515,7 +3535,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
                 if (indices.size() == 1) {
                     return elementType.withMutability(baseType.mutability);
                 } else {
-                    return BasicType::getArray(elementType, static_cast<int64_t>(indices.size()), expr.location);
+                    return BasicType::getArray(elementType, static_cast<int64_t>(indices.size()), expr.location).withMutability(baseType.mutability);
                 }
             }
             // If member looks like a swizzle but indices out of range (e.g. `float[2].z`),
@@ -3644,8 +3664,16 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
     if (baseType.isArrayType() && (!baseType.isMutable() || !elementType.isMutable())) {
         ERROR(expr.location, "cannot assign to immutable array of type '" << baseType << "'");
     }
+    // Storing into a fixed-array value (e.g. a multi-char swizzle or a call
+    // result) would write to a temporary and silently drop the value.
+    // Pointers, array pointers, and slices write through indirection, so only
+    // fixed arrays need an lvalue base.
+    Type baseExprType = expr.getBase()->type.removeOptional();
+    if (baseExprType.isFixedArray() && !expr.getBase()->isLvalue()) {
+        ERROR(expr.location, "cannot assign to element of rvalue of type '" << baseExprType << "'");
+    }
 
-    if (!expr.getBase()->type.removeOptional().removePointer().isArrayType()) {
+    if (!baseExprType.removePointer().isArrayType()) {
         if (auto* baseVarExpr = getAssignmentBaseVarExpr(*expr.getBase())) {
             if (auto* baseVarDecl = llvm::dyn_cast<VarDecl>(baseVarExpr->decl)) {
                 if (!baseVarDecl->isGlobal() && !baseVarDecl->initializer && !definitelyAssignedDecls.count(baseVarDecl)) {

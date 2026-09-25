@@ -134,7 +134,25 @@ Arrays of up to 4 numeric elements support GLSL-style swizzles:
 mapping to indices 0–3 (`x`/`r`/`s` → 0, `y`/`g`/`t` → 1, `z`/`b`/`p` → 2,
 `w`/`a`/`q` → 3). A single character returns the element; multiple
 characters return a new array. Out-of-bounds swizzles are compile errors.
-Swizzles are read-only for now.
+
+Swizzles are writable: assigning to a single character writes the element,
+and assigning an array to multiple characters writes each element in order.
+Multi-character writes must not repeat a component (`v.xy = [1.0, 2.0]`
+works, `v.xx = ...` is a compile error), and only direct assignment writes
+back (indexing or re-swizzling a multi-character swizzle is a compile error).
+Compound assignment (`v.x += 1.0`) and increment work as well.
+
+```cs
+void main() {
+    float[3] v = [1.0, 2.0, 3.0];
+    v.x = 10.0;
+    println(v[0]); // prints 10
+
+    v.yz = [20.0, 30.0];
+    println(v[1]); // prints 20
+    println(v[2]); // prints 30
+}
+```
 
 ```cs
 void main() {

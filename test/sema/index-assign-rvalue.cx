@@ -1,0 +1,15 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: index-assign-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+float[2] getVec() { return [1.0, 2.0]; }
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: cannot assign to element of rvalue of type 'float[2]'
+    getVec()[0] = 5.0;
+    float[2]? opt = [1.0, 2.0];
+    // Unwrapping loads the payload, so indexing into it has no address to store to.
+    // CHECK: [[@LINE+1]]:9: error: cannot assign to element of rvalue of type 'float[2]'
+    opt![0] = 5.0;
+}
+
+// CHECK-NOT: index-assign-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

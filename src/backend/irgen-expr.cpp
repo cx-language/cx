@@ -626,6 +626,10 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
 Value* IRGenerator::emitAssignment(const BinaryExpr& expr) {
     if (expr.getRHS().isUndefinedLiteralExpr()) return nullptr;
 
+    if (auto* member = llvm::dyn_cast<MemberExpr>(&expr.getLHS()); member && member->swizzleIndices.size() > 1) {
+        return emitSwizzleAssignment(*member, expr.getRHS());
+    }
+
     auto lvalue = emitAssignmentLHS(expr.getLHS(), expr.lhsIsMoved);
     auto rvalue = emitExprForPassing(expr.getRHS(), lvalue->getType()->getPointee());
     createStore(rvalue, lvalue);
@@ -983,9 +987,15 @@ Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
         return emitAnonymousStructElementAccess(expr);
     }
 
-    // Array swizzles (`vec.x`, `vec.xy`, `vec.rgba`, etc.): emit element
-    // extracts, building a new array for multi-char swizzles.
+    // Array swizzles (`vec.x`, `vec.xy`, `vec.rgba`, etc.). Single-char
+    // returns the element address so it works as an lvalue; multi-char
+    // builds a new array (direct assignment stores it back element-wise).
     if (!expr.swizzleIndices.empty()) {
+        if (expr.swizzleIndices.size() == 1) {
+            auto* zero = createConstantInt(Type::getInt32(), 0);
+            auto* idx = createConstantInt(Type::getInt32(), expr.swizzleIndices[0]);
+            return createGEP(emitArrayBasePtr(*expr.base), {zero, idx});
+        }
         auto* baseValue = emitExpr(*expr.base);
         Value* basePtr = baseValue->getType()->isPointerType() ? baseValue : createTempAlloca(baseValue);
         auto emitSwizzleElement = [&](int index) -> Value* {
@@ -994,17 +1004,13 @@ Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
             auto* gep = createGEP(basePtr, {zero, idx});
             return createLoad(gep);
         };
-        if (expr.swizzleIndices.size() == 1) {
-            return emitSwizzleElement(expr.swizzleIndices[0]);
-        } else {
-            auto* arrayIRType = getIRType(expr.type);
-            Value* result = createUndefined(arrayIRType);
-            for (size_t i = 0; i < expr.swizzleIndices.size(); ++i) {
-                Value* elem = emitSwizzleElement(expr.swizzleIndices[i]);
-                result = createInsertValue(result, elem, static_cast<int>(i));
-            }
-            return result;
+        auto* arrayIRType = getIRType(expr.type);
+        Value* result = createUndefined(arrayIRType);
+        for (size_t i = 0; i < expr.swizzleIndices.size(); ++i) {
+            Value* elem = emitSwizzleElement(expr.swizzleIndices[i]);
+            result = createInsertValue(result, elem, static_cast<int>(i));
         }
+        return result;
     }
 
     return emitMemberAccess(emitLvalueExpr(*expr.base), llvm::cast<FieldDecl>(expr.decl), &expr);
@@ -1029,13 +1035,31 @@ Value* IRGenerator::emitAnonymousStructElementAccess(const MemberExpr& expr) {
     }
 }
 
-Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
+Value* IRGenerator::emitArrayBasePtr(const Expr& base) {
     auto* value = emitLvalueExpr(base);
 
     if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() && value->getType()->getPointee()->equals(getIRType(base.type))) {
         value = createLoad(value);
     }
     if (!value->getType()->isPointerType()) value = createTempAlloca(value);
+    return value;
+}
+
+Value* IRGenerator::emitSwizzleAssignment(const MemberExpr& lhs, const Expr& rhs) {
+    auto* basePtr = emitArrayBasePtr(*lhs.base);
+    auto* rhsValue = emitExpr(rhs);
+    Value* rhsPtr = rhsValue->getType()->isPointerType() ? rhsValue : createTempAlloca(rhsValue);
+    auto* zero = createConstantInt(Type::getInt32(), 0);
+    for (size_t i = 0; i < lhs.swizzleIndices.size(); ++i) {
+        auto* src = createGEP(rhsPtr, {zero, createConstantInt(Type::getInt32(), static_cast<int>(i))});
+        auto* dst = createGEP(basePtr, {zero, createConstantInt(Type::getInt32(), lhs.swizzleIndices[i])});
+        createStore(createLoad(src), dst);
+    }
+    return nullptr;
+}
+
+Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
+    auto* value = emitArrayBasePtr(base);
 
     Value* gep;
     if (base.type.removeOptional().isArrayPointer()) {

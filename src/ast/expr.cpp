@@ -361,7 +361,12 @@ bool Expr::isLvalue() const {
     }
     case ExprKind::MemberExpr: {
         auto& member = llvm::cast<MemberExpr>(*this);
-        if (!member.decl) return true;
+        if (!member.decl) {
+            // Swizzles leave decl null: single-char is an lvalue iff the base
+            // is; multi-char is a value (direct assignment is special-cased).
+            if (!member.swizzleIndices.empty()) return member.swizzleIndices.size() == 1 && member.base->isLvalue();
+            return true;
+        }
         if (llvm::isa<EnumCase>(member.decl)) return false;
         if (member.base->type.removeOptional().isPointerType()) return true;
         return member.base->isLvalue();

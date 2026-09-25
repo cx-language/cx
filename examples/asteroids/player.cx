@@ -54,26 +54,26 @@ struct Player {
             direction -= turningSpeed * delta;
         }
         if isKeyDown(SDL_SCANCODE_UP) {
-            velocity[0] += cos(direction) * movementSpeed * delta;
-            velocity[1] += sin(direction) * movementSpeed * delta;
+            velocity.x += cos(direction) * movementSpeed * delta;
+            velocity.y += sin(direction) * movementSpeed * delta;
         }
         if isKeyDown(SDL_SCANCODE_DOWN) {
-            velocity[0] -= cos(direction) * movementSpeed * delta;
-            velocity[1] -= sin(direction) * movementSpeed * delta;
+            velocity.x -= cos(direction) * movementSpeed * delta;
+            velocity.y -= sin(direction) * movementSpeed * delta;
         }
         if isKeyDown(SDL_SCANCODE_SPACE) {
             shootMissile();
         }
 
-        position[0] += velocity.x * delta;
-        position[1] += velocity.y * delta;
-        velocity[0] *= 1 - deceleration * delta;
-        velocity[1] *= 1 - deceleration * delta;
+        position.x += velocity.x * delta;
+        position.y += velocity.y * delta;
+        velocity.x *= 1 - deceleration * delta;
+        velocity.y *= 1 - deceleration * delta;
 
-        while position.x < 0 position[0] += width;
-        while position.y < 0 position[1] += height;
-        while position.x >= width position[0] -= width;
-        while position.y >= height position[1] -= height;
+        while position.x < 0 position.x += width;
+        while position.y < 0 position.y += height;
+        while position.x >= width position.x -= width;
+        while position.y >= height position.y -= height;
 
         timeSinceLastMissileShot += delta;
 
