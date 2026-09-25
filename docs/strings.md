@@ -25,6 +25,20 @@ void main() {
 }
 ```
 
+A `StringBuf` converts to a `string` view implicitly,
+so buffers pass directly to functions taking strings:
+
+```cs
+int stringSize(string s) {
+    return s.size();
+}
+
+void main() {
+    var buffer = StringBuf("hello");
+    println(stringSize(buffer)); // prints 5
+}
+```
+
 ## Interpolation
 
 `$name` embeds a value and `${expr}` an arbitrary expression in a string literal.

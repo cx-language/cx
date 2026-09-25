@@ -373,9 +373,11 @@ struct ImplicitCastExpr : Expr {
         AutoDereference,
         Reborrow,
         NumericWiden,
+        UserConversion,
     };
 
-    ImplicitCastExpr(Expr* operand, Type targetType, Kind kind) : Expr(ExprKind::ImplicitCastExpr, operand->location), operand(operand), castKind(kind) {
+    ImplicitCastExpr(Expr* operand, Type targetType, Kind kind, const FunctionDecl* conversionDecl = nullptr)
+    : Expr(ExprKind::ImplicitCastExpr, operand->location), operand(operand), castKind(kind), conversionDecl(conversionDecl) {
         type = NOTNULL(targetType);
         assignableType = NOTNULL(targetType);
         endLocation = operand->endLocation;
@@ -384,6 +386,8 @@ struct ImplicitCastExpr : Expr {
 
     Expr* operand;
     Kind castKind;
+    // The implicit constructor or conversion member to call. Only set for UserConversion.
+    const FunctionDecl* conversionDecl;
 };
 
 struct VarDeclExpr : Expr {

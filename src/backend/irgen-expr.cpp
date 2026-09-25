@@ -641,14 +641,6 @@ static bool isEmptyArrayLiteral(const Expr& expr) {
     return array && array->elements.empty();
 }
 
-static bool isListToSliceConversion(Type sourceType, IRType* targetType) {
-    return sourceType.isBasicType() && sourceType.getName() == "List" && targetType->isStruct() && targetType->getName().starts_with("Slice<");
-}
-
-static bool isStringBufToStringConversion(Type sourceType, IRType* targetType) {
-    return sourceType.isBasicType() && sourceType.getName() == "StringBuf" && targetType->isStruct() && targetType->getName() == "string";
-}
-
 Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     if (isEmptyArrayLiteral(expr) && targetType && targetType->isPointerType()) {
         return createConstantNull(targetType);
@@ -682,26 +674,6 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
         auto* arrayRef = createInsertValue(createUndefined(targetType), elementPtr, 0);
         auto size = createConstantInt(Type::getInt32(), expr.type.removePointer().getArraySize());
         return createInsertValue(arrayRef, size, 1);
-    }
-
-    if (isListToSliceConversion(expr.type, targetType)) {
-        auto* listPtr = emitExprAsPointer(expr);
-        auto* buffer = createLoad(createGEP(listPtr, 0));
-        auto* size = createLoad(createGEP(listPtr, 1));
-        auto* arrayRef = createInsertValue(createUndefined(targetType), buffer, 0);
-        return createInsertValue(arrayRef, size, 1);
-    }
-
-    if (isStringBufToStringConversion(expr.type, targetType)) {
-        auto* listPtr = createGEP(emitExprAsPointer(expr), 0);
-        auto* buffer = createLoad(createGEP(listPtr, 0));
-        auto* listSize = createLoad(createGEP(listPtr, 1));
-        // StringBuf stores a trailing null that the string view excludes.
-        auto* size = createBinaryOp(Token::Minus, listSize, createConstantInt(listSize->getType(), 1), nullptr);
-        auto* arrayRefType = targetType->getFields()[0].type;
-        auto* arrayRef = createInsertValue(createUndefined(arrayRefType), buffer, 0);
-        arrayRef = createInsertValue(arrayRef, size, 1);
-        return createInsertValue(createUndefined(targetType), arrayRef, 0);
     }
 
     // Handle implicit conversions to type 'T[*]'.
@@ -1267,9 +1239,27 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
         return emitExpr(*expr.operand);
     case ImplicitCastExpr::NumericWiden:
         return createCastIfNeeded(emitExpr(*expr.operand), expr.type);
+    case ImplicitCastExpr::UserConversion:
+        return emitUserConversion(expr);
     }
 
     llvm_unreachable("all implicit cast kinds handled");
+}
+
+Value* IRGenerator::emitUserConversion(const ImplicitCastExpr& expr) {
+    auto* conversion = llvm::cast<FunctionDecl>(expr.conversionDecl);
+    Function* callee = getFunction(*conversion);
+    auto paramTypes = map(callee->params, [](const Parameter& param) { return param.type; });
+    if (auto* ctor = llvm::dyn_cast<ConstructorDecl>(conversion)) {
+        // Mirror constructor calls: the callee initializes a fresh temporary.
+        auto* thisAlloca = createEntryBlockAlloca(ctor->getTypeDecl()->getType());
+        llvm::SmallVector<Value*, 2> args{thisAlloca, emitExprForPassing(*expr.operand, paramTypes[1])};
+        createCall(callee, args, &expr);
+        return thisAlloca;
+    }
+    // Mirror method calls: the operand becomes the receiver.
+    llvm::SmallVector<Value*, 1> args{emitExprForPassing(*expr.operand, paramTypes[0])};
+    return createCall(callee, args, &expr);
 }
 
 Value* IRGenerator::emitPlainExpr(const Expr& expr) {

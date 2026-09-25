@@ -956,7 +956,8 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
         rhs = converted;
     } else {
         diagnoseClosureConversion(rhsType, lhsType, location);
-        ERROR(location, "cannot assign '" << rhsType << "' to '" << lhsType << "'" << narrowingHint(rhsType, lhsType));
+        ERROR(location,
+              "cannot assign '" << rhsType << "' to '" << lhsType << "'" << narrowingHint(rhsType, lhsType) << ambiguousConversionHint(rhs, rhsType, lhsType));
     }
 
     // Assigning a possibly-null value invalidates narrowing; assigning a non-null value preserves it.
@@ -1078,7 +1079,24 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     return true;
 }
 
-Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange, bool allowOperatorBorrow) const {
+Expr* Typechecker::convertWithUserConversion(Expr* expr, Type target, bool diagnoseOutOfRange, bool allowOperatorBorrow) {
+    FunctionDecl* conversion = findUserConversion(expr, expr->type, target);
+    if (!conversion) return nullptr;
+    ensureSignature(*conversion);
+
+    Expr* operand = expr;
+    if (conversion->isConstructorDecl()) {
+        Type paramType = conversion->getParams()[0].type;
+        operand = convert(expr, paramType, /*allowPointerToTemporary=*/true, diagnoseOutOfRange, allowOperatorBorrow, /*allowUserConversion=*/false);
+        if (!operand) return nullptr;
+        // Like explicit calls, moving into a by-value parameter consumes a non-copyable source.
+        if (!operand->type.removeReference().isImplicitlyCopyable() && !paramType.isImplicitlyCopyable()) setMoved(operand, true);
+    }
+    markReferenced(conversion);
+    return makeAST<ImplicitCastExpr>(operand, target, ImplicitCastExpr::UserConversion, conversion);
+}
+
+Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange, bool allowOperatorBorrow, bool allowUserConversion) {
     // Array borrows decay to views without copying: dereferencing first
     // would take the address of a temporary, breaking mutation through data()
     // and dangling slices built from the copy. Only constant-array borrows
@@ -1088,18 +1106,21 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
         expr->type.isReferenceType() && expr->type.getPointee().isConcreteArray() && (unwrappedTarget.isArrayPointer() || unwrappedTarget.isSlice());
     if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !type.removeOptional().isPointerType() && !decaysToView) {
         auto* dereferenced = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
-        return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow);
+        return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion);
     }
 
     std::optional<ImplicitCastExpr::Kind> implicitCastKind;
-    if (Type convertedType =
-            isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind, diagnoseOutOfRange, allowOperatorBorrow)) {
+    if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind, diagnoseOutOfRange,
+                                                     allowOperatorBorrow, allowUserConversion)) {
         if (implicitCastKind) {
+            if (*implicitCastKind == ImplicitCastExpr::UserConversion) {
+                return convertWithUserConversion(expr, convertedType, diagnoseOutOfRange, allowOperatorBorrow);
+            }
             if (*implicitCastKind == ImplicitCastExpr::OptionalWrap && expr->type != convertedType.getWrappedType()) {
                 // One wrap node constructs a single level, so convert the operand to the wrapped
                 // type first (e.g. `int` to `int?` when wrapping to `int??`). Each recursion
                 // strips one optional level, so this terminates.
-                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow);
+                expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion);
                 if (!expr) return nullptr;
             }
             if (*implicitCastKind == ImplicitCastExpr::OptionalUnwrap) implicitUses.unwrap = true;
@@ -1114,18 +1135,20 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
             expr->type = convertedType;
 
             if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-                if (Expr* convertedThen = convert(ifExpr->thenExpr, convertedType, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow)) {
+                if (Expr* convertedThen =
+                        convert(ifExpr->thenExpr, convertedType, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion)) {
                     ifExpr->thenExpr = convertedThen;
                 }
-                if (Expr* convertedElse = convert(ifExpr->elseExpr, convertedType, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow)) {
+                if (Expr* convertedElse =
+                        convert(ifExpr->elseExpr, convertedType, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion)) {
                     ifExpr->elseExpr = convertedElse;
                 }
             }
 
             if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(expr); arrayLiteral && convertedType.isConcreteArray()) {
                 for (auto& element : arrayLiteral->elements) {
-                    if (Expr* convertedElement =
-                            convert(element, convertedType.getElementType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow)) {
+                    if (Expr* convertedElement = convert(element, convertedType.getElementType(), allowPointerToTemporary, diagnoseOutOfRange,
+                                                         allowOperatorBorrow, allowUserConversion)) {
                         element = convertedElement;
                     }
                 }
@@ -1135,7 +1158,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
                 auto targetElements = convertedType.getAnonymousStructElements();
                 for (size_t i = 0; i < anonymousStructExpr->elements.size(); ++i) {
                     if (Expr* convertedElement = convert(anonymousStructExpr->elements[i].value, targetElements[i].type, allowPointerToTemporary,
-                                                         diagnoseOutOfRange, allowOperatorBorrow)) {
+                                                         diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion)) {
                         anonymousStructExpr->elements[i].value = convertedElement;
                     }
                 }
@@ -1192,8 +1215,75 @@ static bool isReinterpretible(Type source, Type target) {
     return source == target || (!target.isMutable() && source.equalsIgnoreTopLevelMutable(target));
 }
 
+std::string Typechecker::ambiguousConversionHint(const Expr* expr, Type source, Type target) const {
+    int viableCount = 0;
+    if (findUserConversion(expr, source, target, &viableCount) || viableCount < 2) return "";
+    return " (ambiguous implicit conversion)";
+}
+
+FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Type target, int* viableCount) const {
+    // Conversions never produce borrows or optionals directly; those compose through the borrow and wrap rules.
+    if (source.isOptionalType() || target.isOptionalType() || target.isPointerType()) {
+        if (viableCount) *viableCount = 0;
+        return nullptr;
+    }
+
+    auto isAccessible = [&](const Decl* decl) {
+        // Probing sometimes lacks an expression; private conversions need a use site to verify.
+        return decl->accessLevel != AccessLevel::Private || (expr && inSameModule(*decl, expr->location));
+    };
+
+    // Target-side: an implicit single-parameter constructor the source converts to. Nested probes
+    // disable user conversions (at most one per chain), which also rules out cycles like A -> B -> A.
+    FunctionDecl* targetWinner = nullptr;
+    int targetViable = 0;
+    if (TypeDecl* targetDecl = target.getDecl(); targetDecl && targetDecl->isStruct()) {
+        for (ConstructorDecl* ctor : targetDecl->getConstructors()) {
+            if (!ctor->isImplicit || ctor->getParams().size() != 1 || ctor->getParams()[0].isPack || !isAccessible(ctor)) continue;
+            Type paramType = ctor->getParams()[0].type;
+            if (!isImplicitlyConvertible(expr, source, paramType, /*allowPointerToTemporary=*/true, nullptr, /*diagnoseOutOfRange=*/false,
+                                         /*allowOperatorBorrow=*/false, /*allowUserConversion=*/false)) {
+                continue;
+            }
+            // Same-signature constructors are redefinitions, so an exact parameter match is always unique.
+            if (paramType == source) {
+                targetWinner = ctor;
+                targetViable = 1;
+                break;
+            }
+            ++targetViable;
+            targetWinner = ctor;
+        }
+        if (targetViable != 1) targetWinner = nullptr;
+    }
+
+    // Source-side: an implicit parameterless member returning the target. The source value (or
+    // borrow) becomes the receiver, so no argument conversion applies.
+    FunctionDecl* sourceWinner = nullptr;
+    int sourceViable = 0;
+    if (TypeDecl* sourceDecl = source.removeReference().getDecl(); sourceDecl && sourceDecl->isStruct()) {
+        for (Decl* member : sourceDecl->methods) {
+            if (member->kind != DeclKind::MethodDecl) continue;
+            auto* method = llvm::cast<MethodDecl>(member);
+            if (!method->isImplicit || !method->getParams().empty() || method->getReturnType().isVoid() || !isAccessible(method)) continue;
+            Type returnType = method->getReturnType();
+            if (!returnType.equalsIgnoreTopLevelMutable(target) || (!returnType.isMutable() && target.isMutable())) continue;
+            ++sourceViable;
+            sourceWinner = method;
+        }
+        if (sourceViable != 1) sourceWinner = nullptr;
+    }
+
+    if (viableCount) *viableCount = targetViable + sourceViable;
+
+    // Conversions in both directions (or several in one) are ambiguous.
+    if (targetWinner && sourceWinner) return nullptr;
+    return targetWinner ? targetWinner : sourceWinner;
+}
+
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
-                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange, bool allowOperatorBorrow) const {
+                                          std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange, bool allowOperatorBorrow,
+                                          bool allowUserConversion) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
@@ -1204,14 +1294,6 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             return target.isConcreteArray() ? target : source;
         }
         if (source.isConcreteArray() && (target.isArrayPointer() || target.isSlice())) return source;
-    }
-
-    if (source.isBasicType() && target.isSlice() && source.getName() == "List" && source.getGenericArgs() == target.getGenericArgs()) {
-        return source;
-    }
-
-    if (source.isBasicType() && source.getName() == "StringBuf" && target.isBasicType() && target.getName() == "string") {
-        return source;
     }
 
     if (source.isAnonymousStructType() && target.isAnonymousStructType() && source.getAnonymousStructElements() == target.getAnonymousStructElements()) {
@@ -1232,14 +1314,17 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     Type unwrappedTarget = target.removeOptional();
     bool decaysToView = source.isReferenceType() && source.getPointee().isConcreteArray() && (unwrappedTarget.isArrayPointer() || unwrappedTarget.isSlice());
     if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !target.removeOptional().isPointerType() && !decaysToView) {
-        return isImplicitlyConvertible(expr, source.getPointee(), target, allowPointerToTemporary, implicitCastKind, diagnoseOutOfRange);
+        // Operator borrows stay disabled through the dereference, as before; only the user-conversion flag passes through.
+        return isImplicitlyConvertible(expr, source.getPointee(), target, allowPointerToTemporary, implicitCastKind, diagnoseOutOfRange, false,
+                                       allowUserConversion);
     }
 
     if (source.isOptionalType() && target.isOptionalType() && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable())) {
         // Only a no-op when the wrapped conversion needs no cast; nesting changes (e.g. `int?` to `int??`)
         // fall through to the wrap rule below.
         std::optional<ImplicitCastExpr::Kind> wrappedCastKind;
-        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind, diagnoseOutOfRange, allowOperatorBorrow)
+        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind, diagnoseOutOfRange, allowOperatorBorrow,
+                                    allowUserConversion)
             && !wrappedCastKind) {
             return source;
         }
@@ -1253,8 +1338,10 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow)
-                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow)) {
+            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
+                                        allowUserConversion)
+                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
+                                           allowUserConversion)) {
                 return target;
             }
         }
@@ -1300,7 +1387,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             if (arrayLiteralExpr->elements.size() != static_cast<size_t>(target.getArraySize())) return Type();
             bool isConvertible = llvm::all_of(arrayLiteralExpr->elements, [&](Expr* element) {
                 return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), false, nullptr, diagnoseOutOfRange,
-                                               allowOperatorBorrow);
+                                               allowOperatorBorrow, allowUserConversion);
             });
 
             if (isConvertible) {
@@ -1359,8 +1446,17 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
+    // User-declared conversions come after the builtin rules (a plain borrow read or
+    // same-type match always wins) and before optional wrapping (so `T` to `U?`
+    // composes from the inner conversion).
+    if (allowUserConversion && findUserConversion(expr, source, target)) {
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::UserConversion;
+        return target;
+    }
+
     if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr())
-        && isImplicitlyConvertible(expr, source, target.getWrappedType(), allowPointerToTemporary, nullptr, diagnoseOutOfRange, allowOperatorBorrow)) {
+        && isImplicitlyConvertible(expr, source, target.getWrappedType(), allowPointerToTemporary, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
+                                   allowUserConversion)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalWrap;
         return target;
     }
@@ -1413,8 +1509,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
             auto* elementValue = anonymousStructExpr ? anonymousStructExpr->elements[i].value : nullptr;
 
-            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange,
-                                         allowOperatorBorrow)) {
+            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
+                                         allowUserConversion)) {
                 return Type();
             }
         }
@@ -1548,8 +1644,15 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam, inFunctionType);
     }
 
-    if (paramType.isSlice() && argType.removeOptional().removePointer().isArrayType()) {
-        return findGenericArg(argType.removeOptional().removePointer().getElementType(), paramType.getElementType(), genericParam, inFunctionType);
+    if (paramType.isSlice()) {
+        Type arg = argType.removeOptional().removePointer();
+        if (arg.isArrayType()) {
+            return findGenericArg(arg.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
+        }
+        // Lists convert to slices implicitly, so they infer the element type too.
+        if (arg.isBasicType() && arg.getName() == "List" && arg.getGenericArgs().size() == 1 && arg.getGenericArgs()[0].isType()) {
+            return findGenericArg(arg.getGenericArgs()[0].getType(), paramType.getElementType(), genericParam, inFunctionType);
+        }
     }
 
     return GenericArg();
@@ -2290,6 +2393,29 @@ static const Match* findMatchWithMostExactArgs(llvm::ArrayRef<Match> matches, co
     return result;
 }
 
+// Returns the only candidate using the fewest user-declared conversions, or null
+// when tied. Borrow and view bindings need no conversion call, so they win here.
+static const Match* findMatchWithFewestUserConversions(llvm::ArrayRef<Match> matches, const CallExpr& call) {
+    const Match* result = nullptr;
+    auto bestCount = std::numeric_limits<int>::max();
+
+    for (auto& match : matches) {
+        auto params = getMatchParams(match);
+        if (params.size() != call.args.size()) continue;
+        std::vector<int> argToParam, paramToArg;
+        if (computeArgParamMapping(call.args, params, false, argToParam, paramToArg)) continue;
+
+        if (match.userConversionCount < bestCount) {
+            bestCount = match.userConversionCount;
+            result = &match;
+        } else if (match.userConversionCount == bestCount) {
+            result = nullptr;
+        }
+    }
+
+    return result;
+}
+
 static bool isStdlibDecl(const Match& match) {
     return match.decl->getModule() && match.decl->getModule()->name == "std";
 }
@@ -2316,6 +2442,8 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
         // Implicit wrapping adds nullability; prefer the overload that binds directly.
         return llvm::find_if(matches, [](auto& match) { return match.didWrapOptional == false; });
     } else if (auto match = findMatchWithMostExactArgs(matches, call)) {
+        return match;
+    } else if (auto match = findMatchWithFewestUserConversions(matches, call)) {
         return match;
     } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) {
         return match;
@@ -2571,7 +2699,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             break;
         }
         case DeclKind::DestructorDecl:
-            matches.push_back({decl, false, false});
+            matches.push_back({decl, false, false, false, 0});
             break;
 
         default:
@@ -2973,6 +3101,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
     bool didConvertArguments = false;
     bool didUnwrapOptional = false;
     bool didWrapOptional = false;
+    int userConversionCount = 0;
 
     for (size_t i = 0; i < expr.args.size(); ++i) {
         auto& arg = expr.args[i];
@@ -2998,6 +3127,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
             didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
             didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
             didWrapOptional = didWrapOptional || implicitCastKind == ImplicitCastExpr::OptionalWrap || arg.value->isNullLiteralExpr();
+            if (implicitCastKind == ImplicitCastExpr::UserConversion) ++userConversionCount;
         } else {
             invalidType = true;
         }
@@ -3006,7 +3136,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         if (invalidType) return ArgumentValidation::invalidType(i);
     }
 
-    return ArgumentValidation::success(didConvertArguments, didUnwrapOptional, didWrapOptional);
+    return ArgumentValidation::success(didConvertArguments, didUnwrapOptional, didWrapOptional, userConversionCount);
 }
 
 std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params) {
@@ -3017,7 +3147,7 @@ std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDec
     }
     auto result = getArgumentValidationResult(expr, params, isVariadic);
     if (result.error) return std::nullopt;
-    return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional, result.didWrapOptional};
+    return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional, result.didWrapOptional, result.userConversionCount};
 }
 
 void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, Location location) {
@@ -3112,7 +3242,8 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         (void)convert(arg.value, param.type, true, true, allowOperatorBorrow);
         ERROR_WITH_NOTES(arg.location, std::move(declNote),
                          "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type
-                                              << "'" << narrowingHint(arg.value->type, param.type));
+                                              << "'" << narrowingHint(arg.value->type, param.type)
+                                              << ambiguousConversionHint(arg.value, arg.value->type, param.type));
         break;
     }
     }

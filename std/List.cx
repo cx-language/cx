@@ -225,8 +225,7 @@ struct List<Element> {
 
     /// Returns an iterator over the elements.
     ArrayIterator<Element> iterator() {
-        // TODO: When implicit constructors have been implemented, remove the Slice() call below.
-        return ArrayIterator(Slice(this));
+        return ArrayIterator(this);
     }
 
     /// Returns an iterator over the elements with their indices.

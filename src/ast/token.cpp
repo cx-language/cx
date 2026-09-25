@@ -290,6 +290,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "false",
         "for",
         "if",
+        "implicit",
         "import",
         "in",
         "interface",

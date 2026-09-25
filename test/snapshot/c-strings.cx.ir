@@ -14,16 +14,7 @@ int32 main() {
     void _5 = call _EN3std6string4initEP4char5int32(string* __str_0, char* "x", int32 1)
     string __str.load_0 = load __str_0
     void _6 = call _EN3std9StringBuf4initE6string(StringBuf* _0, string __str.load_0)
-    List<char>* _7 = getelementptr _0, 0
-    char** _8 = getelementptr _7, 0
-    char* .load = load _8
-    int32* _9 = getelementptr _7, 1
-    int32 .load_0 = load _9
-    int32 _10 = .load_0 - int32 1
-    Slice<char> _11 = insertvalue Slice<char> undefined, 0, .load
-    Slice<char> _12 = insertvalue _11, 1, _10
-    string _13 = insertvalue string undefined, 0, _12
-    bool _14 = call _EN3stdeqEP4char6string(char* _4, string _13)
-    bool _15 = !_14
+    bool _7 = call _EN3stdeqEAU_4charR9StringBuf(char* _4, StringBuf* _0)
+    bool _8 = !_7
     return int32 0
 }

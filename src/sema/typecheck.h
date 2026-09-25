@@ -38,9 +38,10 @@ struct ArgumentValidation {
     bool didConvertArguments;
     bool didUnwrapOptional;
     bool didWrapOptional;
+    int userConversionCount = 0;
 
-    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional, bool didWrapOptional) {
-        return {None, -1, didConvertArguments, didUnwrapOptional, didWrapOptional};
+    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional, bool didWrapOptional, int userConversionCount) {
+        return {None, -1, didConvertArguments, didUnwrapOptional, didWrapOptional, userConversionCount};
     }
     static ArgumentValidation tooFew() { return {TooFew, -1, false, false, false}; }
     static ArgumentValidation tooMany() { return {TooMany, -1, false, false, false}; }
@@ -54,6 +55,7 @@ struct Match {
     bool didConvertArguments;
     bool didUnwrapOptional;
     bool didWrapOptional;
+    int userConversionCount = 0;
 };
 
 struct VariadicGenericArgs {
@@ -151,11 +153,23 @@ struct Typechecker {
     /// Returns the converted expression if the conversion succeeds, or null otherwise.
     /// Probing conversions (where failure falls back to another attempt) pass diagnoseOutOfRange=false
     /// so an out-of-range literal doesn't abort the still-untried alternatives.
-    Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false, bool diagnoseOutOfRange = true, bool allowOperatorBorrow = false) const;
+    Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false, bool diagnoseOutOfRange = true, bool allowOperatorBorrow = false,
+                  bool allowUserConversion = true);
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
     Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false,
                                  std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr, bool diagnoseOutOfRange = true,
-                                 bool allowOperatorBorrow = false) const;
+                                 bool allowOperatorBorrow = false, bool allowUserConversion = true) const;
+    /// Finds the user-declared conversion from source to target: an implicit constructor on the target
+    /// or an implicit parameterless member on the source. Pure (no diagnostics, no checking); null when
+    /// none applies or several do. viableCount (when given) receives the number of applicable
+    /// conversions, so error paths can tell "none" from "ambiguous".
+    FunctionDecl* findUserConversion(const Expr* expr, Type source, Type target, int* viableCount = nullptr) const;
+    /// Explains a failed conversion when several user-declared conversions apply, empty otherwise.
+    std::string ambiguousConversionHint(const Expr* expr, Type source, Type target) const;
+    /// Commits a user-declared conversion found by findUserConversion: checks and references the
+    /// conversion function, converts the operand to its parameter (constructors), and wraps both in
+    /// a UserConversion cast. Null when the operand no longer converts.
+    Expr* convertWithUserConversion(Expr* expr, Type target, bool diagnoseOutOfRange, bool allowOperatorBorrow);
     void typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool positive = true);
     GenericArg findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType = false);
     llvm::StringMap<GenericArg> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,

@@ -101,8 +101,11 @@ bool Expr::isConstant() const {
     case ExprKind::VarDeclExpr:
         return false;
 
-    case ExprKind::ImplicitCastExpr:
-        return llvm::cast<ImplicitCastExpr>(this)->operand->isConstant();
+    case ExprKind::ImplicitCastExpr: {
+        // User conversions run arbitrary code; every other cast preserves its operand's value.
+        auto* cast = llvm::cast<ImplicitCastExpr>(this);
+        return cast->castKind != ImplicitCastExpr::UserConversion && cast->operand->isConstant();
+    }
 
     case ExprKind::IfExpr:
         return llvm::cast<IfExpr>(this)->condition->isConstant() && llvm::cast<IfExpr>(this)->thenExpr->isConstant()
@@ -210,8 +213,10 @@ bool Expr::isFoldableBoolConstant() const {
             return false;
         }
     }
-    case ExprKind::ImplicitCastExpr:
-        return llvm::cast<ImplicitCastExpr>(this)->operand->isFoldableBoolConstant();
+    case ExprKind::ImplicitCastExpr: {
+        auto* cast = llvm::cast<ImplicitCastExpr>(this);
+        return cast->castKind != ImplicitCastExpr::UserConversion && cast->operand->isFoldableBoolConstant();
+    }
     case ExprKind::IfExpr: {
         auto* ifExpr = llvm::cast<IfExpr>(this);
         return ifExpr->condition->isFoldableBoolConstant() && ifExpr->thenExpr->isFoldableBoolConstant() && ifExpr->elseExpr->isFoldableBoolConstant();
@@ -553,7 +558,7 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     case ExprKind::ImplicitCastExpr: {
         auto implicitCastExpr = llvm::cast<ImplicitCastExpr>(this);
         return makeAST<ImplicitCastExpr>(implicitCastExpr->operand->instantiate(genericArgs), implicitCastExpr->type.resolve(genericArgs),
-                                         implicitCastExpr->castKind);
+                                         implicitCastExpr->castKind, implicitCastExpr->conversionDecl);
     }
     case ExprKind::VarDeclExpr: {
         auto varDeclExpr = llvm::cast<VarDeclExpr>(this);

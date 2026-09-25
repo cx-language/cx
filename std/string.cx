@@ -18,7 +18,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     /// Initializes a string viewing the given buffer.
-    string(StringBuf& stringBuf) {
+    implicit string(StringBuf& stringBuf) {
         characters = Slice(stringBuf.data(), stringBuf.size());
     }
 

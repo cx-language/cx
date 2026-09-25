@@ -66,3 +66,8 @@ integer literals convert to the expected numeric type automatically,
 and values bind to `T&` borrow parameters automatically.
 Forming a `T*` pointer needs an explicit `&`, and reading one needs an explicit `*`
 (see [Pointers](pointers)).
+
+Structs can also declare their own implicit conversions with `implicit`
+constructors and member functions (see [Structs](structs)).
+Those apply everywhere a value flows into an expected type,
+such as arguments, return values, and initializers.

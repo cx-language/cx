@@ -342,7 +342,8 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     } else {
         diagnoseClosureConversion(returnValueType, currentFunction->getReturnType(), stmt.location);
         ERROR(stmt.location, "mismatching return type '" << returnValueType << "', expected '" << currentFunction->getReturnType() << "'"
-                                                         << narrowingHint(returnValueType, currentFunction->getReturnType()));
+                                                         << narrowingHint(returnValueType, currentFunction->getReturnType())
+                                                         << ambiguousConversionHint(stmt.value, returnValueType, currentFunction->getReturnType()));
     }
 
     checkReturnPointerToLocal(stmt.value);

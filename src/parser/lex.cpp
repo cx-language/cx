@@ -420,6 +420,7 @@ static const llvm::StringMap<Token::Kind> keywords = {
     {"false", Token::False},
     {"for", Token::For},
     {"if", Token::If},
+    {"implicit", Token::Implicit},
     {"import", Token::Import},
     {"in", Token::In},
     {"interface", Token::Interface},

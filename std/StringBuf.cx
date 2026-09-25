@@ -138,8 +138,7 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     /// Returns an iterator over the characters.
     StringIterator iterator() {
-        // TODO: When implicit constructors have been implemented, remove the string() call below.
-        return StringIterator(string(this));
+        return StringIterator(this);
     }
 
     /// Returns true if the string contains the given character.

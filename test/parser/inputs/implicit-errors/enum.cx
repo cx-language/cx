@@ -1,0 +1,7 @@
+enum E {
+    A,
+
+    implicit int f() {
+        return 1;
+    }
+}

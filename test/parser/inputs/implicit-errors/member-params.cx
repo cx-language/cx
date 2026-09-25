@@ -1,0 +1,7 @@
+struct A: Copyable {
+    int x;
+
+    implicit int f(int y) {
+        return y;
+    }
+}

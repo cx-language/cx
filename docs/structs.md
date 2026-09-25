@@ -74,9 +74,7 @@ default values. Argument expressions always evaluate in the order written.
 
 To customize construction, declare a constructor: a member function
 with the same name as the struct. It must initialize every field,
-using `this.` to refer to fields shadowed by parameters.
-Constructors are never implicit: a single-parameter constructor does not convert
-its argument type, so pass `Wrapper(5)` explicitly instead of a bare `5`:
+using `this.` to refer to fields shadowed by parameters:
 
 ```cs
 struct Counter: Copyable {
@@ -92,6 +90,54 @@ void main() {
     println(counter.count); // prints 10
 }
 ```
+
+A single-parameter constructor marked `implicit` also converts its argument
+type, so a bare `5` works wherever a `Counter` is expected:
+
+```cs
+struct Counter: Copyable {
+    int count;
+
+    implicit Counter(int count) {
+        this.count = count;
+    }
+}
+
+void greet(Counter counter) {
+    println(counter.count);
+}
+
+void main() {
+    greet(5); // prints 5
+}
+```
+
+Without `implicit`, constructors never convert:
+pass `Counter(10)` explicitly instead of a bare `10`.
+
+The other direction works with an `implicit` member function that takes no
+parameters and returns the target type:
+
+```cs
+struct Label: Copyable {
+    string text;
+
+    implicit string view() {
+        return text;
+    }
+}
+
+void main() {
+    var label = Label("hi");
+    string s = label;
+    println(s); // prints "hi"
+}
+```
+
+Implicit conversions apply when passing arguments, returning values, and
+initializing or assigning variables. Only one user-declared conversion applies
+per step, and overloads that match without converting win. If conversions
+exist in both directions at once, the use is ambiguous and fails to compile.
 
 ## Destructors
 

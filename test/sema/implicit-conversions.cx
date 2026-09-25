@@ -1,0 +1,45 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// CHECK-NOT: implicit-conversions.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct U: Copyable {
+    int x;
+
+    implicit U(V v) {
+        this.x = v.x;
+    }
+}
+
+struct V: Copyable {
+    int x;
+
+    implicit V(int v) {
+        this.x = v;
+    }
+
+    implicit U toU() {
+        return U(x);
+    }
+}
+
+void takeU(U u) {
+}
+
+U makeU(V v) {
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'V', expected 'U' (ambiguous implicit conversion)
+    return v;
+}
+
+void main() {
+    var v = V(1);
+    // CHECK: [[@LINE+1]]:11: error: invalid argument #1 type 'V' to 'takeU', expected 'U' (ambiguous implicit conversion)
+    takeU(v);
+    // CHECK: [[@LINE+1]]:11: error: cannot assign 'V' to 'U' (ambiguous implicit conversion)
+    U u = v;
+    // CHECK: [[@LINE+1]]:7: error: cannot assign 'V' to 'U' (ambiguous implicit conversion)
+    u = v;
+    // Unambiguous uses still work: explicit construction and unrelated conversions.
+    takeU(U(v));
+    V w = 5;
+}
+
+// CHECK-NOT: implicit-conversions.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

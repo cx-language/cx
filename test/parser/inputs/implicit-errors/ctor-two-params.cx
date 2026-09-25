@@ -1,0 +1,7 @@
+struct A: Copyable {
+    int x;
+
+    implicit A(int x, int y) {
+        this.x = x;
+    }
+}

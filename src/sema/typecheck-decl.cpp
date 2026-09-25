@@ -1289,7 +1289,8 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
             }
 
             diagnoseClosureConversion(initializerType, declaredType, decl.initializer->location);
-            ERROR(decl.initializer->location, "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint);
+            ERROR(decl.initializer->location, "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint
+                                                                << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
         }
     } else {
         if (initializerType.isNull()) {

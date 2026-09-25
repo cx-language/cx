@@ -10,7 +10,7 @@ struct Slice<Element>: Copyable {
     }
 
     /// Initializes a Slice referring to the elements of the given List.
-    Slice(List<Element>& list) {
+    implicit Slice(List<Element>& list) {
         data = list.data();
         size = list.size();
     }

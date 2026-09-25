@@ -310,6 +310,7 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<GenericArg>& genericAr
         auto* methodDecl = llvm::cast<MethodDecl>(this);
         auto proto = methodDecl->proto.instantiate(genericArgs);
         auto instantiation = makeAST<MethodDecl>(std::move(proto), typeDecl, genericArgsArray, accessLevel, methodDecl->getLocation());
+        instantiation->isImplicit = methodDecl->isImplicit;
         if (methodDecl->body) {
             instantiation->body = ::instantiate(*methodDecl->body, genericArgs);
         }
@@ -319,6 +320,7 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<GenericArg>& genericAr
         auto* constructorDecl = llvm::cast<ConstructorDecl>(this);
         auto params = instantiateParams(constructorDecl->getParams(), genericArgs);
         auto instantiation = makeAST<ConstructorDecl>(typeDecl, std::move(params), accessLevel, constructorDecl->getLocation());
+        instantiation->isImplicit = constructorDecl->isImplicit;
         instantiation->body = ::instantiate(*constructorDecl->body, genericArgs);
         return instantiation;
     }

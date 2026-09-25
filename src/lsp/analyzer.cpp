@@ -989,12 +989,12 @@ bool isReadonlyVariable(const Decl& decl) {
 void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>& out) {
     // Mirrors the keyword table in lex.cpp; hash-directives highlight as macros.
     static const llvm::StringMap<const char*> keywords = {
-        {"break", "keyword"},  {"case", "keyword"},      {"const", "keyword"},     {"continue", "keyword"}, {"default", "keyword"}, {"defer", "keyword"},
-        {"else", "keyword"},   {"enum", "keyword"},      {"extern", "keyword"},    {"false", "keyword"},    {"for", "keyword"},     {"if", "keyword"},
-        {"import", "keyword"}, {"in", "keyword"},        {"interface", "keyword"}, {"is", "keyword"},       {"null", "keyword"},    {"private", "keyword"},
-        {"public", "keyword"}, {"return", "keyword"},    {"sizeof", "keyword"},    {"struct", "keyword"},   {"switch", "keyword"},  {"this", "keyword"},
-        {"true", "keyword"},   {"undefined", "keyword"}, {"using", "keyword"},     {"var", "keyword"},      {"while", "keyword"},   {"#if", "macro"},
-        {"#else", "macro"},    {"#endif", "macro"},
+        {"break", "keyword"},    {"case", "keyword"},   {"const", "keyword"},     {"continue", "keyword"},  {"default", "keyword"}, {"defer", "keyword"},
+        {"else", "keyword"},     {"enum", "keyword"},   {"extern", "keyword"},    {"false", "keyword"},     {"for", "keyword"},     {"if", "keyword"},
+        {"implicit", "keyword"}, {"import", "keyword"}, {"in", "keyword"},        {"interface", "keyword"}, {"is", "keyword"},      {"null", "keyword"},
+        {"private", "keyword"},  {"public", "keyword"}, {"return", "keyword"},    {"sizeof", "keyword"},    {"struct", "keyword"},  {"switch", "keyword"},
+        {"this", "keyword"},     {"true", "keyword"},   {"undefined", "keyword"}, {"using", "keyword"},     {"var", "keyword"},     {"while", "keyword"},
+        {"#if", "macro"},        {"#else", "macro"},    {"#endif", "macro"},
     };
     auto emit = [&](int line, int start, int length, const char* type) {
         if (length <= 0) return;
@@ -2270,9 +2270,9 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
     }
 
     std::vector<CompletionItem> items;
-    static const char* keywords[] = {"break",  "case",   "const",  "continue", "default",   "defer",     "else",  "enum",    "extern", "false",
-                                     "for",    "if",     "import", "in",       "interface", "is",        "null",  "private", "public", "return",
-                                     "sizeof", "struct", "switch", "this",     "true",      "undefined", "using", "var",     "while"};
+    static const char* keywords[] = {"break",  "case",   "const",    "continue", "default", "defer",     "else",      "enum",  "extern",  "false",
+                                     "for",    "if",     "implicit", "import",   "in",      "interface", "is",        "null",  "private", "public",
+                                     "return", "sizeof", "struct",   "switch",   "this",    "true",      "undefined", "using", "var",     "while"};
     for (auto* kw : keywords)
         items.push_back({kw, "keyword", "keyword"});
 

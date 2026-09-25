@@ -236,6 +236,9 @@ struct FunctionDecl : Decl {
     bool isPackInstantiation = false;
     // Set by the `test` marker; collected and run by `cx test`.
     bool isTest = false;
+    // Set by the `implicit` marker on single-parameter constructors and
+    // parameterless member functions; enables implicit conversions.
+    bool isImplicit = false;
     // Enclosing function for lambdas, null otherwise. Set during typechecking.
     FunctionDecl* parentFunction = nullptr;
     // Outer locals and parameters captured by value, in first-use order. Only lambdas capture.

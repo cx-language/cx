@@ -111,6 +111,7 @@ struct IRGenerator {
     Value* emitIfExpr(const IfExpr& expr);
     Value* emitSwitchExpr(const SwitchExpr& expr);
     Value* emitImplicitCastExpr(const ImplicitCastExpr& expr);
+    Value* emitUserConversion(const ImplicitCastExpr& expr);
     void emitDeferredExprsAndDestructorCallsForReturn(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls);
     void emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuation);
     void emitReturnStmt(const ReturnStmt& stmt);
@@ -137,7 +138,7 @@ struct IRGenerator {
     AllocaInst* createTempAlloca(Value* value);
     Value* createLoad(Value* value, const Expr* expr = nullptr);
     void createStore(Value* value, Value* pointer);
-    Value* createCall(Value* function, llvm::ArrayRef<Value*> args, const CallExpr* expr);
+    Value* createCall(Value* function, llvm::ArrayRef<Value*> args, const Expr* expr);
     void createBr(BasicBlock* destination, Value* argument = nullptr) {
         insertBlock->add(new BranchInst{ValueKind::BranchInst, destination, argument});
         destination->predecessors.push_back(insertBlock);

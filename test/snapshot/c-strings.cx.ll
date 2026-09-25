@@ -21,17 +21,8 @@ define i32 @main() #0 !dbg !4 {
   call void @_EN3std6string4initEP4char5int32(ptr %__str1, ptr @1, i32 1), !dbg !7
   %__str.load3 = load %string, ptr %__str1, align 8
   call void @_EN3std9StringBuf4initE6string(ptr %1, %string %__str.load3), !dbg !9
-  %3 = getelementptr inbounds %StringBuf, ptr %1, i32 0, i32 0
-  %4 = getelementptr inbounds %"List<char>", ptr %3, i32 0, i32 0
-  %.load = load ptr, ptr %4, align 8
-  %5 = getelementptr inbounds %"List<char>", ptr %3, i32 0, i32 1
-  %.load4 = load i32, ptr %5, align 4
-  %6 = sub i32 %.load4, 1
-  %7 = insertvalue %"Slice<char>" undef, ptr %.load, 0
-  %8 = insertvalue %"Slice<char>" %7, i32 %6, 1
-  %9 = insertvalue %string undef, %"Slice<char>" %8, 0
-  %10 = call i1 @_EN3stdeqEP4char6string(ptr %a2, %string %9), !dbg !10
-  %11 = xor i1 %10, true
+  %3 = call i1 @_EN3stdeqEAU_4charR9StringBuf(ptr %a2, ptr %1), !dbg !10
+  %4 = xor i1 %3, true
   ret i32 0
 }
 
@@ -40,6 +31,8 @@ declare void @_EN3std6string4initEP4char5int32(ptr, ptr, i32) #0
 declare i1 @_EN3stdeqEP4char6string(ptr, %string) #0
 
 declare void @_EN3std9StringBuf4initE6string(ptr, %string) #0
+
+declare i1 @_EN3stdeqEAU_4charR9StringBuf(ptr, ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

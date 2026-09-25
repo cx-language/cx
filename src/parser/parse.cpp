@@ -1657,8 +1657,13 @@ FunctionTemplate* Parser::parseFunctionTemplateProto(TypeDecl* receiverTypeDecl,
 
 /// function-decl ::= function-proto '{' stmt* '}'
 FunctionDecl* Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody, Type type, llvm::StringRef name,
-                                        Location location) {
+                                        Location location, bool isImplicit) {
     auto decl = parseFunctionProto(false, receiverTypeDecl, accessLevel, nullptr, type, name, location);
+    if (isImplicit) {
+        if (!decl->getParams().empty()) ERROR(location, "implicit conversion functions cannot take parameters");
+        if (decl->getReturnType().isVoid()) ERROR(location, "implicit conversion functions must return a value");
+        decl->isImplicit = true;
+    }
 
     if (requireBody || currentToken() == Token::LeftBrace) {
         decl->body = parseBlock(decl);
@@ -1686,11 +1691,13 @@ FunctionDecl* Parser::parseExternFunctionDecl(AccessLevel accessLevel, Type type
 }
 
 /// constructor-decl ::= id param-list '{' stmt* '}'
-ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel) {
+ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit) {
     ASSERT(currentToken() == Token::Identifier);
     auto location = consumeToken().location;
     auto params = parseParamList(nullptr);
+    if (isImplicit && (params.size() != 1 || params[0].isPack)) ERROR(location, "implicit constructors must take exactly one parameter");
     auto decl = makeAST<ConstructorDecl>(receiverTypeDecl, std::move(params), accessLevel, location);
+    decl->isImplicit = isImplicit;
     decl->body = parseBlock(decl);
     return decl;
 }
@@ -1782,6 +1789,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     while (currentToken() != Token::RightBrace) {
         AccessLevel accessLevel = AccessLevel::Default;
+        bool isImplicit = false;
+        Location implicitLocation;
 
     start:
         switch (currentToken()) {
@@ -1795,9 +1804,23 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             accessLevel = AccessLevel::Private;
             consumeToken();
             goto start;
+        case Token::Implicit:
+            if (tag == TypeTag::Interface) {
+                ERROR(getCurrentLocation(), "only struct constructors and member functions can be marked 'implicit'");
+            }
+            if (isImplicit) {
+                WARN(getCurrentLocation(), "duplicate 'implicit' specifier");
+            }
+            isImplicit = true;
+            implicitLocation = getCurrentLocation();
+            consumeToken();
+            goto start;
         case Token::Test:
             ERROR(getCurrentLocation(), "only top-level functions can be marked as tests");
         case Token::Tilde:
+            if (isImplicit) {
+                ERROR(implicitLocation, "only struct constructors and member functions can be marked 'implicit'");
+            }
             if (accessLevel != AccessLevel::Default) {
                 WARN(lookAhead(-1).location, "destructors cannot be " << accessLevel);
             }
@@ -1805,13 +1828,16 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             break;
         case Token::Identifier:
             if (lookAhead(1) == Token::LeftParen && currentToken().getString() == typeName.getString()) {
-                typeDecl->addMethod(parseConstructorDecl(*typeDecl, accessLevel));
+                typeDecl->addMethod(parseConstructorDecl(*typeDecl, accessLevel, isImplicit));
                 hasConstructor = true;
                 break;
             }
             LLVM_FALLTHROUGH;
         case Token::Const:
             if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
+                if (isImplicit) {
+                    ERROR(implicitLocation, "only struct constructors and member functions can be marked 'implicit'");
+                }
                 if (genericParams && !genericParams->empty()) {
                     ERROR(getCurrentLocation(), "static constants are not supported in generic types");
                 }
@@ -1833,12 +1859,18 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
             switch (currentToken()) {
             case Token::LeftParen:
-                typeDecl->addMethod(parseFunctionDecl(typeDecl, accessLevel, requireBody, type, name, location));
+                typeDecl->addMethod(parseFunctionDecl(typeDecl, accessLevel, requireBody, type, name, location, isImplicit));
                 break;
             case Token::Less:
+                if (isImplicit) {
+                    ERROR(implicitLocation, "implicit conversions cannot be generic");
+                }
                 typeDecl->addMethod(parseFunctionTemplate(typeDecl, accessLevel, type, name, location));
                 break;
             default:
+                if (isImplicit) {
+                    ERROR(implicitLocation, "only struct constructors and member functions can be marked 'implicit'");
+                }
                 // A const-qualified member with an initializer is a static constant.
                 if (currentToken() == Token::Assignment && !type.isMutable()) {
                     if (genericParams && !genericParams->empty()) {
@@ -1899,6 +1931,9 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
             accessLevel = AccessLevel::Private;
             consumeToken();
+        }
+        if (currentToken() == Token::Implicit) {
+            ERROR(getCurrentLocation(), "only struct constructors and member functions can be marked 'implicit'");
         }
 
         // A `const` name followed by `=` declares a constant scoped under the enum name.
@@ -2091,6 +2126,8 @@ start:
         isTest = true;
         consumeToken();
         goto start;
+    case Token::Implicit:
+        ERROR(getCurrentLocation(), "only struct constructors and member functions can be marked 'implicit'");
     case Token::Extern:
         if (isTest) ERROR(getCurrentLocation(), "test functions must have a body");
         consumeToken();

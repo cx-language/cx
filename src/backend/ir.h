@@ -238,7 +238,7 @@ struct ExtractInst : Instruction {
 struct CallInst : Instruction {
     Value* function;
     std::vector<Value*> args;
-    const CallExpr* expr;
+    const Expr* expr;
     std::string name;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::CallInst; }

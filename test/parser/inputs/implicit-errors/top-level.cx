@@ -1,0 +1,3 @@
+implicit int f() {
+    return 1;
+}

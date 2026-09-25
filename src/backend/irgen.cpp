@@ -233,7 +233,7 @@ void IRGenerator::createStore(Value* value, Value* pointer) {
     insertBlock->add(new StoreInst{ValueKind::StoreInst, value, pointer});
 }
 
-Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args, const CallExpr* expr) {
+Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args, const Expr* expr) {
     ASSERT(function->kind == ValueKind::Function || (function->getType()->isPointerType() && function->getType()->getPointee()->isFunctionType()));
     return insertBlock->add(new CallInst{ValueKind::CallInst, function, args, expr, ""});
 }

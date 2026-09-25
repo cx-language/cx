@@ -39,6 +39,7 @@ struct Token {
         False,
         For,
         If,
+        Implicit,
         Import,
         In,
         Interface,

@@ -156,11 +156,11 @@ void NullAnalyzer::analyze(Value* value) {
     switch (value->kind) {
     case ValueKind::CallInst: {
         auto call = llvm::cast<CallInst>(value);
-        if (call->expr) {
-            if (auto receiverType = call->expr->receiverType) {
+        if (auto* callExpr = llvm::dyn_cast_or_null<CallExpr>(call->expr)) {
+            if (auto receiverType = callExpr->receiverType) {
                 if (receiverType.isOptionalType() && analyzeNullability(call->args[0], call) == Nullability::DefinitelyNullable) {
                     // TODO: Store the implicit 'this' receiver to the call expr during typechecking to simplify this code.
-                    auto location = call->expr->getReceiver() ? call->expr->getReceiver()->location : call->expr->location;
+                    auto location = callExpr->getReceiver() ? callExpr->getReceiver()->location : callExpr->location;
                     WARN(location, "receiver may be null; unwrap it with a postfix '!' to silence this warning");
                 }
             }

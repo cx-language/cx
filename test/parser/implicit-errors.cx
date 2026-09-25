@@ -1,0 +1,16 @@
+// RUN: %not %cx -parse --error-limit=0 %S/inputs/implicit-errors/top-level.cx %S/inputs/implicit-errors/ctor-zero-params.cx %S/inputs/implicit-errors/ctor-two-params.cx %S/inputs/implicit-errors/member-params.cx %S/inputs/implicit-errors/member-void.cx %S/inputs/implicit-errors/member-generic.cx %S/inputs/implicit-errors/interface.cx %S/inputs/implicit-errors/enum.cx %S/inputs/implicit-errors/field.cx %S/inputs/implicit-errors/destructor.cx %S/inputs/implicit-errors/const.cx %S/inputs/implicit-errors/twice.cx 2>&1 | %FileCheck %s
+
+// CHECK-NOT: {{[A-Za-z-]+\.cx:[0-9]+:[0-9]+: (warning|error):}}
+// CHECK: top-level.cx:1:1: error: only struct constructors and member functions can be marked 'implicit'
+// CHECK: ctor-zero-params.cx:4:14: error: implicit constructors must take exactly one parameter
+// CHECK: ctor-two-params.cx:4:14: error: implicit constructors must take exactly one parameter
+// CHECK: member-params.cx:4:18: error: implicit conversion functions cannot take parameters
+// CHECK: member-void.cx:4:19: error: implicit conversion functions must return a value
+// CHECK: member-generic.cx:4:5: error: implicit conversions cannot be generic
+// CHECK: interface.cx:2:5: error: only struct constructors and member functions can be marked 'implicit'
+// CHECK: enum.cx:4:5: error: only struct constructors and member functions can be marked 'implicit'
+// CHECK: field.cx:2:5: error: only struct constructors and member functions can be marked 'implicit'
+// CHECK: destructor.cx:4:5: error: only struct constructors and member functions can be marked 'implicit'
+// CHECK: const.cx:2:5: error: only struct constructors and member functions can be marked 'implicit'
+// CHECK: twice.cx:4:14: warning: duplicate 'implicit' specifier
+// CHECK-NOT: {{[A-Za-z-]+\.cx:[0-9]+:[0-9]+: (warning|error):}}

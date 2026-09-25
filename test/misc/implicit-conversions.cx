@@ -1,0 +1,139 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Meters: Copyable {
+    int value;
+
+    implicit Meters(int v) {
+        this.value = v;
+    }
+}
+
+struct Label: Copyable {
+    string text;
+
+    implicit string view() {
+        return text;
+    }
+}
+
+struct Box {
+    StringBuf buf;
+
+    implicit Box(StringBuf b) {
+        buf = b;
+    }
+}
+
+int takeMeters(Meters m) {
+    return m.value;
+}
+
+Meters makeMeters() {
+    return 42;
+}
+
+string takeString(string s) {
+    return s;
+}
+
+string labelText(Label l) {
+    return l;
+}
+
+string borrowedText(Label& l) {
+    return l;
+}
+
+int over(int x) {
+    return 1;
+}
+
+int over(Meters m) {
+    return 2;
+}
+
+string pick(Label& l) {
+    return "borrow";
+}
+
+string pick(string s) {
+    return s;
+}
+
+string? maybeView(bool b, Label& l) {
+    if b {
+        return l;
+    }
+    return null;
+}
+
+T firstOf<T>(Slice<T> s) {
+    return s[0];
+}
+
+int sum(int[] values) {
+    int total = 0;
+    for x in values { total += x; }
+    return total;
+}
+
+void main() {
+    // Target-side conversion: param, return, var init, assignment.
+    // CHECK:7
+    println(takeMeters(7));
+    // CHECK-NEXT:42
+    println(makeMeters().value);
+    Meters m = 3;
+    // CHECK-NEXT:3
+    println(m.value);
+    m = 9;
+    // CHECK-NEXT:9
+    println(m.value);
+
+    // Source-side conversion: all positions, incl. borrow and rvalue sources.
+    var label = Label("hello");
+    // CHECK-NEXT:hello
+    println(takeString(label));
+    // CHECK-NEXT:hello
+    println(labelText(label));
+    // CHECK-NEXT:hello
+    println(borrowedText(label));
+    // CHECK-NEXT:temp
+    println(takeString(Label("temp")));
+    string s = label;
+    // CHECK-NEXT:hello
+    println(s);
+    s = Label("bye");
+    // CHECK-NEXT:bye
+    println(s);
+
+    // Exact overloads win over conversions; borrows win over user conversions.
+    // CHECK-NEXT:1
+    println(over(5));
+    // CHECK-NEXT:2
+    println(over(Meters(5)));
+    // CHECK-NEXT:borrow
+    println(pick(label));
+    // CHECK-NEXT:lit
+    println(pick("lit"));
+
+    // Conversions compose with optional wrapping.
+    var maybe = maybeView(true, label);
+    // CHECK-NEXT:hello
+    println(maybe!);
+
+    // Generic callees infer through view conversions.
+    var list = List([10, 20]);
+    // CHECK-NEXT:10
+    println(firstOf(list));
+    // CHECK-NEXT:30
+    println(sum(list));
+    // CHECK-NEXT:3
+    println(sum(List([1, 2])));
+
+    // By-value conversions move non-copyable sources.
+    var sb = StringBuf("moved");
+    Box box = sb;
+    // CHECK-NEXT:moved
+    println(box.buf);
+}
