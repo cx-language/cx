@@ -57,10 +57,18 @@
             return v !== null;
         });
         var fg = cssVar("--text-color") || "#000";
+        function sizeCanvas() {
+            var dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(canvas.clientWidth * dpr);
+            canvas.height = Math.round(HEIGHT * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
         if (!flat.length) {
+            sizeCanvas();
             ctx.font = "11px system-ui, sans-serif";
             ctx.fillStyle = fg;
             ctx.fillText("no data", PAD.left, PAD.top + 14);
+            legend();
             return function () {};
         }
         var min = Math.min.apply(null, flat);
@@ -79,11 +87,8 @@
         // Sizing lives inside draw so resize redraws at the new geometry
         // instead of stretching the old backing store.
         function draw() {
-            var dpr = window.devicePixelRatio || 1;
+            sizeCanvas();
             var width = canvas.clientWidth;
-            canvas.width = Math.round(width * dpr);
-            canvas.height = Math.round(HEIGHT * dpr);
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             var plotW = width - PAD.left - PAD.right;
             var plotH = HEIGHT - PAD.top - PAD.bottom;
             function x(i) {

@@ -377,8 +377,9 @@ jobs:
           export PATH="/usr/lib/llvm-23/bin:$PATH"
           ./wasm/build-xcc-dist.sh wasm/dist
 
-      - name: Test playground
+      - name: Test website JS
         run: |
+          node website/test-bench.mjs
           node wasm/test-editor.mjs
           node wasm/test-playground.mjs
           node wasm/test-playground-worker.mjs
