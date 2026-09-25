@@ -86,6 +86,14 @@ list(FILTER LIBCX_SOURCES EXCLUDE REGEX "src/lsp/main.cpp")
 add_library(libcx ${LIBCX_SOURCES})
 set_target_properties(libcx PROPERTIES PREFIX "")
 target_precompile_headers(libcx PRIVATE src/pch.h)
+# Clang's headers (notably clang/AST/Stmt.h) befriend AST node classes that
+# are only declared later in the same header, without a prior forward
+# declaration. In a unity build an earlier TU's `using namespace cx;` is still
+# active when these headers are parsed, so the unqualified friend names bind
+# to cx's same-named AST classes (cx::IfStmt, ...) instead of declaring
+# clang's, and MSVC rejects the resulting private-member accesses (C2248).
+# Keep the Clang-consuming TUs standalone.
+set_source_files_properties(src/sema/c-import.cpp src/driver/clang.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 add_executable(cx src/cli/main.cpp)
 target_link_libraries(cx libcx)
