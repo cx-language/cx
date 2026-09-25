@@ -751,9 +751,6 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             Type arrayType;
             Type elementType;
             Type scalarType;
-            bool isBroadcast = false;
-            bool scalarOnLeft = false;
-            int64_t arraySize = 0;
 
             if (leftIsArrayLike && rightIsArrayLike) {
                 if (leftType.getArraySize() != rightType.getArraySize()) {
@@ -764,7 +761,6 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                 // For now require same element type modulo mutability; per-element
                 // conversions (e.g. int literal to float) are handled when
                 // typechecking each element op below.
-                arraySize = leftType.getArraySize();
                 arrayType = leftType;
                 elementType = leftType.getElementType();
                 // Verify right element type is compatible at a high level; detailed
@@ -774,18 +770,13 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                     // per-element typechecking below will diagnose precisely.
                 }
             } else if (leftIsArray) {
-                isBroadcast = true;
                 arrayType = leftType;
                 elementType = leftType.getElementType();
                 scalarType = rightType;
-                arraySize = leftType.getArraySize();
             } else {
-                isBroadcast = true;
-                scalarOnLeft = true;
                 arrayType = rightType;
                 elementType = rightType.getElementType();
                 scalarType = leftType;
-                arraySize = rightType.getArraySize();
             }
 
             // Only fixed-size arrays with known size lower via unrolling.
