@@ -1,0 +1,5 @@
+// Helper input for compile-only-output.cx (multi-file -c names the output output.o).
+
+int compileOnlyHelper(int x) {
+    return x + 1;
+}

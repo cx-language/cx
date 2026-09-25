@@ -1,0 +1,24 @@
+// RUN: %cx -print-llvm %s | %FileCheck %s
+// CHECK-NOT: extern-function-definition.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+// An extern function with a body is a definition with C linkage: an
+// unmangled define, still callable from cx. Without a body it stays a
+// declaration (an import).
+
+// CHECK: define i32 @c_add(i32 %a, i32 %b)
+// CHECK: declare i32 @c_imported(i32)
+// CHECK: call i32 @c_add(i32 1, i32 2)
+// CHECK: call i32 @c_imported(i32 3)
+
+extern int c_add(int a, int b) {
+    return a + b;
+}
+
+extern int c_imported(int x);
+
+void main() {
+    println(c_add(1, 2));
+    println(c_imported(3));
+}
+
+// CHECK-NOT: extern-function-definition.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

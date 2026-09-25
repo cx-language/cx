@@ -33,12 +33,10 @@ applications. Each subdirectory is a `cx build` project (see
 - [`embedding/`](embedding/) — embed cx in a C++ host: `embedding.cpp` loads
   `script1.cx`/`script2.cx` via `cx.h` (`cxCreateModule`,
   `cxLoadScriptFromFile`, `cxCompileModule`, `cxGetFunction`) and calls into
-  them. See [`cpp-interop/`](cpp-interop/) for the opposite direction
-  (calling C++ from cx).
-- [`cpp-interop/`](cpp-interop/) — call C++ from cx through `extern "C"`
-  wrappers: a small C++ library (`mathlib.cpp`/`mathlib.h`) with a class and
-  free functions, wrapped as C ABI (`wrapper.cpp`/`wrapper.h`), imported from
-  cx (`main.cx`) via `import` and `extern` declarations.
+  them. See [`c-interop/`](c-interop/) for static linking in both directions.
+- [`c-interop/`](c-interop/) — call C from cx through a direct header import
+  (`mathlib.h`/`mathlib.c` called from `main.cx`), and cx from C through
+  `extern` definitions (`cxlib.cx` exported to `main.c` via `cxlib.h`).
 - [`opengl/`](opengl/) — minimal OpenGL triangle using GLFW for window
   management. Needs `pkg-config` and GLFW3 (`apt install pkg-config
   libglfw3-dev libgl1-mesa-dev`, `brew install pkg-config glfw3`). Build with

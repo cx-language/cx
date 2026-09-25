@@ -601,8 +601,23 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         compileOnly = true;
     }
     if (compileOnly || emitAssembly) {
-        llvm::SmallString<128> outputFilePath = buildParams.outputDirectory;
-        llvm::sys::path::append(outputFilePath, llvm::Twine("output.") + outputFileExtension);
+        std::string fileName = buildParams.outputFileName;
+        if (fileName.empty()) {
+            if (mainModule.fileBuffers.size() == 1) {
+                fileName = llvm::sys::path::stem(mainModule.fileBuffers.front()->getBufferIdentifier()).str();
+            }
+            if (fileName.empty()) fileName = "output";
+            fileName += ".";
+            fileName += outputFileExtension;
+        }
+        // An absolute -o path is used as is; otherwise the output directory is prepended.
+        llvm::SmallString<128> outputFilePath;
+        if (llvm::sys::path::is_absolute(fileName)) {
+            outputFilePath = fileName;
+        } else {
+            outputFilePath = buildParams.outputDirectory;
+            llvm::sys::path::append(outputFilePath, fileName);
+        }
         renameFile(tempIntermediateFilePath, outputFilePath);
         return 0;
     }

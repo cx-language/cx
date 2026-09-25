@@ -1,0 +1,3 @@
+var name = "c-interop"
+var libraries = ["c-interop-math"]
+var librarySearchPaths = ["."]

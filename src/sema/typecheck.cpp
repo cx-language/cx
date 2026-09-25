@@ -202,7 +202,11 @@ static void checkUnusedDeclsInModule(const Module& module) {
                     continue;
                 }
                 // Test functions are entry points for `cx test`, like main is for `cx run`.
-                if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl); functionDecl && functionDecl->isTest) continue;
+                // Exported extern functions are entry points for C callers.
+                if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
+                    functionDecl && (functionDecl->isTest || (functionDecl->isExtern() && functionDecl->body))) {
+                    continue;
+                }
                 if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl); functionTemplate && functionTemplate->functionDecl->isTest) {
                     continue;
                 }

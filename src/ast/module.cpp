@@ -39,6 +39,14 @@ void Module::addToSymbolTable(FunctionTemplate& decl) {
 void Module::addToSymbolTable(FunctionDecl& decl) {
     if (auto existing = symbolTable.findWithMatchingPrototype(decl)) {
         REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getQualifiedName() << "'");
+    } else if (decl.isExtern()) {
+        // C has no overloading: same-name externs share one symbol even with different signatures.
+        for (Decl* candidate : symbolTable.findFirst(decl.getQualifiedName())) {
+            if (auto* existing = llvm::dyn_cast<FunctionDecl>(candidate); existing && existing->isExtern()) {
+                REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getQualifiedName() << "'");
+                break;
+            }
+        }
     }
     symbolTable.addGlobal(decl.getQualifiedName(), &decl);
 }

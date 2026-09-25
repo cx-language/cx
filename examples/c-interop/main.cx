@@ -1,0 +1,10 @@
+// Calls C from cx through a direct header import.
+// Build the C side first (see README.md), then `cx build` links it.
+
+import "mathlib.h";
+
+void main() {
+    println(c_add(20.0, 10.0)); // prints 30
+    println(c_multiply(6.0, 7.0)); // prints 42
+    println(c_factorial(5)); // prints 120
+}

@@ -1,11 +1,23 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+// CHECK-NOT: function-redefinition.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void foo() { }
 // CHECK: [[@LINE+2]]:6: error: redefinition of 'foo'
-// CHECK: :3:6: note: previous definition here
+// CHECK: :4:6: note: previous definition here
 void foo() { }
 
 void bar(int a) { }
 // CHECK: [[@LINE+2]]:6: error: redefinition of 'bar'
-// CHECK: :8:6: note: previous definition here
+// CHECK: :9:6: note: previous definition here
 void bar(int b) { }
+
+// C has no overloading: same-name externs share one symbol even with
+// different signatures.
+extern int baz(int a);
+// CHECK: [[@LINE+2]]:12: error: redefinition of 'baz'
+// CHECK: :16:12: note: previous definition here
+extern int baz(int a, int b) {
+    return a + b;
+}
+
+// CHECK-NOT: function-redefinition.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

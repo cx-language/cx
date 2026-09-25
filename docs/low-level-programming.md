@@ -102,3 +102,31 @@ void main() {
 Additional include directories, preprocessor definitions, and libraries
 are passed on the command line with `-I`, `-D`, `-L`, and `-l`.
 See [Modules and imports](modules) for how imports are resolved.
+
+## Calling cx from C
+
+An `extern` function with a body is exported with C linkage under its plain
+name, so C callers link it like any C function. It stays callable from cx
+too:
+
+```cs
+extern int c_add(int a, int b) {
+    return a + b;
+}
+
+void main() {
+    println(c_add(40, 2)); // prints 42
+}
+```
+
+Compile the cx side to an object file, then link it into the C program:
+
+```sh
+cx cxlib.cx -c -o cxlib.o
+cc main.c cxlib.o -o c-caller
+```
+
+Signatures crossing the boundary must be C-compatible: plain numbers,
+pointers, and C structs. Generic functions cannot be `extern`.
+See the [`c-interop` example](https://github.com/emillaine/cx/tree/main/examples/c-interop)
+for a complete project calling in both directions.

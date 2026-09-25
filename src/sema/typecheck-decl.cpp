@@ -641,7 +641,7 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
             typecheckType(decl.getReturnType(), decl.accessLevel, true, true);
         }
 
-        if (!decl.isExtern() && decl.isMain() && !decl.isMethodDecl() && decl.getModule() == mainModule && decl.genericArgs.empty()) {
+        if ((!decl.isExtern() || decl.body) && decl.isMain() && !decl.isMethodDecl() && decl.getModule() == mainModule && decl.genericArgs.empty()) {
             if (entryMain) {
                 REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(entryMain), "multiple definitions of 'main'");
             } else {
@@ -662,7 +662,7 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.checkState == Decl::CheckState::Checked || decl.checkState == Decl::CheckState::CheckingBody) return;
     typecheckFunctionSignature(decl);
-    if (decl.isExtern()) {
+    if (decl.isExtern() && !decl.body) {
         decl.checkState = Decl::CheckState::Checked;
         return;
     }

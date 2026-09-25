@@ -1688,10 +1688,16 @@ FunctionTemplate* Parser::parseFunctionTemplate(TypeDecl* receiverTypeDecl, Acce
     return decl;
 }
 
-/// extern-function-decl ::= 'private'? 'extern' function-proto ('\n' | ';')
+/// extern-function-decl ::= 'private'? 'extern' function-proto (block | ('\n' | ';'))
 FunctionDecl* Parser::parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location) {
     auto decl = parseFunctionProto(true, nullptr, accessLevel, nullptr, type, name, location);
-    parseStmtTerminator();
+    if (currentToken() == Token::LeftBrace) {
+        // A body makes this a definition with C linkage, callable from C.
+        decl->body = parseBlock(decl);
+    }
+    if (lookAhead(-1) != Token::RightBrace) {
+        parseStmtTerminator();
+    }
     return decl;
 }
 
@@ -2221,6 +2227,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionDecl>(*decl));
         break;
     case Token::Less:
+        if (isExtern) ERROR(location, "extern functions cannot be generic");
         decl = parseFunctionTemplate(nullptr, accessLevel, type, name, location);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionTemplate>(*decl));
         break;

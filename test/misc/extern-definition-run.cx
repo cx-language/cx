@@ -1,0 +1,10 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+
+extern int c_add(int a, int b) {
+    return a + b;
+}
+
+void main() {
+    assert(c_add(40, 2) == 42);
+}

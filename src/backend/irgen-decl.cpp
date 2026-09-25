@@ -82,7 +82,8 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     }
 
     auto function = new Function{
-        ValueKind::Function, mangledName, decl.getName().str(), returnType, std::move(params), {}, decl.isExtern(), decl.isVariadic(), decl.getLocation(),
+        ValueKind::Function,           mangledName,       decl.getName().str(), returnType, std::move(params), {},
+        decl.isExtern() && !decl.body, decl.isVariadic(), decl.getLocation(),
     };
     if (!conflict) {
         module->functions.push_back(function);
@@ -212,7 +213,9 @@ void IRGenerator::emitFunctionDecl(const FunctionDecl& decl) {
 
     // After an error (e.g. a conflicting declaration above) shapes may
     // mismatch; compilation already failed, so don't emit a body.
-    if (!decl.isExtern() && function->body.empty() && !errors) {
+    if ((!decl.isExtern() || decl.body) && function->body.empty() && !errors) {
+        // A definition reusing a declaration object flips it into a definition.
+        function->isExtern = false;
         emitFunctionBody(decl, *function);
     }
 }

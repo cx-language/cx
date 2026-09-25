@@ -338,8 +338,9 @@ IRModule& IRGenerator::emitModule(const Module& sourceModule) {
     for (size_t i = 0; i < functionInstantiations.size(); ++i) {
         auto& instantiation = functionInstantiations[i];
 
-        if (!instantiation.decl->isExtern() && instantiation.function->body.empty()) {
+        if ((!instantiation.decl->isExtern() || instantiation.decl->body) && instantiation.function->body.empty()) {
             currentDecl = instantiation.decl;
+            instantiation.function->isExtern = false;
             emitFunctionBody(*instantiation.decl, *instantiation.function);
         }
     }

@@ -1,0 +1,13 @@
+// RUN: cd %T && %cx -c %s
+// RUN: file-exists %T/compile-only-output.o
+// RUN: %cx -c %s -o %T/abs-custom.o
+// RUN: file-exists %T/abs-custom.o
+// RUN: cd %T && %cx -c %s -o rel-custom.o
+// RUN: file-exists %T/rel-custom.o
+// RUN: cd %T && %cx -c %s %S/inputs/compile-only-helper.cx
+// RUN: file-exists %T/output.o
+// UNSUPPORTED: windows
+
+void main() {
+    println("hi");
+}

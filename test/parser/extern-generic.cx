@@ -1,0 +1,9 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+// CHECK-NOT: extern-generic.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+// CHECK: [[@LINE+1]]:12: error: extern functions cannot be generic
+extern int f<T>(T x) {
+    return 1;
+}
+
+// CHECK-NOT: extern-generic.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
