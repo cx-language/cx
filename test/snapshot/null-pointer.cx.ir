@@ -1,5 +1,5 @@
 
-int32* _EN4main3fooE() {
+int32* _CX1N4main3fooEOPM3std5int320_() {
     return int32* null
 }
 
@@ -8,13 +8,13 @@ int32 main() {
     bool* isNonNull = alloca bool
     int32** ptr = alloca int32*
     bool** ptr2 = alloca bool*
-    int32* _0 = call _EN4main3fooE()
+    int32* _0 = call _CX1N4main3fooEOPM3std5int320_()
     bool _1 = _0 == int32* null
     store _1 to isNull
-    int32* _2 = call _EN4main3fooE()
+    int32* _2 = call _CX1N4main3fooEOPM3std5int320_()
     bool _3 = _2 != int32* null
     store _3 to isNonNull
-    int32* _4 = call _EN4main3fooE()
+    int32* _4 = call _CX1N4main3fooEOPM3std5int320_()
     store _4 to ptr
     store bool* null to ptr2
     return int32 0

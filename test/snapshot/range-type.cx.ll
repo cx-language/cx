@@ -4,23 +4,23 @@
 
 @0 = private unnamed_addr constant [40 x i8] c"integer overflow at range-type.cx:6:13\0A\00", align 1
 
-define i32 @_EN4main3fooE5RangeI5int32E(%"Range<int32>" %r) #0 !dbg !4 {
+define i32 @_CX1N4main3fooEM3std5int321_M3std5RangeIM3std5int32E(%"Range<int32>" %r) #0 !dbg !4 {
   %r1 = alloca %"Range<int32>", align 8
   %sum = alloca i32, align 4
   %__iterator = alloca %"RangeIterator<int32>", align 8
   %i = alloca i32, align 4
   store %"Range<int32>" %r, ptr %r1, align 4
   store i32 0, ptr %sum, align 4
-  %1 = call %"RangeIterator<int32>" @_EN3std5RangeI5int32E8iteratorE(ptr %r1), !dbg !7
+  %1 = call %"RangeIterator<int32>" @_CX1N3stdM3std5RangeIM3std5int32E8iteratorEM3std13RangeIteratorIM3std5int32E0_(ptr %r1), !dbg !7
   store %"RangeIterator<int32>" %1, ptr %__iterator, align 4
   br label %loop.condition
 
 loop.condition:                                   ; preds = %loop.increment, %0
-  %2 = call i1 @_EN3std13RangeIteratorI5int32E8hasValueE(ptr %__iterator), !dbg !7
+  %2 = call i1 @_CX1N3stdM3std13RangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ptr %__iterator), !dbg !7
   br i1 %2, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %3 = call i32 @_EN3std13RangeIteratorI5int32E5valueE(ptr %__iterator), !dbg !7
+  %3 = call i32 @_CX1N3stdM3std13RangeIteratorIM3std5int32E5valueEM3std5int320_(ptr %__iterator), !dbg !7
   store i32 %3, ptr %i, align 4
   %sum.load = load i32, ptr %sum, align 4
   %i.load = load i32, ptr %i, align 4
@@ -35,7 +35,7 @@ loop.body:                                        ; preds = %loop.condition
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 loop.increment:                                   ; preds = %overflow.success
-  call void @_EN3std13RangeIteratorI5int32E9incrementE(ptr %__iterator), !dbg !7
+  call void @_CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(ptr %__iterator), !dbg !7
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
@@ -43,7 +43,7 @@ loop.end:                                         ; preds = %loop.condition
   ret i32 %sum.load2
 
 overflow.fail:                                    ; preds = %loop.body
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !8
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !8
   unreachable
 
 overflow.success:                                 ; preds = %loop.body
@@ -51,25 +51,25 @@ overflow.success:                                 ; preds = %loop.body
   br label %loop.increment
 }
 
-declare %"RangeIterator<int32>" @_EN3std5RangeI5int32E8iteratorE(ptr) #0
+declare %"RangeIterator<int32>" @_CX1N3stdM3std5RangeIM3std5int32E8iteratorEM3std13RangeIteratorIM3std5int32E0_(ptr) #0
 
-declare i1 @_EN3std13RangeIteratorI5int32E8hasValueE(ptr) #0
+declare i1 @_CX1N3stdM3std13RangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ptr) #0
 
-declare i32 @_EN3std13RangeIteratorI5int32E5valueE(ptr) #0
+declare i32 @_CX1N3stdM3std13RangeIteratorIM3std5int32E5valueEM3std5int320_(ptr) #0
 
-declare void @_EN3std13RangeIteratorI5int32E9incrementE(ptr) #0
+declare void @_CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(ptr) #0
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
 define i32 @main() #0 !dbg !9 {
   %1 = alloca %"Range<int32>", align 8
-  call void @_EN3std5RangeI5int32E4initE5int325int32(ptr %1, i32 0, i32 5), !dbg !10
+  call void @_CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ptr %1, i32 0, i32 5), !dbg !10
   %.load = load %"Range<int32>", ptr %1, align 4
-  %2 = call i32 @_EN4main3fooE5RangeI5int32E(%"Range<int32>" %.load), !dbg !11
+  %2 = call i32 @_CX1N4main3fooEM3std5int321_M3std5RangeIM3std5int32E(%"Range<int32>" %.load), !dbg !11
   ret i32 %2
 }
 
-declare void @_EN3std5RangeI5int32E4initE5int325int32(ptr, i32, i32) #0
+declare void @_CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ptr, i32, i32) #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -80,7 +80,7 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "range-type.cx")
-!4 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooE5RangeI5int32E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "foo", linkageName: "_CX1N4main3fooEM3std5int321_M3std5RangeIM3std5int32E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 5, column: 5, scope: !4)

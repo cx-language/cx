@@ -46,6 +46,9 @@ struct TypeBase {
     // Earliest-created base with equal structure ignoring spelling (null when none).
     // Spelling twins share one identity; see Type::canonicalTwin().
     TypeBase* firstTwin = nullptr;
+    // Creation-order index, unique per base. Only mangling uses it, to tell
+    // apart anonymous C types, which have no name to mangle.
+    size_t identityIndex = 0;
 
 protected:
     TypeBase(TypeKind kind) : kind(kind) {}

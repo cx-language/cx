@@ -1,12 +1,12 @@
 
 int32 main() {
     S* _0 = alloca S
-    void _1 = call _EN4main1S4initE(S* _0)
-    void _2 = call _EN4main1S3fooE5int32(S* _0, int32 30)
+    void _1 = call _CX1N4mainM4main1S4initE4void0_(S* _0)
+    void _2 = call _CX1N4mainM4main1S3fooE4void1_M3std5int32(S* _0, int32 30)
     return int32 0
 }
 
-void _EN4main1S3fooE5int32(S* this, int32 bar) {
+void _CX1N4mainM4main1S3fooE4void1_M3std5int32(S* this, int32 bar) {
     int32* bar_0 = alloca int32
     store bar to bar_0
     int32 bar.load = load bar_0
@@ -21,7 +21,7 @@ void _EN4main1S3fooE5int32(S* this, int32 bar) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at parameter-shadows-member-variable.cx:7:17
+    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at parameter-shadows-member-variable.cx:7:17
 ")
     unreachable
 
@@ -29,6 +29,6 @@ overflow.success:
     return void
 }
 
-void _EN4main1S4initE(S* this) {
+void _CX1N4mainM4main1S4initE4void0_(S* this) {
     return void
 }

@@ -53,6 +53,6 @@ if.end_1:
     return int32 0
 }
 
-void _EN4main13shouldBeEmptyE() {
+void _CX1N4main13shouldBeEmptyE4void0_() {
     return void
 }

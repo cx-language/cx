@@ -53,7 +53,7 @@ if.end6:                                          ; preds = %if.else5
   ret i32 0
 }
 
-define void @_EN4main13shouldBeEmptyE() #0 !dbg !14 {
+define void @_CX1N4main13shouldBeEmptyE4void0_() #0 !dbg !14 {
   ret void
 }
 
@@ -76,4 +76,4 @@ attributes #0 = { "frame-pointer"="all" }
 !11 = !DILocation(line: 16, column: 15, scope: !4)
 !12 = !DILocation(line: 19, column: 11, scope: !4)
 !13 = !DILocation(line: 23, column: 5, scope: !4)
-!14 = distinct !DISubprogram(name: "shouldBeEmpty", linkageName: "_EN4main13shouldBeEmptyE", scope: !3, file: !3, line: 26, type: !5, scopeLine: 26, spFlags: DISPFlagDefinition, unit: !2)
+!14 = distinct !DISubprogram(name: "shouldBeEmpty", linkageName: "_CX1N4main13shouldBeEmptyE4void0_", scope: !3, file: !3, line: 26, type: !5, scopeLine: 26, spFlags: DISPFlagDefinition, unit: !2)

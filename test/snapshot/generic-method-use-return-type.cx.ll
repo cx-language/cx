@@ -5,13 +5,13 @@
 define i32 @main() #0 !dbg !4 {
   %x = alloca %"X<int32>", align 8
   %a = alloca %"X<bool>", align 8
-  %1 = call %"X<bool>" @_EN4main1XI5int32E1fI4boolEE4bool(ptr %x, i1 false), !dbg !7
+  %1 = call %"X<bool>" @_CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEEM4main1XIM3std4boolE1_M3std4bool(ptr %x, i1 false), !dbg !7
   store %"X<bool>" %1, ptr %a, align 1
-  call void @_EN4main1XI4boolE1gE(ptr %a), !dbg !8
+  call void @_CX1N4mainM4main1XIM3std4boolE1gE4void0_(ptr %a), !dbg !8
   ret i32 0
 }
 
-define %"X<bool>" @_EN4main1XI5int32E1fI4boolEE4bool(ptr %this, i1 %u) #0 !dbg !9 {
+define %"X<bool>" @_CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEEM4main1XIM3std4boolE1_M3std4bool(ptr %this, i1 %u) #0 !dbg !9 {
   %u1 = alloca i1, align 1
   %x = alloca %"X<bool>", align 8
   store i1 %u, ptr %u1, align 1
@@ -19,7 +19,7 @@ define %"X<bool>" @_EN4main1XI5int32E1fI4boolEE4bool(ptr %this, i1 %u) #0 !dbg !
   ret %"X<bool>" %x.load
 }
 
-define void @_EN4main1XI4boolE1gE(ptr %this) #0 !dbg !10 {
+define void @_CX1N4mainM4main1XIM3std4boolE1gE4void0_(ptr %this) #0 !dbg !10 {
   ret void
 }
 
@@ -37,5 +37,5 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 14, column: 15, scope: !4)
 !8 = !DILocation(line: 15, column: 7, scope: !4)
-!9 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1XI5int32E1fI4boolEE4bool", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
-!10 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1XI4boolE1gE", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!9 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEEM4main1XIM3std4boolE1_M3std4bool", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "g", linkageName: "_CX1N4mainM4main1XIM3std4boolE1gE4void0_", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)

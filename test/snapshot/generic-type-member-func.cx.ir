@@ -1,15 +1,15 @@
 
 int32 main() {
     F<int32, bool>* f = alloca F<int32, bool>
-    void _0 = call _EN4main1FI5int324boolE4initE(F<int32, bool>* f)
-    void _1 = call _EN4main1FI5int324boolE3fooE(F<int32, bool>* f)
+    void _0 = call _CX1N4mainM4main1FIM3std5int32M3std4boolE4initE4void0_(F<int32, bool>* f)
+    void _1 = call _CX1N4mainM4main1FIM3std5int32M3std4boolE3fooE4void0_(F<int32, bool>* f)
     return int32 0
 }
 
-void _EN4main1FI5int324boolE4initE(F<int32, bool>* this) {
+void _CX1N4mainM4main1FIM3std5int32M3std4boolE4initE4void0_(F<int32, bool>* this) {
     return void
 }
 
-void _EN4main1FI5int324boolE3fooE(F<int32, bool>* this) {
+void _CX1N4mainM4main1FIM3std5int32M3std4boolE3fooE4void0_(F<int32, bool>* this) {
     return void
 }

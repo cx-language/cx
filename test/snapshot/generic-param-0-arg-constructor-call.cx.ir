@@ -1,17 +1,17 @@
 
 int32 main() {
     A<C>* a = alloca A<C>
-    void _0 = call _EN4main1AI1CE4initE(A<C>* a)
+    void _0 = call _CX1N4mainM4main1AIM4main1CE4initE4void0_(A<C>* a)
     return int32 0
 }
 
-void _EN4main1AI1CE4initE(A<C>* this) {
+void _CX1N4mainM4main1AIM4main1CE4initE4void0_(A<C>* this) {
     C* t = alloca C
-    void _0 = call _EN4main1C4initE(C* t)
+    void _0 = call _CX1N4mainM4main1C4initE4void0_(C* t)
     return void
 }
 
-void _EN4main1C4initE(C* this) {
+void _CX1N4mainM4main1C4initE4void0_(C* this) {
     int32* i = getelementptr this, 0
     store int32 0 to i
     return void

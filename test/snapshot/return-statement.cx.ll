@@ -1,11 +1,11 @@
 
 define i32 @main() #0 !dbg !4 {
-  %1 = call i32 @_EN4main3fooE(), !dbg !7
+  %1 = call i32 @_CX1N4main3fooEM3std5int320_(), !dbg !7
   ret i32 %1
 }
 
-define i32 @_EN4main3fooE() #0 !dbg !8 {
-  %1 = call i32 @_EN4main3fooE(), !dbg !9
+define i32 @_CX1N4main3fooEM3std5int320_() #0 !dbg !8 {
+  %1 = call i32 @_CX1N4main3fooEM3std5int320_(), !dbg !9
   ret i32 42
 }
 
@@ -22,5 +22,5 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 4, column: 12, scope: !4)
-!8 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooE", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "foo", linkageName: "_CX1N4main3fooEM3std5int320_", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
 !9 = !DILocation(line: 8, column: 5, scope: !8)

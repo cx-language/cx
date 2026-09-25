@@ -1,5 +1,5 @@
 
-vec2 _EN4mainmlE4vec24vec2(vec2 a, vec2 b) {
+vec2 _CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(vec2 a, vec2 b) {
     vec2* a_0 = alloca vec2
     vec2* b_0 = alloca vec2
     vec2* _0 = alloca vec2
@@ -20,7 +20,7 @@ vec2 _EN4mainmlE4vec24vec2(vec2 a, vec2 b) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _8 = call _EN3std10assertFailEP4char(char* "integer overflow at operator-overloading.cx:13:21
+    void _8 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:21
 ")
     unreachable
 
@@ -40,17 +40,17 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _16 = call _EN3std10assertFailEP4char(char* "integer overflow at operator-overloading.cx:13:32
+    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:32
 ")
     unreachable
 
 overflow.success_0:
-    void _17 = call _EN4main4vec24initE5int325int32(vec2* _0, int32 _4, int32 _12)
+    void _17 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* _0, int32 _4, int32 _12)
     vec2 .load = load _0
     return .load
 }
 
-void _EN4main4vec24initE5int325int32(vec2* this, int32 x, int32 y) {
+void _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* this, int32 x, int32 y) {
     int32* x_0 = alloca int32
     int32* y_0 = alloca int32
     store x to x_0
@@ -68,23 +68,23 @@ int32 main() {
     vec2* v = alloca vec2
     vec2* _0 = alloca vec2
     vec2* _1 = alloca vec2
-    void _2 = call _EN4main4vec24initE5int325int32(vec2* v, int32 3, int32 2)
-    void _3 = call _EN4main4vec24initE5int325int32(vec2* _0, int32 2, int32 4)
+    void _2 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* v, int32 3, int32 2)
+    void _3 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* _0, int32 2, int32 4)
     vec2 .load = load _0
     vec2 v.load = load v
-    vec2 _4 = call _EN4mainmlE4vec24vec2(vec2 .load, vec2 v.load)
+    vec2 _4 = call _CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(vec2 .load, vec2 v.load)
     store _4 to v
     vec2 v.load_0 = load v
-    void _5 = call _EN4main4vec24initE5int325int32(vec2* _1, int32 -1, int32 3)
+    void _5 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* _1, int32 -1, int32 3)
     vec2 .load_0 = load _1
-    bool _6 = call _EN4maineqE4vec24vec2(vec2 v.load_0, vec2 .load_0)
+    bool _6 = call _CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(vec2 v.load_0, vec2 .load_0)
     int32* x = getelementptr v, 0
     int32 x.load = load x
-    int32 _7 = call _EN4main4vec2ixE5int32(vec2* v, int32 x.load)
+    int32 _7 = call _CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(vec2* v, int32 x.load)
     return int32 0
 }
 
-bool _EN4maineqE4vec24vec2(vec2 a, vec2 b) {
+bool _CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(vec2 a, vec2 b) {
     vec2* a_0 = alloca vec2
     vec2* b_0 = alloca vec2
     store a to a_0
@@ -97,7 +97,7 @@ bool _EN4maineqE4vec24vec2(vec2 a, vec2 b) {
     return _0
 }
 
-int32 _EN4main4vec2ixE5int32(vec2* this, int32 index) {
+int32 _CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(vec2* this, int32 index) {
     int32* index_0 = alloca int32
     store index to index_0
     int32 index.load = load index_0

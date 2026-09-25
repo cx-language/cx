@@ -17,7 +17,7 @@ void main() {
 // CHECK: boom
 // CHECK: printStackTrace
 // CHECK: abortWrapper
-// CHECK: _EN4main5innerE
-// CHECK: _EN4main6middleE
+// CHECK: _CX1N4main5innerE4void0_
+// CHECK: _CX1N4main6middleE4void0_
 // CHECK: main
 // CHECK-NOT: stack-trace-run-c.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -5,7 +5,7 @@ define i32 @main() #0 !dbg !4 {
   %f = alloca %Foo, align 8
   %bar = alloca i32, align 4
   %qux = alloca i1, align 1
-  call void @_EN4main3Foo4initE5int324bool(ptr %f, i32 666, i1 true), !dbg !7
+  call void @_CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(ptr %f, i32 666, i1 true), !dbg !7
   %a = getelementptr inbounds %Foo, ptr %f, i32 0, i32 0
   %a.load = load i32, ptr %a, align 4
   %1 = add i32 %a.load, 1
@@ -19,7 +19,7 @@ define i32 @main() #0 !dbg !4 {
   ret i32 0
 }
 
-define void @_EN4main3Foo4initE5int324bool(ptr %this, i32 %a, i1 %b) #0 !dbg !8 {
+define void @_CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(ptr %this, i32 %a, i1 %b) #0 !dbg !8 {
   %a1 = alloca i32, align 4
   %b2 = alloca i1, align 1
   store i32 %a, ptr %a1, align 4
@@ -50,4 +50,4 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 15, column: 13, scope: !4)
-!8 = distinct !DISubprogram(name: "init", linkageName: "_EN4main3Foo4initE5int324bool", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)

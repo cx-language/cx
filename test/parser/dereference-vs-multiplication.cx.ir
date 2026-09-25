@@ -1,21 +1,21 @@
 
-int32 _EN4main1gE() {
+int32 _CX1N4main1gEM3std5int320_() {
     return int32 1
 }
 
-void _EN4main1fEP5int325int32(int32* a, int32 b) {
+void _CX1N4main1fE4void2_PM3std5int32M3std5int32(int32* a, int32 b) {
     int32** a_0 = alloca int32*
     int32* b_0 = alloca int32
     int32* m = alloca int32
     int32* n = alloca int32
     store a to a_0
     store b to b_0
-    int32 _0 = call _EN4main1gE()
+    int32 _0 = call _CX1N4main1gEM3std5int320_()
     store _0 to m
     int32* a.load = load a_0
     int32 b.load = load b_0
     store b.load to a.load
-    int32 _1 = call _EN4main1gE()
+    int32 _1 = call _CX1N4main1gEM3std5int320_()
     int32 b.load_0 = load b_0
     int64 _2 = cast _1 to int64
     int64 _3 = cast b.load_0 to int64
@@ -28,7 +28,7 @@ void _EN4main1fEP5int325int32(int32* a, int32 b) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _9 = call _EN3std10assertFailEP4char(char* "integer overflow at dereference-vs-multiplication.cx:11:5
+    void _9 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at dereference-vs-multiplication.cx:11:5
 ")
     unreachable
 

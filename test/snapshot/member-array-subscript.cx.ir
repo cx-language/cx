@@ -11,18 +11,18 @@ int32 main() {
     int32* _7 = getelementptr _1, 0
     Slice<int32> _8 = insertvalue Slice<int32> undefined, 0, _7
     Slice<int32> _9 = insertvalue _8, 1, int32 5
-    void _10 = call _EN4main1C4initE5SliceI5int32E(C* _0, Slice<int32> _9)
-    void _11 = call _EN4main1C3fooE(C* _0)
+    void _10 = call _CX1N4mainM4main1C4initE4void1_M3std5SliceIM3std5int32E(C* _0, Slice<int32> _9)
+    void _11 = call _CX1N4mainM4main1C3fooE4void0_(C* _0)
     return int32 0
 }
 
-void _EN4main1C3fooE(C* this) {
+void _CX1N4mainM4main1C3fooE4void0_(C* this) {
     Slice<int32>* a = getelementptr this, 0
-    int32* _0 = call _EN3std5SliceI5int32EixE5int32(Slice<int32>* a, int32 4)
+    int32* _0 = call _CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32(Slice<int32>* a, int32 4)
     return void
 }
 
-void _EN4main1C4initE5SliceI5int32E(C* this, Slice<int32> a) {
+void _CX1N4mainM4main1C4initE4void1_M3std5SliceIM3std5int32E(C* this, Slice<int32> a) {
     Slice<int32>* a_0 = alloca Slice<int32>
     store a to a_0
     Slice<int32>* a_1 = getelementptr this, 0
@@ -31,7 +31,7 @@ void _EN4main1C4initE5SliceI5int32E(C* this, Slice<int32> a) {
     return void
 }
 
-int32* _EN3std5SliceI5int32EixE5int32(Slice<int32>* this, int32 index) {
+int32* _CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32(Slice<int32>* this, int32 index) {
     int32* index_0 = alloca int32
     string* __str = alloca string
     store index to index_0
@@ -41,7 +41,7 @@ int32* _EN3std5SliceI5int32EixE5int32(Slice<int32>* this, int32 index) {
 
 or.rhs:
     int32 index.load_0 = load index_0
-    int32 _1 = call _EN3std5SliceI5int32E4sizeE(Slice<int32>* this)
+    int32 _1 = call _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* this)
     bool _2 = index.load_0 >= _1
     br or.end(_2)
 
@@ -49,10 +49,10 @@ or.end(bool or):
     br or, if.then, if.else
 
 if.then:
-    void _3 = call _EN3std6string4initEP4char5int32(string* __str, char* "operator[]", int32 10)
+    void _3 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "operator[]", int32 10)
     string __str.load = load __str
     int32 index.load_1 = load index_0
-    void _4 = call _EN3std5SliceI5int32E16indexOutOfBoundsE6string5int32(Slice<int32>* this, string __str.load, int32 index.load_1)
+    void _4 = call _CX1N3stdM3std5SliceIM3std5int32E16indexOutOfBoundsE4void2_M3std6stringM3std5int32(Slice<int32>* this, string __str.load, int32 index.load_1)
     br if.end
 
 if.else:
@@ -66,13 +66,13 @@ if.end:
     return _5
 }
 
-int32 _EN3std5SliceI5int32E4sizeE(Slice<int32>* this) {
+int32 _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* this) {
     int32* size = getelementptr this, 1
     int32 size.load = load size
     return size.load
 }
 
-void _EN3std5SliceI5int32E16indexOutOfBoundsE6string5int32(Slice<int32>* this, string function, int32 index) {
+void _CX1N3stdM3std5SliceIM3std5int32E16indexOutOfBoundsE4void2_M3std6stringM3std5int32(Slice<int32>* this, string function, int32 index) {
     string* function_0 = alloca string
     int32* index_0 = alloca int32
     string* __str = alloca string
@@ -80,20 +80,20 @@ void _EN3std5SliceI5int32E16indexOutOfBoundsE6string5int32(Slice<int32>* this, s
     string* __str_1 = alloca string
     store function to function_0
     store index to index_0
-    void _0 = call _EN3std6string4initEP4char5int32(string* __str, char* "Slice.", int32 6)
+    void _0 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "Slice.", int32 6)
     string __str.load = load __str
     string function.load = load function_0
-    void _1 = call _EN3std6string4initEP4char5int32(string* __str_0, char* ": index ", int32 8)
+    void _1 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str_0, char* ": index ", int32 8)
     string __str.load_0 = load __str_0
     int32 index.load = load index_0
-    void _2 = call _EN3std6string4initEP4char5int32(string* __str_1, char* " is out of bounds, size is ", int32 27)
+    void _2 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str_1, char* " is out of bounds, size is ", int32 27)
     string __str.load_1 = load __str_1
-    int32 _3 = call _EN3std5SliceI5int32E4sizeE(Slice<int32>* this)
-    never _4 = call _EN3std5abortI6string6string6string5int326string5int32EVE6string6string6string5int326string5int32(string __str.load, string function.load, string __str.load_0, int32 index.load, string __str.load_1, int32 _3)
+    int32 _3 = call _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* this)
+    never _4 = call _CX1N3std5abortIM3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32EVEM3std5never6_M3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32(string __str.load, string function.load, string __str.load_0, int32 index.load, string __str.load_1, int32 _3)
     return void
 }
 
-never _EN3std5abortI6string6string6string5int326string5int32EVE6string6string6string5int326string5int32(string args_0, string args_1, string args_2, int32 args_3, string args_4, int32 args_5) {
+never _CX1N3std5abortIM3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32EVEM3std5never6_M3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32(string args_0, string args_1, string args_2, int32 args_3, string args_4, int32 args_5) {
     string* args_0_0 = alloca string
     string* args_1_0 = alloca string
     string* args_2_0 = alloca string
@@ -122,38 +122,38 @@ never _EN3std5abortI6string6string6string5int326string5int32EVE6string6string6st
     store args_5 to args_5_0
     string args_0.load = load args_0_0
     store args_0.load to arg
-    OutputFileStream _8 = call _EN3std6stderrE()
+    OutputFileStream _8 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
     store _8 to _0
-    void _9 = call _EN3std16OutputFileStream5writeI6stringEER6string(OutputFileStream* _0, string* arg)
+    void _9 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _0, string* arg)
     string args_1.load = load args_1_0
     store args_1.load to arg_0
-    OutputFileStream _10 = call _EN3std6stderrE()
+    OutputFileStream _10 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
     store _10 to _1
-    void _11 = call _EN3std16OutputFileStream5writeI6stringEER6string(OutputFileStream* _1, string* arg_0)
+    void _11 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _1, string* arg_0)
     string args_2.load = load args_2_0
     store args_2.load to arg_1
-    OutputFileStream _12 = call _EN3std6stderrE()
+    OutputFileStream _12 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
     store _12 to _2
-    void _13 = call _EN3std16OutputFileStream5writeI6stringEER6string(OutputFileStream* _2, string* arg_1)
+    void _13 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _2, string* arg_1)
     int32 args_3.load = load args_3_0
     store args_3.load to arg_2
-    OutputFileStream _14 = call _EN3std6stderrE()
+    OutputFileStream _14 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
     store _14 to _3
-    void _15 = call _EN3std16OutputFileStream5writeI5int32EER5int32(OutputFileStream* _3, int32* arg_2)
+    void _15 = call _CX1N3stdM3std16OutputFileStream5writeIM3std5int32EE4void1_RM3std5int32(OutputFileStream* _3, int32* arg_2)
     string args_4.load = load args_4_0
     store args_4.load to arg_3
-    OutputFileStream _16 = call _EN3std6stderrE()
+    OutputFileStream _16 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
     store _16 to _4
-    void _17 = call _EN3std16OutputFileStream5writeI6stringEER6string(OutputFileStream* _4, string* arg_3)
+    void _17 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _4, string* arg_3)
     int32 args_5.load = load args_5_0
     store args_5.load to arg_4
-    OutputFileStream _18 = call _EN3std6stderrE()
+    OutputFileStream _18 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
     store _18 to _5
-    void _19 = call _EN3std16OutputFileStream5writeI5int32EER5int32(OutputFileStream* _5, int32* arg_4)
-    OutputFileStream _20 = call _EN3std6stderrE()
+    void _19 = call _CX1N3stdM3std16OutputFileStream5writeIM3std5int32EE4void1_RM3std5int32(OutputFileStream* _5, int32* arg_4)
+    OutputFileStream _20 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
     store _20 to _6
     store char 10 to _7
-    void _21 = call _EN3std16OutputFileStream5writeI4charEER4char(OutputFileStream* _6, char* _7)
-    never _22 = call _EN3std12abortWrapperE()
+    void _21 = call _CX1N3stdM3std16OutputFileStream5writeIM3std4charEE4void1_RM3std4char(OutputFileStream* _6, char* _7)
+    never _22 = call _CX1N3std12abortWrapperEM3std5never0_()
     unreachable
 }

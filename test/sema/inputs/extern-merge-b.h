@@ -1,0 +1,1 @@
+unsigned pick(unsigned x);

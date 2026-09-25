@@ -9,7 +9,7 @@ int32 main() {
     int32* _5 = getelementptr _0, 0
     Slice<int32> _6 = insertvalue Slice<int32> undefined, 0, _5
     Slice<int32> _7 = insertvalue _6, 1, int32 3
-    void _8 = call _EN4main1fI5int32EE5SliceI5int32E(Slice<int32> _7)
+    void _8 = call _CX1N4main1fIM3std5int32EE4void1_M3std5SliceIM3std5int32E(Slice<int32> _7)
     int32[3] _9 = insertvalue int32[3] undefined, 0, int32 1
     int32[3] _10 = insertvalue _9, 1, int32 2
     int32[3] _11 = insertvalue _10, 2, int32 3
@@ -17,20 +17,20 @@ int32 main() {
     int32* _12 = getelementptr _1, 0
     Slice<int32> _13 = insertvalue Slice<int32> undefined, 0, _12
     Slice<int32> _14 = insertvalue _13, 1, int32 3
-    void _15 = call _EN4main1fI5int32EE5SliceI5int32E(Slice<int32> _14)
+    void _15 = call _CX1N4main1fIM3std5int32EE4void1_M3std5SliceIM3std5int32E(Slice<int32> _14)
     return int32 0
 }
 
-void _EN4main1fI5int32EE5SliceI5int32E(Slice<int32> a) {
+void _CX1N4main1fIM3std5int32EE4void1_M3std5SliceIM3std5int32E(Slice<int32> a) {
     Slice<int32>* a_0 = alloca Slice<int32>
     int32* s = alloca int32
     store a to a_0
-    int32 _0 = call _EN3std5SliceI5int32E4sizeE(Slice<int32>* a_0)
+    int32 _0 = call _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* a_0)
     store _0 to s
     return void
 }
 
-int32 _EN3std5SliceI5int32E4sizeE(Slice<int32>* this) {
+int32 _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* this) {
     int32* size = getelementptr this, 1
     int32 size.load = load size
     return size.load

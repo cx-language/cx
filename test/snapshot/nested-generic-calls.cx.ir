@@ -1,33 +1,33 @@
 
 int32 main() {
-    void _0 = call _EN4main1gI5int32EE5int32(int32 42)
-    void _1 = call _EN4main1gI4boolEE4bool(bool false)
+    void _0 = call _CX1N4main1gIM3std5int32EE4void1_M3std5int32(int32 42)
+    void _1 = call _CX1N4main1gIM3std4boolEE4void1_M3std4bool(bool false)
     return int32 0
 }
 
-void _EN4main1gI5int32EE5int32(int32 t) {
+void _CX1N4main1gIM3std5int32EE4void1_M3std5int32(int32 t) {
     int32* t_0 = alloca int32
     store t to t_0
     int32 t.load = load t_0
-    void _0 = call _EN4main1fI5int32EE5int32(int32 t.load)
+    void _0 = call _CX1N4main1fIM3std5int32EE4void1_M3std5int32(int32 t.load)
     return void
 }
 
-void _EN4main1gI4boolEE4bool(bool t) {
+void _CX1N4main1gIM3std4boolEE4void1_M3std4bool(bool t) {
     bool* t_0 = alloca bool
     store t to t_0
     bool t.load = load t_0
-    void _0 = call _EN4main1fI4boolEE4bool(bool t.load)
+    void _0 = call _CX1N4main1fIM3std4boolEE4void1_M3std4bool(bool t.load)
     return void
 }
 
-void _EN4main1fI5int32EE5int32(int32 t) {
+void _CX1N4main1fIM3std5int32EE4void1_M3std5int32(int32 t) {
     int32* t_0 = alloca int32
     store t to t_0
     return void
 }
 
-void _EN4main1fI4boolEE4bool(bool t) {
+void _CX1N4main1fIM3std4boolEE4void1_M3std4bool(bool t) {
     bool* t_0 = alloca bool
     store t to t_0
     return void

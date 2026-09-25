@@ -61,6 +61,11 @@ struct IRType {
     int getArraySize();
     IRType* getPointerTo();
     bool equals(IRType* other);
+    // Same calling-convention shape. Integer signedness, type names, pointee
+    // types, and constness don't affect calls (opaque pointers, width-only
+    // integers), so same-named externs differing only in those share one
+    // symbol instead of conflicting.
+    bool abiEquals(IRType* other);
 };
 
 struct IRBasicType : IRType {

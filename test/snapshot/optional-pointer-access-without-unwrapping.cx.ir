@@ -18,7 +18,7 @@ int32 main() {
     int32* i_2 = getelementptr f.load_2, 0
     store i_2 to c
     Foo* f.load_3 = load f
-    void _0 = call _EN4main3Foo3barE(Foo* f.load_3)
+    void _0 = call _CX1N4mainM4main3Foo3barE4void0_(Foo* f.load_3)
     Foo* f.load_4 = load f
     Foo* f.load_5 = load f
     Foo f.load.load = load f.load_5
@@ -26,6 +26,6 @@ int32 main() {
     return int32 0
 }
 
-void _EN4main3Foo3barE(Foo* this) {
+void _CX1N4mainM4main3Foo3barE4void0_(Foo* this) {
     return void
 }

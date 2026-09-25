@@ -1,5 +1,5 @@
 
-void _EN4main3bazE4bool(bool foo) {
+void _CX1N4main3bazE4void1_M3std4bool(bool foo) {
     bool* foo_0 = alloca bool
     store foo to foo_0
     br loop.condition
@@ -17,7 +17,7 @@ loop.end:
 
 if.then:
     bool foo.load_1 = load foo_0
-    void _0 = call _EN4main3bazE4bool(bool foo.load_1)
+    void _0 = call _CX1N4main3bazE4void1_M3std4bool(bool foo.load_1)
     br loop.condition
 
 if.else:

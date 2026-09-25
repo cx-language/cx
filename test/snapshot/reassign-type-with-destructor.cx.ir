@@ -2,19 +2,19 @@
 int32 main() {
     X* x = alloca X
     X* _0 = alloca X
-    void _1 = call _EN4main1X4initE(X* x)
-    void _2 = call _EN4main1X6deinitE(X* x)
-    void _3 = call _EN4main1X4initE(X* _0)
+    void _1 = call _CX1N4mainM4main1X4initE4void0_(X* x)
+    void _2 = call _CX1N4mainM4main1X6deinitE4void0_(X* x)
+    void _3 = call _CX1N4mainM4main1X4initE4void0_(X* _0)
     X .load = load _0
     store .load to x
-    void _4 = call _EN4main1X6deinitE(X* x)
+    void _4 = call _CX1N4mainM4main1X6deinitE4void0_(X* x)
     return int32 0
 }
 
-void _EN4main1X6deinitE(X* this) {
+void _CX1N4mainM4main1X6deinitE4void0_(X* this) {
     return void
 }
 
-void _EN4main1X4initE(X* this) {
+void _CX1N4mainM4main1X4initE4void0_(X* this) {
     return void
 }

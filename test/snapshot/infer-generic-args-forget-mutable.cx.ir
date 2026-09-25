@@ -1,5 +1,5 @@
 
-void _EN4main1fE5RangeI5int32E(Range<int32> r) {
+void _CX1N4main1fE4void1_M3std5RangeIM3std5int32E(Range<int32> r) {
     Range<int32>* r_0 = alloca Range<int32>
     store r to r_0
     return void
@@ -13,13 +13,13 @@ int32 main() {
     store int32 0 to bar
     int32 foo.load = load foo
     int32 bar.load = load bar
-    void _1 = call _EN3std5RangeI5int32E4initE5int325int32(Range<int32>* _0, int32 foo.load, int32 bar.load)
+    void _1 = call _CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(Range<int32>* _0, int32 foo.load, int32 bar.load)
     Range<int32> .load = load _0
-    void _2 = call _EN4main1fE5RangeI5int32E(Range<int32> .load)
+    void _2 = call _CX1N4main1fE4void1_M3std5RangeIM3std5int32E(Range<int32> .load)
     return int32 0
 }
 
-void _EN3std5RangeI5int32E4initE5int325int32(Range<int32>* this, int32 start, int32 end) {
+void _CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(Range<int32>* this, int32 start, int32 end) {
     int32* start_0 = alloca int32
     int32* end_0 = alloca int32
     store start to start_0

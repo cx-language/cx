@@ -4,7 +4,7 @@
 @2 = private unnamed_addr constant [65 x i8] c"integer overflow at array-literal-non-constant-elements.cx:8:18\0A\00", align 1
 @3 = private unnamed_addr constant [65 x i8] c"integer overflow at array-literal-non-constant-elements.cx:8:29\0A\00", align 1
 
-define [2 x i32] @_EN4main1fE5int325int32(i32 %foo, i32 %bar) #0 !dbg !4 {
+define [2 x i32] @_CX1N4main1fE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32(i32 %foo, i32 %bar) #0 !dbg !4 {
   %foo1 = alloca i32, align 4
   %bar2 = alloca i32, align 4
   store i32 %foo, ptr %foo1, align 4
@@ -22,7 +22,7 @@ define [2 x i32] @_EN4main1fE5int325int32(i32 %foo, i32 %bar) #0 !dbg !4 {
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !7
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -40,7 +40,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition5, label %overflow.fail6, label %overflow.success7
 
 overflow.fail6:                                   ; preds = %overflow.success
-  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !7
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !7
   unreachable
 
 overflow.success7:                                ; preds = %overflow.success
@@ -48,9 +48,9 @@ overflow.success7:                                ; preds = %overflow.success
   ret [2 x i32] %16
 }
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
-define [2 x i32] @_EN4main1gE5int325int32(i32 %foo, i32 %bar) #0 !dbg !8 {
+define [2 x i32] @_CX1N4main1gE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32(i32 %foo, i32 %bar) #0 !dbg !8 {
   %foo1 = alloca i32, align 4
   %bar2 = alloca i32, align 4
   %c = alloca [2 x i32], align 4
@@ -69,7 +69,7 @@ define [2 x i32] @_EN4main1gE5int325int32(i32 %foo, i32 %bar) #0 !dbg !8 {
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @2), !dbg !9
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @2), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -87,7 +87,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition5, label %overflow.fail6, label %overflow.success7
 
 overflow.fail6:                                   ; preds = %overflow.success
-  call void @_EN3std10assertFailEP4char(ptr @3), !dbg !9
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @3), !dbg !9
   unreachable
 
 overflow.success7:                                ; preds = %overflow.success
@@ -106,9 +106,9 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "array-literal-non-constant-elements.cx")
-!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE5int325int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 3, column: 8, scope: !4)
-!8 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE5int325int32", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "g", linkageName: "_CX1N4main1gE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
 !9 = !DILocation(line: 7, column: 8, scope: !8)

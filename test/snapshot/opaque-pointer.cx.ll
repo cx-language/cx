@@ -3,11 +3,11 @@
 
 define i32 @main() #0 !dbg !4 {
   %s = alloca %S, align 8
-  call void @_EN16opaque-pointer_h1S4initEOP6Opaque(ptr %s, ptr null), !dbg !7
+  call void @_CX1N19opaque_2Dpointer__hM19opaque_2Dpointer__h1S4initE4void1_OPM19opaque_2Dpointer__h6Opaque(ptr %s, ptr null), !dbg !7
   ret i32 0
 }
 
-declare void @_EN16opaque-pointer_h1S4initEOP6Opaque(ptr, ptr) #0
+declare void @_CX1N19opaque_2Dpointer__hM19opaque_2Dpointer__h1S4initE4void1_OPM19opaque_2Dpointer__h6Opaque(ptr, ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

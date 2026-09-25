@@ -1,5 +1,5 @@
 
-void _EN4main3fooE5int32(int32 i) {
+void _CX1N4main3fooE4void1_M3std5int32(int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
     int32 i.load = load i_0
@@ -14,9 +14,9 @@ switch.case.0:
 
 switch.case.1:
     int32 i.load_0 = load i_0
-    void _0 = call _EN4main3fooE5int32(int32 i.load_0)
+    void _0 = call _CX1N4main3fooE4void1_M3std5int32(int32 i.load_0)
     int32 i.load_1 = load i_0
-    void _1 = call _EN4main3fooE5int32(int32 i.load_1)
+    void _1 = call _CX1N4main3fooE4void1_M3std5int32(int32 i.load_1)
     br switch.end
 
 switch.case.2:
@@ -36,14 +36,14 @@ switch.case.0_0:
 
 switch.default_0:
     int32 i.load_3 = load i_0
-    void _2 = call _EN4main3fooE5int32(int32 i.load_3)
+    void _2 = call _CX1N4main3fooE4void1_M3std5int32(int32 i.load_3)
     br switch.end_0
 
 switch.end_0:
     return void
 }
 
-int32 _EN4main1fEP1S(S* s) {
+int32 _CX1N4main1fEM3std5int321_PM4main1S(S* s) {
     S** s_0 = alloca S*
     store s to s_0
     S* s.load = load s_0

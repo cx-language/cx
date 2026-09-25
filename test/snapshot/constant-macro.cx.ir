@@ -1,5 +1,5 @@
 
-void _EN4main3fooE5int32(int32 i) {
+void _CX1N4main3fooE4void1_M3std5int32(int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
     int32 i.load = load i_0

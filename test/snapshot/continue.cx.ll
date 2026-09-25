@@ -1,5 +1,5 @@
 
-define void @_EN4main3bazE4bool(i1 %foo) #0 !dbg !4 {
+define void @_CX1N4main3bazE4void1_M3std4bool(i1 %foo) #0 !dbg !4 {
   %foo1 = alloca i1, align 1
   store i1 %foo, ptr %foo1, align 1
   br label %loop.condition
@@ -17,7 +17,7 @@ loop.end:                                         ; preds = %loop.condition
 
 if.then:                                          ; preds = %loop.body
   %foo.load3 = load i1, ptr %foo1, align 1
-  call void @_EN4main3bazE4bool(i1 %foo.load3), !dbg !7
+  call void @_CX1N4main3bazE4void1_M3std4bool(i1 %foo.load3), !dbg !7
   br label %loop.condition
 
 if.else:                                          ; preds = %loop.body
@@ -36,7 +36,7 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "continue.cx")
-!4 = distinct !DISubprogram(name: "baz", linkageName: "_EN4main3bazE4bool", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "baz", linkageName: "_CX1N4main3bazE4void1_M3std4bool", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 6, column: 13, scope: !4)

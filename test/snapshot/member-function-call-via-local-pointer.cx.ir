@@ -4,10 +4,10 @@ int32 main() {
     Foo** rf = alloca Foo*
     store f to rf
     Foo* rf.load = load rf
-    void _0 = call _EN4main3Foo3barE(Foo* rf.load)
+    void _0 = call _CX1N4mainM4main3Foo3barE4void0_(Foo* rf.load)
     return int32 0
 }
 
-void _EN4main3Foo3barE(Foo* this) {
+void _CX1N4mainM4main3Foo3barE4void0_(Foo* this) {
     return void
 }

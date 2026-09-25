@@ -10,17 +10,17 @@ define i32 @main() #0 !dbg !4 {
   %1 = alloca %"Range<int32>", align 8
   %i = alloca i32, align 4
   store i32 9, ptr %p, align 4
-  call void @_EN3std5RangeI5int32E4initE5int325int32(ptr %1, i32 0, i32 3), !dbg !7
-  %2 = call %"RangeIterator<int32>" @_EN3std5RangeI5int32E8iteratorE(ptr %1), !dbg !8
+  call void @_CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ptr %1, i32 0, i32 3), !dbg !7
+  %2 = call %"RangeIterator<int32>" @_CX1N3stdM3std5RangeIM3std5int32E8iteratorEM3std13RangeIteratorIM3std5int32E0_(ptr %1), !dbg !8
   store %"RangeIterator<int32>" %2, ptr %__iterator, align 4
   br label %loop.condition
 
 loop.condition:                                   ; preds = %loop.increment, %0
-  %3 = call i1 @_EN3std13RangeIteratorI5int32E8hasValueE(ptr %__iterator), !dbg !8
+  %3 = call i1 @_CX1N3stdM3std13RangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ptr %__iterator), !dbg !8
   br i1 %3, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %4 = call i32 @_EN3std13RangeIteratorI5int32E5valueE(ptr %__iterator), !dbg !8
+  %4 = call i32 @_CX1N3stdM3std13RangeIteratorIM3std5int32E5valueEM3std5int320_(ptr %__iterator), !dbg !8
   store i32 %4, ptr %i, align 4
   %p.load = load i32, ptr %p, align 4
   %i.load = load i32, ptr %i, align 4
@@ -35,7 +35,7 @@ loop.body:                                        ; preds = %loop.condition
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 loop.increment:                                   ; preds = %overflow.success
-  call void @_EN3std13RangeIteratorI5int32E9incrementE(ptr %__iterator), !dbg !8
+  call void @_CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(ptr %__iterator), !dbg !8
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
@@ -43,7 +43,7 @@ loop.end:                                         ; preds = %loop.condition
   ret i32 %p.load1
 
 overflow.fail:                                    ; preds = %loop.body
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !9
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %loop.body
@@ -51,17 +51,17 @@ overflow.success:                                 ; preds = %loop.body
   br label %loop.increment
 }
 
-declare void @_EN3std5RangeI5int32E4initE5int325int32(ptr, i32, i32) #0
+declare void @_CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ptr, i32, i32) #0
 
-declare %"RangeIterator<int32>" @_EN3std5RangeI5int32E8iteratorE(ptr) #0
+declare %"RangeIterator<int32>" @_CX1N3stdM3std5RangeIM3std5int32E8iteratorEM3std13RangeIteratorIM3std5int32E0_(ptr) #0
 
-declare i1 @_EN3std13RangeIteratorI5int32E8hasValueE(ptr) #0
+declare i1 @_CX1N3stdM3std13RangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ptr) #0
 
-declare i32 @_EN3std13RangeIteratorI5int32E5valueE(ptr) #0
+declare i32 @_CX1N3stdM3std13RangeIteratorIM3std5int32E5valueEM3std5int320_(ptr) #0
 
-declare void @_EN3std13RangeIteratorI5int32E9incrementE(ptr) #0
+declare void @_CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(ptr) #0
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

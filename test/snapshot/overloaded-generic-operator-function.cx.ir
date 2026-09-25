@@ -1,5 +1,5 @@
 
-void _EN4maineqE1S1S(S a, S b) {
+void _CX1N4maino2eqE4void2_M4main1SM4main1S(S a, S b) {
     S* a_0 = alloca S
     S* b_0 = alloca S
     store a to a_0
@@ -7,11 +7,11 @@ void _EN4maineqE1S1S(S a, S b) {
     return void
 }
 
-void _EN4main1fE1S(S s) {
+void _CX1N4main1fE4void1_M4main1S(S s) {
     S* s_0 = alloca S
     store s to s_0
     S s.load = load s_0
     S s.load_0 = load s_0
-    void _0 = call _EN4maineqE1S1S(S s.load, S s.load_0)
+    void _0 = call _CX1N4maino2eqE4void2_M4main1SM4main1S(S s.load, S s.load_0)
     return void
 }

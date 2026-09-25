@@ -1,22 +1,22 @@
 
-Big _EN4main5identE3Big(Big x) {
+Big _CX1N4main5identEM4main3Big1_M4main3Big(Big x) {
     Big* x_0 = alloca Big
     store x to x_0
     Big x.load = load x_0
     return x.load
 }
 
-Outer _EN4main9makeOuterE() {
+Outer _CX1N4main9makeOuterEM4main5Outer0_() {
     Outer* _0 = alloca Outer
     Big* _1 = alloca Big
-    void _2 = call _EN4main3Big4initE5int325int325int325int325int32(Big* _1, int32 1, int32 2, int32 3, int32 4, int32 5)
+    void _2 = call _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Big* _1, int32 1, int32 2, int32 3, int32 4, int32 5)
     Big .load = load _1
-    void _3 = call _EN4main5Outer4initE3Big5int32(Outer* _0, Big .load, int32 7)
+    void _3 = call _CX1N4mainM4main5Outer4initE4void2_M4main3BigM3std5int32(Outer* _0, Big .load, int32 7)
     Outer .load_0 = load _0
     return .load_0
 }
 
-void _EN4main5Outer4initE3Big5int32(Outer* this, Big item, int32 tag) {
+void _CX1N4mainM4main5Outer4initE4void2_M4main3BigM3std5int32(Outer* this, Big item, int32 tag) {
     Big* item_0 = alloca Big
     int32* tag_0 = alloca int32
     store item to item_0
@@ -30,7 +30,7 @@ void _EN4main5Outer4initE3Big5int32(Outer* this, Big item, int32 tag) {
     return void
 }
 
-void _EN4main3Big4initE5int325int325int325int325int32(Big* this, int32 a, int32 b, int32 c, int32 d, int32 e) {
+void _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Big* this, int32 a, int32 b, int32 c, int32 d, int32 e) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     int32* c_0 = alloca int32
@@ -59,7 +59,7 @@ void _EN4main3Big4initE5int325int325int325int325int32(Big* this, int32 a, int32 
     return void
 }
 
-Wide _EN4main9identWideE4Wide(Wide x) {
+Wide _CX1N4main9identWideEM4main4Wide1_M4main4Wide(Wide x) {
     Wide* x_0 = alloca Wide
     store x to x_0
     Wide x.load = load x_0
@@ -73,9 +73,9 @@ int32 main() {
     Big* d = alloca Big
     Wide* w = alloca Wide
     Wide* v = alloca Wide
-    void _0 = call _EN4main3Big4initE5int325int325int325int325int32(Big* b, int32 1, int32 2, int32 3, int32 4, int32 5)
+    void _0 = call _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Big* b, int32 1, int32 2, int32 3, int32 4, int32 5)
     Big b.load = load b
-    Big _1 = call _EN4main5identE3Big(Big b.load)
+    Big _1 = call _CX1N4main5identEM4main3Big1_M4main3Big(Big b.load)
     store _1 to c
     store bool true to flag
     bool flag.load = load flag
@@ -93,13 +93,13 @@ if.end(Big if.result):
     store if.result to d
     int128 _2 = cast int32 1 to int128
     int128 _3 = cast int32 2 to int128
-    void _4 = call _EN4main4Wide4initE6int1286int128(Wide* w, int128 _2, int128 _3)
+    void _4 = call _CX1N4mainM4main4Wide4initE4void2_M3std6int128M3std6int128(Wide* w, int128 _2, int128 _3)
     Wide w.load = load w
-    Wide _5 = call _EN4main9identWideE4Wide(Wide w.load)
+    Wide _5 = call _CX1N4main9identWideEM4main4Wide1_M4main4Wide(Wide w.load)
     store _5 to v
     int32* a = getelementptr d, 0
     int32 a.load = load a
-    Outer _6 = call _EN4main9makeOuterE()
+    Outer _6 = call _CX1N4main9makeOuterEM4main5Outer0_()
     Big item = extractvalue _6, 0
     int32 a_0 = extractvalue item, 0
     int64 _7 = cast a.load to int64
@@ -113,12 +113,12 @@ if.end(Big if.result):
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _14 = call _EN3std10assertFailEP4char(char* "integer overflow at large-struct-passing.cx:40:16
+    void _14 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:16
 ")
     unreachable
 
 overflow.success:
-    Outer _15 = call _EN4main9makeOuterE()
+    Outer _15 = call _CX1N4main9makeOuterEM4main5Outer0_()
     int32 tag = extractvalue _15, 1
     int64 _16 = cast _10 to int64
     int64 _17 = cast tag to int64
@@ -131,7 +131,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _23 = call _EN3std10assertFailEP4char(char* "integer overflow at large-struct-passing.cx:40:37
+    void _23 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:37
 ")
     unreachable
 
@@ -150,7 +150,7 @@ overflow.success_0:
     br overflow.condition_1, overflow.fail, overflow.success
 
 overflow.fail_1:
-    void _32 = call _EN3std10assertFailEP4char(char* "integer overflow at large-struct-passing.cx:40:55
+    void _32 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:55
 ")
     unreachable
 
@@ -158,7 +158,7 @@ overflow.success_1:
     return _28
 }
 
-void _EN4main4Wide4initE6int1286int128(Wide* this, int128 a, int128 b) {
+void _CX1N4mainM4main4Wide4initE4void2_M3std6int128M3std6int128(Wide* this, int128 a, int128 b) {
     int128* a_0 = alloca int128
     int128* b_0 = alloca int128
     store a to a_0

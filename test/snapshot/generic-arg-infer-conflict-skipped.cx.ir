@@ -1,10 +1,10 @@
 
 int32 main() {
-    int32 _0 = call _EN4main3fooI5int324boolEE5int324bool(int32 1, bool false)
+    int32 _0 = call _CX1N4main3fooIM3std5int32M3std4boolEEM3std5int322_M3std5int32M3std4bool(int32 1, bool false)
     return int32 0
 }
 
-int32 _EN4main3fooI5int324boolEE5int324bool(int32 a, bool b) {
+int32 _CX1N4main3fooIM3std5int32M3std4boolEEM3std5int322_M3std5int32M3std4bool(int32 a, bool b) {
     int32* a_0 = alloca int32
     bool* b_0 = alloca bool
     store a to a_0

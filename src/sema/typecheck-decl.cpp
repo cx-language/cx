@@ -641,7 +641,13 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
             typecheckType(decl.getReturnType(), decl.accessLevel, true, true);
         }
 
-        if (!decl.isExtern() && decl.isMain() && !decl.isMethodDecl()) {
+        if (!decl.isExtern() && decl.isMain() && !decl.isMethodDecl() && decl.getModule() == mainModule && decl.genericArgs.empty()) {
+            if (entryMain) {
+                REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(entryMain), "multiple definitions of 'main'");
+            } else {
+                entryMain = &decl;
+                decl.isEntryPoint = true;
+            }
             checkMainSignature(decl);
         }
     } catch (const CompileError&) {
@@ -793,6 +799,9 @@ void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
     // Patterns check once; instantiations are separate declarations that check on use.
     if (decl.checkState == Decl::CheckState::Checked) return;
     decl.checkState = Decl::CheckState::Checked;
+    if (decl.functionDecl->isMain() && !decl.functionDecl->isMethodDecl() && decl.getModule() == mainModule) {
+        ERROR(decl.getLocation(), "'main' cannot be generic");
+    }
     typecheckGenericParamDecls(decl.genericParams, decl.accessLevel);
 
     FunctionDecl* functionDecl = decl.functionDecl;

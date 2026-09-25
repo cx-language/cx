@@ -2,16 +2,16 @@
 %S2 = type { double, double, double, double }
 %S = type { [4 x double] }
 
-define void @_EN4main19returnsLargeStruct2E(ptr sret(%S2) align 8 %sret.arg) #0 !dbg !4 {
+define void @_CX1N4main19returnsLargeStruct2EM4main2S20_(ptr sret(%S2) align 8 %sret.arg) #0 !dbg !4 {
   %1 = alloca %S2, align 8
-  call void @_EN4main2S24initE7float647float647float647float64(ptr %1, double 0.000000e+00, double 1.000000e+00, double 2.000000e+00, double 3.000000e+00), !dbg !7
+  call void @_CX1N4mainM4main2S24initE4void4_M3std7float64M3std7float64M3std7float64M3std7float64(ptr %1, double 0.000000e+00, double 1.000000e+00, double 2.000000e+00, double 3.000000e+00), !dbg !7
   %.load = alloca %S2, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %.load, ptr align 8 %1, i64 32, i1 false)
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %sret.arg, ptr align 8 %.load, i64 32, i1 false)
   ret void
 }
 
-define void @_EN4main2S24initE7float647float647float647float64(ptr %this, double %x, double %y, double %z, double %w) #0 !dbg !8 {
+define void @_CX1N4mainM4main2S24initE4void4_M3std7float64M3std7float64M3std7float64M3std7float64(ptr %this, double %x, double %y, double %z, double %w) #0 !dbg !8 {
   %x1 = alloca double, align 8
   %y2 = alloca double, align 8
   %z3 = alloca double, align 8
@@ -45,7 +45,7 @@ define i32 @main() #0 !dbg !9 {
   call void @returnsLargeStruct(ptr sret(%S) align 8 %sret.alloca), !dbg !10
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %s, ptr align 8 %sret.alloca, i64 32, i1 false)
   %sret.alloca1 = alloca %S2, align 8, !dbg !11
-  call void @_EN4main19returnsLargeStruct2E(ptr sret(%S2) align 8 %sret.alloca1), !dbg !11
+  call void @_CX1N4main19returnsLargeStruct2EM4main2S20_(ptr sret(%S2) align 8 %sret.alloca1), !dbg !11
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %s2, ptr align 8 %sret.alloca1, i64 32, i1 false)
   ret i32 0
 }
@@ -62,11 +62,11 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "struct-return.cx")
-!4 = distinct !DISubprogram(name: "returnsLargeStruct2", linkageName: "_EN4main19returnsLargeStruct2E", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "returnsLargeStruct2", linkageName: "_CX1N4main19returnsLargeStruct2EM4main2S20_", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 13, column: 12, scope: !4)
-!8 = distinct !DISubprogram(name: "init", linkageName: "_EN4main2S24initE7float647float647float647float64", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main2S24initE4void4_M3std7float64M3std7float64M3std7float64M3std7float64", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !9 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 16, type: !5, scopeLine: 16, spFlags: DISPFlagDefinition, unit: !2)
 !10 = !DILocation(line: 17, column: 13, scope: !9)
 !11 = !DILocation(line: 18, column: 14, scope: !9)

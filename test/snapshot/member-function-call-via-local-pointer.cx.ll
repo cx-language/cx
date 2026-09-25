@@ -6,11 +6,11 @@ define i32 @main() #0 !dbg !4 {
   %rf = alloca ptr, align 8
   store ptr %f, ptr %rf, align 8
   %rf.load = load ptr, ptr %rf, align 8
-  call void @_EN4main3Foo3barE(ptr %rf.load), !dbg !7
+  call void @_CX1N4mainM4main3Foo3barE4void0_(ptr %rf.load), !dbg !7
   ret i32 0
 }
 
-define void @_EN4main3Foo3barE(ptr %this) #0 !dbg !8 {
+define void @_CX1N4mainM4main3Foo3barE4void0_(ptr %this) #0 !dbg !8 {
   ret void
 }
 
@@ -27,4 +27,4 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 11, column: 8, scope: !4)
-!8 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main3Foo3barE", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "bar", linkageName: "_CX1N4mainM4main3Foo3barE4void0_", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)

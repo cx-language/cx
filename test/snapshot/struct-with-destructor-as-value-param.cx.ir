@@ -1,11 +1,11 @@
 
-void _EN4main3fooE1AI5int32E(A<int32> a) {
+void _CX1N4main3fooE4void1_M4main1AIM3std5int32E(A<int32> a) {
     A<int32>* a_0 = alloca A<int32>
     store a to a_0
-    void _0 = call _EN4main1AI5int32E6deinitE(A<int32>* a_0)
+    void _0 = call _CX1N4mainM4main1AIM3std5int32E6deinitE4void0_(A<int32>* a_0)
     return void
 }
 
-void _EN4main1AI5int32E6deinitE(A<int32>* this) {
+void _CX1N4mainM4main1AIM3std5int32E6deinitE4void0_(A<int32>* this) {
     return void
 }

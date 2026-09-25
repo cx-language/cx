@@ -5,41 +5,41 @@
 
 define i32 @main() #0 !dbg !4 {
   %m = alloca %"M<S>", align 8
-  call void @_EN4main1MI1SE4initE(ptr %m), !dbg !7
-  call void @_EN4main1MI1SE1fE(ptr %m), !dbg !8
+  call void @_CX1N4mainM4main1MIM4main1SE4initE4void0_(ptr %m), !dbg !7
+  call void @_CX1N4mainM4main1MIM4main1SE1fE4void0_(ptr %m), !dbg !8
   ret i32 0
 }
 
-define void @_EN4main1MI1SE4initE(ptr %this) #0 !dbg !9 {
+define void @_CX1N4mainM4main1MIM4main1SE4initE4void0_(ptr %this) #0 !dbg !9 {
   ret void
 }
 
-define void @_EN4main1MI1SE1fE(ptr %this) #0 !dbg !10 {
+define void @_CX1N4mainM4main1MIM4main1SE1fE4void0_(ptr %this) #0 !dbg !10 {
   %a = alloca %"A<S>", align 8
   %1 = alloca %S, align 8
-  call void @_EN4main1AI1SE4initE(ptr %a), !dbg !11
-  %2 = call %S @_EN4main1AI1SE1aE(ptr %a), !dbg !12
+  call void @_CX1N4mainM4main1AIM4main1SE4initE4void0_(ptr %a), !dbg !11
+  %2 = call %S @_CX1N4mainM4main1AIM4main1SE1aEM4main1S0_(ptr %a), !dbg !12
   store %S %2, ptr %1, align 4
-  call void @_EN4main1S1iE(ptr %1), !dbg !13
+  call void @_CX1N4mainM4main1S1iE4void0_(ptr %1), !dbg !13
   ret void
 }
 
-define void @_EN4main1AI1SE4initE(ptr %this) #0 !dbg !14 {
+define void @_CX1N4mainM4main1AIM4main1SE4initE4void0_(ptr %this) #0 !dbg !14 {
   ret void
 }
 
-define %S @_EN4main1AI1SE1aE(ptr %this) #0 !dbg !15 {
+define %S @_CX1N4mainM4main1AIM4main1SE1aEM4main1S0_(ptr %this) #0 !dbg !15 {
   %1 = alloca %S, align 8
-  call void @_EN4main1S4initE(ptr %1), !dbg !16
+  call void @_CX1N4mainM4main1S4initE4void0_(ptr %1), !dbg !16
   %.load = load %S, ptr %1, align 4
   ret %S %.load
 }
 
-define void @_EN4main1S1iE(ptr %this) #0 !dbg !17 {
+define void @_CX1N4mainM4main1S1iE4void0_(ptr %this) #0 !dbg !17 {
   ret void
 }
 
-define void @_EN4main1S4initE(ptr %this) #0 !dbg !18 {
+define void @_CX1N4mainM4main1S4initE4void0_(ptr %this) #0 !dbg !18 {
   ret void
 }
 
@@ -57,13 +57,13 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 31, column: 13, scope: !4)
 !8 = !DILocation(line: 32, column: 7, scope: !4)
-!9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1MI1SE4initE", scope: !3, file: !3, line: 22, type: !5, scopeLine: 22, spFlags: DISPFlagDefinition, unit: !2)
-!10 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1MI1SE1fE", scope: !3, file: !3, line: 24, type: !5, scopeLine: 24, spFlags: DISPFlagDefinition, unit: !2)
+!9 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1MIM4main1SE4initE4void0_", scope: !3, file: !3, line: 22, type: !5, scopeLine: 22, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4mainM4main1MIM4main1SE1fE4void0_", scope: !3, file: !3, line: 24, type: !5, scopeLine: 24, spFlags: DISPFlagDefinition, unit: !2)
 !11 = !DILocation(line: 25, column: 17, scope: !10)
 !12 = !DILocation(line: 26, column: 11, scope: !10)
 !13 = !DILocation(line: 26, column: 15, scope: !10)
-!14 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1AI1SE4initE", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
-!15 = distinct !DISubprogram(name: "a", linkageName: "_EN4main1AI1SE1aE", scope: !3, file: !3, line: 14, type: !5, scopeLine: 14, spFlags: DISPFlagDefinition, unit: !2)
+!14 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1AIM4main1SE4initE4void0_", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!15 = distinct !DISubprogram(name: "a", linkageName: "_CX1N4mainM4main1AIM4main1SE1aEM4main1S0_", scope: !3, file: !3, line: 14, type: !5, scopeLine: 14, spFlags: DISPFlagDefinition, unit: !2)
 !16 = !DILocation(line: 15, column: 16, scope: !15)
-!17 = distinct !DISubprogram(name: "i", linkageName: "_EN4main1S1iE", scope: !3, file: !3, line: 10, type: !5, scopeLine: 10, spFlags: DISPFlagDefinition, unit: !2)
-!18 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1S4initE", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!17 = distinct !DISubprogram(name: "i", linkageName: "_CX1N4mainM4main1S1iE4void0_", scope: !3, file: !3, line: 10, type: !5, scopeLine: 10, spFlags: DISPFlagDefinition, unit: !2)
+!18 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1S4initE4void0_", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)

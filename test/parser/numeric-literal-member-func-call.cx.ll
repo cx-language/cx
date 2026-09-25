@@ -3,12 +3,12 @@ define i32 @main() #0 !dbg !4 {
   %foo = alloca i64, align 8
   %1 = alloca i32, align 4
   store i32 0, ptr %1, align 4
-  %2 = call i64 @_EN3std5int324hashE(ptr %1), !dbg !7
+  %2 = call i64 @_CX1N3stdM3std5int324hashEM3std6uint640_(ptr %1), !dbg !7
   store i64 %2, ptr %foo, align 8
   ret i32 0
 }
 
-declare i64 @_EN3std5int324hashE(ptr) #0
+declare i64 @_CX1N3stdM3std5int324hashEM3std6uint640_(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

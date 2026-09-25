@@ -5,15 +5,15 @@ int32 main() {
     int32[3] _1 = insertvalue _0, 1, int32 2
     int32[3] _2 = insertvalue _1, 2, int32 3
     store _2 to a
-    void _3 = call _EN3std7printlnI5int32EE5int32(int32 3)
+    void _3 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 3)
     return int32 0
 }
 
-void _EN3std7printlnI5int32EE5int32(int32 value) {
+void _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 value) {
     int32* value_0 = alloca int32
     store value to value_0
     int32 value.load = load value_0
-    void _0 = call _EN3std5printI5int32EE5int32(int32 value.load)
-    void _1 = call _EN3std5printI4charEE4char(char 10)
+    void _0 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 value.load)
+    void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
     return void
 }

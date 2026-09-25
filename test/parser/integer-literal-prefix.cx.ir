@@ -1,4 +1,4 @@
 
-int32 _EN4main3fooE() {
+int32 _CX1N4main3fooEM3std5int320_() {
     return int32 120
 }

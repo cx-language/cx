@@ -1,9 +1,9 @@
 
-void _EN4main3fooE() {
+void _CX1N4main3fooE4void0_() {
     return void
 }
 
-int32 _EN4main2f2E5int324bool(int32 a, bool b) {
+int32 _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool(int32 a, bool b) {
     int32* a_0 = alloca int32
     bool* b_0 = alloca bool
     store a to a_0
@@ -12,7 +12,7 @@ int32 _EN4main2f2E5int324bool(int32 a, bool b) {
     return a.load
 }
 
-void _EN4main1gEF_4void(void()* p) {
+void _CX1N4main1gE4void1_F0_4void(void()* p) {
     void()** p_0 = alloca void()*
     void()** p2 = alloca void()*
     store p to p_0
@@ -23,7 +23,7 @@ void _EN4main1gEF_4void(void()* p) {
     return void
 }
 
-void _EN4main2g2EF5int324bool_5int32(int32(int32, bool)* p) {
+void _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)* p) {
     int32(int32, bool)** p_0 = alloca int32(int32, bool)*
     int32(int32, bool)** p2 = alloca int32(int32, bool)*
     int32* a = alloca int32
@@ -44,7 +44,7 @@ void _EN4main2g2EF5int324bool_5int32(int32(int32, bool)* p) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _9 = call _EN3std10assertFailEP4char(char* "integer overflow at function-pointer-local-variable.cx:14:27
+    void _9 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at function-pointer-local-variable.cx:14:27
 ")
     unreachable
 
@@ -56,11 +56,11 @@ overflow.success:
 int32 main() {
     void()** lf = alloca void()*
     int32(int32, bool)** lf2 = alloca int32(int32, bool)*
-    store _EN4main3fooE to lf
+    store _CX1N4main3fooE4void0_ to lf
     void()* lf.load = load lf
-    void _0 = call _EN4main1gEF_4void(void()* lf.load)
-    store _EN4main2f2E5int324bool to lf2
+    void _0 = call _CX1N4main1gE4void1_F0_4void(void()* lf.load)
+    store _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool to lf2
     int32(int32, bool)* lf2.load = load lf2
-    void _1 = call _EN4main2g2EF5int324bool_5int32(int32(int32, bool)* lf2.load)
+    void _1 = call _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)* lf2.load)
     return int32 0
 }

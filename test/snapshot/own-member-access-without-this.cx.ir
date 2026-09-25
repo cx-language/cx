@@ -2,46 +2,46 @@
 int32 main() {
     A* a = alloca A
     B* b = alloca B
-    void _0 = call _EN4main1A4initE(A* a)
-    int32 _1 = call _EN4main1A3fooE(A* a)
-    void _2 = call _EN4main1A3barE(A* a)
-    void _3 = call _EN4main1B4initE(B* b)
-    int32 _4 = call _EN4main1B3fooE(B* b)
-    void _5 = call _EN4main1B3barE(B* b)
+    void _0 = call _CX1N4mainM4main1A4initE4void0_(A* a)
+    int32 _1 = call _CX1N4mainM4main1A3fooEM3std5int320_(A* a)
+    void _2 = call _CX1N4mainM4main1A3barE4void0_(A* a)
+    void _3 = call _CX1N4mainM4main1B4initE4void0_(B* b)
+    int32 _4 = call _CX1N4mainM4main1B3fooEM3std5int320_(B* b)
+    void _5 = call _CX1N4mainM4main1B3barE4void0_(B* b)
     return int32 0
 }
 
-void _EN4main1A4initE(A* this) {
+void _CX1N4mainM4main1A4initE4void0_(A* this) {
     int32* j = getelementptr this, 1
     store int32 42 to j
     return void
 }
 
-int32 _EN4main1A3fooE(A* this) {
+int32 _CX1N4mainM4main1A3fooEM3std5int320_(A* this) {
     int32* j = getelementptr this, 1
     int32 j.load = load j
     return j.load
 }
 
-void _EN4main1A3barE(A* this) {
+void _CX1N4mainM4main1A3barE4void0_(A* this) {
     int32* j = getelementptr this, 1
     store int32 1 to j
     return void
 }
 
-void _EN4main1B4initE(B* this) {
+void _CX1N4mainM4main1B4initE4void0_(B* this) {
     int32* j = getelementptr this, 1
     store int32 42 to j
     return void
 }
 
-int32 _EN4main1B3fooE(B* this) {
+int32 _CX1N4mainM4main1B3fooEM3std5int320_(B* this) {
     int32* j = getelementptr this, 1
     int32 j.load = load j
     return j.load
 }
 
-void _EN4main1B3barE(B* this) {
+void _CX1N4mainM4main1B3barE4void0_(B* this) {
     int32* j = getelementptr this, 1
     store int32 1 to j
     return void

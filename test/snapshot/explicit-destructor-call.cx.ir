@@ -1,23 +1,23 @@
 
-void _EN4main1fEP1A(A* a) {
+void _CX1N4main1fE4void1_PM4main1A(A* a) {
     A** a_0 = alloca A*
     store a to a_0
     A* a.load = load a_0
-    void _0 = call _EN4main1A6deinitE(A* a.load)
+    void _0 = call _CX1N4mainM4main1A6deinitE4void0_(A* a.load)
     return void
 }
 
-void _EN4main1A6deinitE(A* this) {
+void _CX1N4mainM4main1A6deinitE4void0_(A* this) {
     return void
 }
 
-void _EN4main1gEP1B(B* b) {
+void _CX1N4main1gE4void1_PM4main1B(B* b) {
     B** b_0 = alloca B*
     store b to b_0
     return void
 }
 
-void _EN4main1hEP4char(char* c) {
+void _CX1N4main1hE4void1_PM3std4char(char* c) {
     char** c_0 = alloca char*
     store c to c_0
     return void

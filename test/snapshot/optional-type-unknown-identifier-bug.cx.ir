@@ -1,12 +1,12 @@
 
 int32 main() {
     X<int32>* x = alloca X<int32>
-    void _0 = call _EN4main1XI5int32E4initE(X<int32>* x)
-    void _1 = call _EN4main1XI5int32E6deinitE(X<int32>* x)
+    void _0 = call _CX1N4mainM4main1XIM3std5int32E4initE4void0_(X<int32>* x)
+    void _1 = call _CX1N4mainM4main1XIM3std5int32E6deinitE4void0_(X<int32>* x)
     return int32 0
 }
 
-void _EN4main1XI5int32E6deinitE(X<int32>* this) {
+void _CX1N4mainM4main1XIM3std5int32E6deinitE4void0_(X<int32>* this) {
     int32* a = alloca int32
     Y<int32>** y = getelementptr this, 0
     Y<int32>* y.load = load y
@@ -14,7 +14,7 @@ void _EN4main1XI5int32E6deinitE(X<int32>* this) {
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _0 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-unknown-identifier-bug.cx:11:18
+    void _0 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at optional-type-unknown-identifier-bug.cx:11:18
 ")
     unreachable
 
@@ -25,7 +25,7 @@ assert.success:
     return void
 }
 
-void _EN4main1XI5int32E4initE(X<int32>* this) {
+void _CX1N4mainM4main1XIM3std5int32E4initE4void0_(X<int32>* this) {
     Y<int32>** y = getelementptr this, 0
     store Y<int32>* null to y
     return void

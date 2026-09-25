@@ -5,6 +5,7 @@
 #include <llvm/Support/DynamicLibrary.h>
 #include <llvm/Support/TargetSelect.h>
 #pragma warning(pop)
+#include "../ast/mangle.h"
 #include "../support/utility.h"
 
 using namespace cx;
@@ -24,9 +25,7 @@ static bool allExternsResolvable(const llvm::Module& module) {
 
     auto isResolvable = [](llvm::StringRef name) {
         if (name.empty()) return true;
-        // "\01" escapes an exact symbol name (see mangleFunctionDecl); strip it for lookup.
-        if (name.front() == '\01') name = name.drop_front();
-        return llvm::sys::DynamicLibrary::SearchForAddressOfSymbol(name.str()) != nullptr;
+        return llvm::sys::DynamicLibrary::SearchForAddressOfSymbol(stripAsmLabelMarker(name).str()) != nullptr;
     };
 
     for (const auto& function : module.functions()) {

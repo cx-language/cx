@@ -10,9 +10,9 @@ int32 main() {
     store _0 to v
     int32* p.load_0 = load p
     void* _1 = cast p.load_0 to void*
-    void _2 = call _EN4main3barEP4void(void* _1)
+    void _2 = call _CX1N4main3barE4void1_P4void(void* _1)
     void* v.load = load v
-    void _3 = call _EN4main3barEP4void(void* v.load)
+    void _3 = call _CX1N4main3barE4void1_P4void(void* v.load)
     void* v.load_0 = load v
     int8* _4 = cast v.load_0 to int8*
     store _4 to b
@@ -21,20 +21,20 @@ int32 main() {
     store _5 to v
     int32* cp.load = load cp
     void* _6 = cast cp.load to void*
-    void _7 = call _EN4main3bazEOP4void(void* _6)
+    void _7 = call _CX1N4main3bazE4void1_OP4void(void* _6)
     store int32 0 to i
     void* _8 = cast i to void*
-    void _9 = call _EN4main3bazEOP4void(void* _8)
+    void _9 = call _CX1N4main3bazE4void1_OP4void(void* _8)
     return int32 0
 }
 
-void _EN4main3barEP4void(void* p) {
+void _CX1N4main3barE4void1_P4void(void* p) {
     void** p_0 = alloca void*
     store p to p_0
     return void
 }
 
-void _EN4main3bazEOP4void(void* p) {
+void _CX1N4main3bazE4void1_OP4void(void* p) {
     void** p_0 = alloca void*
     store p to p_0
     return void

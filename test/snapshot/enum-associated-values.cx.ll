@@ -58,7 +58,7 @@ switch.case.2:                                    ; preds = %0
   ret i32 %eb.load
 
 switch.default:                                   ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !7
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 switch.end:                                       ; preds = %switch.case.0
@@ -71,7 +71,7 @@ switch.end:                                       ; preds = %switch.case.0
   ret i32 0
 }
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

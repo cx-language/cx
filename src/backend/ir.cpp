@@ -771,3 +771,66 @@ bool IRType::equals(IRType* other) {
 
     llvm_unreachable("all cases handled");
 }
+
+// Maps a builtin name to its (category, bits) calling-convention class,
+// mirroring LLVMGenerator::getBuiltinType. Unknown names compare by name.
+static std::pair<char, int> abiClass(llvm::StringRef name) {
+    if (name == "void") return {'v', 0};
+    if (name == "bool") return {'b', 1};
+    if (name == "char" || name == "int8" || name == "uint8") return {'i', 8};
+    if (name == "int16" || name == "uint16") return {'i', 16};
+    if (name == "int32" || name == "uint32") return {'i', 32};
+    if (name == "int64" || name == "uint64") return {'i', 64};
+    if (name == "c_size_t") return {'i', static_cast<int>(sizeof(void*) * 8)};
+    if (name == "int128" || name == "uint128") return {'i', 128};
+    if (name == "float32") return {'f', 32};
+    if (name == "float64") return {'f', 64};
+    if (name == "float80") return {'f', 80};
+    return {'x', 0};
+}
+
+bool IRType::abiEquals(IRType* other) {
+    switch (kind) {
+    case IRTypeKind::IRBasicType: {
+        if (!other->isBasicType()) return false;
+        auto a = abiClass(getName()), b = abiClass(other->getName());
+        if (a.first == 'x' || b.first == 'x') return getName() == other->getName();
+        return a == b;
+    }
+    case IRTypeKind::IRPointerType:
+        return other->isPointerType();
+    case IRTypeKind::IRFunctionType: {
+        if (!other->isFunctionType()) return false;
+        auto* a = llvm::cast<IRFunctionType>(this);
+        auto* b = llvm::cast<IRFunctionType>(other);
+        if (a->isVariadic != b->isVariadic) return false;
+        if (!a->returnType->abiEquals(b->returnType)) return false;
+        if (a->paramTypes.size() != b->paramTypes.size()) return false;
+        for (size_t i = 0; i < a->paramTypes.size(); ++i) {
+            if (!a->paramTypes[i]->abiEquals(b->paramTypes[i])) return false;
+        }
+        return true;
+    }
+    case IRTypeKind::IRArrayType:
+        return other->isArrayType() && getArraySize() == other->getArraySize() && getElementType()->abiEquals(other->getElementType());
+    case IRTypeKind::IRStructType: {
+        if (!other->isStruct()) return false;
+        // Named structs lower to nominal LLVM types, so only identical objects
+        // share one; anonymous ones lower structurally and compare by fields.
+        if (this == other) return true;
+        auto* a = llvm::cast<IRStructType>(this);
+        auto* b = llvm::cast<IRStructType>(other);
+        if (!a->name.empty() || !b->name.empty()) return false;
+        if (a->packed != b->packed || a->fields.size() != b->fields.size()) return false;
+        for (size_t i = 0; i < a->fields.size(); ++i) {
+            if (!a->fields[i].type->abiEquals(b->fields[i].type)) return false;
+        }
+        return true;
+    }
+    case IRTypeKind::IRUnionType:
+        // Unions lower to nominal LLVM types; only identical objects share one.
+        return this == other;
+    }
+
+    llvm_unreachable("all cases handled");
+}

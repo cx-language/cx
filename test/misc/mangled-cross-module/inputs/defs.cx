@@ -1,0 +1,5 @@
+struct Widget {
+    int x
+}
+
+void main(int x) { print(x); }

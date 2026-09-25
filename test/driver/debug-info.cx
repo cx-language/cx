@@ -7,15 +7,15 @@ void main() {
     callee();
 }
 
-// CHECK: define void @_EN4main6calleeE() #{{[0-9]+}} !dbg !{{[0-9]+}} {
+// CHECK: define void @_CX1N4main6calleeE4void0_() #{{[0-9]+}} !dbg !{{[0-9]+}} {
 // CHECK: define i32 @main() #{{[0-9]+}} !dbg !{{[0-9]+}} {
-// CHECK: call void @_EN4main6calleeE(), !dbg !{{[0-9]+}}
+// CHECK: call void @_CX1N4main6calleeE4void0_(), !dbg !{{[0-9]+}}
 // CHECK: attributes #{{[0-9]+}} = { "frame-pointer"="all" }
 // CHECK: !llvm.module.flags = !{!{{[0-9]+}}, !{{[0-9]+}}}
 // CHECK: !llvm.dbg.cu = !{!{{[0-9]+}}}
 // CHECK: !DICompileUnit(language: DW_LANG_C, file: !{{[0-9]+}}, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 // CHECK: !DIFile(filename: "debug-info.cx", directory: "{{[^"]+}}")
-// CHECK: distinct !DISubprogram(name: "callee", linkageName: "_EN4main6calleeE", scope: !{{[0-9]+}}, file: !{{[0-9]+}}, line: 4, type: !{{[0-9]+}}, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !{{[0-9]+}})
+// CHECK: distinct !DISubprogram(name: "callee", linkageName: "_CX1N4main6calleeE4void0_", scope: !{{[0-9]+}}, file: !{{[0-9]+}}, line: 4, type: !{{[0-9]+}}, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !{{[0-9]+}})
 // CHECK: distinct !DISubprogram(name: "main", linkageName: "main", scope: !{{[0-9]+}}, file: !{{[0-9]+}}, line: 6, type: !{{[0-9]+}}, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !{{[0-9]+}})
 // CHECK: !DILocation(line: 7, column: 5, scope: !{{[0-9]+}})
 // CHECK-NOT: debug-info.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -15,7 +15,7 @@ int32 main() {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _4 = call _EN3std10assertFailEP4char(char* "integer overflow at int-literal-autocast.cx:9:11
+    void _4 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at int-literal-autocast.cx:9:11
 ")
     unreachable
 

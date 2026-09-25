@@ -2,35 +2,35 @@
 int32 main() {
     S<int32>* _0 = alloca S<int32>
     S<float32>* _1 = alloca S<float32>
-    void _2 = call _EN4main1SI5int32E4initE(S<int32>* _0)
-    void _3 = call _EN4main1SI5int32E1fE(S<int32>* _0)
-    void _4 = call _EN4main1SI7float32E4initE(S<float32>* _1)
-    void _5 = call _EN4main1SI7float32E1fE(S<float32>* _1)
+    void _2 = call _CX1N4mainM4main1SIM3std5int32E4initE4void0_(S<int32>* _0)
+    void _3 = call _CX1N4mainM4main1SIM3std5int32E1fE4void0_(S<int32>* _0)
+    void _4 = call _CX1N4mainM4main1SIM3std7float32E4initE4void0_(S<float32>* _1)
+    void _5 = call _CX1N4mainM4main1SIM3std7float32E1fE4void0_(S<float32>* _1)
     return int32 0
 }
 
-void _EN4main1SI5int32E1fE(S<int32>* this) {
-    void _0 = call _EN4main1SI5int32E1gE(S<int32>* this)
+void _CX1N4mainM4main1SIM3std5int32E1fE4void0_(S<int32>* this) {
+    void _0 = call _CX1N4mainM4main1SIM3std5int32E1gE4void0_(S<int32>* this)
     return void
 }
 
-void _EN4main1SI5int32E4initE(S<int32>* this) {
+void _CX1N4mainM4main1SIM3std5int32E4initE4void0_(S<int32>* this) {
     return void
 }
 
-void _EN4main1SI7float32E1fE(S<float32>* this) {
-    void _0 = call _EN4main1SI7float32E1gE(S<float32>* this)
+void _CX1N4mainM4main1SIM3std7float32E1fE4void0_(S<float32>* this) {
+    void _0 = call _CX1N4mainM4main1SIM3std7float32E1gE4void0_(S<float32>* this)
     return void
 }
 
-void _EN4main1SI7float32E4initE(S<float32>* this) {
+void _CX1N4mainM4main1SIM3std7float32E4initE4void0_(S<float32>* this) {
     return void
 }
 
-void _EN4main1SI5int32E1gE(S<int32>* this) {
+void _CX1N4mainM4main1SIM3std5int32E1gE4void0_(S<int32>* this) {
     return void
 }
 
-void _EN4main1SI7float32E1gE(S<float32>* this) {
+void _CX1N4mainM4main1SIM3std7float32E1gE4void0_(S<float32>* this) {
     return void
 }

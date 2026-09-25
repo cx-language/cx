@@ -52,16 +52,17 @@ CxFunction cxGetFunction(CxModule* module, const char* name) {
     auto* decl = module->module.symbolTable.findOne(name);
 
     if (auto* functionDecl = llvm::dyn_cast_or_null<FunctionDecl>(decl)) {
-        auto mangledName = mangleFunctionDecl(*functionDecl);
+        // Dynamic loaders see the plain symbol; the "\01" marker is LLVM-only.
+        auto symbol = stripAsmLabelMarker(mangleFunctionDecl(*functionDecl)).str();
 
 #ifdef _WIN32
         HMODULE lib = LoadLibraryA("main.dll");
         if (lib) {
-            function.ptr = reinterpret_cast<void*>(GetProcAddress(lib, mangledName.c_str()));
+            function.ptr = reinterpret_cast<void*>(GetProcAddress(lib, symbol.c_str()));
         }
 #else
         void* lib = dlopen("main.so", RTLD_LAZY);
-        function.ptr = dlsym(lib, mangledName.c_str());
+        function.ptr = dlsym(lib, symbol.c_str());
 #endif
     }
 

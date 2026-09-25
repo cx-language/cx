@@ -2,26 +2,26 @@
 int32 main() {
     A* a = alloca A
     B* b = alloca B
-    void _0 = call _EN4main1A4initE4bool5int32(A* a, bool false, int32 0)
-    void _1 = call _EN4main1B4initE5int32(B* b, int32 4)
+    void _0 = call _CX1N4mainM4main1A4initE4void2_M3std4boolM3std5int32(A* a, bool false, int32 0)
+    void _1 = call _CX1N4mainM4main1B4initE4void1_M3std5int32(B* b, int32 4)
     return int32 0
 }
 
-void _EN4main1A4initE4bool5int32(A* this, bool b, int32 p) {
+void _CX1N4mainM4main1A4initE4void2_M3std4boolM3std5int32(A* this, bool b, int32 p) {
     bool* b_0 = alloca bool
     int32* p_0 = alloca int32
     store b to b_0
     store p to p_0
     O* _0 = cast this to O*
     int32 p.load = load p_0
-    void _1 = call _EN4main1O4initE5int32(O* _0, int32 p.load)
+    void _1 = call _CX1N4mainM4main1O4initE4void1_M3std5int32(O* _0, int32 p.load)
     bool* b_1 = getelementptr this, 2
     bool b.load = load b_0
     store b.load to b_1
     return void
 }
 
-void _EN4main1B4initE5int32(B* this, int32 p) {
+void _CX1N4mainM4main1B4initE4void1_M3std5int32(B* this, int32 p) {
     int32* p_0 = alloca int32
     store p to p_0
     int32* p_1 = getelementptr this, 0
@@ -33,7 +33,7 @@ void _EN4main1B4initE5int32(B* this, int32 p) {
     return void
 }
 
-void _EN4main1O4initE5int32(O* this, int32 p) {
+void _CX1N4mainM4main1O4initE4void1_M3std5int32(O* this, int32 p) {
     int32* p_0 = alloca int32
     store p to p_0
     int32* p_1 = getelementptr this, 0

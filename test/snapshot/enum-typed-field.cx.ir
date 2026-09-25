@@ -1,5 +1,5 @@
 
-int32 _EN4main1fE1S(S s) {
+int32 _CX1N4main1fEM4main1E1_M4main1S(S s) {
     S* s_0 = alloca S
     store s to s_0
     int32* f = getelementptr s_0, 1
@@ -7,7 +7,7 @@ int32 _EN4main1fE1S(S s) {
     return f.load
 }
 
-int32 _EN4main1gEP1S(S* s) {
+int32 _CX1N4main1gEM4main1E1_PM4main1S(S* s) {
     S** s_0 = alloca S*
     store s to s_0
     S* s.load = load s_0

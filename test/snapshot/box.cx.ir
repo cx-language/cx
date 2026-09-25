@@ -4,63 +4,63 @@ int32 main() {
     Box<int32>* _0 = alloca Box<int32>
     Box<int32>* q = alloca Box<int32>
     Box<int32>* r = alloca Box<int32>
-    void _1 = call _EN3std3BoxI5int32E4initE5int32(Box<int32>* _0, int32 42)
+    void _1 = call _CX1N3stdM3std3BoxIM3std5int32E4initE4void1_M3std5int32(Box<int32>* _0, int32 42)
     Box<int32> .load = load _0
-    void _2 = call _EN3std3BoxI3BoxI5int32EE4initE3BoxI5int32E(Box<Box<int32>>* p, Box<int32> .load)
-    void _3 = call _EN3std3BoxI5int32E4initE5int32(Box<int32>* q, int32 42)
-    void _4 = call _EN3std3BoxI5int32E4initE5int32(Box<int32>* r, int32 42)
-    int32* _5 = call _EN3std3BoxI5int32E3getE(Box<int32>* q)
+    void _2 = call _CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE4initE4void1_M3std3BoxIM3std5int32E(Box<Box<int32>>* p, Box<int32> .load)
+    void _3 = call _CX1N3stdM3std3BoxIM3std5int32E4initE4void1_M3std5int32(Box<int32>* q, int32 42)
+    void _4 = call _CX1N3stdM3std3BoxIM3std5int32E4initE4void1_M3std5int32(Box<int32>* r, int32 42)
+    int32* _5 = call _CX1N3stdM3std3BoxIM3std5int32E3getEPM3std5int320_(Box<int32>* q)
     store int32 0 to _5
-    int32* _6 = call _EN3std3BoxI5int32E3getE(Box<int32>* r)
-    void _7 = call _EN3std3BoxI5int32E6deinitE(Box<int32>* q)
+    int32* _6 = call _CX1N3stdM3std3BoxIM3std5int32E3getEPM3std5int320_(Box<int32>* r)
+    void _7 = call _CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(Box<int32>* q)
     Box<int32> r.load = load r
     store r.load to q
-    void _8 = call _EN3std3BoxI5int32E6deinitE(Box<int32>* q)
-    void _9 = call _EN3std3BoxI3BoxI5int32EE6deinitE(Box<Box<int32>>* p)
+    void _8 = call _CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(Box<int32>* q)
+    void _9 = call _CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE6deinitE4void0_(Box<Box<int32>>* p)
     return int32 0
 }
 
-void _EN3std3BoxI3BoxI5int32EE6deinitE(Box<Box<int32>>* this) {
+void _CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE6deinitE4void0_(Box<Box<int32>>* this) {
     Box<int32>** pointer = getelementptr this, 0
     Box<int32>* pointer.load = load pointer
-    void _0 = call _EN3std10deallocateIP3BoxI5int32EEEP3BoxI5int32E(Box<int32>* pointer.load)
+    void _0 = call _CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E(Box<int32>* pointer.load)
     return void
 }
 
-void _EN3std3BoxI3BoxI5int32EE4initE3BoxI5int32E(Box<Box<int32>>* this, Box<int32> value) {
+void _CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE4initE4void1_M3std3BoxIM3std5int32E(Box<Box<int32>>* this, Box<int32> value) {
     Box<int32>* value_0 = alloca Box<int32>
     store value to value_0
     Box<int32>** pointer = getelementptr this, 0
     Box<int32> value.load = load value_0
-    Box<int32>* _0 = call _EN3std8allocateI3BoxI5int32EEE3BoxI5int32E(Box<int32> value.load)
+    Box<int32>* _0 = call _CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E(Box<int32> value.load)
     store _0 to pointer
     return void
 }
 
-void _EN3std3BoxI5int32E4initE5int32(Box<int32>* this, int32 value) {
+void _CX1N3stdM3std3BoxIM3std5int32E4initE4void1_M3std5int32(Box<int32>* this, int32 value) {
     int32* value_0 = alloca int32
     store value to value_0
     int32** pointer = getelementptr this, 0
     int32 value.load = load value_0
-    int32* _0 = call _EN3std8allocateI5int32EE5int32(int32 value.load)
+    int32* _0 = call _CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32(int32 value.load)
     store _0 to pointer
     return void
 }
 
-void _EN3std3BoxI5int32E6deinitE(Box<int32>* this) {
+void _CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(Box<int32>* this) {
     int32** pointer = getelementptr this, 0
     int32* pointer.load = load pointer
-    void _0 = call _EN3std10deallocateIP5int32EEP5int32(int32* pointer.load)
+    void _0 = call _CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32(int32* pointer.load)
     return void
 }
 
-int32* _EN3std3BoxI5int32E3getE(Box<int32>* this) {
+int32* _CX1N3stdM3std3BoxIM3std5int32E3getEPM3std5int320_(Box<int32>* this) {
     int32** pointer = getelementptr this, 0
     int32* pointer.load = load pointer
     return pointer.load
 }
 
-void _EN3std10deallocateIP3BoxI5int32EEEP3BoxI5int32E(Box<int32>* allocation) {
+void _CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E(Box<int32>* allocation) {
     Box<int32>** allocation_0 = alloca Box<int32>*
     store allocation to allocation_0
     Box<int32>* allocation.load = load allocation_0
@@ -69,7 +69,7 @@ void _EN3std10deallocateIP3BoxI5int32EEEP3BoxI5int32E(Box<int32>* allocation) {
     return void
 }
 
-Box<int32>* _EN3std8allocateI3BoxI5int32EEE3BoxI5int32E(Box<int32> value) {
+Box<int32>* _CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E(Box<int32> value) {
     Box<int32>* value_0 = alloca Box<int32>
     Box<int32>** allocation = alloca Box<int32>*
     store value to value_0
@@ -79,7 +79,7 @@ Box<int32>* _EN3std8allocateI3BoxI5int32EEE3BoxI5int32E(Box<int32> value) {
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _2 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:9:64
+    void _2 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at allocate.cx:9:64
 ")
     unreachable
 
@@ -93,7 +93,7 @@ assert.success:
     return allocation.load_0
 }
 
-int32* _EN3std8allocateI5int32EE5int32(int32 value) {
+int32* _CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32(int32 value) {
     int32* value_0 = alloca int32
     int32** allocation = alloca int32*
     store value to value_0
@@ -103,7 +103,7 @@ int32* _EN3std8allocateI5int32EE5int32(int32 value) {
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _2 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:9:64
+    void _2 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at allocate.cx:9:64
 ")
     unreachable
 
@@ -117,7 +117,7 @@ assert.success:
     return allocation.load_0
 }
 
-void _EN3std10deallocateIP5int32EEP5int32(int32* allocation) {
+void _CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32(int32* allocation) {
     int32** allocation_0 = alloca int32*
     store allocation to allocation_0
     int32* allocation.load = load allocation_0

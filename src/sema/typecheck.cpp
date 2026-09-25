@@ -194,7 +194,13 @@ static void checkUnusedDeclsInModule(const Module& module) {
             if (decl->isReferenced()) continue;
 
             if (decl->isFunctionDecl() || decl->isFunctionTemplate()) {
-                if (decl->isMain()) continue;
+                if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
+                    // Any main-module non-method "main" is either the entry point
+                    // or already diagnosed (a duplicate); never warn on those.
+                    if (functionDecl->isMain() && !functionDecl->isMethodDecl()) continue;
+                } else if (decl->isMain()) {
+                    continue;
+                }
                 // Test functions are entry points for `cx test`, like main is for `cx run`.
                 if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl); functionDecl && functionDecl->isTest) continue;
                 if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl); functionTemplate && functionTemplate->functionDecl->isTest) {
@@ -218,6 +224,7 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
     llvm::SaveAndRestore restoreModule(currentModule);
     llvm::SaveAndRestore restoreSourceFile(currentSourceFile);
     llvm::SaveAndRestore restoreOptions(options, packageOptions);
+    if (isMainModule) mainModule = &module;
 
     auto stdModule = importModule(nullptr, "std");
     if (!stdModule) {
@@ -333,22 +340,16 @@ void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
     auto* stdModule = Module::getStdlibModule();
     if (!stdModule) return;
 
-    // IRGen materializes argv only for a main with one parameter (see emitMainArgv
-    // in irgen-decl.cpp); any module's main counts since every module is emitted.
+    // IRGen materializes argv only for the entry-point main with one parameter
+    // (see emitMainArgv in irgen-decl.cpp); only the main module can hold it.
     bool usesArgv = false;
-    auto checkForArgvMain = [&](const Module& module) {
-        for (auto& sourceFile : module.sourceFiles) {
-            for (auto* decl : sourceFile.topLevelDecls) {
-                if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
-                    functionDecl && functionDecl->isMain() && !functionDecl->isMethodDecl() && functionDecl->getParams().size() == 1) {
-                    usesArgv = true;
-                }
+    for (auto& sourceFile : mainModule.sourceFiles) {
+        for (auto* decl : sourceFile.topLevelDecls) {
+            if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl); functionDecl && functionDecl->isEntryPoint && functionDecl->getParams().size() == 1) {
+                usesArgv = true;
             }
         }
-    };
-    checkForArgvMain(mainModule);
-    for (auto* importedModule : Module::getAllImportedModules())
-        checkForArgvMain(*importedModule);
+    }
 
     // Single-callee runtime hooks, mirroring the backend lookups in
     // irgen-decl.cpp (malloc) and irgen-expr.cpp (assertFail). Missing decls

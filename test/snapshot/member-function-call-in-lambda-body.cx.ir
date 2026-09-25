@@ -1,18 +1,18 @@
 
 int32 main() {
     int32(X*)** lambda = alloca int32(X*)*
-    store _EN4main9__lambda0EP1X to lambda
+    store _CX1N4main11____lambda0EM3std5int321_PM4main1X to lambda
     return int32 0
 }
 
-int32 _EN4main9__lambda0EP1X(X* x) {
+int32 _CX1N4main11____lambda0EM3std5int321_PM4main1X(X* x) {
     X** x_0 = alloca X*
     store x to x_0
     X* x.load = load x_0
-    int32 _0 = call _EN4main1X3fooE(X* x.load)
+    int32 _0 = call _CX1N4mainM4main1X3fooEM3std5int320_(X* x.load)
     return _0
 }
 
-int32 _EN4main1X3fooE(X* this) {
+int32 _CX1N4mainM4main1X3fooEM3std5int320_(X* this) {
     return int32 42
 }

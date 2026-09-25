@@ -1,25 +1,25 @@
 
 int32 main() {
     S* s = alloca S
-    void _0 = call _EN4main1S4initE(S* s)
-    void _1 = call _EN4main1S3fooE5int32(S* s, int32 30)
+    void _0 = call _CX1N4mainM4main1S4initE4void0_(S* s)
+    void _1 = call _CX1N4mainM4main1S3fooE4void1_M3std5int32(S* s, int32 30)
     return int32 0
 }
 
-void _EN4main1S4initE(S* this) {
+void _CX1N4mainM4main1S4initE4void0_(S* this) {
     return void
 }
 
-void _EN4main1S3fooE5int32(S* this, int32 bar) {
+void _CX1N4mainM4main1S3fooE4void1_M3std5int32(S* this, int32 bar) {
     int32* bar_0 = alloca int32
     int32* a = alloca int32
     store bar to bar_0
     int32 bar.load = load bar_0
     store bar.load to a
-    void _0 = call _EN4main1S3barE(S* this)
+    void _0 = call _CX1N4mainM4main1S3barE4void0_(S* this)
     return void
 }
 
-void _EN4main1S3barE(S* this) {
+void _CX1N4mainM4main1S3barE4void0_(S* this) {
     return void
 }

@@ -17,7 +17,7 @@ void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
     if (stmt.value) {
         createReturn(returnValue);
     } else {
-        createReturn(currentDecl->isMain() ? createConstantInt(Type::getInt32(), 0) : nullptr);
+        createReturn(llvm::cast<FunctionDecl>(currentDecl)->isEntryPoint ? createConstantInt(Type::getInt32(), 0) : nullptr);
     }
 }
 

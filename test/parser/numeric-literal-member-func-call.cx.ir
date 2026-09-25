@@ -3,7 +3,7 @@ int32 main() {
     uint64* foo = alloca uint64
     int32* _0 = alloca int32
     store int32 0 to _0
-    uint64 _1 = call _EN3std5int324hashE(int32* _0)
+    uint64 _1 = call _CX1N3stdM3std5int324hashEM3std6uint640_(int32* _0)
     store _1 to foo
     return int32 0
 }

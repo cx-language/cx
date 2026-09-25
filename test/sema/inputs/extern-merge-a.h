@@ -1,0 +1,1 @@
+int pick(int x);

@@ -898,13 +898,16 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     std::vector<IRType*> argParamTypes(param, params.end());
+    // Same-named externs share one object when merely ABI-compatible, so their
+    // calls may carry a differently spelled but ABI-equal argument type.
+    bool abiOnlyArgs = llvm::dyn_cast_or_null<FunctionDecl>(calleeDecl) && llvm::cast<FunctionDecl>(calleeDecl)->isExtern();
     if (expr.argParamIndices.size() == expr.args.size()) {
         llvm::SmallVector<Value*, 16> writtenValues;
         for (size_t i = 0; i < expr.args.size(); ++i) {
             int paramIndex = expr.argParamIndices[i];
             IRType* paramType = (paramIndex != -1 && size_t(paramIndex) < argParamTypes.size()) ? argParamTypes[size_t(paramIndex)] : nullptr;
             auto* argValue = emitExprForPassing(*expr.args[i].value, paramType);
-            ASSERT(!paramType || argValue->getType()->equals(paramType));
+            ASSERT(!paramType || (abiOnlyArgs ? argValue->getType()->abiEquals(paramType) : argValue->getType()->equals(paramType)));
             writtenValues.push_back(argValue);
         }
         llvm::SmallVector<Value*, 16> orderedValues(argParamTypes.size(), nullptr);

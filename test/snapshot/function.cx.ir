@@ -1,12 +1,12 @@
 
 int32 main() {
     void _0 = call bar()
-    void _1 = call _EN4main3fooE()
+    void _1 = call _CX1N4main3fooE4void0_()
     return int32 0
 }
 
 extern void bar()
 
-void _EN4main3fooE() {
+void _CX1N4main3fooE4void0_() {
     return void
 }

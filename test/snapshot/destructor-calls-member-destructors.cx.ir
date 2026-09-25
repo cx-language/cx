@@ -4,49 +4,49 @@ extern bool f()
 int32 main() {
     A* a = alloca A
     C* c = alloca C
-    void _0 = call _EN4main1A4initE(A* a)
-    void _1 = call _EN4main1C4initE(C* c)
-    void _2 = call _EN4main1C6deinitE(C* c)
-    void _3 = call _EN4main1A6deinitE(A* a)
+    void _0 = call _CX1N4mainM4main1A4initE4void0_(A* a)
+    void _1 = call _CX1N4mainM4main1C4initE4void0_(C* c)
+    void _2 = call _CX1N4mainM4main1C6deinitE4void0_(C* c)
+    void _3 = call _CX1N4mainM4main1A6deinitE4void0_(A* a)
     return int32 0
 }
 
-void _EN4main1A6deinitE(A* this) {
+void _CX1N4mainM4main1A6deinitE4void0_(A* this) {
     B* b = getelementptr this, 0
     B* bb = getelementptr this, 1
     bool _0 = call f()
     br _0, if.then, if.else
 
 if.then:
-    void _1 = call _EN4main1B6deinitE(B* bb)
-    void _2 = call _EN4main1B6deinitE(B* b)
+    void _1 = call _CX1N4mainM4main1B6deinitE4void0_(B* bb)
+    void _2 = call _CX1N4mainM4main1B6deinitE4void0_(B* b)
     return void
 
 if.else:
     br if.end
 
 if.end:
-    void _3 = call _EN4main1B6deinitE(B* bb)
-    void _4 = call _EN4main1B6deinitE(B* b)
+    void _3 = call _CX1N4mainM4main1B6deinitE4void0_(B* bb)
+    void _4 = call _CX1N4mainM4main1B6deinitE4void0_(B* b)
     return void
 }
 
-void _EN4main1A4initE(A* this) {
+void _CX1N4mainM4main1A4initE4void0_(A* this) {
     return void
 }
 
-void _EN4main1C6deinitE(C* this) {
+void _CX1N4mainM4main1C6deinitE4void0_(C* this) {
     B* b = getelementptr this, 0
     B* bb = getelementptr this, 1
-    void _0 = call _EN4main1B6deinitE(B* bb)
-    void _1 = call _EN4main1B6deinitE(B* b)
+    void _0 = call _CX1N4mainM4main1B6deinitE4void0_(B* bb)
+    void _1 = call _CX1N4mainM4main1B6deinitE4void0_(B* b)
     return void
 }
 
-void _EN4main1C4initE(C* this) {
+void _CX1N4mainM4main1C4initE4void0_(C* this) {
     return void
 }
 
-void _EN4main1B6deinitE(B* this) {
+void _CX1N4mainM4main1B6deinitE4void0_(B* this) {
     return void
 }

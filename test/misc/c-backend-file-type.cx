@@ -1,10 +1,10 @@
 // RUN: %cx --backend=c --print-c %s | %FileCheck %s
-// CHECK-NOT: _4FILE
+// CHECK-NOT: _M3std4FILE
 // CHECK: FILE* file;
-// CHECK-NOT: _4FILE
+// CHECK-NOT: _M3std4FILE
 
 // The stdlib's opaque FILE struct denotes C's FILE, so the C backend emits the
-// FILE typedef from stdio.h. A conflicting 'struct _4FILE' definition would warn
+// FILE typedef from stdio.h. A conflicting 'struct _M3std4FILE' definition would warn
 // on every conversion to and from real FILE*.
 
 void main() {

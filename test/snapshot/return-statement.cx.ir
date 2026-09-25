@@ -1,10 +1,10 @@
 
 int32 main() {
-    int32 _0 = call _EN4main3fooE()
+    int32 _0 = call _CX1N4main3fooEM3std5int320_()
     return _0
 }
 
-int32 _EN4main3fooE() {
-    int32 _0 = call _EN4main3fooE()
+int32 _CX1N4main3fooEM3std5int320_() {
+    int32 _0 = call _CX1N4main3fooEM3std5int320_()
     return int32 42
 }

@@ -1,26 +1,26 @@
 
 int32 main() {
     S<A>* x = alloca S<A>
-    void _0 = call _EN4main1SI1AE4initE(S<A>* x)
-    void _1 = call _EN4main1SI1AE1sE(S<A>* x)
+    void _0 = call _CX1N4mainM4main1SIM4main1AE4initE4void0_(S<A>* x)
+    void _1 = call _CX1N4mainM4main1SIM4main1AE1sE4void0_(S<A>* x)
     return int32 0
 }
 
-void _EN4main1SI1AE4initE(S<A>* this) {
+void _CX1N4mainM4main1SIM4main1AE4initE4void0_(S<A>* this) {
     A* _0 = alloca A
-    void _1 = call _EN4main1A4initE(A* _0)
-    void _2 = call _EN4main1A1hE(A* _0)
+    void _1 = call _CX1N4mainM4main1A4initE4void0_(A* _0)
+    void _2 = call _CX1N4mainM4main1A1hE4void0_(A* _0)
     return void
 }
 
-void _EN4main1SI1AE1sE(S<A>* this) {
+void _CX1N4mainM4main1SIM4main1AE1sE4void0_(S<A>* this) {
     return void
 }
 
-void _EN4main1A1hE(A* this) {
+void _CX1N4mainM4main1A1hE4void0_(A* this) {
     return void
 }
 
-void _EN4main1A4initE(A* this) {
+void _CX1N4mainM4main1A4initE4void0_(A* this) {
     return void
 }

@@ -1,5 +1,5 @@
 
-int32 _EN4main3fooE1U(U u) {
+int32 _CX1N4main3fooEM3std5int321_M26union_2Dmember_2Daccess__h1U(U u) {
     U* u_0 = alloca U
     store u to u_0
     int32* b = cast u_0 to int32*
@@ -12,7 +12,7 @@ int32 main() {
     int32* a = cast u to int32*
     store int32 21 to a
     U u.load = load u
-    int32 _0 = call _EN4main3fooE1U(U u.load)
+    int32 _0 = call _CX1N4main3fooEM3std5int321_M26union_2Dmember_2Daccess__h1U(U u.load)
     int32* b = cast u to int32*
     int32 b.load = load b
     int64 _1 = cast _0 to int64
@@ -26,7 +26,7 @@ int32 main() {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _8 = call _EN3std10assertFailEP4char(char* "integer overflow at union-member-access.cx:13:19
+    void _8 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at union-member-access.cx:13:19
 ")
     unreachable
 

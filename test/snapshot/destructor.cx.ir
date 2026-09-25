@@ -8,7 +8,7 @@ int32 main() {
     br bool false, if.then, if.else
 
 if.then:
-    void _0 = call _EN4main3Foo6deinitE(Foo* f2)
+    void _0 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f2)
     br if.end
 
 if.else:
@@ -21,38 +21,38 @@ loop.condition:
     br bool false, loop.body, loop.end
 
 loop.body:
-    void _1 = call _EN4main3Bar6deinitE(Bar* b2)
-    void _2 = call _EN4main3Bar6deinitE(Bar* b)
-    void _3 = call _EN4main3Foo6deinitE(Foo* f)
+    void _1 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b2)
+    void _2 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b)
+    void _3 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f)
     return int32 0
 
 loop.end:
     store int32 1 to i
-    void _4 = call _EN4main3Bar6deinitE(Bar* b)
-    void _5 = call _EN4main3Foo6deinitE(Foo* f)
+    void _4 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b)
+    void _5 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f)
     return int32 0
 }
 
-void _EN4main3Foo6deinitE(Foo* this) {
+void _CX1N4mainM4main3Foo6deinitE4void0_(Foo* this) {
     int32* i = getelementptr this, 0
     store int32 0 to i
-    void _0 = call _EN4main3Foo1fE(Foo* this)
-    void _1 = call _EN4main3Foo1fE(Foo* this)
+    void _0 = call _CX1N4mainM4main3Foo1fE4void0_(Foo* this)
+    void _1 = call _CX1N4mainM4main3Foo1fE4void0_(Foo* this)
     return void
 }
 
-void _EN4main3Bar6deinitE(Bar* this) {
+void _CX1N4mainM4main3Bar6deinitE4void0_(Bar* this) {
     int32* i = getelementptr this, 0
     store int32 0 to i
-    void _0 = call _EN4main3Bar1fE(Bar* this)
-    void _1 = call _EN4main3Bar1fE(Bar* this)
+    void _0 = call _CX1N4mainM4main3Bar1fE4void0_(Bar* this)
+    void _1 = call _CX1N4mainM4main3Bar1fE4void0_(Bar* this)
     return void
 }
 
-void _EN4main3Foo1fE(Foo* this) {
+void _CX1N4mainM4main3Foo1fE4void0_(Foo* this) {
     return void
 }
 
-void _EN4main3Bar1fE(Bar* this) {
+void _CX1N4mainM4main3Bar1fE4void0_(Bar* this) {
     return void
 }

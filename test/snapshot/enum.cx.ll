@@ -1,5 +1,5 @@
 
-@x = private global i32 0
+@_CX1G4main1xE = private global i32 0
 @0 = private unnamed_addr constant [56 x i8] c"invalid value in switch over enum 'A' at enum.cx:11:13\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
@@ -44,11 +44,11 @@ switch.case.2:                                    ; preds = %if.end4
   ret i32 0
 
 switch.default:                                   ; preds = %if.end4
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !7
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 }
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

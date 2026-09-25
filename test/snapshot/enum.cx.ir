@@ -1,4 +1,4 @@
-global x = int32 0
+global _CX1G4main1xE = int32 0
 
 int32 main() {
     int32* foo = alloca int32
@@ -42,7 +42,7 @@ switch.case.2:
     return int32 0
 
 switch.default:
-    void _2 = call _EN3std10assertFailEP4char(char* "invalid value in switch over enum 'A' at enum.cx:11:13
+    void _2 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "invalid value in switch over enum 'A' at enum.cx:11:13
 ")
     unreachable
 

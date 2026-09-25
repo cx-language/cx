@@ -1,5 +1,5 @@
 
-void _EN4main3fooEOP5int32P5int32(int32* a, int32* b) {
+void _CX1N4main3fooE4void2_OPKM3std5int32PM3std5int32(int32* a, int32* b) {
     int32** a_0 = alloca int32*
     int32** b_0 = alloca int32*
     store a to a_0

@@ -239,6 +239,10 @@ struct FunctionDecl : Decl {
     // Set by the `implicit` marker on single-parameter constructors and
     // parameterless member functions; enables implicit conversions.
     bool isImplicit = false;
+    // The program entry point: the single non-generic, non-method "main" in
+    // the main module. Only it lowers to the raw "main" symbol with argc/argv
+    // handling; any other function named "main" mangles like an ordinary one.
+    bool isEntryPoint = false;
     // Enclosing function for lambdas, null otherwise. Set during typechecking.
     FunctionDecl* parentFunction = nullptr;
     // Outer locals and parameters captured by value, in first-use order. Only lambdas capture.

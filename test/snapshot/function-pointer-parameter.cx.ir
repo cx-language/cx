@@ -1,9 +1,9 @@
 
-void _EN4main1fE() {
+void _CX1N4main1fE4void0_() {
     return void
 }
 
-int32 _EN4main2f2E5int324bool(int32 a, bool b) {
+int32 _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool(int32 a, bool b) {
     int32* a_0 = alloca int32
     bool* b_0 = alloca bool
     store a to a_0
@@ -12,7 +12,7 @@ int32 _EN4main2f2E5int324bool(int32 a, bool b) {
     return a.load
 }
 
-void _EN4main1gEF_4void(void()* p) {
+void _CX1N4main1gE4void1_F0_4void(void()* p) {
     void()** p_0 = alloca void()*
     store p to p_0
     void()* p.load = load p_0
@@ -20,7 +20,7 @@ void _EN4main1gEF_4void(void()* p) {
     return void
 }
 
-void _EN4main2g2EF5int324bool_5int32(int32(int32, bool)* p) {
+void _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)* p) {
     int32(int32, bool)** p_0 = alloca int32(int32, bool)*
     int32* a = alloca int32
     store p to p_0
@@ -38,7 +38,7 @@ void _EN4main2g2EF5int324bool_5int32(int32(int32, bool)* p) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _9 = call _EN3std10assertFailEP4char(char* "integer overflow at function-pointer-parameter.cx:12:26
+    void _9 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at function-pointer-parameter.cx:12:26
 ")
     unreachable
 
@@ -48,7 +48,7 @@ overflow.success:
 }
 
 int32 main() {
-    void _0 = call _EN4main1gEF_4void(void()* _EN4main1fE)
-    void _1 = call _EN4main2g2EF5int324bool_5int32(int32(int32, bool)* _EN4main2f2E5int324bool)
+    void _0 = call _CX1N4main1gE4void1_F0_4void(void()* _CX1N4main1fE4void0_)
+    void _1 = call _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)* _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool)
     return int32 0
 }
