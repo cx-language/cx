@@ -81,9 +81,11 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
 
     if [ "$relpath" = "index" ]; then
         title="cx Programming Language"
+        body_class="frontpage"
     else
         # The first '# ' heading is the section name (unwrap links: '# [List](...)' -> 'List').
         title="cx - $(sed -n 's/^# //p' "$file" | head -n 1 | sed 's/^\[\(.*\)\](.*/\1/')"
+        body_class=""
     fi
 
     # The std index page lives at std/index.html: build/std.html would be
@@ -103,7 +105,7 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
         *.md) from="markdown-smart" ;;
         *) from="html" ;;
     esac
-    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
+    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title" --metadata body-class="$body_class"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
@@ -118,8 +120,11 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
     python3 - "$outpath" <<'EOF'
 import html
 import json
+import os
 import re
 import sys
+
+REPO_URL = "https://github.com/cx-language/cx"
 
 outpath = sys.argv[1]
 path = "build/" + outpath + ".html"
@@ -132,6 +137,68 @@ depth = outpath.count("/")
 if depth:
     prefix = "../" * depth
     template = re.sub(r'(href|src)="(\./)?(?!#|/|[a-zA-Z][a-zA-Z0-9+.-]*:)', r'\1="' + prefix, template)
+
+
+def page_links(outpath):
+    """Footer links for one page: edit the source, report an issue.
+
+    Top-level pages come from docs/, stdlib file pages from std/; the
+    generated std index and category pages aggregate many files and get
+    only the issue link. The front page gets neither.
+    """
+    if outpath == "index":
+        return ""
+    if "/" not in outpath:
+        source = "docs/%s.md" % outpath
+    elif os.path.isfile("../std/%s.cx" % outpath[4:]):
+        source = "std/%s.cx" % outpath[4:]
+    else:
+        source = None
+    links = []
+    if source is not None:
+        links.append('<a href="%s/edit/main/%s" target="_blank">Edit this page</a>' % (REPO_URL, source))
+    links.append('<a href="%s/issues/new" target="_blank">Report an issue</a>' % REPO_URL)
+    return '<span class="page-links">%s</span>' % "".join(links)
+
+
+if "##PAGELINKS##" in template:
+    template = template.replace("##PAGELINKS##", page_links(outpath))
+
+
+def docs_order():
+    """Guide reading order: sidebar links backed by a docs/ source file."""
+    toc = open("toc.html").read()
+    ids = re.findall(r'href="\./([^"#]+)"', toc)
+    return [page for page in ids if os.path.isfile("../docs/%s.md" % page)]
+
+
+def page_title(page):
+    with open("../docs/%s.md" % page) as file:
+        for line in file:
+            if line.startswith("# "):
+                return re.sub(r"^\[(.*)\]\(.*", r"\1", line[2:].strip())
+    return page
+
+
+def next_page(outpath):
+    """Next-button for guide pages; API docs and the front page get none."""
+    if "/" in outpath or outpath == "index":
+        return ""
+    order = docs_order()
+    if outpath not in order:
+        return ""
+    following = order[order.index(outpath) + 1 :]
+    if not following:
+        return ""
+    target = following[0]
+    return '<nav class="next-page"><a class="button" href="./%s">Next: %s →</a></nav>' % (
+        target,
+        html.escape(page_title(target)),
+    )
+
+
+if "##NEXTPAGE##" in template:
+    template = template.replace("##NEXTPAGE##", next_page(outpath))
 
 showcase = [
     ("Filter and map", "filter-map.cx"),
@@ -170,6 +237,9 @@ if outpath == "index":
         file.write("var CxExamples = " + json.dumps(examples) + ";\n")
 EOF
 done
+
+# Search index over the docs and generated reference sources.
+python3 generate_search_index.py || exit
 
 cp -r *.css *.js lib build
 

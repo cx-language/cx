@@ -88,14 +88,19 @@ function initializeCodeEditor(block) {
     }
 
     var widgets = [];
+    var runCount = 0;
 
-    function highlightError() {
-        var regex = /^main\.cx:(\d+):(\d+): (.*)(?:\n.*\n([ \t]*)\^)?/gm;
+    function highlightError(diagnostics) {
+        // The compiler underlines ranges with '~' and points with '^';
+        // diagnostics without source context have neither.
+        var regex = /^main\.cx:(\d+):(\d+): (.*)(?:\n.*\n([ \t]*)[~^])?/gm;
         var match;
-        while ((match = regex.exec(output.innerText))) {
+        while ((match = regex.exec(diagnostics))) {
             var [, line, column, message, indent] = match;
             var node = document.createElement("div");
-            node.appendChild(document.createTextNode(indent + "^ " + message));
+            // The strip styling already signals severity; drop the prefix.
+            var compact = message.replace(/^(error|warning): /, "");
+            node.appendChild(document.createTextNode((indent || "") + "^ " + compact));
             node.classList.add("diagnostic", message.startsWith("warning") ? "warning" : "error");
             widgets.push(editor.addLineWidget(line - 1, node, true));
         }
@@ -109,6 +114,7 @@ function initializeCodeEditor(block) {
     }
 
     runButton.onclick = function() {
+        runCount++;
         if (typeof CxPlayground === "undefined") {
             output.style.display = "block";
             stdout.innerText = "";
@@ -140,8 +146,30 @@ function initializeCodeEditor(block) {
             runButton.disabled = false;
             stdout.innerText = response.stdout || "";
             stderr.innerText = response.stderr || "";
-            highlightError();
+            removeErrors();
+            highlightError(output.innerText);
             output.scrollIntoView({ behavior: "smooth", block: "nearest" });
         });
     };
+
+    // Live diagnostics: recompile (without running) after the user stops
+    // typing, so errors show without pressing the play button. Only the
+    // latest check paints: an older check resolving late, or any check
+    // superseded by a Run, is discarded.
+    var checkTimer = null;
+    var checkSequence = 0;
+    editor.on("change", function() {
+        if (typeof CxPlayground === "undefined" || !CxPlayground.check) return;
+        clearTimeout(checkTimer);
+        var runStamp = runCount;
+        checkTimer = setTimeout(function() {
+            if (runStamp !== runCount) return;
+            var sequence = ++checkSequence;
+            CxPlayground.check(editor.getValue()).then(function(response) {
+                if (sequence !== checkSequence || runStamp !== runCount) return;
+                removeErrors();
+                highlightError(response.stderr || "");
+            });
+        }, 750);
+    });
 }

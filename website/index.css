@@ -259,12 +259,15 @@ th {
 
 .top-nav {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 8px 24px;
     flex-wrap: wrap;
     padding: 16px 24px;
     margin: 0 -24px;
+    /* Tallest item (the logo) plus padding: the bar keeps this height
+       on pages without the search box too. */
+    min-height: 64px;
     grid-column: 1 / -1;
     position: sticky;
     top: 0;
@@ -276,7 +279,7 @@ th {
 .top-nav h1 {
     font-family: var(--sans);
     font-weight: 800;
-    font-size: 1.5rem;
+    font-size: 2rem;
     letter-spacing: -0.03em;
     line-height: 1;
     margin: 0;
@@ -309,6 +312,98 @@ th {
 
 .links a + a {
     margin-left: 20px;
+}
+
+.search {
+    position: relative;
+    flex: 0 1 300px;
+    min-width: 120px;
+    margin-left: auto;
+}
+
+.frontpage .search {
+    display: none;
+}
+
+#site-search {
+    width: 100%;
+    font: inherit;
+    font-size: 0.9rem;
+    /* Single-line input: must not inherit the body prose line-height,
+       which would make the search box the tallest nav item. */
+    line-height: 1;
+    color: var(--text-color);
+    background: var(--background-color-2);
+    border: 1px solid var(--background-color-3);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+}
+
+#site-search::placeholder {
+    color: var(--text-color-subtle);
+}
+
+.search-results {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    min-width: 260px;
+    max-height: 60vh;
+    overflow: auto;
+    background: var(--background-color);
+    border: 1px solid var(--background-color-3);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    z-index: 60;
+}
+
+.search-results[hidden] {
+    display: none;
+}
+
+.search-results a {
+    display: block;
+    padding: 8px 12px;
+    color: var(--text-color);
+}
+
+.search-results a:hover {
+    background: var(--background-color-2);
+    text-decoration: none;
+}
+
+.search-results .result-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.search-results .result-snippet {
+    font-size: 0.8rem;
+    color: var(--text-color-subtle);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-results mark {
+    background: var(--background-color-3);
+    color: inherit;
+    border-radius: 2px;
+}
+
+.search-results .search-empty,
+.search-results .search-failure {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    color: var(--text-color-subtle);
+}
+
+@media (max-width: 560px) {
+    .search {
+        flex-basis: 100%;
+        order: 3;
+    }
 }
 
 .side-nav {
@@ -564,7 +659,9 @@ a.button:hover, button:hover {
     padding: 0 4px;
     white-space: pre-wrap;
     font-family: var(--mono);
-    font-size: 12px;
+    /* Inherits the code size: the caret column only lines up when the
+       indent advances match the code lines exactly. */
+    font-size: inherit;
 }
 
 .diagnostic.error {
@@ -645,10 +742,33 @@ button.run:active::before {
 
 .site-footer {
     grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px 24px;
+    flex-wrap: wrap;
     border-top: 1px solid var(--background-color-3);
     padding: 22px 0 48px;
     font-size: 13px;
     color: var(--text-color-subtle);
+}
+
+.page-links {
+    white-space: nowrap;
+}
+
+.page-links a + a {
+    margin-left: 16px;
+}
+
+.next-page {
+    margin: 0 0 48px;
+    text-align: right;
+}
+
+@media screen and (min-width: 768px) {
+    .next-page {
+        grid-column: 2;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
