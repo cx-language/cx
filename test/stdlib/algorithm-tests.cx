@@ -6,6 +6,7 @@ void main() {
     testQuickSort();
     testMax();
     testMin();
+    testMinmax();
 }
 
 void testAllAnyNone() {
@@ -55,12 +56,38 @@ void testMax() {
     var a = 7;
     var b = 9;
     assert(max(a, b) == 9);
-    assert(*max(&a, &b) == 9);
+    int* pa = &a;
+    int* pb = &b;
+    assert(max(pa, pb) == 9);
+    *max(a, b) = 10;
+    assert(b == 10);
+    int m = max(a, b);
+    assert(m == 10);
 }
 
 void testMin() {
     var a = 7;
     var b = 9;
     assert(min(a, b) == 7);
-    assert(*min(&a, &b) == 7);
+    int* pa = &a;
+    int* pb = &b;
+    assert(min(pa, pb) == 7);
+    *min(a, b) = 6;
+    assert(a == 6);
+    int m = min(a, b);
+    assert(m == 6);
+}
+
+void testMinmax() {
+    var a = 7;
+    var b = 9;
+    var r = minmax(a, b);
+    assert(r.min == 7);
+    assert(r.max == 9);
+    r = minmax(b, a);
+    assert(r.min == 7);
+    assert(r.max == 9);
+    r = minmax(3, 1);
+    assert(r.min == 1);
+    assert(r.max == 3);
 }

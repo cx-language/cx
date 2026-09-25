@@ -1,37 +1,31 @@
 /// Public members
 
-/// Gives the maximum of the two elements.
-/// `T` must also be Comparable.
-T max<T: Copyable + Comparable>(T a, T b) {
+/// Gives a reference to the maximum of the two elements.
+/// Like C++ std::max, the result borrows one of the arguments, so don't store
+/// it past temporaries (e.g. `var m = max(f(), g())` dangles).
+T& max<T: Comparable>(T& a, T& b) {
     if a >= b {
         return a;
     }
     return b;
 }
 
-/// Gives a pointer to the maximum of the two elements.
-T* max<T>(T* a, T* b) {
-    if *a >= *b {
-        return a;
-    }
-    return b;
-}
-
-/// Gives the minimum of the two elements.
-/// `T` must also be Comparable.
-T min<T: Copyable + Comparable>(T a, T b) {
+/// Gives a reference to the minimum of the two elements.
+/// Like C++ std::min, the result borrows one of the arguments, so don't store
+/// it past temporaries (e.g. `var m = min(f(), g())` dangles).
+T& min<T: Comparable>(T& a, T& b) {
     if a < b {
         return a;
     }
     return b;
 }
 
-/// Gives a pointer to the minimum of the two elements.
-T* min<T>(T* a, T* b) {
-    if *a < *b {
-        return a;
+/// Gives the minimum and maximum of the two elements.
+(T min, T max) minmax<T: Copyable + Comparable>(T& a, T& b) {
+    if a < b {
+        return (min = a, max = b);
     }
-    return b;
+    return (min = b, max = a);
 }
 
 /// Swaps two items in place. Takes pointers because it mutates its arguments.
