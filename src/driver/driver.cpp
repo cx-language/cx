@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <system_error>
@@ -29,6 +30,7 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/TargetParser/Host.h>
 #pragma warning(pop)
+#include "../ast/demangle.h"
 #include "../ast/module.h"
 #include "../backend/c-backend.h"
 #include "../backend/irgen.h"
@@ -50,6 +52,7 @@ namespace cx {
 cl::SubCommand build("build", "Build a cx project");
 cl::SubCommand run("run", "Build and run a cx executable (program arguments follow '--')");
 cl::SubCommand testSubcommand("test", "Build and run the unit tests in a cx project");
+cl::SubCommand demangleSubcommand("demangle", "Demangle cx symbols (arguments, or stdin when empty; use as a filter for stack traces)");
 
 cl::OptionCategory dependencyCategory("Dependency Options");
 cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(cl::SubCommand::getAll()), cl::cat(dependencyCategory));
@@ -957,6 +960,20 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
     return 0;
 }
 
+static int runDemangle() {
+    if (!inputs.empty()) {
+        for (auto& input : inputs) {
+            llvm::outs() << demangleLine(input) << "\n";
+        }
+        return 0;
+    }
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        llvm::outs() << demangleLine(line) << "\n";
+    }
+    return 0;
+}
+
 static void addPlatformCompileOptions() {
 #ifdef _WIN32
     defines.push_back("Windows");
@@ -999,6 +1016,7 @@ int cx::driverMain(int argc, const char** argv) {
     if (!programArgs.empty() && !run) {
         ABORT("program arguments require the 'run' subcommand");
     }
+    if (demangleSubcommand) return runDemangle();
     addPlatformCompileOptions();
 
     diagnosticOptions.disableWarnings = disableWarnings;

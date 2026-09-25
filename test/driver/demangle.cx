@@ -1,0 +1,15 @@
+// RUN: %cx demangle _CX1N4main3addEM3std5int322_M3std5int32M3std5int32 | %FileCheck %s
+// RUN: %cx demangle main gibberish _CX1G4main7counterE | %FileCheck %s --check-prefix=ARGS
+// RUN: cat %S/inputs/demangle-log.txt | %cx demangle | %FileCheck %s --check-prefix=LOG
+
+// CHECK: main.add(std.int32, std.int32) -> std.int32
+
+// ARGS: main
+// ARGS-NEXT: gibberish
+// ARGS-NEXT: main.counter (global)
+
+// LOG: ./a.out(main.inner() -> void + 0x1a2b) [0x100003f60]
+// LOG-NEXT: ./a.out(main + 0x40) [0x100003f80]
+// LOG-NEXT: not a symbol at all
+
+void main() {}
