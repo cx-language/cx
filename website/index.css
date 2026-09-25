@@ -165,7 +165,9 @@ pre, code, .sourceCode {
     line-height: 1.6;
 }
 
-div.sourceCode {
+/* Pandoc leaves unknown languages (```cx) as a bare pre without the
+   div.sourceCode wrapper, so style that form identically. */
+div.sourceCode, pre.cx {
     position: relative;
     background: var(--background-color-2);
     border: 1px solid var(--background-color-3);
