@@ -126,7 +126,8 @@ On macOS the debug info for `cx build` output is collected into a `.dSYM`
 bundle next to the binary.
 `cx run` and `cx test` usually execute through an in-process JIT for speed, so
 their abort traces show addresses (plus compiler frames) rather than function
-names; `cx build` output always names functions.
+names. Pass `--no-jit` to link and execute a binary with named traces instead;
+`cx build` output always names functions.
 
 ## Installing dependencies
 

@@ -1,6 +1,7 @@
 // RUN: %not %cx run %s -lm 2>&1 | %FileCheck %s
+// RUN: %not %cx run %s --no-jit 2>&1 | %FileCheck %s
 // UNSUPPORTED: windows
-// -lm forces the link-and-exec fallback, so backtrace_symbols names functions.
+// -lm and --no-jit force the link-and-exec fallback, so backtrace_symbols names functions.
 // CHECK-NOT: run-link-fallback.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void inner() {

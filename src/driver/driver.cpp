@@ -93,6 +93,8 @@ cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"), cl::
 cl::alias emitAssemblyAlias("S", cl::aliasopt(emitAssembly), cl::cat(outputCategory));
 cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"), cl::cat(outputCategory));
 cl::opt<bool> noPIE("no-pie", cl::desc("Don't produce a position-independent executable"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
+cl::opt<bool> noJit("no-jit", cl::desc("Don't run in-process via JIT; link and execute a binary instead (named stack traces)"),
+                    cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file name"), cl::cat(outputCategory));
 
 cl::OptionCategory diagnosticCategory("Diagnostic Options");
@@ -566,8 +568,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
         // JIT runs the program in-process, skipping object emission, the C compiler link,
         // and (on macOS) first-execution signature validation of a fresh binary.
-        // Search paths without libraries are inert (macOS always adds framework search paths), so only -l/-framework decline JIT.
-        if ((run || testSubcommand) && !compileOnly && !emitAssembly && libraries.empty() && frameworks.empty() && jitEligible(*linkedModule)) {
+        // Search paths without libraries are inert (macOS always adds framework search paths), so only -l/-framework/--no-jit decline JIT.
+        if ((run || testSubcommand) && !compileOnly && !emitAssembly && !noJit && libraries.empty() && frameworks.empty() && jitEligible(*linkedModule)) {
             PhaseTimer timer("jit-run");
             std::string argv0 = buildParams.filePaths.empty() ? "main" : std::string(buildParams.filePaths.front());
             return jitRun(std::move(linkedModule), llvmGenerator.takeContext(), argv0, programArgs);
