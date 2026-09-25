@@ -37,7 +37,7 @@ OPERATOR_SLUGS = {
 }
 
 TYPE_RE = re.compile(r"(struct|interface|enum)\s+(.+?)\s*\{")
-FUNC_RE = re.compile(r"(operator(?:\[-?\]=?|==|!=|<=|>=|<|>|\+)|~?\w+)\s*(?:<[^;({>]*>)?\s*\(")
+NAME_RE = re.compile(r"(operator(?:\[-?\]=?|==|!=|<=|>=|<|>|\+)|~?\w+)$")
 FIELD_RE = re.compile(r"(.+?)\s+(\w+)\s*;$")
 CONST_RE = re.compile(r"const\s+(?:.*\s)?(\w+)\s*=")
 VARIANT_RE = re.compile(r"(\w+),?$")
@@ -91,15 +91,39 @@ def member_name(signature):
     match = CONST_RE.match(signature)
     if match:
         return match.group(1)
-    match = FUNC_RE.search(signature)
-    if match:
-        return match.group(1)
+    stripped = signature.rstrip().rstrip(";,").rstrip()
+    if stripped.endswith(")"):
+        # The argument list is the paren group closing at the end; the name
+        # precedes it. Matching delimiters instead of searching for "name("
+        # keeps parens inside generic arguments (e.g. function pointer
+        # types in the return type) from confusing the match.
+        head = _head_before(stripped, "(", ")")
+        if head is not None:
+            if head.endswith(">"):
+                # No matching "<" (e.g. operator>): not a generic argument list.
+                head = _head_before(head, "<", ">") or head
+            match = NAME_RE.search(head)
+            if match:
+                return match.group(1)
     match = FIELD_RE.match(signature)
     if match:
         return match.group(2)
     match = VARIANT_RE.match(signature)
     if match:
         return match.group(1)
+    return None
+
+
+def _head_before(text, opener, closer):
+    """Text before the group closing at the end, or None if unbalanced."""
+    depth = 0
+    for i in range(len(text) - 1, -1, -1):
+        if text[i] == closer:
+            depth += 1
+        elif text[i] == opener:
+            depth -= 1
+            if depth == 0:
+                return text[:i].rstrip()
     return None
 
 

@@ -99,6 +99,18 @@ class MemberNameTest(unittest.TestCase):
     def test_operator(self):
         self.assertEqual(member_name("bool operator== <T: Comparable>(T* a, T* b)"), "operator==")
 
+    def test_parens_in_return_type_generics(self):
+        self.assertEqual(
+            member_name(
+                "MappedIterator<Output, Element, ChainIterator<Element, First, Second>,"
+                " Output(Element&)> map<Output>(Output(Element&) transform)"
+            ),
+            "map",
+        )
+
+    def test_function_pointer_return(self):
+        self.assertEqual(member_name("void(int) getCallback()"), "getCallback")
+
     def test_const_member(self):
         self.assertEqual(member_name("const int8 max = 127;"), "max")
         self.assertEqual(member_name("const int8 min = -128;"), "min")
