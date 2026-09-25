@@ -48,7 +48,9 @@ def strip_tags_outside_code(text):
 
 def strip_prose(text):
     # Tolerates unbalanced fences (their lines are markup either way).
-    text = "\n".join(line for line in text.splitlines() if not line.startswith("```"))
+    text = "\n".join(
+        line for line in text.splitlines() if not line.startswith(("```", ":::"))
+    )
     text = IMAGE_RE.sub(r"\1", text)
     text = LINK_RE.sub(unwrap_link, text)
     text = ATTR_RE.sub("", text)

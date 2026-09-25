@@ -37,7 +37,7 @@ OPERATOR_SLUGS = {
 }
 
 TYPE_RE = re.compile(r"(struct|interface|enum)\s+(.+?)\s*\{")
-FUNC_RE = re.compile(r"(operator(?:\[-?\]=?|==|!=|<=|>=|<|>|\+)|~?\w+)\s*(?:<[^;({>]*>)?\s*\(")
+NAME_RE = re.compile(r"(operator(?:\[-?\]=?|==|!=|<=|>=|<|>|\+)|~?\w+)$")
 FIELD_RE = re.compile(r"(.+?)\s+(\w+)\s*;$")
 CONST_RE = re.compile(r"const\s+(?:.*\s)?(\w+)\s*=")
 VARIANT_RE = re.compile(r"(\w+),?$")
@@ -86,15 +86,44 @@ class Type:
 
 
 def member_name(signature):
-    match = FUNC_RE.search(signature)
+    # Constants first: FIELD_RE would otherwise mistake the value for the
+    # name in e.g. "const int8 max = 127;".
+    match = CONST_RE.match(signature)
     if match:
         return match.group(1)
+    stripped = signature.rstrip().rstrip(";,").rstrip()
+    if stripped.endswith(")"):
+        # The argument list is the paren group closing at the end; the name
+        # precedes it. Matching delimiters instead of searching for "name("
+        # keeps parens inside generic arguments (e.g. function pointer
+        # types in the return type) from confusing the match.
+        head = _head_before(stripped, "(", ")")
+        if head is not None:
+            if head.endswith(">"):
+                # No matching "<" (e.g. operator>): not a generic argument list.
+                head = _head_before(head, "<", ">") or head
+            match = NAME_RE.search(head)
+            if match:
+                return match.group(1)
     match = FIELD_RE.match(signature)
     if match:
         return match.group(2)
     match = VARIANT_RE.match(signature)
     if match:
         return match.group(1)
+    return None
+
+
+def _head_before(text, opener, closer):
+    """Text before the group closing at the end, or None if unbalanced."""
+    depth = 0
+    for i in range(len(text) - 1, -1, -1):
+        if text[i] == closer:
+            depth += 1
+        elif text[i] == opener:
+            depth -= 1
+            if depth == 0:
+                return text[:i].rstrip()
     return None
 
 
@@ -231,6 +260,17 @@ def render_group(group, out):
         render_doc(declaration.doc, out)
 
 
+def open_member_body(out):
+    """Start a member div grouping one item's signatures and docs."""
+    out.append("::: member")
+    out.append("")
+
+
+def close_member_body(out):
+    out.append(":::")
+    out.append("")
+
+
 def finish(out):
     return "\n".join(out).rstrip() + "\n"
 
@@ -248,11 +288,32 @@ def heading_link(text, url):
     return f"[{text}]({url}){{target=\"_blank\"}}"
 
 
+def render_member_index(types, functions, constants, out):
+    """Inline link list of everything defined on the page, for quick jumps."""
+    for entry in types:
+        if entry.members:
+            links = ", ".join(
+                f"[{heading_text(name)}](#{entry.name}-{slug(name)})" for name in entry.members
+            )
+            out.append(f"**[{entry.name}](#type-{entry.name})**: {links}")
+            out.append("")
+    if functions:
+        links = ", ".join(f"[{heading_text(name)}](#fn-{slug(name)})" for name in functions)
+        out.append(f"**Functions**: {links}")
+        out.append("")
+    if constants:
+        links = ", ".join(f"[{heading_text(name)}](#const-{name})" for name, _ in constants)
+        out.append(f"**Constants**: {links}")
+        out.append("")
+
+
 def render_file_page(relpath, types, functions, constants, conditional):
     # Types, functions, constants, and members render in file order.
     out = [f"# {heading_link(display_name(relpath), source_url(relpath))}", ""]
     if conditional:
         out += ["*Note: parts of this file are platform-conditional (`#if`).*", ""]
+
+    render_member_index(types, functions, constants, out)
 
     for entry in types:
         out.append(
@@ -260,7 +321,10 @@ def render_file_page(relpath, types, functions, constants, conditional):
             f" {{#type-{entry.name}}}"
         )
         out.append("")
-        render_doc(entry.doc, out)
+        if entry.doc:
+            open_member_body(out)
+            render_doc(entry.doc, out)
+            close_member_body(out)
         for name in entry.members:
             line = entry.members[name].declarations[0].line
             out.append(
@@ -268,7 +332,9 @@ def render_file_page(relpath, types, functions, constants, conditional):
                 f" {{#{entry.name}-{slug(name)}}}"
             )
             out.append("")
+            open_member_body(out)
             render_group(entry.members[name], out)
+            close_member_body(out)
 
     for name in functions:
         line = functions[name].declarations[0].line
@@ -276,7 +342,9 @@ def render_file_page(relpath, types, functions, constants, conditional):
             f"## {heading_link(heading_text(name), source_url(relpath, line))} {{#fn-{slug(name)}}}"
         )
         out.append("")
+        open_member_body(out)
         render_group(functions[name], out)
+        close_member_body(out)
 
     for name, declaration in constants:
         out.append(
@@ -284,13 +352,79 @@ def render_file_page(relpath, types, functions, constants, conditional):
             f" {{#const-{name}}}"
         )
         out.append("")
+        open_member_body(out)
         render_signature(declaration.signature, out)
         render_doc(declaration.doc, out)
+        close_member_body(out)
 
     return finish(out)
 
 
-def render_index(title, pages):
+def first_sentence(doc):
+    """First sentence of a doc comment, for index summaries."""
+    parts = []
+    for line in doc:
+        stripped = line.strip()
+        if not stripped:
+            break
+        parts.append(stripped)
+        if stripped.endswith((".", "?", "!")):
+            break
+        if len(parts) >= 3:
+            break
+    return " ".join(parts)
+
+
+def summary_suffix(doc):
+    return f" - {first_sentence(doc)}" if doc else ""
+
+
+def render_category_page(label, pages):
+    out = [f"# {label}", ""]
+    for relpath, types, functions, constants, _ in pages:
+        page = page_name(relpath)
+        out.append(f"## [{display_name(relpath)}](./{page})")
+        out.append("")
+        if not types and not functions and not constants:
+            out.append("*No public declarations.*")
+            out.append("")
+        for entry in types:
+            # The backslash joins the type line and its member links into one
+            # paragraph so they group visually.
+            line = f"[`{entry.name}`](./{page}#type-{entry.name})" + summary_suffix(entry.doc)
+            if entry.members:
+                links = ", ".join(
+                    f"[`{name}`](./{page}#{entry.name}-{slug(name)})" for name in entry.members
+                )
+                out.append(line + "\\")
+                out.append(f"Members: {links}")
+            else:
+                out.append(line)
+            out.append("")
+        for name in functions:
+            doc = functions[name].declarations[0].doc
+            out.append(f"[`{name}`](./{page}#fn-{slug(name)})" + summary_suffix(doc))
+            out.append("")
+        for name, declaration in constants:
+            out.append(f"[`{name}`](./{page}#const-{name})" + summary_suffix(declaration.doc))
+            out.append("")
+    return finish(out)
+
+
+def render_root_bullet(relpath, types, functions, constants):
+    page = page_name(relpath)
+    names = (
+        [f"[`{t.name}`](./{page}#type-{t.name})" for t in types]
+        + [f"[`{n}`](./{page}#fn-{slug(n)})" for n in functions]
+        + [f"[`{n}`](./{page}#const-{n})" for n, _ in constants]
+    )
+    bullet = f"- [`{display_name(relpath)}`](./{page})"
+    if names:
+        bullet += ": " + ", ".join(names)
+    return bullet
+
+
+def render_root_index(title, pages):
     out = [
         f"# {title}",
         "",
@@ -298,14 +432,25 @@ def render_index(title, pages):
         "by [generate_std_docs.py](https://github.com/cx-language/cx/blob/main/website/generate_std_docs.py).",
         "",
     ]
-    for relpath, types, functions, constants, _ in pages:
-        names = (
-            [f"`{t.name}`" for t in types]
-            + [f"`{n}`" for n in functions]
-            + [f"`{n}`" for n, _ in constants]
-        )
-        out.append(f"- [{relpath}](./{page_name(relpath)}): " + ", ".join(names))
-    out.append("")
+    by_path = {relpath: (types, functions, constants) for relpath, types, functions, constants, _ in pages}
+    categorized = set()
+    for label, paths in STD_CATEGORIES:
+        members = [path for path in paths if path in by_path]
+        if not members:
+            continue
+        categorized.update(members)
+        out.append(f"## [{label}](./{category_page(label)})")
+        out.append("")
+        for relpath in members:
+            out.append(render_root_bullet(relpath, *by_path[relpath]))
+        out.append("")
+    uncategorized = [relpath for relpath, *_ in pages if relpath not in categorized]
+    if uncategorized:
+        out.append("## Other")
+        out.append("")
+        for relpath in uncategorized:
+            out.append(render_root_bullet(relpath, *by_path[relpath]))
+        out.append("")
     return finish(out)
 
 
@@ -340,16 +485,35 @@ STD_CATEGORIES = [
             "Iterator.cx",
             "ArrayIterator.cx",
             "ByteIterator.cx",
+            "ChainIterator.cx",
             "ClosedRangeIterator.cx",
             "EnumeratedIterator.cx",
+            "FilterIterator.cx",
             "LineIterator.cx",
+            "MappedIterator.cx",
             "RangeIterator.cx",
+            "RepeatIterator.cx",
             "StringIterator.cx",
         ],
     ),
-    ("Interfaces", ["Comparable.cx", "Copyable.cx", "Hashable.cx", "Printable.cx"]),
+    (
+        "Interfaces",
+        ["Addable.cx", "Comparable.cx", "Copyable.cx", "Equatable.cx", "Hashable.cx", "Printable.cx"],
+    ),
     ("Input/output", ["stdio.cx", "FileStream.cx"]),
+    ("Math & algorithms", ["math.cx", "Vector.cx", "algorithm.cx"]),
+    ("Memory", ["Arena.cx", "allocate.cx"]),
+    ("Errors", ["error.cx", "Result.cx"]),
+    ("Filesystem & processes", ["fs.cx", "path.cx", "process.cx"]),
+    ("Serialization", ["json.cx"]),
+    ("System", ["libc.cx", "os/posix.cx", "os/windows.cx"]),
 ]
+
+
+# Pages deliberately left outside any category (rendered flat in the
+# sidebar). New stdlib files must either join a category above or be
+# listed here; the coverage test fails otherwise.
+UNCATEGORIZED_PAGES = []
 
 
 def category_slug(label):
@@ -397,13 +561,13 @@ def main(argv=None):
     pages = parse_std(pathlib.Path(args.std_dir))
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "std.md").write_text(render_index("Standard library reference", pages))
+    (output_dir / "std.md").write_text(render_root_index("Standard library reference", pages))
     for label, paths in STD_CATEGORIES:
         members = [page for page in pages if page[0] in paths]
         if members:
             category_path = output_dir / f"{category_page(label)}.md"
             category_path.parent.mkdir(parents=True, exist_ok=True)
-            category_path.write_text(render_index(label, members))
+            category_path.write_text(render_category_page(label, members))
     for relpath, types, functions, constants, conditional in pages:
         page_path = output_dir / f"{page_name(relpath)}.md"
         page_path.parent.mkdir(parents=True, exist_ok=True)

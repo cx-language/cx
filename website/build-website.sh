@@ -102,7 +102,10 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
     else
         # The first '# ' heading is the section name (unwrap links: '# [List](...)' -> 'List').
         title="cx - $(sed -n 's/^# //p' "$file" | head -n 1 | sed 's/^\[\(.*\)\](.*/\1/')"
-        body_class=""
+        case "$relpath" in
+            std*) body_class="std" ;;
+            *) body_class="" ;;
+        esac
     fi
 
     # The std index page lives at std/index.html: build/std.html would be

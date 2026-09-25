@@ -11,15 +11,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from generate_std_docs import (
     STD_CATEGORIES,
+    UNCATEGORIZED_PAGES,
     category_page,
     category_slug,
+    first_sentence,
     main,
     member_name,
     page_name,
     parse_file,
     parse_std,
+    render_category_page,
     render_file_page,
-    render_index,
+    render_root_index,
     render_toc_items,
 )
 
@@ -96,6 +99,23 @@ class MemberNameTest(unittest.TestCase):
     def test_operator(self):
         self.assertEqual(member_name("bool operator== <T: Comparable>(T* a, T* b)"), "operator==")
 
+    def test_parens_in_return_type_generics(self):
+        self.assertEqual(
+            member_name(
+                "MappedIterator<Output, Element, ChainIterator<Element, First, Second>,"
+                " Output(Element&)> map<Output>(Output(Element&) transform)"
+            ),
+            "map",
+        )
+
+    def test_function_pointer_return(self):
+        self.assertEqual(member_name("void(int) getCallback()"), "getCallback")
+
+    def test_const_member(self):
+        self.assertEqual(member_name("const int8 max = 127;"), "max")
+        self.assertEqual(member_name("const int8 min = -128;"), "min")
+        self.assertEqual(member_name("const _CALL_REPORTFAULT = 0x2;"), "_CALL_REPORTFAULT")
+
 
 class PageNameTest(unittest.TestCase):
     def test_top_level(self):
@@ -142,6 +162,14 @@ class FixtureTest(unittest.TestCase):
         self.assertIn(fenced("int size;"), self.markdown)
         self.assertIn(fenced("Widget(int size)"), self.markdown)
 
+    def test_member_bodies_wrapped_in_divs(self):
+        # Type docs, each member group, each function, and each constant.
+        self.assertEqual(self.markdown.count("::: member"), 10)
+        self.assertIn(
+            "{#Widget-size}\n\n::: member\n\n" + fenced("int size;"),
+            self.markdown,
+        )
+
     def test_private_member_omitted(self):
         self.assertNotIn("helper", self.markdown)
 
@@ -184,6 +212,23 @@ class FixtureTest(unittest.TestCase):
 
     def test_no_conditional_note(self):
         self.assertNotIn("platform-conditional", self.markdown)
+
+    def test_member_index(self):
+        self.assertIn(
+            "**[Widget](#type-Widget)**: [size](#Widget-size), [Widget](#Widget-Widget)",
+            self.markdown,
+        )
+        self.assertIn("**[Action](#type-Action)**: [run](#Action-run)", self.markdown)
+        self.assertIn(
+            "**[Color](#type-Color)**: [Red](#Color-Red), [Green](#Color-Green)",
+            self.markdown,
+        )
+        self.assertIn(
+            "**Functions**: [operator==](#fn-operator-eq), [puts](#fn-puts)",
+            self.markdown,
+        )
+        self.assertIn("**Constants**: [answer](#const-answer)", self.markdown)
+        self.assertLess(self.markdown.index("**[Widget]"), self.markdown.index("{#type-Widget}"))
 
     def test_file_order(self):
         widget = self.markdown.index("{#type-Widget}")
@@ -248,6 +293,20 @@ class AliasTest(unittest.TestCase):
             directory.cleanup()
 
 
+class StructConstTest(unittest.TestCase):
+    def test_const_renders_under_its_name(self):
+        source = "struct int8 {\n    const int8 max = 127;\n    const int8 min = -128;\n}\n"
+        directory, (types, functions, constants) = parse_fixture(source)
+        try:
+            markdown = render_file_page("integers.cx", types, functions, constants, False)
+        finally:
+            directory.cleanup()
+        self.assertIn("{#int8-max}", markdown)
+        self.assertIn("{#int8-min}", markdown)
+        self.assertIn("[max](#int8-max)", markdown)
+        self.assertNotIn("{#int8-127}", markdown)
+
+
 class ConditionalTest(unittest.TestCase):
     def test_if_marked_conditional(self):
         with tempfile.TemporaryDirectory() as std_dir:
@@ -262,28 +321,100 @@ class ConditionalTest(unittest.TestCase):
         self.assertNotIn("platform-conditional", render_file_page("c.cx", [], {}, [], False))
 
 
-class IndexTest(unittest.TestCase):
+class FirstSentenceTest(unittest.TestCase):
+    def test_single_line(self):
+        self.assertEqual(first_sentence(["A widget."]), "A widget.")
+
+    def test_wrapped_sentence_joined(self):
+        self.assertEqual(
+            first_sentence(["The result of an operation that can fail: either success (`Ok`) holding", "the value."]),
+            "The result of an operation that can fail: either success (`Ok`) holding the value.",
+        )
+
+    def test_stops_at_blank_line(self):
+        self.assertEqual(first_sentence(["Summary.", "", "Details."]), "Summary.")
+
+
+class CategoryPageTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.keepalive, parts = parse_fixture()
         types, functions, constants = parts
-        cls.markdown = render_index(
-            "Standard library reference", [("fixture.cx", types, functions, constants, False)]
+        cls.markdown = render_category_page(
+            "Test category", [("fixture.cx", types, functions, constants, False)]
         )
 
     @classmethod
     def tearDownClass(cls):
         cls.keepalive.cleanup()
 
-    def test_bullet_links_to_page(self):
-        self.assertIn("- [fixture.cx](./std/fixture): ", self.markdown)
+    def test_file_section_links_to_page(self):
+        self.assertIn("## [fixture](./std/fixture)", self.markdown)
 
-    def test_bullet_lists_declarations(self):
-        for name in ["`Widget`", "`Action`", "`Color`", "`operator==`", "`puts`", "`answer`"]:
-            self.assertIn(name, self.markdown)
+    def test_type_with_summary_and_member_links(self):
+        self.assertIn(
+            "[`Widget`](./std/fixture#type-Widget) - A widget.\\\n"
+            "Members: [`size`](./std/fixture#Widget-size), [`Widget`](./std/fixture#Widget-Widget)",
+            self.markdown,
+        )
 
-    def test_bullet_lists_declarations_in_file_order(self):
-        self.assertLess(self.markdown.index("`Widget`"), self.markdown.index("`Action`"))
+    def test_functions_and_constants_with_summaries(self):
+        self.assertIn(
+            "[`operator==`](./std/fixture#fn-operator-eq) - Compares widgets.", self.markdown
+        )
+        self.assertIn("[`puts`](./std/fixture#fn-puts)", self.markdown)
+        self.assertIn("[`answer`](./std/fixture#const-answer)", self.markdown)
+
+    def test_no_blurb(self):
+        self.assertNotIn("Auto-generated from", self.markdown)
+
+    def test_empty_file_noted(self):
+        markdown = render_category_page("Test category", [("empty.cx", [], {}, [], False)])
+        self.assertIn("*No public declarations.*", markdown)
+
+
+class RootIndexTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.keepalive, parts = parse_fixture()
+        types, functions, constants = parts
+        cls.bool_keepalive, (bool_types, _, _) = parse_fixture(
+            "struct bool {\n    bool value;\n}\n"
+        )
+        cls.markdown = render_root_index(
+            "Standard library reference",
+            [
+                ("bool.cx", bool_types, {}, [], False),
+                ("fixture.cx", types, functions, constants, False),
+            ],
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.keepalive.cleanup()
+        cls.bool_keepalive.cleanup()
+
+    def test_blurb_kept(self):
+        self.assertIn("Auto-generated from", self.markdown)
+
+    def test_category_section_before_other(self):
+        self.assertIn("## [Primitive types](./std/primitive-types)", self.markdown)
+        self.assertIn("## Other", self.markdown)
+        self.assertLess(
+            self.markdown.index("## [Primitive types]"), self.markdown.index("## Other")
+        )
+
+    def test_bullet_links_to_page_and_declarations(self):
+        self.assertIn(
+            "- [`fixture`](./std/fixture): "
+            "[`Widget`](./std/fixture#type-Widget), "
+            "[`Action`](./std/fixture#type-Action), "
+            "[`Color`](./std/fixture#type-Color), "
+            "[`operator==`](./std/fixture#fn-operator-eq), "
+            "[`puts`](./std/fixture#fn-puts), "
+            "[`answer`](./std/fixture#const-answer)",
+            self.markdown,
+        )
 
 
 class FileOrderTest(unittest.TestCase):
@@ -301,13 +432,13 @@ class FileOrderTest(unittest.TestCase):
 class TocTest(unittest.TestCase):
     def test_uncategorized_pages_render_flat(self):
         items = render_toc_items(
-            [("allocate.cx", [], {}, [], False), ("os/posix.cx", [], {}, [], False)]
+            [("future.cx", [], {}, [], False), ("future/nested.cx", [], {}, [], False)]
         )
         self.assertEqual(
             items,
             [
-                '                <li><a href="./std/allocate">allocate</a></li>',
-                '                <li><a href="./std/os/posix">os/posix</a></li>',
+                '                <li><a href="./std/future">future</a></li>',
+                '                <li><a href="./std/future/nested">future/nested</a></li>',
             ],
         )
 
@@ -316,7 +447,7 @@ class TocTest(unittest.TestCase):
             [
                 ("List.cx", [], {}, [], False),
                 ("bool.cx", [], {}, [], False),
-                ("allocate.cx", [], {}, [], False),
+                ("future.cx", [], {}, [], False),
             ]
         )
         self.assertEqual(
@@ -332,7 +463,7 @@ class TocTest(unittest.TestCase):
                 '                        <li><a href="./std/List">List</a></li>\n'
                 "                    </ul>\n"
                 "                </li>",
-                '                <li><a href="./std/allocate">allocate</a></li>',
+                '                <li><a href="./std/future">future</a></li>',
             ],
         )
 
@@ -414,12 +545,18 @@ class StdlibTest(unittest.TestCase):
                 self.assertNotIn(path, seen, f"{label}: {path}")
                 seen.add(path)
 
+    def test_all_pages_categorized_or_allowlisted(self):
+        categorized = {path for _, paths in STD_CATEGORIES for path in paths}
+        self.assertEqual(set(self.by_path) - categorized, set(UNCATEGORIZED_PAGES))
+
     def test_category_links_rendered(self):
         toc = "\n".join(render_toc_items(self.pages))
         for label, slug in [
             ("Primitive types", "primitive-types"),
             ("Ranges &amp; iterators", "ranges-iterators"),
             ("Input/output", "input-output"),
+            ("Math &amp; algorithms", "math-algorithms"),
+            ("Filesystem &amp; processes", "filesystem-processes"),
         ]:
             self.assertIn(f'<a href="./std/{slug}">{label}</a>', toc)
 
@@ -427,6 +564,8 @@ class StdlibTest(unittest.TestCase):
         self.assertEqual(category_slug("Primitive types"), "primitive-types")
         self.assertEqual(category_slug("Ranges & iterators"), "ranges-iterators")
         self.assertEqual(category_slug("Input/output"), "input-output")
+        self.assertEqual(category_slug("Math & algorithms"), "math-algorithms")
+        self.assertEqual(category_slug("Filesystem & processes"), "filesystem-processes")
 
     def test_category_pages_dont_collide_with_file_pages(self):
         file_pages = {page_name(relpath) for relpath in self.by_path}
@@ -446,11 +585,15 @@ class StagingTest(unittest.TestCase):
             category = (out / "std/primitive-types.md").read_text()
             toc = (out / "toc.html").read_text()
         self.assertIn("# Standard library reference", index)
-        self.assertIn("- [fixture.cx](./std/fixture): ", index)
+        self.assertIn("Auto-generated from", index)
+        self.assertIn("## [Primitive types](./std/primitive-types)", index)
+        self.assertIn("- [`fixture`](./std/fixture): ", index)
         self.assertIn("## [struct Widget: Copyable]", page)
         self.assertIn("# Primitive types", category)
-        self.assertIn("- [bool.cx](./std/bool): `bool`", category)
-        self.assertNotIn("fixture.cx", category)
+        self.assertNotIn("Auto-generated from", category)
+        self.assertIn("## [bool](./std/bool)", category)
+        self.assertIn("[`bool`](./std/bool#type-bool)", category)
+        self.assertNotIn("fixture", category)
         self.assertIn('<li><a href="./std/fixture">fixture</a></li>', toc)
         self.assertIn('<a href="./std/primitive-types">Primitive types</a>', toc)
         self.assertNotIn("<!--STD-PAGES-->", toc)

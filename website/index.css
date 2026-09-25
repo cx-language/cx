@@ -118,6 +118,27 @@ main h1, main h2, main h3, main h4 {
     scroll-margin-top: 84px;
 }
 
+/* API reference: each item's title stays in the left scanning column
+   while its signatures and docs indent into a grouped body. */
+.std main h2, .std main h3 {
+    margin-bottom: 0.35em;
+}
+
+.member {
+    margin: 0 0 0 1.25em;
+}
+
+.member > div.sourceCode, .member > pre, .member > p {
+    margin-top: 0.6em;
+    margin-bottom: 0.6em;
+}
+
+@media (max-width: 560px) {
+    .member {
+        margin-left: 0.75em;
+    }
+}
+
 a, a:visited {
     text-decoration: none;
     color: var(--blue);
@@ -165,7 +186,9 @@ pre, code, .sourceCode {
     line-height: 1.6;
 }
 
-div.sourceCode {
+/* Pandoc leaves unknown languages (```cx) as a bare pre without the
+   div.sourceCode wrapper, so style that form identically. */
+div.sourceCode, pre.cx {
     position: relative;
     background: var(--background-color-2);
     border: 1px solid var(--background-color-3);
@@ -283,6 +306,9 @@ th {
     letter-spacing: -0.03em;
     line-height: 1;
     margin: 0;
+    /* Lowercase glyphs sit below the line box center; nudge up so the
+       wordmark looks centered against the nav links. */
+    transform: translateY(-0.08em);
 }
 
 .top-nav h1 a {
