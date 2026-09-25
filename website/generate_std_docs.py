@@ -386,16 +386,35 @@ STD_CATEGORIES = [
             "Iterator.cx",
             "ArrayIterator.cx",
             "ByteIterator.cx",
+            "ChainIterator.cx",
             "ClosedRangeIterator.cx",
             "EnumeratedIterator.cx",
+            "FilterIterator.cx",
             "LineIterator.cx",
+            "MappedIterator.cx",
             "RangeIterator.cx",
+            "RepeatIterator.cx",
             "StringIterator.cx",
         ],
     ),
-    ("Interfaces", ["Comparable.cx", "Copyable.cx", "Hashable.cx", "Printable.cx"]),
+    (
+        "Interfaces",
+        ["Addable.cx", "Comparable.cx", "Copyable.cx", "Equatable.cx", "Hashable.cx", "Printable.cx"],
+    ),
     ("Input/output", ["stdio.cx", "FileStream.cx"]),
+    ("Math & algorithms", ["math.cx", "Vector.cx", "algorithm.cx"]),
+    ("Memory", ["Arena.cx", "allocate.cx"]),
+    ("Errors", ["error.cx", "Result.cx"]),
+    ("Filesystem & processes", ["fs.cx", "path.cx", "process.cx"]),
+    ("Serialization", ["json.cx"]),
+    ("System", ["libc.cx", "os/posix.cx", "os/windows.cx"]),
 ]
+
+
+# Pages deliberately left outside any category (rendered flat in the
+# sidebar). New stdlib files must either join a category above or be
+# listed here; the coverage test fails otherwise.
+UNCATEGORIZED_PAGES = []
 
 
 def category_slug(label):

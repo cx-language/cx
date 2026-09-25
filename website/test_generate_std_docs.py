@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from generate_std_docs import (
     STD_CATEGORIES,
+    UNCATEGORIZED_PAGES,
     category_page,
     category_slug,
     main,
@@ -345,13 +346,13 @@ class FileOrderTest(unittest.TestCase):
 class TocTest(unittest.TestCase):
     def test_uncategorized_pages_render_flat(self):
         items = render_toc_items(
-            [("allocate.cx", [], {}, [], False), ("os/posix.cx", [], {}, [], False)]
+            [("future.cx", [], {}, [], False), ("future/nested.cx", [], {}, [], False)]
         )
         self.assertEqual(
             items,
             [
-                '                <li><a href="./std/allocate">allocate</a></li>',
-                '                <li><a href="./std/os/posix">os/posix</a></li>',
+                '                <li><a href="./std/future">future</a></li>',
+                '                <li><a href="./std/future/nested">future/nested</a></li>',
             ],
         )
 
@@ -360,7 +361,7 @@ class TocTest(unittest.TestCase):
             [
                 ("List.cx", [], {}, [], False),
                 ("bool.cx", [], {}, [], False),
-                ("allocate.cx", [], {}, [], False),
+                ("future.cx", [], {}, [], False),
             ]
         )
         self.assertEqual(
@@ -376,7 +377,7 @@ class TocTest(unittest.TestCase):
                 '                        <li><a href="./std/List">List</a></li>\n'
                 "                    </ul>\n"
                 "                </li>",
-                '                <li><a href="./std/allocate">allocate</a></li>',
+                '                <li><a href="./std/future">future</a></li>',
             ],
         )
 
@@ -458,12 +459,18 @@ class StdlibTest(unittest.TestCase):
                 self.assertNotIn(path, seen, f"{label}: {path}")
                 seen.add(path)
 
+    def test_all_pages_categorized_or_allowlisted(self):
+        categorized = {path for _, paths in STD_CATEGORIES for path in paths}
+        self.assertEqual(set(self.by_path) - categorized, set(UNCATEGORIZED_PAGES))
+
     def test_category_links_rendered(self):
         toc = "\n".join(render_toc_items(self.pages))
         for label, slug in [
             ("Primitive types", "primitive-types"),
             ("Ranges &amp; iterators", "ranges-iterators"),
             ("Input/output", "input-output"),
+            ("Math &amp; algorithms", "math-algorithms"),
+            ("Filesystem &amp; processes", "filesystem-processes"),
         ]:
             self.assertIn(f'<a href="./std/{slug}">{label}</a>', toc)
 
@@ -471,6 +478,8 @@ class StdlibTest(unittest.TestCase):
         self.assertEqual(category_slug("Primitive types"), "primitive-types")
         self.assertEqual(category_slug("Ranges & iterators"), "ranges-iterators")
         self.assertEqual(category_slug("Input/output"), "input-output")
+        self.assertEqual(category_slug("Math & algorithms"), "math-algorithms")
+        self.assertEqual(category_slug("Filesystem & processes"), "filesystem-processes")
 
     def test_category_pages_dont_collide_with_file_pages(self):
         file_pages = {page_name(relpath) for relpath in self.by_path}
