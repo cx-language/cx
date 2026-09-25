@@ -559,6 +559,16 @@ def test_completion_members(cx_lsp, path):
         json.dumps({"add": adds, "main": mains})[:300],
     )
 
+    # @test functions are excluded: the runner calls them, user code never should.
+    content = "@test\nvoid testSomething() {\n}\nvoid helper() {\n}\nvoid main() {\n\n}\n"
+    result = run_query(cx_lsp, base_query("completion", path, content, (6, 0)))
+    labels = [item["label"] for item in result.get("items", [])]
+    check(
+        "query-completion-excludes-tests",
+        "testSomething" not in labels and "helper" in labels,
+        json.dumps([label for label in labels if "test" in label.lower() or label == "helper"])[:300],
+    )
+
 
 def test_package_dedup(cx_lsp):
     # A package directory that the "std" import resolves to (like std/

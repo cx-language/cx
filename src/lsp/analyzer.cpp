@@ -2281,6 +2281,12 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
     // Collect visible top-level declarations (main + imports).
     auto addDecl = [&](Decl* decl) {
         if (!decl || decl->getName().empty()) return;
+        // Test functions are run by the test runner, never called directly.
+        if (auto* fn = llvm::dyn_cast<FunctionDecl>(decl)) {
+            if (fn->isTest) return;
+        } else if (auto* tmpl = llvm::dyn_cast<FunctionTemplate>(decl)) {
+            if (tmpl->functionDecl->isTest) return;
+        }
         std::string name = decl->getName().str();
         CompletionItem item;
         item.label = name;
