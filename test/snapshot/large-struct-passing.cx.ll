@@ -183,6 +183,7 @@ overflow.fail14:                                  ; preds = %overflow.success10
   unreachable
 
 overflow.success15:                               ; preds = %overflow.success10
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !19
   ret i32 %21
 }
 
@@ -201,6 +202,8 @@ define void @_CX1N4mainM4main4Wide4initE4void2_M3std6int128M3std6int128(ptr %thi
 }
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }

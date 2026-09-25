@@ -6,10 +6,13 @@ define i32 @main() #0 !dbg !4 {
   store float 4.200000e+00, ptr %f, align 4
   %f.load = load float, ptr %f, align 4
   %1 = call i32 (ptr, ...) @printf(ptr @0, i32 -3, float %f.load), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
 declare i32 @printf(ptr, ...) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -24,3 +27,4 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 5, column: 5, scope: !4)
+!8 = !DILocation(line: 3, column: 6, scope: !4)

@@ -13,6 +13,7 @@ int32 main() {
     Slice<int32> _9 = insertvalue _8, 1, int32 5
     void _10 = call _CX1N4mainM4main1C4initE4void1_M3std5SliceIM3std5int32E(C* _0, Slice<int32> _9)
     void _11 = call _CX1N4mainM4main1C3fooE4void0_(C* _0)
+    void _12 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

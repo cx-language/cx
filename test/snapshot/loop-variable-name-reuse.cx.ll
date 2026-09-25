@@ -47,10 +47,11 @@ loop.increment5:                                  ; preds = %loop.body4
   br label %loop.condition3
 
 loop.end6:                                        ; preds = %loop.condition3
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !11
   ret i32 0
 }
 
-define void @_CX1N3stdM3std11ClosedRangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ptr %this, i32 %start, i32 %end) #0 !dbg !11 {
+define void @_CX1N3stdM3std11ClosedRangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ptr %this, i32 %start, i32 %end) #0 !dbg !12 {
   %start1 = alloca i32, align 4
   %end2 = alloca i32, align 4
   store i32 %start, ptr %start1, align 4
@@ -64,15 +65,15 @@ define void @_CX1N3stdM3std11ClosedRangeIM3std5int32E4initE4void2_M3std5int32M3s
   ret void
 }
 
-define %"ClosedRangeIterator<int32>" @_CX1N3stdM3std11ClosedRangeIM3std5int32E8iteratorEM3std19ClosedRangeIteratorIM3std5int32E0_(ptr %this) #0 !dbg !13 {
+define %"ClosedRangeIterator<int32>" @_CX1N3stdM3std11ClosedRangeIM3std5int32E8iteratorEM3std19ClosedRangeIteratorIM3std5int32E0_(ptr %this) #0 !dbg !14 {
   %1 = alloca %"ClosedRangeIterator<int32>", align 8
   %this.load = load %"ClosedRange<int32>", ptr %this, align 4
-  call void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ptr %1, %"ClosedRange<int32>" %this.load), !dbg !14
+  call void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ptr %1, %"ClosedRange<int32>" %this.load), !dbg !15
   %.load = load %"ClosedRangeIterator<int32>", ptr %1, align 4
   ret %"ClosedRangeIterator<int32>" %.load
 }
 
-define i1 @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ptr %this) #0 !dbg !15 {
+define i1 @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ptr %this) #0 !dbg !16 {
   %current = getelementptr inbounds %"ClosedRangeIterator<int32>", ptr %this, i32 0, i32 0
   %current.load = load i32, ptr %current, align 4
   %end = getelementptr inbounds %"ClosedRangeIterator<int32>", ptr %this, i32 0, i32 1
@@ -81,13 +82,13 @@ define i1 @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E8hasValueEM3std4bool0
   ret i1 %1
 }
 
-define i32 @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E5valueEM3std5int320_(ptr %this) #0 !dbg !17 {
+define i32 @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E5valueEM3std5int320_(ptr %this) #0 !dbg !18 {
   %current = getelementptr inbounds %"ClosedRangeIterator<int32>", ptr %this, i32 0, i32 0
   %current.load = load i32, ptr %current, align 4
   ret i32 %current.load
 }
 
-define void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(ptr %this) #0 !dbg !18 {
+define void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(ptr %this) #0 !dbg !19 {
   %current = getelementptr inbounds %"ClosedRangeIterator<int32>", ptr %this, i32 0, i32 0
   %current.load = load i32, ptr %current, align 4
   %1 = add i32 %current.load, 1
@@ -95,25 +96,27 @@ define void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(
   ret void
 }
 
-define void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ptr %this, %"ClosedRange<int32>" %range) #0 !dbg !19 {
+declare void @_CX1N3std10checkLeaksE4void0_() #0
+
+define void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ptr %this, %"ClosedRange<int32>" %range) #0 !dbg !20 {
   %range1 = alloca %"ClosedRange<int32>", align 8
   store %"ClosedRange<int32>" %range, ptr %range1, align 4
   %current = getelementptr inbounds %"ClosedRangeIterator<int32>", ptr %this, i32 0, i32 0
-  %1 = call i32 @_CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_(ptr %range1), !dbg !20
+  %1 = call i32 @_CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_(ptr %range1), !dbg !21
   store i32 %1, ptr %current, align 4
   %end = getelementptr inbounds %"ClosedRangeIterator<int32>", ptr %this, i32 0, i32 1
-  %2 = call i32 @_CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_(ptr %range1), !dbg !21
+  %2 = call i32 @_CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_(ptr %range1), !dbg !22
   store i32 %2, ptr %end, align 4
   ret void
 }
 
-define i32 @_CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_(ptr %this) #0 !dbg !22 {
+define i32 @_CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_(ptr %this) #0 !dbg !23 {
   %start = getelementptr inbounds %"ClosedRange<int32>", ptr %this, i32 0, i32 0
   %start.load = load i32, ptr %start, align 4
   ret i32 %start.load
 }
 
-define i32 @_CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_(ptr %this) #0 !dbg !23 {
+define i32 @_CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_(ptr %this) #0 !dbg !24 {
   %end = getelementptr inbounds %"ClosedRange<int32>", ptr %this, i32 0, i32 1
   %end.load = load i32, ptr %end, align 4
   ret i32 %end.load
@@ -135,16 +138,17 @@ attributes #0 = { "frame-pointer"="all" }
 !8 = !DILocation(line: 4, column: 5, scope: !4)
 !9 = !DILocation(line: 5, column: 15, scope: !4)
 !10 = !DILocation(line: 5, column: 5, scope: !4)
-!11 = distinct !DISubprogram(name: "init", linkageName: "_CX1N3stdM3std11ClosedRangeIM3std5int32E4initE4void2_M3std5int32M3std5int32", scope: !12, file: !12, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
-!12 = !DIFile(filename: "ClosedRange.cx")
-!13 = distinct !DISubprogram(name: "iterator", linkageName: "_CX1N3stdM3std11ClosedRangeIM3std5int32E8iteratorEM3std19ClosedRangeIteratorIM3std5int32E0_", scope: !12, file: !12, line: 34, type: !5, scopeLine: 34, spFlags: DISPFlagDefinition, unit: !2)
-!14 = !DILocation(line: 35, column: 16, scope: !13)
-!15 = distinct !DISubprogram(name: "hasValue", linkageName: "_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E8hasValueEM3std4bool0_", scope: !16, file: !16, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
-!16 = !DIFile(filename: "ClosedRangeIterator.cx")
-!17 = distinct !DISubprogram(name: "value", linkageName: "_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E5valueEM3std5int320_", scope: !16, file: !16, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
-!18 = distinct !DISubprogram(name: "increment", linkageName: "_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_", scope: !16, file: !16, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
-!19 = distinct !DISubprogram(name: "init", linkageName: "_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E", scope: !16, file: !16, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
-!20 = !DILocation(line: 8, column: 25, scope: !19)
-!21 = !DILocation(line: 9, column: 21, scope: !19)
-!22 = distinct !DISubprogram(name: "start", linkageName: "_CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_", scope: !12, file: !12, line: 24, type: !5, scopeLine: 24, spFlags: DISPFlagDefinition, unit: !2)
-!23 = distinct !DISubprogram(name: "end", linkageName: "_CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_", scope: !12, file: !12, line: 29, type: !5, scopeLine: 29, spFlags: DISPFlagDefinition, unit: !2)
+!11 = !DILocation(line: 3, column: 6, scope: !4)
+!12 = distinct !DISubprogram(name: "init", linkageName: "_CX1N3stdM3std11ClosedRangeIM3std5int32E4initE4void2_M3std5int32M3std5int32", scope: !13, file: !13, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!13 = !DIFile(filename: "ClosedRange.cx")
+!14 = distinct !DISubprogram(name: "iterator", linkageName: "_CX1N3stdM3std11ClosedRangeIM3std5int32E8iteratorEM3std19ClosedRangeIteratorIM3std5int32E0_", scope: !13, file: !13, line: 34, type: !5, scopeLine: 34, spFlags: DISPFlagDefinition, unit: !2)
+!15 = !DILocation(line: 35, column: 16, scope: !14)
+!16 = distinct !DISubprogram(name: "hasValue", linkageName: "_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E8hasValueEM3std4bool0_", scope: !17, file: !17, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!17 = !DIFile(filename: "ClosedRangeIterator.cx")
+!18 = distinct !DISubprogram(name: "value", linkageName: "_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E5valueEM3std5int320_", scope: !17, file: !17, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!19 = distinct !DISubprogram(name: "increment", linkageName: "_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_", scope: !17, file: !17, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
+!20 = distinct !DISubprogram(name: "init", linkageName: "_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E", scope: !17, file: !17, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!21 = !DILocation(line: 8, column: 25, scope: !20)
+!22 = !DILocation(line: 9, column: 21, scope: !20)
+!23 = distinct !DISubprogram(name: "start", linkageName: "_CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_", scope: !13, file: !13, line: 24, type: !5, scopeLine: 24, spFlags: DISPFlagDefinition, unit: !2)
+!24 = distinct !DISubprogram(name: "end", linkageName: "_CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_", scope: !13, file: !13, line: 29, type: !5, scopeLine: 29, spFlags: DISPFlagDefinition, unit: !2)

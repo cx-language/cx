@@ -79,16 +79,19 @@ switch.case.0_0:
     union { struct { int32 } }* _14 = getelementptr b, 1
     int32* some_0 = cast _14 to int32*
     int32 some.load_0 = load some_0
+    void _15 = call _CX1N3std10checkLeaksE4void0_()
     return some.load_0
 
 switch.case.1_0:
+    void _16 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 switch.default_0:
-    never _15 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
+    never _17 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
 ")
     unreachable
 
 switch.end_0:
+    void _18 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

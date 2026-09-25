@@ -87,10 +87,11 @@ define i32 @main() #0 !dbg !10 {
   %x = getelementptr inbounds %vec2, ptr %v, i32 0, i32 0
   %x.load = load i32, ptr %x, align 4
   %5 = call i32 @_CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(ptr %v, i32 %x.load), !dbg !16
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !17
   ret i32 0
 }
 
-define i1 @_CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(%vec2 %a, %vec2 %b) #0 !dbg !17 {
+define i1 @_CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(%vec2 %a, %vec2 %b) #0 !dbg !18 {
   %a1 = alloca %vec2, align 8
   %b2 = alloca %vec2, align 8
   store %vec2 %a, ptr %a1, align 4
@@ -103,12 +104,14 @@ define i1 @_CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(%vec2 %a, %vec2 %b)
   ret i1 %1
 }
 
-define i32 @_CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(ptr %this, i32 %index) #0 !dbg !18 {
+define i32 @_CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(ptr %this, i32 %index) #0 !dbg !19 {
   %index1 = alloca i32, align 4
   store i32 %index, ptr %index1, align 4
   %index.load = load i32, ptr %index1, align 4
   ret i32 %index.load
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -132,5 +135,6 @@ attributes #0 = { "frame-pointer"="all" }
 !14 = !DILocation(line: 19, column: 14, scope: !10)
 !15 = !DILocation(line: 19, column: 11, scope: !10)
 !16 = !DILocation(line: 20, column: 10, scope: !10)
-!17 = distinct !DISubprogram(name: "==", linkageName: "_CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2", scope: !3, file: !3, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
-!18 = distinct !DISubprogram(name: "[]", linkageName: "_CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!17 = !DILocation(line: 16, column: 6, scope: !10)
+!18 = distinct !DISubprogram(name: "==", linkageName: "_CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2", scope: !3, file: !3, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
+!19 = distinct !DISubprogram(name: "[]", linkageName: "_CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)

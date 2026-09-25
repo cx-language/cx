@@ -95,5 +95,6 @@ coalesce.default_3:
 
 coalesce.end_3(int32* coalesce_3):
     store coalesce_3 to w
+    void _26 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

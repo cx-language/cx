@@ -347,10 +347,12 @@ void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
     // IRGen materializes argv only for the entry-point main with one parameter
     // (see emitMainArgv in irgen-decl.cpp); only the main module can hold it.
     bool usesArgv = false;
+    bool hasEntryPointMain = false;
     for (auto& sourceFile : mainModule.sourceFiles) {
         for (auto* decl : sourceFile.topLevelDecls) {
-            if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl); functionDecl && functionDecl->isEntryPoint && functionDecl->getParams().size() == 1) {
-                usesArgv = true;
+            if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl); functionDecl && functionDecl->isEntryPoint) {
+                hasEntryPointMain = true;
+                if (functionDecl->getParams().size() == 1) usesArgv = true;
             }
         }
     }
@@ -358,11 +360,16 @@ void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
     // Single-callee runtime hooks, mirroring the backend lookups in
     // irgen-decl.cpp (malloc) and irgen-expr.cpp (assertFail). Missing decls
     // are the backend's error to report, as before.
+    bool usesLeakCheck = hasEntryPointMain && options.mode == BuildMode::Debug && !options.noLeakCheck;
     if (usesArgv) {
         if (Decl* mallocDecl = stdModule->symbolTable.findOne("malloc")) markReferenced(mallocDecl);
     }
-    if (usesArgv || implicitUses.assertCall || implicitUses.checkedArithmetic || implicitUses.unwrap || implicitUses.enumSwitch) {
+    // checkLeaks counts with checked arithmetic, so it needs assertFail even when user code has no checks.
+    if (usesArgv || implicitUses.assertCall || implicitUses.checkedArithmetic || implicitUses.unwrap || implicitUses.enumSwitch || usesLeakCheck) {
         if (Decl* assertDecl = stdModule->symbolTable.findOne("assertFail")) markReferenced(assertDecl);
+    }
+    if (usesLeakCheck) {
+        if (Decl* leakDecl = stdModule->symbolTable.findOne("checkLeaks")) markReferenced(leakDecl);
     }
 
     // Overload sets IRGen scans by parameter shape. Ensure each signature before
@@ -371,15 +378,17 @@ void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
     // live in irgen-decl.cpp (emitMainArgv) and irgen-expr.cpp (emitStringLiteralExpr),
     // the string == in irgen-stmt.cpp (emitStringSwitchStmt). The backend asserts the
     // callees are checked, so a missed implicitUses flag fails loudly in tests
-    // instead of miscompiling.
-    if (usesArgv || implicitUses.stringLiteral) {
+    // instead of miscompiling. checkLeaks uses string literals, so it needs the
+    // 2-arg string.init even when user code has no string literals.
+    if (usesArgv || implicitUses.stringLiteral || usesLeakCheck) {
         for (Decl* decl : stdModule->symbolTable.findInTopLevelScope("string.init")) {
             ensureSignature(*decl);
             auto* ctor = llvm::dyn_cast<ConstructorDecl>(decl);
             if (!ctor) continue;
             auto params = ctor->getParams();
             if (usesArgv && params.size() == 1 && params[0].type.isPointerType() && params[0].type.getPointee().isChar()) markReferenced(decl);
-            if (implicitUses.stringLiteral && params.size() == 2 && params[0].type.isPointerType() && params[1].type.isInt32()) markReferenced(decl);
+            if ((implicitUses.stringLiteral || usesLeakCheck) && params.size() == 2 && params[0].type.isPointerType() && params[1].type.isInt32())
+                markReferenced(decl);
         }
     }
     if (implicitUses.stringSwitch) {

@@ -5,6 +5,7 @@ define i32 @main() #0 !dbg !4 {
   %f = alloca %Foo, align 8
   call void @_CX1N4mainM4main3Foo4initE4void1_M3std5int32(ptr %f, i32 5), !dbg !7
   call void @_CX1N4mainM4main3Foo6deinitE4void0_(ptr %f), !dbg !8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
@@ -19,6 +20,8 @@ define void @_CX1N4mainM4main3Foo4initE4void1_M3std5int32(ptr %this, i32 %i) #0 
 define void @_CX1N4mainM4main3Foo6deinitE4void0_(ptr %this) #0 !dbg !10 {
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

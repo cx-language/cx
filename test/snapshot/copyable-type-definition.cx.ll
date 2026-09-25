@@ -16,10 +16,11 @@ define i32 @main() #0 !dbg !4 {
   %b = getelementptr inbounds %Foo, ptr %f, i32 0, i32 1
   %b.load = load i1, ptr %b, align 1
   store i1 %b.load, ptr %qux, align 1
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
-define void @_CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(ptr %this, i32 %a, i1 %b) #0 !dbg !8 {
+define void @_CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(ptr %this, i32 %a, i1 %b) #0 !dbg !9 {
   %a1 = alloca i32, align 4
   %b2 = alloca i1, align 1
   store i32 %a, ptr %a1, align 4
@@ -37,6 +38,8 @@ define void @_CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(ptr %this, i
   ret void
 }
 
+declare void @_CX1N3std10checkLeaksE4void0_() #0
+
 attributes #0 = { "frame-pointer"="all" }
 
 !llvm.module.flags = !{!0, !1}
@@ -50,4 +53,5 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 15, column: 13, scope: !4)
-!8 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!8 = !DILocation(line: 14, column: 6, scope: !4)
+!9 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)

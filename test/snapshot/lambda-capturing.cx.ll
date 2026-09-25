@@ -90,10 +90,11 @@ define i32 @main() #0 !dbg !10 {
   %3 = extractvalue %__closure2 %b.load, 0
   %4 = extractvalue %__closure2 %b.load, 1
   %5 = call i32 %3(i32 %4, i32 2), !dbg !14
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !15
   ret i32 0
 }
 
-define void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %this, i32 %d) #0 !dbg !15 {
+define void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %this, i32 %d) #0 !dbg !16 {
   %d1 = alloca i32, align 4
   store i32 %d, ptr %d1, align 4
   %d2 = getelementptr inbounds %S, ptr %this, i32 0, i32 0
@@ -102,7 +103,7 @@ define void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %this, i32 %d) #0 !d
   ret void
 }
 
-define i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %this, i32 %c) #0 !dbg !16 {
+define i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %this, i32 %c) #0 !dbg !17 {
   %c1 = alloca i32, align 4
   %b = alloca %__closure1, align 8
   store i32 %c, ptr %c1, align 4
@@ -124,11 +125,11 @@ define i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %this, i32 %c) #
   %4 = load i32, ptr %3, align 4
   %5 = getelementptr inbounds %__closure1, ptr %b.load, i32 0, i32 2
   %6 = load ptr, ptr %5, align 8
-  %7 = call i32 %2(i32 %4, ptr %6, i32 1), !dbg !17
+  %7 = call i32 %2(i32 %4, ptr %6, i32 1), !dbg !18
   ret i32 %7
 }
 
-define i32 @_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(i32 %__capture_a, i32 %c) #0 !dbg !18 {
+define i32 @_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(i32 %__capture_a, i32 %c) #0 !dbg !19 {
   %__capture_a1 = alloca i32, align 4
   %c2 = alloca i32, align 4
   store i32 %__capture_a, ptr %__capture_a1, align 4
@@ -146,14 +147,16 @@ define i32 @_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(i32 %
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !19
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !20
   unreachable
 
 overflow.success:                                 ; preds = %0
   ret i32 %4
 }
 
-define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(i32 %__capture_c, ptr %__capture_this, i32 %x) #0 !dbg !20 {
+declare void @_CX1N3std10checkLeaksE4void0_() #0
+
+define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(i32 %__capture_c, ptr %__capture_this, i32 %x) #0 !dbg !21 {
   %__capture_c1 = alloca i32, align 4
   %x2 = alloca i32, align 4
   store i32 %__capture_c, ptr %__capture_c1, align 4
@@ -171,7 +174,7 @@ define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4mai
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @3), !dbg !21
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @3), !dbg !22
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -188,7 +191,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition3, label %overflow.fail4, label %overflow.success5
 
 overflow.fail4:                                   ; preds = %overflow.success
-  %16 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @4), !dbg !21
+  %16 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @4), !dbg !22
   unreachable
 
 overflow.success5:                                ; preds = %overflow.success
@@ -219,10 +222,11 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !12 = !DILocation(line: 20, column: 13, scope: !10)
 !13 = !DILocation(line: 21, column: 11, scope: !10)
 !14 = !DILocation(line: 24, column: 9, scope: !10)
-!15 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1S4initE4void1_M3std5int32", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
-!16 = distinct !DISubprogram(name: "get", linkageName: "_CX1N4mainM4main1S3getEM3std5int321_M3std5int32", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
-!17 = !DILocation(line: 14, column: 16, scope: !16)
-!18 = distinct !DISubprogram(name: "__lambda2", linkageName: "_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32", scope: !3, file: !3, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
-!19 = !DILocation(line: 23, column: 13, scope: !18)
-!20 = distinct !DISubprogram(name: "__lambda1", linkageName: "_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
-!21 = !DILocation(line: 13, column: 17, scope: !20)
+!15 = !DILocation(line: 18, column: 6, scope: !10)
+!16 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1S4initE4void1_M3std5int32", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!17 = distinct !DISubprogram(name: "get", linkageName: "_CX1N4mainM4main1S3getEM3std5int321_M3std5int32", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
+!18 = !DILocation(line: 14, column: 16, scope: !17)
+!19 = distinct !DISubprogram(name: "__lambda2", linkageName: "_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32", scope: !3, file: !3, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
+!20 = !DILocation(line: 23, column: 13, scope: !19)
+!21 = distinct !DISubprogram(name: "__lambda1", linkageName: "_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!22 = !DILocation(line: 13, column: 17, scope: !21)

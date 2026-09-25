@@ -2,6 +2,7 @@
 int32 main() {
     void _0 = call _CX1N4main1gIM3std5int32EE4void1_M3std5int32(int32 42)
     void _1 = call _CX1N4main1gIM3std4boolEE4void1_M3std4bool(bool false)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

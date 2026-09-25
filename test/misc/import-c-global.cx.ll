@@ -4,10 +4,13 @@
 define i32 @main() #0 !dbg !4 {
   %my_global.load = load i32, ptr @my_global, align 4
   call void @_CX1N3std5printIM3std5int32EE4void1_M3std5int32(i32 %my_global.load), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
 declare void @_CX1N3std5printIM3std5int32EE4void1_M3std5int32(i32) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -22,3 +25,4 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 6, column: 5, scope: !4)
+!8 = !DILocation(line: 5, column: 6, scope: !4)

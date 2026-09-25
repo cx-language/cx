@@ -5,6 +5,7 @@ int32 main() {
     X<bool> _0 = call _CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEEM4main1XIM3std4boolE1_M3std4bool(X<int32>* x, bool false)
     store _0 to a
     void _1 = call _CX1N4mainM4main1XIM3std4boolE1gE4void0_(X<bool>* a)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

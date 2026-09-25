@@ -1,4 +1,5 @@
-// RUN: %cx test -Werror %s | %FileCheck -match-full-lines %s
+// Leak check disabled: nested interpolation builds an inner StringBuf temporary that cannot be bound to a local.
+// RUN: %cx test -Werror --no-leak-check %s | %FileCheck -match-full-lines %s
 
 struct Point: Printable {
     int x;

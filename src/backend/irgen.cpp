@@ -96,7 +96,7 @@ DestructorDecl* IRGenerator::getDefaultDestructor(TypeDecl& typeDecl) {
     ASSERT(!typeDecl.getDestructor());
 
     for (auto& field : typeDecl.fields) {
-        if (field.type.getDestructor() || anonymousStructNeedsDestruction(field.type)) {
+        if (typeNeedsDestruction(field.type)) {
             auto destructor = makeAST<DestructorDecl>(typeDecl, typeDecl.getLocation());
             destructor->body = std::vector<Stmt*>();
             return destructor;
@@ -106,33 +106,23 @@ DestructorDecl* IRGenerator::getDefaultDestructor(TypeDecl& typeDecl) {
     return nullptr;
 }
 
-// True when an anonymous struct transitively contains an element that needs
-// destruction: an explicit destructor, a named struct with an explicit (or
-// shallow default) destructor, or a nested anonymous struct that qualifies.
 bool IRGenerator::anonymousStructNeedsDestruction(Type type) {
     if (!type.isAnonymousStructType()) return false;
     for (auto& element : type.getAnonymousStructElements()) {
-        if (element.type.getDestructor()) return true;
-        if (anonymousStructNeedsDestruction(element.type)) return true;
-        if (auto* elementDecl = element.type.getDecl()) {
-            if (elementDecl->getDestructor()) return true;
-            for (auto& field : elementDecl->fields) {
-                if (field.type.getDestructor() || anonymousStructNeedsDestruction(field.type)) return true;
-            }
-        }
+        if (typeNeedsDestruction(element.type)) return true;
     }
     return false;
 }
 
+// Note: fixed-size-array elements and enum associated-value payloads are not
+// checked here yet (arrays have no getDecl, enums have no fields), so those
+// owning values still leak. See Triage cards for both gaps.
 bool IRGenerator::typeNeedsDestruction(Type type) {
     if (type.getDestructor()) return true;
-    if (anonymousStructNeedsDestruction(type)) return true;
+    if (type.isAnonymousStructType()) return anonymousStructNeedsDestruction(type);
     if (auto* typeDecl = type.getDecl()) {
-        // Preserve the existing shallow check for named structs; anonymous
-        // struct awareness is handled via anonymousStructNeedsDestruction above
-        // and in getDefaultDestructor.
         for (auto& field : typeDecl->fields) {
-            if (field.type.getDestructor() || anonymousStructNeedsDestruction(field.type)) return true;
+            if (typeNeedsDestruction(field.type)) return true;
         }
     }
     return false;
@@ -164,34 +154,26 @@ void IRGenerator::deferDestructorCall(Value* receiver, const VariableDecl* decl)
     deferDestructionForType(receiver, decl->type, decl, {});
 }
 
-// Destroys explicit-destructor elements before overwriting an anonymous struct
-// on assignment, mirroring emitAssignmentLHS for named structs (which only
-// destroys explicit destructors, not default ones). GEPs are emitted eagerly:
-// unlike scope-exit destruction, the calls immediately follow in the same block.
-void IRGenerator::destroyExplicitElementsForAssignment(Value* base, Type type) {
+// Destroys elements before overwriting an anonymous struct on assignment.
+// GEPs are emitted eagerly: unlike scope-exit destruction, the calls
+// immediately follow in the same block.
+void IRGenerator::destroyElementsForAssignment(Value* base, Type type) {
     if (auto* destructor = type.getDestructor()) {
         checkImplicitCalleeIsChecked(*destructor, "deinit");
         createDestructorCall(getFunction(*destructor), base);
     } else if (type.isAnonymousStructType()) {
         int index = 0;
         for (auto& element : type.getAnonymousStructElements()) {
-            if (element.type.getDestructor() || anonymousStructHasExplicitDestruction(element.type)) {
-                destroyExplicitElementsForAssignment(createGEP(base, index, nullptr, element.name), element.type);
+            if (typeNeedsDestruction(element.type)) {
+                destroyElementsForAssignment(createGEP(base, index, nullptr, element.name), element.type);
             }
             ++index;
         }
+    } else if (auto* typeDecl = type.getDecl()) {
+        if (auto* defaultDestructor = getDefaultDestructor(*typeDecl)) {
+            createDestructorCall(getFunction(*defaultDestructor), base);
+        }
     }
-}
-
-// True when an anonymous struct transitively contains an explicit destructor,
-// used to avoid emitting dead GEPs on assignment when there is nothing to destroy.
-bool IRGenerator::anonymousStructHasExplicitDestruction(Type type) {
-    if (!type.isAnonymousStructType()) return false;
-    for (auto& element : type.getAnonymousStructElements()) {
-        if (element.type.getDestructor()) return true;
-        if (anonymousStructHasExplicitDestruction(element.type)) return true;
-    }
-    return false;
 }
 
 void IRGenerator::emitDeferredExprsAndDestructorCallsForReturn(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls) {
@@ -238,10 +220,8 @@ Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args, con
     return insertBlock->add(new CallInst{ValueKind::CallInst, function, args, expr, ""});
 }
 
-Value* IRGenerator::emitAssignmentLHS(const Expr& lhs, bool skipDestructor) {
-    Value* value = emitLvalueExpr(lhs);
-
-    if (skipDestructor) return value;
+void IRGenerator::destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skipDestructor) {
+    if (skipDestructor) return;
 
     // Don't call destructor for LHS when assigning to fields in constructor.
     if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(currentDecl)) {
@@ -255,19 +235,21 @@ Value* IRGenerator::emitAssignmentLHS(const Expr& lhs, bool skipDestructor) {
 
         if (auto* fieldDecl = llvm::dyn_cast_or_null<FieldDecl>(referencedDecl)) {
             if (fieldDecl->getParentDecl() == constructorDecl->getTypeDecl()) {
-                return value;
+                return;
             }
         }
     }
 
     // Call destructor for LHS.
     if (auto* destructor = lhs.type.getDestructor()) {
-        createDestructorCall(getFunction(*destructor), value);
+        createDestructorCall(getFunction(*destructor), lvalue);
     } else if (lhs.type.isAnonymousStructType()) {
-        destroyExplicitElementsForAssignment(value, lhs.type);
+        destroyElementsForAssignment(lvalue, lhs.type);
+    } else if (auto* typeDecl = lhs.type.getDecl()) {
+        if (auto* defaultDestructor = getDefaultDestructor(*typeDecl)) {
+            createDestructorCall(getFunction(*defaultDestructor), lvalue);
+        }
     }
-
-    return value;
 }
 
 void IRGenerator::createDestructorCall(Function* destructor, Value* receiver) {

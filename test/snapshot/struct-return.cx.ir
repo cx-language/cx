@@ -37,5 +37,6 @@ int32 main() {
     store _0 to s
     S2 _1 = call _CX1N4main19returnsLargeStruct2EM4main2S20_()
     store _1 to s2
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

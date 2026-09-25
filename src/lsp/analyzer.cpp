@@ -2007,6 +2007,10 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         CompileOptions baseOptions;
         baseOptions.noUnusedWarnings = true; // unused warnings are noisy during editing
         baseOptions.defines = query.defines;
+        if (baseOptions.mode == BuildMode::Debug) {
+            baseOptions.defines.push_back("Debug");
+            baseOptions.defines.push_back("LeakCheck");
+        }
         // Shared search paths: workspace folders, then explicit extras, then the
         // distribution root (for std/) and system paths. The file's directory
         // joins the main module's options below, not dependencies'.

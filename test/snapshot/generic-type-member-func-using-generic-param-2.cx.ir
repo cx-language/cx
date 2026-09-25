@@ -3,6 +3,7 @@ int32 main() {
     C<bool>* c = alloca C<bool>
     void _0 = call _CX1N4mainM4main1CIM3std4boolE4initE4void0_(C<bool>* c)
     void _1 = call _CX1N4mainM4main1CIM3std4boolE1fE4void0_(C<bool>* c)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

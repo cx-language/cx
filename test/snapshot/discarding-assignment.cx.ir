@@ -3,5 +3,6 @@ extern int32 foo()
 
 int32 main() {
     int32 _0 = call foo()
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

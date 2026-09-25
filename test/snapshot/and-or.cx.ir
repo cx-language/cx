@@ -60,5 +60,6 @@ or.end_1(bool or_1):
 
 or.end_0(bool or_2):
     store or_2 to or2
+    void _10 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

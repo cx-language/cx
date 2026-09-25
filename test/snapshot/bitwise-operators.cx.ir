@@ -24,5 +24,6 @@ int32 main() {
     uint32 _5 = c.load >> d.load
     int32 a.load_4 = load a
     bool _6 = !a.load_4
+    void _7 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

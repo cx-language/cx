@@ -3,7 +3,8 @@
 @test
 void testSum() {
     println(sum([1, 2, 3])); // CHECK: 6
-    println(sum(List([1, 2, 3]))); // CHECK-NEXT: 6
+    var three = List([1, 2, 3]);
+    println(sum(three)); // CHECK-NEXT: 6
     println(sum([1.5, 2.5])); // CHECK-NEXT: 4
     println(sum([-1, 1])); // CHECK-NEXT: 0
     println(sum([7])); // CHECK-NEXT: 7

@@ -1,5 +1,5 @@
-// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --no-leak-check %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch --no-leak-check %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:[0, 4, 8]
 // CHECK-NEXT:[4, 6]
 // CHECK-NEXT:[0, 2, 4]
@@ -9,6 +9,8 @@
 // intermediate list of a filter/map chain) belong to the caller, not to the
 // lambda. The C backend emits each function body linearly, so a misplaced
 // temporary produces uncompilable C.
+// Leak check disabled: this test intentionally uses temporaries, which leak
+// until temporary destruction is implemented.
 
 void main() {
     var doubled = List([0, 1, 2, 3, 4]).filter(n => n % 2 == 0).map(n => n * 2).toList();

@@ -8,5 +8,6 @@ void _CX1N4main3ptrE4void1_RM4main3Foo(Foo* p) {
 int32 main() {
     Foo* f = alloca Foo
     void _0 = call _CX1N4main3ptrE4void1_RM4main3Foo(Foo* f)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

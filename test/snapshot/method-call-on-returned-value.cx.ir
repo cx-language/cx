@@ -40,6 +40,7 @@ int32 main() {
     void _9 = call _CX1N4mainM4main1S1fE4void0_(S* _2)
     void _10 = call _CX1N4mainM4main1C4initE4void0_(C* _3)
     void _11 = call _CX1N4mainM4main1C1fE4void0_(C* _3)
+    void _12 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

@@ -37,18 +37,23 @@ if.end4:                                          ; preds = %if.else3, %if.then2
   ]
 
 switch.case.0:                                    ; preds = %if.end4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 
 switch.case.1:                                    ; preds = %if.end4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 
 switch.case.2:                                    ; preds = %if.end4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 
 switch.default:                                   ; preds = %if.end4
   %3 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 

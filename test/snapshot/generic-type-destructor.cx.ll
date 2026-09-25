@@ -9,6 +9,7 @@ define i32 @main() #0 !dbg !4 {
   call void @_CX1N4mainM4main1CIM3std4boolE4initE4void0_(ptr %b), !dbg !8
   call void @_CX1N4mainM4main1CIM3std4boolE6deinitE4void0_(ptr %b), !dbg !9
   call void @_CX1N4mainM4main1CIM3std5int32E6deinitE4void0_(ptr %i), !dbg !9
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 }
 
@@ -27,6 +28,8 @@ define void @_CX1N4mainM4main1CIM3std4boolE6deinitE4void0_(ptr %this) #0 !dbg !1
 define void @_CX1N4mainM4main1CIM3std5int32E6deinitE4void0_(ptr %this) #0 !dbg !13 {
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

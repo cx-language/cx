@@ -5,6 +5,7 @@ int32 main() {
     void _2 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda2EM3std5int322_M3std5int32M3std5int32)
     void _3 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32)
     void _4 = call _CX1N4main3fooI4voidEE4void1_F2_M3std5int32M3std5int324void(void(int32, int32)* _CX1N4main11____lambda4E4void2_M3std5int32M3std5int32)
+    void _5 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

@@ -140,7 +140,7 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
     if (decl.isDestructorDecl()) {
         for (auto& field : decl.getTypeDecl()->fields) {
-            if (!field.type.getDestructor() && !anonymousStructNeedsDestruction(field.type)) continue;
+            if (!typeNeedsDestruction(field.type)) continue;
             deferDestructorCall(emitMemberAccess(&function.params[0], &field), &field);
         }
     }
@@ -150,6 +150,7 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
     if (insertBlock->body.empty() || !llvm::isa<ReturnInst>(insertBlock->body.back())) {
         if (decl.getReturnType().isVoid()) {
+            if (decl.isEntryPoint) emitLeakCheckIfNeeded();
             createReturn(decl.isEntryPoint ? createConstantInt(Type::getInt32(), 0) : nullptr);
         } else {
             createUnreachable();

@@ -17,6 +17,7 @@ define i32 @main() #0 !dbg !4 {
   store %string %1, ptr %b, align 8
   %2 = call i32 @_CX1N4main3quxIM3std5int32EEM3std5int321_M3std5int32(i32 -5), !dbg !12
   store i32 %2, ptr %five, align 4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !10
   ret i32 0
 }
 
@@ -60,6 +61,8 @@ if.end:                                           ; preds = %if.else
   %t.load3 = load i32, ptr %t1, align 4
   ret i32 %t.load3
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

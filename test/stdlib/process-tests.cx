@@ -13,8 +13,10 @@ void testGetUnsetEnv() {
 
 @test
 void testRunStatus() {
-    assert(run("exit 0").status == 0);
-    assert(run("exit 3").status == 3);
+    var r0 = run("exit 0");
+    assert(r0.status == 0);
+    var r3 = run("exit 3");
+    assert(r3.status == 3);
     var silent = run("exit 0");
     assert(string(&silent.output) == "");
 }

@@ -95,7 +95,9 @@ and rejoining it needs no manual loop:
 ```cs
 void main() {
     var csv = StringBuf("a,b,c");
-    println(join(csv.split(','), ";"));
+    var fields = csv.split(',');
+    var text = join(fields, ";");
+    println(text);
 }
 ```
 
@@ -106,7 +108,8 @@ reshaping a list reads as a pipeline instead of nested loops and temporary buffe
 void main() {
     var nums = List([1, 2, 3, 4]);
     println(sum(nums));
-    println(nums.map(n => n * 2).toList());
+    var doubled = nums.map(n => n * 2).toList();
+    println(doubled);
 }
 ```
 

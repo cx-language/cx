@@ -30,10 +30,11 @@ define i32 @main() #0 !dbg !4 {
   %enum.load5 = alloca %E, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 4 %enum.load5, ptr align 4 %enum1, i64 52, i1 false)
   call void @llvm.memcpy.p0.p0.i64(ptr align 4 %e, ptr align 4 %enum.load5, i64 52, i1 false)
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 }
 
-define void @_CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(ptr %this, ptr %e) #0 !dbg !9 {
+define void @_CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(ptr %this, ptr %e) #0 !dbg !10 {
   %e1 = alloca ptr, align 8
   store ptr %e, ptr %e1, align 8
   %e2 = getelementptr inbounds %"S<E>", ptr %this, i32 0, i32 0
@@ -44,6 +45,8 @@ define void @_CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(ptr %this, ptr 
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
@@ -60,4 +63,5 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !6 = !{}
 !7 = !DILocation(line: 13, column: 21, scope: !4)
 !8 = !DILocation(line: 14, column: 15, scope: !4)
-!9 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!9 = !DILocation(line: 12, column: 6, scope: !4)
+!10 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)

@@ -90,6 +90,7 @@ void main() {
     // CHECK-NEXT:Fail
     take(P.Fail);
     // CHECK-NEXT:Ok(200)
-    println(p.toString());
+    var s = p.toString();
+    println(s);
 }
 

@@ -6,5 +6,6 @@ int32 main() {
     store _0 to a
     float32 _1 = float32 4 + float32 4
     store _1 to b
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

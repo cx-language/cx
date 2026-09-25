@@ -35,5 +35,6 @@ if.end_0(bool if.result):
 
 if.end(bool if.result_0):
     store if.result_0 to x
+    void _5 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

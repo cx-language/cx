@@ -79,9 +79,11 @@ overflow.success:                                 ; preds = %switch.case.0
 switch.case.011:                                  ; preds = %switch.end
   %11 = getelementptr inbounds %"Opt<int32>", ptr %b, i32 0, i32 1
   %some.load12 = load i32, ptr %11, align 4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 %some.load12
 
 switch.case.113:                                  ; preds = %switch.end
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 
 switch.default14:                                 ; preds = %switch.end
@@ -90,6 +92,8 @@ switch.default14:                                 ; preds = %switch.end
 }
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

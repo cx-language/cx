@@ -2,6 +2,7 @@
 int32 main() {
     int32(X*)** lambda = alloca int32(X*)*
     store _CX1N4main11____lambda0EM3std5int321_PM4main1X to lambda
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

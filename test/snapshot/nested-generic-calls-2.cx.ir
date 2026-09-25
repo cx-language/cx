@@ -3,6 +3,7 @@ int32 main() {
     M<S>* m = alloca M<S>
     void _0 = call _CX1N4mainM4main1MIM4main1SE4initE4void0_(M<S>* m)
     void _1 = call _CX1N4mainM4main1MIM4main1SE1fE4void0_(M<S>* m)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

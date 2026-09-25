@@ -7,5 +7,6 @@ int32 main() {
     store int32 43 to _CX1G4main3fooE
     int32 _CX1G4main3barE.load = load _CX1G4main3barE
     store _CX1G4main3barE.load to d
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

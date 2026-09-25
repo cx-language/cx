@@ -2,6 +2,7 @@
 int32 main() {
     int32 _0 = call plain(int32 41)
     void _1 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _0)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

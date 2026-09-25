@@ -53,8 +53,11 @@ declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 define i32 @main() #0 !dbg !13 {
   call void @_CX1N4main1gE4void1_F0_4void(ptr @_CX1N4main1fE4void0_), !dbg !14
   call void @_CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(ptr @_CX1N4main2f2EM3std5int322_M3std5int32M3std4bool), !dbg !15
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !16
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -77,3 +80,4 @@ attributes #0 = { "frame-pointer"="all" }
 !13 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
 !14 = !DILocation(line: 16, column: 5, scope: !13)
 !15 = !DILocation(line: 17, column: 5, scope: !13)
+!16 = !DILocation(line: 15, column: 6, scope: !13)

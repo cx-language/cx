@@ -24,12 +24,14 @@ loop.body:
     void _1 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b2)
     void _2 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b)
     void _3 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f)
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 loop.end:
     store int32 1 to i
-    void _4 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b)
-    void _5 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f)
+    void _5 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b)
+    void _6 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f)
+    void _7 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

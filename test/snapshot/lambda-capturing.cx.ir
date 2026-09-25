@@ -80,6 +80,7 @@ int32 main() {
     int32(int32, int32)* _5 = extractvalue b.load, 0
     int32 _6 = extractvalue b.load, 1
     int32 _7 = call _5(int32 _6, int32 2)
+    void _8 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

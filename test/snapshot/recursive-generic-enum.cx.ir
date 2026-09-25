@@ -26,6 +26,7 @@ int32 main() {
     store _6 to _7
     E enum.load_0 = load enum_0
     store enum.load_0 to e
+    void _8 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

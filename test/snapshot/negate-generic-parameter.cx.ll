@@ -1,16 +1,19 @@
 
 define i32 @main() #0 !dbg !4 {
   %1 = call float @_CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(float 0.000000e+00), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
-define float @_CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(float %a) #0 !dbg !8 {
+define float @_CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(float %a) #0 !dbg !9 {
   %a1 = alloca float, align 4
   store float %a, ptr %a1, align 4
   %a.load = load float, ptr %a1, align 4
   %1 = fneg float %a.load
   ret float %1
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -25,4 +28,5 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 8, column: 5, scope: !4)
-!8 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!8 = !DILocation(line: 7, column: 6, scope: !4)
+!9 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)

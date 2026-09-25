@@ -7,5 +7,6 @@ int32 main() {
     store _2 to a
     int32* _3 = getelementptr a, int32 0, int32 1
     int32 .load = load _3
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return .load
 }

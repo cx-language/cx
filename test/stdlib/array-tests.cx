@@ -209,10 +209,18 @@ void testFindMapFilter() {
 
     assert(a.find(x => x == 2)! == 2); // TODO: '!' shouldn't be required
     assert(a.find(x => x == 9) == null);
-    assert(a.map(n => n * 2).toList() == List([0, 2, 4, 6, 8]));
-    assert(a.filter(n => n % 2 == 0).toList() == List([0, 2, 4]));
-    assert(a.map((int& n) => n + 1).toList() == List([1, 2, 3, 4, 5]));
-    assert(a.filter((int& n) => n > 2).toList() == List([3, 4]));
+    var doubled = a.map(n => n * 2).toList();
+    var expectedDoubled = List([0, 2, 4, 6, 8]);
+    assert(doubled == expectedDoubled);
+    var evens = a.filter(n => n % 2 == 0).toList();
+    var expectedEvens = List([0, 2, 4]);
+    assert(evens == expectedEvens);
+    var incremented = a.map((int& n) => n + 1).toList();
+    var expectedIncremented = List([1, 2, 3, 4, 5]);
+    assert(incremented == expectedIncremented);
+    var big = a.filter((int& n) => n > 2).toList();
+    var expectedBig = List([3, 4]);
+    assert(big == expectedBig);
 }
 
 @test
@@ -220,7 +228,9 @@ void testChainEnumerate() {
     int[2] a = [1, 2];
     int[2] b = [3, 4];
 
-    assert(a.chain(b.iterator()).toList() == List([1, 2, 3, 4]));
+    var chained = a.chain(b.iterator()).toList();
+    var expectedChained = List([1, 2, 3, 4]);
+    assert(chained == expectedChained);
 
     var iterator = a.enumerate();
     assert(iterator.hasValue());

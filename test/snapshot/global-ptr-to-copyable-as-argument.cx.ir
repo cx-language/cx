@@ -3,6 +3,7 @@ global _CX1G4main2spE = S* null
 int32 main() {
     S* _CX1G4main2spE.load = load _CX1G4main2spE
     void _0 = call _CX1N4main3fooE4void1_OPM4main1S(S* _CX1G4main2spE.load)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

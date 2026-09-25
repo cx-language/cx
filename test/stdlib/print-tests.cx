@@ -18,9 +18,12 @@ void testPrint() {
     println(0.1 + 0.2); // CHECK-NEXT: 0.3
     println("f", 0, '0'); // CHECK-NEXT: f00
     println([1, 2, 3]); // CHECK-NEXT: [1, 2, 3]
-    println(List([1, 2, 3])); // CHECK-NEXT: [1, 2, 3]
-    println(List([1])); // CHECK-NEXT: [1]
-    println(List<int32>()); // CHECK-NEXT: []
+    var three = List([1, 2, 3]);
+    println(three); // CHECK-NEXT: [1, 2, 3]
+    var one = List([1]);
+    println(one); // CHECK-NEXT: [1]
+    var emptyInts = List<int32>();
+    println(emptyInts); // CHECK-NEXT: []
     Optional<int> empty = Optional.None;
     println(empty); // CHECK-NEXT: null
     println(Optional.Some(value = 42)); // CHECK-NEXT: 42

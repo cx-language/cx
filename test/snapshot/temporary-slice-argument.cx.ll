@@ -14,19 +14,22 @@ define i32 @main() #0 !dbg !4 {
   %7 = insertvalue %"Slice<int32>" undef, ptr %6, 0
   %8 = insertvalue %"Slice<int32>" %7, i32 3, 1
   call void @_CX1N4main1fIM3std5int32EE4void1_M3std5SliceIM3std5int32E(%"Slice<int32>" %8), !dbg !8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 }
 
-define void @_CX1N4main1fIM3std5int32EE4void1_M3std5SliceIM3std5int32E(%"Slice<int32>" %a) #0 !dbg !9 {
+define void @_CX1N4main1fIM3std5int32EE4void1_M3std5SliceIM3std5int32E(%"Slice<int32>" %a) #0 !dbg !10 {
   %a1 = alloca %"Slice<int32>", align 8
   %s = alloca i32, align 4
   store %"Slice<int32>" %a, ptr %a1, align 8
-  %1 = call i32 @_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(ptr %a1), !dbg !10
+  %1 = call i32 @_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(ptr %a1), !dbg !11
   store i32 %1, ptr %s, align 4
   ret void
 }
 
-define i32 @_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(ptr %this) #0 !dbg !11 {
+declare void @_CX1N3std10checkLeaksE4void0_() #0
+
+define i32 @_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(ptr %this) #0 !dbg !12 {
   %size = getelementptr inbounds %"Slice<int32>", ptr %this, i32 0, i32 1
   %size.load = load i32, ptr %size, align 4
   ret i32 %size.load
@@ -46,7 +49,8 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 8, column: 5, scope: !4)
 !8 = !DILocation(line: 9, column: 5, scope: !4)
-!9 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fIM3std5int32EE4void1_M3std5SliceIM3std5int32E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
-!10 = !DILocation(line: 4, column: 15, scope: !9)
-!11 = distinct !DISubprogram(name: "size", linkageName: "_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_", scope: !12, file: !12, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
-!12 = !DIFile(filename: "Slice.cx")
+!9 = !DILocation(line: 7, column: 6, scope: !4)
+!10 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fIM3std5int32EE4void1_M3std5SliceIM3std5int32E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!11 = !DILocation(line: 4, column: 15, scope: !10)
+!12 = distinct !DISubprogram(name: "size", linkageName: "_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_", scope: !13, file: !13, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
+!13 = !DIFile(filename: "Slice.cx")

@@ -9,6 +9,7 @@ int32 main() {
 if.then:
     void _0 = call bar()
     void _1 = call foo()
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 if.else:
@@ -18,7 +19,7 @@ if.end:
     br bool false, if.then, if.else
 
 if.then_0:
-    void _2 = call bar()
+    void _3 = call bar()
     br if.end_0
 
 if.else_0:
@@ -31,25 +32,27 @@ loop.condition:
     br bool false, loop.body, loop.end
 
 loop.body:
-    void _3 = call bar()
-    void _4 = call foo()
+    void _4 = call bar()
+    void _5 = call foo()
     br loop.condition
 
 loop.end:
     br bool true, if.then, if.else
 
 if.then_1:
-    void _5 = call bar()
-    void _6 = call foo()
+    void _6 = call bar()
+    void _7 = call foo()
+    void _8 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 if.else_1:
     br if.end_1
 
 if.end_1:
-    void _7 = call foo()
-    void _8 = call bar()
     void _9 = call foo()
+    void _10 = call bar()
+    void _11 = call foo()
+    void _12 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

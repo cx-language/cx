@@ -1,12 +1,24 @@
 #include "module.h"
 #include "ast-print.h"
+#include <algorithm>
 
 using namespace cx;
 
 llvm::StringMap<Module*> Module::allImportedModules;
 
 std::vector<Module*> Module::getAllImportedModules() {
-    return map(allImportedModules, [](auto& p) { return p.second; });
+    auto modules = map(allImportedModules, [](auto& p) { return p.second; });
+    // Emit std first: its globals and functions must live in its own IR module.
+    // Otherwise a dependent emitted first pulls std code into its module via
+    // getFunction, while std globals stay in std, and the LLVM backend caches
+    // globals per IR object, producing cross-module references.
+    for (size_t i = 1; i < modules.size(); ++i) {
+        if (modules[i]->name == "std") {
+            std::rotate(modules.begin(), modules.begin() + i, modules.begin() + i + 1);
+            break;
+        }
+    }
+    return modules;
 }
 
 Module* Module::getStdlibModule() {

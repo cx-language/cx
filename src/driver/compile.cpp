@@ -35,6 +35,8 @@ CompileToCResult cx::compileToC(const char* fileName, const char* source, const 
     CompileOptions compileOptions;
     compileOptions.noUnusedWarnings = options.noUnusedWarnings;
     compileOptions.importSearchPaths = options.importSearchPaths;
+    compileOptions.defines.push_back("Debug");
+    compileOptions.defines.push_back("LeakCheck");
 
     // The stages below mirror buildModule()'s frontend stages (see driver.cpp).
     for (auto& fileBuffer : mainModule.fileBuffers) {

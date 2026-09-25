@@ -16,7 +16,7 @@ struct Arena {
         while chunks != null {
             var chunk = chunks;
             chunks = chunk.next;
-            free(chunk);
+            cxFree(chunk);
         }
         current = null;
     }
@@ -110,7 +110,7 @@ struct Arena {
             return null;
         }
 
-        var memory = malloc(c_size_t(dataOffset + capacity));
+        var memory = cxMalloc(c_size_t(dataOffset + capacity));
         if memory == null {
             return null;
         }

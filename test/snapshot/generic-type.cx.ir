@@ -2,5 +2,6 @@
 int32 main() {
     A<int32>* a = alloca A<int32>
     A<A<A<bool>>>* aaa = alloca A<A<A<bool>>>
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

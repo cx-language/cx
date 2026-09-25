@@ -94,6 +94,7 @@ struct IRGenerator {
     Value* emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType);
     void emitAssert(Value* condition, const Expr* expr, Location location, llvm::StringRef message = "Assertion failed", const llvm::Twine& name = "assert");
     void emitAbortWithMessage(llvm::StringRef message, Location location);
+    void emitLeakCheckIfNeeded();
     Value* emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements);
     Value* emitEnumCaseCall(const EnumCase& enumCase, const CallExpr& expr);
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
@@ -127,7 +128,7 @@ struct IRGenerator {
     Value* emitLoopConditionValue(const Expr& condition);
     void emitBreakStmt(const BreakStmt&);
     void emitContinueStmt(const ContinueStmt&);
-    Value* emitAssignmentLHS(const Expr& lhs, bool skipDestructor);
+    void destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skipDestructor);
     void emitCompoundStmt(const CompoundStmt& stmt);
     void emitStmt(const Stmt& stmt);
     void emitStmts(llvm::ArrayRef<Stmt*> stmts);
@@ -250,10 +251,9 @@ struct IRGenerator {
     DestructorDecl* getDefaultDestructor(TypeDecl& typeDecl);
     void deferDestructorCall(Value* receiver, const VariableDecl* decl);
     bool anonymousStructNeedsDestruction(Type type);
-    bool anonymousStructHasExplicitDestruction(Type type);
     bool typeNeedsDestruction(Type type);
     void deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes = {});
-    void destroyExplicitElementsForAssignment(Value* base, Type type);
+    void destroyElementsForAssignment(Value* base, Type type);
     IRGenScope& globalScope() { return scopes.front(); }
     void setInsertPoint(BasicBlock* block);
 

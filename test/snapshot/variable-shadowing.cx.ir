@@ -6,6 +6,7 @@ int32 main() {
     store int32 0 to i
     void _0 = call _CX1N4mainM4main1S4initE4void1_M3std5int32(S* s, int32 0)
     void _1 = call _CX1N4mainM4main1S1fE4void0_(S* s)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

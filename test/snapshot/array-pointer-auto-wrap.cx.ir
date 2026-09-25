@@ -4,5 +4,6 @@ int32 main() {
     int32** o = alloca int32*
     int32* p.load = load p
     store p.load to o
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

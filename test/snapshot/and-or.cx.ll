@@ -66,8 +66,11 @@ or.end11:                                         ; preds = %or.rhs10, %or.end
 or.end13:                                         ; preds = %or.end11, %or.rhs9
   %or14 = phi i1 [ %or12, %or.end11 ], [ %9, %or.rhs9 ]
   store i1 %or14, ptr %or2, align 1
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !17
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -91,3 +94,4 @@ attributes #0 = { "frame-pointer"="all" }
 !14 = !DILocation(line: 11, column: 15, scope: !4)
 !15 = !DILocation(line: 11, column: 29, scope: !4)
 !16 = !DILocation(line: 11, column: 22, scope: !4)
+!17 = !DILocation(line: 7, column: 6, scope: !4)

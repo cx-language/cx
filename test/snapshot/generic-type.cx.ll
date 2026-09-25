@@ -7,8 +7,11 @@
 define i32 @main() #0 !dbg !4 {
   %a = alloca %"A<int32>", align 8
   %aaa = alloca %"A<A<A<bool>>>", align 8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -22,3 +25,4 @@ attributes #0 = { "frame-pointer"="all" }
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
+!7 = !DILocation(line: 7, column: 6, scope: !4)

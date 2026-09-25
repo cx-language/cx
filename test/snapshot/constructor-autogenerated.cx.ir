@@ -14,6 +14,7 @@ int32 main() {
     Empty e.load = load e
     void _4 = call _CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty(Generic<Empty>* h, Empty e.load)
     void _5 = call _CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(Generic<Empty>* h)
+    void _6 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

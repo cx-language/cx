@@ -5,5 +5,6 @@ int32 main() {
     void _0 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "foo", int32 3)
     string __str.load = load __str
     store __str.load to s
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

@@ -9,5 +9,6 @@ int32 main() {
     int32* bar = alloca int32
     store int32 42 to bar
     void _0 = call _CX1N4main3fooE4void1_RM3std5int32(int32* bar)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

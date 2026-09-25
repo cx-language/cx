@@ -41,6 +41,7 @@ loop.increment:                                   ; preds = %overflow.success
 
 loop.end:                                         ; preds = %loop.condition
   %p.load1 = load i32, ptr %p, align 4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 %p.load1
 
 overflow.fail:                                    ; preds = %loop.body
@@ -61,6 +62,8 @@ declare i1 @_CX1N3stdM3std13RangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ptr
 declare i32 @_CX1N3stdM3std13RangeIteratorIM3std5int32E5valueEM3std5int320_(ptr) #0
 
 declare void @_CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 

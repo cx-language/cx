@@ -3,11 +3,12 @@ int32 main() {
     X* x = alloca X
     X* _0 = alloca X
     void _1 = call _CX1N4mainM4main1X4initE4void0_(X* x)
-    void _2 = call _CX1N4mainM4main1X6deinitE4void0_(X* x)
-    void _3 = call _CX1N4mainM4main1X4initE4void0_(X* _0)
+    void _2 = call _CX1N4mainM4main1X4initE4void0_(X* _0)
     X .load = load _0
+    void _3 = call _CX1N4mainM4main1X6deinitE4void0_(X* x)
     store .load to x
     void _4 = call _CX1N4mainM4main1X6deinitE4void0_(X* x)
+    void _5 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

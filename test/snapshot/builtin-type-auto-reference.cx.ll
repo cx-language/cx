@@ -9,8 +9,11 @@ define i32 @main() #0 !dbg !7 {
   %bar = alloca i32, align 4
   store i32 42, ptr %bar, align 4
   call void @_CX1N4main3fooE4void1_RM3std5int32(ptr %bar), !dbg !8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -26,3 +29,4 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !8 = !DILocation(line: 7, column: 5, scope: !7)
+!9 = !DILocation(line: 5, column: 6, scope: !7)

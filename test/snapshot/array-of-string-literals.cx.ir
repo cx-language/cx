@@ -10,5 +10,6 @@ int32 main() {
     string __str.load_0 = load __str_0
     string[2] _3 = insertvalue _1, 1, __str.load_0
     store _3 to a
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

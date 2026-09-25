@@ -40,5 +40,6 @@ if.else_0:
 
 if.end_0(int32 if.result):
     store if.result to a
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

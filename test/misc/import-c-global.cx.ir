@@ -3,5 +3,6 @@ extern global int32 my_global
 int32 main() {
     int32 my_global.load = load my_global
     void _0 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 my_global.load)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

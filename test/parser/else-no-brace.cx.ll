@@ -3,11 +3,15 @@ define i32 @main() #0 !dbg !4 {
   br i1 true, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 1
 
 if.else:                                          ; preds = %0
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -21,3 +25,4 @@ attributes #0 = { "frame-pointer"="all" }
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
+!7 = !DILocation(line: 3, column: 5, scope: !4)

@@ -5,6 +5,7 @@ int32 main() {
     store f to rf
     Foo* rf.load = load rf
     void _0 = call _CX1N4mainM4main3Foo3barE4void0_(Foo* rf.load)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

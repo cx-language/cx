@@ -6,5 +6,6 @@ int32 main() {
     bool b.load = load b
     bool _0 = b.load == bool true
     store _0 to c
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

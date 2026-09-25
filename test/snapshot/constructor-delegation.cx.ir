@@ -2,6 +2,7 @@
 int32 main() {
     X* x = alloca X
     void _0 = call _CX1N4mainM4main1X4initE4void2_M3std5int32M3std5int32(X* x, int32 4, int32 2)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

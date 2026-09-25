@@ -1,4 +1,5 @@
-// RUN: check_exit_status 0 %cx test -Werror %s
+// Leak check disabled: List<StringBuf> elements are never destroyed (deinit is a no-op for types without an explicit destructor).
+// RUN: check_exit_status 0 %cx test -Werror --no-leak-check %s
 // Callbacks accept Copyable types by value or by borrow; untyped lambdas
 // borrow. Borrowed callbacks must not consume non-Copyable elements.
 

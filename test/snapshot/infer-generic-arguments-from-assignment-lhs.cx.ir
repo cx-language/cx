@@ -5,12 +5,13 @@ int32 main() {
     List<int32>* _0 = alloca List<int32>
     void _1 = call _CX1N3stdM3std4ListIM3std5int32E4initE4void1_L8capacityM3std5int32(List<int32>* i, int32 10)
     void _2 = call _CX1N3stdM3std4ListIM3std5int32E4initE4void0_(List<int32>* j)
-    void _3 = call _CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(List<int32>* i)
-    void _4 = call _CX1N3stdM3std4ListIM3std5int32E4initE4void0_(List<int32>* _0)
+    void _3 = call _CX1N3stdM3std4ListIM3std5int32E4initE4void0_(List<int32>* _0)
     List<int32> .load = load _0
+    void _4 = call _CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(List<int32>* i)
     store .load to i
     void _5 = call _CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(List<int32>* j)
     void _6 = call _CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(List<int32>* i)
+    void _7 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 
@@ -108,7 +109,7 @@ void _CX1N3std10deallocateIAM3std5int32EE4void1_AM3std5int32(int32* allocation) 
     store allocation to allocation_0
     int32* allocation.load = load allocation_0
     void* _0 = cast allocation.load to void*
-    void _1 = call free(void* _0)
+    void _1 = call _CX1N3std6cxFreeE4void1_OP4void(void* _0)
     return void
 }
 
@@ -243,18 +244,18 @@ overflow.end(bool overflowed):
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:36:55
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:97:57
 ")
     unreachable
 
 overflow.success:
     c_size_t _7 = cast _1 to c_size_t
-    void* _8 = call malloc(c_size_t _7)
+    void* _8 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t _7)
     bool assert.condition = _8 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:36:71
+    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:97:73
 ")
     unreachable
 

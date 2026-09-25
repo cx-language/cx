@@ -7,5 +7,6 @@ int32 main() {
     bool b.load = load b
     bool _2 = !b.load
     store _2 to b
+    void _3 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

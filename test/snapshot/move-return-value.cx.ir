@@ -19,5 +19,6 @@ int32 main() {
     X _0 = call _CX1N4main1fEM4main1X0_()
     store _0 to a
     void _1 = call _CX1N4mainM4main1X6deinitE4void0_(X* a)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

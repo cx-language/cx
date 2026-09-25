@@ -111,10 +111,13 @@ if.else29:                                        ; preds = %if.end26
   br label %if.end30
 
 if.end30:                                         ; preds = %if.else29, %if.then28
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
 
-define void @_CX1N4main1fE4void0_() #0 !dbg !7 {
+declare void @_CX1N3std10checkLeaksE4void0_() #0
+
+define void @_CX1N4main1fE4void0_() #0 !dbg !8 {
   %a = alloca %"Optional<int32>", align 8
   %enum = alloca %"Optional<int32>", align 8
   %b = alloca %"Optional<int32>", align 8
@@ -177,7 +180,7 @@ if.end:                                           ; preds = %overflow.success19,
   br i1 %11, label %if.then24, label %if.else26
 
 overflow.fail:                                    ; preds = %if.then
-  %12 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !8
+  %12 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %if.then
@@ -194,7 +197,7 @@ overflow.success:                                 ; preds = %if.then
   br i1 %overflow.condition17, label %overflow.fail18, label %overflow.success19
 
 overflow.fail18:                                  ; preds = %overflow.success
-  %20 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !8
+  %20 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !9
   unreachable
 
 overflow.success19:                               ; preds = %overflow.success
@@ -228,13 +231,13 @@ if.end27:                                         ; preds = %if.else26, %if.then
   br i1 %__implicit_unwrap.condition, label %__implicit_unwrap.fail, label %__implicit_unwrap.success
 
 __implicit_unwrap.fail:                           ; preds = %if.end27
-  %28 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !8
+  %28 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !9
   unreachable
 
 __implicit_unwrap.success:                        ; preds = %if.end27
   %29 = getelementptr inbounds %"Optional<int32>", ptr %c, i32 0, i32 1
   %.load29 = load i32, ptr %29, align 4
-  call void @_CX1N4main12takesNonNullE4void1_M3std5int32(i32 %.load29), !dbg !9
+  call void @_CX1N4main12takesNonNullE4void1_M3std5int32(i32 %.load29), !dbg !10
   %c.load30 = load %"Optional<int32>", ptr %c, align 4
   %30 = extractvalue %"Optional<int32>" %c.load30, 0
   %31 = icmp eq i32 %30, 1
@@ -243,7 +246,7 @@ __implicit_unwrap.success:                        ; preds = %if.end27
 if.then31:                                        ; preds = %__implicit_unwrap.success
   %32 = getelementptr inbounds %"Optional<int32>", ptr %c, i32 0, i32 1
   %.load32 = load i32, ptr %32, align 4
-  call void @_CX1N4main12takesNonNullE4void1_M3std5int32(i32 %.load32), !dbg !10
+  call void @_CX1N4main12takesNonNullE4void1_M3std5int32(i32 %.load32), !dbg !11
   br label %if.end34
 
 if.else33:                                        ; preds = %__implicit_unwrap.success
@@ -255,13 +258,13 @@ if.end34:                                         ; preds = %if.else33, %if.then
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
-define void @_CX1N4main12takesNonNullE4void1_M3std5int32(i32 %i) #0 !dbg !11 {
+define void @_CX1N4main12takesNonNullE4void1_M3std5int32(i32 %i) #0 !dbg !12 {
   %i1 = alloca i32, align 4
   store i32 %i, ptr %i1, align 4
   ret void
 }
 
-define void @_CX1N4main1gE4void0_() #0 !dbg !12 {
+define void @_CX1N4main1gE4void0_() #0 !dbg !13 {
   %p = alloca ptr, align 8
   store ptr null, ptr %p, align 8
   %p.load = load ptr, ptr %p, align 8
@@ -290,9 +293,10 @@ attributes #0 = { "frame-pointer"="all" }
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
-!7 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fE4void0_", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
-!8 = !DILocation(line: 18, column: 6, scope: !7)
-!9 = !DILocation(line: 33, column: 5, scope: !7)
-!10 = !DILocation(line: 35, column: 9, scope: !7)
-!11 = distinct !DISubprogram(name: "takesNonNull", linkageName: "_CX1N4main12takesNonNullE4void1_M3std5int32", scope: !3, file: !3, line: 44, type: !5, scopeLine: 44, spFlags: DISPFlagDefinition, unit: !2)
-!12 = distinct !DISubprogram(name: "g", linkageName: "_CX1N4main1gE4void0_", scope: !3, file: !3, line: 39, type: !5, scopeLine: 39, spFlags: DISPFlagDefinition, unit: !2)
+!7 = !DILocation(line: 4, column: 6, scope: !4)
+!8 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fE4void0_", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!9 = !DILocation(line: 18, column: 6, scope: !8)
+!10 = !DILocation(line: 33, column: 5, scope: !8)
+!11 = !DILocation(line: 35, column: 9, scope: !8)
+!12 = distinct !DISubprogram(name: "takesNonNull", linkageName: "_CX1N4main12takesNonNullE4void1_M3std5int32", scope: !3, file: !3, line: 44, type: !5, scopeLine: 44, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "g", linkageName: "_CX1N4main1gE4void0_", scope: !3, file: !3, line: 39, type: !5, scopeLine: 39, spFlags: DISPFlagDefinition, unit: !2)

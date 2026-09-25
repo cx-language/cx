@@ -188,9 +188,12 @@ void testParseInt() {
 
 @test
 void testEscape() {
-    assert("".escape() == "");
-    assert("0 r t \' n".escape() == "0 r t ' n");
-    assert("\0 \r \t \' \" \\ \n".escape() == "\\0 \\r \\t ' \\\" \\\\ \\n");
+    var emptyEscape = "".escape();
+    assert(emptyEscape == "");
+    var plainEscape = "0 r t \' n".escape();
+    assert(plainEscape == "0 r t ' n");
+    var controlEscape = "\0 \r \t \' \" \\ \n".escape();
+    assert(controlEscape == "\\0 \\r \\t ' \\\" \\\\ \\n");
 }
 
 @test

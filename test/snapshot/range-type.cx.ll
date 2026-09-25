@@ -67,10 +67,13 @@ define i32 @main() #0 !dbg !9 {
   call void @_CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ptr %1, i32 0, i32 5), !dbg !10
   %.load = load %"Range<int32>", ptr %1, align 4
   %2 = call i32 @_CX1N4main3fooEM3std5int321_M3std5RangeIM3std5int32E(%"Range<int32>" %.load), !dbg !11
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !12
   ret i32 %2
 }
 
 declare void @_CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ptr, i32, i32) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -89,3 +92,4 @@ attributes #0 = { "frame-pointer"="all" }
 !9 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)
 !10 = !DILocation(line: 12, column: 17, scope: !9)
 !11 = !DILocation(line: 12, column: 12, scope: !9)
+!12 = !DILocation(line: 11, column: 5, scope: !9)

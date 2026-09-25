@@ -14,12 +14,15 @@ define i32 @main() #0 !dbg !4 {
   store ptr @1, ptr %baz, align 8
   %2 = call i32 @getBar(ptr %f), !dbg !8
   store i32 %2, ptr %bar, align 4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 }
 
 declare i32 @puts(ptr) #0
 
 declare i32 @getBar(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -35,3 +38,4 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 7, column: 5, scope: !4)
 !8 = !DILocation(line: 11, column: 15, scope: !4)
+!9 = !DILocation(line: 6, column: 6, scope: !4)

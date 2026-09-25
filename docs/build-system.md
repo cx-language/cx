@@ -74,7 +74,9 @@ import "unwind.h";
 ```
 
 Defines come from `-D` flags, the project's `defines` setting, and `pkg-config`
-dependencies; `Windows` and `macOS` are predefined on those platforms.
+dependencies; `Windows` and `macOS` are predefined on those platforms, and
+`Debug` is predefined in debug builds (absent with `--release` or
+`--release-safe`).
 
 ## Unit tests
 
@@ -118,6 +120,15 @@ compilation, safety checks enabled. Two flags select optimized release builds:
 Safety checks abort the program with an error on integer overflow and similar
 traps; `--release` drops them for maximum speed, so arithmetic overflow
 wraps instead.
+
+Debug builds also enable the leak detector: allocations made through
+`allocate`, containers, and arenas are tracked, and the program aborts at
+exit if any are still live, reporting the count and bytes. Release builds
+skip tracking entirely. Pass `--no-leak-check` to disable the check in
+debug builds. Only cx allocations are tracked. The check runs when `main`
+returns, so calling `exit()` directly skips it, as does embedding cx code
+without a cx `main`; `main` argument storage is exempt. Under `cx test` all
+tests run first and a single abort fires at the end if anything leaked.
 
 Debug builds (the default) embed debug info: aborts print a stack trace
 naming the cx functions involved, and the binary loads in a debugger

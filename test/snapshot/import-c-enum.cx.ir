@@ -13,5 +13,6 @@ int32 main() {
     store int32 18446744073709551615 to qux3
     int32 qux3.load = load qux3
     store qux3.load to qux4
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

@@ -7,5 +7,6 @@ int32 main() {
     uint16[2] _1 = insertvalue uint16[2] undefined, 0, uint16 50
     uint16[2] _2 = insertvalue _1, 1, uint16 100
     store _2 to bar
+    void _3 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

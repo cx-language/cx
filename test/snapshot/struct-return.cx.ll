@@ -47,10 +47,13 @@ define i32 @main() #0 !dbg !9 {
   %sret.alloca1 = alloca %S2, align 8, !dbg !11
   call void @_CX1N4main19returnsLargeStruct2EM4main2S20_(ptr sret(%S2) align 8 %sret.alloca1), !dbg !11
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %s2, ptr align 8 %sret.alloca1, i64 32, i1 false)
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !12
   ret i32 0
 }
 
 declare void @returnsLargeStruct(ptr sret(%S) align 8) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
@@ -70,3 +73,4 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !9 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 16, type: !5, scopeLine: 16, spFlags: DISPFlagDefinition, unit: !2)
 !10 = !DILocation(line: 17, column: 13, scope: !9)
 !11 = !DILocation(line: 18, column: 14, scope: !9)
+!12 = !DILocation(line: 16, column: 6, scope: !9)

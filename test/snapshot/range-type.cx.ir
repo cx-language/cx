@@ -52,5 +52,6 @@ int32 main() {
     void _1 = call _CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(Range<int32>* _0, int32 0, int32 5)
     Range<int32> .load = load _0
     int32 _2 = call _CX1N4main3fooEM3std5int321_M3std5RangeIM3std5int32E(Range<int32> .load)
+    void _3 = call _CX1N3std10checkLeaksE4void0_()
     return _2
 }

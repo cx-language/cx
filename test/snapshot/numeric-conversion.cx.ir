@@ -13,5 +13,6 @@ int32 main() {
     store _1 to u
     uint32 _2 = cast bool true to uint32
     store _2 to s
+    void _3 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

@@ -23,6 +23,7 @@ define i32 @main() #0 !dbg !4 {
   call void @_CX1N3stdM3std9StringBuf4initE4void1_M3std6string(ptr %1, %string %__str.load3), !dbg !9
   %3 = call i1 @_CX1N3stdo2eqEM3std4bool2_AM3std4charRM3std9StringBuf(ptr %a2, ptr %1), !dbg !10
   %4 = xor i1 %3, true
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
 
@@ -33,6 +34,8 @@ declare i1 @_CX1N3stdo2eqEM3std4bool2_PM3std4charM3std6string(ptr, %string) #0
 declare void @_CX1N3stdM3std9StringBuf4initE4void1_M3std6string(ptr, %string) #0
 
 declare i1 @_CX1N3stdo2eqEM3std4bool2_AM3std4charRM3std9StringBuf(ptr, ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

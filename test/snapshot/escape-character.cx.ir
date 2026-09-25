@@ -2,5 +2,6 @@
 int32 main() {
     string* __str = alloca string
     void _0 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "\n", int32 2)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

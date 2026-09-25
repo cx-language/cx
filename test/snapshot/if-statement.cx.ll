@@ -15,8 +15,11 @@ if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -32,3 +35,4 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 8, column: 9, scope: !4)
 !8 = !DILocation(line: 10, column: 9, scope: !4)
+!9 = !DILocation(line: 6, column: 6, scope: !4)

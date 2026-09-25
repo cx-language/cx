@@ -4,5 +4,6 @@ int32 main() {
     store float32 4.19999981 to f
     float32 f.load = load f
     c_int _0 = call printf(char* "%d %f", int32 -3, float32 f.load)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

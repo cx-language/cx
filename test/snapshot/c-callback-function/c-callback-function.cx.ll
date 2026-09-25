@@ -10,6 +10,7 @@ define i32 @main() #0 !dbg !7 {
   call void @foo(ptr @_CX1N4main1fEM3std5int321_M3std5int32), !dbg !8
   call void @bar(ptr @_CX1N4main1fEM3std5int321_M3std5int32), !dbg !9
   call void @baz(ptr @_CX1N4main1fEM3std5int321_M3std5int32), !dbg !10
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !11
   ret i32 0
 }
 
@@ -18,6 +19,8 @@ declare void @foo(ptr) #0
 declare void @bar(ptr) #0
 
 declare void @baz(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -35,3 +38,4 @@ attributes #0 = { "frame-pointer"="all" }
 !8 = !DILocation(line: 10, column: 5, scope: !7)
 !9 = !DILocation(line: 11, column: 5, scope: !7)
 !10 = !DILocation(line: 12, column: 5, scope: !7)
+!11 = !DILocation(line: 9, column: 6, scope: !7)

@@ -32,5 +32,6 @@ assert.success_0:
     uint8[1]* ptr.load_0 = load ptr
     uint8* _6 = getelementptr ptr.load_0, int32 0, int32 0
     store uint8 1 to _6
+    void _7 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

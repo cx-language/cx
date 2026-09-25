@@ -13,11 +13,7 @@ enum JsonNode {
 }
 
 void main() {
-    JsonNode a = JsonNode.Array(List([
-        JsonNode.Boolean(false),
-        JsonNode.Number(42),
-        JsonNode.Null
-    ]));
+    JsonNode a = JsonNode.Number(42);
 
     switch (a) {
         case String: println("it's a string");

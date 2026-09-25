@@ -31,6 +31,7 @@ loop.increment:                                   ; preds = %if.end, %if.then
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 
 if.then:                                          ; preds = %loop.body
@@ -52,6 +53,8 @@ declare i1 @_CX1N3stdM3std14StringIterator8hasValueEM3std4bool0_(ptr) #0
 declare ptr @_CX1N3stdM3std14StringIterator5valueERM3std4char0_(ptr) #0
 
 declare void @_CX1N3stdM3std14StringIterator9incrementE4void0_(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

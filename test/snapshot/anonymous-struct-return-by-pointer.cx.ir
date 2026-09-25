@@ -9,6 +9,7 @@ int32 main() {
     store _2 to f
     struct { int32 }* _3 = call _CX1N4mainM4main1S1gEPT1_1aM3std5int320_(S* s)
     store _3 to g
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

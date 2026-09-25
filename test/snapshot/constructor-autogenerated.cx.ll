@@ -19,6 +19,7 @@ define i32 @main() #0 !dbg !4 {
   %e.load = load %Empty, ptr %e, align 1
   call void @_CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty(ptr %h, %Empty %e.load), !dbg !11
   call void @_CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(ptr %h), !dbg !12
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !12
   ret i32 0
 }
 
@@ -63,6 +64,8 @@ define void @_CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(ptr %this) #0
   call void @_CX1N4mainM4main5Empty6deinitE4void0_(ptr %i), !dbg !18
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 define void @_CX1N4mainM4main5Empty6deinitE4void0_(ptr %this) #0 !dbg !19 {
   ret void

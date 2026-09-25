@@ -9,5 +9,6 @@ int32 main() {
     StringBuf _2 = call _CX1N3stdo2plEM3std9StringBuf2_M3std9StringBufM3std6string(StringBuf a.load, string __str.load)
     store _2 to a
     void _3 = call _CX1N3stdM3std9StringBuf6deinitE4void0_(StringBuf* a)
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

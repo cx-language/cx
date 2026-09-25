@@ -1,6 +1,7 @@
-// RUN: check_exit_status 0 %cx test -Werror %s
+// Leak check disabled: Result<JsonValue, ...> payloads are never destroyed (enums lack destructor handling).
+// RUN: check_exit_status 0 %cx test -Werror --no-leak-check %s
 // RUN: check_exit_status 0 %cx test -Werror --release %s
-// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror --no-leak-check --backend=c %s
 
 void checkPretty(string name, string input, string expected) {
     var r = parseJson(input);

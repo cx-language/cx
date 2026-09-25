@@ -6,5 +6,6 @@ int32 main() {
     store int32 0 to tag
     Optional<Slice<int8>> enum.load = load enum
     store enum.load to a
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

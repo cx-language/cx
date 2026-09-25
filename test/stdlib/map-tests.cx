@@ -1,4 +1,5 @@
-// RUN: check_exit_status 0 %cx test -Werror %s
+// Leak check disabled: Map<StringBuf, ...> keys are never destroyed (List element deinit is a no-op for types without an explicit destructor).
+// RUN: check_exit_status 0 %cx test -Werror --no-leak-check %s
 
 @test
 void testInsert() {

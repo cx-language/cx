@@ -13,5 +13,6 @@ loop.body:
     br loop.condition
 
 loop.end:
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

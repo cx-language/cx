@@ -9,5 +9,6 @@ int32 main() {
     store char* "foo" to baz
     uint32 _1 = call getBar(Foo* f)
     store _1 to bar
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

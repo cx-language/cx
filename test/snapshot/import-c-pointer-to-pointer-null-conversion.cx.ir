@@ -1,5 +1,6 @@
 
 int32 main() {
     void _0 = call foo(char** null)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

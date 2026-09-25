@@ -28,20 +28,23 @@ define i32 @main() #0 !dbg !11 {
   call void @_CX1N4mainM4main3Foo4initE4void0_(ptr %f), !dbg !12
   call void @_CX1N4mainM4main3Bar4initE4void0_(ptr %b), !dbg !13
   call void @_CX1N4main3quxE4void2_PM4main3FooPM4main3Bar(ptr %f, ptr %b), !dbg !14
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !15
   ret i32 0
 }
 
-define void @_CX1N4mainM4main3Foo4initE4void0_(ptr %this) #0 !dbg !15 {
+define void @_CX1N4mainM4main3Foo4initE4void0_(ptr %this) #0 !dbg !16 {
   %i = getelementptr inbounds %Foo, ptr %this, i32 0, i32 0
   store i32 0, ptr %i, align 4
   ret void
 }
 
-define void @_CX1N4mainM4main3Bar4initE4void0_(ptr %this) #0 !dbg !16 {
+define void @_CX1N4mainM4main3Bar4initE4void0_(ptr %this) #0 !dbg !17 {
   %i = getelementptr inbounds %Bar, ptr %this, i32 0, i32 0
   store i32 0, ptr %i, align 4
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -63,5 +66,6 @@ attributes #0 = { "frame-pointer"="all" }
 !12 = !DILocation(line: 21, column: 13, scope: !11)
 !13 = !DILocation(line: 22, column: 13, scope: !11)
 !14 = !DILocation(line: 23, column: 5, scope: !11)
-!15 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main3Foo4initE4void0_", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
-!16 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main3Bar4initE4void0_", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)
+!15 = !DILocation(line: 20, column: 6, scope: !11)
+!16 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main3Foo4initE4void0_", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!17 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main3Bar4initE4void0_", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)

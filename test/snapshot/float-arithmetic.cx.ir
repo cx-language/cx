@@ -13,5 +13,6 @@ int32 main() {
     float32 b.load_0 = load b
     float32 _3 = b.load_0 + float32 -1
     store _3 to b
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

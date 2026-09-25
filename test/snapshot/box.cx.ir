@@ -12,11 +12,12 @@ int32 main() {
     int32* _5 = call _CX1N3stdM3std3BoxIM3std5int32E3getEPM3std5int320_(Box<int32>* q)
     store int32 0 to _5
     int32* _6 = call _CX1N3stdM3std3BoxIM3std5int32E3getEPM3std5int320_(Box<int32>* r)
-    void _7 = call _CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(Box<int32>* q)
     Box<int32> r.load = load r
+    void _7 = call _CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(Box<int32>* q)
     store r.load to q
     void _8 = call _CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(Box<int32>* q)
     void _9 = call _CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE6deinitE4void0_(Box<Box<int32>>* p)
+    void _10 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 
@@ -65,7 +66,7 @@ void _CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int3
     store allocation to allocation_0
     Box<int32>* allocation.load = load allocation_0
     void* _0 = cast allocation.load to void*
-    void _1 = call free(void* _0)
+    void _1 = call _CX1N3std6cxFreeE4void1_OP4void(void* _0)
     return void
 }
 
@@ -74,12 +75,12 @@ Box<int32>* _CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_
     Box<int32>** allocation = alloca Box<int32>*
     store value to value_0
     c_size_t _0 = cast sizeof(Box<int32>) to c_size_t
-    void* _1 = call malloc(c_size_t _0)
+    void* _1 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t _0)
     bool assert.condition = _1 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:9:64
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:70:66
 ")
     unreachable
 
@@ -98,12 +99,12 @@ int32* _CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32(int32 value) {
     int32** allocation = alloca int32*
     store value to value_0
     c_size_t _0 = cast uint64 4 to c_size_t
-    void* _1 = call malloc(c_size_t _0)
+    void* _1 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t _0)
     bool assert.condition = _1 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:9:64
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:70:66
 ")
     unreachable
 
@@ -122,6 +123,6 @@ void _CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32(int32* allocation) 
     store allocation to allocation_0
     int32* allocation.load = load allocation_0
     void* _0 = cast allocation.load to void*
-    void _1 = call free(void* _0)
+    void _1 = call _CX1N3std6cxFreeE4void1_OP4void(void* _0)
     return void
 }

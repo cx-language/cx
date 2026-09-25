@@ -4,6 +4,16 @@
 
 using namespace cx;
 
+void IRGenerator::emitLeakCheckIfNeeded() {
+    if (options.mode != BuildMode::Debug || options.noLeakCheck) return;
+    auto* stdlib = Module::getStdlibModule();
+    if (!stdlib) return;
+    auto* decl = llvm::dyn_cast_or_null<FunctionDecl>(stdlib->symbolTable.findOne("checkLeaks"));
+    if (!decl) return;
+    checkImplicitCalleeIsChecked(*decl, "checkLeaks");
+    createCall(getFunction(*decl), {}, nullptr);
+}
+
 void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
     // Evaluate the return value first: it may depend on values that the deferred
     // expressions and/or destructor calls deallocate.
@@ -13,6 +23,8 @@ void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
     }
 
     emitDeferredExprsAndDestructorCallsForReturn(&stmt.movedDecls);
+
+    if (llvm::cast<FunctionDecl>(currentDecl)->isEntryPoint) emitLeakCheckIfNeeded();
 
     if (stmt.value) {
         createReturn(returnValue);

@@ -170,11 +170,11 @@ This is how containers destroy their elements:
 
 ```cs
 void main() {
-    var buffer = allocateArray<StringBuf>(1);
+    var buffer = allocateArray<List<int>>(1);
 
     var slot = &buffer[0];
-    slot.init(StringBuf("hi"));
-    println(buffer[0]); // prints "hi"
+    slot.init(List([1, 2, 3]));
+    println(buffer[0]); // prints "[1, 2, 3]"
 
     buffer[0].deinit(); // destroys the element; nothing will destroy it again
     deallocate(buffer);

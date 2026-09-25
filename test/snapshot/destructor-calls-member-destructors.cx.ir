@@ -8,6 +8,7 @@ int32 main() {
     void _1 = call _CX1N4mainM4main1C4initE4void0_(C* c)
     void _2 = call _CX1N4mainM4main1C6deinitE4void0_(C* c)
     void _3 = call _CX1N4mainM4main1A6deinitE4void0_(A* a)
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

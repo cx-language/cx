@@ -15,14 +15,17 @@ define i32 @main() #0 !dbg !7 {
   %3 = insertvalue %"Slice<int32>" %2, i32 3, 1
   call void @_CX1N4main3fooE4void1_M3std5SliceIM3std5int32E(%"Slice<int32>" %3), !dbg !8
   call void @_CX1N4main3bazE4void1_P5ArrayIM3std5int32N3_E(ptr %a), !dbg !9
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !10
   ret i32 0
 }
 
-define void @_CX1N4main3bazE4void1_P5ArrayIM3std5int32N3_E(ptr %b) #0 !dbg !10 {
+define void @_CX1N4main3bazE4void1_P5ArrayIM3std5int32N3_E(ptr %b) #0 !dbg !11 {
   %b1 = alloca ptr, align 8
   store ptr %b, ptr %b1, align 8
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -39,4 +42,5 @@ attributes #0 = { "frame-pointer"="all" }
 !7 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !8 = !DILocation(line: 7, column: 5, scope: !7)
 !9 = !DILocation(line: 8, column: 5, scope: !7)
-!10 = distinct !DISubprogram(name: "baz", linkageName: "_CX1N4main3bazE4void1_P5ArrayIM3std5int32N3_E", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)
+!10 = !DILocation(line: 5, column: 6, scope: !7)
+!11 = distinct !DISubprogram(name: "baz", linkageName: "_CX1N4main3bazE4void1_P5ArrayIM3std5int32N3_E", scope: !3, file: !3, line: 11, type: !5, scopeLine: 11, spFlags: DISPFlagDefinition, unit: !2)

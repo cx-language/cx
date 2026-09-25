@@ -27,12 +27,14 @@ loop.body:                                        ; preds = %loop.condition
   call void @_CX1N4mainM4main3Bar6deinitE4void0_(ptr %b2), !dbg !7
   call void @_CX1N4mainM4main3Bar6deinitE4void0_(ptr %b), !dbg !7
   call void @_CX1N4mainM4main3Foo6deinitE4void0_(ptr %f), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 
 loop.end:                                         ; preds = %loop.condition
   store i32 1, ptr %i, align 4
   call void @_CX1N4mainM4main3Bar6deinitE4void0_(ptr %b), !dbg !7
   call void @_CX1N4mainM4main3Foo6deinitE4void0_(ptr %f), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
 
@@ -51,6 +53,8 @@ define void @_CX1N4mainM4main3Bar6deinitE4void0_(ptr %this) #0 !dbg !11 {
   call void @_CX1N4mainM4main3Bar1fE4void0_(ptr %this), !dbg !13
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 define void @_CX1N4mainM4main3Foo1fE4void0_(ptr %this) #0 !dbg !14 {
   ret void

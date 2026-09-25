@@ -6,10 +6,13 @@ define i32 @main() #0 !dbg !4 {
   store [1 x i32] [i32 42], ptr %qux, align 4
   store i32 3, ptr @_CX1G4main3fooE, align 4
   %1 = call i64 @_CX1N3stdM3std5int324hashEM3std6uint640_(ptr getelementptr inbounds ([3 x i32], ptr @_CX1G4main3fooE, i32 0, i32 1)), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
 declare i64 @_CX1N3stdM3std5int324hashEM3std6uint640_(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -24,3 +27,4 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 8, column: 12, scope: !4)
+!8 = !DILocation(line: 5, column: 6, scope: !4)

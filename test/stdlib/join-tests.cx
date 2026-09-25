@@ -2,11 +2,19 @@
 
 @test
 void testJoin() {
-    println(join([1, 2, 3], ", ")); // CHECK: 1, 2, 3
-    println(join(List([1, 2, 3]), "-")); // CHECK-NEXT: 1-2-3
-    println(join(["a", "b", "c"], "")); // CHECK-NEXT: abc
-    println(join([1], ", ")); // CHECK-NEXT: 1
-    assert(string(join(List<int>(), ", ")) == "");
-    println(join([true, false], " or ")); // CHECK-NEXT: true or false
+    var j1 = join([1, 2, 3], ", ");
+    println(j1); // CHECK: 1, 2, 3
+    var l = List([1, 2, 3]);
+    var j2 = join(l, "-");
+    println(j2); // CHECK-NEXT: 1-2-3
+    var j3 = join(["a", "b", "c"], "");
+    println(j3); // CHECK-NEXT: abc
+    var j4 = join([1], ", ");
+    println(j4); // CHECK-NEXT: 1
+    var empty = List<int>();
+    var j5 = join(empty, ", ");
+    assert(string(j5) == "");
+    var j6 = join([true, false], " or ");
+    println(j6); // CHECK-NEXT: true or false
     // CHECK-NEXT: ok testJoin
 }

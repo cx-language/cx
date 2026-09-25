@@ -14,8 +14,10 @@ void testEquals() {
 
 @test
 void testConcat() {
-    assert("[".repeat(3) + "]" == "[[[]");
-    assert("a" + "bc".repeat(2) == "abcbc");
+    var brackets = "[".repeat(3) + "]";
+    assert(brackets == "[[[]");
+    var abcs = "a" + "bc".repeat(2);
+    assert(abcs == "abcbc");
 }
 
 @test

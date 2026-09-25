@@ -23,6 +23,7 @@ int32 main() {
     Foo* f.load_5 = load f
     Foo f.load.load = load f.load_5
     store f.load.load to f.load_4
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

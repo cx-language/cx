@@ -3,9 +3,11 @@ int32 main() {
     br bool true, if.then, if.else
 
 if.then:
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 1
 
 if.else:
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 if.end:

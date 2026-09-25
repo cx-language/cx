@@ -107,6 +107,7 @@ if.else_4:
     br if.end_4
 
 if.end_4:
+    void _19 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

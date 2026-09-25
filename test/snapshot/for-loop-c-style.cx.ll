@@ -35,6 +35,7 @@ loop.increment:                                   ; preds = %overflow.success
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 
 overflow.fail:                                    ; preds = %loop.body
@@ -45,6 +46,8 @@ overflow.success:                                 ; preds = %loop.body
   store i32 %5, ptr %sum, align 4
   br label %loop.increment
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 

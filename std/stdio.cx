@@ -174,7 +174,8 @@ enum FileError : Printable {
 
 /// Reads the entire file into a string, or returns an error if the file can't be opened.
 Result<StringBuf, FileError> readFile(string path) {
-    var file = fopen(StringBuf(path).cString(), "rb");
+    var pathBuf = StringBuf(path);
+    var file = fopen(pathBuf.cString(), "rb");
     if !file return Err(FileError.CouldNotOpen);
     defer fclose(file);
 
@@ -190,7 +191,8 @@ Result<StringBuf, FileError> readFile(string path) {
 
 /// Writes the string to the named file.
 bool writeFile(string path, string content) {
-    var file = fopen(StringBuf(path).cString(), "wb");
+    var pathBuf = StringBuf(path);
+    var file = fopen(pathBuf.cString(), "wb");
     if !file return false;
     defer fclose(file);
 
@@ -200,7 +202,8 @@ bool writeFile(string path, string content) {
 
 /// Deletes the named file, returning true on success.
 bool removeFile(string path) {
-    return remove(StringBuf(path).cString()) == 0;
+    var pathBuf = StringBuf(path);
+    return remove(pathBuf.cString()) == 0;
 }
 
 /// Prints the message to stderr and aborts.

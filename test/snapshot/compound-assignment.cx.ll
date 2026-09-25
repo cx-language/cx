@@ -74,10 +74,13 @@ overflow.success8:                                ; preds = %overflow.success4
   %i.load14 = load i32, ptr %i, align 4
   %27 = ashr i32 %i.load14, 1
   store i32 %27, ptr %i, align 4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

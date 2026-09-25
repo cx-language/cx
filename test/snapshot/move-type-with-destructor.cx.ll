@@ -7,8 +7,8 @@ define void @_CX1N4main1fE4void2_M4main1YPM4main1Y(%Y %a, ptr %b) #0 !dbg !4 {
   store %Y %a, ptr %a1, align 1
   store ptr %b, ptr %b2, align 8
   %b.load = load ptr, ptr %b2, align 8
-  call void @_CX1N4mainM4main1Y6deinitE4void0_(ptr %b.load), !dbg !7
   %a.load = load %Y, ptr %a1, align 1
+  call void @_CX1N4mainM4main1Y6deinitE4void0_(ptr %b.load), !dbg !7
   store %Y %a.load, ptr %b.load, align 1
   ret void
 }

@@ -3,6 +3,7 @@ int32 main() {
     uint32* u = alloca uint32
     uint32 u.load = load u
     void _0 = call _CX1N4main1fIM3std6uint32EE4void2_M3std6uint32M3std6uint32(uint32 0, uint32 u.load)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

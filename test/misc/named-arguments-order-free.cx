@@ -12,7 +12,7 @@ string record(string s) {
     return s;
 }
 
-string greet(string greeting, string name) {
+StringBuf greet(string greeting, string name) {
     return greeting + " " + name;
 }
 
@@ -34,7 +34,8 @@ void main() {
     println(p.name, p.extra);
 
     // CHECK-NEXT:hi world
-    println(greet(name = "world", greeting = "hi"));
+    var greeting = greet(name = "world", greeting = "hi");
+    println(greeting);
 
     // CHECK-NEXT:21
     var e = E.A(b = 1, a = 2);

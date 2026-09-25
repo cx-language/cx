@@ -25,12 +25,15 @@ define i32 @main() #0 !dbg !4 {
   %f.load9 = load ptr, ptr %f, align 8
   %f.load.load = load %Foo, ptr %f.load9, align 4
   store %Foo %f.load.load, ptr %f.load8, align 4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
-define void @_CX1N4mainM4main3Foo3barE4void0_(ptr %this) #0 !dbg !8 {
+define void @_CX1N4mainM4main3Foo3barE4void0_(ptr %this) #0 !dbg !9 {
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -45,4 +48,5 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 14, column: 7, scope: !4)
-!8 = distinct !DISubprogram(name: "bar", linkageName: "_CX1N4mainM4main3Foo3barE4void0_", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!8 = !DILocation(line: 8, column: 6, scope: !4)
+!9 = distinct !DISubprogram(name: "bar", linkageName: "_CX1N4mainM4main3Foo3barE4void0_", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)

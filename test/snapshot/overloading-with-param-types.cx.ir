@@ -42,6 +42,7 @@ int32 main() {
     T t.load_0 = load t
     T t.load_1 = load t
     void _5 = call _CX1N4maino2plE4void2_M4main1TM4main1T(T t.load_0, T t.load_1)
+    void _6 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

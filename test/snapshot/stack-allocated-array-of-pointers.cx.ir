@@ -3,5 +3,6 @@ int32 main() {
     void*[3]* a = alloca void*[3]
     int32*[2]* b = alloca int32*[2]
     float32**[1]* c = alloca float32**[1]
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

@@ -51,11 +51,13 @@ switch.case.1:                                    ; preds = %0
   store %E %enum.load11, ptr %e, align 4
   %i12 = getelementptr inbounds { i1, i32 }, ptr %1, i32 0, i32 1
   %i.load13 = load i32, ptr %i12, align 4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 %i.load13
 
 switch.case.2:                                    ; preds = %0
   %3 = getelementptr inbounds %E, ptr %e, i32 0, i32 1
   %eb.load = load i32, ptr %3, align 4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 %eb.load
 
 switch.default:                                   ; preds = %0
@@ -69,8 +71,11 @@ switch.end:                                       ; preds = %switch.case.0
   %e.tag16 = getelementptr inbounds %E, ptr %e, i32 0, i32 0
   %e.tag.load17 = load i32, ptr %e.tag16, align 4
   %6 = icmp eq i32 %e.tag.load17, 1
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 

@@ -155,6 +155,7 @@ overflow.fail_1:
     unreachable
 
 overflow.success_1:
+    void _33 = call _CX1N3std10checkLeaksE4void0_()
     return _28
 }
 

@@ -40,10 +40,13 @@ overflow.fail3:                                   ; preds = %overflow.success
   unreachable
 
 overflow.success4:                                ; preds = %overflow.success
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 %13
 }
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

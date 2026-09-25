@@ -9,6 +9,7 @@ define i32 @main() #0 !dbg !4 {
 if.then:                                          ; preds = %0
   call void @bar(), !dbg !7
   call void @foo(), !dbg !8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 
 if.else:                                          ; preds = %0
@@ -18,7 +19,7 @@ if.end:                                           ; preds = %if.else
   br i1 false, label %if.then1, label %if.else2
 
 if.then1:                                         ; preds = %if.end
-  call void @bar(), !dbg !9
+  call void @bar(), !dbg !10
   br label %if.end3
 
 if.else2:                                         ; preds = %if.end
@@ -31,29 +32,33 @@ loop.condition:                                   ; preds = %loop.body, %if.end3
   br i1 false, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  call void @bar(), !dbg !10
-  call void @foo(), !dbg !11
+  call void @bar(), !dbg !11
+  call void @foo(), !dbg !12
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
   br i1 true, label %if.then4, label %if.else5
 
 if.then4:                                         ; preds = %loop.end
-  call void @bar(), !dbg !12
+  call void @bar(), !dbg !13
   call void @foo(), !dbg !8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 
 if.else5:                                         ; preds = %loop.end
   br label %if.end6
 
 if.end6:                                          ; preds = %if.else5
-  call void @foo(), !dbg !13
-  call void @bar(), !dbg !12
+  call void @foo(), !dbg !14
+  call void @bar(), !dbg !13
   call void @foo(), !dbg !8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 }
 
-define void @_CX1N4main13shouldBeEmptyE4void0_() #0 !dbg !14 {
+declare void @_CX1N3std10checkLeaksE4void0_() #0
+
+define void @_CX1N4main13shouldBeEmptyE4void0_() #0 !dbg !15 {
   ret void
 }
 
@@ -71,9 +76,10 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 9, column: 15, scope: !4)
 !8 = !DILocation(line: 7, column: 11, scope: !4)
-!9 = !DILocation(line: 13, column: 15, scope: !4)
-!10 = !DILocation(line: 17, column: 9, scope: !4)
-!11 = !DILocation(line: 16, column: 15, scope: !4)
-!12 = !DILocation(line: 19, column: 11, scope: !4)
-!13 = !DILocation(line: 23, column: 5, scope: !4)
-!14 = distinct !DISubprogram(name: "shouldBeEmpty", linkageName: "_CX1N4main13shouldBeEmptyE4void0_", scope: !3, file: !3, line: 26, type: !5, scopeLine: 26, spFlags: DISPFlagDefinition, unit: !2)
+!9 = !DILocation(line: 6, column: 6, scope: !4)
+!10 = !DILocation(line: 13, column: 15, scope: !4)
+!11 = !DILocation(line: 17, column: 9, scope: !4)
+!12 = !DILocation(line: 16, column: 15, scope: !4)
+!13 = !DILocation(line: 19, column: 11, scope: !4)
+!14 = !DILocation(line: 23, column: 5, scope: !4)
+!15 = distinct !DISubprogram(name: "shouldBeEmpty", linkageName: "_CX1N4main13shouldBeEmptyE4void0_", scope: !3, file: !3, line: 26, type: !5, scopeLine: 26, spFlags: DISPFlagDefinition, unit: !2)

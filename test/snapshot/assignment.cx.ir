@@ -9,5 +9,6 @@ int32 main() {
     int32 foo.load_0 = load foo
     int32 _1 = foo.load_0 + int32 1
     store _1 to foo
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

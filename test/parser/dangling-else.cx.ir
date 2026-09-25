@@ -9,12 +9,15 @@ if.else:
     br if.end
 
 if.end:
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 2
 
 if.then_0:
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 1
 
 if.else_0:
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 if.end_0:

@@ -100,8 +100,11 @@ coalesce.default16:                               ; preds = %coalesce.end13
 coalesce.end17:                                   ; preds = %coalesce.default16, %coalesce.value15
   %coalesce18 = phi ptr [ %21, %coalesce.value15 ], [ %23, %coalesce.default16 ]
   store ptr %coalesce18, ptr %w, align 8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !15
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -123,3 +126,4 @@ attributes #0 = { "frame-pointer"="all" }
 !12 = !DILocation(line: 12, column: 27, scope: !4)
 !13 = !DILocation(line: 13, column: 13, scope: !4)
 !14 = !DILocation(line: 13, column: 20, scope: !4)
+!15 = !DILocation(line: 9, column: 6, scope: !4)

@@ -13,18 +13,21 @@ define i32 @main() #0 !dbg !7 {
   %x = alloca %"X<int32>", align 8
   call void @_CX1N4mainM4main1XIM3std5int32E4initE4void0_(ptr %x), !dbg !8
   call void @_CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEE4void1_F1_M3std4boolM3std5int32(ptr %x, ptr @_CX1N4main1gEM3std5int321_M3std4bool), !dbg !9
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !10
   ret i32 0
 }
 
-define void @_CX1N4mainM4main1XIM3std5int32E4initE4void0_(ptr %this) #0 !dbg !10 {
+define void @_CX1N4mainM4main1XIM3std5int32E4initE4void0_(ptr %this) #0 !dbg !11 {
   ret void
 }
 
-define void @_CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEE4void1_F1_M3std4boolM3std5int32(ptr %this, ptr %u) #0 !dbg !11 {
+define void @_CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEE4void1_F1_M3std4boolM3std5int32(ptr %this, ptr %u) #0 !dbg !12 {
   %u1 = alloca ptr, align 8
   store ptr %u, ptr %u1, align 8
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -41,5 +44,6 @@ attributes #0 = { "frame-pointer"="all" }
 !7 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
 !8 = !DILocation(line: 10, column: 13, scope: !7)
 !9 = !DILocation(line: 11, column: 7, scope: !7)
-!10 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1XIM3std5int32E4initE4void0_", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
-!11 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEE4void1_F1_M3std4boolM3std5int32", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
+!10 = !DILocation(line: 9, column: 6, scope: !7)
+!11 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1XIM3std5int32E4initE4void0_", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!12 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEE4void1_F1_M3std4boolM3std5int32", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)

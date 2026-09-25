@@ -21,8 +21,11 @@ define i32 @main() #0 !dbg !10 {
   %1 = call %X @_CX1N4main1fEM4main1X0_(), !dbg !11
   store %X %1, ptr %a, align 1
   call void @_CX1N4mainM4main1X6deinitE4void0_(ptr %a), !dbg !12
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !12
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

@@ -5,8 +5,8 @@ void _CX1N4main1fE4void2_M4main1YPM4main1Y(Y a, Y* b) {
     store a to a_0
     store b to b_0
     Y* b.load = load b_0
-    void _0 = call _CX1N4mainM4main1Y6deinitE4void0_(Y* b.load)
     Y a.load = load a_0
+    void _0 = call _CX1N4mainM4main1Y6deinitE4void0_(Y* b.load)
     store a.load to b.load
     return void
 }

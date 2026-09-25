@@ -6,6 +6,7 @@ int32 main() {
     void _3 = call _CX1N4mainM4main1SIM3std5int32E1fE4void0_(S<int32>* _0)
     void _4 = call _CX1N4mainM4main1SIM3std7float32E4initE4void0_(S<float32>* _1)
     void _5 = call _CX1N4mainM4main1SIM3std7float32E1fE4void0_(S<float32>* _1)
+    void _6 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

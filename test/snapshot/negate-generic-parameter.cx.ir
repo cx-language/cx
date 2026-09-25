@@ -1,6 +1,7 @@
 
 int32 main() {
     float32 _0 = call _CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(float32 0)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

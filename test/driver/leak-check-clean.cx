@@ -1,0 +1,23 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+
+void main() {
+    var p = allocate(42);
+    assert(*p == 42);
+    deallocate(p);
+
+    var list = List([1, 2, 3]);
+    assert(list[0] == 1);
+
+    var box = Box(42);
+    assert(*box.get() == 42);
+
+    var arena = Arena(chunkSize = 32);
+    var v = arena.allocate(7);
+    assert(*v! == 7);
+
+    var t = (s = StringBuf("a"), n = 1);
+    t = (s = StringBuf("bb"), n = 2);
+    assert(string(t.s) == "bb");
+    assert(t.n == 2);
+}

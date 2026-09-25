@@ -17,8 +17,11 @@ define i32 @main() #0 !dbg !7 {
   %5 = call ptr @_CX1N4main3fooEOPM3std5int320_(), !dbg !10
   store ptr %5, ptr %ptr, align 8
   store ptr null, ptr %ptr2, align 8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !11
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -36,3 +39,4 @@ attributes #0 = { "frame-pointer"="all" }
 !8 = !DILocation(line: 6, column: 18, scope: !7)
 !9 = !DILocation(line: 7, column: 21, scope: !7)
 !10 = !DILocation(line: 8, column: 15, scope: !7)
+!11 = !DILocation(line: 5, column: 6, scope: !7)

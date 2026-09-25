@@ -25,6 +25,7 @@ loop.increment:
     br loop.condition
 
 loop.end:
+    void _6 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 if.then:

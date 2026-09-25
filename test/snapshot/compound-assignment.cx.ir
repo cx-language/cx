@@ -74,5 +74,6 @@ overflow.success_1:
     int32 i.load_7 = load i
     int32 _29 = i.load_7 >> int32 1
     store _29 to i
+    void _30 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

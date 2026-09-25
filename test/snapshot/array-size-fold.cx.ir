@@ -6,6 +6,7 @@ int32 main() {
     int32[3] _2 = insertvalue _1, 2, int32 3
     store _2 to a
     void _3 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 3)
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

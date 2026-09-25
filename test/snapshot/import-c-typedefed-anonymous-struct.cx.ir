@@ -3,5 +3,6 @@ int32 main() {
     Foo* x = alloca Foo
     Foo x.load = load x
     void _0 = call foo(Foo x.load)
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

@@ -9,6 +9,7 @@ int32 main() {
     store enum.load to a
     store int32 1 to _0
     bool _1 = call _CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32(Optional<int32>* a, int32* _0)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

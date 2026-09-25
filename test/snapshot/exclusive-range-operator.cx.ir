@@ -35,10 +35,11 @@ loop.increment:
 
 loop.end:
     int32 p.load_0 = load p
+    void _13 = call _CX1N3std10checkLeaksE4void0_()
     return p.load_0
 
 overflow.fail:
-    never _13 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at exclusive-range-operator.cx:7:11
+    never _14 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at exclusive-range-operator.cx:7:11
 ")
     unreachable
 

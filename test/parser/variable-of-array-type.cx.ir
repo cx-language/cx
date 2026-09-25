@@ -8,5 +8,6 @@ int32 main() {
     store int32 3 to _1
     int32* _2 = getelementptr _CX1G4main3fooE, int32 0, int32 1
     uint64 _3 = call _CX1N3stdM3std5int324hashEM3std6uint640_(int32* _2)
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

@@ -6,8 +6,8 @@
 %"Range<int32>" = type { i32, i32 }
 %never = type {}
 
-@0 = private unnamed_addr constant [39 x i8] c"integer overflow at allocate.cx:36:55\0A\00", align 1
-@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:71\0A\00", align 1
+@0 = private unnamed_addr constant [39 x i8] c"integer overflow at allocate.cx:97:57\0A\00", align 1
+@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:97:73\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
   %i = alloca %"List<int32>", align 8
@@ -15,12 +15,13 @@ define i32 @main() #0 !dbg !4 {
   %1 = alloca %"List<int32>", align 8
   call void @_CX1N3stdM3std4ListIM3std5int32E4initE4void1_L8capacityM3std5int32(ptr %i, i32 10), !dbg !7
   call void @_CX1N3stdM3std4ListIM3std5int32E4initE4void0_(ptr %j), !dbg !8
-  call void @_CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(ptr %i), !dbg !9
-  call void @_CX1N3stdM3std4ListIM3std5int32E4initE4void0_(ptr %1), !dbg !10
+  call void @_CX1N3stdM3std4ListIM3std5int32E4initE4void0_(ptr %1), !dbg !9
   %.load = load %"List<int32>", ptr %1, align 8
+  call void @_CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(ptr %i), !dbg !10
   store %"List<int32>" %.load, ptr %i, align 8
-  call void @_CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(ptr %j), !dbg !9
-  call void @_CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(ptr %i), !dbg !9
+  call void @_CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(ptr %j), !dbg !10
+  call void @_CX1N3stdM3std4ListIM3std5int32E6deinitE4void0_(ptr %i), !dbg !10
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !10
   ret i32 0
 }
 
@@ -80,6 +81,8 @@ loop.end:                                         ; preds = %loop.condition
   br label %if.end
 }
 
+declare void @_CX1N3std10checkLeaksE4void0_() #0
+
 define %"ArrayIterator<int32>" @_CX1N3stdM3std4ListIM3std5int32E8iteratorEM3std13ArrayIteratorIM3std5int32E0_(ptr %this) #0 !dbg !19 {
   %1 = alloca %"ArrayIterator<int32>", align 8
   %2 = alloca %"Slice<int32>", align 8
@@ -117,7 +120,7 @@ define void @_CX1N3std10deallocateIAM3std5int32EE4void1_AM3std5int32(ptr %alloca
   %allocation1 = alloca ptr, align 8
   store ptr %allocation, ptr %allocation1, align 8
   %allocation.load = load ptr, ptr %allocation1, align 8
-  call void @free(ptr %allocation.load), !dbg !28
+  call void @_CX1N3std6cxFreeE4void1_OP4void(ptr %allocation.load), !dbg !28
   ret void
 }
 
@@ -232,7 +235,7 @@ define void @_CX1N3stdM3std13ArrayIteratorIM3std5int32E4initE4void1_M3std5SliceI
   ret void
 }
 
-declare void @free(ptr) #0
+declare void @_CX1N3std6cxFreeE4void1_OP4void(ptr) #0
 
 define ptr @_CX1N3std13allocateArrayIM3std5int32EEAM3std5int321_M3std5int32(i32 %size) #0 !dbg !42 {
   %size1 = alloca i32, align 4
@@ -259,7 +262,7 @@ overflow.fail:                                    ; preds = %overflow.end
   unreachable
 
 overflow.success:                                 ; preds = %overflow.end
-  %8 = call ptr @malloc(i64 %2), !dbg !44
+  %8 = call ptr @_CX1N3std8cxMallocEOP4void1_M3std10c__size__t(i64 %2), !dbg !44
   %assert.condition = icmp eq ptr %8, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
@@ -307,7 +310,7 @@ define i32 @_CX1N3stdM3std4ListIM3std5int32E4sizeEM3std5int320_(ptr %this) #0 !d
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
-declare ptr @malloc(i64) #0
+declare ptr @_CX1N3std8cxMallocEOP4void1_M3std10c__size__t(i64) #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -323,8 +326,8 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 4, column: 19, scope: !4)
 !8 = !DILocation(line: 5, column: 19, scope: !4)
-!9 = !DILocation(line: 3, column: 6, scope: !4)
-!10 = !DILocation(line: 7, column: 9, scope: !4)
+!9 = !DILocation(line: 7, column: 9, scope: !4)
+!10 = !DILocation(line: 3, column: 6, scope: !4)
 !11 = distinct !DISubprogram(name: "init", linkageName: "_CX1N3stdM3std4ListIM3std5int32E4initE4void1_L8capacityM3std5int32", scope: !12, file: !12, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
 !12 = !DIFile(filename: "List.cx")
 !13 = !DILocation(line: 16, column: 9, scope: !11)
@@ -340,9 +343,9 @@ attributes #0 = { "frame-pointer"="all" }
 !23 = !DIFile(filename: "ArrayIterator.cx")
 !24 = distinct !DISubprogram(name: "value", linkageName: "_CX1N3stdM3std13ArrayIteratorIM3std5int32E5valueERM3std5int320_", scope: !23, file: !23, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
 !25 = distinct !DISubprogram(name: "increment", linkageName: "_CX1N3stdM3std13ArrayIteratorIM3std5int32E9incrementE4void0_", scope: !23, file: !23, line: 23, type: !5, scopeLine: 23, spFlags: DISPFlagDefinition, unit: !2)
-!26 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIAM3std5int32EE4void1_AM3std5int32", scope: !27, file: !27, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
+!26 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIAM3std5int32EE4void1_AM3std5int32", scope: !27, file: !27, line: 113, type: !5, scopeLine: 113, spFlags: DISPFlagDefinition, unit: !2)
 !27 = !DIFile(filename: "allocate.cx")
-!28 = !DILocation(line: 53, column: 5, scope: !26)
+!28 = !DILocation(line: 114, column: 5, scope: !26)
 !29 = distinct !DISubprogram(name: "reserve", linkageName: "_CX1N3stdM3std4ListIM3std5int32E7reserveE4void1_M3std5int32", scope: !12, file: !12, line: 141, type: !5, scopeLine: 141, spFlags: DISPFlagDefinition, unit: !2)
 !30 = !DILocation(line: 143, column: 29, scope: !29)
 !31 = !DILocation(line: 145, column: 27, scope: !29)
@@ -356,9 +359,9 @@ attributes #0 = { "frame-pointer"="all" }
 !39 = !DILocation(line: 8, column: 25, scope: !38)
 !40 = !DILocation(line: 9, column: 22, scope: !38)
 !41 = !DILocation(line: 9, column: 35, scope: !38)
-!42 = distinct !DISubprogram(name: "allocateArray", linkageName: "_CX1N3std13allocateArrayIM3std5int32EEAM3std5int321_M3std5int32", scope: !27, file: !27, line: 35, type: !5, scopeLine: 35, spFlags: DISPFlagDefinition, unit: !2)
-!43 = !DILocation(line: 35, column: 9, scope: !42)
-!44 = !DILocation(line: 36, column: 26, scope: !42)
+!42 = distinct !DISubprogram(name: "allocateArray", linkageName: "_CX1N3std13allocateArrayIM3std5int32EEAM3std5int321_M3std5int32", scope: !27, file: !27, line: 96, type: !5, scopeLine: 96, spFlags: DISPFlagDefinition, unit: !2)
+!43 = !DILocation(line: 96, column: 9, scope: !42)
+!44 = !DILocation(line: 97, column: 26, scope: !42)
 !45 = distinct !DISubprogram(name: "data", linkageName: "_CX1N3stdM3std5SliceIM3std5int32E4dataEAM3std5int320_", scope: !35, file: !35, line: 76, type: !5, scopeLine: 76, spFlags: DISPFlagDefinition, unit: !2)
 !46 = distinct !DISubprogram(name: "size", linkageName: "_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_", scope: !35, file: !35, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
 !47 = distinct !DISubprogram(name: "data", linkageName: "_CX1N3stdM3std4ListIM3std5int32E4dataEAM3std5int320_", scope: !12, file: !12, line: 117, type: !5, scopeLine: 117, spFlags: DISPFlagDefinition, unit: !2)

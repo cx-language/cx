@@ -7,6 +7,7 @@ int32 main() {
     void _2 = call _CX1N4mainM4main3FooIM3std5int32E4initE4void0_(Foo<int32>* t)
     void _3 = call _CX1N4mainM4main3FooIM3std5int32E3bazE4void0_(Foo<int32>* t)
     void _4 = call _CX1N4mainM4main3FooIM3std5int32E6deinitE4void0_(Foo<int32>* t)
+    void _5 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

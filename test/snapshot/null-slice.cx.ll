@@ -11,11 +11,14 @@ define i32 @main() #0 !dbg !4 {
   %enum.load = alloca %"Optional<Slice<int8>>", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %enum.load, ptr align 8 %enum, i64 24, i1 false)
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %a, ptr align 8 %enum.load, i64 24, i1 false)
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
@@ -30,3 +33,4 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
+!7 = !DILocation(line: 3, column: 6, scope: !4)

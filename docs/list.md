@@ -53,7 +53,8 @@ int calculateSum(int[] array) {
 void main() {
     println(calculateSum([1, 2, 3]));
     // A List converts to a slice view implicitly.
-    println(calculateSum(List([4, 5, 6])));
+    var list = List([4, 5, 6]);
+    println(calculateSum(list));
 }
 ```
 

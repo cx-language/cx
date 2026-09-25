@@ -10,6 +10,7 @@ define i32 @main() #0 !dbg !4 {
   call void @_CX1N4mainM4main3FooIM3std5int32E4initE4void0_(ptr %t), !dbg !9
   call void @_CX1N4mainM4main3FooIM3std5int32E3bazE4void0_(ptr %t), !dbg !10
   call void @_CX1N4mainM4main3FooIM3std5int32E6deinitE4void0_(ptr %t), !dbg !11
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !11
   ret i32 0
 }
 
@@ -36,6 +37,8 @@ define void @_CX1N4mainM4main3FooIM3std5int32E6deinitE4void0_(ptr %this) #0 !dbg
   call void @_CX1N4mainM4main3FooIM3std5int32E3bazE4void0_(ptr %this), !dbg !20
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 define void @_CX1N4mainM4main1S3barE4void0_(ptr %this) #0 !dbg !21 {
   ret void

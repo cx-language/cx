@@ -3,8 +3,11 @@ declare i32 @foo() #0
 
 define i32 @main() #0 !dbg !4 {
   %1 = call i32 @foo(), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -19,3 +22,4 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 6, column: 9, scope: !4)
+!8 = !DILocation(line: 5, column: 6, scope: !4)

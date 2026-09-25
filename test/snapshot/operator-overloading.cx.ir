@@ -81,6 +81,7 @@ int32 main() {
     int32* x = getelementptr v, 0
     int32 x.load = load x
     int32 _7 = call _CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(vec2* v, int32 x.load)
+    void _8 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

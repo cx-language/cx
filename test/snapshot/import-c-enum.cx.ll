@@ -13,8 +13,11 @@ define i32 @main() #0 !dbg !4 {
   store i32 -1, ptr %qux3, align 4
   %qux3.load = load i32, ptr %qux3, align 4
   store i32 %qux3.load, ptr %qux4, align 4
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -28,3 +31,4 @@ attributes #0 = { "frame-pointer"="all" }
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
+!7 = !DILocation(line: 5, column: 6, scope: !4)

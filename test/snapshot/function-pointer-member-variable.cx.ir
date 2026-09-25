@@ -13,6 +13,7 @@ int32 main() {
     int32(int32)* p.load = load p
     int32 _1 = call p.load(int32 42)
     void _2 = call _CX1N4mainM4main1X1fE4void0_(X* x)
+    void _3 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

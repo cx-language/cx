@@ -41,5 +41,6 @@ overflow.fail_0:
     unreachable
 
 overflow.success_0:
+    void _21 = call _CX1N3std10checkLeaksE4void0_()
     return _16
 }

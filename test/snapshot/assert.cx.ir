@@ -12,5 +12,6 @@ assert.fail:
     unreachable
 
 assert.success:
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

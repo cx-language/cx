@@ -693,8 +693,12 @@ Value* IRGenerator::emitAssignment(const BinaryExpr& expr) {
         return emitSwizzleAssignment(*member, expr.getRHS());
     }
 
-    auto lvalue = emitAssignmentLHS(expr.getLHS(), expr.lhsIsMoved);
+    // Evaluate LHS address, then RHS (which may borrow from LHS), then destroy
+    // the old LHS value before storing. Destroying before RHS would
+    // use-after-free when RHS borrows LHS, e.g. `s = join(string(&s), ...)`.
+    auto lvalue = emitLvalueExpr(expr.getLHS());
     auto rvalue = emitExprForPassing(expr.getRHS(), lvalue->getType()->getPointee());
+    destroyAssignmentLHS(expr.getLHS(), lvalue, expr.lhsIsMoved);
     createStore(rvalue, lvalue);
     return nullptr;
 }

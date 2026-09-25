@@ -53,6 +53,7 @@ loop.increment_0:
     br loop.condition_0
 
 loop.end_0:
+    void _16 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

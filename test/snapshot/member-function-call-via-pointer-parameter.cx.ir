@@ -25,6 +25,7 @@ int32 main() {
     void _0 = call _CX1N4mainM4main3Foo4initE4void0_(Foo* f)
     void _1 = call _CX1N4mainM4main3Bar4initE4void0_(Bar* b)
     void _2 = call _CX1N4main3quxE4void2_PM4main3FooPM4main3Bar(Foo* f, Bar* b)
+    void _3 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

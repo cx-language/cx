@@ -20,6 +20,7 @@ int32 main() {
     store _10 to ref
     int32 _11 = call _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* ref)
     store _11 to bb
+    void _12 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

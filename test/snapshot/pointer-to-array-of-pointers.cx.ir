@@ -23,5 +23,6 @@ assert.success:
     char* .load = load _2
     c_int _3 = call printf(char* "%s
 ", char* .load)
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

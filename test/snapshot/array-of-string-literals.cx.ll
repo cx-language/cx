@@ -21,6 +21,7 @@ define i32 @main() #0 !dbg !4 {
   %insert.gep4 = getelementptr inbounds [2 x %string], ptr %insert.alloca3, i32 0, i32 1
   store %string %__str.load2, ptr %insert.gep4, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %a, ptr align 8 %insert.alloca3, i64 32, i1 false)
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
 
@@ -28,6 +29,8 @@ declare void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr, ptr,
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }

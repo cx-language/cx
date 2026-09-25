@@ -199,16 +199,20 @@ void testRemoveFirstByPredicate() {
     var a = List([0, 1, 2, 3]);
 
     a.removeFirst(value => value > 1);
-    assert(a == List([0, 1, 3]));
+    var expectedAfterFirst = List([0, 1, 3]);
+    assert(a == expectedAfterFirst);
 
     a.removeFirst(value => value < 1);
-    assert(a == List([1, 3]));
+    var expectedAfterSecond = List([1, 3]);
+    assert(a == expectedAfterSecond);
 
     a.removeFirst(value => value < 1);
-    assert(a == List([1, 3]));
+    var expectedAfterThird = List([1, 3]);
+    assert(a == expectedAfterThird);
 
     a.removeFirst(value => value > 1);
-    assert(a == List([1]));
+    var expectedAfterFourth = List([1]);
+    assert(a == expectedAfterFourth);
 
     a.removeFirst(value => value == 1);
     assert(a.empty());
@@ -225,18 +229,22 @@ void testRemovalReturnValues() {
     assert(pushed == 40 && a.size() == 4);
 
     assert(a.removeAt(0) == 10);
-    assert(a == List([20, 30, 40]));
+    var expectedAfterRemoveAt = List([20, 30, 40]);
+    assert(a == expectedAfterRemoveAt);
 
     assert(a.removeFirst() == 20);
-    assert(a == List([30, 40]));
+    var expectedAfterRemoveFirst = List([30, 40]);
+    assert(a == expectedAfterRemoveFirst);
 
     var found = a.removeFirst(value => value > 30);
     assert(found == 40);
-    assert(a == List([30]));
+    var expectedAfterPredicate = List([30]);
+    assert(a == expectedAfterPredicate);
 
     var missing = a.removeFirst(value => value > 30);
     assert(missing == null);
-    assert(a == List([30]));
+    var expectedAfterMissing = List([30]);
+    assert(a == expectedAfterMissing);
 
     assert(a.pop() == 30);
     assert(a.empty());
@@ -297,7 +305,8 @@ void testClear() {
     assert(a.capacity() == capacity);
 
     a.push(4);
-    assert(a == List([4]));
+    var expectedAfterPush = List([4]);
+    assert(a == expectedAfterPush);
 }
 
 @test
@@ -321,7 +330,9 @@ void testChain() {
     var a = List([1, 2]);
     var b = List([3, 4]);
 
-    assert(a.chain(b.iterator()).toList() == List([1, 2, 3, 4]));
+    var chained = a.chain(b.iterator()).toList();
+    var expectedChained = List([1, 2, 3, 4]);
+    assert(chained == expectedChained);
 }
 
 var destroyed = 0;

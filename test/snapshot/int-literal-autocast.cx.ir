@@ -21,5 +21,6 @@ overflow.fail:
 
 overflow.success:
     store _1 to b
+    void _5 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

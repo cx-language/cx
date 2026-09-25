@@ -15,10 +15,11 @@ define i32 @main() #0 !dbg !4 {
   store %"Optional<int32>" %enum.load, ptr %a, align 4
   store i32 1, ptr %1, align 4
   %2 = call i1 @_CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32(ptr %a, ptr %1), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
-define i1 @_CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32(ptr %a, ptr %b) #0 !dbg !8 {
+define i1 @_CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32(ptr %a, ptr %b) #0 !dbg !9 {
   %a1 = alloca ptr, align 8
   %b2 = alloca ptr, align 8
   store ptr %a, ptr %a1, align 8
@@ -45,7 +46,7 @@ if.end:                                           ; preds = %if.else
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %if.end
-  %6 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !10
+  %6 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !11
   unreachable
 
 assert.success:                                   ; preds = %if.end
@@ -56,6 +57,8 @@ assert.success:                                   ; preds = %if.end
   %8 = icmp eq i32 %.load, %b.load.load
   ret i1 %8
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
@@ -72,6 +75,7 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 5, column: 7, scope: !4)
-!8 = distinct !DISubprogram(name: "==", linkageName: "_CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32", scope: !9, file: !9, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
-!9 = !DIFile(filename: "Optional.cx")
-!10 = !DILocation(line: 15, column: 6, scope: !8)
+!8 = !DILocation(line: 3, column: 6, scope: !4)
+!9 = distinct !DISubprogram(name: "==", linkageName: "_CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32", scope: !10, file: !10, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
+!10 = !DIFile(filename: "Optional.cx")
+!11 = !DILocation(line: 15, column: 6, scope: !9)

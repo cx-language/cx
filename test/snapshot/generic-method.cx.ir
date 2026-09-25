@@ -12,6 +12,7 @@ int32 main() {
     void _0 = call _CX1N4mainM4main1X4initE4void0_(X* x)
     int32 _1 = call _CX1N4mainM4main1X1fIM3std5int32EEM3std5int321_F0_M3std5int32(X* x, int32()* _CX1N4main1gEM3std5int320_)
     bool _2 = call _CX1N4mainM4main1X1fIM3std4boolEEM3std4bool1_F0_M3std4bool(X* x, bool()* _CX1N4main1hEM3std4bool0_)
+    void _3 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

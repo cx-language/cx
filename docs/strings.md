@@ -47,8 +47,10 @@ Interpolated values must implement `Printable`. Write `$$` for a literal dollar 
 ```cs
 void main() {
     var name = "world";
-    println("hello $name!"); // prints "hello world!"
-    println("1 + 2 = ${1 + 2}"); // prints "1 + 2 = 3"
+    var greeting = "hello $name!";
+    println(greeting); // prints "hello world!"
+    var math = "1 + 2 = ${1 + 2}";
+    println(math); // prints "1 + 2 = 3"
     println("$$5"); // prints "$5"
 }
 ```

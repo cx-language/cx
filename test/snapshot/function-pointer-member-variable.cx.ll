@@ -15,10 +15,11 @@ define i32 @main() #0 !dbg !7 {
   %p.load = load ptr, ptr %p, align 8
   %1 = call i32 %p.load(i32 42), !dbg !9
   call void @_CX1N4mainM4main1X1fE4void0_(ptr %x), !dbg !10
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !11
   ret i32 0
 }
 
-define void @_CX1N4mainM4main1X4initE4void1_F1_M3std5int32M3std5int32(ptr %this, ptr %p) #0 !dbg !11 {
+define void @_CX1N4mainM4main1X4initE4void1_F1_M3std5int32M3std5int32(ptr %this, ptr %p) #0 !dbg !12 {
   %p1 = alloca ptr, align 8
   store ptr %p, ptr %p1, align 8
   %p2 = getelementptr inbounds %X, ptr %this, i32 0, i32 0
@@ -27,21 +28,23 @@ define void @_CX1N4mainM4main1X4initE4void1_F1_M3std5int32M3std5int32(ptr %this,
   ret void
 }
 
-define void @_CX1N4mainM4main1X1fE4void0_(ptr %this) #0 !dbg !12 {
+define void @_CX1N4mainM4main1X1fE4void0_(ptr %this) #0 !dbg !13 {
   %p2 = alloca ptr, align 8
   %p = getelementptr inbounds %X, ptr %this, i32 0, i32 0
   %p.load = load ptr, ptr %p, align 8
-  %1 = call i32 %p.load(i32 42), !dbg !13
+  %1 = call i32 %p.load(i32 42), !dbg !14
   %p1 = getelementptr inbounds %X, ptr %this, i32 0, i32 0
   %p.load2 = load ptr, ptr %p1, align 8
-  %2 = call i32 %p.load2(i32 42), !dbg !14
+  %2 = call i32 %p.load2(i32 42), !dbg !15
   %p3 = getelementptr inbounds %X, ptr %this, i32 0, i32 0
   %p.load4 = load ptr, ptr %p3, align 8
   store ptr %p.load4, ptr %p2, align 8
   %p2.load = load ptr, ptr %p2, align 8
-  %3 = call i32 %p2.load(i32 42), !dbg !15
+  %3 = call i32 %p2.load(i32 42), !dbg !16
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -59,8 +62,9 @@ attributes #0 = { "frame-pointer"="all" }
 !8 = !DILocation(line: 19, column: 13, scope: !7)
 !9 = !DILocation(line: 20, column: 7, scope: !7)
 !10 = !DILocation(line: 21, column: 7, scope: !7)
-!11 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1X4initE4void1_F1_M3std5int32M3std5int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
-!12 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4mainM4main1X1fE4void0_", scope: !3, file: !3, line: 6, type: !5, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !2)
-!13 = !DILocation(line: 7, column: 14, scope: !12)
-!14 = !DILocation(line: 8, column: 9, scope: !12)
-!15 = !DILocation(line: 10, column: 9, scope: !12)
+!11 = !DILocation(line: 18, column: 6, scope: !7)
+!12 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1X4initE4void1_F1_M3std5int32M3std5int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4mainM4main1X1fE4void0_", scope: !3, file: !3, line: 6, type: !5, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !2)
+!14 = !DILocation(line: 7, column: 14, scope: !13)
+!15 = !DILocation(line: 8, column: 9, scope: !13)
+!16 = !DILocation(line: 10, column: 9, scope: !13)

@@ -37,8 +37,11 @@ if.end:                                           ; preds = %if.else2, %if.then1
 if.end3:                                          ; preds = %if.end, %if.then
   %if.result4 = phi i1 [ %2, %if.then ], [ %if.result, %if.end ]
   store i1 %if.result4, ptr %x, align 1
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !12
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -57,3 +60,4 @@ attributes #0 = { "frame-pointer"="all" }
 !9 = !DILocation(line: 10, column: 25, scope: !4)
 !10 = !DILocation(line: 10, column: 31, scope: !4)
 !11 = !DILocation(line: 10, column: 37, scope: !4)
+!12 = !DILocation(line: 9, column: 6, scope: !4)

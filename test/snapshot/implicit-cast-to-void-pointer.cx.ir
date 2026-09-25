@@ -25,6 +25,7 @@ int32 main() {
     store int32 0 to i
     void* _8 = cast i to void*
     void _9 = call _CX1N4main3bazE4void1_OP4void(void* _8)
+    void _10 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

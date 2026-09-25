@@ -33,10 +33,13 @@ assert.success3:                                  ; preds = %assert.success
   %ptr.load4 = load ptr, ptr %ptr, align 8
   %5 = getelementptr inbounds [1 x i8], ptr %ptr.load4, i32 0, i32 0
   store i8 1, ptr %5, align 1
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 

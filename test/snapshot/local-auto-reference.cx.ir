@@ -5,5 +5,6 @@ int32 main() {
     Foo** pf = alloca Foo*
     store f to rf
     store f to pf
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

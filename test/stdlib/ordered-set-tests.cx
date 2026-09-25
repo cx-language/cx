@@ -154,7 +154,7 @@ void testIteratorOrder() {
 
     assert(called == 100);
 
-    set = OrderedSet();
+    set.clear();
 
     for i in 0..100 {
         set.insert(uint(99 - i));

@@ -40,6 +40,7 @@ loop.increment:                                   ; preds = %overflow.success
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !9
   ret i32 0
 
 overflow.fail:                                    ; preds = %loop.body
@@ -95,6 +96,8 @@ define void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(
   store i32 %1, ptr %current, align 4
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 

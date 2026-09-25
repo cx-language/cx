@@ -98,6 +98,7 @@ cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"), cl
 cl::opt<bool> noPIE("no-pie", cl::desc("Don't produce a position-independent executable"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> noJit("no-jit", cl::desc("Don't run in-process via JIT; link and execute a binary instead (named stack traces)"),
                     cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
+cl::opt<bool> noLeakCheck("no-leak-check", cl::desc("Disable the leak detector in debug builds"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file name"), cl::cat(outputCategory));
 
 cl::OptionCategory diagnosticCategory("Diagnostic Options");
@@ -360,8 +361,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         addPredefinedImportSearchPaths(buildParams.filePaths);
     }
 
-    CompileOptions options = {buildMode, noUnusedWarnings, checkAll, warnUndefinedMacros, warnUnusedResult, importSearchPaths, frameworkSearchPaths, defines,
-                              cflags};
+    CompileOptions options = {
+        buildMode, noUnusedWarnings, checkAll, warnUndefinedMacros, warnUnusedResult, noLeakCheck, importSearchPaths, frameworkSearchPaths, defines, cflags};
     auto remainingPrintOpts = std::popcount(printOpts.getBits());
     bool printSectionDividers = remainingPrintOpts > 1;
 
@@ -894,6 +895,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
     baseOptions.checkAll = checkAll;
     baseOptions.warnUndefinedMacros = warnUndefinedMacros;
     baseOptions.warnUnusedResult = warnUnusedResult;
+    baseOptions.noLeakCheck = noLeakCheck;
     baseOptions.importSearchPaths = importSearchPaths;
     baseOptions.frameworkSearchPaths = frameworkSearchPaths;
     baseOptions.defines = defines;
@@ -983,6 +985,10 @@ static int runDemangle() {
 }
 
 static void addPlatformCompileOptions() {
+    if (buildMode == BuildMode::Debug) {
+        defines.push_back("Debug");
+        if (!noLeakCheck) defines.push_back("LeakCheck");
+    }
 #ifdef _WIN32
     defines.push_back("Windows");
     cflags.push_back("-fms-extensions");

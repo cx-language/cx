@@ -9,6 +9,7 @@ define i32 @main() #0 !dbg !4 {
   %x = alloca %"X<int32>", align 8
   call void @_CX1N4mainM4main1XIM3std5int32E4initE4void0_(ptr %x), !dbg !7
   call void @_CX1N4mainM4main1XIM3std5int32E6deinitE4void0_(ptr %x), !dbg !8
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
@@ -36,6 +37,8 @@ assert.success:                                   ; preds = %0
   store i32 %a.load, ptr %a, align 4
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 

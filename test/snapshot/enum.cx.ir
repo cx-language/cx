@@ -33,19 +33,23 @@ if.end_0:
     }
 
 switch.case.0:
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 switch.case.1:
+    void _3 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 switch.case.2:
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 switch.default:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "invalid value in switch over enum 'A' at enum.cx:11:13
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "invalid value in switch over enum 'A' at enum.cx:11:13
 ")
     unreachable
 
 switch.end:
+    void _6 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

@@ -62,5 +62,6 @@ int32 main() {
     store _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool to lf2
     int32(int32, bool)* lf2.load = load lf2
     void _1 = call _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)* lf2.load)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

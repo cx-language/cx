@@ -10,5 +10,6 @@ int32 main() {
     void _0 = call foo(int32(int32)* _CX1N4main1fEM3std5int321_M3std5int32)
     void _1 = call bar(int32(int32)* _CX1N4main1fEM3std5int321_M3std5int32)
     void _2 = call baz(int32(int32)* _CX1N4main1fEM3std5int321_M3std5int32)
+    void _3 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

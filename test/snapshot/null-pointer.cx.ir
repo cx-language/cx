@@ -17,5 +17,6 @@ int32 main() {
     int32* _4 = call _CX1N4main3fooEOPM3std5int320_()
     store _4 to ptr
     store bool* null to ptr2
+    void _5 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

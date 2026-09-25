@@ -4,8 +4,11 @@ define i32 @main() #0 !dbg !4 {
   %bar = alloca [2 x i16], align 2
   store [1 x float] [float 1.000000e+00], ptr %foo, align 4
   store [2 x i16] [i16 50, i16 100], ptr %bar, align 2
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
   ret i32 0
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -19,3 +22,4 @@ attributes #0 = { "frame-pointer"="all" }
 !4 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
+!7 = !DILocation(line: 3, column: 6, scope: !4)

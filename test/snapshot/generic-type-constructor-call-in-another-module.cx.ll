@@ -4,14 +4,17 @@
 define i32 @main() #0 !dbg !4 {
   %a = alloca %"A<int32>", align 8
   call void @_CX1N36imported__generic__type__constructorM36imported__generic__type__constructor1AIM3std5int32E4initE4void0_(ptr %a), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !8
   ret i32 0
 }
 
-define void @_CX1N36imported__generic__type__constructorM36imported__generic__type__constructor1AIM3std5int32E4initE4void0_(ptr %this) #0 !dbg !8 {
+define void @_CX1N36imported__generic__type__constructorM36imported__generic__type__constructor1AIM3std5int32E4initE4void0_(ptr %this) #0 !dbg !9 {
   %a = getelementptr inbounds %"A<int32>", ptr %this, i32 0, i32 0
   store ptr null, ptr %a, align 8
   ret void
 }
+
+declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -26,5 +29,6 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 6, column: 13, scope: !4)
-!8 = distinct !DISubprogram(name: "init", linkageName: "_CX1N36imported__generic__type__constructorM36imported__generic__type__constructor1AIM3std5int32E4initE4void0_", scope: !9, file: !9, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
-!9 = !DIFile(filename: "a.cx")
+!8 = !DILocation(line: 5, column: 6, scope: !4)
+!9 = distinct !DISubprogram(name: "init", linkageName: "_CX1N36imported__generic__type__constructorM36imported__generic__type__constructor1AIM3std5int32E4initE4void0_", scope: !10, file: !10, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!10 = !DIFile(filename: "a.cx")

@@ -12,6 +12,7 @@ int32 main() {
     store _4 to b
     int32 _5 = call _CX1N4main3quxIM3std5int32EEM3std5int321_M3std5int32(int32 -5)
     store _5 to five
+    void _6 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

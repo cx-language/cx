@@ -1,4 +1,5 @@
 
 int32 main() {
+    void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

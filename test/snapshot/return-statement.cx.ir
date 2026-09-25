@@ -1,6 +1,7 @@
 
 int32 main() {
     int32 _0 = call _CX1N4main3fooEM3std5int320_()
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return _0
 }
 

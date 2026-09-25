@@ -3,8 +3,8 @@
 %"Box<int32>" = type { ptr }
 %never = type {}
 
-@0 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:64\0A\00", align 1
-@1 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:64\0A\00", align 1
+@0 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:70:66\0A\00", align 1
+@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:70:66\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
   %p = alloca %"Box<Box<int32>>", align 8
@@ -19,11 +19,12 @@ define i32 @main() #0 !dbg !4 {
   %2 = call ptr @_CX1N3stdM3std3BoxIM3std5int32E3getEPM3std5int320_(ptr %q), !dbg !11
   store i32 0, ptr %2, align 4
   %3 = call ptr @_CX1N3stdM3std3BoxIM3std5int32E3getEPM3std5int320_(ptr %r), !dbg !12
-  call void @_CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(ptr %q), !dbg !13
   %r.load = load %"Box<int32>", ptr %r, align 8
+  call void @_CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(ptr %q), !dbg !13
   store %"Box<int32>" %r.load, ptr %q, align 8
   call void @_CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(ptr %q), !dbg !13
   call void @_CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE6deinitE4void0_(ptr %p), !dbg !13
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !13
   ret i32 0
 }
 
@@ -67,11 +68,13 @@ define void @_CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE6deinitE4void0_(ptr %this
   ret void
 }
 
+declare void @_CX1N3std10checkLeaksE4void0_() #0
+
 define void @_CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E(ptr %allocation) #0 !dbg !24 {
   %allocation1 = alloca ptr, align 8
   store ptr %allocation, ptr %allocation1, align 8
   %allocation.load = load ptr, ptr %allocation1, align 8
-  call void @free(ptr %allocation.load), !dbg !26
+  call void @_CX1N3std6cxFreeE4void1_OP4void(ptr %allocation.load), !dbg !26
   ret void
 }
 
@@ -79,7 +82,7 @@ define ptr @_CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_
   %value1 = alloca %"Box<int32>", align 8
   %allocation = alloca ptr, align 8
   store %"Box<int32>" %value, ptr %value1, align 8
-  %1 = call ptr @malloc(i64 ptrtoint (ptr getelementptr (%"Box<int32>", ptr null, i32 1) to i64)), !dbg !28
+  %1 = call ptr @_CX1N3std8cxMallocEOP4void1_M3std10c__size__t(i64 ptrtoint (ptr getelementptr (%"Box<int32>", ptr null, i32 1) to i64)), !dbg !28
   %assert.condition = icmp eq ptr %1, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
@@ -100,7 +103,7 @@ define ptr @_CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32(i32 %value
   %value1 = alloca i32, align 4
   %allocation = alloca ptr, align 8
   store i32 %value, ptr %value1, align 4
-  %1 = call ptr @malloc(i64 4), !dbg !31
+  %1 = call ptr @_CX1N3std8cxMallocEOP4void1_M3std10c__size__t(i64 4), !dbg !31
   %assert.condition = icmp eq ptr %1, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
@@ -121,13 +124,13 @@ define void @_CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32(ptr %alloca
   %allocation1 = alloca ptr, align 8
   store ptr %allocation, ptr %allocation1, align 8
   %allocation.load = load ptr, ptr %allocation1, align 8
-  call void @free(ptr %allocation.load), !dbg !34
+  call void @_CX1N3std6cxFreeE4void1_OP4void(ptr %allocation.load), !dbg !34
   ret void
 }
 
-declare void @free(ptr) #0
+declare void @_CX1N3std6cxFreeE4void1_OP4void(ptr) #0
 
-declare ptr @malloc(i64) #0
+declare ptr @_CX1N3std8cxMallocEOP4void1_M3std10c__size__t(i64) #0
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
@@ -160,14 +163,14 @@ attributes #0 = { "frame-pointer"="all" }
 !21 = !DILocation(line: 16, column: 9, scope: !20)
 !22 = distinct !DISubprogram(name: "deinit", linkageName: "_CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE6deinitE4void0_", scope: !15, file: !15, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
 !23 = !DILocation(line: 16, column: 9, scope: !22)
-!24 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E", scope: !25, file: !25, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
+!24 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E", scope: !25, file: !25, line: 113, type: !5, scopeLine: 113, spFlags: DISPFlagDefinition, unit: !2)
 !25 = !DIFile(filename: "allocate.cx")
-!26 = !DILocation(line: 53, column: 5, scope: !24)
-!27 = distinct !DISubprogram(name: "allocate", linkageName: "_CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E", scope: !25, file: !25, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
-!28 = !DILocation(line: 9, column: 34, scope: !27)
-!29 = !DILocation(line: 8, column: 7, scope: !27)
-!30 = distinct !DISubprogram(name: "allocate", linkageName: "_CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32", scope: !25, file: !25, line: 8, type: !5, scopeLine: 8, spFlags: DISPFlagDefinition, unit: !2)
-!31 = !DILocation(line: 9, column: 34, scope: !30)
-!32 = !DILocation(line: 8, column: 7, scope: !30)
-!33 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32", scope: !25, file: !25, line: 52, type: !5, scopeLine: 52, spFlags: DISPFlagDefinition, unit: !2)
-!34 = !DILocation(line: 53, column: 5, scope: !33)
+!26 = !DILocation(line: 114, column: 5, scope: !24)
+!27 = distinct !DISubprogram(name: "allocate", linkageName: "_CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E", scope: !25, file: !25, line: 69, type: !5, scopeLine: 69, spFlags: DISPFlagDefinition, unit: !2)
+!28 = !DILocation(line: 70, column: 34, scope: !27)
+!29 = !DILocation(line: 69, column: 7, scope: !27)
+!30 = distinct !DISubprogram(name: "allocate", linkageName: "_CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32", scope: !25, file: !25, line: 69, type: !5, scopeLine: 69, spFlags: DISPFlagDefinition, unit: !2)
+!31 = !DILocation(line: 70, column: 34, scope: !30)
+!32 = !DILocation(line: 69, column: 7, scope: !30)
+!33 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32", scope: !25, file: !25, line: 113, type: !5, scopeLine: 113, spFlags: DISPFlagDefinition, unit: !2)
+!34 = !DILocation(line: 114, column: 5, scope: !33)
