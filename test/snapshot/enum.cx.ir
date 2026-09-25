@@ -42,7 +42,7 @@ switch.case.2:
     return int32 0
 
 switch.default:
-    void _2 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "invalid value in switch over enum 'A' at enum.cx:11:13
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "invalid value in switch over enum 'A' at enum.cx:11:13
 ")
     unreachable
 

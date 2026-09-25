@@ -1,4 +1,6 @@
 
+%never = type {}
+
 @0 = private unnamed_addr constant [46 x i8] c"integer overflow at for-loop-c-style.cx:6:13\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
@@ -36,7 +38,7 @@ loop.end:                                         ; preds = %loop.condition
   ret i32 0
 
 overflow.fail:                                    ; preds = %loop.body
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
+  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %loop.body
@@ -44,7 +46,7 @@ overflow.success:                                 ; preds = %loop.body
   br label %loop.increment
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

@@ -1,6 +1,7 @@
 
 %"Box<Box<int32>>" = type { ptr }
 %"Box<int32>" = type { ptr }
+%never = type {}
 
 @0 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:64\0A\00", align 1
 @1 = private unnamed_addr constant [35 x i8] c"Unwrap failed at allocate.cx:9:64\0A\00", align 1
@@ -83,7 +84,7 @@ define ptr @_CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !29
+  %2 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !29
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -104,7 +105,7 @@ define ptr @_CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32(i32 %value
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !32
+  %2 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !32
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -128,7 +129,7 @@ declare void @free(ptr) #0
 
 declare ptr @malloc(i64) #0
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

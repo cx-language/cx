@@ -14,7 +14,7 @@ int32 main() {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at compound-assignment.cx:5:7
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at compound-assignment.cx:5:7
 ")
     unreachable
 
@@ -32,7 +32,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _15 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at compound-assignment.cx:6:7
+    never _15 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at compound-assignment.cx:6:7
 ")
     unreachable
 
@@ -50,7 +50,7 @@ overflow.success_0:
     br overflow.condition_1, overflow.fail, overflow.success
 
 overflow.fail_1:
-    void _23 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at compound-assignment.cx:7:7
+    never _23 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at compound-assignment.cx:7:7
 ")
     unreachable
 

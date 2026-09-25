@@ -24,7 +24,7 @@ loop.end:
     br _3, if.then, if.else
 
 __implicit_unwrap.fail:
-    void _4 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:5:11
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:5:11
 ")
     unreachable
 
@@ -44,7 +44,7 @@ if.end:
     return void
 
 __implicit_unwrap.fail_0:
-    void _6 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:9:11
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:9:11
 ")
     unreachable
 
@@ -91,7 +91,7 @@ loop.end:
     br _3, if.then, if.else
 
 __implicit_unwrap.fail:
-    void _4 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:15:11
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:15:11
 ")
     unreachable
 
@@ -111,7 +111,7 @@ if.end:
     br loop.condition_0
 
 __implicit_unwrap.fail_0:
-    void _6 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:19:11
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:19:11
 ")
     unreachable
 
@@ -139,7 +139,7 @@ loop.end_0:
     br _11, if.then, if.else
 
 __implicit_unwrap.fail_1:
-    void _12 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:23:11
+    never _12 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:23:11
 ")
     unreachable
 
@@ -163,7 +163,7 @@ if.end_0:
     br _15, if.then, if.else
 
 __implicit_unwrap.fail_2:
-    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:28:11
+    never _16 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:28:11
 ")
     unreachable
 
@@ -183,7 +183,7 @@ if.end_1:
     return void
 
 __implicit_unwrap.fail_3:
-    void _18 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:32:11
+    never _18 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:32:11
 ")
     unreachable
 

@@ -1,6 +1,7 @@
 
 %0 = type { { i32 } }
 %"Optional<int32>" = type { i32, %0 }
+%never = type {}
 
 @0 = private unnamed_addr constant [36 x i8] c"Unwrap failed at Optional.cx:17:16\0A\00", align 1
 
@@ -45,20 +46,20 @@ if.end:                                           ; preds = %if.else
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %if.end
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !10
+  %7 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !10
   unreachable
 
 assert.success:                                   ; preds = %if.end
   store %"Optional<int32>" %a.load.load4, ptr %1, align 4
-  %7 = getelementptr inbounds %"Optional<int32>", ptr %1, i32 0, i32 1
-  %.load = load i32, ptr %7, align 4
+  %8 = getelementptr inbounds %"Optional<int32>", ptr %1, i32 0, i32 1
+  %.load = load i32, ptr %8, align 4
   %b.load = load ptr, ptr %b2, align 8
   %b.load.load = load i32, ptr %b.load, align 4
-  %8 = icmp eq i32 %.load, %b.load.load
-  ret i1 %8
+  %9 = icmp eq i32 %.load, %b.load.load
+  ret i1 %9
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

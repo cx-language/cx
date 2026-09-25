@@ -1,5 +1,6 @@
 
 %S = type { i32 }
+%never = type {}
 
 @0 = private unnamed_addr constant [63 x i8] c"integer overflow at parameter-shadows-member-variable.cx:7:17\0A\00", align 1
 
@@ -28,14 +29,14 @@ define void @_CX1N4mainM4main1S3fooE4void1_M3std5int32(ptr %this, i32 %bar) #0 !
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !11
+  %7 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !11
   unreachable
 
 overflow.success:                                 ; preds = %0
   ret void
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

@@ -1,0 +1,19 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+
+// Unreferenced parameters are silenced with a void cast.
+
+// CHECK-LABEL: 1C1fE{{.*}} this) {
+// CHECK-NEXT: (void)this;
+
+struct C {
+    int i;
+
+    int f() {
+        return 42;
+    }
+}
+
+void main() {
+    var c = C(i = 1);
+    println(c.f());
+}

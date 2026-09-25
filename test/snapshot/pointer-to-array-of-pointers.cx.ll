@@ -1,4 +1,6 @@
 
+%never = type {}
+
 @0 = private unnamed_addr constant [55 x i8] c"Unwrap failed at pointer-to-array-of-pointers.cx:8:21\0A\00", align 1
 @1 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 
@@ -15,18 +17,18 @@ define i32 @main() #0 !dbg !4 {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !8
+  %2 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !8
   unreachable
 
 assert.success:                                   ; preds = %0
   %i.load = load i32, ptr %i, align 4
-  %2 = getelementptr inbounds ptr, ptr %s.load, i32 %i.load
-  %.load = load ptr, ptr %2, align 8
-  %3 = call i32 (ptr, ...) @printf(ptr @1, ptr %.load), !dbg !9
+  %3 = getelementptr inbounds ptr, ptr %s.load, i32 %i.load
+  %.load = load ptr, ptr %3, align 8
+  %4 = call i32 (ptr, ...) @printf(ptr @1, ptr %.load), !dbg !9
   ret i32 0
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 declare i32 @printf(ptr, ...) #0
 

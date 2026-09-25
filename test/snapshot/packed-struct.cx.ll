@@ -1,5 +1,6 @@
 
 %S = type <{ i8, i16, i8 }>
+%never = type {}
 
 @0 = private unnamed_addr constant [43 x i8] c"Assertion failed at packed-struct.cx:11:5\0A\00", align 1
 
@@ -16,14 +17,14 @@ define i32 @main() #0 !dbg !4 {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
+  %2 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 assert.success:                                   ; preds = %0
   ret i32 0
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

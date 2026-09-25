@@ -1,5 +1,6 @@
 
 %vec2 = type { i32, i32 }
+%never = type {}
 
 @0 = private unnamed_addr constant [51 x i8] c"integer overflow at operator-overloading.cx:13:21\0A\00", align 1
 @1 = private unnamed_addr constant [51 x i8] c"integer overflow at operator-overloading.cx:13:32\0A\00", align 1
@@ -25,7 +26,7 @@ define %vec2 @_CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(%vec2 %a, %vec2
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
+  %9 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -33,27 +34,27 @@ overflow.success:                                 ; preds = %0
   %y.load = load i32, ptr %y, align 4
   %y5 = getelementptr inbounds %vec2, ptr %b2, i32 0, i32 1
   %y.load6 = load i32, ptr %y5, align 4
-  %9 = sext i32 %y.load to i64
-  %10 = sext i32 %y.load6 to i64
-  %11 = mul i64 %9, %10
-  %12 = trunc i64 %11 to i32
-  %13 = sext i32 %12 to i64
-  %14 = icmp ne i64 %11, %13
-  %15 = xor i1 %14, true
-  %overflow.condition7 = icmp eq i1 %15, false
+  %10 = sext i32 %y.load to i64
+  %11 = sext i32 %y.load6 to i64
+  %12 = mul i64 %10, %11
+  %13 = trunc i64 %12 to i32
+  %14 = sext i32 %13 to i64
+  %15 = icmp ne i64 %12, %14
+  %16 = xor i1 %15, true
+  %overflow.condition7 = icmp eq i1 %16, false
   br i1 %overflow.condition7, label %overflow.fail8, label %overflow.success9
 
 overflow.fail8:                                   ; preds = %overflow.success
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !7
+  %17 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !7
   unreachable
 
 overflow.success9:                                ; preds = %overflow.success
-  call void @_CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(ptr %1, i32 %5, i32 %12), !dbg !8
+  call void @_CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(ptr %1, i32 %5, i32 %13), !dbg !8
   %.load = load %vec2, ptr %1, align 4
   ret %vec2 %.load
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 define void @_CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(ptr %this, i32 %x, i32 %y) #0 !dbg !9 {
   %x1 = alloca i32, align 4

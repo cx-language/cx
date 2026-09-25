@@ -25,7 +25,7 @@ int32 _CX1N4mainM4main1B1gEM3std5int320_(B* this) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _8 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at interface-method-definition.cx:5:26
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at interface-method-definition.cx:5:26
 ")
     unreachable
 

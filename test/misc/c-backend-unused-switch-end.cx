@@ -1,0 +1,28 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+
+// An unreferenced switch end block emits no label.
+
+// CHECK-LABEL: 4main1fE{{.*}}* o) {
+// CHECK: switch (
+// CHECK: 10assertFailE{{.*}}(
+// CHECK-NEXT: abort();
+// CHECK-NEXT: }
+
+enum Outcome {
+    Ok(int value),
+    Err,
+}
+
+int f(Outcome& o) {
+    switch (*o) {
+        case Ok value:
+            return value;
+        case Err:
+            return -1;
+    }
+}
+
+void main() {
+    var o = Outcome.Ok(1);
+    println(f(o));
+}

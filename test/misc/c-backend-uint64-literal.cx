@@ -1,0 +1,10 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+
+// Integer literals above INT64_MAX carry an explicit ULL suffix.
+
+// CHECK: 18446744073709551615ULL
+
+void main() {
+    uint64 ubig = 18446744073709551615;
+    println(ubig);
+}

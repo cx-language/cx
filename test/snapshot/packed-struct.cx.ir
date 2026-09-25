@@ -12,7 +12,7 @@ int32 main() {
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _1 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Assertion failed at packed-struct.cx:11:5
+    never _1 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Assertion failed at packed-struct.cx:11:5
 ")
     unreachable
 

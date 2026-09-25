@@ -1,4 +1,6 @@
 
+%never = type {}
+
 @0 = private unnamed_addr constant [35 x i8] c"Assertion failed at assert.cx:6:5\0A\00", align 1
 
 declare i1 @b() #0
@@ -9,14 +11,14 @@ define i32 @main() #0 !dbg !4 {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !8
+  %2 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !8
   unreachable
 
 assert.success:                                   ; preds = %0
   ret i32 0
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

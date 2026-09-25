@@ -38,7 +38,7 @@ loop.end:
     return p.load_0
 
 overflow.fail:
-    void _13 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at exclusive-range-operator.cx:7:11
+    never _13 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at exclusive-range-operator.cx:7:11
 ")
     unreachable
 

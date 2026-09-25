@@ -1,0 +1,32 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+// RUN: %cx --backend=c --c-dispatch --print-c %s | %FileCheck %s --check-prefix=DISPATCH
+
+// A discarded call result emits a bare call, not an unused _call temporary.
+// This covers plain statement calls as well as short-circuit arms whose
+// value feeds a dead block parameter. The full-line patterns below reject
+// an assigned `_callN = ...` shape.
+
+// CHECK-LABEL: int32_t main(void) {
+// CHECK-NEXT: {{^    [_A-Za-z][_A-Za-z0-9]*\(41\);$}}
+// CHECK: {{^    [_A-Za-z][_A-Za-z0-9]*\(\);$}}
+
+// DISPATCH-LABEL: int32_t main(void) {
+// DISPATCH: case 0: {
+// DISPATCH-NEXT: {{^    [_A-Za-z][_A-Za-z0-9]*\(41\);$}}
+
+int f(int x) {
+    return x + 1;
+}
+
+bool a() {
+    return true;
+}
+
+bool b() {
+    return false;
+}
+
+void main() {
+    f(41);
+    a() && b();
+}

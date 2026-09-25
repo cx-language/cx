@@ -21,7 +21,7 @@ void _CX1N4mainM4main1S3fooE4void1_M3std5int32(S* this, int32 bar) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at parameter-shadows-member-variable.cx:7:17
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at parameter-shadows-member-variable.cx:7:17
 ")
     unreachable
 

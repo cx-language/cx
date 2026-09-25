@@ -17,6 +17,112 @@ bool hasReturnValue(const CallInst* inst) {
     return !returnType->isVoid() && !returnType->isNever();
 }
 
+// Pure instructions without side effects: safe to drop when their result is unread.
+// Safety checks are separate instructions, so dropping these cannot remove a check.
+bool isPureTemp(ValueKind kind) {
+    switch (kind) {
+    case ValueKind::LoadInst:
+    case ValueKind::ExtractInst:
+    case ValueKind::BinaryInst:
+    case ValueKind::UnaryInst:
+    case ValueKind::CastInst:
+    case ValueKind::GEPInst:
+    case ValueKind::ConstGEPInst:
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Invokes fn for each value operand of inst. Branch destinations are blocks, not values.
+template<typename Fn> void forEachOperand(const Instruction* inst, Fn&& fn) {
+    auto mark = [&](const Value* value) {
+        if (value) fn(value);
+    };
+    switch (inst->kind) {
+    case ValueKind::ReturnInst:
+        mark(llvm::cast<ReturnInst>(inst)->value);
+        break;
+    case ValueKind::BranchInst:
+        mark(llvm::cast<BranchInst>(inst)->argument);
+        break;
+    case ValueKind::CondBranchInst: {
+        auto* branch = llvm::cast<CondBranchInst>(inst);
+        mark(branch->condition);
+        mark(branch->argument);
+        break;
+    }
+    case ValueKind::SwitchInst: {
+        auto* switchInst = llvm::cast<SwitchInst>(inst);
+        mark(switchInst->condition);
+        for (auto& c : switchInst->cases)
+            mark(c.first);
+        break;
+    }
+    case ValueKind::LoadInst:
+        mark(llvm::cast<LoadInst>(inst)->value);
+        break;
+    case ValueKind::StoreInst: {
+        auto* store = llvm::cast<StoreInst>(inst);
+        mark(store->value);
+        mark(store->pointer);
+        break;
+    }
+    case ValueKind::InsertInst: {
+        auto* insert = llvm::cast<InsertInst>(inst);
+        mark(insert->aggregate);
+        mark(insert->value);
+        break;
+    }
+    case ValueKind::ExtractInst:
+        mark(llvm::cast<ExtractInst>(inst)->aggregate);
+        break;
+    case ValueKind::CallInst: {
+        auto* call = llvm::cast<CallInst>(inst);
+        mark(call->function);
+        for (auto* arg : call->args)
+            mark(arg);
+        break;
+    }
+    case ValueKind::BinaryInst: {
+        auto* binary = llvm::cast<BinaryInst>(inst);
+        mark(binary->left);
+        mark(binary->right);
+        break;
+    }
+    case ValueKind::UnaryInst:
+        mark(llvm::cast<UnaryInst>(inst)->operand);
+        break;
+    case ValueKind::GEPInst: {
+        auto* gep = llvm::cast<GEPInst>(inst);
+        mark(gep->pointer);
+        for (auto* index : gep->indexes)
+            mark(index);
+        break;
+    }
+    case ValueKind::ConstGEPInst:
+        mark(llvm::cast<ConstGEPInst>(inst)->pointer);
+        break;
+    case ValueKind::CastInst:
+        mark(llvm::cast<CastInst>(inst)->value);
+        break;
+    case ValueKind::AllocaInst:
+    case ValueKind::UnreachableInst:
+    case ValueKind::SizeofInst:
+    case ValueKind::BasicBlock:
+    case ValueKind::Function:
+    case ValueKind::Parameter:
+    case ValueKind::GlobalVariable:
+    case ValueKind::ConstantString:
+    case ValueKind::ConstantInt:
+    case ValueKind::ConstantFP:
+    case ValueKind::ConstantBool:
+    case ValueKind::ConstantNull:
+    case ValueKind::Undefined:
+        break;
+    }
+}
+
 // Named structs use field names (see codegenTypeDefinition); anonymous structs fall back to indices.
 std::string getFieldName(IRType* type, int index) {
     ASSERT(index < (int)type->getFields().size());
@@ -121,7 +227,9 @@ void CGenerator::codegenArgument(const Value* value) {
 }
 
 void CGenerator::codegenBranch(const BranchInst* inst) {
-    if (inst->argument && inst->destination->parameter) {
+    // Assignments to unread block parameters are dead: the argument value is
+    // already evaluated where it is defined, so dropping the store is safe.
+    if (inst->argument && inst->destination->parameter && !deadValues.contains(inst->destination->parameter)) {
         stream.indent(4) << getBlockParamName(inst->destination->parameter) << " = ";
         codegenArgument(inst->argument);
         stream << "; // branch argument\n";
@@ -134,7 +242,7 @@ void CGenerator::codegenBranch(const BranchInst* inst) {
     }
 }
 static void codegenCondBranchAssignment(CGenerator& generator, llvm::raw_string_ostream& stream, const BasicBlock* block, const Value* argument, int indent) {
-    if (block->parameter && argument) {
+    if (block->parameter && argument && !generator.deadValues.contains(block->parameter)) {
         stream.indent(indent) << generator.getBlockParamName(block->parameter) << " = ";
         generator.codegenArgument(argument);
         stream << ";\n";
@@ -191,6 +299,8 @@ void CGenerator::codegenSwitch(const SwitchInst* inst) {
 }
 
 void CGenerator::codegenLoad(const LoadInst* inst) {
+    // Pure and side-effect free (safety checks are separate instructions), so skip when unread.
+    if (deadValues.contains(inst)) return;
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_load");
     if (inst->getType()->isArrayType()) {
@@ -282,6 +392,7 @@ void CGenerator::codegenInsert(const InsertInst* inst) {
 }
 
 void CGenerator::codegenExtract(const ExtractInst* inst) {
+    if (deadValues.contains(inst)) return;
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_extract");
     codegenTempDeclaration(inst, name);
@@ -295,8 +406,11 @@ void CGenerator::codegenCall(const CallInst* inst) {
     stream.indent(4);
     auto* returnType = inst->function->getType()->getPointee()->getReturnType();
     bool returnsArray = returnType->isArrayType();
+    // A discarded result needs no temporary, except array results, which need
+    // storage for the hidden result pointer.
+    bool needsTemp = hasReturnValue(inst) && (returnsArray || useCounts[inst] > 0);
     std::string returnName;
-    if (hasReturnValue(inst)) {
+    if (needsTemp) {
         const std::string& name = getOrCreateTempName(inst, "_call");
         if (returnsArray) returnName = name;
         if (returnsArray) {
@@ -325,9 +439,15 @@ void CGenerator::codegenCall(const CallInst* inst) {
         if (i + 1 < inst->args.size()) stream << ", ";
     }
     stream << ");\n";
+    if (returnType->isNever()) {
+        // 'never' erases to 'void', so tell the C compiler the call doesn't
+        // return; otherwise it warns about values unset on the fallthrough path.
+        stream.indent(4) << "abort();\n";
+    }
 }
 
 void CGenerator::codegenBinary(const BinaryInst* inst) {
+    if (deadValues.contains(inst)) return;
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_binary_op");
     codegenTempDeclaration(inst, name);
@@ -403,6 +523,7 @@ void CGenerator::codegenBinary(const BinaryInst* inst) {
 }
 
 void CGenerator::codegenUnary(const UnaryInst* inst) {
+    if (deadValues.contains(inst)) return;
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_unary_op");
     codegenTempDeclaration(inst, name);
@@ -428,6 +549,7 @@ void CGenerator::codegenUnary(const UnaryInst* inst) {
 }
 
 void CGenerator::codegenGEP(const GEPInst* inst) {
+    if (deadValues.contains(inst)) return;
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_get_element_ptr");
     if (dispatchMode) {
@@ -447,6 +569,7 @@ void CGenerator::codegenGEP(const GEPInst* inst) {
 }
 
 void CGenerator::codegenConstGEP(const ConstGEPInst* inst) {
+    if (deadValues.contains(inst)) return;
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_const_get_element_ptr");
     if (dispatchMode) {
@@ -465,6 +588,7 @@ void CGenerator::codegenConstGEP(const ConstGEPInst* inst) {
 }
 
 void CGenerator::codegenCast(const CastInst* inst) {
+    if (deadValues.contains(inst)) return;
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_cast");
     codegenTempDeclaration(inst, name);
@@ -529,7 +653,7 @@ void CGenerator::codegenTypeExpression(llvm::raw_string_ostream& stream, IRType*
                 stream << '*';
                 if (!pointerType->mutablePointee) stream << " const";
             }
-            stream << "*)";
+            stream << ")";
             codegenTypeSuffix(stream, array, needsTypeDefinition);
             return;
         }
@@ -570,7 +694,7 @@ void CGenerator::codegenTempDeclarationForType(IRType* type, const std::string& 
 }
 
 void CGenerator::codegenBasicBlock(const BasicBlock* block) {
-    if (!dispatchMode && !block->name.empty()) {
+    if (!dispatchMode && !block->name.empty() && gotoTargets.contains(block)) {
         // Extra semicolon to work around "label followed by a declaration is a C23 extension".
         stream << '\n' << getBlockLabel(block) << ": ;\n";
     }
@@ -736,6 +860,9 @@ void CGenerator::codegenConstantInt(const ConstantInt* inst) {
         return;
     }
     stream << inst->value;
+    // Non-negative magnitudes above INT64_MAX don't fit a signed 64-bit literal; spell them
+    // unsigned. Wider magnitudes are still unrepresentable as C literals, as before.
+    if (!inst->value.isNegative() && inst->value.getActiveBits() > 63) stream << "ULL";
 }
 
 void CGenerator::codegenConstantFP(const ConstantFP* inst) {
@@ -897,7 +1024,92 @@ void CGenerator::codegenInstImpl(const Value* value) {
     }
 }
 
+void CGenerator::collectUsedValues(const Function* function) {
+    useCounts.clear();
+    deadValues.clear();
+    gotoTargets.clear();
+    // Branch arguments feeding each block parameter. A dead parameter drops its
+    // assignments, so its arguments lose those uses (see the worklist below).
+    std::unordered_map<const Value*, std::vector<const Value*>> paramArgs;
+    for (auto* block : function->body) {
+        for (auto* inst : block->body) {
+            forEachOperand(inst, [&](const Value* value) { ++useCounts[value]; });
+            switch (inst->kind) {
+            case ValueKind::BranchInst: {
+                auto* branch = llvm::cast<BranchInst>(inst);
+                gotoTargets.insert(branch->destination);
+                if (branch->destination->parameter && branch->argument) {
+                    paramArgs[branch->destination->parameter].push_back(branch->argument);
+                } else if (branch->argument) {
+                    --useCounts[branch->argument]; // counted above, but no assignment exists
+                }
+                break;
+            }
+            case ValueKind::CondBranchInst: {
+                auto* branch = llvm::cast<CondBranchInst>(inst);
+                gotoTargets.insert(branch->trueBlock);
+                gotoTargets.insert(branch->falseBlock);
+                if (branch->argument) {
+                    bool hasTrue = branch->trueBlock->parameter != nullptr;
+                    bool hasFalse = branch->falseBlock->parameter != nullptr;
+                    if (hasTrue) paramArgs[branch->trueBlock->parameter].push_back(branch->argument);
+                    if (hasFalse) paramArgs[branch->falseBlock->parameter].push_back(branch->argument);
+                    // forEachOperand counts the shared argument once; each emitted
+                    // assignment is a separate use.
+                    useCounts[branch->argument] += (hasTrue ? 1 : 0) + (hasFalse ? 1 : 0) - 1;
+                }
+                break;
+            }
+            case ValueKind::SwitchInst: {
+                auto* switchInst = llvm::cast<SwitchInst>(inst);
+                for (auto& c : switchInst->cases)
+                    gotoTargets.insert(c.second);
+                gotoTargets.insert(switchInst->defaultBlock);
+                break;
+            }
+            default:
+                break;
+            }
+        }
+    }
+    // Dropping a dead value orphans its operands, so iterate to a fixpoint.
+    // Function parameters may be marked dead too; nothing consults deadValues
+    // for them (silencing uses counts), so it is harmless.
+    std::vector<const Value*> worklist;
+    auto killIfUnused = [&](const Value* value) {
+        if (value && useCounts[value] == 0 && (isPureTemp(value->kind) || value->kind == ValueKind::Parameter)) worklist.push_back(value);
+    };
+    for (auto* block : function->body) {
+        for (auto* inst : block->body)
+            killIfUnused(inst);
+        killIfUnused(block->parameter);
+    }
+    while (!worklist.empty()) {
+        const Value* dead = worklist.back();
+        worklist.pop_back();
+        if (!deadValues.insert(dead).second) continue;
+        if (dead->kind == ValueKind::Parameter) {
+            for (const Value* arg : paramArgs[dead]) {
+                if (--useCounts[arg] == 0) killIfUnused(arg);
+            }
+            continue;
+        }
+        forEachOperand(llvm::cast<Instruction>(dead), [&](const Value* operand) {
+            if (--useCounts[operand] == 0) killIfUnused(operand);
+        });
+    }
+}
+
+void CGenerator::silenceUnusedParams(const Function* function) {
+    for (auto& param : function->params) {
+        if (!param.type->isArrayType() && useCounts[&param] == 0) {
+            stream.indent(4) << "(void)" << param.name << ";\n";
+        }
+    }
+}
+
 void CGenerator::codegenFunctionPrototype(const Function* function) {
+    collectUsedValues(function);
     bool returnsArray = function->returnType->isArrayType();
     auto emitParameters = [&] {
         if (returnsArray) {
@@ -970,6 +1182,7 @@ void CGenerator::codegenFunction(const Function* function) {
         resetValueNaming(function);
         collectBlockParams(function);
         copyArrayParams(function);
+        silenceUnusedParams(function);
         for (auto* block : function->body) {
             codegenBasicBlock(block);
         }
@@ -1009,6 +1222,7 @@ const std::string& CGenerator::getBlockParamName(const Parameter* param) {
 
 void CGenerator::collectBlockParams(const Function* function) {
     for (auto* block : function->body) {
+        if (block->parameter && deadValues.contains(block->parameter)) continue;
         if (block->parameter && !emittedValues.contains(block->parameter)) {
             const std::string& name = getBlockParamName(block->parameter);
             stream.indent(4);
@@ -1036,6 +1250,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
     stream << " {\n";
     resetValueNaming(function);
     copyArrayParams(function);
+    silenceUnusedParams(function);
     dispatchBlockIds.clear();
 
     int id = 0;
@@ -1061,6 +1276,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             case ValueKind::CallInst: {
                 auto* call = llvm::cast<CallInst>(inst);
                 if (!hasReturnValue(call)) break;
+                if (!call->getType()->isArrayType() && useCounts[call] == 0) break;
                 auto name = claimSuffixedName("_call");
                 stream.indent(4);
                 codegenTempDeclarationForType(call->getType(), name);
@@ -1073,6 +1289,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             case ValueKind::BinaryInst:
             case ValueKind::UnaryInst:
             case ValueKind::CastInst: {
+                if (deadValues.contains(inst)) break;
                 auto name = claimSuffixedName(inst->kind == ValueKind::LoadInst      ? "_load"
                                               : inst->kind == ValueKind::ExtractInst ? "_extract"
                                               : inst->kind == ValueKind::BinaryInst  ? "_binary_op"
@@ -1096,6 +1313,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             }
             case ValueKind::GEPInst:
             case ValueKind::ConstGEPInst: {
+                if (deadValues.contains(inst)) break;
                 auto prefix = inst->kind == ValueKind::GEPInst ? "_get_element_ptr" : "_const_get_element_ptr";
                 auto name = claimSuffixedName(prefix);
                 stream.indent(4);

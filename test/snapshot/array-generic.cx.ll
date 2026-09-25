@@ -1,4 +1,6 @@
 
+%never = type {}
+
 @0 = private unnamed_addr constant [43 x i8] c"integer overflow at array-generic.cx:5:21\0A\00", align 1
 @1 = private unnamed_addr constant [43 x i8] c"integer overflow at array-generic.cx:5:28\0A\00", align 1
 
@@ -17,31 +19,31 @@ define i32 @main() #0 !dbg !4 {
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %0
-  %8 = getelementptr inbounds [3 x i32], ptr %a, i32 0, i32 2
-  %.load1 = load i32, ptr %8, align 4
-  %9 = sext i32 %4 to i64
-  %10 = sext i32 %.load1 to i64
-  %11 = add i64 %9, %10
-  %12 = trunc i64 %11 to i32
-  %13 = sext i32 %12 to i64
-  %14 = icmp ne i64 %11, %13
-  %15 = xor i1 %14, true
-  %overflow.condition2 = icmp eq i1 %15, false
+  %9 = getelementptr inbounds [3 x i32], ptr %a, i32 0, i32 2
+  %.load1 = load i32, ptr %9, align 4
+  %10 = sext i32 %4 to i64
+  %11 = sext i32 %.load1 to i64
+  %12 = add i64 %10, %11
+  %13 = trunc i64 %12 to i32
+  %14 = sext i32 %13 to i64
+  %15 = icmp ne i64 %12, %14
+  %16 = xor i1 %15, true
+  %overflow.condition2 = icmp eq i1 %16, false
   br i1 %overflow.condition2, label %overflow.fail3, label %overflow.success4
 
 overflow.fail3:                                   ; preds = %overflow.success
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !7
+  %17 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !7
   unreachable
 
 overflow.success4:                                ; preds = %overflow.success
-  ret i32 %12
+  ret i32 %13
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

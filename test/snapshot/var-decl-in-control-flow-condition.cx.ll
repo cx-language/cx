@@ -1,4 +1,6 @@
 
+%never = type {}
+
 @0 = private unnamed_addr constant [61 x i8] c"Unwrap failed at var-decl-in-control-flow-condition.cx:5:11\0A\00", align 1
 @1 = private unnamed_addr constant [61 x i8] c"Unwrap failed at var-decl-in-control-flow-condition.cx:9:11\0A\00", align 1
 @2 = private unnamed_addr constant [62 x i8] c"Unwrap failed at var-decl-in-control-flow-condition.cx:15:11\0A\00", align 1
@@ -32,7 +34,7 @@ loop.end:                                         ; preds = %loop.condition
   br i1 %4, label %if.then, label %if.else
 
 __implicit_unwrap.fail:                           ; preds = %loop.body
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !9
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !9
   unreachable
 
 __implicit_unwrap.success:                        ; preds = %loop.body
@@ -51,7 +53,7 @@ if.end:                                           ; preds = %__implicit_unwrap.s
   ret void
 
 __implicit_unwrap.fail6:                          ; preds = %if.then
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !9
+  %6 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !9
   unreachable
 
 __implicit_unwrap.success7:                       ; preds = %if.then
@@ -63,7 +65,7 @@ define ptr @_CX1N4main1hEOPM3std5int320_() #0 !dbg !12 {
   ret ptr null
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 define void @_CX1N4main1jE4void1_PM3std5int32(ptr %i) #0 !dbg !13 {
   %i1 = alloca ptr, align 8
@@ -99,7 +101,7 @@ loop.end:                                         ; preds = %loop.condition
   br i1 %4, label %if.then, label %if.else
 
 __implicit_unwrap.fail:                           ; preds = %loop.body
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @2), !dbg !17
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !17
   unreachable
 
 __implicit_unwrap.success:                        ; preds = %loop.body
@@ -118,7 +120,7 @@ if.end:                                           ; preds = %__implicit_unwrap.s
   br label %loop.condition6
 
 __implicit_unwrap.fail4:                          ; preds = %if.then
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @3), !dbg !17
+  %6 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @3), !dbg !17
   unreachable
 
 __implicit_unwrap.success5:                       ; preds = %if.then
@@ -126,11 +128,11 @@ __implicit_unwrap.success5:                       ; preds = %if.then
   br label %if.end
 
 loop.condition6:                                  ; preds = %__implicit_unwrap.success12, %if.end
-  %5 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !20
-  store ptr %5, ptr %c3, align 8
+  %7 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !20
+  store ptr %7, ptr %c3, align 8
   %c3.load = load ptr, ptr %c3, align 8
-  %6 = icmp ne ptr %c3.load, null
-  br i1 %6, label %loop.body7, label %loop.end10
+  %8 = icmp ne ptr %c3.load, null
+  br i1 %8, label %loop.body7, label %loop.end10
 
 loop.body7:                                       ; preds = %loop.condition6
   %c3.load8 = load ptr, ptr %c3, align 8
@@ -138,14 +140,14 @@ loop.body7:                                       ; preds = %loop.condition6
   br i1 %__implicit_unwrap.condition9, label %__implicit_unwrap.fail11, label %__implicit_unwrap.success12
 
 loop.end10:                                       ; preds = %loop.condition6
-  %7 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !21
-  store ptr %7, ptr %c4, align 8
+  %9 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !21
+  store ptr %9, ptr %c4, align 8
   %c4.load = load ptr, ptr %c4, align 8
-  %8 = icmp ne ptr %c4.load, null
-  br i1 %8, label %if.then13, label %if.else16
+  %10 = icmp ne ptr %c4.load, null
+  br i1 %10, label %if.then13, label %if.else16
 
 __implicit_unwrap.fail11:                         ; preds = %loop.body7
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @4), !dbg !17
+  %11 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @4), !dbg !17
   unreachable
 
 __implicit_unwrap.success12:                      ; preds = %loop.body7
@@ -161,14 +163,14 @@ if.else16:                                        ; preds = %loop.end10
   br label %if.end17
 
 if.end17:                                         ; preds = %__implicit_unwrap.success19, %if.else16
-  %9 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !23
-  store ptr %9, ptr %c5, align 8
+  %12 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !23
+  store ptr %12, ptr %c5, align 8
   %c5.load = load ptr, ptr %c5, align 8
-  %10 = icmp ne ptr %c5.load, null
-  br i1 %10, label %if.then20, label %if.else23
+  %13 = icmp ne ptr %c5.load, null
+  br i1 %13, label %if.then20, label %if.else23
 
 __implicit_unwrap.fail18:                         ; preds = %if.then13
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @5), !dbg !17
+  %14 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @5), !dbg !17
   unreachable
 
 __implicit_unwrap.success19:                      ; preds = %if.then13
@@ -187,7 +189,7 @@ if.end24:                                         ; preds = %__implicit_unwrap.s
   ret void
 
 __implicit_unwrap.fail25:                         ; preds = %if.then20
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @6), !dbg !17
+  %15 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @6), !dbg !17
   unreachable
 
 __implicit_unwrap.success26:                      ; preds = %if.then20

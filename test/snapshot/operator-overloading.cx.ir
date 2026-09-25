@@ -20,7 +20,7 @@ vec2 _CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(vec2 a, vec2 b) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _8 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:21
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:21
 ")
     unreachable
 
@@ -40,7 +40,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:32
+    never _16 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:32
 ")
     unreachable
 

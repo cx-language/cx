@@ -28,7 +28,7 @@ void _CX1N4main1fE4void2_PM3std5int32M3std5int32(int32* a, int32 b) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _9 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at dereference-vs-multiplication.cx:11:5
+    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at dereference-vs-multiplication.cx:11:5
 ")
     unreachable
 

@@ -17,7 +17,7 @@ int32[2] _CX1N4main1fE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32(int32 foo, 
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:17
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:17
 ")
     unreachable
 
@@ -36,7 +36,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:28
+    never _16 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:28
 ")
     unreachable
 
@@ -64,7 +64,7 @@ int32[2] _CX1N4main1gE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32(int32 foo, 
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:18
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:18
 ")
     unreachable
 
@@ -83,7 +83,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:29
+    never _16 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:29
 ")
     unreachable
 

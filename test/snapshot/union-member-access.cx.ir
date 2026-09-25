@@ -26,7 +26,7 @@ int32 main() {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _8 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at union-member-access.cx:13:19
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at union-member-access.cx:13:19
 ")
     unreachable
 

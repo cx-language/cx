@@ -10,7 +10,7 @@ int32 main() {
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _2 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at unwrap.cx:6:37
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at unwrap.cx:6:37
 ")
     unreachable
 
@@ -24,7 +24,7 @@ assert.success:
     br assert.condition_0, assert.fail, assert.success
 
 assert.fail_0:
-    void _5 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at unwrap.cx:8:8
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at unwrap.cx:8:8
 ")
     unreachable
 

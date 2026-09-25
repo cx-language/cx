@@ -2,6 +2,7 @@
 %Big = type { i32, i32, i32, i32, i32 }
 %Outer = type { %Big, i32 }
 %Wide = type { i128, i128 }
+%never = type {}
 
 @0 = private unnamed_addr constant [51 x i8] c"integer overflow at large-struct-passing.cx:40:16\0A\00", align 1
 @1 = private unnamed_addr constant [51 x i8] c"integer overflow at large-struct-passing.cx:40:37\0A\00", align 1
@@ -141,7 +142,7 @@ if.end:                                           ; preds = %if.else, %if.then
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %if.end
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !19
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !19
   unreachable
 
 overflow.success:                                 ; preds = %if.end
@@ -149,40 +150,40 @@ overflow.success:                                 ; preds = %if.end
   call void @_CX1N4main9makeOuterEM4main5Outer0_(ptr sret(%Outer) align 4 %sret.alloca6), !dbg !20
   %tag = getelementptr inbounds %Outer, ptr %sret.alloca6, i32 0, i32 1
   %tag7 = load i32, ptr %tag, align 4
-  %8 = sext i32 %4 to i64
-  %9 = sext i32 %tag7 to i64
-  %10 = add i64 %8, %9
-  %11 = trunc i64 %10 to i32
-  %12 = sext i32 %11 to i64
-  %13 = icmp ne i64 %10, %12
-  %14 = xor i1 %13, true
-  %overflow.condition8 = icmp eq i1 %14, false
+  %9 = sext i32 %4 to i64
+  %10 = sext i32 %tag7 to i64
+  %11 = add i64 %9, %10
+  %12 = trunc i64 %11 to i32
+  %13 = sext i32 %12 to i64
+  %14 = icmp ne i64 %11, %13
+  %15 = xor i1 %14, true
+  %overflow.condition8 = icmp eq i1 %15, false
   br i1 %overflow.condition8, label %overflow.fail9, label %overflow.success10
 
 overflow.fail9:                                   ; preds = %overflow.success
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !19
+  %16 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !19
   unreachable
 
 overflow.success10:                               ; preds = %overflow.success
   %a11 = getelementptr inbounds %Wide, ptr %v, i32 0, i32 0
   %a.load12 = load i128, ptr %a11, align 16
-  %15 = trunc i128 %a.load12 to i32
-  %16 = sext i32 %11 to i64
-  %17 = sext i32 %15 to i64
-  %18 = add i64 %16, %17
-  %19 = trunc i64 %18 to i32
-  %20 = sext i32 %19 to i64
-  %21 = icmp ne i64 %18, %20
-  %22 = xor i1 %21, true
-  %overflow.condition13 = icmp eq i1 %22, false
+  %17 = trunc i128 %a.load12 to i32
+  %18 = sext i32 %12 to i64
+  %19 = sext i32 %17 to i64
+  %20 = add i64 %18, %19
+  %21 = trunc i64 %20 to i32
+  %22 = sext i32 %21 to i64
+  %23 = icmp ne i64 %20, %22
+  %24 = xor i1 %23, true
+  %overflow.condition13 = icmp eq i1 %24, false
   br i1 %overflow.condition13, label %overflow.fail14, label %overflow.success15
 
 overflow.fail14:                                  ; preds = %overflow.success10
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @2), !dbg !19
+  %25 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !19
   unreachable
 
 overflow.success15:                               ; preds = %overflow.success10
-  ret i32 %19
+  ret i32 %21
 }
 
 define void @_CX1N4mainM4main4Wide4initE4void2_M3std6int128M3std6int128(ptr %this, i128 %a, i128 %b) #0 !dbg !21 {
@@ -199,7 +200,7 @@ define void @_CX1N4mainM4main4Wide4initE4void2_M3std6int128M3std6int128(ptr %thi
   ret void
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }

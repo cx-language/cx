@@ -14,7 +14,7 @@ void _CX1N4mainM4main1XIM3std5int32E6deinitE4void0_(X<int32>* this) {
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _0 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at optional-type-unknown-identifier-bug.cx:11:18
+    never _0 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at optional-type-unknown-identifier-bug.cx:11:18
 ")
     unreachable
 

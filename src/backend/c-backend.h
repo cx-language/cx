@@ -88,6 +88,16 @@ struct CGenerator {
     // copies, which behave like any other array. This also implements
     // by-value semantics.
     void copyArrayParams(const Function* function);
+    // Counts operand references (useCounts) and collects the blocks targeted
+    // by gotos (gotoTargets). Pure temporaries and block parameters no live
+    // instruction reads are marked dead (deadValues), cascading: dropping one
+    // may orphan its operands. Dead values are omitted instead of warning.
+    // Runs at the top of codegenFunctionPrototype, which precedes every
+    // prototype and body.
+    void collectUsedValues(const Function* function);
+    // Silences -Wunused-parameter for unreferenced parameters. Array
+    // parameters are always referenced by the entry memcpy in copyArrayParams.
+    void silenceUnusedParams(const Function* function);
     std::string finish();
 
     // When dispatchMode is true, functions are emitted as goto-free dispatch
@@ -112,6 +122,12 @@ struct CGenerator {
     std::unordered_set<std::string> usedValueNames;
     // Program counter value per basic block, used only in dispatch mode.
     std::unordered_map<const BasicBlock*, int> dispatchBlockIds;
+    // Operand reference counts for the function currently being emitted.
+    std::unordered_map<const Value*, int> useCounts;
+    // Pure temporaries and block parameters no live instruction reads.
+    std::unordered_set<const Value*> deadValues;
+    // Blocks targeted by a branch, conditional branch, or switch case.
+    std::unordered_set<const BasicBlock*> gotoTargets;
     int valueSuffixCounter = 0;
 };
 

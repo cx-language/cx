@@ -204,7 +204,7 @@ bool removeFile(string path) {
 }
 
 /// Prints the message to stderr and aborts.
-void assertFail(const char* message) {
+never assertFail(const char* message) {
     var stream = fdopen(2, "w");
     if stream {
         fprintf(stream, "%s", message);

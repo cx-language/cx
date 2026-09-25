@@ -1,5 +1,6 @@
 
 %U = type { i32 }
+%never = type {}
 
 @0 = private unnamed_addr constant [50 x i8] c"integer overflow at union-member-access.cx:13:19\0A\00", align 1
 
@@ -27,14 +28,14 @@ define i32 @main() #0 !dbg !7 {
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !9
+  %9 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %0
   ret i32 %5
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

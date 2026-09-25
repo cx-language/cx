@@ -1,6 +1,7 @@
 
 %0 = type { { i32 } }
 %"Opt<int32>" = type { i32, %0 }
+%never = type {}
 
 @0 = private unnamed_addr constant [66 x i8] c"invalid value in switch over enum 'Opt' at generic-enum.cx:12:13\0A\00", align 1
 @1 = private unnamed_addr constant [43 x i8] c"integer overflow at generic-enum.cx:14:39\0A\00", align 1
@@ -52,7 +53,7 @@ switch.case.1:                                    ; preds = %0
   br label %switch.end
 
 switch.default:                                   ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 switch.end:                                       ; preds = %overflow.success, %switch.case.1
@@ -64,31 +65,31 @@ switch.end:                                       ; preds = %overflow.success, %
   ]
 
 overflow.fail:                                    ; preds = %switch.case.0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !7
+  %9 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %switch.case.0
-  %8 = insertvalue { i32 } undef, i32 %4, 0
+  %10 = insertvalue { i32 } undef, i32 %4, 0
   %associatedValue9 = getelementptr inbounds %"Opt<int32>", ptr %enum2, i32 0, i32 1
-  store { i32 } %8, ptr %associatedValue9, align 4
+  store { i32 } %10, ptr %associatedValue9, align 4
   %enum.load10 = load %"Opt<int32>", ptr %enum2, align 4
   store %"Opt<int32>" %enum.load10, ptr %b, align 4
   br label %switch.end
 
 switch.case.011:                                  ; preds = %switch.end
-  %9 = getelementptr inbounds %"Opt<int32>", ptr %b, i32 0, i32 1
-  %some.load12 = load i32, ptr %9, align 4
+  %11 = getelementptr inbounds %"Opt<int32>", ptr %b, i32 0, i32 1
+  %some.load12 = load i32, ptr %11, align 4
   ret i32 %some.load12
 
 switch.case.113:                                  ; preds = %switch.end
   ret i32 0
 
 switch.default14:                                 ; preds = %switch.end
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @2), !dbg !7
+  %12 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !7
   unreachable
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

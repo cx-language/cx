@@ -18,7 +18,7 @@ int32 main() {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _11 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-generic.cx:5:21
+    never _11 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-generic.cx:5:21
 ")
     unreachable
 
@@ -36,7 +36,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _20 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-generic.cx:5:28
+    never _20 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-generic.cx:5:28
 ")
     unreachable
 

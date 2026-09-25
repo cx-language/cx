@@ -4,6 +4,7 @@
 %"Slice<int32>" = type { ptr, i32 }
 %"RangeIterator<int32>" = type { i32, i32 }
 %"Range<int32>" = type { i32, i32 }
+%never = type {}
 
 @0 = private unnamed_addr constant [39 x i8] c"integer overflow at allocate.cx:36:55\0A\00", align 1
 @1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:71\0A\00", align 1
@@ -254,20 +255,20 @@ overflow.end:                                     ; preds = %overflow.check, %0
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %overflow.end
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !43
+  %7 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !43
   unreachable
 
 overflow.success:                                 ; preds = %overflow.end
-  %7 = call ptr @malloc(i64 %2), !dbg !44
-  %assert.condition = icmp eq ptr %7, null
+  %8 = call ptr @malloc(i64 %2), !dbg !44
+  %assert.condition = icmp eq ptr %8, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %overflow.success
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !43
+  %9 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !43
   unreachable
 
 assert.success:                                   ; preds = %overflow.success
-  ret ptr %7
+  ret ptr %8
 }
 
 declare void @_CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ptr, i32, i32) #0
@@ -304,7 +305,7 @@ define i32 @_CX1N3stdM3std4ListIM3std5int32E4sizeEM3std5int320_(ptr %this) #0 !d
   ret i32 %size.load
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 declare ptr @malloc(i64) #0
 

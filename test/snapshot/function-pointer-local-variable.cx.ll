@@ -1,4 +1,6 @@
 
+%never = type {}
+
 @0 = private unnamed_addr constant [62 x i8] c"integer overflow at function-pointer-local-variable.cx:14:27\0A\00", align 1
 
 define void @_CX1N4main3fooE4void0_() #0 !dbg !4 {
@@ -44,7 +46,7 @@ define void @_CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(ptr %p) #0
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !12
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !12
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -52,7 +54,7 @@ overflow.success:                                 ; preds = %0
   ret void
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 define i32 @main() #0 !dbg !13 {
   %lf = alloca ptr, align 8

@@ -34,7 +34,7 @@ int32 _CX1N4main11____lambda0EM3std5int322_M3std5int32M3std5int32(int32 a, int32
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:8:29
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:8:29
 ")
     unreachable
 
@@ -60,7 +60,7 @@ int32 _CX1N4main11____lambda1EM3std5int322_M3std5int32M3std5int32(int32 a, int32
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:9:31
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:9:31
 ")
     unreachable
 
@@ -108,7 +108,7 @@ if.end:
     unreachable
 
 overflow.fail:
-    void _15 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:12:22
+    never _15 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:12:22
 ")
     unreachable
 
@@ -116,7 +116,7 @@ overflow.success:
     return _4
 
 overflow.fail_0:
-    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:14:22
+    never _16 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:14:22
 ")
     unreachable
 
@@ -143,7 +143,7 @@ int32 _CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32(int32 a, int32
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:18:19
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:18:19
 ")
     unreachable
 

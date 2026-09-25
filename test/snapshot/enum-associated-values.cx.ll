@@ -1,6 +1,7 @@
 
 %0 = type { { i1, i32 } }
 %E = type { i32, %0 }
+%never = type {}
 
 @0 = private unnamed_addr constant [74 x i8] c"invalid value in switch over enum 'E' at enum-associated-values.cx:14:13\0A\00", align 1
 
@@ -58,20 +59,20 @@ switch.case.2:                                    ; preds = %0
   ret i32 %eb.load
 
 switch.default:                                   ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
+  %4 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 switch.end:                                       ; preds = %switch.case.0
   %e.tag14 = getelementptr inbounds %E, ptr %e, i32 0, i32 0
   %e.tag.load15 = load i32, ptr %e.tag14, align 4
-  %4 = icmp eq i32 %e.tag.load15, 0
+  %5 = icmp eq i32 %e.tag.load15, 0
   %e.tag16 = getelementptr inbounds %E, ptr %e, i32 0, i32 0
   %e.tag.load17 = load i32, ptr %e.tag16, align 4
-  %5 = icmp eq i32 %e.tag.load17, 1
+  %6 = icmp eq i32 %e.tag.load17, 1
   ret i32 0
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

@@ -1,5 +1,6 @@
 
 %__closure0 = type { ptr, i32, i32 }
+%never = type {}
 %S = type { i32 }
 %__closure2 = type { ptr, i32 }
 %__closure1 = type { ptr, i32, ptr }
@@ -49,30 +50,30 @@ define i32 @_CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !9
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %0
   %__capture_d.load = load i32, ptr %__capture_d2, align 4
-  %8 = sext i32 %4 to i64
-  %9 = sext i32 %__capture_d.load to i64
-  %10 = add i64 %8, %9
-  %11 = trunc i64 %10 to i32
-  %12 = sext i32 %11 to i64
-  %13 = icmp ne i64 %10, %12
-  %14 = xor i1 %13, true
-  %overflow.condition4 = icmp eq i1 %14, false
+  %9 = sext i32 %4 to i64
+  %10 = sext i32 %__capture_d.load to i64
+  %11 = add i64 %9, %10
+  %12 = trunc i64 %11 to i32
+  %13 = sext i32 %12 to i64
+  %14 = icmp ne i64 %11, %13
+  %15 = xor i1 %14, true
+  %overflow.condition4 = icmp eq i1 %15, false
   br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
 
 overflow.fail5:                                   ; preds = %overflow.success
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !9
+  %16 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !9
   unreachable
 
 overflow.success6:                                ; preds = %overflow.success
-  ret i32 %11
+  ret i32 %12
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 define i32 @main() #0 !dbg !10 {
   %s = alloca %S, align 8
@@ -145,7 +146,7 @@ define i32 @_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(i32 %
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @2), !dbg !19
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !19
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -170,28 +171,28 @@ define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4mai
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @3), !dbg !21
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @3), !dbg !21
   unreachable
 
 overflow.success:                                 ; preds = %0
   %d = getelementptr inbounds %S, ptr %__capture_this, i32 0, i32 0
   %d.load = load i32, ptr %d, align 4
-  %8 = sext i32 %4 to i64
-  %9 = sext i32 %d.load to i64
-  %10 = add i64 %8, %9
-  %11 = trunc i64 %10 to i32
-  %12 = sext i32 %11 to i64
-  %13 = icmp ne i64 %10, %12
-  %14 = xor i1 %13, true
-  %overflow.condition3 = icmp eq i1 %14, false
+  %9 = sext i32 %4 to i64
+  %10 = sext i32 %d.load to i64
+  %11 = add i64 %9, %10
+  %12 = trunc i64 %11 to i32
+  %13 = sext i32 %12 to i64
+  %14 = icmp ne i64 %11, %13
+  %15 = xor i1 %14, true
+  %overflow.condition3 = icmp eq i1 %15, false
   br i1 %overflow.condition3, label %overflow.fail4, label %overflow.success5
 
 overflow.fail4:                                   ; preds = %overflow.success
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @4), !dbg !21
+  %16 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @4), !dbg !21
   unreachable
 
 overflow.success5:                                ; preds = %overflow.success
-  ret i32 %11
+  ret i32 %12
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)

@@ -1,6 +1,7 @@
 
 %"RangeIterator<int32>" = type { i32, i32 }
 %"Range<int32>" = type { i32, i32 }
+%never = type {}
 
 @0 = private unnamed_addr constant [54 x i8] c"integer overflow at exclusive-range-operator.cx:7:11\0A\00", align 1
 
@@ -43,7 +44,7 @@ loop.end:                                         ; preds = %loop.condition
   ret i32 %p.load1
 
 overflow.fail:                                    ; preds = %loop.body
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !9
+  %12 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %loop.body
@@ -61,7 +62,7 @@ declare i32 @_CX1N3stdM3std13RangeIteratorIM3std5int32E5valueEM3std5int320_(ptr)
 
 declare void @_CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(ptr) #0
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

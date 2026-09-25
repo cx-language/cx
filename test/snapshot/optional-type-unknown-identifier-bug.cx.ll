@@ -1,5 +1,6 @@
 
 %"X<int32>" = type { ptr }
+%never = type {}
 %"Y<int32>" = type { i32 }
 
 @0 = private unnamed_addr constant [64 x i8] c"Unwrap failed at optional-type-unknown-identifier-bug.cx:11:18\0A\00", align 1
@@ -25,7 +26,7 @@ define void @_CX1N4mainM4main1XIM3std5int32E6deinitE4void0_(ptr %this) #0 !dbg !
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !11
+  %1 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !11
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -35,7 +36,7 @@ assert.success:                                   ; preds = %0
   ret void
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

@@ -1,4 +1,6 @@
 
+%never = type {}
+
 @0 = private unnamed_addr constant [49 x i8] c"integer overflow at lambda-noncapturing.cx:8:29\0A\00", align 1
 @1 = private unnamed_addr constant [49 x i8] c"integer overflow at lambda-noncapturing.cx:9:31\0A\00", align 1
 @2 = private unnamed_addr constant [50 x i8] c"integer overflow at lambda-noncapturing.cx:12:22\0A\00", align 1
@@ -40,7 +42,7 @@ define i32 @_CX1N4main11____lambda0EM3std5int322_M3std5int32M3std5int32(i32 %a, 
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !15
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !15
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -65,7 +67,7 @@ define i32 @_CX1N4main11____lambda1EM3std5int322_M3std5int32M3std5int32(i32 %a, 
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !17
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !17
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -112,14 +114,14 @@ if.end:                                           ; No predecessors!
   unreachable
 
 overflow.fail:                                    ; preds = %if.then
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @2), !dbg !19
+  %16 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !19
   unreachable
 
 overflow.success:                                 ; preds = %if.then
   ret i32 %5
 
 overflow.fail8:                                   ; preds = %if.else
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @3), !dbg !19
+  %17 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @3), !dbg !19
   unreachable
 
 overflow.success9:                                ; preds = %if.else
@@ -145,7 +147,7 @@ define i32 @_CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32(i32 %a, 
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @4), !dbg !21
+  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @4), !dbg !21
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -182,7 +184,7 @@ if.end:                                           ; preds = %if.else
   ret void
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

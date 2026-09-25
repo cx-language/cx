@@ -1,0 +1,16 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+
+// 'never' erases to 'void', so a call to a never-returning function is
+// followed by abort() to tell the C compiler the call doesn't return.
+
+// CHECK-LABEL: 4main1fE{{.*}}void) {
+// CHECK: 3std5abort{{.*}}(
+// CHECK-NEXT: abort();
+
+void f() {
+    abort("boom");
+}
+
+void main() {
+    f();
+}

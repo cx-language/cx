@@ -243,7 +243,7 @@ overflow.end(bool overflowed):
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _6 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at allocate.cx:36:55
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:36:55
 ")
     unreachable
 
@@ -254,7 +254,7 @@ overflow.success:
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _9 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at allocate.cx:36:71
+    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:36:71
 ")
     unreachable
 

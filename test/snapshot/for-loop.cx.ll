@@ -1,6 +1,7 @@
 
 %"ClosedRangeIterator<int32>" = type { i32, i32 }
 %"ClosedRange<int32>" = type { i32, i32 }
+%never = type {}
 
 @0 = private unnamed_addr constant [38 x i8] c"integer overflow at for-loop.cx:6:13\0A\00", align 1
 
@@ -42,7 +43,7 @@ loop.end:                                         ; preds = %loop.condition
   ret i32 0
 
 overflow.fail:                                    ; preds = %loop.body
-  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !9
+  %12 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %loop.body
@@ -95,7 +96,7 @@ define void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(
   ret void
 }
 
-declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
 define void @_CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ptr %this, %"ClosedRange<int32>" %range) #0 !dbg !18 {
   %range1 = alloca %"ClosedRange<int32>", align 8
