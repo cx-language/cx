@@ -336,22 +336,97 @@ def render_file_page(relpath, types, functions, constants, conditional):
     return finish(out)
 
 
-def render_index(title, pages, blurb=True):
-    out = [f"# {title}", ""]
-    if blurb:
-        out += [
-            "Auto-generated from the [standard library sources](https://github.com/cx-language/cx/tree/main/std)",
-            "by [generate_std_docs.py](https://github.com/cx-language/cx/blob/main/website/generate_std_docs.py).",
-            "",
-        ]
+def first_sentence(doc):
+    """First sentence of a doc comment, for index summaries."""
+    parts = []
+    for line in doc:
+        stripped = line.strip()
+        if not stripped:
+            break
+        parts.append(stripped)
+        if stripped.endswith((".", "?", "!")):
+            break
+        if len(parts) >= 3:
+            break
+    return " ".join(parts)
+
+
+def summary_suffix(doc):
+    return f" - {first_sentence(doc)}" if doc else ""
+
+
+def render_category_page(label, pages):
+    out = [f"# {label}", ""]
     for relpath, types, functions, constants, _ in pages:
-        names = (
-            [f"`{t.name}`" for t in types]
-            + [f"`{n}`" for n in functions]
-            + [f"`{n}`" for n, _ in constants]
-        )
-        out.append(f"- [{relpath}](./{page_name(relpath)}): " + ", ".join(names))
-    out.append("")
+        page = page_name(relpath)
+        out.append(f"## [{display_name(relpath)}](./{page})")
+        out.append("")
+        if not types and not functions and not constants:
+            out.append("*No public declarations.*")
+            out.append("")
+        for entry in types:
+            # The backslash joins the type line and its member links into one
+            # paragraph so they group visually.
+            line = f"[`{entry.name}`](./{page}#type-{entry.name})" + summary_suffix(entry.doc)
+            if entry.members:
+                links = ", ".join(
+                    f"[`{name}`](./{page}#{entry.name}-{slug(name)})" for name in entry.members
+                )
+                out.append(line + "\\")
+                out.append(f"Members: {links}")
+            else:
+                out.append(line)
+            out.append("")
+        for name in functions:
+            doc = functions[name].declarations[0].doc
+            out.append(f"[`{name}`](./{page}#fn-{slug(name)})" + summary_suffix(doc))
+            out.append("")
+        for name, declaration in constants:
+            out.append(f"[`{name}`](./{page}#const-{name})" + summary_suffix(declaration.doc))
+            out.append("")
+    return finish(out)
+
+
+def render_root_bullet(relpath, types, functions, constants):
+    page = page_name(relpath)
+    names = (
+        [f"[`{t.name}`](./{page}#type-{t.name})" for t in types]
+        + [f"[`{n}`](./{page}#fn-{slug(n)})" for n in functions]
+        + [f"[`{n}`](./{page}#const-{n})" for n, _ in constants]
+    )
+    bullet = f"- [`{display_name(relpath)}`](./{page})"
+    if names:
+        bullet += ": " + ", ".join(names)
+    return bullet
+
+
+def render_root_index(title, pages):
+    out = [
+        f"# {title}",
+        "",
+        "Auto-generated from the [standard library sources](https://github.com/cx-language/cx/tree/main/std)",
+        "by [generate_std_docs.py](https://github.com/cx-language/cx/blob/main/website/generate_std_docs.py).",
+        "",
+    ]
+    by_path = {relpath: (types, functions, constants) for relpath, types, functions, constants, _ in pages}
+    categorized = set()
+    for label, paths in STD_CATEGORIES:
+        members = [path for path in paths if path in by_path]
+        if not members:
+            continue
+        categorized.update(members)
+        out.append(f"## [{label}](./{category_page(label)})")
+        out.append("")
+        for relpath in members:
+            out.append(render_root_bullet(relpath, *by_path[relpath]))
+        out.append("")
+    uncategorized = [relpath for relpath, *_ in pages if relpath not in categorized]
+    if uncategorized:
+        out.append("## Other")
+        out.append("")
+        for relpath in uncategorized:
+            out.append(render_root_bullet(relpath, *by_path[relpath]))
+        out.append("")
     return finish(out)
 
 
@@ -462,13 +537,13 @@ def main(argv=None):
     pages = parse_std(pathlib.Path(args.std_dir))
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "std.md").write_text(render_index("Standard library reference", pages))
+    (output_dir / "std.md").write_text(render_root_index("Standard library reference", pages))
     for label, paths in STD_CATEGORIES:
         members = [page for page in pages if page[0] in paths]
         if members:
             category_path = output_dir / f"{category_page(label)}.md"
             category_path.parent.mkdir(parents=True, exist_ok=True)
-            category_path.write_text(render_index(label, members, blurb=False))
+            category_path.write_text(render_category_page(label, members))
     for relpath, types, functions, constants, conditional in pages:
         page_path = output_dir / f"{page_name(relpath)}.md"
         page_path.parent.mkdir(parents=True, exist_ok=True)
