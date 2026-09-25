@@ -1085,15 +1085,23 @@ Expr* Typechecker::convertWithUserConversion(Expr* expr, Type target, bool diagn
     ensureSignature(*conversion);
 
     Expr* operand = expr;
+    if (operand->type.isOptionalType()) {
+        operand = convert(operand, operand->type.getWrappedType(), /*allowPointerToTemporary=*/false, diagnoseOutOfRange, allowOperatorBorrow,
+                          /*allowUserConversion=*/false);
+        if (!operand) return nullptr;
+    }
     if (conversion->isConstructorDecl()) {
         Type paramType = conversion->getParams()[0].type;
-        operand = convert(expr, paramType, /*allowPointerToTemporary=*/true, diagnoseOutOfRange, allowOperatorBorrow, /*allowUserConversion=*/false);
+        operand = convert(operand, paramType, /*allowPointerToTemporary=*/true, diagnoseOutOfRange, allowOperatorBorrow, /*allowUserConversion=*/false);
         if (!operand) return nullptr;
         // Like explicit calls, moving into a by-value parameter consumes a non-copyable source.
         if (!operand->type.removeReference().isImplicitlyCopyable() && !paramType.isImplicitlyCopyable()) setMoved(operand, true);
+        markReferenced(conversion);
+        return makeAST<ImplicitCastExpr>(operand, target, ImplicitCastExpr::UserConversion, conversion);
     }
     markReferenced(conversion);
-    return makeAST<ImplicitCastExpr>(operand, target, ImplicitCastExpr::UserConversion, conversion);
+    auto* call = makeAST<ImplicitCastExpr>(operand, conversion->getReturnType(), ImplicitCastExpr::UserConversion, conversion);
+    return convert(call, target, /*allowPointerToTemporary=*/false, diagnoseOutOfRange, allowOperatorBorrow, /*allowUserConversion=*/false);
 }
 
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange, bool allowOperatorBorrow, bool allowUserConversion) {
@@ -1221,11 +1229,20 @@ std::string Typechecker::ambiguousConversionHint(const Expr* expr, Type source, 
     return " (ambiguous implicit conversion)";
 }
 
-FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Type target, int* viableCount) const {
+FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Type target, int* viableCount, bool diagnoseOutOfRange) const {
     // Conversions never produce borrows or optionals directly; those compose through the borrow and wrap rules.
-    if (source.isOptionalType() || target.isOptionalType() || target.isPointerType()) {
+    if (target.isOptionalType() || target.isPointerType()) {
         if (viableCount) *viableCount = 0;
         return nullptr;
+    }
+    if (source.isOptionalType()) {
+        // An optional source unwraps first (asserting non-null like the plain unwrap rule),
+        // unless the plain unwrap already applies.
+        if (source.getWrappedType() == target) {
+            if (viableCount) *viableCount = 0;
+            return nullptr;
+        }
+        source = source.getWrappedType();
     }
 
     auto isAccessible = [&](const Decl* decl) {
@@ -1233,15 +1250,15 @@ FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Typ
         return decl->accessLevel != AccessLevel::Private || (expr && inSameModule(*decl, expr->location));
     };
 
-    // Target-side: an implicit single-parameter constructor the source converts to. Nested probes
-    // disable user conversions (at most one per chain), which also rules out cycles like A -> B -> A.
+    // Nested probes disable user conversions (at most one per chain), which also rules out
+    // cycles like A -> B -> A. Range diagnostics pass through like the surrounding probe.
     FunctionDecl* targetWinner = nullptr;
     int targetViable = 0;
     if (TypeDecl* targetDecl = target.getDecl(); targetDecl && targetDecl->isStruct()) {
         for (ConstructorDecl* ctor : targetDecl->getConstructors()) {
             if (!ctor->isImplicit || ctor->getParams().size() != 1 || ctor->getParams()[0].isPack || !isAccessible(ctor)) continue;
             Type paramType = ctor->getParams()[0].type;
-            if (!isImplicitlyConvertible(expr, source, paramType, /*allowPointerToTemporary=*/true, nullptr, /*diagnoseOutOfRange=*/false,
+            if (!isImplicitlyConvertible(expr, source, paramType, /*allowPointerToTemporary=*/true, nullptr, diagnoseOutOfRange,
                                          /*allowOperatorBorrow=*/false, /*allowUserConversion=*/false)) {
                 continue;
             }
@@ -1257,8 +1274,8 @@ FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Typ
         if (targetViable != 1) targetWinner = nullptr;
     }
 
-    // Source-side: an implicit parameterless member returning the target. The source value (or
-    // borrow) becomes the receiver, so no argument conversion applies.
+    // Source-side: an implicit parameterless member whose return converts to the target. The
+    // source value (or borrow) becomes the receiver, so no argument conversion applies.
     FunctionDecl* sourceWinner = nullptr;
     int sourceViable = 0;
     if (TypeDecl* sourceDecl = source.removeReference().getDecl(); sourceDecl && sourceDecl->isStruct()) {
@@ -1267,7 +1284,16 @@ FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Typ
             auto* method = llvm::cast<MethodDecl>(member);
             if (!method->isImplicit || !method->getParams().empty() || method->getReturnType().isVoid() || !isAccessible(method)) continue;
             Type returnType = method->getReturnType();
-            if (!returnType.equalsIgnoreTopLevelMutable(target) || (!returnType.isMutable() && target.isMutable())) continue;
+            // No operand: the receiver says nothing about the call result.
+            if (!isImplicitlyConvertible(nullptr, returnType, target, /*allowPointerToTemporary=*/false, nullptr, diagnoseOutOfRange,
+                                         /*allowOperatorBorrow=*/false, /*allowUserConversion=*/false)) {
+                continue;
+            }
+            if (returnType == target) {
+                sourceWinner = method;
+                sourceViable = 1;
+                break;
+            }
             ++sourceViable;
             sourceWinner = method;
         }
@@ -1283,7 +1309,7 @@ FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Typ
 
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
                                           std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange, bool allowOperatorBorrow,
-                                          bool allowUserConversion) const {
+                                          bool allowUserConversion, bool* usesUserConversion) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
@@ -1316,7 +1342,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !target.removeOptional().isPointerType() && !decaysToView) {
         // Operator borrows stay disabled through the dereference, as before; only the user-conversion flag passes through.
         return isImplicitlyConvertible(expr, source.getPointee(), target, allowPointerToTemporary, implicitCastKind, diagnoseOutOfRange, false,
-                                       allowUserConversion);
+                                       allowUserConversion, usesUserConversion);
     }
 
     if (source.isOptionalType() && target.isOptionalType() && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable())) {
@@ -1324,7 +1350,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // fall through to the wrap rule below.
         std::optional<ImplicitCastExpr::Kind> wrappedCastKind;
         if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind, diagnoseOutOfRange, allowOperatorBorrow,
-                                    allowUserConversion)
+                                    allowUserConversion, usesUserConversion)
             && !wrappedCastKind) {
             return source;
         }
@@ -1339,9 +1365,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
             if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
-                                        allowUserConversion)
+                                        allowUserConversion, usesUserConversion)
                 && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
-                                           allowUserConversion)) {
+                                           allowUserConversion, usesUserConversion)) {
                 return target;
             }
         }
@@ -1387,7 +1413,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             if (arrayLiteralExpr->elements.size() != static_cast<size_t>(target.getArraySize())) return Type();
             bool isConvertible = llvm::all_of(arrayLiteralExpr->elements, [&](Expr* element) {
                 return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), false, nullptr, diagnoseOutOfRange,
-                                               allowOperatorBorrow, allowUserConversion);
+                                               allowOperatorBorrow, allowUserConversion, usesUserConversion);
             });
 
             if (isConvertible) {
@@ -1449,14 +1475,15 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     // User-declared conversions come after the builtin rules (a plain borrow read or
     // same-type match always wins) and before optional wrapping (so `T` to `U?`
     // composes from the inner conversion).
-    if (allowUserConversion && findUserConversion(expr, source, target)) {
+    if (allowUserConversion && findUserConversion(expr, source, target, nullptr, diagnoseOutOfRange)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::UserConversion;
+        if (usesUserConversion) *usesUserConversion = true;
         return target;
     }
 
     if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr())
         && isImplicitlyConvertible(expr, source, target.getWrappedType(), allowPointerToTemporary, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
-                                   allowUserConversion)) {
+                                   allowUserConversion, usesUserConversion)) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalWrap;
         return target;
     }
@@ -1510,7 +1537,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             auto* elementValue = anonymousStructExpr ? anonymousStructExpr->elements[i].value : nullptr;
 
             if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
-                                         allowUserConversion)) {
+                                         allowUserConversion, usesUserConversion)) {
                 return Type();
             }
         }
@@ -3122,12 +3149,14 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
 
         bool invalidType = false;
         std::optional<ImplicitCastExpr::Kind> implicitCastKind;
+        bool usesUserConversion = false;
         // Probing: other overload candidates are still untried, so don't diagnose yet.
-        if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param.type, true, &implicitCastKind, false, isOperatorCall(expr))) {
+        if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param.type, true, &implicitCastKind, false, isOperatorCall(expr), true,
+                                                         &usesUserConversion)) {
             didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
             didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
             didWrapOptional = didWrapOptional || implicitCastKind == ImplicitCastExpr::OptionalWrap || arg.value->isNullLiteralExpr();
-            if (implicitCastKind == ImplicitCastExpr::UserConversion) ++userConversionCount;
+            if (usesUserConversion) ++userConversionCount;
         } else {
             invalidType = true;
         }
@@ -3184,11 +3213,31 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         declNote.push_back(Note{calleeDecl->getLocation(), ("'" + callee + "' declared here").str()});
     }
 
+    auto reportInvalidType = [&](size_t argIndex) {
+        auto& arg = expr.args[argIndex];
+        auto& param = params[size_t(argToParam[argIndex])];
+        diagnoseClosureConversion(arg.value->type, param.type, arg.location);
+        // Validation probed without diagnosing; re-run once so an out-of-range literal still
+        // reports the range instead of a generic mismatch. This either throws or returns null,
+        // since probing already failed, so discarding the result is safe.
+        (void)convert(arg.value, param.type, true, true, allowOperatorBorrow);
+        ERROR_WITH_NOTES(arg.location, std::move(declNote),
+                         "invalid argument #" << (argIndex + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type << "'"
+                                              << narrowingHint(arg.value->type, param.type) << ambiguousConversionHint(arg.value, arg.value->type, param.type));
+    };
+
     switch (result.error) {
     case ArgumentValidation::None: {
         for (size_t i = 0; i < expr.args.size(); ++i) {
             int paramIndex = argToParam[i];
-            if (paramIndex != -1) expr.args[i].value = convert(expr.args[i].value, params[size_t(paramIndex)].type, true, true, allowOperatorBorrow);
+            if (paramIndex == -1) continue;
+            // Committing can still fail when probing succeeded (e.g. a user conversion whose
+            // operand no longer converts); report it as a mismatch rather than storing null.
+            if (Expr* converted = convert(expr.args[i].value, params[size_t(paramIndex)].type, true, true, allowOperatorBorrow)) {
+                expr.args[i].value = converted;
+            } else {
+                reportInvalidType(i);
+            }
         }
         for (size_t j = 0; j < params.size(); ++j) {
             if (paramToArg[j] != -1) continue;
@@ -3200,7 +3249,8 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                 defaultArg = converted;
             } else {
                 ERROR_RANGE(expr.location, expr.endLocation,
-                            "cannot assign '" << defaultArg->type << "' to '" << param.type << "'" << narrowingHint(defaultArg->type, param.type));
+                            "cannot assign '" << defaultArg->type << "' to '" << param.type << "'" << narrowingHint(defaultArg->type, param.type)
+                                              << ambiguousConversionHint(defaultArg, defaultArg->type, param.type));
             }
             argToParam.push_back(int(j));
             expr.args.emplace_back(std::string(param.getName()), defaultArg, expr.location);
@@ -3232,20 +3282,9 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         ERROR_WITH_NOTES(arg.location, std::move(declNote), "duplicate argument for parameter '" << arg.name << "'");
         break;
     }
-    case ArgumentValidation::InvalidType: {
-        auto& arg = expr.args[result.index];
-        auto& param = params[size_t(argToParam[size_t(result.index)])];
-        diagnoseClosureConversion(arg.value->type, param.type, arg.location);
-        // Validation probed without diagnosing; re-run once so an out-of-range literal still
-        // reports the range instead of a generic mismatch. This either throws or returns null,
-        // since probing already failed, so discarding the result is safe.
-        (void)convert(arg.value, param.type, true, true, allowOperatorBorrow);
-        ERROR_WITH_NOTES(arg.location, std::move(declNote),
-                         "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type
-                                              << "'" << narrowingHint(arg.value->type, param.type)
-                                              << ambiguousConversionHint(arg.value, arg.value->type, param.type));
+    case ArgumentValidation::InvalidType:
+        reportInvalidType(size_t(result.index));
         break;
-    }
     }
 }
 

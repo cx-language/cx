@@ -156,14 +156,16 @@ struct Typechecker {
     Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false, bool diagnoseOutOfRange = true, bool allowOperatorBorrow = false,
                   bool allowUserConversion = true);
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
+    /// usesUserConversion (when given) reports whether a user-declared conversion applies at any
+    /// level, including nested under optionals and composite literals.
     Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false,
                                  std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr, bool diagnoseOutOfRange = true,
-                                 bool allowOperatorBorrow = false, bool allowUserConversion = true) const;
+                                 bool allowOperatorBorrow = false, bool allowUserConversion = true, bool* usesUserConversion = nullptr) const;
     /// Finds the user-declared conversion from source to target: an implicit constructor on the target
-    /// or an implicit parameterless member on the source. Pure (no diagnostics, no checking); null when
-    /// none applies or several do. viableCount (when given) receives the number of applicable
-    /// conversions, so error paths can tell "none" from "ambiguous".
-    FunctionDecl* findUserConversion(const Expr* expr, Type source, Type target, int* viableCount = nullptr) const;
+    /// or an implicit parameterless member on the source. Pure except for range diagnostics (like the
+    /// surrounding probe); null when none applies or several do. viableCount (when given) receives
+    /// the number of applicable conversions, so error paths can tell "none" from "ambiguous".
+    FunctionDecl* findUserConversion(const Expr* expr, Type source, Type target, int* viableCount = nullptr, bool diagnoseOutOfRange = false) const;
     /// Explains a failed conversion when several user-declared conversions apply, empty otherwise.
     std::string ambiguousConversionHint(const Expr* expr, Type source, Type target) const;
     /// Commits a user-declared conversion found by findUserConversion: checks and references the

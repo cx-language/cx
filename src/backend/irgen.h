@@ -111,7 +111,7 @@ struct IRGenerator {
     Value* emitIfExpr(const IfExpr& expr);
     Value* emitSwitchExpr(const SwitchExpr& expr);
     Value* emitImplicitCastExpr(const ImplicitCastExpr& expr);
-    Value* emitUserConversion(const ImplicitCastExpr& expr);
+    Value* emitUserConversion(const ImplicitCastExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
     void emitDeferredExprsAndDestructorCallsForReturn(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls);
     void emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuation);
     void emitReturnStmt(const ReturnStmt& stmt);

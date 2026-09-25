@@ -1246,19 +1246,18 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
     llvm_unreachable("all implicit cast kinds handled");
 }
 
-Value* IRGenerator::emitUserConversion(const ImplicitCastExpr& expr) {
+Value* IRGenerator::emitUserConversion(const ImplicitCastExpr& expr, AllocaInst* thisAllocaForInit) {
     auto* conversion = llvm::cast<FunctionDecl>(expr.conversionDecl);
     Function* callee = getFunction(*conversion);
-    auto paramTypes = map(callee->params, [](const Parameter& param) { return param.type; });
     if (auto* ctor = llvm::dyn_cast<ConstructorDecl>(conversion)) {
-        // Mirror constructor calls: the callee initializes a fresh temporary.
-        auto* thisAlloca = createEntryBlockAlloca(ctor->getTypeDecl()->getType());
-        llvm::SmallVector<Value*, 2> args{thisAlloca, emitExprForPassing(*expr.operand, paramTypes[1])};
+        // Mirror constructor calls: the callee initializes the local or a fresh temporary.
+        auto* thisAlloca = thisAllocaForInit ? thisAllocaForInit : createEntryBlockAlloca(ctor->getTypeDecl()->getType());
+        llvm::SmallVector<Value*, 2> args{thisAlloca, emitExprForPassing(*expr.operand, callee->params[1].type)};
         createCall(callee, args, &expr);
         return thisAlloca;
     }
     // Mirror method calls: the operand becomes the receiver.
-    llvm::SmallVector<Value*, 1> args{emitExprForPassing(*expr.operand, paramTypes[0])};
+    llvm::SmallVector<Value*, 1> args{emitExprForPassing(*expr.operand, callee->params[0].type)};
     return createCall(callee, args, &expr);
 }
 

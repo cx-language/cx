@@ -248,6 +248,17 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
             }
         }
 
+        if (auto* castExpr = llvm::dyn_cast<ImplicitCastExpr>(initializer)) {
+            if (castExpr->castKind == ImplicitCastExpr::UserConversion) {
+                if (auto* constructorDecl = llvm::dyn_cast_or_null<ConstructorDecl>(castExpr->conversionDecl)) {
+                    if (constructorDecl->getTypeDecl()->getType() == decl.type) {
+                        emitUserConversion(*castExpr, alloca);
+                        return alloca;
+                    }
+                }
+            }
+        }
+
         if (!initializer->isUndefinedLiteralExpr()) {
             createStore(emitExprForPassing(*initializer, alloca->allocatedType), alloca);
         }

@@ -24,6 +24,14 @@ struct V: Copyable {
 void takeU(U u) {
 }
 
+struct Tiny: Copyable {
+    int8 x;
+
+    implicit Tiny(int8 v) {
+        this.x = v;
+    }
+}
+
 U makeU(V v) {
     // CHECK: [[@LINE+1]]:5: error: mismatching return type 'V', expected 'U' (ambiguous implicit conversion)
     return v;
@@ -40,6 +48,9 @@ void main() {
     // Unambiguous uses still work: explicit construction and unrelated conversions.
     takeU(U(v));
     V w = 5;
+    // Out-of-range literals report the range, not a generic mismatch.
+    // CHECK: [[@LINE+1]]:14: error: 1000 is out of range for type 'int8'
+    Tiny t = 1000;
 }
 
 // CHECK-NOT: implicit-conversions.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -21,6 +21,11 @@
 
 using namespace cx;
 
+namespace {
+// Reported wherever `implicit` appears outside a struct constructor or member function.
+constexpr char implicitMemberOnly[] = "only struct constructors and member functions can be marked 'implicit'";
+} // namespace
+
 Parser::Parser(llvm::MemoryBufferRef input, Module& module, const CompileOptions& options)
 : lexer(input), currentModule(&module), currentTokenIndex(0), options(options) {
     tokenBuffer.emplace_back(lexer.nextToken());
@@ -1806,7 +1811,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             goto start;
         case Token::Implicit:
             if (tag == TypeTag::Interface) {
-                ERROR(getCurrentLocation(), "only struct constructors and member functions can be marked 'implicit'");
+                ERROR(getCurrentLocation(), implicitMemberOnly);
             }
             if (isImplicit) {
                 WARN(getCurrentLocation(), "duplicate 'implicit' specifier");
@@ -1819,7 +1824,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             ERROR(getCurrentLocation(), "only top-level functions can be marked as tests");
         case Token::Tilde:
             if (isImplicit) {
-                ERROR(implicitLocation, "only struct constructors and member functions can be marked 'implicit'");
+                ERROR(implicitLocation, implicitMemberOnly);
             }
             if (accessLevel != AccessLevel::Default) {
                 WARN(lookAhead(-1).location, "destructors cannot be " << accessLevel);
@@ -1836,7 +1841,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
         case Token::Const:
             if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
                 if (isImplicit) {
-                    ERROR(implicitLocation, "only struct constructors and member functions can be marked 'implicit'");
+                    ERROR(implicitLocation, implicitMemberOnly);
                 }
                 if (genericParams && !genericParams->empty()) {
                     ERROR(getCurrentLocation(), "static constants are not supported in generic types");
@@ -1869,7 +1874,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 break;
             default:
                 if (isImplicit) {
-                    ERROR(implicitLocation, "only struct constructors and member functions can be marked 'implicit'");
+                    ERROR(implicitLocation, implicitMemberOnly);
                 }
                 // A const-qualified member with an initializer is a static constant.
                 if (currentToken() == Token::Assignment && !type.isMutable()) {
@@ -1933,7 +1938,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             consumeToken();
         }
         if (currentToken() == Token::Implicit) {
-            ERROR(getCurrentLocation(), "only struct constructors and member functions can be marked 'implicit'");
+            ERROR(getCurrentLocation(), implicitMemberOnly);
         }
 
         // A `const` name followed by `=` declares a constant scoped under the enum name.
@@ -2127,7 +2132,7 @@ start:
         consumeToken();
         goto start;
     case Token::Implicit:
-        ERROR(getCurrentLocation(), "only struct constructors and member functions can be marked 'implicit'");
+        ERROR(getCurrentLocation(), implicitMemberOnly);
     case Token::Extern:
         if (isTest) ERROR(getCurrentLocation(), "test functions must have a body");
         consumeToken();
