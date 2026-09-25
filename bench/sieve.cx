@@ -1,0 +1,17 @@
+// Prime number sieve. Prints the number of primes below the limit.
+// Workload: allocation + branching + memory writes. Output must be stable.
+void main() {
+    const count = 100000000;
+    var isPrime = List(count, true);
+    var primes = 0;
+    for i in 2..count {
+        if !isPrime[i] continue;
+        primes += 1;
+        var j = i + i;
+        while j < count {
+            isPrime[j] = false;
+            j += i;
+        }
+    }
+    println(primes);
+}
