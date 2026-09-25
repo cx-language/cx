@@ -142,6 +142,14 @@ class FixtureTest(unittest.TestCase):
         self.assertIn(fenced("int size;"), self.markdown)
         self.assertIn(fenced("Widget(int size)"), self.markdown)
 
+    def test_member_bodies_wrapped_in_divs(self):
+        # Type docs, each member group, each function, and each constant.
+        self.assertEqual(self.markdown.count("::: member"), 10)
+        self.assertIn(
+            "{#Widget-size}\n\n::: member\n\n" + fenced("int size;"),
+            self.markdown,
+        )
+
     def test_private_member_omitted(self):
         self.assertNotIn("helper", self.markdown)
 

@@ -231,6 +231,17 @@ def render_group(group, out):
         render_doc(declaration.doc, out)
 
 
+def open_member_body(out):
+    """Start a member div grouping one item's signatures and docs."""
+    out.append("::: member")
+    out.append("")
+
+
+def close_member_body(out):
+    out.append(":::")
+    out.append("")
+
+
 def finish(out):
     return "\n".join(out).rstrip() + "\n"
 
@@ -260,7 +271,10 @@ def render_file_page(relpath, types, functions, constants, conditional):
             f" {{#type-{entry.name}}}"
         )
         out.append("")
-        render_doc(entry.doc, out)
+        if entry.doc:
+            open_member_body(out)
+            render_doc(entry.doc, out)
+            close_member_body(out)
         for name in entry.members:
             line = entry.members[name].declarations[0].line
             out.append(
@@ -268,7 +282,9 @@ def render_file_page(relpath, types, functions, constants, conditional):
                 f" {{#{entry.name}-{slug(name)}}}"
             )
             out.append("")
+            open_member_body(out)
             render_group(entry.members[name], out)
+            close_member_body(out)
 
     for name in functions:
         line = functions[name].declarations[0].line
@@ -276,7 +292,9 @@ def render_file_page(relpath, types, functions, constants, conditional):
             f"## {heading_link(heading_text(name), source_url(relpath, line))} {{#fn-{slug(name)}}}"
         )
         out.append("")
+        open_member_body(out)
         render_group(functions[name], out)
+        close_member_body(out)
 
     for name, declaration in constants:
         out.append(
@@ -284,8 +302,10 @@ def render_file_page(relpath, types, functions, constants, conditional):
             f" {{#const-{name}}}"
         )
         out.append("")
+        open_member_body(out)
         render_signature(declaration.signature, out)
         render_doc(declaration.doc, out)
+        close_member_body(out)
 
     return finish(out)
 

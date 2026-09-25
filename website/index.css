@@ -118,6 +118,27 @@ main h1, main h2, main h3, main h4 {
     scroll-margin-top: 84px;
 }
 
+/* API reference: each item's title stays in the left scanning column
+   while its signatures and docs indent into a grouped body. */
+.std main h2, .std main h3 {
+    margin-bottom: 0.35em;
+}
+
+.member {
+    margin: 0 0 0 1.25em;
+}
+
+.member > div.sourceCode, .member > pre, .member > p {
+    margin-top: 0.6em;
+    margin-bottom: 0.6em;
+}
+
+@media (max-width: 560px) {
+    .member {
+        margin-left: 0.75em;
+    }
+}
+
 a, a:visited {
     text-decoration: none;
     color: var(--blue);
