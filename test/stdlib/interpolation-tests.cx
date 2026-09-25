@@ -1,4 +1,4 @@
-// RUN: %cx run -Werror %s | %FileCheck -match-full-lines %s
+// RUN: %cx test -Werror %s | %FileCheck -match-full-lines %s
 
 struct Point: Printable {
     int x;
@@ -13,7 +13,8 @@ struct Point: Printable {
     }
 }
 
-void main() {
+@test
+void testInterpolation() {
     var name = "world";
     var p = Point(x = 3, y = 4);
     var x = 42;
@@ -27,4 +28,5 @@ void main() {
     println("$$p"); // CHECK-NEXT: $p
     println("$5"); // CHECK-NEXT: $5
     println("$p$x"); // CHECK-NEXT: (3, 4)42
+    // CHECK-NEXT: ok testInterpolation
 }

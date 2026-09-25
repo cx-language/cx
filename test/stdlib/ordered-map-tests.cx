@@ -1,20 +1,6 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testInsertAndContains();
-    testInsertAndDelete();
-    testInsertAndIndex();
-    testLowerAndHigher();
-    testFirstLast();
-    testEmptyMapFunctions();
-    testEmptyMapIterator();
-    testIteratorOrder();
-    testUnitMapIterator();
-    testRemoveReturnValue();
-    testClear();
-    testAllAnyNone();
-}
-
+@test
 void testInsertAndContains() {
     var m = OrderedMap<int, int>();
     assert(m.size() == 0);
@@ -31,6 +17,7 @@ void testInsertAndContains() {
     assert(m.size() == 10);
 }
 
+@test
 void testInsertAndDelete() {
     var m = OrderedMap<int, int>();
 
@@ -51,6 +38,7 @@ void testInsertAndDelete() {
     }
 }
 
+@test
 void testInsertAndIndex() {
     var m = OrderedMap<int, int>();
 
@@ -71,6 +59,7 @@ void testInsertAndIndex() {
     }
 }
 
+@test
 void testLowerAndHigher() {
     var m = OrderedMap<int, int>();
 
@@ -89,6 +78,7 @@ void testLowerAndHigher() {
     }
 }
 
+@test
 void testFirstLast() {
     var m = OrderedMap<int, int>();
 
@@ -101,6 +91,7 @@ void testFirstLast() {
     assert(m.last()! == 69);
 }
 
+@test
 void testEmptyMapFunctions() {
     var m = OrderedMap<int, int>();
 
@@ -110,7 +101,19 @@ void testEmptyMapFunctions() {
     assert(m.lowerKey(42) == null);
 }
 
+@test
+void testEmptyMapIterator() {
+    var map = OrderedMap<int, int>();
+    map.insert(1, 2);
+    map.insert(1, 2);
+    map.remove(1);
 
+    for _ in map {
+        assert(false);
+    }
+}
+
+@test
 void testIteratorOrder() {
     var map = OrderedMap<int, int>();
 
@@ -146,17 +149,7 @@ void testIteratorOrder() {
 
 }
 
-void testEmptyMapIterator() {
-    var map = OrderedMap<int, int>();
-    map.insert(1, 2);
-    map.insert(1, 2);
-    map.remove(1);
-
-    for _ in map {
-        assert(false);
-    }
-}
-
+@test
 void testUnitMapIterator() {
     var map = OrderedMap<int, int>();
     map.insert(1, 2);
@@ -172,6 +165,7 @@ void testUnitMapIterator() {
     assert(count == 1);
 }
 
+@test
 void testRemoveReturnValue() {
     var m = OrderedMap<int, int>();
     m.insert(1, 10);
@@ -186,6 +180,7 @@ void testRemoveReturnValue() {
     assert(m.size() == 1);
 }
 
+@test
 void testClear() {
     var m = OrderedMap<int, int>();
     m.insert(1, 10);
@@ -200,6 +195,7 @@ void testClear() {
     assert(m[3]! == 30);
 }
 
+@test
 void testAllAnyNone() {
     var m = OrderedMap<int, int>();
     m.insert(1, 2);

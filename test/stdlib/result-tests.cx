@@ -1,5 +1,5 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
-// RUN: check_exit_status 0 %cx run -Werror --release %s
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --release %s
 
 Result<int, string> parseDigit(char c) {
     if c >= '0' && c <= '9' {
@@ -8,14 +8,7 @@ Result<int, string> parseDigit(char c) {
     return Result.Err(error = "not a digit");
 }
 
-void main() {
-    testConstruction();
-    testCaseComparison();
-    testUnwrap();
-    testSwitch();
-    testPrint();
-}
-
+@test
 void testConstruction() {
     Result<int, string> inferred = Result.Ok(value = 1);
     assert(inferred == Ok);
@@ -30,6 +23,7 @@ void testConstruction() {
     assert(explicitErr == Err);
 }
 
+@test
 void testCaseComparison() {
     var ok = parseDigit('7');
     var err = parseDigit('x');
@@ -44,11 +38,13 @@ void testCaseComparison() {
     assert(err == Result.Err);
 }
 
+@test
 void testUnwrap() {
     assert(unwrap(parseDigit('7')) == 7);
     assert(unwrap(Result.Ok<int, int>(value = 42)) == 42);
 }
 
+@test
 void testSwitch() {
     var ok = parseDigit('7');
     var err = parseDigit('x');
@@ -68,6 +64,7 @@ void testSwitch() {
     }
 }
 
+@test
 void testPrint() {
     print(parseDigit('7'));
     print(parseDigit('x'));

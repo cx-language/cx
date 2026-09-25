@@ -1,5 +1,5 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
-// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
 
 struct Point {
     float x;
@@ -12,19 +12,7 @@ struct Holder {
 
 void setTo99(int& v) { *v = 99; }
 
-void main() {
-    testIndexAssign();
-    testPlainAssign();
-    testPointerOptionalAssign();
-    testMemberAssign();
-    testAddressOf();
-    testBorrowParam();
-    testNestedLvalues();
-    testCompoundAssign();
-    testMethodCall();
-    testNestedUnwrap();
-}
-
+@test
 void testIndexAssign() {
     float[2]? opt = [1.0, 2.0];
     opt![0] = 5.0;
@@ -32,12 +20,14 @@ void testIndexAssign() {
     assert(opt![1] == 2.0);
 }
 
+@test
 void testPlainAssign() {
     int? a = 1;
     a! = 42;
     assert(a! == 42);
 }
 
+@test
 void testPointerOptionalAssign() {
     var n = 5;
     var m = 6;
@@ -46,12 +36,14 @@ void testPointerOptionalAssign() {
     assert(*p! == 6);
 }
 
+@test
 void testMemberAssign() {
     Point? pt = Point(1.0, 2.0);
     pt!.x = 9.0;
     assert(pt!.x == 9.0 && pt!.y == 2.0);
 }
 
+@test
 void testAddressOf() {
     int? b = 3;
     var bp = &b!;
@@ -59,12 +51,14 @@ void testAddressOf() {
     assert(b! == 8);
 }
 
+@test
 void testBorrowParam() {
     int? c = 0;
     setTo99(c!);
     assert(c! == 99);
 }
 
+@test
 void testNestedLvalues() {
     var h = Holder(1);
     h.field! = 10;
@@ -75,6 +69,7 @@ void testNestedLvalues() {
     assert(opts[1]! == 20);
 }
 
+@test
 void testCompoundAssign() {
     int? a = 1;
     a! += 5;
@@ -85,12 +80,14 @@ void testCompoundAssign() {
     assert(c! == 1);
 }
 
+@test
 void testMethodCall() {
     StringBuf? b = StringBuf("hi");
     b!.push('!');
     assert(b! == "hi!");
 }
 
+@test
 void testNestedUnwrap() {
     int?? a = 5;
     a!! = 6;

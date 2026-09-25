@@ -1,6 +1,6 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
-// RUN: check_exit_status 0 %cx run -Werror --release %s
-// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --release %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
 
 void checkPretty(string name, string input, string expected) {
     var r = parseJson(input);
@@ -79,6 +79,7 @@ void checkRoundTrip(string name, string input) {
     }
 }
 
+@test
 void testValues() {
     checkPretty("null", "null", "null");
     checkPretty("true", "true", "true");
@@ -115,6 +116,7 @@ void testValues() {
     checkCompact("compact escapes", "\"\\u0001\"", "\"\\u0001\"");
 }
 
+@test
 void testRawUtf8() {
     checkPretty("raw utf-8", "\"café\"", "\"café\"");
     checkPretty("raw astral", "\"𝄞\"", "\"𝄞\"");
@@ -122,6 +124,7 @@ void testRawUtf8() {
     checkRoundTrip("raw utf-8 round trip", "{\"s\": \"café 𝄞\"}");
 }
 
+@test
 void testErrors() {
     checkError("empty input", "", JsonError.UnexpectedCharacter(0));
     checkError("blank input", "   ", JsonError.UnexpectedCharacter(3));
@@ -151,6 +154,7 @@ void testErrors() {
     checkError("message nested", "[1, {\"b\": 2}] trailing", JsonError.UnexpectedTrailingCharacters(14));
 }
 
+@test
 void testMessages() {
     checkMessage(JsonError.UnexpectedCharacter(3), "unexpected character at offset 3");
     checkMessage(JsonError.InvalidLiteral(9), "invalid literal at offset 9");
@@ -170,6 +174,7 @@ void testMessages() {
     checkMessage(JsonError.MaximumDepthExceeded(1000), "maximum nesting depth exceeded at offset 1000");
 }
 
+@test
 void testDepth() {
     var nested = "[".repeat(100) + "]".repeat(100);
     checkRoundTrip("deep nesting", string(nested));
@@ -177,10 +182,12 @@ void testDepth() {
     checkError("nesting depth exceeded", string(tooDeep), JsonError.MaximumDepthExceeded(1000));
 }
 
+@test
 void testRoundTrips() {
     checkRoundTrip("round trip", "{\"s\": \"a\\\"b\\\\c\\u00e9\\uD834\\uDD1E\\u0001\", \"i\": -42, \"f\": 3.141592653589793, \"e\": 1e10, \"a\": [1, true, null, {}, []], \"o\": {}}");
 }
 
+@test
 void testPrint() {
     var r = parseJson("{\"a\": [1, true, null]}");
     switch (r) {
@@ -194,14 +201,4 @@ void testPrint() {
             println("FAIL print: unexpected error: ", e.toString());
             assert(false);
     }
-}
-
-void main() {
-    testValues();
-    testRawUtf8();
-    testErrors();
-    testMessages();
-    testDepth();
-    testRoundTrips();
-    testPrint();
 }

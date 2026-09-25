@@ -1,14 +1,7 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
-// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
 
-void main() {
-    testInts();
-    testLong();
-    testFloats();
-    testExternCalls();
-    testMinMax();
-}
-
+@test
 void testInts() {
     c_int a = 42;
     assert(a == 42);
@@ -51,6 +44,7 @@ void testInts() {
     assert(sizeof(c_ulonglong) == 8);
 }
 
+@test
 void testLong() {
     // c_long matches C's long: 32-bit on Windows and wasm32, 64-bit elsewhere.
     c_long l = 100;
@@ -63,6 +57,7 @@ void testLong() {
     assert(sizeof(c_long) == 4 || sizeof(c_long) == 8);
 }
 
+@test
 void testFloats() {
     c_double d = 1.5;
     assert(d == 1.5);
@@ -82,6 +77,7 @@ void testFloats() {
     assert(h == 1.5);
 }
 
+@test
 void testExternCalls() {
     // The public math functions are C externs with c_double signatures.
     c_double r = sqrt(4.0);
@@ -92,6 +88,7 @@ void testExternCalls() {
     assert(t == 2.0);
 }
 
+@test
 void testMinMax() {
     assert(c_schar.max == 127);
     assert(c_schar.min == -128);

@@ -1,14 +1,6 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testEquals();
-    testConcat();
-    testAppend();
-    testIterate();
-    testToList();
-    testEmpty();
-}
-
+@test
 void testEquals() {
     assert("abc".repeat(3) == "abcabcabc");
     assert("1".repeat(5) == "11111");
@@ -20,17 +12,20 @@ void testEquals() {
     assert("abc".repeat(-2) == "");
 }
 
+@test
 void testConcat() {
     assert("[".repeat(3) + "]" == "[[[]");
     assert("a" + "bc".repeat(2) == "abcbc");
 }
 
+@test
 void testAppend() {
     var buf = StringBuf("x");
     buf.append("ab".repeat(2));
     assert(string(&buf) == "xabab");
 }
 
+@test
 void testIterate() {
     var count = 0;
     for chunk in "ab".repeat(3) {
@@ -40,12 +35,14 @@ void testIterate() {
     assert(count == 3);
 }
 
+@test
 void testToList() {
     var chunks = "ab".repeat(2).toList();
     assert(chunks.size() == 2);
     assert(chunks[0] == "ab" && chunks[1] == "ab");
 }
 
+@test
 void testEmpty() {
     var empty = "ab".repeat(0).toList();
     assert(empty.size() == 0);

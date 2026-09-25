@@ -1,10 +1,6 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testReadWriteFile();
-    testReadNonExistentFile();
-}
-
+@test
 void testReadWriteFile() {
     var text = "The quick brown fox jumps over the lazy dog\n";
     bool success = writeFile("test.txt", text);
@@ -14,6 +10,7 @@ void testReadWriteFile() {
     assert(string(content) == text);
 }
 
+@test
 void testReadNonExistentFile() {
     var content = readFile("dog.txt");
     assert(content == Err);

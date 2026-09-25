@@ -1,11 +1,4 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
-
-void main() {
-    testChainLists();
-    testChainIsLazy();
-    testChainAdaptors();
-    testChainMapFilter();
-}
+// RUN: check_exit_status 0 %cx test -Werror %s
 
 int chainCalls = 0;
 
@@ -14,6 +7,7 @@ int countChain(int& x) {
     return x;
 }
 
+@test
 void testChainLists() {
     var a = List([1, 2]);
     var b = List([3, 4, 5]);
@@ -22,6 +16,7 @@ void testChainLists() {
     assert(result[0] == 1 && result[2] == 3 && result[4] == 5);
 }
 
+@test
 void testChainIsLazy() {
     var a = List([1, 2]);
     var b = List([3]);
@@ -32,6 +27,7 @@ void testChainIsLazy() {
     assert(chained.value() == 3);
 }
 
+@test
 void testChainAdaptors() {
     var a = List([1, 2]);
     var b = List([3, 4]);
@@ -41,6 +37,7 @@ void testChainAdaptors() {
     assert(result[0] == 1 && result[3] == 4);
 }
 
+@test
 void testChainMapFilter() {
     var a = List([1, 2]);
     var b = List([3, 4]);

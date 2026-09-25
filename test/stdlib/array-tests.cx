@@ -1,27 +1,7 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
-// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
 
-void main() {
-    testConstruction();
-    testSize();
-    testIndex();
-    testIteration();
-    testDistinctSizes();
-    testNested();
-    testInference();
-    testValueConstruction();
-    testDot();
-    testLength();
-    testNormalized();
-    testCross();
-    testPointerElements();
-    testConst();
-    testFirstLastContainsIndexOf();
-    testFindMapFilter();
-    testChainEnumerate();
-    testAllAnyNone();
-}
-
+@test
 void testConstruction() {
     int[3] a = [10, 20, 30];
     assert(a.size() == 3);
@@ -29,6 +9,7 @@ void testConstruction() {
     assert(a[2] == 30);
 }
 
+@test
 void testSize() {
     int[1] one = [1];
     assert(one.size() == 1);
@@ -36,6 +17,7 @@ void testSize() {
     assert(five.size() == 5);
 }
 
+@test
 void testIndex() {
     int[3] a = [10, 20, 30];
     a[1] = 99;
@@ -44,6 +26,7 @@ void testIndex() {
     assert(a.data()[2] == 30);
 }
 
+@test
 void testIteration() {
     int[3] a = [10, 20, 30];
     var total = 0;
@@ -53,6 +36,7 @@ void testIteration() {
     assert(total == 60);
 }
 
+@test
 void testDistinctSizes() {
     int[2] two = [1, 2];
     int[3] three = [1, 2, 3];
@@ -60,6 +44,7 @@ void testDistinctSizes() {
     assert(three.size() == 3);
 }
 
+@test
 void testNested() {
     int[2][2] m = [[1, 2], [3, 4]];
     assert(m.size() == 2);
@@ -92,6 +77,7 @@ int firstOrNegative(int[*]? p) {
     return p[0];
 }
 
+@test
 void testInference() {
     int[3] a3 = [10, 20, 30];
     int[2] a2 = [1, 2];
@@ -104,6 +90,7 @@ void testInference() {
     assert(makeArray()[1] == 20);
 }
 
+@test
 void testValueConstruction() {
     int[3] constructed = Array();
     assert(constructed.size() == 3);
@@ -132,6 +119,7 @@ void testValueConstruction() {
     assert(m[0] == 5);
 }
 
+@test
 void testDot() {
     float[2] a = [1.0, 2.0];
     float[2] b = [3.0, 4.0];
@@ -144,6 +132,7 @@ void testDot() {
     assert(c.dot(d) == 32.0);
 }
 
+@test
 void testLength() {
     float[2] a = [3.0, 4.0];
     assert(a.length() == 5.0);
@@ -153,6 +142,7 @@ void testLength() {
     assert(b.length() == 3.0);
 }
 
+@test
 void testNormalized() {
     float[2] a = [3.0, 4.0];
     var n = a.normalized();
@@ -163,6 +153,7 @@ void testNormalized() {
     assert(m[2] == m[1] && m[1] == 2.0 * m[0]);
 }
 
+@test
 void testCross() {
     float[3] x = [1.0, 0.0, 0.0];
     float[3] y = [0.0, 1.0, 0.0];
@@ -174,6 +165,7 @@ void testCross() {
     assert(zi[0] == 0 && zi[1] == 0 && zi[2] == 1);
 }
 
+@test
 void testPointerElements() {
     // Instantiating generic Array methods with a non-basic element type must not crash.
     var x = 1;
@@ -184,6 +176,7 @@ void testPointerElements() {
     assert(ptrs[1] == &y);
 }
 
+@test
 void testConst() {
     const float[2] a = [3.0, 4.0];
     const float[2] b = [1.0, 2.0];
@@ -197,6 +190,7 @@ void testConst() {
     assert(z[0] == 0.0 && z[1] == 0.0 && z[2] == 1.0);
 }
 
+@test
 void testFirstLastContainsIndexOf() {
     int[3] a = [10, 20, 30];
 
@@ -209,6 +203,7 @@ void testFirstLastContainsIndexOf() {
     assert(a.indexOf(99) == a.size());
 }
 
+@test
 void testFindMapFilter() {
     int[5] a = [0, 1, 2, 3, 4];
 
@@ -220,6 +215,7 @@ void testFindMapFilter() {
     assert(a.filter((int& n) => n > 2).toList() == List([3, 4]));
 }
 
+@test
 void testChainEnumerate() {
     int[2] a = [1, 2];
     int[2] b = [3, 4];
@@ -237,6 +233,7 @@ void testChainEnumerate() {
     assert(!iterator.hasValue());
 }
 
+@test
 void testAllAnyNone() {
     int[3] a = [2, 4, 6];
 

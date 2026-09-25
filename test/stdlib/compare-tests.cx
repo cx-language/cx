@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
 struct C: Comparable {
     int a;
@@ -16,7 +16,8 @@ struct E: Equatable {
     }
 }
 
-void main() {
+@test
+void testComparable() {
     var a = C(6);
     var b = C(99);
 
@@ -26,7 +27,10 @@ void main() {
     assert(a < b);
     assert(!(a == b));
     assert(a != b);
+}
 
+@test
+void testEquatable() {
     var x = E(6);
     var y = E(99);
     var z = E(6);

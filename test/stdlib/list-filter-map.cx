@@ -1,10 +1,11 @@
-// RUN: %cx run %s | %FileCheck %s
+// RUN: %cx test %s | %FileCheck %s
 
 bool isEven(int& n) {
     return n % 2 == 0;
 }
 
-void main() {
+@test
+void testFilterMap() {
     var numbers = List([0, 1, 2, 3, 4]);
 
     var even = numbers.filter(isEven).toList();
@@ -13,5 +14,6 @@ void main() {
 
     var doubled = even.map(n => n * 2).toList();
     // CHECK-NEXT: [0, 4, 8]
+    // CHECK-NEXT: ok testFilterMap
     println(doubled);
 }

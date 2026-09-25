@@ -1,4 +1,4 @@
-// RUN: %cx run %s | %FileCheck %s -match-full-lines
+// RUN: %cx test %s | %FileCheck %s -match-full-lines
 
 // If the struct is empty, it's size will be 0. Then the list iteration becomes a no-op as the begin and end pointers are immediately equal.
 // TODO: Use index-based iteration or make empty structs have a size of 1 to allow iteration over empty structs, or leave it as undefined?
@@ -6,12 +6,14 @@ struct S {
     int x = 0;
 
     ~S() {
-        // CHECK: ddd
+        // Each destructor prints "d" with no newline, so the runner's "ok ..." lands on the same line.
+        // CHECK: dddok testDestroyElementsInDestructor
         print("d");
     }
 }
 
-void main() {
+@test
+void testDestroyElementsInDestructor() {
     if (true) {
         var a = List<S>();
         a.push(S());

@@ -1,25 +1,16 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
 bool approx<T>(T a, T b) {
     return abs(a - b) < 0.0001;
 }
 
-void main() {
-    testConstants();
-    testTrigonometric();
-    testHyperbolic();
-    testExpLog();
-    testPowSqrt();
-    testRounding();
-    testFloat64();
-    testFloat32();
-}
-
+@test
 void testConstants() {
     assert(approx(pi, 3.14159));
     assert(approx(e, 2.71828));
 }
 
+@test
 void testTrigonometric() {
     assert(approx(sin(0.0), 0.0));
     assert(approx(sin(pi / 2), 1.0));
@@ -33,6 +24,7 @@ void testTrigonometric() {
     assert(approx(atan2(1.0, 0.0), pi / 2));
 }
 
+@test
 void testHyperbolic() {
     assert(approx(sinh(0.0), 0.0));
     assert(approx(sinh(1.0), 1.17520));
@@ -42,6 +34,7 @@ void testHyperbolic() {
     assert(approx(tanh(1.0), 0.76159));
 }
 
+@test
 void testExpLog() {
     assert(approx(exp(0.0), 1.0));
     assert(approx(exp(1.0), e));
@@ -52,6 +45,7 @@ void testExpLog() {
     assert(approx(log10(100.0), 2.0));
 }
 
+@test
 void testPowSqrt() {
     assert(approx(pow(2.0, 10.0), 1024.0));
     assert(approx(sqrt(2.0), 1.41421));
@@ -59,6 +53,7 @@ void testPowSqrt() {
     assert(approx(hypot(3.0, 4.0), 5.0));
 }
 
+@test
 void testRounding() {
     assert(ceil(1.5) == 2.0);
     assert(ceil(-1.5) == -1.0);
@@ -71,6 +66,7 @@ void testRounding() {
     assert(fmod(5.5, 2.0) == 1.5);
 }
 
+@test
 void testFloat64() {
     float64 x = sin(float64(0.5));
     assert(approx(x, 0.47943));
@@ -101,6 +97,7 @@ void testFloat64() {
     assert(fmod(float64(5.5), float64(2.0)) == 1.5);
 }
 
+@test
 void testFloat32() {
     float32 x = sin(0.5);
     assert(approx(x, 0.47943));

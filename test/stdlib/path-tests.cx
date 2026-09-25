@@ -1,23 +1,13 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testSeparators();
-    testSplitDrive();
-    testIsAbsolute();
-    testSplit();
-    testExtension();
-    testJoin();
-    testComponents();
-    testNormalize();
-    testRelativePath();
-}
-
+@test
 void testSeparators() {
     assert(isSeparator('/'), "isSeparator slash");
     assert(isSeparator('\\'), "isSeparator backslash");
     assert(!isSeparator('a'), "isSeparator letter");
 }
 
+@test
 void testSplitDrive() {
     var d = splitDrive("/a/b");
     assert(d.drive == "" && d.rest == "/a/b", "splitDrive posix");
@@ -41,6 +31,7 @@ void testSplitDrive() {
     assert(d.drive == "" && d.rest == "//server", "splitDrive no share");
 }
 
+@test
 void testIsAbsolute() {
     assert(isAbsolute("/"), "isAbsolute root");
     assert(isAbsolute("/a"), "isAbsolute posix");
@@ -55,6 +46,7 @@ void testIsAbsolute() {
     assert(!isRelative("/"), "isRelative root");
 }
 
+@test
 void testSplit() {
     var s = split("a/b");
     assert(s.dir == "a" && s.base == "b", "split basic");
@@ -88,6 +80,7 @@ void testSplit() {
     assert(basename("a") == "a", "basename bare");
 }
 
+@test
 void testExtension() {
     var e = splitExtension("a.tar.gz");
     assert(e.root == "a.tar" && e.ext == ".gz", "splitExtension basic");
@@ -152,6 +145,7 @@ void testExtension() {
     assert(!isHidden("a/b/"), "isHidden trailing slash");
 }
 
+@test
 void testJoin() {
     var r = join("a", "b");
     assert(r == "a/b", "join basic");
@@ -214,6 +208,7 @@ void testJoin() {
     assert(r == "a/b", "joinAll list");
 }
 
+@test
 void testComponents() {
     var c = components("a/b/c");
     assert(c.size() == 3 && c[0] == "a" && c[1] == "b" && c[2] == "c", "components basic");
@@ -242,6 +237,7 @@ void testComponents() {
     assert(t == "", "toPosixSeparators empty");
 }
 
+@test
 void testNormalize() {
     var n = normalize("");
     assert(n == ".", "normalize empty");
@@ -299,6 +295,7 @@ void testNormalize() {
     assert(n == "a", "normalize trailing dot");
 }
 
+@test
 void testRelativePath() {
     var r = relativePath("/a/b", "/a/c");
     assert(r == "../c", "relativePath sibling");

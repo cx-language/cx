@@ -1,6 +1,7 @@
-// RUN: %cx run -Werror %s | %FileCheck -match-full-lines %s
+// RUN: %cx test -Werror %s | %FileCheck -match-full-lines %s
 
-void main() {
+@test
+void testSum() {
     println(sum([1, 2, 3])); // CHECK: 6
     println(sum(List([1, 2, 3]))); // CHECK-NEXT: 6
     println(sum([1.5, 2.5])); // CHECK-NEXT: 4
@@ -8,4 +9,5 @@ void main() {
     println(sum([7])); // CHECK-NEXT: 7
     var arr = [10, 20, 30];
     println(sum(arr)); // CHECK-NEXT: 60
+    // CHECK-NEXT: ok testSum
 }

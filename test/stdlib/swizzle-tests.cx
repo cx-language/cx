@@ -1,17 +1,7 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
-// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
 
-void main() {
-    testSingle();
-    testMulti();
-    testRgba();
-    testReorderDuplicate();
-    testSingleWrite();
-    testMultiWrite();
-    testCompoundWrite();
-    testPointerBase();
-}
-
+@test
 void testSingle() {
     float[3] v = [1.0, 2.0, 3.0];
     assert(v.x == 1.0);
@@ -22,6 +12,7 @@ void testSingle() {
     assert(v.b == 3.0);
 }
 
+@test
 void testMulti() {
     float[3] v = [1.0, 2.0, 3.0];
     float[2] xy = v.xy;
@@ -34,6 +25,7 @@ void testMulti() {
     assert(xyz[2] == 3.0);
 }
 
+@test
 void testRgba() {
     float[4] w = [1.0, 2.0, 3.0, 4.0];
     assert(w.w == 4.0);
@@ -46,6 +38,7 @@ void testRgba() {
     assert(wzyx[3] == 1.0);
 }
 
+@test
 void testReorderDuplicate() {
     float[3] v = [1.0, 2.0, 3.0];
     float[3] zyx = v.zyx;
@@ -58,6 +51,7 @@ void testReorderDuplicate() {
     assert(xx[1] == 1.0);
 }
 
+@test
 void testSingleWrite() {
     float[2] v = [1.0, 2.0];
     v.x = 5.0;
@@ -72,6 +66,7 @@ void testSingleWrite() {
     assert(v[0] == 7.0);
 }
 
+@test
 void testMultiWrite() {
     float[3] v = [1.0, 2.0, 3.0];
     v.xy = [10.0, 20.0];
@@ -90,6 +85,7 @@ void testMultiWrite() {
     assert(v.y == 7.0);
 }
 
+@test
 void testCompoundWrite() {
     float[3] v = [1.0, 2.0, 3.0];
     v.x += 5.0;
@@ -101,6 +97,7 @@ void testCompoundWrite() {
     assert(v.z == 4.0);
 }
 
+@test
 void testPointerBase() {
     float[3] v = [1.0, 2.0, 3.0];
     float[3]* q = &v;

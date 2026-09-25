@@ -1,18 +1,12 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testExists();
-    testCreateListRenameRemove();
-    testFileSize();
-    testCurrentAndChangeDirectory();
-    testListMissingDirectory();
-}
-
+@test
 void testExists() {
     assert(exists("."));
     assert(!exists("CX_DEFINITELY_MISSING_FILE_XYZ"));
 }
 
+@test
 void testCreateListRenameRemove() {
     assert(createDirectory("cx_fs_test_dir"));
     assert(!createDirectory("cx_fs_test_dir"));
@@ -35,6 +29,7 @@ void testCreateListRenameRemove() {
     assert(!exists("cx_fs_test_dir"));
 }
 
+@test
 void testFileSize() {
     assert(writeFile("cx_fs_test_size.txt", "hello"));
     assert(fileSize("cx_fs_test_size.txt")! == 5);
@@ -42,6 +37,7 @@ void testFileSize() {
     assert(fileSize("CX_DEFINITELY_MISSING_FILE_XYZ") == null);
 }
 
+@test
 void testCurrentAndChangeDirectory() {
     assert(createDirectory("cx_fs_test_cwd_dir"));
     assert(changeDirectory("cx_fs_test_cwd_dir"));
@@ -50,6 +46,7 @@ void testCurrentAndChangeDirectory() {
     assert(removeDirectory("cx_fs_test_cwd_dir"));
 }
 
+@test
 void testListMissingDirectory() {
     assert(listDirectory("CX_DEFINITELY_MISSING_DIR_XYZ").size() == 0);
 }

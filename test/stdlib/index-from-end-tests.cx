@@ -1,18 +1,6 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testList();
-    testListAssign();
-    testSliceRef();
-    testString();
-    testStringBuf();
-    testStringBufAssign();
-    testStaticArray();
-    testStaticArrayAssign();
-    testSlice();
-    testExpressionOffset();
-}
-
+@test
 void testList() {
     var list = List<int>();
     list.push(10);
@@ -23,6 +11,7 @@ void testList() {
     assert(list[-3] == 10);
 }
 
+@test
 void testListAssign() {
     var list = List<int>();
     list.push(1);
@@ -33,6 +22,7 @@ void testListAssign() {
     assert(list[1] == 20);
 }
 
+@test
 void testSliceRef() {
     var list = List<int>();
     list.push(10);
@@ -42,30 +32,35 @@ void testSliceRef() {
     assert(ref[-2] == 10);
 }
 
+@test
 void testString() {
     var s = "hello";
     assert(s[-1] == 'o');
     assert(s[-5] == 'h');
 }
 
+@test
 void testStringBuf() {
     var s = StringBuf("hello");
     assert(s[-1] == 'o');
     assert(s[-5] == 'h');
 }
 
+@test
 void testStringBufAssign() {
     var s = StringBuf("hello");
     s[-1] = '!';
     assert(string(&s) == "hell!");
 }
 
+@test
 void testStaticArray() {
     int[3] numbers = [10, 20, 30];
     assert(numbers[-1] == 30);
     assert(numbers[-3] == 10);
 }
 
+@test
 void testStaticArrayAssign() {
     int[3] numbers = [10, 20, 30];
     numbers[-1] = 300;
@@ -73,6 +68,13 @@ void testStaticArrayAssign() {
     assert(numbers[2] == 300);
 }
 
+@test
+void testSlice() {
+    assert(last([10, 20, 30]) == 30);
+    assert(last([7, 8]) == 8);
+}
+
+@test
 void testExpressionOffset() {
     var list = List<int>();
     list.push(10);
@@ -85,9 +87,4 @@ void testExpressionOffset() {
 
 int last(int[] numbers) {
     return numbers[-1];
-}
-
-void testSlice() {
-    assert(last([10, 20, 30]) == 30);
-    assert(last([7, 8]) == 8);
 }

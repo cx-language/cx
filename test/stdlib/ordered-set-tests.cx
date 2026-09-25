@@ -1,21 +1,6 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testInsert();
-    testRemoval();
-    testDuplicates();
-    testIterator();
-    testEmptyOrderedSetIterator();
-    testUnitOrderedSetIterator();
-    testFirstLast();
-    testLowerAndHigher();
-    testEmptyOrderedSetFunctions();
-    testIteratorOrder();
-    testRemoveReturnValue();
-    testClear();
-    testAllAnyNone();
-}
-
+@test
 void testInsert() {
     var s = OrderedSet<int>();
 
@@ -25,6 +10,7 @@ void testInsert() {
     assert(!s.contains(39));
 }
 
+@test
 void testRemoval() {
     var s = OrderedSet<int>();
 
@@ -36,6 +22,7 @@ void testRemoval() {
     assert(!s.remove(42));
 }
 
+@test
 void testDuplicates() {
     var s = OrderedSet<int>();
 
@@ -47,6 +34,7 @@ void testDuplicates() {
     assert(!s.contains(42));
 }
 
+@test
 void testIterator() {
     var s = OrderedSet<int>();
 
@@ -81,6 +69,7 @@ void testIterator() {
     assert(ccc);
 }
 
+@test
 void testEmptyOrderedSetIterator() {
     var s = OrderedSet<int>();
     s.insert(79);
@@ -92,6 +81,7 @@ void testEmptyOrderedSetIterator() {
     }
 }
 
+@test
 void testUnitOrderedSetIterator() {
     var s = OrderedSet<int>();
     s.insert(79);
@@ -106,6 +96,20 @@ void testUnitOrderedSetIterator() {
     assert(count == 1);
 }
 
+@test
+void testFirstLast() {
+    var s = OrderedSet<uint>();
+
+    s.insert(63);
+    s.insert(69);
+    s.insert(1);
+    s.insert(53);
+
+    assert(s.first()! == 1);
+    assert(s.last()! == 69);
+}
+
+@test
 void testLowerAndHigher() {
     var m = OrderedSet<int>();
 
@@ -124,18 +128,7 @@ void testLowerAndHigher() {
     }
 }
 
-void testFirstLast() {
-    var s = OrderedSet<uint>();
-
-    s.insert(63);
-    s.insert(69);
-    s.insert(1);
-    s.insert(53);
-
-    assert(s.first()! == 1);
-    assert(s.last()! == 69);
-}
-
+@test
 void testEmptyOrderedSetFunctions() {
     var s = OrderedSet<uint>();
 
@@ -145,6 +138,7 @@ void testEmptyOrderedSetFunctions() {
     assert(s.lower(42) == null);
 }
 
+@test
 void testIteratorOrder() {
     var set = OrderedSet<uint>();
 
@@ -176,6 +170,7 @@ void testIteratorOrder() {
     assert(called == 100);
 }
 
+@test
 void testRemoveReturnValue() {
     var s = OrderedSet<int>();
     s.insert(1);
@@ -188,6 +183,7 @@ void testRemoveReturnValue() {
     assert(s.size() == 1);
 }
 
+@test
 void testClear() {
     var s = OrderedSet<int>();
     s.insert(1);
@@ -202,6 +198,7 @@ void testClear() {
     assert(s.contains(3));
 }
 
+@test
 void testAllAnyNone() {
     var s = OrderedSet<int>();
     s.insert(2);

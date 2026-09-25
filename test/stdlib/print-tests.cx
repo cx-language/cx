@@ -1,4 +1,4 @@
-// RUN: %cx run -Werror %s | %FileCheck -match-full-lines %s
+// RUN: %cx test -Werror %s | %FileCheck -match-full-lines %s
 
 struct A: Printable {
     string a;
@@ -10,7 +10,8 @@ struct A: Printable {
     }
 }
 
-void main() {
+@test
+void testPrint() {
     println(true); // CHECK: true
     println(false); // CHECK-NEXT: false
     println(A("foo")); // CHECK-NEXT: foofoo!
@@ -30,4 +31,5 @@ void main() {
     println(-1); // CHECK-NEXT: -1
     println(int64.min); // CHECK-NEXT: -9223372036854775808
     println(uint64.max); // CHECK-NEXT: 18446744073709551615
+    // CHECK-NEXT: ok testPrint
 }

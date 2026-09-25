@@ -1,13 +1,6 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testPushPop();
-    testEmpty();
-    testPushAfterPop();
-    testFirst();
-    testClear();
-}
-
+@test
 void testPushPop() {
     var q = Queue<int>();
 
@@ -27,6 +20,7 @@ void testPushPop() {
     assert(q.size() == 0);
 }
 
+@test
 void testEmpty() {
     var q = Queue<string>();
 
@@ -41,6 +35,7 @@ void testEmpty() {
     assert(q.empty());
 }
 
+@test
 void testPushAfterPop() {
     var q = Queue<string>();
 
@@ -54,6 +49,7 @@ void testPushAfterPop() {
     assert(q.size() == 0);
 }
 
+@test
 void testFirst() {
     var q = Queue<string>();
 
@@ -65,6 +61,7 @@ void testFirst() {
     assert(q.pop() == "bar");
 }
 
+@test
 void testClear() {
     var q = Queue<string>();
     q.push("foo");

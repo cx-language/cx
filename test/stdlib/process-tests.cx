@@ -1,21 +1,17 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testGetSetEnv();
-    testGetUnsetEnv();
-    testRunStatus();
-    testRunOutput();
-}
-
+@test
 void testGetSetEnv() {
     setenv("CX_TEST_PROCESS_VAR", "hello123");
     assert(getenv("CX_TEST_PROCESS_VAR")! == "hello123");
 }
 
+@test
 void testGetUnsetEnv() {
     assert(getenv("CX_DEFINITELY_UNSET_VAR_XYZ") == null);
 }
 
+@test
 void testRunStatus() {
     assert(run("exit 0").status == 0);
     assert(run("exit 3").status == 3);
@@ -23,6 +19,7 @@ void testRunStatus() {
     assert(string(&silent.output) == "");
 }
 
+@test
 void testRunOutput() {
     var result = run("echo hello");
     assert(result.status == 0);

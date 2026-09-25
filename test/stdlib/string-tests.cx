@@ -1,28 +1,13 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
+@test
+void testStringComparison() {
     assert("abc" == "abc");
     assert(!("abc" == "not"));
     assert("abc" < "bcd");
-
-    testStringIterator();
-    testIndexOf();
-    testIndexOfString();
-    testSubstr();
-    testSplit();
-    testOtherSplit();
-    testBytes();
-    testLines();
-    testParseInt();
-    testEscape();
-    testRepeat();
-    testStartsEndsWith();
-    testAppendPrintable();
-    testFirstLast();
-    testStringBufPushPop();
-    testStringBufClear();
 }
 
+@test
 void testStringIterator() {
     var iterator = "xy".iterator();
 
@@ -37,6 +22,7 @@ void testStringIterator() {
     assert(!iterator.hasValue());
 }
 
+@test
 void testIndexOf() {
     var s = StringBuf("word");
 
@@ -51,6 +37,7 @@ void testIndexOf() {
     assert(s.indexOf('d', 2) == 3);
 }
 
+@test
 void testIndexOfString() {
     string s = "hello world";
 
@@ -71,6 +58,7 @@ void testIndexOfString() {
     assert(s.indexOf("world", 7) == s.size());
 }
 
+@test
 void testSubstr() {
     var s = StringBuf("word");
     assert(s.substr(0..1) == "w");
@@ -93,6 +81,7 @@ void testSubstr() {
     assert(s3.substr(0..0) == "");
 }
 
+@test
 void testSplit() {
     var s = StringBuf("this is the best sentence");
     var words = s.split();
@@ -104,6 +93,7 @@ void testSplit() {
     assert(words[4] == "sentence");
 }
 
+@test
 void testOtherSplit() {
     var s = StringBuf("this,sentence,is,comma,separated");
     var words = s.split(',');
@@ -136,6 +126,7 @@ void testOtherSplit() {
     assert(words[7] == "");
 }
 
+@test
 void testBytes() {
     // TODO: Unicode / UTF-8
     var text = "The quick brown fox jumps over the lazy dog";
@@ -149,6 +140,7 @@ void testBytes() {
     assert(i == text.size());
 }
 
+@test
 void testLines() {
     var text = "The quick brown fox \n\n\n jumps over\n the lazy dog\n";
     var expected = ["The quick brown fox ", "", "", " jumps over", " the lazy dog"];
@@ -162,6 +154,7 @@ void testLines() {
     assert(i == expected.size());
 }
 
+@test
 void testParseInt() {
     assert("".parseInt() == null);
     assert("a".parseInt() == null);
@@ -193,12 +186,14 @@ void testParseInt() {
     assert("0x80000000".parseInt() == null);
 }
 
+@test
 void testEscape() {
     assert("".escape() == "");
     assert("0 r t \' n".escape() == "0 r t ' n");
     assert("\0 \r \t \' \" \\ \n".escape() == "\\0 \\r \\t ' \\\" \\\\ \\n");
 }
 
+@test
 void testRepeat() {
     assert("abc".repeat(3) == "abcabcabc");
     assert("1".repeat(5) == "11111");
@@ -207,6 +202,7 @@ void testRepeat() {
     assert("abc".repeat(1) == "abc");
 }
 
+@test
 void testStartsEndsWith() {
     assert("abc".startsWith("a"));
     assert("abc".startsWith("abc"));
@@ -225,6 +221,7 @@ void testStartsEndsWith() {
     assert("".endsWith(""));
 }
 
+@test
 void testAppendPrintable() {
     var b = StringBuf();
     b.append(0);
@@ -242,6 +239,7 @@ void testAppendPrintable() {
     assert(s == "abc");
 }
 
+@test
 void testFirstLast() {
     var s = "hello";
 
@@ -253,6 +251,7 @@ void testFirstLast() {
     assert(b.last() == 'i');
 }
 
+@test
 void testStringBufPushPop() {
     var b = StringBuf();
     b.push('a');
@@ -265,6 +264,7 @@ void testStringBufPushPop() {
     assert(b.empty());
 }
 
+@test
 void testStringBufClear() {
     var prealloc = StringBuf(capacity = 100);
     assert(prealloc.capacity() >= 100);

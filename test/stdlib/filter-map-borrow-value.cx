@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 // Callbacks accept Copyable types by value or by borrow; untyped lambdas
 // borrow. Borrowed callbacks must not consume non-Copyable elements.
 
@@ -22,7 +22,8 @@ bool isLongRef(StringBuf& s) {
     return s.size() > 1;
 }
 
-void main() {
+@test
+void testBorrowValueOrBorrow() {
     var numbers = List([0, 1, 2, 3, 4]);
 
     assert(numbers.filter(isEvenVal).toList() == List([0, 2, 4]));

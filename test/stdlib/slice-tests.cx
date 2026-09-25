@@ -1,14 +1,7 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
-// RUN: check_exit_status 0 %cx run --backend=c -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test --backend=c -Werror %s
 
-void main() {
-    testFind();
-    testEquality();
-    testFirstLastContainsIndexOf();
-    testMapFilterChain();
-    testAllAnyNone();
-}
-
+@test
 void testFind() {
     var a = List<int>();
     assert(Slice(a).find(x => x == 1) == null);
@@ -19,6 +12,7 @@ void testFind() {
     assert(Slice(a).find(x => x == 3) == null);
 }
 
+@test
 void testEquality() {
     var x = List([1, 2, 3]);
     var y = List([1, 2, 3]);
@@ -35,6 +29,7 @@ void testEquality() {
     assert(x != y);
 }
 
+@test
 void testFirstLastContainsIndexOf() {
     var a = List([10, 20, 30]);
     var s = Slice(a);
@@ -48,6 +43,7 @@ void testFirstLastContainsIndexOf() {
     assert(s.indexOf(99) == s.size());
 }
 
+@test
 void testMapFilterChain() {
     var a = List([0, 1, 2, 3, 4]);
     var s = Slice(a);
@@ -68,6 +64,7 @@ void testMapFilterChain() {
     assert(*iterator.value().value == 1);
 }
 
+@test
 void testAllAnyNone() {
     var a = List([2, 4, 6]);
     var s = Slice(a);

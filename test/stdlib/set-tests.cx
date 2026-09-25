@@ -1,16 +1,6 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testInsert();
-    testRemoval();
-    testDuplicates();
-    testIterator();
-    testEmptySetIterator();
-    testUnitSetIterator();
-    testClear();
-    testAllAnyNone();
-}
-
+@test
 void testInsert() {
     var s = Set<string>();
 
@@ -21,6 +11,7 @@ void testInsert() {
 }
 
 
+@test
 void testRemoval() {
     var s = Set<string>();
 
@@ -32,6 +23,7 @@ void testRemoval() {
     assert(!s.remove("ok"));
 }
 
+@test
 void testDuplicates() {
     var s = Set<string>();
 
@@ -43,6 +35,7 @@ void testDuplicates() {
     assert(!s.contains("ok"));
 }
 
+@test
 void testIterator() {
     var s = Set<string>();
 
@@ -77,6 +70,7 @@ void testIterator() {
     assert(ccc);
 }
 
+@test
 void testEmptySetIterator() {
     var s = Set<string>();
     s.insert("foo");
@@ -88,6 +82,7 @@ void testEmptySetIterator() {
     }
 }
 
+@test
 void testUnitSetIterator() {
     var s = Set<string>();
     s.insert("foo");
@@ -102,6 +97,7 @@ void testUnitSetIterator() {
     assert(count == 1);
 }
 
+@test
 void testClear() {
     var s = Set<string>();
     s.insert("a");
@@ -116,6 +112,7 @@ void testClear() {
     assert(s.contains("c"));
 }
 
+@test
 void testAllAnyNone() {
     var s = Set<int>();
     s.insert(2);

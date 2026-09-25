@@ -1,46 +1,11 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
 struct C {
     int i;
     ~C() {}
 }
 
-void main() {
-    testListInsertionAndRemoval();
-    testListInitFromLiteral();
-    testAppendArray();
-    testNestedPushAppend();
-    testListInitWithRepeatedValue();
-    testArrayIterator();
-    testListMutatingIteration();
-    testListIntMutation();
-    testListEnumeratedIterator();
-    testEmpty();
-    testFind();
-    testMap();
-    testFilter();
-    testRemoveFirstByPredicate();
-    testRemovalReturnValues();
-    testAddressOfBorrowResult();
-    testElementDestruction();
-    testContainsIndexOf();
-    testClear();
-    testAllAnyNone();
-    testChain();
-}
-
-void testAddressOfBorrowResult() {
-    var a = List([1, 2, 3]);
-    var p = &a.first();
-    *p = 99;
-    assert(a[0] == 99);
-    assert(a.first() == 99);
-    *a.first() = 7;
-    assert(a[0] == 7);
-    *a.first() += 8;
-    assert(a[0] == 15);
-}
-
+@test
 void testListInsertionAndRemoval() {
     var a = List<C>();
     assert(a.size() == 0 && a.capacity() >= 0);
@@ -58,6 +23,7 @@ void testListInsertionAndRemoval() {
     assert(a.size() == 2 && a.capacity() >= 2);
 }
 
+@test
 void testListInitFromLiteral() {
     var a = List([1, 2, 3]);
 
@@ -67,6 +33,7 @@ void testListInitFromLiteral() {
     assert(a[2] == 3);
 }
 
+@test
 void testAppendArray() {
     var a = List([1, 2]);
     var b = [3, 4, 5];
@@ -77,6 +44,7 @@ void testAppendArray() {
     assert(a[4] == 5);
 }
 
+@test
 void testNestedPushAppend() {
     var a = List<int[]>();
     a.push([]);
@@ -85,6 +53,7 @@ void testNestedPushAppend() {
     assert(a.size() == 1);
 }
 
+@test
 void testListInitWithRepeatedValue() {
     var a = List(3, true);
 
@@ -97,6 +66,7 @@ void testListInitWithRepeatedValue() {
     assert(b.empty());
 }
 
+@test
 void testArrayIterator() {
     var a = List<C>();
     a.push(C(1));
@@ -115,6 +85,7 @@ void testArrayIterator() {
     assert(!iterator.hasValue());
 }
 
+@test
 void testListMutatingIteration() {
     var a = List<C>();
     a.push(C(i = 1));
@@ -130,6 +101,7 @@ void testListMutatingIteration() {
     assert(a[2].i == 4);
 }
 
+@test
 void testListIntMutation() {
     var a = List<int>();
     a.push(1);
@@ -145,6 +117,7 @@ void testListIntMutation() {
     assert(a[2] == 4);
 }
 
+@test
 void testListEnumeratedIterator() {
     var a = List<int>();
     a.push(9000);
@@ -172,6 +145,7 @@ void testListEnumeratedIterator() {
     assert(!iterator.hasValue());
 }
 
+@test
 void testEmpty() {
     var a = List<int>();
     assert(a.empty());
@@ -179,6 +153,7 @@ void testEmpty() {
     assert(!a.empty());
 }
 
+@test
 void testFind() {
     var a = List<int>();
     assert(a.find(x => x == 1) == null);
@@ -189,6 +164,7 @@ void testFind() {
     assert(a.find(x => x == 3) == null);
 }
 
+@test
 void testMap() {
     var a = List<int>();
     a.push(1);
@@ -204,6 +180,7 @@ void testMap() {
     assert(b[3] == true);
 }
 
+@test
 void testFilter() {
     var a = List<int>();
     a.push(1);
@@ -217,6 +194,7 @@ void testFilter() {
     assert(b[1] == 4);
 }
 
+@test
 void testRemoveFirstByPredicate() {
     var a = List([0, 1, 2, 3]);
 
@@ -239,6 +217,7 @@ void testRemoveFirstByPredicate() {
     assert(a.empty());
 }
 
+@test
 void testRemovalReturnValues() {
     var a = List([10, 20, 30]);
 
@@ -263,16 +242,20 @@ void testRemovalReturnValues() {
     assert(a.empty());
 }
 
-var destroyed = 0;
-
-struct DestructionTester {
-    ~DestructionTester() {
-        destroyed++;
-    }
+@test
+void testAddressOfBorrowResult() {
+    var a = List([1, 2, 3]);
+    var p = &a.first();
+    *p = 99;
+    assert(a[0] == 99);
+    assert(a.first() == 99);
+    *a.first() = 7;
+    assert(a[0] == 7);
+    *a.first() += 8;
+    assert(a[0] == 15);
 }
 
-void sink(DestructionTester t) {}
-
+@test
 void testElementDestruction() {
     var a = List<DestructionTester>();
 
@@ -289,6 +272,7 @@ void testElementDestruction() {
     assert(destroyed == 5);
 }
 
+@test
 void testContainsIndexOf() {
     var a = List([10, 20, 30]);
 
@@ -303,6 +287,7 @@ void testContainsIndexOf() {
     assert(empty.indexOf(1) == 0);
 }
 
+@test
 void testClear() {
     var a = List([1, 2, 3]);
     var capacity = a.capacity();
@@ -315,6 +300,7 @@ void testClear() {
     assert(a == List([4]));
 }
 
+@test
 void testAllAnyNone() {
     var a = List([2, 4, 6]);
 
@@ -330,9 +316,20 @@ void testAllAnyNone() {
     assert(a.none((int& n) => n < 0));
 }
 
+@test
 void testChain() {
     var a = List([1, 2]);
     var b = List([3, 4]);
 
     assert(a.chain(b.iterator()).toList() == List([1, 2, 3, 4]));
 }
+
+var destroyed = 0;
+
+struct DestructionTester {
+    ~DestructionTester() {
+        destroyed++;
+    }
+}
+
+void sink(DestructionTester t) {}

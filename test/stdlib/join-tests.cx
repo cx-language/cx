@@ -1,10 +1,12 @@
-// RUN: %cx run -Werror %s | %FileCheck -match-full-lines %s
+// RUN: %cx test -Werror %s | %FileCheck -match-full-lines %s
 
-void main() {
+@test
+void testJoin() {
     println(join([1, 2, 3], ", ")); // CHECK: 1, 2, 3
     println(join(List([1, 2, 3]), "-")); // CHECK-NEXT: 1-2-3
     println(join(["a", "b", "c"], "")); // CHECK-NEXT: abc
     println(join([1], ", ")); // CHECK-NEXT: 1
     assert(string(join(List<int>(), ", ")) == "");
     println(join([true, false], " or ")); // CHECK-NEXT: true or false
+    // CHECK-NEXT: ok testJoin
 }

@@ -1,21 +1,6 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
-void main() {
-    testInsert();
-    testRemoval();
-    testDuplicates();
-    testGetter();
-    testResize();
-    testSize();
-    testIterator();
-    testEmptyMapIterator();
-    testUnitMapIterator();
-    testRemoveReturnValue();
-    testClear();
-    testReserve();
-    testAllAnyNone();
-}
-
+@test
 void testInsert() {
     var map = Map<string, int>();
 
@@ -25,14 +10,37 @@ void testInsert() {
     assert(!map.contains("lol"));
 }
 
-void testSize() {
-    var map = Map<string, string>();
-
+@test
+void testRemoval() {
+    var map = Map<string, int>();
     assert(map.size() == 0);
-    map.insert("best", "ok");
+
+    map.insert("ok", 2);
+
+    assert(map.contains("ok"));
     assert(map.size() == 1);
+
+    map.remove("ok");
+    assert(!map.contains("ok"));
+    assert(map.size() == 0);
 }
 
+@test
+void testDuplicates() {
+    var map = Map<string, int>();
+
+    map.insert("ok", 1);
+    map.set("ok", 2);
+    assert(map.contains("ok"));
+
+    assert(map["ok"]! == 2);
+
+    map.remove("ok");
+    assert(!map.contains("ok"));
+    assert(map["ok"] == null);
+}
+
+@test
 void testGetter() {
     var map = Map<string, int>();
 
@@ -40,6 +48,7 @@ void testGetter() {
     assert(map["ok"]! == 42);
 }
 
+@test
 void testResize() {
     var map = Map<StringBuf, int>();
 
@@ -56,35 +65,16 @@ void testResize() {
     assert(map.size() == 255);
 }
 
+@test
+void testSize() {
+    var map = Map<string, string>();
 
-void testRemoval() {
-    var map = Map<string, int>();
     assert(map.size() == 0);
-
-    map.insert("ok", 2);
-
-    assert(map.contains("ok"));
+    map.insert("best", "ok");
     assert(map.size() == 1);
-
-    map.remove("ok");
-    assert(!map.contains("ok"));
-    assert(map.size() == 0);
 }
 
-void testDuplicates() {
-    var map = Map<string, int>();
-
-    map.insert("ok", 1);
-    map.set("ok", 2);
-    assert(map.contains("ok"));
-
-    assert(map["ok"]! == 2);
-
-    map.remove("ok");
-    assert(!map.contains("ok"));
-    assert(map["ok"] == null);
-}
-
+@test
 void testIterator() {
     var map = Map<string, string>();
 
@@ -116,6 +106,7 @@ void testIterator() {
     assert(ccc);
 }
 
+@test
 void testEmptyMapIterator() {
     var map = Map<string, string>();
     map.insert("foo", "foo");
@@ -126,6 +117,7 @@ void testEmptyMapIterator() {
     }
 }
 
+@test
 void testUnitMapIterator() {
     var map = Map<string, string>();
     map.insert("foo", "foo");
@@ -139,6 +131,7 @@ void testUnitMapIterator() {
     assert(count == 1);
 }
 
+@test
 void testRemoveReturnValue() {
     var map = Map<string, int>();
     map.insert("ok", 2);
@@ -149,6 +142,7 @@ void testRemoveReturnValue() {
     assert(map.size() == 0);
 }
 
+@test
 void testClear() {
     var map = Map<string, int>();
     map.insert("a", 1);
@@ -165,6 +159,7 @@ void testClear() {
     assert(map["c"]! == 3);
 }
 
+@test
 void testReserve() {
     var map = Map<string, int>();
     map.reserve(1000);
@@ -175,6 +170,7 @@ void testReserve() {
     assert(map.capacity() >= 1000);
 }
 
+@test
 void testAllAnyNone() {
     var map = Map<string, int>();
     map.insert("a", 2);

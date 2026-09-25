@@ -1,7 +1,7 @@
-// RUN: check_exit_status 0 %cx run -Werror %s
-// RUN: check_exit_status 0 %cx run -Werror --release %s
-// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
-// RUN: check_exit_status 0 %cx run -Werror --release --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --release %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror --release --backend=c %s
 
 var destroyed = 0;
 
@@ -11,15 +11,7 @@ struct Tracked {
     }
 }
 
-void main() {
-    testAllocations();
-    testGrowthAndStablePointers();
-    testZeroCount();
-    testOverflow();
-    testExplicitDeinit();
-    testMoveOwnership();
-}
-
+@test
 void testAllocations() {
     var arena = Arena(chunkSize = 32);
 
@@ -40,6 +32,7 @@ void testAllocations() {
     assert(array[3] == 51);
 }
 
+@test
 void testGrowthAndStablePointers() {
     var arena = Arena(chunkSize = 16);
     var first = arena.allocate<int>();
@@ -61,6 +54,7 @@ void testGrowthAndStablePointers() {
     assert(array[0] == 10 && array[2] == 30);
 }
 
+@test
 void testZeroCount() {
     var arena = Arena(chunkSize = 0);
     var first = arena.allocateArray<int>(0);
@@ -71,6 +65,7 @@ void testZeroCount() {
     assert(first == second);
 }
 
+@test
 void testOverflow() {
     var arena = Arena(chunkSize = 32);
 
@@ -88,6 +83,7 @@ void testOverflow() {
     assert(oversized.allocateArray<uint8>(huge) == null);
 }
 
+@test
 void testExplicitDeinit() {
     var arena = Arena(chunkSize = 8);
     var value = arena.allocate(Tracked());
@@ -106,6 +102,7 @@ Arena makeArena() {
     return arena;
 }
 
+@test
 void testMoveOwnership() {
     var arena = makeArena();
     var value = arena.allocate<int>();
