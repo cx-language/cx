@@ -12,7 +12,7 @@ define i32 @main() #0 !dbg !4 {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !8
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !8
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -24,7 +24,7 @@ assert.success:                                   ; preds = %0
   br i1 %assert.condition1, label %assert.fail2, label %assert.success3
 
 assert.fail2:                                     ; preds = %assert.success
-  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !8
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !8
   unreachable
 
 assert.success3:                                  ; preds = %assert.success
@@ -33,7 +33,7 @@ assert.success3:                                  ; preds = %assert.success
   ret i32 0
 }
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

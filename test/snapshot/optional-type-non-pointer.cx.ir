@@ -110,7 +110,7 @@ if.end_4:
     return int32 0
 }
 
-void _EN4main1fE() {
+void _CX1N4main1fE4void0_() {
     Optional<int32>* a = alloca Optional<int32>
     Optional<int32>* enum = alloca Optional<int32>
     Optional<int32>* b = alloca Optional<int32>
@@ -180,7 +180,7 @@ if.end:
     br _17, if.then, if.else
 
 overflow.fail:
-    void _18 = call _EN3std10assertFailEP4char(char* "integer overflow at optional-type-non-pointer.cx:26:19
+    void _18 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:26:19
 ")
     unreachable
 
@@ -200,7 +200,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _28 = call _EN3std10assertFailEP4char(char* "integer overflow at optional-type-non-pointer.cx:27:15
+    void _28 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:27:15
 ")
     unreachable
 
@@ -238,7 +238,7 @@ if.end_0:
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 __implicit_unwrap.fail:
-    void _39 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
+    void _39 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
 ")
     unreachable
 
@@ -247,7 +247,7 @@ __implicit_unwrap.success:
     union { struct { int32 } }* _40 = getelementptr _0, 1
     int32* _41 = cast _40 to int32*
     int32 .load_3 = load _41
-    void _42 = call _EN4main12takesNonNullE5int32(int32 .load_3)
+    void _42 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_3)
     Optional<int32> c.load_2 = load c
     int32 _43 = extractvalue c.load_2, 0
     bool _44 = _43 == int32 1
@@ -257,7 +257,7 @@ if.then_1:
     union { struct { int32 } }* _45 = getelementptr c, 1
     int32* _46 = cast _45 to int32*
     int32 .load_4 = load _46
-    void _47 = call _EN4main12takesNonNullE5int32(int32 .load_4)
+    void _47 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_4)
     br if.end_1
 
 if.else_1:
@@ -267,13 +267,13 @@ if.end_1:
     return void
 }
 
-void _EN4main12takesNonNullE5int32(int32 i) {
+void _CX1N4main12takesNonNullE4void1_M3std5int32(int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
     return void
 }
 
-void _EN4main1gE() {
+void _CX1N4main1gE4void0_() {
     char*** p = alloca char**
     store char** null to p
     char** p.load = load p

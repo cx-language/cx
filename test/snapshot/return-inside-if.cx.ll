@@ -1,7 +1,7 @@
 
 declare i1 @foo() #0
 
-define void @_EN4main3barE() #0 !dbg !4 {
+define void @_CX1N4main3barE4void0_() #0 !dbg !4 {
   %1 = call i1 @foo(), !dbg !7
   br i1 %1, label %if.then, label %if.else
 
@@ -54,7 +54,7 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "return-inside-if.cx")
-!4 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main3barE", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "bar", linkageName: "_CX1N4main3barE4void0_", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 6, column: 9, scope: !4)

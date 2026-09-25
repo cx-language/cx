@@ -1,11 +1,11 @@
 
-void _EN4main3barE() {
+void _CX1N4main3barE4void0_() {
     return void
 }
 
-void _EN4main3fooE5int32(int32 bar) {
+void _CX1N4main3fooE4void1_M3std5int32(int32 bar) {
     int32* bar_0 = alloca int32
     store bar to bar_0
-    void _0 = call _EN4main3barE()
+    void _0 = call _CX1N4main3barE4void0_()
     return void
 }

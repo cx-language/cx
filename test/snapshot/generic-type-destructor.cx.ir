@@ -2,25 +2,25 @@
 int32 main() {
     C<int32>* i = alloca C<int32>
     C<bool>* b = alloca C<bool>
-    void _0 = call _EN4main1CI5int32E4initE(C<int32>* i)
-    void _1 = call _EN4main1CI4boolE4initE(C<bool>* b)
-    void _2 = call _EN4main1CI4boolE6deinitE(C<bool>* b)
-    void _3 = call _EN4main1CI5int32E6deinitE(C<int32>* i)
+    void _0 = call _CX1N4mainM4main1CIM3std5int32E4initE4void0_(C<int32>* i)
+    void _1 = call _CX1N4mainM4main1CIM3std4boolE4initE4void0_(C<bool>* b)
+    void _2 = call _CX1N4mainM4main1CIM3std4boolE6deinitE4void0_(C<bool>* b)
+    void _3 = call _CX1N4mainM4main1CIM3std5int32E6deinitE4void0_(C<int32>* i)
     return int32 0
 }
 
-void _EN4main1CI5int32E6deinitE(C<int32>* this) {
+void _CX1N4mainM4main1CIM3std5int32E6deinitE4void0_(C<int32>* this) {
     return void
 }
 
-void _EN4main1CI5int32E4initE(C<int32>* this) {
+void _CX1N4mainM4main1CIM3std5int32E4initE4void0_(C<int32>* this) {
     return void
 }
 
-void _EN4main1CI4boolE6deinitE(C<bool>* this) {
+void _CX1N4mainM4main1CIM3std4boolE6deinitE4void0_(C<bool>* this) {
     return void
 }
 
-void _EN4main1CI4boolE4initE(C<bool>* this) {
+void _CX1N4mainM4main1CIM3std4boolE4initE4void0_(C<bool>* this) {
     return void
 }

@@ -1,5 +1,5 @@
 
-void _EN4main3fooE5int326uint32(int32 i, uint32 u) {
+void _CX1N4main3fooE4void2_M3std5int32M3std6uint32(int32 i, uint32 u) {
     int32* i_0 = alloca int32
     uint32* u_0 = alloca uint32
     bool* a = alloca bool

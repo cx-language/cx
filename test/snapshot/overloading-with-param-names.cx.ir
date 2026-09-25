@@ -1,45 +1,45 @@
 
-void _EN4main3fooE1i5int32(int32 i) {
+void _CX1N4main3fooE4void1_L1iM3std5int32(int32 i) {
     int32* i_0 = alloca int32
     Foo* _0 = alloca Foo
     Foo* _1 = alloca Foo
     store i to i_0
     int32 i.load = load i_0
-    void _2 = call _EN4main3Foo4initE1i5int32(Foo* _0, int32 i.load)
+    void _2 = call _CX1N4mainM4main3Foo4initE4void1_L1iM3std5int32(Foo* _0, int32 i.load)
     int32 i.load_0 = load i_0
-    void _3 = call _EN4main3Foo3fooE1i5int32(Foo* _0, int32 i.load_0)
+    void _3 = call _CX1N4mainM4main3Foo3fooE4void1_L1iM3std5int32(Foo* _0, int32 i.load_0)
     int32 i.load_1 = load i_0
-    void _4 = call _EN4main3Foo4initE3qux5int32(Foo* _1, int32 i.load_1)
+    void _4 = call _CX1N4mainM4main3Foo4initE4void1_L3quxM3std5int32(Foo* _1, int32 i.load_1)
     int32 i.load_2 = load i_0
-    void _5 = call _EN4main3Foo3fooE3qux5int32(Foo* _1, int32 i.load_2)
+    void _5 = call _CX1N4mainM4main3Foo3fooE4void1_L3quxM3std5int32(Foo* _1, int32 i.load_2)
     return void
 }
 
-void _EN4main3Foo3fooE1i5int32(Foo* this, int32 i) {
+void _CX1N4mainM4main3Foo3fooE4void1_L1iM3std5int32(Foo* this, int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
     return void
 }
 
-void _EN4main3Foo4initE1i5int32(Foo* this, int32 i) {
+void _CX1N4mainM4main3Foo4initE4void1_L1iM3std5int32(Foo* this, int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
     return void
 }
 
-void _EN4main3Foo3fooE3qux5int32(Foo* this, int32 qux) {
+void _CX1N4mainM4main3Foo3fooE4void1_L3quxM3std5int32(Foo* this, int32 qux) {
     int32* qux_0 = alloca int32
     store qux to qux_0
     return void
 }
 
-void _EN4main3Foo4initE3qux5int32(Foo* this, int32 qux) {
+void _CX1N4mainM4main3Foo4initE4void1_L3quxM3std5int32(Foo* this, int32 qux) {
     int32* qux_0 = alloca int32
     store qux to qux_0
     return void
 }
 
-void _EN4main3fooE3qux5int32(int32 qux) {
+void _CX1N4main3fooE4void1_L3quxM3std5int32(int32 qux) {
     int32* qux_0 = alloca int32
     store qux to qux_0
     return void

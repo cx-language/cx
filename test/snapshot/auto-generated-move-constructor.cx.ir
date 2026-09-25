@@ -1,5 +1,5 @@
 
-void _EN4main3fooEP1X1X(X* p, X x) {
+void _CX1N4main3fooE4void2_PM4main1XM4main1X(X* p, X x) {
     X** p_0 = alloca X*
     X* x_0 = alloca X
     store p to p_0
@@ -10,6 +10,6 @@ void _EN4main3fooEP1X1X(X* p, X x) {
     return void
 }
 
-void _EN4main1X6deinitE(X* this) {
+void _CX1N4mainM4main1X6deinitE4void0_(X* this) {
     return void
 }

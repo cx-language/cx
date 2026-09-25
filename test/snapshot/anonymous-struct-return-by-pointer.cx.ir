@@ -4,15 +4,15 @@ int32 main() {
     struct { int32 }** f = alloca struct { int32 }*
     struct { int32 }** g = alloca struct { int32 }*
     struct { int32 } _0 = insertvalue struct { int32 } undefined, 0, int32 1
-    void _1 = call _EN4main1S4initET5int32_(S* s, struct { int32 } _0)
-    struct { int32 }* _2 = call _EN4main1S1fE(S* s)
+    void _1 = call _CX1N4mainM4main1S4initE4void1_T1_1aM3std5int32(S* s, struct { int32 } _0)
+    struct { int32 }* _2 = call _CX1N4mainM4main1S1fEPT1_1aM3std5int320_(S* s)
     store _2 to f
-    struct { int32 }* _3 = call _EN4main1S1gE(S* s)
+    struct { int32 }* _3 = call _CX1N4mainM4main1S1gEPT1_1aM3std5int320_(S* s)
     store _3 to g
     return int32 0
 }
 
-void _EN4main1S4initET5int32_(S* this, struct { int32 } t) {
+void _CX1N4mainM4main1S4initE4void1_T1_1aM3std5int32(S* this, struct { int32 } t) {
     struct { int32 }* t_0 = alloca struct { int32 }
     store t to t_0
     struct { int32 }* t_1 = getelementptr this, 0
@@ -21,12 +21,12 @@ void _EN4main1S4initET5int32_(S* this, struct { int32 } t) {
     return void
 }
 
-struct { int32 }* _EN4main1S1fE(S* this) {
+struct { int32 }* _CX1N4mainM4main1S1fEPT1_1aM3std5int320_(S* this) {
     struct { int32 }* t = getelementptr this, 0
     return t
 }
 
-struct { int32 }* _EN4main1S1gE(S* this) {
+struct { int32 }* _CX1N4mainM4main1S1gEPT1_1aM3std5int320_(S* this) {
     struct { int32 }* t = getelementptr this, 0
     return t
 }

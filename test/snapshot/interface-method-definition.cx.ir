@@ -2,18 +2,18 @@
 int32 main() {
     B* b = alloca B
     int32* x = alloca int32
-    void _0 = call _EN4main1B4initE(B* b)
-    int32 _1 = call _EN4main1B1gE(B* b)
+    void _0 = call _CX1N4mainM4main1B4initE4void0_(B* b)
+    int32 _1 = call _CX1N4mainM4main1B1gEM3std5int320_(B* b)
     store _1 to x
     return int32 0
 }
 
-void _EN4main1B4initE(B* this) {
+void _CX1N4mainM4main1B4initE4void0_(B* this) {
     return void
 }
 
-int32 _EN4main1B1gE(B* this) {
-    int32 _0 = call _EN4main1B1fE(B* this)
+int32 _CX1N4mainM4main1B1gEM3std5int320_(B* this) {
+    int32 _0 = call _CX1N4mainM4main1B1fEM3std5int320_(B* this)
     int64 _1 = cast _0 to int64
     int64 _2 = cast int32 2 to int64
     int64 _3 = _1 * _2
@@ -25,7 +25,7 @@ int32 _EN4main1B1gE(B* this) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _8 = call _EN3std10assertFailEP4char(char* "integer overflow at interface-method-definition.cx:5:26
+    void _8 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at interface-method-definition.cx:5:26
 ")
     unreachable
 
@@ -33,6 +33,6 @@ overflow.success:
     return _4
 }
 
-int32 _EN4main1B1fE(B* this) {
+int32 _CX1N4mainM4main1B1fEM3std5int320_(B* this) {
     return int32 21
 }

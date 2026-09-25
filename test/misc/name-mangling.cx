@@ -1,0 +1,97 @@
+// RUN: %cx --print-ir %s 2>&1 | %FileCheck %s
+// CHECK-NOT: name-mangling.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+// Mangled symbols embed module, receiver, name, generic args, return type,
+// parameter count, and parameter types, so every overload gets its own symbol.
+
+// CHECK: global _CX1G4main7counterE = int32 0
+// CHECK: int32 _CX1N4main3addEM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
+// CHECK: int32 _CX1N4main3addEM3std5int321_M3std5int32(int32 a) {
+// CHECK: void _CX1N4main9takeConstE4void1_KM3std5int32(int32 x) {
+// CHECK: void _CX1N4main7takeMutE4void1_M3std5int32(int32 x) {
+// CHECK: bool _CX1N4maino2eqEM3std4bool2_RM4main3BoxRM4main3Box(
+// CHECK: void _CX1N4main4moveE4void1_L1xM3std5int32(int32 x) {
+// CHECK: void _CX1N4main4moveE4void1_L1yM3std5int32(int32 y) {
+// CHECK: int32 _CX1N4main5firstEM3std5int321_T2_1aM3std5int321bM3std5int32(
+// CHECK: int32 _CX1N4main5applyEM3std5int322_F1_M3std5int32M3std5int32M3std5int32(
+// CHECK: int32 _CX1N4main8fixedSumEM3std5int321_5ArrayIM3std5int32N3_E(
+// CHECK: int32 _CX1N4main6optValEM3std5int321_OM3std5int32(
+// CHECK: void _CX1N4main5ptrFnE4void1_PM3std5int32(
+// CHECK: void _CX1N4main8borrowFnE4void1_RM3std5int32(
+// CHECK: void _CX1N4main7sliceFnE4void1_M3std5SliceIM3std5int32E(
+// CHECK: void _CX1N4main10arrayPtrFnE4void1_AM3std5int32(
+// CHECK: int32 _CX1N4main3oneEM3std5int321_M3std5int32(int32 x) {
+// CHECK: int32 main() {
+// CHECK: void _CX1N4mainM4main3Box4initE4void1_M3std5int32(
+// CHECK: int32 _CX1N4main8identityIM3std5int32EEM3std5int321_M3std5int32(int32 x) {
+// CHECK: bool _CX1N4main8identityIM3std4boolEEM3std4bool1_M3std4bool(
+// CHECK: int32 _CX1N4main{{[0-9]+}}____lambda{{[0-9]+}}EM3std5int321_M3std5int32C1_M3std5int32(
+// CHECK: int32 _CX1N4mainM4main3Box3getEM3std5int320_(
+// CHECK: void _CX1N4mainM4main3Box4mainE4void0_(
+// CHECK: void _CX1N4mainM4main7WrapperIM3std5int32E4initE4void1_M3std5int32(
+// CHECK: int32 _CX1N4mainM4main7WrapperIM3std5int32E3getEM3std5int320_(
+
+struct Box {
+    int x
+    int get() { return x; }
+    void main() { print("method main"); }
+}
+
+struct Wrapper<T> {
+    T value
+    T get() { return value; }
+}
+
+int add(int a, int b) { return a + b; }
+int add(int a) { return a; }
+void takeConst(const int x) { print(x); }
+void takeMut(int x) { print(x); }
+T identity<T>(T x) { return x; }
+bool operator==(Box& a, Box& b) { return a.x == b.x; }
+void move(public int x) { print(x); }
+void move(public int y) { print(y); }
+int first((int a, int b) t) { return t.a; }
+int apply(int(int) f, int x) { return f(x); }
+int fixedSum(int[3] a) { return a[0]; }
+int optVal(int? o) { return o ?? 0; }
+void ptrFn(int* p) { print(*p); }
+void borrowFn(int& r) { print(r); }
+void sliceFn(int[] s) { print(s.size()); }
+void arrayPtrFn(int[*] p) { print(p[0]); }
+
+var counter = 0;
+
+int one(int x) { return x; }
+
+void main() {
+    var b = Box(3);
+    print(add(1, 2));
+    print(add(1));
+    takeConst(1);
+    takeMut(2);
+    print(identity(3));
+    print(identity(true));
+    print(b == b);
+    move(x = 1);
+    move(y = 2);
+    print(first((a = 1, b = 2)));
+    print(apply(one, 4));
+    int[3] arr = [1, 2, 3];
+    print(fixedSum(arr));
+    print(optVal(5));
+    int v = 6;
+    ptrFn(&v);
+    borrowFn(v);
+    int[] sl = [7, 8];
+    sliceFn(sl);
+    arrayPtrFn(arr);
+    var f = (int x) => x + v;
+    print(f(1));
+    counter = b.get();
+    b.main();
+    var w = Wrapper(9);
+    print(w.get());
+    print(counter);
+}
+
+// CHECK-NOT: name-mangling.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

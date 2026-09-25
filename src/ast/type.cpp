@@ -204,6 +204,7 @@ template<typename T> static Type getType(T&& typeBase, Mutability mutability, Lo
 
     typeBases.push_back(makeAST<T>(std::forward<T>(typeBase)));
     typeBases.back()->firstTwin = firstTwin;
+    typeBases.back()->identityIndex = typeBases.size() - 1;
     // Share already-registered declarations so getDecl() usually hits without
     // scanning; its lazy search covers twins created before registration.
     if (firstTwin) {
@@ -524,7 +525,8 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
     case TypeKind::AnonymousStructType:
         return other.isAnonymousStructType() && getAnonymousStructElements() == other.getAnonymousStructElements();
     case TypeKind::FunctionType:
-        return other.isFunctionType() && getReturnType() == other.getReturnType() && getParamTypes() == other.getParamTypes();
+        return other.isFunctionType() && getReturnType() == other.getReturnType() && getParamTypes() == other.getParamTypes()
+            && llvm::cast<FunctionType>(typeBase)->isVariadic == llvm::cast<FunctionType>(other.typeBase)->isVariadic;
     case TypeKind::PointerType:
         return other.isPointerType() && getPointerKind() == other.getPointerKind() && getPointee() == other.getPointee();
     case TypeKind::UnresolvedType:

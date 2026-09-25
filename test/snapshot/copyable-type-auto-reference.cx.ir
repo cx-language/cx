@@ -1,5 +1,5 @@
 
-void _EN4main3fooER3Foo(Foo* ref_f) {
+void _CX1N4main3fooE4void1_RM4main3Foo(Foo* ref_f) {
     Foo** ref_f_0 = alloca Foo*
     store ref_f to ref_f_0
     return void
@@ -7,6 +7,6 @@ void _EN4main3fooER3Foo(Foo* ref_f) {
 
 int32 main() {
     Foo* f = alloca Foo
-    void _0 = call _EN4main3fooER3Foo(Foo* f)
+    void _0 = call _CX1N4main3fooE4void1_RM4main3Foo(Foo* f)
     return int32 0
 }

@@ -1,10 +1,10 @@
 
 int32 main() {
     A* a = alloca A
-    void _0 = call _EN4main1A4initE(A* a)
+    void _0 = call _CX1N4mainM4main1A4initE4void0_(A* a)
     return int32 0
 }
 
-void _EN4main1A4initE(A* this) {
+void _CX1N4mainM4main1A4initE4void0_(A* this) {
     return void
 }

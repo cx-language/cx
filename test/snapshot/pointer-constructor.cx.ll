@@ -1,5 +1,5 @@
 
-define void @_EN4main3fooEPP4charP4char(ptr %p, ptr %x) #0 !dbg !4 {
+define void @_CX1N4main3fooE4void2_PPM3std4charPM3std4char(ptr %p, ptr %x) #0 !dbg !4 {
   %p1 = alloca ptr, align 8
   %x2 = alloca ptr, align 8
   %pp = alloca ptr, align 8
@@ -25,6 +25,6 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "pointer-constructor.cx")
-!4 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooEPP4charP4char", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "foo", linkageName: "_CX1N4main3fooE4void2_PPM3std4charPM3std4char", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}

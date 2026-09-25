@@ -4,6 +4,7 @@
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/Twine.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
@@ -264,6 +265,8 @@ struct IRGenerator {
     IRModule* module = nullptr;
     std::vector<IRModule*> generatedModules;
     std::vector<FunctionInstantiation> functionInstantiations;
+    // Extern names already reported as conflicting; getFunction runs per use.
+    llvm::StringSet<> reportedExternConflicts;
     const Decl* currentDecl;
     /// The basic blocks to branch to on a 'break'/'continue' statement.
     llvm::SmallVector<BasicBlock*, 4> breakTargets;

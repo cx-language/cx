@@ -1,5 +1,5 @@
 
-void _EN4main3fooE5SliceI5int32E(Slice<int32> a) {
+void _CX1N4main3fooE4void1_M3std5SliceIM3std5int32E(Slice<int32> a) {
     Slice<int32>* a_0 = alloca Slice<int32>
     store a to a_0
     return void
@@ -14,12 +14,12 @@ int32 main() {
     int32* _3 = getelementptr a, 0
     Slice<int32> _4 = insertvalue Slice<int32> undefined, 0, _3
     Slice<int32> _5 = insertvalue _4, 1, int32 3
-    void _6 = call _EN4main3fooE5SliceI5int32E(Slice<int32> _5)
-    void _7 = call _EN4main3bazEP5ArrayI5int32N3_E(int32[3]* a)
+    void _6 = call _CX1N4main3fooE4void1_M3std5SliceIM3std5int32E(Slice<int32> _5)
+    void _7 = call _CX1N4main3bazE4void1_P5ArrayIM3std5int32N3_E(int32[3]* a)
     return int32 0
 }
 
-void _EN4main3bazEP5ArrayI5int32N3_E(int32[3]* b) {
+void _CX1N4main3bazE4void1_P5ArrayIM3std5int32N3_E(int32[3]* b) {
     int32[3]** b_0 = alloca int32[3]*
     store b to b_0
     return void

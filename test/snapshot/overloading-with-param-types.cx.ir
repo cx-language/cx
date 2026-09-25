@@ -1,17 +1,17 @@
 
-void _EN4main1fE1S(S a) {
+void _CX1N4main1fE4void1_M4main1S(S a) {
     S* a_0 = alloca S
     store a to a_0
     return void
 }
 
-void _EN4main1fE1T(T a) {
+void _CX1N4main1fE4void1_M4main1T(T a) {
     T* a_0 = alloca T
     store a to a_0
     return void
 }
 
-void _EN4mainplE1S1S(S a, S b) {
+void _CX1N4maino2plE4void2_M4main1SM4main1S(S a, S b) {
     S* a_0 = alloca S
     S* b_0 = alloca S
     store a to a_0
@@ -19,7 +19,7 @@ void _EN4mainplE1S1S(S a, S b) {
     return void
 }
 
-void _EN4mainplE1T1T(T a, T b) {
+void _CX1N4maino2plE4void2_M4main1TM4main1T(T a, T b) {
     T* a_0 = alloca T
     T* b_0 = alloca T
     store a to a_0
@@ -30,28 +30,28 @@ void _EN4mainplE1T1T(T a, T b) {
 int32 main() {
     S* s = alloca S
     T* t = alloca T
-    void _0 = call _EN4main1S4initE(S* s)
-    void _1 = call _EN4main1T4initE(T* t)
+    void _0 = call _CX1N4mainM4main1S4initE4void0_(S* s)
+    void _1 = call _CX1N4mainM4main1T4initE4void0_(T* t)
     S s.load = load s
-    void _2 = call _EN4main1fE1S(S s.load)
+    void _2 = call _CX1N4main1fE4void1_M4main1S(S s.load)
     T t.load = load t
-    void _3 = call _EN4main1fE1T(T t.load)
+    void _3 = call _CX1N4main1fE4void1_M4main1T(T t.load)
     S s.load_0 = load s
     S s.load_1 = load s
-    void _4 = call _EN4mainplE1S1S(S s.load_0, S s.load_1)
+    void _4 = call _CX1N4maino2plE4void2_M4main1SM4main1S(S s.load_0, S s.load_1)
     T t.load_0 = load t
     T t.load_1 = load t
-    void _5 = call _EN4mainplE1T1T(T t.load_0, T t.load_1)
+    void _5 = call _CX1N4maino2plE4void2_M4main1TM4main1T(T t.load_0, T t.load_1)
     return int32 0
 }
 
-void _EN4main1S4initE(S* this) {
+void _CX1N4mainM4main1S4initE4void0_(S* this) {
     int32* i = getelementptr this, 0
     store int32 0 to i
     return void
 }
 
-void _EN4main1T4initE(T* this) {
+void _CX1N4mainM4main1T4initE4void0_(T* this) {
     int32* i = getelementptr this, 0
     store int32 0 to i
     return void

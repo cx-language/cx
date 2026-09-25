@@ -1,30 +1,30 @@
 
 %"X<int32>" = type {}
 
-define void @_EN4main1fE() #0 !dbg !4 {
+define void @_CX1N4main1fE4void0_() #0 !dbg !4 {
   %index = alloca i32, align 4
   %x = alloca %"X<int32>", align 8
   %1 = alloca %"X<int32>", align 8
   store i32 0, ptr %index, align 4
-  %2 = call %"X<int32>" @_EN4main1gE(), !dbg !7
+  %2 = call %"X<int32>" @_CX1N4main1gEM4main1XIM3std5int32E0_(), !dbg !7
   store %"X<int32>" %2, ptr %x, align 1
-  call void @_EN4main1XI5int32E4initE(ptr %1), !dbg !8
-  call void @_EN4main1XI5int32E1gE(ptr %1), !dbg !9
+  call void @_CX1N4mainM4main1XIM3std5int32E4initE4void0_(ptr %1), !dbg !8
+  call void @_CX1N4mainM4main1XIM3std5int32E1gE4void0_(ptr %1), !dbg !9
   ret void
 }
 
-define %"X<int32>" @_EN4main1gE() #0 !dbg !10 {
+define %"X<int32>" @_CX1N4main1gEM4main1XIM3std5int32E0_() #0 !dbg !10 {
   %x = alloca %"X<int32>", align 8
-  call void @_EN4main1XI5int32E4initE(ptr %x), !dbg !11
+  call void @_CX1N4mainM4main1XIM3std5int32E4initE4void0_(ptr %x), !dbg !11
   %x.load = load %"X<int32>", ptr %x, align 1
   ret %"X<int32>" %x.load
 }
 
-define void @_EN4main1XI5int32E4initE(ptr %this) #0 !dbg !12 {
+define void @_CX1N4mainM4main1XIM3std5int32E4initE4void0_(ptr %this) #0 !dbg !12 {
   ret void
 }
 
-define void @_EN4main1XI5int32E1gE(ptr %this) #0 !dbg !13 {
+define void @_CX1N4mainM4main1XIM3std5int32E1gE4void0_(ptr %this) #0 !dbg !13 {
   %index = alloca i32, align 4
   store i32 0, ptr %index, align 4
   ret void
@@ -39,13 +39,13 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "reuse-variable-name-in-unrelated-scope.cx")
-!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fE4void0_", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 5, column: 13, scope: !4)
 !8 = !DILocation(line: 6, column: 5, scope: !4)
 !9 = !DILocation(line: 6, column: 14, scope: !4)
-!10 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "g", linkageName: "_CX1N4main1gEM4main1XIM3std5int32E0_", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
 !11 = !DILocation(line: 10, column: 13, scope: !10)
-!12 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1XI5int32E4initE", scope: !3, file: !3, line: 14, type: !5, scopeLine: 14, spFlags: DISPFlagDefinition, unit: !2)
-!13 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1XI5int32E1gE", scope: !3, file: !3, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
+!12 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1XIM3std5int32E4initE4void0_", scope: !3, file: !3, line: 14, type: !5, scopeLine: 14, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "g", linkageName: "_CX1N4mainM4main1XIM3std5int32E1gE4void0_", scope: !3, file: !3, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)

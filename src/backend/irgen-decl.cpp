@@ -10,15 +10,9 @@ using namespace cx;
 Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     auto mangledName = mangleFunctionDecl(decl);
 
-    for (auto* function : module->functions) {
-        if (function->mangledName == mangledName) {
-            return function;
-        }
-    }
-
     auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter{ValueKind::Parameter, getIRType(p.type), p.getName().str()}; });
 
-    if (decl.isMain() && !decl.isMethodDecl() && !decl.getParams().empty()) {
+    if (decl.isEntryPoint && !decl.getParams().empty()) {
         // The OS passes argc/argv; the declared args array is materialized from them in emitFunctionBody.
         params = {Parameter{ValueKind::Parameter, getIRType(Type::getInt32()), "argc"},
                   Parameter{ValueKind::Parameter, getIRType(BasicType::get("char", {}).getPointerTo().getPointerTo()), "argv"}};
@@ -37,36 +31,63 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
                       Parameter{ValueKind::Parameter, getIRType(PointerType::get(decl.getTypeDecl()->getType(), PointerKind::Reference)), "this"});
     }
 
-    auto returnType = getIRType(decl.isMain() ? Type::getInt32() : decl.getReturnType());
+    auto returnType = getIRType(decl.isEntryPoint ? Type::getInt32() : decl.getReturnType());
+
+    auto signatureMatches = [&](const Function* function) {
+        if (function->isVariadic != decl.isVariadic()) return false;
+        if (!function->returnType->abiEquals(returnType)) return false;
+        if (function->params.size() != params.size()) return false;
+        for (size_t i = 0; i < params.size(); ++i) {
+            if (!function->params[i].type->abiEquals(params[i].type)) return false;
+        }
+        return true;
+    };
+
+    // Same linker symbol, different signature: only possible for unmangled
+    // extern names, since _CX1 names embed the full signature. The backends
+    // dedup by name, so diagnose instead of miscompiling the later call.
+    auto reportConflict = [&](Location previousLocation) {
+        if (!reportedExternConflicts.insert(mangledName).second) return;
+        std::vector<Note> notes{Note{previousLocation, "previous definition here"}};
+        reportError(
+            decl.getLocation(),
+            (StringBuilder() << "conflicting declaration of " << (decl.isExtern() ? "extern function '" : "function '") << decl.getName() << "'").string,
+            notes);
+    };
+
+    // On conflict the caller still needs a correctly shaped object to limp
+    // along until the driver aborts on the error, so fall through and build
+    // an unregistered one below instead of reusing the mismatched object.
+    bool conflict = false;
+    for (auto* function : module->functions) {
+        if (function->mangledName != mangledName) continue;
+        if (signatureMatches(function)) return function;
+        reportConflict(function->location);
+        conflict = true;
+        break;
+    }
 
     // Definitions are emitted once per program: a function referenced from several
     // modules reuses the first module's object, so later modules call it as an
-    // external declaration instead of emitting a duplicate definition. Reuse only
-    // when the signature matches; same-named externs with different types (e.g. a
-    // C import shadowing a std extern) keep separate objects so each call uses
-    // its own module's parameter types.
-    for (auto& instantiation : functionInstantiations) {
-        auto* existing = instantiation.function;
-        if (existing->mangledName != mangledName) continue;
-        if (existing->isVariadic != decl.isVariadic()) continue;
-        if (!existing->returnType->equals(returnType)) continue;
-        if (existing->params.size() != params.size()) continue;
-        bool signatureMatch = true;
-        for (size_t i = 0; i < params.size(); ++i) {
-            if (!existing->params[i].type->equals(params[i].type)) {
-                signatureMatch = false;
-                break;
-            }
+    // external declaration instead of emitting a duplicate definition.
+    if (!conflict) {
+        for (auto& instantiation : functionInstantiations) {
+            auto* existing = instantiation.function;
+            if (existing->mangledName != mangledName) continue;
+            if (signatureMatches(existing)) return existing;
+            reportConflict(instantiation.decl->getLocation());
+            conflict = true;
+            break;
         }
-        if (signatureMatch) return existing;
     }
 
     auto function = new Function{
         ValueKind::Function, mangledName, decl.getName().str(), returnType, std::move(params), {}, decl.isExtern(), decl.isVariadic(), decl.getLocation(),
     };
-    module->functions.push_back(function);
-
-    functionInstantiations.push_back({&decl, function});
+    if (!conflict) {
+        module->functions.push_back(function);
+        functionInstantiations.push_back({&decl, function});
+    }
     return function;
 }
 
@@ -102,7 +123,7 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     }
 
     Value* mainArgv = nullptr;
-    if (decl.isMain() && !decl.isMethodDecl() && decl.getParams().size() == 1) {
+    if (decl.isEntryPoint && decl.getParams().size() == 1) {
         mainArgv = emitMainArgv(&function.params[0], &function.params[1], decl.getParams()[0].type, decl.getLocation());
     }
 
@@ -128,7 +149,7 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
     if (insertBlock->body.empty() || !llvm::isa<ReturnInst>(insertBlock->body.back())) {
         if (decl.getReturnType().isVoid()) {
-            createReturn(decl.isMain() ? createConstantInt(Type::getInt32(), 0) : nullptr);
+            createReturn(decl.isEntryPoint ? createConstantInt(Type::getInt32(), 0) : nullptr);
         } else {
             createUnreachable();
         }
@@ -189,7 +210,9 @@ Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Locati
 void IRGenerator::emitFunctionDecl(const FunctionDecl& decl) {
     auto function = getFunction(decl);
 
-    if (!decl.isExtern() && function->body.empty()) {
+    // After an error (e.g. a conflicting declaration above) shapes may
+    // mismatch; compilation already failed, so don't emit a body.
+    if (!decl.isExtern() && function->body.empty() && !errors) {
         emitFunctionBody(decl, *function);
     }
 }
@@ -225,7 +248,7 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
         }
 
         if (decl.type.isMutable()) {
-            value = createGlobalVariable(value, decl.type, decl.getName());
+            value = createGlobalVariable(value, decl.type, mangleGlobalVar(decl));
         }
 
         auto it = globalScope().valuesByDecl.try_emplace(&decl, value);

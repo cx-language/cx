@@ -1,5 +1,5 @@
 
-int32 _EN4main3fooE5int32(int32 a) {
+int32 _CX1N4main3fooEM3std5int321_M3std5int32(int32 a) {
     int32* a_0 = alloca int32
     store a to a_0
     int32 a.load = load a_0
@@ -8,15 +8,15 @@ int32 _EN4main3fooE5int32(int32 a) {
 
 int32 main() {
     X* x = alloca X
-    void _0 = call _EN4main1X4initEF5int32_5int32(X* x, int32(int32)* _EN4main3fooE5int32)
+    void _0 = call _CX1N4mainM4main1X4initE4void1_F1_M3std5int32M3std5int32(X* x, int32(int32)* _CX1N4main3fooEM3std5int321_M3std5int32)
     int32(int32)** p = getelementptr x, 0
     int32(int32)* p.load = load p
     int32 _1 = call p.load(int32 42)
-    void _2 = call _EN4main1X1fE(X* x)
+    void _2 = call _CX1N4mainM4main1X1fE4void0_(X* x)
     return int32 0
 }
 
-void _EN4main1X4initEF5int32_5int32(X* this, int32(int32)* p) {
+void _CX1N4mainM4main1X4initE4void1_F1_M3std5int32M3std5int32(X* this, int32(int32)* p) {
     int32(int32)** p_0 = alloca int32(int32)*
     store p to p_0
     int32(int32)** p_1 = getelementptr this, 0
@@ -25,7 +25,7 @@ void _EN4main1X4initEF5int32_5int32(X* this, int32(int32)* p) {
     return void
 }
 
-void _EN4main1X1fE(X* this) {
+void _CX1N4mainM4main1X1fE4void0_(X* this) {
     int32(int32)** p2 = alloca int32(int32)*
     int32(int32)** p = getelementptr this, 0
     int32(int32)* p.load = load p

@@ -1,7 +1,7 @@
 
 %S = type { ptr }
 
-define void @_EN4main1fE1S(%S %s) #0 !dbg !4 {
+define void @_CX1N4main1fE4void1_M4main1S(%S %s) #0 !dbg !4 {
   %s1 = alloca %S, align 8
   store %S %s, ptr %s1, align 8
   ret void
@@ -16,6 +16,6 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "recursive-type.cx")
-!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE1S", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fE4void1_M4main1S", scope: !3, file: !3, line: 7, type: !5, scopeLine: 7, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}

@@ -217,6 +217,10 @@ struct Typechecker {
     bool genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs);
 
     Module* currentModule;
+    Module* mainModule = nullptr;
+    // The program entry point, once seen: the single non-generic,
+    // non-method "main" in the main module. Set in typecheckFunctionSignature.
+    FunctionDecl* entryMain = nullptr;
     SourceFile* currentSourceFile;
     bool suppressAccessWarnings = false;
     // Set while canonicalizing aliases: resolutions must not trigger checking,

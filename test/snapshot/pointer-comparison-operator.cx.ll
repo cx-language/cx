@@ -1,5 +1,5 @@
 
-define void @_EN4main3fooEOP5int32P5int32(ptr %a, ptr %b) #0 !dbg !4 {
+define void @_CX1N4main3fooE4void2_OPKM3std5int32PM3std5int32(ptr %a, ptr %b) #0 !dbg !4 {
   %a1 = alloca ptr, align 8
   %b2 = alloca ptr, align 8
   store ptr %a, ptr %a1, align 8
@@ -22,6 +22,6 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "pointer-comparison-operator.cx")
-!4 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooEOP5int32P5int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "foo", linkageName: "_CX1N4main3fooE4void2_OPKM3std5int32PM3std5int32", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}

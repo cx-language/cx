@@ -1,5 +1,5 @@
 
-define void @_EN4main1fEP7float647float647float64(ptr %foo, double %bar, double %baz) #0 !dbg !4 {
+define void @_CX1N4main1fE4void3_PM3std7float64M3std7float64M3std7float64(ptr %foo, double %bar, double %baz) #0 !dbg !4 {
   %foo1 = alloca ptr, align 8
   %bar2 = alloca double, align 8
   %baz3 = alloca double, align 8
@@ -27,6 +27,6 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "compound-assignment-rhs-precedence.cx")
-!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fEP7float647float647float64", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fE4void3_PM3std7float64M3std7float64M3std7float64", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}

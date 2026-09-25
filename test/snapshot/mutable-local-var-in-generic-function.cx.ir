@@ -1,10 +1,10 @@
 
 int32 main() {
-    void _0 = call _EN4main1fI5int32EE()
+    void _0 = call _CX1N4main1fIM3std5int32EE4void0_()
     return int32 0
 }
 
-void _EN4main1fI5int32EE() {
+void _CX1N4main1fIM3std5int32EE4void0_() {
     int32* i = alloca int32
     store int32 0 to i
     int32 i.load = load i

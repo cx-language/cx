@@ -52,7 +52,7 @@ switch.case.1:                                    ; preds = %0
   br label %switch.end
 
 switch.default:                                   ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !7
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 switch.end:                                       ; preds = %overflow.success, %switch.case.1
@@ -64,7 +64,7 @@ switch.end:                                       ; preds = %overflow.success, %
   ]
 
 overflow.fail:                                    ; preds = %switch.case.0
-  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !7
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %switch.case.0
@@ -84,11 +84,11 @@ switch.case.113:                                  ; preds = %switch.end
   ret i32 0
 
 switch.default14:                                 ; preds = %switch.end
-  call void @_EN3std10assertFailEP4char(ptr @2), !dbg !7
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @2), !dbg !7
   unreachable
 }
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

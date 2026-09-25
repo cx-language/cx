@@ -1,10 +1,10 @@
 
 define i32 @main() #0 !dbg !4 {
-  call void @_EN4main1fI5int32EE(), !dbg !7
+  call void @_CX1N4main1fIM3std5int32EE4void0_(), !dbg !7
   ret i32 0
 }
 
-define void @_EN4main1fI5int32EE() #0 !dbg !8 {
+define void @_CX1N4main1fIM3std5int32EE4void0_() #0 !dbg !8 {
   %i = alloca i32, align 4
   store i32 0, ptr %i, align 4
   %i.load = load i32, ptr %i, align 4
@@ -26,4 +26,4 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 9, column: 5, scope: !4)
-!8 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fI5int32EE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fIM3std5int32EE4void0_", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)

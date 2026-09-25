@@ -1,0 +1,25 @@
+// RUN: %cx --print-ir %s 2>&1 | %FileCheck %s
+// CHECK-NOT: main.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+import inputs
+
+// CHECK: string _CX1N4main8describeEM3std6string1_M6inputs6Widget(
+// CHECK: string _CX1N4main8describeEM3std6string1_M4main6Gadget(
+// The imported main mangles as an ordinary function (only its call shows:
+// definitions in other modules are not printed).
+// CHECK: call _CX1N6inputs4mainE4void1_M3std5int32(int32 3)
+
+struct Gadget {
+    int y
+}
+
+string describe(Widget w) { return "widget"; }
+string describe(Gadget g) { return "gadget"; }
+
+void main() {
+    print(describe(Widget(1)));
+    print(describe(Gadget(2)));
+    main(3);
+}
+
+// CHECK-NOT: main.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

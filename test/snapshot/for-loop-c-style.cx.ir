@@ -34,7 +34,7 @@ loop.end:
     return int32 0
 
 overflow.fail:
-    void _9 = call _EN3std10assertFailEP4char(char* "integer overflow at for-loop-c-style.cx:6:13
+    void _9 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at for-loop-c-style.cx:6:13
 ")
     unreachable
 

@@ -19,35 +19,35 @@ define i32 @main() #0 !dbg !4 {
   %1 = getelementptr inbounds [3 x i32], ptr %three, i32 0, i32 0
   %2 = insertvalue %"Slice<int32>" undef, ptr %1, 0
   %3 = insertvalue %"Slice<int32>" %2, i32 3, 1
-  call void @_EN4main3fooE5SliceI5int32E(%"Slice<int32>" %3), !dbg !7
-  call void @_EN4main3barEP5ArrayI5int32N3_E(ptr %three), !dbg !8
+  call void @_CX1N4main3fooE4void1_M3std5SliceIM3std5int32E(%"Slice<int32>" %3), !dbg !7
+  call void @_CX1N4main3barE4void1_PM3std5ArrayIM3std5int32N3_E(ptr %three), !dbg !8
   store i32 3, ptr %b, align 4
   %4 = getelementptr inbounds [3 x i32], ptr %three, i32 0, i32 0
   %5 = insertvalue %"Slice<int32>" undef, ptr %4, 0
   %6 = insertvalue %"Slice<int32>" %5, i32 3, 1
   store %"Slice<int32>" %6, ptr %ref, align 8
-  %7 = call i32 @_EN3std5SliceI5int32E4sizeE(ptr %ref), !dbg !9
+  %7 = call i32 @_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(ptr %ref), !dbg !9
   store i32 %7, ptr %bb, align 4
   ret i32 0
 }
 
-define void @_EN4main3fooE5SliceI5int32E(%"Slice<int32>" %ints) #0 !dbg !10 {
+define void @_CX1N4main3fooE4void1_M3std5SliceIM3std5int32E(%"Slice<int32>" %ints) #0 !dbg !10 {
   %ints1 = alloca %"Slice<int32>", align 8
   %a = alloca i32, align 4
   %b = alloca i32, align 4
   %c = alloca %"Slice<int32>", align 8
   store %"Slice<int32>" %ints, ptr %ints1, align 8
-  %1 = call ptr @_EN3std5SliceI5int32EixE5int32(ptr %ints1, i32 1), !dbg !11
+  %1 = call ptr @_CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32(ptr %ints1, i32 1), !dbg !11
   %.load = load i32, ptr %1, align 4
   store i32 %.load, ptr %a, align 4
-  %2 = call i32 @_EN3std5SliceI5int32E4sizeE(ptr %ints1), !dbg !12
+  %2 = call i32 @_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(ptr %ints1), !dbg !12
   store i32 %2, ptr %b, align 4
   %ints.load = load %"Slice<int32>", ptr %ints1, align 8
   store %"Slice<int32>" %ints.load, ptr %c, align 8
   ret void
 }
 
-define void @_EN4main3barEP5ArrayI5int32N3_E(ptr %ints) #0 !dbg !13 {
+define void @_CX1N4main3barE4void1_PM3std5ArrayIM3std5int32N3_E(ptr %ints) #0 !dbg !13 {
   %ints1 = alloca ptr, align 8
   %b = alloca i32, align 4
   %ref = alloca %"Slice<int32>", align 8
@@ -61,13 +61,13 @@ define void @_EN4main3barEP5ArrayI5int32N3_E(ptr %ints) #0 !dbg !13 {
   ret void
 }
 
-define i32 @_EN3std5SliceI5int32E4sizeE(ptr %this) #0 !dbg !14 {
+define i32 @_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(ptr %this) #0 !dbg !14 {
   %size = getelementptr inbounds %"Slice<int32>", ptr %this, i32 0, i32 1
   %size.load = load i32, ptr %size, align 4
   ret i32 %size.load
 }
 
-define ptr @_EN3std5SliceI5int32EixE5int32(ptr %this, i32 %index) #0 !dbg !16 {
+define ptr @_CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32(ptr %this, i32 %index) #0 !dbg !16 {
   %index1 = alloca i32, align 4
   %__str = alloca %string, align 8
   store i32 %index, ptr %index1, align 4
@@ -77,7 +77,7 @@ define ptr @_EN3std5SliceI5int32EixE5int32(ptr %this, i32 %index) #0 !dbg !16 {
 
 or.rhs:                                           ; preds = %0
   %index.load2 = load i32, ptr %index1, align 4
-  %2 = call i32 @_EN3std5SliceI5int32E4sizeE(ptr %this), !dbg !17
+  %2 = call i32 @_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(ptr %this), !dbg !17
   %3 = icmp sge i32 %index.load2, %2
   br label %or.end
 
@@ -86,10 +86,10 @@ or.end:                                           ; preds = %or.rhs, %0
   br i1 %or, label %if.then, label %if.else
 
 if.then:                                          ; preds = %or.end
-  call void @_EN3std6string4initEP4char5int32(ptr %__str, ptr @0, i32 10), !dbg !18
+  call void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr %__str, ptr @0, i32 10), !dbg !18
   %__str.load = load %string, ptr %__str, align 8
   %index.load3 = load i32, ptr %index1, align 4
-  call void @_EN3std5SliceI5int32E16indexOutOfBoundsE6string5int32(ptr %this, %string %__str.load, i32 %index.load3), !dbg !19
+  call void @_CX1N3stdM3std5SliceIM3std5int32E16indexOutOfBoundsE4void2_M3std6stringM3std5int32(ptr %this, %string %__str.load, i32 %index.load3), !dbg !19
   br label %if.end
 
 if.else:                                          ; preds = %or.end
@@ -103,9 +103,9 @@ if.end:                                           ; preds = %if.else, %if.then
   ret ptr %4
 }
 
-declare void @_EN3std6string4initEP4char5int32(ptr, ptr, i32) #0
+declare void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr, ptr, i32) #0
 
-define void @_EN3std5SliceI5int32E16indexOutOfBoundsE6string5int32(ptr %this, %string %function, i32 %index) #0 !dbg !20 {
+define void @_CX1N3stdM3std5SliceIM3std5int32E16indexOutOfBoundsE4void2_M3std6stringM3std5int32(ptr %this, %string %function, i32 %index) #0 !dbg !20 {
   %function1 = alloca %string, align 8
   %index2 = alloca i32, align 4
   %__str = alloca %string, align 8
@@ -113,20 +113,20 @@ define void @_EN3std5SliceI5int32E16indexOutOfBoundsE6string5int32(ptr %this, %s
   %__str4 = alloca %string, align 8
   store %string %function, ptr %function1, align 8
   store i32 %index, ptr %index2, align 4
-  call void @_EN3std6string4initEP4char5int32(ptr %__str, ptr @1, i32 6), !dbg !21
+  call void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr %__str, ptr @1, i32 6), !dbg !21
   %__str.load = load %string, ptr %__str, align 8
   %function.load = load %string, ptr %function1, align 8
-  call void @_EN3std6string4initEP4char5int32(ptr %__str3, ptr @2, i32 8), !dbg !21
+  call void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr %__str3, ptr @2, i32 8), !dbg !21
   %__str.load5 = load %string, ptr %__str3, align 8
   %index.load = load i32, ptr %index2, align 4
-  call void @_EN3std6string4initEP4char5int32(ptr %__str4, ptr @3, i32 27), !dbg !21
+  call void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr %__str4, ptr @3, i32 27), !dbg !21
   %__str.load6 = load %string, ptr %__str4, align 8
-  %1 = call i32 @_EN3std5SliceI5int32E4sizeE(ptr %this), !dbg !22
-  %2 = call %never @_EN3std5abortI6string6string6string5int326string5int32EVE6string6string6string5int326string5int32(%string %__str.load, %string %function.load, %string %__str.load5, i32 %index.load, %string %__str.load6, i32 %1), !dbg !23
+  %1 = call i32 @_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(ptr %this), !dbg !22
+  %2 = call %never @_CX1N3std5abortIM3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32EVEM3std5never6_M3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32(%string %__str.load, %string %function.load, %string %__str.load5, i32 %index.load, %string %__str.load6, i32 %1), !dbg !23
   ret void
 }
 
-define %never @_EN3std5abortI6string6string6string5int326string5int32EVE6string6string6string5int326string5int32(%string %args_0, %string %args_1, %string %args_2, i32 %args_3, %string %args_4, i32 %args_5) #0 !dbg !24 {
+define %never @_CX1N3std5abortIM3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32EVEM3std5never6_M3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32(%string %args_0, %string %args_1, %string %args_2, i32 %args_3, %string %args_4, i32 %args_5) #0 !dbg !24 {
   %args_01 = alloca %string, align 8
   %args_12 = alloca %string, align 8
   %args_23 = alloca %string, align 8
@@ -155,51 +155,51 @@ define %never @_EN3std5abortI6string6string6string5int326string5int32EVE6string6
   store i32 %args_5, ptr %args_56, align 4
   %args_0.load = load %string, ptr %args_01, align 8
   store %string %args_0.load, ptr %arg, align 8
-  %9 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  %9 = call %OutputFileStream @_CX1N3std6stderrEM3std16OutputFileStream0_(), !dbg !26
   store %OutputFileStream %9, ptr %1, align 8
-  call void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr %1, ptr %arg), !dbg !27
+  call void @_CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(ptr %1, ptr %arg), !dbg !27
   %args_1.load = load %string, ptr %args_12, align 8
   store %string %args_1.load, ptr %arg7, align 8
-  %10 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  %10 = call %OutputFileStream @_CX1N3std6stderrEM3std16OutputFileStream0_(), !dbg !26
   store %OutputFileStream %10, ptr %2, align 8
-  call void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr %2, ptr %arg7), !dbg !27
+  call void @_CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(ptr %2, ptr %arg7), !dbg !27
   %args_2.load = load %string, ptr %args_23, align 8
   store %string %args_2.load, ptr %arg8, align 8
-  %11 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  %11 = call %OutputFileStream @_CX1N3std6stderrEM3std16OutputFileStream0_(), !dbg !26
   store %OutputFileStream %11, ptr %3, align 8
-  call void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr %3, ptr %arg8), !dbg !27
+  call void @_CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(ptr %3, ptr %arg8), !dbg !27
   %args_3.load = load i32, ptr %args_34, align 4
   store i32 %args_3.load, ptr %arg9, align 4
-  %12 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  %12 = call %OutputFileStream @_CX1N3std6stderrEM3std16OutputFileStream0_(), !dbg !26
   store %OutputFileStream %12, ptr %4, align 8
-  call void @_EN3std16OutputFileStream5writeI5int32EER5int32(ptr %4, ptr %arg9), !dbg !27
+  call void @_CX1N3stdM3std16OutputFileStream5writeIM3std5int32EE4void1_RM3std5int32(ptr %4, ptr %arg9), !dbg !27
   %args_4.load = load %string, ptr %args_45, align 8
   store %string %args_4.load, ptr %arg10, align 8
-  %13 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  %13 = call %OutputFileStream @_CX1N3std6stderrEM3std16OutputFileStream0_(), !dbg !26
   store %OutputFileStream %13, ptr %5, align 8
-  call void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr %5, ptr %arg10), !dbg !27
+  call void @_CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(ptr %5, ptr %arg10), !dbg !27
   %args_5.load = load i32, ptr %args_56, align 4
   store i32 %args_5.load, ptr %arg11, align 4
-  %14 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  %14 = call %OutputFileStream @_CX1N3std6stderrEM3std16OutputFileStream0_(), !dbg !26
   store %OutputFileStream %14, ptr %6, align 8
-  call void @_EN3std16OutputFileStream5writeI5int32EER5int32(ptr %6, ptr %arg11), !dbg !27
-  %15 = call %OutputFileStream @_EN3std6stderrE(), !dbg !28
+  call void @_CX1N3stdM3std16OutputFileStream5writeIM3std5int32EE4void1_RM3std5int32(ptr %6, ptr %arg11), !dbg !27
+  %15 = call %OutputFileStream @_CX1N3std6stderrEM3std16OutputFileStream0_(), !dbg !28
   store %OutputFileStream %15, ptr %7, align 8
   store i8 10, ptr %8, align 1
-  call void @_EN3std16OutputFileStream5writeI4charEER4char(ptr %7, ptr %8), !dbg !29
-  %16 = call %never @_EN3std12abortWrapperE(), !dbg !30
+  call void @_CX1N3stdM3std16OutputFileStream5writeIM3std4charEE4void1_RM3std4char(ptr %7, ptr %8), !dbg !29
+  %16 = call %never @_CX1N3std12abortWrapperEM3std5never0_(), !dbg !30
   unreachable
 }
 
-declare %OutputFileStream @_EN3std6stderrE() #0
+declare %OutputFileStream @_CX1N3std6stderrEM3std16OutputFileStream0_() #0
 
-declare void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr, ptr) #0
+declare void @_CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(ptr, ptr) #0
 
-declare void @_EN3std16OutputFileStream5writeI5int32EER5int32(ptr, ptr) #0
+declare void @_CX1N3stdM3std16OutputFileStream5writeIM3std5int32EE4void1_RM3std5int32(ptr, ptr) #0
 
-declare void @_EN3std16OutputFileStream5writeI4charEER4char(ptr, ptr) #0
+declare void @_CX1N3stdM3std16OutputFileStream5writeIM3std4charEE4void1_RM3std4char(ptr, ptr) #0
 
-declare %never @_EN3std12abortWrapperE() #0
+declare %never @_CX1N3std12abortWrapperEM3std5never0_() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -216,21 +216,21 @@ attributes #0 = { "frame-pointer"="all" }
 !7 = !DILocation(line: 5, column: 5, scope: !4)
 !8 = !DILocation(line: 6, column: 5, scope: !4)
 !9 = !DILocation(line: 9, column: 18, scope: !4)
-!10 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooE5SliceI5int32E", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "foo", linkageName: "_CX1N4main3fooE4void1_M3std5SliceIM3std5int32E", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
 !11 = !DILocation(line: 13, column: 17, scope: !10)
 !12 = !DILocation(line: 14, column: 18, scope: !10)
-!13 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main3barEP5ArrayI5int32N3_E", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
-!14 = distinct !DISubprogram(name: "size", linkageName: "_EN3std5SliceI5int32E4sizeE", scope: !15, file: !15, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "bar", linkageName: "_CX1N4main3barE4void1_PM3std5ArrayIM3std5int32N3_E", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!14 = distinct !DISubprogram(name: "size", linkageName: "_CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_", scope: !15, file: !15, line: 31, type: !5, scopeLine: 31, spFlags: DISPFlagDefinition, unit: !2)
 !15 = !DIFile(filename: "Slice.cx")
-!16 = distinct !DISubprogram(name: "[]", linkageName: "_EN3std5SliceI5int32EixE5int32", scope: !15, file: !15, line: 42, type: !5, scopeLine: 42, spFlags: DISPFlagDefinition, unit: !2)
+!16 = distinct !DISubprogram(name: "[]", linkageName: "_CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32", scope: !15, file: !15, line: 42, type: !5, scopeLine: 42, spFlags: DISPFlagDefinition, unit: !2)
 !17 = !DILocation(line: 43, column: 34, scope: !16)
 !18 = !DILocation(line: 42, column: 14, scope: !16)
 !19 = !DILocation(line: 43, column: 41, scope: !16)
-!20 = distinct !DISubprogram(name: "indexOutOfBounds", linkageName: "_EN3std5SliceI5int32E16indexOutOfBoundsE6string5int32", scope: !15, file: !15, line: 115, type: !5, scopeLine: 115, spFlags: DISPFlagDefinition, unit: !2)
+!20 = distinct !DISubprogram(name: "indexOutOfBounds", linkageName: "_CX1N3stdM3std5SliceIM3std5int32E16indexOutOfBoundsE4void2_M3std6stringM3std5int32", scope: !15, file: !15, line: 115, type: !5, scopeLine: 115, spFlags: DISPFlagDefinition, unit: !2)
 !21 = !DILocation(line: 115, column: 18, scope: !20)
 !22 = !DILocation(line: 116, column: 85, scope: !20)
 !23 = !DILocation(line: 116, column: 9, scope: !20)
-!24 = distinct !DISubprogram(name: "abort", linkageName: "_EN3std5abortI6string6string6string5int326string5int32EVE6string6string6string5int326string5int32", scope: !25, file: !25, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!24 = distinct !DISubprogram(name: "abort", linkageName: "_CX1N3std5abortIM3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32EVEM3std5never6_M3std6stringM3std6stringM3std6stringM3std5int32M3std6stringM3std5int32", scope: !25, file: !25, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
 !25 = !DIFile(filename: "error.cx")
 !26 = !DILocation(line: 11, column: 9, scope: !24)
 !27 = !DILocation(line: 11, column: 18, scope: !24)

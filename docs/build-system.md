@@ -130,6 +130,14 @@ addresses (plus compiler frames) rather than function names. Pass `--no-jit` to
 link and execute a binary with named traces instead; `cx build` output always
 names functions.
 
+Traces and debugger output show mangled symbol names (such as
+`_CX1N4main5innerE4void0_`). `cx demangle` decodes them back to
+`main.inner() -> void`; it takes symbols as arguments, or filters stdin:
+
+```sh
+$ ./myproject 2>&1 | cx demangle
+```
+
 ## Installing dependencies
 
 Dependencies are cx libraries hosted in Git repositories.

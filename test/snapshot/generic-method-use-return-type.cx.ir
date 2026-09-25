@@ -2,13 +2,13 @@
 int32 main() {
     X<int32>* x = alloca X<int32>
     X<bool>* a = alloca X<bool>
-    X<bool> _0 = call _EN4main1XI5int32E1fI4boolEE4bool(X<int32>* x, bool false)
+    X<bool> _0 = call _CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEEM4main1XIM3std4boolE1_M3std4bool(X<int32>* x, bool false)
     store _0 to a
-    void _1 = call _EN4main1XI4boolE1gE(X<bool>* a)
+    void _1 = call _CX1N4mainM4main1XIM3std4boolE1gE4void0_(X<bool>* a)
     return int32 0
 }
 
-X<bool> _EN4main1XI5int32E1fI4boolEE4bool(X<int32>* this, bool u) {
+X<bool> _CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEEM4main1XIM3std4boolE1_M3std4bool(X<int32>* this, bool u) {
     bool* u_0 = alloca bool
     X<bool>* x = alloca X<bool>
     store u to u_0
@@ -16,6 +16,6 @@ X<bool> _EN4main1XI5int32E1fI4boolEE4bool(X<int32>* this, bool u) {
     return x.load
 }
 
-void _EN4main1XI4boolE1gE(X<bool>* this) {
+void _CX1N4mainM4main1XIM3std4boolE1gE4void0_(X<bool>* this) {
     return void
 }

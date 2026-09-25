@@ -6,14 +6,14 @@
 
 define i32 @main() #0 !dbg !4 {
   %__str = alloca %string, align 8
-  call void @_EN3std6string4initEP4char5int32(ptr %__str, ptr @0, i32 0), !dbg !7
-  %1 = call i32 @_EN3std6string4sizeE(ptr %__str), !dbg !8
+  call void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr %__str, ptr @0, i32 0), !dbg !7
+  %1 = call i32 @_CX1N3stdM3std6string4sizeEM3std5int320_(ptr %__str), !dbg !8
   ret i32 %1
 }
 
-declare void @_EN3std6string4initEP4char5int32(ptr, ptr, i32) #0
+declare void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr, ptr, i32) #0
 
-declare i32 @_EN3std6string4sizeE(ptr) #0
+declare i32 @_CX1N3stdM3std6string4sizeEM3std5int320_(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

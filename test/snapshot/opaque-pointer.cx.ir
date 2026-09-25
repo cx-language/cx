@@ -1,6 +1,6 @@
 
 int32 main() {
     S* s = alloca S
-    void _0 = call _EN16opaque-pointer_h1S4initEOP6Opaque(S* s, Opaque* null)
+    void _0 = call _CX1N19opaque_2Dpointer__hM19opaque_2Dpointer__h1S4initE4void1_OPM19opaque_2Dpointer__h6Opaque(S* s, Opaque* null)
     return int32 0
 }

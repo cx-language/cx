@@ -8,11 +8,11 @@ int32 main() {
     Optional<int32> enum.load = load enum
     store enum.load to a
     store int32 1 to _0
-    bool _1 = call _EN3stdeqI5int32EERO5int32R5int32(Optional<int32>* a, int32* _0)
+    bool _1 = call _CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32(Optional<int32>* a, int32* _0)
     return int32 0
 }
 
-bool _EN3stdeqI5int32EERO5int32R5int32(Optional<int32>* a, int32* b) {
+bool _CX1N3stdo2eqIM3std5int32EEM3std4bool2_ROM3std5int32RM3std5int32(Optional<int32>* a, int32* b) {
     Optional<int32>** a_0 = alloca Optional<int32>*
     int32** b_0 = alloca int32*
     Optional<int32>* _0 = alloca Optional<int32>
@@ -40,7 +40,7 @@ if.end:
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _6 = call _EN3std10assertFailEP4char(char* "Unwrap failed at Optional.cx:17:16
+    void _6 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at Optional.cx:17:16
 ")
     unreachable
 

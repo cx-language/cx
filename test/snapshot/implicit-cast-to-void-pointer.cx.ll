@@ -8,27 +8,27 @@ define i32 @main() #0 !dbg !4 {
   %p.load = load ptr, ptr %p, align 8
   store ptr %p.load, ptr %v, align 8
   %p.load1 = load ptr, ptr %p, align 8
-  call void @_EN4main3barEP4void(ptr %p.load1), !dbg !7
+  call void @_CX1N4main3barE4void1_P4void(ptr %p.load1), !dbg !7
   %v.load = load ptr, ptr %v, align 8
-  call void @_EN4main3barEP4void(ptr %v.load), !dbg !8
+  call void @_CX1N4main3barE4void1_P4void(ptr %v.load), !dbg !8
   %v.load2 = load ptr, ptr %v, align 8
   store ptr %v.load2, ptr %b, align 8
   %b.load = load ptr, ptr %b, align 8
   store ptr %b.load, ptr %v, align 8
   %cp.load = load ptr, ptr %cp, align 8
-  call void @_EN4main3bazEOP4void(ptr %cp.load), !dbg !9
+  call void @_CX1N4main3bazE4void1_OP4void(ptr %cp.load), !dbg !9
   store i32 0, ptr %i, align 4
-  call void @_EN4main3bazEOP4void(ptr %i), !dbg !10
+  call void @_CX1N4main3bazE4void1_OP4void(ptr %i), !dbg !10
   ret i32 0
 }
 
-define void @_EN4main3barEP4void(ptr %p) #0 !dbg !11 {
+define void @_CX1N4main3barE4void1_P4void(ptr %p) #0 !dbg !11 {
   %p1 = alloca ptr, align 8
   store ptr %p, ptr %p1, align 8
   ret void
 }
 
-define void @_EN4main3bazEOP4void(ptr %p) #0 !dbg !12 {
+define void @_CX1N4main3bazE4void1_OP4void(ptr %p) #0 !dbg !12 {
   %p1 = alloca ptr, align 8
   store ptr %p, ptr %p1, align 8
   ret void
@@ -50,5 +50,5 @@ attributes #0 = { "frame-pointer"="all" }
 !8 = !DILocation(line: 8, column: 5, scope: !4)
 !9 = !DILocation(line: 11, column: 5, scope: !4)
 !10 = !DILocation(line: 13, column: 5, scope: !4)
-!11 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main3barEP4void", scope: !3, file: !3, line: 16, type: !5, scopeLine: 16, spFlags: DISPFlagDefinition, unit: !2)
-!12 = distinct !DISubprogram(name: "baz", linkageName: "_EN4main3bazEOP4void", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!11 = distinct !DISubprogram(name: "bar", linkageName: "_CX1N4main3barE4void1_P4void", scope: !3, file: !3, line: 16, type: !5, scopeLine: 16, spFlags: DISPFlagDefinition, unit: !2)
+!12 = distinct !DISubprogram(name: "baz", linkageName: "_CX1N4main3bazE4void1_OP4void", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)

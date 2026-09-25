@@ -7,13 +7,13 @@
 define i32 @main() #0 !dbg !4 {
   %s = alloca %string, align 8
   %__str = alloca %string, align 8
-  call void @_EN3std6string4initEP4char5int32(ptr %__str, ptr @0, i32 3), !dbg !7
+  call void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr %__str, ptr @0, i32 3), !dbg !7
   %__str.load = load %string, ptr %__str, align 8
   store %string %__str.load, ptr %s, align 8
   ret i32 0
 }
 
-declare void @_EN3std6string4initEP4char5int32(ptr, ptr, i32) #0
+declare void @_CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(ptr, ptr, i32) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

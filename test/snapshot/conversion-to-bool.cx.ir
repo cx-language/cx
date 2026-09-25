@@ -1,5 +1,5 @@
 
-void _EN4main1fEP4char(char* pb) {
+void _CX1N4main1fE4void1_PM3std4char(char* pb) {
     char** pb_0 = alloca char*
     bool* b = alloca bool
     store pb to pb_0

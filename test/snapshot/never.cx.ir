@@ -1,24 +1,24 @@
 
-never _EN4main1fE() {
-    never _0 = call _EN4main1fE()
+never _CX1N4main1fEM3std5never0_() {
+    never _0 = call _CX1N4main1fEM3std5never0_()
     unreachable
 }
 
-never _EN4main1gE() {
-    never _0 = call _EN3std12abortWrapperE()
+never _CX1N4main1gEM3std5never0_() {
+    never _0 = call _CX1N3std12abortWrapperEM3std5never0_()
     unreachable
 }
 
-never _EN4main1hE() {
+never _CX1N4main1hEM3std5never0_() {
     unreachable
 }
 
-void _EN4main1iE() {
-    never _0 = call _EN4main1fE()
+void _CX1N4main1iE4void0_() {
+    never _0 = call _CX1N4main1fEM3std5never0_()
     return void
 }
 
-int32 _EN4main1iE5int32(int32 x) {
+int32 _CX1N4main1iEM3std5int321_M3std5int32(int32 x) {
     int32* x_0 = alloca int32
     store x to x_0
     int32 x.load = load x_0
@@ -30,7 +30,7 @@ switch.case.0:
     return int32 1
 
 switch.default:
-    never _0 = call _EN4main1fE()
+    never _0 = call _CX1N4main1fEM3std5never0_()
     br switch.end
 
 switch.end:

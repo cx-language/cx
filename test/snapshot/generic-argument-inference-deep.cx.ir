@@ -1,16 +1,16 @@
 
-void _EN4main1fE1SI5int32E1SI5int32E(S<int32> c, S<int32> d) {
+void _CX1N4main1fE4void2_M4main1SIM3std5int32EM4main1SIM3std5int32E(S<int32> c, S<int32> d) {
     S<int32>* c_0 = alloca S<int32>
     S<int32>* d_0 = alloca S<int32>
     store c to c_0
     store d to d_0
     S<int32> c.load = load c_0
     S<int32> d.load = load d_0
-    bool _0 = call _EN4maineqI5int32EE1SI5int32E1SI5int32E(S<int32> c.load, S<int32> d.load)
+    bool _0 = call _CX1N4maino2eqIM3std5int32EEM3std4bool2_M4main1SIM3std5int32EM4main1SIM3std5int32E(S<int32> c.load, S<int32> d.load)
     return void
 }
 
-bool _EN4maineqI5int32EE1SI5int32E1SI5int32E(S<int32> a, S<int32> b) {
+bool _CX1N4maino2eqIM3std5int32EEM3std4bool2_M4main1SIM3std5int32EM4main1SIM3std5int32E(S<int32> a, S<int32> b) {
     S<int32>* a_0 = alloca S<int32>
     S<int32>* b_0 = alloca S<int32>
     store a to a_0
@@ -18,7 +18,7 @@ bool _EN4maineqI5int32EE1SI5int32E1SI5int32E(S<int32> a, S<int32> b) {
     return bool true
 }
 
-void _EN4main1fEP1SI4boolEP1SI4boolE(S<bool>* c, S<bool>* d) {
+void _CX1N4main1fE4void2_PM4main1SIM3std4boolEPM4main1SIM3std4boolE(S<bool>* c, S<bool>* d) {
     S<bool>** c_0 = alloca S<bool>*
     S<bool>** d_0 = alloca S<bool>*
     store c to c_0
@@ -27,11 +27,11 @@ void _EN4main1fEP1SI4boolEP1SI4boolE(S<bool>* c, S<bool>* d) {
     S<bool> c.load.load = load c.load
     S<bool>* d.load = load d_0
     S<bool> d.load.load = load d.load
-    bool _0 = call _EN4maineqI4boolEE1SI4boolE1SI4boolE(S<bool> c.load.load, S<bool> d.load.load)
+    bool _0 = call _CX1N4maino2eqIM3std4boolEEM3std4bool2_M4main1SIM3std4boolEM4main1SIM3std4boolE(S<bool> c.load.load, S<bool> d.load.load)
     return void
 }
 
-bool _EN4maineqI4boolEE1SI4boolE1SI4boolE(S<bool> a, S<bool> b) {
+bool _CX1N4maino2eqIM3std4boolEEM3std4bool2_M4main1SIM3std4boolEM4main1SIM3std4boolE(S<bool> a, S<bool> b) {
     S<bool>* a_0 = alloca S<bool>
     S<bool>* b_0 = alloca S<bool>
     store a to a_0

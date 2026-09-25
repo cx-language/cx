@@ -1,25 +1,25 @@
-global i = int32 0
+global _CX1G4main1iE = int32 0
 
 int32 main() {
-    int32* i_0 = alloca int32
+    int32* i = alloca int32
     S* s = alloca S
-    store int32 0 to i_0
-    void _0 = call _EN4main1S4initE5int32(S* s, int32 0)
-    void _1 = call _EN4main1S1fE(S* s)
+    store int32 0 to i
+    void _0 = call _CX1N4mainM4main1S4initE4void1_M3std5int32(S* s, int32 0)
+    void _1 = call _CX1N4mainM4main1S1fE4void0_(S* s)
     return int32 0
 }
 
-void _EN4main1S4initE5int32(S* this, int32 i_0) {
-    int32* i_1 = alloca int32
-    store i_0 to i_1
-    int32* i_2 = getelementptr this, 0
-    int32 i.load = load i_1
-    store i.load to i_2
+void _CX1N4mainM4main1S4initE4void1_M3std5int32(S* this, int32 i) {
+    int32* i_0 = alloca int32
+    store i to i_0
+    int32* i_1 = getelementptr this, 0
+    int32 i.load = load i_0
+    store i.load to i_1
     return void
 }
 
-void _EN4main1S1fE(S* this) {
-    int32* i_0 = alloca int32
-    store int32 0 to i_0
+void _CX1N4mainM4main1S1fE4void0_(S* this) {
+    int32* i = alloca int32
+    store int32 0 to i
     return void
 }

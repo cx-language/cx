@@ -6,56 +6,56 @@ int32 main() {
     ClosedRangeIterator<int32>* __iterator_0 = alloca ClosedRangeIterator<int32>
     ClosedRange<int32>* _1 = alloca ClosedRange<int32>
     int32* i_0 = alloca int32
-    void _2 = call _EN3std11ClosedRangeI5int32E4initE5int325int32(ClosedRange<int32>* _0, int32 0, int32 5)
-    ClosedRangeIterator<int32> _3 = call _EN3std11ClosedRangeI5int32E8iteratorE(ClosedRange<int32>* _0)
+    void _2 = call _CX1N3stdM3std11ClosedRangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ClosedRange<int32>* _0, int32 0, int32 5)
+    ClosedRangeIterator<int32> _3 = call _CX1N3stdM3std11ClosedRangeIM3std5int32E8iteratorEM3std19ClosedRangeIteratorIM3std5int32E0_(ClosedRange<int32>* _0)
     store _3 to __iterator
     br loop.condition
 
 loop.condition:
-    bool _4 = call _EN3std19ClosedRangeIteratorI5int32E8hasValueE(ClosedRangeIterator<int32>* __iterator)
+    bool _4 = call _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ClosedRangeIterator<int32>* __iterator)
     br _4, loop.body, loop.end
 
 loop.body:
-    int32 _5 = call _EN3std19ClosedRangeIteratorI5int32E5valueE(ClosedRangeIterator<int32>* __iterator)
+    int32 _5 = call _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E5valueEM3std5int320_(ClosedRangeIterator<int32>* __iterator)
     store _5 to i
     br loop.increment
 
 loop.increment:
-    void _6 = call _EN3std19ClosedRangeIteratorI5int32E9incrementE(ClosedRangeIterator<int32>* __iterator)
+    void _6 = call _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(ClosedRangeIterator<int32>* __iterator)
     br loop.condition
 
 loop.end:
-    void _7 = call _EN3std11ClosedRangeI5int32E4initE5int325int32(ClosedRange<int32>* _1, int32 0, int32 5)
-    ClosedRangeIterator<int32> _8 = call _EN3std11ClosedRangeI5int32E8iteratorE(ClosedRange<int32>* _1)
+    void _7 = call _CX1N3stdM3std11ClosedRangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ClosedRange<int32>* _1, int32 0, int32 5)
+    ClosedRangeIterator<int32> _8 = call _CX1N3stdM3std11ClosedRangeIM3std5int32E8iteratorEM3std19ClosedRangeIteratorIM3std5int32E0_(ClosedRange<int32>* _1)
     store _8 to __iterator_0
     br loop.condition_0
 
 loop.condition_0:
-    bool _9 = call _EN3std19ClosedRangeIteratorI5int32E8hasValueE(ClosedRangeIterator<int32>* __iterator_0)
+    bool _9 = call _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ClosedRangeIterator<int32>* __iterator_0)
     br _9, loop.body, loop.end
 
 loop.body_0:
-    int32 _10 = call _EN3std19ClosedRangeIteratorI5int32E5valueE(ClosedRangeIterator<int32>* __iterator_0)
+    int32 _10 = call _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E5valueEM3std5int320_(ClosedRangeIterator<int32>* __iterator_0)
     store _10 to i_0
     br loop.increment_0
 
 loop.increment_0:
-    void _11 = call _EN3std19ClosedRangeIteratorI5int32E9incrementE(ClosedRangeIterator<int32>* __iterator_0)
+    void _11 = call _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(ClosedRangeIterator<int32>* __iterator_0)
     br loop.condition_0
 
 loop.end_0:
     return int32 0
 }
 
-ClosedRangeIterator<int32> _EN3std11ClosedRangeI5int32E8iteratorE(ClosedRange<int32>* this) {
+ClosedRangeIterator<int32> _CX1N3stdM3std11ClosedRangeIM3std5int32E8iteratorEM3std19ClosedRangeIteratorIM3std5int32E0_(ClosedRange<int32>* this) {
     ClosedRangeIterator<int32>* _0 = alloca ClosedRangeIterator<int32>
     ClosedRange<int32> this.load = load this
-    void _1 = call _EN3std19ClosedRangeIteratorI5int32E4initE11ClosedRangeI5int32E(ClosedRangeIterator<int32>* _0, ClosedRange<int32> this.load)
+    void _1 = call _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ClosedRangeIterator<int32>* _0, ClosedRange<int32> this.load)
     ClosedRangeIterator<int32> .load = load _0
     return .load
 }
 
-void _EN3std11ClosedRangeI5int32E4initE5int325int32(ClosedRange<int32>* this, int32 start, int32 end) {
+void _CX1N3stdM3std11ClosedRangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ClosedRange<int32>* this, int32 start, int32 end) {
     int32* start_0 = alloca int32
     int32* end_0 = alloca int32
     store start to start_0
@@ -69,7 +69,7 @@ void _EN3std11ClosedRangeI5int32E4initE5int325int32(ClosedRange<int32>* this, in
     return void
 }
 
-bool _EN3std19ClosedRangeIteratorI5int32E8hasValueE(ClosedRangeIterator<int32>* this) {
+bool _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ClosedRangeIterator<int32>* this) {
     int32* current = getelementptr this, 0
     int32 current.load = load current
     int32* end = getelementptr this, 1
@@ -78,13 +78,13 @@ bool _EN3std19ClosedRangeIteratorI5int32E8hasValueE(ClosedRangeIterator<int32>* 
     return _0
 }
 
-int32 _EN3std19ClosedRangeIteratorI5int32E5valueE(ClosedRangeIterator<int32>* this) {
+int32 _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E5valueEM3std5int320_(ClosedRangeIterator<int32>* this) {
     int32* current = getelementptr this, 0
     int32 current.load = load current
     return current.load
 }
 
-void _EN3std19ClosedRangeIteratorI5int32E9incrementE(ClosedRangeIterator<int32>* this) {
+void _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(ClosedRangeIterator<int32>* this) {
     int32* current = getelementptr this, 0
     int32 current.load = load current
     int32 _0 = current.load + int32 1
@@ -92,25 +92,25 @@ void _EN3std19ClosedRangeIteratorI5int32E9incrementE(ClosedRangeIterator<int32>*
     return void
 }
 
-void _EN3std19ClosedRangeIteratorI5int32E4initE11ClosedRangeI5int32E(ClosedRangeIterator<int32>* this, ClosedRange<int32> range) {
+void _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ClosedRangeIterator<int32>* this, ClosedRange<int32> range) {
     ClosedRange<int32>* range_0 = alloca ClosedRange<int32>
     store range to range_0
     int32* current = getelementptr this, 0
-    int32 _0 = call _EN3std11ClosedRangeI5int32E5startE(ClosedRange<int32>* range_0)
+    int32 _0 = call _CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_(ClosedRange<int32>* range_0)
     store _0 to current
     int32* end = getelementptr this, 1
-    int32 _1 = call _EN3std11ClosedRangeI5int32E3endE(ClosedRange<int32>* range_0)
+    int32 _1 = call _CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_(ClosedRange<int32>* range_0)
     store _1 to end
     return void
 }
 
-int32 _EN3std11ClosedRangeI5int32E5startE(ClosedRange<int32>* this) {
+int32 _CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_(ClosedRange<int32>* this) {
     int32* start = getelementptr this, 0
     int32 start.load = load start
     return start.load
 }
 
-int32 _EN3std11ClosedRangeI5int32E3endE(ClosedRange<int32>* this) {
+int32 _CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_(ClosedRange<int32>* this) {
     int32* end = getelementptr this, 1
     int32 end.load = load end
     return end.load

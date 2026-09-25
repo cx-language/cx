@@ -1,14 +1,14 @@
 
 int32 main() {
-    void _0 = call _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* _EN4main9__lambda0E5int325int32)
-    void _1 = call _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* _EN4main9__lambda1E5int325int32)
-    void _2 = call _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* _EN4main9__lambda2E5int325int32)
-    void _3 = call _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* _EN4main9__lambda3E5int325int32)
-    void _4 = call _EN4main3fooI4voidEEF5int325int32_4void(void(int32, int32)* _EN4main9__lambda4E5int325int32)
+    void _0 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda0EM3std5int322_M3std5int32M3std5int32)
+    void _1 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda1EM3std5int322_M3std5int32M3std5int32)
+    void _2 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda2EM3std5int322_M3std5int32M3std5int32)
+    void _3 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32)
+    void _4 = call _CX1N4main3fooI4voidEE4void1_F2_M3std5int32M3std5int324void(void(int32, int32)* _CX1N4main11____lambda4E4void2_M3std5int32M3std5int32)
     return int32 0
 }
 
-void _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* a) {
+void _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* a) {
     int32(int32, int32)** a_0 = alloca int32(int32, int32)*
     store a to a_0
     int32(int32, int32)* a.load = load a_0
@@ -16,7 +16,7 @@ void _EN4main3fooI5int32EEF5int325int32_5int32(int32(int32, int32)* a) {
     return void
 }
 
-int32 _EN4main9__lambda0E5int325int32(int32 a, int32 b) {
+int32 _CX1N4main11____lambda0EM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     store a to a_0
@@ -34,7 +34,7 @@ int32 _EN4main9__lambda0E5int325int32(int32 a, int32 b) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-noncapturing.cx:8:29
+    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:8:29
 ")
     unreachable
 
@@ -42,7 +42,7 @@ overflow.success:
     return _3
 }
 
-int32 _EN4main9__lambda1E5int325int32(int32 a, int32 b) {
+int32 _CX1N4main11____lambda1EM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     store a to a_0
@@ -60,7 +60,7 @@ int32 _EN4main9__lambda1E5int325int32(int32 a, int32 b) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-noncapturing.cx:9:31
+    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:9:31
 ")
     unreachable
 
@@ -68,7 +68,7 @@ overflow.success:
     return _3
 }
 
-int32 _EN4main9__lambda2E5int325int32(int32 a, int32 b) {
+int32 _CX1N4main11____lambda2EM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     store a to a_0
@@ -108,7 +108,7 @@ if.end:
     unreachable
 
 overflow.fail:
-    void _15 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-noncapturing.cx:12:22
+    void _15 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:12:22
 ")
     unreachable
 
@@ -116,7 +116,7 @@ overflow.success:
     return _4
 
 overflow.fail_0:
-    void _16 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-noncapturing.cx:14:22
+    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:14:22
 ")
     unreachable
 
@@ -124,7 +124,7 @@ overflow.success_0:
     return _11
 }
 
-int32 _EN4main9__lambda3E5int325int32(int32 a, int32 b) {
+int32 _CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     int32* x = alloca int32
@@ -143,7 +143,7 @@ int32 _EN4main9__lambda3E5int325int32(int32 a, int32 b) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at lambda-noncapturing.cx:18:19
+    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at lambda-noncapturing.cx:18:19
 ")
     unreachable
 
@@ -153,7 +153,7 @@ overflow.success:
     return x.load
 }
 
-void _EN4main3fooI4voidEEF5int325int32_4void(void(int32, int32)* a) {
+void _CX1N4main3fooI4voidEE4void1_F2_M3std5int32M3std5int324void(void(int32, int32)* a) {
     void(int32, int32)** a_0 = alloca void(int32, int32)*
     store a to a_0
     void(int32, int32)* a.load = load a_0
@@ -161,7 +161,7 @@ void _EN4main3fooI4voidEEF5int325int32_4void(void(int32, int32)* a) {
     return void
 }
 
-void _EN4main9__lambda4E5int325int32(int32 a, int32 b) {
+void _CX1N4main11____lambda4E4void2_M3std5int32M3std5int32(int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     store a to a_0

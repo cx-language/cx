@@ -7,7 +7,7 @@ void main() {
     callee();
 }
 
-// CHECK: define void @_EN4main6calleeE() #{{[0-9]+}} {
+// CHECK: define void @_CX1N4main6calleeE4void0_() #{{[0-9]+}} {
 // CHECK: define i32 @main() #{{[0-9]+}} {
 // CHECK-NOT: !DICompileUnit
 // CHECK-NOT: !DISubprogram

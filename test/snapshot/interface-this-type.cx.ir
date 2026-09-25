@@ -2,37 +2,37 @@
 int32 main() {
     S* a = alloca S
     S* b = alloca S
-    void _0 = call _EN4main1S4initE(S* a)
-    void _1 = call _EN4main1S4initE(S* b)
-    S* _2 = call _EN4main1S3fooEP1S(S* a, S* b)
-    void _3 = call _EN4main1fI1SEEP1S(S* _2)
+    void _0 = call _CX1N4mainM4main1S4initE4void0_(S* a)
+    void _1 = call _CX1N4mainM4main1S4initE4void0_(S* b)
+    S* _2 = call _CX1N4mainM4main1S3fooEPM4main1S1_PM4main1S(S* a, S* b)
+    void _3 = call _CX1N4main1fIM4main1SEE4void1_PM4main1S(S* _2)
     return int32 0
 }
 
-void _EN4main1S4initE(S* this) {
+void _CX1N4mainM4main1S4initE4void0_(S* this) {
     S** that = getelementptr this, 0
     store this to that
     return void
 }
 
-void _EN4main1fI1SEEP1S(S* a) {
+void _CX1N4main1fIM4main1SEE4void1_PM4main1S(S* a) {
     S** a_0 = alloca S*
     store a to a_0
     S* a.load = load a_0
     S* a.load_0 = load a_0
-    S* _0 = call _EN4main1S3barE(S* a.load_0)
-    S* _1 = call _EN4main1S3fooEP1S(S* a.load, S* _0)
+    S* _0 = call _CX1N4mainM4main1S3barEPM4main1S0_(S* a.load_0)
+    S* _1 = call _CX1N4mainM4main1S3fooEPM4main1S1_PM4main1S(S* a.load, S* _0)
     return void
 }
 
-S* _EN4main1S3fooEP1S(S* this, S* a) {
+S* _CX1N4mainM4main1S3fooEPM4main1S1_PM4main1S(S* this, S* a) {
     S** a_0 = alloca S*
     store a to a_0
     return this
 }
 
-S* _EN4main1S3barE(S* this) {
-    S* _0 = call _EN4main1S3fooEP1S(S* this, S* this)
-    S* _1 = call _EN4main1S3fooEP1S(S* this, S* _0)
+S* _CX1N4mainM4main1S3barEPM4main1S0_(S* this) {
+    S* _0 = call _CX1N4mainM4main1S3fooEPM4main1S1_PM4main1S(S* this, S* this)
+    S* _1 = call _CX1N4mainM4main1S3fooEPM4main1S1_PM4main1S(S* this, S* _0)
     return _1
 }

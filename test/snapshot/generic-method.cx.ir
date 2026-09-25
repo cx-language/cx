@@ -1,25 +1,25 @@
 
-int32 _EN4main1gE() {
+int32 _CX1N4main1gEM3std5int320_() {
     return int32 0
 }
 
-bool _EN4main1hE() {
+bool _CX1N4main1hEM3std4bool0_() {
     return bool false
 }
 
 int32 main() {
     X* x = alloca X
-    void _0 = call _EN4main1X4initE(X* x)
-    int32 _1 = call _EN4main1X1fI5int32EEF_5int32(X* x, int32()* _EN4main1gE)
-    bool _2 = call _EN4main1X1fI4boolEEF_4bool(X* x, bool()* _EN4main1hE)
+    void _0 = call _CX1N4mainM4main1X4initE4void0_(X* x)
+    int32 _1 = call _CX1N4mainM4main1X1fIM3std5int32EEM3std5int321_F0_M3std5int32(X* x, int32()* _CX1N4main1gEM3std5int320_)
+    bool _2 = call _CX1N4mainM4main1X1fIM3std4boolEEM3std4bool1_F0_M3std4bool(X* x, bool()* _CX1N4main1hEM3std4bool0_)
     return int32 0
 }
 
-void _EN4main1X4initE(X* this) {
+void _CX1N4mainM4main1X4initE4void0_(X* this) {
     return void
 }
 
-int32 _EN4main1X1fI5int32EEF_5int32(X* this, int32()* t) {
+int32 _CX1N4mainM4main1X1fIM3std5int32EEM3std5int321_F0_M3std5int32(X* this, int32()* t) {
     int32()** t_0 = alloca int32()*
     store t to t_0
     int32()* t.load = load t_0
@@ -27,7 +27,7 @@ int32 _EN4main1X1fI5int32EEF_5int32(X* this, int32()* t) {
     return _0
 }
 
-bool _EN4main1X1fI4boolEEF_4bool(X* this, bool()* t) {
+bool _CX1N4mainM4main1X1fIM3std4boolEEM3std4bool1_F0_M3std4bool(X* this, bool()* t) {
     bool()** t_0 = alloca bool()*
     store t to t_0
     bool()* t.load = load t_0

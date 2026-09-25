@@ -12,7 +12,7 @@ define i32 @main() #0 !dbg !4 {
   %2 = alloca %"S<E>", align 8
   %tag = getelementptr inbounds %E, ptr %enum, i32 0, i32 0
   store i32 0, ptr %tag, align 4
-  call void @_EN4main1SI1EE4initEOP1E(ptr %1, ptr null), !dbg !7
+  call void @_CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(ptr %1, ptr null), !dbg !7
   %.load = load %"S<E>", ptr %1, align 8
   %3 = insertvalue { %"S<E>" } undef, %"S<E>" %.load, 0
   %associatedValue = getelementptr inbounds %E, ptr %enum, i32 0, i32 1
@@ -22,7 +22,7 @@ define i32 @main() #0 !dbg !4 {
   call void @llvm.memcpy.p0.p0.i64(ptr align 4 %inner, ptr align 4 %enum.load, i64 52, i1 false)
   %tag2 = getelementptr inbounds %E, ptr %enum1, i32 0, i32 0
   store i32 0, ptr %tag2, align 4
-  call void @_EN4main1SI1EE4initEOP1E(ptr %2, ptr %inner), !dbg !8
+  call void @_CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(ptr %2, ptr %inner), !dbg !8
   %.load3 = load %"S<E>", ptr %2, align 8
   %4 = insertvalue { %"S<E>" } undef, %"S<E>" %.load3, 0
   %associatedValue4 = getelementptr inbounds %E, ptr %enum1, i32 0, i32 1
@@ -33,7 +33,7 @@ define i32 @main() #0 !dbg !4 {
   ret i32 0
 }
 
-define void @_EN4main1SI1EE4initEOP1E(ptr %this, ptr %e) #0 !dbg !9 {
+define void @_CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(ptr %this, ptr %e) #0 !dbg !9 {
   %e1 = alloca ptr, align 8
   store ptr %e, ptr %e1, align 8
   %e2 = getelementptr inbounds %"S<E>", ptr %this, i32 0, i32 0
@@ -60,4 +60,4 @@ attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: re
 !6 = !{}
 !7 = !DILocation(line: 13, column: 21, scope: !4)
 !8 = !DILocation(line: 14, column: 15, scope: !4)
-!9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1SI1EE4initEOP1E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!9 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)

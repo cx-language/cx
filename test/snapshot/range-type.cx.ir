@@ -1,21 +1,21 @@
 
-int32 _EN4main3fooE5RangeI5int32E(Range<int32> r) {
+int32 _CX1N4main3fooEM3std5int321_M3std5RangeIM3std5int32E(Range<int32> r) {
     Range<int32>* r_0 = alloca Range<int32>
     int32* sum = alloca int32
     RangeIterator<int32>* __iterator = alloca RangeIterator<int32>
     int32* i = alloca int32
     store r to r_0
     store int32 0 to sum
-    RangeIterator<int32> _0 = call _EN3std5RangeI5int32E8iteratorE(Range<int32>* r_0)
+    RangeIterator<int32> _0 = call _CX1N3stdM3std5RangeIM3std5int32E8iteratorEM3std13RangeIteratorIM3std5int32E0_(Range<int32>* r_0)
     store _0 to __iterator
     br loop.condition
 
 loop.condition:
-    bool _1 = call _EN3std13RangeIteratorI5int32E8hasValueE(RangeIterator<int32>* __iterator)
+    bool _1 = call _CX1N3stdM3std13RangeIteratorIM3std5int32E8hasValueEM3std4bool0_(RangeIterator<int32>* __iterator)
     br _1, loop.body, loop.end
 
 loop.body:
-    int32 _2 = call _EN3std13RangeIteratorI5int32E5valueE(RangeIterator<int32>* __iterator)
+    int32 _2 = call _CX1N3stdM3std13RangeIteratorIM3std5int32E5valueEM3std5int320_(RangeIterator<int32>* __iterator)
     store _2 to i
     int32 sum.load = load sum
     int32 i.load = load i
@@ -30,7 +30,7 @@ loop.body:
     br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
-    void _10 = call _EN3std13RangeIteratorI5int32E9incrementE(RangeIterator<int32>* __iterator)
+    void _10 = call _CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(RangeIterator<int32>* __iterator)
     br loop.condition
 
 loop.end:
@@ -38,7 +38,7 @@ loop.end:
     return sum.load_0
 
 overflow.fail:
-    void _11 = call _EN3std10assertFailEP4char(char* "integer overflow at range-type.cx:6:13
+    void _11 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at range-type.cx:6:13
 ")
     unreachable
 
@@ -49,8 +49,8 @@ overflow.success:
 
 int32 main() {
     Range<int32>* _0 = alloca Range<int32>
-    void _1 = call _EN3std5RangeI5int32E4initE5int325int32(Range<int32>* _0, int32 0, int32 5)
+    void _1 = call _CX1N3stdM3std5RangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(Range<int32>* _0, int32 0, int32 5)
     Range<int32> .load = load _0
-    int32 _2 = call _EN4main3fooE5RangeI5int32E(Range<int32> .load)
+    int32 _2 = call _CX1N4main3fooEM3std5int321_M3std5RangeIM3std5int32E(Range<int32> .load)
     return _2
 }

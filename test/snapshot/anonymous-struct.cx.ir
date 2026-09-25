@@ -1,5 +1,5 @@
 
-struct { bool, struct { float32 } } _EN4main1fE() {
+struct { bool, struct { float32 } } _CX1N4main1fET2_1cM3std4bool1dT1_1eM3std7float320_() {
     struct { float32 }* d = alloca struct { float32 }
     struct { int32, struct { bool, struct { float32 } } }* a = alloca struct { int32, struct { bool, struct { float32 } } }
     struct { bool, struct { float32 } }* b = alloca struct { bool, struct { float32 } }
@@ -39,7 +39,7 @@ struct { bool, struct { float32 } } _EN4main1fE() {
     return b.load_0
 }
 
-struct { bool, float32 } _EN4main1gE() {
+struct { bool, float32 } _CX1N4main1gET2_1cM3std4bool1fM3std7float320_() {
     struct { bool, float32 } _0 = insertvalue struct { bool, float32 } undefined, 0, bool true
     struct { bool, float32 } _1 = insertvalue _0, 1, float32 1
     return _1

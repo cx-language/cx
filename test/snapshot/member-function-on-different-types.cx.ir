@@ -2,18 +2,18 @@
 int32 main() {
     Foo* _0 = alloca Foo
     Bar* _1 = alloca Bar
-    void _2 = call _EN4main3Foo4initE5int32(Foo* _0, int32 1)
-    void _3 = call _EN4main3Foo7doStuffE(Foo* _0)
-    void _4 = call _EN4main3Bar4initE5int32(Bar* _1, int32 2)
-    void _5 = call _EN4main3Bar7doStuffE(Bar* _1)
+    void _2 = call _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Foo* _0, int32 1)
+    void _3 = call _CX1N4mainM4main3Foo7doStuffE4void0_(Foo* _0)
+    void _4 = call _CX1N4mainM4main3Bar4initE4void1_M3std5int32(Bar* _1, int32 2)
+    void _5 = call _CX1N4mainM4main3Bar7doStuffE4void0_(Bar* _1)
     return int32 0
 }
 
-void _EN4main3Foo7doStuffE(Foo* this) {
+void _CX1N4mainM4main3Foo7doStuffE4void0_(Foo* this) {
     return void
 }
 
-void _EN4main3Foo4initE5int32(Foo* this, int32 i) {
+void _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Foo* this, int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
     int32* i_1 = getelementptr this, 0
@@ -22,11 +22,11 @@ void _EN4main3Foo4initE5int32(Foo* this, int32 i) {
     return void
 }
 
-void _EN4main3Bar7doStuffE(Bar* this) {
+void _CX1N4mainM4main3Bar7doStuffE4void0_(Bar* this) {
     return void
 }
 
-void _EN4main3Bar4initE5int32(Bar* this, int32 i) {
+void _CX1N4mainM4main3Bar4initE4void1_M3std5int32(Bar* this, int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
     int32* i_1 = getelementptr this, 0

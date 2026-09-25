@@ -3,7 +3,7 @@ int32 main() {
     Foo* f = alloca Foo
     int32* bar = alloca int32
     bool* qux = alloca bool
-    void _0 = call _EN4main3Foo4initE5int324bool(Foo* f, int32 666, bool true)
+    void _0 = call _CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(Foo* f, int32 666, bool true)
     int32* a = getelementptr f, 0
     int32 a.load = load a
     int32 _1 = a.load + int32 1
@@ -17,7 +17,7 @@ int32 main() {
     return int32 0
 }
 
-void _EN4main3Foo4initE5int324bool(Foo* this, int32 a, bool b) {
+void _CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(Foo* this, int32 a, bool b) {
     int32* a_0 = alloca int32
     bool* b_0 = alloca bool
     store a to a_0

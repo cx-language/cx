@@ -1,5 +1,5 @@
 
-uint8 _EN4main3fooE4bool(bool b) {
+uint8 _CX1N4main3fooEM3std5uint81_M3std4bool(bool b) {
     bool* b_0 = alloca bool
     store b to b_0
     bool b.load = load b_0

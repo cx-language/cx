@@ -1,5 +1,5 @@
 
-void _EN4main3getEP3Foo(Foo* f) {
+void _CX1N4main3getE4void1_PM4main3Foo(Foo* f) {
     Foo** f_0 = alloca Foo*
     int32* m = alloca int32
     store f to f_0
@@ -20,6 +20,6 @@ int32 main() {
     int32 i.load = load i
     store i.load to n
     Foo* rf.load_0 = load rf
-    void _0 = call _EN4main3getEP3Foo(Foo* rf.load_0)
+    void _0 = call _CX1N4main3getE4void1_PM4main3Foo(Foo* rf.load_0)
     return int32 0
 }

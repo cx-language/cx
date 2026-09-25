@@ -1,10 +1,10 @@
 
 define i32 @main() #0 !dbg !4 {
-  %1 = call i32 @_EN4main3fooI5int324boolEE5int324bool(i32 1, i1 false), !dbg !7
+  %1 = call i32 @_CX1N4main3fooIM3std5int32M3std4boolEEM3std5int322_M3std5int32M3std4bool(i32 1, i1 false), !dbg !7
   ret i32 0
 }
 
-define i32 @_EN4main3fooI5int324boolEE5int324bool(i32 %a, i1 %b) #0 !dbg !8 {
+define i32 @_CX1N4main3fooIM3std5int32M3std4boolEEM3std5int322_M3std5int32M3std4bool(i32 %a, i1 %b) #0 !dbg !8 {
   %a1 = alloca i32, align 4
   %b2 = alloca i1, align 1
   store i32 %a, ptr %a1, align 4
@@ -25,4 +25,4 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 6, column: 15, scope: !4)
-!8 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main3fooI5int324boolEE5int324bool", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "foo", linkageName: "_CX1N4main3fooIM3std5int32M3std4boolEEM3std5int322_M3std5int32M3std4bool", scope: !3, file: !3, line: 4, type: !5, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !2)

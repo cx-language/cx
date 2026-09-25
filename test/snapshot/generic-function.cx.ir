@@ -3,38 +3,38 @@ int32 main() {
     string* b = alloca string
     string* __str = alloca string
     int32* five = alloca int32
-    void _0 = call _EN4main3fooI5int32EE5int32(int32 1)
-    void _1 = call _EN4main3fooI4boolEE4bool(bool false)
-    void _2 = call _EN4main3fooI4boolEE4bool(bool true)
-    void _3 = call _EN3std6string4initEP4char5int32(string* __str, char* "bar", int32 3)
+    void _0 = call _CX1N4main3fooIM3std5int32EE4void1_M3std5int32(int32 1)
+    void _1 = call _CX1N4main3fooIM3std4boolEE4void1_M3std4bool(bool false)
+    void _2 = call _CX1N4main3fooIM3std4boolEE4void1_M3std4bool(bool true)
+    void _3 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "bar", int32 3)
     string __str.load = load __str
-    string _4 = call _EN4main3barI6stringEE6string(string __str.load)
+    string _4 = call _CX1N4main3barIM3std6stringEEM3std6string1_M3std6string(string __str.load)
     store _4 to b
-    int32 _5 = call _EN4main3quxI5int32EE5int32(int32 -5)
+    int32 _5 = call _CX1N4main3quxIM3std5int32EEM3std5int321_M3std5int32(int32 -5)
     store _5 to five
     return int32 0
 }
 
-void _EN4main3fooI5int32EE5int32(int32 t) {
+void _CX1N4main3fooIM3std5int32EE4void1_M3std5int32(int32 t) {
     int32* t_0 = alloca int32
     store t to t_0
     return void
 }
 
-void _EN4main3fooI4boolEE4bool(bool t) {
+void _CX1N4main3fooIM3std4boolEE4void1_M3std4bool(bool t) {
     bool* t_0 = alloca bool
     store t to t_0
     return void
 }
 
-string _EN4main3barI6stringEE6string(string t) {
+string _CX1N4main3barIM3std6stringEEM3std6string1_M3std6string(string t) {
     string* t_0 = alloca string
     store t to t_0
     string t.load = load t_0
     return t.load
 }
 
-int32 _EN4main3quxI5int32EE5int32(int32 t) {
+int32 _CX1N4main3quxIM3std5int32EEM3std5int321_M3std5int32(int32 t) {
     int32* t_0 = alloca int32
     store t to t_0
     int32 t.load = load t_0

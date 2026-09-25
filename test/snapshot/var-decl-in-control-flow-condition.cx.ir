@@ -1,11 +1,11 @@
 
-void _EN4main1fE() {
+void _CX1N4main1fE4void0_() {
     int32** c = alloca int32*
     int32** c_0 = alloca int32*
     br loop.condition
 
 loop.condition:
-    int32* _0 = call _EN4main1hE()
+    int32* _0 = call _CX1N4main1hEOPM3std5int320_()
     store _0 to c
     int32* c.load = load c
     bool _1 = c.load != int32* null
@@ -17,19 +17,19 @@ loop.body:
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 loop.end:
-    int32* _2 = call _EN4main1hE()
+    int32* _2 = call _CX1N4main1hEOPM3std5int320_()
     store _2 to c_0
     int32* c.load_1 = load c_0
     bool _3 = c.load_1 != int32* null
     br _3, if.then, if.else
 
 __implicit_unwrap.fail:
-    void _4 = call _EN3std10assertFailEP4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:5:11
+    void _4 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:5:11
 ")
     unreachable
 
 __implicit_unwrap.success:
-    void _5 = call _EN4main1jEP5int32(int32* c.load_0)
+    void _5 = call _CX1N4main1jE4void1_PM3std5int32(int32* c.load_0)
     br loop.condition
 
 if.then:
@@ -44,26 +44,26 @@ if.end:
     return void
 
 __implicit_unwrap.fail_0:
-    void _6 = call _EN3std10assertFailEP4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:9:11
+    void _6 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:9:11
 ")
     unreachable
 
 __implicit_unwrap.success_0:
-    void _7 = call _EN4main1jEP5int32(int32* c.load_2)
+    void _7 = call _CX1N4main1jE4void1_PM3std5int32(int32* c.load_2)
     br if.end
 }
 
-int32* _EN4main1hE() {
+int32* _CX1N4main1hEOPM3std5int320_() {
     return int32* null
 }
 
-void _EN4main1jEP5int32(int32* i) {
+void _CX1N4main1jE4void1_PM3std5int32(int32* i) {
     int32** i_0 = alloca int32*
     store i to i_0
     return void
 }
 
-void _EN4main1gE() {
+void _CX1N4main1gE4void0_() {
     int32** c1 = alloca int32*
     int32** c2 = alloca int32*
     int32** c3 = alloca int32*
@@ -72,7 +72,7 @@ void _EN4main1gE() {
     br loop.condition
 
 loop.condition:
-    int32* _0 = call _EN4main1hE()
+    int32* _0 = call _CX1N4main1hEOPM3std5int320_()
     store _0 to c1
     int32* c1.load = load c1
     bool _1 = c1.load != int32* null
@@ -84,19 +84,19 @@ loop.body:
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 loop.end:
-    int32* _2 = call _EN4main1hE()
+    int32* _2 = call _CX1N4main1hEOPM3std5int320_()
     store _2 to c2
     int32* c2.load = load c2
     bool _3 = c2.load != int32* null
     br _3, if.then, if.else
 
 __implicit_unwrap.fail:
-    void _4 = call _EN3std10assertFailEP4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:15:11
+    void _4 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:15:11
 ")
     unreachable
 
 __implicit_unwrap.success:
-    void _5 = call _EN4main1jEP5int32(int32* c1.load_0)
+    void _5 = call _CX1N4main1jE4void1_PM3std5int32(int32* c1.load_0)
     br loop.condition
 
 if.then:
@@ -111,16 +111,16 @@ if.end:
     br loop.condition_0
 
 __implicit_unwrap.fail_0:
-    void _6 = call _EN3std10assertFailEP4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:19:11
+    void _6 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:19:11
 ")
     unreachable
 
 __implicit_unwrap.success_0:
-    void _7 = call _EN4main1jEP5int32(int32* c2.load_0)
+    void _7 = call _CX1N4main1jE4void1_PM3std5int32(int32* c2.load_0)
     br if.end
 
 loop.condition_0:
-    int32* _8 = call _EN4main1hE()
+    int32* _8 = call _CX1N4main1hEOPM3std5int320_()
     store _8 to c3
     int32* c3.load = load c3
     bool _9 = c3.load != int32* null
@@ -132,19 +132,19 @@ loop.body_0:
     br __implicit_unwrap.condition_1, __implicit_unwrap.fail, __implicit_unwrap.success
 
 loop.end_0:
-    int32* _10 = call _EN4main1hE()
+    int32* _10 = call _CX1N4main1hEOPM3std5int320_()
     store _10 to c4
     int32* c4.load = load c4
     bool _11 = c4.load != int32* null
     br _11, if.then, if.else
 
 __implicit_unwrap.fail_1:
-    void _12 = call _EN3std10assertFailEP4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:23:11
+    void _12 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:23:11
 ")
     unreachable
 
 __implicit_unwrap.success_1:
-    void _13 = call _EN4main1jEP5int32(int32* c3.load_0)
+    void _13 = call _CX1N4main1jE4void1_PM3std5int32(int32* c3.load_0)
     br loop.condition_0
 
 if.then_0:
@@ -156,19 +156,19 @@ if.else_0:
     br if.end_0
 
 if.end_0:
-    int32* _14 = call _EN4main1hE()
+    int32* _14 = call _CX1N4main1hEOPM3std5int320_()
     store _14 to c5
     int32* c5.load = load c5
     bool _15 = c5.load != int32* null
     br _15, if.then, if.else
 
 __implicit_unwrap.fail_2:
-    void _16 = call _EN3std10assertFailEP4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:28:11
+    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:28:11
 ")
     unreachable
 
 __implicit_unwrap.success_2:
-    void _17 = call _EN4main1jEP5int32(int32* c4.load_0)
+    void _17 = call _CX1N4main1jE4void1_PM3std5int32(int32* c4.load_0)
     br if.end_0
 
 if.then_1:
@@ -183,11 +183,11 @@ if.end_1:
     return void
 
 __implicit_unwrap.fail_3:
-    void _18 = call _EN3std10assertFailEP4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:32:11
+    void _18 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:32:11
 ")
     unreachable
 
 __implicit_unwrap.success_3:
-    void _19 = call _EN4main1jEP5int32(int32* c5.load_0)
+    void _19 = call _CX1N4main1jE4void1_PM3std5int32(int32* c5.load_0)
     br if.end_1
 }

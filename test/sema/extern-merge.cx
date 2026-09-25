@@ -1,0 +1,17 @@
+// RUN: %cx --print-ir %s 2>&1 | %FileCheck %s
+// CHECK-NOT: {{(warning|error)}}:
+
+import "inputs/extern-merge-a.h";
+import "inputs/extern-merge-b.h";
+
+// Same C name, ABI-compatible spellings (int32 vs uint32): one symbol, no error.
+// CHECK: call pick(int32 1)
+// CHECK: call pick(uint32
+
+void main() {
+    print(pick(1));
+    uint u = 2;
+    print(pick(u));
+}
+
+// CHECK-NOT: {{(warning|error)}}:

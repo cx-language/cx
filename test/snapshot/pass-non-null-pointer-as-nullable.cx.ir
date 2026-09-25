@@ -1,5 +1,5 @@
 
-void _EN4main3fooEOP5int32(int32* p) {
+void _CX1N4main3fooE4void1_OPM3std5int32(int32* p) {
     int32** p_0 = alloca int32*
     store p to p_0
     return void
@@ -11,7 +11,7 @@ int32 main() {
     store int32 42 to i
     store i to x
     int32* x.load = load x
-    void _0 = call _EN4main3fooEOP5int32(int32* x.load)
-    void _1 = call _EN4main3fooEOP5int32(int32* i)
+    void _0 = call _CX1N4main3fooE4void1_OPM3std5int32(int32* x.load)
+    void _1 = call _CX1N4main3fooE4void1_OPM3std5int32(int32* i)
     return int32 0
 }

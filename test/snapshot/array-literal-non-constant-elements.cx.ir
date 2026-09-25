@@ -1,5 +1,5 @@
 
-int32[2] _EN4main1fE5int325int32(int32 foo, int32 bar) {
+int32[2] _CX1N4main1fE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32(int32 foo, int32 bar) {
     int32* foo_0 = alloca int32
     int32* bar_0 = alloca int32
     store foo to foo_0
@@ -17,7 +17,7 @@ int32[2] _EN4main1fE5int325int32(int32 foo, int32 bar) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:17
+    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:17
 ")
     unreachable
 
@@ -36,7 +36,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _16 = call _EN3std10assertFailEP4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:28
+    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:28
 ")
     unreachable
 
@@ -45,7 +45,7 @@ overflow.success_0:
     return _17
 }
 
-int32[2] _EN4main1gE5int325int32(int32 foo, int32 bar) {
+int32[2] _CX1N4main1gE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32(int32 foo, int32 bar) {
     int32* foo_0 = alloca int32
     int32* bar_0 = alloca int32
     int32[2]* c = alloca int32[2]
@@ -64,7 +64,7 @@ int32[2] _EN4main1gE5int325int32(int32 foo, int32 bar) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    void _7 = call _EN3std10assertFailEP4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:18
+    void _7 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:18
 ")
     unreachable
 
@@ -83,7 +83,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    void _16 = call _EN3std10assertFailEP4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:29
+    void _16 = call _CX1N3std10assertFailE4void1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:29
 ")
     unreachable
 

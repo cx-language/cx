@@ -9,11 +9,11 @@ int32 main() {
     int32* _4 = getelementptr b, 0
     Slice<int32> _5 = insertvalue Slice<int32> undefined, 0, _4
     Slice<int32> _6 = insertvalue _5, 1, int32 3
-    void _7 = call _EN4main1MI5int32E4initE5SliceI5int32E(M<int32>* _0, Slice<int32> _6)
+    void _7 = call _CX1N4mainM4main1MIM3std5int32E4initE4void1_M3std5SliceIM3std5int32E(M<int32>* _0, Slice<int32> _6)
     return int32 0
 }
 
-void _EN4main1MI5int32E4initE5SliceI5int32E(M<int32>* this, Slice<int32> a) {
+void _CX1N4mainM4main1MIM3std5int32E4initE4void1_M3std5SliceIM3std5int32E(M<int32>* this, Slice<int32> a) {
     Slice<int32>* a_0 = alloca Slice<int32>
     store a to a_0
     return void

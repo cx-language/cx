@@ -1,23 +1,23 @@
 
-X _EN4main1fE() {
+X _CX1N4main1fEM4main1X0_() {
     X* x = alloca X
-    void _0 = call _EN4main1X4initE(X* x)
+    void _0 = call _CX1N4mainM4main1X4initE4void0_(X* x)
     X x.load = load x
     return x.load
 }
 
-void _EN4main1X6deinitE(X* this) {
+void _CX1N4mainM4main1X6deinitE4void0_(X* this) {
     return void
 }
 
-void _EN4main1X4initE(X* this) {
+void _CX1N4mainM4main1X4initE4void0_(X* this) {
     return void
 }
 
 int32 main() {
     X* a = alloca X
-    X _0 = call _EN4main1fE()
+    X _0 = call _CX1N4main1fEM4main1X0_()
     store _0 to a
-    void _1 = call _EN4main1X6deinitE(X* a)
+    void _1 = call _CX1N4mainM4main1X6deinitE4void0_(X* a)
     return int32 0
 }

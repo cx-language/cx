@@ -1,16 +1,16 @@
 
 int32 main() {
     Foo* f = alloca Foo
-    void _0 = call _EN4main3Foo4initE5int32(Foo* f, int32 5)
-    void _1 = call _EN4main3Foo6deinitE(Foo* f)
+    void _0 = call _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Foo* f, int32 5)
+    void _1 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f)
     return int32 0
 }
 
-void _EN4main3Foo6deinitE(Foo* this) {
+void _CX1N4mainM4main3Foo6deinitE4void0_(Foo* this) {
     return void
 }
 
-void _EN4main3Foo4initE5int32(Foo* this, int32 i) {
+void _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Foo* this, int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
     float32* f = getelementptr this, 0

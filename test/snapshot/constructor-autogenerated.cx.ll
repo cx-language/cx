@@ -12,17 +12,17 @@ define i32 @main() #0 !dbg !4 {
   %g = alloca %"Generic<float32>", align 8
   %h = alloca %"Generic<Empty>", align 8
   store i32 2, ptr %b, align 4
-  call void @_EN4main1X4initE5int32P5int32(ptr %x, i32 4, ptr %b), !dbg !7
-  call void @_EN4main1X4initE5int32P5int32(ptr %y, i32 4, ptr %b), !dbg !8
-  call void @_EN4main5Empty4initE(ptr %e), !dbg !9
-  call void @_EN4main7GenericI7float32E4initE7float32(ptr %g, float 4.500000e+00), !dbg !10
+  call void @_CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(ptr %x, i32 4, ptr %b), !dbg !7
+  call void @_CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(ptr %y, i32 4, ptr %b), !dbg !8
+  call void @_CX1N4mainM4main5Empty4initE4void0_(ptr %e), !dbg !9
+  call void @_CX1N4mainM4main7GenericIM3std7float32E4initE4void1_M3std7float32(ptr %g, float 4.500000e+00), !dbg !10
   %e.load = load %Empty, ptr %e, align 1
-  call void @_EN4main7GenericI5EmptyE4initE5Empty(ptr %h, %Empty %e.load), !dbg !11
-  call void @_EN4main7GenericI5EmptyE6deinitE(ptr %h), !dbg !12
+  call void @_CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty(ptr %h, %Empty %e.load), !dbg !11
+  call void @_CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(ptr %h), !dbg !12
   ret i32 0
 }
 
-define void @_EN4main1X4initE5int32P5int32(ptr %this, i32 %a, ptr %b) #0 !dbg !13 {
+define void @_CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(ptr %this, i32 %a, ptr %b) #0 !dbg !13 {
   %a1 = alloca i32, align 4
   %b2 = alloca ptr, align 8
   store i32 %a, ptr %a1, align 4
@@ -36,11 +36,11 @@ define void @_EN4main1X4initE5int32P5int32(ptr %this, i32 %a, ptr %b) #0 !dbg !1
   ret void
 }
 
-define void @_EN4main5Empty4initE(ptr %this) #0 !dbg !14 {
+define void @_CX1N4mainM4main5Empty4initE4void0_(ptr %this) #0 !dbg !14 {
   ret void
 }
 
-define void @_EN4main7GenericI7float32E4initE7float32(ptr %this, float %i) #0 !dbg !15 {
+define void @_CX1N4mainM4main7GenericIM3std7float32E4initE4void1_M3std7float32(ptr %this, float %i) #0 !dbg !15 {
   %i1 = alloca float, align 4
   store float %i, ptr %i1, align 4
   %i2 = getelementptr inbounds %"Generic<float32>", ptr %this, i32 0, i32 0
@@ -49,7 +49,7 @@ define void @_EN4main7GenericI7float32E4initE7float32(ptr %this, float %i) #0 !d
   ret void
 }
 
-define void @_EN4main7GenericI5EmptyE4initE5Empty(ptr %this, %Empty %i) #0 !dbg !16 {
+define void @_CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty(ptr %this, %Empty %i) #0 !dbg !16 {
   %i1 = alloca %Empty, align 8
   store %Empty %i, ptr %i1, align 1
   %i2 = getelementptr inbounds %"Generic<Empty>", ptr %this, i32 0, i32 0
@@ -58,13 +58,13 @@ define void @_EN4main7GenericI5EmptyE4initE5Empty(ptr %this, %Empty %i) #0 !dbg 
   ret void
 }
 
-define void @_EN4main7GenericI5EmptyE6deinitE(ptr %this) #0 !dbg !17 {
+define void @_CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(ptr %this) #0 !dbg !17 {
   %i = getelementptr inbounds %"Generic<Empty>", ptr %this, i32 0, i32 0
-  call void @_EN4main5Empty6deinitE(ptr %i), !dbg !18
+  call void @_CX1N4mainM4main5Empty6deinitE4void0_(ptr %i), !dbg !18
   ret void
 }
 
-define void @_EN4main5Empty6deinitE(ptr %this) #0 !dbg !19 {
+define void @_CX1N4mainM4main5Empty6deinitE4void0_(ptr %this) #0 !dbg !19 {
   ret void
 }
 
@@ -86,10 +86,10 @@ attributes #0 = { "frame-pointer"="all" }
 !10 = !DILocation(line: 8, column: 13, scope: !4)
 !11 = !DILocation(line: 9, column: 13, scope: !4)
 !12 = !DILocation(line: 3, column: 6, scope: !4)
-!13 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1X4initE5int32P5int32", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
-!14 = distinct !DISubprogram(name: "init", linkageName: "_EN4main5Empty4initE", scope: !3, file: !3, line: 17, type: !5, scopeLine: 17, spFlags: DISPFlagDefinition, unit: !2)
-!15 = distinct !DISubprogram(name: "init", linkageName: "_EN4main7GenericI7float32E4initE7float32", scope: !3, file: !3, line: 21, type: !5, scopeLine: 21, spFlags: DISPFlagDefinition, unit: !2)
-!16 = distinct !DISubprogram(name: "init", linkageName: "_EN4main7GenericI5EmptyE4initE5Empty", scope: !3, file: !3, line: 21, type: !5, scopeLine: 21, spFlags: DISPFlagDefinition, unit: !2)
-!17 = distinct !DISubprogram(name: "deinit", linkageName: "_EN4main7GenericI5EmptyE6deinitE", scope: !3, file: !3, line: 21, type: !5, scopeLine: 21, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
+!14 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main5Empty4initE4void0_", scope: !3, file: !3, line: 17, type: !5, scopeLine: 17, spFlags: DISPFlagDefinition, unit: !2)
+!15 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main7GenericIM3std7float32E4initE4void1_M3std7float32", scope: !3, file: !3, line: 21, type: !5, scopeLine: 21, spFlags: DISPFlagDefinition, unit: !2)
+!16 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty", scope: !3, file: !3, line: 21, type: !5, scopeLine: 21, spFlags: DISPFlagDefinition, unit: !2)
+!17 = distinct !DISubprogram(name: "deinit", linkageName: "_CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_", scope: !3, file: !3, line: 21, type: !5, scopeLine: 21, spFlags: DISPFlagDefinition, unit: !2)
 !18 = !DILocation(line: 21, column: 8, scope: !17)
-!19 = distinct !DISubprogram(name: "deinit", linkageName: "_EN4main5Empty6deinitE", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
+!19 = distinct !DISubprogram(name: "deinit", linkageName: "_CX1N4mainM4main5Empty6deinitE4void0_", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)

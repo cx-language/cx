@@ -20,7 +20,7 @@ define i32 @main() #0 !dbg !4 {
   %i6 = getelementptr inbounds %Foo, ptr %f.load5, i32 0, i32 0
   store ptr %i6, ptr %c, align 8
   %f.load7 = load ptr, ptr %f, align 8
-  call void @_EN4main3Foo3barE(ptr %f.load7), !dbg !7
+  call void @_CX1N4mainM4main3Foo3barE4void0_(ptr %f.load7), !dbg !7
   %f.load8 = load ptr, ptr %f, align 8
   %f.load9 = load ptr, ptr %f, align 8
   %f.load.load = load %Foo, ptr %f.load9, align 4
@@ -28,7 +28,7 @@ define i32 @main() #0 !dbg !4 {
   ret i32 0
 }
 
-define void @_EN4main3Foo3barE(ptr %this) #0 !dbg !8 {
+define void @_CX1N4mainM4main3Foo3barE4void0_(ptr %this) #0 !dbg !8 {
   ret void
 }
 
@@ -45,4 +45,4 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 14, column: 7, scope: !4)
-!8 = distinct !DISubprogram(name: "bar", linkageName: "_EN4main3Foo3barE", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!8 = distinct !DISubprogram(name: "bar", linkageName: "_CX1N4mainM4main3Foo3barE4void0_", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)

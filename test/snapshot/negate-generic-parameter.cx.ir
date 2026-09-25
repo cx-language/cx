@@ -1,10 +1,10 @@
 
 int32 main() {
-    float32 _0 = call _EN4main1fI7float32EE7float32(float32 0)
+    float32 _0 = call _CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(float32 0)
     return int32 0
 }
 
-float32 _EN4main1fI7float32EE7float32(float32 a) {
+float32 _CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(float32 a) {
     float32* a_0 = alloca float32
     store a to a_0
     float32 a.load = load a_0

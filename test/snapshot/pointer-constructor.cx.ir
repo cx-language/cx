@@ -1,5 +1,5 @@
 
-void _EN4main3fooEPP4charP4char(char** p, char* x) {
+void _CX1N4main3fooE4void2_PPM3std4charPM3std4char(char** p, char* x) {
     char*** p_0 = alloca char**
     char** x_0 = alloca char*
     char*** pp = alloca char**

@@ -1,12 +1,12 @@
-global sp = S* null
+global _CX1G4main2spE = S* null
 
 int32 main() {
-    S* sp.load = load sp
-    void _0 = call _EN4main3fooEOP1S(S* sp.load)
+    S* _CX1G4main2spE.load = load _CX1G4main2spE
+    void _0 = call _CX1N4main3fooE4void1_OPM4main1S(S* _CX1G4main2spE.load)
     return int32 0
 }
 
-void _EN4main3fooEOP1S(S* p) {
+void _CX1N4main3fooE4void1_OPM4main1S(S* p) {
     S** p_0 = alloca S*
     store p to p_0
     return void

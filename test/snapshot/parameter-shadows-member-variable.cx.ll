@@ -5,16 +5,16 @@
 
 define i32 @main() #0 !dbg !4 {
   %1 = alloca %S, align 8
-  call void @_EN4main1S4initE(ptr %1), !dbg !7
-  call void @_EN4main1S3fooE5int32(ptr %1, i32 30), !dbg !8
+  call void @_CX1N4mainM4main1S4initE4void0_(ptr %1), !dbg !7
+  call void @_CX1N4mainM4main1S3fooE4void1_M3std5int32(ptr %1, i32 30), !dbg !8
   ret i32 0
 }
 
-define void @_EN4main1S4initE(ptr %this) #0 !dbg !9 {
+define void @_CX1N4mainM4main1S4initE4void0_(ptr %this) #0 !dbg !9 {
   ret void
 }
 
-define void @_EN4main1S3fooE5int32(ptr %this, i32 %bar) #0 !dbg !10 {
+define void @_CX1N4mainM4main1S3fooE4void1_M3std5int32(ptr %this, i32 %bar) #0 !dbg !10 {
   %bar1 = alloca i32, align 4
   store i32 %bar, ptr %bar1, align 4
   %bar.load = load i32, ptr %bar1, align 4
@@ -28,14 +28,14 @@ define void @_EN4main1S3fooE5int32(ptr %this, i32 %bar) #0 !dbg !10 {
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !11
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !11
   unreachable
 
 overflow.success:                                 ; preds = %0
   ret void
 }
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -51,6 +51,6 @@ attributes #0 = { "frame-pointer"="all" }
 !6 = !{}
 !7 = !DILocation(line: 12, column: 5, scope: !4)
 !8 = !DILocation(line: 12, column: 9, scope: !4)
-!9 = distinct !DISubprogram(name: "init", linkageName: "_EN4main1S4initE", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
-!10 = distinct !DISubprogram(name: "foo", linkageName: "_EN4main1S3fooE5int32", scope: !3, file: !3, line: 6, type: !5, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !2)
+!9 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1S4initE4void0_", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
+!10 = distinct !DISubprogram(name: "foo", linkageName: "_CX1N4mainM4main1S3fooE4void1_M3std5int32", scope: !3, file: !3, line: 6, type: !5, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !2)
 !11 = !DILocation(line: 6, column: 10, scope: !10)

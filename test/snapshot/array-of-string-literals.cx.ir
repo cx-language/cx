@@ -3,10 +3,10 @@ int32 main() {
     string[2]* a = alloca string[2]
     string* __str = alloca string
     string* __str_0 = alloca string
-    void _0 = call _EN3std6string4initEP4char5int32(string* __str, char* "foo", int32 3)
+    void _0 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "foo", int32 3)
     string __str.load = load __str
     string[2] _1 = insertvalue string[2] undefined, 0, __str.load
-    void _2 = call _EN3std6string4initEP4char5int32(string* __str_0, char* "bar", int32 3)
+    void _2 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str_0, char* "bar", int32 3)
     string __str.load_0 = load __str_0
     string[2] _3 = insertvalue _1, 1, __str.load_0
     store _3 to a

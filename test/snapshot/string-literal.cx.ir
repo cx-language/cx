@@ -2,7 +2,7 @@
 int32 main() {
     string* s = alloca string
     string* __str = alloca string
-    void _0 = call _EN3std6string4initEP4char5int32(string* __str, char* "foo", int32 3)
+    void _0 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "foo", int32 3)
     string __str.load = load __str
     store __str.load to s
     return int32 0

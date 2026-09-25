@@ -7,13 +7,13 @@
 @5 = private unnamed_addr constant [62 x i8] c"Unwrap failed at var-decl-in-control-flow-condition.cx:28:11\0A\00", align 1
 @6 = private unnamed_addr constant [62 x i8] c"Unwrap failed at var-decl-in-control-flow-condition.cx:32:11\0A\00", align 1
 
-define void @_EN4main1fE() #0 !dbg !4 {
+define void @_CX1N4main1fE4void0_() #0 !dbg !4 {
   %c = alloca ptr, align 8
   %c1 = alloca ptr, align 8
   br label %loop.condition
 
 loop.condition:                                   ; preds = %__implicit_unwrap.success, %0
-  %1 = call ptr @_EN4main1hE(), !dbg !7
+  %1 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !7
   store ptr %1, ptr %c, align 8
   %c.load = load ptr, ptr %c, align 8
   %2 = icmp ne ptr %c.load, null
@@ -25,18 +25,18 @@ loop.body:                                        ; preds = %loop.condition
   br i1 %__implicit_unwrap.condition, label %__implicit_unwrap.fail, label %__implicit_unwrap.success
 
 loop.end:                                         ; preds = %loop.condition
-  %3 = call ptr @_EN4main1hE(), !dbg !8
+  %3 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !8
   store ptr %3, ptr %c1, align 8
   %c.load3 = load ptr, ptr %c1, align 8
   %4 = icmp ne ptr %c.load3, null
   br i1 %4, label %if.then, label %if.else
 
 __implicit_unwrap.fail:                           ; preds = %loop.body
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !9
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !9
   unreachable
 
 __implicit_unwrap.success:                        ; preds = %loop.body
-  call void @_EN4main1jEP5int32(ptr %c.load2), !dbg !10
+  call void @_CX1N4main1jE4void1_PM3std5int32(ptr %c.load2), !dbg !10
   br label %loop.condition
 
 if.then:                                          ; preds = %loop.end
@@ -51,27 +51,27 @@ if.end:                                           ; preds = %__implicit_unwrap.s
   ret void
 
 __implicit_unwrap.fail6:                          ; preds = %if.then
-  call void @_EN3std10assertFailEP4char(ptr @1), !dbg !9
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @1), !dbg !9
   unreachable
 
 __implicit_unwrap.success7:                       ; preds = %if.then
-  call void @_EN4main1jEP5int32(ptr %c.load4), !dbg !11
+  call void @_CX1N4main1jE4void1_PM3std5int32(ptr %c.load4), !dbg !11
   br label %if.end
 }
 
-define ptr @_EN4main1hE() #0 !dbg !12 {
+define ptr @_CX1N4main1hEOPM3std5int320_() #0 !dbg !12 {
   ret ptr null
 }
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
-define void @_EN4main1jEP5int32(ptr %i) #0 !dbg !13 {
+define void @_CX1N4main1jE4void1_PM3std5int32(ptr %i) #0 !dbg !13 {
   %i1 = alloca ptr, align 8
   store ptr %i, ptr %i1, align 8
   ret void
 }
 
-define void @_EN4main1gE() #0 !dbg !14 {
+define void @_CX1N4main1gE4void0_() #0 !dbg !14 {
   %c1 = alloca ptr, align 8
   %c2 = alloca ptr, align 8
   %c3 = alloca ptr, align 8
@@ -80,7 +80,7 @@ define void @_EN4main1gE() #0 !dbg !14 {
   br label %loop.condition
 
 loop.condition:                                   ; preds = %__implicit_unwrap.success, %0
-  %1 = call ptr @_EN4main1hE(), !dbg !15
+  %1 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !15
   store ptr %1, ptr %c1, align 8
   %c1.load = load ptr, ptr %c1, align 8
   %2 = icmp ne ptr %c1.load, null
@@ -92,18 +92,18 @@ loop.body:                                        ; preds = %loop.condition
   br i1 %__implicit_unwrap.condition, label %__implicit_unwrap.fail, label %__implicit_unwrap.success
 
 loop.end:                                         ; preds = %loop.condition
-  %3 = call ptr @_EN4main1hE(), !dbg !16
+  %3 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !16
   store ptr %3, ptr %c2, align 8
   %c2.load = load ptr, ptr %c2, align 8
   %4 = icmp ne ptr %c2.load, null
   br i1 %4, label %if.then, label %if.else
 
 __implicit_unwrap.fail:                           ; preds = %loop.body
-  call void @_EN3std10assertFailEP4char(ptr @2), !dbg !17
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @2), !dbg !17
   unreachable
 
 __implicit_unwrap.success:                        ; preds = %loop.body
-  call void @_EN4main1jEP5int32(ptr %c1.load1), !dbg !18
+  call void @_CX1N4main1jE4void1_PM3std5int32(ptr %c1.load1), !dbg !18
   br label %loop.condition
 
 if.then:                                          ; preds = %loop.end
@@ -118,15 +118,15 @@ if.end:                                           ; preds = %__implicit_unwrap.s
   br label %loop.condition6
 
 __implicit_unwrap.fail4:                          ; preds = %if.then
-  call void @_EN3std10assertFailEP4char(ptr @3), !dbg !17
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @3), !dbg !17
   unreachable
 
 __implicit_unwrap.success5:                       ; preds = %if.then
-  call void @_EN4main1jEP5int32(ptr %c2.load2), !dbg !19
+  call void @_CX1N4main1jE4void1_PM3std5int32(ptr %c2.load2), !dbg !19
   br label %if.end
 
 loop.condition6:                                  ; preds = %__implicit_unwrap.success12, %if.end
-  %5 = call ptr @_EN4main1hE(), !dbg !20
+  %5 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !20
   store ptr %5, ptr %c3, align 8
   %c3.load = load ptr, ptr %c3, align 8
   %6 = icmp ne ptr %c3.load, null
@@ -138,18 +138,18 @@ loop.body7:                                       ; preds = %loop.condition6
   br i1 %__implicit_unwrap.condition9, label %__implicit_unwrap.fail11, label %__implicit_unwrap.success12
 
 loop.end10:                                       ; preds = %loop.condition6
-  %7 = call ptr @_EN4main1hE(), !dbg !21
+  %7 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !21
   store ptr %7, ptr %c4, align 8
   %c4.load = load ptr, ptr %c4, align 8
   %8 = icmp ne ptr %c4.load, null
   br i1 %8, label %if.then13, label %if.else16
 
 __implicit_unwrap.fail11:                         ; preds = %loop.body7
-  call void @_EN3std10assertFailEP4char(ptr @4), !dbg !17
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @4), !dbg !17
   unreachable
 
 __implicit_unwrap.success12:                      ; preds = %loop.body7
-  call void @_EN4main1jEP5int32(ptr %c3.load8), !dbg !22
+  call void @_CX1N4main1jE4void1_PM3std5int32(ptr %c3.load8), !dbg !22
   br label %loop.condition6
 
 if.then13:                                        ; preds = %loop.end10
@@ -161,18 +161,18 @@ if.else16:                                        ; preds = %loop.end10
   br label %if.end17
 
 if.end17:                                         ; preds = %__implicit_unwrap.success19, %if.else16
-  %9 = call ptr @_EN4main1hE(), !dbg !23
+  %9 = call ptr @_CX1N4main1hEOPM3std5int320_(), !dbg !23
   store ptr %9, ptr %c5, align 8
   %c5.load = load ptr, ptr %c5, align 8
   %10 = icmp ne ptr %c5.load, null
   br i1 %10, label %if.then20, label %if.else23
 
 __implicit_unwrap.fail18:                         ; preds = %if.then13
-  call void @_EN3std10assertFailEP4char(ptr @5), !dbg !17
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @5), !dbg !17
   unreachable
 
 __implicit_unwrap.success19:                      ; preds = %if.then13
-  call void @_EN4main1jEP5int32(ptr %c4.load14), !dbg !24
+  call void @_CX1N4main1jE4void1_PM3std5int32(ptr %c4.load14), !dbg !24
   br label %if.end17
 
 if.then20:                                        ; preds = %if.end17
@@ -187,11 +187,11 @@ if.end24:                                         ; preds = %__implicit_unwrap.s
   ret void
 
 __implicit_unwrap.fail25:                         ; preds = %if.then20
-  call void @_EN3std10assertFailEP4char(ptr @6), !dbg !17
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @6), !dbg !17
   unreachable
 
 __implicit_unwrap.success26:                      ; preds = %if.then20
-  call void @_EN4main1jEP5int32(ptr %c5.load21), !dbg !25
+  call void @_CX1N4main1jE4void1_PM3std5int32(ptr %c5.load21), !dbg !25
   br label %if.end24
 }
 
@@ -204,7 +204,7 @@ attributes #0 = { "frame-pointer"="all" }
 !1 = !{i32 2, !"Debug Info Version", i32 3}
 !2 = distinct !DICompileUnit(language: DW_LANG_C, file: !3, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 !3 = !DIFile(filename: "var-decl-in-control-flow-condition.cx")
-!4 = distinct !DISubprogram(name: "f", linkageName: "_EN4main1fE", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
+!4 = distinct !DISubprogram(name: "f", linkageName: "_CX1N4main1fE4void0_", scope: !3, file: !3, line: 3, type: !5, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !2)
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 4, column: 20, scope: !4)
@@ -212,9 +212,9 @@ attributes #0 = { "frame-pointer"="all" }
 !9 = !DILocation(line: 3, column: 6, scope: !4)
 !10 = !DILocation(line: 5, column: 9, scope: !4)
 !11 = !DILocation(line: 9, column: 9, scope: !4)
-!12 = distinct !DISubprogram(name: "h", linkageName: "_EN4main1hE", scope: !3, file: !3, line: 35, type: !5, scopeLine: 35, spFlags: DISPFlagDefinition, unit: !2)
-!13 = distinct !DISubprogram(name: "j", linkageName: "_EN4main1jEP5int32", scope: !3, file: !3, line: 39, type: !5, scopeLine: 39, spFlags: DISPFlagDefinition, unit: !2)
-!14 = distinct !DISubprogram(name: "g", linkageName: "_EN4main1gE", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
+!12 = distinct !DISubprogram(name: "h", linkageName: "_CX1N4main1hEOPM3std5int320_", scope: !3, file: !3, line: 35, type: !5, scopeLine: 35, spFlags: DISPFlagDefinition, unit: !2)
+!13 = distinct !DISubprogram(name: "j", linkageName: "_CX1N4main1jE4void1_PM3std5int32", scope: !3, file: !3, line: 39, type: !5, scopeLine: 39, spFlags: DISPFlagDefinition, unit: !2)
+!14 = distinct !DISubprogram(name: "g", linkageName: "_CX1N4main1gE4void0_", scope: !3, file: !3, line: 13, type: !5, scopeLine: 13, spFlags: DISPFlagDefinition, unit: !2)
 !15 = !DILocation(line: 14, column: 20, scope: !14)
 !16 = !DILocation(line: 18, column: 17, scope: !14)
 !17 = !DILocation(line: 13, column: 6, scope: !14)

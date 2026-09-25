@@ -8,7 +8,7 @@ int32 main() {
     S<E>* _1 = alloca S<E>
     int32* tag = getelementptr enum, 0
     store int32 0 to tag
-    void _2 = call _EN4main1SI1EE4initEOP1E(S<E>* _0, E* null)
+    void _2 = call _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(S<E>* _0, E* null)
     S<E> .load = load _0
     struct { S<E> } _3 = insertvalue struct { S<E> } undefined, 0, .load
     union { struct { S<E> }, struct { int32[12] } }* associatedValue = getelementptr enum, 1
@@ -18,7 +18,7 @@ int32 main() {
     store enum.load to inner
     int32* tag_0 = getelementptr enum_0, 0
     store int32 0 to tag_0
-    void _5 = call _EN4main1SI1EE4initEOP1E(S<E>* _1, E* inner)
+    void _5 = call _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(S<E>* _1, E* inner)
     S<E> .load_0 = load _1
     struct { S<E> } _6 = insertvalue struct { S<E> } undefined, 0, .load_0
     union { struct { S<E> }, struct { int32[12] } }* associatedValue_0 = getelementptr enum_0, 1
@@ -29,7 +29,7 @@ int32 main() {
     return int32 0
 }
 
-void _EN4main1SI1EE4initEOP1E(S<E>* this, E* e) {
+void _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(S<E>* this, E* e) {
     E** e_0 = alloca E*
     store e to e_0
     E** e_1 = getelementptr this, 0

@@ -1,5 +1,5 @@
 
-Optional<int32> _EN4main1fE() {
+Optional<int32> _CX1N4main1fEOM3std5int320_() {
     int32* i = alloca int32
     Optional<int32>* enum = alloca Optional<int32>
     store int32 1 to i

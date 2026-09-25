@@ -36,7 +36,7 @@ loop.end:                                         ; preds = %loop.condition
   ret i32 0
 
 overflow.fail:                                    ; preds = %loop.body
-  call void @_EN3std10assertFailEP4char(ptr @0), !dbg !7
+  call void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr @0), !dbg !7
   unreachable
 
 overflow.success:                                 ; preds = %loop.body
@@ -44,7 +44,7 @@ overflow.success:                                 ; preds = %loop.body
   br label %loop.increment
 }
 
-declare void @_EN3std10assertFailEP4char(ptr) #0
+declare void @_CX1N3std10assertFailE4void1_PKM3std4char(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

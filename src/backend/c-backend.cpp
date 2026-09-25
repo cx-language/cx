@@ -37,7 +37,7 @@ llvm::StringRef getCFunctionName(const Function* function) {
 // The stdlib's opaque 'struct FILE {}' (std/libc.cx) denotes C's FILE. Every use of the
 // name resolves to it, so an empty struct named FILE can only be that type (a C-imported
 // FILE means the same thing). Emit the FILE typedef from stdio.h instead of a conflicting
-// 'struct _4FILE' definition, which would warn on every conversion to and from real FILE*.
+// mangled 'struct _M...' definition, which would warn on every conversion to and from real FILE*.
 bool isCFileType(const IRStructType* type) {
     return type->name == "FILE" && type->fields.empty();
 }

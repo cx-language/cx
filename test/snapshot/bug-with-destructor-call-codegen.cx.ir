@@ -2,25 +2,25 @@
 int32 main() {
     X* a = alloca X
     Y<bool>* _0 = alloca Y<bool>
-    void _1 = call _EN4main1X4initE(X* a)
-    void _2 = call _EN4main1YI4boolE4initE(Y<bool>* _0)
-    int32 _3 = call _EN4main1YI4boolE1fE(Y<bool>* _0)
-    void _4 = call _EN4main1X6deinitE(X* a)
+    void _1 = call _CX1N4mainM4main1X4initE4void0_(X* a)
+    void _2 = call _CX1N4mainM4main1YIM3std4boolE4initE4void0_(Y<bool>* _0)
+    int32 _3 = call _CX1N4mainM4main1YIM3std4boolE1fEM3std5int320_(Y<bool>* _0)
+    void _4 = call _CX1N4mainM4main1X6deinitE4void0_(X* a)
     return int32 0
 }
 
-void _EN4main1X6deinitE(X* this) {
+void _CX1N4mainM4main1X6deinitE4void0_(X* this) {
     return void
 }
 
-void _EN4main1X4initE(X* this) {
+void _CX1N4mainM4main1X4initE4void0_(X* this) {
     return void
 }
 
-int32 _EN4main1YI4boolE1fE(Y<bool>* this) {
+int32 _CX1N4mainM4main1YIM3std4boolE1fEM3std5int320_(Y<bool>* this) {
     return int32 1
 }
 
-void _EN4main1YI4boolE4initE(Y<bool>* this) {
+void _CX1N4mainM4main1YIM3std4boolE4initE4void0_(Y<bool>* this) {
     return void
 }

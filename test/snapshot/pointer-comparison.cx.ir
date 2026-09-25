@@ -1,5 +1,5 @@
 
-bool _EN4mainltER1XR1X(X* a, X* b) {
+bool _CX1N4maino2ltEM3std4bool2_RM4main1XRM4main1X(X* a, X* b) {
     X** a_0 = alloca X*
     X** b_0 = alloca X*
     store a to a_0
@@ -7,7 +7,7 @@ bool _EN4mainltER1XR1X(X* a, X* b) {
     return bool true
 }
 
-void _EN4main2fxEP1XP1XP4voidP4void(X* a, X* b, void* v1, void* v2) {
+void _CX1N4main2fxE4void4_PM4main1XPM4main1XP4voidP4void(X* a, X* b, void* v1, void* v2) {
     X** a_0 = alloca X*
     X** b_0 = alloca X*
     void** v1_0 = alloca void*
@@ -24,7 +24,7 @@ void _EN4main2fxEP1XP1XP4voidP4void(X* a, X* b, void* v1, void* v2) {
     bool _1 = a.load_0 < b.load_0
     X* a.load_1 = load a_0
     X* b.load_1 = load b_0
-    bool _2 = call _EN4mainltER1XR1X(X* a.load_1, X* b.load_1)
+    bool _2 = call _CX1N4maino2ltEM3std4bool2_RM4main1XRM4main1X(X* a.load_1, X* b.load_1)
     void* v1.load = load v1_0
     void* v2.load = load v2_0
     bool _3 = v1.load != v2.load

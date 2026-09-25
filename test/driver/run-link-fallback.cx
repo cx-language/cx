@@ -15,6 +15,6 @@ void main() {
 // CHECK: boom
 // CHECK: printStackTrace
 // CHECK: abortWrapper
-// CHECK: _EN4main5innerE
+// CHECK: _CX1N4main5innerE4void0_
 // CHECK: main
 // CHECK-NOT: run-link-fallback.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

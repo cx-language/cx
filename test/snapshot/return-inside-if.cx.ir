@@ -1,7 +1,7 @@
 
 extern bool foo()
 
-void _EN4main3barE() {
+void _CX1N4main3barE4void0_() {
     bool _0 = call foo()
     br _0, if.then, if.else
 
