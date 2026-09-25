@@ -118,8 +118,11 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
     python3 - "$outpath" <<'EOF'
 import html
 import json
+import os
 import re
 import sys
+
+REPO_URL = "https://github.com/cx-language/cx"
 
 outpath = sys.argv[1]
 path = "build/" + outpath + ".html"
@@ -132,6 +135,32 @@ depth = outpath.count("/")
 if depth:
     prefix = "../" * depth
     template = re.sub(r'(href|src)="(\./)?(?!#|/|[a-zA-Z][a-zA-Z0-9+.-]*:)', r'\1="' + prefix, template)
+
+
+def page_links(outpath):
+    """Footer links for one page: edit the source, report an issue.
+
+    Top-level pages come from docs/, stdlib file pages from std/; the
+    generated std index and category pages aggregate many files and get
+    only the issue link. The front page gets neither.
+    """
+    if outpath == "index":
+        return ""
+    if "/" not in outpath:
+        source = "docs/%s.md" % outpath
+    elif os.path.isfile("../std/%s.cx" % outpath[4:]):
+        source = "std/%s.cx" % outpath[4:]
+    else:
+        source = None
+    links = []
+    if source is not None:
+        links.append('<a href="%s/edit/main/%s" target="_blank">Edit this page</a>' % (REPO_URL, source))
+    links.append('<a href="%s/issues/new" target="_blank">Report an issue</a>' % REPO_URL)
+    return '<span class="page-links">%s</span>' % "".join(links)
+
+
+if "##PAGELINKS##" in template:
+    template = template.replace("##PAGELINKS##", page_links(outpath))
 
 showcase = [
     ("Filter and map", "filter-map.cx"),

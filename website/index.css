@@ -645,10 +645,22 @@ button.run:active::before {
 
 .site-footer {
     grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px 24px;
+    flex-wrap: wrap;
     border-top: 1px solid var(--background-color-3);
     padding: 22px 0 48px;
     font-size: 13px;
     color: var(--text-color-subtle);
+}
+
+.page-links {
+    white-space: nowrap;
+}
+
+.page-links a + a {
+    margin-left: 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {
