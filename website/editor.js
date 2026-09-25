@@ -98,7 +98,9 @@ function initializeCodeEditor(block) {
         while ((match = regex.exec(diagnostics))) {
             var [, line, column, message, indent] = match;
             var node = document.createElement("div");
-            node.appendChild(document.createTextNode((indent || "") + "^ " + message));
+            // The strip styling already signals severity; drop the prefix.
+            var compact = message.replace(/^(error|warning): /, "");
+            node.appendChild(document.createTextNode((indent || "") + "^ " + compact));
             node.classList.add("diagnostic", message.startsWith("warning") ? "warning" : "error");
             widgets.push(editor.addLineWidget(line - 1, node, true));
         }

@@ -246,7 +246,7 @@ await runWithStderr(
 check(widgets.length === 1, "range diagnostic produces one widget");
 check(widgets[0].line === 0, "widget is placed on the error line (0-based)");
 check(
-    widgets[0].text === " ".repeat(41) + "^ error: unknown identifier 'isEven'",
+    widgets[0].text === " ".repeat(41) + "^ unknown identifier 'isEven'",
     "tilde-underlined diagnostic keeps its indent, got: " + JSON.stringify(widgets[0].text)
 );
 check(!widgets[0].text.includes("undefined"), "widget text has no undefined prefix");
@@ -254,12 +254,12 @@ check(widgets[0].node.classList.contains("error"), "error diagnostic gets the er
 
 await runWithStderr("main.cx:2:5: warning: unused variable 'x'\n    var x = 1;\n        ^\n");
 check(widgets.length === 1, "caret diagnostic produces one widget");
-check(widgets[0].text === "        ^ warning: unused variable 'x'", "caret diagnostic keeps its indent, got: " + JSON.stringify(widgets[0].text));
+check(widgets[0].text === "        ^ unused variable 'x'", "caret diagnostic keeps its indent, got: " + JSON.stringify(widgets[0].text));
 check(widgets[0].node.classList.contains("warning"), "warning diagnostic gets the warning class");
 
 await runWithStderr("main.cx:1:1: error: something broke\n");
 check(widgets.length === 1, "context-less diagnostic produces one widget");
-check(widgets[0].text === "^ error: something broke", "context-less diagnostic has no undefined prefix, got: " + JSON.stringify(widgets[0].text));
+check(widgets[0].text === "^ something broke", "context-less diagnostic has no undefined prefix, got: " + JSON.stringify(widgets[0].text));
 
 // Live diagnostics: editing triggers a background check whose errors show
 // without pressing Run.
@@ -279,7 +279,7 @@ editorListeners.change();
 await flushTimers();
 check(checkedWith.length === 1 && checkedWith[0] === editorValue, "change triggers a check of the current code");
 check(
-    widgets.length === 1 && widgets[0].text === "^ error: something broke",
+    widgets.length === 1 && widgets[0].text === "^ something broke",
     "check errors show without running, got: " + JSON.stringify(widgets.map((w) => w.text))
 );
 
@@ -326,7 +326,7 @@ resolveFirst({ stdout: "", stderr: "main.cx:1:1: error: first\n" });
 await new Promise((resolve) => setTimeout(resolve, 10));
 scriptedCheck = { stdout: "", stderr: "" };
 check(
-    widgets.length === 1 && widgets[0].text === "^ warning: second",
+    widgets.length === 1 && widgets[0].text === "^ second",
     "late first check is discarded, got: " + JSON.stringify(widgets.map((w) => w.text))
 );
 
