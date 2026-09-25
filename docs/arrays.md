@@ -99,7 +99,9 @@ void main() {
 
 Sizes must match; mismatched sizes are a compile error. Only arrays of
 known (constant) size support element-wise ops; generic sizes (`T[N]` with
-symbolic `N`) cannot unroll and are rejected with a clear error.
+symbolic `N`) are rejected with a clear error. Element-wise ops compile to
+a loop over the elements for larger arrays, which release builds vectorize;
+small arrays stay unrolled.
 
 ## Vector operations
 

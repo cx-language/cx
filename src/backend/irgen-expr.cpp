@@ -521,6 +521,57 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
             } else {
                 rhsScalar = rhsValue;
             }
+            bool isComparison = (expr.op == Token::Equal || expr.op == Token::NotEqual);
+            Token::Kind combiner = expr.op == Token::Equal ? Token::And : Token::Or;
+
+            // Large arrays lower to a counted loop so the backend compilers
+            // can vectorize; small ones stay unrolled for minimal overhead.
+            // Element ops are unchecked (matching existing array semantics).
+            if (arraySize > 4) {
+                auto indexType = Type::getInt32();
+                auto* indexAlloca = createEntryBlockAlloca(indexType);
+                auto* zero = createConstantInt(indexType, 0);
+                createStore(zero, indexAlloca);
+
+                AllocaInst* resultAlloca = nullptr;
+                AllocaInst* accAlloca = nullptr;
+                if (isComparison) {
+                    accAlloca = createEntryBlockAlloca(Type::getBool());
+                    createStore(createConstantBool(expr.op == Token::Equal), accAlloca);
+                } else {
+                    resultAlloca = createEntryBlockAlloca(getIRType(arrayT));
+                }
+
+                auto* function = currentFunction;
+                auto* cond = new BasicBlock("arrayop.cond", function);
+                auto* body = new BasicBlock("arrayop.body", function);
+                auto* end = new BasicBlock("arrayop.end", function);
+                createBr(cond);
+
+                setInsertPoint(cond);
+                auto* index = createLoad(indexAlloca);
+                createCondBr(createBinaryOp(Token::Less, index, createConstantInt(indexType, arraySize), &expr), body, end);
+
+                setInsertPoint(body);
+                auto* i = createLoad(indexAlloca);
+                auto emitLoopElement = [&](Value* arrayPtr) -> Value* { return createLoad(createGEP(arrayPtr, {zero, i})); };
+                Value* lhsElem = leftIsArray ? emitLoopElement(lhsPtr) : lhsScalar;
+                Value* rhsElem = rightIsArray ? emitLoopElement(rhsPtr) : rhsScalar;
+                if (isComparison) {
+                    Value* cmp = createBinaryOp(expr.op, lhsElem, rhsElem, &expr);
+                    createStore(createBinaryOp(combiner, createLoad(accAlloca), cmp, &expr), accAlloca);
+                } else {
+                    createStore(createBinaryOp(expr.op, lhsElem, rhsElem, &expr), createGEP(resultAlloca, {zero, i}));
+                }
+                createStore(createBinaryOp(Token::Plus, i, createConstantInt(indexType, 1), &expr), indexAlloca);
+                createBr(cond);
+
+                setInsertPoint(end);
+                if (isComparison) {
+                    return createLoad(accAlloca);
+                }
+                return resultAlloca;
+            }
 
             auto emitArrayElement = [&](Value* arrayPtr, int64_t index) -> Value* {
                 auto* zero = createConstantInt(Type::getInt32(), 0);
@@ -529,13 +580,11 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
                 return createLoad(gep);
             };
 
-            bool isComparison = (expr.op == Token::Equal || expr.op == Token::NotEqual);
             if (isComparison) {
                 if (arraySize == 0) return createConstantBool(expr.op == Token::Equal);
                 // `a == b` lowers to `(a[0]==b[0]) & (a[1]==b[1]) & ...` (bitwise
                 // AND on bools, eager; equivalent to && for pure comparisons).
                 // `!=` uses `|` (OR). Broadcast compares each element to the scalar.
-                Token::Kind combiner = expr.op == Token::Equal ? Token::And : Token::Or;
                 Value* result = nullptr;
                 for (int64_t i = 0; i < arraySize; ++i) {
                     Value* lhsElem = leftIsArray ? emitArrayElement(lhsPtr, i) : lhsScalar;

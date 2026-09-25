@@ -6,6 +6,7 @@ void main() {
     testBroadcast();
     testComparison();
     testIntArrays();
+    testLargeArrays();
 }
 
 void testArrayArray() {
@@ -79,4 +80,44 @@ void testIntArrays() {
     int[3] e = a & b;
     assert(e[0] == (1 & 4));
     assert(e[1] == (2 & 5));
+}
+
+void testLargeArrays() {
+    // Arrays larger than 4 elements lower to a counted loop so the backends
+    // can vectorize; the unrolled lowering also crashed at runtime for large
+    // sizes, so cover arithmetic, broadcast, nesting, and comparisons here.
+    float[1024] a = undefined;
+    float[1024] b = undefined;
+    for i in 0..1024 {
+        a[i] = float(i);
+        b[i] = float(i) * 2.0;
+    }
+    float[1024] c = a + b;
+    assert(c[0] == 0.0);
+    assert(c[100] == 300.0);
+    assert(c[1023] == 3069.0);
+    assert((a * 2.0)[7] == 14.0);
+    assert((100.0 - a)[10] == 90.0);
+    assert(((a + b) * 2.0)[100] == 600.0);
+    assert(a == a);
+    assert(a != b);
+    assert((a + b) == c);
+
+    int[100] x = undefined;
+    int[100] y = undefined;
+    for i in 0..100 {
+        x[i] = i;
+        y[i] = i * 3;
+    }
+    assert((x + y)[42] == 168);
+    assert((x * 3)[10] == 30);
+    assert(x == x);
+    assert(x != y);
+
+    float[5] s = [1.0, 2.0, 3.0, 4.0, 5.0];
+    float[5] t = [5.0, 4.0, 3.0, 2.0, 1.0];
+    float[5] st = s + t;
+    assert(st[0] == 6.0);
+    assert(st[4] == 6.0);
+    assert(s != t);
 }
