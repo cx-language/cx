@@ -55,7 +55,8 @@ mkdir build
 rm -rf .generated
 python3 generate_std_docs.py || exit
 
-for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html bench.html; do
+build_page() {
+    file=$1
     case $file in
         ../docs/*)
             relpath="${file#../docs/}"
@@ -125,7 +126,7 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
         *.md) from="markdown-smart" ;;
         *) from="html" ;;
     esac
-    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" $extra --metadata pagetitle="$title" --metadata body-class="$body_class"
+    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" $extra --metadata pagetitle="$title" --metadata body-class="$body_class" || return 1
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
@@ -137,7 +138,7 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
     # check_examples) and run in the browser playground: no C header imports,
     # no file system access, and no float-to-int conversions of unbounded
     # values (those trap on WebAssembly). The first entry is shown by default.
-    python3 - "$outpath" <<'EOF'
+    python3 - "$outpath" <<'EOF' || return 1
 import html
 import json
 import os
@@ -261,7 +262,31 @@ if outpath == "index":
     with open("build/playground-examples.js", "w") as file:
         file.write("var CxExamples = " + json.dumps(examples) + ";\n")
 EOF
+}
+
+# Pages build independently (one pandoc + one post-processing step each, all
+# writing distinct files), so build them in parallel batches: a pandoc
+# invocation costs ~60ms of startup, which dominates the build sequentially.
+max_jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
+pids=""
+running=0
+failed=0
+for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html bench.html; do
+    build_page "$file" &
+    pids="$pids $!"
+    running=$((running + 1))
+    if [ "$running" -ge "$max_jobs" ]; then
+        for pid in $pids; do
+            wait "$pid" || failed=1
+        done
+        pids=""
+        running=0
+    fi
 done
+for pid in $pids; do
+    wait "$pid" || failed=1
+done
+[ "$failed" -eq 0 ] || exit 1
 
 # Search index over the docs and generated reference sources.
 python3 generate_search_index.py || exit
