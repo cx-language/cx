@@ -80,6 +80,9 @@ cmake --build .
 ```
 
 The `cx` and `cx-lsp` binaries end up in the `build` directory.
+For the fastest clean build of just the compiler, configure with
+`-G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_UNITY_BUILD=ON` and run
+`cmake --build . --target cx`.
 
 ### Editor support
 
