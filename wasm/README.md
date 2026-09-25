@@ -70,6 +70,11 @@ tests below. xcc is MIT licensed; see its repository for attribution.
 ## Testing
 
 ```sh
+# No build needed (fake DOM, mocked playground):
+node wasm/test-editor.mjs
+node wasm/test-playground.mjs
+node wasm/test-playground-worker.mjs
+
 # Needs an xcc checkout or a dist directory (stages the real cc.wasm):
 node wasm/test-wasi-shim.mjs <xcc-dir-or-dist>
 node wasm/test-pipeline.mjs <dist-dir>
@@ -78,7 +83,12 @@ node wasm/test-pipeline.mjs <dist-dir>
 node wasm/smoke-playground.mjs wasm/dist
 ```
 
-`test-wasi-shim.mjs` compiles the committed fixture (`wasm/fixtures/smoke.c`,
+`test-editor.mjs` covers the docs code editors (example switching, diagnostic
+widgets, live checks) with a fake DOM and a mocked playground.
+`test-playground-worker.mjs` covers the worker protocol's compile-only paths
+with a stubbed pipeline, and `test-playground.mjs` covers the main-thread
+run/check timeout behavior with a stubbed worker. `test-wasi-shim.mjs`
+compiles the committed fixture (`wasm/fixtures/smoke.c`,
 representative cx output) with the real `cc.wasm` on the real shim and runs
 the result. `test-pipeline.mjs` additionally covers the shared pipeline
 stages with a mocked frontend. `smoke-playground.mjs` covers stage 1 with the

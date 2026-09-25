@@ -11,6 +11,8 @@
 // start-compile-exit design), so no compiler state ever carries over between
 // runs. Posting {"action": "ping", "id"} answers {"id",
 // "ready": true} once all artifacts are loaded (used to warm up).
+// {"action": "check", "id", "code"} answers {"id", "stdout", "stderr"} with
+// the stage-1 diagnostics only, without compiling to WebAssembly or running.
 
 /* global importScripts, CxWasm, CxWasi, CxPipeline, fflate, postMessage, onmessage, fetch */
 
@@ -65,19 +67,26 @@ function unzipFiles(data) {
     return files;
 }
 
-async function runCode(code) {
+// Stage 1 of runCode, shared with the "check" action: compile cx to C,
+// reporting compiler-internal failures via stderr.
+async function compileCxStage(code) {
     var compiled;
     try {
         compiled = await CxPipeline.compileCxToC(CxWasm, code);
     } catch (error) {
-        return { stdout: "", stderr: "error: the cx compiler failed to run (" + (error && error.message ? error.message : error) + ")\n" };
+        return { status: -1, cCode: undefined, stdout: "", stderr: "error: the cx compiler failed to run (" + (error && error.message ? error.message : error) + ")\n" };
     }
+    var compileStderr = compiled.diagnostics.stderr;
+    if (compiled.status !== 0 && compiled.internalError) {
+        compileStderr += "internal compiler error: " + compiled.internalError + "\n";
+    }
+    return { status: compiled.status, cCode: compiled.cCode, stdout: compiled.diagnostics.stdout, stderr: compileStderr };
+}
+
+async function runCode(code) {
+    var compiled = await compileCxStage(code);
     if (compiled.status !== 0) {
-        var compileStderr = compiled.diagnostics.stderr;
-        if (compiled.internalError) {
-            compileStderr += "internal compiler error: " + compiled.internalError + "\n";
-        }
-        return { stdout: compiled.diagnostics.stdout, stderr: compileStderr };
+        return { stdout: compiled.stdout, stderr: compiled.stderr };
     }
     var ccWasmBytes = await loadCcWasm();
     var wccFiles = await loadWccFiles();
@@ -103,6 +112,13 @@ onmessage = function (event) {
     if (message.action === "run") {
         runCode(message.code).then(function (result) {
             postMessage({ id: message.id, stdout: result.stdout, stderr: result.stderr });
+        }, function (error) {
+            postMessage({ id: message.id, stdout: "", stderr: "error: " + String((error && error.stack) || error) + "\n" });
+        });
+    }
+    if (message.action === "check") {
+        compileCxStage(message.code).then(function (compiled) {
+            postMessage({ id: message.id, stdout: compiled.stdout, stderr: compiled.stderr });
         }, function (error) {
             postMessage({ id: message.id, stdout: "", stderr: "error: " + String((error && error.stack) || error) + "\n" });
         });

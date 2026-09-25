@@ -6,12 +6,15 @@
 // executed with captured stdout/stderr. See playground-worker.js.
 //
 // Usage: CxPlayground.run(code) returns a promise of {stdout, stderr}.
+// CxPlayground.check(code) returns a promise of {stdout, stderr} with the
+// stage-1 diagnostics only, for live error display while editing.
 (function (global) {
     "use strict";
 
     var WORKER_URL = "playground-worker.js";
     var WARMUP_TIMEOUT_MS = 120000;
     var RUN_TIMEOUT_MS = 60000;
+    var CHECK_TIMEOUT_MS = 60000;
 
     var worker = null;
     var nextId = 0;
@@ -58,20 +61,21 @@
         return worker;
     }
 
-    function postMessage(message, timeoutMs) {
+    function postMessage(message, timeoutMs, terminateOnTimeout) {
         return new Promise(function (resolve, reject) {
             var id = ++nextId;
             message.id = id;
             var timer = setTimeout(function () {
                 pending.delete(id);
-                // Abandon (but don't terminate) the worker on warmup timeouts
-                // so that slow networks still get a chance; runs terminate it
-                // to also stop infinite loops in user programs.
-                if (timeoutMs === RUN_TIMEOUT_MS && worker) {
+                // Runs terminate the worker to also stop infinite loops in
+                // user programs; warmup and check timeouts abandon it instead
+                // so that slow networks still get a chance (and a slow
+                // background check can't kill a foreground run).
+                if (terminateOnTimeout && worker) {
                     worker.terminate();
                     worker = null;
                 }
-                reject(new Error(timeoutMs === RUN_TIMEOUT_MS ? "timed out" : "timed out while loading the playground"));
+                reject(new Error(terminateOnTimeout ? "timed out" : "timed out while loading the playground"));
             }, timeoutMs);
             pending.set(id, { resolve: resolve, reject: reject, timer: timer });
             try {
@@ -99,7 +103,7 @@
         if (!isSupported()) {
             return Promise.resolve({ stdout: "", stderr: unsupportedMessage() });
         }
-        return postMessage({ action: "run", code: code }, RUN_TIMEOUT_MS).then(function (message) {
+        return postMessage({ action: "run", code: code }, RUN_TIMEOUT_MS, true).then(function (message) {
             if (message.ready !== undefined && !message.ready) {
                 return { stdout: "", stderr: "error: failed to load the playground (" + (message.error || "unknown error") + ")\n" };
             }
@@ -116,9 +120,28 @@
         });
     }
 
+    // Compiles cx source without running it, resolving to {stdout, stderr}
+    // with the compiler diagnostics. Never rejects; internal failures
+    // resolve to empty diagnostics so background checks stay silent (the
+    // Run button reports playground failures instead).
+    function check(code) {
+        if (!isSupported()) {
+            return Promise.resolve({ stdout: "", stderr: "" });
+        }
+        return postMessage({ action: "check", code: code }, CHECK_TIMEOUT_MS).then(function (message) {
+            if (message.ready !== undefined && !message.ready) {
+                return { stdout: "", stderr: "" };
+            }
+            return { stdout: message.stdout || "", stderr: message.stderr || "" };
+        }, function () {
+            return { stdout: "", stderr: "" };
+        });
+    }
+
     global.CxPlayground = {
         warmUp: warmUp,
         run: run,
+        check: check,
         isSupported: isSupported,
     };
 })(typeof globalThis !== "undefined" ? globalThis : this);

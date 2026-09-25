@@ -110,6 +110,7 @@ function check(condition, message) {
 // Fake CodeMirror.
 let editorValue = "";
 const widgets = [];
+const editorListeners = {};
 const fakeEditor = {
     refresh() {},
     getValue() {
@@ -118,9 +119,17 @@ const fakeEditor = {
     setValue(v) {
         editorValue = v;
     },
+    on(name, fn) {
+        editorListeners[name] = fn;
+    },
     addLineWidget(line, node) {
-        widgets.push({ line, text: node.innerText, node });
-        return { clear() {} };
+        const widget = { line, text: node.innerText, node };
+        widgets.push(widget);
+        return {
+            clear() {
+                widgets.splice(widgets.indexOf(widget), 1);
+            },
+        };
     },
 };
 
@@ -140,9 +149,18 @@ showcase.appendChild(block);
 
 const ranWith = [];
 let scriptedResult = null;
+const checkedWith = [];
+let scriptedCheck = { stdout: "", stderr: "" };
+let timers = [];
 const sandbox = {
     console,
-    setTimeout: (fn) => 0,
+    setTimeout: (fn) => {
+        timers.push(fn);
+        return timers.length;
+    },
+    clearTimeout: (id) => {
+        if (id) timers[id - 1] = null;
+    },
     setInterval: () => 0,
     clearInterval: () => {},
     CodeMirror: (wrapper, opts) => {
@@ -159,6 +177,10 @@ const sandbox = {
         run: async (code) => {
             ranWith.push(code);
             return scriptedResult || { stdout: "ran: " + code, stderr: "" };
+        },
+        check: async (code) => {
+            checkedWith.push(code);
+            return typeof scriptedCheck === "function" ? scriptedCheck(code) : scriptedCheck;
         },
     },
     document: {
@@ -238,6 +260,102 @@ check(widgets[0].node.classList.contains("warning"), "warning diagnostic gets th
 await runWithStderr("main.cx:1:1: error: something broke\n");
 check(widgets.length === 1, "context-less diagnostic produces one widget");
 check(widgets[0].text === "^ error: something broke", "context-less diagnostic has no undefined prefix, got: " + JSON.stringify(widgets[0].text));
+
+// Live diagnostics: editing triggers a background check whose errors show
+// without pressing Run.
+async function flushTimers() {
+    const pending = timers;
+    timers = [];
+    pending.forEach((fn) => fn && fn());
+    await new Promise((resolve) => setTimeout(resolve, 10));
+}
+
+check(typeof editorListeners.change === "function", "editor subscribes to change events");
+
+widgets.length = 0;
+checkedWith.length = 0;
+scriptedCheck = { stdout: "", stderr: "main.cx:1:1: error: something broke\n" };
+editorListeners.change();
+await flushTimers();
+check(checkedWith.length === 1 && checkedWith[0] === editorValue, "change triggers a check of the current code");
+check(
+    widgets.length === 1 && widgets[0].text === "^ error: something broke",
+    "check errors show without running, got: " + JSON.stringify(widgets.map((w) => w.text))
+);
+
+checkedWith.length = 0;
+scriptedCheck = { stdout: "", stderr: "" };
+editorListeners.change();
+editorListeners.change();
+await flushTimers();
+check(checkedWith.length === 1, "debounced changes trigger a single check");
+check(widgets.length === 0, "clean check clears the widgets");
+
+// A check resolving after a Run started is discarded.
+let resolveCheck;
+scriptedCheck = new Promise((resolve) => {
+    resolveCheck = resolve;
+});
+editorListeners.change();
+await flushTimers();
+scriptedResult = { stdout: "ok", stderr: "" };
+runButton.click();
+resolveCheck({ stdout: "", stderr: "main.cx:1:1: error: stale\n" });
+await new Promise((resolve) => setTimeout(resolve, 10));
+scriptedResult = null;
+check(widgets.length === 0, "stale check does not clobber run widgets, got: " + JSON.stringify(widgets.map((w) => w.text)));
+
+// Overlapping checks: the first resolving last is discarded.
+widgets.length = 0;
+let resolveFirst;
+let first = true;
+scriptedCheck = () => {
+    if (first) {
+        first = false;
+        return new Promise((resolve) => {
+            resolveFirst = resolve;
+        });
+    }
+    return { stdout: "", stderr: "main.cx:2:1: warning: second\n" };
+};
+editorListeners.change();
+await flushTimers();
+editorListeners.change();
+await flushTimers();
+resolveFirst({ stdout: "", stderr: "main.cx:1:1: error: first\n" });
+await new Promise((resolve) => setTimeout(resolve, 10));
+scriptedCheck = { stdout: "", stderr: "" };
+check(
+    widgets.length === 1 && widgets[0].text === "^ warning: second",
+    "late first check is discarded, got: " + JSON.stringify(widgets.map((w) => w.text))
+);
+
+// A check applying mid-run does not duplicate the run's widgets.
+widgets.length = 0;
+let resolveRun;
+scriptedCheck = { stdout: "", stderr: "main.cx:1:1: error: live\n" };
+scriptedResult = new Promise((resolve) => {
+    resolveRun = resolve;
+});
+runButton.click();
+editorListeners.change();
+await flushTimers();
+check(widgets.length === 1, "check applies while a run is in flight");
+resolveRun({ stdout: "", stderr: "main.cx:1:1: error: live\n" });
+await new Promise((resolve) => setTimeout(resolve, 10));
+scriptedResult = null;
+scriptedCheck = { stdout: "", stderr: "" };
+check(widgets.length === 1, "run completion replaces mid-flight check widgets, got: " + JSON.stringify(widgets.map((w) => w.text)));
+
+// A Run between the change and the debounce firing skips the check.
+widgets.length = 0;
+checkedWith.length = 0;
+editorListeners.change();
+scriptedResult = { stdout: "", stderr: "" };
+runButton.click();
+await flushTimers();
+scriptedResult = null;
+check(checkedWith.length === 0, "run between change and fire skips the check");
 
 if (failures > 0) {
     console.error(failures + " test(s) failed");
