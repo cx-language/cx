@@ -193,6 +193,23 @@ class FixtureTest(unittest.TestCase):
     def test_no_conditional_note(self):
         self.assertNotIn("platform-conditional", self.markdown)
 
+    def test_member_index(self):
+        self.assertIn(
+            "**[Widget](#type-Widget)**: [size](#Widget-size), [Widget](#Widget-Widget)",
+            self.markdown,
+        )
+        self.assertIn("**[Action](#type-Action)**: [run](#Action-run)", self.markdown)
+        self.assertIn(
+            "**[Color](#type-Color)**: [Red](#Color-Red), [Green](#Color-Green)",
+            self.markdown,
+        )
+        self.assertIn(
+            "**Functions**: [operator==](#fn-operator-eq), [puts](#fn-puts)",
+            self.markdown,
+        )
+        self.assertIn("**Constants**: [answer](#const-answer)", self.markdown)
+        self.assertLess(self.markdown.index("**[Widget]"), self.markdown.index("{#type-Widget}"))
+
     def test_file_order(self):
         widget = self.markdown.index("{#type-Widget}")
         action = self.markdown.index("{#type-Action}")

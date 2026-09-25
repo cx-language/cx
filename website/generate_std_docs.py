@@ -259,11 +259,32 @@ def heading_link(text, url):
     return f"[{text}]({url}){{target=\"_blank\"}}"
 
 
+def render_member_index(types, functions, constants, out):
+    """Inline link list of everything defined on the page, for quick jumps."""
+    for entry in types:
+        if entry.members:
+            links = ", ".join(
+                f"[{heading_text(name)}](#{entry.name}-{slug(name)})" for name in entry.members
+            )
+            out.append(f"**[{entry.name}](#type-{entry.name})**: {links}")
+            out.append("")
+    if functions:
+        links = ", ".join(f"[{heading_text(name)}](#fn-{slug(name)})" for name in functions)
+        out.append(f"**Functions**: {links}")
+        out.append("")
+    if constants:
+        links = ", ".join(f"[{heading_text(name)}](#const-{name})" for name, _ in constants)
+        out.append(f"**Constants**: {links}")
+        out.append("")
+
+
 def render_file_page(relpath, types, functions, constants, conditional):
     # Types, functions, constants, and members render in file order.
     out = [f"# {heading_link(display_name(relpath), source_url(relpath))}", ""]
     if conditional:
         out += ["*Note: parts of this file are platform-conditional (`#if`).*", ""]
+
+    render_member_index(types, functions, constants, out)
 
     for entry in types:
         out.append(
