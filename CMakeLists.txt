@@ -289,9 +289,10 @@ if(NOT TARGET FileCheck)
     add_executable(FileCheck ${FILECHECK_SRC_FILE})
     llvm_map_components_to_libnames(FILECHECK_NEEDED_LIBS filecheck support)
     target_link_libraries(FileCheck ${FILECHECK_NEEDED_LIBS})
-    # Optimize test utilities by default.
+    # Optimize test utilities by default. No /GL: the LTCG object it emits
+    # conflicts with the incremental FASTLINK Debug link (LNK2001 on main).
     if(MSVC)
-        set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} /w /O2 /GL /MT")
+        set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} /w /O2 /MT")
     else()
         set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
     endif()
