@@ -96,6 +96,11 @@ class MemberNameTest(unittest.TestCase):
     def test_operator(self):
         self.assertEqual(member_name("bool operator== <T: Comparable>(T* a, T* b)"), "operator==")
 
+    def test_const_member(self):
+        self.assertEqual(member_name("const int8 max = 127;"), "max")
+        self.assertEqual(member_name("const int8 min = -128;"), "min")
+        self.assertEqual(member_name("const _CALL_REPORTFAULT = 0x2;"), "_CALL_REPORTFAULT")
+
 
 class PageNameTest(unittest.TestCase):
     def test_top_level(self):
@@ -271,6 +276,20 @@ class AliasTest(unittest.TestCase):
             self.assertEqual(constants, [])
         finally:
             directory.cleanup()
+
+
+class StructConstTest(unittest.TestCase):
+    def test_const_renders_under_its_name(self):
+        source = "struct int8 {\n    const int8 max = 127;\n    const int8 min = -128;\n}\n"
+        directory, (types, functions, constants) = parse_fixture(source)
+        try:
+            markdown = render_file_page("integers.cx", types, functions, constants, False)
+        finally:
+            directory.cleanup()
+        self.assertIn("{#int8-max}", markdown)
+        self.assertIn("{#int8-min}", markdown)
+        self.assertIn("[max](#int8-max)", markdown)
+        self.assertNotIn("{#int8-127}", markdown)
 
 
 class ConditionalTest(unittest.TestCase):

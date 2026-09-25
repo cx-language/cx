@@ -86,6 +86,11 @@ class Type:
 
 
 def member_name(signature):
+    # Constants first: FIELD_RE would otherwise mistake the value for the
+    # name in e.g. "const int8 max = 127;".
+    match = CONST_RE.match(signature)
+    if match:
+        return match.group(1)
     match = FUNC_RE.search(signature)
     if match:
         return match.group(1)
