@@ -207,7 +207,12 @@ jobs:
       - name: Build
         working-directory: ${{runner.workspace}}/build
         shell: bash
-        run: cmake --build . --config ${{ matrix.build_type }}
+        run: |
+          # Build wall-clock stamps for the benchmark record. Python timestamps
+          # keep this portable: BSD date has no %N and git-bash has no bc.
+          python3 -c "import time; print(time.time())" > "$RUNNER_TEMP/cx_build_start"
+          cmake --build . --config ${{ matrix.build_type }}
+          python3 -c "import time; print(time.time())" > "$RUNNER_TEMP/cx_build_end"
 
       # Full test runs stay on Release legs only: unoptimized Debug
       # binaries are several-fold slower per compiler invocation, and the
@@ -256,7 +261,84 @@ jobs:
             brew install sdl3 glfw3
           fi
           # Tests depending on SDL3 or GLFW are disabled on Windows CI.
+          # Time only the check invocation, not the SDL/apt setup above it.
+          python3 -c "import time; print(time.time())" > "$RUNNER_TEMP/cx_check_start"
           CX_PRINT_STACK_TRACE=true cmake --build . --config ${{ matrix.build_type }} --target check
+          python3 -c "import time; print(time.time())" > "$RUNNER_TEMP/cx_check_end"
+
+      # Benchmarks run in this leg only: the compiler is already built here,
+      # so the marginal cost is just the corpus timing (under a minute).
+      # Runs on PRs too, which validates that the corpus still compiles
+      # warning-free; only main commits are recorded (see bench-record).
+      - name: Benchmark corpus
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        working-directory: ${{runner.workspace}}/build
+        shell: bash
+        run: |
+          elapsed() { python3 -c "import sys; print(float(open(sys.argv[2]).read()) - float(open(sys.argv[1]).read()))" "$1" "$2"; }
+          build_s=$(elapsed "$RUNNER_TEMP/cx_build_start" "$RUNNER_TEMP/cx_build_end")
+          check_s=$(elapsed "$RUNNER_TEMP/cx_check_start" "$RUNNER_TEMP/cx_check_end")
+          python3 "$GITHUB_WORKSPACE/scripts/bench-corpus.py" --cx ./cx \
+            --build-seconds "$build_s" --check-seconds "$check_s" --output "$RUNNER_TEMP/bench.json"
+
+      - name: Upload benchmark record
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-record
+          path: ${{ runner.temp }}/bench.json
+
+  bench-record:
+    if: github.ref == 'refs/heads/main'
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download benchmark record
+        uses: actions/download-artifact@v4
+        with:
+          name: bench-record
+          path: bench-record
+
+      - name: Append to bench-data branch
+        shell: bash
+        run: |
+          append() {
+            cat bench-record/bench.json >> bench.jsonl
+            git add bench.jsonl
+            git commit -m "bench: $sha"
+          }
+          # First run bootstraps the branch; an end-of-file append always
+          # conflicts under rebase, so retries reset and re-append instead.
+          git fetch origin bench-data || true
+          git checkout bench-data 2>/dev/null || git checkout --orphan bench-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          sha=$(python3 -c "import json; print(json.load(open('bench-record/bench.json'))['sha'])")
+          if grep -q "$sha" bench.jsonl 2>/dev/null; then
+            echo "commit $sha is already recorded"
+            exit 0
+          fi
+          append
+          for _ in 1 2 3 4 5; do
+            if git push origin bench-data; then
+              pushed=1
+              break
+            fi
+            sleep 10
+            git fetch origin bench-data
+            git reset --hard origin/bench-data
+            # A failed push may still have landed; never record twice.
+            if grep -q "$sha" bench.jsonl; then
+              pushed=1
+              break
+            fi
+            append
+          done
+          [ "${pushed:-0}" = 1 ]
 
   build-playground:
     runs-on: ubuntu-latest
@@ -351,6 +433,14 @@ jobs:
           )
 
           touch website/build/.nojekyll
+
+      # History for the /bench graphs. Best-effort: a missing branch or
+      # record must not fail the deploy; the page shows a stub instead.
+      - name: Attach benchmark data
+        run: |
+          git fetch origin bench-data --depth 1 || true
+          git show origin/bench-data:bench.jsonl > /tmp/bench.jsonl 2>/dev/null || : > /tmp/bench.jsonl
+          python3 -c "import json; lines = [line for line in open('/tmp/bench.jsonl') if line.strip()]; json.dump([json.loads(line) for line in lines], open('website/build/bench-data.json', 'w'))" || echo '[]' > website/build/bench-data.json
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
