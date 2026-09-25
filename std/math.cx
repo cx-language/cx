@@ -23,103 +23,103 @@ const float e = 2.71828182845904523536;
 // Trigonometric functions.
 
 /// Returns the sine of x.
-extern float64 sin(float64 x);
+extern c_double sin(c_double x);
 /// Returns the sine of x.
 float sin(float x) { return sinf(x); }
 
 /// Returns the cosine of x.
-extern float64 cos(float64 x);
+extern c_double cos(c_double x);
 /// Returns the cosine of x.
 float cos(float x) { return cosf(x); }
 
 /// Returns the tangent of x.
-extern float64 tan(float64 x);
+extern c_double tan(c_double x);
 /// Returns the tangent of x.
 float tan(float x) { return tanf(x); }
 
 /// Returns the arc sine of x.
-extern float64 asin(float64 x);
+extern c_double asin(c_double x);
 /// Returns the arc sine of x.
 float asin(float x) { return asinf(x); }
 
 /// Returns the arc cosine of x.
-extern float64 acos(float64 x);
+extern c_double acos(c_double x);
 /// Returns the arc cosine of x.
 float acos(float x) { return acosf(x); }
 
 /// Returns the arc tangent of x.
-extern float64 atan(float64 x);
+extern c_double atan(c_double x);
 /// Returns the arc tangent of x.
 float atan(float x) { return atanf(x); }
 
 /// Returns the arc tangent of y/x.
-extern float64 atan2(float64 y, float64 x);
+extern c_double atan2(c_double y, c_double x);
 /// Returns the arc tangent of y/x.
 float atan2(float y, float x) { return atan2f(y, x); }
 
 // Hyperbolic functions.
 
 /// Returns the hyperbolic sine of x.
-extern float64 sinh(float64 x);
+extern c_double sinh(c_double x);
 /// Returns the hyperbolic sine of x.
 float sinh(float x) { return sinhf(x); }
 
 /// Returns the hyperbolic cosine of x.
-extern float64 cosh(float64 x);
+extern c_double cosh(c_double x);
 /// Returns the hyperbolic cosine of x.
 float cosh(float x) { return coshf(x); }
 
 /// Returns the hyperbolic tangent of x.
-extern float64 tanh(float64 x);
+extern c_double tanh(c_double x);
 /// Returns the hyperbolic tangent of x.
 float tanh(float x) { return tanhf(x); }
 
 // Exponential and logarithmic functions.
 
 /// Returns e raised to the power x.
-extern float64 exp(float64 x);
+extern c_double exp(c_double x);
 /// Returns e raised to the power x.
 float exp(float x) { return expf(x); }
 
 /// Returns 2 raised to the power x.
-extern float64 exp2(float64 x);
+extern c_double exp2(c_double x);
 /// Returns 2 raised to the power x.
 float exp2(float x) { return exp2f(x); }
 
 /// Returns the natural logarithm of x.
-extern float64 log(float64 x);
+extern c_double log(c_double x);
 /// Returns the natural logarithm of x.
 float log(float x) { return logf(x); }
 
 /// Returns the base-2 logarithm of x.
-extern float64 log2(float64 x);
+extern c_double log2(c_double x);
 /// Returns the base-2 logarithm of x.
 float log2(float x) { return log2f(x); }
 
 /// Returns the base-10 logarithm of x.
-extern float64 log10(float64 x);
+extern c_double log10(c_double x);
 /// Returns the base-10 logarithm of x.
 float log10(float x) { return log10f(x); }
 
 // Power and root functions.
 
 /// Returns x raised to the power y.
-extern float64 pow(float64 x, float64 y);
+extern c_double pow(c_double x, c_double y);
 /// Returns x raised to the power y.
 float pow(float x, float y) { return powf(x, y); }
 
 /// Returns the square root of x.
-extern float64 sqrt(float64 x);
+extern c_double sqrt(c_double x);
 /// Returns the square root of x.
 float sqrt(float x) { return sqrtf(x); }
 
 /// Returns the cube root of x.
-extern float64 cbrt(float64 x);
+extern c_double cbrt(c_double x);
 /// Returns the cube root of x.
 float cbrt(float x) { return cbrtf(x); }
 
 /// Returns the square root of the sum of the squares of x and y.
-extern float64 hypot(float64 x, float64 y);
+extern c_double hypot(c_double x, c_double y);
 #if Windows
 /// Returns the square root of the sum of the squares of x and y.
 float hypot(float x, float y) { return _hypotf(x, y); }
@@ -131,57 +131,57 @@ float hypot(float x, float y) { return hypotf(x, y); }
 // Rounding and remainder functions.
 
 /// Rounds x up to an integer.
-extern float64 ceil(float64 x);
+extern c_double ceil(c_double x);
 /// Rounds x up to an integer.
 float ceil(float x) { return ceilf(x); }
 
 /// Rounds x down to an integer.
-extern float64 floor(float64 x);
+extern c_double floor(c_double x);
 /// Rounds x down to an integer.
 float floor(float x) { return floorf(x); }
 
 /// Rounds x toward zero to an integer.
-extern float64 trunc(float64 x);
+extern c_double trunc(c_double x);
 /// Rounds x toward zero to an integer.
 float trunc(float x) { return truncf(x); }
 
 /// Rounds x to the nearest integer.
-extern float64 round(float64 x);
+extern c_double round(c_double x);
 /// Rounds x to the nearest integer.
 float round(float x) { return roundf(x); }
 
 /// Returns the remainder of x/y.
-extern float64 fmod(float64 x, float64 y);
+extern c_double fmod(c_double x, c_double y);
 /// Returns the remainder of x/y.
 float fmod(float x, float y) { return fmodf(x, y); }
 
 // Private single-precision C bindings used by the wrappers above.
-private extern float sinf(float x);
-private extern float cosf(float x);
-private extern float tanf(float x);
-private extern float asinf(float x);
-private extern float acosf(float x);
-private extern float atanf(float x);
-private extern float atan2f(float y, float x);
-private extern float sinhf(float x);
-private extern float coshf(float x);
-private extern float tanhf(float x);
-private extern float expf(float x);
-private extern float exp2f(float x);
-private extern float logf(float x);
-private extern float log2f(float x);
-private extern float log10f(float x);
-private extern float powf(float x, float y);
-private extern float sqrtf(float x);
-private extern float cbrtf(float x);
+private extern c_float sinf(c_float x);
+private extern c_float cosf(c_float x);
+private extern c_float tanf(c_float x);
+private extern c_float asinf(c_float x);
+private extern c_float acosf(c_float x);
+private extern c_float atanf(c_float x);
+private extern c_float atan2f(c_float y, c_float x);
+private extern c_float sinhf(c_float x);
+private extern c_float coshf(c_float x);
+private extern c_float tanhf(c_float x);
+private extern c_float expf(c_float x);
+private extern c_float exp2f(c_float x);
+private extern c_float logf(c_float x);
+private extern c_float log2f(c_float x);
+private extern c_float log10f(c_float x);
+private extern c_float powf(c_float x, c_float y);
+private extern c_float sqrtf(c_float x);
+private extern c_float cbrtf(c_float x);
 #if Windows
 // UCRT exports _hypotf but not hypotf (an inline wrapper in math.h).
-private extern float _hypotf(float x, float y);
+private extern c_float _hypotf(c_float x, c_float y);
 #else
-private extern float hypotf(float x, float y);
+private extern c_float hypotf(c_float x, c_float y);
 #endif
-private extern float ceilf(float x);
-private extern float floorf(float x);
-private extern float truncf(float x);
-private extern float roundf(float x);
-private extern float fmodf(float x, float y);
+private extern c_float ceilf(c_float x);
+private extern c_float floorf(c_float x);
+private extern c_float truncf(c_float x);
+private extern c_float roundf(c_float x);
+private extern c_float fmodf(c_float x, c_float y);

@@ -38,6 +38,8 @@ static const llvm::DataLayout& getHostDataLayout() {
 llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
     // c_size_t matches C's size_t (pointer-sized); host width is target width.
     if (name == "c_size_t") return sizeof(void*) == 8 ? llvm::Type::getInt64Ty(ctx) : llvm::Type::getInt32Ty(ctx);
+    // c_long matches C's long; the host long has the target width.
+    if (name == "c_long" || name == "c_ulong") return sizeof(long) == 8 ? llvm::Type::getInt64Ty(ctx) : llvm::Type::getInt32Ty(ctx);
     return llvm::StringSwitch<llvm::Type*>(name)
         .Case("void", llvm::Type::getVoidTy(ctx))
         .Case("bool", llvm::Type::getInt1Ty(ctx))
@@ -52,9 +54,19 @@ llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
         .Case("uint32", llvm::Type::getInt32Ty(ctx))
         .Case("uint64", llvm::Type::getInt64Ty(ctx))
         .Case("uint128", llvm::Type::getInt128Ty(ctx))
+        .Case("c_schar", llvm::Type::getInt8Ty(ctx))
+        .Case("c_uchar", llvm::Type::getInt8Ty(ctx))
+        .Case("c_short", llvm::Type::getInt16Ty(ctx))
+        .Case("c_ushort", llvm::Type::getInt16Ty(ctx))
+        .Case("c_int", llvm::Type::getInt32Ty(ctx))
+        .Case("c_uint", llvm::Type::getInt32Ty(ctx))
+        .Case("c_longlong", llvm::Type::getInt64Ty(ctx))
+        .Case("c_ulonglong", llvm::Type::getInt64Ty(ctx))
         .Case("float32", llvm::Type::getFloatTy(ctx))
         .Case("float64", llvm::Type::getDoubleTy(ctx))
         .Case("float80", llvm::Type::getX86_FP80Ty(ctx))
+        .Case("c_float", llvm::Type::getFloatTy(ctx))
+        .Case("c_double", llvm::Type::getDoubleTy(ctx))
         .Default(nullptr);
 }
 

@@ -2,9 +2,9 @@
 
 private extern char*? getenv(const char* name);
 #if Windows
-private extern int _putenv(const char* nameEqualsValue);
+private extern c_int _putenv(const char* nameEqualsValue);
 #else
-private extern int setenv(const char* name, const char* value, int overwrite);
+private extern c_int setenv(const char* name, const char* value, c_int overwrite);
 #endif
 
 /// Returns the value of the environment variable, or null if it's not set.

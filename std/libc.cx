@@ -6,73 +6,73 @@ private extern void free(void*? ptr);
 /// Aborts the program immediately.
 private extern never abort();
 /// Exits the program with the given status.
-private extern never exit(int status);
+private extern never exit(c_int status);
 /// Parses a double from the string.
-private extern float64 strtod(const char* str, char**? endptr);
+private extern c_double strtod(const char* str, char**? endptr);
 /// Parses a float from the string.
-private extern float32 strtof(const char* str, char**? endptr);
+private extern c_float strtof(const char* str, char**? endptr);
 
 // stdio.h
 /// A C file handle.
 private struct FILE {}
 /// Prints formatted output to stdout.
-private extern int printf(const char* format, ...);
+private extern c_int printf(const char* format, ...);
 /// Prints formatted output to the given file.
-private extern int fprintf(FILE* file, const char* format, ...);
+private extern c_int fprintf(FILE* file, const char* format, ...);
 /// Prints formatted output into the given string.
-private extern int sprintf(char* str, const char* format, ...);
+private extern c_int sprintf(char* str, const char* format, ...);
 /// Prints the given string followed by a newline.
-private extern int puts(const char* str);
+private extern c_int puts(const char* str);
 /// Writes the given string to the file.
-private extern int fputs(const char* str, FILE* file);
+private extern c_int fputs(const char* str, FILE* file);
 /// Writes the given character to the file.
-private extern int fputc(int c, FILE* file);
+private extern c_int fputc(c_int c, FILE* file);
 /// Reads a character from stdin.
-private extern int getchar();
+private extern c_int getchar();
 /// Opens the named file.
 private extern FILE*? fopen(const char* filename, const char* mode);
 #if Windows
-private extern FILE*? _fdopen(int fd, const char* mode);
+private extern FILE*? _fdopen(c_int fd, const char* mode);
 /// Opens a file descriptor as a file.
-private FILE*? fdopen(int fd, const char* mode) { return _fdopen(fd, mode); }
+private FILE*? fdopen(c_int fd, const char* mode) { return _fdopen(fd, mode); }
 #else
 /// Opens a file descriptor as a file.
-private extern FILE*? fdopen(int fd, const char* mode);
+private extern FILE*? fdopen(c_int fd, const char* mode);
 #endif
 /// Reads a character from the file.
-private extern int fgetc(FILE* file);
+private extern c_int fgetc(FILE* file);
 /// Reads elements from the file.
 private extern c_size_t fread(void* data, c_size_t size, c_size_t count, FILE* file);
 /// Writes elements to the file.
 private extern c_size_t fwrite(const void* data, c_size_t size, c_size_t count, FILE* file);
 /// Moves the file position.
-private extern void fseek(FILE* file, int64 offset, int origin);
+private extern void fseek(FILE* file, c_long offset, c_int origin);
 /// Returns the current file position.
-private extern int64 ftell(FILE* file);
+private extern c_long ftell(FILE* file);
 /// Closes the file.
-private extern int fclose(FILE* file);
+private extern c_int fclose(FILE* file);
 /// Flushes buffered output to the file, or to all files if null.
-private extern int fflush(FILE*? file);
+private extern c_int fflush(FILE*? file);
 /// Returns true at end of file.
-private extern int feof(FILE* file);
+private extern c_int feof(FILE* file);
 /// Deletes the named file.
-private extern int remove(const char* filename);
+private extern c_int remove(const char* filename);
 /// Pushes a character back onto the file.
-private extern int ungetc(int c, FILE* file);
+private extern c_int ungetc(c_int c, FILE* file);
 /// Moves the file position to the start.
 private extern void rewind(FILE* file);
 #if Windows
 private extern FILE*? _popen(const char* command, const char* mode);
-private extern int _pclose(FILE* stream);
+private extern c_int _pclose(FILE* stream);
 /// Runs the command in a shell, returning a pipe to its standard output.
 private FILE*? popen(const char* command, const char* mode) { return _popen(command, mode); }
 /// Closes the pipe, returning its exit status.
-private int pclose(FILE* stream) { return _pclose(stream); }
+private c_int pclose(FILE* stream) { return _pclose(stream); }
 #else
 /// Runs the command in a shell, returning a pipe to its standard output.
 private extern FILE*? popen(const char* command, const char* mode);
 /// Closes the pipe, returning its exit status.
-private extern int pclose(FILE* stream);
+private extern c_int pclose(FILE* stream);
 #endif
 /// Origin for fseek: start of file.
 private const SEEK_SET = 0;
@@ -89,30 +89,30 @@ private extern void* memcpy(void* dest, const void* src, c_size_t n);
 
 // ctype.h
 /// Returns true if the character is alphanumeric.
-private extern int isalnum(int ch);
+private extern c_int isalnum(c_int ch);
 /// Returns true if the character is a letter.
-private extern int isalpha(int ch);
+private extern c_int isalpha(c_int ch);
 /// Returns true if the character is lowercase.
-private extern int islower(int ch);
+private extern c_int islower(c_int ch);
 /// Returns true if the character is uppercase.
-private extern int isupper(int ch);
+private extern c_int isupper(c_int ch);
 /// Returns true if the character is a digit.
-private extern int isdigit(int ch);
+private extern c_int isdigit(c_int ch);
 /// Returns true if the character is a hexadecimal digit.
-private extern int isxdigit(int ch);
+private extern c_int isxdigit(c_int ch);
 /// Returns true if the character is a control character.
-private extern int iscntrl(int ch);
+private extern c_int iscntrl(c_int ch);
 /// Returns true if the character is printable but not a space.
-private extern int isgraph(int ch);
+private extern c_int isgraph(c_int ch);
 /// Returns true if the character is whitespace.
-private extern int isspace(int ch);
+private extern c_int isspace(c_int ch);
 /// Returns true if the character is a blank.
-private extern int isblank(int ch);
+private extern c_int isblank(c_int ch);
 /// Returns true if the character is printable.
-private extern int isprint(int ch);
+private extern c_int isprint(c_int ch);
 /// Returns true if the character is punctuation.
-private extern int ispunct(int ch);
+private extern c_int ispunct(c_int ch);
 /// Converts the character to lowercase.
-private extern int tolower(int ch);
+private extern c_int tolower(c_int ch);
 /// Converts the character to uppercase.
-private extern int toupper(int ch);
+private extern c_int toupper(c_int ch);

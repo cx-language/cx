@@ -20,7 +20,7 @@ assert.success:
     int32 i.load = load i
     char** _2 = getelementptr s.load, i.load
     char* .load = load _2
-    int32 _3 = call printf(char* "%s
+    c_int _3 = call printf(char* "%s
 ", char* .load)
     return int32 0
 }

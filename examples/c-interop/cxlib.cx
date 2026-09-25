@@ -1,10 +1,10 @@
 // cx functions exported to C. The `extern` gives them C linkage under their
 // plain names (see cxlib.h), so C callers link them like any C function.
 
-extern int cx_is_even(int n) {
+extern c_int cx_is_even(c_int n) {
     return n % 2 == 0 ? 1 : 0;
 }
 
-extern double cx_hypot(double a, double b) {
+extern c_double cx_hypot(c_double a, c_double b) {
     return sqrt(a * a + b * b);
 }

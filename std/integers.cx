@@ -245,6 +245,229 @@ struct c_size_t: Copyable, Comparable, Printable, Hashable, Addable {
     }
 }
 
+/// C's `signed char` type: an 8-bit signed integer.
+struct c_schar: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const c_schar max = 127;
+    /// Smallest value of this type.
+    const c_schar min = -128;
+
+    /// Compares this value to another.
+    Ordering compare(c_schar& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printSigned(int64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
+/// C's `unsigned char` type: an 8-bit unsigned integer.
+struct c_uchar: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const c_uchar max = 255;
+    /// Smallest value of this type.
+    const c_uchar min = 0;
+
+    /// Compares this value to another.
+    Ordering compare(c_uchar& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printUnsigned(uint64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
+/// C's `short` type: a 16-bit signed integer.
+struct c_short: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const c_short max = 32767;
+    /// Smallest value of this type.
+    const c_short min = -32768;
+
+    /// Compares this value to another.
+    Ordering compare(c_short& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printSigned(int64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
+/// C's `unsigned short` type: a 16-bit unsigned integer.
+struct c_ushort: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const c_ushort max = 65535;
+    /// Smallest value of this type.
+    const c_ushort min = 0;
+
+    /// Compares this value to another.
+    Ordering compare(c_ushort& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printUnsigned(uint64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
+/// C's `int` type: a 32-bit signed integer.
+struct c_int: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const c_int max = 2147483647;
+    /// Smallest value of this type.
+    const c_int min = -2147483648;
+
+    /// Compares this value to another.
+    Ordering compare(c_int& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printSigned(int64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
+/// C's `unsigned int` type: a 32-bit unsigned integer.
+struct c_uint: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const c_uint max = 4294967295;
+    /// Smallest value of this type.
+    const c_uint min = 0;
+
+    /// Compares this value to another.
+    Ordering compare(c_uint& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printUnsigned(uint64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
+/// C's `long` type: a 32-bit signed integer on Windows and wasm32, 64-bit on
+/// the 64-bit Unix targets. (No `max`/`min`: the largest value depends on the target.)
+struct c_long: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Compares this value to another.
+    Ordering compare(c_long& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printSigned(int64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
+/// C's `unsigned long` type: a 32-bit unsigned integer on Windows and wasm32,
+/// 64-bit on the 64-bit Unix targets. (No `max`/`min`: the largest value
+/// depends on the target.)
+struct c_ulong: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Compares this value to another.
+    Ordering compare(c_ulong& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printUnsigned(uint64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
+/// C's `long long` type: a 64-bit signed integer.
+struct c_longlong: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const c_longlong max = 9223372036854775807;
+    /// Smallest value of this type.
+    const c_longlong min = -9223372036854775808;
+
+    /// Compares this value to another.
+    Ordering compare(c_longlong& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printSigned(int64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
+/// C's `unsigned long long` type: a 64-bit unsigned integer.
+struct c_ulonglong: Copyable, Comparable, Printable, Hashable, Addable {
+    /// Largest value of this type.
+    const c_ulonglong max = 18446744073709551615;
+    /// Smallest value of this type.
+    const c_ulonglong min = 0;
+
+    /// Compares this value to another.
+    Ordering compare(c_ulonglong& other) {
+        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+    }
+
+    /// Writes this value to the given stream.
+    void print(OutputStream& stream) {
+        printUnsigned(uint64(this), stream);
+    }
+
+    /// Returns the hash of this value.
+    uint64 hash() {
+        return uint64(this);
+    }
+}
+
 // Not Printable or Hashable for now.
 /// A 128-bit unsigned integer.
 struct uint128: Copyable, Comparable {

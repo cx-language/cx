@@ -34,6 +34,18 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt32, uint32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt64, uint64)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt128, uint128)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(CSizeT, c_size_t)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CSChar, c_schar)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CUChar, c_uchar)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CShort, c_short)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CUShort, c_ushort)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CInt, c_int)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CUInt, c_uint)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CLong, c_long)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CULong, c_ulong)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CLongLong, c_longlong)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CULongLong, c_ulonglong)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CFloat, c_float)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(CDouble, c_double)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float32, float32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float64, float64)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float80, float80)
@@ -73,7 +85,9 @@ bool Type::isArrayPointer() const {
 }
 
 constexpr llvm::StringRef builtinScalarNames[] = {
-    "int8", "int16", "int32", "int64", "int128", "uint8", "uint16", "uint32", "uint64", "uint128", "c_size_t", "float32", "float64", "float80", "bool", "char",
+    "int8",        "int16",   "int32",    "int64",   "int128",   "uint8",   "uint16", "uint32", "uint64",  "uint128",
+    "c_size_t",    "c_schar", "c_uchar",  "c_short", "c_ushort", "c_int",   "c_uint", "c_long", "c_ulong", "c_longlong",
+    "c_ulonglong", "c_float", "c_double", "float32", "float64",  "float80", "bool",   "char",
 };
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
@@ -350,8 +364,8 @@ std::vector<ParamDecl> FunctionType::getParamDecls(Location location) const {
     return map(paramTypes, [&](Type paramType) { return ParamDecl(paramType, "", false, location); });
 }
 
-constexpr auto signedInts = {"int8", "int16", "int32", "int64"};
-constexpr auto unsignedInts = {"uint8", "uint16", "uint32", "uint64", "c_size_t"};
+constexpr auto signedInts = {"int8", "int16", "int32", "int64", "c_schar", "c_short", "c_int", "c_long", "c_longlong"};
+constexpr auto unsignedInts = {"uint8", "uint16", "uint32", "uint64", "c_size_t", "c_uchar", "c_ushort", "c_uint", "c_ulong", "c_ulonglong"};
 
 bool Type::isInteger() const {
     if (!isBasicType()) return false;
@@ -375,11 +389,14 @@ int Type::getIntegerBitWidth() const {
     // width as its target (native host, or wasm32 under Emscripten), so the
     // host pointer width is the target width. (There is no cross-compilation.)
     if (isCSizeT()) return static_cast<int>(sizeof(void*) * 8);
+    // c_long matches C's long: 32-bit on Windows and wasm32, 64-bit on the
+    // 64-bit Unix targets. The host long has the target width (no cross-compilation).
+    if (isCLong() || isCULong()) return static_cast<int>(sizeof(long) * 8);
     return llvm::StringSwitch<int>(getName())
-        .Cases({"int8", "uint8"}, 8)
-        .Cases({"int16", "uint16"}, 16)
-        .Cases({"int32", "uint32"}, 32)
-        .Cases({"int64", "uint64"}, 64);
+        .Cases({"int8", "uint8", "c_schar", "c_uchar"}, 8)
+        .Cases({"int16", "uint16", "c_short", "c_ushort"}, 16)
+        .Cases({"int32", "uint32", "c_int", "c_uint"}, 32)
+        .Cases({"int64", "uint64", "c_longlong", "c_ulonglong"}, 64);
 }
 
 std::optional<uint64_t> Type::getSizeInBytes() const {
@@ -388,8 +405,8 @@ std::optional<uint64_t> Type::getSizeInBytes() const {
     if (isInteger()) return getIntegerBitWidth() / 8;
     if (isInt128() || isUInt128()) return 16;
     if (isChar() || isBool()) return 1;
-    if (isFloat32()) return 4;
-    if (isFloat64()) return 8;
+    if (isFloat32() || isCFloat()) return 4;
+    if (isFloat64() || isCDouble()) return 8;
     return std::nullopt;
 }
 

@@ -15,6 +15,18 @@ Type      | Meaning
 `uint32`  | 32-bit unsigned integer
 `uint64`  | 64-bit unsigned integer
 `c_size_t` | C `size_t` type (pointer-sized unsigned integer: 32-bit on wasm32, 64-bit on 64-bit targets)
+`c_schar` | C `signed char` type (8-bit signed integer)
+`c_uchar` | C `unsigned char` type (8-bit unsigned integer)
+`c_short` | C `short` type (16-bit signed integer)
+`c_ushort` | C `unsigned short` type (16-bit unsigned integer)
+`c_int` | C `int` type (32-bit signed integer)
+`c_uint` | C `unsigned int` type (32-bit unsigned integer)
+`c_long` | C `long` type (32-bit signed integer on Windows and wasm32, 64-bit on 64-bit Unix targets)
+`c_ulong` | C `unsigned long` type (32-bit unsigned integer on Windows and wasm32, 64-bit on 64-bit Unix targets)
+`c_longlong` | C `long long` type (64-bit signed integer)
+`c_ulonglong` | C `unsigned long long` type (64-bit unsigned integer)
+`c_float` | C `float` type (32-bit floating-point number)
+`c_double` | C `double` type (64-bit floating-point number)
 `float`   | alias of `float32`, default type for floating-point literals
 `float32` | 32-bit floating-point number
 `float64` | 64-bit floating-point number

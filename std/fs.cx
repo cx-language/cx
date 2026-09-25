@@ -3,19 +3,19 @@
 // Lexical path manipulation without file system access lives in path.cx.
 
 #if Windows
-private extern int _access(const char* path, int mode);
-private extern int _mkdir(const char* path);
-private extern int _rmdir(const char* path);
+private extern c_int _access(const char* path, c_int mode);
+private extern c_int _mkdir(const char* path);
+private extern c_int _rmdir(const char* path);
 private extern char*? _getcwd(char*? buffer, c_size_t size);
-private extern int _chdir(const char* path);
+private extern c_int _chdir(const char* path);
 #else
-private extern int access(const char* path, int mode);
-private extern int mkdir(const char* path, int mode);
-private extern int rmdir(const char* path);
+private extern c_int access(const char* path, c_int mode);
+private extern c_int mkdir(const char* path, c_int mode);
+private extern c_int rmdir(const char* path);
 private extern char*? getcwd(char*? buffer, c_size_t size);
-private extern int chdir(const char* path);
+private extern c_int chdir(const char* path);
 #endif
-private extern int rename(const char* oldName, const char* newName);
+private extern c_int rename(const char* oldName, const char* newName);
 
 #if Windows
 private bool pathExists(const char* path) { return _access(path, 0) == 0; }

@@ -344,12 +344,14 @@ Value* IRGenerator::emitNullCoalescingExpr(const BinaryExpr& expr) {
 static int getIntegerBitWidth(IRType* type) {
     // c_size_t is pointer-sized like C's size_t; the host pointer width is
     // the target width (native host, or wasm32 under Emscripten).
-    if (llvm::cast<IRBasicType>(type)->name == "c_size_t") return static_cast<int>(sizeof(void*) * 8);
-    return llvm::StringSwitch<int>(llvm::cast<IRBasicType>(type)->name)
-        .Cases({"int8", "uint8"}, 8)
-        .Cases({"int16", "uint16"}, 16)
-        .Cases({"int32", "uint32"}, 32)
-        .Cases({"int64", "uint64"}, 64)
+    auto name = llvm::cast<IRBasicType>(type)->name;
+    if (name == "c_size_t") return static_cast<int>(sizeof(void*) * 8);
+    if (name == "c_long" || name == "c_ulong") return static_cast<int>(sizeof(long) * 8);
+    return llvm::StringSwitch<int>(name)
+        .Cases({"int8", "uint8", "c_schar", "c_uchar"}, 8)
+        .Cases({"int16", "uint16", "c_short", "c_ushort"}, 16)
+        .Cases({"int32", "uint32", "c_int", "c_uint"}, 32)
+        .Cases({"int64", "uint64", "c_longlong", "c_ulonglong"}, 64)
         .Cases({"int128", "uint128"}, 128)
         .Default(0);
 }

@@ -1,6 +1,6 @@
 #if Windows
 
-private extern uint _set_abort_behavior(uint flags, uint mask);
+private extern c_uint _set_abort_behavior(c_uint flags, c_uint mask);
 /// Flag disabling the crash dialog.
 const _CALL_REPORTFAULT = 0x2;
 

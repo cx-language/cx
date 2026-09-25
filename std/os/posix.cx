@@ -2,8 +2,8 @@
 
 #if hasInclude("execinfo.h")
 
-private extern int backtrace(void** array, int size);
-private extern char*[*]? backtrace_symbols(void** array, int size);
+private extern c_int backtrace(void** array, c_int size);
+private extern char*[*]? backtrace_symbols(void** array, c_int size);
 
 /// Prints the current stack trace.
 void printStackTrace() {

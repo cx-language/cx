@@ -79,7 +79,7 @@ struct Type {
     bool isConcreteArray() const;
     bool isSlice() const;
     bool isArrayPointer() const;
-    bool isFloatingPoint() const { return isFloat32() || isFloat64() || isFloat80(); }
+    bool isFloatingPoint() const { return isFloat32() || isFloat64() || isFloat80() || isCFloat() || isCDouble(); }
     bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
     bool isIncrementable() const { return isInteger() || isFloatingPoint() || isArrayPointer(); }
@@ -97,6 +97,18 @@ struct Type {
     bool isUInt64() const;
     bool isUInt128() const;
     bool isCSizeT() const;
+    bool isCSChar() const;
+    bool isCUChar() const;
+    bool isCShort() const;
+    bool isCUShort() const;
+    bool isCInt() const;
+    bool isCUInt() const;
+    bool isCLong() const;
+    bool isCULong() const;
+    bool isCLongLong() const;
+    bool isCULongLong() const;
+    bool isCFloat() const;
+    bool isCDouble() const;
     bool isFloat32() const;
     bool isFloat64() const;
     bool isFloat80() const;
@@ -164,6 +176,18 @@ struct Type {
     static Type getUInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt128(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getCSizeT(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCSChar(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCUChar(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCShort(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCUShort(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCInt(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCUInt(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCLong(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCULong(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCLongLong(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCULongLong(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCFloat(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getCDouble(Mutability mutability = Mutability::Mutable, Location location = Location());
     // TODO: Return correct uintptr type by checking target platform pointer size.
     static Type getUIntPtr(Mutability mutability = Mutability::Mutable, Location location = Location()) { return getUInt64(mutability, location); }
     static Type getFloat32(Mutability mutability = Mutability::Mutable, Location location = Location());

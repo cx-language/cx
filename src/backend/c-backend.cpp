@@ -878,7 +878,7 @@ void CGenerator::codegenConstantFP(const ConstantFP* inst) {
     // Give narrow constants their own type so arithmetic and casts round through it
     // like the LLVM backend; a bare decimal would compute in double precision.
     auto name = llvm::cast<IRBasicType>(inst->type)->name;
-    if (name == "float32" || name == "float80") {
+    if (name == "float32" || name == "float80" || name == "c_float") {
         stream << "(";
         codegenType(stream, inst->type, true);
         stream << ") ";
@@ -1366,6 +1366,18 @@ void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, boo
                                     .Case("uint64", "uint64_t")
                                     .Case("uint128", "unsigned __int128")
                                     .Case("c_size_t", "size_t")
+                                    .Case("c_schar", "signed char")
+                                    .Case("c_uchar", "unsigned char")
+                                    .Case("c_short", "short")
+                                    .Case("c_ushort", "unsigned short")
+                                    .Case("c_int", "int")
+                                    .Case("c_uint", "unsigned int")
+                                    .Case("c_long", "long")
+                                    .Case("c_ulong", "unsigned long")
+                                    .Case("c_longlong", "long long")
+                                    .Case("c_ulonglong", "unsigned long long")
+                                    .Case("c_float", "float")
+                                    .Case("c_double", "double")
                                     .Case("float32", "float")
                                     .Case("float64", "double")
                                     .Case("float80", "__float80")

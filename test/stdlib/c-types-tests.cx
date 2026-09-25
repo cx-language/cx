@@ -1,0 +1,108 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+
+void main() {
+    testInts();
+    testLong();
+    testFloats();
+    testExternCalls();
+    testMinMax();
+}
+
+void testInts() {
+    c_int a = 42;
+    assert(a == 42);
+    int b = a;
+    assert(b == 42);
+    c_int c = b;
+    assert(c == 42);
+    assert(a + c == 84);
+    assert(a < 100);
+
+    c_schar sc = -8;
+    assert(sc == -8);
+    c_uchar uc = 200;
+    assert(uc == 200);
+    c_short s = -300;
+    assert(s == -300);
+    c_ushort us = 60000;
+    assert(us == 60000);
+    c_uint u = 3000000000;
+    assert(u == 3000000000);
+    c_longlong ll = -5000000000;
+    assert(ll == -5000000000);
+    c_ulonglong ull = 15000000000;
+    assert(ull == 15000000000);
+
+    // Widening to larger types is implicit.
+    int64 w = a;
+    assert(w == 42);
+    // Narrowing needs an explicit conversion.
+    c_schar n = c_schar(a);
+    assert(n == 42);
+
+    assert(sizeof(c_schar) == 1);
+    assert(sizeof(c_uchar) == 1);
+    assert(sizeof(c_short) == 2);
+    assert(sizeof(c_ushort) == 2);
+    assert(sizeof(c_int) == 4);
+    assert(sizeof(c_uint) == 4);
+    assert(sizeof(c_longlong) == 8);
+    assert(sizeof(c_ulonglong) == 8);
+}
+
+void testLong() {
+    // c_long matches C's long: 32-bit on Windows and wasm32, 64-bit elsewhere.
+    c_long l = 100;
+    assert(l == 100);
+    int64 m = int64(l);
+    assert(m == 100);
+    c_ulong ul = 200;
+    assert(ul == 200);
+    assert(sizeof(c_long) == sizeof(c_ulong));
+    assert(sizeof(c_long) == 4 || sizeof(c_long) == 8);
+}
+
+void testFloats() {
+    c_double d = 1.5;
+    assert(d == 1.5);
+    float64 e = d;
+    assert(e == 1.5);
+    c_float f = 2.5;
+    assert(f == 2.5);
+    float g = f;
+    assert(g == 2.5);
+    assert(sizeof(c_float) == 4);
+    assert(sizeof(c_double) == 8);
+
+    // Same-width conversions are implicit; narrowing is explicit.
+    c_double dd = e;
+    assert(dd == 1.5);
+    float h = float(e);
+    assert(h == 1.5);
+}
+
+void testExternCalls() {
+    // The public math functions are C externs with c_double signatures.
+    c_double r = sqrt(4.0);
+    assert(r == 2.0);
+    float64 s = sin(0.0);
+    assert(s == 0.0);
+    float t = sqrt(4.0);
+    assert(t == 2.0);
+}
+
+void testMinMax() {
+    assert(c_schar.max == 127);
+    assert(c_schar.min == -128);
+    assert(c_uchar.max == 255);
+    assert(c_short.max == 32767);
+    assert(c_int.max == 2147483647);
+    assert(c_int.min == -2147483648);
+    assert(c_uint.max == 4294967295);
+    assert(c_longlong.max == 9223372036854775807);
+    assert(c_ulonglong.max == 18446744073709551615);
+    println(c_int.max);
+    println(c_long(12345));
+    println(c_double(1.25));
+}

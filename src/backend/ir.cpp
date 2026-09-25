@@ -606,25 +606,29 @@ void IRModule::print(llvm::raw_ostream& stream) const {
 bool IRType::isInteger() {
     if (!isBasicType()) return false;
     return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name)
-        .Cases({"int8", "int16", "int32", "int64", "int128", "uint8", "uint16", "uint32", "uint64", "uint128", "c_size_t"}, true)
+        .Cases({"int8",    "int16",   "int32",   "int64",    "int128", "uint8",  "uint16", "uint32",  "uint64",     "uint128",    "c_size_t",
+                "c_schar", "c_uchar", "c_short", "c_ushort", "c_int",  "c_uint", "c_long", "c_ulong", "c_longlong", "c_ulonglong"},
+               true)
         .Default(false);
 }
 
 bool IRType::isSignedInteger() {
     if (!isBasicType()) return false;
-    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"int8", "int16", "int32", "int64", "int128"}, true).Default(false);
+    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name)
+        .Cases({"int8", "int16", "int32", "int64", "int128", "c_schar", "c_short", "c_int", "c_long", "c_longlong"}, true)
+        .Default(false);
 }
 
 bool IRType::isUnsignedInteger() {
     if (!isBasicType()) return false;
     return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name)
-        .Cases({"uint8", "uint16", "uint32", "uint64", "uint128", "c_size_t"}, true)
+        .Cases({"uint8", "uint16", "uint32", "uint64", "uint128", "c_size_t", "c_uchar", "c_ushort", "c_uint", "c_ulong", "c_ulonglong"}, true)
         .Default(false);
 }
 
 bool IRType::isFloatingPoint() {
     if (!isBasicType()) return false;
-    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"float32", "float64", "float80"}, true).Default(false);
+    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"float32", "float64", "float80", "c_float", "c_double"}, true).Default(false);
 }
 
 bool IRType::isChar() {
@@ -777,14 +781,15 @@ bool IRType::equals(IRType* other) {
 static std::pair<char, int> abiClass(llvm::StringRef name) {
     if (name == "void") return {'v', 0};
     if (name == "bool") return {'b', 1};
-    if (name == "char" || name == "int8" || name == "uint8") return {'i', 8};
-    if (name == "int16" || name == "uint16") return {'i', 16};
-    if (name == "int32" || name == "uint32") return {'i', 32};
-    if (name == "int64" || name == "uint64") return {'i', 64};
+    if (name == "char" || name == "int8" || name == "uint8" || name == "c_schar" || name == "c_uchar") return {'i', 8};
+    if (name == "int16" || name == "uint16" || name == "c_short" || name == "c_ushort") return {'i', 16};
+    if (name == "int32" || name == "uint32" || name == "c_int" || name == "c_uint") return {'i', 32};
+    if (name == "int64" || name == "uint64" || name == "c_longlong" || name == "c_ulonglong") return {'i', 64};
     if (name == "c_size_t") return {'i', static_cast<int>(sizeof(void*) * 8)};
+    if (name == "c_long" || name == "c_ulong") return {'i', static_cast<int>(sizeof(long) * 8)};
     if (name == "int128" || name == "uint128") return {'i', 128};
-    if (name == "float32") return {'f', 32};
-    if (name == "float64") return {'f', 64};
+    if (name == "float32" || name == "c_float") return {'f', 32};
+    if (name == "float64" || name == "c_double") return {'f', 64};
     if (name == "float80") return {'f', 80};
     return {'x', 0};
 }

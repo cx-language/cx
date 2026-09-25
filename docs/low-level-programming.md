@@ -73,10 +73,14 @@ void main() {
 
 Individual functions can also be declared with `extern`, without importing a header.
 The standard library uses `extern` declarations in `std/libc.cx`
-to give common C functions more precise cx types:
+to give common C functions more precise cx types.
+Declare parameters and return types with the `c_` prefixed types
+(`c_int`, `c_uint`, `c_long`, `c_double`, and the rest: see
+[Builtin types](builtin-types)) so the signature matches the C headers
+on every target:
 
 ```cs
-extern int putchar(int ch);
+extern c_int putchar(c_int ch);
 
 void main() {
     putchar('f'); // prints "f"
@@ -110,7 +114,7 @@ name, so C callers link it like any C function. It stays callable from cx
 too:
 
 ```cs
-extern int c_add(int a, int b) {
+extern c_int c_add(c_int a, c_int b) {
     return a + b;
 }
 

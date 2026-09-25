@@ -3,6 +3,6 @@ int32 main() {
     float32* f = alloca float32
     store float32 4.19999981 to f
     float32 f.load = load f
-    int32 _0 = call printf(char* "%d %f", int32 -3, float32 f.load)
+    c_int _0 = call printf(char* "%d %f", int32 -3, float32 f.load)
     return int32 0
 }
