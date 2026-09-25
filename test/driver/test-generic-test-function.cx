@@ -2,10 +2,11 @@
 
 // CHECK-NOT: test-generic-test-function.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
-test void testGeneric<T>() {
+@test
+void testGeneric<T>() {
 }
 
-// CHECK: [[@LINE-3]]:11: error: generic test functions are not supported
+// CHECK: [[@LINE-3]]:6: error: generic test functions are not supported
 
 void main() {
     testGeneric<int>();

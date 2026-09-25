@@ -4,10 +4,12 @@ int add(int a, int b) {
     return a + b;
 }
 
-test void testAdd() {
+@test
+void testAdd() {
     assert(add(2, 3) == 5);
 }
 
-test void testAddNegative() {
+@test
+void testAddNegative() {
     assert(add(-1, 1) == 0);
 }

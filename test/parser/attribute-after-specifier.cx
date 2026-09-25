@@ -1,0 +1,8 @@
+// RUN: %cx -parse %s
+
+private @test
+void f() {
+}
+
+void main() {
+}

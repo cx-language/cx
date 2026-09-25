@@ -4,7 +4,8 @@
 
 struct S {
     // CHECK: [[@LINE+1]]:5: error: only top-level functions can be marked as tests
-    test void foo() {
+    @test
+    void foo() {
     }
 }
 

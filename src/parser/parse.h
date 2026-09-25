@@ -177,6 +177,7 @@ private:
     void parseIfdef(std::vector<Decl*>* activeDecls);
     Decl* parseTopLevelDecl(bool addToSymbolTable);
     Decl* parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel);
+    void parseTestAttribute(bool& isTest, Location& testLocation);
 
 private:
     Lexer lexer;

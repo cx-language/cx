@@ -1,0 +1,9 @@
+// RUN: %cx -typecheck %s
+
+// 'test' is no longer a keyword, so it works as an ordinary identifier.
+void test() {
+}
+
+void main() {
+    test();
+}

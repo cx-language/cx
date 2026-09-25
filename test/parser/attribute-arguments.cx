@@ -1,0 +1,10 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: attribute-arguments.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+// CHECK: [[@LINE+1]]:6: error: attributes do not take arguments
+@test(x)
+void f() {
+}
+
+// CHECK-NOT: attribute-arguments.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

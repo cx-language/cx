@@ -1805,6 +1805,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
         AccessLevel accessLevel = AccessLevel::Default;
         bool isImplicit = false;
         Location implicitLocation;
+        bool isTest = false;
+        Location testLocation;
 
     start:
         switch (currentToken()) {
@@ -1818,6 +1820,10 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             accessLevel = AccessLevel::Private;
             consumeToken();
             goto start;
+        case Token::At: {
+            parseTestAttribute(isTest, testLocation);
+            ERROR(testLocation, "only top-level functions can be marked as tests");
+        }
         case Token::Implicit:
             if (tag == TypeTag::Interface) {
                 ERROR(getCurrentLocation(), implicitMemberOnly);
@@ -1829,8 +1835,6 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             implicitLocation = getCurrentLocation();
             consumeToken();
             goto start;
-        case Token::Test:
-            ERROR(getCurrentLocation(), "only top-level functions can be marked as tests");
         case Token::Tilde:
             if (isImplicit) {
                 ERROR(implicitLocation, implicitMemberOnly);
@@ -1938,14 +1942,16 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     while (currentToken() != Token::RightBrace) {
         AccessLevel accessLevel = AccessLevel::Default;
-        if (currentToken() == Token::Test) {
-            ERROR(getCurrentLocation(), "only top-level functions can be marked as tests");
-        }
+        bool isTest = false;
+        Location testLocation;
+        parseTestAttribute(isTest, testLocation);
         while (currentToken() == Token::Private) {
             if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
             accessLevel = AccessLevel::Private;
             consumeToken();
         }
+        parseTestAttribute(isTest, testLocation);
+        if (isTest) ERROR(testLocation, "only top-level functions can be marked as tests");
         if (currentToken() == Token::Implicit) {
             ERROR(getCurrentLocation(), implicitMemberOnly);
         }
@@ -2121,11 +2127,32 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
     consumeToken();
 }
 
+/// Parses leading `@attribute`s, setting isTest when `@test` is present. Only `@test`
+/// exists for now; anything else is rejected here. Records the first `@test`
+/// location for misplacement errors.
+/// @throws CompileError
+void Parser::parseTestAttribute(bool& isTest, Location& testLocation) {
+    while (currentToken() == Token::At) {
+        auto atLocation = getCurrentLocation();
+        consumeToken();
+        auto name = parse(Token::Identifier, "after '@'");
+        if (name.getString() != "test") ERROR(name.location, "unknown attribute '" << name.getString() << "'");
+        if (currentToken() == Token::LeftParen) ERROR(getCurrentLocation(), "attributes do not take arguments");
+        if (isTest) {
+            WARN(atLocation, "duplicate '@test' attribute");
+        } else {
+            testLocation = atLocation;
+        }
+        isTest = true;
+    }
+}
+
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | enum-decl | type-alias-decl | import-decl | var-decl
 /// @throws CompileError
 Decl* Parser::parseTopLevelDecl(bool addToSymbolTable) {
     AccessLevel accessLevel = AccessLevel::Default;
     bool isTest = false;
+    Location testLocation;
     Decl* decl = nullptr;
 
 start:
@@ -2135,10 +2162,8 @@ start:
         accessLevel = AccessLevel::Private;
         consumeToken();
         goto start;
-    case Token::Test:
-        if (isTest) WARN(getCurrentLocation(), "duplicate test specifier");
-        isTest = true;
-        consumeToken();
+    case Token::At:
+        parseTestAttribute(isTest, testLocation);
         goto start;
     case Token::Implicit:
         ERROR(getCurrentLocation(), implicitMemberOnly);

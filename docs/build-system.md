@@ -78,7 +78,7 @@ dependencies; `Windows` and `macOS` are predefined on those platforms.
 
 ## Unit tests
 
-Mark a top-level function with `test` to make it a unit test,
+Mark a top-level function with the `@test` attribute to make it a unit test,
 then run them all with `cx test`:
 
 ```cs {.noRun}
@@ -86,7 +86,8 @@ int add(int a, int b) {
     return a + b;
 }
 
-test void testAdd() {
+@test
+void testAdd() {
     assert(add(2, 3) == 5);
 }
 ```

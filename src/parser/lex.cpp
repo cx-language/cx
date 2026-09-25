@@ -432,7 +432,6 @@ static const llvm::StringMap<Token::Kind> keywords = {
     {"sizeof", Token::Sizeof},
     {"struct", Token::Struct},
     {"switch", Token::Switch},
-    {"test", Token::Test},
     {"then", Token::Then},
     {"this", Token::This},
     {"true", Token::True},
@@ -606,6 +605,8 @@ Token Lexer::lexToken() {
             if (ch == '?') return Token(Token::QuestionQuestion, getCurrentLocation());
             unreadChar(ch);
             return Token(Token::QuestionMark, getCurrentLocation());
+        case '@':
+            return Token(Token::At, getCurrentLocation());
         case '\0':
             goto end;
         case '"':

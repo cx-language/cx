@@ -51,7 +51,6 @@ struct Token {
         Sizeof,
         Struct,
         Switch,
-        Test,
         Then,
         This,
         True,
@@ -113,6 +112,7 @@ struct Token {
         FatArrow,
         QuestionMark,
         QuestionQuestion,
+        At,
         TokenCount
     };
 

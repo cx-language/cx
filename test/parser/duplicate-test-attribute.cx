@@ -1,0 +1,14 @@
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK-NOT: duplicate-test-attribute.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+@test
+// CHECK: [[@LINE+1]]:1: warning: duplicate '@test' attribute
+@test
+void f() {
+}
+
+void main() {
+}
+
+// CHECK-NOT: duplicate-test-attribute.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

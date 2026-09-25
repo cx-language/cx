@@ -1,0 +1,11 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+// The old `test` specifier form is rejected; `@test` above the function replaces it.
+
+// CHECK-NOT: test-specifier-removed.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+// CHECK: [[@LINE+1]]:11: error: expected newline or ';', got identifier
+test void f() {
+}
+
+// CHECK-NOT: test-specifier-removed.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
