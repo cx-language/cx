@@ -41,6 +41,13 @@ static bool allExternsResolvable(const llvm::Module& module) {
 }
 
 bool cx::jitEligible(const llvm::Module& linkedModule) {
+#ifdef _WIN32
+    // Process symbol lookup binds libc calls to msvcrt.dll instead of the UCRT linked
+    // binaries use: floats print legacy formats (1e+010, 1.#INF), puts/printf split across
+    // CRT buffers, and fdopen(2) stderr output is lost. Stay on link-and-exec until JIT
+    // symbols bind to the host CRT explicitly.
+    return false;
+#endif
     const auto* main = linkedModule.getFunction("main");
     if (!main || main->isDeclaration()) return false;
     // User mains lower to main() or main(argc, argv); anything else keeps the old path.
