@@ -364,8 +364,9 @@ bool Expr::isLvalue() const {
         if (!member.decl) {
             // Swizzles leave decl null: single-char is an lvalue iff the base
             // is; multi-char is a value (direct assignment is special-cased).
+            // Anonymous struct members also leave decl null and are lvalues iff the base is.
             if (!member.swizzleIndices.empty()) return member.swizzleIndices.size() == 1 && member.base->isLvalue();
-            return true;
+            return member.base->isLvalue();
         }
         if (llvm::isa<EnumCase>(member.decl)) return false;
         if (member.base->type.removeOptional().isPointerType()) return true;

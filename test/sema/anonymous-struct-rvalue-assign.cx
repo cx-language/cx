@@ -1,0 +1,15 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: anonymous-struct-rvalue-assign.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+(int x, int y) make() { return (x = 1, y = 2); }
+
+void main() {
+    // CHECK: [[@LINE+1]]:12: error: cannot assign to expression of type 'int'
+    make().x = 99;
+    // Assigning through an lvalue base is fine.
+    var point = (x = 1, y = 2);
+    point.x = 99;
+    point.y += 1;
+}
+
+// CHECK-NOT: anonymous-struct-rvalue-assign.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
