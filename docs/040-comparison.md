@@ -29,7 +29,11 @@ with a richer feature set designed for day-to-day productivity and joy of progra
 
 ## Difference between cx and C++
 
-cx keeps what C++ gets right: deterministic destruction, generics, function
+> "Within C++, there is a much smaller and cleaner language struggling to get out."
+> - _Bjarne Stroustrup_
+
+cx is trying to be that language.
+It keeps what C++ gets right: deterministic destruction, generics, function
 overloading, close-to-the-metal performance with no garbage collector, and
 the principle of paying only for what you use. It changes the parts of C++
 that cost productivity:
@@ -56,6 +60,19 @@ that cost productivity:
 - A standard build system and dependency manager are built in, instead of the
   fragmented CMake/conan/vcpkg ecosystem. Dependencies are plain Git
   repositories; there is no central registry.
+- Tagged unions are a language feature (`enum` with payloads, matched with
+  `switch`) instead of a library type like `std::variant`, which needs
+  [tedious visitor boilerplate][std-visit] to use.
+- No implicit deep copies through copy constructors and copy assignment
+  operators; expensive operations are visible in the code.
+- Debug builds check array bounds, integer overflow, and null dereferences by
+  default, instead of leaving them to opt-in sanitizers.
+- Less verbose syntax for common things: lambdas infer their parameter types
+  (`n => n * 2`), named arguments label call sites, and there is no C-style
+  cast syntax.
+- The standard library covers more everyday needs: string and array slices,
+  Unicode-aware strings, helpers such as `split` and `join`, and algorithms
+  that take ranges instead of iterator pairs.
 
 One caveat: cx imports C headers directly, but C++ API interop is a
 longer-term goal, so C++ code currently needs C wrappers to be callable from
@@ -114,6 +131,9 @@ maturity, cx is still young.
 
 - The naming conventions of the Rust language and standard libraries favor very short abbreviated names such as `Vec`, `str`, `i32`.
   cx uses less-abbreviated names such as `List`, `string`, `int32`.
+
+- The Rust compiler warns about names that don't follow its snake_case and
+  CamelCase conventions. cx doesn't enforce any naming convention or coding style.
 
 - cx has potential for faster compile times than Rust, due to not having to do things like borrow checking.
 
@@ -248,5 +268,7 @@ in. The differences:
   central registry.
 - Odin is further along: it is stable, documented, and used in production.
   cx is younger and still evolving.
+
+[std-visit]: https://bitbashing.io/std-visit.html
 
 [^rust-modules]: <https://boats.gitlab.io/blog/post/2017-01-04-the-rust-module-system-is-too-confusing/>{target="_blank"}
