@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: use-before-assignment.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void useBeforeAssign() {
     int x;
@@ -49,4 +48,3 @@ void main() {
     okBothBranches(true);
 }
 
-// CHECK-NOT: use-before-assignment.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

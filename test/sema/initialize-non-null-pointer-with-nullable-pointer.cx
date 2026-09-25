@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
 
 extern int*? foo();
 
@@ -8,18 +8,15 @@ void main() {
 }
 
 void explicitlyUnwrapped() {
-    // CHECK-NOT: [[@LINE+1]]:17: warning:
     int* f = foo()!;
 }
 
 void checkedBeforeUnwrap() {
     int*? x = foo();
     if (x != null) {
-        // CHECK-NOT: [[@LINE+1]]:18: warning:
         int* y = x;
     }
     if (x) {
-        // CHECK-NOT: [[@LINE+1]]:18: warning:
         int* z = x;
     }
 }

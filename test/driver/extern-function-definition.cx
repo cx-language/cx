@@ -1,5 +1,4 @@
 // RUN: %cx -print-llvm %s | %FileCheck %s
-// CHECK-NOT: extern-function-definition.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 // An extern function with a body is a definition with C linkage: an
 // unmangled define, still callable from cx. Without a body it stays a
@@ -21,4 +20,3 @@ void main() {
     println(c_imported(3));
 }
 
-// CHECK-NOT: extern-function-definition.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

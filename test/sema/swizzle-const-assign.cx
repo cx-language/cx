@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: swizzle-const-assign.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     const float[3] v = [1.0, 2.0, 3.0];
@@ -9,4 +8,3 @@ void main() {
     v.xy = [1.0, 2.0];
 }
 
-// CHECK-NOT: swizzle-const-assign.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

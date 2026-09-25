@@ -1,9 +1,7 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: array-size-non-constant.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     // CHECK: [[@LINE+1]]:5: error: array size must be a constant integer expression
     int[n] a;
 }
 
-// CHECK-NOT: array-size-non-constant.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

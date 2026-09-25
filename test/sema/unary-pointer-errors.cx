@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
-// CHECK-NOT: unary-pointer-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void f(int* p, int[*] s) {
     // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to pointer of type 'int*'; dereference it explicitly (e.g. '-*p')
@@ -18,4 +17,3 @@ void g(int* p, int x) {
     _ = ~x;
 }
 
-// CHECK-NOT: unary-pointer-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

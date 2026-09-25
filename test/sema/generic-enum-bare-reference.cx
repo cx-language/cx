@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: generic-enum-bare-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 enum Opt<T> {
     Some(T value),
@@ -12,4 +11,3 @@ void main() {
     var x = Opt;
 }
 
-// CHECK-NOT: generic-enum-bare-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -1,9 +1,7 @@
 // RUN: %cx -typecheck --check-all %s 2>&1 | %FileCheck --allow-empty %s
 // The standard library is fully typechecked under --check-all, so an empty
-// program validates all of std. Diagnostics would reference std files, hence
-// the global negative checks instead of file-scoped ones.
-// CHECK-NOT: warning:
-// CHECK-NOT: error:
+// program validates all of std. The implicit no-unexpected-diagnostics guard
+// in %FileCheck covers the std files too, so no explicit checks are needed.
 
 void main() {
 }

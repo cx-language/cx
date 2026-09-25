@@ -2,7 +2,6 @@
 
 void takesInt(int i) {}
 
-// CHECK-NOT: {{(warning|error)}}:
 void redundantUnwrap(int? v) {
     if v {
         // CHECK: [[@LINE+1]]:18: warning: unwrapping non-optional type 'int' has no effect
@@ -10,7 +9,6 @@ void redundantUnwrap(int? v) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void redundantNullCheck(int? v) {
     if v {
         // CHECK: [[@LINE+1]]:14: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
@@ -19,7 +17,6 @@ void redundantNullCheck(int? v) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void redundantNegation(int? v) {
     if v {
         // CHECK: [[@LINE+1]]:13: error: type 'int' is not convertible to boolean
@@ -28,7 +25,6 @@ void redundantNegation(int? v) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void useAfterNullAssignment(int? v) {
     if v {
         v = null;
@@ -37,7 +33,6 @@ void useAfterNullAssignment(int? v) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void useAfterOptionalAssignment(int? v, int? w) {
     if v {
         v = w;
@@ -46,7 +41,6 @@ void useAfterOptionalAssignment(int? v, int? w) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void useAfterBranchAssignment(int? v, bool c) {
     if v {
         if c {
@@ -57,7 +51,6 @@ void useAfterBranchAssignment(int? v, bool c) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void inferredVarIsNonOptional(int? v) {
     if v {
         var c = v;
@@ -66,7 +59,6 @@ void inferredVarIsNonOptional(int? v) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void useAfterLoopAssignment(int? v, bool c) {
     if v {
         while c {
@@ -79,7 +71,6 @@ void useAfterLoopAssignment(int? v, bool c) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void useAfterSwitchAssignment(int? v, int c) {
     if v {
         switch c {
@@ -91,14 +82,12 @@ void useAfterSwitchAssignment(int? v, int c) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void useAfterLogicalAnd(int? v, bool y) {
     var b = v != null && y;
     // CHECK: [[@LINE+1]]:5: error: no matching function 'println(string, int?)'
     println("x: ", v);
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void useInDefer(int? v) {
     if v {
         // CHECK: [[@LINE+1]]:15: error: no matching function 'println(string, int?)'
@@ -106,7 +95,6 @@ void useInDefer(int? v) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:
 void redundantNullCheckAfterNotEqual(int? v) {
     if (v != null) {
         // CHECK: [[@LINE+1]]:14: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
@@ -118,4 +106,3 @@ void redundantNullCheckAfterNotEqual(int? v) {
     }
 }
 
-// CHECK-NOT: {{(warning|error)}}:

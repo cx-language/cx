@@ -1,9 +1,7 @@
 // RUN: %not %cx run %s 2>&1 | %FileCheck %s
-// CHECK-NOT: index-from-end-out-of-bounds.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 void main() {
     var list = List<int>();
     list.push(10);
     // CHECK: List index 4 is out of bounds, size is 1
     println(list[-4]);
 }
-// CHECK-NOT: index-from-end-out-of-bounds.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: warning
 
 int loopsInsideLambdasAreFine() {
     var f = () => {
@@ -40,5 +39,3 @@ void main() {
     }
 }
 
-// CHECK-NOT: error
-// CHECK-NOT: warning

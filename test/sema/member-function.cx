@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: member-function.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct Foo {
     int i;

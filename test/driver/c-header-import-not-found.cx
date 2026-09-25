@@ -2,6 +2,5 @@
 
 // CHECK: [[@LINE+1]]:8: error: couldn't find C header file 'foo.h'
 import "foo.h";
-// CHECK-NOT: error
 
 void main() {}

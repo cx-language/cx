@@ -1,8 +1,6 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: {{.*}}a.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
-// CHECK: {{.*}}main.cx:9:6: warning: unused declaration 'mainUnused'
-// CHECK-NOT: {{.*}}a.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK: {{.*}}main.cx:7:6: warning: unused declaration 'mainUnused'
 
 import mod;
 

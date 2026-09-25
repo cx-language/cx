@@ -10,10 +10,8 @@ int f(int n) {
 }
 
 void main() {
-    // CHECK-NOT: while-true-return.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
     // CHECK: 5
     println(f(5));
     // CHECK-NEXT: 0
     println(f(-3));
-    // CHECK-NOT: while-true-return.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 }

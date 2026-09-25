@@ -1,7 +1,6 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
 int main() {
-    // CHECK-NOT: dangling-else-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
     if (true)
         if (false)
             return 1;
@@ -24,5 +23,4 @@ int main() {
         return 2;
 
     return 3;
-    // CHECK-NOT: dangling-else-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 }

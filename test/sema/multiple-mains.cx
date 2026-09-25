@@ -1,11 +1,9 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: multiple-mains.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {}
 
 // CHECK: [[@LINE+1]]:6: error: multiple definitions of 'main'
 void main(string[] args) {}
 
-// CHECK: multiple-mains.cx:4:6: note: previous definition here
+// CHECK: multiple-mains.cx:3:6: note: previous definition here
 
-// CHECK-NOT: multiple-mains.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

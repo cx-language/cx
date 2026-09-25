@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
-// CHECK-NOT: increment-through-pointer-error.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void f(bool* a) {
     var p = a;
@@ -14,4 +13,3 @@ void g(int* a) {
     (*a)--;
 }
 
-// CHECK-NOT: increment-through-pointer-error.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

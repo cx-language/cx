@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
-// CHECK-NOT: assign-to-borrow-requires-deref.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void assignToBorrow(int& x) {
     // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
@@ -30,4 +29,3 @@ void inferredBorrowRebind() {
     *f = 99;
 }
 
-// CHECK-NOT: assign-to-borrow-requires-deref.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

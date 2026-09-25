@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
 
 struct S {}
 
@@ -20,13 +20,11 @@ void singleBranchMoveIsAllowed(bool b, S s, S t) {
     if (b) {
         bar(s);
     }
-    // CHECK-NOT: [[@LINE+1]]:9: error:
     bar(s);
 
     if (b) {
     } else {
         baz(t);
     }
-    // CHECK-NOT: [[@LINE+1]]:9: error:
     baz(t);
 }

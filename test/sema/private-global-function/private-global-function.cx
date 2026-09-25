@@ -1,5 +1,5 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
-// RUN: %cx -typecheck %s 2>&1 | %FileCheck %p/mod/a.cx
+// RUN: %cx -typecheck %s 2>&1 | %FileCheckNoGuard %p/mod/a.cx
 import mod;
 
 void main() {

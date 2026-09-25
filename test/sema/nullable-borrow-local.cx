@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: nullable-borrow-local.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     var x = 1;
@@ -8,4 +7,3 @@ void main() {
     int&? r = x;
 }
 
-// CHECK-NOT: nullable-borrow-local.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: container-view-conversion-fail.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void takesIntRef(Slice<int> values) {}
 
@@ -11,4 +10,3 @@ void main() {
     takesIntRef(strings);
 }
 
-// CHECK-NOT: container-view-conversion-fail.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

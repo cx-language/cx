@@ -1,6 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK-NOT: reference-locals.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct PlainPoint { int x; }
 
@@ -42,4 +41,3 @@ void main() {
     // CHECK-NEXT:11
     println(e2);
 }
-// CHECK-NOT: reference-locals.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

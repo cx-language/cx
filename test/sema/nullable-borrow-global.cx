@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: nullable-borrow-global.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 // CHECK: [[@LINE+1]]:1: error: reference type 'int&?' may only appear as a function parameter, return type, local variable, or interface argument
 int&? global;
@@ -8,4 +7,3 @@ int&? global;
 void main() {
 }
 
-// CHECK-NOT: nullable-borrow-global.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

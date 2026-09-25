@@ -1,6 +1,5 @@
 // RUN: %not %cx test %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: test-private-test-function.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 @test
 private void testPrivate() {
@@ -12,4 +11,3 @@ void main() {
     testPrivate();
 }
 
-// CHECK-NOT: test-private-test-function.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

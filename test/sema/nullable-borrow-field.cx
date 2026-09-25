@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: nullable-borrow-field.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct S {
     // CHECK: [[@LINE+1]]:5: error: reference type 'int&?' may only appear as a function parameter, return type, local variable, or interface argument
@@ -10,4 +9,3 @@ struct S {
 void main() {
 }
 
-// CHECK-NOT: nullable-borrow-field.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

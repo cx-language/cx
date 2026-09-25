@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: sizeof-pointer-not-constant.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     uint64 x = 8;
@@ -10,4 +9,3 @@ void main() {
     }
 }
 
-// CHECK-NOT: sizeof-pointer-not-constant.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

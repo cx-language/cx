@@ -1,4 +1,4 @@
-// RUN: %not %cx run %s 2>&1 | %FileCheck -match-full-lines %s
+// RUN: %not %cx run -Wno-unused %s 2>&1 | %FileCheck -match-full-lines %s
 
 void main() {
     int*? p = null;

@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: arg-validation-notes.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void greet(string name, int times) {
     println(name);
@@ -18,14 +17,13 @@ void badType() {
     greet("ok", 1);
     // CHECK: [[@LINE+1]]:16: error: invalid argument #2 type 'string' to 'greet', expected 'int'
     greet("x", "y");
-    // CHECK: 4:6: note: 'greet' declared here
+    // CHECK: 3:6: note: 'greet' declared here
 }
 
 void badName() {
     point(x = 1, y = 2);
     // CHECK: [[@LINE+1]]:11: error: invalid argument name 'z'
     point(z = 1, y = 2);
-    // CHECK: 8:6: note: 'point' declared here
+    // CHECK: 7:6: note: 'point' declared here
 }
 
-// CHECK-NOT: arg-validation-notes.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

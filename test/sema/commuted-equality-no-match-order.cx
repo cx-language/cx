@@ -1,7 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: error
-// CHECK-NOT: warning
 
 struct A {
     int x;
@@ -18,5 +16,3 @@ void main() {
     println(a == b);
 }
 
-// CHECK-NOT: error
-// CHECK-NOT: warning

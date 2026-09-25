@@ -1,9 +1,7 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: test-marker-on-variable.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 @test
 // CHECK: [[@LINE+1]]:5: error: only functions can be marked as tests
 int x = 1;
 
-// CHECK-NOT: test-marker-on-variable.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

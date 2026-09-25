@@ -1,6 +1,5 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: test-marker-on-member.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct S {
     // CHECK: [[@LINE+1]]:5: error: only top-level functions can be marked as tests
@@ -9,4 +8,3 @@ struct S {
     }
 }
 
-// CHECK-NOT: test-marker-on-member.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

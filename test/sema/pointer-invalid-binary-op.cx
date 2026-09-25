@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
-// CHECK-NOT: pointer-invalid-binary-op.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     int a = 2;
@@ -10,4 +9,3 @@ void main() {
     int c = p * q;
 }
 
-// CHECK-NOT: pointer-invalid-binary-op.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

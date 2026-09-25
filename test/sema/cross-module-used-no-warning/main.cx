@@ -1,8 +1,6 @@
 // RUN: %cx -typecheck --Werror %s 2>&1 | %FileCheck %s -allow-empty
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s -allow-empty
 
-// CHECK-NOT: warning
-// CHECK-NOT: error
 
 import mod;
 

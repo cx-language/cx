@@ -6,16 +6,9 @@ void main() {
     println(h);
 }
 
-// CHECK-NOT: {{warning|error}}:
 // CHECK: import-c-float16-skipped.h:1:10: warning: skipping C declaration 'h': 16-bit floating-point types are not supported
-// CHECK-NOT: {{warning|error}}:
 // CHECK: import-c-float16-skipped.h:2:8: warning: skipping C declaration 'bh': 16-bit floating-point types are not supported
-// CHECK-NOT: {{warning|error}}:
 // CHECK: import-c-float16-skipped.h:3:10: warning: skipping C declaration 'geth': 16-bit floating-point types are not supported
-// CHECK-NOT: {{warning|error}}:
 // CHECK: import-c-float16-skipped.h:4:8: warning: skipping C declaration 'WithHalf': 16-bit floating-point types are not supported
-// CHECK-NOT: {{warning|error}}:
 // CHECK: import-c-float16-skipped.h:8:5: warning: skipping C declaration 'takesHalfStruct': 16-bit floating-point types are not supported
-// CHECK-NOT: {{warning|error}}:
-// CHECK: [[@LINE-14]]:13: error: unknown identifier 'h'
-// CHECK-NOT: {{warning|error}}:
+// CHECK: [[@LINE-8]]:13: error: unknown identifier 'h'

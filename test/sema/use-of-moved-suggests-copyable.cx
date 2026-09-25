@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
 
 struct T {
     int x;
@@ -22,7 +22,6 @@ void h(S s) {}
 void k() {
     var s = S(x = 1);
     h(s);
-    // CHECK-NOT: [[@LINE+1]]:7: error:
     h(s);
 }
 

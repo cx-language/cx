@@ -1,13 +1,14 @@
-// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
-// RUN: %cx -typecheck %s 2>&1 | %FileCheck %p/mod/a.cx
-// RUN: %cx -typecheck %s 2>&1 | %FileCheck %p/mod/a.cx -check-prefix=CHECK-PRIVATE-IN-PUBLIC-DECL
+// RUN: %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck -Wno-unused %s 2>&1 | %FileCheckNoGuard %p/mod/a.cx
+// RUN: %cx -typecheck -Wno-unused %s 2>&1 | %FileCheckNoGuard %p/mod/a.cx -check-prefix=CHECK-PRIVATE-IN-PUBLIC-DECL
 import mod;
 
 void main() {
     // CHECK-DAG: [[@LINE+1]]:5: warning: 'A' is private
     A a = undefined;
 
-    // CHECK-DAG: [[@LINE+1]]:9: warning: 'A' is private
+    // CHECK-DAG: [[@LINE+2]]:9: warning: 'A' is private
+    // CHECK-DAG: [[@LINE+1]]:9: warning: 'init' is private
     a = A();
 
     // Imported declarations check on use; exercise mod's public API so its
@@ -33,3 +34,10 @@ struct B {
     // CHECK-DAG: [[@LINE+1]]:5: warning: 'A' is private
     A a;
 }
+
+// The mod warnings from m/o/p/E (checked precisely in mod/a.cx); listed here
+// so the implicit no-unexpected-diagnostics guard accepts them.
+// CHECK-DAG: a.cx:{{[0-9]+}}:{{[0-9]+}}: warning: using private type 'A' in public declaration
+// CHECK-DAG: a.cx:{{[0-9]+}}:{{[0-9]+}}: warning: using private type 'A' in public declaration
+// CHECK-DAG: a.cx:{{[0-9]+}}:{{[0-9]+}}: warning: using private type 'A' in public declaration
+// CHECK-DAG: a.cx:{{[0-9]+}}:{{[0-9]+}}: warning: using private type 'A' in public declaration

@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: pointer-invariance.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void bar(int*?* pp) {
 }
@@ -47,21 +46,17 @@ void arrayElementWidening() {
 void stillAllowed() {
     int x = 42;
     int* p = &x;
-    // CHECK-NOT: [[@LINE+1]]:{{[0-9]+}}: {{(warning|error)}}:
     barPlain(&p);
     char c = 'a';
     char* pc = &c;
-    // CHECK-NOT: [[@LINE+1]]:{{[0-9]+}}: {{(warning|error)}}:
     barConstChar(pc);
-    // CHECK-NOT: [[@LINE+1]]:{{[0-9]+}}: {{(warning|error)}}:
     barVoid(p);
 }
 
-// CHECK: 5:6: warning: unused declaration 'bar'
-// CHECK: 8:6: warning: unused declaration 'barConst'
-// CHECK: 11:6: warning: unused declaration 'barArr'
-// CHECK: 23:6: warning: unused declaration 'nullabilityWidening'
-// CHECK: 32:6: warning: unused declaration 'constUnderPointer'
-// CHECK: 39:6: warning: unused declaration 'arrayElementWidening'
-// CHECK: 47:6: warning: unused declaration 'stillAllowed'
-// CHECK-NOT: pointer-invariance.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK: 4:6: warning: unused declaration 'bar'
+// CHECK: 7:6: warning: unused declaration 'barConst'
+// CHECK: 10:6: warning: unused declaration 'barArr'
+// CHECK: 22:6: warning: unused declaration 'nullabilityWidening'
+// CHECK: 31:6: warning: unused declaration 'constUnderPointer'
+// CHECK: 38:6: warning: unused declaration 'arrayElementWidening'
+// CHECK: 46:6: warning: unused declaration 'stillAllowed'

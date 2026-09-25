@@ -1,6 +1,4 @@
 // RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: unknown-type-float16.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 // CHECK: [[@LINE+1]]:15: error: unknown type 'float16'
 extern void f(float16 x);
-// CHECK-NOT: unknown-type-float16.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

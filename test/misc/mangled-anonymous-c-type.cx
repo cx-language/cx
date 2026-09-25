@@ -1,5 +1,4 @@
 // RUN: %cx --print-ir %s 2>&1 | %FileCheck %s
-// CHECK-NOT: mangled-anonymous-c-type.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 import "inputs/mangled-anonymous-c-type.h";
 
@@ -14,4 +13,3 @@ void main() {
     print(ident(o.inner).x);
 }
 
-// CHECK-NOT: mangled-anonymous-c-type.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

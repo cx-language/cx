@@ -3,7 +3,6 @@
 
 // MSVC doesn't support __int128, which the C backend emits for int128.
 
-// CHECK-NOT: integer-overflow-bounds-run-c.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 // CHECK:2147483647
 // CHECK-NEXT:2147483647
 // CHECK-NEXT:2147483647
@@ -27,7 +26,6 @@
 // CHECK-NEXT:true
 // CHECK-NEXT:true
 // CHECK-NEXT:true
-// CHECK-NOT: integer-overflow-bounds-run-c.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     int max = 2147483647;

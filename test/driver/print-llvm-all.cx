@@ -1,5 +1,4 @@
 // RUN: %cx -print-llvm-all %s | %FileCheck %s
-// CHECK-NOT: print-llvm-all.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     println("hi");
@@ -8,4 +7,3 @@ void main() {
 // CHECK: @_CX1G3std10stdoutFileE
 // CHECK: _CX1N3stdM3std6string4initE
 // CHECK: define i32 @main()
-// CHECK-NOT: print-llvm-all.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
-// CHECK-NOT: no-implicit-deref.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void takeInt(int x) {}
 
@@ -25,4 +24,3 @@ int derefRequired(int* p) {
     return p;
 }
 
-// CHECK-NOT: no-implicit-deref.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -5,8 +5,6 @@ struct S {}
 void main() {
     var s = S()
 
-    // CHECK-NOT: index-assignment-overload-not-found.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
     // CHECK: [[@LINE+1]]:6: error: 'S' doesn't provide an operator[]=
     s[1] = 2
-    // CHECK-NOT: index-assignment-overload-not-found.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 }

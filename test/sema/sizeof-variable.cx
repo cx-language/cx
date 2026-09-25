@@ -1,7 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: error
-// CHECK-NOT: warning
 
 void main() {
     var a = [1,2,3]
@@ -10,5 +8,3 @@ void main() {
     var e = sizeof(a[0])
 }
 
-// CHECK-NOT: error
-// CHECK-NOT: warning

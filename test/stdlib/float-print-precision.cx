@@ -1,7 +1,6 @@
 // RUN: %cx test -Werror %s | %FileCheck -match-full-lines %s
 // RUN: %cx test -Werror --backend=c %s | %FileCheck -match-full-lines %s
 // RUN: %cx --backend=c --print-c %s | %FileCheck --check-prefix=PRINT %s
-// CHECK-NOT: float-print-precision.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 // MSVC rejects literal zero divisors even for floats, so the C backend
 // spells x / 0.0 as x * INFINITY.
 // PRINT: * INFINITY;
@@ -30,4 +29,3 @@ void testFloatPrintPrecision() {
     // CHECK-NEXT: ok testFloatPrintPrecision
 }
 
-// CHECK-NOT: float-print-precision.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

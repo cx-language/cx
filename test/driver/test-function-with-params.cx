@@ -1,6 +1,5 @@
 // RUN: %not %cx test %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: test-function-with-params.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 @test
 void testWithParams(int x) {
@@ -12,4 +11,3 @@ void main() {
     testWithParams(1);
 }
 
-// CHECK-NOT: test-function-with-params.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -1,6 +1,5 @@
 // RUN: %not %cx test %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: test-generic-test-function.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 @test
 void testGeneric<T>() {
@@ -12,4 +11,3 @@ void main() {
     testGeneric<int>();
 }
 
-// CHECK-NOT: test-generic-test-function.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

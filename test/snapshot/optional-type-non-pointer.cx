@@ -32,7 +32,6 @@ void f() {
     // CHECK: [[@LINE+1]]:18: warning: value may be null; unwrap it with a postfix '!' to silence this warning
     takesNonNull(c);
     if (c) {
-        // CHECK-NOT: [[@LINE+1]]:22: warning:
         takesNonNull(c);
     }
 }

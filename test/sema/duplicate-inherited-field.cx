@@ -6,7 +6,7 @@ interface Named {
 
 struct Person: Named {
     // CHECK: [[@LINE+1]]:12: warning: field 'name' duplicates inherited field from interface 'Named'
-    string name;
+    string name = "bob";
 }
 
 struct Robot: Named {

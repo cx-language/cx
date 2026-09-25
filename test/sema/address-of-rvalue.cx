@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
-// CHECK-NOT: address-of-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 int foo() { return 42; }
 int? getOpt() { return 42; }
@@ -40,4 +39,3 @@ void main() {
     int* ok6 = &list.push(4);
 }
 
-// CHECK-NOT: address-of-rvalue.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

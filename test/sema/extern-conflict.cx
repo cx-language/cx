@@ -1,5 +1,4 @@
 // RUN: %not %cx --print-ir %s 2>&1 | %FileCheck %s
-// CHECK-NOT: {{(warning|error)}}:
 
 import "inputs/extern-conflict-a.h";
 import "inputs/extern-conflict-b.h";
@@ -12,4 +11,3 @@ void main() {
     print(picks(1, 2));
 }
 
-// CHECK-NOT: {{(warning|error)}}:

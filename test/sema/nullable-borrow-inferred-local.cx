@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: nullable-borrow-inferred-local.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void f(int&? o) {
     // CHECK: [[@LINE+1]]:9: error: reference type 'int&?' may only appear as a function parameter, return type, local variable, or interface argument
@@ -10,5 +9,4 @@ void f(int&? o) {
 void main() {
 }
 
-// CHECK: 5:6: warning: unused declaration 'f'
-// CHECK-NOT: nullable-borrow-inferred-local.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK: 4:6: warning: unused declaration 'f'

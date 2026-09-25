@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
-// CHECK-NOT: unknown-type-size-t.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     int x = 1;
@@ -10,4 +9,3 @@ void main() {
     size_t t = 5;
 }
 
-// CHECK-NOT: unknown-type-size-t.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

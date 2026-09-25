@@ -1,6 +1,5 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: is-while-binding.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 enum Outcome {
     Ok(int value),
@@ -14,4 +13,3 @@ void main() {
     }
 }
 
-// CHECK-NOT: is-while-binding.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

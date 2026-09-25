@@ -1,5 +1,4 @@
 // RUN: %cx --print-ir %s 2>&1 | %FileCheck %s
-// CHECK-NOT: name-mangling.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 // Mangled symbols embed module, receiver, name, generic args, return type,
 // parameter count, and parameter types, so every overload gets its own symbol.
@@ -94,4 +93,3 @@ void main() {
     print(counter);
 }
 
-// CHECK-NOT: name-mangling.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

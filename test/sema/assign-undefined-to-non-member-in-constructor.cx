@@ -4,6 +4,7 @@ struct A {
     int i;
 
     A() {
+        i = 0;
         var j = 0;
         // CHECK: [[@LINE+1]]:13: error: 'undefined' is only allowed as an initial value
         j = undefined;

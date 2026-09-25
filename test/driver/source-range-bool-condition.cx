@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: :{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 int stringLength(string s) {
     return s.size();
 }
@@ -10,4 +9,3 @@ void main() {
 // CHECK: [[@LINE-3]]:12: error: type 'int' is not convertible to boolean
 // CHECK-NEXT: while (stringLength("hi")) {
 // CHECK-NEXT: ~~~~~~~~~~~~~~~~~~
-// CHECK-NOT: :{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

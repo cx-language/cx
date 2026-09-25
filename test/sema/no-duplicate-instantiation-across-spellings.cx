@@ -1,5 +1,4 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: no-duplicate-instantiation-across-spellings.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 T pick<T>(T x) {
     var unused_in_body = 1;
@@ -14,4 +13,3 @@ void main() {
     println(pick(v));
 }
 
-// CHECK-NOT: no-duplicate-instantiation-across-spellings.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

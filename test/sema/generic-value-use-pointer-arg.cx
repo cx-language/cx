@@ -3,10 +3,7 @@
 // Calling an Array method that uses its element type as a value with a
 // non-basic element type must fail with a clean error, not crash the compiler.
 
-// CHECK-NOT: generic-value-use-pointer-arg.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 // CHECK: Array.cx:{{[0-9]+}}:{{[0-9]+}}: error: unknown identifier 'T'
-// CHECK-NOT: error:
-// CHECK-NOT: generic-value-use-pointer-arg.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     var x = 1;

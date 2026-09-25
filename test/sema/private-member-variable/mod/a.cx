@@ -4,7 +4,9 @@
 
 struct A {
     private int a;
-    A() {}
+    A() {
+        a = 0;
+    }
     void f() {
         this.a++;
         a++;

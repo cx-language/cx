@@ -1,8 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: import-interpolation.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 // CHECK: [[@LINE+1]]:8: error: string interpolation is not allowed in import paths
 import "$var";
 
 void main() {}
-// CHECK-NOT: import-interpolation.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

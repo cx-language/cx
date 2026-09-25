@@ -1,6 +1,5 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: warning
 
 enum Color {
     Red,
@@ -63,4 +62,3 @@ void main() {
     unqualifiedFullyCovered(Color.Red);
 }
 
-// CHECK-NOT: warning

@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
-// CHECK-NOT: alias-spelling-in-diagnostics.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 using MyInt = int;
 using Ints = List<int>;
@@ -27,6 +26,7 @@ void main() {
     MyInt d = true;
     // CHECK: [[@LINE+1]]:14: error: cannot assign 'int' to 'Ints'
     Ints e = 0;
+    // CHECK: [[@LINE+2]]:14: warning: unnecessary conversion to same type
     // CHECK: [[@LINE+1]]:14: error: cannot assign 'int' to 'bool'
     bool f = int(1);
     // CHECK: [[@LINE+1]]:19: error: cannot assign 'int' to 'List<int>'
@@ -62,4 +62,3 @@ void main() {
     bool r = 1.5;
 }
 
-// CHECK-NOT: alias-spelling-in-diagnostics.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

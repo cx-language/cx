@@ -4,8 +4,6 @@ import "inputs/mixed-c-duplicate-a.h";
 import "inputs/mixed-c-duplicate-b.h";
 
 void main() {
-    // CHECK-NOT: mixed-c-duplicate-import.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
     // CHECK: [[@LINE+1]]:13: error: ambiguous reference to 'widget'
     var w = widget;
-    // CHECK-NOT: mixed-c-duplicate-import.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 }

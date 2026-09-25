@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: enum-impl-decl-error-missing-method.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 interface X {
     void foo();
@@ -11,4 +10,3 @@ enum Z: X {
     A,
 }
 
-// CHECK-NOT: enum-impl-decl-error-missing-method.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

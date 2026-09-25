@@ -1,6 +1,5 @@
 // RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
-// CHECK-NOT: {{(warning|error)}}:
 void foo(int*? p) {
     if (p == null) {
         return;
@@ -10,4 +9,3 @@ void foo(int*? p) {
     var a = *(p!);
 }
 
-// CHECK-NOT: {{(warning|error)}}:

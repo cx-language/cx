@@ -1,8 +1,6 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: nested-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 // CHECK: [[@LINE+1]]:11: error: nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value
 void f(int&& x) {}
 
-// CHECK-NOT: nested-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

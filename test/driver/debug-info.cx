@@ -1,5 +1,4 @@
 // RUN: %cx -print-llvm %s 2>&1 | %FileCheck %s
-// CHECK-NOT: debug-info.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void callee() {}
 
@@ -15,7 +14,6 @@ void main() {
 // CHECK: !llvm.dbg.cu = !{!{{[0-9]+}}}
 // CHECK: !DICompileUnit(language: DW_LANG_C, file: !{{[0-9]+}}, producer: "cx", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
 // CHECK: !DIFile(filename: "debug-info.cx", directory: "{{[^"]+}}")
-// CHECK: distinct !DISubprogram(name: "callee", linkageName: "_CX1N4main6calleeE4void0_", scope: !{{[0-9]+}}, file: !{{[0-9]+}}, line: 4, type: !{{[0-9]+}}, scopeLine: 4, spFlags: DISPFlagDefinition, unit: !{{[0-9]+}})
-// CHECK: distinct !DISubprogram(name: "main", linkageName: "main", scope: !{{[0-9]+}}, file: !{{[0-9]+}}, line: 6, type: !{{[0-9]+}}, scopeLine: 6, spFlags: DISPFlagDefinition, unit: !{{[0-9]+}})
-// CHECK: !DILocation(line: 7, column: 5, scope: !{{[0-9]+}})
-// CHECK-NOT: debug-info.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+// CHECK: distinct !DISubprogram(name: "callee", linkageName: "_CX1N4main6calleeE4void0_", scope: !{{[0-9]+}}, file: !{{[0-9]+}}, line: 3, type: !{{[0-9]+}}, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !{{[0-9]+}})
+// CHECK: distinct !DISubprogram(name: "main", linkageName: "main", scope: !{{[0-9]+}}, file: !{{[0-9]+}}, line: 5, type: !{{[0-9]+}}, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !{{[0-9]+}})
+// CHECK: !DILocation(line: 6, column: 5, scope: !{{[0-9]+}})

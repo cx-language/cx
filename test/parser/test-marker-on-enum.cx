@@ -1,6 +1,5 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: test-marker-on-enum.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 enum E {
     // CHECK: [[@LINE+1]]:5: error: only top-level functions can be marked as tests
@@ -8,4 +7,3 @@ enum E {
     Red
 }
 
-// CHECK-NOT: test-marker-on-enum.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

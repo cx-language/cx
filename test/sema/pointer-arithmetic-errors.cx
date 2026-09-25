@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
-// CHECK-NOT: pointer-arithmetic-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void f(int* p, int* q, int[*] s, int[*] t, int x) {
     // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
@@ -35,4 +34,3 @@ void g(int* p, int* q, int[*] s, int[*] t, int*? o) {
     _ = -*p + *q;
 }
 
-// CHECK-NOT: pointer-arithmetic-errors.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

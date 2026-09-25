@@ -1,9 +1,7 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
-// CHECK-NOT: trailing-dot.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     var a = 0.
 // CHECK: [[@LINE+1]]:1: error: expected identifier, got '}'
 }
 
-// CHECK-NOT: trailing-dot.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

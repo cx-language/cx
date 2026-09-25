@@ -1,6 +1,5 @@
 // RUN: %not %cx run --backend=c %s 2>&1 | %FileCheck %s
 // UNSUPPORTED: windows
-// CHECK-NOT: stack-trace-run-c.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void inner() {
     abort("boom");
@@ -20,4 +19,3 @@ void main() {
 // CHECK: _CX1N4main5innerE4void0_
 // CHECK: _CX1N4main6middleE4void0_
 // CHECK: main
-// CHECK-NOT: stack-trace-run-c.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

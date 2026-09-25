@@ -1,6 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 
-// CHECK-NOT: enum-methods.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 enum E {
     A(int x),
@@ -94,4 +93,3 @@ void main() {
     println(p.toString());
 }
 
-// CHECK-NOT: enum-methods.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

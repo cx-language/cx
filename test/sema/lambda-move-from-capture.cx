@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: warning
 
 struct Point {
     int x;
@@ -17,5 +16,3 @@ void main() {
     _ = f();
 }
 
-// CHECK-NOT: error
-// CHECK-NOT: warning

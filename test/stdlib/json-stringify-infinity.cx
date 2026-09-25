@@ -1,6 +1,5 @@
 // RUN: %not %cx run %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: json-stringify-infinity.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     var v = JsonValue.Number(1.0 / 0.0);
@@ -8,4 +7,3 @@ void main() {
 }
 
 // CHECK: JsonValue.Number must be finite
-// CHECK-NOT: json-stringify-infinity.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

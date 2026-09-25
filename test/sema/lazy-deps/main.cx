@@ -1,5 +1,7 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck --allow-empty %s --check-prefix=CHECK-LAZY
 // RUN: %not %cx -typecheck --check-all %s 2>&1 | %FileCheck %s --check-prefix=CHECK-ALL
+// FileCheck requires at least one directive per used prefix; the implicit
+// guard already covers this, the explicit NOT just satisfies that.
 // CHECK-LAZY-NOT: {{(warning|error)}}:
 import mod;
 

@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
-// CHECK-NOT: pointer-to-rvalue-arg.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct A: Copyable {
     int i;
@@ -24,4 +23,3 @@ void main() {
     f(0);
 }
 
-// CHECK-NOT: pointer-to-rvalue-arg.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

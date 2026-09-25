@@ -5,5 +5,4 @@ struct A {}
 void main() {
     // CHECK: [[@LINE+1]]:5: error: unknown identifier 'A.iterator'
     for i in A() {}
-    // CHECK-NOT: error
 }

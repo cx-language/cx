@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: constant-overflow.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     // CHECK: [[@LINE+1]]:24: error: 2147483648 is out of range for type 'int'
@@ -15,4 +14,3 @@ void main() {
     println(umax + one);
 }
 
-// CHECK-NOT: constant-overflow.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

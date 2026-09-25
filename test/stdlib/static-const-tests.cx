@@ -1,5 +1,4 @@
 // RUN: check_exit_status 0 %cx test -Werror %s
-// CHECK-NOT: static-const-tests.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct Point {
     const origin_x = 0;

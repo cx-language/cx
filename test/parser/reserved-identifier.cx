@@ -10,4 +10,3 @@ struct __closure0 {
     int x;
 }
 
-// CHECK-NOT: error

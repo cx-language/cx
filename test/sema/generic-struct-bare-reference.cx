@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: generic-struct-bare-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct Box<T> {
     T value;
@@ -11,4 +10,3 @@ void main() {
     var x = Box;
 }
 
-// CHECK-NOT: generic-struct-bare-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

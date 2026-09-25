@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: warning
 
 struct Point {
     int x;
@@ -14,5 +13,3 @@ void main() {
     var f = () => p.x;
 }
 
-// CHECK-NOT: error
-// CHECK-NOT: warning

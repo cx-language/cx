@@ -1,6 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK-NOT: warning
 
 void takesFn(int(int) f) {
     _ = f(10);
@@ -34,5 +33,3 @@ void main() {
     _ = returnsFn();
 }
 
-// CHECK-NOT: error
-// CHECK-NOT: warning

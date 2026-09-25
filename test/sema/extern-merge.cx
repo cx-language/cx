@@ -1,5 +1,4 @@
 // RUN: %cx --print-ir %s 2>&1 | %FileCheck %s
-// CHECK-NOT: {{(warning|error)}}:
 
 import "inputs/extern-merge-a.h";
 import "inputs/extern-merge-b.h";
@@ -14,4 +13,3 @@ void main() {
     print(pick(u));
 }
 
-// CHECK-NOT: {{(warning|error)}}:

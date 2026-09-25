@@ -1,5 +1,4 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: static-const-redefinition.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 struct S {
     int x;
@@ -12,4 +11,3 @@ enum E {
     // CHECK: [[@LINE+1]]:11: error: redefinition of 'A'
     const A = 1;
 }
-// CHECK-NOT: static-const-redefinition.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

@@ -1,12 +1,10 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
-// CHECK-NOT: array-optional-data-warning.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 void main() {
     int[*]? p = null;
     // CHECK: [[@LINE+1]]:7: warning: value may be null; unwrap it with a postfix '!' to silence this warning
     p.data()[0];
     if (p != null) {
-        // CHECK-NOT: array-optional-data-warning.cx:{{[0-9]+}}:{{[0-9]+}}: warning:
         p.data()[0];
     }
 }
