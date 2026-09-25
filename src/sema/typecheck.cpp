@@ -483,7 +483,9 @@ static void appendUnique(std::vector<Decl*>& target, llvm::ArrayRef<Decl*> sourc
 }
 
 std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl, bool inAllImportedModules) {
-    ASSERT(!name.empty());
+    // Anonymous C-imported types have empty names and never resolve; callers
+    // like findTypeAlias forward them during field checking.
+    if (name.empty()) return {};
     std::vector<Decl*> decls;
 
     if (!receiverTypeDecl) {

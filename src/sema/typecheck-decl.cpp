@@ -103,6 +103,8 @@ static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> me
 
 TypeAliasDecl* Typechecker::findTypeAlias(Type type) {
     if (!type.isBasicType() || type.isBuiltinType()) return nullptr;
+    // Anonymous C-imported types have empty names; nothing to resolve.
+    if (type.getName().empty()) return nullptr;
 
     // Current-module type declarations shadow imported declarations. Keep the
     // first declaration at the winning scope; multiple imported type names stay

@@ -1,0 +1,8 @@
+// RUN: %cx -typecheck %s
+
+import "inputs/anonymous-struct-field.h";
+
+void main() {
+    Outer o = undefined;
+    o.z = 42;
+}
