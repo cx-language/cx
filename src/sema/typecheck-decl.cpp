@@ -384,7 +384,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 auto decls = findDecls(basicType->name);
 
                 if (decls.empty()) {
-                    ERROR(type.location, "unknown type '" << type << "'");
+                    ERROR(type.location, "unknown type '" << type << "'" << Type::didYouMeanBuiltin(basicType->name));
                 }
                 auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));
                 decl = typeTemplate;

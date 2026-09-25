@@ -3366,6 +3366,7 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
         ERROR(expr.location, "expected type generic argument for 'cast'");
     }
     Type targetType = expr.genericArgs.front().getType();
+    typecheckType(targetType, AccessLevel::None);
     ParamDecl param(sourceType, "", false, expr.location);
 
     validateAndConvertArguments(expr, param, false, expr.getFunctionName(), expr.location);

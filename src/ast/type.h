@@ -174,6 +174,9 @@ struct Type {
     static Type getUndefined(Mutability mutability = Mutability::Mutable, Location location = Location());
 
     static bool isBuiltinScalar(llvm::StringRef typeName);
+    // Returns " (did you mean 'X'?)" for the closest builtin scalar type name,
+    // or "" when nothing is close enough.
+    static std::string didYouMeanBuiltin(llvm::StringRef typeName);
 
     TypeBase* typeBase = nullptr;
     Mutability mutability = Mutability::Mutable;

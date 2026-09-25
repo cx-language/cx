@@ -72,12 +72,28 @@ bool Type::isArrayPointer() const {
     return getKind() == TypeKind::ArrayPointerType;
 }
 
+constexpr llvm::StringRef builtinScalarNames[] = {
+    "int8", "int16", "int32", "int64", "int128", "uint8", "uint16", "uint32", "uint64", "uint128", "c_size_t", "float32", "float64", "float80", "bool", "char",
+};
+
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
-    return llvm::StringSwitch<bool>(typeName)
-        .Cases({"int8", "int16", "int32", "int64", "int128"}, true)
-        .Cases({"uint8", "uint16", "uint32", "uint64", "uint128", "c_size_t"}, true)
-        .Cases({"float32", "float64", "float80", "bool", "char"}, true)
-        .Default(false);
+    return llvm::is_contained(builtinScalarNames, typeName);
+}
+
+std::string Type::didYouMeanBuiltin(llvm::StringRef typeName) {
+    llvm::StringRef best;
+    unsigned bestDistance = 0;
+    for (llvm::StringRef name : builtinScalarNames) {
+        unsigned distance = typeName.edit_distance(name, true, 2);
+        if (distance <= 2 && (best.empty() || distance < bestDistance)) {
+            best = name;
+            bestDistance = distance;
+        }
+    }
+    // Scale the tolerance with the name length so short names like 'Foo'
+    // don't match 'bool' (distance 2) while 'size_t' still matches 'c_size_t'.
+    if (best.empty() || bestDistance * 3 > typeName.size()) return "";
+    return (" (did you mean '" + best + "'?)").str();
 }
 
 bool Type::isEnumType() const {
