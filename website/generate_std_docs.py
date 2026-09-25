@@ -336,14 +336,14 @@ def render_file_page(relpath, types, functions, constants, conditional):
     return finish(out)
 
 
-def render_index(title, pages):
-    out = [
-        f"# {title}",
-        "",
-        "Auto-generated from the [standard library sources](https://github.com/cx-language/cx/tree/main/std)",
-        "by [generate_std_docs.py](https://github.com/cx-language/cx/blob/main/website/generate_std_docs.py).",
-        "",
-    ]
+def render_index(title, pages, blurb=True):
+    out = [f"# {title}", ""]
+    if blurb:
+        out += [
+            "Auto-generated from the [standard library sources](https://github.com/cx-language/cx/tree/main/std)",
+            "by [generate_std_docs.py](https://github.com/cx-language/cx/blob/main/website/generate_std_docs.py).",
+            "",
+        ]
     for relpath, types, functions, constants, _ in pages:
         names = (
             [f"`{t.name}`" for t in types]
@@ -468,7 +468,7 @@ def main(argv=None):
         if members:
             category_path = output_dir / f"{category_page(label)}.md"
             category_path.parent.mkdir(parents=True, exist_ok=True)
-            category_path.write_text(render_index(label, members))
+            category_path.write_text(render_index(label, members, blurb=False))
     for relpath, types, functions, constants, conditional in pages:
         page_path = output_dir / f"{page_name(relpath)}.md"
         page_path.parent.mkdir(parents=True, exist_ok=True)
