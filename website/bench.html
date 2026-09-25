@@ -1,0 +1,71 @@
+<link rel="stylesheet" href="index.css">
+<style>
+.bench-chart {
+    margin: 2em 0;
+}
+.bench-chart canvas {
+    width: 100%;
+    cursor: crosshair;
+}
+.bench-legend span {
+    display: inline-block;
+    margin-right: 1.2em;
+    font-size: 0.9em;
+    color: var(--text-color-subtle);
+}
+.bench-legend i {
+    display: inline-block;
+    width: 1.6em;
+    height: 3px;
+    margin-right: 0.4em;
+    vertical-align: middle;
+}
+#bench-tip {
+    position: fixed;
+    z-index: 10;
+    padding: 0.5em 0.8em;
+    background: var(--background-color-2);
+    border: 1px solid var(--background-color-3);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    font-size: 0.85em;
+    line-height: 1.5;
+    pointer-events: none;
+    white-space: nowrap;
+}
+#bench-tip .tip-sha {
+    color: var(--text-color-subtle);
+}
+</style>
+
+<section class="intro">
+    <h1>Benchmarks</h1>
+    <p>
+        Performance history of the compiler and compiled programs, one point per
+        <code>main</code> commit. Hover a graph for values, click a point to open
+        the commit. Runners are shared GitHub machines, so single points wobble:
+        trends and step changes are the signal. Corpus and method are documented
+        in <a href="https://github.com/cx-language/cx/tree/main/bench" target="_blank"><code>bench/</code></a>.
+    </p>
+</section>
+
+<section id="bench-charts">
+    <div class="bench-chart">
+        <h2>C++ build and test suite (seconds)</h2>
+        <div class="bench-legend" id="legend-build"></div>
+    </div>
+    <div class="bench-chart">
+        <h2>cx compile time (seconds)</h2>
+        <div class="bench-legend" id="legend-compile"></div>
+    </div>
+    <div class="bench-chart">
+        <h2>cx run time (seconds)</h2>
+        <div class="bench-legend" id="legend-run"></div>
+    </div>
+    <div class="bench-chart">
+        <h2>Binary sizes</h2>
+        <div class="bench-legend" id="legend-size"></div>
+    </div>
+</section>
+
+<div id="bench-tip" hidden></div>

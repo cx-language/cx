@@ -55,7 +55,7 @@ mkdir build
 rm -rf .generated
 python3 generate_std_docs.py || exit
 
-for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html; do
+for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html bench.html; do
     case $file in
         ../docs/*)
             relpath="${file#../docs/}"
@@ -68,10 +68,13 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
         index.html)
             relpath="index"
             ;;
+        bench.html)
+            relpath="bench"
+            ;;
     esac
 
     case $relpath in
-        index)
+        index|bench)
             toc=""
             ;;
         *)
@@ -79,9 +82,23 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
             ;;
     esac
 
+    # bench.js loads via an include because pandoc strips script elements
+    # from the page source.
+    case $relpath in
+        bench)
+            extra=--include-after-body="bench-script.html"
+            ;;
+        *)
+            extra=""
+            ;;
+    esac
+
     if [ "$relpath" = "index" ]; then
         title="cx Programming Language"
         body_class="frontpage"
+    elif [ "$relpath" = "bench" ]; then
+        title="cx - Benchmarks"
+        body_class=""
     else
         # The first '# ' heading is the section name (unwrap links: '# [List](...)' -> 'List').
         title="cx - $(sed -n 's/^# //p' "$file" | head -n 1 | sed 's/^\[\(.*\)\](.*/\1/')"
@@ -105,7 +122,7 @@ for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.
         *.md) from="markdown-smart" ;;
         *) from="html" ;;
     esac
-    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title" --metadata body-class="$body_class"
+    pandoc -f "$from" "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" $extra --metadata pagetitle="$title" --metadata body-class="$body_class"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
@@ -149,7 +166,12 @@ def page_links(outpath):
     if outpath == "index":
         return ""
     if "/" not in outpath:
-        source = "docs/%s.md" % outpath
+        # bench.html has no docs/ source; skip its edit link instead of
+        # pointing at a nonexistent file.
+        if not os.path.isfile("../docs/%s.md" % outpath):
+            source = None
+        else:
+            source = "docs/%s.md" % outpath
     elif os.path.isfile("../std/%s.cx" % outpath[4:]):
         source = "std/%s.cx" % outpath[4:]
     else:
@@ -242,6 +264,12 @@ done
 python3 generate_search_index.py || exit
 
 cp -r *.css *.js lib build
+
+# Local graph preview: drop a bench-data.json next to this script (e.g. saved
+# from the deployed site) and it is served with the preview build.
+if [ -f "bench-data.json" ]; then
+    cp "bench-data.json" build/
+fi
 
 # Playground WebAssembly artifacts, if built (see wasm/README.md). Without
 # them the site still works, but the Run buttons report that the playground
