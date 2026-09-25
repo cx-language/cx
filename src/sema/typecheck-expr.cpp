@@ -3403,7 +3403,7 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
             expr.setIndex(converted);
             indexExpr = converted;
         } else if (!indexType.isInteger()) {
-            ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected '" << ArrayPointerType::getIndexType() << "'");
+            ERROR(indexExpr->location, "illegal index type '" << indexType << "', expected integer type");
         }
         // Wider integer indexes pass through unconverted; both backends accept any integer index type.
     }
