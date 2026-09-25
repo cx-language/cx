@@ -1,0 +1,10 @@
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck --allow-empty %s --check-prefix=CHECK-LAZY
+// RUN: %not %cx -typecheck --check-all %s 2>&1 | %FileCheck %s --check-prefix=CHECK-ALL
+// CHECK-LAZY-NOT: {{(warning|error)}}:
+import mod;
+
+void main() {
+}
+
+// CHECK-ALL: broken.cx:4:5: error: unknown identifier 'undefinedVariable'
+// CHECK-ALL: broken.cx:7:22: error: unknown type 'UnknownType'

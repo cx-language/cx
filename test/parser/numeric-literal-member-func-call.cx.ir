@@ -7,9 +7,3 @@ int main() {
     store _1 to foo
     return int 0
 }
-
-uint64 _EN3std3int4hashE(int* this) {
-    int this.load = load this
-    uint64 _0 = cast this.load to uint64
-    return _0
-}

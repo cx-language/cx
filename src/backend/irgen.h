@@ -18,6 +18,11 @@ struct Type;
 struct CompileOptions;
 struct IRGenerator;
 
+// Always-on check that an implicit runtime callee was checked. IRGen looks these
+// up by name, bypassing normal demand-checking; sema tracks the triggering
+// constructs in Typechecker::implicitUses. A missed flag fails here loudly.
+void checkImplicitCalleeIsChecked(const Decl& decl, const char* name);
+
 struct IRGenScope {
     IRGenScope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
     void onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls = nullptr);

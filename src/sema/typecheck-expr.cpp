@@ -230,7 +230,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
 
     auto* decl = findDecl(expr.identifier, expr.location, expr.endLocation);
     checkHasAccess(*decl, expr.location, AccessLevel::None);
-    decl->referenced = true;
+    markReferenced(decl);
     expr.decl = decl;
 
     if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
@@ -563,6 +563,10 @@ EnumCase* cx::getIsEnumCase(Expr& expr) {
 
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.op;
+
+    // Conservative: the backend emits overflow checks for integer +,-,* (see
+    // emitCheckedArithmetic), and compound assignment desugars through here.
+    if (op == Token::Plus || op == Token::Minus || op == Token::Star) implicitUses.checkedArithmetic = true;
 
     if (op == Token::Assignment) {
         typecheckAssignment(expr, expr.location);
@@ -1016,8 +1020,10 @@ static bool hasField(TypeDecl& type, const FieldDecl& field) {
     return llvm::any_of(type.fields, [&](const FieldDecl& f) { return f.getName() == field.getName() && f.type == field.type; });
 }
 
-bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
-    auto decls = findDecls(getQualifiedFunctionName(type.getType(), functionDecl.getName(), {}));
+bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) {
+    // Search the type's own methods (like hasField searches its fields): instantiation
+    // methods may live in another module's symbol table than the one this lookup searches.
+    auto decls = findDecls(getQualifiedFunctionName(type.getType(), functionDecl.getName(), {}), &type);
 
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
@@ -1030,7 +1036,7 @@ bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
     return false;
 }
 
-bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
+bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) {
     auto thisTypeResolvedInterface = llvm::cast<TypeDecl>(interface.instantiate({{"This", type.getType()}}, {}));
 
     for (auto& fieldRequirement : thisTypeResolvedInterface->fields) {
@@ -1089,6 +1095,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
                 expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow);
                 if (!expr) return nullptr;
             }
+            if (*implicitCastKind == ImplicitCastExpr::OptionalUnwrap) implicitUses.unwrap = true;
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
             if (*implicitCastKind == ImplicitCastExpr::AutoReference && expr->hasAssignableType() && expr->assignableType.isOptionalType()
                 && !expr->assignableType.getWrappedType().isImplementedAsPointer() && expr->type == expr->assignableType.getWrappedType()) {
@@ -2775,6 +2782,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     if (expr.getFunctionName() == "assert") {
+        implicitUses.assertCall = true;
         llvm::SmallVector<ParamDecl, 2> assertParams;
         assertParams.emplace_back(Type::getBool(), "", false, Location());
         assertParams.emplace_back(BasicType::get("string", {}), "message", false, Location());
@@ -2871,7 +2879,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
-        functionDecl && functionDecl->isMethodDecl() && !functionDecl->typechecked && functionDecl->getTypeDecl()->getName() == "Array") {
+        functionDecl && functionDecl->isMethodDecl() && functionDecl->getTypeDecl()->getName() == "Array") {
         deferTypechecking(functionDecl);
     }
 
@@ -2911,7 +2919,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     expr.calleeDecl = decl;
-    decl->referenced = true;
+    markReferenced(decl);
 
     if (auto* variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
         maybeCaptureVariable(*variableDecl);
@@ -3220,7 +3228,7 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
                         varHadError = true;
                     } else if (varType) {
                         checkHasAccess(*decl, expr.location, AccessLevel::None);
-                        decl->referenced = true;
+                        markReferenced(decl);
                         expr.operandType = varType;
                     }
                 } catch (const CompileError&) {
@@ -3493,6 +3501,7 @@ Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
         WARN(expr.location, "unwrapping non-optional type '" << type << "' has no effect");
         return type;
     }
+    implicitUses.unwrap = true;
     return type.getWrappedType();
 }
 
@@ -3663,6 +3672,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         if (!type) throw CompileError::dependentError(); // Variable initializer had an error, don't report uses of that variable as errors.
         break;
     case ExprKind::StringLiteralExpr:
+        implicitUses.stringLiteral = true;
         type = typecheckStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
         break;
     case ExprKind::CharacterLiteralExpr:

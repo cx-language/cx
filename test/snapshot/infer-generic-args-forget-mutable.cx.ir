@@ -18,3 +18,17 @@ int main() {
     void _2 = call _EN4main1fE5RangeI3intE(Range<int> .load)
     return int 0
 }
+
+void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
+    int* start_0 = alloca int
+    int* end_0 = alloca int
+    store start to start_0
+    store end to end_0
+    int* start_1 = getelementptr this, 0
+    int start.load = load start_0
+    store start.load to start_1
+    int* end_1 = getelementptr this, 1
+    int end.load = load end_0
+    store end.load to end_1
+    return void
+}

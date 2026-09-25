@@ -3,6 +3,7 @@
 %string = type { %"Slice<char>" }
 %"Slice<char>" = type { ptr, i32 }
 %never = type {}
+%OutputFileStream = type { ptr, i1 }
 
 @0 = private unnamed_addr constant [11 x i8] c"operator[]\00", align 1
 @1 = private unnamed_addr constant [7 x i8] c"Slice.\00", align 1
@@ -125,7 +126,80 @@ define void @_EN3std5SliceI3intE16indexOutOfBoundsE6string3int(ptr %this, %strin
   ret void
 }
 
-declare %never @_EN3std5abortI6string6string6string3int6string3intEVE6string6string6string3int6string3int(%string, %string, %string, i32, %string, i32) #0
+define %never @_EN3std5abortI6string6string6string3int6string3intEVE6string6string6string3int6string3int(%string %args_0, %string %args_1, %string %args_2, i32 %args_3, %string %args_4, i32 %args_5) #0 !dbg !24 {
+  %args_01 = alloca %string, align 8
+  %args_12 = alloca %string, align 8
+  %args_23 = alloca %string, align 8
+  %args_34 = alloca i32, align 4
+  %args_45 = alloca %string, align 8
+  %args_56 = alloca i32, align 4
+  %arg = alloca %string, align 8
+  %1 = alloca %OutputFileStream, align 8
+  %arg7 = alloca %string, align 8
+  %2 = alloca %OutputFileStream, align 8
+  %arg8 = alloca %string, align 8
+  %3 = alloca %OutputFileStream, align 8
+  %arg9 = alloca i32, align 4
+  %4 = alloca %OutputFileStream, align 8
+  %arg10 = alloca %string, align 8
+  %5 = alloca %OutputFileStream, align 8
+  %arg11 = alloca i32, align 4
+  %6 = alloca %OutputFileStream, align 8
+  %7 = alloca %OutputFileStream, align 8
+  %8 = alloca i8, align 1
+  store %string %args_0, ptr %args_01, align 8
+  store %string %args_1, ptr %args_12, align 8
+  store %string %args_2, ptr %args_23, align 8
+  store i32 %args_3, ptr %args_34, align 4
+  store %string %args_4, ptr %args_45, align 8
+  store i32 %args_5, ptr %args_56, align 4
+  %args_0.load = load %string, ptr %args_01, align 8
+  store %string %args_0.load, ptr %arg, align 8
+  %9 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  store %OutputFileStream %9, ptr %1, align 8
+  call void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr %1, ptr %arg), !dbg !27
+  %args_1.load = load %string, ptr %args_12, align 8
+  store %string %args_1.load, ptr %arg7, align 8
+  %10 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  store %OutputFileStream %10, ptr %2, align 8
+  call void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr %2, ptr %arg7), !dbg !27
+  %args_2.load = load %string, ptr %args_23, align 8
+  store %string %args_2.load, ptr %arg8, align 8
+  %11 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  store %OutputFileStream %11, ptr %3, align 8
+  call void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr %3, ptr %arg8), !dbg !27
+  %args_3.load = load i32, ptr %args_34, align 4
+  store i32 %args_3.load, ptr %arg9, align 4
+  %12 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  store %OutputFileStream %12, ptr %4, align 8
+  call void @_EN3std16OutputFileStream5writeI3intEER3int(ptr %4, ptr %arg9), !dbg !27
+  %args_4.load = load %string, ptr %args_45, align 8
+  store %string %args_4.load, ptr %arg10, align 8
+  %13 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  store %OutputFileStream %13, ptr %5, align 8
+  call void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr %5, ptr %arg10), !dbg !27
+  %args_5.load = load i32, ptr %args_56, align 4
+  store i32 %args_5.load, ptr %arg11, align 4
+  %14 = call %OutputFileStream @_EN3std6stderrE(), !dbg !26
+  store %OutputFileStream %14, ptr %6, align 8
+  call void @_EN3std16OutputFileStream5writeI3intEER3int(ptr %6, ptr %arg11), !dbg !27
+  %15 = call %OutputFileStream @_EN3std6stderrE(), !dbg !28
+  store %OutputFileStream %15, ptr %7, align 8
+  store i8 10, ptr %8, align 1
+  call void @_EN3std16OutputFileStream5writeI4charEER4char(ptr %7, ptr %8), !dbg !29
+  %16 = call %never @_EN3std12abortWrapperE(), !dbg !30
+  unreachable
+}
+
+declare %OutputFileStream @_EN3std6stderrE() #0
+
+declare void @_EN3std16OutputFileStream5writeI6stringEER6string(ptr, ptr) #0
+
+declare void @_EN3std16OutputFileStream5writeI3intEER3int(ptr, ptr) #0
+
+declare void @_EN3std16OutputFileStream5writeI4charEER4char(ptr, ptr) #0
+
+declare %never @_EN3std12abortWrapperE() #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -156,3 +230,10 @@ attributes #0 = { "frame-pointer"="all" }
 !21 = !DILocation(line: 115, column: 18, scope: !20)
 !22 = !DILocation(line: 116, column: 85, scope: !20)
 !23 = !DILocation(line: 116, column: 9, scope: !20)
+!24 = distinct !DISubprogram(name: "abort", linkageName: "_EN3std5abortI6string6string6string3int6string3intEVE6string6string6string3int6string3int", scope: !25, file: !25, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
+!25 = !DIFile(filename: "error.cx")
+!26 = !DILocation(line: 11, column: 9, scope: !24)
+!27 = !DILocation(line: 11, column: 18, scope: !24)
+!28 = !DILocation(line: 13, column: 5, scope: !24)
+!29 = !DILocation(line: 13, column: 14, scope: !24)
+!30 = !DILocation(line: 14, column: 5, scope: !24)

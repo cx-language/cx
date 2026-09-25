@@ -7,14 +7,7 @@ define i32 @main() #0 !dbg !4 {
   ret i32 0
 }
 
-define void @_EN16opaque-pointer_h1S4initEOP6Opaque(ptr %this, ptr %opaque) #0 {
-  %opaque1 = alloca ptr, align 8
-  store ptr %opaque, ptr %opaque1, align 8
-  %opaque2 = getelementptr inbounds %S, ptr %this, i32 0, i32 0
-  %opaque.load = load ptr, ptr %opaque1, align 8
-  store ptr %opaque.load, ptr %opaque2, align 8
-  ret void
-}
+declare void @_EN16opaque-pointer_h1S4initEOP6Opaque(ptr, ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 

@@ -4,12 +4,3 @@ int main() {
     void _0 = call _EN16opaque-pointer_h1S4initEOP6Opaque(S* s, Opaque* null)
     return int 0
 }
-
-void _EN16opaque-pointer_h1S4initEOP6Opaque(S* this, Opaque* opaque) {
-    Opaque** opaque_0 = alloca Opaque*
-    store opaque to opaque_0
-    Opaque** opaque_1 = getelementptr this, 0
-    Opaque* opaque.load = load opaque_0
-    store opaque.load to opaque_1
-    return void
-}

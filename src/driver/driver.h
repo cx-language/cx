@@ -21,6 +21,7 @@ enum class BuildMode { Debug, ReleaseSafe, ReleaseFast };
 struct CompileOptions {
     BuildMode mode = BuildMode::Debug;
     bool noUnusedWarnings = false;
+    bool checkAll = false;
     bool warnUndefinedMacros = false;
     bool warnUnusedResult = false;
     std::vector<std::string> importSearchPaths = {};

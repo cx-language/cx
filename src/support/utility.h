@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cassert>
+#include <chrono>
+#include <cstdlib>
 #include <iosfwd>
 #include <string>
 #include <utility> // std::move
@@ -165,10 +167,34 @@ void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<No
 
 std::optional<std::string> findExternalCCompiler();
 
+/// Runs a shell command, capturing stdout into `output`. Returns the exit status.
+int exec(const char* command, std::string& output);
+
+/// Header search paths reported by the external C compiler (`cc -E -v`),
+/// queried once on first use. Most builds never import C headers, so eager
+/// querying would waste ~25ms per invocation.
+const std::vector<std::string>& getCCompilerSearchPaths();
+
 /// Locates the directory containing the `std/` standard-library directory.
 /// `CX_ROOT` wins, then directories relative to the running executable are
 /// probed (installed `<prefix>/bin` + `<prefix>/share/cx` layouts and in-tree
 /// build dirs), with the compile-time source directory as a dev fallback.
 std::string getCxRootDir();
+
+/// Phase timers for compile-time profiling. Set CX_PROFILE=1 to print
+/// per-stage wall times to stderr.
+inline bool profilingEnabled() {
+    static bool enabled = std::getenv("CX_PROFILE") != nullptr;
+    return enabled;
+}
+struct PhaseTimer {
+    std::string name;
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    ~PhaseTimer() {
+        if (!profilingEnabled()) return;
+        auto ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+        llvm::errs() << "[profile] " << name << ": " << ms << " ms\n";
+    }
+};
 
 } // namespace cx

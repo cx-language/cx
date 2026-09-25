@@ -22,6 +22,16 @@ ignored_dirs = ["inputs"]
 # declarations are expected there; all other warnings are still errors.
 no_unused_dirs = ["embedding"]
 
+# Bound every child process: a hung compiler must fail the suite, not block
+# CTest forever (this suite has no per-step timeout otherwise).
+def _call(cmd, **kwargs):
+    try:
+        return subprocess.call(cmd, timeout=600, **kwargs)
+    except subprocess.TimeoutExpired:
+        print(f"timed out: {' '.join(cmd)}")
+        return 1
+
+
 # The cpp-interop example links a small C++ static library; build it first
 # so `cx build` finds libcpp-interop-math.a via build.cx.
 def build_cpp_interop_lib():
@@ -37,10 +47,10 @@ def build_cpp_interop_lib():
         print("warning: no C++ compiler found, skipping cpp-interop C++ library build")
         return
     for src, obj in [("mathlib.cpp", "mathlib.o"), ("wrapper.cpp", "wrapper.o")]:
-        result = subprocess.call([cxx, "-std=c++20", "-O2", "-c", src, "-o", obj], cwd=directory)
+        result = _call([cxx, "-std=c++20", "-O2", "-c", src, "-o", obj], cwd=directory)
         if result != 0:
             sys.exit(result)
-    result = subprocess.call(["ar", "rcs", "libcpp-interop-math.a", "mathlib.o", "wrapper.o"], cwd=directory)
+    result = _call(["ar", "rcs", "libcpp-interop-math.a", "mathlib.o", "wrapper.o"], cwd=directory)
     if result != 0:
         sys.exit(result)
 
@@ -59,7 +69,7 @@ def build_example(file):
 
     if file.endswith(".cx"):
         output = os.path.splitext(file)[0] + (".exe" if is_windows else "")
-        exit_status = subprocess.call([args.cx, file, "-o", output, "-Werror"] + cx_args)
+        exit_status = _call([args.cx, file, "-o", output, "-Werror"] + cx_args)
         try:
             os.remove(output)
         except FileNotFoundError:
@@ -71,7 +81,7 @@ def build_example(file):
     elif file not in ignored_dirs and os.path.isdir(file):
         extra_args = ["-Wno-unused"] if file in no_unused_dirs else []
         before = set(os.listdir(file))
-        exit_status = subprocess.call([args.cx, "build", "-Werror"] + extra_args + cx_args, cwd=file)
+        exit_status = _call([args.cx, "build", "-Werror"] + extra_args + cx_args, cwd=file)
         for entry in set(os.listdir(file)) - before:
             path = os.path.join(file, entry)
             if os.path.isdir(path) and not os.path.islink(path):

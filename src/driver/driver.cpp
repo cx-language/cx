@@ -40,12 +40,6 @@
 #include "../support/utility.h"
 #include "clang.h"
 
-#ifdef _MSC_VER
-#define popen _popen
-#define pclose _pclose
-#define WEXITSTATUS(x) x
-#endif
-
 using namespace cx;
 namespace cl = llvm::cl;
 
@@ -108,6 +102,8 @@ cl::opt<bool> warnUndefinedMacros("Wundef", cl::desc("Warn about undefined macro
                                   cl::cat(diagnosticCategory));
 cl::opt<bool> warnUnusedResult("Wunused-result", cl::desc("Warn about unused expression results"), cl::sub(cl::SubCommand::getAll()),
                                cl::cat(diagnosticCategory));
+cl::opt<bool> checkAll("check-all", cl::desc("Typecheck all code in imported modules, not just used code"), cl::sub(cl::SubCommand::getAll()),
+                       cl::cat(diagnosticCategory));
 cl::opt<int> errorLimit("error-limit", cl::desc("Limit the number of reported errors (10 by default, 0 removes limit)"), cl::init(10),
                         cl::sub(cl::SubCommand::getAll()), cl::cat(diagnosticCategory));
 
@@ -156,26 +152,6 @@ static std::string shellEscape(llvm::StringRef arg) {
 #endif
 }
 
-static int exec(const char* command, std::string& output) {
-    FILE* pipe = popen(command, "r");
-    if (!pipe) {
-        ABORT("failed to execute '" << command << "'");
-    }
-
-    try {
-        char buffer[128];
-        while (fgets(buffer, sizeof buffer, pipe)) {
-            output += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw;
-    }
-
-    int status = pclose(pipe);
-    return WEXITSTATUS(status);
-}
-
 static void addHeaderSearchPathsFromEnvVar(const char* name, std::vector<std::string>& paths) {
     if (auto pathList = llvm::sys::Process::GetEnv(name)) {
         llvm::SmallVector<llvm::StringRef, 16> splitPaths;
@@ -183,27 +159,6 @@ static void addHeaderSearchPathsFromEnvVar(const char* name, std::vector<std::st
 
         for (llvm::StringRef path : splitPaths) {
             paths.push_back(path.str());
-        }
-    }
-}
-
-static void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& paths) {
-    auto cCompilerPath = findExternalCCompiler();
-    if (!cCompilerPath) return;
-
-    if (llvm::sys::path::filename(*cCompilerPath) != "cl.exe") {
-        std::string command = "echo | " + *cCompilerPath + " -E -v - 2>&1 | grep '^ /'";
-        std::string output;
-        exec(command.c_str(), output);
-
-        llvm::SmallVector<llvm::StringRef, 8> lines;
-        llvm::SplitString(output, lines, "\n");
-
-        for (auto line : lines) {
-            auto path = line.trim();
-            if (llvm::sys::fs::is_directory(path)) {
-                paths.push_back(path.str());
-            }
         }
     }
 }
@@ -222,7 +177,8 @@ static void appendSystemImportSearchPaths(std::vector<std::string>& paths) {
     addHeaderSearchPathsFromEnvVar("CPATH", paths);
     addHeaderSearchPathsFromEnvVar("C_INCLUDE_PATH", paths);
     addHeaderSearchPathsFromEnvVar("INCLUDE", paths);
-    addHeaderSearchPathsFromCCompilerOutput(paths);
+    // Compiler-reported header paths are queried lazily on first C import
+    // (see getCCompilerSearchPaths): most builds never import C headers.
 }
 
 static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFiles) {
@@ -387,13 +343,18 @@ static bool synthesizeTestMain(Module& mainModule) {
 }
 
 int cx::buildModule(Module& mainModule, BuildParams buildParams) {
+    PhaseTimer totalTimer("buildModule-total");
     if (mainModule.fileBuffers.empty()) {
         ABORT("no input files");
     }
 
-    addPredefinedImportSearchPaths(buildParams.filePaths);
+    {
+        PhaseTimer timer("search-paths");
+        addPredefinedImportSearchPaths(buildParams.filePaths);
+    }
 
-    CompileOptions options = {buildMode, noUnusedWarnings, warnUndefinedMacros, warnUnusedResult, importSearchPaths, frameworkSearchPaths, defines, cflags};
+    CompileOptions options = {buildMode, noUnusedWarnings, checkAll, warnUndefinedMacros, warnUnusedResult, importSearchPaths, frameworkSearchPaths, defines,
+                              cflags};
     auto remainingPrintOpts = std::popcount(printOpts.getBits());
     bool printSectionDividers = remainingPrintOpts > 1;
 
@@ -415,9 +376,12 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         buildParams.outputFileName = specifiedOutputFileName;
     }
 
-    for (auto& fileBuffer : mainModule.fileBuffers) {
-        Parser parser(*fileBuffer, mainModule, options);
-        parser.parse();
+    {
+        PhaseTimer timer("parse");
+        for (auto& fileBuffer : mainModule.fileBuffers) {
+            Parser parser(*fileBuffer, mainModule, options);
+            parser.parse();
+        }
     }
 
     if (parse) return errors ? 1 : 0;
@@ -425,11 +389,17 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (buildParams.runTests && !synthesizeTestMain(mainModule)) return 1;
 
     Typechecker typechecker(options, buildParams.config ? &buildParams.config->resolvedDependencies : nullptr);
-    for (auto& importedModule : mainModule.getImportedModules()) {
-        typechecker.typecheckModule(*importedModule, options);
+    {
+        PhaseTimer timer("typecheck-imports");
+        for (auto& importedModule : mainModule.getImportedModules()) {
+            typechecker.typecheckModule(*importedModule, options, false);
+        }
     }
-    typechecker.typecheckModule(mainModule, options);
-    typechecker.checkUnusedDecls(mainModule);
+    {
+        PhaseTimer timer("typecheck-main");
+        typechecker.typecheckModule(mainModule, options, true);
+        typechecker.checkUnusedDecls(mainModule);
+    }
 
     if (errors) return 1;
 
@@ -439,14 +409,20 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     }
 
     IRGenerator irGenerator(options);
-    for (auto* importedModule : Module::getAllImportedModules()) {
-        irGenerator.emitModule(*importedModule);
+    {
+        PhaseTimer timer("irgen");
+        for (auto* importedModule : Module::getAllImportedModules()) {
+            irGenerator.emitModule(*importedModule);
+        }
+        irGenerator.emitModule(mainModule);
     }
-    irGenerator.emitModule(mainModule);
 
     NullAnalyzer nullAnalyzer;
-    for (auto module : irGenerator.generatedModules) {
-        nullAnalyzer.analyze(module);
+    {
+        PhaseTimer timer("null-analyzer");
+        for (auto module : irGenerator.generatedModules) {
+            nullAnalyzer.analyze(module);
+        }
     }
 
     if (errors) return 1;
@@ -537,11 +513,14 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         file << cCode;
         break;
     }
-    case Backend::LLVM:
+    case Backend::LLVM: {
         LLVMGenerator llvmGenerator;
         llvmGenerator.emitDebugInfo = options.mode == BuildMode::Debug;
-        for (auto* irModule : irGenerator.generatedModules) {
-            llvmGenerator.codegenModule(*irModule);
+        {
+            PhaseTimer timer("llvm-codegen");
+            for (auto* irModule : irGenerator.generatedModules) {
+                llvmGenerator.codegenModule(*irModule);
+            }
         }
 
         bool printed = false;
@@ -561,14 +540,21 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         llvm::Module linkedModule("", llvmGenerator.ctx);
         llvm::Linker linker(linkedModule);
 
-        for (auto& module : llvmGenerator.generatedModules) {
-            bool error = linker.linkInModule(std::unique_ptr<llvm::Module>(module));
-            if (error) ABORT("LLVM module linking failed");
+        {
+            PhaseTimer timer("llvm-link");
+            for (auto& module : llvmGenerator.generatedModules) {
+                bool error = linker.linkInModule(std::unique_ptr<llvm::Module>(module));
+                if (error) ABORT("LLVM module linking failed");
+            }
         }
 
         auto relocModel = noPIE ? llvm::Reloc::Model::Static : llvm::Reloc::Model::PIC_;
-        auto* targetMachine = createTargetMachine(linkedModule, relocModel, options.mode);
-        optimizeLLVMModule(linkedModule, options.mode, targetMachine);
+        llvm::TargetMachine* targetMachine;
+        {
+            PhaseTimer timer("llvm-opt");
+            targetMachine = createTargetMachine(linkedModule, relocModel, options.mode);
+            optimizeLLVMModule(linkedModule, options.mode, targetMachine);
+        }
 
         if (emitBitcode) {
             emitLLVMBitcode(linkedModule, "output.bc");
@@ -581,8 +567,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         }
 
         auto fileType = emitAssembly ? llvm::CodeGenFileType::AssemblyFile : llvm::CodeGenFileType::ObjectFile;
-        emitLLVMModuleToMachineCode(linkedModule, *targetMachine, tempIntermediateFilePath, fileType);
-        break;
+        {
+            PhaseTimer timer("emit-obj");
+            emitLLVMModuleToMachineCode(linkedModule, *targetMachine, tempIntermediateFilePath, fileType);
+        }
+    } break;
     }
 
     if (!buildParams.outputDirectory.empty()) {
@@ -703,7 +692,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (captureCcOutput) {
         ccRedirects = {std::nullopt, ccStdoutLog.str(), std::nullopt};
     }
-    int ccExitStatus = useExternalCCompiler ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, std::nullopt, ccRedirects) : invokeClang(ccArgs);
+    int ccExitStatus;
+    {
+        PhaseTimer timer("cc-link");
+        ccExitStatus = useExternalCCompiler ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, std::nullopt, ccRedirects) : invokeClang(ccArgs);
+    }
     if (ccExitStatus != 0) {
         llvm::sys::fs::remove(tempIntermediateFilePath);
         if (captureCcOutput) {
@@ -785,6 +778,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     // Debug-only: release builds emit no DWARF, so there is nothing to collect
     // (and a failed dsymutil would warn spuriously).
     if (!buildParams.createSharedLib && options.mode == BuildMode::Debug) {
+        PhaseTimer timer("dsymutil");
         std::string dsymutilCommand = "xcrun dsymutil " + shellEscape(outputPath.str()) + " 2>/dev/null";
         std::string dsymutilOutput;
         if (exec(dsymutilCommand.c_str(), dsymutilOutput) != 0) {
@@ -906,6 +900,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
     CompileOptions baseOptions;
     baseOptions.mode = buildMode;
     baseOptions.noUnusedWarnings = noUnusedWarnings;
+    baseOptions.checkAll = checkAll;
     baseOptions.warnUndefinedMacros = warnUndefinedMacros;
     baseOptions.warnUnusedResult = warnUnusedResult;
     baseOptions.importSearchPaths = importSearchPaths;

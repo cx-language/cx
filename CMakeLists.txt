@@ -118,10 +118,23 @@ target_link_libraries(libcx ${LLVM_LIBS})
 add_executable(example_embedding examples/embedding/embedding.cpp)
 target_include_directories(example_embedding PRIVATE src)
 target_link_libraries(example_embedding libcx)
+include(ProcessorCount)
+ProcessorCount(CHECK_PARALLEL_JOBS)
+if(CHECK_PARALLEL_JOBS EQUAL 0)
+    set(CHECK_PARALLEL_JOBS 4)
+endif()
+# Inner parallelism for the snippet suites: CTest already parallelizes across
+# tests, so a full core count here oversubscribes (two suites times N threads
+# plus lit shards). Cap at 4, fewer on small machines. Direct script runs keep
+# the higher default for fast iteration.
+set(SNIPPET_JOBS 4)
+if(CHECK_PARALLEL_JOBS LESS 4)
+    set(SNIPPET_JOBS ${CHECK_PARALLEL_JOBS})
+endif()
 add_test(NAME examples COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>")
 add_test(NAME examples-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
-add_test(NAME docs-snippets COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>")
-add_test(NAME docs-snippets-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
+add_test(NAME docs-snippets COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--jobs=${SNIPPET_JOBS}")
+add_test(NAME docs-snippets-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--backend=c" "--jobs=${SNIPPET_JOBS}")
 add_test(NAME docs-stdlib-unit COMMAND python3 "${PROJECT_SOURCE_DIR}/website/test_generate_std_docs.py")
 add_test(NAME prose COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_prose.py")
 # Language server end-to-end tests (query subprocess + stdio server session).
@@ -135,14 +148,13 @@ set_tests_properties(lsp PROPERTIES TIMEOUT 1800)
 # must not run concurrently with each other now that check runs tests in
 # parallel.
 set_tests_properties(examples examples-c-backend PROPERTIES RESOURCE_LOCK examples-workdir)
-include(ProcessorCount)
-ProcessorCount(CHECK_PARALLEL_JOBS)
-if(CHECK_PARALLEL_JOBS EQUAL 0)
-    set(CHECK_PARALLEL_JOBS 4)
-endif()
-# Run one test per processor. The suites are CPU-bound (each lit shard,
-# docs/examples run, and LSP run is effectively serial), so extra CTest
-# slots oversubscribe slower Debug runners and trigger test timeouts.
+# Bound every long suite: a hung compiler must fail loudly instead of
+# blocking CTest forever. Generous enough for slow Debug runners.
+set_tests_properties(examples examples-c-backend docs-snippets docs-snippets-c-backend PROPERTIES TIMEOUT 1200)
+# Run one test per processor. The suites are CPU-bound, so extra CTest slots
+# oversubscribe slower Debug runners and trigger test timeouts. The snippet
+# suites cap their inner parallelism above so they don't multiply the slot
+# count; examples and LSP are short enough to leave uncapped.
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --parallel ${CHECK_PARALLEL_JOBS} -C $<CONFIG>
     USES_TERMINAL)
@@ -232,6 +244,8 @@ foreach(shard RANGE ${LIT_SHARD_MAX})
         -Dfilecheck_path=$<TARGET_FILE:FileCheck>
         -Dtest_dir=${PROJECT_SOURCE_DIR}/test
         -Dllvm_version=${LLVM_VERSION_MAJOR})
+    # Lit already caps each file at 120s; this bounds the shard as a whole.
+    set_tests_properties(${lit_test_name} PROPERTIES TIMEOUT 900)
 endforeach()
 
 # FileCheck for tests: the LLVM distribution's CMake config already exports
