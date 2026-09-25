@@ -4,6 +4,11 @@
 as one module, so files in the same project never need to import each other.
 See [Build system](build-system).
 
+The standard library needs no import either:
+every non-private declaration in `std/` is visible to all code automatically.
+Only external code needs `import`: other directories outside your project,
+and vendored libraries under `vendor/`, which compile as separate modules.
+
 ## Importing a module
 
 An `import` declaration pulls in a directory of `.cx` files from outside the project,

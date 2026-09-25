@@ -166,6 +166,10 @@ translation unit at a time, which leaves more room for optimization and avoids l
 surprises. Libraries are imported as a whole, so users never hunt for which file declares a
 feature, and library authors can reorganize files without breaking compatibility. Every
 library lives in its own namespace automatically, with no per-file declarations to maintain.
+Files from the same project share one module and need no imports between them
+(except vendored libraries under `vendor/`, which compile as separate modules),
+and the standard library is visible without any import; only external code needs
+`import` (see [Modules and imports](./modules)).
 Together this means faster builds and less time wrestling the build when a project grows past
 a handful of files.
 

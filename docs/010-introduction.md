@@ -15,6 +15,31 @@ The primary goals of cx are:
 - Don't change too much from C/C++, especially in terms of syntax, so that C/C++ programmers are immediately productive in cx.
 - Don't introduce any "big new ideas" or dogma. Instead, focus on what has been proven to work and implement those in the best way possible.
 
+## Non-goals
+
+cx explicitly does not aim for:
+
+- Guaranteed compile-time memory or thread safety. That is Rust's trade-off:
+  cx prefers a simpler language and faster iteration, catching memory bugs with
+  debug-mode checks and tooling such as AddressSanitizer instead
+  (see [Difference between cx and Rust](./comparison#difference-between-cx-and-rust)).
+- A managed runtime or garbage collector. There is no hidden runtime;
+  the program you write is the program that runs.
+- Source compatibility with C or C++. cx interoperates with existing C code
+  (C++ interop is a longer-term goal) so projects can adopt it gradually,
+  but it does not keep C/C++ syntax or semantics where they are flawed.
+
+## Who cx is for
+
+cx is a general-purpose language, but it is designed especially for game
+development and other areas where you want both low-level control and
+high-level expressiveness in one language - domains where debug performance and
+quick prototyping matter. Debug builds compile fast for a short
+edit-compile-run cycle (see [Build modes](./build-system#build-modes)), and
+nothing stops you from writing quick, hacky code to reach a design decision
+faster and making the surviving code correct afterwards
+(see [Difference between cx and Rust](./comparison#difference-between-cx-and-rust)).
+
 ## Why cx?
 
 C++ is a huge and complex language that has accumulated many problems over the years, for example:
@@ -85,6 +110,70 @@ which also solves the majority of the above problems. Rust differs from cx in th
 So in summary, cx is intended to be used over Rust for non-safety-critical
 applications where programmer productivity, ergonomics, and performance are more
 important than Rust's safety and explicitness.
+
+## Frequently asked questions
+
+### Do I need to import the standard library or other files in my project?
+
+No. The standard library is visible to all code automatically, and all `.cx`
+files in your project (except `build.cx` and vendored libraries under `vendor/`)
+compile as one module, so neither needs `import`. Only external code needs
+importing: dependencies, vendored libraries, and other directories outside your
+project. See [Modules and imports](./modules).
+
+### What does "no hidden allocation or runtime" mean? Do containers allocate?
+
+There is no garbage collector or language runtime allocating behind your back.
+Allocating is confined to the container types you choose (`List`, `Map`,
+`StringBuf`, ...), which manage their own memory without allocator plumbing.
+For full control over allocation, use fixed-size arrays, slices, `malloc`/`free`,
+or an `Arena`. See [Low-level programming](./low-level-programming).
+
+### Is cx memory-safe?
+
+cx is safer by default than C/C++: array accesses are bounds-checked, integer
+arithmetic is overflow-checked, null dereferences are checked, and the type
+system tracks nullability at compile time. But unlike Rust, cx does not
+guarantee memory or thread safety at compile time; for that, use debug-mode
+checks and tooling such as AddressSanitizer. See [Safer by default](./language-overview#safer-by-default)
+and [Difference between cx and Rust](./comparison#difference-between-cx-and-rust).
+
+### How do I build a project and add dependencies?
+
+Run `cx build` in the project directory; it works with no configuration.
+Dependencies are Git repositories declared in `build.cx` and imported by package
+name, with no central registry. Run tests with `cx test`. See [Build system](./build-system).
+
+### How do I use existing C or C++ code?
+
+Import C headers directly (`import "stdio.h";`) and call their functions like
+ordinary cx functions; individual C functions can also be declared with bare
+`extern`. C++ APIs need C wrappers for now; direct C++ interop is a longer-term goal.
+See [Using C libraries](./low-level-programming#using-c-libraries).
+
+### Which build mode should I use?
+
+The default debug mode compiles fast with safety checks enabled. Use `--release`
+for fully optimized builds with checks disabled (overflow wraps), or
+`--release-safe` for optimized builds that keep the checks. See [Build modes](./build-system#build-modes).
+
+### There is no preprocessor or macros - how do I conditionally compile code?
+
+Use `#if` with `-D` defines and the predefined `Windows`/`macOS` conditions,
+both in source files and in `build.cx`. See [Conditional compilation](./build-system#conditional-compilation).
+
+### What does "simple and unopinionated" mean in practice?
+
+The language stays small (one struct concept, one member-access operator, no
+pointer/reference split), there is one obvious way to do simple things, and the
+compiler never forces a naming convention or coding style on you. Multiple
+paradigms are supported equally. See [Design principles](./design-principles).
+
+### What is cx not for?
+
+Safety-critical code where compile-time guarantees matter more than iteration
+speed, and projects that need a stable, mature ecosystem today:
+cx is still evolving toward its 0.1 release. See [Non-goals](#non-goals).
 
 ## Not to be confused with
 
