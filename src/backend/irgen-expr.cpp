@@ -48,6 +48,7 @@ Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
     for (auto* decl : Module::getStdlibModule()->symbolTable.findInTopLevelScope("string.init")) {
         auto params = llvm::cast<ConstructorDecl>(decl)->getParams();
         if (params.size() == 2 && params[0].type.isPointerType() && params[1].type.isInt32()) {
+            checkImplicitCalleeIsChecked(*decl, "string.init");
             stringConstructor = getFunction(*llvm::cast<ConstructorDecl>(decl));
             break;
         }
@@ -746,7 +747,9 @@ void IRGenerator::emitAssert(Value* condition, const Expr* expr, Location locati
 }
 
 void IRGenerator::emitAbortWithMessage(llvm::StringRef message, Location location) {
-    auto* assertFail = getFunction(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("assertFail")));
+    auto* assertFailDecl = llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("assertFail"));
+    checkImplicitCalleeIsChecked(*assertFailDecl, "assertFail");
+    auto* assertFail = getFunction(*assertFailDecl);
     auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":", std::to_string(location.line), ":",
                                                std::to_string(location.column), "\n");
     createCall(assertFail, createGlobalStringPtr(messageAndLocation), nullptr);

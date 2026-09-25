@@ -137,7 +137,9 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
 Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Location location) {
     Type stringType = BasicType::get("string", {});
-    auto* mallocFunction = getFunction(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("malloc")));
+    auto* mallocDecl = llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("malloc"));
+    checkImplicitCalleeIsChecked(*mallocDecl, "malloc");
+    auto* mallocFunction = getFunction(*mallocDecl);
 
     // Copy the C strings into a heap array of strings that lives for the whole program run.
     Value* count = createCast(argc, Type::getUInt64(), "argv.count");
@@ -152,6 +154,7 @@ Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Locati
     for (auto* decl : Module::getStdlibModule()->symbolTable.findInTopLevelScope("string.init")) {
         auto params = llvm::cast<ConstructorDecl>(decl)->getParams();
         if (params.size() == 1 && params[0].type.isPointerType() && params[0].type.getPointee().isChar()) {
+            checkImplicitCalleeIsChecked(*decl, "string.init");
             stringInit = getFunction(*llvm::cast<ConstructorDecl>(decl));
             break;
         }
@@ -263,6 +266,11 @@ void IRGenerator::emitDecl(const Decl& decl) {
     case DeclKind::MethodDecl:
     case DeclKind::ConstructorDecl:
     case DeclKind::DestructorDecl:
+        // Imported modules check lazily, so unreferenced functions never got
+        // past their signature (or were never touched at all); their bodies
+        // are untyped and must not be emitted. Referenced functions emit on
+        // demand through getValue even when skipped here.
+        if (decl.checkState != Decl::CheckState::Checked) return;
         emitFunctionDecl(llvm::cast<FunctionDecl>(decl));
         break;
     case DeclKind::GenericParamDecl:

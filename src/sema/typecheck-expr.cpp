@@ -230,7 +230,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
 
     auto* decl = findDecl(expr.identifier, expr.location, expr.endLocation);
     checkHasAccess(*decl, expr.location, AccessLevel::None);
-    decl->referenced = true;
+    markReferenced(decl);
     expr.decl = decl;
 
     if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
@@ -570,6 +570,10 @@ EnumCase* cx::getIsEnumCase(Expr& expr) {
 
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.op;
+
+    // Conservative: the backend emits overflow checks for integer +,-,* (see
+    // emitCheckedArithmetic), and compound assignment desugars through here.
+    if (op == Token::Plus || op == Token::Minus || op == Token::Star) implicitUses.checkedArithmetic = true;
 
     if (op == Token::Assignment) {
         typecheckAssignment(expr, expr.location);
@@ -1023,8 +1027,10 @@ static bool hasField(TypeDecl& type, const FieldDecl& field) {
     return llvm::any_of(type.fields, [&](const FieldDecl& f) { return f.getName() == field.getName() && f.type == field.type; });
 }
 
-bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
-    auto decls = findDecls(getQualifiedFunctionName(type.getType(), functionDecl.getName(), {}));
+bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) {
+    // Search the type's own methods (like hasField searches its fields): instantiation
+    // methods may live in another module's symbol table than the one this lookup searches.
+    auto decls = findDecls(getQualifiedFunctionName(type.getType(), functionDecl.getName(), {}), &type);
 
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
@@ -1037,7 +1043,7 @@ bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
     return false;
 }
 
-bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
+bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) {
     auto thisTypeResolvedInterface = llvm::cast<TypeDecl>(interface.instantiate({{"This", type.getType()}}, {}));
 
     for (auto& fieldRequirement : thisTypeResolvedInterface->fields) {
@@ -1096,6 +1102,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
                 expr = convert(expr, convertedType.getWrappedType(), allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow);
                 if (!expr) return nullptr;
             }
+            if (*implicitCastKind == ImplicitCastExpr::OptionalUnwrap) implicitUses.unwrap = true;
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
             if (*implicitCastKind == ImplicitCastExpr::AutoReference && expr->hasAssignableType() && expr->assignableType.isOptionalType()
                 && !expr->assignableType.getWrappedType().isImplementedAsPointer() && expr->type == expr->assignableType.getWrappedType()) {
@@ -1909,6 +1916,43 @@ std::string cx::narrowingHint(Type source, Type target) {
     auto isNumeric = [](Type type) { return type.isInteger() || type.isFloatingPoint() || type.isChar(); };
     if (!isNumeric(source) || !isNumeric(target)) return "";
     return " (use '" + target.toString() + "(...)' to convert explicitly)";
+}
+
+std::string cx::copyableHint(Type type) {
+    if (!type || type.containsUnresolvedPlaceholder()) return "";
+    if (type.isImplicitlyCopyable()) return "";
+    Type unwrapped = type.removeReference();
+    while (unwrapped.isOptionalType()) {
+        unwrapped = unwrapped.getWrappedType();
+    }
+    while (unwrapped.isConcreteArray()) {
+        unwrapped = unwrapped.getElementType().removeReference();
+        while (unwrapped.isOptionalType()) {
+            unwrapped = unwrapped.getWrappedType();
+        }
+    }
+    if (unwrapped.isAnonymousStructType()) {
+        for (auto& element : unwrapped.getAnonymousStructElements()) {
+            if (!element.type.containsUnresolvedPlaceholder() && !element.type.isImplicitlyCopyable()) return copyableHint(element.type);
+        }
+        return "";
+    }
+    if (unwrapped.isImplicitlyCopyable()) return "";
+    auto* decl = unwrapped.getDecl();
+    if (!decl) return " (type '" + type.toString() + "' is not Copyable)";
+    if (decl->isClosure()) {
+        for (auto& field : decl->fields) {
+            if (field.getName().starts_with("__capture_") && !field.type.containsUnresolvedPlaceholder() && !field.type.isImplicitlyCopyable()) {
+                return copyableHint(field.type);
+            }
+        }
+        return " (closure captures a non-Copyable type; make the captured type Copyable to allow copies)";
+    }
+    if (unwrapped.getName() == "Optional" || unwrapped.getName() == "Array") return " (type '" + unwrapped.toString() + "' is not Copyable)";
+    if (decl->getModule() && (decl->getModule()->name == "std" || decl->getModule()->isCHeaderImport)) {
+        return " (type '" + unwrapped.toString() + "' is not Copyable)";
+    }
+    return " (type '" + unwrapped.toString() + "' is not Copyable; add ': Copyable' to '" + decl->getName().str() + "' to allow copies)";
 }
 
 // Suggests '&' when a call would match a concrete candidate by taking addresses.
@@ -2747,6 +2791,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     if (expr.getFunctionName() == "assert") {
+        implicitUses.assertCall = true;
         llvm::SmallVector<ParamDecl, 2> assertParams;
         assertParams.emplace_back(Type::getBool(), "", false, Location());
         assertParams.emplace_back(BasicType::get("string", {}), "message", false, Location());
@@ -2843,7 +2888,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
-        functionDecl && functionDecl->isMethodDecl() && !functionDecl->typechecked && functionDecl->getTypeDecl()->getName() == "Array") {
+        functionDecl && functionDecl->isMethodDecl() && functionDecl->getTypeDecl()->getName() == "Array") {
         deferTypechecking(functionDecl);
     }
 
@@ -2883,7 +2928,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     expr.calleeDecl = decl;
-    decl->referenced = true;
+    markReferenced(decl);
 
     if (auto* variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
         maybeCaptureVariable(*variableDecl);
@@ -3192,7 +3237,7 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
                         varHadError = true;
                     } else if (varType) {
                         checkHasAccess(*decl, expr.location, AccessLevel::None);
-                        decl->referenced = true;
+                        markReferenced(decl);
                         expr.operandType = varType;
                     }
                 } catch (const CompileError&) {
@@ -3465,6 +3510,7 @@ Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
         WARN(expr.location, "unwrapping non-optional type '" << type << "' has no effect");
         return type;
     }
+    implicitUses.unwrap = true;
     return type.getWrappedType();
 }
 
@@ -3635,6 +3681,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         if (!type) throw CompileError::dependentError(); // Variable initializer had an error, don't report uses of that variable as errors.
         break;
     case ExprKind::StringLiteralExpr:
+        implicitUses.stringLiteral = true;
         type = typecheckStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
         break;
     case ExprKind::CharacterLiteralExpr:
@@ -3940,7 +3987,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved) {
                 auto* parent = variableDecl->parent;
                 if ((variableDecl->kind == DeclKind::VarDecl || variableDecl->kind == DeclKind::ParamDecl) && parent && parent->isFunctionDecl()
                     && parent != currentFunction) {
-                    ERROR(varExpr->location, "cannot move from captured variable '" << varExpr->identifier << "'");
+                    ERROR(varExpr->location, "cannot move from captured variable '" << varExpr->identifier << "'" << copyableHint(varExpr->type));
                 }
             }
         }
@@ -3955,6 +4002,11 @@ void Typechecker::setMoved(Expr* expr, bool isMoved) {
 
 void Typechecker::checkNotMoved(const Decl& decl, const VarExpr& expr) {
     if (movedDecls.count(&decl)) {
-        ERROR_RANGE(expr.location, expr.endLocation, "use of moved value '" << expr.identifier << "'");
+        std::string hint;
+        if (auto* variableDecl = llvm::dyn_cast<VariableDecl>(&decl)) {
+            hint = copyableHint(variableDecl->type);
+        }
+        if (hint.empty() && expr.type) hint = copyableHint(expr.type);
+        ERROR_RANGE(expr.location, expr.endLocation, "use of moved value '" << expr.identifier << "'" << hint);
     }
 }

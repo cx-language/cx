@@ -2136,9 +2136,9 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
 
         Typechecker typechecker(options, buildDir.empty() ? nullptr : &projectConfig.resolvedDependencies);
         for (auto* imported : module->getImportedModules()) {
-            typechecker.typecheckModule(*imported, options);
+            typechecker.typecheckModule(*imported, options, false);
         }
-        typechecker.typecheckModule(*module, options);
+        typechecker.typecheckModule(*module, options, true);
         typechecker.checkUnusedDecls(*module);
 
         result.mainModule = module;

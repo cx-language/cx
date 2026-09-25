@@ -69,7 +69,7 @@ struct Typechecker {
     Typechecker(const CompileOptions& options, const std::vector<BuildConfig::ResolvedDependency>* dependencies = nullptr)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
       isPostProcessing(false), options(options), dependencies(dependencies) {}
-    void typecheckModule(Module& module, const CompileOptions& packageOptions);
+    void typecheckModule(Module& module, const CompileOptions& packageOptions, bool isMainModule);
     void checkUnusedDecls(const Module& mainModule);
 
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
@@ -78,8 +78,24 @@ struct Typechecker {
     void typecheckTopLevelDecl(Decl& decl);
     void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);
     void typecheckFunctionDecl(FunctionDecl& decl);
+    void typecheckFunctionSignature(FunctionDecl& decl);
     void typecheckFunctionTemplate(FunctionTemplate& decl);
     void typecheckMethodDecl(Decl& decl);
+    // Ensures the declaration's signature is checked, checking it on first
+    // use. Drives lazy checking of imported modules; main-module decls are
+    // already checked eagerly, so this is a no-op for them.
+    void ensureSignature(Decl& decl);
+    void ensureSignatureImpl(Decl& decl);
+    void ensureInterfaces(TypeDecl& decl);
+    void markReferenced(Decl* decl);
+    // Whole-checks std declarations IRGen references without going through
+    // sema name resolution (malloc, assertFail, string.init, operator==),
+    // limited to the ones the checked code can actually reach.
+    void ensureImplicitRuntimeUses(const Module& mainModule);
+    // Points name resolution at the declaration's own module and file.
+    // Lazily checked declarations from imported modules must resolve names
+    // in their own scope, not the use site's. Callers save and restore.
+    void setDeclContext(Decl& decl);
 
     bool typecheckStmt(Stmt*& stmt);
     void typecheckCompoundStmt(CompoundStmt& stmt);
@@ -98,14 +114,16 @@ struct Typechecker {
     void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true, bool allowReference = false);
     Type resolveTypeAliases(Type type, AccessLevel userAccessLevel = AccessLevel::None);
     Type resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving);
-    TypeAliasDecl* findTypeAlias(Type type) const;
+    TypeAliasDecl* findTypeAlias(Type type);
     void canonicalizeTypeAliases();
     void typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel);
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel);
     void typecheckTypeDecl(TypeDecl& decl);
+    void typecheckTypeSignature(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
     void typecheckTypeAliasDecl(TypeAliasDecl& decl);
     void typecheckEnumDecl(EnumDecl& decl);
+    void typecheckEnumSignature(EnumDecl& decl);
     void typecheckImportDecl(ImportDecl& decl);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType);
@@ -128,8 +146,8 @@ struct Typechecker {
     Type typecheckIfExpr(IfExpr& expr);
     Type typecheckSwitchExpr(SwitchExpr& expr, Type expectedType);
 
-    bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
-    bool providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
+    bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl);
+    bool providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason);
     /// Returns the converted expression if the conversion succeeds, or null otherwise.
     /// Probing conversions (where failure falls back to another attempt) pass diagnoseOutOfRange=false
     /// so an out-of-range literal doesn't abort the still-untried alternatives.
@@ -142,8 +160,8 @@ struct Typechecker {
     GenericArg findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType = false);
     llvm::StringMap<GenericArg> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                       Type expectedType);
-    Decl* findDecl(llvm::StringRef name, Location location, Location endLocation = {}) const;
-    std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false) const;
+    Decl* findDecl(llvm::StringRef name, Location location, Location endLocation = {});
+    std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false);
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry = true);
     std::vector<GenericArg> inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
@@ -185,6 +203,10 @@ struct Typechecker {
     Module* currentModule;
     SourceFile* currentSourceFile;
     bool suppressAccessWarnings = false;
+    // Set while canonicalizing aliases: resolutions must not trigger checking,
+    // which would check declarations out of order. The eager loop and lazy
+    // uses ensure signatures afterward.
+    bool suppressEnsureSignature = false;
     FunctionDecl* currentFunction;
     Stmt** currentStmt; // Double-pointer so it refers to the correct statement after lowering.
     std::vector<Stmt*> currentControlStmts;
@@ -195,6 +217,26 @@ struct Typechecker {
     llvm::SmallPtrSet<Decl*, 32> definitelyAssignedDecls;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
+    // Set while checking function signatures (parameters and return type).
+    // Types mentioned there materialize no values, so their destructors must
+    // not be demand-checked: values are dropped (and their destructors marked)
+    // at bodies, variable declarations, and field declarations instead.
+    bool checkingFunctionSignature = false;
+    // Constructs seen while checking that need implicit runtime declarations
+    // at IRGen (see ensureImplicitRuntimeUses). Set conservatively: a missed
+    // construct would emit a call to an unchecked body, so when in doubt set.
+    // Mutable for const helpers like convert() that also observe them.
+    struct ImplicitUses {
+        bool stringLiteral = false;
+        bool stringSwitch = false;
+        bool enumSwitch = false;
+        bool unwrap = false;
+        bool checkedArithmetic = false;
+        bool assertCall = false;
+    };
+    mutable ImplicitUses implicitUses;
+    // Types whose infinite-size error was already reported by the early size check.
+    llvm::SmallPtrSet<const TypeDecl*, 16> infiniteSizeReported;
     CompileOptions options; // Active package's options; switched per module.
     const std::vector<BuildConfig::ResolvedDependency>* dependencies; // Closure, or null without a project.
 };
@@ -206,5 +248,7 @@ bool containsGenericParam(Type type, llvm::StringRef genericParam);
 void diagnoseClosureConversion(Type source, Type target, Location location);
 // Suggests an explicit conversion when a value of one numeric type is used where another is expected.
 std::string narrowingHint(Type source, Type target);
+// Suggests adding ': Copyable' when a use fails because the value was moved.
+std::string copyableHint(Type type);
 
 } // namespace cx

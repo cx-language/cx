@@ -2,18 +2,31 @@
 #include <algorithm>
 #include <fstream>
 #include <ostream>
+#ifdef __APPLE__
+#include <limits.h>
+#include <unistd.h>
+#endif
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallSet.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Process.h>
 #include <llvm/Support/Program.h>
+#include <llvm/Support/VersionTuple.h>
 #ifndef __EMSCRIPTEN__
 // Signal handling is not available in the WebAssembly build.
 #include <llvm/Support/Signals.h>
 #endif
 #pragma warning(pop)
+
+#ifdef _MSC_VER
+#define popen _popen
+#define pclose _pclose
+#define WEXITSTATUS(x) x
+#endif
 
 using namespace cx;
 
@@ -129,6 +142,118 @@ std::optional<std::string> cx::findExternalCCompiler() {
         }
     }
     return std::nullopt;
+}
+
+int cx::exec(const char* command, std::string& output) {
+    FILE* pipe = popen(command, "r");
+    if (!pipe) {
+        ABORT("failed to execute '" << command << "'");
+    }
+
+    try {
+        char buffer[128];
+        while (fgets(buffer, sizeof buffer, pipe)) {
+            output += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+
+    int status = pclose(pipe);
+    return WEXITSTATUS(status);
+}
+
+const std::vector<std::string>& cx::getCCompilerSearchPaths() {
+    static std::vector<std::string> paths;
+    static bool queried = false;
+    if (!queried) {
+        queried = true;
+#ifdef __EMSCRIPTEN__
+        // No host C toolchain inside the cx-wasm module (it lives in a
+        // separate module), so there is nothing to query; callers correctly
+        // treat the empty list as "no system headers".
+        return paths;
+#else
+        PhaseTimer timer("c-search-paths");
+        auto cCompilerPath = findExternalCCompiler();
+#ifdef __APPLE__
+        // macOS ships no /usr/include, so the SDK provides all system headers and the
+        // query below would fire for nearly every build. The SDK location follows from
+        // the selected developer directory (explicit xcode-select choice first, then
+        // xcode-select's own fallback order), probed with stat instead of a ~25ms
+        // compiler spawn, along with the toolchain's clang resource directory (home of
+        // compiler builtin headers like stdarg.h). Only SDK/usr/include matters in
+        // practice alongside it: the toolchain's other dirs carry Swift/lexer leftovers
+        // that would only shadow our matching LLVM builtin headers. The SDK and the
+        // resource dir must come from the same developer directory, and the resolved
+        // compiler must be Apple's own; anything else falls back to spawning below.
+        std::string developerDirs[3];
+        char selectedDir[PATH_MAX];
+        ssize_t selectedLen = readlink("/var/db/xcode_select_link", selectedDir, sizeof(selectedDir) - 1);
+        if (selectedLen > 0) {
+            selectedDir[selectedLen] = '\0';
+            developerDirs[0] = selectedDir;
+        }
+        developerDirs[1] = "/Applications/Xcode.app/Contents/Developer";
+        developerDirs[2] = "/Library/Developer/CommandLineTools";
+        bool useStaticPaths = !cCompilerPath || cCompilerPath->starts_with("/usr/bin/");
+        for (auto& developerDir : developerDirs) {
+            if (!developerDir.empty() && cCompilerPath && cCompilerPath->starts_with(developerDir)) useStaticPaths = true;
+        }
+        if (useStaticPaths) {
+            for (auto& developerDir : developerDirs) {
+                if (developerDir.empty()) continue;
+                const char* sdkSubpath = nullptr;
+                for (auto* candidate : {"/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk", "/SDKs/MacOSX.sdk"}) {
+                    if (llvm::sys::fs::is_directory(developerDir + candidate + "/usr/include")) {
+                        sdkSubpath = candidate;
+                        break;
+                    }
+                }
+                // Old clang versions linger next to the current one; the newest
+                // matches what `cc` reports (dotted entries symlink to it).
+                std::string clangIncludeDir;
+                llvm::VersionTuple newestClangVersion;
+                for (auto* clangSubpath : {"/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang", "/usr/lib/clang"}) {
+                    std::error_code error;
+                    llvm::sys::fs::directory_iterator end;
+                    for (llvm::sys::fs::directory_iterator it(developerDir + clangSubpath, error); !error && it != end; it.increment(error)) {
+                        llvm::VersionTuple version;
+                        // tryParse returns true on failure; keep the newest seen.
+                        if (version.tryParse(llvm::sys::path::filename(it->path())) || version <= newestClangVersion) continue;
+                        std::string includeDir = it->path() + "/include";
+                        if (llvm::sys::fs::is_directory(includeDir)) {
+                            newestClangVersion = version;
+                            clangIncludeDir = includeDir;
+                        }
+                    }
+                }
+                if (!sdkSubpath || clangIncludeDir.empty()) continue;
+                paths.push_back(clangIncludeDir);
+                paths.push_back(developerDir + sdkSubpath + "/usr/include");
+                std::string frameworksDir = developerDir + sdkSubpath + "/System/Library/Frameworks";
+                if (llvm::sys::fs::is_directory(frameworksDir)) paths.push_back(frameworksDir);
+                return paths;
+            }
+        }
+#endif
+        if (cCompilerPath && llvm::sys::path::filename(*cCompilerPath) != "cl.exe") {
+            std::string command = "echo | " + *cCompilerPath + " -E -v - 2>&1 | grep '^ /'";
+            std::string output;
+            exec(command.c_str(), output);
+            llvm::SmallVector<llvm::StringRef, 8> lines;
+            llvm::SplitString(output, lines, "\n");
+            for (auto line : lines) {
+                auto path = line.trim();
+                if (llvm::sys::fs::is_directory(path)) {
+                    paths.push_back(path.str());
+                }
+            }
+        }
+#endif
+    }
+    return paths;
 }
 
 std::string cx::getCxRootDir() {

@@ -18,3 +18,17 @@ int32 main() {
     void _2 = call _EN4main1fE5RangeI5int32E(Range<int32> .load)
     return int32 0
 }
+
+void _EN3std5RangeI5int32E4initE5int325int32(Range<int32>* this, int32 start, int32 end) {
+    int32* start_0 = alloca int32
+    int32* end_0 = alloca int32
+    store start to start_0
+    store end to end_0
+    int32* start_1 = getelementptr this, 0
+    int32 start.load = load start_0
+    store start.load to start_1
+    int32* end_1 = getelementptr this, 1
+    int32 end.load = load end_0
+    store end.load to end_1
+    return void
+}

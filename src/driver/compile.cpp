@@ -46,9 +46,9 @@ CompileToCResult cx::compileToC(const char* fileName, const char* source, const 
 
     Typechecker typechecker(compileOptions);
     for (auto& importedModule : mainModule.getImportedModules()) {
-        typechecker.typecheckModule(*importedModule, compileOptions);
+        typechecker.typecheckModule(*importedModule, compileOptions, false);
     }
-    typechecker.typecheckModule(mainModule, compileOptions);
+    typechecker.typecheckModule(mainModule, compileOptions, true);
     typechecker.checkUnusedDecls(mainModule);
 
     if (errors) return CompileToCResult{.status = 1};

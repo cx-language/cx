@@ -101,7 +101,7 @@ static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> me
     }
 }
 
-TypeAliasDecl* Typechecker::findTypeAlias(Type type) const {
+TypeAliasDecl* Typechecker::findTypeAlias(Type type) {
     if (!type.isBasicType() || type.isBuiltinType()) return nullptr;
 
     // Current-module type declarations shadow imported declarations. Keep the
@@ -144,7 +144,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
             }
 
             checkHasAccess(*alias, type.location, userAccessLevel);
-            alias->referenced = true;
+            markReferenced(alias);
             Type resolved = resolveTypeAliases(alias->aliasedType, userAccessLevel, resolving);
             resolving.erase(alias);
 
@@ -202,6 +202,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
 }
 
 void Typechecker::canonicalizeTypeAliases() {
+    llvm::SaveAndRestore suppress(suppressEnsureSignature, true);
     auto hasTypeAlias = [](const Module& module) {
         return llvm::any_of(module.sourceFiles, [](const SourceFile& sourceFile) {
             return llvm::any_of(sourceFile.topLevelDecls, [](const Decl* decl) { return decl->isTypeAliasDecl(); });
@@ -368,7 +369,10 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 nestedAllowReference = llvm::any_of(findDecls(basicType->name), allowsBorrowArgs);
             }
             for (auto genericArg : basicType->genericArgs) {
-                if (genericArg.isType()) typecheckType(genericArg.getType(), userAccessLevel, true, nestedAllowReference);
+                // Type nodes are canonicalized, so the stored arguments may carry another use's
+                // locations (the first use wins at parse time, but laziness may check a later use
+                // first); relocate them to the current use, mirroring the recheck above.
+                if (genericArg.isType()) typecheckType(genericArg.getType().withLocation(type.location), userAccessLevel, true, nestedAllowReference);
             }
 
             auto decls = findDecls(basicType->getQualifiedName());
@@ -402,6 +406,17 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
             validateGenericArgs(llvm::cast<TypeTemplate>(decl)->genericParams, basicType->genericArgs, basicType->name, type.location);
         } else if (!decl->isTypeDecl()) {
             ERROR(type.location, "'" << type << "' is not a type");
+        }
+
+        // IRGen drops values of destructor types at scope exit without going through
+        // name resolution, so the destructor would never be demand-checked otherwise.
+        // Skipped for types mentioned in signatures: parameters are marked from the
+        // body instead (see typecheckFunctionDecl), and no other values materialize
+        // from a signature mention.
+        if (!checkingFunctionSignature) {
+            if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                if (DestructorDecl* dtor = typeDecl->getDestructor()) markReferenced(dtor);
+            }
         }
 
         checkHasAccess(*decl, type.location, userAccessLevel);
@@ -597,27 +612,23 @@ static void checkMainSignature(const FunctionDecl& decl) {
     }
 }
 
-void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
-    if (decl.typechecked) return;
-    for (auto& param : decl.proto.params) {
-        param.type = resolveTypeAliases(param.type, decl.accessLevel);
-    }
-    decl.proto.returnType = resolveTypeAliases(decl.proto.returnType, decl.accessLevel);
-    int errorsBefore = errors;
-    llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
-    // Lambda bodies are checked inline within the enclosing function; moves they record
-    // must not clobber the enclosing move state, which is restored when the body is done.
-    llvm::SaveAndRestore saveMovedDecls(movedDecls, movedDecls);
-    llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls, definitelyAssignedDecls);
-    // 'break' and 'continue' must not cross function boundaries into enclosing loops or switches.
-    llvm::SaveAndRestore saveControlStmts(currentControlStmts, std::vector<Stmt*>());
-    llvm::SaveAndRestore saveLocalVarDecls(localVarDecls, std::vector<VarDecl*>());
+void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
+    if (decl.checkState != Decl::CheckState::Unchecked) return;
+    decl.checkState = Decl::CheckState::CheckingSignature;
+    llvm::SaveAndRestore saveModule(currentModule);
+    llvm::SaveAndRestore saveFile(currentSourceFile);
+    llvm::SaveAndRestore setCheckingSignature(checkingFunctionSignature, true);
+    setDeclContext(decl);
+    try {
+        for (auto& param : decl.proto.params) {
+            param.type = resolveTypeAliases(param.type, decl.accessLevel);
+        }
+        decl.proto.returnType = resolveTypeAliases(decl.proto.returnType, decl.accessLevel);
 
-    if (decl.hasPack()) {
-        ERROR(decl.getPackParam()->getLocation(), "variadic parameter requires a generic function");
-    }
+        if (decl.hasPack()) {
+            ERROR(decl.getPackParam()->getLocation(), "variadic parameter requires a generic function");
+        }
 
-    if (decl.isExtern()) {
         Scope scope(&decl, &currentModule->symbolTable);
         llvm::SaveAndRestore setCurrentFunction(currentFunction, &decl);
 
@@ -628,27 +639,65 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             typecheckType(decl.getReturnType(), decl.accessLevel, true, true);
         }
 
-        decl.typechecked = true;
+        if (!decl.isExtern() && decl.isMain() && !decl.isMethodDecl()) {
+            checkMainSignature(decl);
+        }
+    } catch (const CompileError&) {
+        // Leave the partial signature in place (as eager checking would) but
+        // report only once: later uses see SignatureChecked and don't rethrow.
+        decl.checkState = Decl::CheckState::SignatureChecked;
+        throw;
+    }
+    decl.checkState = Decl::CheckState::SignatureChecked;
+}
+
+void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
+    if (decl.checkState == Decl::CheckState::Checked || decl.checkState == Decl::CheckState::CheckingBody) return;
+    typecheckFunctionSignature(decl);
+    if (decl.isExtern()) {
+        decl.checkState = Decl::CheckState::Checked;
         return;
     }
-
-    TypeDecl* receiverTypeDecl = decl.getTypeDecl();
-
-    Scope scope(&decl, &currentModule->symbolTable);
-    llvm::SaveAndRestore setCurrentFunction(currentFunction, &decl);
-
-    typecheckParams(decl.getParams(), decl.accessLevel);
-
-    if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
-        // Element accessors (e.g. List.front, Map.operator[]) return borrows into the container.
-        typecheckType(decl.getReturnType(), decl.accessLevel, true, true);
+    // Value parameters are owned by the body: it drops them at exit, but their
+    // types are only mentioned in the signature, where destructor marking is
+    // skipped (see checkingFunctionSignature).
+    for (auto& param : decl.getParams()) {
+        if (DestructorDecl* dtor = param.type.getDestructor()) markReferenced(dtor);
     }
+    decl.checkState = Decl::CheckState::CheckingBody;
+    llvm::SaveAndRestore saveModule(currentModule);
+    llvm::SaveAndRestore saveFile(currentSourceFile);
+    setDeclContext(decl);
+    try {
+        int errorsBefore = errors;
+        llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
+        // Lambda bodies are checked inline within the enclosing function; moves they record
+        // must not clobber the enclosing move state, which is restored when the body is done.
+        llvm::SaveAndRestore saveMovedDecls(movedDecls, movedDecls);
+        llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls, definitelyAssignedDecls);
+        // 'break' and 'continue' must not cross function boundaries into enclosing loops or switches.
+        llvm::SaveAndRestore saveControlStmts(currentControlStmts, std::vector<Stmt*>());
+        llvm::SaveAndRestore saveLocalVarDecls(localVarDecls, std::vector<VarDecl*>());
 
-    if (decl.isMain() && !decl.isMethodDecl()) {
-        checkMainSignature(decl);
-    }
+        TypeDecl* receiverTypeDecl = decl.getTypeDecl();
+        // Methods reached by name (e.g. interface copies in the module table)
+        // must see their receiver's fields; methods reached through the type
+        // find it already ensured.
+        if (receiverTypeDecl) {
+            ensureSignature(*receiverTypeDecl);
+        }
 
-    if (!decl.isExtern()) {
+        Scope scope(&decl, &currentModule->symbolTable);
+        llvm::SaveAndRestore setCurrentFunction(currentFunction, &decl);
+
+        // The signature phase registered the parameters in its own scope,
+        // which has since popped; re-add them (already checked) for the body.
+        for (auto& param : decl.getParams()) {
+            if (!param.getName().empty()) {
+                currentModule->symbolTable.add(param.getName(), &param);
+            }
+        }
+
         llvm::SmallPtrSet<FieldDecl*, 32> initializedFields;
         llvm::SaveAndRestore setInitializedFields(currentInitializedFields, &initializedFields);
 
@@ -714,29 +763,34 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                 }
             }
         }
-    }
 
-    if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(*decl.body)) {
-        if (decl.getReturnType().isNeverType()) {
-            WARN(decl.getLocation(), "'" << decl.getName() << "' is declared to never return but it does return");
-        } else {
-            REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' is missing a return statement");
-        }
-    }
-
-    // Don't warn about unused variables in the standard library or after errors.
-    if (errors == errorsBefore && decl.getModule()->name != "std" && !options.noUnusedWarnings) {
-        for (auto* varDecl : localVarDecls) {
-            if (!varDecl->isReferenced() && !varDecl->getName().starts_with("_")) {
-                WARN(varDecl->getLocation(), "unused variable '" << varDecl->getName() << "'");
+        if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(*decl.body)) {
+            if (decl.getReturnType().isNeverType()) {
+                WARN(decl.getLocation(), "'" << decl.getName() << "' is declared to never return but it does return");
+            } else {
+                REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' is missing a return statement");
             }
         }
-    }
 
-    decl.typechecked = true;
+        // Don't warn about unused variables in the standard library or after errors.
+        if (errors == errorsBefore && decl.getModule()->name != "std" && !options.noUnusedWarnings) {
+            for (auto* varDecl : localVarDecls) {
+                if (!varDecl->isReferenced() && !varDecl->getName().starts_with("_")) {
+                    WARN(varDecl->getLocation(), "unused variable '" << varDecl->getName() << "'");
+                }
+            }
+        }
+    } catch (const CompileError&) {
+        decl.checkState = Decl::CheckState::Checked;
+        throw;
+    }
+    decl.checkState = Decl::CheckState::Checked;
 }
 
 void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
+    // Patterns check once; instantiations are separate declarations that check on use.
+    if (decl.checkState == Decl::CheckState::Checked) return;
+    decl.checkState = Decl::CheckState::Checked;
     typecheckGenericParamDecls(decl.genericParams, decl.accessLevel);
 
     FunctionDecl* functionDecl = decl.functionDecl;
@@ -763,131 +817,304 @@ void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
     }
 }
 
-void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
+void Typechecker::ensureInterfaces(TypeDecl& decl) {
+    if (decl.interfacesEnsured) return;
+    decl.interfacesEnsured = true;
+    llvm::StringMap<GenericArg> genericArgs = {{"This", GenericArg(decl.getType())}};
+
+    for (Type interface : decl.interfaces) {
+        try {
+            // Interfaces constrain but never store, so borrows may appear in them.
+            typecheckType(interface, decl.accessLevel, true, true);
+        } catch (const CompileError& error) {
+            error.report();
+        }
+        if (!interface.getDecl()) continue;
+        // Inheriting from a non-interface is meaningless; the conformance check reports it.
+        if (!interface.getDecl()->isInterface()) continue;
+
+        // Enums have no fields, so an interface field requirement fails conformance instead.
+        if (!decl.isEnumDecl()) {
+            std::vector<FieldDecl> inheritedFields;
+
+            for (auto& field : interface.getDecl()->fields) {
+                auto duplicate = llvm::find_if(decl.fields, [&](const FieldDecl& f) { return f.getName() == field.getName(); });
+                if (duplicate != decl.fields.end()) {
+                    WARN(duplicate->getLocation(),
+                         "field '" << field.getName() << "' duplicates inherited field from interface '" << interface.getDecl()->getName() << "'");
+                }
+                inheritedFields.push_back(field.instantiate(genericArgs, decl));
+            }
+
+            decl.fields.insert(decl.fields.begin(), inheritedFields.begin(), inheritedFields.end());
+        }
+
+        for (auto member : interface.getDecl()->methods) {
+            auto methodDecl = llvm::cast<MethodDecl>(member);
+            if (methodDecl->body) {
+                auto copy = methodDecl->instantiate(genericArgs, {}, decl);
+                currentModule->addToSymbolTable(*copy);
+                decl.addMethod(copy);
+            }
+        }
+    }
+
+    // The parser-generated constructor misses inherited fields, so
+    // regenerate it now that they're added. Duplicate field names
+    // can't form parameters; leave the parser version in that case.
+    if (decl.isStruct() && !decl.interfaces.empty()) {
+        llvm::SmallDenseSet<llvm::StringRef, 8> fieldNames;
+        bool hasDuplicates = false;
+        for (auto& field : decl.fields) {
+            if (!fieldNames.insert(field.getName()).second) {
+                hasDuplicates = true;
+                break;
+            }
+        }
+        if (!hasDuplicates) {
+            auto& methods = decl.methods;
+            auto newEnd = llvm::remove_if(methods, [](Decl* decl) {
+                auto* ctor = llvm::dyn_cast<ConstructorDecl>(decl);
+                return ctor && ctor->isAutogenerated;
+            });
+            if (newEnd != methods.end()) {
+                methods.erase(newEnd, methods.end());
+                decl.addAutogeneratedConstructor();
+            }
+        }
+    }
+}
+
+void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
+    if (decl.checkState != Decl::CheckState::Unchecked) return;
+    decl.checkState = Decl::CheckState::CheckingSignature;
     // Members of generic instantiations carry template-definition locations;
     // access warnings for them would duplicate the use-site checks, so suppress.
     llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
-    for (Type interface : decl.interfaces) {
-        // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
-        typecheckType(interface, decl.accessLevel, true, true);
-        auto* interfaceDecl = interface.getDecl();
+    llvm::SaveAndRestore saveModule(currentModule);
+    llvm::SaveAndRestore saveFile(currentSourceFile);
+    setDeclContext(decl);
+    try {
+        ensureInterfaces(decl);
 
-        if (!interfaceDecl->isInterface()) {
-            REPORT_ERROR(interface.location, "'" << interface << "' is not an interface");
-            continue;
-        }
+        // Conformance runs before methods are checked (as before), comparing
+        // raw signatures on both sides.
+        for (Type interface : decl.interfaces) {
+            // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
+            typecheckType(interface, decl.accessLevel, true, true);
+            auto* interfaceDecl = interface.getDecl();
 
-        std::string errorReason;
-        if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-            REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
-        }
-    }
+            if (!interfaceDecl->isInterface()) {
+                REPORT_ERROR(interface.location, "'" << interface << "' is not an interface");
+                continue;
+            }
 
-    TypeDecl* realDecl;
-
-    if (decl.isInterface()) {
-        // TODO: Move this to typecheckModule to the pre-typechecking phase?
-        realDecl = llvm::cast<TypeDecl>(decl.instantiate({{"This", decl.getType()}}, {}));
-    } else {
-        realDecl = &decl;
-    }
-
-    for (auto& fieldDecl : realDecl->fields) {
-        typecheckFieldDecl(fieldDecl);
-    }
-
-    for (auto& methodDecl : realDecl->methods) {
-        typecheckMethodDecl(*methodDecl);
-    }
-
-    // Static constants share the value namespace with fields; duplicates would
-    // make `Type.name` and `instance.name` resolve differently (type access
-    // prefers the constant, instance access prefers the field).
-    for (size_t i = 0; i < realDecl->staticConsts.size(); ++i) {
-        auto* constant = realDecl->staticConsts[i];
-        for (size_t j = 0; j < i; ++j) {
-            if (realDecl->staticConsts[j]->getName() == constant->getName()) {
-                ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+            std::string errorReason;
+            if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
+                REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
             }
         }
-        for (auto& field : realDecl->fields) {
-            if (field.getName() == constant->getName()) {
-                ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+
+        TypeDecl* realDecl;
+
+        if (decl.isInterface()) {
+            realDecl = llvm::cast<TypeDecl>(decl.instantiate({{"This", decl.getType()}}, {}));
+        } else {
+            realDecl = &decl;
+        }
+
+        // Report this type's own size error before descending into members: member checks
+        // ensure nested declarations whose errors would otherwise precede it. Type links are
+        // parse-time (types are canonicalized), so non-generic cycles are visible already;
+        // cycles through not-yet-instantiated generics are caught by the late check below.
+        try {
+            checkForInfiniteSize(decl, map(realDecl->fields, [](const FieldDecl& field) { return field.type; }));
+        } catch (const CompileError& error) {
+            error.report();
+            infiniteSizeReported.insert(&decl);
+        }
+
+        for (auto& fieldDecl : realDecl->fields) {
+            typecheckFieldDecl(fieldDecl);
+        }
+
+        for (auto& methodDecl : realDecl->methods) {
+            ensureSignature(*methodDecl);
+        }
+
+        // Static constants share the value namespace with fields; duplicates would
+        // make `Type.name` and `instance.name` resolve differently (type access
+        // prefers the constant, instance access prefers the field).
+        for (size_t i = 0; i < realDecl->staticConsts.size(); ++i) {
+            auto* constant = realDecl->staticConsts[i];
+            for (size_t j = 0; j < i; ++j) {
+                if (realDecl->staticConsts[j]->getName() == constant->getName()) {
+                    ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+                }
+            }
+            for (auto& field : realDecl->fields) {
+                if (field.getName() == constant->getName()) {
+                    ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+                }
             }
         }
-    }
 
-    checkForInfiniteSize(decl, map(realDecl->fields, [](const FieldDecl& field) { return field.type; }));
+        if (!infiniteSizeReported.contains(&decl)) {
+            checkForInfiniteSize(decl, map(realDecl->fields, [](const FieldDecl& field) { return field.type; }));
+        }
+    } catch (const CompileError&) {
+        decl.checkState = Decl::CheckState::SignatureChecked;
+        throw;
+    }
+    decl.checkState = Decl::CheckState::SignatureChecked;
+}
+
+void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
+    typecheckTypeSignature(decl);
+    if (decl.checkState == Decl::CheckState::Checked || decl.checkState == Decl::CheckState::CheckingBody) return;
+    decl.checkState = Decl::CheckState::CheckingBody;
+    // Members of generic instantiations carry template-definition locations;
+    // access warnings for them would duplicate the use-site checks, so suppress.
+    llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
+    llvm::SaveAndRestore saveModule(currentModule);
+    llvm::SaveAndRestore saveFile(currentSourceFile);
+    setDeclContext(decl);
+    try {
+        TypeDecl* realDecl;
+
+        if (decl.isInterface()) {
+            realDecl = llvm::cast<TypeDecl>(decl.instantiate({{"This", decl.getType()}}, {}));
+        } else {
+            realDecl = &decl;
+        }
+
+        for (auto& methodDecl : realDecl->methods) {
+            typecheckMethodDecl(*methodDecl);
+        }
+    } catch (const CompileError&) {
+        decl.checkState = Decl::CheckState::Checked;
+        throw;
+    }
+    decl.checkState = Decl::CheckState::Checked;
 }
 
 void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
+    if (decl.checkState == Decl::CheckState::Checked) return;
+    decl.checkState = Decl::CheckState::Checked;
     typecheckGenericParamDecls(decl.genericParams, decl.accessLevel);
 }
 
 void Typechecker::typecheckTypeAliasDecl(TypeAliasDecl& decl) {
+    if (decl.checkState == Decl::CheckState::Checked) return;
+    decl.checkState = Decl::CheckState::Checked;
     typecheckType(resolveTypeAliases(decl.aliasedType, decl.accessLevel), decl.accessLevel, true, true);
 }
 
-void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
+void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
+    if (decl.checkState != Decl::CheckState::Unchecked) return;
+    decl.checkState = Decl::CheckState::CheckingSignature;
     // Members of generic instantiations carry template-definition locations;
     // access warnings for them would duplicate the use-site checks, so suppress.
     llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
-    for (Type interface : decl.interfaces) {
-        // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
-        typecheckType(interface, decl.accessLevel, true, true);
-        auto* interfaceDecl = interface.getDecl();
+    llvm::SaveAndRestore saveModule(currentModule);
+    llvm::SaveAndRestore saveFile(currentSourceFile);
+    setDeclContext(decl);
+    try {
+        ensureInterfaces(decl);
 
-        if (!interfaceDecl->isInterface()) {
-            REPORT_ERROR(interface.location, "'" << interface << "' is not an interface");
-            continue;
-        }
+        for (Type interface : decl.interfaces) {
+            // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
+            typecheckType(interface, decl.accessLevel, true, true);
+            auto* interfaceDecl = interface.getDecl();
 
-        std::string errorReason;
-        if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-            REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
-        }
-    }
+            if (!interfaceDecl->isInterface()) {
+                REPORT_ERROR(interface.location, "'" << interface << "' is not an interface");
+                continue;
+            }
 
-    std::vector<const EnumCase*> cases = map(decl.cases, [](const EnumCase& c) { return &c; });
-    std::ranges::sort(cases, [](auto* a, auto* b) { return a->getName() < b->getName(); });
-    auto it = std::ranges::adjacent_find(cases, [](auto* a, auto* b) { return a->getName() == b->getName(); });
-
-    if (it != cases.end()) {
-        ERROR((*it)->getLocation(), "duplicate enum case '" << (*it)->getName() << "'");
-    }
-
-    bool allowReference = allowsSubstitutedReference(decl);
-
-    for (auto& enumCase : decl.cases) {
-        typecheckExpr(*enumCase.value);
-
-        if (enumCase.associatedType) {
-            enumCase.associatedType = resolveTypeAliases(enumCase.associatedType, enumCase.accessLevel);
-            typecheckType(enumCase.associatedType, enumCase.accessLevel, true, allowReference);
-        }
-    }
-
-    for (auto& methodDecl : decl.methods) {
-        typecheckMethodDecl(*methodDecl);
-    }
-
-    // Static constants share the value namespace with cases; duplicates would
-    // make `Enum.name` ambiguous between a case and a constant.
-    for (size_t i = 0; i < decl.staticConsts.size(); ++i) {
-        auto* constant = decl.staticConsts[i];
-        for (size_t j = 0; j < i; ++j) {
-            if (decl.staticConsts[j]->getName() == constant->getName()) {
-                ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+            std::string errorReason;
+            if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
+                REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
             }
         }
+
+        std::vector<const EnumCase*> cases = map(decl.cases, [](const EnumCase& c) { return &c; });
+        std::ranges::sort(cases, [](auto* a, auto* b) { return a->getName() < b->getName(); });
+        auto it = std::ranges::adjacent_find(cases, [](auto* a, auto* b) { return a->getName() == b->getName(); });
+
+        if (it != cases.end()) {
+            ERROR((*it)->getLocation(), "duplicate enum case '" << (*it)->getName() << "'");
+        }
+
+        bool allowReference = allowsSubstitutedReference(decl);
+
+        // Report this type's own size error before descending into members (see the struct
+        // case above); cycles through not-yet-instantiated generics fall to the late check.
+        try {
+            checkForInfiniteSize(decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
+        } catch (const CompileError& error) {
+            error.report();
+            infiniteSizeReported.insert(&decl);
+        }
+
         for (auto& enumCase : decl.cases) {
-            if (enumCase.getName() == constant->getName()) {
-                ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+            typecheckExpr(*enumCase.value);
+
+            if (enumCase.associatedType) {
+                enumCase.associatedType = resolveTypeAliases(enumCase.associatedType, enumCase.accessLevel);
+                typecheckType(enumCase.associatedType, enumCase.accessLevel, true, allowReference);
             }
         }
-    }
 
-    checkForInfiniteSize(decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
+        for (auto& methodDecl : decl.methods) {
+            ensureSignature(*methodDecl);
+        }
+
+        // Static constants share the value namespace with cases; duplicates would
+        // make `Enum.name` ambiguous between a case and a constant.
+        for (size_t i = 0; i < decl.staticConsts.size(); ++i) {
+            auto* constant = decl.staticConsts[i];
+            for (size_t j = 0; j < i; ++j) {
+                if (decl.staticConsts[j]->getName() == constant->getName()) {
+                    ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+                }
+            }
+            for (auto& enumCase : decl.cases) {
+                if (enumCase.getName() == constant->getName()) {
+                    ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+                }
+            }
+        }
+
+        if (!infiniteSizeReported.contains(&decl)) {
+            checkForInfiniteSize(decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
+        }
+    } catch (const CompileError&) {
+        decl.checkState = Decl::CheckState::SignatureChecked;
+        throw;
+    }
+    decl.checkState = Decl::CheckState::SignatureChecked;
+}
+
+void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
+    typecheckEnumSignature(decl);
+    if (decl.checkState == Decl::CheckState::Checked || decl.checkState == Decl::CheckState::CheckingBody) return;
+    decl.checkState = Decl::CheckState::CheckingBody;
+    // Members of generic instantiations carry template-definition locations;
+    // access warnings for them would duplicate the use-site checks, so suppress.
+    llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
+    llvm::SaveAndRestore saveModule(currentModule);
+    llvm::SaveAndRestore saveFile(currentSourceFile);
+    setDeclContext(decl);
+    try {
+        for (auto& methodDecl : decl.methods) {
+            typecheckMethodDecl(*methodDecl);
+        }
+    } catch (const CompileError&) {
+        decl.checkState = Decl::CheckState::Checked;
+        throw;
+    }
+    decl.checkState = Decl::CheckState::Checked;
 }
 
 // Global initializers are emitted as constant expressions; anything needing runtime
@@ -1145,6 +1372,68 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl) {
                 REPORT_ERROR(decl.getLocation(), "couldn't import module '" << decl.target << "': " << module.getError().message());
             }
         }
+    }
+}
+
+void Typechecker::ensureSignature(Decl& decl) {
+    if (suppressEnsureSignature) return;
+    // Lookups run in the caller's context, but the declaration must resolve names
+    // (and report redefinitions) in its own module and file.
+    llvm::SaveAndRestore saveModule(currentModule);
+    llvm::SaveAndRestore saveFile(currentSourceFile);
+    setDeclContext(decl);
+    // Nested declarations report here without aborting the outer check: each error is
+    // reported exactly once, at discovery, and the outer declaration still gets its own
+    // diagnostics. (Declaration-order exceptions like the size check below handle their
+    // own ordering explicitly.)
+    try {
+        ensureSignatureImpl(decl);
+    } catch (const CompileError& error) {
+        error.report();
+    }
+}
+
+void Typechecker::ensureSignatureImpl(Decl& decl) {
+    switch (decl.kind) {
+    case DeclKind::FunctionDecl:
+    case DeclKind::MethodDecl:
+    case DeclKind::ConstructorDecl:
+    case DeclKind::DestructorDecl: {
+        auto& functionDecl = llvm::cast<FunctionDecl>(decl);
+        // Interface methods mention the unbound `This` type; only their This-instantiated
+        // clones (made at call sites and for conformance checks) are ever checked.
+        if (auto* receiver = functionDecl.getTypeDecl(); receiver && receiver->isInterface() && !receiver->instantiatedFrom) break;
+        typecheckFunctionSignature(functionDecl);
+        break;
+    }
+    case DeclKind::FunctionTemplate:
+        typecheckFunctionTemplate(llvm::cast<FunctionTemplate>(decl));
+        break;
+    case DeclKind::TypeDecl:
+        typecheckTypeSignature(llvm::cast<TypeDecl>(decl));
+        break;
+    case DeclKind::TypeTemplate:
+        typecheckTypeTemplate(llvm::cast<TypeTemplate>(decl));
+        break;
+    case DeclKind::TypeAliasDecl:
+        // Aliases resolve on demand through resolveTypeAliases; checking one here would
+        // re-enter (and reorder) the very resolution that triggered the lookup. Main-module
+        // aliases are still checked eagerly.
+        break;
+    case DeclKind::EnumDecl:
+        typecheckEnumSignature(llvm::cast<EnumDecl>(decl));
+        break;
+    case DeclKind::FieldDecl:
+        // Fields are resolved with their parent type, which may itself be
+        // unensured when the field is found by name (implicit receiver).
+        if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(static_cast<VariableDecl&>(decl).parent)) {
+            typecheckTypeSignature(*typeDecl);
+        }
+        break;
+    default:
+        // Globals are prepass roots, locals/params check inline, and imports
+        // resolve through the imports prepass: nothing to ensure on lookup.
+        break;
     }
 }
 

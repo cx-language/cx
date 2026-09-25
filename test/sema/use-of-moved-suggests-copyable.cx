@@ -1,0 +1,36 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+struct T {
+    int x;
+}
+
+void f(T t) {}
+
+void g() {
+    var t = T(x = 1);
+    f(t);
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 't' (type 'T' is not Copyable; add ': Copyable' to 'T' to allow copies)
+    f(t);
+}
+
+struct S: Copyable {
+    int x;
+}
+
+void h(S s) {}
+
+void k() {
+    var s = S(x = 1);
+    h(s);
+    // CHECK-NOT: [[@LINE+1]]:7: error:
+    h(s);
+}
+
+void capture() {
+    var t = T(x = 1);
+    var fn = () => {
+        f(t);
+        return 1;
+    };
+    // CHECK: [[@LINE-3]]:11: error: cannot move from captured variable 't' (type 'T' is not Copyable; add ': Copyable' to 'T' to allow copies)
+}

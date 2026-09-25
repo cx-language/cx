@@ -2030,11 +2030,23 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
         auto header = parse(Token::StringLiteral);
         parse(Token::RightParen);
 
-        for (llvm::StringRef path : llvm::concat<const std::string>(options.importSearchPaths, options.frameworkSearchPaths)) {
+        auto headerFoundIn = [&](llvm::StringRef path) {
             auto headerPath = (path + "/" + header.getString().drop_back().drop_front()).str();
-            if (llvm::sys::fs::exists(headerPath) && !llvm::sys::fs::is_directory(headerPath)) {
+            return llvm::sys::fs::exists(headerPath) && !llvm::sys::fs::is_directory(headerPath);
+        };
+        for (llvm::StringRef path : llvm::concat<const std::string>(options.importSearchPaths, options.frameworkSearchPaths)) {
+            if (headerFoundIn(path)) {
                 condition = true;
                 break;
+            }
+        }
+        // Compiler-reported paths last: querying them spawns `cc -E -v`.
+        if (!condition) {
+            for (llvm::StringRef path : getCCompilerSearchPaths()) {
+                if (headerFoundIn(path)) {
+                    condition = true;
+                    break;
+                }
             }
         }
     } else {

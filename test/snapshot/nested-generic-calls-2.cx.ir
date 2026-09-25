@@ -20,11 +20,15 @@ void _EN4main1MI1SE1fE(M<S>* this) {
     return void
 }
 
-void _EN4main1AI1SE4initE(A<S>* this) {
+void _EN4main1S4initE(S* this) {
     return void
 }
 
 void _EN4main1S1iE(S* this) {
+    return void
+}
+
+void _EN4main1AI1SE4initE(A<S>* this) {
     return void
 }
 
@@ -33,8 +37,4 @@ S _EN4main1AI1SE1aE(A<S>* this) {
     void _1 = call _EN4main1S4initE(S* _0)
     S .load = load _0
     return .load
-}
-
-void _EN4main1S4initE(S* this) {
-    return void
 }

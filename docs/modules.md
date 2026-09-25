@@ -72,3 +72,20 @@ cx run main.cx
 ```
 
 `import shapes;` finds the `shapes/` directory sitting beside `main.cx`.
+
+## Lazy checking of imports
+
+Imported modules are parsed in full, but only the declarations your code
+actually uses are typechecked. This keeps builds fast: a large dependency
+costs almost nothing if you only use a small part of it. Your own module is
+always checked in full, so errors surface even in unused code.
+
+As a consequence, broken code in a dependency that nothing uses produces no
+error. To validate a dependency completely, for example in its own test
+suite, pass `--check-all`:
+
+```sh
+cx build --check-all
+```
+
+This typechecks every declaration in every imported module.

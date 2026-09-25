@@ -8,11 +8,7 @@ define i32 @main() #0 !dbg !4 {
   ret i32 0
 }
 
-define i64 @_EN3std5int324hashE(ptr %this) #0 !dbg !8 {
-  %this.load = load i32, ptr %this, align 4
-  %1 = sext i32 %this.load to i64
-  ret i64 %1
-}
+declare i64 @_EN3std5int324hashE(ptr) #0
 
 attributes #0 = { "frame-pointer"="all" }
 
@@ -27,5 +23,3 @@ attributes #0 = { "frame-pointer"="all" }
 !5 = !DISubroutineType(types: !6)
 !6 = !{}
 !7 = !DILocation(line: 4, column: 17, scope: !4)
-!8 = distinct !DISubprogram(name: "hash", linkageName: "_EN3std5int324hashE", scope: !9, file: !9, line: 98, type: !5, scopeLine: 98, spFlags: DISPFlagDefinition, unit: !2)
-!9 = !DIFile(filename: "integers.cx")

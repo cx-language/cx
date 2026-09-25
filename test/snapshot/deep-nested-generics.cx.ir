@@ -24,6 +24,12 @@ void _EN4main1SI1RE1sE(S<R>* this) {
     return void
 }
 
+int32 _EN4main1R1hE(R* this) {
+    int32* i = getelementptr this, 0
+    int32 i.load = load i
+    return i.load
+}
+
 A<R> _EN4main1AI1AI1REEixE5int32(A<A<R>>* this, int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
@@ -38,10 +44,4 @@ R _EN4main1AI1REixE5int32(A<R>* this, int32 i) {
     R* t = getelementptr this, 0
     R t.load = load t
     return t.load
-}
-
-int32 _EN4main1R1hE(R* this) {
-    int32* i = getelementptr this, 0
-    int32 i.load = load i
-    return i.load
 }
