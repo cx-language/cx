@@ -230,6 +230,11 @@ def test_query_modes(cx_lsp, path):
     result = run_query(cx_lsp, base_query("hover", path, GOOD_SOURCE, (5, 18)))
     check("query-hover", "int add(int x, int y)" in result.get("hover", ""), result.get("hover", "")[:200])
 
+    # Hover quotes user alias spellings as written.
+    alias_source = "using Count = int;\nCount bump(Count x) {\n    return x + 1;\n}\n"
+    result = run_query(cx_lsp, base_query("hover", path, alias_source, (1, 7)))
+    check("query-hover-alias", "Count bump(Count x)" in result.get("hover", ""), result.get("hover", "")[:200])
+
     result = run_query(cx_lsp, base_query("definition", path, GOOD_SOURCE, (5, 18)))
     check("query-definition-found", result.get("found") is True, json.dumps(result)[:300])
     check(

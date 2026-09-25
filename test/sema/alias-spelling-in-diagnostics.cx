@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
 // CHECK-NOT: alias-spelling-in-diagnostics.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
 
 using MyInt = int;
@@ -10,6 +10,10 @@ int foo() {
 
 int32 bar() {
     return 2;
+}
+
+int withParam(int x) {
+    return x;
 }
 
 void main() {
@@ -27,6 +31,32 @@ void main() {
     bool f = int(1);
     // CHECK: [[@LINE+1]]:19: error: cannot assign 'int' to 'List<int>'
     List<int> g = 0;
+    const int ci = 1;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'const int' to 'bool'
+    bool h = ci;
+    var x = 1;
+    int* p = &x;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int*' to 'bool'
+    bool i = p;
+    int? o = null;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int?' to 'bool'
+    bool j = o;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int()' to 'bool'
+    bool k = foo;
+    // CHECK: [[@LINE+1]]:15: error: cannot assign 'int(int)' to 'bool'
+    bool k2 = withParam;
+    // A canonical declaration keeps its spelling even when initialized from an alias.
+    int32 l = foo();
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int32' to 'bool'
+    bool m = l;
+    MyInt n = 2;
+    int32 o2 = n;
+    // CHECK: [[@LINE+1]]:15: error: cannot assign 'int32' to 'bool'
+    bool p2 = o2;
+    var la = List([1, 2]);
+    var lb = List([true]);
+    // CHECK: [[@LINE+1]]:16: error: no matching operator '==' with arguments 'List<int>' and 'List<bool>'
+    println(la == lb);
 }
 
 // CHECK-NOT: alias-spelling-in-diagnostics.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

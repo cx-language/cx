@@ -1,0 +1,52 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:7
+// CHECK-NEXT:4
+// CHECK-NEXT:true
+// CHECK-NEXT:dtor
+// CHECK-NEXT:reassigned
+// CHECK-NEXT:42
+// CHECK-NEXT:Err(bad)
+// CHECK-NEXT:dtor
+
+void takeInts(List<int32> list) {
+    println(list.size() + 1);
+}
+
+struct Box<T> {
+    T value;
+    ~Box() {
+        println("dtor");
+    }
+}
+
+Result<int, string> compute(bool ok) {
+    if ok {
+        return Result.Ok(42);
+    }
+    return Result.Err("bad");
+}
+
+void main() {
+    // Spelled and canonical twins of one instantiation share methods and IR identity.
+    List<int32> l32 = List([1, 2, 3]);
+    List<int> li = List([4, 5]);
+    l32.push(4);
+    li.push(6);
+    println(l32.size() + li.size());
+    takeInts(li);
+    int*? p = null;
+    int32*? q = p;
+    println(q == null);
+
+    // Reassigning a spelled instantiation destroys the old value.
+    var b = Box<int>(value = 1);
+    b = Box<int>(value = 2);
+    println("reassigned");
+
+    // Generic enums lower through spelled arguments.
+    var r = compute(true);
+    println(unwrap(r));
+    var e = compute(false);
+    println(e);
+}

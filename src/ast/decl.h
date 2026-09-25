@@ -22,7 +22,9 @@ template<> struct hash<std::vector<cx::GenericArg>> {
             size_t argHash;
             if (arg.isType()) {
                 const cx::Type& type = arg.getType();
-                argHash = reinterpret_cast<size_t>(type.typeBase) ^ static_cast<size_t>(type.mutability);
+                // Spelling twins compare equal, so hash the shared twin or equal
+                // keys would land in different buckets and instantiate twice.
+                argHash = reinterpret_cast<size_t>(type.canonicalTwin().typeBase) ^ static_cast<size_t>(type.mutability);
             } else if (arg.isInt()) {
                 argHash = std::hash<int64_t>{}(arg.getInt());
             } else {

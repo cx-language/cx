@@ -1,0 +1,17 @@
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+// CHECK-NOT: no-duplicate-instantiation-across-spellings.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+T pick<T>(T x) {
+    var unused_in_body = 1;
+    return x;
+}
+
+// Both calls instantiate pick<int32> once; a second instantiation would warn twice.
+// CHECK-COUNT-1: warning: unused variable 'unused_in_body'
+void main() {
+    println(pick(1));
+    int32 v = 2;
+    println(pick(v));
+}
+
+// CHECK-NOT: no-duplicate-instantiation-across-spellings.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

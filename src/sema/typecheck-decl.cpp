@@ -336,10 +336,10 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         }
         Decl* decl;
         auto* basicType = llvm::cast<BasicType>(type.typeBase);
-        if (basicType->decl) {
-            decl = basicType->decl;
+        if (TypeDecl* typeDecl = type.getDecl()) {
+            decl = typeDecl;
 
-            // Check generic arguments on repeat uses too: resolving basicType->decl above
+            // Check generic arguments on repeat uses too: resolving the declaration above
             // skips the lookup below, which would otherwise silence access warnings after
             // the first use. Type nodes are interned, so the stored arguments carry the
             // first use's locations; relocate them to the current use. This is exact when

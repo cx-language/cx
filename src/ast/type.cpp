@@ -81,8 +81,8 @@ bool Type::isBuiltinScalar(llvm::StringRef typeName) {
 }
 
 bool Type::isEnumType() const {
-    if (auto* basicType = llvm::dyn_cast<BasicType>(typeBase)) {
-        return basicType->decl && basicType->decl->isEnumDecl();
+    if (auto* typeDecl = getDecl()) {
+        return typeDecl->isEnumDecl();
     }
     return false;
 }
@@ -155,10 +155,10 @@ static bool spellingsEqual(Type a, Type b) {
     case TypeKind::BasicType: {
         auto argsA = a.getGenericArgs(), argsB = b.getGenericArgs();
         for (size_t i = 0; i < argsA.size(); ++i) {
-            if (argsA[i].isInt() != argsB[i].isInt()) return false;
+            if (argsA[i].kind != argsB[i].kind) return false;
             if (argsA[i].isInt()) {
                 if (argsA[i].getInt() != argsB[i].getInt()) return false;
-            } else if (!spellingsEqual(argsA[i].getType(), argsB[i].getType())) {
+            } else if (argsA[i].isType() && !spellingsEqual(argsA[i].getType(), argsB[i].getType())) {
                 return false;
             }
         }
@@ -191,6 +191,7 @@ static bool spellingsEqual(Type a, Type b) {
 template<typename T> static Type getType(T&& typeBase, Mutability mutability, Location location) {
     Type newType(&typeBase, mutability, location);
 
+    // ponytail: linear interning scan, multiplied by spelling-twin bases; hash-cons the bases if compile time regresses.
     // typeBases is creation-ordered, so the first structural match is the earliest twin.
     TypeBase* firstTwin = nullptr;
     for (auto* existingTypeBase : typeBases) {
@@ -203,6 +204,13 @@ template<typename T> static Type getType(T&& typeBase, Mutability mutability, Lo
 
     typeBases.push_back(makeAST<T>(std::forward<T>(typeBase)));
     typeBases.back()->firstTwin = firstTwin;
+    // Share already-registered declarations so getDecl() usually hits without
+    // scanning; its lazy search covers twins created before registration.
+    if (firstTwin) {
+        if (auto* freshBasic = llvm::dyn_cast<BasicType>(typeBases.back())) {
+            freshBasic->decl = llvm::cast<BasicType>(firstTwin)->decl;
+        }
+    }
     return Type(typeBases.back(), mutability, location);
 }
 
@@ -383,6 +391,7 @@ std::string Type::getQualifiedTypeName() const {
 }
 
 std::string Type::getDisplayName() const {
+    if (!aliasSpelling.empty()) return toString();
     Type receiverType = getArrayTypeForReceiver(*this);
     if (!receiverType.isBasicType()) return receiverType.toString();
     auto* basicType = llvm::cast<BasicType>(receiverType.typeBase);
@@ -611,7 +620,7 @@ TypeDecl* Type::getDecl() const {
 
 Type Type::canonicalTwin() const {
     if (!typeBase || !typeBase->firstTwin) return *this;
-    return Type(typeBase->firstTwin, mutability, location, aliasSpelling);
+    return Type(typeBase->firstTwin, mutability, location);
 }
 
 DestructorDecl* Type::getDestructor() const {

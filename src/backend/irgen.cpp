@@ -259,12 +259,8 @@ Value* IRGenerator::emitAssignmentLHS(const Expr& lhs, bool skipDestructor) {
     }
 
     // Call destructor for LHS.
-    if (auto* basicType = llvm::dyn_cast<BasicType>(lhs.type.typeBase)) {
-        if (auto* typeDecl = basicType->decl) {
-            if (auto* destructor = typeDecl->getDestructor()) {
-                createDestructorCall(getFunction(*destructor), value);
-            }
-        }
+    if (auto* destructor = lhs.type.getDestructor()) {
+        createDestructorCall(getFunction(*destructor), value);
     } else if (lhs.type.isAnonymousStructType()) {
         destroyExplicitElementsForAssignment(value, lhs.type);
     }

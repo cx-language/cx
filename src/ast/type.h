@@ -122,8 +122,8 @@ struct Type {
     llvm::ArrayRef<Type> getClosureParamTypes() const;
     Type getClosureReturnType() const;
     TypeDecl* getDecl() const;
-    // Same type with its base replaced by the earliest-created structural twin.
-    // Identity-keyed maps must use this; all twins agree on the answer.
+    // Earliest-created structural twin with spelling dropped. Identity-keyed maps
+    // and hashes must use this; all twins agree on the answer.
     Type canonicalTwin() const;
     DestructorDecl* getDestructor() const;
     bool equalsIgnoreTopLevelMutable(Type) const;
