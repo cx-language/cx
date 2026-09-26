@@ -129,7 +129,7 @@ Value* IRGenerator::emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType) {
     return createCast(createGEP(enumPtr, optionalPayloadFieldIndex), wrappedType.getPointerTo());
 }
 
-Value* IRGenerator::emitOptionalUnwrap(Expr& operand, const Expr& expr, const llvm::Twine& name) {
+Value* IRGenerator::emitOptionalUnwrap(const Expr& operand, const Expr& expr, const llvm::Twine& name) {
     auto* value = emitLvalueExpr(operand);
     llvm::StringRef message = "Unwrap failed";
 
@@ -1161,10 +1161,10 @@ Value* IRGenerator::emitIndexAssignmentExpr(const IndexAssignmentExpr& expr) {
 }
 
 Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
-    if (!expr.operand->type.isOptionalType()) {
-        return emitExpr(*expr.operand);
+    if (expr.calleeDecl) {
+        return emitCallExpr(expr);
     }
-    return emitOptionalUnwrap(*expr.operand, expr, "assert");
+    return emitOptionalUnwrap(*expr.getReceiver(), expr, "assert");
 }
 
 Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {

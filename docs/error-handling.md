@@ -66,6 +66,7 @@ void main() {
     if digit == Ok {
         println(digit.unwrap()); // prints 7
     }
+    println(parseDigit('7')!); // prints 7, shorthand for .unwrap()
 
     var notDigit = parseDigit('x');
     if notDigit == Err {

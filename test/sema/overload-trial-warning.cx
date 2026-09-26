@@ -1,7 +1,10 @@
-// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+void take(int x) {}
+void take(string s) {}
 
 void main() {
-    var content = readFile("definitely-not-here-12345").unwrap();
-    // CHECK: [[@LINE+1]]:27: warning: unwrapping non-optional type 'StringBuf' has no effect
-    println(string(content!));
+    int[3] arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:14: warning: accessing array out-of-bounds with index 10, array size is 3
+    take(arr[10]);
 }

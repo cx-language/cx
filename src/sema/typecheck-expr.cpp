@@ -924,7 +924,7 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
             continue;
         }
         if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(current)) {
-            current = unwrapExpr->operand;
+            current = unwrapExpr->getReceiver();
             continue;
         }
         return nullptr;
@@ -3016,6 +3016,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             ERROR(expr.getReceiver()->location, "type '" << receiverType.removePointer() << "' has no member function '" << expr.getFunctionName() << "'");
         }
 
+        if (decls.empty() && expr.kind == ExprKind::UnwrapExpr) {
+            ERROR(expr.location, "type '" << receiverType << "' is not optional and has no 'unwrap' method");
+        }
+
         if (decls.empty() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
         }
@@ -3699,10 +3703,9 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
 }
 
 Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
-    Type type = typecheckExpr(*expr.operand);
+    Type type = typecheckExpr(*expr.getReceiver());
     if (!type.isOptionalType()) {
-        WARN(expr.location, "unwrapping non-optional type '" << type << "' has no effect");
-        return type;
+        return typecheckCallExpr(expr);
     }
     implicitUses.unwrap = true;
     return type.getWrappedType();

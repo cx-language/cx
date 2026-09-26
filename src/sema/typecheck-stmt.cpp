@@ -146,7 +146,7 @@ static void collectAssignedNames(const Expr& expr, llvm::StringSet<>& names) {
         return;
     }
     case ExprKind::UnwrapExpr:
-        collectAssignedNames(*llvm::cast<UnwrapExpr>(expr).operand, names);
+        collectAssignedNames(*llvm::cast<UnwrapExpr>(expr).getReceiver(), names);
         return;
     case ExprKind::LambdaExpr: {
         auto* functionDecl = llvm::cast<LambdaExpr>(expr).functionDecl;

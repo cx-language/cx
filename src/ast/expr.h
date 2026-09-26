@@ -207,6 +207,7 @@ struct CallExpr : Expr {
         case ExprKind::BinaryExpr:
         case ExprKind::IndexExpr:
         case ExprKind::IndexAssignmentExpr:
+        case ExprKind::UnwrapExpr:
             return true;
         default:
             return false;
@@ -322,14 +323,12 @@ struct IndexAssignmentExpr : IndexExpr {
     static bool classof(const Expr* e) { return e->kind == ExprKind::IndexAssignmentExpr; }
 };
 
-/// A postfix expression that unwraps an optional (nullable) value, yielding the value wrapped by
-/// the optional, for example 'foo!'. If the optional is null, the operation triggers an assertion
-/// error (by default), or causes undefined behavior (in unchecked mode).
-struct UnwrapExpr : Expr {
-    UnwrapExpr(Expr* operand, Location location) : Expr(ExprKind::UnwrapExpr, location), operand(operand) {}
+/// A postfix '!' expression, desugared into an 'unwrap' method call on the operand. Optionals
+/// keep dedicated handling: unwrapping one yields the wrapped value, or triggers an assertion
+/// error if it is null (by default), or causes undefined behavior (in unchecked mode).
+struct UnwrapExpr : CallExpr {
+    UnwrapExpr(Expr* operand, Location location) : CallExpr(ExprKind::UnwrapExpr, makeAST<MemberExpr>(operand, "unwrap", location), {}, location) {}
     static bool classof(const Expr* e) { return e->kind == ExprKind::UnwrapExpr; }
-
-    Expr* operand;
 };
 
 struct LambdaExpr : Expr {

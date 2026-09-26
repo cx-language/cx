@@ -452,9 +452,13 @@ void Finder::visitExpr(Expr* expr, int depth) {
             visitExpr(el.value, depth + 1);
         return;
     }
-    case ExprKind::UnwrapExpr:
-        visitExpr(llvm::cast<UnwrapExpr>(expr)->operand, depth + 1);
+    case ExprKind::UnwrapExpr: {
+        auto* call = llvm::cast<CallExpr>(expr);
+        visitExpr(call->getReceiver(), depth + 1);
+        // The callee is a synthesized 'unwrap' member at the '!' location; only the '!' itself is real source.
+        if (call->calleeDecl) consider(call->calleeDecl, call->location, 1, expr, false, depth + 1);
         return;
+    }
     case ExprKind::LambdaExpr: {
         auto* lambda = llvm::cast<LambdaExpr>(expr);
         if (lambda->functionDecl) visitDecl(lambda->functionDecl, depth + 1);
@@ -744,9 +748,13 @@ void ReferenceCollector::visitExpr(Expr* expr) {
         for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
             visitExpr(el.value);
         return;
-    case ExprKind::UnwrapExpr:
-        visitExpr(llvm::cast<UnwrapExpr>(expr)->operand);
+    case ExprKind::UnwrapExpr: {
+        auto* call = llvm::cast<CallExpr>(expr);
+        visitExpr(call->getReceiver());
+        // The callee is a synthesized 'unwrap' member at the '!' location; only the '!' itself is real source.
+        if (call->calleeDecl == target) locations.emplace_back(call->location, 1);
         return;
+    }
     case ExprKind::LambdaExpr:
         if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);
         return;
@@ -1290,9 +1298,17 @@ void SemanticCollector::visitExpr(Expr* expr) {
         for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
             visitExpr(el.value);
         return;
-    case ExprKind::UnwrapExpr:
-        visitExpr(llvm::cast<UnwrapExpr>(expr)->operand);
+    case ExprKind::UnwrapExpr: {
+        auto* call = llvm::cast<CallExpr>(expr);
+        visitExpr(call->getReceiver());
+        // The callee is a synthesized 'unwrap' member at the '!' location; only the '!' itself is real source.
+        if (call->calleeDecl) {
+            if (const char* type = tokenTypeForDecl(*call->calleeDecl)) {
+                emit(call->location, "!", type, false, isReadonlyVariable(*call->calleeDecl));
+            }
+        }
         return;
+    }
     case ExprKind::LambdaExpr:
         if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);
         return;
@@ -1614,7 +1630,8 @@ struct MemberExprCollector {
                 visitExpr(el.value);
             return;
         case ExprKind::UnwrapExpr:
-            visitExpr(llvm::cast<UnwrapExpr>(expr)->operand);
+            // Visit the receiver, not the synthesized 'unwrap' callee.
+            visitExpr(llvm::cast<CallExpr>(expr)->getReceiver());
             return;
         case ExprKind::LambdaExpr:
             if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);
@@ -2357,7 +2374,8 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                     visitExpr(el.value);
                 return;
             case ExprKind::UnwrapExpr:
-                visitExpr(llvm::cast<UnwrapExpr>(expr)->operand);
+                // Visit the receiver, not the synthesized 'unwrap' callee.
+                visitExpr(llvm::cast<CallExpr>(expr)->getReceiver());
                 return;
             case ExprKind::LambdaExpr:
                 if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);

@@ -384,8 +384,13 @@ bool Expr::isLvalue() const {
     }
     case ExprKind::UnaryExpr:
         return llvm::cast<UnaryExpr>(this)->op == Token::Star;
-    case ExprKind::UnwrapExpr:
-        return llvm::cast<UnwrapExpr>(this)->operand->isLvalue();
+    case ExprKind::UnwrapExpr: {
+        auto& unwrapExpr = llvm::cast<UnwrapExpr>(*this);
+        // A resolved 'unwrap' method call is a value; only the builtin optional
+        // unwrap designates the payload in place.
+        if (unwrapExpr.calleeDecl) return false;
+        return unwrapExpr.getReceiver()->isLvalue();
+    }
     default:
         return false;
     }
@@ -530,7 +535,7 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
     }
     case ExprKind::UnwrapExpr: {
         auto* unwrapExpr = llvm::cast<UnwrapExpr>(this);
-        auto operand = unwrapExpr->operand->instantiate(genericArgs);
+        auto operand = unwrapExpr->getReceiver()->instantiate(genericArgs);
         auto* newExpr = makeAST<UnwrapExpr>(operand, unwrapExpr->location);
         newExpr->endLocation = unwrapExpr->endLocation;
         return newExpr;

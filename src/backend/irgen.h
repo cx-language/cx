@@ -89,7 +89,7 @@ struct IRGenerator {
     Value* emitAssignment(const BinaryExpr& expr);
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);
     Value* emitOptionalConstruction(Type wrappedType, Expr* arg);
-    Value* emitOptionalUnwrap(Expr& operand, const Expr& expr, const llvm::Twine& name);
+    Value* emitOptionalUnwrap(const Expr& operand, const Expr& expr, const llvm::Twine& name);
     Value* emitOptionalHasValueTest(Value* enumValue);
     Value* emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType);
     void emitAssert(Value* condition, const Expr* expr, Location location, llvm::StringRef message = "Assertion failed", const llvm::Twine& name = "assert");

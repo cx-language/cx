@@ -1,11 +1,10 @@
-// RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
 void foo(int*? p) {
     if (p == null) {
         return;
     }
     defer println("foo");
-    // CHECK: [[@LINE+1]]:16: warning: unwrapping non-optional type 'int*' has no effect
+    // CHECK: [[@LINE+1]]:16: error: type 'int*' is not optional and has no 'unwrap' method
     var a = *(p!);
 }
-

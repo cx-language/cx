@@ -4,7 +4,7 @@ void takesInt(int i) {}
 
 void redundantUnwrap(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:18: warning: unwrapping non-optional type 'int' has no effect
+        // CHECK: [[@LINE+1]]:18: error: type 'int' is not optional and has no 'unwrap' method
         var x = v!;
     }
 }

@@ -1,0 +1,35 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+T force<T>(T? v) {
+    return v!;
+}
+
+T unwrapIt<T, E>(Result<T, E> r) {
+    return r!;
+}
+
+enum Box<T> {
+    Full(T value),
+    Vacant,
+
+    T unwrap() {
+        return switch this {
+            case Full value: value,
+            case Vacant: abort("unwrapped Vacant"),
+        };
+    }
+}
+
+void main() {
+    // CHECK:9
+    println(force<int>(9));
+    // CHECK-NEXT:7
+    println(unwrapIt(Result.Ok<int, string>(value = 7)));
+
+    Result<int, string>? r = Ok(11);
+    // CHECK-NEXT:11
+    println(r!!);
+
+    // CHECK-NEXT:42
+    println(Box.Full(42)!);
+}

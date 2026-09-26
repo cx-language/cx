@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+void main() {
+    var r = Result.Ok<int, string>(value = 1);
+    // CHECK: [[@LINE+1]]:6: error: cannot assign to expression of type 'int'
+    r! = 2;
+}

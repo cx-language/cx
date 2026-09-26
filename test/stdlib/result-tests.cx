@@ -45,6 +45,14 @@ void testUnwrap() {
 }
 
 @test
+void testUnwrapOperator() {
+    assert(parseDigit('7')! == 7);
+    assert(Result.Ok<int, int>(value = 42)! == 42);
+    var ok = parseDigit('7');
+    assert(ok! == 7);
+}
+
+@test
 void testSwitch() {
     var ok = parseDigit('7');
     var err = parseDigit('x');

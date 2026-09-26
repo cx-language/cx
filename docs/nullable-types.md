@@ -58,6 +58,17 @@ void main() {
 }
 ```
 
+Postfix `!` desugars into an `unwrap` method call,
+so it also works on any other type with an `unwrap` method,
+such as [`Result`](error-handling):
+
+```cs
+void main() {
+    Result<int, string> digit = Ok(7);
+    println(digit!); // prints 7, aborts with the error if Err
+}
+```
+
 ## Switching on nullable values
 
 The `?` suffix is shorthand for the generic `Optional` enum,
