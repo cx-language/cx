@@ -34,7 +34,7 @@ struct List<Element> {
 
     /// Initializes the list to contain the given number of uninitialized elements.
     List(public int uninitializedSize) {
-        buffer = allocateArray<Element>(uninitializedSize);
+        buffer = allocate<Element>(uint64(uninitializedSize));
         size = uninitializedSize;
         capacity = uninitializedSize;
     }
@@ -140,7 +140,7 @@ struct List<Element> {
     /// Ensures that the capacity is large enough to store the given number of elements.
     void reserve(int minimumCapacity) {
         if minimumCapacity > capacity {
-            var newBuffer = allocateArray<Element>(size = minimumCapacity);
+            var newBuffer = allocate<Element>(count = uint64(minimumCapacity));
 
             for index in 0..size {
                 var source = &buffer[index];

@@ -165,7 +165,7 @@ This avoids the mistake of forgetting to add necessary cleanup calls when we add
 
 ```cs
 int main() {
-    var p = safeAllocate<int>(0); // allocate some resource
+    var p = tryAllocateValue<int>(0); // allocate some resource
     defer deallocate(p); // defer deallocation of the resource
 
     if p == null {

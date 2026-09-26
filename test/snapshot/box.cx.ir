@@ -33,7 +33,7 @@ void _CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE4initE4void1_M3std3BoxIM3std5int3
     store value to value_0
     Box<int32>** pointer = getelementptr this, 0
     Box<int32> value.load = load value_0
-    Box<int32>* _0 = call _CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E(Box<int32> value.load)
+    Box<int32>* _0 = call _CX1N3std13allocateValueIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E(Box<int32> value.load)
     store _0 to pointer
     return void
 }
@@ -43,7 +43,7 @@ void _CX1N3stdM3std3BoxIM3std5int32E4initE4void1_M3std5int32(Box<int32>* this, i
     store value to value_0
     int32** pointer = getelementptr this, 0
     int32 value.load = load value_0
-    int32* _0 = call _CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32(int32 value.load)
+    int32* _0 = call _CX1N3std13allocateValueIM3std5int32EEPM3std5int321_M3std5int32(int32 value.load)
     store _0 to pointer
     return void
 }
@@ -70,7 +70,7 @@ void _CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int3
     return void
 }
 
-Box<int32>* _CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E(Box<int32> value) {
+Box<int32>* _CX1N3std13allocateValueIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E(Box<int32> value) {
     Box<int32>* value_0 = alloca Box<int32>
     Box<int32>** allocation = alloca Box<int32>*
     store value to value_0
@@ -80,7 +80,7 @@ Box<int32>* _CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:80:66
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:124:60
 ")
     unreachable
 
@@ -94,7 +94,7 @@ assert.success:
     return allocation.load_0
 }
 
-int32* _CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32(int32 value) {
+int32* _CX1N3std13allocateValueIM3std5int32EEPM3std5int321_M3std5int32(int32 value) {
     int32* value_0 = alloca int32
     int32** allocation = alloca int32*
     store value to value_0
@@ -104,7 +104,7 @@ int32* _CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32(int32 value) {
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:80:66
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:124:60
 ")
     unreachable
 

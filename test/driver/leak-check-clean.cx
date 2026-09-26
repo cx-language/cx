@@ -2,7 +2,7 @@
 // RUN: check_exit_status 0 %cx run -Werror --backend=c %s
 
 void main() {
-    var p = allocate(42);
+    var p = allocateValue(42);
     assert(*p == 42);
     deallocate(p);
 
@@ -13,7 +13,7 @@ void main() {
     assert(*box.get() == 42);
 
     var arena = Arena(chunkSize = 32);
-    var v = arena.allocate(7);
+    var v = arena.allocateValue(7);
     assert(*v! == 7);
 
     var t = (s = StringBuf("a"), n = 1);

@@ -20,11 +20,11 @@ void testAllocations() {
     single.init(7);
     assert(*single! == 7);
 
-    var initialized = arena.allocate(11);
+    var initialized = arena.allocateValue(11);
     assert(initialized != null);
     assert(*initialized! == 11);
 
-    var array = arena.allocateArray<uint64>(4);
+    var array = arena.allocate<uint64>(4);
     assert(array != null);
     for i in 0..4 {
         array[i] = uint64(i * 17);
@@ -39,7 +39,7 @@ void testGrowthAndStablePointers() {
     assert(first != null);
     first.init(1234);
 
-    var array = arena.allocateArray<int>(3);
+    var array = arena.allocate<int>(3);
     assert(array != null);
     array[0] = 10;
     array[1] = 20;
@@ -57,10 +57,10 @@ void testGrowthAndStablePointers() {
 @test
 void testZeroCount() {
     var arena = Arena(chunkSize = 0);
-    var first = arena.allocateArray<int>(0);
+    var first = arena.allocate<int>(0);
     assert(first != null);
 
-    var second = arena.allocateArray<int>(0);
+    var second = arena.allocate<int>(0);
     assert(second != null);
     assert(first == second);
 }
@@ -71,8 +71,8 @@ void testOverflow() {
 
     var huge = uint64(1) << 63;
     var hugeElements = uint64(1) << 61;
-    assert(arena.allocateArray<int>(huge) == null);
-    assert(arena.allocateArray<uint64>(hugeElements) == null);
+    assert(arena.allocate<int>(huge) == null);
+    assert(arena.allocate<uint64>(hugeElements) == null);
 
     var recovered = arena.allocate<int>();
     assert(recovered != null);
@@ -80,13 +80,13 @@ void testOverflow() {
     assert(*recovered! == 17);
 
     var oversized = Arena(chunkSize = huge);
-    assert(oversized.allocateArray<uint8>(huge) == null);
+    assert(oversized.allocate<uint8>(huge) == null);
 }
 
 @test
 void testExplicitDeinit() {
     var arena = Arena(chunkSize = 8);
-    var value = arena.allocate(Tracked());
+    var value = arena.allocateValue(Tracked());
     assert(value != null);
     value!.deinit();
     assert(destroyed == 1);

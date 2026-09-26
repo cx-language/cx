@@ -31,7 +31,7 @@ struct Arena {
     }
 
     /// Moves the given value into arena-owned storage, or returns null on overflow or allocation failure.
-    T*? allocate<T>(T value) {
+    T*? allocateValue<T>(T value) {
         var allocation = this.allocate<T>();
         if allocation == null {
             return null;
@@ -41,9 +41,9 @@ struct Arena {
     }
 
     /// Allocates uninitialized storage for count values, or returns null on overflow or allocation failure.
-    T[*]? allocateArray<T>(uint64 count) {
+    T[*]? allocate<T>(uint64 count) {
         var size = uint64(0);
-        if !this.checkedSize<T>(count, size) {
+        if !checkedArraySize<T>(count, size) {
             return null;
         }
 
@@ -52,15 +52,6 @@ struct Arena {
             return null;
         }
         return cast<T[*]>(storage);
-    }
-
-    private bool checkedSize<T>(uint64 count, uint64& size) {
-        var elementSize = sizeof(T);
-        if count != 0 && elementSize > uint64(-1) / count {
-            return false;
-        }
-        *size = elementSize * count;
-        return true;
     }
 
     private uint8*? reserve(uint64 size) {

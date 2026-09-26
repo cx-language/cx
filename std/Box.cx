@@ -4,7 +4,7 @@ struct Box<T> {
 
     /// Moves the given value onto the heap.
     Box(T value) {
-        this.pointer = allocate(value);
+        this.pointer = allocateValue(value);
     }
 
 //    Box(T* pointer) {

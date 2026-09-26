@@ -10,6 +10,6 @@
 // CHECK-NOT: bug report
 
 void main() {
-    var p = allocate(42);
+    var p = allocateValue(42);
     _ = p;
 }

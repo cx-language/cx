@@ -170,7 +170,7 @@ This is how containers destroy their elements:
 
 ```cs
 void main() {
-    var buffer = allocateArray<List<int>>(1);
+    var buffer = allocate<List<int>>(1);
 
     var slot = &buffer[0];
     slot.init(List([1, 2, 3]));

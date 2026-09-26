@@ -1,0 +1,19 @@
+// RUN: %not %cx -typecheck %s --error-limit=0 2>&1 | %FileCheck %s
+
+void arrayForm() {
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'allocateArray'
+    var p = allocateArray<int>(4);
+    _ = p;
+}
+
+void safeForm() {
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'safeAllocate'
+    var p = safeAllocate<int>(0);
+    _ = p;
+}
+
+void valueForm() {
+    // CHECK: [[@LINE+1]]:13: error: no matching function 'allocate(int)'
+    var p = allocate(4);
+    _ = p;
+}

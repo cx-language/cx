@@ -166,7 +166,7 @@ struct OrderedMap<Key, Value> {
     /// Inserts a key-value pair into the Map.
     bool insert(Key key, Value value) {
         if root == null {
-            root = allocate(AVLnode(key, null, value));
+            root = allocateValue(AVLnode(key, null, value));
         } else {
             var n = root;
 
@@ -181,9 +181,9 @@ struct OrderedMap<Key, Value> {
 
                 if newNode == null {
                     if goLeft {
-                        parent.left = allocate(AVLnode<Key, Value>(key, parent, value)); // TODO: Should work without specifying generic arguments.
+                        parent.left = allocateValue(AVLnode<Key, Value>(key, parent, value)); // TODO: Should work without specifying generic arguments.
                     } else {
-                        parent.right = allocate(AVLnode<Key, Value>(key, parent, value));
+                        parent.right = allocateValue(AVLnode<Key, Value>(key, parent, value));
                     }
 
                     rebalance(parent);

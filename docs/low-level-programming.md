@@ -34,7 +34,7 @@ void main() {
         println(*value); // prints 42
     }
 
-    var values = arena.allocateArray<int>(3);
+    var values = arena.allocate<int>(3);
     if values != null {
         for i in 0..3 {
             values[i] = i;
@@ -43,7 +43,7 @@ void main() {
 }
 ```
 
-`allocate<T>()` and `allocateArray<T>(count)` return uninitialized storage. Initialize each value before reading it. `allocate(value)` is a convenience overload that moves one initialized value into the arena. The arena destructor frees its backing chunks; it does not infer or run destructors for values placed in that storage, so explicitly deinitialize values that own resources before the arena is destroyed. Do not use an arena after calling `deinit()`. An arena is not thread-safe; concurrent writers need separate arenas or external synchronization.
+`allocate<T>()` and `allocate<T>(count)` return uninitialized storage. Initialize each value before reading it. `allocateValue(value)` is a convenience overload that moves one initialized value into the arena. The arena destructor frees its backing chunks; it does not infer or run destructors for values placed in that storage, so explicitly deinitialize values that own resources before the arena is destroyed. Do not use an arena after calling `deinit()`. An arena is not thread-safe; concurrent writers need separate arenas or external synchronization.
 
 ## Using C libraries
 

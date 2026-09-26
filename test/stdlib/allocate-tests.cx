@@ -1,0 +1,56 @@
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --release %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror --release --backend=c %s
+
+@test
+void testAllocate() {
+    var numbers = allocate<int>(4);
+    for i in 0..4 {
+        numbers[i] = i * 10;
+    }
+    for i in 0..4 {
+        assert(numbers[i] == i * 10);
+    }
+    deallocate(numbers);
+}
+
+@test
+void testAllocateZeroCount() {
+    var empty = allocate<int>(0);
+    deallocate(empty);
+    var alsoEmpty = tryAllocate<int>(0);
+    assert(alsoEmpty != null);
+    deallocate(alsoEmpty);
+}
+
+@test
+void testAllocateValue() {
+    var p = allocateValue(42);
+    assert(*p == 42);
+    deallocate(p);
+}
+
+@test
+void testTryAllocate() {
+    var numbers = tryAllocate<int>(4);
+    assert(numbers != null);
+    numbers![0] = 7;
+    assert(numbers[0] == 7);
+    deallocate(numbers);
+    assert(tryAllocate<uint64>(uint64(-1)) == null);
+}
+
+@test
+void testTryAllocateValue() {
+    var p = tryAllocateValue(42);
+    assert(p != null);
+    assert(*p! == 42);
+    deallocate(p);
+}
+
+@test
+void testDeallocateNull() {
+    int*? nothing = null;
+    deallocate(nothing);
+}
