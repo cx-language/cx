@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s --error-limit=0 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck -Wno-unused %s --error-limit=0 2>&1 | %FileCheck %s
 
 void arrayForm() {
     // CHECK: [[@LINE+1]]:13: error: unknown identifier 'allocateArray'
