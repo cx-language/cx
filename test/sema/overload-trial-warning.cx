@@ -1,7 +1,7 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void main() {
-    var content = unwrap(readFile("definitely-not-here-12345"));
+    var content = readFile("definitely-not-here-12345").unwrap();
     // CHECK: [[@LINE+1]]:27: warning: unwrapping non-optional type 'StringBuf' has no effect
     println(string(content!));
 }

@@ -6,7 +6,7 @@ uint compileShader(string path, uint kind) {
         abort("cannot read shader file: ", path);
     }
     var shader = glCreateShader(kind);
-    var cstr = unwrap(source).cString();
+    var cstr = source.unwrap().cString();
     // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
     glShaderSource(shader, 1, cast<const char*?*>(&cstr), null);
     glCompileShader(shader);

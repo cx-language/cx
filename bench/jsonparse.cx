@@ -53,7 +53,7 @@ void main() {
     var text = makeDocument();
     var total = int64(0);
     for _ in 0..100 {
-        var parsed = unwrap(parseJson(text));
+        var parsed = parseJson(text).unwrap();
         total += checksum(parsed);
     }
     println(total);

@@ -3,14 +3,14 @@
 enum Result<T, E> {
     Ok(T value),
     Err(E error),
-}
 
-/// Returns the success value, aborting with the error if the result is `Err`.
-T unwrap<T, E: Printable>(Result<T, E>& result) {
-    return switch *result {
-        case Ok value: value,
-        case Err error: abort("called unwrap() on Err: ", error),
-    };
+    /// Returns the success value, aborting with the error if the result is `Err`.
+    T unwrap() {
+        return switch this {
+            case Ok value: value,
+            case Err error: abort("called unwrap() on Err: ", error),
+        };
+    }
 }
 
 /// Prints the given result.

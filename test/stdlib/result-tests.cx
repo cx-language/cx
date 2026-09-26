@@ -14,7 +14,7 @@ void testConstruction() {
     assert(inferred == Ok);
 
     var explicit = Result.Ok<int, string>(value = 2);
-    assert(unwrap(explicit) == 2);
+    assert(explicit.unwrap() == 2);
 
     Result<int, string> fromDeclaredType = Result.Err(error = "boom");
     assert(fromDeclaredType == Err);
@@ -40,8 +40,8 @@ void testCaseComparison() {
 
 @test
 void testUnwrap() {
-    assert(unwrap(parseDigit('7')) == 7);
-    assert(unwrap(Result.Ok<int, int>(value = 42)) == 42);
+    assert(parseDigit('7').unwrap() == 7);
+    assert(Result.Ok<int, int>(value = 42).unwrap() == 42);
 }
 
 @test

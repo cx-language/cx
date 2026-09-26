@@ -3,7 +3,7 @@
 
 void main() {
     var err = Result.Err<int, string>(error = "not a digit");
-    unwrap(err);
+    err.unwrap();
 }
 
 // CHECK: called unwrap() on Err: not a digit

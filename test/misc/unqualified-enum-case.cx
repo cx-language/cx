@@ -44,7 +44,7 @@ void main() {
     assert(present! == 5);
 
     Result<int, string> e = Ok(1);
-    assert(unwrap(e) == 1);
+    assert(e.unwrap() == 1);
 
     Outcome<Outcome<int> > nested = Ok(Err(500));
     switch (nested) {

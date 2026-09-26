@@ -46,7 +46,7 @@ void main() {
 
     // Generic enums lower through spelled arguments.
     var r = compute(true);
-    println(unwrap(r));
+    println(r.unwrap());
     var e = compute(false);
     println(e);
 }

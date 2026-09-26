@@ -51,7 +51,7 @@ void main() {
 ```
 
 Use `== Ok` and `== Err` to test which case a result holds.
-`unwrap` returns the success value, or aborts with the error:
+The `unwrap` method returns the success value, or aborts with the error:
 
 ```cs
 Result<int, string> parseDigit(char c) {
@@ -64,7 +64,7 @@ Result<int, string> parseDigit(char c) {
 void main() {
     var digit = parseDigit('7');
     if digit == Ok {
-        println(unwrap(digit)); // prints 7
+        println(digit.unwrap()); // prints 7
     }
 
     var notDigit = parseDigit('x');

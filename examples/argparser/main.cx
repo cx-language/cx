@@ -132,7 +132,7 @@ int main(string[] argv) {
     var tasks = List<Task>();
     var content = readFile(parser.option("db"));
     if content == Ok {
-        loadTasks(unwrap(content).substr(0), tasks);
+        loadTasks(content.unwrap().substr(0), tasks);
     }
 
     var cmd = parser.matchedCommand();
