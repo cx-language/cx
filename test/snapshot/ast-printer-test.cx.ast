@@ -3,6 +3,15 @@ TypeDecl
 FunctionDecl main
     VarStmt VarDecl text CallExpr MemberExpr
 
-    ExprStmt CallExpr MemberExpr
+    VarStmt VarDecl program CallExpr VarExpr Program type=NULL
+        CallExpr VarExpr string type=NULL
+            ImplicitCastExpr 2 ImplicitCastExpr 2 VarExpr text type=StringBuf
 
+
+    VarStmt VarDecl tape CallExpr VarExpr Tape type=NULL
+
+    VarStmt VarDecl pc IntLiteralExpr
+    VarStmt VarDecl size CallExpr MemberExpr
+
+    ForStmt
 

@@ -1,34 +1,14 @@
 struct Tape {
-    List<int> tape;
+    List<int> cells;
     int pos;
 
     Tape() {
-        tape = List([0]);
+        cells = List([0]);
         pos = 0;
     }
 
     int value() {
-        return tape[pos];
-    }
-
-    void increment() {
-        tape[pos]++;
-    }
-
-    void decrement() {
-        tape[pos]--;
-    }
-
-    void forward() {
-        pos++;
-
-        if pos >= tape.size()
-            tape.push(0);
-    }
-
-    void backward() {
-        if pos > 0
-            pos--;
+        return cells[pos];
     }
 }
 
@@ -64,44 +44,45 @@ struct Program {
             code.append(ch);
         }
     }
-
-    void run() {
-        var tape = Tape();
-        var pc = 0;
-        var size = code.size();
-
-        while pc < size {
-            switch code[pc] {
-                case '+':
-                    tape.increment();
-
-                case '-':
-                    tape.decrement();
-
-                case '>':
-                    tape.forward();
-
-                case '<':
-                    tape.backward();
-
-                case '[':
-                    if tape.value() == 0
-                        pc = bracketMap[pc]!;
-
-                case ']':
-                    if tape.value() != 0
-                        pc = bracketMap[pc]!;
-
-                case '.':
-                    print(char(tape.value()));
-            }
-
-            pc++;
-        }
-    }
 }
 
 void main() {
     var text = readFile("inputs/mandel.b").unwrap();
-    Program(string(text)).run();
+    var program = Program(string(text));
+    var tape = Tape();
+    var pc = 0;
+    var size = program.code.size();
+
+    while pc < size {
+        switch program.code[pc] {
+            case '+':
+                tape.cells[tape.pos]++;
+
+            case '-':
+                tape.cells[tape.pos]--;
+
+            case '>':
+                tape.pos++;
+
+                if tape.pos >= tape.cells.size()
+                    tape.cells.push(0);
+
+            case '<':
+                if tape.pos > 0
+                    tape.pos--;
+
+            case '[':
+                if tape.value() == 0
+                    pc = program.bracketMap[pc]!;
+
+            case ']':
+                if tape.value() != 0
+                    pc = program.bracketMap[pc]!;
+
+            case '.':
+                print(char(tape.value()));
+        }
+
+        pc++;
+    }
 }
