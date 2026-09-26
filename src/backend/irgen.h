@@ -83,6 +83,7 @@ struct IRGenerator {
     Value* emitLogicalAnd(const Expr& left, const Expr& right);
     Value* emitLogicalOr(const Expr& left, const Expr& right);
     Value* emitNullCoalescingExpr(const BinaryExpr& expr);
+    Value* emitPositiveModulo(Value* lhs, Value* rhs, const Expr* expr);
     Value* emitBoolConvertibleOperand(const Expr& expr);
     Value* emitBinaryExpr(const BinaryExpr& expr);
     Value* emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const BinaryExpr& expr);

@@ -494,6 +494,14 @@ static bool isVectorFriendlyElement(IRType* type) {
     return false;
 }
 
+Value* IRGenerator::emitPositiveModulo(Value* lhs, Value* rhs, const Expr* expr) {
+    if (lhs->getType()->isUnsignedInteger()) return createBinaryOp(Token::Modulo, lhs, rhs, expr);
+    // Positive remainder ((a % b) + b) % b. The operands are already evaluated values, so this doesn't re-evaluate them.
+    auto* rem = createBinaryOp(Token::Modulo, lhs, rhs, expr);
+    auto* shifted = createBinaryOp(Token::Plus, rem, rhs, expr);
+    return createBinaryOp(Token::Modulo, shifted, rhs, expr);
+}
+
 Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     if (expr.isAssignment()) {
         return emitAssignment(expr);
@@ -696,11 +704,7 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     case Token::PositiveModulo: {
         auto left = emitExprOrEnumTag(expr.getLHS(), nullptr);
         auto right = emitExprOrEnumTag(expr.getRHS(), nullptr);
-        if (left->getType()->isUnsignedInteger()) return createBinaryOp(Token::Modulo, left, right, &expr);
-        // Positive remainder ((a % b) + b) % b. The operands are already evaluated values, so this doesn't re-evaluate them.
-        auto* rem = createBinaryOp(Token::Modulo, left, right, &expr);
-        auto* shifted = createBinaryOp(Token::Plus, rem, right, &expr);
-        return createBinaryOp(Token::Modulo, shifted, right, &expr);
+        return emitPositiveModulo(left, right, &expr);
     }
 
     default:

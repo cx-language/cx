@@ -76,6 +76,17 @@ void testIntArrays() {
     assert(d[1] == 1);
     assert(d[2] == 0);
 
+    int[3] m = [-7, 7, -8];
+    int[3] n = m %% 3;
+    assert(n[0] == 2);
+    assert(n[1] == 1);
+    assert(n[2] == 1);
+
+    int[3] o = [-7, 7, 8] %% [3, 3, 3];
+    assert(o[0] == 2);
+    assert(o[1] == 1);
+    assert(o[2] == 2);
+
     int[3] e = a & b;
     assert(e[0] == (1 & 4));
     assert(e[1] == (2 & 5));
@@ -206,6 +217,8 @@ void testLargeArrays() {
     assert((x >> 1)[60] == 30);
     assert((x / 3)[60] == 20);
     assert((x % 7)[60] == 4);
+    assert((x %% 7)[42] == 0);
+    assert((100 %% y)[10] == 10);
     assert(x == x);
     assert(x != y);
 
