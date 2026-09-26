@@ -72,10 +72,9 @@ bool Type::isImplicitlyCopyable() const {
     llvm_unreachable("all cases handled");
 }
 
-// Note: fixed-size-array elements are not checked here yet (arrays have no
-// getDecl), so those owning values still leak. See the Triage card.
 bool Type::needsDestruction() const {
     if (getDestructor()) return true;
+    if (isFixedArray()) return getElementType().needsDestruction();
     if (isAnonymousStructType()) {
         for (auto& element : getAnonymousStructElements()) {
             if (element.type.needsDestruction()) return true;

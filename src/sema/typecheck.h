@@ -281,6 +281,10 @@ void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<GenericArg
 // Returns the enum case tested by an `is` expression's right side, or null when it isn't one.
 EnumCase* getIsEnumCase(Expr& expr);
 bool containsGenericParam(Type type, llvm::StringRef genericParam);
+// True when a fixed array flows into a view type (slice or raw pointer): the
+// consumer borrows the elements without taking ownership, so the source must
+// still die at its own site instead of being flagged as moved.
+bool isArrayBorrow(Type source, Type target);
 void diagnoseClosureConversion(Type source, Type target, Location location);
 // Suggests an explicit conversion when a value of one numeric type is used where another is expected.
 std::string narrowingHint(Type source, Type target);

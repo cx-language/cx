@@ -1011,10 +1011,10 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     }
 
     if (!rhsType.removeReference().isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
-        setMoved(rhs, true);
+        if (!isArrayBorrow(rhsType, lhsType)) setMoved(rhs, true);
         setMoved(lhs, false);
     } else if (rhsType.needsDestruction()) {
-        setMoved(rhs, true, /*trackVars=*/false);
+        if (!isArrayBorrow(rhsType, lhsType)) setMoved(rhs, true, /*trackVars=*/false);
     }
 
     if (currentInitializedFields) {
@@ -1115,10 +1115,13 @@ Expr* Typechecker::convertWithUserConversion(Expr* expr, Type target, bool diagn
         operand = convert(operand, paramType, /*allowPointerToTemporary=*/true, diagnoseOutOfRange, allowOperatorBorrow, /*allowUserConversion=*/false);
         if (!operand) return nullptr;
         // Like explicit calls, moving into a by-value parameter consumes a non-copyable source.
-        if (!operand->type.removeReference().isImplicitlyCopyable() && !paramType.isImplicitlyCopyable()) {
-            setMoved(operand, true);
-        } else if (!paramType.removeOptional().isReferenceType() && operand->type.needsDestruction()) {
-            setMoved(operand, true, /*trackVars=*/false);
+        // A borrowed array is only viewed, never consumed.
+        if (!isArrayBorrow(operand->type, paramType)) {
+            if (!operand->type.removeReference().isImplicitlyCopyable() && !paramType.isImplicitlyCopyable()) {
+                setMoved(operand, true);
+            } else if (!paramType.removeOptional().isReferenceType() && operand->type.needsDestruction()) {
+                setMoved(operand, true, /*trackVars=*/false);
+            }
         }
         markReferenced(conversion);
         return makeAST<ImplicitCastExpr>(operand, target, ImplicitCastExpr::UserConversion, conversion);
@@ -3122,6 +3125,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     auto markArgMoved = [&](Expr* arg, const ParamDecl* param) {
+        if (param && isArrayBorrow(arg->type, param->type)) return;
         if (!arg->type.removeReference().isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
             setMoved(arg, true);
         } else if ((!param || !param->type.removeOptional().isReferenceType()) && arg->type.needsDestruction()) {
@@ -4221,6 +4225,13 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
 
 static bool moveConsumesSource(const Expr* e) {
     return !e->type || e->type.needsDestruction();
+}
+
+bool cx::isArrayBorrow(Type source, Type target) {
+    if (!source || !target) return false;
+    if (!source.removeReference().isFixedArray()) return false;
+    Type t = target.removeOptional();
+    return t.isSlice() || t.isArrayPointer() || (t.isPointerType() && !t.isReferenceType());
 }
 
 void Typechecker::propagateMove(Expr* source, bool trackVars, Location location) {

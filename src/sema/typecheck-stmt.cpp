@@ -409,7 +409,9 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
 
     checkReturnPointerToLocal(stmt.value);
     bool trackVars = !stmt.value || !stmt.value->type || !stmt.value->type.removeReference().isImplicitlyCopyable();
-    setMoved(stmt.value, true, trackVars);
+    if (stmt.value && stmt.value->type && !isArrayBorrow(stmt.value->type, currentFunction->getReturnType())) {
+        setMoved(stmt.value, true, trackVars);
+    }
     stmt.movedDecls.insert(movedDecls.begin(), movedDecls.end());
 }
 

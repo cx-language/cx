@@ -33,9 +33,9 @@ struct IRGenScope {
         Function* function;
         Value* value;
         const Decl* decl;
-        // Non-empty for anonymous struct elements: GEP indexes from the
-        // variable alloca to the destructible element, applied at scope end
-        // so the GEPs dominate the destructor call.
+        // Non-empty for anonymous struct and fixed-array elements: GEP indexes
+        // from the base to the destructible element, applied at destruction
+        // time so the GEPs dominate the destructor call.
         std::vector<int> indexes;
         // Temporaries only: when set, the destructor runs only if this
         // conditional-region flag is set, since the value may never have
@@ -263,7 +263,7 @@ struct IRGenerator {
     void destroyTempScope();
     void destroyAllTempScopes();
     void unwindTempScopesTo(size_t depth);
-    void registerTempDestructor(AllocaInst* alloca, Type type);
+    void registerTempDestructor(Value* base, Type type, std::vector<int> indexes = {});
     Value* maybeRegisterResultTemp(Value* result, const Expr& expr);
     Value* createTempGuard();
     void createGuardedDestructorCall(Function* destructor, Value* receiver, Value* guard);

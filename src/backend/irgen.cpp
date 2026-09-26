@@ -128,26 +128,41 @@ void IRGenerator::unwindTempScopesTo(size_t depth) {
     ASSERT(depth <= tempScopes.size());
     for (auto it = tempScopes.begin() + depth; it != tempScopes.end(); ++it) {
         for (auto& temp : reverse(*it)) {
+            Value* receiver = temp.value;
+            for (int index : temp.indexes) {
+                receiver = createGEP(receiver, index);
+            }
             if (temp.guard) {
-                createGuardedDestructorCall(temp.function, temp.value, temp.guard);
+                createGuardedDestructorCall(temp.function, receiver, temp.guard);
             } else {
-                createDestructorCall(temp.function, temp.value);
+                createDestructorCall(temp.function, receiver);
             }
         }
     }
     if (tempScopes.size() > depth) tempScopes.back().clear();
 }
 
-void IRGenerator::registerTempDestructor(AllocaInst* alloca, Type type) {
+void IRGenerator::registerTempDestructor(Value* base, Type type, std::vector<int> indexes) {
+    if (type.isFixedArray()) {
+        Type elementType = type.getElementType();
+        if (elementType.needsDestruction()) {
+            for (int64_t i = 0; i < type.getArraySize(); ++i) {
+                auto elementIndexes = indexes;
+                elementIndexes.push_back(int(i));
+                registerTempDestructor(base, elementType, std::move(elementIndexes));
+            }
+        }
+        return;
+    }
     if (emittingReceiver) {
         if (auto* function = getDestructorFunction(type)) {
-            scopes.back().destructorsToCall.push_back({function, alloca, nullptr, {}, tempGuard});
+            scopes.back().destructorsToCall.push_back({function, base, nullptr, std::move(indexes), tempGuard});
         }
         return;
     }
     if (tempScopes.empty()) return;
     if (auto* function = getDestructorFunction(type)) {
-        tempScopes.back().push_back({function, alloca, nullptr, {}, tempGuard});
+        tempScopes.back().push_back({function, base, nullptr, std::move(indexes), tempGuard});
     }
 }
 
@@ -213,6 +228,17 @@ void IRGenerator::deferDestructionForType(Value* base, Type type, const Variable
         }
         return;
     }
+    if (type.isFixedArray()) {
+        Type elementType = type.getElementType();
+        if (elementType.needsDestruction()) {
+            for (int64_t i = 0; i < type.getArraySize(); ++i) {
+                auto elementIndexes = indexes;
+                elementIndexes.push_back(int(i));
+                deferDestructionForType(base, elementType, owner, std::move(elementIndexes));
+            }
+        }
+        return;
+    }
     if (auto* function = getDestructorFunction(type)) {
         scopes.back().destructorsToCall.push_back({function, base, owner, std::move(indexes)});
     }
@@ -234,6 +260,15 @@ void IRGenerator::destroyElementsForAssignment(Value* base, Type type) {
                 destroyElementsForAssignment(createGEP(base, index, nullptr, element.name), element.type);
             }
             ++index;
+        }
+        return;
+    }
+    if (type.isFixedArray()) {
+        Type elementType = type.getElementType();
+        if (elementType.needsDestruction()) {
+            for (int64_t i = 0; i < type.getArraySize(); ++i) {
+                destroyElementsForAssignment(createGEP(base, int(i)), elementType);
+            }
         }
         return;
     }
@@ -309,7 +344,7 @@ void IRGenerator::destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skip
     // Call destructor for LHS.
     if (auto* destructor = lhs.type.getDestructor()) {
         createDestructorCall(getFunction(*destructor), lvalue);
-    } else if (lhs.type.isAnonymousStructType()) {
+    } else if (lhs.type.isAnonymousStructType() || lhs.type.isFixedArray()) {
         destroyElementsForAssignment(lvalue, lhs.type);
     } else if (auto* typeDecl = lhs.type.getDecl()) {
         if (auto* defaultDestructor = typeDecl->getOrSynthesizeDefaultDestructor()) {
