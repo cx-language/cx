@@ -57,7 +57,7 @@ struct ChainIterator<Element, First, Second>: Iterator<Element&> {
         return FilterIterator<Element, ChainIterator<Element, First, Second>, bool(T)>(*this, include);
     }
 
-    /// Collects the remaining elements into a list.
+    /// Collects the remaining elements into a list by copying them; only sound for Copyable elements.
     List<Element> toList() {
         var output = List<Element>();
         while hasValue() {

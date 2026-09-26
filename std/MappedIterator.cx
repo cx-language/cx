@@ -53,7 +53,7 @@ struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&> {
         return ChainIterator(*this, other);
     }
 
-    /// Collects the remaining elements into a list.
+    /// Collects the remaining elements into a list by copying them; only sound for Copyable elements.
     List<Output> toList() {
         var output = List<Output>();
         while hasValue() {

@@ -109,8 +109,11 @@ struct Map<Key: Hashable, Value> {
         for i in 0..capacity() {
             var slot = &hashTable[i];
 
-            for el in slot {
-                newTable[convertHash(el.key.hash()) % newCapacity].push(*el);
+            // Drain each slot with pop(), moving elements out. Copying them
+            // would alias the old table's elements, which its destructor frees.
+            while slot.size() > 0 {
+                var el = slot.pop();
+                newTable[convertHash(el.key.hash()) % newCapacity].push(el);
             }
         }
 

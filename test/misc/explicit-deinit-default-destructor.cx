@@ -1,0 +1,39 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:before
+// CHECK-NEXT:inner dtor
+// CHECK-NEXT:after
+// CHECK-NEXT:done
+
+// Explicit deinit() on a type without an explicit destructor lowers to the
+// default destructor: fields are destroyed at the deinit call, exactly once
+// (a scope-exit call would print between "after" and "done").
+
+struct Inner {
+    int i;
+    ~Inner() {
+        println("inner dtor");
+    }
+}
+
+struct Outer {
+    Inner inner;
+}
+
+struct Plain {
+    int i;
+}
+
+void main() {
+    {
+        var o = Outer(inner = Inner(i = 1));
+        println("before");
+        o.deinit();
+        println("after");
+    }
+    println("done");
+
+    // No destructible fields: still compiles, still a no-op.
+    var p = Plain(i = 1);
+    p.deinit();
+}

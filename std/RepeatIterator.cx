@@ -27,7 +27,7 @@ struct RepeatIterator<T: Copyable>: Copyable, Iterator<T&> {
         index++;
     }
 
-    /// Collects the repetitions into a list.
+    /// Collects the repetitions into a list by copying them; only sound for Copyable elements.
     List<T> toList() {
         var output = List<T>();
         while hasValue() {

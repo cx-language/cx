@@ -170,7 +170,7 @@ Function* IRGenerator::getDestructorFunction(Type type) {
         return getFunction(*destructor);
     }
     if (auto* typeDecl = type.getDecl()) {
-        if (auto* defaultDestructor = getDefaultDestructor(*typeDecl)) {
+        if (auto* defaultDestructor = typeDecl->getOrSynthesizeDefaultDestructor()) {
             return getFunction(*defaultDestructor);
         }
     }
@@ -198,31 +198,6 @@ void IRGenerator::createGuardedDestructorCall(Function* destructor, Value* recei
 
 void IRGenerator::deferEvaluationOf(const Expr& expr) {
     scopes.back().deferredExprs.push_back(&expr);
-}
-
-/// Returns a destructor that only calls the destructors of the member variables, or null if
-/// no such destructor is needed because none of the member variables have destructors.
-DestructorDecl* IRGenerator::getDefaultDestructor(TypeDecl& typeDecl) {
-    ASSERT(!typeDecl.getDestructor());
-
-    auto synthesize = [&] {
-        auto destructor = makeAST<DestructorDecl>(typeDecl, typeDecl.getLocation());
-        destructor->body = std::vector<Stmt*>();
-        return destructor;
-    };
-
-    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(&typeDecl)) {
-        return enumDecl->hasDestructiblePayload() ? synthesize() : nullptr;
-    }
-
-    for (auto& field : typeDecl.fields) {
-        if (field.type.needsDestruction()) {
-            auto destructor = synthesize();
-            return destructor;
-        }
-    }
-
-    return nullptr;
 }
 
 void IRGenerator::deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes) {
@@ -337,7 +312,7 @@ void IRGenerator::destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skip
     } else if (lhs.type.isAnonymousStructType()) {
         destroyElementsForAssignment(lvalue, lhs.type);
     } else if (auto* typeDecl = lhs.type.getDecl()) {
-        if (auto* defaultDestructor = getDefaultDestructor(*typeDecl)) {
+        if (auto* defaultDestructor = typeDecl->getOrSynthesizeDefaultDestructor()) {
             createDestructorCall(getFunction(*defaultDestructor), lvalue);
         }
     }

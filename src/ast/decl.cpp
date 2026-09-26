@@ -424,6 +424,28 @@ DestructorDecl* TypeDecl::getDestructor() const {
     return nullptr;
 }
 
+DestructorDecl* TypeDecl::getOrSynthesizeDefaultDestructor() {
+    ASSERT(!getDestructor());
+
+    auto synthesize = [&] {
+        auto destructor = makeAST<DestructorDecl>(*this, getLocation());
+        destructor->body = std::vector<Stmt*>();
+        return destructor;
+    };
+
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(this)) {
+        return enumDecl->hasDestructiblePayload() ? synthesize() : nullptr;
+    }
+
+    for (auto& field : fields) {
+        if (field.type.needsDestruction()) {
+            return synthesize();
+        }
+    }
+
+    return nullptr;
+}
+
 Type TypeDecl::getType(Mutability mutability) const {
     return BasicType::get(name, genericArgs, mutability, location);
 }

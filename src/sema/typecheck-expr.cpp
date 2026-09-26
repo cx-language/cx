@@ -2944,7 +2944,15 @@ std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm:
         receiverTypeDecl = nullptr;
     }
 
-    return findDecls(callee, receiverTypeDecl, isPostProcessing);
+    auto decls = findDecls(callee, receiverTypeDecl, isPostProcessing);
+    // An explicit `x.deinit()` lowers to the default destructor when the type
+    // declares none, so containers destroy elements that only have one.
+    if (decls.empty() && expr.getFunctionName() == "deinit" && receiverTypeDecl && !receiverTypeDecl->getDestructor()) {
+        if (auto* defaultDestructor = receiverTypeDecl->getOrSynthesizeDefaultDestructor()) {
+            decls.push_back(defaultDestructor);
+        }
+    }
+    return decls;
 }
 
 Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {

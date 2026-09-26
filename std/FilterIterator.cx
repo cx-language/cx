@@ -46,7 +46,7 @@ struct FilterIterator<Input, It, Predicate>: Iterator<Input&> {
         return ChainIterator(*this, other);
     }
 
-    /// Collects the remaining elements into a list.
+    /// Collects the remaining elements into a list by copying them; only sound for Copyable elements.
     List<Input> toList() {
         var output = List<Input>();
         while hasValue() {

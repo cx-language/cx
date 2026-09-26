@@ -269,7 +269,6 @@ struct IRGenerator {
     void createGuardedDestructorCall(Function* destructor, Value* receiver, Value* guard);
     Function* getDestructorFunction(Type type);
     void deferEvaluationOf(const Expr& expr);
-    DestructorDecl* getDefaultDestructor(TypeDecl& typeDecl);
     void deferDestructorCall(Value* receiver, const VariableDecl* decl);
     void deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes = {});
     void destroyElementsForAssignment(Value* base, Type type);

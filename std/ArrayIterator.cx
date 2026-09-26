@@ -24,7 +24,7 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element&> {
         current++;
     }
 
-    /// Collects the remaining elements into a list.
+    /// Collects the remaining elements into a list by copying them; only sound for Copyable elements.
     List<Element> toList() {
         var output = List<Element>();
         while hasValue() {

@@ -1,5 +1,4 @@
-// Leak check disabled: List<StringBuf> elements are never destroyed (deinit is a no-op for types without an explicit destructor).
-// RUN: check_exit_status 0 %cx test -Werror --no-leak-check %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 // Callbacks accept Copyable types by value or by borrow; untyped lambdas
 // borrow. Borrowed callbacks must not consume non-Copyable elements.
 
@@ -46,9 +45,24 @@ void testBorrowValueOrBorrow() {
     assert(numbers.all(isEvenRef) == false);
     assert(numbers.all(n => n >= 0) == true);
 
-    var buffers = List([StringBuf("a"), StringBuf("bb"), StringBuf("ccc")]);
-    assert(buffers.filter(isLongRef).toList().size() == 2);
+    // Built with push(): List(Element[]) memcpys from the source array, which
+    // aliases owning elements instead of moving them.
+    var buffers = List<StringBuf>();
+    buffers.push(StringBuf("a"));
+    buffers.push(StringBuf("bb"));
+    buffers.push(StringBuf("ccc"));
+    // toList() copies elements, so it cannot collect borrowed owning values;
+    // count through the iterator instead.
+    var longCount = 0;
+    for _ in buffers.filter(isLongRef) {
+        longCount = longCount + 1;
+    }
+    assert(longCount == 2);
     assert(buffers.size() == 3);
-    assert(buffers.filter(s => s.size() > 1).toList().size() == 2);
+    var lambdaCount = 0;
+    for _ in buffers.filter(s => s.size() > 1) {
+        lambdaCount = lambdaCount + 1;
+    }
+    assert(lambdaCount == 2);
     assert(buffers.size() == 3);
 }
