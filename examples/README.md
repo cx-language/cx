@@ -62,6 +62,13 @@ applications. Each subdirectory is a `cx build` project (see
   `--self-test`.
 
   ![Ray tracer output](raytracer/screenshot.png)
+- [`fractal/`](fractal/) — GPU Mandelbrot explorer with smooth
+  iteration-count coloring, rendered with OpenGL 3.3 via GLFW. Drag to
+  pan, scroll to zoom at the cursor. See
+  [`fractal/README.md`](fractal/README.md) for building and
+  `--screenshot`.
+
+  ![Mandelbrot close-up](fractal/screenshot.png)
 
 ## Building all examples
 
@@ -72,4 +79,4 @@ python3 build_examples.py --cx /path/to/cx
 compiles every single-file program (`cx <file> -Werror`) and every project
 directory (`cx build -Werror`), skipping `inputs/` fixtures. `embedding/` is
 built with `-Wno-unused` since its entry point is called from the C++ host.
-`tree.cx`, `asteroids`, `opengl`, and `voxel-game` are skipped on Windows.
+`tree.cx`, `asteroids`, `opengl`, `voxel-game`, and `fractal` are skipped on Windows.

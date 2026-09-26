@@ -1,0 +1,290 @@
+import "GLFW/glfw3.h";
+
+// GPU Mandelbrot explorer: drag to pan, scroll to zoom at the cursor,
+// Up/Down adjust detail, R resets the view, Esc quits.
+
+float64 pendingZoom = 0;
+
+void scrollCallback(GLFWwindow*? window, float64 xoff, float64 yoff) {
+    pendingZoom += yoff;
+}
+
+uint compileShader(string path, uint kind) {
+    var source = readFile(path);
+    if source == Err {
+        abort("cannot read shader file: ", path);
+    }
+    var shader = glCreateShader(kind);
+    // Bind the unwrapped text: calling .cString() on the temporary leaks it.
+    var text = source.unwrap();
+    var cstr = text.cString();
+    // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
+    glShaderSource(shader, 1, cast<const char*?*>(&cstr), null);
+    glCompileShader(shader);
+    int status = undefined;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if status == 0 {
+        char[512] log = undefined;
+        glGetShaderInfoLog(shader, 512, null, &log[0]);
+        var message = StringBuf(&log[0]);
+        abort("shader compile failed: ", path, ": ", message);
+    }
+    return shader;
+}
+
+uint createProgram(string vertPath, string fragPath) {
+    var vert = compileShader(vertPath, GL_VERTEX_SHADER);
+    var frag = compileShader(fragPath, GL_FRAGMENT_SHADER);
+    var program = glCreateProgram();
+    glAttachShader(program, vert);
+    glAttachShader(program, frag);
+    glLinkProgram(program);
+    int status = undefined;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if status == 0 {
+        char[512] log = undefined;
+        glGetProgramInfoLog(program, 512, null, &log[0]);
+        var message = StringBuf(&log[0]);
+        abort("program link failed: ", message);
+    }
+    glDeleteShader(vert);
+    glDeleteShader(frag);
+    return program;
+}
+
+int uniformLoc(uint program, string name) {
+    var buf = StringBuf(name);
+    return glGetUniformLocation(program, buf.cString());
+}
+
+struct View: Copyable {
+    float centerX;
+    float centerY;
+    float viewH;
+    int maxIter;
+}
+
+View defaultView() {
+    return View(centerX = -0.5, centerY = 0.0, viewH = 2.5, maxIter = 256);
+}
+
+void drawView(uint program, int centerLoc, int viewHLoc, int aspectLoc, int iterLoc,
+    View& view, int width, int height) {
+    glViewport(0, 0, width, height);
+    glUseProgram(program);
+    glUniform2f(centerLoc, view.centerX, view.centerY);
+    glUniform1f(viewHLoc, view.viewH);
+    glUniform1f(aspectLoc, float(width) / float(height));
+    glUniform1i(iterLoc, view.maxIter);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+}
+
+int runExplorer() {
+    if glfwInit() == 0 {
+        println("glfwInit failed");
+        return 1;
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
+    var window = glfwCreateWindow(960, 640, "fractal", null, null);
+    if window == null {
+        println("glfwCreateWindow failed");
+        glfwTerminate();
+        return 1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+    glfwSetScrollCallback(window, scrollCallback);
+
+    var program = createProgram("assets/fractal.vert", "assets/fractal.frag");
+    var centerLoc = uniformLoc(program, "uCenter");
+    var viewHLoc = uniformLoc(program, "uViewH");
+    var aspectLoc = uniformLoc(program, "uAspect");
+    var iterLoc = uniformLoc(program, "uMaxIter");
+    uint vao = undefined;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    var view = defaultView();
+    var dragging = false;
+    float64 lastX = 0;
+    float64 lastY = 0;
+    var prevUp = false;
+    var prevDown = false;
+    var fpsFrames = 0;
+    var fpsStart = glfwGetTime();
+
+    while glfwWindowShouldClose(window) == 0 {
+        if glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS {
+            glfwSetWindowShouldClose(window, 1);
+        }
+        if glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS {
+            view = defaultView();
+        }
+        var up = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
+        if up && !prevUp {
+            view.maxIter = clamp(view.maxIter * 2, 50, 5000);
+        }
+        prevUp = up;
+        var down = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
+        if down && !prevDown {
+            view.maxIter = clamp(view.maxIter / 2, 50, 5000);
+        }
+        prevDown = down;
+
+        int width = undefined;
+        int height = undefined;
+        glfwGetFramebufferSize(window, &width, &height);
+        if width <= 0 || height <= 0 {
+            glfwPollEvents();
+            continue;
+        }
+        var aspect = float(width) / float(height);
+        float64 mx = undefined;
+        float64 my = undefined;
+        glfwGetCursorPos(window, &mx, &my);
+        // Cursor and window sizes share screen coordinates; the framebuffer
+        // is scaled up on HiDPI displays, so it would misplace the cursor.
+        int winWidth = undefined;
+        int winHeight = undefined;
+        glfwGetWindowSize(window, &winWidth, &winHeight);
+
+        if pendingZoom != 0.0 {
+            var factor = pow(1.15, float(-pendingZoom));
+            pendingZoom = 0.0;
+            var newH = clamp(view.viewH * factor, 1e-4, 5.0);
+            // Keep the complex point under the cursor fixed.
+            var cursorX = view.centerX + (float(mx) / float(winWidth) - 0.5) * aspect * view.viewH;
+            var cursorY = view.centerY + (0.5 - float(my) / float(winHeight)) * view.viewH;
+            var keep = newH / view.viewH;
+            view.centerX = cursorX - (cursorX - view.centerX) * keep;
+            view.centerY = cursorY - (cursorY - view.centerY) * keep;
+            view.viewH = newH;
+        }
+
+        var held = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+        if held {
+            if dragging {
+                view.centerX -= float(mx - lastX) / float(winWidth) * aspect * view.viewH;
+                view.centerY += float(my - lastY) / float(winHeight) * view.viewH;
+            }
+            lastX = mx;
+            lastY = my;
+            dragging = true;
+        } else {
+            dragging = false;
+        }
+
+        drawView(program, centerLoc, viewHLoc, aspectLoc, iterLoc, view, width, height);
+
+        var now = glfwGetTime();
+        fpsFrames++;
+        if now - fpsStart >= 1.0 {
+            var title = StringBuf("fractal - ");
+            title.append(fpsFrames);
+            title.append(" FPS");
+            glfwSetWindowTitle(window, title.cString());
+            fpsFrames = 0;
+            fpsStart = now;
+        }
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glDeleteVertexArrays(1, &vao);
+    glDeleteProgram(program);
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
+}
+
+// Renders a fixed seahorse-valley close-up offscreen for --screenshot.
+int runScreenshot(string path) {
+    if glfwInit() == 0 {
+        println("glfwInit failed");
+        return 1;
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
+    glfwWindowHint(GLFW_VISIBLE, 0);
+    var window = glfwCreateWindow(800, 600, "screenshot", null, null);
+    if window == null {
+        println("window failed");
+        glfwTerminate();
+        return 1;
+    }
+    glfwMakeContextCurrent(window);
+
+    var program = createProgram("assets/fractal.vert", "assets/fractal.frag");
+    uint vao = undefined;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    var centerLoc = uniformLoc(program, "uCenter");
+    var viewHLoc = uniformLoc(program, "uViewH");
+    var aspectLoc = uniformLoc(program, "uAspect");
+    var iterLoc = uniformLoc(program, "uMaxIter");
+
+    // The screen center must map to the view center: c = (-0.5, 0) is
+    // inside the set, so the middle pixel of the default view is black.
+    drawView(program, centerLoc, viewHLoc, aspectLoc, iterLoc, defaultView(), 800, 600);
+    uint8[3] middle = undefined;
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(400, 300, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, middle.data());
+    if middle[0] > 10 || middle[1] > 10 || middle[2] > 10 {
+        abort("screenshot: screen center does not map to view center");
+    }
+
+    var view = View(centerX = -0.77, centerY = 0.1225, viewH = 0.015, maxIter = 512);
+    drawView(program, centerLoc, viewHLoc, aspectLoc, iterLoc, view, 800, 600);
+
+    uint8[800 * 600 * 3] pixels = undefined;
+    glReadPixels(0, 0, 800, 600, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+    var lit = 0;
+    for i in 0..800 * 600 {
+        if pixels[i * 3] > 10 || pixels[i * 3 + 1] > 10 || pixels[i * 3 + 2] > 10 {
+            lit++;
+        }
+    }
+    var litFrac = float(lit) / 480000.0;
+    println("lit fraction: ", litFrac);
+    if litFrac < 0.05 || litFrac > 0.99 {
+        abort("screenshot: scene badly framed");
+    }
+
+    uint8[800 * 600 * 3] flipped = undefined;
+    for row in 0..600 {
+        for col in 0..2400 {
+            flipped[row * 2400 + col] = pixels[(599 - row) * 2400 + col];
+        }
+    }
+    var body = string(cast<char*>(&flipped[0]), 800 * 600 * 3);
+    var out = StringBuf("P6\n800 600\n255\n");
+    out.append(body);
+    if !writeFile(path, string(out)) {
+        abort("screenshot: cannot write file");
+    }
+    println("wrote ", path);
+    glDeleteVertexArrays(1, &vao);
+    glDeleteProgram(program);
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
+}
+
+int main(string[] args) {
+    for i in 0..args.size() {
+        if args[i] == "--screenshot" {
+            if i + 1 >= args.size() {
+                println("usage: --screenshot <path>");
+                return 1;
+            }
+            return runScreenshot(args[i + 1]);
+        }
+    }
+    return runExplorer();
+}
