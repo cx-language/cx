@@ -1,0 +1,19 @@
+// RUN: %cx -print-llvm %s | %FileCheck %s
+
+void take(int[] ints) {
+    _ = ints[1];
+}
+
+void main() {
+    var three = [0, 42, 0];
+    take(three);
+}
+
+// A slice is a {data pointer, length} pair, constructed with insertvalue and
+// passed by value.
+// CHECK: %"Slice<int32>" = type { ptr, i32 }
+// CHECK-LABEL: define void @{{.*}}take{{.*}}(%"Slice<int32>" {{.*}})
+// CHECK-LABEL: define i32 @main()
+// CHECK: insertvalue %"Slice<int32>" undef, ptr {{.*}}, 0
+// CHECK: insertvalue %"Slice<int32>" {{.*}}, i32 3, 1
+// CHECK: call void @{{.*}}take{{.*}}(%"Slice<int32>" {{.*}})

@@ -1,0 +1,1 @@
+void FOO() asm("test");

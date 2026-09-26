@@ -1,0 +1,15 @@
+// RUN: %cx -print-llvm %s | %FileCheck %s
+
+import "asm-label.h";
+
+void main() {
+    FOO();
+}
+
+// The C asm label renames the symbol, here with a \01 prefix that suppresses
+// the platform's underscore prefixing. The source-level name is gone.
+// CHECK-NOT: FOO
+// CHECK: call void @"\01test"()
+// CHECK-NOT: FOO
+// CHECK: declare void @"\01test"()
+// CHECK-NOT: FOO

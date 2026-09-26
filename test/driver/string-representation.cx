@@ -1,0 +1,16 @@
+// RUN: %cx -print-llvm %s | %FileCheck %s
+
+void main() {
+    _ = "foo";
+    _ = "a\nb";
+}
+
+// A string wraps Slice<char>. Literals become private NUL-terminated globals
+// (escapes folded), and construction passes the data pointer with the length
+// excluding the NUL.
+// CHECK: %string = type { %"Slice<char>" }
+// CHECK: %"Slice<char>" = type { ptr, i32 }
+// CHECK: @[[FOO:.+]] = private unnamed_addr constant [4 x i8] c"foo\00", align 1
+// CHECK: @[[ANB:.+]] = private unnamed_addr constant [4 x i8] c"a\0Ab\00", align 1
+// CHECK: call void @{{.*}}string4init{{.*}}(ptr {{.*}}, ptr @[[FOO]], i32 3)
+// CHECK: call void @{{.*}}string4init{{.*}}(ptr {{.*}}, ptr @[[ANB]], i32 3)

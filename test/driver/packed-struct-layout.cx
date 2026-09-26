@@ -1,0 +1,21 @@
+// RUN: %cx -print-llvm %s | %FileCheck %s
+
+import "packed-struct-layout.h";
+
+void main() {
+    S s = undefined;
+    s.a = 0xAB;
+    s.b = 0xCDEF;
+    s.c = 0;
+}
+
+// The C packed attribute lowers to an LLVM packed struct type, and field
+// accesses use the fields' natural alignments at unpadded offsets.
+// CHECK: %S = type <{ i8, i16, i8 }>
+// CHECK-LABEL: define i32 @main()
+// CHECK: getelementptr inbounds %S, ptr %s, i32 0, i32 0
+// CHECK: store i8 -85, ptr %a, align 1
+// CHECK: getelementptr inbounds %S, ptr %s, i32 0, i32 1
+// CHECK: store i16 -12817, ptr %b, align 2
+// CHECK: getelementptr inbounds %S, ptr %s, i32 0, i32 2
+// CHECK: store i8 0, ptr %c, align 1
