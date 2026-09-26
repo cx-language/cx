@@ -540,6 +540,9 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
 
     auto args = map(typechecker.options.cflags, [](auto& cflag) { return cflag.c_str(); });
     args.push_back("-fgnuc-version=4.2.1"); // Enable compatibility with GCC macros in imported headers.
+#ifdef _WIN32
+    args.push_back("-fms-extensions"); // Needed to parse MSVC system headers.
+#endif
     clang::CompilerInvocation::CreateFromArgs(ci.getInvocation(), args, ci.getDiagnostics());
 
     clang::TargetOptions pto;
