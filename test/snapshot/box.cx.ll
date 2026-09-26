@@ -3,8 +3,8 @@
 %"Box<int32>" = type { ptr }
 %never = type {}
 
-@0 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:70:66\0A\00", align 1
-@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:70:66\0A\00", align 1
+@0 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:80:66\0A\00", align 1
+@1 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:80:66\0A\00", align 1
 
 define i32 @main() #0 !dbg !4 {
   %p = alloca %"Box<Box<int32>>", align 8
@@ -163,14 +163,14 @@ attributes #0 = { "frame-pointer"="all" }
 !21 = !DILocation(line: 16, column: 9, scope: !20)
 !22 = distinct !DISubprogram(name: "deinit", linkageName: "_CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE6deinitE4void0_", scope: !15, file: !15, line: 15, type: !5, scopeLine: 15, spFlags: DISPFlagDefinition, unit: !2)
 !23 = !DILocation(line: 16, column: 9, scope: !22)
-!24 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E", scope: !25, file: !25, line: 113, type: !5, scopeLine: 113, spFlags: DISPFlagDefinition, unit: !2)
+!24 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E", scope: !25, file: !25, line: 123, type: !5, scopeLine: 123, spFlags: DISPFlagDefinition, unit: !2)
 !25 = !DIFile(filename: "allocate.cx")
-!26 = !DILocation(line: 114, column: 5, scope: !24)
-!27 = distinct !DISubprogram(name: "allocate", linkageName: "_CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E", scope: !25, file: !25, line: 69, type: !5, scopeLine: 69, spFlags: DISPFlagDefinition, unit: !2)
-!28 = !DILocation(line: 70, column: 34, scope: !27)
-!29 = !DILocation(line: 69, column: 7, scope: !27)
-!30 = distinct !DISubprogram(name: "allocate", linkageName: "_CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32", scope: !25, file: !25, line: 69, type: !5, scopeLine: 69, spFlags: DISPFlagDefinition, unit: !2)
-!31 = !DILocation(line: 70, column: 34, scope: !30)
-!32 = !DILocation(line: 69, column: 7, scope: !30)
-!33 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32", scope: !25, file: !25, line: 113, type: !5, scopeLine: 113, spFlags: DISPFlagDefinition, unit: !2)
-!34 = !DILocation(line: 114, column: 5, scope: !33)
+!26 = !DILocation(line: 124, column: 5, scope: !24)
+!27 = distinct !DISubprogram(name: "allocate", linkageName: "_CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_M3std3BoxIM3std5int32E", scope: !25, file: !25, line: 79, type: !5, scopeLine: 79, spFlags: DISPFlagDefinition, unit: !2)
+!28 = !DILocation(line: 80, column: 34, scope: !27)
+!29 = !DILocation(line: 79, column: 7, scope: !27)
+!30 = distinct !DISubprogram(name: "allocate", linkageName: "_CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32", scope: !25, file: !25, line: 79, type: !5, scopeLine: 79, spFlags: DISPFlagDefinition, unit: !2)
+!31 = !DILocation(line: 80, column: 34, scope: !30)
+!32 = !DILocation(line: 79, column: 7, scope: !30)
+!33 = distinct !DISubprogram(name: "deallocate", linkageName: "_CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32", scope: !25, file: !25, line: 123, type: !5, scopeLine: 123, spFlags: DISPFlagDefinition, unit: !2)
+!34 = !DILocation(line: 124, column: 5, scope: !33)

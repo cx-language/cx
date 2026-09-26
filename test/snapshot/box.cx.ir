@@ -80,7 +80,7 @@ Box<int32>* _CX1N3std8allocateIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5int32E1_
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:70:66
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:80:66
 ")
     unreachable
 
@@ -104,7 +104,7 @@ int32* _CX1N3std8allocateIM3std5int32EEPM3std5int321_M3std5int32(int32 value) {
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:70:66
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:80:66
 ")
     unreachable
 

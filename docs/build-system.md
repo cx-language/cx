@@ -122,13 +122,14 @@ traps; `--release` drops them for maximum speed, so arithmetic overflow
 wraps instead.
 
 Debug builds also enable the leak detector: allocations made through
-`allocate`, containers, and arenas are tracked, and the program aborts at
-exit if any are still live, reporting the count and bytes. Release builds
-skip tracking entirely. Pass `--no-leak-check` to disable the check in
-debug builds. Only cx allocations are tracked. The check runs when `main`
-returns, so calling `exit()` directly skips it, as does embedding cx code
-without a cx `main`; `main` argument storage is exempt. Under `cx test` all
-tests run first and a single abort fires at the end if anything leaked.
+`allocate`, containers, and arenas are tracked, and the program reports
+the count and bytes and exits with status 1 if any are still live when
+`main` returns. Release builds skip tracking entirely. Pass
+`--no-leak-check` to disable the check in debug builds. Only cx allocations
+are tracked. Calling `exit()` directly skips the check, as does embedding
+cx code without a cx `main`; `main` argument storage is exempt. Under
+`cx test` all tests run first and a single report fires at the end if
+anything leaked.
 
 Debug builds (the default) embed debug info: aborts print a stack trace
 naming the cx functions involved, and the binary loads in a debugger

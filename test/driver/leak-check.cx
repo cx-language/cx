@@ -1,9 +1,13 @@
 // RUN: %not %cx run %s 2>&1 | %FileCheck %s
 // RUN: %not %cx run --backend=c %s 2>&1 | %FileCheck %s
+// RUN: check_exit_status 1 %cx run %s
+// RUN: check_exit_status 1 %cx run --backend=c %s
 // RUN: check_exit_status 0 %cx run --no-leak-check %s
 // RUN: check_exit_status 0 %cx run --release %s
 // RUN: check_exit_status 0 %cx run --release-safe %s
 // CHECK: memory leak: 1 allocation(s), 4 byte(s) leaked
+// CHECK-NOT: Stack dump
+// CHECK-NOT: bug report
 
 void main() {
     var p = allocate(42);

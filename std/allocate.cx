@@ -41,12 +41,22 @@ private void cxFree(void*? ptr) {
     free(header);
 }
 
-// Called by the compiler at the end of main in debug builds. Aborts on leaks.
+// Called by the compiler at the end of main in debug builds. Reports leaks
+// to stderr and exits with status 1 (no stack trace: the program already ran
+// to completion, and aborting here would dump JIT compiler frames under cx run).
 // ponytail: single-threaded only; add a lock if cx gains threads. Reports
 // totals only, upgrade by capturing caller location per allocation.
 private void checkLeaks() {
     if leakCount != 0 {
-        abort("memory leak: ", leakCount, " allocation(s), ", leakBytes, " byte(s) leaked");
+        fflush(null);
+        var err = stderr();
+        err.write("memory leak: ");
+        err.write(leakCount);
+        err.write(" allocation(s), ");
+        err.write(leakBytes);
+        err.write(" byte(s) leaked");
+        err.write('\n');
+        exit(c_int(1));
     }
 }
 #else
