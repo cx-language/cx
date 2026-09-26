@@ -182,8 +182,9 @@ A value moved into a variable, argument, or return value belongs to its new
 home instead, so its destructor still runs exactly once, when the owner dies.
 
 A destructor can also be invoked explicitly with `.deinit()`.
-This doesn't replace the automatic call: the destructor still runs again
-at scope exit, so never call it on owned values such as locals.
+This consumes the value like a move: the destructor does not run again
+at scope exit, so the value cannot be used afterwards unless it is
+reassigned first.
 
 Explicit destruction is for values the compiler won't destroy,
 such as elements in manually allocated memory.
