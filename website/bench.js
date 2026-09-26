@@ -199,8 +199,17 @@
         return draw;
     }
 
-    function subSeries(obj, group) {
-        return Object.keys(obj).map(function (key) {
+    function subSeries(records, group) {
+        // Union keys across all records in first-seen order: programs added
+        // to the corpus later have no entries in early records. drawChart
+        // already renders missing points as gaps in the line.
+        var keys = [];
+        records.forEach(function (r) {
+            Object.keys((r.metrics && r.metrics[group]) || {}).forEach(function (key) {
+                if (keys.indexOf(key) === -1) keys.push(key);
+            });
+        });
+        return keys.map(function (key) {
             return { path: [group, key], label: key };
         });
     }
@@ -222,18 +231,17 @@
                 return;
             }
             var tip = document.getElementById("bench-tip");
-            var first = records[0].metrics;
             var redraws = [
                 drawChart("legend-build", tip, records, [
                     { path: ["cxx_build_s"], label: "C++ build" },
                     { path: ["check_s"], label: "test suite" },
                 ], fmtSeconds),
                 drawChart("legend-compile", tip, records,
-                    subSeries(first.compile_s, "compile_s"), fmtSeconds),
+                    subSeries(records, "compile_s"), fmtSeconds),
                 drawChart("legend-run", tip, records,
-                    subSeries(first.run_s, "run_s"), fmtSeconds),
+                    subSeries(records, "run_s"), fmtSeconds),
                 drawChart("legend-size", tip, records,
-                    [{ path: ["cx_bytes"], label: "cx" }].concat(subSeries(first.bench_bytes, "bench_bytes")),
+                    [{ path: ["cx_bytes"], label: "cx" }].concat(subSeries(records, "bench_bytes")),
                     fmtBytes),
             ];
             window.addEventListener("resize", function () {

@@ -81,7 +81,21 @@ function records(n, { gapAt = -1, nullBuild = false } = {}) {
     return out;
 }
 
-async function scenario(name, payload, { ok = true, wantIndex = 5, hoverX = 400, wantAbsent = null } = {}) {
+function lateRecords() {
+    const out = records(12);
+    for (let i = 6; i < 12; i++) {
+        out[i].metrics.compile_s.wordcount = 0.25;
+        out[i].metrics.run_s.wordcount = 0.5;
+        out[i].metrics.bench_bytes.wordcount = 41000;
+    }
+    return out;
+}
+
+async function scenario(
+    name,
+    payload,
+    { ok = true, wantIndex = 5, hoverX = 400, wantAbsent = null, wantCounts = "2,3,3,4", wantLate = null } = {}
+) {
     const els = {};
     for (const id of ["legend-build", "legend-compile", "legend-run", "legend-size", "bench-tip", "bench-charts"]) {
         els[id] = makeEl();
@@ -113,7 +127,7 @@ async function scenario(name, payload, { ok = true, wantIndex = 5, hoverX = 400,
     const counts = ["legend-build", "legend-compile", "legend-run", "legend-size"].map(
         (id) => els[id].children.length
     );
-    check(name, String(counts) === "2,3,3,4", `legends [${counts}]`);
+    check(name, String(counts) === wantCounts, `legends [${counts}]`);
     const canvases = ["legend-build", "legend-compile", "legend-run", "legend-size"].map(
         (id) => els[id].parentNode.children.find((c) => c.handlers.mousemove || "width" in c) || {}
     );
@@ -134,6 +148,13 @@ async function scenario(name, payload, { ok = true, wantIndex = 5, hoverX = 400,
         "tooltip"
     );
     if (wantAbsent) check(name, !tip.innerHTML.includes(wantAbsent), `tooltip lacks ${wantAbsent}`);
+    if (wantLate) {
+        const compile = canvases[1];
+        compile.handlers.mousemove({ clientX: 784, clientY: 100 });
+        check(name, tip.innerHTML.includes(wantLate), `late tooltip has ${wantLate}`);
+        compile.handlers.mousemove({ clientX: 64, clientY: 100 });
+        check(name, !tip.innerHTML.includes(wantLate), `early tooltip lacks ${wantLate}`);
+    }
     canvas.handlers.mouseleave();
     check(name, tip.hidden, "tooltip hides");
     canvas.handlers.mousemove({ clientX: hoverX, clientY: 100 });
@@ -147,6 +168,7 @@ async function scenario(name, payload, { ok = true, wantIndex = 5, hoverX = 400,
 }
 
 await scenario("records", records(12));
+await scenario("late series", lateRecords(), { wantCounts: "2,4,4,5", wantLate: "wordcount" });
 await scenario("gap", records(12, { gapAt: 6 }), { wantIndex: 6, hoverX: 457, wantAbsent: "test suite" });
 await scenario("null build metrics", records(4, { nullBuild: true }));
 await scenario("single", records(1), { wantIndex: 0 });
