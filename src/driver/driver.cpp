@@ -794,6 +794,9 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         for (llvm::StringRef extension : {"ilk", "pdb"}) {
             auto path = tempOutputFilePath;
             llvm::sys::path::replace_extension(path, extension);
+            // lld-link emits no .ilk file, so only move sidecars the linker
+            // actually produced.
+            if (!llvm::sys::fs::exists(path)) continue;
             llvm::sys::path::replace_extension(outputPath, extension);
             renameFile(path, outputPath);
         }
