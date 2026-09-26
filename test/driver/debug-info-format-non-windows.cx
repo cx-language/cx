@@ -1,0 +1,12 @@
+// UNSUPPORTED: windows
+// RUN: %cx -print-llvm %s 2>&1 | %FileCheck %s --check-prefix=DEFAULT
+// RUN: %cx -print-llvm --dwarf-debug-info %s 2>&1 | %FileCheck %s --check-prefix=EXPLICIT
+
+// Off Windows the debug format is always DWARF; --dwarf-debug-info is a no-op.
+
+void main() {}
+
+// DEFAULT: !{i32 2, !"Dwarf Version", i32 4}
+// DEFAULT-NOT: !"CodeView"
+// EXPLICIT: !{i32 2, !"Dwarf Version", i32 4}
+// EXPLICIT-NOT: !"CodeView"

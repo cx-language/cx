@@ -1,0 +1,13 @@
+// REQUIRES: windows
+// RUN: %cx -print-llvm %s 2>&1 | %FileCheck %s --check-prefix=DEFAULT
+// RUN: %cx -print-llvm --dwarf-debug-info %s 2>&1 | %FileCheck %s --check-prefix=DWARF
+
+// Windows defaults to CodeView (PDB) debug info; --dwarf-debug-info opts
+// back into DWARF.
+
+void main() {}
+
+// DEFAULT: !{i32 2, !"CodeView", i32 1}
+// DEFAULT-NOT: !"Dwarf Version"
+// DWARF: !{i32 2, !"Dwarf Version", i32 4}
+// DWARF-NOT: !"CodeView"

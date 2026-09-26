@@ -25,6 +25,7 @@ struct CompileOptions {
     bool warnUndefinedMacros = false;
     bool warnUnusedResult = false;
     bool noLeakCheck = false;
+    bool dwarfDebugInfo = false;
     std::vector<std::string> importSearchPaths = {};
     std::vector<std::string> frameworkSearchPaths = {};
     std::vector<std::string> defines = {};

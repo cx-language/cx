@@ -133,10 +133,12 @@ anything leaked.
 
 Debug builds (the default) embed debug info: aborts print a stack trace
 naming the cx functions involved, and the binary loads in a debugger
-(`lldb`, `gdb`). Release builds omit debug info but keep symbol names,
-so stack traces still name cx functions where the platform allows it.
-On macOS the debug info for `cx build` output is collected into a `.dSYM`
-bundle next to the binary.
+(`lldb`, `gdb`, or Visual Studio on Windows). Release builds omit debug
+info but keep symbol names, so stack traces still name cx functions where
+the platform allows it. On macOS the debug info for `cx build` output is
+collected into a `.dSYM` bundle next to the binary. On Windows the debug
+info is CodeView in a `.pdb` file next to the binary; pass
+`--dwarf-debug-info` for DWARF instead.
 `cx run` and `cx test` usually execute through an in-process JIT for speed (except
 on Windows, which links and executes a binary), so their abort traces show
 addresses (plus compiler frames) rather than function names. Pass `--no-jit` to

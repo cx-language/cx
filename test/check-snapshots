@@ -48,6 +48,9 @@ if "LLVM" in sections:
     sections["LLVM"] = re.sub(r"^target (datalayout|triple) = \".*\"\n", "", sections["LLVM"], flags=re.MULTILINE)
     # Debug file directories hold absolute source paths; strip them too.
     sections["LLVM"] = re.sub(r'!DIFile\(filename: ("[^"]*"), directory: "[^"]*"\)', r"!DIFile(filename: \1)", sections["LLVM"])
+    # The debug info format varies by platform (CodeView on Windows, DWARF
+    # elsewhere); canonicalize it so snapshots stay portable.
+    sections["LLVM"] = re.sub(r'!\{i32 2, !"(?:CodeView|Dwarf Version)", i32 \d+\}', r'!{i32 2, !"DEBUG-FORMAT", i32 0}', sections["LLVM"])
 
 for check in checks_to_run:
     snapshot_path = test_file + check.extension

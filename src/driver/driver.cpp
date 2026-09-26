@@ -99,6 +99,8 @@ cl::opt<bool> noPIE("no-pie", cl::desc("Don't produce a position-independent exe
 cl::opt<bool> noJit("no-jit", cl::desc("Don't run in-process via JIT; link and execute a binary instead (named stack traces)"),
                     cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> noLeakCheck("no-leak-check", cl::desc("Disable the leak detector in debug builds"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
+cl::opt<bool> dwarfDebugInfo("dwarf-debug-info", cl::desc("Emit DWARF debug info on Windows instead of CodeView"), cl::sub(cl::SubCommand::getAll()),
+                             cl::cat(outputCategory));
 cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file name"), cl::cat(outputCategory));
 
 cl::OptionCategory diagnosticCategory("Diagnostic Options");
@@ -361,8 +363,9 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         addPredefinedImportSearchPaths(buildParams.filePaths);
     }
 
-    CompileOptions options = {
-        buildMode, noUnusedWarnings, checkAll, warnUndefinedMacros, warnUnusedResult, noLeakCheck, importSearchPaths, frameworkSearchPaths, defines, cflags};
+    CompileOptions options = {buildMode,   noUnusedWarnings, checkAll,          warnUndefinedMacros,  warnUnusedResult,
+                              noLeakCheck, dwarfDebugInfo,   importSearchPaths, frameworkSearchPaths, defines,
+                              cflags};
     auto remainingPrintOpts = std::popcount(printOpts.getBits());
     bool printSectionDividers = remainingPrintOpts > 1;
 
@@ -503,6 +506,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         if (printOpts.isSet(PrintOpt::LLVM) || printOpts.isSet(PrintOpt::LLVMAll)) {
             LLVMGenerator printLLVMGenerator;
             printLLVMGenerator.emitDebugInfo = options.mode == BuildMode::Debug;
+            printLLVMGenerator.useCodeViewDebugInfo = isWindows && !options.dwarfDebugInfo;
             for (auto* irModule : irGenerator.generatedModules) {
                 printLLVMGenerator.codegenModule(*irModule);
             }
@@ -525,6 +529,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     case Backend::LLVM: {
         LLVMGenerator llvmGenerator;
         llvmGenerator.emitDebugInfo = options.mode == BuildMode::Debug;
+        llvmGenerator.useCodeViewDebugInfo = isWindows && !options.dwarfDebugInfo;
         {
             PhaseTimer timer("llvm-codegen");
             for (auto* irModule : irGenerator.generatedModules) {
@@ -919,6 +924,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
     baseOptions.warnUndefinedMacros = warnUndefinedMacros;
     baseOptions.warnUnusedResult = warnUnusedResult;
     baseOptions.noLeakCheck = noLeakCheck;
+    baseOptions.dwarfDebugInfo = dwarfDebugInfo;
     baseOptions.importSearchPaths = importSearchPaths;
     baseOptions.frameworkSearchPaths = frameworkSearchPaths;
     baseOptions.defines = defines;

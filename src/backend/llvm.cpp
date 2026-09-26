@@ -960,7 +960,11 @@ llvm::Module& LLVMGenerator::codegenModule(const IRModule& sourceModule) {
     }
     if (unitPath && emitDebugInfo) {
         debugBuilder = std::make_unique<llvm::DIBuilder>(*module);
-        module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 4);
+        if (useCodeViewDebugInfo) {
+            module->addModuleFlag(llvm::Module::Warning, "CodeView", 1);
+        } else {
+            module->addModuleFlag(llvm::Module::Warning, "Dwarf Version", 4);
+        }
         module->addModuleFlag(llvm::Module::Warning, "Debug Info Version", llvm::DEBUG_METADATA_VERSION);
         llvm::DIFile* unitFile = getDebugFile(unitPath);
         debugBuilder->createCompileUnit(llvm::dwarf::DW_LANG_C, unitFile, "cx", /* isOptimized */ false, /* Flags */ "", /* RV */ 0);

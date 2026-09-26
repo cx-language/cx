@@ -64,9 +64,11 @@ struct LLVMGenerator {
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getStructType(IRStructType* type);
 
-    // False in release modes: skip DWARF emission entirely. Frame pointers
+    // False in release modes: skip debug info emission entirely. Frame pointers
     // are still kept so backtrace() unwinds past cx frames.
     bool emitDebugInfo = true;
+    // Emit CodeView instead of DWARF (the default on Windows, where debuggers read PDB).
+    bool useCodeViewDebugInfo = false;
 
     // Hands the context to the caller (for JIT execution). The generator must not be used afterwards.
     std::unique_ptr<llvm::LLVMContext> takeContext() {
