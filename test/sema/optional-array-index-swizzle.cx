@@ -1,0 +1,29 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+void indexOptional() {
+    float[3]? opt = [1.0, 2.0, 3.0];
+    // CHECK: [[@LINE+1]]:13: error: cannot index into optional type 'float[3]?' (narrow it with 'if' or unwrap it with '!' first)
+    println(opt[0]);
+}
+
+void swizzleOptional() {
+    float[3]? opt = [1.0, 2.0, 3.0];
+    // CHECK: [[@LINE+1]]:13: error: cannot access swizzle 'x' of optional type 'float[3]?' (narrow it with 'if' or unwrap it with '!' first)
+    println(opt.x);
+}
+
+void assignOptional() {
+    float[3]? opt = [1.0, 2.0, 3.0];
+    // CHECK: [[@LINE+1]]:5: error: cannot index into optional type 'float[3]?' (narrow it with 'if' or unwrap it with '!' first)
+    opt[0] = 5.0;
+}
+
+void narrowedIsFine() {
+    float[3]? opt = [1.0, 2.0, 3.0];
+    println(opt![0]);
+    println(opt!.x);
+    if opt {
+        println(opt[0]);
+        println(opt.y);
+    }
+}

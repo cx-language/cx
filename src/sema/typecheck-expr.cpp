@@ -3526,6 +3526,10 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
             // Note: single-char `v.x` on arrays is a swizzle (returns element);
             // it does not conflict with struct fields since arrays have no fields.
             if (isSwizzle && !indices.empty()) {
+                if (expr.base->type.isOptionalType()) {
+                    ERROR(expr.base->location, "cannot access swizzle '" << expr.member << "' of optional type '" << expr.base->type
+                                                                         << "' (narrow it with 'if' or unwrap it with '!' first)");
+                }
                 Type elementType = baseType.getElementType();
                 expr.swizzleIndices.clear();
                 for (int idx : indices) {
@@ -3595,6 +3599,11 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
     Type arrayType;
 
     if (lhsType.removeOptional().isArrayType()) {
+        // Indexing through an optional view works (it warns and unwraps at runtime),
+        // but an optional concrete array has no such lowering, so reject it outright.
+        if (lhsType.isOptionalType() && lhsType.removeOptional().isConcreteArray()) {
+            ERROR(expr.getBase()->location, "cannot index into optional type '" << lhsType << "' (narrow it with 'if' or unwrap it with '!' first)");
+        }
         arrayType = lhsType.removeOptional();
     } else if (lhsType.isPointerType() && lhsType.getPointee().isArrayType()) {
         arrayType = lhsType.getPointee();
