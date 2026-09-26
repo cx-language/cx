@@ -29,17 +29,17 @@ struct Array<T, int N> {
 
     /// Returns true if the array contains an element equal to the given value.
     bool contains(T& value) {
-        return indexOf(value) != N;
+        return indexOf(value) != null;
     }
 
-    /// Returns the index of the first element equal to the given value, or the size if it's not found.
-    int indexOf(T& value) {
+    /// Returns the index of the first element equal to the given value, or null if it's not found.
+    int? indexOf(T& value) {
         for i in 0..N {
             if this[i] == value {
                 return i;
             }
         }
-        return N;
+        return null;
     }
 
     /// Returns an iterator over the elements.

@@ -40,7 +40,7 @@ void testFirstLastContainsIndexOf() {
     assert(!s.contains(99));
     assert(s.indexOf(10) == 0);
     assert(s.indexOf(30) == 2);
-    assert(s.indexOf(99) == s.size());
+    assert(s.indexOf(99) == null);
 }
 
 @test

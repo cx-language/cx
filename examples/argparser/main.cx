@@ -15,7 +15,7 @@ void loadTasks(string content, List<Task>& tasks) {
         }
         var rest = line.substr(2);
         var sp = rest.indexOf(' ');
-        if sp >= rest.size() {
+        if sp == null {
             continue;
         }
         tasks.push(Task(done = line[0] == '1', priority = rest.substr(0..sp), title = rest.substr(sp + 1)));

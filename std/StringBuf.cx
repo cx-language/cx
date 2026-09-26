@@ -173,22 +173,22 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     /// Returns true if the string contains the given character.
     bool contains(char c) {
-        return indexOf(c, 0) != size();
+        return indexOf(c, 0) != null;
     }
 
-    /// Returns the index of the given character, or the size if it's not found.
-    int indexOf(char c) {
+    /// Returns the index of the given character, or null if it's not found.
+    int? indexOf(char c) {
         return indexOf(c, 0);
     }
 
-    /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
-    int indexOf(char c, int start) {
+    /// Returns the index of the given character, or null if it's not found. Starts from `start`.
+    int? indexOf(char c, int start) {
         for i in start..size() {
             if characters[i] == c {
                 return i;
             }
         }
-        return size();
+        return null;
     }
 
     /// Returns the substring of the string starting from the given index, until the end of the string.
@@ -218,7 +218,7 @@ struct StringBuf: Comparable, Hashable, Printable {
         var pos = 0;
 
         while true {
-            pos = indexOf(delim, prev);
+            pos = indexOf(delim, prev) ?? size();
             var token = substr(prev..pos);
             tokens.push(token);
             prev = pos + 1;

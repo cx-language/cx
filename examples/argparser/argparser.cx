@@ -422,7 +422,7 @@ struct OptionSet {
         if arg.size() > 2 && arg[0] == '-' && arg[1] == '-' {
             var body = arg.substr(2);
             var eq = body.indexOf('=');
-            if eq < body.size() {
+            if eq != null {
                 var name = body.substr(0..eq);
                 if name == "help" {
                     helpWasRequested = true;

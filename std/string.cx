@@ -61,42 +61,42 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     /// Returns true if the string contains the given character.
     bool contains(char c) {
-        return indexOf(c) != size();
+        return indexOf(c) != null;
     }
 
     /// Returns true if the string contains the given substring.
     bool contains(string needle) {
-        return indexOf(needle) != size();
+        return indexOf(needle) != null;
     }
 
-    /// Returns the index of the given character, or the size if it's not found.
-    int indexOf(char c) {
+    /// Returns the index of the given character, or null if it's not found.
+    int? indexOf(char c) {
         return indexOf(c, 0);
     }
 
-    /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
-    int indexOf(char c, int start) {
+    /// Returns the index of the given character, or null if it's not found. Starts from `start`.
+    int? indexOf(char c, int start) {
         for i in start..size() {
             if characters[i] == c {
                 return i;
             }
         }
-        return size();
+        return null;
     }
 
-    /// Returns the index of the given substring, or the size if it's not found.
-    int indexOf(string needle) {
+    /// Returns the index of the given substring, or null if it's not found.
+    int? indexOf(string needle) {
         return indexOf(needle, 0);
     }
 
-    /// Returns the index of the given substring, or the size if it's not found. Starts from `start`.
-    int indexOf(string needle, int start) {
+    /// Returns the index of the given substring, or null if it's not found. Starts from `start`.
+    int? indexOf(string needle, int start) {
         for i in start..size() {
             if substr(i).startsWith(needle) {
                 return i;
             }
         }
-        return size();
+        return null;
     }
 
     /// Returns true if the string starts with the given prefix.

@@ -288,11 +288,11 @@ void testContainsIndexOf() {
     assert(!a.contains(99));
     assert(a.indexOf(10) == 0);
     assert(a.indexOf(30) == 2);
-    assert(a.indexOf(99) == a.size());
+    assert(a.indexOf(99) == null);
 
     var empty = List<int>();
     assert(!empty.contains(1));
-    assert(empty.indexOf(1) == 0);
+    assert(empty.indexOf(1) == null);
 }
 
 @test

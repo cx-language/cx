@@ -46,17 +46,17 @@ struct Slice<Element>: Copyable {
 
     /// Returns true if the array contains an element equal to the given value.
     bool contains(Element& value) {
-        return indexOf(value) != size();
+        return indexOf(value) != null;
     }
 
-    /// Returns the index of the first element equal to the given value, or the size if it's not found.
-    int indexOf(Element& value) {
+    /// Returns the index of the first element equal to the given value, or null if it's not found.
+    int? indexOf(Element& value) {
         for i in 0..size() {
             if data[i] == value {
                 return i;
             }
         }
-        return size();
+        return null;
     }
 
     /// Returns a reference to the element at the given index.

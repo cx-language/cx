@@ -233,17 +233,17 @@ struct List<Element> {
 
     /// Returns true if the list contains an element equal to the given value.
     bool contains(Element& value) {
-        return indexOf(value) != size;
+        return indexOf(value) != null;
     }
 
-    /// Returns the index of the first element equal to the given value, or the size if it's not found.
-    int indexOf(Element& value) {
+    /// Returns the index of the first element equal to the given value, or null if it's not found.
+    int? indexOf(Element& value) {
         for i in 0..size {
             if buffer[i] == value {
                 return i;
             }
         }
-        return size;
+        return null;
     }
 
     /// Returns an iterator over the elements.

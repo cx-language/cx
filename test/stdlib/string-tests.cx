@@ -33,7 +33,7 @@ void testIndexOf() {
     assert(s.indexOf('d') == 3);
 
     // Start from index
-    assert(s.indexOf('w', 1) == s.size());
+    assert(s.indexOf('w', 1) == null);
     assert(s.indexOf('d', 2) == 3);
 }
 
@@ -44,10 +44,10 @@ void testIndexOfString() {
     assert(s.indexOf("hello") == 0);
     assert(s.indexOf("world") == 6);
     assert(s.indexOf("o") == 4);
-    assert(s.indexOf("z") == s.size());
+    assert(s.indexOf("z") == null);
     assert(s.indexOf("") == 0);
     assert(s.indexOf("o", 5) == 7);
-    assert(s.indexOf("hello", 1) == s.size());
+    assert(s.indexOf("hello", 1) == null);
 
     assert(s.contains("world"));
     assert(!s.contains("z"));
@@ -55,7 +55,7 @@ void testIndexOfString() {
     assert(s.indexOf('w') == 6);
     assert(s.indexOf('o', 5) == 7);
     assert(s.indexOf("world") == 6);
-    assert(s.indexOf("world", 7) == s.size());
+    assert(s.indexOf("world", 7) == null);
 }
 
 @test
