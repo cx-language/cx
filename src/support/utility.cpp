@@ -238,7 +238,11 @@ const std::vector<std::string>& cx::getCCompilerSearchPaths() {
             }
         }
 #endif
-        if (cCompilerPath && llvm::sys::path::filename(*cCompilerPath) != "cl.exe") {
+        // MSVC-family drivers don't print GNU-style search paths for -E -v,
+        // and stock Windows has no grep for the pipeline below (system headers
+        // come from INCLUDE instead), so skip the probe for them.
+        llvm::StringRef compilerName = cCompilerPath ? llvm::sys::path::filename(*cCompilerPath) : "";
+        if (!compilerName.empty() && compilerName != "cl.exe" && compilerName != "clang-cl.exe") {
             std::string command = "echo | " + *cCompilerPath + " -E -v - 2>&1 | grep '^ /'";
             std::string output;
             exec(command.c_str(), output);
