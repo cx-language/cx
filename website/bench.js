@@ -240,9 +240,10 @@
                     subSeries(records, "compile_s"), fmtSeconds),
                 drawChart("legend-run", tip, records,
                     subSeries(records, "run_s"), fmtSeconds),
-                drawChart("legend-size", tip, records,
-                    [{ path: ["cx_bytes"], label: "cx" }].concat(subSeries(records, "bench_bytes")),
-                    fmtBytes),
+                drawChart("legend-cxsize", tip, records,
+                    [{ path: ["cx_bytes"], label: "cx" }], fmtBytes),
+                drawChart("legend-benchsize", tip, records,
+                    subSeries(records, "bench_bytes"), fmtBytes),
             ];
             window.addEventListener("resize", function () {
                 redraws.forEach(function (draw) {

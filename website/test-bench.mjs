@@ -94,10 +94,10 @@ function lateRecords() {
 async function scenario(
     name,
     payload,
-    { ok = true, wantIndex = 5, hoverX = 400, wantAbsent = null, wantCounts = "2,3,3,4", wantLate = null } = {}
+    { ok = true, wantIndex = 5, hoverX = 400, wantAbsent = null, wantCounts = "2,3,3,1,3", wantLate = null } = {}
 ) {
     const els = {};
-    for (const id of ["legend-build", "legend-compile", "legend-run", "legend-size", "bench-tip", "bench-charts"]) {
+    for (const id of ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize", "bench-tip", "bench-charts"]) {
         els[id] = makeEl();
         els[id].parentNode = makeEl();
     }
@@ -124,11 +124,11 @@ async function scenario(
         console.log(`ok ${name}`);
         return;
     }
-    const counts = ["legend-build", "legend-compile", "legend-run", "legend-size"].map(
+    const counts = ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize"].map(
         (id) => els[id].children.length
     );
     check(name, String(counts) === wantCounts, `legends [${counts}]`);
-    const canvases = ["legend-build", "legend-compile", "legend-run", "legend-size"].map(
+    const canvases = ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize"].map(
         (id) => els[id].parentNode.children.find((c) => c.handlers.mousemove || "width" in c) || {}
     );
     // Unsized backing stores render stretched; every chart must size its canvas.
@@ -168,7 +168,7 @@ async function scenario(
 }
 
 await scenario("records", records(12));
-await scenario("late series", lateRecords(), { wantCounts: "2,4,4,5", wantLate: "wordcount" });
+await scenario("late series", lateRecords(), { wantCounts: "2,4,4,1,4", wantLate: "wordcount" });
 await scenario("gap", records(12, { gapAt: 6 }), { wantIndex: 6, hoverX: 457, wantAbsent: "test suite" });
 await scenario("null build metrics", records(4, { nullBuild: true }));
 await scenario("single", records(1), { wantIndex: 0 });
