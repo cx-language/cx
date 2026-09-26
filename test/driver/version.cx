@@ -1,0 +1,5 @@
+// RUN: %cx --version | %FileCheck %s
+
+// CHECK: cx commit: {{([0-9a-f]{40}|unknown)}}
+
+void main() {}

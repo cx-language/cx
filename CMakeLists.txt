@@ -55,6 +55,18 @@ message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 add_definitions(-DCX_ROOT_DIR="${PROJECT_SOURCE_DIR}")
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE CX_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET)
+endif()
+if(NOT CX_COMMIT_HASH)
+    set(CX_COMMIT_HASH "unknown")
+endif()
+add_definitions(-DCX_COMMIT_HASH="${CX_COMMIT_HASH}")
 
 # Define the include path of the Clang builtin headers, to be used by the compiler to avoid errors
 # about missing C headers when importing C headers from cx code. For more information, see e.g.

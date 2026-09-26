@@ -1048,6 +1048,7 @@ int cx::driverMain(int argc, const char** argv) {
         }
     }
     cl::HideUnrelatedOptions({&stageSelectionCategory, &outputCategory, &dependencyCategory, &diagnosticCategory});
+    cl::AddExtraVersionPrinter([](llvm::raw_ostream& out) { out << "cx commit: " << CX_COMMIT_HASH << "\n"; });
     cl::ParseCommandLineOptions(argc, argv, "cx compiler\n");
     if (releaseMode && releaseSafeMode) ABORT("can't combine --release with --release-safe");
     if (releaseMode) {
