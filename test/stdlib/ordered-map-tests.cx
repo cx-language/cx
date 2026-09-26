@@ -1,5 +1,4 @@
-// Leak check disabled: nodes holding StringBuf keys are never destroyed.
-// RUN: check_exit_status 0 %cx test -Werror --no-leak-check %s
+// RUN: check_exit_status 0 %cx test -Werror %s
 
 @test
 void testInsertAndContains() {
@@ -250,4 +249,27 @@ void testStringBufKeys() {
         assert(previous < e.key);
         previous = StringBuf(string(e.key));
     }
+}
+
+@test
+void testOwningEntriesClear() {
+    var m = OrderedMap<StringBuf, StringBuf>();
+
+    var k1 = StringBuf("one");
+    var v1 = StringBuf("1");
+    m.insert(k1, v1);
+    var k2 = StringBuf("two");
+    var v2 = StringBuf("2");
+    m.insert(k2, v2);
+    assert(m.size() == 2);
+
+    m.clear();
+    assert(m.size() == 0);
+    assert(m.empty());
+
+    // Destroyed with entries still in it.
+    var k3 = StringBuf("three");
+    var v3 = StringBuf("3");
+    m.insert(k3, v3);
+    assert(m.size() == 1);
 }

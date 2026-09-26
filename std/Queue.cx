@@ -19,8 +19,10 @@ struct Queue<T> {
     /// Removes all elements from the queue.
     void clear() {
         while !empty() {
-            var next = head!.next;
-            deallocate(head);
+            var node = head!;
+            var next = node.next;
+            node.value.deinit();
+            deallocate(node);
             head = next;
         }
         tail = null;

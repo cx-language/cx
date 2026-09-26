@@ -76,3 +76,19 @@ void testClear() {
     assert(q.pop() == "baz");
     assert(q.empty());
 }
+
+@test
+void testOwningValues() {
+    var q = Queue<StringBuf>();
+    q.push(StringBuf("a"));
+    q.push(StringBuf("bb"));
+    assert(string(q.pop()) == "a");
+
+    q.push(StringBuf("ccc"));
+    q.clear();
+    assert(q.empty());
+
+    // Destroyed with entries still in it.
+    q.push(StringBuf("dd"));
+    assert(string(q.first()) == "dd");
+}
