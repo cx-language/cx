@@ -126,35 +126,42 @@ never _CX1N3std5abortIM3std6stringM3std6stringM3std6stringM3std5int32M3std6strin
     OutputFileStream _8 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
     store _8 to _0
     void _9 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _0, string* arg)
+    void _10 = call _CX1N3stdM3std16OutputFileStream6deinitE4void0_(OutputFileStream* _0)
     string args_1.load = load args_1_0
     store args_1.load to arg_0
-    OutputFileStream _10 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
-    store _10 to _1
-    void _11 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _1, string* arg_0)
+    OutputFileStream _11 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
+    store _11 to _1
+    void _12 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _1, string* arg_0)
+    void _13 = call _CX1N3stdM3std16OutputFileStream6deinitE4void0_(OutputFileStream* _1)
     string args_2.load = load args_2_0
     store args_2.load to arg_1
-    OutputFileStream _12 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
-    store _12 to _2
-    void _13 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _2, string* arg_1)
+    OutputFileStream _14 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
+    store _14 to _2
+    void _15 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _2, string* arg_1)
+    void _16 = call _CX1N3stdM3std16OutputFileStream6deinitE4void0_(OutputFileStream* _2)
     int32 args_3.load = load args_3_0
     store args_3.load to arg_2
-    OutputFileStream _14 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
-    store _14 to _3
-    void _15 = call _CX1N3stdM3std16OutputFileStream5writeIM3std5int32EE4void1_RM3std5int32(OutputFileStream* _3, int32* arg_2)
+    OutputFileStream _17 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
+    store _17 to _3
+    void _18 = call _CX1N3stdM3std16OutputFileStream5writeIM3std5int32EE4void1_RM3std5int32(OutputFileStream* _3, int32* arg_2)
+    void _19 = call _CX1N3stdM3std16OutputFileStream6deinitE4void0_(OutputFileStream* _3)
     string args_4.load = load args_4_0
     store args_4.load to arg_3
-    OutputFileStream _16 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
-    store _16 to _4
-    void _17 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _4, string* arg_3)
+    OutputFileStream _20 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
+    store _20 to _4
+    void _21 = call _CX1N3stdM3std16OutputFileStream5writeIM3std6stringEE4void1_RM3std6string(OutputFileStream* _4, string* arg_3)
+    void _22 = call _CX1N3stdM3std16OutputFileStream6deinitE4void0_(OutputFileStream* _4)
     int32 args_5.load = load args_5_0
     store args_5.load to arg_4
-    OutputFileStream _18 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
-    store _18 to _5
-    void _19 = call _CX1N3stdM3std16OutputFileStream5writeIM3std5int32EE4void1_RM3std5int32(OutputFileStream* _5, int32* arg_4)
-    OutputFileStream _20 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
-    store _20 to _6
+    OutputFileStream _23 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
+    store _23 to _5
+    void _24 = call _CX1N3stdM3std16OutputFileStream5writeIM3std5int32EE4void1_RM3std5int32(OutputFileStream* _5, int32* arg_4)
+    void _25 = call _CX1N3stdM3std16OutputFileStream6deinitE4void0_(OutputFileStream* _5)
+    OutputFileStream _26 = call _CX1N3std6stderrEM3std16OutputFileStream0_()
+    store _26 to _6
     store char 10 to _7
-    void _21 = call _CX1N3stdM3std16OutputFileStream5writeIM3std4charEE4void1_RM3std4char(OutputFileStream* _6, char* _7)
-    never _22 = call _CX1N3std12abortWrapperEM3std5never0_()
+    void _27 = call _CX1N3stdM3std16OutputFileStream5writeIM3std4charEE4void1_RM3std4char(OutputFileStream* _6, char* _7)
+    void _28 = call _CX1N3stdM3std16OutputFileStream6deinitE4void0_(OutputFileStream* _6)
+    never _29 = call _CX1N3std12abortWrapperEM3std5never0_()
     unreachable
 }

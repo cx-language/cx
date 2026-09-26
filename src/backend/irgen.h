@@ -261,6 +261,7 @@ struct IRGenerator {
     void destroyAllTempScopes();
     void unwindTempScopesTo(size_t depth);
     void registerTempDestructor(AllocaInst* alloca, Type type);
+    Value* maybeRegisterResultTemp(Value* result, const Expr& expr);
     Value* createTempGuard();
     void createGuardedDestructorCall(Function* destructor, Value* receiver, Value* guard);
     Function* getDestructorFunction(Type type);

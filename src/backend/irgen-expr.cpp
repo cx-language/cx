@@ -923,7 +923,7 @@ Value* IRGenerator::emitClosureCallExpr(const CallExpr& expr) {
     for (size_t i = 0; i < expr.args.size(); ++i) {
         args.push_back(emitExprForPassing(*expr.args[i].value, paramTypes[captureCount + i]));
     }
-    return createCall(function, args, &expr);
+    return maybeRegisterResultTemp(createCall(function, args, &expr), expr);
 }
 
 Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit) {
@@ -1067,7 +1067,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
         createCall(calleeValue, args, &expr);
         return args[0];
     } else {
-        return createCall(calleeValue, args, &expr);
+        return maybeRegisterResultTemp(createCall(calleeValue, args, &expr), expr);
     }
 }
 
@@ -1263,7 +1263,7 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
         captureExpr.assignableType = captured->getCaptureType();
         closure = createInsertValue(closure, emitExpr(captureExpr), index++);
     }
-    return closure;
+    return maybeRegisterResultTemp(closure, expr);
 }
 
 Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
@@ -1442,7 +1442,7 @@ Value* IRGenerator::emitUserConversion(const ImplicitCastExpr& expr, AllocaInst*
     }
     // Mirror method calls: the operand becomes the receiver.
     llvm::SmallVector<Value*, 1> args{emitExprForPassing(*expr.operand, callee->params[0].type)};
-    return createCall(callee, args, &expr);
+    return maybeRegisterResultTemp(createCall(callee, args, &expr), expr);
 }
 
 Value* IRGenerator::emitPlainExpr(const Expr& expr) {

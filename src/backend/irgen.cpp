@@ -135,6 +135,19 @@ void IRGenerator::registerTempDestructor(AllocaInst* alloca, Type type) {
     }
 }
 
+Value* IRGenerator::maybeRegisterResultTemp(Value* result, const Expr& expr) {
+    // A moved result is owned by its consumer; anything else dies at the
+    // end of the enclosing statement. Returning the spill is transparent:
+    // emitExpr loads pointers whose pointee matches the expression type.
+    // Pointer results are borrows, never fresh values: subscript operators
+    // return references that sema erases from the expression type.
+    if (!result || result->getType()->isPointerType()) return result;
+    if (expr.isMovedFrom || !expr.type.needsDestruction()) return result;
+    auto* spill = createTempAlloca(result);
+    registerTempDestructor(spill, expr.type);
+    return spill;
+}
+
 Function* IRGenerator::getDestructorFunction(Type type) {
     if (auto* destructor = type.getDestructor()) {
         checkImplicitCalleeIsChecked(*destructor, "deinit");

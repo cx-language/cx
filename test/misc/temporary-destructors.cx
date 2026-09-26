@@ -31,6 +31,15 @@
 // CHECK-NEXT:21
 // CHECK-NEXT:22
 // CHECK-NEXT:24
+// CHECK-NEXT:25
+// CHECK-NEXT:32
+// CHECK-NEXT:25
+// CHECK-NEXT:true
+// CHECK-NEXT:26
+// CHECK-NEXT:27
+// CHECK-NEXT:28
+// CHECK-NEXT:29
+// CHECK-NEXT:32
 // CHECK-NEXT:end
 // CHECK-NEXT:take
 
@@ -72,6 +81,17 @@ C make(int i) {
 
 bool pred(C c) {
     return c.i > 0;
+}
+
+struct M {
+    int i;
+    C get(int j) {
+        return make(j);
+    }
+}
+
+C operator+(C a, C b) {
+    return make(a.i + b.i);
 }
 
 int early() {
@@ -197,6 +217,31 @@ void main() {
     // Discarded literals destroy their element temporaries.
     (y = C(i = 29));
     [C(i = 30)];
+    println(deaths);
+
+    // Dropped function and method results die at statement end; bound,
+    // borrowed, passed, and returned ones are owned by their consumer.
+    make(31);
+    println(deaths);
+    var c31 = make(32);
+    borrow(c31);
+    println(deaths);
+    println(pred(make(33)));
+    println(deaths);
+    var mm = M(i = 0);
+    mm.get(34);
+    println(deaths);
+    var mk = (int x) => make(x);
+    mk(35);
+    println(deaths);
+
+    // A dropped closure destroys what it captured.
+    var c36 = make(36);
+    (int x) => x + c36.i;
+    println(deaths);
+
+    // Dropped operator results die too; both operands were moved.
+    make(37) + make(38);
     println(deaths);
     println("end");
 }
