@@ -203,12 +203,14 @@ void runInteractive() {
     defer SDL_DestroyRenderer(renderer);
     // Map sim coordinates onto the full output at any pixel density.
     SDL_SetRenderLogicalPresentation(renderer, width, height, SDL_LOGICAL_PRESENTATION_STRETCH);
+    var useDelay = !SDL_SetRenderVSync(renderer, 1);
 
     var flock = makeFlock();
     var grid = makeGrid();
     SDL_Event event = undefined;
     var frames = 0;
     var titleStart = SDL_GetTicks();
+    var lastFrame = titleStart;
 
     while true {
         while SDL_PollEvent(&event) {
@@ -220,11 +222,18 @@ void runInteractive() {
             }
         }
 
+        var frameNow = SDL_GetTicks();
+        var dt = float(frameNow - lastFrame) / 1000.0;
+        lastFrame = frameNow;
+        if dt > 0.05 {
+            dt = 0.05;
+        }
+
         float mouseX = 0;
         float mouseY = 0;
         var buttons = SDL_GetMouseState(&mouseX, &mouseY);
         // SDL_BUTTON_LMASK is a function-like macro, so it doesn't import; its value is 1.
-        stepFlock(flock, grid, 1.0 / 60.0, (buttons & 1) != 0, mouseX, mouseY);
+        stepFlock(flock, grid, dt, (buttons & 1) != 0, mouseX, mouseY);
 
         SDL_SetRenderDrawColor(renderer, 10, 12, 20, 255);
         SDL_RenderClear(renderer);
@@ -246,7 +255,9 @@ void runInteractive() {
             frames = 0;
             titleStart = now;
         }
-        SDL_Delay(16);
+        if useDelay {
+            SDL_Delay(16);
+        }
     }
 }
 
