@@ -1,4 +1,4 @@
-// RUN: check-snapshots
+// RUN: check-snapshots -print-ir -print-llvm
 
 void capturesParam(int p) {
     var d = 3;

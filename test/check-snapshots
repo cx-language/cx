@@ -7,10 +7,14 @@ import subprocess
 import sys
 from types import SimpleNamespace
 
+# Policy: snapshot the owned cx IR broadly, but keep
+# LLVM snapshots to a few golden tests that opt in with explicit print flags.
+# Both dumps move together on most compiler changes, so per-test .ll files
+# double review volume without adding signal.
 all_checks = [
     SimpleNamespace(name="AST", flag="-print-ast", extension=".ast", is_default=False),
     SimpleNamespace(name="IR", flag="-print-ir", extension=".ir", is_default=True),
-    SimpleNamespace(name="LLVM", flag="-print-llvm", extension=".ll", is_default=True),
+    SimpleNamespace(name="LLVM", flag="-print-llvm", extension=".ll", is_default=False),
 ]
 
 cx, test_file, *cx_flags = sys.argv[1:]
