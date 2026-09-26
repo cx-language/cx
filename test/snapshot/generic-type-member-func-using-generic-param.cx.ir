@@ -8,11 +8,15 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1AIM3std5int32E4initE4void0_(A<int32>* this) {
+    A<int32>** this_0 = alloca A<int32>*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main1AIM3std5int32E1aE4void1_M3std5int32(A<int32>* this, int32 n) {
+    A<int32>** this_0 = alloca A<int32>*
     int32* n_0 = alloca int32
+    store this to this_0
     store n to n_0
     return void
 }

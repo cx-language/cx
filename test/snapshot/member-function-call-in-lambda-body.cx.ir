@@ -15,5 +15,7 @@ int32 _CX1N4main11____lambda0EM3std5int321_PM4main1X(X* x) {
 }
 
 int32 _CX1N4mainM4main1X3fooEM3std5int320_(X* this) {
+    X** this_0 = alloca X*
+    store this to this_0
     return int32 42
 }

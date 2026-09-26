@@ -11,5 +11,7 @@ void _CX1N4main3fooE4void2_PM4main1XM4main1X(X* p, X x) {
 }
 
 void _CX1N4mainM4main1X6deinitE4void0_(X* this) {
+    X** this_0 = alloca X*
+    store this to this_0
     return void
 }

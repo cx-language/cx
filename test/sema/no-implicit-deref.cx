@@ -24,3 +24,9 @@ int derefRequired(int* p) {
     return p;
 }
 
+void derefNotSuggestedForOwning() {
+    var r = Result.Ok<StringBuf, string>(value = StringBuf("hi"));
+    // CHECK: [[@LINE+1]]:21: error: cannot assign 'StringBuf&' to 'StringBuf'{{$}}
+    StringBuf s = r.unwrap();
+}
+

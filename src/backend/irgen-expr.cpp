@@ -12,7 +12,7 @@ using namespace cx;
 
 Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
     if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(expr.decl)) {
-        return emitEnumCase(*enumCase, {});
+        return emitEnumCase(*enumCase, {}, expr.isMovedFrom);
     }
     return getValue(expr.decl);
 }
@@ -86,7 +86,7 @@ Value* IRGenerator::emitNullLiteralExpr(const NullLiteralExpr& expr) {
     if (expr.type.isImplementedAsPointer()) {
         return createConstantNull(expr.type);
     } else {
-        return emitOptionalConstruction(expr.type.getWrappedType(), nullptr);
+        return emitOptionalConstruction(expr.type.getWrappedType(), nullptr, expr.isMovedFrom);
     }
 }
 
@@ -107,16 +107,16 @@ int64_t IRGenerator::getOptionalNoneTag() {
     return getOptionalEnumDecl().getCaseByName("None")->value->getConstantIntegerValue().getSExtValue();
 }
 
-Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Expr* arg) {
+Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Expr* arg, bool isMovedFrom) {
     auto* decl = Module::getStdlibModule()->symbolTable.findOne("Optional");
     auto* enumDecl = llvm::cast<EnumDecl>(llvm::cast<TypeTemplate>(decl)->instantiate(GenericArg(wrappedType)));
     auto* enumCase = enumDecl->getCaseByName(arg ? "Some" : "None");
     ASSERT(enumCase);
     if (arg) {
         NamedValue argValue(arg);
-        return emitEnumCase(*enumCase, llvm::ArrayRef<NamedValue>(&argValue, 1));
+        return emitEnumCase(*enumCase, llvm::ArrayRef<NamedValue>(&argValue, 1), isMovedFrom);
     }
-    return emitEnumCase(*enumCase, {});
+    return emitEnumCase(*enumCase, {}, isMovedFrom);
 }
 
 Value* IRGenerator::emitOptionalHasValueTest(Value* enumValue) {
@@ -852,7 +852,7 @@ void IRGenerator::emitAbortWithMessage(llvm::StringRef message, Location locatio
     createUnreachable();
 }
 
-Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements) {
+Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements, bool isMovedFrom) {
     auto enumDecl = enumCase.getEnumDecl();
     auto tag = emitExpr(*enumCase.value);
     if (!enumDecl->hasAssociatedValues()) return tag;
@@ -879,13 +879,19 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
         Value* associatedValue = emitAggregateElements(enumCase.associatedType, associatedValueElements);
         auto* associatedValuePtr = createCast(createGEP(enumValue, 1, nullptr, "associatedValue"), associatedValue->getType()->getPointerTo());
         createStore(associatedValue, associatedValuePtr);
+    } else if (enumCase.associatedType) {
+        zeroEnumPayload(enumValue, enumDecl->getType());
     }
 
+    // A case constructed without payload arguments owns nothing, so there is nothing to destroy.
+    if (!isMovedFrom && !associatedValueElements.empty()) {
+        registerTempDestructor(enumValue, enumDecl->getType());
+    }
     return enumValue;
 }
 
 Value* IRGenerator::emitEnumCaseCall(const EnumCase& enumCase, const CallExpr& expr) {
-    if (expr.argParamIndices.size() != expr.args.size()) return emitEnumCase(enumCase, expr.args);
+    if (expr.argParamIndices.size() != expr.args.size()) return emitEnumCase(enumCase, expr.args, expr.isMovedFrom);
     auto enumDecl = enumCase.getEnumDecl();
     auto tag = emitExpr(*enumCase.value);
     if (!enumDecl->hasAssociatedValues()) return tag;
@@ -902,9 +908,49 @@ Value* IRGenerator::emitEnumCaseCall(const EnumCase& enumCase, const CallExpr& e
             associatedValue = createInsertValue(associatedValue, writtenValues[i], expr.argParamIndices[i]);
         auto* associatedValuePtr = createCast(createGEP(enumValue, 1, nullptr, "associatedValue"), associatedValue->getType()->getPointerTo());
         createStore(associatedValue, associatedValuePtr);
+    } else if (enumCase.associatedType) {
+        zeroEnumPayload(enumValue, enumDecl->getType());
     }
 
+    // A case constructed without payload arguments owns nothing, so there is nothing to destroy.
+    if (!expr.isMovedFrom && !expr.args.empty()) {
+        registerTempDestructor(enumValue, enumDecl->getType());
+    }
     return enumValue;
+}
+
+// A case constructed without payload arguments (e.g. `Ok` in `r == Ok`) leaves the payload
+// bytes uninitialized. The value can still be destroyed or copied into owned storage, so zero
+// the payload to keep it well-formed.
+void IRGenerator::zeroEnumPayload(Value* enumValue, Type enumType) {
+    auto* memsetDecl = llvm::cast<FunctionDecl>(Module::getStdlibModule()->symbolTable.findOne("memset"));
+    checkImplicitCalleeIsChecked(*memsetDecl, "memset");
+    auto* memsetFunction = getFunction(*memsetDecl);
+    auto params = memsetDecl->getParams();
+    auto* payloadPtr = createCastIfNeeded(createGEP(enumValue, 1, nullptr, "associatedValue"), params[0].type);
+    auto* zero = createCastIfNeeded(createConstantInt(Type::getInt32(), 0), params[1].type);
+    IRType* payloadType = getIRType(enumType)->getFields()[optionalPayloadFieldIndex].type;
+    auto* size = createCastIfNeeded(new SizeofInst{ValueKind::SizeofInst, payloadType, ""}, params[2].type);
+    createCall(memsetFunction, {payloadPtr, zero, size}, nullptr);
+}
+
+void IRGenerator::emitEnumPayloadDestruction(EnumDecl& enumDecl, Value* self) {
+    auto* function = insertBlock->parent;
+    auto* end = new BasicBlock("enum.dtor.end", function);
+    auto* tag = createLoad(createGEP(self, 0, nullptr, "tag"));
+    auto* switchInst = createSwitch(tag, end);
+
+    int index = 0;
+    for (auto& enumCase : enumDecl.cases) {
+        if (!enumCase.associatedType || !enumCase.associatedType.needsDestruction()) continue;
+        auto* block = new BasicBlock("enum.dtor.case." + std::to_string(index++), function);
+        setInsertPoint(block);
+        auto* payloadPtr = createCast(createGEP(self, 1, nullptr, "associatedValue"), enumCase.associatedType.getPointerTo());
+        destroyElementsForAssignment(payloadPtr, enumCase.associatedType);
+        createBr(end);
+        switchInst->cases.emplace_back(emitExpr(*enumCase.value), block);
+    }
+    setInsertPoint(end);
 }
 
 Value* IRGenerator::emitClosureCallExpr(const CallExpr& expr) {
@@ -1020,6 +1066,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
                 args.emplace_back(tempAlloca);
             }
         } else if (expr.getReceiver()) {
+            llvm::SaveAndRestore saveEmittingReceiver(emittingReceiver, true);
             args.emplace_back(emitExprForPassing(*expr.getReceiver(), *param));
         } else {
             args.emplace_back(getThis());
@@ -1102,7 +1149,7 @@ Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, c
 
 Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
     if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(expr.decl)) {
-        return emitEnumCase(*enumCase, {});
+        return emitEnumCase(*enumCase, {}, expr.isMovedFrom);
     }
 
     if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(expr.decl)) {
@@ -1223,6 +1270,8 @@ Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
     if (expr.calleeDecl) {
         return emitCallExpr(expr);
     }
+    // The result borrows the operand, so operand temporaries die at scope exit like receivers.
+    llvm::SaveAndRestore saveEmittingReceiver(emittingReceiver, true);
     return emitOptionalUnwrap(*expr.getReceiver(), expr, "assert");
 }
 
@@ -1235,6 +1284,8 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     auto tempScopesBackup = std::move(tempScopes);
     auto tempGuardBackup = tempGuard;
     tempGuard = nullptr;
+    auto emittingReceiverBackup = emittingReceiver;
+    emittingReceiver = false;
 
     emitDecl(*functionDecl);
 
@@ -1242,6 +1293,7 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     scopes = std::move(scopesBackup);
     tempScopes = std::move(tempScopesBackup);
     tempGuard = tempGuardBackup;
+    emittingReceiver = emittingReceiverBackup;
     if (insertBlockBackup) setInsertPoint(insertBlockBackup);
 
     if (functionDecl->captures.empty()) {
@@ -1348,7 +1400,7 @@ Value* IRGenerator::emitSwitchExpr(const SwitchExpr& expr) {
         tempGuard = armGuards[armIndex];
 
         if (auto* associatedValue = arm.associatedValue) {
-            auto type = associatedValue->type.getPointerTo();
+            auto type = associatedValue->type.removeReference().getPointerTo();
             auto* associatedValuePtr = createCast(createGEP(enumValue, 1), type, associatedValue->getName());
             // The binding borrows the enum payload, so it must not run a destructor.
             setLocalValue(associatedValuePtr, associatedValue, false);
@@ -1408,7 +1460,7 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
             }
             return emitExpr(*expr.operand);
         } else {
-            return emitOptionalConstruction(expr.operand->type, expr.operand);
+            return emitOptionalConstruction(expr.operand->type, expr.operand, expr.isMovedFrom);
         }
     case ImplicitCastExpr::OptionalUnwrap:
         return emitOptionalUnwrap(*expr.operand, expr, "__implicit_unwrap");
@@ -1441,7 +1493,11 @@ Value* IRGenerator::emitUserConversion(const ImplicitCastExpr& expr, AllocaInst*
         return thisAlloca;
     }
     // Mirror method calls: the operand becomes the receiver.
-    llvm::SmallVector<Value*, 1> args{emitExprForPassing(*expr.operand, callee->params[0].type)};
+    llvm::SmallVector<Value*, 1> args;
+    {
+        llvm::SaveAndRestore saveEmittingReceiver(emittingReceiver, true);
+        args.push_back(emitExprForPassing(*expr.operand, callee->params[0].type));
+    }
     return maybeRegisterResultTemp(createCall(callee, args, &expr), expr);
 }
 

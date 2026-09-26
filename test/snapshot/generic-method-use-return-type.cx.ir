@@ -10,13 +10,17 @@ int32 main() {
 }
 
 X<bool> _CX1N4mainM4main1XIM3std5int32E1fIM3std4boolEEM4main1XIM3std4boolE1_M3std4bool(X<int32>* this, bool u) {
+    X<int32>** this_0 = alloca X<int32>*
     bool* u_0 = alloca bool
     X<bool>* x = alloca X<bool>
+    store this to this_0
     store u to u_0
     X<bool> x.load = load x
     return x.load
 }
 
 void _CX1N4mainM4main1XIM3std4boolE1gE4void0_(X<bool>* this) {
+    X<bool>** this_0 = alloca X<bool>*
+    store this to this_0
     return void
 }

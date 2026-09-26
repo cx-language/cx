@@ -17,43 +17,54 @@ Outer _CX1N4main9makeOuterEM4main5Outer0_() {
 }
 
 void _CX1N4mainM4main5Outer4initE4void2_M4main3BigM3std5int32(Outer* this, Big item, int32 tag) {
+    Outer** this_0 = alloca Outer*
     Big* item_0 = alloca Big
     int32* tag_0 = alloca int32
+    store this to this_0
     store item to item_0
     store tag to tag_0
-    Big* item_1 = getelementptr this, 0
+    Outer* this.load = load this_0
+    Big* item_1 = getelementptr this.load, 0
     Big item.load = load item_0
     store item.load to item_1
-    int32* tag_1 = getelementptr this, 1
+    Outer* this.load_0 = load this_0
+    int32* tag_1 = getelementptr this.load_0, 1
     int32 tag.load = load tag_0
     store tag.load to tag_1
     return void
 }
 
 void _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Big* this, int32 a, int32 b, int32 c, int32 d, int32 e) {
+    Big** this_0 = alloca Big*
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     int32* c_0 = alloca int32
     int32* d_0 = alloca int32
     int32* e_0 = alloca int32
+    store this to this_0
     store a to a_0
     store b to b_0
     store c to c_0
     store d to d_0
     store e to e_0
-    int32* a_1 = getelementptr this, 0
+    Big* this.load = load this_0
+    int32* a_1 = getelementptr this.load, 0
     int32 a.load = load a_0
     store a.load to a_1
-    int32* b_1 = getelementptr this, 1
+    Big* this.load_0 = load this_0
+    int32* b_1 = getelementptr this.load_0, 1
     int32 b.load = load b_0
     store b.load to b_1
-    int32* c_1 = getelementptr this, 2
+    Big* this.load_1 = load this_0
+    int32* c_1 = getelementptr this.load_1, 2
     int32 c.load = load c_0
     store c.load to c_1
-    int32* d_1 = getelementptr this, 3
+    Big* this.load_2 = load this_0
+    int32* d_1 = getelementptr this.load_2, 3
     int32 d.load = load d_0
     store d.load to d_1
-    int32* e_1 = getelementptr this, 4
+    Big* this.load_3 = load this_0
+    int32* e_1 = getelementptr this.load_3, 4
     int32 e.load = load e_0
     store e.load to e_1
     return void
@@ -166,14 +177,18 @@ overflow.success_1:
 }
 
 void _CX1N4mainM4main4Wide4initE4void2_M3std6int128M3std6int128(Wide* this, int128 a, int128 b) {
+    Wide** this_0 = alloca Wide*
     int128* a_0 = alloca int128
     int128* b_0 = alloca int128
+    store this to this_0
     store a to a_0
     store b to b_0
-    int128* a_1 = getelementptr this, 0
+    Wide* this.load = load this_0
+    int128* a_1 = getelementptr this.load, 0
     int128 a.load = load a_0
     store a.load to a_1
-    int128* b_1 = getelementptr this, 1
+    Wide* this.load_0 = load this_0
+    int128* b_1 = getelementptr this.load_0, 1
     int128 b.load = load b_0
     store b.load to b_1
     return void

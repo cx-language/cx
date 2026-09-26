@@ -9,23 +9,30 @@ int32 main() {
 }
 
 void _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Foo* this, int32 i) {
+    Foo** this_0 = alloca Foo*
     int32* i_0 = alloca int32
+    store this to this_0
     store i to i_0
-    int32* i_1 = getelementptr this, 0
+    Foo* this.load = load this_0
+    int32* i_1 = getelementptr this.load, 0
     int32 i.load = load i_0
     store i.load to i_1
     return void
 }
 
 void _CX1N4mainM4main3Bar4initE4void2_M3std5int32M3std5int32(Bar* this, int32 j, int32 i) {
+    Bar** this_0 = alloca Bar*
     int32* j_0 = alloca int32
     int32* i_0 = alloca int32
+    store this to this_0
     store j to j_0
     store i to i_0
-    int32* i_1 = getelementptr this, 0
+    Bar* this.load = load this_0
+    int32* i_1 = getelementptr this.load, 0
     int32 i.load = load i_0
     store i.load to i_1
-    int32* j_1 = getelementptr this, 1
+    Bar* this.load_0 = load this_0
+    int32* j_1 = getelementptr this.load_0, 1
     int32 j.load = load j_0
     store j.load to j_1
     return void

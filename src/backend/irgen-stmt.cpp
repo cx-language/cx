@@ -63,7 +63,7 @@ void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
         createCondBr(condition, thenBlock, elseBlock);
 
         setInsertPoint(thenBlock);
-        auto type = ifStmt.isBinding->type.getPointerTo();
+        auto type = ifStmt.isBinding->type.removeReference().getPointerTo();
         auto* bindingPtr = createCast(createGEP(enumValue, 1), type, ifStmt.isBinding->getName());
         // Like switch bindings, the binding borrows the enum payload, so it must not run a destructor.
         setLocalValue(bindingPtr, ifStmt.isBinding, false);
@@ -133,7 +133,7 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
         setInsertPoint(block);
 
         if (auto* associatedValue = switchCase.associatedValue) {
-            auto type = associatedValue->type.getPointerTo();
+            auto type = associatedValue->type.removeReference().getPointerTo();
             auto* associatedValuePtr = createCast(createGEP(enumValue, 1), type, associatedValue->getName());
             // The binding borrows the enum payload, so it must not run a destructor.
             setLocalValue(associatedValuePtr, associatedValue, false);

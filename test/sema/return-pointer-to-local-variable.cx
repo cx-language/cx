@@ -55,3 +55,32 @@ int* f9(int& a) {
     // CHECK-NOT: [[@LINE+1]]:13: warning: returning pointer to local variable
     return &a;
 }
+
+StringBuf& f10() {
+    var r = Result.Ok<StringBuf, string>(value = StringBuf("hi"));
+    // CHECK: [[@LINE+1]]:14: warning: returning pointer to local variable
+    return r.unwrap();
+}
+
+StringBuf& f11() {
+    StringBuf& b = Result.Ok<StringBuf, string>(value = StringBuf("hi")).unwrap();
+    // CHECK: [[@LINE+1]]:12: warning: returning pointer to temporary
+    return b;
+}
+
+struct WrapBox {
+    StringBuf s;
+}
+
+StringBuf& f12() {
+    var w = WrapBox(s = StringBuf("hi"));
+    // CHECK: [[@LINE+1]]:14: warning: returning pointer to local variable
+    return w.s;
+}
+
+int& f13(List<int>& list) {
+    var it = list.iterator();
+    // CHECK-NOT: [[@LINE+1]]:12: warning: returning pointer to local variable
+    // CHECK-NOT: [[@LINE+2]]:12: warning: returning pointer to temporary
+    return it.value();
+}

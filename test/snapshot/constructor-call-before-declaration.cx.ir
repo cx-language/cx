@@ -8,13 +8,18 @@ int32 main() {
 }
 
 void _CX1N4mainM4main3Foo6deinitE4void0_(Foo* this) {
+    Foo** this_0 = alloca Foo*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Foo* this, int32 i) {
+    Foo** this_0 = alloca Foo*
     int32* i_0 = alloca int32
+    store this to this_0
     store i to i_0
-    float32* f = getelementptr this, 0
+    Foo* this.load = load this_0
+    float32* f = getelementptr this.load, 0
     store float32 0 to f
     return void
 }

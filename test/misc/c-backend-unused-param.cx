@@ -1,9 +1,10 @@
 // RUN: %cx --backend=c --print-c %s | %FileCheck %s
 
-// Unreferenced parameters are silenced with a void cast.
+// Unreferenced parameters (including `this`) spill like any other parameter.
 
 // CHECK-LABEL: 1C1fE{{.*}} this) {
-// CHECK-NEXT: (void)this;
+// CHECK-NEXT: struct {{.*}}* this0;
+// CHECK-NEXT: *(&this0) = this;
 
 struct C {
     int i;

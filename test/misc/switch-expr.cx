@@ -18,7 +18,7 @@ int exhaustive(Outcome& o) {
 int withNever(Outcome& o) {
     return switch *o {
         case Ok value: value,
-        case Err error: abort("code ", error),
+        case Err error: abort("code ", *error),
         case Pending: 0,
     };
 }

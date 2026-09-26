@@ -16,25 +16,33 @@ void _CX1N4main3fooE4void1_L1iM3std5int32(int32 i) {
 }
 
 void _CX1N4mainM4main3Foo3fooE4void1_L1iM3std5int32(Foo* this, int32 i) {
+    Foo** this_0 = alloca Foo*
     int32* i_0 = alloca int32
+    store this to this_0
     store i to i_0
     return void
 }
 
 void _CX1N4mainM4main3Foo4initE4void1_L1iM3std5int32(Foo* this, int32 i) {
+    Foo** this_0 = alloca Foo*
     int32* i_0 = alloca int32
+    store this to this_0
     store i to i_0
     return void
 }
 
 void _CX1N4mainM4main3Foo3fooE4void1_L3quxM3std5int32(Foo* this, int32 qux) {
+    Foo** this_0 = alloca Foo*
     int32* qux_0 = alloca int32
+    store this to this_0
     store qux to qux_0
     return void
 }
 
 void _CX1N4mainM4main3Foo4initE4void1_L3quxM3std5int32(Foo* this, int32 qux) {
+    Foo** this_0 = alloca Foo*
     int32* qux_0 = alloca int32
+    store this to this_0
     store qux to qux_0
     return void
 }

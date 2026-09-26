@@ -11,17 +11,25 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1X6deinitE4void0_(X* this) {
+    X** this_0 = alloca X*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main1X4initE4void0_(X* this) {
+    X** this_0 = alloca X*
+    store this to this_0
     return void
 }
 
 int32 _CX1N4mainM4main1YIM3std4boolE1fEM3std5int320_(Y<bool>* this) {
+    Y<bool>** this_0 = alloca Y<bool>*
+    store this to this_0
     return int32 1
 }
 
 void _CX1N4mainM4main1YIM3std4boolE4initE4void0_(Y<bool>* this) {
+    Y<bool>** this_0 = alloca Y<bool>*
+    store this to this_0
     return void
 }

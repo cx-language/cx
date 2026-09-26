@@ -107,7 +107,8 @@ struct Typechecker {
     void typecheckSwitchStmt(SwitchStmt& stmt);
     Type typecheckSwitchCondition(Expr*& condition);
     EnumCase* typecheckSwitchCaseValue(Expr*& value, Type conditionType);
-    void typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase* enumCase);
+    void typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase* enumCase, Expr* subject);
+    bool subjectBorrows(Expr* subject);
     void warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const;
     void typecheckForStmt(ForStmt& forStmt);
     void typecheckDoWhileStmt(DoWhileStmt& doWhileStmt);
@@ -209,6 +210,10 @@ struct Typechecker {
     // named declarations as moved when trackVars holds, so copies into copyable
     // consumers keep working while their temps are still recognized as consumed.
     void setMoved(Expr* expr, bool isMoved, bool trackVars = true);
+    // Moves ownership out of a projection source (member/index base, unwrap operand,
+    // binding subject): owned roots are consumed, temporaries are flagged for
+    // destructor elision, and borrowed roots are an error (nothing skips for them).
+    void propagateMove(Expr* source, bool trackVars, Location location);
     void checkNotMoved(const Decl& decl, const VarExpr& expr);
 
     void applyNarrowings(const Expr& condition, bool polarity);
@@ -236,6 +241,12 @@ struct Typechecker {
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     llvm::SmallPtrSet<Decl*, 32> movedDecls;
+    // Switch-case and `is` bindings borrow their subject's payload; moving out of
+    // one consumes the whole subject like moving out of a member does.
+    llvm::DenseMap<const Decl*, Expr*> bindingSources;
+    // True while checking a placement-`init` argument, which moves out of raw
+    // container storage with no owner, so borrow/dereference moves are allowed.
+    bool inMoveInit = false;
     std::vector<VarDecl*> localVarDecls;
     NarrowMap narrowedTypes;
     llvm::SmallPtrSet<Decl*, 32> definitelyAssignedDecls;
@@ -257,6 +268,7 @@ struct Typechecker {
         bool unwrap = false;
         bool checkedArithmetic = false;
         bool assertCall = false;
+        bool payloadlessEnumCase = false;
     };
     mutable ImplicitUses implicitUses;
     // Types whose infinite-size error was already reported by the early size check.

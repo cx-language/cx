@@ -1,0 +1,46 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:1
+// CHECK-NEXT:1
+// CHECK-NEXT:2
+// CHECK-NEXT:2
+
+int deaths = 0;
+
+struct C {
+    int i;
+    ~C() {
+        deaths = deaths + 1;
+    }
+}
+
+enum R {
+    Ok(C value),
+    Err,
+}
+
+void main() {
+    {
+        var r = R.Ok(C(i = 1));
+        if r == Err {
+            println("bad");
+        }
+    }
+    println(deaths);
+    {
+        // Comparing against a payloadless case must not destroy anything.
+        var r = R.Err;
+        if r == Ok {
+            println("bad");
+        }
+    }
+    println(deaths);
+    {
+        var r = R.Ok(C(i = 2));
+        switch r {
+            case Ok value: println(value.i);
+            case Err: println("bad");
+        }
+    }
+    println(deaths);
+}

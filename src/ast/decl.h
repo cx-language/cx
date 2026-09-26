@@ -416,6 +416,7 @@ struct EnumDecl : TypeDecl {
     }
     void addCase(EnumCase&& enumCase);
     bool hasAssociatedValues() const;
+    bool hasDestructiblePayload() const;
     EnumCase* getCaseByName(llvm::StringRef name);
     // TODO: Select tag type to be able to hold all enum values.
     Type getTagType() const { return Type::getInt32(); }
@@ -439,6 +440,9 @@ struct VarDecl : VariableDecl, Movable {
     // True for lowered for-loop element variables yielding a borrow: the variable aliases
     // the element instead of copying it out, so reference types are preserved, not dereferenced.
     bool isForLoopElement = false;
+    // True for switch-case and `is` payload bindings: bound implicitly by the switch,
+    // so a borrow-typed binding needs no initializer.
+    bool isPayloadBinding = false;
 };
 
 struct ImportDecl : Decl {

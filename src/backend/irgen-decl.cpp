@@ -100,17 +100,22 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     auto arg = function.params.begin();
 
     if (decl.getTypeDecl()) {
-        setLocalValue(&*arg++, nullptr);
+        // Spill like every other by-reference parameter, so dereferencing reads
+        // through to the caller's object instead of copying it (e.g. `switch this`).
+        auto* spill = createEntryBlockAlloca(PointerType::get(decl.getTypeDecl()->getType(), PointerKind::Reference), "this");
+        createStore(&*arg++, spill);
+        setLocalValue(spill, nullptr);
     }
 
     for (auto* captured : decl.captures) {
         if (captured->isReferenceCapture()) {
-            // Captured `this` is already a pointer to the caller's object; bind it directly
-            // like a method's `this` param so member access aliases the object, not a copy.
-            Value* thisParam = &*arg++;
-            auto inserted = scopes.back().valuesByDecl.try_emplace(captured, thisParam);
+            // Captured `this` spills like a method's `this` param so dereferencing
+            // reads through to the caller's object instead of copying it.
+            auto* spill = createEntryBlockAlloca(captured->getCaptureType(), ("__capture_" + captured->getName()).str());
+            createStore(&*arg++, spill);
+            auto inserted = scopes.back().valuesByDecl.try_emplace(captured, spill);
             ASSERT(inserted.second);
-            auto thisInserted = scopes.back().valuesByDecl.try_emplace(nullptr, thisParam);
+            auto thisInserted = scopes.back().valuesByDecl.try_emplace(nullptr, spill);
             ASSERT(thisInserted.second);
             continue;
         }
@@ -139,9 +144,15 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     }
 
     if (decl.isDestructorDecl()) {
-        for (auto& field : decl.getTypeDecl()->fields) {
-            if (!field.type.needsDestruction()) continue;
-            deferDestructorCall(emitMemberAccess(&function.params[0], &field), &field);
+        // Enums cannot declare destructors, so this is always a synthesized
+        // default destructor with an empty body; destroy the active payload.
+        if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl.getTypeDecl())) {
+            emitEnumPayloadDestruction(*enumDecl, &function.params[0]);
+        } else {
+            for (auto& field : decl.getTypeDecl()->fields) {
+                if (!field.type.needsDestruction()) continue;
+                deferDestructorCall(emitMemberAccess(&function.params[0], &field), &field);
+            }
         }
     }
 
@@ -223,7 +234,8 @@ void IRGenerator::emitFunctionDecl(const FunctionDecl& decl) {
 
 Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
     if (decl.getName() == "this") {
-        return getThis();
+        // The spill, like any other by-reference parameter; callers load through it.
+        return getValue(nullptr);
     }
 
     if (auto* value = getValueOrNull(&decl)) {

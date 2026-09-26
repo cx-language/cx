@@ -13,9 +13,13 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1X6deinitE4void0_(X* this) {
+    X** this_0 = alloca X*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main1X4initE4void0_(X* this) {
+    X** this_0 = alloca X*
+    store this to this_0
     return void
 }

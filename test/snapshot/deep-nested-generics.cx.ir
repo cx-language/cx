@@ -8,41 +8,56 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1SIM4main1RE4initE4void0_(S<R>* this) {
+    S<R>** this_0 = alloca S<R>*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main1SIM4main1RE1sE4void0_(S<R>* this) {
+    S<R>** this_0 = alloca S<R>*
     A<R>* t = alloca A<R>
     R* tt = alloca R
-    A<A<R>>* a = getelementptr this, 0
+    store this to this_0
+    S<R>* this.load = load this_0
+    A<A<R>>* a = getelementptr this.load, 0
     A<R> _0 = call _CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M3std5int32(A<A<R>>* a, int32 0)
     store _0 to t
     R _1 = call _CX1N4mainM4main1AIM4main1REo2ixEM4main1R1_M3std5int32(A<R>* t, int32 0)
     store _1 to tt
-    A<A<R>>* a_0 = getelementptr this, 0
+    S<R>* this.load_0 = load this_0
+    A<A<R>>* a_0 = getelementptr this.load_0, 0
     int32 _2 = call _CX1N4mainM4main1R1hEM3std5int320_(R* tt)
     A<R> _3 = call _CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M3std5int32(A<A<R>>* a_0, int32 _2)
     return void
 }
 
 int32 _CX1N4mainM4main1R1hEM3std5int320_(R* this) {
-    int32* i = getelementptr this, 0
+    R** this_0 = alloca R*
+    store this to this_0
+    R* this.load = load this_0
+    int32* i = getelementptr this.load, 0
     int32 i.load = load i
     return i.load
 }
 
 A<R> _CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M3std5int32(A<A<R>>* this, int32 i) {
+    A<A<R>>** this_0 = alloca A<A<R>>*
     int32* i_0 = alloca int32
+    store this to this_0
     store i to i_0
-    A<R>* t = getelementptr this, 0
+    A<A<R>>* this.load = load this_0
+    A<R>* t = getelementptr this.load, 0
     A<R> t.load = load t
     return t.load
 }
 
 R _CX1N4mainM4main1AIM4main1REo2ixEM4main1R1_M3std5int32(A<R>* this, int32 i) {
+    A<R>** this_0 = alloca A<R>*
     int32* i_0 = alloca int32
+    store this to this_0
     store i to i_0
-    R* t = getelementptr this, 0
+    A<R>* this.load = load this_0
+    R* t = getelementptr this.load, 0
     R t.load = load t
     return t.load
 }

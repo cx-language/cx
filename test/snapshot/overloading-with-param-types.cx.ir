@@ -47,13 +47,19 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1S4initE4void0_(S* this) {
-    int32* i = getelementptr this, 0
+    S** this_0 = alloca S*
+    store this to this_0
+    S* this.load = load this_0
+    int32* i = getelementptr this.load, 0
     store int32 0 to i
     return void
 }
 
 void _CX1N4mainM4main1T4initE4void0_(T* this) {
-    int32* i = getelementptr this, 0
+    T** this_0 = alloca T*
+    store this to this_0
+    T* this.load = load this_0
+    int32* i = getelementptr this.load, 0
     store int32 0 to i
     return void
 }

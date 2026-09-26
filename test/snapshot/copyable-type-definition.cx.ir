@@ -19,17 +19,22 @@ int32 main() {
 }
 
 void _CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(Foo* this, int32 a, bool b) {
+    Foo** this_0 = alloca Foo*
     int32* a_0 = alloca int32
     bool* b_0 = alloca bool
+    store this to this_0
     store a to a_0
     store b to b_0
-    int32* a_1 = getelementptr this, 0
+    Foo* this.load = load this_0
+    int32* a_1 = getelementptr this.load, 0
     int32 a.load = load a_0
     store a.load to a_1
-    bool* b_1 = getelementptr this, 1
+    Foo* this.load_0 = load this_0
+    bool* b_1 = getelementptr this.load_0, 1
     bool b.load = load b_0
     store b.load to b_1
-    int32* a_2 = getelementptr this, 0
+    Foo* this.load_1 = load this_0
+    int32* a_2 = getelementptr this.load_1, 0
     int32 a.load_0 = load a_2
     int32 _0 = a.load_0 + int32 1
     store _0 to a_2

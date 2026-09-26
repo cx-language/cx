@@ -8,6 +8,8 @@ void _CX1N4main1fE4void1_PM4main1A(A* a) {
 }
 
 void _CX1N4mainM4main1A6deinitE4void0_(A* this) {
+    A** this_0 = alloca A*
+    store this to this_0
     return void
 }
 

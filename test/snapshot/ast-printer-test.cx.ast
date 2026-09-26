@@ -5,7 +5,7 @@ FunctionDecl main
 
     VarStmt VarDecl program CallExpr VarExpr Program type=NULL
         CallExpr VarExpr string type=NULL
-            ImplicitCastExpr 2 ImplicitCastExpr 2 VarExpr text type=StringBuf
+            VarExpr text type=StringBuf&
 
 
     VarStmt VarDecl tape CallExpr VarExpr Tape type=NULL

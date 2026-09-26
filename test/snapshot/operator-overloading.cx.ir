@@ -51,14 +51,18 @@ overflow.success_0:
 }
 
 void _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* this, int32 x, int32 y) {
+    vec2** this_0 = alloca vec2*
     int32* x_0 = alloca int32
     int32* y_0 = alloca int32
+    store this to this_0
     store x to x_0
     store y to y_0
-    int32* x_1 = getelementptr this, 0
+    vec2* this.load = load this_0
+    int32* x_1 = getelementptr this.load, 0
     int32 x.load = load x_0
     store x.load to x_1
-    int32* y_1 = getelementptr this, 1
+    vec2* this.load_0 = load this_0
+    int32* y_1 = getelementptr this.load_0, 1
     int32 y.load = load y_0
     store y.load to y_1
     return void
@@ -99,7 +103,9 @@ bool _CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(vec2 a, vec2 b) {
 }
 
 int32 _CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(vec2* this, int32 index) {
+    vec2** this_0 = alloca vec2*
     int32* index_0 = alloca int32
+    store this to this_0
     store index to index_0
     int32 index.load = load index_0
     return index.load

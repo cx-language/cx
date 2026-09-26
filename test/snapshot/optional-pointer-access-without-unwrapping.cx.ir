@@ -28,5 +28,7 @@ int32 main() {
 }
 
 void _CX1N4mainM4main3Foo3barE4void0_(Foo* this) {
+    Foo** this_0 = alloca Foo*
+    store this to this_0
     return void
 }

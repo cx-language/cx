@@ -82,7 +82,9 @@ void main() {
 
 The `is` operator tests whether an enum value is a specific case.
 Appending a name binds the case's payload in the then-branch,
-using the same semantics as `switch` case bindings:
+using the same semantics as `switch` case bindings.
+The binding borrows the payload rather than copying it,
+so the payload cannot be moved out of the binding:
 
 ```cs
 enum Outcome {

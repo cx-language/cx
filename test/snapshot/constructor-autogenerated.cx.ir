@@ -19,46 +19,62 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(X* this, int32 a, int32* b) {
+    X** this_0 = alloca X*
     int32* a_0 = alloca int32
     int32** b_0 = alloca int32*
+    store this to this_0
     store a to a_0
     store b to b_0
-    int32* a_1 = getelementptr this, 0
+    X* this.load = load this_0
+    int32* a_1 = getelementptr this.load, 0
     int32 a.load = load a_0
     store a.load to a_1
-    int32** b_1 = getelementptr this, 1
+    X* this.load_0 = load this_0
+    int32** b_1 = getelementptr this.load_0, 1
     int32* b.load = load b_0
     store b.load to b_1
     return void
 }
 
 void _CX1N4mainM4main5Empty6deinitE4void0_(Empty* this) {
+    Empty** this_0 = alloca Empty*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main5Empty4initE4void0_(Empty* this) {
+    Empty** this_0 = alloca Empty*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main7GenericIM3std7float32E4initE4void1_M3std7float32(Generic<float32>* this, float32 i) {
+    Generic<float32>** this_0 = alloca Generic<float32>*
     float32* i_0 = alloca float32
+    store this to this_0
     store i to i_0
-    float32* i_1 = getelementptr this, 0
+    Generic<float32>* this.load = load this_0
+    float32* i_1 = getelementptr this.load, 0
     float32 i.load = load i_0
     store i.load to i_1
     return void
 }
 
 void _CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(Generic<Empty>* this) {
+    Generic<Empty>** this_0 = alloca Generic<Empty>*
+    store this to this_0
     Empty* i = getelementptr this, 0
     void _0 = call _CX1N4mainM4main5Empty6deinitE4void0_(Empty* i)
     return void
 }
 
 void _CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty(Generic<Empty>* this, Empty i) {
+    Generic<Empty>** this_0 = alloca Generic<Empty>*
     Empty* i_0 = alloca Empty
+    store this to this_0
     store i to i_0
-    Empty* i_1 = getelementptr this, 0
+    Generic<Empty>* this.load = load this_0
+    Empty* i_1 = getelementptr this.load, 0
     Empty i.load = load i_0
     store i.load to i_1
     return void

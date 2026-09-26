@@ -11,16 +11,21 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1S4initE4void1_M3std5int32(S* this, int32 i) {
+    S** this_0 = alloca S*
     int32* i_0 = alloca int32
+    store this to this_0
     store i to i_0
-    int32* i_1 = getelementptr this, 0
+    S* this.load = load this_0
+    int32* i_1 = getelementptr this.load, 0
     int32 i.load = load i_0
     store i.load to i_1
     return void
 }
 
 void _CX1N4mainM4main1S1fE4void0_(S* this) {
+    S** this_0 = alloca S*
     int32* i = alloca int32
+    store this to this_0
     store int32 0 to i
     return void
 }

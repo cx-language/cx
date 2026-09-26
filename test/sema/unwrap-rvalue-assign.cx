@@ -2,6 +2,6 @@
 
 void main() {
     var r = Result.Ok<int, string>(value = 1);
-    // CHECK: [[@LINE+1]]:6: error: cannot assign to expression of type 'int'
+    // CHECK: [[@LINE+1]]:6: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
     r! = 2;
 }

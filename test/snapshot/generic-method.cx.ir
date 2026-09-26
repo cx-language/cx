@@ -17,11 +17,15 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1X4initE4void0_(X* this) {
+    X** this_0 = alloca X*
+    store this to this_0
     return void
 }
 
 int32 _CX1N4mainM4main1X1fIM3std5int32EEM3std5int321_F0_M3std5int32(X* this, int32()* t) {
+    X** this_0 = alloca X*
     int32()** t_0 = alloca int32()*
+    store this to this_0
     store t to t_0
     int32()* t.load = load t_0
     int32 _0 = call t.load()
@@ -29,7 +33,9 @@ int32 _CX1N4mainM4main1X1fIM3std5int32EEM3std5int321_F0_M3std5int32(X* this, int
 }
 
 bool _CX1N4mainM4main1X1fIM3std4boolEEM3std4bool1_F0_M3std4bool(X* this, bool()* t) {
+    X** this_0 = alloca X*
     bool()** t_0 = alloca bool()*
+    store this to this_0
     store t to t_0
     bool()* t.load = load t_0
     bool _0 = call t.load()

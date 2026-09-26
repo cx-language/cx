@@ -11,17 +11,25 @@ int32 main() {
 }
 
 void _CX1N4mainM4main3Foo4initE4void0_(Foo* this) {
-    int32* baz = getelementptr this, 0
+    Foo** this_0 = alloca Foo*
+    store this to this_0
+    Foo* this.load = load this_0
+    int32* baz = getelementptr this.load, 0
     store int32 42 to baz
     return void
 }
 
 void _CX1N4mainM4main3Foo3barE4void0_(Foo* this) {
+    Foo** this_0 = alloca Foo*
+    store this to this_0
     return void
 }
 
 int32 _CX1N4mainM4main3Foo3quxEM3std5int320_(Foo* this) {
-    int32* baz = getelementptr this, 0
+    Foo** this_0 = alloca Foo*
+    store this to this_0
+    Foo* this.load = load this_0
+    int32* baz = getelementptr this.load, 0
     int32 baz.load = load baz
     return baz.load
 }

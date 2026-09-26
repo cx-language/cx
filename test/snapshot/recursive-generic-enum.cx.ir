@@ -31,9 +31,12 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(S<E>* this, E* e) {
+    S<E>** this_0 = alloca S<E>*
     E** e_0 = alloca E*
+    store this to this_0
     store e to e_0
-    E** e_1 = getelementptr this, 0
+    S<E>* this.load = load this_0
+    E** e_1 = getelementptr this.load, 0
     E* e.load = load e_0
     store e.load to e_1
     return void

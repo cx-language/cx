@@ -93,15 +93,18 @@ struct IRGenerator {
     Value* emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const BinaryExpr& expr);
     Value* emitAssignment(const BinaryExpr& expr);
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);
-    Value* emitOptionalConstruction(Type wrappedType, Expr* arg);
+    Value* emitOptionalConstruction(Type wrappedType, Expr* arg, bool isMovedFrom);
     Value* emitOptionalUnwrap(const Expr& operand, const Expr& expr, const llvm::Twine& name);
     Value* emitOptionalHasValueTest(Value* enumValue);
     Value* emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType);
     void emitAssert(Value* condition, const Expr* expr, Location location, llvm::StringRef message = "Assertion failed", const llvm::Twine& name = "assert");
     void emitAbortWithMessage(llvm::StringRef message, Location location);
     void emitLeakCheckIfNeeded();
-    Value* emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements);
+    Value* emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements, bool isMovedFrom);
     Value* emitEnumCaseCall(const EnumCase& enumCase, const CallExpr& expr);
+    void zeroEnumPayload(Value* enumValue, Type enumType);
+    void emitEnumPayloadDestruction(EnumDecl& enumDecl, Value* self);
+
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
     Value* emitClosureCallExpr(const CallExpr& expr);
     Value* emitBuiltinCast(const CallExpr& expr);
@@ -288,6 +291,10 @@ struct IRGenerator {
     // currently being emitted, or null in unconditional code. Attached to
     // temporaries at registration so untaken regions destroy nothing.
     Value* tempGuard = nullptr;
+    // True while emitting a method-call receiver. Receiver temporaries outlive
+    // their statement: the result may borrow them (`readFile().unwrap()`), so
+    // they die at scope exit instead, after the values initialized from them.
+    bool emittingReceiver = false;
     IRModule* module = nullptr;
     std::vector<IRModule*> generatedModules;
     std::vector<FunctionInstantiation> functionInstantiations;

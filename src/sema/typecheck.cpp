@@ -364,6 +364,11 @@ void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
     if (usesArgv) {
         if (Decl* mallocDecl = stdModule->symbolTable.findOne("malloc")) markReferenced(mallocDecl);
     }
+    // Payloadless construction of a case with associated values (e.g. `Ok` in `r == Ok`)
+    // emits a memset of the payload in irgen-expr.cpp (zeroEnumPayload).
+    if (implicitUses.payloadlessEnumCase) {
+        if (Decl* memsetDecl = stdModule->symbolTable.findOne("memset")) markReferenced(memsetDecl);
+    }
     // checkLeaks counts with checked arithmetic, so it needs assertFail even when user code has no checks.
     if (usesArgv || implicitUses.assertCall || implicitUses.checkedArithmetic || implicitUses.unwrap || implicitUses.enumSwitch || usesLeakCheck) {
         if (Decl* assertDecl = stdModule->symbolTable.findOne("assertFail")) markReferenced(assertDecl);

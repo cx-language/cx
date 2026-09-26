@@ -264,6 +264,14 @@ static void collectAssignedNames(const Stmt* stmt, llvm::StringSet<>& names) {
     llvm_unreachable("all cases handled");
 }
 
+// Iterator methods (e.g. `value()`) borrow the iterated target, not the iterator
+// object, so borrows derived through iterator-typed receivers are not local.
+static bool isIteratorType(Type type) {
+    if (!type) return false;
+    auto* typeDecl = type.removeOptional().removePointer().getDecl();
+    return typeDecl && llvm::any_of(typeDecl->interfaces, [](Type interface) { return interface.getName() == "Iterator"; });
+}
+
 void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(returnValue)) {
         if (unaryExpr->op == Token::And) {
@@ -274,12 +282,52 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     Type localVariableType;
     const Expr* operand = returnValue;
 
-    while (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(operand)) {
-        operand = implicitCastExpr->operand;
+    // Borrow-returning projections borrow their base (e.g. `r.unwrap()` borrows
+    // `r`); trace through calls, member access, named borrows, and casts to the
+    // root referent. A direct `return callee()` needs no tracing: the callee's
+    // own return was already checked, so only traced roots are reported below.
+    // Note: operators are CallExprs too; only method calls have receivers.
+    bool traced = false;
+    bool tainted = false;
+    Type projectedType;
+    llvm::SmallPtrSet<const Decl*, 8> seenBorrows;
+    while (!tainted) {
+        while (auto* implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(operand)) {
+            operand = implicitCastExpr->operand;
+        }
+        const Expr* next = nullptr;
+        if (auto* callExpr = llvm::dyn_cast<CallExpr>(operand)) {
+            next = callExpr->getReceiver();
+            // A call on a type name (e.g. `Result.Ok(...)`) constructs a temporary;
+            // don't descend into the type itself.
+            if (auto* base = llvm::dyn_cast_or_null<VarExpr>(next)) {
+                if (!base->decl) next = nullptr;
+            }
+            if (next && isIteratorType(next->type)) {
+                tainted = true;
+                break;
+            }
+        } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(operand)) {
+            next = memberExpr->base;
+        } else if (auto* varExpr = llvm::dyn_cast<VarExpr>(operand)) {
+            // Unresolved names (e.g. the `Outcome` in `Outcome.Ok`) have no declaration to follow.
+            if (auto* varDecl = varExpr->decl ? llvm::dyn_cast<VarDecl>(varExpr->decl) : nullptr) {
+                if (varDecl->type.isReferenceType() && varDecl->initializer && seenBorrows.insert(varDecl).second) next = varDecl->initializer;
+            }
+        }
+        if (!next) break;
+        if (!traced) projectedType = operand->type;
+        operand = next;
+        traced = true;
+        // A raw pointer's target is unknown (it may point anywhere), so a borrow
+        // traced through one cannot be attributed to a local; stay silent.
+        if (operand->type && operand->type.removeOptional().isPointerType() && !operand->type.removeOptional().isReferenceType()) tainted = true;
     }
 
+    if (tainted) return;
+
     if (auto varExpr = llvm::dyn_cast<VarExpr>(operand)) {
-        if (varExpr->isThis()) return;
+        if (varExpr->isThis() || !varExpr->decl) return;
 
         switch (varExpr->decl->kind) {
         case DeclKind::VarDecl: {
@@ -302,9 +350,22 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
         }
     }
 
+    // Through projections the referent has the projection's type, not the root's.
+    Type referentType = (traced && projectedType) ? projectedType : localVariableType;
     if (localVariableType && currentFunction->getReturnType().removeOptional().isPointerType()
-        && currentFunction->getReturnType().removeOptional().getPointee().equalsIgnoreTopLevelMutable(localVariableType.removeReference())) {
+        && currentFunction->getReturnType().removeOptional().getPointee().equalsIgnoreTopLevelMutable(referentType.removeReference())) {
         WARN(returnValue->location, "returning pointer to local variable (local variables will not exist after the function returns)");
+    }
+
+    // A borrow of an owned temporary (e.g. `makeValue().borrow()`) dangles once
+    // the statement ends. Dereferences refer through to the target instead of
+    // a temporary, and borrow-typed results reborrow the referent (whose own
+    // return was already checked), so neither warns here.
+    bool isDeref = false;
+    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(operand)) isDeref = unaryExpr->op == Token::Star;
+    if (!localVariableType && traced && llvm::isa<CallExpr>(operand) && !isDeref && operand->type && !operand->type.removeOptional().isPointerType()
+        && currentFunction->getReturnType().removeOptional().isPointerType()) {
+        WARN(returnValue->location, "returning pointer to temporary (temporaries are destroyed at the end of the statement)");
     }
 }
 
@@ -347,7 +408,8 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     }
 
     checkReturnPointerToLocal(stmt.value);
-    setMoved(stmt.value, true);
+    bool trackVars = !stmt.value || !stmt.value->type || !stmt.value->type.removeReference().isImplicitlyCopyable();
+    setMoved(stmt.value, true, trackVars);
     stmt.movedDecls.insert(movedDecls.begin(), movedDecls.end());
 }
 
@@ -378,7 +440,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         if (ifStmt.isBinding) {
             auto* isExpr = llvm::cast<BinaryExpr>(ifStmt.condition);
             ASSERT(isExpr->op == Token::Is);
-            typecheckSwitchCaseBinding(ifStmt.isBinding, getIsEnumCase(isExpr->getRHS()));
+            typecheckSwitchCaseBinding(ifStmt.isBinding, getIsEnumCase(isExpr->getRHS()), &isExpr->getLHS());
         }
         for (auto& stmt : ifStmt.thenBody) {
             typecheckStmt(stmt);
@@ -492,10 +554,11 @@ EnumCase* Typechecker::typecheckSwitchCaseValue(Expr*& value, Type conditionType
     return enumCase;
 }
 
-void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase* enumCase) {
+void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase* enumCase, Expr* subject) {
     if (!associatedValue) return;
     // The parser has no enclosing declaration for bindings in switch expressions; adopt them here.
     associatedValue->parent = currentFunction;
+    associatedValue->isPayloadBinding = true;
     if (!enumCase) {
         ERROR(associatedValue->location, "only enum cases can bind associated values");
     }
@@ -506,9 +569,28 @@ void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase*
     if (associatedType.isAnonymousStructType() && associatedType.getAnonymousStructElements().size() == 1) {
         associatedType = associatedType.getAnonymousStructElements().front().type;
     }
+    if (subject && subjectBorrows(subject)) {
+        // The binding aliases borrowed storage (e.g. `switch this`), so moving out of it
+        // is forbidden; only borrowing uses are sound. Codegen already passes the pointer.
+        associatedType = PointerType::get(associatedType, PointerKind::Reference);
+    } else if (subject) {
+        bindingSources[associatedValue] = subject;
+    }
     associatedValue->type = associatedType;
     typecheckVarDecl(*associatedValue);
     definitelyAssignedDecls.insert(associatedValue);
+}
+
+bool Typechecker::subjectBorrows(Expr* subject) {
+    // Borrow subjects read through: an implicit dereference cast (e.g. `switch this`)
+    // or an explicit dereference (e.g. `switch *p`). Both borrow the original storage.
+    if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(subject)) {
+        return cast->castKind == ImplicitCastExpr::AutoDereference;
+    }
+    if (auto* unary = llvm::dyn_cast<UnaryExpr>(subject)) {
+        return unary->op == Token::Star;
+    }
+    return subject->type.isReferenceType();
 }
 
 // Switch expressions lower directly to a switch instruction, so unlike switch statements
@@ -623,7 +705,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         NarrowMap outerNarrowings = narrowedTypes;
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
 
-        typecheckSwitchCaseBinding(switchCase.associatedValue, enumCase);
+        typecheckSwitchCaseBinding(switchCase.associatedValue, enumCase, stmt.condition);
 
         for (auto& caseStmt : switchCase.stmts) {
             typecheckStmt(caseStmt);
@@ -687,7 +769,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         NarrowMap outerNarrowings = narrowedTypes;
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
 
-        typecheckSwitchCaseBinding(arm.associatedValue, enumCase);
+        typecheckSwitchCaseBinding(arm.associatedValue, enumCase, expr.condition);
         typecheckExpr(*arm.expr, false, expectedType);
         narrowedTypes = outerNarrowings;
         if (!arm.expr->type.isNeverType()) {
@@ -758,7 +840,8 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         if (!resultType || resultType.isNeverType()) {
             resultType = armType;
         } else if (!armType.isVoid() && !resultType.isVoid() && (armIsNull != resultType.isNull())) {
-            Type other = armIsNull ? resultType : armType;
+            // Null is a value, so a borrow joining with null produces an owned optional, not an optional borrow.
+            Type other = (armIsNull ? resultType : armType).removeReference();
             Type target = other.isOptionalType() ? other : OptionalType::get(other);
             if (auto convertedArm = convert(*armExpr, target)) {
                 *armExpr = convertedArm;

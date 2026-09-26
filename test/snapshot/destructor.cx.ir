@@ -36,25 +36,39 @@ loop.end:
 }
 
 void _CX1N4mainM4main3Foo6deinitE4void0_(Foo* this) {
-    int32* i = getelementptr this, 0
+    Foo** this_0 = alloca Foo*
+    store this to this_0
+    Foo* this.load = load this_0
+    int32* i = getelementptr this.load, 0
     store int32 0 to i
-    void _0 = call _CX1N4mainM4main3Foo1fE4void0_(Foo* this)
-    void _1 = call _CX1N4mainM4main3Foo1fE4void0_(Foo* this)
+    Foo* this.load_0 = load this_0
+    void _0 = call _CX1N4mainM4main3Foo1fE4void0_(Foo* this.load_0)
+    Foo* this.load_1 = load this_0
+    void _1 = call _CX1N4mainM4main3Foo1fE4void0_(Foo* this.load_1)
     return void
 }
 
 void _CX1N4mainM4main3Bar6deinitE4void0_(Bar* this) {
-    int32* i = getelementptr this, 0
+    Bar** this_0 = alloca Bar*
+    store this to this_0
+    Bar* this.load = load this_0
+    int32* i = getelementptr this.load, 0
     store int32 0 to i
-    void _0 = call _CX1N4mainM4main3Bar1fE4void0_(Bar* this)
-    void _1 = call _CX1N4mainM4main3Bar1fE4void0_(Bar* this)
+    Bar* this.load_0 = load this_0
+    void _0 = call _CX1N4mainM4main3Bar1fE4void0_(Bar* this.load_0)
+    Bar* this.load_1 = load this_0
+    void _1 = call _CX1N4mainM4main3Bar1fE4void0_(Bar* this.load_1)
     return void
 }
 
 void _CX1N4mainM4main3Foo1fE4void0_(Foo* this) {
+    Foo** this_0 = alloca Foo*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main3Bar1fE4void0_(Bar* this) {
+    Bar** this_0 = alloca Bar*
+    store this to this_0
     return void
 }

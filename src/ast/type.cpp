@@ -72,9 +72,8 @@ bool Type::isImplicitlyCopyable() const {
     llvm_unreachable("all cases handled");
 }
 
-// Note: fixed-size-array elements and enum associated-value payloads are not
-// checked here yet (arrays have no getDecl, enums have no fields), so those
-// owning values still leak. See Triage cards for both gaps.
+// Note: fixed-size-array elements are not checked here yet (arrays have no
+// getDecl), so those owning values still leak. See the Triage card.
 bool Type::needsDestruction() const {
     if (getDestructor()) return true;
     if (isAnonymousStructType()) {
@@ -84,6 +83,7 @@ bool Type::needsDestruction() const {
         return false;
     }
     if (auto* typeDecl = getDecl()) {
+        if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(typeDecl)) return enumDecl->hasDestructiblePayload();
         for (auto& field : typeDecl->fields) {
             if (field.type.needsDestruction()) return true;
         }

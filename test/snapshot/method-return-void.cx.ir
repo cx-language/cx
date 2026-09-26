@@ -8,9 +8,13 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1C4initE4void0_(C* this) {
+    C** this_0 = alloca C*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main1C1fE4void0_(C* this) {
+    C** this_0 = alloca C*
+    store this to this_0
     return void
 }

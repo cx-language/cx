@@ -13,6 +13,8 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1A6deinitE4void0_(A* this) {
+    A** this_0 = alloca A*
+    store this to this_0
     B* b = getelementptr this, 0
     B* bb = getelementptr this, 1
     bool _0 = call f()
@@ -33,10 +35,14 @@ if.end:
 }
 
 void _CX1N4mainM4main1A4initE4void0_(A* this) {
+    A** this_0 = alloca A*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main1C6deinitE4void0_(C* this) {
+    C** this_0 = alloca C*
+    store this to this_0
     B* b = getelementptr this, 0
     B* bb = getelementptr this, 1
     void _0 = call _CX1N4mainM4main1B6deinitE4void0_(B* bb)
@@ -45,9 +51,13 @@ void _CX1N4mainM4main1C6deinitE4void0_(C* this) {
 }
 
 void _CX1N4mainM4main1C4initE4void0_(C* this) {
+    C** this_0 = alloca C*
+    store this to this_0
     return void
 }
 
 void _CX1N4mainM4main1B6deinitE4void0_(B* this) {
+    B** this_0 = alloca B*
+    store this to this_0
     return void
 }

@@ -12,18 +12,24 @@ int32 main() {
 }
 
 void _CX1N4mainM4main3FooIM3std5int32E4initE4void1_M3std5int32(Foo<int32>* this, int32 t) {
+    Foo<int32>** this_0 = alloca Foo<int32>*
     int32* t_0 = alloca int32
+    store this to this_0
     store t to t_0
-    int32* t_1 = getelementptr this, 0
+    Foo<int32>* this.load = load this_0
+    int32* t_1 = getelementptr this.load, 0
     int32 t.load = load t_0
     store t.load to t_1
     return void
 }
 
 void _CX1N4mainM4main3FooIM3std6stringE4initE4void1_M3std6string(Foo<string>* this, string t) {
+    Foo<string>** this_0 = alloca Foo<string>*
     string* t_0 = alloca string
+    store this to this_0
     store t to t_0
-    string* t_1 = getelementptr this, 0
+    Foo<string>* this.load = load this_0
+    string* t_1 = getelementptr this.load, 0
     string t.load = load t_0
     store t.load to t_1
     return void

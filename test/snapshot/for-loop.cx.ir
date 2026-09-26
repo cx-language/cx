@@ -48,44 +48,61 @@ overflow.success:
 }
 
 ClosedRangeIterator<int32> _CX1N3stdM3std11ClosedRangeIM3std5int32E8iteratorEM3std19ClosedRangeIteratorIM3std5int32E0_(ClosedRange<int32>* this) {
+    ClosedRange<int32>** this_0 = alloca ClosedRange<int32>*
     ClosedRangeIterator<int32>* _0 = alloca ClosedRangeIterator<int32>
-    ClosedRange<int32> this.load = load this
-    void _1 = call _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ClosedRangeIterator<int32>* _0, ClosedRange<int32> this.load)
+    store this to this_0
+    ClosedRange<int32>* this.load = load this_0
+    ClosedRange<int32> this.load.load = load this.load
+    void _1 = call _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ClosedRangeIterator<int32>* _0, ClosedRange<int32> this.load.load)
     ClosedRangeIterator<int32> .load = load _0
     return .load
 }
 
 void _CX1N3stdM3std11ClosedRangeIM3std5int32E4initE4void2_M3std5int32M3std5int32(ClosedRange<int32>* this, int32 start, int32 end) {
+    ClosedRange<int32>** this_0 = alloca ClosedRange<int32>*
     int32* start_0 = alloca int32
     int32* end_0 = alloca int32
+    store this to this_0
     store start to start_0
     store end to end_0
-    int32* start_1 = getelementptr this, 0
+    ClosedRange<int32>* this.load = load this_0
+    int32* start_1 = getelementptr this.load, 0
     int32 start.load = load start_0
     store start.load to start_1
-    int32* end_1 = getelementptr this, 1
+    ClosedRange<int32>* this.load_0 = load this_0
+    int32* end_1 = getelementptr this.load_0, 1
     int32 end.load = load end_0
     store end.load to end_1
     return void
 }
 
 bool _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E8hasValueEM3std4bool0_(ClosedRangeIterator<int32>* this) {
-    int32* current = getelementptr this, 0
+    ClosedRangeIterator<int32>** this_0 = alloca ClosedRangeIterator<int32>*
+    store this to this_0
+    ClosedRangeIterator<int32>* this.load = load this_0
+    int32* current = getelementptr this.load, 0
     int32 current.load = load current
-    int32* end = getelementptr this, 1
+    ClosedRangeIterator<int32>* this.load_0 = load this_0
+    int32* end = getelementptr this.load_0, 1
     int32 end.load = load end
     bool _0 = current.load <= end.load
     return _0
 }
 
 int32 _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E5valueEM3std5int320_(ClosedRangeIterator<int32>* this) {
-    int32* current = getelementptr this, 0
+    ClosedRangeIterator<int32>** this_0 = alloca ClosedRangeIterator<int32>*
+    store this to this_0
+    ClosedRangeIterator<int32>* this.load = load this_0
+    int32* current = getelementptr this.load, 0
     int32 current.load = load current
     return current.load
 }
 
 void _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(ClosedRangeIterator<int32>* this) {
-    int32* current = getelementptr this, 0
+    ClosedRangeIterator<int32>** this_0 = alloca ClosedRangeIterator<int32>*
+    store this to this_0
+    ClosedRangeIterator<int32>* this.load = load this_0
+    int32* current = getelementptr this.load, 0
     int32 current.load = load current
     int32 _0 = current.load + int32 1
     store _0 to current
@@ -93,25 +110,35 @@ void _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E9incrementE4void0_(ClosedRa
 }
 
 void _CX1N3stdM3std19ClosedRangeIteratorIM3std5int32E4initE4void1_M3std11ClosedRangeIM3std5int32E(ClosedRangeIterator<int32>* this, ClosedRange<int32> range) {
+    ClosedRangeIterator<int32>** this_0 = alloca ClosedRangeIterator<int32>*
     ClosedRange<int32>* range_0 = alloca ClosedRange<int32>
+    store this to this_0
     store range to range_0
-    int32* current = getelementptr this, 0
+    ClosedRangeIterator<int32>* this.load = load this_0
+    int32* current = getelementptr this.load, 0
     int32 _0 = call _CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_(ClosedRange<int32>* range_0)
     store _0 to current
-    int32* end = getelementptr this, 1
+    ClosedRangeIterator<int32>* this.load_0 = load this_0
+    int32* end = getelementptr this.load_0, 1
     int32 _1 = call _CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_(ClosedRange<int32>* range_0)
     store _1 to end
     return void
 }
 
 int32 _CX1N3stdM3std11ClosedRangeIM3std5int32E5startEM3std5int320_(ClosedRange<int32>* this) {
-    int32* start = getelementptr this, 0
+    ClosedRange<int32>** this_0 = alloca ClosedRange<int32>*
+    store this to this_0
+    ClosedRange<int32>* this.load = load this_0
+    int32* start = getelementptr this.load, 0
     int32 start.load = load start
     return start.load
 }
 
 int32 _CX1N3stdM3std11ClosedRangeIM3std5int32E3endEM3std5int320_(ClosedRange<int32>* this) {
-    int32* end = getelementptr this, 1
+    ClosedRange<int32>** this_0 = alloca ClosedRange<int32>*
+    store this to this_0
+    ClosedRange<int32>* this.load = load this_0
+    int32* end = getelementptr this.load, 1
     int32 end.load = load end
     return end.load
 }

@@ -17,14 +17,20 @@ define i32 @main() #0 !dbg !4 {
 }
 
 define void @_CX1N4mainM4main1A4initE4void0_(ptr %this) #0 !dbg !10 {
+  %this1 = alloca ptr, align 8
+  store ptr %this, ptr %this1, align 8
   ret void
 }
 
 define void @_CX1N4mainM4main1C4initE4void0_(ptr %this) #0 !dbg !11 {
+  %this1 = alloca ptr, align 8
+  store ptr %this, ptr %this1, align 8
   ret void
 }
 
 define void @_CX1N4mainM4main1C6deinitE4void0_(ptr %this) #0 !dbg !12 {
+  %this1 = alloca ptr, align 8
+  store ptr %this, ptr %this1, align 8
   %b = getelementptr inbounds %C, ptr %this, i32 0, i32 0
   %bb = getelementptr inbounds %C, ptr %this, i32 0, i32 1
   call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %bb), !dbg !13
@@ -33,6 +39,8 @@ define void @_CX1N4mainM4main1C6deinitE4void0_(ptr %this) #0 !dbg !12 {
 }
 
 define void @_CX1N4mainM4main1A6deinitE4void0_(ptr %this) #0 !dbg !14 {
+  %this1 = alloca ptr, align 8
+  store ptr %this, ptr %this1, align 8
   %b = getelementptr inbounds %A, ptr %this, i32 0, i32 0
   %bb = getelementptr inbounds %A, ptr %this, i32 0, i32 1
   %1 = call i1 @f(), !dbg !15
@@ -55,6 +63,8 @@ if.end:                                           ; preds = %if.else
 declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 define void @_CX1N4mainM4main1B6deinitE4void0_(ptr %this) #0 !dbg !17 {
+  %this1 = alloca ptr, align 8
+  store ptr %this, ptr %this1, align 8
   ret void
 }
 

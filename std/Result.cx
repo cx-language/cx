@@ -4,11 +4,12 @@ enum Result<T, E> {
     Ok(T value),
     Err(E error),
 
-    /// Returns the success value, aborting with the error if the result is `Err`.
-    T unwrap() {
+    /// Borrows the success value, aborting with the error if the result is `Err`.
+    /// To move the value out, match with `switch` instead.
+    T& unwrap() {
         return switch this {
             case Ok value: value,
-            case Err error: abort("called unwrap() on Err: ", error),
+            case Err error: abort("called unwrap() on Err: ", *error),
         };
     }
 }

@@ -396,6 +396,13 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 currentModule->addToSymbolTable(*instantiation);
                 deferTypechecking(instantiation);
                 checkHasAccess(*decl, type.location, userAccessLevel);
+                // This first-mention path breaks out before the destructor
+                // marking below, so mark here too.
+                if (!checkingFunctionSignature) {
+                    if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(instantiation)) {
+                        if (DestructorDecl* dtor = typeDecl->getDestructor()) markReferenced(dtor);
+                    }
+                }
                 break;
             } else if (decls.size() > 1) {
                 ERROR_WITH_NOTES(type.location, getTypeCandidateNotes(decls), "ambiguous reference to '" << type.getName() << "'");
@@ -1270,7 +1277,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         if (!declaredType) {
             ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation or initializer");
         }
-        if (declaredType.isReferenceType() && !decl.isGlobal()) {
+        if (declaredType.isReferenceType() && !decl.isGlobal() && !decl.isPayloadBinding) {
             ERROR(decl.getLocation(), "reference variable '" << decl.getName() << "' must be initialized (borrows cannot be rebound)");
         }
         if (decl.isGlobal()) {

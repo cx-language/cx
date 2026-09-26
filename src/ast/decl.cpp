@@ -487,6 +487,15 @@ bool EnumDecl::hasAssociatedValues() const {
     return false;
 }
 
+bool EnumDecl::hasDestructiblePayload() const {
+    for (auto& enumCase : cases) {
+        if (enumCase.associatedType && enumCase.associatedType.needsDestruction()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 FieldDecl::FieldDecl(Type type, llvm::StringRef name, Expr* defaultValue, TypeDecl& parent, AccessLevel accessLevel, Location location)
 : VariableDecl(DeclKind::FieldDecl, accessLevel, &parent, type), name(internString(name)), defaultValue(defaultValue), location(location) {}
 

@@ -7,5 +7,7 @@ void _CX1N4main3fooE4void1_M4main1AIM3std5int32E(A<int32> a) {
 }
 
 void _CX1N4mainM4main1AIM3std5int32E6deinitE4void0_(A<int32>* this) {
+    A<int32>** this_0 = alloca A<int32>*
+    store this to this_0
     return void
 }

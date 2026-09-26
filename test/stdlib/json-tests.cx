@@ -1,4 +1,4 @@
-// Leak check disabled: Result<JsonValue, ...> payloads are never destroyed (enums lack destructor handling).
+// Leak check disabled: some allocations in parse paths are still never freed.
 // RUN: check_exit_status 0 %cx test -Werror --no-leak-check %s
 // RUN: check_exit_status 0 %cx test -Werror --release %s
 // RUN: check_exit_status 0 %cx test -Werror --no-leak-check --backend=c %s

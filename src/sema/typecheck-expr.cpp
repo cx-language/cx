@@ -283,8 +283,11 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         ERROR_RANGE(expr.location, expr.endLocation, "'" << expr.identifier << "' is not a variable");
     case DeclKind::EnumDecl:
         ERROR_RANGE(expr.location, expr.endLocation, "'" << expr.identifier << "' is not a variable");
-    case DeclKind::EnumCase:
-        return llvm::cast<EnumCase>(decl)->type;
+    case DeclKind::EnumCase: {
+        auto* enumCase = llvm::cast<EnumCase>(decl);
+        if (enumCase->associatedType) implicitUses.payloadlessEnumCase = true;
+        return enumCase->type;
+    }
     case DeclKind::FieldDecl: {
         if (currentFunction && currentFunction->isLambda()) {
             maybeCaptureVariable(*llvm::cast<VariableDecl>(findDecl("this", expr.location)));
@@ -2062,6 +2065,8 @@ std::string cx::narrowingHint(Type source, Type target) {
         return " (use '&' to take the address explicitly)";
     }
     if (source.removeOptional().isPointerType() && source.removeOptional().getPointee().equalsIgnoreTopLevelMutable(target.removeOptional())) {
+        // Dereferencing an owning borrow to move out of it is rejected, so don't suggest it.
+        if (target.removeOptional().needsDestruction()) return "";
         return " (use '*' to dereference explicitly)";
     }
     auto isNumeric = [](Type type) { return type.isInteger() || type.isFloatingPoint() || type.isChar(); };
@@ -3008,6 +3013,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             typecheckExpr(*expr.args[0].value);
 
             if (expr.isMoveInit()) {
+                // Placement initialization moves out of raw container storage, which has
+                // no owner to double-destroy, so borrow/dereference moves stay allowed here.
+                llvm::SaveAndRestore saveInMoveInit(inMoveInit, true);
                 if (!expr.args[0].value->type.removeReference().isImplicitlyCopyable()) {
                     setMoved(expr.args[0].value, true);
                 } else if (expr.args[0].value->type.needsDestruction()) {
@@ -3807,6 +3815,10 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
         checkNotMoved(*captured, use);
         if (!captured->type.isImplicitlyCopyable()) {
             movedDecls.insert(captured);
+            // A captured payload binding owns a copy, so its subject is consumed whole.
+            if (auto it = bindingSources.find(captured); it != bindingSources.end()) {
+                propagateMove(it->second, /*trackVars=*/true, expr.location);
+            }
         }
     }
 
@@ -4071,24 +4083,24 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
         if (!enumDeclOrTemplate) return nullptr;
     }
 
+    EnumCase* enumCase = nullptr;
     if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(enumDeclOrTemplate)) {
         if (call) validateGenericArgCount(0, call->genericArgs, enumDecl->getName(), call->location);
-        auto* enumCase = enumDecl->getCaseByName(memberExpr->member);
+        enumCase = enumDecl->getCaseByName(memberExpr->member);
         if (!enumCase) {
             for (auto* staticConst : enumDecl->staticConsts) {
                 if (staticConst->getName() == memberExpr->member) return nullptr;
             }
             ERROR_RANGE(expr.location, expr.endLocation, "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->member << "'");
         }
-        return enumCase;
+    } else if (auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(enumDeclOrTemplate)) {
+        if (llvm::isa<EnumDecl>(typeTemplate->typeDecl)) {
+            enumCase = instantiateEnumCase(*typeTemplate, memberExpr->member, *memberExpr, call, expectedType);
+        }
     }
 
-    if (auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(enumDeclOrTemplate)) {
-        if (!llvm::isa<EnumDecl>(typeTemplate->typeDecl)) return nullptr;
-        return instantiateEnumCase(*typeTemplate, memberExpr->member, *memberExpr, call, expectedType);
-    }
-
-    return nullptr;
+    if (enumCase && (!call || call->args.empty()) && enumCase->associatedType) implicitUses.payloadlessEnumCase = true;
+    return enumCase;
 }
 
 VarDecl* Typechecker::getStaticConst(const Expr& expr) {
@@ -4199,6 +4211,82 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
     return enumCase;
 }
 
+static bool moveConsumesSource(const Expr* e) {
+    return !e->type || e->type.needsDestruction();
+}
+
+void Typechecker::propagateMove(Expr* source, bool trackVars, Location location) {
+    Expr* current = source;
+    while (current) {
+        if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(current)) {
+            current = memberExpr->base;
+            continue;
+        }
+        if (auto* indexExpr = llvm::dyn_cast<IndexExpr>(current)) {
+            current = indexExpr->getBase();
+            continue;
+        }
+        if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(current)) {
+            current = unwrapExpr->getReceiver();
+            continue;
+        }
+        if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(current)) {
+            // AutoDereference reads through borrowed storage; every other cast
+            // produces a fresh value, flagged below for destructor elision.
+            if (cast->castKind != ImplicitCastExpr::AutoDereference) {
+                current->isMovedFrom = true;
+                return;
+            }
+            current = cast->operand;
+            continue;
+        }
+        if (auto* ifExpr = llvm::dyn_cast<IfExpr>(current)) {
+            if (moveConsumesSource(ifExpr->thenExpr)) propagateMove(ifExpr->thenExpr, trackVars, location);
+            if (moveConsumesSource(ifExpr->elseExpr)) propagateMove(ifExpr->elseExpr, trackVars, location);
+            return;
+        }
+        if (auto* switchExpr = llvm::dyn_cast<SwitchExpr>(current)) {
+            for (auto& arm : switchExpr->arms) {
+                if (moveConsumesSource(arm.expr)) propagateMove(arm.expr, trackVars, location);
+            }
+            if (switchExpr->defaultExpr && moveConsumesSource(switchExpr->defaultExpr)) {
+                propagateMove(switchExpr->defaultExpr, trackVars, location);
+            }
+            return;
+        }
+        if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(current)) {
+            for (auto& element : arrayLiteral->elements) {
+                if (moveConsumesSource(element)) propagateMove(element, trackVars, location);
+            }
+            return;
+        }
+        if (auto* anonStruct = llvm::dyn_cast<AnonymousStructExpr>(current)) {
+            for (auto& element : anonStruct->elements) {
+                if (moveConsumesSource(element.value)) propagateMove(element.value, trackVars, location);
+            }
+            return;
+        }
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) {
+            if (!varExpr->decl) return;
+            if (auto it = bindingSources.find(varExpr->decl); it != bindingSources.end()) {
+                if (trackVars) movedDecls.insert(varExpr->decl);
+                current = it->second;
+                continue;
+            }
+            if (varExpr->type && varExpr->type.isReferenceType()) {
+                if (trackVars && !inMoveInit) ERROR(location, "cannot move out of borrowed value; borrow it instead");
+                return;
+            }
+            if (trackVars) movedDecls.insert(varExpr->decl);
+            return;
+        }
+        // Temporaries and fresh values (calls, literals): flagging elides their
+        // destruction; the moved-out copy is owned by the consumer.
+        current->isMovedFrom = true;
+        return;
+    }
+}
+
 void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     if (!expr) return;
     expr->isMovedFrom = isMoved;
@@ -4207,14 +4295,14 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     // source only when ownership is at stake: copying non-owning bits out is
     // always safe, while moving owning bits out aliases the source's storage.
     // Direct moves of non-copyable bindings still always track (see VarExpr).
-    auto consumes = [](const Expr* e) { return !e->type || e->type.needsDestruction(); };
+    auto consumes = [](const Expr* e) { return moveConsumesSource(e); };
 
     if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
         // Ownership transfers through value casts. Borrow casts (AutoReference,
         // AutoDereference, Reborrow) and conversions (already marked where the
         // conversion was built; IRGen reads the flag off the cast itself) stop here.
-        if ((cast->castKind == ImplicitCastExpr::OptionalWrap || cast->castKind == ImplicitCastExpr::OptionalUnwrap) && consumes(cast->operand)) {
-            setMoved(cast->operand, isMoved, trackVars);
+        if (isMoved && (cast->castKind == ImplicitCastExpr::OptionalWrap || cast->castKind == ImplicitCastExpr::OptionalUnwrap) && consumes(cast->operand)) {
+            propagateMove(cast->operand, trackVars, expr->location);
         }
         return;
     }
@@ -4240,12 +4328,32 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     // base so its destructor is skipped). Assigning through a projection does
     // not resurrect a moved base the way whole-value reassignment does.
     if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(expr)) {
-        if (isMoved && consumes(expr)) setMoved(memberExpr->base, isMoved, trackVars);
+        if (isMoved && consumes(expr)) propagateMove(memberExpr->base, trackVars, expr->location);
         return;
     }
 
     if (auto* indexExpr = llvm::dyn_cast<IndexExpr>(expr)) {
-        if (isMoved && consumes(expr)) setMoved(indexExpr->getBase(), isMoved, trackVars);
+        if (isMoved && consumes(expr)) propagateMove(indexExpr->getBase(), trackVars, expr->location);
+        return;
+    }
+
+    // Unwrapping (`opt!`) projects the payload like a member access; moving out
+    // of it consumes the whole optional. Dereferences (`*p`) copy out of
+    // borrowed storage, so only borrowing uses may escape one.
+    if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(expr)) {
+        if (isMoved && consumes(expr)) propagateMove(unwrapExpr->getReceiver(), trackVars, expr->location);
+        return;
+    }
+
+    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(expr)) {
+        // Dereferences copy out of borrowed storage, so moving out of one leaves two
+        // owners. Structs keep legacy leniency (containers like Map move out of
+        // element borrows while element destruction is still a no-op; see the Triage
+        // card for the remaining double-free hole), but enums destroy their payloads,
+        // so those moves are rejected loudly, not silently.
+        if (isMoved && consumes(expr) && unaryExpr->op == Token::Star && trackVars && !inMoveInit && unaryExpr->type.removeOptional().isEnumType()) {
+            ERROR(expr->location, "cannot move out of dereference; borrow it instead");
+        }
         return;
     }
 
@@ -4268,6 +4376,17 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         // Type names in member-access bases never resolve to a declaration; only
         // resolved bindings participate in move tracking.
         if (!varExpr->decl) return;
+
+        // A payload binding borrows its subject; moving a non-copyable one out
+        // consumes the whole subject like a member does. Later uses still error
+        // via the binding. Copyable bindings copy out freely like any copyable value.
+        if (isMoved && trackVars && varExpr->type && !varExpr->type.removeReference().isImplicitlyCopyable()) {
+            if (auto it = bindingSources.find(varExpr->decl); it != bindingSources.end()) {
+                movedDecls.insert(varExpr->decl);
+                propagateMove(it->second, trackVars, varExpr->location);
+                return;
+            }
+        }
 
         // Moving out of a capture would leave the closure's stored copy in a moved-from state
         // while the closure stays callable, so only copies of implicitly copyable captures are allowed out.

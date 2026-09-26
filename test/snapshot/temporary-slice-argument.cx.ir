@@ -32,7 +32,10 @@ void _CX1N4main1fIM3std5int32EE4void1_M3std5SliceIM3std5int32E(Slice<int32> a) {
 }
 
 int32 _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* this) {
-    int32* size = getelementptr this, 1
+    Slice<int32>** this_0 = alloca Slice<int32>*
+    store this to this_0
+    Slice<int32>* this.load = load this_0
+    int32* size = getelementptr this.load, 1
     int32 size.load = load size
     return size.load
 }

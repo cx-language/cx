@@ -95,28 +95,34 @@ define i32 @main() #0 !dbg !10 {
 }
 
 define void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %this, i32 %d) #0 !dbg !16 {
-  %d1 = alloca i32, align 4
-  store i32 %d, ptr %d1, align 4
-  %d2 = getelementptr inbounds %S, ptr %this, i32 0, i32 0
-  %d.load = load i32, ptr %d1, align 4
-  store i32 %d.load, ptr %d2, align 4
+  %this1 = alloca ptr, align 8
+  %d2 = alloca i32, align 4
+  store ptr %this, ptr %this1, align 8
+  store i32 %d, ptr %d2, align 4
+  %this.load = load ptr, ptr %this1, align 8
+  %d3 = getelementptr inbounds %S, ptr %this.load, i32 0, i32 0
+  %d.load = load i32, ptr %d2, align 4
+  store i32 %d.load, ptr %d3, align 4
   ret void
 }
 
 define i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %this, i32 %c) #0 !dbg !17 {
-  %c1 = alloca i32, align 4
+  %this1 = alloca ptr, align 8
+  %c2 = alloca i32, align 4
   %b = alloca %__closure1, align 8
-  store i32 %c, ptr %c1, align 4
-  %c.load = load i32, ptr %c1, align 4
+  store ptr %this, ptr %this1, align 8
+  store i32 %c, ptr %c2, align 4
+  %c.load = load i32, ptr %c2, align 4
   %insert.alloca = alloca %__closure1, align 8
   store %__closure1 { ptr @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S, i32 undef, ptr undef }, ptr %insert.alloca, align 8
   %insert.gep = getelementptr inbounds %__closure1, ptr %insert.alloca, i32 0, i32 1
   store i32 %c.load, ptr %insert.gep, align 4
-  %insert.alloca2 = alloca %__closure1, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %insert.alloca2, ptr align 8 %insert.alloca, i64 24, i1 false)
-  %insert.gep3 = getelementptr inbounds %__closure1, ptr %insert.alloca2, i32 0, i32 2
-  store ptr %this, ptr %insert.gep3, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %b, ptr align 8 %insert.alloca2, i64 24, i1 false)
+  %this.load = load ptr, ptr %this1, align 8
+  %insert.alloca3 = alloca %__closure1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %insert.alloca3, ptr align 8 %insert.alloca, i64 24, i1 false)
+  %insert.gep4 = getelementptr inbounds %__closure1, ptr %insert.alloca3, i32 0, i32 2
+  store ptr %this.load, ptr %insert.gep4, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %b, ptr align 8 %insert.alloca3, i64 24, i1 false)
   %b.load = alloca %__closure1, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %b.load, ptr align 8 %b, i64 24, i1 false)
   %1 = getelementptr inbounds %__closure1, ptr %b.load, i32 0, i32 0
@@ -158,10 +164,12 @@ declare void @_CX1N3std10checkLeaksE4void0_() #0
 
 define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(i32 %__capture_c, ptr %__capture_this, i32 %x) #0 !dbg !21 {
   %__capture_c1 = alloca i32, align 4
-  %x2 = alloca i32, align 4
+  %__capture_this2 = alloca ptr, align 8
+  %x3 = alloca i32, align 4
   store i32 %__capture_c, ptr %__capture_c1, align 4
-  store i32 %x, ptr %x2, align 4
-  %x.load = load i32, ptr %x2, align 4
+  store ptr %__capture_this, ptr %__capture_this2, align 8
+  store i32 %x, ptr %x3, align 4
+  %x.load = load i32, ptr %x3, align 4
   %__capture_c.load = load i32, ptr %__capture_c1, align 4
   %1 = sext i32 %x.load to i64
   %2 = sext i32 %__capture_c.load to i64
@@ -178,7 +186,8 @@ overflow.fail:                                    ; preds = %0
   unreachable
 
 overflow.success:                                 ; preds = %0
-  %d = getelementptr inbounds %S, ptr %__capture_this, i32 0, i32 0
+  %__capture_this.load = load ptr, ptr %__capture_this2, align 8
+  %d = getelementptr inbounds %S, ptr %__capture_this.load, i32 0, i32 0
   %d.load = load i32, ptr %d, align 4
   %9 = sext i32 %4 to i64
   %10 = sext i32 %d.load to i64
@@ -187,14 +196,14 @@ overflow.success:                                 ; preds = %0
   %13 = sext i32 %12 to i64
   %14 = icmp ne i64 %11, %13
   %15 = xor i1 %14, true
-  %overflow.condition3 = icmp eq i1 %15, false
-  br i1 %overflow.condition3, label %overflow.fail4, label %overflow.success5
+  %overflow.condition4 = icmp eq i1 %15, false
+  br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
 
-overflow.fail4:                                   ; preds = %overflow.success
+overflow.fail5:                                   ; preds = %overflow.success
   %16 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @4), !dbg !22
   unreachable
 
-overflow.success5:                                ; preds = %overflow.success
+overflow.success6:                                ; preds = %overflow.success
   ret i32 %12
 }
 

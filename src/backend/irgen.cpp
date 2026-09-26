@@ -18,7 +18,11 @@ void IRGenScope::onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMove
         for (int index : p.indexes) {
             receiver = irGenerator->createGEP(receiver, index);
         }
-        irGenerator->createDestructorCall(p.function, receiver);
+        if (p.guard) {
+            irGenerator->createGuardedDestructorCall(p.function, receiver, p.guard);
+        } else {
+            irGenerator->createDestructorCall(p.function, receiver);
+        }
     }
 }
 
@@ -70,6 +74,12 @@ Value* IRGenerator::getValue(const Decl* decl) {
 
 Value* IRGenerator::getThis(IRType* targetType) {
     auto value = getValue(nullptr);
+
+    // `this` spills like other by-reference parameters; member access and calls
+    // below want the pointer itself.
+    if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType()) {
+        value = createLoad(value);
+    }
 
     // TODO: Handle this casting in a more general place?
     if (targetType && !value->getType()->equals(targetType)) {
@@ -129,6 +139,12 @@ void IRGenerator::unwindTempScopesTo(size_t depth) {
 }
 
 void IRGenerator::registerTempDestructor(AllocaInst* alloca, Type type) {
+    if (emittingReceiver) {
+        if (auto* function = getDestructorFunction(type)) {
+            scopes.back().destructorsToCall.push_back({function, alloca, nullptr, {}, tempGuard});
+        }
+        return;
+    }
     if (tempScopes.empty()) return;
     if (auto* function = getDestructorFunction(type)) {
         tempScopes.back().push_back({function, alloca, nullptr, {}, tempGuard});
@@ -189,10 +205,19 @@ void IRGenerator::deferEvaluationOf(const Expr& expr) {
 DestructorDecl* IRGenerator::getDefaultDestructor(TypeDecl& typeDecl) {
     ASSERT(!typeDecl.getDestructor());
 
+    auto synthesize = [&] {
+        auto destructor = makeAST<DestructorDecl>(typeDecl, typeDecl.getLocation());
+        destructor->body = std::vector<Stmt*>();
+        return destructor;
+    };
+
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(&typeDecl)) {
+        return enumDecl->hasDestructiblePayload() ? synthesize() : nullptr;
+    }
+
     for (auto& field : typeDecl.fields) {
         if (field.type.needsDestruction()) {
-            auto destructor = makeAST<DestructorDecl>(typeDecl, typeDecl.getLocation());
-            destructor->body = std::vector<Stmt*>();
+            auto destructor = synthesize();
             return destructor;
         }
     }

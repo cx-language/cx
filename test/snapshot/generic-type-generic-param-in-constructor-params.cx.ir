@@ -15,7 +15,9 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1MIM3std5int32E4initE4void1_M3std5SliceIM3std5int32E(M<int32>* this, Slice<int32> a) {
+    M<int32>** this_0 = alloca M<int32>*
     Slice<int32>* a_0 = alloca Slice<int32>
+    store this to this_0
     store a to a_0
     return void
 }

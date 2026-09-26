@@ -85,22 +85,28 @@ int32 main() {
 }
 
 void _CX1N4mainM4main1S4initE4void1_M3std5int32(S* this, int32 d) {
+    S** this_0 = alloca S*
     int32* d_0 = alloca int32
+    store this to this_0
     store d to d_0
-    int32* d_1 = getelementptr this, 0
+    S* this.load = load this_0
+    int32* d_1 = getelementptr this.load, 0
     int32 d.load = load d_0
     store d.load to d_1
     return void
 }
 
 int32 _CX1N4mainM4main1S3getEM3std5int321_M3std5int32(S* this, int32 c) {
+    S** this_0 = alloca S*
     int32* c_0 = alloca int32
     __closure1* b = alloca __closure1
+    store this to this_0
     store c to c_0
     __closure1 _0 = insertvalue __closure1 undefined, 0, _CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S
     int32 c.load = load c_0
     __closure1 _1 = insertvalue _0, 1, c.load
-    __closure1 _2 = insertvalue _1, 2, this
+    S* this.load = load this_0
+    __closure1 _2 = insertvalue _1, 2, this.load
     store _2 to b
     __closure1 b.load = load b
     int32(int32, S*, int32)* _3 = extractvalue b.load, 0
@@ -138,8 +144,10 @@ overflow.success:
 
 int32 _CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(int32 __capture_c, S* __capture_this, int32 x) {
     int32* __capture_c_0 = alloca int32
+    S** __capture_this_0 = alloca S*
     int32* x_0 = alloca int32
     store __capture_c to __capture_c_0
+    store __capture_this to __capture_this_0
     store x to x_0
     int32 x.load = load x_0
     int32 __capture_c.load = load __capture_c_0
@@ -159,7 +167,8 @@ overflow.fail:
     unreachable
 
 overflow.success:
-    int32* d = getelementptr __capture_this, 0
+    S* __capture_this.load = load __capture_this_0
+    int32* d = getelementptr __capture_this.load, 0
     int32 d.load = load d
     int64 _8 = cast _3 to int64
     int64 _9 = cast d.load to int64
