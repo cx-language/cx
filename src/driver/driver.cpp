@@ -252,7 +252,7 @@ static void optimizeLLVMModule(llvm::Module& module, BuildMode mode, llvm::Targe
 static void emitLLVMModuleToMachineCode(llvm::Module& module, llvm::TargetMachine& targetMachine, llvm::StringRef fileName, llvm::CodeGenFileType fileType) {
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::OF_None);
-    if (error) ABORT(error.message());
+    if (error) ABORT("couldn't open file '" << fileName << "': " << error.message());
 
     llvm::legacy::PassManager passManager;
     if (targetMachine.addPassesToEmitFile(passManager, file, nullptr, fileType)) {
@@ -274,7 +274,7 @@ static bool isLibraryFilePath(llvm::StringRef value) {
 static void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::OF_None);
-    if (error) ABORT(error.message());
+    if (error) ABORT("couldn't open file '" << fileName << "': " << error.message());
     llvm::WriteBitcodeToFile(module, file);
     file.flush();
 }
@@ -514,7 +514,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         outputFileExtension = "c";
         int fileDescriptor;
         if (auto error = llvm::sys::fs::createTemporaryFile("cx", outputFileExtension, fileDescriptor, tempIntermediateFilePath)) {
-            ABORT(error.message());
+            ABORT("couldn't create temporary file: " << error.message());
         }
 
         llvm::raw_fd_ostream file(fileDescriptor, /* shouldClose */ true);
@@ -581,7 +581,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
         outputFileExtension = emitAssembly ? "s" : isWindows ? "obj" : "o";
         if (auto error = llvm::sys::fs::createTemporaryFile("cx", outputFileExtension, tempIntermediateFilePath)) {
-            ABORT(error.message());
+            ABORT("couldn't create temporary file: " << error.message());
         }
 
         auto fileType = emitAssembly ? llvm::CodeGenFileType::AssemblyFile : llvm::CodeGenFileType::ObjectFile;
@@ -592,9 +592,13 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     } break;
     }
 
-    if (!buildParams.outputDirectory.empty()) {
-        auto error = llvm::sys::fs::create_directories(buildParams.outputDirectory);
-        if (error) ABORT(error.message());
+    // Skip existing directories: creating "." unconditionally fails on Windows
+    // in non-writable current directories (e.g. C:\) even though there is
+    // nothing to create.
+    if (!buildParams.outputDirectory.empty() && !llvm::sys::fs::is_directory(buildParams.outputDirectory)) {
+        if (auto error = llvm::sys::fs::create_directories(buildParams.outputDirectory)) {
+            ABORT("couldn't create output directory '" << buildParams.outputDirectory << "': " << error.message());
+        }
     }
 
     bool treatAsLibrary = mainModule.symbolTable.findInTopLevelScope("main").empty() && !run;
