@@ -69,6 +69,12 @@ applications. Each subdirectory is a `cx build` project (see
   `--screenshot`.
 
   ![Mandelbrot close-up](fractal/screenshot.png)
+- [`boids/`](boids/) — flocking simulation with 1500 boids
+  (separation/alignment/cohesion over a uniform grid) in a toroidal
+  world, rendered with SDL3 and colored by speed. See
+  [`boids/README.md`](boids/README.md) for building and `--screenshot`.
+
+  ![Boids flocking](boids/screenshot.png)
 
 ## Building all examples
 
@@ -79,4 +85,4 @@ python3 build_examples.py --cx /path/to/cx
 compiles every single-file program (`cx <file> -Werror`) and every project
 directory (`cx build -Werror`), skipping `inputs/` fixtures. `embedding/` is
 built with `-Wno-unused` since its entry point is called from the C++ host.
-`tree.cx`, `asteroids`, `opengl`, `voxel-game`, and `fractal` are skipped on Windows.
+`tree.cx`, `asteroids`, `opengl`, `voxel-game`, `fractal`, and `boids` are skipped on Windows.

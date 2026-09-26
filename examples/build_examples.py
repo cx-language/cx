@@ -103,7 +103,7 @@ def build_example(file):
     # Returns the file on failure, None on success. Each example builds in
     # its own directory with its own output files, so examples are
     # independent and can build in parallel worker threads.
-    if is_windows and file in ["tree.cx", "asteroids", "opengl", "voxel-game", "c-interop", "fractal"]:
+    if is_windows and file in ["tree.cx", "asteroids", "opengl", "voxel-game", "c-interop", "fractal", "boids"]:
         return None
 
     if file.endswith(".cx"):

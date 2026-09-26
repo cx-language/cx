@@ -1,0 +1,2 @@
+var name = "boids"
+var pkgConfigDependencies = ["sdl3"]

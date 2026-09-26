@@ -1,0 +1,323 @@
+import "SDL3/SDL.h";
+
+// Boids flocking: 1500 agents with separation/alignment/cohesion over a
+// uniform grid, colored by speed. Hold the left mouse button to attract
+// the flock to the cursor. Esc quits.
+
+const width = 1280;
+const height = 720;
+const boidCount = 1500;
+const perception = 40.0;
+const minSpeed = 50.0;
+const maxSpeed = 110.0;
+
+uint rngState = 123456789;
+
+uint xorshift() {
+    var s = rngState;
+    s ^= s << 13;
+    s ^= s >> 17;
+    s ^= s << 5;
+    rngState = s;
+    return s;
+}
+
+float rand01() {
+    return float(xorshift() % 1000) / 1000.0;
+}
+
+struct Flock {
+    List<float> x;
+    List<float> y;
+    List<float> vx;
+    List<float> vy;
+}
+
+Flock makeFlock() {
+    var flock = Flock(x = List<float>(), y = List<float>(), vx = List<float>(), vy = List<float>());
+    for _ in 0..boidCount {
+        flock.x.push(rand01() * width);
+        flock.y.push(rand01() * height);
+        var angle = rand01() * 2.0 * pi;
+        flock.vx.push(cos(angle) * maxSpeed);
+        flock.vy.push(sin(angle) * maxSpeed);
+    }
+    return flock;
+}
+
+struct Grid {
+    List<int> head;
+    List<int> next;
+    int cellsX;
+    int cellsY;
+}
+
+Grid makeGrid() {
+    var cellsX = (width + int(perception) - 1) / int(perception);
+    var cellsY = (height + int(perception) - 1) / int(perception);
+    var grid = Grid(head = List<int>(), next = List<int>(), cellsX = cellsX, cellsY = cellsY);
+    for _ in 0..cellsX * cellsY {
+        grid.head.push(-1);
+    }
+    for _ in 0..boidCount {
+        grid.next.push(-1);
+    }
+    return grid;
+}
+
+// Single add/subtract suffices: callers only stray less than one span past an edge.
+float wrap(float v, float max) {
+    if v < 0.0 {
+        return v + max;
+    }
+    if v >= max {
+        return v - max;
+    }
+    return v;
+}
+
+// Shortest signed offset across the seam for a coordinate difference.
+float wrapDelta(float d, float max) {
+    if d > max * 0.5 {
+        return d - max;
+    }
+    if d < -max * 0.5 {
+        return d + max;
+    }
+    return d;
+}
+
+void stepFlock(Flock& flock, Grid& grid, float dt, bool attract, float mouseX, float mouseY) {
+    for i in 0..grid.head.size() {
+        grid.head[i] = -1;
+    }
+    for i in 0..boidCount {
+        var cx = clamp(int(flock.x[i] / perception), 0, grid.cellsX - 1);
+        var cy = clamp(int(flock.y[i] / perception), 0, grid.cellsY - 1);
+        var cell = cy * grid.cellsX + cx;
+        grid.next[i] = grid.head[cell];
+        grid.head[cell] = i;
+    }
+    var r2 = perception * perception;
+    for i in 0..boidCount {
+        var px = flock.x[i];
+        var py = flock.y[i];
+        var sepX = 0.0;
+        var sepY = 0.0;
+        var avgVx = 0.0;
+        var avgVy = 0.0;
+        var avgX = 0.0;
+        var avgY = 0.0;
+        var neighbors = 0;
+        var homeX = clamp(int(px / perception), 0, grid.cellsX - 1);
+        var homeY = clamp(int(py / perception), 0, grid.cellsY - 1);
+        // Wrapped 3x3 cells plus minimum-image offsets: perception crosses
+        // the seam just like motion does.
+        for oy in -1..2 {
+            for ox in -1..2 {
+                var gx = (homeX + ox + grid.cellsX) % grid.cellsX;
+                var gy = (homeY + oy + grid.cellsY) % grid.cellsY;
+                var j = grid.head[gy * grid.cellsX + gx];
+                while j != -1 {
+                    if j != i {
+                        var dx = wrapDelta(px - flock.x[j], float(width));
+                        var dy = wrapDelta(py - flock.y[j], float(height));
+                        var d2 = dx * dx + dy * dy;
+                        if d2 < r2 && d2 > 1e-6 {
+                            var dist = sqrt(d2);
+                            sepX += dx / (dist * dist);
+                            sepY += dy / (dist * dist);
+                            avgVx += flock.vx[j];
+                            avgVy += flock.vy[j];
+                            avgX += -dx;
+                            avgY += -dy;
+                            neighbors++;
+                        }
+                    }
+                    j = grid.next[j];
+                }
+            }
+        }
+        var ax = 0.0;
+        var ay = 0.0;
+        if neighbors > 0 {
+            var n = float(neighbors);
+            ax += sepX * 200.0;
+            ay += sepY * 200.0;
+            ax += (avgVx / n - flock.vx[i]) * 2.0;
+            ay += (avgVy / n - flock.vy[i]) * 2.0;
+            ax += avgX / n * 5.0;
+            ay += avgY / n * 5.0;
+        }
+        if attract {
+            var dx = mouseX - px;
+            var dy = mouseY - py;
+            var dist = sqrt(dx * dx + dy * dy);
+            if dist > 1.0 {
+                ax += dx / dist * 300.0;
+                ay += dy / dist * 300.0;
+            }
+        }
+        var nvx = flock.vx[i] + ax * dt;
+        var nvy = flock.vy[i] + ay * dt;
+        var speed = sqrt(nvx * nvx + nvy * nvy);
+        if speed > 1e-6 {
+            var clamped = clamp(speed, minSpeed, maxSpeed);
+            nvx = nvx / speed * clamped;
+            nvy = nvy / speed * clamped;
+        }
+        // In-place update, deliberately: deterministic, stable, and half the memory.
+        flock.vx[i] = nvx;
+        flock.vy[i] = nvy;
+        flock.x[i] = wrap(px + nvx * dt, float(width));
+        flock.y[i] = wrap(py + nvy * dt, float(height));
+    }
+}
+
+// Normalized speed with spread-out lows so typical cruise speeds show color variety.
+float speedT(float vx, float vy) {
+    var t = clamp((sqrt(vx * vx + vy * vy) - minSpeed) / (maxSpeed - minSpeed), 0.0, 1.0);
+    return sqrt(t);
+}
+
+void runInteractive() {
+    if !SDL_Init(SDL_INIT_VIDEO) {
+        println(SDL_GetError()!);
+        return;
+    }
+    defer SDL_Quit();
+
+    // 0x2000 is SDL_WINDOW_HIGH_PIXEL_DENSITY (a macro cx can't import).
+    var window = SDL_CreateWindow("boids", width, height, uint64(0x2000));
+    if window == null {
+        println(SDL_GetError()!);
+        return;
+    }
+    defer SDL_DestroyWindow(window);
+
+    var renderer = SDL_CreateRenderer(window, null);
+    if renderer == null {
+        println(SDL_GetError()!);
+        return;
+    }
+    defer SDL_DestroyRenderer(renderer);
+    // Map sim coordinates onto the full output at any pixel density.
+    SDL_SetRenderLogicalPresentation(renderer, width, height, SDL_LOGICAL_PRESENTATION_STRETCH);
+
+    var flock = makeFlock();
+    var grid = makeGrid();
+    SDL_Event event = undefined;
+    var frames = 0;
+    var titleStart = SDL_GetTicks();
+
+    while true {
+        while SDL_PollEvent(&event) {
+            if event.type == SDL_EVENT_QUIT {
+                return;
+            }
+            if event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE {
+                return;
+            }
+        }
+
+        float mouseX = 0;
+        float mouseY = 0;
+        var buttons = SDL_GetMouseState(&mouseX, &mouseY);
+        // SDL_BUTTON_LMASK is a function-like macro, so it doesn't import; its value is 1.
+        stepFlock(flock, grid, 1.0 / 60.0, (buttons & 1) != 0, mouseX, mouseY);
+
+        SDL_SetRenderDrawColor(renderer, 10, 12, 20, 255);
+        SDL_RenderClear(renderer);
+        for i in 0..boidCount {
+            var t = speedT(flock.vx[i], flock.vy[i]);
+            SDL_SetRenderDrawColor(renderer, uint8(40 + int(200.0 * t * t)), uint8(120 + int(120.0 * t)), uint8(255 - int(120.0 * t)), 255);
+            SDL_RenderLine(renderer, flock.x[i], flock.y[i],
+                flock.x[i] + flock.vx[i] * 0.08, flock.y[i] + flock.vy[i] * 0.08);
+        }
+        SDL_RenderPresent(renderer);
+
+        frames++;
+        var now = SDL_GetTicks();
+        if now - titleStart >= 1000 {
+            var title = StringBuf("boids - ");
+            title.append(frames);
+            title.append(" FPS");
+            SDL_SetWindowTitle(window, title.cString());
+            frames = 0;
+            titleStart = now;
+        }
+        SDL_Delay(16);
+    }
+}
+
+// Advances the sim without opening a window and rasterizes the result,
+// so screenshots stay reproducible and CI-friendly.
+int runScreenshot(string path) {
+    rngState = 123456789;
+    var flock = makeFlock();
+    var grid = makeGrid();
+    for _ in 0..900 {
+        stepFlock(flock, grid, 1.0 / 60.0, false, 0.0, 0.0);
+    }
+    var pixels = List<uint8>();
+    pixels.reserve(width * height * 3);
+    for _ in 0..width * height {
+        pixels.push(10);
+        pixels.push(12);
+        pixels.push(20);
+    }
+    for i in 0..boidCount {
+        var t = speedT(flock.vx[i], flock.vy[i]);
+        var r = uint8(40 + int(200.0 * t * t));
+        var g = uint8(120 + int(120.0 * t));
+        var b = uint8(255 - int(120.0 * t));
+        var tailX = flock.x[i] - flock.vx[i] * 0.08;
+        var tailY = flock.y[i] - flock.vy[i] * 0.08;
+        for s in 0..12 {
+            var fx = tailX + (flock.x[i] - tailX) * float(s) / 11.0;
+            var fy = tailY + (flock.y[i] - tailY) * float(s) / 11.0;
+            var sx = int(wrap(fx, float(width)));
+            var sy = int(wrap(fy, float(height)));
+            var at = (sy * width + sx) * 3;
+            pixels[at] = r;
+            pixels[at + 1] = g;
+            pixels[at + 2] = b;
+        }
+    }
+    var lit = 0;
+    for i in 0..width * height {
+        if pixels[i * 3] != 10 || pixels[i * 3 + 1] != 12 || pixels[i * 3 + 2] != 20 {
+            lit++;
+        }
+    }
+    var litFrac = float(lit) / float(width * height);
+    println("lit fraction: ", litFrac);
+    if litFrac < 0.002 || litFrac > 0.05 {
+        abort("screenshot: scene badly framed");
+    }
+    var out = StringBuf("P6\n");
+    out.append(width);
+    out.append(" ");
+    out.append(height);
+    out.append("\n255\n");
+    out.append(string(cast<char*>(&pixels[0]), pixels.size()));
+    if !writeFile(path, string(out)) {
+        abort("screenshot: cannot write file");
+    }
+    println("wrote ", path);
+    return 0;
+}
+
+int main(string[] args) {
+    for i in 0..args.size() {
+        if args[i] == "--screenshot" {
+            if i + 1 >= args.size() {
+                println("usage: --screenshot <path>");
+                return 1;
+            }
+            return runScreenshot(args[i + 1]);
+        }
+    }
+    runInteractive();
+    return 0;
+}
