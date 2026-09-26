@@ -188,3 +188,54 @@ void testAllAnyNone() {
     assert(map.any((MapEntry<string, int>& e) => e.key == "a"));
     assert(map.none((MapEntry<string, int>& e) => e.value < 0));
 }
+
+void churnHeap() {
+    var junk = List<StringBuf>();
+    for i in 0..500 {
+        var s = StringBuf();
+        s.append("zzzzzzzzzzzzzzzzzzzz");
+        s.append(i);
+        junk.push(s);
+    }
+}
+
+@test
+void testStringBufKeys() {
+    var map = Map<StringBuf, int>();
+
+    var word = StringBuf();
+    word.append("albe");
+    map.set(word, 1);
+
+    churnHeap();
+
+    var lookup = StringBuf();
+    lookup.append("albe");
+    assert(map.contains(lookup));
+    assert(map.size() == 1);
+
+    for e in map {
+        assert(e.key == lookup);
+        assert(e.value == 1);
+    }
+}
+
+@test
+void testSetSameWordTwice() {
+    var map = Map<StringBuf, int>();
+
+    var first = StringBuf();
+    first.append("albe");
+    map.set(first, 1);
+
+    var second = StringBuf();
+    second.append("albe");
+    map.set(second, 2);
+
+    churnHeap();
+
+    assert(map.size() == 1);
+    var lookup = StringBuf();
+    lookup.append("albe");
+    assert(map[lookup]! == 2);
+}

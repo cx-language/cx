@@ -36,6 +36,9 @@ struct Map<Key: Hashable, Value> {
             insert(key, value);
         } else {
             *this[key]! = value;
+            // The key moves into the map on the other path; consume it here too, since
+            // values moved on only one path are still destroyed at scope end.
+            drop(key);
         }
     }
 

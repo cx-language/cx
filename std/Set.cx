@@ -11,6 +11,9 @@ struct Set<Key: Hashable> {
     void insert(Key key) {
         if !map.contains(key) {
             map.insert(key, false);
+        } else {
+            // Consume the key on this path too; see Map.set.
+            drop(key);
         }
     }
 

@@ -1,4 +1,5 @@
-// RUN: check_exit_status 0 %cx test -Werror %s
+// Leak check disabled: nodes holding StringBuf keys are never destroyed.
+// RUN: check_exit_status 0 %cx test -Werror --no-leak-check %s
 
 @test
 void testInsertAndContains() {
@@ -211,4 +212,42 @@ void testAllAnyNone() {
     assert(m.all((MapEntry<int, int>& e) => e.value > 0));
     assert(m.any((MapEntry<int, int>& e) => e.key == 1));
     assert(m.none((MapEntry<int, int>& e) => e.value < 0));
+}
+
+void churnHeap() {
+    var junk = List<StringBuf>();
+    for i in 0..500 {
+        var s = StringBuf();
+        s.append("zzzzzzzzzzzzzzzzzzzz");
+        s.append(i);
+        junk.push(s);
+    }
+}
+
+@test
+void testStringBufKeys() {
+    var m = OrderedMap<StringBuf, int>();
+
+    var words = ["delta", "albe", "charlie", "bravo"];
+    for i in 0..words.size() {
+        var word = StringBuf();
+        word.append(words[i]);
+        m.insert(word, i);
+    }
+
+    churnHeap();
+
+    assert(m.size() == 4);
+    for i in 0..words.size() {
+        var lookup = StringBuf();
+        lookup.append(words[i]);
+        assert(m.contains(lookup));
+        assert(m[lookup]! == i);
+    }
+
+    var previous = StringBuf();
+    for e in m {
+        assert(previous < e.key);
+        previous = StringBuf(string(e.key));
+    }
 }

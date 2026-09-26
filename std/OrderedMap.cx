@@ -168,29 +168,35 @@ struct OrderedMap<Key, Value> {
         if root == null {
             root = allocateValue(AVLnode(key, null, value));
         } else {
+            // Find the insertion point first without moving anything; the key and value move
+            // below on all paths, since values moved on only one path are still destroyed at
+            // scope end.
             var n = root;
+            var parent = n;
+            var goLeft = false;
 
             while true {
                 if n.entry.key == key {
                     return false;
                 }
 
-                var parent = n;
-                var goLeft = n.entry.key > key;
+                parent = n;
+                goLeft = n.entry.key > key;
                 var newNode = goLeft ? n.left : n.right;
 
                 if newNode == null {
-                    if goLeft {
-                        parent.left = allocateValue(AVLnode<Key, Value>(key, parent, value)); // TODO: Should work without specifying generic arguments.
-                    } else {
-                        parent.right = allocateValue(AVLnode<Key, Value>(key, parent, value));
-                    }
-
-                    rebalance(parent);
                     break;
                 }
                 n = newNode;
             }
+
+            if goLeft {
+                parent.left = allocateValue(AVLnode<Key, Value>(key, parent, value)); // TODO: Should work without specifying generic arguments.
+            } else {
+                parent.right = allocateValue(AVLnode<Key, Value>(key, parent, value));
+            }
+
+            rebalance(parent);
         }
 
         size++;

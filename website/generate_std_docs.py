@@ -502,7 +502,7 @@ STD_CATEGORIES = [
     ),
     ("Input/output", ["stdio.cx", "FileStream.cx"]),
     ("Math & algorithms", ["math.cx", "algorithm.cx"]),
-    ("Memory", ["Arena.cx", "allocate.cx"]),
+    ("Memory", ["Arena.cx", "allocate.cx", "drop.cx"]),
     ("Errors", ["error.cx", "Result.cx"]),
     ("Filesystem & processes", ["fs.cx", "path.cx", "process.cx"]),
     ("Serialization", ["json.cx"]),

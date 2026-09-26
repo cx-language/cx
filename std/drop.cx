@@ -1,0 +1,3 @@
+/// Ends the lifetime of the given value immediately, running its destructor (if any).
+/// This is useful for consuming a value on a code path that doesn't otherwise use it.
+void drop<T>(T value) {}
