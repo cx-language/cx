@@ -55,6 +55,13 @@ applications. Each subdirectory is a `cx build` project (see
   Esc to quit.
 
   ![Voxel game screenshot](https://github.com/user-attachments/assets/c21f64b3-3d0c-44db-a742-b896d4ab1c17)
+- [`raytracer/`](raytracer/) — CPU ray tracer with zero dependencies:
+  reflective spheres over a checkered ground plane, hard shadows,
+  Blinn-Phong highlights, and a gradient sky, rendered to a PPM file.
+  See [`raytracer/README.md`](raytracer/README.md) for options and
+  `--self-test`.
+
+  ![Ray tracer output](raytracer/screenshot.png)
 
 ## Building all examples
 

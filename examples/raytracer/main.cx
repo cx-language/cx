@@ -1,0 +1,262 @@
+// Whitted-style CPU ray tracer: spheres over a checkered ground plane,
+// one point light with shadows, Blinn-Phong highlights, and reflections.
+// Writes a binary PPM (P6). Fully deterministic, no dependencies.
+
+struct Sphere: Copyable {
+    float[3] center;
+    float radius;
+    float[3] color;
+    float reflectivity;
+}
+
+struct Hit: Copyable {
+    bool hit;
+    float[3] point;
+    float[3] normal;
+    float[3] color;
+    float reflectivity;
+}
+
+Sphere[3] sceneSpheres() {
+    return [
+        Sphere(center = [0.0, 0.6, -1.2], radius = 0.6, color = [0.9, 0.15, 0.1], reflectivity = 0.25),
+        Sphere(center = [-1.3, 0.5, -2.2], radius = 0.5, color = [0.15, 0.25, 0.9], reflectivity = 0.1),
+        Sphere(center = [1.35, 0.65, -2.4], radius = 0.65, color = [0.15, 0.8, 0.25], reflectivity = 0.1),
+    ];
+}
+
+// Nearest sphere hit along the ray, or t < 0 when nothing is hit.
+float intersectSphere(float[3] origin, float[3] dir, Sphere s) {
+    var oc = origin - s.center;
+    var b = oc.dot(dir);
+    var c = oc.dot(oc) - s.radius * s.radius;
+    var disc = b * b - c;
+    if disc < 0.0 {
+        return -1.0;
+    }
+    var root = sqrt(disc);
+    var t = -b - root;
+    if t > 1e-4 {
+        return t;
+    }
+    t = -b + root;
+    if t > 1e-4 {
+        return t;
+    }
+    return -1.0;
+}
+
+// Ground plane at y = 0, or t < 0 when the ray points away.
+float intersectGround(float[3] origin, float[3] dir) {
+    if dir.y > -1e-6 {
+        return -1.0;
+    }
+    var t = -origin.y / dir.y;
+    if t > 1e-4 {
+        return t;
+    }
+    return -1.0;
+}
+
+float[3] groundColor(float[3] p) {
+    var check = (int(floor(p.x)) + int(floor(p.z))) %% 2;
+    if check == 0 {
+        return [0.85, 0.85, 0.85];
+    }
+    return [0.2, 0.2, 0.25];
+}
+
+Hit nearestHit(float[3] origin, float[3] dir, Sphere[3]& spheres) {
+    var best = Hit(hit = false, point = [0.0, 0.0, 0.0],
+        normal = [0.0, 1.0, 0.0], color = [0.0, 0.0, 0.0], reflectivity = 0.0);
+    var bestT = 1e30;
+    for i in 0..spheres.size() {
+        var t = intersectSphere(origin, dir, spheres[i]);
+        if t > 0.0 && t < bestT {
+            bestT = t;
+            best.hit = true;
+            best.point = origin + dir * t;
+            best.normal = (best.point - spheres[i].center).normalized();
+            best.color = spheres[i].color;
+            best.reflectivity = spheres[i].reflectivity;
+        }
+    }
+    var gt = intersectGround(origin, dir);
+    if gt > 0.0 && gt < bestT {
+        best.hit = true;
+        best.point = origin + dir * gt;
+        best.normal = [0.0, 1.0, 0.0];
+        best.color = groundColor(best.point);
+        best.reflectivity = 0.0;
+    }
+    return best;
+}
+
+bool inShadow(float[3] p, float[3] lightDir, float lightDist, Sphere[3]& spheres) {
+    // No ground check: the light sits above the plane, so shadow rays always point up.
+    var origin = p + lightDir * 1e-4;
+    for i in 0..spheres.size() {
+        var t = intersectSphere(origin, lightDir, spheres[i]);
+        if t > 0.0 && t < lightDist {
+            return true;
+        }
+    }
+    return false;
+}
+
+float[3] trace(float[3] origin, float[3] dir, int depth, Sphere[3]& spheres) {
+    var hit = nearestHit(origin, dir, spheres);
+    if !hit.hit {
+        var t = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
+        var skyTop = [0.5, 0.7, 1.0];
+        var skyBottom = [1.0, 1.0, 1.0];
+        return skyTop * t + skyBottom * (1.0 - t);
+    }
+    var lightPos = [4.0, 6.0, 2.0];
+    var toLight = lightPos - hit.point;
+    var lightDist = sqrt(toLight.dot(toLight));
+    var lightDir = toLight / lightDist;
+    var lit = 1.0;
+    if inShadow(hit.point, lightDir, lightDist, spheres) {
+        lit = 0.0;
+    }
+    var diffuse = hit.normal.dot(lightDir);
+    if diffuse < 0.0 {
+        diffuse = 0.0;
+    }
+    var viewDir = (origin - hit.point).normalized();
+    var half = (lightDir + viewDir).normalized();
+    var spec = hit.normal.dot(half);
+    if spec < 0.0 {
+        spec = 0.0;
+    }
+    spec = pow(spec, 64.0) * 0.5 * lit;
+    var white = [1.0, 1.0, 1.0];
+    var shaded = hit.color * (0.12 + 0.88 * diffuse * lit) + white * spec;
+    if depth <= 0 || hit.reflectivity <= 0.0 {
+        return shaded;
+    }
+    var reflected = dir - hit.normal * (2.0 * dir.dot(hit.normal));
+    var bounce = trace(hit.point + hit.normal * 1e-4, reflected.normalized(), depth - 1, spheres);
+    return shaded * (1.0 - hit.reflectivity) + bounce * hit.reflectivity;
+}
+
+struct Camera: Copyable {
+    float[3] origin;
+    float[3] forward;
+    float[3] right;
+    float[3] up;
+    float tanHalf;
+    float aspect;
+}
+
+Camera makeCamera(int width, int height) {
+    var origin = [0.0, 1.25, 3.1];
+    var target = [0.0, 0.55, -0.5];
+    var forward = (target - origin).normalized();
+    var worldUp = [0.0, 1.0, 0.0];
+    var right = cross(forward, worldUp).normalized();
+    var up = cross(right, forward);
+    var tanHalf = tan(30.0 * pi / 180.0);
+    var aspect = float(width) / float(height);
+    return Camera(origin = origin, forward = forward, right = right,
+        up = up, tanHalf = tanHalf, aspect = aspect);
+}
+
+float[3] pixelColor(Camera& cam, Sphere[3]& spheres, int width, int height, int x, int y) {
+    var u = (float(x) + 0.5) / float(width) * 2.0 - 1.0;
+    var v = 1.0 - (float(y) + 0.5) / float(height) * 2.0;
+    var dir = (cam.forward + cam.right * (u * cam.aspect * cam.tanHalf) + cam.up * (v * cam.tanHalf)).normalized();
+    return trace(cam.origin, dir, 4, spheres);
+}
+
+uint8 toByte(float c) {
+    return uint8(int(clamp(c, 0.0, 1.0) * 255.99));
+}
+
+void render(int width, int height, List<uint8>& pixels) {
+    var spheres = sceneSpheres();
+    var cam = makeCamera(width, height);
+    pixels.reserve(width * height * 3);
+    for y in 0..height {
+        for x in 0..width {
+            var c = pixelColor(cam, spheres, width, height, x, y);
+            pixels.push(toByte(c.x));
+            pixels.push(toByte(c.y));
+            pixels.push(toByte(c.z));
+        }
+    }
+}
+
+bool writePpm(string path, int width, int height, List<uint8>& pixels) {
+    var out = StringBuf("P6\n");
+    out.append(width);
+    out.append(" ");
+    out.append(height);
+    out.append("\n255\n");
+    out.append(string(cast<char*>(&pixels[0]), pixels.size()));
+    return writeFile(path, string(out));
+}
+
+void check(bool ok, string what) {
+    if !ok {
+        abort("self-test failed: ", what);
+    }
+}
+
+int runSelfTest() {
+    var spheres = sceneSpheres();
+    var cam = makeCamera(64, 48);
+    // Center pixel must see the red sphere.
+    var center = pixelColor(cam, spheres, 64, 48, 32, 24);
+    check(center.x > 0.3 && center.x > center.y && center.x > center.z, "center is red");
+    // Top-left pixel must see the blue-ish sky.
+    var sky = pixelColor(cam, spheres, 64, 48, 0, 0);
+    check(sky.z > sky.x && sky.z > 0.5, "corner is sky");
+    // Bottom-center pixel must see the gray checkered ground.
+    var ground = pixelColor(cam, spheres, 64, 48, 32, 40);
+    check(abs(ground.x - ground.y) < 0.1 && abs(ground.y - ground.z) < 0.15, "bottom is ground");
+    // Full tiny render must complete.
+    var pixels = List<uint8>();
+    render(64, 48, pixels);
+    check(pixels.size() == 64 * 48 * 3, "pixel count");
+    println("self-test passed");
+    return 0;
+}
+
+int main(string[] args) {
+    string path = "render.ppm";
+    var width = 800;
+    var height = 600;
+    for i in 0..args.size() {
+        if args[i] == "--self-test" {
+            return runSelfTest();
+        }
+    }
+    if args.size() > 1 {
+        path = args[1];
+    }
+    if args.size() == 3 || args.size() > 4 {
+        println("usage: raytracer [output.ppm] [width height]");
+        return 1;
+    }
+    if args.size() > 3 {
+        var w = args[2].parseInt();
+        var h = args[3].parseInt();
+        if w != null && h != null && w > 0 && h > 0 && w <= 16384 && h <= 16384 {
+            width = w;
+            height = h;
+        } else {
+            println("usage: raytracer [output.ppm] [width height]");
+            return 1;
+        }
+    }
+    var pixels = List<uint8>();
+    render(width, height, pixels);
+    if !writePpm(path, width, height, pixels) {
+        println("cannot write ", path);
+        return 1;
+    }
+    println("wrote ", path);
+    return 0;
+}
