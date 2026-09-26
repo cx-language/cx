@@ -76,6 +76,7 @@ struct Type {
     bool isOptionalType() const { return isBasicType() && getName() == "Optional"; }
     bool isBuiltinType() const { return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull() || isVoid(); }
     bool isImplicitlyCopyable() const;
+    bool needsDestruction() const;
     bool isConcreteArray() const;
     bool isSlice() const;
     bool isArrayPointer() const;

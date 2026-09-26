@@ -160,6 +160,27 @@ void main() {
 }
 ```
 
+A temporary - a struct value that isn't stored anywhere - is destroyed at the
+end of the statement that creates it:
+
+```cs
+struct Logger {
+    string prefix;
+
+    ~Logger() {
+        println(prefix, " closed");
+    }
+}
+
+void main() {
+    Logger(prefix = "tmp"); // prints "tmp closed" at the end of this statement
+    println("working");
+}
+```
+
+A value moved into a variable, argument, or return value belongs to its new
+home instead, so its destructor still runs exactly once, when the owner dies.
+
 A destructor can also be invoked explicitly with `.deinit()`.
 This doesn't replace the automatic call: the destructor still runs again
 at scope exit, so never call it on owned values such as locals.

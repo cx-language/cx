@@ -1,0 +1,19 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+struct T {
+    ~T() {
+    }
+}
+
+void f(T t) {}
+
+void ternaryConsumesBothArms(bool b, T a, T c) {
+    var t = b ? a : c;
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'a'
+    f(a);
+}
+
+void ternaryArmTemporaryIsConsumed(bool b) {
+    var t = b ? T() : T();
+    f(t);
+}

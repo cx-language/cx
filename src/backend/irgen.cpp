@@ -6,7 +6,9 @@ using namespace cx;
 
 void IRGenScope::onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls) {
     for (const Expr* expr : reverse(deferredExprs)) {
+        irGenerator->beginTempScope();
         irGenerator->emitExpr(*expr);
+        irGenerator->endTempScope();
     }
 
     for (auto& p : reverse(destructorsToCall)) {
@@ -86,6 +88,85 @@ void IRGenerator::endScope() {
     scopes.pop_back();
 }
 
+void IRGenerator::beginTempScope() {
+    tempScopes.emplace_back();
+}
+
+void IRGenerator::destroyTempScope() {
+    if (tempScopes.empty()) return;
+    unwindTempScopesTo(tempScopes.size() - 1);
+}
+
+void IRGenerator::endTempScope() {
+    destroyTempScope();
+    tempScopes.pop_back();
+}
+
+// Destroys every pending temporary: the calls emitted here cover the return
+// path, while outer scopes still emit their own calls for paths that fall
+// through past the return. Only the return's own scope is cleared, so its
+// frame pops silently instead of emitting past the terminator.
+void IRGenerator::destroyAllTempScopes() {
+    unwindTempScopesTo(0);
+}
+
+// Destroys temporaries created after a loop or switch body was entered, keeping
+// outer ones alive. Only the jumping statement's own scope is cleared: emitting
+// here covers the taken path, while outer scopes still emit for paths that fall
+// through. Every frame still pops normally at emission time.
+void IRGenerator::unwindTempScopesTo(size_t depth) {
+    ASSERT(depth <= tempScopes.size());
+    for (auto it = tempScopes.begin() + depth; it != tempScopes.end(); ++it) {
+        for (auto& temp : reverse(*it)) {
+            if (temp.guard) {
+                createGuardedDestructorCall(temp.function, temp.value, temp.guard);
+            } else {
+                createDestructorCall(temp.function, temp.value);
+            }
+        }
+    }
+    if (tempScopes.size() > depth) tempScopes.back().clear();
+}
+
+void IRGenerator::registerTempDestructor(AllocaInst* alloca, Type type) {
+    if (tempScopes.empty()) return;
+    if (auto* function = getDestructorFunction(type)) {
+        tempScopes.back().push_back({function, alloca, nullptr, {}, tempGuard});
+    }
+}
+
+Function* IRGenerator::getDestructorFunction(Type type) {
+    if (auto* destructor = type.getDestructor()) {
+        checkImplicitCalleeIsChecked(*destructor, "deinit");
+        return getFunction(*destructor);
+    }
+    if (auto* typeDecl = type.getDecl()) {
+        if (auto* defaultDestructor = getDefaultDestructor(*typeDecl)) {
+            return getFunction(*defaultDestructor);
+        }
+    }
+    return nullptr;
+}
+
+// Creates a conditional-region flag, cleared here and set by the region when it
+// runs. The creating block must dominate both the region and the destruction.
+Value* IRGenerator::createTempGuard() {
+    auto* guard = createEntryBlockAlloca(getIRType(Type::getBool()));
+    createStore(createConstantBool(false), guard);
+    return guard;
+}
+
+void IRGenerator::createGuardedDestructorCall(Function* destructor, Value* receiver, Value* guard) {
+    auto* function = insertBlock->parent;
+    auto* callBlock = new BasicBlock("temp.dtor", function);
+    auto* endBlock = new BasicBlock("temp.dtor.end", function);
+    createCondBr(createLoad(guard), callBlock, endBlock);
+    setInsertPoint(callBlock);
+    createDestructorCall(destructor, receiver);
+    createBr(endBlock);
+    setInsertPoint(endBlock);
+}
+
 void IRGenerator::deferEvaluationOf(const Expr& expr) {
     scopes.back().deferredExprs.push_back(&expr);
 }
@@ -96,7 +177,7 @@ DestructorDecl* IRGenerator::getDefaultDestructor(TypeDecl& typeDecl) {
     ASSERT(!typeDecl.getDestructor());
 
     for (auto& field : typeDecl.fields) {
-        if (typeNeedsDestruction(field.type)) {
+        if (field.type.needsDestruction()) {
             auto destructor = makeAST<DestructorDecl>(typeDecl, typeDecl.getLocation());
             destructor->body = std::vector<Stmt*>();
             return destructor;
@@ -106,46 +187,21 @@ DestructorDecl* IRGenerator::getDefaultDestructor(TypeDecl& typeDecl) {
     return nullptr;
 }
 
-bool IRGenerator::anonymousStructNeedsDestruction(Type type) {
-    if (!type.isAnonymousStructType()) return false;
-    for (auto& element : type.getAnonymousStructElements()) {
-        if (typeNeedsDestruction(element.type)) return true;
-    }
-    return false;
-}
-
-// Note: fixed-size-array elements and enum associated-value payloads are not
-// checked here yet (arrays have no getDecl, enums have no fields), so those
-// owning values still leak. See Triage cards for both gaps.
-bool IRGenerator::typeNeedsDestruction(Type type) {
-    if (type.getDestructor()) return true;
-    if (type.isAnonymousStructType()) return anonymousStructNeedsDestruction(type);
-    if (auto* typeDecl = type.getDecl()) {
-        for (auto& field : typeDecl->fields) {
-            if (typeNeedsDestruction(field.type)) return true;
-        }
-    }
-    return false;
-}
-
 void IRGenerator::deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes) {
-    if (auto* destructor = type.getDestructor()) {
-        checkImplicitCalleeIsChecked(*destructor, "deinit");
-        scopes.back().destructorsToCall.push_back({getFunction(*destructor), base, owner, std::move(indexes)});
-    } else if (type.isAnonymousStructType()) {
+    if (type.isAnonymousStructType()) {
         int index = 0;
         for (auto& element : type.getAnonymousStructElements()) {
-            if (typeNeedsDestruction(element.type)) {
+            if (element.type.needsDestruction()) {
                 auto elementIndexes = indexes;
                 elementIndexes.push_back(index);
                 deferDestructionForType(base, element.type, owner, std::move(elementIndexes));
             }
             ++index;
         }
-    } else if (auto* typeDecl = type.getDecl()) {
-        if (auto defaultDestructor = getDefaultDestructor(*typeDecl)) {
-            scopes.back().destructorsToCall.push_back({getFunction(*defaultDestructor), base, owner, std::move(indexes)});
-        }
+        return;
+    }
+    if (auto* function = getDestructorFunction(type)) {
+        scopes.back().destructorsToCall.push_back({function, base, owner, std::move(indexes)});
     }
 }
 
@@ -158,21 +214,18 @@ void IRGenerator::deferDestructorCall(Value* receiver, const VariableDecl* decl)
 // GEPs are emitted eagerly: unlike scope-exit destruction, the calls
 // immediately follow in the same block.
 void IRGenerator::destroyElementsForAssignment(Value* base, Type type) {
-    if (auto* destructor = type.getDestructor()) {
-        checkImplicitCalleeIsChecked(*destructor, "deinit");
-        createDestructorCall(getFunction(*destructor), base);
-    } else if (type.isAnonymousStructType()) {
+    if (type.isAnonymousStructType()) {
         int index = 0;
         for (auto& element : type.getAnonymousStructElements()) {
-            if (typeNeedsDestruction(element.type)) {
+            if (element.type.needsDestruction()) {
                 destroyElementsForAssignment(createGEP(base, index, nullptr, element.name), element.type);
             }
             ++index;
         }
-    } else if (auto* typeDecl = type.getDecl()) {
-        if (auto* defaultDestructor = getDefaultDestructor(*typeDecl)) {
-            createDestructorCall(getFunction(*defaultDestructor), base);
-        }
+        return;
+    }
+    if (auto* function = getDestructorFunction(type)) {
+        createDestructorCall(function, base);
     }
 }
 

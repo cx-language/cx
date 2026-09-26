@@ -37,6 +37,10 @@ struct IRGenScope {
         // variable alloca to the destructible element, applied at scope end
         // so the GEPs dominate the destructor call.
         std::vector<int> indexes;
+        // Temporaries only: when set, the destructor runs only if this
+        // conditional-region flag is set, since the value may never have
+        // been constructed (untaken ternary/switch arms, `??` defaults).
+        Value* guard = nullptr;
     };
 
     llvm::SmallVector<const Expr*, 8> deferredExprs;
@@ -251,11 +255,18 @@ struct IRGenerator {
     void createReturn(Value* value) { insertBlock->add(new ReturnInst{ValueKind::ReturnInst, value}); }
     void beginScope();
     void endScope();
+    void beginTempScope();
+    void endTempScope();
+    void destroyTempScope();
+    void destroyAllTempScopes();
+    void unwindTempScopesTo(size_t depth);
+    void registerTempDestructor(AllocaInst* alloca, Type type);
+    Value* createTempGuard();
+    void createGuardedDestructorCall(Function* destructor, Value* receiver, Value* guard);
+    Function* getDestructorFunction(Type type);
     void deferEvaluationOf(const Expr& expr);
     DestructorDecl* getDefaultDestructor(TypeDecl& typeDecl);
     void deferDestructorCall(Value* receiver, const VariableDecl* decl);
-    bool anonymousStructNeedsDestruction(Type type);
-    bool typeNeedsDestruction(Type type);
     void deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes = {});
     void destroyElementsForAssignment(Value* base, Type type);
     IRGenScope& globalScope() { return scopes.front(); }
@@ -268,6 +279,14 @@ struct IRGenerator {
 
     const CompileOptions& options;
     std::vector<IRGenScope> scopes;
+    // Per-statement temporaries (constructor-call results not moved into a consumer),
+    // destroyed in reverse order at the end of the enclosing statement. Saved and
+    // restored across lambda bodies like scopes; see beginTempScope/endTempScope.
+    std::vector<llvm::SmallVector<IRGenScope::DeferredDestructor, 4>> tempScopes;
+    // Guard flag of the conditional region (ternary/switch arm, `??` default)
+    // currently being emitted, or null in unconditional code. Attached to
+    // temporaries at registration so untaken regions destroy nothing.
+    Value* tempGuard = nullptr;
     IRModule* module = nullptr;
     std::vector<IRModule*> generatedModules;
     std::vector<FunctionInstantiation> functionInstantiations;
@@ -277,6 +296,11 @@ struct IRGenerator {
     /// The basic blocks to branch to on a 'break'/'continue' statement.
     llvm::SmallVector<BasicBlock*, 4> breakTargets;
     llvm::SmallVector<BasicBlock*, 4> continueTargets;
+    // tempScopes size at each break/continue target: break/continue destroy temporaries
+    // created inside the loop or switch body while leaving outer ones (e.g. an if
+    // condition a loop body borrows from) alive.
+    llvm::SmallVector<size_t, 4> breakTempScopeDepths;
+    llvm::SmallVector<size_t, 4> continueTempScopeDepths;
     BasicBlock* insertBlock;
     Function* currentFunction = nullptr;
     // True while emitting a global variable initializer, which must be a pure constant: string

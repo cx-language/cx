@@ -140,7 +140,7 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
     if (decl.isDestructorDecl()) {
         for (auto& field : decl.getTypeDecl()->fields) {
-            if (!typeNeedsDestruction(field.type)) continue;
+            if (!field.type.needsDestruction()) continue;
             deferDestructorCall(emitMemberAccess(&function.params[0], &field), &field);
         }
     }

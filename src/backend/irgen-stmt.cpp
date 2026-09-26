@@ -22,6 +22,10 @@ void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
         returnValue = emitExprForPassing(*stmt.value, insertBlock->parent->returnType);
     }
 
+    // Returning abandons every enclosing statement, so all pending temporaries die
+    // here, before the terminator; the emitStmt frame then pops an empty scope.
+    destroyAllTempScopes();
+
     emitDeferredExprsAndDestructorCallsForReturn(&stmt.movedDecls);
 
     if (llvm::cast<FunctionDecl>(currentDecl)->isEntryPoint) emitLeakCheckIfNeeded();
@@ -119,6 +123,7 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
     auto* defaultBlock = new BasicBlock("switch.default", function);
     auto* end = new BasicBlock("switch.end", function);
     breakTargets.push_back(end);
+    breakTempScopeDepths.push_back(tempScopes.size());
     auto* switchInst = createSwitch(condition, defaultBlock);
 
     auto casesIterator = cases.begin();
@@ -153,6 +158,7 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
     }
 
     breakTargets.pop_back();
+    breakTempScopeDepths.pop_back();
     setInsertPoint(end);
 }
 
@@ -215,11 +221,13 @@ void IRGenerator::emitStringSwitchStmt(const SwitchStmt& switchStmt) {
     auto* defaultBlock = new BasicBlock("switch.default", function);
     auto* end = new BasicBlock("switch.end", function);
     breakTargets.push_back(end);
+    breakTempScopeDepths.push_back(tempScopes.size());
 
     std::vector<BasicBlock*> caseBlocks;
     for (size_t i = 0; i < switchStmt.cases.size(); ++i) {
         auto* caseBlock = new BasicBlock("switch.case." + std::to_string(i), function);
         auto* nextBlock = i + 1 < switchStmt.cases.size() ? new BasicBlock("switch.test." + std::to_string(i + 1), function) : defaultBlock;
+        // Case values are constants, so no temporaries can be constructed here.
         Value* caseValue = emitExprForPassing(*switchStmt.cases[i].value, stringType);
         createCondBr(createCall(stringEquals, {condition, caseValue}, nullptr), caseBlock, nextBlock);
         caseBlocks.push_back(caseBlock);
@@ -238,11 +246,14 @@ void IRGenerator::emitStringSwitchStmt(const SwitchStmt& switchStmt) {
     emitBlock(switchStmt.defaultStmts, end);
 
     breakTargets.pop_back();
+    breakTempScopeDepths.pop_back();
     setInsertPoint(end);
 }
 
 Value* IRGenerator::emitLoopConditionValue(const Expr& condition) {
+    beginTempScope();
     auto* conditionValue = emitExpr(condition);
+    endTempScope();
     if (conditionValue->getType()->isPointerType()) {
         conditionValue = emitImplicitNullComparison(conditionValue);
     } else if (condition.type.isOptionalType() && !condition.type.getWrappedType().isPointerType()) {
@@ -260,6 +271,8 @@ void IRGenerator::emitDoWhileStmt(const DoWhileStmt& doWhileStmt) {
 
     breakTargets.push_back(end);
     continueTargets.push_back(condition);
+    breakTempScopeDepths.push_back(tempScopes.size());
+    continueTempScopeDepths.push_back(tempScopes.size());
     createBr(body);
 
     setInsertPoint(body);
@@ -270,14 +283,18 @@ void IRGenerator::emitDoWhileStmt(const DoWhileStmt& doWhileStmt) {
 
     breakTargets.pop_back();
     continueTargets.pop_back();
+    breakTempScopeDepths.pop_back();
+    continueTempScopeDepths.pop_back();
     setInsertPoint(end);
 }
 
 void IRGenerator::emitForStmt(const ForStmt& forStmt) {
     if (forStmt.variable) {
+        beginTempScope();
         for (auto* decl : forStmt.variable->decls) {
             emitVarDecl(*decl);
         }
+        endTempScope();
     }
 
     auto* increment = forStmt.increment;
@@ -289,6 +306,8 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
 
     breakTargets.push_back(end);
     continueTargets.push_back(afterBody);
+    breakTempScopeDepths.push_back(tempScopes.size());
+    continueTempScopeDepths.push_back(tempScopes.size());
     createBr(condition);
 
     setInsertPoint(condition);
@@ -303,22 +322,28 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
 
     if (increment) {
         setInsertPoint(afterBody);
+        beginTempScope();
         emitExpr(*increment);
+        endTempScope();
         createBr(condition);
     }
 
     breakTargets.pop_back();
     continueTargets.pop_back();
+    breakTempScopeDepths.pop_back();
+    continueTempScopeDepths.pop_back();
     setInsertPoint(end);
 }
 
 void IRGenerator::emitBreakStmt(const BreakStmt&) {
     ASSERT(!breakTargets.empty());
+    unwindTempScopesTo(breakTempScopeDepths.back());
     createBr(breakTargets.back());
 }
 
 void IRGenerator::emitContinueStmt(const ContinueStmt&) {
     ASSERT(!continueTargets.empty());
+    unwindTempScopesTo(continueTempScopeDepths.back());
     createBr(continueTargets.back());
 }
 
@@ -329,6 +354,7 @@ void IRGenerator::emitCompoundStmt(const CompoundStmt& compoundStmt) {
 }
 
 void IRGenerator::emitStmt(const Stmt& stmt) {
+    beginTempScope();
     switch (stmt.kind) {
     case StmtKind::ReturnStmt:
         emitReturnStmt(llvm::cast<ReturnStmt>(stmt));
@@ -372,6 +398,7 @@ void IRGenerator::emitStmt(const Stmt& stmt) {
         emitCompoundStmt(llvm::cast<CompoundStmt>(stmt));
         break;
     }
+    endTempScope();
 }
 
 void IRGenerator::emitStmts(llvm::ArrayRef<Stmt*> stmts) {

@@ -100,6 +100,9 @@ struct Expr {
     Location location;
     // True when this expression was explicitly parenthesized in source.
     bool parenthesized = false;
+    // True when the value was moved into its consumer (set by Typechecker::setMoved).
+    // IRGen skips temporary-destructor registration for flagged constructor calls.
+    bool isMovedFrom = false;
     // One past the last source character of the expression. Invalid for
     // synthesized expressions, which render as a point at location.
     Location endLocation;

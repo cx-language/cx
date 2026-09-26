@@ -1332,9 +1332,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
               "reference type '" << decl.type << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }
 
-    if (!decl.type.isImplicitlyCopyable()) {
-        setMoved(decl.initializer, true);
-    }
+    setMoved(decl.initializer, true, /*trackVars=*/!decl.type.isImplicitlyCopyable());
 
     if (decl.isGlobal() && decl.initializer) {
         llvm::SmallPtrSet<const VarDecl*, 8> seen;

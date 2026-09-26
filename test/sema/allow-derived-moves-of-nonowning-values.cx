@@ -1,0 +1,32 @@
+// RUN: %cx -typecheck %s
+
+struct Asteroid {
+    float size;
+}
+
+struct GameState {
+    Asteroid[4] asteroids;
+}
+
+void use(GameState& s) {}
+void takeAsteroid(Asteroid a) {}
+
+void copyElementOutOfIndexedBase() {
+    var state = GameState(asteroids = [Asteroid(size = 1.0), Asteroid(size = 2.0), Asteroid(size = 3.0), Asteroid(size = 4.0)]);
+    var asteroid = state.asteroids[0];
+    use(state);
+    takeAsteroid(asteroid);
+}
+
+void ternaryOverNonowningValues(bool b, Asteroid a, Asteroid c) {
+    var t = b ? a : c;
+    takeAsteroid(a);
+    takeAsteroid(c);
+    takeAsteroid(t);
+}
+
+void arrayOfNonowningValues(Asteroid a) {
+    var arr = [a];
+    takeAsteroid(a);
+    takeAsteroid(arr[0]);
+}

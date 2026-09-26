@@ -1010,6 +1010,8 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     if (!rhsType.removeReference().isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
         setMoved(rhs, true);
         setMoved(lhs, false);
+    } else if (rhsType.needsDestruction()) {
+        setMoved(rhs, true, /*trackVars=*/false);
     }
 
     if (currentInitializedFields) {
@@ -1110,7 +1112,11 @@ Expr* Typechecker::convertWithUserConversion(Expr* expr, Type target, bool diagn
         operand = convert(operand, paramType, /*allowPointerToTemporary=*/true, diagnoseOutOfRange, allowOperatorBorrow, /*allowUserConversion=*/false);
         if (!operand) return nullptr;
         // Like explicit calls, moving into a by-value parameter consumes a non-copyable source.
-        if (!operand->type.removeReference().isImplicitlyCopyable() && !paramType.isImplicitlyCopyable()) setMoved(operand, true);
+        if (!operand->type.removeReference().isImplicitlyCopyable() && !paramType.isImplicitlyCopyable()) {
+            setMoved(operand, true);
+        } else if (!paramType.removeOptional().isReferenceType() && operand->type.needsDestruction()) {
+            setMoved(operand, true, /*trackVars=*/false);
+        }
         markReferenced(conversion);
         return makeAST<ImplicitCastExpr>(operand, target, ImplicitCastExpr::UserConversion, conversion);
     }
@@ -3004,6 +3010,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             if (expr.isMoveInit()) {
                 if (!expr.args[0].value->type.removeReference().isImplicitlyCopyable()) {
                     setMoved(expr.args[0].value, true);
+                } else if (expr.args[0].value->type.needsDestruction()) {
+                    setMoved(expr.args[0].value, true, /*trackVars=*/false);
                 }
                 return Type::getVoid();
             }
@@ -3032,8 +3040,20 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
+        // For projections only a base with destruction to skip is consumed: destroying an
+        // element through a pointer (`buffer[0].deinit()`) must not consume the pointer.
         if (llvm::isa<DestructorDecl>(decl)) {
-            setMoved(expr.getReceiver(), true);
+            Expr* base = expr.getReceiver();
+            while (true) {
+                if (auto* member = llvm::dyn_cast<MemberExpr>(base)) {
+                    base = member->base;
+                } else if (auto* index = llvm::dyn_cast<IndexExpr>(base)) {
+                    base = index->getBase();
+                } else {
+                    break;
+                }
+            }
+            setMoved(expr.getReceiver(), true, /*trackVars=*/base->type && base->type.needsDestruction());
         }
     } else {
         auto callee = expr.getFunctionName();
@@ -3085,19 +3105,23 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         validateAndConvertArguments(expr, params, false, decl->getName(), expr.location);
     }
 
+    auto markArgMoved = [&](Expr* arg, const ParamDecl* param) {
+        if (!arg->type.removeReference().isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
+            setMoved(arg, true);
+        } else if ((!param || !param->type.removeOptional().isReferenceType()) && arg->type.needsDestruction()) {
+            setMoved(arg, true, /*trackVars=*/false);
+        }
+    };
+
     if (expr.argParamIndices.size() == expr.args.size()) {
         for (size_t i = 0; i < expr.args.size(); ++i) {
             int paramIndex = expr.argParamIndices[i];
             const ParamDecl* param = (paramIndex != -1 && size_t(paramIndex) < params.size()) ? &params[size_t(paramIndex)] : nullptr;
-            if (!expr.args[i].value->type.removeReference().isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
-                setMoved(expr.args[i].value, true);
-            }
+            markArgMoved(expr.args[i].value, param);
         }
     } else {
         for (auto&& [param, arg] : llvm::zip_longest(params, expr.args)) {
-            if (arg && !arg->value->type.removeReference().isImplicitlyCopyable() && (!param || !param->type.isImplicitlyCopyable())) {
-                setMoved(arg->value, true);
-            }
+            if (arg) markArgMoved(arg->value, param ? &*param : nullptr);
         }
     }
 
@@ -4175,20 +4199,79 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
     return enumCase;
 }
 
-void Typechecker::setMoved(Expr* expr, bool isMoved) {
+void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
+    if (!expr) return;
+    expr->isMovedFrom = isMoved;
+
+    // Derived values (casts, arms, projections, literal elements) consume their
+    // source only when ownership is at stake: copying non-owning bits out is
+    // always safe, while moving owning bits out aliases the source's storage.
+    // Direct moves of non-copyable bindings still always track (see VarExpr).
+    auto consumes = [](const Expr* e) { return !e->type || e->type.needsDestruction(); };
+
     if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
-        if (cast->castKind == ImplicitCastExpr::OptionalWrap) {
-            setMoved(cast->operand, isMoved);
+        // Ownership transfers through value casts. Borrow casts (AutoReference,
+        // AutoDereference, Reborrow) and conversions (already marked where the
+        // conversion was built; IRGen reads the flag off the cast itself) stop here.
+        if ((cast->castKind == ImplicitCastExpr::OptionalWrap || cast->castKind == ImplicitCastExpr::OptionalUnwrap) && consumes(cast->operand)) {
+            setMoved(cast->operand, isMoved, trackVars);
+        }
+        return;
+    }
+
+    // A moved branch value comes from exactly one arm, but move checking is
+    // conservative like Rust: a conditional move consumes both arms' bindings.
+    if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
+        if (consumes(ifExpr->thenExpr)) setMoved(ifExpr->thenExpr, isMoved, trackVars);
+        if (consumes(ifExpr->elseExpr)) setMoved(ifExpr->elseExpr, isMoved, trackVars);
+        return;
+    }
+
+    if (auto* switchExpr = llvm::dyn_cast<SwitchExpr>(expr)) {
+        for (auto& arm : switchExpr->arms) {
+            if (consumes(arm.expr)) setMoved(arm.expr, isMoved, trackVars);
+        }
+        if (switchExpr->defaultExpr && consumes(switchExpr->defaultExpr)) setMoved(switchExpr->defaultExpr, isMoved, trackVars);
+        return;
+    }
+
+    // Moving a member or element moves the whole base: there are no partial
+    // moves, so consuming `base.field` consumes `base` (and flags a temporary
+    // base so its destructor is skipped). Assigning through a projection does
+    // not resurrect a moved base the way whole-value reassignment does.
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(expr)) {
+        if (isMoved && consumes(expr)) setMoved(memberExpr->base, isMoved, trackVars);
+        return;
+    }
+
+    if (auto* indexExpr = llvm::dyn_cast<IndexExpr>(expr)) {
+        if (isMoved && consumes(expr)) setMoved(indexExpr->getBase(), isMoved, trackVars);
+        return;
+    }
+
+    // Literals own their elements: each element value is copied into the aggregate.
+    if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(expr)) {
+        for (auto& element : arrayLiteral->elements) {
+            if (consumes(element)) setMoved(element, isMoved, trackVars);
+        }
+        return;
+    }
+
+    if (auto* anonStruct = llvm::dyn_cast<AnonymousStructExpr>(expr)) {
+        for (auto& element : anonStruct->elements) {
+            if (consumes(element.value)) setMoved(element.value, isMoved, trackVars);
         }
         return;
     }
 
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr)) {
-        ASSERT(varExpr->decl);
+        // Type names in member-access bases never resolve to a declaration; only
+        // resolved bindings participate in move tracking.
+        if (!varExpr->decl) return;
 
         // Moving out of a capture would leave the closure's stored copy in a moved-from state
         // while the closure stays callable, so only copies of implicitly copyable captures are allowed out.
-        if (isMoved && currentFunction && currentFunction->isLambda() && varExpr->type && !varExpr->type.isImplicitlyCopyable()) {
+        if (isMoved && trackVars && currentFunction && currentFunction->isLambda() && varExpr->type && !varExpr->type.isImplicitlyCopyable()) {
             if (auto* variableDecl = llvm::dyn_cast<VariableDecl>(varExpr->decl)) {
                 auto* parent = variableDecl->parent;
                 if ((variableDecl->kind == DeclKind::VarDecl || variableDecl->kind == DeclKind::ParamDecl) && parent && parent->isFunctionDecl()
@@ -4198,6 +4281,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved) {
             }
         }
 
+        if (!trackVars) return;
         if (isMoved) {
             movedDecls.insert(varExpr->decl);
         } else {

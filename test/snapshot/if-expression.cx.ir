@@ -11,30 +11,42 @@ extern bool e()
 
 int32 main() {
     bool* x = alloca bool
-    bool _0 = call a()
-    br _0, if.then, if.else
+    bool* _0 = alloca bool
+    bool* _1 = alloca bool
+    bool* _2 = alloca bool
+    bool* _3 = alloca bool
+    bool _4 = call a()
+    store bool false to _0
+    store bool false to _1
+    br _4, if.then, if.else
 
 if.then:
-    bool _1 = call b()
-    br if.end(_1)
+    store bool true to _0
+    bool _5 = call b()
+    br if.end(_5)
 
 if.else:
-    bool _2 = call c()
-    br _2, if.then, if.else
+    store bool true to _1
+    bool _6 = call c()
+    store bool false to _2
+    store bool false to _3
+    br _6, if.then, if.else
 
 if.then_0:
-    bool _3 = call d()
-    br if.end_0(_3)
+    store bool true to _2
+    bool _7 = call d()
+    br if.end_0(_7)
 
 if.else_0:
-    bool _4 = call e()
-    br if.end_0(_4)
+    store bool true to _3
+    bool _8 = call e()
+    br if.end_0(_8)
 
 if.end_0(bool if.result):
     br if.end(if.result)
 
 if.end(bool if.result_0):
     store if.result_0 to x
-    void _5 = call _CX1N3std10checkLeaksE4void0_()
+    void _9 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

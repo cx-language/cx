@@ -3,12 +3,14 @@ int32 main() {
     bool** foo = alloca bool*
     bool* b = alloca bool
     int32* a = alloca int32
+    bool* _0 = alloca bool
+    bool* _1 = alloca bool
     bool* foo.load = load foo
-    bool _0 = foo.load == bool* null
-    store _0 to b
+    bool _2 = foo.load == bool* null
+    store _2 to b
     bool* foo.load_0 = load foo
-    bool _1 = foo.load_0 != bool* null
-    br _1, if.then, if.else
+    bool _3 = foo.load_0 != bool* null
+    br _3, if.then, if.else
 
 if.then:
     br if.end
@@ -21,25 +23,29 @@ if.end:
 
 loop.condition:
     bool* foo.load_1 = load foo
-    bool _2 = foo.load_1 != bool* null
-    br _2, loop.body, loop.end
+    bool _4 = foo.load_1 != bool* null
+    br _4, loop.body, loop.end
 
 loop.body:
     br loop.condition
 
 loop.end:
     bool* foo.load_2 = load foo
-    bool _3 = foo.load_2 != bool* null
-    br _3, if.then, if.else
+    bool _5 = foo.load_2 != bool* null
+    store bool false to _0
+    store bool false to _1
+    br _5, if.then, if.else
 
 if.then_0:
+    store bool true to _0
     br if.end_0(int32 1)
 
 if.else_0:
+    store bool true to _1
     br if.end_0(int32 2)
 
 if.end_0(int32 if.result):
     store if.result to a
-    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    void _6 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

@@ -1,0 +1,25 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+struct C {
+    int i;
+    ~C() {
+    }
+}
+
+struct Wrap {
+    C c;
+}
+
+void take(C c) {}
+
+void projectionMovesWholeBase(Wrap w) {
+    take(w.c);
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'w'
+    println(w.c.i);
+}
+
+void copyableProjectionLeavesBaseAlone(Wrap w) {
+    var i = w.c.i;
+    println(w.c.i);
+    println(i);
+}

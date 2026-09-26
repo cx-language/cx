@@ -279,7 +279,11 @@ Value* IRGenerator::emitLogicalAnd(const Expr& left, const Expr& right) {
     createCondBr(lhs, rhsBlock, endBlock, lhs);
 
     setInsertPoint(rhsBlock);
+    // The right side may not run, and its boolean result cannot borrow its
+    // temporaries, so they die here instead of at statement end.
+    beginTempScope();
     Value* rhs = emitBoolConvertibleOperand(right);
+    endTempScope();
     createBr(endBlock, rhs);
 
     setInsertPoint(endBlock);
@@ -295,7 +299,11 @@ Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
     createCondBr(lhs, endBlock, rhsBlock, lhs);
 
     setInsertPoint(rhsBlock);
+    // The right side may not run, and its boolean result cannot borrow its
+    // temporaries, so they die here instead of at statement end.
+    beginTempScope();
     Value* rhs = emitBoolConvertibleOperand(right);
+    endTempScope();
     createBr(endBlock, rhs);
 
     setInsertPoint(endBlock);
@@ -327,6 +335,9 @@ Value* IRGenerator::emitNullCoalescingExpr(const BinaryExpr& expr) {
     auto* valueBlock = new BasicBlock("coalesce.value", function);
     auto* defaultBlock = new BasicBlock("coalesce.default");
     auto* endBlock = new BasicBlock("coalesce.end");
+    // The default runs only on null; see emitIfExpr.
+    auto* defaultGuard = createTempGuard();
+    auto* outerGuard = tempGuard;
     createCondBr(hasValue, valueBlock, defaultBlock);
 
     setInsertPoint(valueBlock);
@@ -346,7 +357,10 @@ Value* IRGenerator::emitNullCoalescingExpr(const BinaryExpr& expr) {
     createBr(endBlock, thenValue);
 
     setInsertPoint(defaultBlock);
+    createStore(createConstantBool(true), defaultGuard);
+    tempGuard = defaultGuard;
     createBr(endBlock, emitExpr(expr.getRHS()));
+    tempGuard = outerGuard;
 
     setInsertPoint(endBlock);
     endBlock->parameter = new Parameter{ValueKind::Parameter, thenValue->getType(), "coalesce"};
@@ -997,7 +1011,13 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
             } else if (currentDecl->isConstructorDecl() && expr.getFunctionName() == "init") {
                 args.emplace_back(getThis(*param));
             } else {
-                args.emplace_back(createEntryBlockAlloca(constructorDecl->getTypeDecl()->getType()));
+                auto* tempAlloca = createEntryBlockAlloca(constructorDecl->getTypeDecl()->getType());
+                // A moved result is owned by its consumer; anything else dies at the
+                // end of the enclosing statement.
+                if (!expr.isMovedFrom) {
+                    registerTempDestructor(tempAlloca, constructorDecl->getTypeDecl()->getType());
+                }
+                args.emplace_back(tempAlloca);
             }
         } else if (expr.getReceiver()) {
             args.emplace_back(emitExprForPassing(*expr.getReceiver(), *param));
@@ -1212,11 +1232,16 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     auto currentFunctionBackup = currentFunction;
     auto insertBlockBackup = insertBlock;
     auto scopesBackup = std::move(scopes);
+    auto tempScopesBackup = std::move(tempScopes);
+    auto tempGuardBackup = tempGuard;
+    tempGuard = nullptr;
 
     emitDecl(*functionDecl);
 
     currentFunction = currentFunctionBackup;
     scopes = std::move(scopesBackup);
+    tempScopes = std::move(tempScopesBackup);
+    tempGuard = tempGuardBackup;
     if (insertBlockBackup) setInsertPoint(insertBlockBackup);
 
     if (functionDecl->captures.empty()) {
@@ -1257,17 +1282,27 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
     auto* thenBlock = new BasicBlock("if.then", function);
     auto* elseBlock = new BasicBlock("if.else");
     auto* endIfBlock = new BasicBlock("if.end");
+    // Only the taken arm runs, so each arm gets a guard flag: its temporaries
+    // are destroyed at statement end only if the arm executed.
+    auto* thenGuard = createTempGuard();
+    auto* elseGuard = createTempGuard();
+    auto* outerGuard = tempGuard;
     createCondBr(condition, thenBlock, elseBlock);
 
     setInsertPoint(thenBlock);
+    createStore(createConstantBool(true), thenGuard);
+    tempGuard = thenGuard;
     auto* thenValue = emitExpr(*expr.thenExpr);
     // Void branches produce no value to join; like void calls, the result is only usable in discard positions.
     bool isVoid = !thenValue || thenValue->getType()->isVoid();
     createBr(endIfBlock, isVoid ? nullptr : thenValue);
 
     setInsertPoint(elseBlock);
+    createStore(createConstantBool(true), elseGuard);
+    tempGuard = elseGuard;
     auto* elseValue = emitExpr(*expr.elseExpr);
     createBr(endIfBlock, isVoid ? nullptr : elseValue);
+    tempGuard = outerGuard;
 
     setInsertPoint(endIfBlock);
     if (isVoid) return thenValue;
@@ -1294,13 +1329,23 @@ Value* IRGenerator::emitSwitchExpr(const SwitchExpr& expr) {
     setInsertPoint(insertBlockBackup);
     auto* defaultBlock = new BasicBlock("switch.default");
     auto* end = new BasicBlock("switch.end");
+    // Only the taken arm runs; see emitIfExpr.
+    llvm::SmallVector<Value*, 8> armGuards;
+    for (size_t i = 0; i < expr.arms.size(); ++i) {
+        armGuards.push_back(createTempGuard());
+    }
+    auto* defaultGuard = createTempGuard();
+    auto* outerGuard = tempGuard;
     auto* switchInst = createSwitch(condition, defaultBlock);
 
     auto casesIterator = cases.begin();
-    for (auto& arm : expr.arms) {
+    for (size_t armIndex = 0; armIndex < expr.arms.size(); ++armIndex) {
+        auto& arm = expr.arms[armIndex];
         auto* value = casesIterator->first;
         auto* block = casesIterator->second;
         setInsertPoint(block);
+        createStore(createConstantBool(true), armGuards[armIndex]);
+        tempGuard = armGuards[armIndex];
 
         if (auto* associatedValue = arm.associatedValue) {
             auto type = associatedValue->type.getPointerTo();
@@ -1322,6 +1367,8 @@ Value* IRGenerator::emitSwitchExpr(const SwitchExpr& expr) {
 
     setInsertPoint(defaultBlock);
     if (expr.defaultExpr) {
+        createStore(createConstantBool(true), defaultGuard);
+        tempGuard = defaultGuard;
         if (expr.defaultExpr->type.isNeverType()) {
             emitExpr(*expr.defaultExpr);
             createUnreachable();
@@ -1337,6 +1384,7 @@ Value* IRGenerator::emitSwitchExpr(const SwitchExpr& expr) {
         bool checkEmitted = emitEnumSwitchCheck(*expr.condition, caseValues, *switchInst, end);
         ASSERT(checkEmitted);
     }
+    tempGuard = outerGuard;
 
     setInsertPoint(end);
     end->parameter = new Parameter{ValueKind::Parameter, getIRType(expr.type), "switch.result"};
@@ -1385,6 +1433,9 @@ Value* IRGenerator::emitUserConversion(const ImplicitCastExpr& expr, AllocaInst*
     if (auto* ctor = llvm::dyn_cast<ConstructorDecl>(conversion)) {
         // Mirror constructor calls: the callee initializes the local or a fresh temporary.
         auto* thisAlloca = thisAllocaForInit ? thisAllocaForInit : createEntryBlockAlloca(ctor->getTypeDecl()->getType());
+        if (!thisAllocaForInit && !expr.isMovedFrom) {
+            registerTempDestructor(thisAlloca, ctor->getTypeDecl()->getType());
+        }
         llvm::SmallVector<Value*, 2> args{thisAlloca, emitExprForPassing(*expr.operand, callee->params[1].type)};
         createCall(callee, args, &expr);
         return thisAlloca;

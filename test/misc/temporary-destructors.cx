@@ -1,0 +1,202 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:take
+// CHECK-NEXT:1
+// CHECK-NEXT:2
+// CHECK-NEXT:2
+// CHECK-NEXT:10
+// CHECK-NEXT:6
+// CHECK-NEXT:7
+// CHECK-NEXT:8
+// CHECK-NEXT:8
+// CHECK-NEXT:9
+// CHECK-NEXT:9
+// CHECK-NEXT:10
+// CHECK-NEXT:1
+// CHECK-NEXT:100
+// CHECK-NEXT:11
+// CHECK-NEXT:12
+// CHECK-NEXT:13
+// CHECK-NEXT:14
+// CHECK-NEXT:true
+// CHECK-NEXT:15
+// CHECK-NEXT:15
+// CHECK-NEXT:16
+// CHECK-NEXT:19
+// CHECK-NEXT:22
+// CHECK-NEXT:18
+// CHECK-NEXT:24
+// CHECK-NEXT:23
+// CHECK-NEXT:19
+// CHECK-NEXT:21
+// CHECK-NEXT:22
+// CHECK-NEXT:24
+// CHECK-NEXT:end
+// CHECK-NEXT:take
+
+int deaths = 0;
+
+struct C {
+    int i;
+    ~C() {
+        deaths = deaths + 1;
+    }
+}
+
+struct Wrap {
+    C c;
+}
+
+struct W : Copyable {
+    C c;
+}
+
+void borrow(C& c) {
+    println(c.i);
+}
+
+void take(Wrap w) {
+    println("take");
+}
+
+void takeCopyable(W w) {
+}
+
+bool isPositive(C& c) {
+    return c.i > 0;
+}
+
+C make(int i) {
+    return C(i = i);
+}
+
+bool pred(C c) {
+    return c.i > 0;
+}
+
+int early() {
+    if pred(C(i = 1)) {
+        return 100;
+    }
+    return -1;
+}
+
+void main() {
+    // Temporaries moved into a variable, argument, or return value are owned by
+    // the consumer: nothing dies here.
+    var t = make(1);
+    take(Wrap(c = C(i = 2)));
+    println(deaths);
+
+    // A bare temporary dies at the end of its statement.
+    C(i = 3);
+    println(deaths);
+
+    // Ternary and array-literal elements are moved, not destroyed.
+    var b = true;
+    var u = b ? C(i = 4) : C(i = 5);
+    var arr = [C(i = 6)];
+    println(deaths);
+    println(u.i + arr[0].i);
+
+    // Loop conditions destroy their temporaries every iteration.
+    var n = 3;
+    while pred(C(i = 7)) && n > 0 {
+        n = n - 1;
+    }
+    println(deaths);
+
+    // break and continue unwind temporaries created inside the loop body.
+    while true {
+        if pred(C(i = 8)) {
+            break;
+        }
+    }
+    println(deaths);
+    var m = 0;
+    while m < 1 {
+        m = m + 1;
+        if pred(C(i = 9)) {
+            continue;
+        }
+    }
+    println(deaths);
+
+    // if and switch subjects live through their branches, then die.
+    if C(i = 10).i > 0 {
+        println(deaths);
+    }
+    println(deaths);
+    switch C(i = 11).i {
+        case 11:
+            println(deaths);
+        default:
+            println("no");
+    }
+    println(deaths);
+
+    // Returning abandons the if condition temporary too.
+    borrow(t);
+    println(early());
+    println(deaths);
+
+    // Borrowed temporaries die after the call; explicit deinit runs exactly once.
+    borrow(C(i = 12));
+    C(i = 13).deinit();
+    println(deaths);
+
+    // Deferred and lambda-body temporaries die in their own scope.
+    defer take(Wrap(c = C(i = 14)));
+    var f = () => {
+        C(i = 15);
+    };
+    f();
+    println(deaths);
+
+    // Moving a member out of a temporary consumes the whole temporary.
+    println(pred(Wrap(c = C(i = 16)).c));
+    println(deaths);
+
+    // Short-circuit right sides destroy their temporaries only when they run.
+    if false && C(i = 17).i > 0 {
+    }
+    println(deaths);
+    if true && C(i = 18).i > 0 {
+    }
+    println(deaths);
+
+    // Borrowed ternary arms live to statement end; untaken arms destroy nothing.
+    var nb = false;
+    borrow(b ? C(i = 19) : C(i = 20));
+    borrow(nb ? C(i = 21) : C(i = 22));
+    println(deaths);
+
+    // `??` defaults are guarded the same way.
+    C? nopt = null;
+    C? sopt = C(i = 23);
+    borrow(nopt ?? C(i = 24));
+    borrow(sopt ?? C(i = 25));
+    println(deaths);
+
+    // Break unwinds guarded temporaries; fallthrough still destroys them.
+    var k = 0;
+    while k < 2 {
+        k = k + 1;
+        if isPositive(k == 2 ? C(i = 26) : C(i = 27)) {
+            if k == 2 {
+                break;
+            }
+        }
+    }
+    println(deaths);
+
+    // Copyable types with owning fields move their temporaries whole.
+    takeCopyable(W(c = C(i = 28)));
+    println(deaths);
+
+    // Discarded literals destroy their element temporaries.
+    (y = C(i = 29));
+    [C(i = 30)];
+    println(deaths);
+    println("end");
+}

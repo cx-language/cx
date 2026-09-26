@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+struct T {
+    ~T() {
+    }
+}
+
+void f(T t) {}
+
+void arrayLiteralMovesElements(T x) {
+    var arr = [x];
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'x'
+    f(x);
+}

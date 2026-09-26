@@ -204,7 +204,11 @@ struct Typechecker {
     void deferTypechecking(Decl* decl);
     void postProcess();
 
-    void setMoved(Expr* expr, bool isMoved);
+    // Marks an expression consumed by a move. Always flags the tree (IRGen skips
+    // temporary-destructor registration for flagged constructor calls); only records
+    // named declarations as moved when trackVars holds, so copies into copyable
+    // consumers keep working while their temps are still recognized as consumed.
+    void setMoved(Expr* expr, bool isMoved, bool trackVars = true);
     void checkNotMoved(const Decl& decl, const VarExpr& expr);
 
     void applyNarrowings(const Expr& condition, bool polarity);
