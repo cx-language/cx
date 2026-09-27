@@ -226,6 +226,7 @@ struct Typechecker {
     bool genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs);
     bool trySynthesizePrintMethod(TypeDecl& decl, bool silent);
     bool tryEnsurePrintable(TypeDecl& typeDecl, const TypeDecl& interface, bool silent);
+    bool tryDesugarEnumIteration(ForEachStmt& forEachStmt);
     TypeDecl* getPrintableDecl();
     bool isConcreteType(Type type);
 

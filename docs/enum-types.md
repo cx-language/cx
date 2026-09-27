@@ -121,3 +121,25 @@ void main() {
     println(Color.Red); // prints red
 }
 ```
+
+## Iterating cases
+
+A `for` loop over an enum without associated values visits each case
+in declaration order:
+
+```cs
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+void main() {
+    for color in Color {
+        println(color == Color.Red); // prints true, then false, false
+    }
+}
+```
+
+Enums with associated values and generic enums cannot be iterated;
+looping over them is a compile error.

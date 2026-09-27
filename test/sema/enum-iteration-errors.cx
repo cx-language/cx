@@ -1,0 +1,31 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+enum WithPayload {
+    A(int x),
+    B,
+}
+
+enum Generic<T> {
+    A,
+    B,
+}
+
+void payloadLoop() {
+    // CHECK: error: cannot iterate cases of enum 'WithPayload' because case 'A' has associated values
+    for c in WithPayload {
+    }
+}
+
+void genericLoop() {
+    // CHECK: error: cannot iterate cases of generic enum 'Generic'
+    for c in Generic {
+    }
+}
+
+using GenericInt = Generic<int>;
+
+void genericAliasLoop() {
+    // CHECK: error: cannot iterate cases of generic enum 'Generic'
+    for c in GenericInt {
+    }
+}

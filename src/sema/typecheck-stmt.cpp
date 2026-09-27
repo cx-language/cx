@@ -904,6 +904,50 @@ void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type condi
     }
 }
 
+bool Typechecker::tryDesugarEnumIteration(ForEachStmt& forEachStmt) {
+    auto* varExpr = llvm::dyn_cast<VarExpr>(forEachStmt.range);
+    if (!varExpr) return false;
+    Decl* target = findDecl(varExpr->identifier, varExpr->location, varExpr->endLocation);
+    if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(target)) {
+        Type aliasedType = resolveTypeAliases(alias->aliasedType);
+        typecheckType(aliasedType, AccessLevel::None);
+        target = aliasedType.getDecl();
+        if (!target) return false;
+    }
+    if (auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(target)) {
+        if (llvm::isa<EnumDecl>(typeTemplate->typeDecl)) {
+            ERROR(varExpr->location, "cannot iterate cases of generic enum '" << typeTemplate->getName() << "'");
+        }
+        return false;
+    }
+    auto* enumDecl = llvm::dyn_cast<EnumDecl>(target);
+    if (!enumDecl) return false;
+    if (enumDecl->instantiatedFrom) {
+        ERROR(varExpr->location, "cannot iterate cases of generic enum '" << enumDecl->getName() << "'");
+    }
+    checkHasAccess(*enumDecl, varExpr->location, AccessLevel::None);
+    for (auto& enumCase : enumDecl->cases) {
+        if (enumCase.associatedType) {
+            ERROR(varExpr->location,
+                  "cannot iterate cases of enum '" << enumDecl->getName() << "' because case '" << enumCase.getName() << "' has associated values");
+        }
+    }
+    std::vector<Expr*> elements;
+    for (auto& enumCase : enumDecl->cases) {
+        // Base each case on the written name, which may be an alias; the enum's own
+        // name could resolve to something else if shadowed by a local.
+        elements.push_back(makeAST<MemberExpr>(makeAST<VarExpr>(varExpr->identifier, varExpr->location), enumCase.getName(), varExpr->location));
+    }
+    auto* array = makeAST<ArrayLiteralExpr>(std::move(elements), varExpr->location);
+    if (array->elements.empty()) {
+        typecheckExpr(*array, false, BasicType::getArray(enumDecl->getType(), 0));
+    } else {
+        typecheckExpr(*array);
+    }
+    forEachStmt.range = array;
+    return true;
+}
+
 void Typechecker::typecheckForStmt(ForStmt& forStmt) {
     Scope scope(currentFunction, &currentModule->symbolTable);
 
@@ -1038,7 +1082,9 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
             break;
         case StmtKind::ForEachStmt: {
             auto* forEachStmt = llvm::cast<ForEachStmt>(stmt);
-            typecheckExpr(*forEachStmt->range);
+            if (!tryDesugarEnumIteration(*forEachStmt)) {
+                typecheckExpr(*forEachStmt->range);
+            }
             auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isForStmt(); });
             stmt = forEachStmt->lower(nestLevel);
             typecheckStmt(stmt);

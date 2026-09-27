@@ -352,6 +352,8 @@ static Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&, Type expectedTy
 
 Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expectedType) {
     if (array.elements.empty()) {
+        // Lowered ranges are checked again without an expected type; keep the inferred one.
+        if (!expectedType && array.type) return array.type;
         if (expectedType && !expectedType.containsUnresolvedPlaceholder()) {
             Type unwrapped = expectedType;
             while (unwrapped.isOptionalType()) {

@@ -1,0 +1,50 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+enum Empty {
+}
+
+using Primary = Color;
+
+int tag(Color c) {
+    switch c {
+        case Red: return 0;
+        case Green: return 1;
+        case Blue: return 2;
+    }
+}
+
+void main() {
+    for c in Color {
+        println(tag(c)); // CHECK:0
+    } // CHECK-NEXT:1
+    // CHECK-NEXT:2
+    for c, i in Color {
+        assert(tag(c) == i);
+    }
+    var n = 0;
+    for _ in Empty {
+        n++;
+    }
+    assert(n == 0);
+    for c in Primary {
+        println(tag(c)); // CHECK-NEXT:0
+    } // CHECK-NEXT:1
+    // CHECK-NEXT:2
+    // A local shadowing the enum name iterates the variable instead.
+    var Color = [7, 8];
+    for x in Color {
+        println(x); // CHECK-NEXT:7
+    } // CHECK-NEXT:8
+    // The alias still reaches the enum when its own name is shadowed.
+    for c in Primary {
+        println(tag(c)); // CHECK-NEXT:0
+    } // CHECK-NEXT:1
+    // CHECK-NEXT:2
+}
