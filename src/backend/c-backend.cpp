@@ -208,7 +208,7 @@ void CGenerator::codegenReturn(const ReturnInst* inst) {
     auto* function = inst->parent && inst->parent->parent ? inst->parent->parent : nullptr;
     if (function && function->returnType->isArrayType()) {
         stream.indent(4) << "memcpy(_cx_return, &";
-        codegenInst(inst->value);
+        codegenArgument(inst->value);
         stream << ", sizeof(*_cx_return));\n";
         stream.indent(4) << "return _cx_return;\n";
         return;
@@ -415,6 +415,19 @@ void CGenerator::codegenExtract(const ExtractInst* inst) {
     if (deadValues.contains(inst)) return;
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_extract");
+    if (inst->getType()->isArrayType()) {
+        // C arrays are not assignable; declare the temp and copy into it like codegenLoad.
+        if (!dispatchMode) {
+            codegenTempDeclaration(inst, name);
+            stream << ";\n";
+            stream.indent(4);
+        }
+        stream << "memcpy(" << name << ", ";
+        codegenInst(inst->aggregate);
+        stream << "." << getFieldName(inst->aggregate->getType(), inst->index);
+        stream << ", sizeof(" << name << "));\n";
+        return;
+    }
     codegenTempDeclaration(inst, name);
     stream << " = ";
     codegenInst(inst->aggregate);
