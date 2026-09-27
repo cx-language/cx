@@ -1,5 +1,7 @@
 #include "typecheck.h"
 #include <algorithm>
+#include <exception>
+#include <functional>
 #include <limits>
 #include <string>
 #include <tuple>
@@ -10,6 +12,7 @@
 #include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/arena.h"
 #include "../ast/decl.h"

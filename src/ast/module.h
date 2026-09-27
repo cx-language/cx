@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
@@ -45,6 +46,7 @@ struct SymbolTable {
     void add(llvm::StringRef name, Decl* decl) { scopes.back()->decls[name].push_back(decl); }
     void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front()->decls[name].push_back(decl); }
     void removeGlobal(llvm::StringRef name, Decl* decl) {
+
         auto it = scopes.front()->decls.find(name);
         if (it == scopes.front()->decls.end()) return;
         auto& decls = it->second;
