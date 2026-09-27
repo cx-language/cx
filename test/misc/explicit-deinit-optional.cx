@@ -3,6 +3,7 @@
 // CHECK:1
 // CHECK-NEXT:1
 // CHECK-NEXT:1
+// CHECK-NEXT:1
 
 int deaths = 0;
 
@@ -21,6 +22,15 @@ void main() {
     (*buf).deinit();
     println(deaths - before);
     deallocate(buf);
+
+    // Same for non-optional pointees: deinit destroys in place, so moving
+    // out of the dereference is not involved.
+    var buf2 = allocate<S>(1);
+    buf2[0] = S(x = 6);
+    before = deaths;
+    (*buf2).deinit();
+    println(deaths - before);
+    deallocate(buf2);
 
     // deinit on an optional local destroys the payload and suppresses the scope destructor.
     {

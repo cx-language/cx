@@ -3430,6 +3430,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
                     break;
                 }
             }
+            llvm::SaveAndRestore saveInExplicitDeinit(inExplicitDeinit, true);
             setMoved(expr.getReceiver(), true, /*trackVars=*/base->type && base->type.needsDestruction());
         }
     } else {
@@ -4758,7 +4759,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(expr)) {
         // Dereferences copy out of borrowed storage, so moving owning bits out of one
         // leaves two owners. Non-owning bits copy out freely.
-        if (isMoved && consumes(expr) && unaryExpr->op == Token::Star && trackVars && !inMoveInit) {
+        if (isMoved && consumes(expr) && unaryExpr->op == Token::Star && trackVars && !inMoveInit && !inExplicitDeinit) {
             ERROR(expr->location, "cannot move out of dereference; borrow it instead");
         }
         return;

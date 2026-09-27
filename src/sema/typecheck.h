@@ -265,6 +265,9 @@ struct Typechecker {
     // True while checking a placement-`init` argument, which moves out of raw
     // container storage with no owner, so borrow/dereference moves are allowed.
     bool inMoveInit = false;
+    // True while marking an explicit-`deinit` receiver, which destroys in place
+    // with nothing copied out, so dereference moves are allowed.
+    bool inExplicitDeinit = false;
     std::vector<VarDecl*> localVarDecls;
     NarrowMap narrowedTypes;
     llvm::SmallPtrSet<Decl*, 32> definitelyAssignedDecls;
