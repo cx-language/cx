@@ -233,12 +233,25 @@ void CGenerator::codegenArgument(const Value* value) {
     }
 }
 
+static void codegenBranchArgAssignment(CGenerator& generator, llvm::raw_string_ostream& stream, const Parameter* param, const Value* argument) {
+    const std::string& name = generator.getBlockParamName(param);
+    if (param->type->isArrayType()) {
+        // C arrays are not assignable; copy element-wise like codegenStore.
+        stream << "memcpy(" << name << ", &";
+        generator.codegenArgument(argument);
+        stream << ", sizeof(" << name << "))";
+    } else {
+        stream << name << " = ";
+        generator.codegenArgument(argument);
+    }
+}
+
 void CGenerator::codegenBranch(const BranchInst* inst) {
     // Assignments to unread block parameters are dead: the argument value is
     // already evaluated where it is defined, so dropping the store is safe.
     if (inst->argument && inst->destination->parameter && !deadValues.contains(inst->destination->parameter)) {
-        stream.indent(4) << getBlockParamName(inst->destination->parameter) << " = ";
-        codegenArgument(inst->argument);
+        stream.indent(4);
+        codegenBranchArgAssignment(*this, stream, inst->destination->parameter, inst->argument);
         stream << "; // branch argument\n";
     }
     if (dispatchMode) {
@@ -250,8 +263,8 @@ void CGenerator::codegenBranch(const BranchInst* inst) {
 }
 static void codegenCondBranchAssignment(CGenerator& generator, llvm::raw_string_ostream& stream, const BasicBlock* block, const Value* argument, int indent) {
     if (block->parameter && argument && !generator.deadValues.contains(block->parameter)) {
-        stream.indent(indent) << generator.getBlockParamName(block->parameter) << " = ";
-        generator.codegenArgument(argument);
+        stream.indent(indent);
+        codegenBranchArgAssignment(generator, stream, block->parameter, argument);
         stream << ";\n";
     }
 }

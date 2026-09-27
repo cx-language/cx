@@ -1,0 +1,45 @@
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:5
+// CHECK-NEXT:6
+// CHECK-NEXT:15
+// CHECK-NEXT:-3
+// CHECK-NEXT:2
+// CHECK-NEXT:9
+
+float[3] pick(bool b) {
+    float[3] a = [1.0, 2.0, 3.0];
+    float[3] c = [4.0, 5.0, 6.0];
+    if b {
+        return a;
+    } else {
+        return c;
+    }
+}
+
+void main() {
+    float[3] a = [1.0, 2.0, 3.0];
+    float[3] b = [4.0, 5.0, 6.0];
+    var c = true ? (a + b) : (a - b);
+    println(c[0]);
+
+    var t = pick(true);
+    var f = pick(false);
+    println(t[0] + t[1] + t[2]);
+    println(f[0] + f[1] + f[2]);
+
+    var d = false ? (a + b) : (a - b);
+    println(d[0]);
+
+    // Array literal (Insert, not Load) as branch argument.
+    var e = true ? [1.0, 2.0, 3.0] : b;
+    println(e[1]);
+
+    // Switch expression joins array arms from multiple predecessors.
+    var which = 1;
+    var g = switch which {
+        case 0: a,
+        default: b,
+    };
+    println(g[0] + g[1]);
+}
