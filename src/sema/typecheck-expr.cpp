@@ -406,7 +406,7 @@ static Type emptyArrayLiteralType(Type expectedType) {
         while (unwrapped.isOptionalType()) {
             unwrapped = unwrapped.getWrappedType();
         }
-        if (unwrapped.isArrayType() || unwrapped.isSlice()) {
+        if ((unwrapped.isArrayType() || unwrapped.isSlice()) && !unwrapped.hasSizeofArraySize()) {
             return expectedType;
         }
     }
@@ -1300,6 +1300,15 @@ static bool isSafeNumericWidening(Type source, Type target) {
     return false;
 }
 
+// Array sizes match when both are the same integer or the same symbolic size.
+// Sizeof markers share one name, so their operands decide instead.
+static bool arraySizesMatch(Type source, Type target) {
+    if (source.hasSizeofArraySize() || target.hasSizeofArraySize()) {
+        return source.hasSizeofArraySize() && target.hasSizeofArraySize() && source.getSizeofArrayOperand() == target.getSizeofArrayOperand();
+    }
+    return source.getArraySize() == target.getArraySize() && source.getArraySizeParam() == target.getArraySizeParam();
+}
+
 // True when viewing source bits as target needs no conversion: the types must match
 // exactly, except that const may be added (nothing can be written through a const
 // target, so narrowing the uses is safe). Anything else, even representation-preserving
@@ -1309,8 +1318,7 @@ static bool isReinterpretible(Type source, Type target) {
     if (source.isArrayType() && target.isArrayType()) {
         if (target.isMutable() && !source.isMutable()) return false;
         if (source.isFixedArray() != target.isFixedArray()) return false;
-        return source.getArraySize() == target.getArraySize() && source.getArraySizeParam() == target.getArraySizeParam()
-            && isReinterpretible(source.getElementType(), target.getElementType());
+        return arraySizesMatch(source, target) && isReinterpretible(source.getElementType(), target.getElementType());
     }
     return source == target || (!target.isMutable() && source.equalsIgnoreTopLevelMutable(target));
 }
@@ -1408,7 +1416,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     if (source.isArrayType() && (target.isArrayType() || target.isSlice()) && (source.getElementType().isMutable() || !target.getElementType().isMutable())
         && isReinterpretible(source.getElementType(), target.getElementType())) {
-        if (target.isArrayType() && source.getArraySize() == target.getArraySize() && source.getArraySizeParam() == target.getArraySizeParam()) {
+        if (target.isArrayType() && arraySizesMatch(source, target)) {
             return target.isConcreteArray() ? target : source;
         }
         if (source.isConcreteArray() && (target.isArrayPointer() || target.isSlice())) return source;
@@ -3346,6 +3354,15 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             return receiverType;
         }
 
+        // Array.size() on a sizeof-sized array never instantiates the stdlib method
+        // (its body returns the size parameter, which has no value here); IRGen
+        // materializes the size through sizeof instead.
+        if (receiverType.removeOptional().removePointer().hasSizeofArraySize() && expr.getFunctionName() == "size") {
+            validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.location);
+            validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
+            return Type::getInt32();
+        }
+
         if (receiverType.removeOptional().removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
         }
@@ -3853,6 +3870,9 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
         }
     }
     typecheckType(expr.operandType, AccessLevel::None, /*recheckGenericArgs=*/true, /*allowReference=*/true);
+    if (resolveTypeAliases(expr.operandType).isVoid()) {
+        ERROR(expr.location, "cannot take sizeof of 'void'");
+    }
     return Type::getUInt64();
 }
 

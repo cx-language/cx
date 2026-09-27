@@ -483,6 +483,12 @@ Type Parser::parseArrayType(Type elementType) {
         const Expr* sizeExpr = parseExpr();
         parse(Token::RightBracket);
         checkArraySizeDivisors(*sizeExpr);
+        if (auto* sizeofExpr = llvm::dyn_cast<SizeofExpr>(sizeExpr); sizeofExpr && !sizeExpr->isFoldableIntConstant()) {
+            std::vector<GenericArg> args;
+            args.emplace_back(elementType);
+            args.emplace_back(Type::getSizeofMarker(sizeofExpr->operandType));
+            return BasicType::get("Array", args, elementType.mutability, elementType.location);
+        }
         if (!sizeExpr->isFoldableIntConstant()) {
             ERROR(sizeExpr->location, "array size must be a constant integer expression");
         }

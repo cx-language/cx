@@ -92,7 +92,11 @@ struct IRFunctionType : IRType {
 struct IRArrayType : IRType {
     IRType* elementType;
     int size;
+    // Set for sizeof-computed sizes, which backends fold with target layout.
+    // Empty otherwise; size is -1 while symbolic.
+    Type sizeofOperand;
 
+    bool hasSymbolicSize() const { return (bool)sizeofOperand; }
     static bool classof(const IRType* t) { return t->kind == IRTypeKind::IRArrayType; }
 };
 

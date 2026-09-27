@@ -1,0 +1,43 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+struct Pair {
+    int a;
+    int b;
+}
+
+// Owning elements need static destructor loops, which backend-folded sizes lack.
+void fillOwning() {
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: arrays with sizeof-computed size cannot hold owning elements
+    StringBuf[sizeof(Pair)] arr = undefined;
+}
+
+// Literals cannot initialize arrays whose arity is unknown here.
+void initFromLiteral() {
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: cannot assign 'int[2]' to 'uint8[sizeof(Pair)]'
+    uint8[sizeof(Pair)] x = [1, 2];
+}
+
+// A size cycle leaves the layout equation unsolvable.
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: 'Loop' has infinite size because it contains itself
+struct Loop {
+    uint8[sizeof(Loop)] buf;
+}
+
+void useUnknown() {
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: unknown type 'Bogus'
+    uint8[sizeof(Bogus)] x = undefined;
+}
+
+void useVoid() {
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: cannot take sizeof of 'void'
+    uint8[sizeof(void)] x = undefined;
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: cannot take sizeof of 'void'
+    println(sizeof(void));
+}
+
+void main() {
+    fillOwning();
+    initFromLiteral();
+    useUnknown();
+    useVoid();
+}

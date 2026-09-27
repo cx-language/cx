@@ -58,7 +58,13 @@ static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::Small
     if (!type || type.isBuiltinType() || type.isFunctionType() || type.isImplementedAsPointer()) return false;
 
     if (type.isArrayType()) {
-        if (type.getArraySize() == 0) return false; // Zero-sized arrays occupy no storage.
+        if (type.hasSizeofArraySize()) {
+            // A sizeof size depends on its operand's layout; a cycle through it
+            // leaves the size equation unsolvable.
+            if (containsItselfByValue(type.getSizeofArrayOperand(), target, visiting)) return true;
+        } else if (type.getArraySize() == 0) {
+            return false; // Zero-sized arrays occupy no storage.
+        }
         return containsItselfByValue(type.getElementType(), target, visiting);
     }
 
@@ -169,9 +175,15 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
             arg.type = resolveTypeAliases(arg.type, userAccessLevel, resolving);
             return arg;
         });
-        if (genericArgs == basicType->genericArgs) return type;
-
-        return BasicType::get(basicType->name, genericArgs, type.mutability, type.location);
+        Type rebuilt = BasicType::get(basicType->name, genericArgs, type.mutability, type.location);
+        // Fold sizeof sizes whose operand now has a known size.
+        if (rebuilt.isFixedArray() && rebuilt.hasSizeofArraySize()) {
+            if (auto size = rebuilt.getSizeofArrayOperand().getSizeInBytes()) {
+                return BasicType::getArray(rebuilt.getElementType(), int64_t(*size), type.location);
+            }
+        }
+        if (rebuilt == type) return type;
+        return rebuilt;
     }
     case TypeKind::ArrayPointerType: {
         auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving);
@@ -325,7 +337,18 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         // binding lazy: getTypeDecl resolves the stdlib methods only when a
         // member is actually looked up.
         if (type.isFixedArray()) {
-            if (!type.getArraySizeParam().empty()) {
+            if (type.hasSizeofArraySize()) {
+                Type operand = type.getSizeofArrayOperand();
+                typecheckType(operand.withLocation(type.location), userAccessLevel, recheckGenericArgs);
+                if (resolveTypeAliases(operand).isVoid()) {
+                    ERROR(type.location, "cannot take sizeof of 'void'");
+                }
+                // Element destructors are emitted per element with a static count,
+                // which a backend-folded size cannot provide.
+                if (type.getElementType().needsDestruction()) {
+                    ERROR(type.location, "arrays with sizeof-computed size cannot hold owning elements");
+                }
+            } else if (!type.getArraySizeParam().empty()) {
                 ERROR(type.location, "array size must be a constant integer expression");
             }
             if (type.getGenericArgs()[1].isInt() && type.getArraySize() > std::numeric_limits<int>::max()) {

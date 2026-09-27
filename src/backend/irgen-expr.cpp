@@ -1041,14 +1041,17 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     // Array.size() is known from the type; emit the constant instead of a call
-    // that only folds away after inlining. Symbolic sizes still call the method.
+    // that only folds away after inlining. Sizeof-computed sizes materialize
+    // through sizeof (sema never instantiates the method for those, so there
+    // is no callee); other symbolic sizes still call the method.
     if (expr.getFunctionName() == "size" && expr.getReceiver()) {
+        Type receiverType = expr.receiverType.removeOptional().removePointer();
+        if (receiverType.hasSizeofArraySize()) {
+            return createCastIfNeeded(createSizeof(receiverType.getSizeofArrayOperand()), getIRType(Type::getInt32()));
+        }
         if (auto* functionDecl = llvm::dyn_cast_or_null<FunctionDecl>(expr.calleeDecl)) {
-            if (functionDecl->getTypeDecl() && functionDecl->getTypeDecl()->getName() == "Array") {
-                Type receiverType = expr.receiverType.removeOptional().removePointer();
-                if (receiverType.isConcreteArray()) {
-                    return createConstantInt(Type::getInt32(), receiverType.getArraySize());
-                }
+            if (functionDecl->getTypeDecl() && functionDecl->getTypeDecl()->getName() == "Array" && receiverType.isConcreteArray()) {
+                return createConstantInt(Type::getInt32(), receiverType.getArraySize());
             }
         }
     }

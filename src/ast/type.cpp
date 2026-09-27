@@ -281,6 +281,28 @@ Type BasicType::getArray(Type elementType, int64_t size, Location location) {
     return BasicType::get("Array", args, elementType.mutability, location);
 }
 
+Type Type::getSizeofMarker(Type operand) {
+    return BasicType::get("sizeof", {GenericArg(operand)}, Mutability::Mutable, operand.location);
+}
+
+bool Type::isSizeofMarker() const {
+    return isBasicType() && getName() == "sizeof" && getGenericArgs().size() == 1 && getGenericArgs()[0].isType();
+}
+
+Type Type::getSizeofOperand() const {
+    ASSERT(isSizeofMarker());
+    return getGenericArgs()[0].getType();
+}
+
+bool Type::hasSizeofArraySize() const {
+    return isFixedArray() && getGenericArgs()[1].isType() && getGenericArgs()[1].getType().isSizeofMarker();
+}
+
+Type Type::getSizeofArrayOperand() const {
+    ASSERT(hasSizeofArraySize());
+    return getGenericArgs()[1].getType().getSizeofOperand();
+}
+
 Type ArrayPointerType::get(Type elementType, Location location) {
     return getType(ArrayPointerType(elementType), elementType.mutability, location);
 }
@@ -600,8 +622,9 @@ bool cx::operator!=(Type lhs, Type rhs) {
 bool Type::containsUnresolvedPlaceholder() const {
     switch (getKind()) {
     case TypeKind::BasicType:
-        // A symbolic array size (Array<T, N> with N a placeholder) is unresolved.
-        if (isFixedArray() && !getArraySizeParam().empty()) return true;
+        // A symbolic array size (Array<T, N> with N a placeholder) is unresolved,
+        // unless it is sizeof-computed, which backends fold with target layout.
+        if (isFixedArray() && !getArraySizeParam().empty() && !hasSizeofArraySize()) return true;
         for (GenericArg genericArg : getGenericArgs()) {
             if (genericArg.isType() && genericArg.getType().containsUnresolvedPlaceholder()) {
                 return true;
@@ -712,7 +735,11 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
             }
             elementType.printTo(stream, canonical);
             stream << "[";
-            if (!getArraySizeParam().empty()) {
+            if (hasSizeofArraySize()) {
+                stream << "sizeof(";
+                getSizeofArrayOperand().printTo(stream, canonical);
+                stream << ")";
+            } else if (!getArraySizeParam().empty()) {
                 stream << getArraySizeParam();
             } else {
                 stream << getArraySize();

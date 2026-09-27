@@ -37,9 +37,13 @@ IRType* cx::getIRType(Type astType) {
         // Fixed-size arrays ("T[N]") lower to LLVM array types, not to the
         // fieldless stdlib Array struct layout.
         if (astType.isFixedArray()) {
-            ASSERT(astType.isConcreteArray());
             auto elementType = getIRType(astType.getElementType());
-            irType = new IRArrayType{IRTypeKind::IRArrayType, elementType, static_cast<int>(astType.getArraySize())};
+            if (astType.hasSizeofArraySize()) {
+                irType = new IRArrayType{IRTypeKind::IRArrayType, elementType, -1, astType.getSizeofArrayOperand()};
+            } else {
+                ASSERT(astType.isConcreteArray());
+                irType = new IRArrayType{IRTypeKind::IRArrayType, elementType, static_cast<int>(astType.getArraySize()), Type()};
+            }
             break;
         }
         if (astType.isVoid() || Type::isBuiltinScalar(astType.getName())) {
@@ -212,7 +216,7 @@ IRType* Value::getType() const {
             ASSERT(gep->index < baseType->getFields().size());
             return baseType->getFields()[gep->index].type->getPointerTo();
         case IRTypeKind::IRArrayType:
-            ASSERT(gep->index < baseType->getArraySize());
+            if (!llvm::cast<IRArrayType>(baseType)->hasSymbolicSize()) ASSERT(gep->index < baseType->getArraySize());
             return baseType->getElementType()->getPointerTo();
         default:
             llvm_unreachable("invalid const GEP target type");
@@ -696,7 +700,9 @@ IRType* IRType::getElementType() {
 }
 
 int IRType::getArraySize() {
-    return llvm::cast<IRArrayType>(this)->size;
+    auto* arrayType = llvm::cast<IRArrayType>(this);
+    ASSERT(!arrayType->hasSymbolicSize());
+    return arrayType->size;
 }
 
 IRType* IRType::getPointerTo() {
@@ -719,8 +725,11 @@ llvm::raw_ostream& cx::operator<<(llvm::raw_ostream& stream, IRType* type) {
         }
         return stream << ")";
 
-    case IRTypeKind::IRArrayType:
-        return stream << type->getElementType() << "[" << type->getArraySize() << "]";
+    case IRTypeKind::IRArrayType: {
+        auto* arrayType = llvm::cast<IRArrayType>(type);
+        if (arrayType->hasSymbolicSize()) return stream << arrayType->elementType << "[sizeof(" << arrayType->sizeofOperand << ")]";
+        return stream << arrayType->elementType << "[" << arrayType->size << "]";
+    }
 
     case IRTypeKind::IRStructType:
         if (type->getName() != "") {
@@ -767,11 +776,17 @@ bool IRType::equals(IRType* other) {
         }
         return true;
 
-    case IRTypeKind::IRArrayType:
+    case IRTypeKind::IRArrayType: {
         if (!other->isArrayType()) return false;
-        if (getArraySize() != other->getArraySize()) return false;
-        if (!getElementType()->equals(other->getElementType())) return false;
-        return true;
+        auto* a = llvm::cast<IRArrayType>(this);
+        auto* b = llvm::cast<IRArrayType>(other);
+        if (a->hasSymbolicSize() || b->hasSymbolicSize()) {
+            if (!a->hasSymbolicSize() || !b->hasSymbolicSize() || a->sizeofOperand != b->sizeofOperand) return false;
+        } else if (a->size != b->size) {
+            return false;
+        }
+        return getElementType()->equals(other->getElementType());
+    }
 
     case IRTypeKind::IRStructType:
         if (!other->isStruct()) return false;
@@ -833,8 +848,13 @@ bool IRType::abiEquals(IRType* other) {
         }
         return true;
     }
-    case IRTypeKind::IRArrayType:
-        return other->isArrayType() && getArraySize() == other->getArraySize() && getElementType()->abiEquals(other->getElementType());
+    case IRTypeKind::IRArrayType: {
+        if (!other->isArrayType() || !getElementType()->abiEquals(other->getElementType())) return false;
+        auto* a = llvm::cast<IRArrayType>(this);
+        auto* b = llvm::cast<IRArrayType>(other);
+        if (a->hasSymbolicSize() || b->hasSymbolicSize()) return a->hasSymbolicSize() && b->hasSymbolicSize() && a->sizeofOperand == b->sizeofOperand;
+        return a->size == b->size;
+    }
     case IRTypeKind::IRStructType: {
         if (!other->isStruct()) return false;
         // Named structs lower to nominal LLVM types, so only identical objects

@@ -156,6 +156,15 @@ struct Type {
     Type getElementType() const;
     int64_t getArraySize() const;
     llvm::StringRef getArraySizeParam() const;
+    // A "sizeof(T)" array size is symbolic like a size parameter, but folds to an
+    // integer once the operand type is known instead of substituting a value.
+    // The marker name is unspellable (sizeof is a keyword), so user
+    // declarations can never collide with it.
+    bool isSizeofMarker() const;
+    Type getSizeofOperand() const;
+    bool hasSizeofArraySize() const;
+    Type getSizeofArrayOperand() const;
+    static Type getSizeofMarker(Type operand);
     llvm::ArrayRef<AnonymousStructElement> getAnonymousStructElements() const;
     llvm::ArrayRef<GenericArg> getGenericArgs() const;
     Type getReturnType() const;

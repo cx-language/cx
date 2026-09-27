@@ -95,7 +95,12 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
     }
     case IRTypeKind::IRArrayType: {
         auto arrayType = llvm::cast<IRArrayType>(type);
-        return llvm::ArrayType::get(getLLVMType(arrayType->elementType), arrayType->size);
+        auto* elementType = getLLVMType(arrayType->elementType);
+        if (arrayType->hasSymbolicSize()) {
+            auto* operandType = getLLVMType(getIRType(arrayType->sizeofOperand));
+            return llvm::ArrayType::get(elementType, getHostDataLayout().getTypeAllocSize(operandType));
+        }
+        return llvm::ArrayType::get(elementType, arrayType->size);
     }
     case IRTypeKind::IRFunctionType: {
         auto functionType = llvm::cast<IRFunctionType>(type);

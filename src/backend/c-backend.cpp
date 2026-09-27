@@ -1584,9 +1584,15 @@ void CGenerator::codegenTypeSuffix(llvm::raw_string_ostream& stream, IRType* typ
     switch (type->kind) {
     case IRTypeKind::IRArrayType: {
         auto* arrayType = llvm::cast<IRArrayType>(type);
-        // MSVC rejects zero-size arrays (C2466); over-allocate one dummy
-        // element instead. It is never accessed: indexing is bounds-checked.
-        stream << "[" << (arrayType->size == 0 ? 1 : arrayType->size) << "]";
+        if (arrayType->hasSymbolicSize()) {
+            stream << "[sizeof(";
+            codegenTypeExpression(stream, getIRType(arrayType->sizeofOperand), true);
+            stream << ")]";
+        } else {
+            // MSVC rejects zero-size arrays (C2466); over-allocate one dummy
+            // element instead. It is never accessed: indexing is bounds-checked.
+            stream << "[" << (arrayType->size == 0 ? 1 : arrayType->size) << "]";
+        }
         codegenTypeSuffix(stream, arrayType->elementType, false);
         break;
     }
@@ -1628,9 +1634,16 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
             codegenTypeDefinition(stream, paramType, define);
         }
         break;
-    case IRTypeKind::IRArrayType:
-        codegenTypeDefinition(stream, llvm::cast<IRArrayType>(type)->elementType, define);
+    case IRTypeKind::IRArrayType: {
+        auto* arrayType = llvm::cast<IRArrayType>(type);
+        codegenTypeDefinition(stream, arrayType->elementType, define);
+        // sizeof(...) needs the complete operand type; without this the operand's
+        // definition is interleaved mid-declaration at the use site.
+        if (define && arrayType->hasSymbolicSize()) {
+            codegenTypeDefinition(stream, getIRType(arrayType->sizeofOperand), true);
+        }
         break;
+    }
     case IRTypeKind::IRStructType: {
         auto* irStruct = llvm::cast<IRStructType>(type);
         if (irStruct->isImportedFromC || isCFileType(irStruct) || alreadyEmittedTypes.contains(type)) break;

@@ -4,6 +4,11 @@ A static array stores a fixed number of elements of the same type.
 The size is written next to the element type: `int[3]` is an array of three integers.
 The size can be any constant integer expression, such as `uint8[64 * 64 * 4]`.
 
+The size may also be `sizeof(T)`, which folds once the operand type is known.
+Generic code uses this to reserve scratch space for a value of unknown type,
+as in `uint8[sizeof(E)]`. Such arrays cannot hold owning elements or be
+initialized from literals, since their size is only known to the backends.
+
 ```cs
 void main() {
     int[3] numbers = [1, 2, 3];
