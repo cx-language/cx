@@ -2351,7 +2351,10 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr, Type targetType) {
         sourceType = sourceType.getPointee();
     }
 
-    if (sourceType == targetType) {
+    // A conversion written against a type parameter (e.g. `T(0)`) is only redundant for some
+    // instantiations, so it never warns; only warn for conversions spelled with a concrete type.
+    auto* calleeVar = llvm::dyn_cast<VarExpr>(expr.callee);
+    if (sourceType == targetType && !(calleeVar && calleeVar->instantiatedFromTypeParam)) {
         WARN(expr.callee->location, "unnecessary conversion to same type");
     }
 

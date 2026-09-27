@@ -32,6 +32,9 @@ struct Set<Key: Hashable> {
         map.reserve(minimumCapacity);
     }
 
+    /// Returns the sum of the elements, or zero if there are none.
+    Key sum() { return iterator().sum(); }
+
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Key&) predicate) { return all(iterator(), predicate); }
 
@@ -93,5 +96,10 @@ struct SetIterator<Element>: Copyable, Iterator<Element&> {
     /// Advances to the next element.
     void increment() {
         iterator.increment();
+    }
+
+    /// Returns the sum of the remaining elements, or zero if there are none.
+    Element sum() {
+        return sumRemaining(*this, Element(0));
     }
 }

@@ -62,4 +62,9 @@ struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&> {
         }
         return output;
     }
+
+    /// Returns the sum of the remaining elements, or zero if there are none.
+    Output sum() {
+        return sumRemaining(*this, Output(0));
+    }
 }

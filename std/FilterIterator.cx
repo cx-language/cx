@@ -55,4 +55,9 @@ struct FilterIterator<Input, It, Predicate>: Iterator<Input&> {
         }
         return output;
     }
+
+    /// Returns the sum of the remaining elements, or zero if there are none.
+    Input sum() {
+        return sumRemaining(*this, Input(0));
+    }
 }

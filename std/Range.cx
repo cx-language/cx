@@ -36,6 +36,9 @@ struct Range<T>: Copyable {
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
+    /// Returns the sum of the elements, or zero if there are none.
+    T sum() { return iterator().sum(); }
+
     /// Returns true if all values satisfy the predicate.
     bool all(bool(T&) predicate) { return all(iterator(), predicate); }
     /// Returns true if all values satisfy the predicate.

@@ -135,6 +135,9 @@ struct Slice<Element>: Copyable {
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
+    /// Returns the sum of the elements, or zero if there are none.
+    Element sum() { return iterator().sum(); }
+
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element&) predicate) { return all(iterator(), predicate); }
     /// Returns true if all elements satisfy the predicate.

@@ -1,0 +1,27 @@
+// RUN: %cx -typecheck -Werror -Wno-unused %s
+
+// A conversion written against a type parameter is only redundant for some
+// instantiations, so it must not warn. -Werror fails the test if it does.
+T zero<T>() {
+    return T(0);
+}
+
+struct Wrap<T> {
+    T zero() {
+        return T(0);
+    }
+}
+
+struct GenericWrap<T> {
+    T zero<U>(U ignored) {
+        return T(0);
+    }
+}
+
+void useZero() {
+    var a = zero<int>();
+    var w = Wrap<int>();
+    var b = w.zero();
+    var g = GenericWrap<int>();
+    var c = g.zero(true);
+}

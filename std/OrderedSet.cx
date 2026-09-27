@@ -59,6 +59,9 @@ struct OrderedSet<Element> {
         map.clear();
     }
 
+    /// Returns the sum of the elements, or zero if there are none.
+    Element sum() { return iterator().sum(); }
+
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element&) predicate) { return all(iterator(), predicate); }
 
@@ -105,5 +108,10 @@ struct OrderedSetIterator<Element>: Copyable, Iterator<Element&> {
     /// Advances to the next element.
     void increment() {
         mapIter.increment();
+    }
+
+    /// Returns the sum of the remaining elements, or zero if there are none.
+    Element sum() {
+        return sumRemaining(*this, Element(0));
     }
 }

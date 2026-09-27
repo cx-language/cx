@@ -119,6 +119,8 @@ struct VarExpr : Expr {
 
     Decl* decl;
     llvm::StringRef identifier;
+    // True if generic instantiation rewrote a type-parameter reference (e.g. `T` in `T(x)`) to the argument's name.
+    bool instantiatedFromTypeParam = false;
 };
 
 struct StringLiteralExpr : Expr {

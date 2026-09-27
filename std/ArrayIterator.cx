@@ -33,4 +33,9 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element&> {
         }
         return output;
     }
+
+    /// Returns the sum of the remaining elements, or zero if there are none.
+    Element sum() {
+        return sumRemaining(*this, Element(0));
+    }
 }

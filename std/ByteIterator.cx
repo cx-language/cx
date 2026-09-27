@@ -32,6 +32,11 @@ struct ByteIterator: Copyable, Iterator<uint8> {
         return output;
     }
 
+    /// Returns the sum of the remaining bytes, or zero if there are none.
+    uint8 sum() {
+        return sumRemaining(*this, uint8(0));
+    }
+
     /// Returns itself.
     ByteIterator iterator() {
         return this;

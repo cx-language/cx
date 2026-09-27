@@ -297,6 +297,9 @@ struct SmallList<Element, int N> {
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
+    /// Returns the sum of the elements, or zero if there are none.
+    Element sum() { return iterator().sum(); }
+
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element&) predicate) { return all(iterator(), predicate); }
     /// Returns true if all elements satisfy the predicate.
@@ -363,6 +366,11 @@ struct SmallListIterator<Element, int N>: Copyable, Iterator<Element&> {
     /// Advances to the next element.
     void increment() {
         index++;
+    }
+
+    /// Returns the sum of the remaining elements, or zero if there are none.
+    Element sum() {
+        return sumRemaining(*this, Element(0));
     }
 
     /// Collects the remaining elements into a list by copying them; only sound for Copyable elements.

@@ -413,11 +413,15 @@ Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
         // (e.g. a pointer) keeps the parameter name, producing an "unknown identifier"
         // error if that method is called with such an argument instead of crashing.
         llvm::StringRef identifier = varExpr->identifier;
+        // A generic method of a generic type instantiates twice; keep the flag from the first pass.
+        bool instantiatedFromTypeParam = varExpr->instantiatedFromTypeParam;
         if (it != genericArgs.end() && it->second.isType() && it->second.getType().isBasicType()) {
             identifier = it->second.getType().getName();
+            instantiatedFromTypeParam = true;
         }
         auto* newExpr = makeAST<VarExpr>(identifier, varExpr->location);
         newExpr->endLocation = varExpr->endLocation;
+        newExpr->instantiatedFromTypeParam = instantiatedFromTypeParam;
         return newExpr;
     }
     case ExprKind::StringLiteralExpr: {

@@ -99,6 +99,9 @@ struct Array<T, int N> {
         return ChainIterator<T, ArrayIterator<T>, Other>(iterator(), other);
     }
 
+    /// Returns the sum of the elements, or zero if there are none.
+    T sum() { return iterator().sum(); }
+
     /// Returns true if all elements satisfy the predicate.
     bool all(bool(T&) predicate) { return all(iterator(), predicate); }
 

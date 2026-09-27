@@ -107,7 +107,7 @@ reshaping a list reads as a pipeline instead of nested loops and temporary buffe
 ```cs
 void main() {
     var nums = List([1, 2, 3, 4]);
-    println(sum(nums));
+    println(nums.sum());
     var doubled = nums.map(n => n * 2).toList();
     println(doubled);
 }

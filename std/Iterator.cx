@@ -73,3 +73,13 @@ bool none<T: Copyable, I>(I& it, bool(T) predicate) {
     }
     return true;
 }
+
+/// Sums the remaining elements of the iterator, starting from the given zero value.
+private T sumRemaining<T, I>(I& it, T zero) {
+    var total = zero;
+    while it.hasValue() {
+        total += it.value();
+        it.increment();
+    }
+    return total;
+}

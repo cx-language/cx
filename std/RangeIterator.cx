@@ -35,4 +35,9 @@ struct RangeIterator<T>: Copyable, Iterator<T> {
         }
         return output;
     }
+
+    /// Returns the sum of the remaining elements, or zero if there are none.
+    T sum() {
+        return sumRemaining(*this, T(0));
+    }
 }
