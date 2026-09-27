@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
 
 
 struct Point {
@@ -15,5 +15,28 @@ void main() {
         return q.x;
     };
     _ = f();
+}
+
+struct NC {
+    int x;
+    ~NC() {}
+}
+
+void take(NC v) {
+}
+
+void run(void() body) {
+    body();
+}
+
+// The lambda is checked twice (overload probe, then validation); the second
+// check must not crash on the unset return type left by the first failure.
+int recheckAfterError() {
+    var n = NC(1);
+    run(() => {
+        // CHECK: [[@LINE+1]]:14: error: cannot move from captured variable 'n'
+        take(n);
+    });
+    return 0;
 }
 

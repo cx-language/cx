@@ -4174,11 +4174,16 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
     expr.functionDecl->parentFunction = currentFunction;
     typecheckFunctionDecl(*expr.functionDecl);
 
+    // A failed first check marks the lambda Checked while leaving the return type (or a
+    // capture's type) unset; re-entrant checks must bail instead of interning null types.
+    if (!expr.functionDecl->getReturnType()) throw CompileError::dependentError();
+
     if (expr.functionDecl->captures.empty()) {
         return Type(expr.functionDecl->getFunctionType(), Mutability::Mutable, expr.location);
     }
 
     for (auto* captured : expr.functionDecl->captures) {
+        if (!captured->type) throw CompileError::dependentError();
         VarExpr use(captured->getName(), expr.location);
         checkNotMoved(*captured, use);
         if (!captured->type.isImplicitlyCopyable()) {
