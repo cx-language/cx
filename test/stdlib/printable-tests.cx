@@ -59,6 +59,15 @@ void testSynthesizedNullableFieldPrint() {
 }
 
 @test
+void testPrintDoesNotMove() {
+    var buf = StringBuf("hello");
+    print(buf);
+    println(buf);
+    println(buf, buf);
+    assert(string(buf) == "hello");
+}
+
+@test
 void testSynthesizedStructInContainerPrint() {
     var list = List<Point>();
     list.push(Point(5, 6));
