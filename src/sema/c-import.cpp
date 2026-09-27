@@ -210,6 +210,61 @@ struct CToCxConverter final : clang::ASTConsumer {
         return FieldDecl(toCx(decl.getType()), decl.getName(), nullptr, typeDecl, AccessLevel::Default, Location());
     }
 
+    // Collects the field names an imported record will have after anonymous
+    // struct members are promoted, so generated field names can avoid them.
+    void collectPromotedNames(const clang::RecordDecl& def, bool parentIsUnion, std::unordered_set<std::string>& names) {
+        for (auto* field : def.fields()) {
+            if (field->isAnonymousStructOrUnion()) {
+                auto* anonRecord = field->getType()->getAsRecordDecl();
+                const clang::RecordDecl* anonDef = anonRecord ? anonRecord->getDefinition() : nullptr;
+                if (anonDef && !anonDef->isUnion() && !parentIsUnion) {
+                    collectPromotedNames(*anonDef, false, names);
+                }
+            } else if (!field->getName().empty()) {
+                names.emplace(field->getName());
+            }
+        }
+    }
+
+    // Appends the conversion of one field of a C record definition to the cx
+    // record. Anonymous structs nested in structs are promoted (they're laid
+    // out in place, so this preserves the C layout); anything nested in a
+    // union nests under a generated field name since union members overlap
+    // rather than sequence. Returns false if the field can't be converted, in
+    // which case the whole struct is dropped.
+    bool appendField(const clang::FieldDecl& field, TypeDecl& typeDecl, bool& hasAnonymousMember, std::unordered_set<std::string>& usedNames,
+                     unsigned& anonymousMemberCount) {
+        if (field.isAnonymousStructOrUnion()) {
+            auto* anonRecord = field.getType()->getAsRecordDecl();
+            const clang::RecordDecl* anonDef = anonRecord ? anonRecord->getDefinition() : nullptr;
+            if (!anonDef) return false;
+            hasAnonymousMember = true;
+            if (anonDef->isUnion() || typeDecl.isUnion()) {
+                TypeDecl* nested = toCx(*anonDef);
+                if (!nested) return false;
+                std::string fieldName;
+                do {
+                    fieldName = "unnamed_" + std::to_string(anonymousMemberCount++);
+                } while (!usedNames.insert(fieldName).second);
+                auto nestedType = BasicType::get(nested->getName(), {}, Mutability::Mutable);
+                llvm::cast<BasicType>(nestedType.typeBase)->decl = nested;
+                typeDecl.fields.emplace_back(nestedType, fieldName, nullptr, typeDecl, AccessLevel::Default, Location());
+            } else {
+                for (auto* subfield : anonDef->fields()) {
+                    if (!appendField(*subfield, typeDecl, hasAnonymousMember, usedNames, anonymousMemberCount)) return false;
+                }
+            }
+            return true;
+        }
+        auto fieldDecl = toCx(field, typeDecl);
+        if (!fieldDecl) return false;
+        if (auto* fieldRecord = field.getType()->getAsRecordDecl()) {
+            if (getName(*fieldRecord).empty()) hasAnonymousMember = true;
+        }
+        typeDecl.fields.emplace_back(std::move(*fieldDecl));
+        return true;
+    }
+
     TypeDecl* toCx(const clang::RecordDecl& recordDecl) {
         // Key by canonical declaration so that forward declarations, the
         // definition, and references to either all resolve to the same type.
@@ -220,8 +275,17 @@ struct CToCxConverter final : clang::ASTConsumer {
         auto it = importedRecordDecls.find(canonical);
         if (it == importedRecordDecls.end()) {
             auto tag = recordDecl.isUnion() ? TypeTag::Union : TypeTag::Struct;
-            auto* typeDecl =
-                makeAST<TypeDecl>(tag, getName(recordDecl), std::vector<GenericArg>(), std::vector<Type>(), AccessLevel::Default, module, nullptr, Location());
+            llvm::StringRef name = getName(recordDecl);
+            std::string anonymousName;
+            if (name.empty()) {
+                // Anonymous records only occur nested in other records, so
+                // they always have a definition; give them a generated name.
+                do {
+                    anonymousName = "AnonymousRecord" + std::to_string(anonymousRecordCount++);
+                } while (!module.symbolTable.findInTopLevelScope(anonymousName).empty());
+                name = anonymousName;
+            }
+            auto* typeDecl = makeAST<TypeDecl>(tag, name, std::vector<GenericArg>(), std::vector<Type>(), AccessLevel::Default, module, nullptr, Location());
             it = importedRecordDecls.emplace(canonical, typeDecl).first;
 
             // Add to symbol table before type-checking so that type-checker finds the struct decl.
@@ -237,20 +301,20 @@ struct CToCxConverter final : clang::ASTConsumer {
                 TypeDecl* typeDecl = it->second;
                 typeDecl->packed = def->hasAttr<clang::PackedAttr>();
 
-                bool hasFieldWithAnonymousType = false;
+                bool hasAnonymousMember = false;
+                unsigned anonymousMemberCount = 0;
+                std::unordered_set<std::string> usedNames;
+                collectPromotedNames(*def, typeDecl->isUnion(), usedNames);
                 for (auto* field : def->fields()) {
-                    if (auto fieldDecl = toCx(*field, *typeDecl)) {
-                        if (fieldDecl->type.isBasicType() && fieldDecl->type.getName().empty()) {
-                            hasFieldWithAnonymousType = true;
-                        }
-                        typeDecl->fields.emplace_back(std::move(*fieldDecl));
-                    } else {
+                    if (!appendField(*field, *typeDecl, hasAnonymousMember, usedNames, anonymousMemberCount)) {
                         return nullptr;
                     }
                 }
 
-                // Fields with unnameable types not yet supported.
-                if (!def->getName().empty() && def->isStruct() && !hasFieldWithAnonymousType) {
+                // Structs with anonymous members keep the C layout but get no
+                // autogenerated constructor: overlapping union members can't
+                // be constructed by field, so none of these structs can.
+                if (!def->getName().empty() && def->isStruct() && !hasAnonymousMember) {
                     // TODO: Add types in 'addAutogeneratedConstructor' so we don't need to type-check afterwards?
                     typeDecl->addAutogeneratedConstructor();
                     // Add types to the autogenerated constructor for IRGen:
@@ -467,6 +531,7 @@ private:
     clang::ASTContext* astContext = nullptr;
     std::unordered_map<const clang::RecordDecl*, TypeDecl*> importedRecordDecls;
     std::unordered_set<const clang::RecordDecl*> completedRecordDecls;
+    unsigned anonymousRecordCount = 0;
 };
 
 struct MacroImporter final : clang::PPCallbacks {

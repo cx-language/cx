@@ -1,0 +1,27 @@
+// RUN: check-snapshots
+
+import "inputs/anonymous-union.h";
+
+void main() {
+    var w = makeWithAnon();
+    print(w.tag);
+    print(w.unnamed_0.a);
+    var o = makeOnlyUnion();
+    print(o.unnamed_0.b);
+    var f = makeFlat();
+    print(f.x);
+    print(f.y);
+    print(f.z);
+    var n = makeNestedFlat();
+    print(n.z);
+    var t = makeTwoUnions();
+    print(t.unnamed_0.a);
+    print(t.unnamed_1.b);
+    var s = makeStructInUnion();
+    print(s.unnamed_0.x);
+    print(s.unnamed_0.y);
+    print(s.d);
+    var c = makeNameClash();
+    print(c.unnamed_1.a);
+    print(c.unnamed_0);
+}
