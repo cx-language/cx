@@ -395,3 +395,43 @@ bool operator==(char[*] a, StringBuf& b) {
 bool operator==(StringBuf& a, char[*] b) {
     return string(a) == string(b);
 }
+
+/// A null-terminated copy of a string for passing to C functions.
+/// Strings shorter than 256 characters use inline storage, avoiding heap
+/// allocation; longer ones spill to a heap buffer.
+struct CStringBuffer {
+    private char[256] inlineStorage;
+    private char[*] heapBuffer;
+    private bool spilled;
+
+    CStringBuffer(string text) {
+        if text.size() + 1 <= 256 {
+            copyInto(&inlineStorage[0], text);
+            heapBuffer = undefined;
+            spilled = false;
+        } else {
+            inlineStorage = undefined;
+            heapBuffer = allocate<char>(count = uint64(text.size() + 1));
+            copyInto(heapBuffer, text);
+            spilled = true;
+        }
+    }
+
+    ~CStringBuffer() {
+        if spilled deallocate(heapBuffer);
+    }
+
+    /// Returns the null-terminated string. Only valid while this buffer is alive.
+    char* cString() {
+        if spilled return heapBuffer;
+        return &inlineStorage[0];
+    }
+
+    private void copyInto(char[*] dest, string text) {
+        // memcpy requires valid pointers even for zero bytes; an empty string may not have one.
+        if !text.empty() {
+            memcpy(dest, text.data(), c_size_t(text.size()));
+        }
+        dest[text.size()] = '\0';
+    }
+}

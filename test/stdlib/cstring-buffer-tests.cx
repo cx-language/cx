@@ -1,0 +1,51 @@
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --release %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror --release --backend=c %s
+
+void checkRoundTrip(string text) {
+    var buf = CStringBuffer(text);
+    assert(string(buf.cString()) == text);
+}
+
+@test
+void testCStringBufferShortString() {
+    checkRoundTrip("");
+    checkRoundTrip("hello");
+    checkRoundTrip("" + "a".repeat(255));
+}
+
+@test
+void testCStringBufferSpillsToHeap() {
+    checkRoundTrip("" + "b".repeat(256));
+    checkRoundTrip("" + "c".repeat(1000));
+}
+
+@test
+void testCStringBufferSpillPathSuccess() {
+    // A >255 digit number lexeme exercises the spill path through strtod and must still parse.
+    var digits = StringBuf(capacity = 310);
+    digits.push('1');
+    digits.push('.');
+    for _ in 0..300 {
+        digits.push('0');
+    }
+    digits.push('5');
+    var r = parseJson(string(digits));
+    switch (r) {
+        case Ok v:
+            assert(v.toString() == "1");
+        case Err e:
+            println("unexpected error: ", e.toString());
+            assert(false);
+    }
+}
+
+@test
+void testCStringBufferThroughRealCalls() {
+    // Exercises both paths through real C calls.
+    assert(!exists("definitely-not-a-real-file-name-12345"));
+    assert(!exists("" + "x".repeat(500)));
+    assert(getenv("CX_DEFINITELY_UNSET_VARIABLE_12345") == null);
+    assert(getenv("" + "y".repeat(500)) == null);
+}

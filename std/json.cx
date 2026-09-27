@@ -391,7 +391,7 @@ private struct JsonParser {
                 return Ok(JsonValue.Integer(integer));
             }
         }
-        var text = StringBuf(lexeme);
+        var text = CStringBuffer(lexeme);
         float64 value = strtod(text.cString(), null);
         // Only infinite values equal their own half.
         if value != 0.0 && value / 2.0 == value {
