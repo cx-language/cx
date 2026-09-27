@@ -6,7 +6,9 @@ struct S {
 }
 
 // Using the type must not crash the compiler.
-void f(S s) {}
+void f(S s) {
+    s.deinit();
+}
 
 void main() {
     // CHECK: [[@LINE+1]]:5: error: unknown identifier 'nosuchcall'

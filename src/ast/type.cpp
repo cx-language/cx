@@ -1,6 +1,7 @@
 #include "type.h"
 #include <sstream>
 #pragma warning(push, 0)
+#include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSwitch.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -72,6 +73,10 @@ bool Type::isImplicitlyCopyable() const {
     llvm_unreachable("all cases handled");
 }
 
+// In-progress needsDestruction queries. Infinite-size types are already an error, but
+// checking continues after it, so field cycles must still terminate.
+static thread_local std::vector<const TypeDecl*> destructionQueries;
+
 bool Type::needsDestruction() const {
     if (getDestructor()) return true;
     if (isFixedArray()) return getElementType().needsDestruction();
@@ -81,11 +86,13 @@ bool Type::needsDestruction() const {
         }
         return false;
     }
-    if (auto* typeDecl = getDecl()) {
-        if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(typeDecl)) return enumDecl->hasDestructiblePayload();
-        for (auto& field : typeDecl->fields) {
-            if (field.type.needsDestruction()) return true;
-        }
+    auto* typeDecl = getDecl();
+    if (!typeDecl || llvm::is_contained(destructionQueries, typeDecl)) return false;
+    destructionQueries.push_back(typeDecl);
+    llvm::scope_exit pop([&] { destructionQueries.pop_back(); });
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(typeDecl)) return enumDecl->hasDestructiblePayload();
+    for (auto& field : typeDecl->fields) {
+        if (field.type.needsDestruction()) return true;
     }
     return false;
 }
