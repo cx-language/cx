@@ -8,6 +8,22 @@ struct HasPrintConst {
     const print = 1;
 }
 
+enum EnumHasPrintMethod {
+    A,
+    B,
+
+    int print() {
+        return 1;
+    }
+}
+
+enum EnumHasPrintConst {
+    A,
+    B,
+
+    const print = 1;
+}
+
 void main() {
     var h = HasPrintField(9);
     // Print synthesis declines when a member already owns the name, so this stays an error.
@@ -16,4 +32,8 @@ void main() {
     var c = HasPrintConst();
     // CHECK: error: no matching function 'print(HasPrintConst)'
     println(c);
+    // CHECK: error: no matching function 'print(EnumHasPrintMethod)'
+    println(EnumHasPrintMethod.A);
+    // CHECK: error: no matching function 'print(EnumHasPrintConst)'
+    println(EnumHasPrintConst.A);
 }

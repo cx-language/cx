@@ -2069,7 +2069,7 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
                 if (satisfiesCopyable(genericArg.getType())) continue;
             } else if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase)) {
                 auto* typeDecl = getTypeDecl(*basicType);
-                // Printable is synthesized on demand for concrete structs, so `print(point)` just works.
+                // Printable is synthesized on demand for concrete structs and enums, so `print(point)` just works.
                 if (typeDecl && tryEnsurePrintable(*typeDecl, *interface, returnOnError)) continue;
             }
 
@@ -2306,7 +2306,7 @@ bool Typechecker::tryEnsurePrintable(TypeDecl& typeDecl, const TypeDecl& interfa
 bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
     // Builtin scalars without a print method (int128 etc.) stay unprintable; claiming
     // them would render their values as `Name()`. Same for closures and anonymous types.
-    if (!decl.isStruct() || decl.getName().empty() || decl.isClosure() || Type::isBuiltinScalar(decl.getName())) return false;
+    if ((!decl.isStruct() && !decl.isEnumDecl()) || decl.getName().empty() || decl.isClosure() || Type::isBuiltinScalar(decl.getName())) return false;
     // A user member named `print` owns the name; never shadow it.
     for (Decl* method : decl.methods) {
         if (method->getName() == "print") return false;
@@ -2316,6 +2316,11 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
     }
     for (FieldDecl& field : decl.fields) {
         if (field.getName() == "print" || !isConcreteType(field.type)) return false;
+    }
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(&decl)) {
+        for (EnumCase& enumCase : enumDecl->cases) {
+            if (enumCase.associatedType && !isConcreteType(enumCase.associatedType)) return false;
+        }
     }
     size_t methodCount = decl.methods.size();
     size_t interfaceCount = decl.interfaces.size();
@@ -2369,15 +2374,57 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
         }
         stmts.push_back(makeAST<IfStmt>(condition, std::move(thenBody), std::move(elseBody)));
     };
-    appendString(body, std::string(decl.getName()) + "(");
-    bool first = true;
-    for (FieldDecl& field : decl.fields) {
-        if (!first) appendString(body, ", ");
-        first = false;
-        appendString(body, std::string(field.getName()) + ": ");
-        printField(body, [&] { return makeAST<MemberExpr>(makeAST<VarExpr>("this", location), field.getName(), location); }, field.type);
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(&decl)) {
+        // Payloadless cases print as bare names (`Red`); payloads print positionally
+        // (`Ok(42)`, `Click(3, 4)`), matching hand-written enum prints.
+        std::vector<SwitchCase> cases;
+        for (EnumCase& enumCase : enumDecl->cases) {
+            std::vector<Stmt*> caseBody;
+            VarDecl* binding = nullptr;
+            if (!enumCase.associatedType) {
+                appendString(caseBody, std::string(enumCase.getName()));
+            } else {
+                auto elements = enumCase.associatedType.getAnonymousStructElements();
+                binding = makeAST<VarDecl>(Type(), "__payload", nullptr, method, AccessLevel::None, home, location);
+                appendString(caseBody, std::string(enumCase.getName()) + "(");
+                if (elements.size() == 1) {
+                    // Single-element payloads bind the value directly. The binding borrows
+                    // (`T&`), which cannot be compared with null, so dereference optional
+                    // payloads back to the plain optional type for the null check.
+                    Type payloadType = elements.front().type;
+                    printField(
+                        caseBody,
+                        [&] {
+                            Expr* payload = makeAST<VarExpr>("__payload", location);
+                            return payloadType.isOptionalType() ? makeAST<UnaryExpr>(Token::Star, payload, location) : payload;
+                        },
+                        payloadType);
+                } else {
+                    bool firstElement = true;
+                    for (auto& element : elements) {
+                        if (!firstElement) appendString(caseBody, ", ");
+                        firstElement = false;
+                        printField(
+                            caseBody, [&] { return makeAST<MemberExpr>(makeAST<VarExpr>("__payload", location), element.name, location); }, element.type);
+                    }
+                }
+                appendString(caseBody, ")");
+            }
+            // Bare case names desugar to qualified ones during switch checking.
+            cases.emplace_back(makeAST<VarExpr>(enumCase.getName(), location), binding, std::move(caseBody));
+        }
+        body.push_back(makeAST<SwitchStmt>(makeAST<VarExpr>("this", location), std::move(cases), std::vector<Stmt*>()));
+    } else {
+        appendString(body, std::string(decl.getName()) + "(");
+        bool first = true;
+        for (FieldDecl& field : decl.fields) {
+            if (!first) appendString(body, ", ");
+            first = false;
+            appendString(body, std::string(field.getName()) + ": ");
+            printField(body, [&] { return makeAST<MemberExpr>(makeAST<VarExpr>("this", location), field.getName(), location); }, field.type);
+        }
+        appendString(body, ")");
     }
-    appendString(body, ")");
     method->body = std::move(body);
     // Body checking reports (not throws) statement errors, so collect diagnostics and
     // treat new errors as failed synthesis. Probing stays silent; loud callers re-emit.
@@ -2386,7 +2433,7 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
     std::exception_ptr pending;
     {
         llvm::SaveAndRestore collect(diagnosticCollector, &collected);
-        // Visible before its body is checked so recursive structs terminate: calls only need the signature.
+        // Visible before its body is checked so recursive types terminate: calls only need the signature.
         // Nullable-receiver lookup skips the methods list, so register in the symbol table too.
         decl.addMethod(method);
         home.addToSymbolTable(*method);
@@ -3298,7 +3345,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         auto callee = expr.getQualifiedFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
 
-        // Synthesize `print` for concrete structs on first use (`toString` comes with it via Printable), then retry.
+        // Synthesize `print` for concrete structs and enums on first use (`toString` comes with it via Printable), then retry.
         if (decls.empty() && (expr.getFunctionName() == "print" || expr.getFunctionName() == "toString")) {
             if (auto* basicType = llvm::dyn_cast<BasicType>(receiverType.removeOptional().removePointer().typeBase)) {
                 if (auto* typeDecl = getTypeDecl(*basicType)) {

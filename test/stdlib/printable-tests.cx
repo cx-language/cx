@@ -77,3 +77,65 @@ void testSynthesizedStructInContainerPrint() {
     list.print(stream);
     assert(string(buf) == "[Point(x: 5, y: 6), Point(x: 7, y: 8)]");
 }
+
+enum Color {
+    Red,
+    Green,
+}
+
+enum Outcome<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+enum Event {
+    Click(int x, int y),
+    Quit,
+}
+
+enum MaybeName {
+    Name(string? value),
+    Anonymous,
+}
+
+enum ClickEvent {
+    Click(int? x, int y),
+    Miss,
+}
+
+@test
+void testSynthesizedEnumPrint() {
+    assert(string(Color.Red.toString()) == "Red");
+    assert(string(Event.Quit.toString()) == "Quit");
+    assert(string(Event.Click(x = 3, y = 4).toString()) == "Click(3, 4)");
+    assert(string(ClickEvent.Click(x = 1, y = 2).toString()) == "Click(1, 2)");
+    assert(string(ClickEvent.Click(x = null, y = 2).toString()) == "Click(null, 2)");
+    assert(string(Outcome.Ok("hi").toString()) == "Ok(hi)");
+    assert(string(Outcome.Err<string>(1).toString()) == "Err(1)");
+    assert(string(MaybeName.Name("Bo").toString()) == "Name(Bo)");
+    assert(string(MaybeName.Name(null).toString()) == "Name(null)");
+}
+
+@test
+void testSynthesizedEnumInContainerPrint() {
+    var list = List<Color>();
+    list.push(Color.Red);
+    list.push(Color.Green);
+    var buf = StringBuf();
+    var stream = OutputStream(&buf);
+    list.print(stream);
+    assert(string(buf) == "[Red, Green]");
+}
+
+enum HasList {
+    Hold(List<int> items),
+    Empty,
+}
+
+@test
+void testSynthesizedEnumPrintDoesNotMove() {
+    var event = HasList.Hold(List([1, 2]));
+    print(event);
+    println(event);
+    assert(string(event.toString()) == "Hold([1, 2])");
+}

@@ -1,0 +1,61 @@
+// RUN: %cx run %s | %FileCheck %s
+
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+enum Outcome<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+enum Event {
+    Click(int x, int y),
+    Keypress(char key),
+    Quit,
+}
+
+enum MaybeName {
+    Name(string? value),
+    Anonymous,
+}
+
+struct Point {
+    int x;
+    int y;
+}
+
+enum Shape {
+    At(Point point),
+    Colored(Color color),
+}
+
+enum Custom : Printable {
+    Yes,
+    No,
+
+    void print(OutputStream& stream) {
+        switch this {
+            case Yes: stream.append("CUSTOM-YES");
+            case No: stream.append("CUSTOM-NO");
+        }
+    }
+}
+
+void main() {
+    println(Color.Red); // CHECK: Red
+    println(Color.Green); // CHECK-NEXT: Green
+    println(Outcome.Ok(42)); // CHECK-NEXT: Ok(42)
+    println(Outcome.Err<int>(404)); // CHECK-NEXT: Err(404)
+    println(Event.Click(x = 3, y = 4)); // CHECK-NEXT: Click(3, 4)
+    println(Event.Keypress(key = 'q')); // CHECK-NEXT: Keypress(q)
+    println(Event.Quit); // CHECK-NEXT: Quit
+    println(MaybeName.Name("Bo")); // CHECK-NEXT: Name(Bo)
+    println(MaybeName.Name(null)); // CHECK-NEXT: Name(null)
+    println(MaybeName.Anonymous); // CHECK-NEXT: Anonymous
+    println(Shape.At(Point(1, 2))); // CHECK-NEXT: At(Point(x: 1, y: 2))
+    println(Shape.Colored(Color.Blue)); // CHECK-NEXT: Colored(Blue)
+    println(Custom.Yes); // CHECK-NEXT: CUSTOM-YES
+}

@@ -122,6 +122,9 @@ void main() {
 }
 ```
 
+A hand-written `print` is only needed for custom output like this;
+plain enums print without any boilerplate, as described below.
+
 ## Iterating cases
 
 A `for` loop over an enum without associated values visits each case
@@ -143,3 +146,38 @@ void main() {
 
 Enums with associated values and generic enums cannot be iterated;
 looping over them is a compile error.
+
+## Printing
+
+Enums print generically: `print` renders the case name, followed by
+the associated values in parentheses when the case carries any, so no
+boilerplate is needed for logging and debugging.
+The compiler generates the equivalent of a hand-written `print` method
+the first time an enum value is printed, and the enum also gains
+`toString` through the `Printable` interface:
+
+```cs
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+enum Outcome<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+void main() {
+    println(Color.Red); // prints "Red"
+    println(Outcome.Ok(42)); // prints "Ok(42)"
+    println(Outcome.Err<int>(404)); // prints "Err(404)"
+}
+```
+
+Cases with several associated values print them positionally:
+`Click(3, 4)`. Nested enums, generic enums instantiated with
+printable arguments, and containers of enums all work. Nullable
+associated values print as `null` when null. An enum with its own
+`print` method or a member named `print` keeps it; the compiler never
+overrides user-declared members.
