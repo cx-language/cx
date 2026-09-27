@@ -14,6 +14,11 @@ struct OrderedMap<Key, Value> {
         clear();
     }
 
+    /// Moves the map out, leaving an empty map in its place.
+    OrderedMap<Key, Value> take() {
+        return takeFrom(&this, OrderedMap());
+    }
+
     /// Removes all entries from the map.
     void clear() {
         if root != null {

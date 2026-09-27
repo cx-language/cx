@@ -7,6 +7,11 @@ struct Set<Key: Hashable> {
         map = Map();
     }
 
+    /// Moves the set out, leaving an empty set in its place.
+    Set<Key> take() {
+        return takeFrom(&this, Set());
+    }
+
     /// Inserts an element into the set. If the element exists already, nothing is done.
     void insert(Key key) {
         if !map.contains(key) {

@@ -49,6 +49,11 @@ struct List<Element> {
         }
     }
 
+    /// Moves the list out, leaving an empty list in its place.
+    List<Element> take() {
+        return takeFrom(&this, List());
+    }
+
     /// Returns the number of elements in the list.
     int size() {
         return size;

@@ -16,6 +16,11 @@ struct Queue<T> {
         clear();
     }
 
+    /// Moves the queue out, leaving an empty queue in its place.
+    Queue<T> take() {
+        return takeFrom(&this, Queue());
+    }
+
     /// Removes all elements from the queue.
     void clear() {
         while !empty() {

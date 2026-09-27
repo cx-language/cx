@@ -258,6 +258,26 @@ void main() {
 }
 ```
 
+Values stored in a struct field or behind a pointer can be moved out
+explicitly with `take()`, which leaves a fresh default value behind so
+the container stays usable. The stdlib collections provide it
+(`List`, `Map`, `Set`, `OrderedMap`, `OrderedSet`, `Queue`,
+`SmallList`, `StringBuf`, `Optional`, `Arena`):
+
+```cs
+struct Team {
+    string tag;
+    List<string> members;
+}
+
+void main() {
+    var team = Team("red", List(["a", "b"]));
+    var members = team.members.take(); // moves; team.members is now empty
+    println(members.size()); // prints 2
+    println(team.members.size()); // prints 0
+}
+```
+
 ## Printing
 
 Structs print generically: `print` renders the struct name followed by

@@ -1,0 +1,172 @@
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --release %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
+
+struct Person {
+    StringBuf name;
+    int age;
+}
+
+struct Team {
+    List<StringBuf> members;
+}
+
+@test
+void testTakeStringBufField() {
+    var p = Person(name = StringBuf("Bo"), age = 42);
+    var name = p.name.take();
+    assert(string(name) == "Bo");
+    assert(string(p.name) == "");
+    assert(p.age == 42);
+}
+
+@test
+void testTakeListField() {
+    var membersList = List<StringBuf>();
+    membersList.push(StringBuf("a"));
+    var t = Team(members = membersList);
+    var members = t.members.take();
+    assert(members.size() == 1);
+    assert(string(members[0]) == "a");
+    assert(t.members.size() == 0);
+}
+
+@test
+void testTakeMapAndSet() {
+    var m = Map<string, int>();
+    m.insert("k", 1);
+    var taken = m.take();
+    assert(taken.size() == 1);
+    var key = "k";
+    assert(taken[key]! == 1);
+    assert(m.size() == 0);
+    m.insert("after", 2);
+    var keyAfter = "after";
+    assert(m[keyAfter]! == 2);
+
+    var s = Set<string>();
+    s.insert("x");
+    var takenSet = s.take();
+    assert(takenSet.size() == 1);
+    assert(s.size() == 0);
+    s.insert("y");
+    assert(s.size() == 1);
+}
+
+@test
+void testTakeOrderedContainers() {
+    var m = OrderedMap<string, int>();
+    m.insert("k", 2);
+    var taken = m.take();
+    assert(taken.size() == 1);
+    var key = "k";
+    assert(taken[key]! == 2);
+    assert(m.size() == 0);
+    m.insert("after", 3);
+    var keyAfter = "after";
+    assert(m[keyAfter]! == 3);
+
+    var s = OrderedSet<string>();
+    s.insert("x");
+    var takenSet = s.take();
+    assert(takenSet.size() == 1);
+    assert(s.size() == 0);
+    s.insert("y");
+    assert(s.size() == 1);
+}
+
+@test
+void testTakeQueueAndSmallList() {
+    var q = Queue<int>();
+    q.push(7);
+    var taken = q.take();
+    assert(taken.pop() == 7);
+    assert(q.size() == 0);
+    q.push(8);
+    assert(q.pop() == 8);
+
+    // Push past inline capacity so the take moves a heap spill.
+    var l = SmallList<int, 4>();
+    for i in 0..6 {
+        l.push(i);
+    }
+    var takenList = l.take();
+    assert(takenList.size() == 6);
+    assert(takenList[5] == 5);
+    assert(l.size() == 0);
+    l.push(9);
+    assert(l[0] == 9);
+}
+
+@test
+void testTakeOptional() {
+    // Unwrapping first takes the payload, leaving Some(empty).
+    Optional<StringBuf> o = Optional.Some(value = StringBuf("hi"));
+    var payload = o!.take();
+    assert(string(payload) == "hi");
+    assert(string(o!) == "");
+
+    // Pointer receivers take the whole optional, leaving None.
+    Optional<StringBuf> p = Optional.Some(value = StringBuf("yo"));
+    var whole = (&p).take();
+    assert(p == null);
+    assert(string(whole!) == "yo");
+
+    Optional<StringBuf> e = Optional.None;
+    var wholeEmpty = (&e).take();
+    assert(e == null);
+    assert(wholeEmpty == null);
+}
+
+@test
+void testTakeLocalStaysUsable() {
+    var a = StringBuf("x");
+    var b = a.take();
+    assert(string(a) == "");
+    assert(string(b) == "x");
+
+    // takeFrom with a custom default: returns the old value, leaves the default.
+    var n = 7;
+    assert(takeFrom(&n, 99) == 7);
+    assert(n == 99);
+
+    // Empty take, double take, and push-after-take all stay valid.
+    var l = List<int>();
+    assert(l.take().size() == 0);
+    l.push(1);
+    assert(l.take().size() == 1);
+    assert(l.take().size() == 0);
+    l.push(2);
+    assert(l[0] == 2);
+}
+
+struct Inner {
+    StringBuf value;
+}
+
+struct Outer {
+    Inner inner;
+}
+
+void steal(Outer& o) {
+    var v = o.inner.value.take();
+    assert(string(v) == "deep");
+}
+
+@test
+void testTakeNestedThroughBorrow() {
+    var o = Outer(inner = Inner(value = StringBuf("deep")));
+    steal(o);
+    assert(string(o.inner.value) == "");
+}
+
+@test
+void testTakeArena() {
+    var arena = Arena();
+    var p = arena.allocate<int>();
+    p.init(42);
+    var taken = arena.take();
+    assert(*(p!) == 42);
+    assert(taken.allocate<int>() != null);
+    assert(arena.allocate<int>() != null);
+}

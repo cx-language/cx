@@ -9,6 +9,11 @@ struct StringBuf: Comparable, Hashable, Printable {
         characters.push('\0');
     }
 
+    /// Moves the string out, leaving an empty string in its place.
+    StringBuf take() {
+        return takeFrom(&this, StringBuf());
+    }
+
     /// Initializes an empty string with pre-allocated capacity.
     StringBuf(public int capacity) {
         init();

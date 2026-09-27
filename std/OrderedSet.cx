@@ -7,6 +7,11 @@ struct OrderedSet<Element> {
         map = OrderedMap();
     }
 
+    /// Moves the set out, leaving an empty set in its place.
+    OrderedSet<Element> take() {
+        return takeFrom(&this, OrderedSet());
+    }
+
     /// Inserts an element into the Set.
     bool insert(Element e) {
         return map.insert(e, false);

@@ -1,0 +1,11 @@
+/// Moves the value out of the given slot, leaving `defaultValue` in its place.
+///
+/// This is the primitive behind `take()` methods; most code should call those instead.
+/// The default value must be fully owned and valid, since it becomes the slot's new contents.
+/// `slot` must not point into `defaultValue`; the copy reads the slot first and would alias.
+T takeFrom<T>(T* slot, T defaultValue) {
+    T out = undefined;
+    memcpy(&out, slot, c_size_t(sizeof(T)));
+    slot.init(defaultValue);
+    return out;
+}

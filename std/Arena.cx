@@ -23,6 +23,11 @@ struct Arena {
         current = null;
     }
 
+    /// Moves the arena out, leaving an empty arena in its place.
+    Arena take() {
+        return takeFrom(&this, Arena());
+    }
+
     /// Allocates uninitialized storage for one value, or returns null on overflow or allocation failure.
     T*? allocate<T>() {
         var storage = reserve(sizeof(T));

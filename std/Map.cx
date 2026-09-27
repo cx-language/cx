@@ -17,6 +17,11 @@ struct Map<Key: Hashable, Value> {
         hashTable = List(128, List<MapEntry<Key, Value>>());
     }
 
+    /// Moves the map out, leaving an empty map in its place.
+    Map<Key, Value> take() {
+        return takeFrom(&this, Map());
+    }
+
     /// Inserts an element into the map. The key must not already be in the map.
     void insert(Key key, Value value) {
         assert(!contains(key));
