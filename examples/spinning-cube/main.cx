@@ -1,0 +1,296 @@
+// Software rasterizer: a spinning cube with flat shading and a depth buffer.
+// Projects the cube, rasterizes its triangles with edge functions, and shades
+// each face by its rotated normal. Writes a binary PPM (P6). Fully
+// deterministic, no dependencies.
+
+struct Tri {
+    int a;
+    int b;
+    int c;
+    float[3] color;
+    float[3] normal;
+}
+
+float[3][8] cubeVerts() {
+    return [
+        [-1.0, -1.0, -1.0],
+        [1.0, -1.0, -1.0],
+        [1.0, 1.0, -1.0],
+        [-1.0, 1.0, -1.0],
+        [-1.0, -1.0, 1.0],
+        [1.0, -1.0, 1.0],
+        [1.0, 1.0, 1.0],
+        [-1.0, 1.0, 1.0],
+    ];
+}
+
+Tri[12] cubeTris() {
+    var front = [0.9, 0.15, 0.1];
+    var back = [0.9, 0.5, 0.1];
+    var left = [0.15, 0.8, 0.25];
+    var right = [0.15, 0.25, 0.9];
+    var top = [0.9, 0.85, 0.2];
+    var bottom = [0.6, 0.2, 0.8];
+    return [
+        Tri(a = 4, b = 5, c = 6, color = front, normal = [0.0, 0.0, 1.0]),
+        Tri(a = 4, b = 6, c = 7, color = front, normal = [0.0, 0.0, 1.0]),
+        Tri(a = 1, b = 0, c = 3, color = back, normal = [0.0, 0.0, -1.0]),
+        Tri(a = 1, b = 3, c = 2, color = back, normal = [0.0, 0.0, -1.0]),
+        Tri(a = 0, b = 4, c = 7, color = left, normal = [-1.0, 0.0, 0.0]),
+        Tri(a = 0, b = 7, c = 3, color = left, normal = [-1.0, 0.0, 0.0]),
+        Tri(a = 5, b = 1, c = 2, color = right, normal = [1.0, 0.0, 0.0]),
+        Tri(a = 5, b = 2, c = 6, color = right, normal = [1.0, 0.0, 0.0]),
+        Tri(a = 3, b = 7, c = 6, color = top, normal = [0.0, 1.0, 0.0]),
+        Tri(a = 3, b = 6, c = 2, color = top, normal = [0.0, 1.0, 0.0]),
+        Tri(a = 0, b = 1, c = 5, color = bottom, normal = [0.0, -1.0, 0.0]),
+        Tri(a = 0, b = 5, c = 4, color = bottom, normal = [0.0, -1.0, 0.0]),
+    ];
+}
+
+float[3] rotateY(float[3] v, float angle) {
+    var c = cos(angle);
+    var s = sin(angle);
+    return [c * v.x + s * v.z, v.y, -s * v.x + c * v.z];
+}
+
+float[3] rotateX(float[3] v, float angle) {
+    var c = cos(angle);
+    var s = sin(angle);
+    return [v.x, c * v.y - s * v.z, s * v.y + c * v.z];
+}
+
+// Perspective divide to pixels. Returns [sx, sy, depth] with positive depth
+// in front of the camera, which sits at the origin looking down -z.
+float[3] project(float[3] view, float focal, int width, int height) {
+    var inv = 1.0 / -view.z;
+    var sx = (view.x * focal * inv * 0.5 + 0.5) * float(width);
+    var sy = (0.5 - view.y * focal * inv * 0.5) * float(height);
+    return [sx, sy, -view.z];
+}
+
+float edge(float ax, float ay, float bx, float by, float px, float py) {
+    return (px - ax) * (by - ay) - (py - ay) * (bx - ax);
+}
+
+float[3] shade(float[3] color, float[3] normal) {
+    var lightDir = [0.5, 0.7, 0.5].normalized();
+    var diffuse = normal.dot(lightDir);
+    if diffuse < 0.0 {
+        diffuse = 0.0;
+    }
+    return color * (0.25 + 0.75 * diffuse);
+}
+
+uint8 toByte(float c) {
+    return uint8(int(clamp(c, 0.0, 1.0) * 255.99));
+}
+
+void render(int width, int height, int angleDegrees, List<uint8>& pixels) {
+    var spin = float(angleDegrees) * pi / 180.0;
+    var tilt = 28.0 * pi / 180.0;
+    var distance = 5.5;
+    var focal = 1.0 / tan(22.0 * pi / 180.0);
+    var verts = cubeVerts();
+    var tris = cubeTris();
+    // View-space verts and face visibility. Faces pointing away from the
+    // camera (normal.z <= 0) are culled; the cube always stays in front.
+    var view = verts;
+    for i in 0..8 {
+        view[i] = rotateX(rotateY(verts[i], spin), tilt) + [0.0, 0.0, -distance];
+    }
+    var depths = List<float>();
+    for _ in 0..width * height {
+        depths.push(1e30);
+    }
+    var top = [0.08, 0.1, 0.18];
+    var bottom = [0.02, 0.03, 0.08];
+    pixels.reserve(width * height * 3);
+    for y in 0..height {
+        var t = float(y) / float(height);
+        var bg = top * (1.0 - t) + bottom * t;
+        for _ in 0..width {
+            pixels.push(toByte(bg.x));
+            pixels.push(toByte(bg.y));
+            pixels.push(toByte(bg.z));
+        }
+    }
+    for i in 0..tris.size() {
+        var tri = tris[i];
+        var normal = rotateX(rotateY(tri.normal, spin), tilt);
+        if normal.z <= 0.0 {
+            continue;
+        }
+        var p0 = project(view[tri.a], focal, width, height);
+        var p1 = project(view[tri.b], focal, width, height);
+        var p2 = project(view[tri.c], focal, width, height);
+        var area = edge(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y);
+        if area == 0.0 {
+            continue;
+        }
+        var minX = int(p0.x);
+        if int(p1.x) < minX {
+            minX = int(p1.x);
+        }
+        if int(p2.x) < minX {
+            minX = int(p2.x);
+        }
+        var maxX = int(p0.x) + 1;
+        if int(p1.x) + 1 > maxX {
+            maxX = int(p1.x) + 1;
+        }
+        if int(p2.x) + 1 > maxX {
+            maxX = int(p2.x) + 1;
+        }
+        var minY = int(p0.y);
+        if int(p1.y) < minY {
+            minY = int(p1.y);
+        }
+        if int(p2.y) < minY {
+            minY = int(p2.y);
+        }
+        var maxY = int(p0.y) + 1;
+        if int(p1.y) + 1 > maxY {
+            maxY = int(p1.y) + 1;
+        }
+        if int(p2.y) + 1 > maxY {
+            maxY = int(p2.y) + 1;
+        }
+        if minX < 0 {
+            minX = 0;
+        }
+        if minY < 0 {
+            minY = 0;
+        }
+        if maxX > width {
+            maxX = width;
+        }
+        if maxY > height {
+            maxY = height;
+        }
+        var color = shade(tri.color, normal);
+        var r = toByte(color.x);
+        var g = toByte(color.y);
+        var b = toByte(color.z);
+        for y in minY..maxY {
+            for x in minX..maxX {
+                var px = float(x) + 0.5;
+                var py = float(y) + 0.5;
+                var w0 = edge(p1.x, p1.y, p2.x, p2.y, px, py);
+                var w1 = edge(p2.x, p2.y, p0.x, p0.y, px, py);
+                var w2 = edge(p0.x, p0.y, p1.x, p1.y, px, py);
+                var inside = area > 0.0 ? w0 >= 0.0 && w1 >= 0.0 && w2 >= 0.0 : w0 <= 0.0 && w1 <= 0.0 && w2 <= 0.0;
+                if !inside {
+                    continue;
+                }
+                var depth = (w0 * p0.z + w1 * p1.z + w2 * p2.z) / area;
+                if depth < depths[y * width + x] {
+                    depths[y * width + x] = depth;
+                    pixels[(y * width + x) * 3] = r;
+                    pixels[(y * width + x) * 3 + 1] = g;
+                    pixels[(y * width + x) * 3 + 2] = b;
+                }
+            }
+        }
+    }
+}
+
+bool writePpm(string path, int width, int height, List<uint8>& pixels) {
+    var out = StringBuf("P6\n");
+    out.append(width);
+    out.append(" ");
+    out.append(height);
+    out.append("\n255\n");
+    out.append(string(cast<char*>(&pixels[0]), pixels.size()));
+    return writeFile(path, string(out));
+}
+
+void check(bool ok, string what) {
+    if !ok {
+        abort("self-test failed: ", what);
+    }
+}
+
+int channel(List<uint8>& pixels, int width, int x, int y, int c) {
+    return int(pixels[(y * width + x) * 3 + c]);
+}
+
+int runSelfTest() {
+    // A quarter turn about Y sends +x to -z.
+    var turned = rotateY([1.0, 0.0, 0.0], pi / 2.0);
+    check(abs(turned.x) < 1e-5 && abs(turned.y) < 1e-5 && abs(turned.z + 1.0) < 1e-5, "rotation");
+    // The look-at point projects to the screen center.
+    var middle = project([0.0, 0.0, -3.5], 1.0, 64, 48);
+    check(abs(middle.x - 32.0) < 0.001 && abs(middle.y - 24.0) < 0.001, "projection");
+    // The center pixel sees the red front face.
+    var pixels = List<uint8>();
+    render(64, 48, 25, pixels);
+    check(pixels.size() == 64 * 48 * 3, "pixel count");
+    var r = channel(pixels, 64, 32, 24, 0);
+    var g = channel(pixels, 64, 32, 24, 1);
+    var b = channel(pixels, 64, 32, 24, 2);
+    check(r > g && r > b && r > 40, "center is red");
+    // A corner pixel sees the dark background.
+    var cr = channel(pixels, 64, 0, 0, 0);
+    var cg = channel(pixels, 64, 0, 0, 1);
+    var cb = channel(pixels, 64, 0, 0, 2);
+    check(cr < 80 && cg < 80 && cb < 80, "corner is background");
+    // Different angles render different frames: the cube spins.
+    var other = List<uint8>();
+    render(64, 48, 115, other);
+    var differ = false;
+    for i in 0..pixels.size() {
+        if pixels[i] != other[i] {
+            differ = true;
+        }
+    }
+    check(differ, "angles differ");
+    println("self-test passed");
+    return 0;
+}
+
+int main(string[] args) {
+    string path = "cube.ppm";
+    var width = 800;
+    var height = 600;
+    var angle = 25;
+    for i in 0..args.size() {
+        if args[i] == "--self-test" {
+            return runSelfTest();
+        }
+    }
+    if args.size() > 1 {
+        path = args[1];
+    }
+    if args.size() == 3 || args.size() > 5 {
+        println("usage: spinning-cube [output.ppm] [width height] [angle]");
+        return 1;
+    }
+    if args.size() > 3 {
+        var w = args[2].parseInt();
+        var h = args[3].parseInt();
+        if w != null && h != null && w > 0 && h > 0 && w <= 16384 && h <= 16384 {
+            width = w;
+            height = h;
+        } else {
+            println("usage: spinning-cube [output.ppm] [width height] [angle]");
+            return 1;
+        }
+    }
+    if args.size() > 4 {
+        var a = args[4].parseInt();
+        if a != null {
+            angle = a;
+        } else {
+            println("usage: spinning-cube [output.ppm] [width height] [angle]");
+            return 1;
+        }
+    }
+    var pixels = List<uint8>();
+    render(width, height, angle, pixels);
+    if !writePpm(path, width, height, pixels) {
+        println("cannot write ", path);
+        return 1;
+    }
+    println("wrote ", path);
+    return 0;
+}

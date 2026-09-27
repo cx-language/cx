@@ -62,6 +62,13 @@ applications. Each subdirectory is a `cx build` project (see
   `--self-test`.
 
   ![Ray tracer output](raytracer/screenshot.png)
+- [`spinning-cube/`](spinning-cube/) — software rasterizer with zero
+  dependencies: a spinning cube with flat shading and a depth buffer,
+  rendered to a PPM file. See
+  [`spinning-cube/README.md`](spinning-cube/README.md) for options and
+  `--self-test`.
+
+  ![Spinning cube output](spinning-cube/screenshot.png)
 - [`fractal/`](fractal/) — GPU Mandelbrot explorer with smooth
   iteration-count coloring, rendered with OpenGL 3.3 via GLFW. Drag to
   pan, scroll to zoom at the cursor. See
