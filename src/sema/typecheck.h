@@ -178,6 +178,8 @@ struct Typechecker {
     llvm::StringMap<GenericArg> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                       Type expectedType);
     Decl* findDecl(llvm::StringRef name, Location location, Location endLocation = {});
+    /// findDecl that returns null on unknown identifier instead of reporting it. Still throws on ambiguous reference.
+    Decl* tryFindDecl(llvm::StringRef name, Location location);
     std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false);
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry = true);
@@ -247,6 +249,11 @@ struct Typechecker {
     // which would check declarations out of order. The eager loop and lazy
     // uses ensure signatures afterward.
     bool suppressEnsureSignature = false;
+    // Set while speculatively resolving an overload (commuted ==/!= retry): resolution failures
+    // return null instead of throwing, since the caller falls through to another strategy whose
+    // own diagnostics (or success) apply. Callers under this flag must handle a null callee;
+    // nested calls re-throw a silent error instead of propagating null types (see typecheckCallExpr).
+    bool overloadProbe = false;
     FunctionDecl* currentFunction;
     Stmt** currentStmt; // Double-pointer so it refers to the correct statement after lowering.
     std::vector<Stmt*> currentControlStmts;

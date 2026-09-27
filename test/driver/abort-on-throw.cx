@@ -1,0 +1,109 @@
+// RUN: abort-on-throw %cx run -Wno-unused %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// Valid programs must compile without throwing: overload probing, operator
+// derivation, and sizeof lookup resolve speculatively. The wrapper aborts on
+// any throw, so this test fails if speculation throws.
+
+string pick(string[] parts) { return "array"; }
+string pick(List<string>* parts) { return "list"; }
+string pick(int x) { return "int"; }
+
+int inner(int x) { return x + 1; }
+string inner(string x) { return x; }
+int outer(int x) { return x * 10; }
+int apply(int(int) f, int x) { return f(x); }
+int apply(string(string) f, int x) { return 999; }
+int apply2(int(int) f, int x) { return f(x); }
+int apply2(int(string) f, int x) { return 999; }
+
+T ident<T>(T x) { return x; }
+string ident(string x) { return "specific"; }
+
+string show2<T>(T[] x) { return "array"; }
+string show2(int x) { return "int"; }
+
+struct V {
+    int x;
+}
+bool operator==(V& a, V& b) { return a.x == b.x; }
+bool operator==(V& a, int b) { return a.x == b; }
+bool operator<(V& a, V& b) { return a.x < b.x; }
+
+interface Named {
+    string name();
+}
+struct HasName: Named {
+    string name() { return "n"; }
+}
+struct NoName {
+    int v;
+}
+string describe<T: Named>(T* x) { return x.name(); }
+string describe(NoName* x) { return "noname"; }
+
+string pdescribe<T: Printable>(T x) { return "printable"; }
+string pdescribe(int(int) f) { return "func"; }
+
+struct Point {
+    int x;
+    int y;
+}
+
+uint64 takeInt(uint64 x) { return x; }
+string takeInt(string x) { return x; }
+
+void main() {
+    var v = V(1);
+    var h = HasName();
+    var n = NoName(3);
+    var p = Point(1, 2);
+    // CHECK:array
+    println(pick([]));
+    // CHECK-NEXT:int
+    println(pick(0));
+    // CHECK-NEXT:20
+    println(outer(inner(1)));
+    // CHECK-NEXT:30
+    println(outer(inner(inner(1))));
+    // CHECK-NEXT:11
+    println(apply((int c) => c + 1, 10));
+    // Untyped lambda disambiguated across overloads without throwing.
+    // CHECK-NEXT:11
+    println(apply(c => c + 1, 10));
+    // CHECK-NEXT:11
+    println(apply2((c) => c + 1, 10));
+    // CHECK-NEXT:42
+    println(ident(42));
+    // CHECK-NEXT:specific
+    println(ident("hi"));
+    // CHECK-NEXT:array
+    println(show2([1, 2]));
+    // CHECK-NEXT:int
+    println(show2(5));
+    // CHECK-NEXT:true
+    println(1 == v);
+    // CHECK-NEXT:true
+    println(v != V(2));
+    // CHECK-NEXT:false
+    println(v != 1);
+    // CHECK-NEXT:false
+    println(1 != v);
+    // CHECK-NEXT:true
+    println(v > V(0));
+    // CHECK-NEXT:true
+    println(v >= v);
+    // CHECK-NEXT:n
+    println(describe(&h));
+    // CHECK-NEXT:noname
+    println(describe(&n));
+    // CHECK-NEXT:printable
+    println(pdescribe(v));
+    // CHECK-NEXT:func
+    println(pdescribe((int c) => c));
+    // CHECK-NEXT:8
+    println(sizeof(Point));
+    // CHECK-NEXT:8
+    println(sizeof(p));
+    // CHECK-NEXT:8
+    println(takeInt(sizeof(Point)));
+}

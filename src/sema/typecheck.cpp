@@ -455,7 +455,7 @@ void Typechecker::setDeclContext(Decl& decl) {
     // Synthesized declarations carry no file; the caller's file context applies.
 }
 
-Decl* Typechecker::findDecl(llvm::StringRef name, Location location, Location endLocation) {
+Decl* Typechecker::tryFindDecl(llvm::StringRef name, Location location) {
     ASSERT(!name.empty());
 
     if (Decl* match = findDeclInModules(name, location, currentModule)) {
@@ -488,6 +488,11 @@ Decl* Typechecker::findDecl(llvm::StringRef name, Location location, Location en
         return match;
     }
 
+    return nullptr;
+}
+
+Decl* Typechecker::findDecl(llvm::StringRef name, Location location, Location endLocation) {
+    if (Decl* match = tryFindDecl(name, location)) return match;
     ERROR_RANGE(location, endLocation, "unknown identifier '" << name << "'");
 }
 

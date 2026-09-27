@@ -118,7 +118,16 @@ void cx::printDiagnostic(Location location, llvm::StringRef type, llvm::raw_ostr
 }
 
 CompileError::CompileError(Location location, std::string&& message, std::vector<Note>&& notes, Location endLocation)
-: location(location), message(std::move(message)), notes(std::move(notes)), endLocation(endLocation) {}
+: location(location), message(std::move(message)), notes(std::move(notes)), endLocation(endLocation) {
+    // Test hook: proves valid programs never throw (see test/driver/abort-on-throw.cx).
+    if (std::getenv("CX_ABORT_ON_THROW") != nullptr) {
+        llvm::errs() << "aborting: threw with CX_ABORT_ON_THROW=1";
+        if (!this->message.empty()) llvm::errs() << ": " << this->message;
+        llvm::errs() << '\n';
+        printStackTrace();
+        std::abort();
+    }
+}
 
 void CompileError::report() const {
     if (message.empty()) return;

@@ -393,19 +393,24 @@ static Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&, Type expectedTy
     return expectedType;
 }
 
+static Type emptyArrayLiteralType(Type expectedType) {
+    if (expectedType && !expectedType.containsUnresolvedPlaceholder()) {
+        Type unwrapped = expectedType;
+        while (unwrapped.isOptionalType()) {
+            unwrapped = unwrapped.getWrappedType();
+        }
+        if (unwrapped.isArrayType() || unwrapped.isSlice()) {
+            return expectedType;
+        }
+    }
+    return Type();
+}
+
 Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expectedType) {
     if (array.elements.empty()) {
         // Lowered ranges are checked again without an expected type; keep the inferred one.
         if (!expectedType && array.type) return array.type;
-        if (expectedType && !expectedType.containsUnresolvedPlaceholder()) {
-            Type unwrapped = expectedType;
-            while (unwrapped.isOptionalType()) {
-                unwrapped = unwrapped.getWrappedType();
-            }
-            if (unwrapped.isArrayType() || unwrapped.isSlice()) {
-                return expectedType;
-            }
-        }
+        if (Type type = emptyArrayLiteralType(expectedType)) return type;
         ERROR(array.location, "couldn't infer type of empty array literal");
     }
 
@@ -3089,13 +3094,16 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 // == and != commute: retry with swapped operands so only one parameter order needs an overload.
                 // The matched overload runs with its declared parameter order.
                 std::swap(expr.args[0], expr.args[1]);
+                Decl* retryDecl = nullptr;
                 try {
-                    return resolveOverload(decls, expr, callee, expectedType, false);
+                    llvm::SaveAndRestore probe(overloadProbe, true);
+                    retryDecl = resolveOverload(decls, expr, callee, expectedType, false);
                 } catch (const CompileError&) {
-                    // Restore the written order and fall through to the error
-                    // below so the diagnostic shows the user's operand order.
-                    std::swap(expr.args[0], expr.args[1]);
+                    // Swapped order didn't match; restore and fall through below.
                 }
+                if (retryDecl) return retryDecl;
+                // Restore the written order so the diagnostic shows the user's operand order.
+                std::swap(expr.args[0], expr.args[1]);
             }
         }
     }
@@ -3140,8 +3148,13 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                         auto* decl = resolveOverload(derivedDecls, expr, derivedCallee, expectedType, allowCommutativeRetry);
                         binaryExpr->op = savedOp;
                         calleeVar->identifier = savedCallee;
-                        binaryExpr->negateResult = negateResult;
-                        return decl;
+                        // A null callee is a probe failure under an outer retry: restore and fall through.
+                        if (!decl) {
+                            if (swapOperands) std::swap(expr.args[0], expr.args[1]);
+                        } else {
+                            binaryExpr->negateResult = negateResult;
+                            return decl;
+                        }
                     } catch (const CompileError&) {
                         // Restore the written form and fall through to the error below.
                         binaryExpr->op = savedOp;
@@ -3180,6 +3193,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         } catch (const CompileError&) {
             // Args like `[]` need expected types to infer. Multiple applicable overloads
             // means the call is ambiguous; report that instead of the inference error.
+            if (overloadProbe) return nullptr;
             ERROR_WITH_NOTES(expr.callee->location, getCandidateNotes(map(matches, [](auto& match) { return match.decl; }), expr),
                              "ambiguous reference to '" << calleeWithGenericArgs << "'" << (isConstructorCall ? " constructor" : ""));
         }
@@ -3187,6 +3201,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         if (auto match = resolveAmbiguousOverload(matches, expr)) {
             matches = {*match};
         } else {
+            if (overloadProbe) return nullptr;
             ERROR_WITH_NOTES(expr.callee->location, getCandidateNotes(map(matches, [](auto& match) { return match.decl; }), expr),
                              "ambiguous reference to '" << calleeWithGenericArgs << "'" << (isConstructorCall ? " constructor" : ""));
         }
@@ -3197,6 +3212,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         deferTypechecking(matches.front().decl);
         return matches.front().decl;
     }
+
+    if (overloadProbe) return nullptr;
 
     if (decls.empty()) {
         if (expr.getFunctionName() == "[]" || expr.getFunctionName() == "[]=") {
@@ -3373,6 +3390,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         decl = resolveOverload(decls, expr, callee, expectedType);
+        // Null callee only arises under an overload probe: re-throw silently instead of propagating a null type.
+        if (!decl) throw CompileError::dependentError();
 
         Type arrayReceiverType = receiverType.removeOptional().removePointer();
         if (arrayReceiverType.isFixedArray() && !arrayReceiverType.isMutable() && expr.getFunctionName() == "data") {
@@ -3411,6 +3430,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         decl = resolveOverload(decls, expr, callee, expectedType);
+        // Null callee only arises under an overload probe: re-throw silently instead of propagating a null type.
+        if (!decl) throw CompileError::dependentError();
 
         if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
             expr.receiverType = constructorDecl->getTypeDecl()->getType();
@@ -3523,6 +3544,11 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         bool hadType = arg.value->hasType();
 
         if (!arg.value->hasType()) {
+            // An empty array literal only typechecks when the parameter type supplies the element type;
+            // reject the candidate without throwing so overload probing stays throw-free on valid code.
+            if (auto* array = llvm::dyn_cast<ArrayLiteralExpr>(arg.value); array && array->elements.empty() && !emptyArrayLiteralType(param.type)) {
+                return ArgumentValidation::invalidType(i);
+            }
             try {
                 typecheckExpr(*arg.value, false, param.type);
             } catch (const CompileError&) {
@@ -3776,24 +3802,27 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
             bool namesType = llvm::any_of(decls, [](Decl* decl) { return decl->isTypeDecl() || decl->isTypeTemplate(); });
             bool varHadError = false;
             if (!namesType) {
+                // A missing name is not an error here: the type path below
+                // resolves lazily-imported types or reports unknown type.
                 try {
-                    Decl* decl = findDecl(basicType->name, expr.location);
-                    Type varType;
-                    if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
-                        varType = varDecl->type;
-                    } else if (auto* paramDecl = llvm::dyn_cast<ParamDecl>(decl)) {
-                        varType = paramDecl->type;
-                    } else if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(decl)) {
-                        varType = fieldDecl->type;
-                    } else {
-                        decl = nullptr;
-                    }
-                    if (decl && !varType) {
-                        varHadError = true;
-                    } else if (varType) {
-                        checkHasAccess(*decl, expr.location, AccessLevel::None);
-                        markReferenced(decl);
-                        expr.operandType = varType;
+                    if (Decl* decl = tryFindDecl(basicType->name, expr.location)) {
+                        Type varType;
+                        if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+                            varType = varDecl->type;
+                        } else if (auto* paramDecl = llvm::dyn_cast<ParamDecl>(decl)) {
+                            varType = paramDecl->type;
+                        } else if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(decl)) {
+                            varType = fieldDecl->type;
+                        } else {
+                            decl = nullptr;
+                        }
+                        if (decl && !varType) {
+                            varHadError = true;
+                        } else if (varType) {
+                            checkHasAccess(*decl, expr.location, AccessLevel::None);
+                            markReferenced(decl);
+                            expr.operandType = varType;
+                        }
                     }
                 } catch (const CompileError&) {
                     // Fall through to report the type error below.
