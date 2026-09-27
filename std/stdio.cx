@@ -50,21 +50,14 @@ void print<T: Printable>(T* value) {
 
 /// Prints the given value.
 void print<T: Printable>(List<T>& list) {
-    print(Slice(list));
+    var stream = OutputStream();
+    list.print(stream);
 }
 
 /// Prints the given value.
 void print<T: Printable, int N>(SmallList<T, N>& list) {
-    print('[');
-
-    for elem, index in list {
-        print(elem);
-
-        if index != list.size() - 1
-            print(", ");
-    }
-
-    print(']');
+    var stream = OutputStream();
+    list.print(stream);
 }
 
 /// Joins the array elements into a string with the given separator.
@@ -88,16 +81,8 @@ StringBuf join<T: Printable>(List<T>& list, string separator) {
 
 /// Prints the given value.
 void print<T: Printable>(Slice<T> array) {
-    print('[');
-
-    for elem, index in array {
-        print(elem);
-
-        if index != array.size() - 1
-            print(", ");
-    }
-
-    print(']');
+    var stream = OutputStream();
+    array.print(stream);
 }
 
 /// Prints the given value without allocating.

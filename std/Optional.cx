@@ -2,6 +2,16 @@
 enum Optional<T> {
     None,
     Some(T value),
+
+    /// Writes the value, or null if there is none, to the given stream.
+    void print(OutputStream& stream) {
+        switch this {
+            case None:
+                stream.append("null");
+            case Some value:
+                value.print(stream);
+        }
+    }
 }
 
 /// Returns true if both optionals are equal.
@@ -37,9 +47,6 @@ bool operator== <T: Comparable>(T& a, Optional<T*>& b) {
 
 /// Prints the given value.
 void print<T: Printable>(Optional<T>& optional) {
-    if (*optional == null) {
-        print("null");
-    } else {
-        print((*optional)!);
-    }
+    var stream = OutputStream();
+    optional.print(stream);
 }

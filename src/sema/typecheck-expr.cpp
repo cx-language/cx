@@ -2017,7 +2017,8 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
                 if (satisfiesCopyable(genericArg.getType())) continue;
             } else if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase)) {
                 auto* typeDecl = getTypeDecl(*basicType);
-                if (typeDecl && typeDecl->hasInterface(*interface)) continue;
+                // Printable is synthesized on demand for concrete structs, so `print(point)` just works.
+                if (typeDecl && tryEnsurePrintable(*typeDecl, *interface, returnOnError)) continue;
             }
 
             if (returnOnError) return false;
@@ -2214,6 +2215,174 @@ bool Typechecker::genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParam
     return true;
 }
 
+bool Typechecker::isConcreteType(Type type) {
+    if (auto* basicType = llvm::dyn_cast<BasicType>(type.typeBase)) {
+        for (GenericArg arg : basicType->genericArgs) {
+            if (arg.isType() && !isConcreteType(arg.getType())) return false;
+        }
+        if (basicType->decl) return true;
+        auto decls = findDecls(basicType->getQualifiedName());
+        if (decls.empty()) decls = findDecls(basicType->name);
+        return llvm::any_of(decls, [](Decl* decl) { return llvm::isa<TypeDecl>(decl) || llvm::isa<TypeTemplate>(decl); });
+    }
+    if (auto* pointerType = llvm::dyn_cast<PointerType>(type.typeBase)) return isConcreteType(pointerType->pointeeType);
+    if (auto* arrayPointerType = llvm::dyn_cast<ArrayPointerType>(type.typeBase)) return isConcreteType(arrayPointerType->elementType);
+    if (auto* functionType = llvm::dyn_cast<FunctionType>(type.typeBase)) {
+        if (!isConcreteType(functionType->returnType)) return false;
+        return llvm::all_of(functionType->paramTypes, [&](Type param) { return isConcreteType(param); });
+    }
+    if (auto* anonStruct = llvm::dyn_cast<AnonymousStructType>(type.typeBase)) {
+        return llvm::all_of(anonStruct->elements, [&](const AnonymousStructElement& element) { return isConcreteType(element.type); });
+    }
+    return false;
+}
+
+TypeDecl* Typechecker::getPrintableDecl() {
+    Module* stdlib = Module::getStdlibModule();
+    if (!stdlib) return nullptr;
+    for (Decl* found : stdlib->symbolTable.findFirst("Printable")) {
+        if (auto* printable = llvm::dyn_cast<TypeDecl>(found)) return printable;
+    }
+    return nullptr;
+}
+
+bool Typechecker::tryEnsurePrintable(TypeDecl& typeDecl, const TypeDecl& interface, bool silent) {
+    if (&interface != getPrintableDecl()) return typeDecl.hasInterface(interface);
+    return typeDecl.hasInterface(interface) || trySynthesizePrintMethod(typeDecl, silent);
+}
+
+bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
+    // Builtin scalars without a print method (int128 etc.) stay unprintable; claiming
+    // them would render their values as `Name()`. Same for closures and anonymous types.
+    if (!decl.isStruct() || decl.getName().empty() || decl.isClosure() || Type::isBuiltinScalar(decl.getName())) return false;
+    // A user member named `print` owns the name; never shadow it.
+    for (Decl* method : decl.methods) {
+        if (method->getName() == "print") return false;
+    }
+    for (auto* staticConst : decl.staticConsts) {
+        if (staticConst->getName() == "print") return false;
+    }
+    for (FieldDecl& field : decl.fields) {
+        if (field.getName() == "print" || !isConcreteType(field.type)) return false;
+    }
+    size_t methodCount = decl.methods.size();
+    size_t interfaceCount = decl.interfaces.size();
+    Module& home = *decl.getModule();
+    std::vector<std::pair<std::string, Decl*>> addedToSymbolTable;
+    auto rollback = [&] {
+        decl.methods.resize(methodCount);
+        decl.interfaces.resize(interfaceCount);
+        for (auto& [name, added] : addedToSymbolTable) {
+            home.symbolTable.removeGlobal(name, added);
+        }
+        addedToSymbolTable.clear();
+    };
+    Location location = decl.getLocation();
+    Type streamType = PointerType::get(BasicType::get("OutputStream", {}), PointerKind::Reference);
+    std::vector<ParamDecl> params;
+    params.emplace_back(streamType, "stream", false, location);
+    auto* method =
+        makeAST<MethodDecl>(FunctionProto("print", std::move(params), Type::getVoid()), decl, std::vector<GenericArg>(), AccessLevel::Default, location);
+    std::vector<Stmt*> body;
+    auto appendString = [&](std::vector<Stmt*>& stmts, std::string text) {
+        auto* callee = makeAST<MemberExpr>(makeAST<VarExpr>("stream", location), "append", location);
+        std::vector<NamedValue> args;
+        args.emplace_back(makeAST<StringLiteralExpr>(std::move(text), location));
+        stmts.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(callee, std::move(args), std::vector<GenericArg>(), location)));
+    };
+    auto printValue = [&](std::vector<Stmt*>& stmts, Expr* receiver) {
+        auto* callee = makeAST<MemberExpr>(receiver, "print", location);
+        std::vector<NamedValue> args;
+        args.emplace_back(makeAST<VarExpr>("stream", location));
+        stmts.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(callee, std::move(args), std::vector<GenericArg>(), location)));
+    };
+    std::function<void(std::vector<Stmt*>&, std::function<Expr*()>, Type)> printField = [&](std::vector<Stmt*>& stmts, std::function<Expr*()> makeField,
+                                                                                            Type type) {
+        if (!type.isOptionalType()) {
+            printValue(stmts, makeField());
+            return;
+        }
+        // Member calls on Optional bind the wrapped type's method but pass the whole
+        // Optional, so check null at every level and unwrap values step by step. Pointers
+        // unwrap implicitly through member access instead: an explicit `!` on them would
+        // warn as a redundant null check.
+        auto* condition = makeAST<BinaryExpr>(Token::Equal, makeField(), makeAST<NullLiteralExpr>(location), location);
+        std::vector<Stmt*> thenBody, elseBody;
+        appendString(thenBody, "null");
+        Type inner = type.removeOptional();
+        if (inner.isPointerType()) {
+            printValue(elseBody, makeField());
+        } else {
+            printField(elseBody, [&] { return makeAST<UnwrapExpr>(makeField(), location); }, inner);
+        }
+        stmts.push_back(makeAST<IfStmt>(condition, std::move(thenBody), std::move(elseBody)));
+    };
+    appendString(body, std::string(decl.getName()) + "(");
+    bool first = true;
+    for (FieldDecl& field : decl.fields) {
+        if (!first) appendString(body, ", ");
+        first = false;
+        appendString(body, std::string(field.getName()) + ": ");
+        printField(body, [&] { return makeAST<MemberExpr>(makeAST<VarExpr>("this", location), field.getName(), location); }, field.type);
+    }
+    appendString(body, ")");
+    method->body = std::move(body);
+    // Body checking reports (not throws) statement errors, so collect diagnostics and
+    // treat new errors as failed synthesis. Probing stays silent; loud callers re-emit.
+    int errorsBefore = errors;
+    std::vector<CollectedDiagnostic> collected;
+    std::exception_ptr pending;
+    {
+        llvm::SaveAndRestore collect(diagnosticCollector, &collected);
+        // Visible before its body is checked so recursive structs terminate: calls only need the signature.
+        // Nullable-receiver lookup skips the methods list, so register in the symbol table too.
+        decl.addMethod(method);
+        home.addToSymbolTable(*method);
+        addedToSymbolTable.emplace_back(method->getQualifiedName(), method);
+        decl.interfaces.push_back(BasicType::get("Printable", {}));
+        // The late interface misses ensureInterfaces when it already ran, so copy its
+        // defaults (toString) directly in that case. Otherwise ensureInterfaces picks it up.
+        if (decl.interfacesEnsured) {
+            if (TypeDecl* printable = getPrintableDecl()) {
+                llvm::StringMap<GenericArg> thisArg = {{"This", GenericArg(decl.getType())}};
+                for (auto member : printable->methods) {
+                    if (auto* defaultMethod = llvm::cast<MethodDecl>(member); defaultMethod->body) {
+                        auto* copy = defaultMethod->instantiate(thisArg, {}, decl);
+                        home.addToSymbolTable(*copy);
+                        addedToSymbolTable.emplace_back(copy->getQualifiedName(), copy);
+                        decl.addMethod(copy);
+                    }
+                }
+            }
+        }
+        try {
+            typecheckType(decl.interfaces.back(), decl.accessLevel, true, true);
+            typecheckFunctionDecl(*method);
+        } catch (...) {
+            pending = std::current_exception();
+        }
+    }
+    bool failed = pending || llvm::any_of(collected, [](const CollectedDiagnostic& diagnostic) { return diagnostic.severity == "error"; });
+    if (!failed) {
+        for (auto& diagnostic : collected) {
+            if (diagnostic.severity == "warning") reportWarning(diagnostic.location, diagnostic.message, diagnostic.notes);
+        }
+        return true;
+    }
+    rollback();
+    errors = errorsBefore;
+    if (silent) return false;
+    for (auto& diagnostic : collected) {
+        if (diagnostic.severity == "warning") {
+            reportWarning(diagnostic.location, diagnostic.message, diagnostic.notes);
+        } else {
+            reportError(diagnostic.location, diagnostic.message, diagnostic.notes);
+        }
+    }
+    if (pending) std::rethrow_exception(pending);
+    throw CompileError::dependentError();
+}
+
 bool Typechecker::genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg) {
     if (genericParam.isValueParam) return genericArg.isInt();
     if (!genericArg || genericArg.isInt()) return false;
@@ -2229,7 +2398,7 @@ bool Typechecker::genericArgSatisfiesConstraints(const GenericParamDecl& generic
         auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
         auto* basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase);
         auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
-        if (!typeDecl || !interface || !typeDecl->hasInterface(*interface)) return false;
+        if (!typeDecl || !interface || !tryEnsurePrintable(*typeDecl, *interface, /*silent=*/true)) return false;
     }
     return true;
 }
@@ -2247,7 +2416,7 @@ bool Typechecker::validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> ge
                 auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
                 auto* basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase);
                 auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
-                satisfies = typeDecl && interface && typeDecl->hasInterface(*interface);
+                satisfies = typeDecl && interface && tryEnsurePrintable(*typeDecl, *interface, /*silent=*/false);
             }
             if (satisfies) continue;
             valid = false;
@@ -3076,6 +3245,15 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
         auto callee = expr.getQualifiedFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
+
+        // Synthesize `print` for concrete structs on first use (`toString` comes with it via Printable), then retry.
+        if (decls.empty() && (expr.getFunctionName() == "print" || expr.getFunctionName() == "toString")) {
+            if (auto* basicType = llvm::dyn_cast<BasicType>(receiverType.removeOptional().removePointer().typeBase)) {
+                if (auto* typeDecl = getTypeDecl(*basicType)) {
+                    if (trySynthesizePrintMethod(*typeDecl, /*silent=*/false)) decls = findCalleeCandidates(expr, callee);
+                }
+            }
+        }
 
         if (decls.empty() && receiverType.removeOptional().removePointer().isFixedArray()) {
             ERROR(expr.getReceiver()->location, "type '" << receiverType.removePointer() << "' has no member function '" << expr.getFunctionName() << "'");

@@ -82,6 +82,18 @@ struct Slice<Element> {
         return ArrayIterator(this);
     }
 
+    /// Writes the elements to the given stream.
+    void print(OutputStream& stream) {
+        stream.push('[');
+        for elem, index in this {
+            if index != 0 {
+                stream.append(", ");
+            }
+            elem.print(stream);
+        }
+        stream.push(']');
+    }
+
     /// Returns an iterator over the elements with their indices.
     EnumeratedIterator<Element> enumerate() {
         return EnumeratedIterator(iterator());

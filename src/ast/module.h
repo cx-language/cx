@@ -44,6 +44,12 @@ struct SymbolTable {
     Scope& getCurrentScope() { return *scopes.back(); }
     void add(llvm::StringRef name, Decl* decl) { scopes.back()->decls[name].push_back(decl); }
     void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front()->decls[name].push_back(decl); }
+    void removeGlobal(llvm::StringRef name, Decl* decl) {
+        auto it = scopes.front()->decls.find(name);
+        if (it == scopes.front()->decls.end()) return;
+        auto& decls = it->second;
+        decls.erase(std::remove(decls.begin(), decls.end(), decl), decls.end());
+    }
     void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) { identifierReplacements.try_emplace(name, replacement); }
 
     llvm::ArrayRef<Decl*> findFirst(llvm::StringRef name) const {

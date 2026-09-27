@@ -1,0 +1,19 @@
+// RUN: %cx run %s | %FileCheck %s
+
+struct Point {
+    int x;
+    int y;
+}
+
+struct Custom : Printable {
+    int x;
+
+    void print(OutputStream& stream) {
+        stream.append("CUSTOM!");
+    }
+}
+
+void main() {
+    println(Point(1, 2)); // CHECK: Point(x: 1, y: 2)
+    println(Custom(5)); // CHECK-NEXT: CUSTOM!
+}

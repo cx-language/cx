@@ -257,3 +257,29 @@ void main() {
     printTwice(42); // prints 42 twice
 }
 ```
+
+## Printing
+
+Structs print generically: `print` renders the struct name followed by
+each field, so no boilerplate is needed for logging and debugging.
+The compiler generates the equivalent of a hand-written `print` method
+the first time a struct value is printed, and the struct also gains
+`toString` through the `Printable` interface:
+
+```cs
+struct Point {
+    int x;
+    int y;
+}
+
+void main() {
+    println(Point(1, 2)); // prints "Point(x: 1, y: 2)"
+}
+```
+
+Nested structs, generic structs instantiated with printable arguments,
+and containers of structs all work. Nullable fields print as `null`
+when null. A struct with its own `print` method or a member named
+`print` keeps it; the compiler never overrides user-declared members.
+Note that a hand-written `print` alone does not make `print(value)` work:
+like before, the struct must still declare `: Printable` for that.

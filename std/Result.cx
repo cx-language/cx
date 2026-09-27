@@ -12,18 +12,24 @@ enum Result<T, E> {
             case Err error: abort("called unwrap() on Err: ", *error),
         };
     }
+
+    /// Writes the result to the given stream.
+    void print(OutputStream& stream) {
+        switch this {
+            case Ok value:
+                stream.append("Ok(");
+                value.print(stream);
+                stream.push(')');
+            case Err error:
+                stream.append("Err(");
+                error.print(stream);
+                stream.push(')');
+        }
+    }
 }
 
 /// Prints the given result.
 void print<T: Printable, E: Printable>(Result<T, E>& result) {
-    switch *result {
-        case Ok value:
-            print("Ok(");
-            print(value);
-            print(")");
-        case Err error:
-            print("Err(");
-            print(error);
-            print(")");
-    }
+    var stream = OutputStream();
+    result.print(stream);
 }

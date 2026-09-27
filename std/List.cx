@@ -54,6 +54,11 @@ struct List<Element> {
         return size;
     }
 
+    /// Writes the elements to the given stream.
+    void print(OutputStream& stream) {
+        Slice(this).print(stream);
+    }
+
     /// Returns true if the list has no elements, otherwise false
     bool empty() {
         return size == 0;

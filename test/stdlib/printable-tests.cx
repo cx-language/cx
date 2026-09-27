@@ -16,3 +16,55 @@ void testCustomPrintableStruct() {
     var text = A("foo", "bar").toString();
     assert(string(text) == "foo+bar");
 }
+
+struct Point {
+    int x;
+    int y;
+}
+
+struct Line {
+    Point a;
+    Point b;
+    string label;
+}
+
+struct Pair<T> {
+    T first;
+    T second;
+}
+
+struct Node {
+    int value;
+    Node*? next;
+}
+
+@test
+void testSynthesizedStructPrint() {
+    assert(string(Point(1, 2).toString()) == "Point(x: 1, y: 2)");
+    assert(string(Line(Point(0, 0), Point(3, 4), "diag").toString()) == "Line(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4), label: diag)");
+}
+
+@test
+void testSynthesizedGenericStructPrint() {
+    assert(string(Pair<int>(1, 2).toString()) == "Pair(first: 1, second: 2)");
+    var nested = Pair<Point>(Point(1, 1), Point(2, 2));
+    assert(string(nested.toString()) == "Pair(first: Point(x: 1, y: 1), second: Point(x: 2, y: 2))");
+}
+
+@test
+void testSynthesizedNullableFieldPrint() {
+    assert(string(Node(2, null).toString()) == "Node(value: 2, next: null)");
+    var tail = Node(2, null);
+    assert(string(Node(1, &tail).toString()) == "Node(value: 1, next: Node(value: 2, next: null))");
+}
+
+@test
+void testSynthesizedStructInContainerPrint() {
+    var list = List<Point>();
+    list.push(Point(5, 6));
+    list.push(Point(7, 8));
+    var buf = StringBuf();
+    var stream = OutputStream(&buf);
+    list.print(stream);
+    assert(string(buf) == "[Point(x: 5, y: 6), Point(x: 7, y: 8)]");
+}

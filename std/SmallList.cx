@@ -53,6 +53,18 @@ struct SmallList<Element, int N> {
         return size;
     }
 
+    /// Writes the elements to the given stream.
+    void print(OutputStream& stream) {
+        stream.push('[');
+        for elem, index in this {
+            if index != 0 {
+                stream.append(", ");
+            }
+            elem.print(stream);
+        }
+        stream.push(']');
+    }
+
     /// Returns true if the list has no elements, otherwise false.
     bool empty() {
         return size == 0;

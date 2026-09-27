@@ -10,6 +10,18 @@ struct Array<T, int N> {
         return N;
     }
 
+    /// Writes the elements to the given stream.
+    void print(OutputStream& stream) {
+        stream.push('[');
+        for i in 0..N {
+            if i != 0 {
+                stream.append(", ");
+            }
+            this[i].print(stream);
+        }
+        stream.push(']');
+    }
+
     /// Returns a pointer to the first element.
     T[*] data() {
         return this;

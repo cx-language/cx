@@ -224,6 +224,10 @@ struct Typechecker {
                                     Location location);
     bool validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);
     bool genericArgsMatch(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs);
+    bool trySynthesizePrintMethod(TypeDecl& decl, bool silent);
+    bool tryEnsurePrintable(TypeDecl& typeDecl, const TypeDecl& interface, bool silent);
+    TypeDecl* getPrintableDecl();
+    bool isConcreteType(Type type);
 
     Module* currentModule;
     Module* mainModule = nullptr;
