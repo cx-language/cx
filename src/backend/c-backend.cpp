@@ -1656,11 +1656,13 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
             stream.indent(4);
             stream << "char _cx_empty;\n";
         }
-        for (auto& field : irStruct->fields) {
+        for (size_t i = 0; i < irStruct->fields.size(); ++i) {
+            auto& field = irStruct->fields[i];
             stream.indent(4);
             // Pointer members only need their pointee declared, which also keeps in-progress
             // ancestor types from being re-entered here; by-value members need full definitions.
-            codegenDeclaration(stream, field.type, field.name, !field.type->isPointerType());
+            // Unnamed fields (e.g. enum payloads) use the same _N fallback as use sites.
+            codegenDeclaration(stream, field.type, getFieldName(type, int(i)), !field.type->isPointerType());
             stream << ";\n";
         }
         stream << "};\n";
@@ -1684,9 +1686,10 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
         // Named unions are defined in C headers; only anonymous enum payload unions need definitions here.
         if (unionType->name.empty()) {
             stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << " {\n";
-            for (auto& field : unionType->fields) {
+            for (size_t i = 0; i < unionType->fields.size(); ++i) {
+                auto& field = unionType->fields[i];
                 stream.indent(4);
-                codegenDeclaration(stream, field.type, field.name, !field.type->isPointerType());
+                codegenDeclaration(stream, field.type, getFieldName(type, int(i)), !field.type->isPointerType());
                 stream << ";\n";
             }
             stream << "};\n";
