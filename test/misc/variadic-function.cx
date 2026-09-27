@@ -4,6 +4,7 @@
 // CHECK:single
 // CHECK-EMPTY:
 // CHECK:a|12
+// CHECK:0a1b2c
 
 void printAll<T: Printable>(T&... args) {
     for arg in args {
@@ -21,9 +22,18 @@ void printFirstAndRest<T: Printable, U: Printable>(T& first, U&... rest) {
     print('\n');
 }
 
+void printIndexed<T: Printable>(T&... args) {
+    for arg, i in args {
+        print(i);
+        print(arg);
+    }
+    print('\n');
+}
+
 void main() {
     printAll("a", 1, "b", 2);
     printAll("single");
     printAll();
     printFirstAndRest("a", 1, 2);
+    printIndexed("a", "b", "c");
 }

@@ -97,7 +97,8 @@ static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Str
             bool isPackLoop = !shadowedHere && rangeVar && rangeVar->identifier == packName;
 
             if (!isPackLoop) {
-                bool nestedShadowed = shadowedHere || forEach->variable->getName() == packName;
+                bool nestedShadowed =
+                    shadowedHere || forEach->variable->getName() == packName || (forEach->indexVariable && forEach->indexVariable->getName() == packName);
                 forEach->body = unrollPackLoops(forEach->body, packName, expandedNames, parentFunc, module, nestedShadowed);
                 result.push_back(forEach);
                 break;
@@ -110,15 +111,21 @@ static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Str
                 ERROR(*loc, "continue cannot be used in a loop over a variadic parameter");
             }
 
-            bool loopVarShadowsPack = forEach->variable->getName() == packName;
-            for (const std::string& expandedName : expandedNames) {
+            bool loopVarShadowsPack = forEach->variable->getName() == packName || (forEach->indexVariable && forEach->indexVariable->getName() == packName);
+            for (size_t i = 0; i < expandedNames.size(); i++) {
                 auto clonedBody = ::cx::instantiate(forEach->body, llvm::StringMap<GenericArg>());
                 clonedBody = unrollPackLoops(clonedBody, packName, expandedNames, parentFunc, module, loopVarShadowsPack);
 
                 std::vector<Stmt*> iteration;
-                auto* loopVar = makeAST<VarDecl>(Type(), forEach->variable->getName(), makeAST<VarExpr>(expandedName, forEach->location), parentFunc,
+                auto* loopVar = makeAST<VarDecl>(Type(), forEach->variable->getName(), makeAST<VarExpr>(expandedNames[i], forEach->location), parentFunc,
                                                  AccessLevel::None, module, forEach->variable->getLocation());
                 iteration.push_back(makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{loopVar}));
+                if (forEach->indexVariable) {
+                    auto* indexVar =
+                        makeAST<VarDecl>(Type(), forEach->indexVariable->getName(), makeAST<IntLiteralExpr>(llvm::APSInt::get(i), forEach->location),
+                                         parentFunc, AccessLevel::None, module, forEach->indexVariable->getLocation());
+                    iteration.push_back(makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{indexVar}));
+                }
                 for (Stmt* cloned : clonedBody)
                     iteration.push_back(cloned);
                 result.push_back(makeAST<CompoundStmt>(std::move(iteration)));

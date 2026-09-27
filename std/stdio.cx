@@ -57,8 +57,8 @@ void print<T: Printable>(List<T>& list) {
 void print<T: Printable, int N>(SmallList<T, N>& list) {
     print('[');
 
-    for index in 0..list.size() {
-        print(list[index]);
+    for elem, index in list {
+        print(elem);
 
         if index != list.size() - 1
             print(", ");
@@ -71,11 +71,11 @@ void print<T: Printable, int N>(SmallList<T, N>& list) {
 StringBuf join<T: Printable>(Slice<T> array, string separator) {
     var result = StringBuf();
 
-    for index in 0..array.size() {
+    for elem, index in array {
         if index != 0 {
             result.append(separator);
         }
-        array[index].print(OutputStream(&result));
+        elem.print(OutputStream(&result));
     }
 
     return result;
@@ -109,8 +109,8 @@ T sum<T: Addable>(List<T>& list) {
 void print<T: Printable>(Slice<T> array) {
     print('[');
 
-    for index in 0..array.size() {
-        print(array[index]);
+    for elem, index in array {
+        print(elem);
 
         if index != array.size() - 1
             print(", ");

@@ -1,0 +1,84 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:0a
+// CHECK-NEXT:1b
+// CHECK-NEXT:2c
+// CHECK-NEXT:63
+// CHECK-NEXT:02
+// CHECK-NEXT:0 1 2 10 11 12
+// CHECK-NEXT:3
+// CHECK-NEXT:empty
+// CHECK-NEXT:9
+// CHECK-NEXT:13
+
+void printPair<T>(T elem, int index) {
+    print(index);
+    println(elem);
+}
+
+int sumValues(List<int>& list) {
+    var total = 0;
+    for v, k in list {
+        total += v + k;
+    }
+    return total;
+}
+
+void main() {
+    var list = List(["a", "b", "c"]);
+    for elem, i in list {
+        printPair(elem, i);
+    }
+    assert(sumValues(List([10, 20, 30])) == 63);
+    println(sumValues(List([10, 20, 30])));
+
+    // continue and break keep the counter correct.
+    for x, i in [1, 2, 3, 4] {
+        if x == 2 {
+            continue;
+        }
+        if x == 4 {
+            break;
+        }
+        print(i);
+    }
+    println("");
+
+    // Nested indexed loops use separate counters.
+    for _, i in [10, 20] {
+        for _, j in [1, 2, 3] {
+            if i + j > 0 {
+                print(" ");
+            }
+            print(i * 10 + j);
+        }
+    }
+    println("");
+
+    // The index starts at 0 for non-zero-based ranges too.
+    var sum = 0;
+    for _, j in 5..8 {
+        sum += j;
+    }
+    println(sum);
+
+    // Empty ranges never bind the variables.
+    for _, j in 0..0 {
+        println(j);
+    }
+    println("empty");
+
+    // Elements stay mutable with the index present.
+    var numbers = List([1, 2, 3]);
+    for e, i in numbers {
+        *e += i;
+    }
+    println(numbers[0] + numbers[1] + numbers[2]);
+
+    // Works over iterator objects as well as collections.
+    var total = 0;
+    for v, k in numbers.iterator() {
+        total += v * k;
+    }
+    println(total);
+}

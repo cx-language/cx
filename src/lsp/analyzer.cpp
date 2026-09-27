@@ -563,7 +563,8 @@ void Finder::visitStmt(Stmt* stmt, int depth) {
         auto* forStmt = llvm::cast<ForStmt>(stmt);
         if (forStmt->variable) visitStmt(forStmt->variable, depth + 1);
         visitExpr(forStmt->condition, depth + 1);
-        visitExpr(forStmt->increment, depth + 1);
+        for (auto* increment : forStmt->increments)
+            visitExpr(increment, depth + 1);
         for (auto* s : forStmt->body)
             visitStmt(s, depth + 1);
         return;
@@ -571,6 +572,7 @@ void Finder::visitStmt(Stmt* stmt, int depth) {
     case StmtKind::ForEachStmt: {
         auto* forEach = llvm::cast<ForEachStmt>(stmt);
         if (forEach->variable) visitDecl(forEach->variable, depth + 1);
+        if (forEach->indexVariable) visitDecl(forEach->indexVariable, depth + 1);
         visitExpr(forEach->range, depth + 1);
         for (auto* s : forEach->body)
             visitStmt(s, depth + 1);
@@ -847,7 +849,8 @@ void ReferenceCollector::visitStmt(Stmt* stmt) {
         auto* forStmt = llvm::cast<ForStmt>(stmt);
         if (forStmt->variable) visitStmt(forStmt->variable);
         visitExpr(forStmt->condition);
-        visitExpr(forStmt->increment);
+        for (auto* increment : forStmt->increments)
+            visitExpr(increment);
         for (auto* s : forStmt->body)
             visitStmt(s);
         return;
@@ -855,6 +858,7 @@ void ReferenceCollector::visitStmt(Stmt* stmt) {
     case StmtKind::ForEachStmt: {
         auto* forEach = llvm::cast<ForEachStmt>(stmt);
         if (forEach->variable) visitDecl(forEach->variable);
+        if (forEach->indexVariable) visitDecl(forEach->indexVariable);
         visitExpr(forEach->range);
         for (auto* s : forEach->body)
             visitStmt(s);
@@ -1401,7 +1405,8 @@ void SemanticCollector::visitStmt(Stmt* stmt) {
         auto* forStmt = llvm::cast<ForStmt>(stmt);
         if (forStmt->variable) visitStmt(forStmt->variable);
         visitExpr(forStmt->condition);
-        visitExpr(forStmt->increment);
+        for (auto* increment : forStmt->increments)
+            visitExpr(increment);
         for (auto* s : forStmt->body)
             visitStmt(s);
         return;
@@ -1409,6 +1414,7 @@ void SemanticCollector::visitStmt(Stmt* stmt) {
     case StmtKind::ForEachStmt: {
         auto* forEach = llvm::cast<ForEachStmt>(stmt);
         if (forEach->variable) visitDecl(forEach->variable);
+        if (forEach->indexVariable) visitDecl(forEach->indexVariable);
         visitExpr(forEach->range);
         for (auto* s : forEach->body)
             visitStmt(s);
@@ -1718,7 +1724,8 @@ struct MemberExprCollector {
             auto* forStmt = llvm::cast<ForStmt>(stmt);
             if (forStmt->variable) visitStmt(forStmt->variable);
             visitExpr(forStmt->condition);
-            visitExpr(forStmt->increment);
+            for (auto* increment : forStmt->increments)
+                visitExpr(increment);
             for (auto* s : forStmt->body)
                 visitStmt(s);
             return;
@@ -1726,6 +1733,7 @@ struct MemberExprCollector {
         case StmtKind::ForEachStmt: {
             auto* forEach = llvm::cast<ForEachStmt>(stmt);
             if (forEach->variable) visitDecl(forEach->variable);
+            if (forEach->indexVariable) visitDecl(forEach->indexVariable);
             visitExpr(forEach->range);
             for (auto* s : forEach->body)
                 visitStmt(s);
@@ -2468,7 +2476,8 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                 auto* forStmt = llvm::cast<ForStmt>(stmt);
                 if (forStmt->variable) visitStmt(forStmt->variable);
                 visitExpr(forStmt->condition);
-                visitExpr(forStmt->increment);
+                for (auto* increment : forStmt->increments)
+                    visitExpr(increment);
                 for (auto* s : forStmt->body)
                     visitStmt(s);
                 return;
@@ -2476,6 +2485,7 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
             case StmtKind::ForEachStmt: {
                 auto* forEach = llvm::cast<ForEachStmt>(stmt);
                 if (forEach->variable) visitDecl(forEach->variable);
+                if (forEach->indexVariable) visitDecl(forEach->indexVariable);
                 visitExpr(forEach->range);
                 for (auto* s : forEach->body)
                     visitStmt(s);

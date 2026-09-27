@@ -140,24 +140,25 @@ struct DoWhileStmt : Stmt {
 };
 
 struct ForStmt : Stmt {
-    ForStmt(VarStmt* variable, Expr* condition, Expr* increment, std::vector<Stmt*>&& body, Location location)
-    : Stmt(StmtKind::ForStmt), variable(variable), condition(condition), increment(increment), body(std::move(body)), location(location) {}
+    ForStmt(VarStmt* variable, Expr* condition, std::vector<Expr*>&& increments, std::vector<Stmt*>&& body, Location location)
+    : Stmt(StmtKind::ForStmt), variable(variable), condition(condition), increments(std::move(increments)), body(std::move(body)), location(location) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::ForStmt; }
 
     VarStmt* variable;
     Expr* condition;
-    Expr* increment;
+    std::vector<Expr*> increments;
     std::vector<Stmt*> body;
     Location location;
 };
 
 struct ForEachStmt : Stmt {
-    ForEachStmt(VarDecl* variable, Expr* range, std::vector<Stmt*>&& body, Location location)
-    : Stmt(StmtKind::ForEachStmt), variable(variable), range(range), body(std::move(body)), location(location) {}
+    ForEachStmt(VarDecl* variable, VarDecl* indexVariable, Expr* range, std::vector<Stmt*>&& body, Location location)
+    : Stmt(StmtKind::ForEachStmt), variable(variable), indexVariable(indexVariable), range(range), body(std::move(body)), location(location) {}
     Stmt* lower(int nestLevel);
     static bool classof(const Stmt* s) { return s->kind == StmtKind::ForEachStmt; }
 
     VarDecl* variable;
+    VarDecl* indexVariable; // Null unless written as 'for elem, index in ...'.
     Expr* range;
     std::vector<Stmt*> body;
     Location location;

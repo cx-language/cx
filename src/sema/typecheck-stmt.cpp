@@ -240,7 +240,8 @@ static void collectAssignedNames(const Stmt* stmt, llvm::StringSet<>& names) {
         auto& forStmt = llvm::cast<ForStmt>(*stmt);
         if (forStmt.variable) collectAssignedNames(forStmt.variable, names);
         if (forStmt.condition) collectAssignedNames(*forStmt.condition, names);
-        if (forStmt.increment) collectAssignedNames(*forStmt.increment, names);
+        for (auto* increment : forStmt.increments)
+            collectAssignedNames(*increment, names);
         for (auto& bodyStmt : forStmt.body)
             collectAssignedNames(bodyStmt, names);
         return;
@@ -916,7 +917,8 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
     if (forStmt.condition) collectAssignedNames(*forStmt.condition, assignedNames);
     for (auto& stmt : forStmt.body)
         collectAssignedNames(stmt, assignedNames);
-    if (forStmt.increment) collectAssignedNames(*forStmt.increment, assignedNames);
+    for (auto* increment : forStmt.increments)
+        collectAssignedNames(*increment, assignedNames);
     NarrowMap outerNarrowings = narrowedTypes;
     dropNarrowingsForNames(assignedNames);
 
@@ -937,7 +939,7 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
 
     currentControlStmts.pop_back();
 
-    if (auto* increment = forStmt.increment) {
+    for (auto* increment : forStmt.increments) {
         typecheckExpr(*increment);
     }
 

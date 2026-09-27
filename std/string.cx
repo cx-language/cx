@@ -104,8 +104,8 @@ struct string: Copyable, Comparable, Hashable, Printable {
         if prefix.size() > size() {
             return false;
         }
-        for index in 0..prefix.size() {
-            if this[index] != prefix[index] {
+        for c, index in prefix {
+            if this[index] != c {
                 return false;
             }
         }
@@ -117,8 +117,8 @@ struct string: Copyable, Comparable, Hashable, Printable {
         if suffix.size() > size() {
             return false;
         }
-        for index in 0..suffix.size() {
-            if this[size() - suffix.size() + index] != suffix[index] {
+        for c, index in suffix {
+            if this[size() - suffix.size() + index] != c {
                 return false;
             }
         }
@@ -313,8 +313,8 @@ bool operator==(string a, string b) {
         return false;
     }
 
-    for index in 0..a.size() {
-        if a[index] != b[index] {
+    for c, index in a {
+        if c != b[index] {
             return false;
         }
     }

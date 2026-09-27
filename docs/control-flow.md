@@ -24,6 +24,20 @@ void main() {
 }
 ```
 
+Bind a second loop variable to also get the zero-based iteration index.
+The index is an `int` that counts iterations from 0 even for ranges that do
+not start at 0, and each iteration gets a fresh copy, so assigning to it does
+not affect iteration:
+
+```cs
+void main() {
+    for element, index in ["a", "b", "c"] {
+        print(index);
+        println(element); // prints 0a 1b 2c
+    }
+}
+```
+
 ## while
 
 The while-loop loops until its condition evaluates to false.

@@ -47,8 +47,8 @@ struct Map<Key: Hashable, Value> {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = &hashTable[hashValue];
 
-        for i in 0..slot.size() {
-            if slot[i].key == *e {
+        for entry, i in slot {
+            if entry.key == *e {
                 var removed = slot.removeAt(i);
                 size--;
                 return removed.value;

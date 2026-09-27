@@ -1284,19 +1284,27 @@ DoWhileStmt* Parser::parseDoWhileStmt(Decl* parent) {
 /// for-header ::= var-decl ';' expr? ';' expr? |
 ///            '(' var-decl ';' expr? ';' expr? ')'
 /// foreach-stmt ::= 'for' foreach-header block-or-stmt
-/// foreach-header ::= id 'in' expr
+/// foreach-header ::= id 'in' expr | id ',' id 'in' expr
 Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
     ASSERT(currentToken() == Token::For);
     auto location = consumeToken().location;
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
 
-    if (currentToken() == Token::Identifier && lookAhead(1) == Token::In) {
+    if (currentToken() == Token::Identifier && (lookAhead(1) == Token::In || lookAhead(1) == Token::Comma)) {
         auto name = parse(Token::Identifier);
-        if (parens) {
-            ERROR(location, "for-each loop header must not be parenthesized, write 'for " << name.getString() << " in ...'");
-        }
         auto* varDecl = makeAST<VarDecl>(Type(), name.getString(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+        VarDecl* indexVarDecl = nullptr;
+        if (currentToken() == Token::Comma) {
+            consumeToken();
+            auto indexName = parse(Token::Identifier);
+            indexVarDecl = makeAST<VarDecl>(Type(), indexName.getString(), nullptr, parent, AccessLevel::None, *currentModule, indexName.location);
+        }
+        if (parens) {
+            auto suggestion = "for " + name.getString().str();
+            if (indexVarDecl) suggestion += ", " + indexVarDecl->getName().str();
+            ERROR(location, "for-each loop header must not be parenthesized, write '" << suggestion << " in ...'");
+        }
         parse(Token::In);
         Expr* range;
         {
@@ -1305,7 +1313,7 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         }
         if (parens) parse(Token::RightParen);
         auto body = parseBlockOrStmt(parent);
-        return makeAST<ForEachStmt>(varDecl, range, std::move(body), location);
+        return makeAST<ForEachStmt>(varDecl, indexVarDecl, range, std::move(body), location);
     }
 
     auto varStmt = currentToken() == Token::Semicolon ? (consumeToken(), nullptr) : parseVarStmt(parent);
@@ -1320,14 +1328,14 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
             condition = parseExpr();
             parse(Token::Semicolon);
         }
-        Expr* increment = nullptr;
+        std::vector<Expr*> increments;
         if (currentToken() != Token::RightParen && currentToken() != Token::LeftBrace) {
             llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
-            increment = parseExpr();
+            increments.push_back(parseExpr());
         }
         if (parens) parse(Token::RightParen);
         auto body = parseBlockOrStmt(parent);
-        return makeAST<ForStmt>(varStmt, condition, increment, std::move(body), location);
+        return makeAST<ForStmt>(varStmt, condition, std::move(increments), std::move(body), location);
     } else if (currentToken() == Token::In) {
         ERROR(varStmt->decls.front()->getLocation(),
               "for-each loop variable must be a bare identifier, write 'for " << varStmt->decls.front()->getName() << " in ...'");

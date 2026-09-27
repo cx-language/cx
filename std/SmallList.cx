@@ -379,8 +379,8 @@ struct SmallListIterator<Element, int N>: Copyable, Iterator<Element&> {
 /// Returns true if both lists have equal elements.
 bool operator==<T, int M, int N>(SmallList<T, M>& a, SmallList<T, N>& b) {
     if a.size() != b.size() return false;
-    for i in 0..a.size() {
-        if a[i] != b[i] return false;
+    for x, i in a {
+        if x != b[i] return false;
     }
     return true;
 }

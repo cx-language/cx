@@ -88,17 +88,18 @@ Stmt* Stmt::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
         auto* forStmt = llvm::cast<ForStmt>(this);
         auto variable = forStmt->variable ? llvm::cast<VarStmt>(forStmt->variable->instantiate(genericArgs)) : nullptr;
         auto condition = forStmt->condition ? forStmt->condition->instantiate(genericArgs) : nullptr;
-        auto increment = forStmt->increment ? forStmt->increment->instantiate(genericArgs) : nullptr;
+        auto increments = ::instantiate(forStmt->increments, genericArgs);
         auto body = ::instantiate(forStmt->body, genericArgs);
-        return makeAST<ForStmt>(variable, condition, increment, std::move(body), forStmt->location);
+        return makeAST<ForStmt>(variable, condition, std::move(increments), std::move(body), forStmt->location);
     }
     case StmtKind::ForEachStmt: {
         auto* forEachStmt = llvm::cast<ForEachStmt>(this);
         // The second argument can be empty because VarDecl instantiation doesn't use it.
         auto variable = llvm::cast<VarDecl>(forEachStmt->variable->instantiate(genericArgs, {}));
+        auto indexVariable = forEachStmt->indexVariable ? llvm::cast<VarDecl>(forEachStmt->indexVariable->instantiate(genericArgs, {})) : nullptr;
         auto range = forEachStmt->range->instantiate(genericArgs);
         auto body = ::instantiate(forEachStmt->body, genericArgs);
-        return makeAST<ForEachStmt>(variable, range, std::move(body), forEachStmt->location);
+        return makeAST<ForEachStmt>(variable, indexVariable, range, std::move(body), forEachStmt->location);
     }
     case StmtKind::BreakStmt: {
         auto* breakStmt = llvm::cast<BreakStmt>(this);
@@ -118,7 +119,7 @@ Stmt* Stmt::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
 }
 
 Stmt* WhileStmt::lower() {
-    return makeAST<ForStmt>(nullptr, condition, nullptr, std::move(body), location);
+    return makeAST<ForStmt>(nullptr, condition, std::vector<Expr*>(), std::move(body), location);
 }
 
 // Lowers 'for id in range { ... }' into:
@@ -126,6 +127,9 @@ Stmt* WhileStmt::lower() {
 //     var id = __iterator.value();
 //     ...
 // }
+// With an index variable ('for id, index in range'), a __index counter is
+// declared alongside the iterator, bound to a fresh index variable each
+// iteration, and incremented with the iterator.
 // The loop variable keeps whatever type value() returns. In particular a borrow is
 // aliased, not copied out, so elements are mutated in place. Method resolution cannot
 // be relied on here (generic contexts leave it unresolved), so the variable is always
@@ -149,6 +153,14 @@ Stmt* ForEachStmt::lower(int nestLevel) {
                                             AccessLevel::None, *variable->getModule(), location);
     auto iteratorVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{iteratorVarDecl});
 
+    std::string indexCounterName;
+    if (indexVariable) {
+        indexCounterName = "__index" + (nestLevel > 0 ? std::to_string(nestLevel) : "");
+        auto zero = makeAST<IntLiteralExpr>(llvm::APSInt(64, false), location);
+        auto counterVarDecl = makeAST<VarDecl>(Type(), indexCounterName, zero, variable->parent, AccessLevel::None, *variable->getModule(), location);
+        iteratorVarStmt->decls.push_back(counterVarDecl);
+    }
+
     auto iteratorVarExpr = makeAST<VarExpr>(iteratorVariableName, location);
     auto hasValueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr, "hasValue", location);
     auto hasValueCallExpr = makeAST<CallExpr>(hasValueMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
@@ -163,6 +175,12 @@ Stmt* ForEachStmt::lower(int nestLevel) {
 
     std::vector<Stmt*> forBody;
     forBody.push_back(loopVariableVarStmt);
+    if (indexVariable) {
+        auto counterVarExpr = makeAST<VarExpr>(indexCounterName, location);
+        auto indexVarDecl = makeAST<VarDecl>(indexVariable->type, indexVariable->getName(), counterVarExpr, variable->parent, AccessLevel::None,
+                                             *variable->getModule(), indexVariable->getLocation());
+        forBody.push_back(makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{indexVarDecl}));
+    }
 
     for (auto& stmt : body) {
         forBody.push_back(stmt);
@@ -171,5 +189,10 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVarExpr3 = makeAST<VarExpr>(iteratorVariableName, location);
     auto incrementMemberExpr = makeAST<MemberExpr>(iteratorVarExpr3, "increment", location);
     auto incrementCallExpr = makeAST<CallExpr>(incrementMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
-    return makeAST<ForStmt>(iteratorVarStmt, hasValueCallExpr, incrementCallExpr, std::move(forBody), location);
+    std::vector<Expr*> increments{incrementCallExpr};
+    if (indexVariable) {
+        auto counterVarExpr = makeAST<VarExpr>(indexCounterName, location);
+        increments.push_back(makeAST<UnaryExpr>(Token::Increment, counterVarExpr, location));
+    }
+    return makeAST<ForStmt>(iteratorVarStmt, hasValueCallExpr, std::move(increments), std::move(forBody), location);
 }

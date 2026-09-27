@@ -297,11 +297,11 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
         endTempScope();
     }
 
-    auto* increment = forStmt.increment;
+    auto& increments = forStmt.increments;
     auto* function = insertBlock->parent;
     auto* condition = new BasicBlock("loop.condition", function);
     auto* body = new BasicBlock("loop.body", function);
-    auto* afterBody = increment ? new BasicBlock("loop.increment", function) : condition;
+    auto* afterBody = !increments.empty() ? new BasicBlock("loop.increment", function) : condition;
     auto* end = new BasicBlock("loop.end", function);
 
     breakTargets.push_back(end);
@@ -320,10 +320,12 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
     setInsertPoint(body);
     emitBlock(forStmt.body, afterBody);
 
-    if (increment) {
+    if (!increments.empty()) {
         setInsertPoint(afterBody);
         beginTempScope();
-        emitExpr(*increment);
+        for (auto* increment : increments) {
+            emitExpr(*increment);
+        }
         endTempScope();
         createBr(condition);
     }

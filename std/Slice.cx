@@ -159,8 +159,8 @@ bool operator==<T>(Slice<T> a, Slice<T> b) {
         return false;
     }
 
-    for i in 0..a.size() {
-        if a[i] != b[i] {
+    for x, i in a {
+        if x != b[i] {
             return false;
         }
     }
