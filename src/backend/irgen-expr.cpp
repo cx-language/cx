@@ -3,6 +3,7 @@
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/StringSwitch.h>
 #include <llvm/Support/Path.h>
+#include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/module.h"
 #include "../driver/driver.h"
@@ -14,7 +15,20 @@ Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
     if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(expr.decl)) {
         return emitEnumCase(*enumCase, {}, expr.isMovedFrom);
     }
-    return getValue(expr.decl);
+    Value* value = getValue(expr.decl);
+    if (emittingGlobalInitializer) {
+        // Immutable globals lower to real globals (see emitVarDecl), but a
+        // global initializer can't load from another global; splice in the
+        // referenced initializer instead, as if it were still inlined.
+        if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(expr.decl)) {
+            if (varDecl->isGlobal() && !varDecl->type.isMutable()) {
+                if (auto* global = llvm::dyn_cast<GlobalVariable>(value)) {
+                    if (global->value) value = global->value;
+                }
+            }
+        }
+    }
+    return value;
 }
 
 Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {

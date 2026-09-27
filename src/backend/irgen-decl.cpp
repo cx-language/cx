@@ -263,7 +263,11 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
             }
         }
 
-        if (decl.type.isMutable()) {
+        // Immutable globals inline their initializer at use sites, but only leaf
+        // values can be inlined; anything that emitted instructions (array
+        // literals, constant expressions) needs a real global since the C
+        // backend emits those as statements, which can't nest in expressions.
+        if (decl.type.isMutable() || (wellFormed && !deadBlock->body.empty())) {
             value = createGlobalVariable(value, decl.type, mangleGlobalVar(decl));
         }
 
