@@ -137,8 +137,13 @@ struct List<Element> {
     /// Adds all elements from the given array to the end of the list.
     void append(Element[] elements) {
         if elements.empty() return;
-        reserve(size + elements.size());
-        memcpy(&buffer[size], elements.data(), c_size_t(sizeof(Element) * uint64(elements.size())));
+        // Checked explicitly: release builds don't instrument integer overflow.
+        var newSize = uint64(size) + uint64(elements.size());
+        assert(newSize <= uint64(int.max), "List size overflow");
+        reserve(int(newSize));
+        var byteSize = uint64(0);
+        assert(checkedArraySize<Element>(uint64(elements.size()), byteSize), "allocation size overflow");
+        memcpy(&buffer[size], elements.data(), c_size_t(byteSize));
         size += elements.size();
     }
 
@@ -329,6 +334,7 @@ struct List<Element> {
         if capacity == 0 {
             reserve(1);
         } else {
+            assert(capacity <= int.max / 2, "List capacity overflow");
             reserve(capacity * 2);
         }
     }
