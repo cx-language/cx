@@ -1,6 +1,6 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 
-struct CopyablePoint: Copyable { int x; }
+struct CopyablePoint { int x; }
 struct PlainPoint { int x; }
 
 // The for-loop element variable has whatever type the iterator value() returns.

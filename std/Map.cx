@@ -171,7 +171,7 @@ int convertHash(uint64 hash) {
 }
 
 /// Iterates over the entries of a map.
-struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>&> {
+struct MapIterator<Key, Value>: Iterator<MapEntry<Key, Value>&> {
     private ArrayIterator<List<MapEntry<Key, Value>>> hashTableIterator;
     private MapEntry<Key, Value>[*] current;
 

@@ -4,7 +4,7 @@ void main() {
     var f = Foo(5);
 }
 
-struct Foo: Copyable {
+struct Foo {
     float f;
     Foo(int i) { f = 0.0; }
     ~Foo() { }

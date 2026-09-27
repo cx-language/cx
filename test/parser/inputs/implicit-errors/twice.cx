@@ -1,4 +1,4 @@
-struct A: Copyable {
+struct A {
     int x;
 
     implicit implicit A(int v) {

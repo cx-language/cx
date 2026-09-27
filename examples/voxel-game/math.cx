@@ -1,7 +1,7 @@
 // 3D math: vectors, matrices, and transforms (column-major matrices).
 // Vectors are float[3] arrays with the standard dot/cross/length/normalized operations.
 
-struct Mat4: Copyable {
+struct Mat4 {
     float[16] m;
 }
 

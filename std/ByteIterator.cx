@@ -1,5 +1,5 @@
 /// Iterates over the bytes of a string.
-struct ByteIterator: Copyable, Iterator<uint8> {
+struct ByteIterator: Iterator<uint8> {
     private string stream;
 
     /// Initializes an iterator over the given string.

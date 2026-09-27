@@ -1,6 +1,6 @@
 // RUN: %cx -typecheck %s
 
-struct A: Copyable {
+struct A {
     int s
 
     void a() {

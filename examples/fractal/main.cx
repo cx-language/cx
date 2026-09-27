@@ -57,7 +57,7 @@ int uniformLoc(uint program, string name) {
     return glGetUniformLocation(program, buf.cString());
 }
 
-struct View: Copyable {
+struct View {
     float centerX;
     float centerY;
     float viewH;

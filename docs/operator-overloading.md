@@ -8,7 +8,7 @@ also fill `T*` parameters without an explicit `&`. Ordinary function calls
 still require `&` for a `T*` parameter. Value parameters copy their operands.
 
 ```cs
-struct Vec2: Copyable {
+struct Vec2 {
     int x;
     int y;
 }
@@ -46,7 +46,7 @@ A typical use is indexed access to a type's components,
 like the axes of a vector:
 
 ```cs
-struct Vec3: Copyable {
+struct Vec3 {
     int x;
     int y;
     int z;

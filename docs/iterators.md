@@ -39,7 +39,7 @@ struct Countdown {
     }
 }
 
-struct CountdownIterator: Copyable, Iterator<int> {
+struct CountdownIterator: Iterator<int> {
     int current;
 
     CountdownIterator(Countdown countdown) {

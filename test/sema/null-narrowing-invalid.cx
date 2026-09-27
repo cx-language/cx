@@ -28,16 +28,16 @@ void redundantNegation(int? v) {
 void useAfterNullAssignment(int? v) {
     if v {
         v = null;
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
-        println("x: ", v);
+        // CHECK: [[@LINE+1]]:11: error: no matching operator '+' with arguments 'int?' and 'int'
+        v + 1;
     }
 }
 
 void useAfterOptionalAssignment(int? v, int? w) {
     if v {
         v = w;
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
-        println("x: ", v);
+        // CHECK: [[@LINE+1]]:11: error: no matching operator '+' with arguments 'int?' and 'int'
+        v + 1;
     }
 }
 
@@ -46,8 +46,8 @@ void useAfterBranchAssignment(int? v, bool c) {
         if c {
             v = null;
         }
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
-        println("x: ", v);
+        // CHECK: [[@LINE+1]]:11: error: no matching operator '+' with arguments 'int?' and 'int'
+        v + 1;
     }
 }
 
@@ -62,12 +62,12 @@ void inferredVarIsNonOptional(int? v) {
 void useAfterLoopAssignment(int? v, bool c) {
     if v {
         while c {
-            // CHECK: [[@LINE+1]]:13: error: no matching function 'println(string, int?)'
-            println("x: ", v);
+            // CHECK: [[@LINE+1]]:15: error: no matching operator '+' with arguments 'int?' and 'int'
+            v + 1;
             v = null;
         }
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
-        println("x: ", v);
+        // CHECK: [[@LINE+1]]:11: error: no matching operator '+' with arguments 'int?' and 'int'
+        v + 1;
     }
 }
 
@@ -77,21 +77,21 @@ void useAfterSwitchAssignment(int? v, int c) {
         case 1:
             v = null;
         }
-        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
-        println("x: ", v);
+        // CHECK: [[@LINE+1]]:11: error: no matching operator '+' with arguments 'int?' and 'int'
+        v + 1;
     }
 }
 
 void useAfterLogicalAnd(int? v, bool y) {
     var b = v != null && y;
-    // CHECK: [[@LINE+1]]:5: error: no matching function 'println(string, int?)'
-    println("x: ", v);
+    // CHECK: [[@LINE+1]]:7: error: no matching operator '+' with arguments 'int?' and 'int'
+    v + 1;
 }
 
 void useInDefer(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:15: error: no matching function 'println(string, int?)'
-        defer println("x: ", v);
+        // CHECK: [[@LINE+1]]:17: error: no matching operator '+' with arguments 'int?' and 'int'
+        defer v + 1;
     }
 }
 

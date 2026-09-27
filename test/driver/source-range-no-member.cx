@@ -1,5 +1,5 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-struct Point: Copyable {
+struct Point {
     int x;
     int y;
 }

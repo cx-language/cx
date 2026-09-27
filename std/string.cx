@@ -1,5 +1,5 @@
 /// A non-owning string view.
-struct string: Copyable, Comparable, Hashable, Printable {
+struct string: Comparable, Hashable, Printable {
     private Slice<char> characters;
 
     /// Initializes a string of the given length at the given address.

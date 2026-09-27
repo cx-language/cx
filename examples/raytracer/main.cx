@@ -2,14 +2,14 @@
 // one point light with shadows, Blinn-Phong highlights, and reflections.
 // Writes a binary PPM (P6). Fully deterministic, no dependencies.
 
-struct Sphere: Copyable {
+struct Sphere {
     float[3] center;
     float radius;
     float[3] color;
     float reflectivity;
 }
 
-struct Hit: Copyable {
+struct Hit {
     bool hit;
     float[3] point;
     float[3] normal;
@@ -141,7 +141,7 @@ float[3] trace(float[3] origin, float[3] dir, int depth, Sphere[3]& spheres) {
     return shaded * (1.0 - hit.reflectivity) + bounce * hit.reflectivity;
 }
 
-struct Camera: Copyable {
+struct Camera {
     float[3] origin;
     float[3] forward;
     float[3] right;

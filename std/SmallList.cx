@@ -343,7 +343,7 @@ struct SmallList<Element, int N> {
 }
 
 /// Iterates over the elements of a small list.
-struct SmallListIterator<Element, int N>: Copyable, Iterator<Element&> {
+struct SmallListIterator<Element, int N>: Iterator<Element&> {
     private SmallList<Element, N>* list;
     private int index;
 

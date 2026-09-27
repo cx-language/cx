@@ -1,6 +1,6 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 
-struct Meters: Copyable {
+struct Meters {
     int value;
 
     implicit Meters(int v) {
@@ -8,7 +8,7 @@ struct Meters: Copyable {
     }
 }
 
-struct Label: Copyable {
+struct Label {
     string text;
 
     implicit string view() {

@@ -1,6 +1,6 @@
 // RUN: %cx -print-llvm %s
 
-struct S<T>: Copyable {
+struct S<T> {
     void f(T t) {
         var v = t
     }

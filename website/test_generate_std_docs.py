@@ -31,7 +31,7 @@ STD_DIR = WEBSITE_DIR.parent / "std"
 
 FIXTURE = """\
 /// A widget.
-struct Widget: Copyable {
+struct Widget {
     int size;
 
 //    Widget(int size) {
@@ -145,7 +145,7 @@ class FixtureTest(unittest.TestCase):
 
     def test_type_header_and_doc(self):
         self.assertIn(
-            "## [struct Widget: Copyable](https://github.com/cx-language/cx/blob/main/std/fixture.cx#L2)"
+            "## [struct Widget](https://github.com/cx-language/cx/blob/main/std/fixture.cx#L2)"
             '{target="_blank"} {#type-Widget}',
             self.markdown,
         )
@@ -588,7 +588,7 @@ class StagingTest(unittest.TestCase):
         self.assertIn("Auto-generated from", index)
         self.assertIn("## [Primitive types](./std/primitive-types)", index)
         self.assertIn("- [`fixture`](./std/fixture): ", index)
-        self.assertIn("## [struct Widget: Copyable]", page)
+        self.assertIn("## [struct Widget]", page)
         self.assertIn("# Primitive types", category)
         self.assertNotIn("Auto-generated from", category)
         self.assertIn("## [bool](./std/bool)", category)

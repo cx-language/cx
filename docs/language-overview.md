@@ -211,7 +211,7 @@ __Named arguments__ label call sites that would otherwise be cryptic sequences l
 which keeps calls readable when a function takes several same-typed parameters:
 
 ```cs
-struct Point: Copyable {
+struct Point {
     int x;
     int y;
 }

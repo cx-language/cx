@@ -1,0 +1,13 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:15: error: ': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold a non-Copyable field
+struct Point: Copyable {
+    int x;
+    int y;
+}
+
+// CHECK: [[@LINE+1]]:17: error: ': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold a non-Copyable field
+enum Direction: Copyable {
+    North,
+    South,
+}

@@ -1,6 +1,8 @@
 // RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
 
-struct T {}
+struct T {
+    ~T() {}
+}
 
 void f(T t) {}
 

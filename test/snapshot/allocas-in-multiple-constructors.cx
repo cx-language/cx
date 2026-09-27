@@ -1,6 +1,6 @@
 // RUN: check-snapshots
 
-struct S: Copyable {
+struct S {
     S() {
         var i = 4;
     }

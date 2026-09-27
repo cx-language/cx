@@ -1,6 +1,6 @@
 // RUN: %cx -print-llvm %s
 
-struct Foo: Copyable {
+struct Foo {
     Foo(int a) { }
     Foo(int a, int b) { }
 }

@@ -141,7 +141,7 @@ struct Counter {
     }
 }
 
-struct CopyableCounter: Copyable {
+struct CopyableCounter {
     int n;
 
     void bump() {
@@ -171,7 +171,7 @@ void captureStoreIsLocal() {
     println(a);
 }
 
-struct CopyablePoint: Copyable {
+struct CopyablePoint {
     int x;
     int y;
 }

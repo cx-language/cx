@@ -4,7 +4,7 @@ interface I {
     void i();
 }
 
-struct S: Copyable, I {
+struct S: I {
     int i;
     S() {}
     void i() {}

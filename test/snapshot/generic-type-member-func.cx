@@ -1,6 +1,6 @@
 // RUN: check-snapshots
 
-struct F<T, U>: Copyable {
+struct F<T, U> {
     T a
     U b
     F() {

@@ -1,0 +1,68 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct Owned {
+    List<int> items;
+}
+
+struct Token {
+    int id;
+    ~Token() {}
+}
+
+enum MaybeOwned {
+    None,
+    Some(Owned owned),
+}
+
+struct Wrap<T> {
+    T value;
+}
+
+void f(Owned o) {}
+void f(Token t) {}
+void f(MaybeOwned m) {}
+void f(Wrap<List<int>> w) {}
+void f(Optional<List<int> > o) {}
+
+void fieldPoisonsCopy() {
+    var o = Owned(List([1]));
+    f(o);
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'o' (type 'Owned' is not Copyable because it holds 'List<int>', which has a destructor)
+    f(o);
+}
+
+void destructorPoisonsCopy() {
+    var t = Token(1);
+    f(t);
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 't' (type 'Token' has a destructor, so its values cannot be copied)
+    f(t);
+}
+
+void payloadPoisonsEnumCopy() {
+    var m = MaybeOwned.Some(Owned(List([2])));
+    f(m);
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'm' (type 'MaybeOwned' is not Copyable because it holds 'List<int>', which has a destructor)
+    f(m);
+}
+
+void genericInstantiationPoisonsCopy() {
+    var w = Wrap(List([3]));
+    f(w);
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'w' (type 'Wrap<List<int>>' is not Copyable because it holds 'List<int>', which has a destructor)
+    f(w);
+}
+
+void optionalOfOwnedIsNotCopyable() {
+    Optional<List<int> > o = List([5]);
+    f(o);
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'o' (type 'List<int>?' is not Copyable because it holds 'List<int>', which has a destructor)
+    f(o);
+}
+
+void closureOverOwnedIsNotCopyable() {
+    var o = Owned(List([4]));
+    var fn = () => o.items.size();
+    var fn2 = fn;
+    // CHECK: [[@LINE+1]]:15: error: use of moved value 'fn' (closure cannot be copied because it captures 'o', which is not Copyable)
+    var fn3 = fn;
+}

@@ -1,0 +1,49 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+struct T {
+    List<int> items;
+}
+
+void f(T t) {}
+
+void g() {
+    var t = T(items = List([1]));
+    f(t);
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 't' (type 'T' is not Copyable because it holds 'List<int>', which has a destructor)
+    f(t);
+}
+
+struct S {
+    int x;
+}
+
+void h(S s) {}
+
+void k() {
+    var s = S(x = 1);
+    h(s);
+    h(s);
+}
+
+struct Token {
+    int id;
+    ~Token() {}
+}
+
+void f(Token t) {}
+
+void direct() {
+    var t = Token(1);
+    f(t);
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 't' (type 'Token' has a destructor, so its values cannot be copied)
+    f(t);
+}
+
+void capture() {
+    var t = Token(1);
+    var fn = () => {
+        f(t);
+        return 1;
+    };
+    // CHECK: [[@LINE-3]]:11: error: cannot move from captured variable 't' (type 'Token' has a destructor, so its values cannot be copied)
+}

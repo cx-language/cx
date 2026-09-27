@@ -1,6 +1,6 @@
 // RUN: check_exit_status 6 %cx run %s
 
-struct X: Copyable {
+struct X {
     int a;
 }
 

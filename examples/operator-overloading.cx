@@ -1,5 +1,5 @@
 // Complex numbers with operator overloading.
-struct Complex: Copyable {
+struct Complex {
     float real;
     float imag;
 

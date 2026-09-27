@@ -1,9 +1,9 @@
 // RUN: check_exit_status 5 %cx run %s
 
-struct Foo: Copyable { }
+struct Foo { }
 struct Bar { }
 
-struct X: Copyable {
+struct X {
     int a;
 }
 

@@ -288,7 +288,9 @@ bool isArrayBorrow(Type source, Type target);
 void diagnoseClosureConversion(Type source, Type target, Location location);
 // Suggests an explicit conversion when a value of one numeric type is used where another is expected.
 std::string narrowingHint(Type source, Type target);
-// Suggests adding ': Copyable' when a use fails because the value was moved.
+// Explains why a type is not Copyable when a use fails because the value was moved.
 std::string copyableHint(Type type);
+// Whether a type satisfies a ': Copyable' generic constraint. Structural, not name-based.
+bool satisfiesCopyable(Type type);
 
 } // namespace cx

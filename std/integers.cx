@@ -32,7 +32,7 @@ private void printUnsigned(uint64 value, OutputStream& stream) {
 }
 
 /// An 8-bit signed integer.
-struct int8: Copyable, Comparable, Printable, Hashable, Addable {
+struct int8: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const int8 max = 127;
     /// Smallest value of this type.
@@ -55,7 +55,7 @@ struct int8: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// A 16-bit signed integer.
-struct int16: Copyable, Comparable, Printable, Hashable, Addable {
+struct int16: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const int16 max = 32767;
     /// Smallest value of this type.
@@ -78,7 +78,7 @@ struct int16: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// A 32-bit signed integer.
-struct int32: Copyable, Comparable, Printable, Hashable, Addable {
+struct int32: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const int32 max = 2147483647;
     /// Smallest value of this type.
@@ -101,7 +101,7 @@ struct int32: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// A 64-bit signed integer.
-struct int64: Copyable, Comparable, Printable, Hashable, Addable {
+struct int64: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const int64 max = 9223372036854775807;
     /// Smallest value of this type.
@@ -125,7 +125,7 @@ struct int64: Copyable, Comparable, Printable, Hashable, Addable {
 
 // Not Printable or Hashable for now.
 /// A 128-bit signed integer.
-struct int128: Copyable, Comparable {
+struct int128: Comparable {
     /// Compares this value to another.
     Ordering compare(int128& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -133,7 +133,7 @@ struct int128: Copyable, Comparable {
 }
 
 /// An 8-bit unsigned integer.
-struct uint8: Copyable, Comparable, Printable, Hashable, Addable {
+struct uint8: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const uint8 max = 255;
     /// Smallest value of this type.
@@ -156,7 +156,7 @@ struct uint8: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// A 16-bit unsigned integer.
-struct uint16: Copyable, Comparable, Printable, Hashable, Addable {
+struct uint16: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const uint16 max = 65535;
     /// Smallest value of this type.
@@ -179,7 +179,7 @@ struct uint16: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// A 32-bit unsigned integer.
-struct uint32: Copyable, Comparable, Printable, Hashable, Addable {
+struct uint32: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const uint32 max = 4294967295;
     /// Smallest value of this type.
@@ -202,7 +202,7 @@ struct uint32: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// A 64-bit unsigned integer.
-struct uint64: Copyable, Comparable, Printable, Hashable, Addable {
+struct uint64: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const uint64 max = 18446744073709551615;
     /// Smallest value of this type.
@@ -228,7 +228,7 @@ struct uint64: Copyable, Comparable, Printable, Hashable, Addable {
 /// 64-bit on the 64-bit native targets. Use it for C externs that take
 /// `size_t` (e.g. `getcwd`) so the generated call matches the C headers on
 /// every target. (No `max`/`min`: the largest value depends on the target.)
-struct c_size_t: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_size_t: Comparable, Printable, Hashable, Addable {
     /// Compares this value to another.
     Ordering compare(c_size_t& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -246,7 +246,7 @@ struct c_size_t: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// C's `signed char` type: an 8-bit signed integer.
-struct c_schar: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_schar: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const c_schar max = 127;
     /// Smallest value of this type.
@@ -269,7 +269,7 @@ struct c_schar: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// C's `unsigned char` type: an 8-bit unsigned integer.
-struct c_uchar: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_uchar: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const c_uchar max = 255;
     /// Smallest value of this type.
@@ -292,7 +292,7 @@ struct c_uchar: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// C's `short` type: a 16-bit signed integer.
-struct c_short: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_short: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const c_short max = 32767;
     /// Smallest value of this type.
@@ -315,7 +315,7 @@ struct c_short: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// C's `unsigned short` type: a 16-bit unsigned integer.
-struct c_ushort: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_ushort: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const c_ushort max = 65535;
     /// Smallest value of this type.
@@ -338,7 +338,7 @@ struct c_ushort: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// C's `int` type: a 32-bit signed integer.
-struct c_int: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_int: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const c_int max = 2147483647;
     /// Smallest value of this type.
@@ -361,7 +361,7 @@ struct c_int: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// C's `unsigned int` type: a 32-bit unsigned integer.
-struct c_uint: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_uint: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const c_uint max = 4294967295;
     /// Smallest value of this type.
@@ -385,7 +385,7 @@ struct c_uint: Copyable, Comparable, Printable, Hashable, Addable {
 
 /// C's `long` type: a 32-bit signed integer on Windows and wasm32, 64-bit on
 /// the 64-bit Unix targets. (No `max`/`min`: the largest value depends on the target.)
-struct c_long: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_long: Comparable, Printable, Hashable, Addable {
     /// Compares this value to another.
     Ordering compare(c_long& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -405,7 +405,7 @@ struct c_long: Copyable, Comparable, Printable, Hashable, Addable {
 /// C's `unsigned long` type: a 32-bit unsigned integer on Windows and wasm32,
 /// 64-bit on the 64-bit Unix targets. (No `max`/`min`: the largest value
 /// depends on the target.)
-struct c_ulong: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_ulong: Comparable, Printable, Hashable, Addable {
     /// Compares this value to another.
     Ordering compare(c_ulong& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -423,7 +423,7 @@ struct c_ulong: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// C's `long long` type: a 64-bit signed integer.
-struct c_longlong: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_longlong: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const c_longlong max = 9223372036854775807;
     /// Smallest value of this type.
@@ -446,7 +446,7 @@ struct c_longlong: Copyable, Comparable, Printable, Hashable, Addable {
 }
 
 /// C's `unsigned long long` type: a 64-bit unsigned integer.
-struct c_ulonglong: Copyable, Comparable, Printable, Hashable, Addable {
+struct c_ulonglong: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
     const c_ulonglong max = 18446744073709551615;
     /// Smallest value of this type.
@@ -470,7 +470,7 @@ struct c_ulonglong: Copyable, Comparable, Printable, Hashable, Addable {
 
 // Not Printable or Hashable for now.
 /// A 128-bit unsigned integer.
-struct uint128: Copyable, Comparable {
+struct uint128: Comparable {
     /// Compares this value to another.
     Ordering compare(uint128& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;

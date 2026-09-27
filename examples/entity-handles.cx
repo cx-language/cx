@@ -2,7 +2,7 @@
 // indices receive a new generation, so old handles cannot resolve to the new
 // entity.
 
-struct EntityHandle: Copyable {
+struct EntityHandle {
     int index;
     int generation;
 }

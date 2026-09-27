@@ -7,7 +7,7 @@ struct S<E> {
     void s() {}
 }
 
-struct A: Copyable {
+struct A {
     void h() {}
 }
 

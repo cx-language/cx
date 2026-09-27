@@ -1,5 +1,5 @@
 /// A non-owning reference to a contiguous array of elements.
-struct Slice<Element>: Copyable {
+struct Slice<Element> {
     private Element[*] data;
     private int size;
 

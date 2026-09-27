@@ -8,6 +8,6 @@ S*? sp = null
 
 void foo(S*? p) { }
 
-struct S: Copyable {
+struct S {
     int i
 }

@@ -87,7 +87,7 @@ struct OrderedSet<Element> {
 }
 
 /// Iterates over the elements of an ordered set, in order.
-struct OrderedSetIterator<Element>: Copyable, Iterator<Element&> {
+struct OrderedSetIterator<Element>: Iterator<Element&> {
     private OrderedMapIterator<Element, bool> mapIter;
 
     /// Initializes an iterator over the given set.

@@ -1,6 +1,6 @@
 // Mandelbrot checksum. Prints a single checksum instead of ASCII art so the
 // benchmark measures float arithmetic, not terminal I/O. Output must be stable.
-struct Complex: Copyable {
+struct Complex {
     float r;
     float i;
 

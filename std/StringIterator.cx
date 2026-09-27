@@ -1,5 +1,5 @@
 /// Iterates over the characters of a string.
-struct StringIterator: Copyable, Iterator<char&> {
+struct StringIterator: Iterator<char&> {
     private char[*] current;
     private char[*] end;
 

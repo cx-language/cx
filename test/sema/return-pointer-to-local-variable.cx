@@ -12,7 +12,7 @@ int* f1() {
     return a;
 }
 
-struct S: Copyable {
+struct S {
     int i;
 
     int* f2() {

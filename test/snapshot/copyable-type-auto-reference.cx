@@ -1,6 +1,6 @@
 // RUN: check-snapshots
 
-struct Foo: Copyable { int i; }
+struct Foo { int i; }
 
 void foo(Foo& ref_f) { }
 

@@ -1,6 +1,6 @@
 // RUN: check-snapshots
 
-struct Big : Copyable {
+struct Big  {
     int a;
     int b;
     int c;

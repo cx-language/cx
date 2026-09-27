@@ -1,6 +1,6 @@
 // Mandelbrot set visualizer
 
-struct Complex: Copyable {
+struct Complex {
     float r;
     float i;
 

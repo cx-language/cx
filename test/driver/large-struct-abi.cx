@@ -1,6 +1,6 @@
 // RUN: %cx -print-llvm %s | %FileCheck %s
 
-struct Big : Copyable {
+struct Big  {
     int a;
     int b;
     int c;

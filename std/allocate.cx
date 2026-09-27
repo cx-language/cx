@@ -1,7 +1,7 @@
 /// A (possibly stateful) memory allocator: allocation and deallocation function
 /// pointers plus an opaque state pointer passed to both. Function pointers
 /// instead of an interface because interfaces cannot be stored in variables.
-struct Allocator: Copyable {
+struct Allocator {
     void*? state;
     void*?(void*?, c_size_t) alloc;
     void(void*?, void*?) free;

@@ -4,7 +4,7 @@ interface Fooable {
     void foo()
 }
 
-struct F: Copyable {
+struct F {
     int foo() { return 1 }
 }
 

@@ -1,6 +1,6 @@
 // RUN: check-snapshots -Wno-unused
 
-struct S: Copyable {}
+struct S {}
 
 interface I {
     void foo();

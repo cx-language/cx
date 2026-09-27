@@ -1,0 +1,69 @@
+// RUN: %cx -typecheck %s
+
+struct Point {
+    int x;
+    int y;
+}
+
+struct Line {
+    Point start;
+    Point end;
+}
+
+enum Direction {
+    North,
+    South,
+}
+
+enum MaybePoint {
+    None,
+    Some(Point point),
+}
+
+struct Wrap<T> {
+    T value;
+}
+
+void usePoint(Point p) {}
+void useLine(Line l) {}
+void useDirection(Direction d) {}
+void useMaybe(MaybePoint m) {}
+void useWrap(Wrap<int> w) {}
+void useOptional(Optional<int> o) {}
+
+void takesCopyable<T: Copyable>(T value) {}
+
+void main() {
+    var p = Point(1, 2);
+    usePoint(p);
+    usePoint(p);
+
+    var l = Line(Point(0, 0), Point(1, 1));
+    useLine(l);
+    useLine(l);
+
+    var d = Direction.North;
+    useDirection(d);
+    useDirection(d);
+
+    var m = MaybePoint.Some(Point(3, 4));
+    useMaybe(m);
+    useMaybe(m);
+
+    var w = Wrap(42);
+    useWrap(w);
+    useWrap(w);
+
+    Optional<int> o = 5;
+    useOptional(o);
+    useOptional(o);
+
+    takesCopyable(p);
+    takesCopyable(42);
+    takesCopyable(o);
+    takesCopyable("hello");
+
+    var f = () => p.x;
+    var g = f;
+    _ = g();
+}

@@ -918,6 +918,11 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
         // Conformance runs before methods are checked (as before), comparing
         // raw signatures on both sides.
         for (Type interface : decl.interfaces) {
+            if (interface.isBasicType() && interface.getName() == "Copyable") {
+                REPORT_ERROR(interface.location, "': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold "
+                                                 "a non-Copyable field");
+                continue;
+            }
             // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
             typecheckType(interface, decl.accessLevel, true, true);
             auto* interfaceDecl = interface.getDecl();
@@ -932,6 +937,10 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
                 REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
             }
         }
+
+        // Drop the rejected entry so later queries never see it.
+        decl.interfaces.erase(llvm::remove_if(decl.interfaces, [](Type interface) { return interface.isBasicType() && interface.getName() == "Copyable"; }),
+                              decl.interfaces.end());
 
         TypeDecl* realDecl;
 
@@ -1041,6 +1050,11 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
         ensureInterfaces(decl);
 
         for (Type interface : decl.interfaces) {
+            if (interface.isBasicType() && interface.getName() == "Copyable") {
+                REPORT_ERROR(interface.location, "': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold "
+                                                 "a non-Copyable field");
+                continue;
+            }
             // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
             typecheckType(interface, decl.accessLevel, true, true);
             auto* interfaceDecl = interface.getDecl();
@@ -1055,6 +1069,10 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
                 REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
             }
         }
+
+        // Drop the rejected entry so later queries never see it.
+        decl.interfaces.erase(llvm::remove_if(decl.interfaces, [](Type interface) { return interface.isBasicType() && interface.getName() == "Copyable"; }),
+                              decl.interfaces.end());
 
         std::vector<const EnumCase*> cases = map(decl.cases, [](const EnumCase& c) { return &c; });
         std::ranges::sort(cases, [](auto* a, auto* b) { return a->getName() < b->getName(); });

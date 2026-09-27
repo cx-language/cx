@@ -1,6 +1,6 @@
 // RUN: check-snapshots
 
-struct Foo: Copyable {
+struct Foo {
     int a;
     bool b;
 

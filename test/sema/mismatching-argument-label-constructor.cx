@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-struct X: Copyable {
+struct X {
     X(int a) { }
 }
 

@@ -4,7 +4,7 @@ const int chunkW = 16;
 const int chunkH = 64;
 const int chunkD = 16;
 
-struct Chunk: Copyable {
+struct Chunk {
     int cx;
     int cz;
     uint8[16 * 64 * 16] blocks;

@@ -1,5 +1,5 @@
 /// An inclusive range from start to end.
-struct ClosedRange<T>: Copyable {
+struct ClosedRange<T> {
     private T start;
     private T end;
 

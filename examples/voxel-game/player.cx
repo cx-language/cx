@@ -1,6 +1,6 @@
 // First-person player: look, walk, jump, collide, and raycast blocks.
 
-struct Input: Copyable {
+struct Input {
     bool forward = false;
     bool back = false;
     bool left = false;
@@ -11,7 +11,7 @@ struct Input: Copyable {
     float lookDY = 0.0;
 }
 
-struct Player: Copyable {
+struct Player {
     float[3] pos;
     float[3] vel;
     float yaw;

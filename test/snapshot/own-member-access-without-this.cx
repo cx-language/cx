@@ -17,7 +17,7 @@ struct A {
     }
 }
 
-struct B: Copyable {
+struct B {
     int i
     int j
 

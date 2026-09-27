@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
 // CHECK: [[@LINE+1]]:6: error: 'E' has infinite size because it contains itself
 enum E {
@@ -10,5 +10,10 @@ struct S {
     E e;
 }
 
+// Using the type must not crash the compiler.
+void f(S s) {}
+
 void main() {
+    // CHECK: [[@LINE+1]]:5: error: unknown identifier 'nosuchcall'
+    nosuchcall();
 }

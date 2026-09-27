@@ -1,5 +1,5 @@
 /// Iterates over the values of a closed range.
-struct ClosedRangeIterator<T>: Copyable, Iterator<T> {
+struct ClosedRangeIterator<T>: Iterator<T> {
     private T current;
     private T end;
 

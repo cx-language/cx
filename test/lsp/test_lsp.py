@@ -56,7 +56,8 @@ void main() {
     println("done");
 }
 
-struct Point: Copyable {
+interface Shape {}
+struct Point: Shape {
     int x;
     int y;
 }
@@ -71,7 +72,7 @@ void useTypes() {
     println(origin.x);
 }
 
-struct Counter: Copyable {
+struct Counter {
     int count;
     void bump(int step) {
         int doubled = step * 2;
@@ -250,7 +251,7 @@ def test_query_modes(cx_lsp, path):
     check("query-completion-stdlib", "println" in labels)
 
     # Completion inside a struct method sees the method's params and locals.
-    result = run_query(cx_lsp, base_query("completion", path, GOOD_SOURCE, (27, 20)))
+    result = run_query(cx_lsp, base_query("completion", path, GOOD_SOURCE, (28, 20)))
     labels = [item["label"] for item in result.get("items", [])]
     check("query-completion-method-param", "step" in labels)
     check("query-completion-method-local", "doubled" in labels)
@@ -270,20 +271,20 @@ def test_query_modes(cx_lsp, path):
     locations = [(r["range"]["start"]["line"], r["range"]["start"]["character"]) for r in result.get("references", [])]
     check("query-references", (0, 4) in locations and (5, 17) in locations, json.dumps(locations)[:300])
 
-    # Hover/definition/references on a type annotation (`Point` at line 20).
-    result = run_query(cx_lsp, base_query("hover", path, GOOD_SOURCE, (20, 5)))
+    # Hover/definition/references on a type annotation (`Point` at line 21).
+    result = run_query(cx_lsp, base_query("hover", path, GOOD_SOURCE, (21, 5)))
     check("query-hover-type", "struct Point" in result.get("hover", ""), result.get("hover", "")[:200])
 
-    result = run_query(cx_lsp, base_query("definition", path, GOOD_SOURCE, (20, 5)))
+    result = run_query(cx_lsp, base_query("definition", path, GOOD_SOURCE, (21, 5)))
     check(
         "query-definition-type",
-        result.get("found") is True and result.get("range", {}).get("start") == {"line": 9, "character": 7},
+        result.get("found") is True and result.get("range", {}).get("start") == {"line": 10, "character": 7},
         json.dumps(result)[:300],
     )
 
-    result = run_query(cx_lsp, base_query("references", path, GOOD_SOURCE, (20, 5)))
+    result = run_query(cx_lsp, base_query("references", path, GOOD_SOURCE, (21, 5)))
     locations = [(r["range"]["start"]["line"], r["range"]["start"]["character"]) for r in result.get("references", [])]
-    check("query-references-type", (9, 7) in locations and (20, 4) in locations, json.dumps(locations)[:300])
+    check("query-references-type", (10, 7) in locations and (21, 4) in locations, json.dumps(locations)[:300])
 
     result = run_query(cx_lsp, base_query("semanticTokens", path, GOOD_SOURCE))
     ordered = result.get("tokens", [])
@@ -293,16 +294,16 @@ def test_query_modes(cx_lsp, path):
     check("query-tokens-keyword", tokens.get((1, 4, 6, "keyword")) == [])
     check("query-tokens-string", tokens.get((6, 12, 6, "string")) == [])
     check("query-tokens-number", tokens.get((5, 21, 1, "number")) == [])
-    check("query-tokens-struct-def", tokens.get((9, 7, 5, "struct")) == ["definition"])
-    check("query-tokens-enum-member", tokens.get((15, 4, 3, "enumMember")) == ["definition"])
-    check("query-tokens-method-def", tokens.get((26, 9, 4, "method")) == ["definition"])
-    check("query-tokens-type-ref", tokens.get((20, 4, 5, "struct")) == [])
-    check("query-tokens-property", tokens.get((21, 19, 1, "property")) == [])
+    check("query-tokens-struct-def", tokens.get((10, 7, 5, "struct")) == ["definition"])
+    check("query-tokens-enum-member", tokens.get((16, 4, 3, "enumMember")) == ["definition"])
+    check("query-tokens-method-def", tokens.get((27, 9, 4, "method")) == ["definition"])
+    check("query-tokens-type-ref", tokens.get((21, 4, 5, "struct")) == [])
+    check("query-tokens-property", tokens.get((22, 19, 1, "property")) == [])
     check("query-tokens-param-def", tokens.get((0, 12, 1, "parameter")) == ["definition"])
-    check("query-tokens-interface", tokens.get((9, 14, 8, "interface")) == [])
-    check("query-tokens-enum-def", tokens.get((14, 5, 5, "enum")) == ["definition"])
-    check("query-tokens-param-ref", tokens.get((27, 22, 4, "parameter")) == [])
-    check("query-tokens-variable-ref", tokens.get((28, 16, 7, "variable")) == [])
+    check("query-tokens-interface", tokens.get((10, 14, 5, "interface")) == [])
+    check("query-tokens-enum-def", tokens.get((15, 5, 5, "enum")) == ["definition"])
+    check("query-tokens-param-ref", tokens.get((28, 22, 4, "parameter")) == [])
+    check("query-tokens-variable-ref", tokens.get((29, 16, 7, "variable")) == [])
     check(
         "query-tokens-sorted",
         all((b["line"], b["start"]) >= (a["line"], a["start"]) for a, b in zip(ordered, ordered[1:])),
@@ -463,7 +464,7 @@ def test_completion_members(cx_lsp, path):
         result = run_query(cx_lsp, base_query("completion", path, content, pos))
         return {item["label"]: item for item in result.get("items", [])}
 
-    POINT = "struct Point: Copyable {\n    int x;\n    int y;\n    void move(int dx) {}\n}\n"
+    POINT = "struct Point {\n    int x;\n    int y;\n    void move(int dx) {}\n}\n"
 
     # Struct instance: only its fields and methods, no keywords or globals.
     content = POINT + "void main() {\n    Point p = Point(0, 0);\n    p.\n}\n"
@@ -506,12 +507,12 @@ def test_completion_members(cx_lsp, path):
     check("query-completion-member-optional", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
 
     # `this.` inside a method completes the enclosing type.
-    content = "struct Point: Copyable {\n    int x;\n    int y;\n    void move(int dx) {\n        this.\n    }\n}\n"
+    content = "struct Point {\n    int x;\n    int y;\n    void move(int dx) {\n        this.\n    }\n}\n"
     items = labels_for(content, (4, 13))
     check("query-completion-member-this", set(items) == {"x", "y", "move"}, json.dumps(sorted(items))[:300])
 
     # Chained member and call-result receivers.
-    content = "struct Point: Copyable {\n    int x;\n    int y;\n}\nstruct Wrapper: Copyable {\n    Point inner;\n}\nvoid main() {\n    Wrapper w = Wrapper(Point(1, 2));\n    w.inner.\n}\n"
+    content = "struct Point {\n    int x;\n    int y;\n}\nstruct Wrapper {\n    Point inner;\n}\nvoid main() {\n    Wrapper w = Wrapper(Point(1, 2));\n    w.inner.\n}\n"
     items = labels_for(content, (9, 12))
     check("query-completion-member-chained", set(items) == {"x", "y"}, json.dumps(sorted(items))[:300])
 

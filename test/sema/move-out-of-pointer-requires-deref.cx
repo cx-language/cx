@@ -15,7 +15,7 @@ void g() {
     T z = *p;
 }
 
-struct S: Copyable {
+struct S {
     int v;
 }
 

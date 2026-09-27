@@ -2,6 +2,6 @@
 void main() {
     var a = Foo(qux = 4);
 }
-struct Foo: Copyable {
+struct Foo {
     Foo(int qux) { }
 }

@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
 
-struct Foo: Copyable { }
+struct Foo { }
 
 // CHECK: [[@LINE+2]]:8: error: redefinition of 'Foo'
 // CHECK: :3:8: note: previous definition here

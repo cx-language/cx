@@ -84,7 +84,7 @@ enum Request {
     }
 }
 
-struct Node: Copyable {
+struct Node {
     int id;
 
     Node* self() {

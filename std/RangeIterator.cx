@@ -1,5 +1,5 @@
 /// Iterates over the values of a range.
-struct RangeIterator<T>: Copyable, Iterator<T> {
+struct RangeIterator<T>: Iterator<T> {
     private T current;
     private T end;
 

@@ -41,7 +41,7 @@ uint createProgram(string vertPath, string fragPath) {
     return program;
 }
 
-struct BlockUniforms: Copyable {
+struct BlockUniforms {
     int mvp;
     int blockTex;
     int cameraPos;

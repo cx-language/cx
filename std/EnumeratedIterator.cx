@@ -1,5 +1,5 @@
 /// Iterates over elements with their indices.
-struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<Element>> {
+struct EnumeratedIterator<Element>: Iterator<EnumeratedIteratorEntry<Element>> {
     private ArrayIterator<Element> base;
     private int index;
 
@@ -27,7 +27,7 @@ struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<E
 }
 
 /// An element with its index.
-struct EnumeratedIteratorEntry<Value>: Copyable {
+struct EnumeratedIteratorEntry<Value> {
     /// The element.
     Value* value;
     /// The element's index.

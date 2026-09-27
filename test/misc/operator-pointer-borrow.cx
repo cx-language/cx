@@ -2,7 +2,7 @@
 // RUN: %cx run --backend=c %s | %FileCheck %s
 // CHECK: true
 
-struct A: Copyable {
+struct A {
     int value;
 }
 

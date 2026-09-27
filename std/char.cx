@@ -1,5 +1,5 @@
 /// A single character.
-struct char: Copyable, Comparable, Printable, Hashable {
+struct char: Comparable, Printable, Hashable {
     /// Returns true if this is a letter.
     bool isAlpha() {
         return (this >= 'A' && this <= 'Z') || (this >= 'a' && this <= 'z');

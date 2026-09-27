@@ -1,6 +1,6 @@
 // RUN: %cx -typecheck %s
 
-struct S<T>: Copyable {
+struct S<T> {
     void f(T t) {
         T*? p = null;
         *p! = t;

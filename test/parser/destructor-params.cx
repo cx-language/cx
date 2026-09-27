@@ -1,6 +1,6 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
-struct Foo: Copyable {
+struct Foo {
     // CHECK: [[@LINE+1]]:5: error: destructors cannot have parameters
     ~Foo(int i) { }
 }

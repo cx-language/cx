@@ -1,9 +1,14 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
 // CHECK: [[@LINE+1]]:8: error: 'S' has infinite size because it contains itself
 struct S {
     S s;
 }
 
+// Using the type must not crash the compiler.
+void f(S s) {}
+
 void main() {
+    // CHECK: [[@LINE+1]]:5: error: unknown identifier 'nosuchcall'
+    nosuchcall();
 }

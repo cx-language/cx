@@ -12,7 +12,7 @@ struct Foo {
     void f() {}
 }
 
-struct Bar: Copyable {
+struct Bar {
     int i;
 
     ~Bar() {

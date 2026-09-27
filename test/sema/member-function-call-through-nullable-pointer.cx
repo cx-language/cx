@@ -1,6 +1,6 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
-struct Foo: Copyable {
+struct Foo {
     int i;
     void bar() { }
 }

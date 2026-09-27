@@ -56,7 +56,7 @@ struct Wrap {
     C c;
 }
 
-struct W : Copyable {
+struct W  {
     C c;
 }
 

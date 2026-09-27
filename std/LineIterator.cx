@@ -1,5 +1,5 @@
 /// Iterates over the lines of a string.
-struct LineIterator: Copyable, Iterator<string> {
+struct LineIterator: Iterator<string> {
     private string stream;
     private int end;
 

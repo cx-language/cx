@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <unordered_set>
 #pragma warning(push, 0)
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
@@ -365,9 +367,21 @@ bool TypeDecl::hasInterface(const TypeDecl& interface) const {
     return llvm::any_of(interfaces, [&](Type type) { return type.getDecl() == &interface; });
 }
 
+// In-progress isCopyable queries. Infinite-size types are already an error, but checking
+// continues after it, so field cycles must still terminate: re-entry answers non-copyable.
+static thread_local std::vector<const TypeDecl*> copyableQueries;
+
 bool TypeDecl::isCopyable() const {
-    if (name == "Optional") return genericArgs.front().getType().isImplicitlyCopyable();
-    return llvm::any_of(interfaces, [&](Type type) { return type.getName() == "Copyable"; });
+    // Copyable by default; a destructor or a non-copyable field opts out. Explicit
+    // ': Copyable' lists are rejected in typechecking, so the interfaces play no role here.
+    if (llvm::is_contained(copyableQueries, this)) return false;
+    copyableQueries.push_back(this);
+    llvm::scope_exit pop([&] { copyableQueries.pop_back(); });
+    if (getDestructor()) return false;
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(this)) {
+        return llvm::all_of(enumDecl->cases, [](auto& enumCase) { return !enumCase.associatedType || enumCase.associatedType.isImplicitlyCopyable(); });
+    }
+    return llvm::all_of(fields, [](auto& field) { return field.type.isImplicitlyCopyable(); });
 }
 
 void TypeDecl::addField(FieldDecl&& field) {

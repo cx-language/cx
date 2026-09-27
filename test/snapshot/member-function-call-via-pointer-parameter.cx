@@ -6,7 +6,7 @@ struct Foo {
     void foo() { }
 }
 
-struct Bar: Copyable {
+struct Bar {
     int i;
     Bar() { i = 0; }
     void bar() { }

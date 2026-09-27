@@ -50,7 +50,7 @@ private void printFloat32(float32 value, OutputStream& stream) {
 }
 
 /// A 32-bit floating-point number.
-struct float32: Copyable, Comparable, Printable, Addable {
+struct float32: Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(float32& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -64,7 +64,7 @@ struct float32: Copyable, Comparable, Printable, Addable {
 }
 
 /// A 64-bit floating-point number.
-struct float64: Copyable, Comparable, Printable, Addable {
+struct float64: Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(float64& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -78,7 +78,7 @@ struct float64: Copyable, Comparable, Printable, Addable {
 }
 
 /// An 80-bit floating-point number.
-struct float80: Copyable, Comparable {
+struct float80: Comparable {
     /// Compares this value to another.
     Ordering compare(float80& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -86,7 +86,7 @@ struct float80: Copyable, Comparable {
 }
 
 /// C's `float` type: a 32-bit floating-point number.
-struct c_float: Copyable, Comparable, Printable, Addable {
+struct c_float: Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(c_float& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
@@ -100,7 +100,7 @@ struct c_float: Copyable, Comparable, Printable, Addable {
 }
 
 /// C's `double` type: a 64-bit floating-point number.
-struct c_double: Copyable, Comparable, Printable, Addable {
+struct c_double: Comparable, Printable, Addable {
     /// Compares this value to another.
     Ordering compare(c_double& other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;

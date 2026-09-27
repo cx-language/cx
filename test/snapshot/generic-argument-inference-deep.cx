@@ -1,6 +1,6 @@
 // RUN: check-snapshots -Wno-unused
 
-struct S<T>: Copyable {
+struct S<T> {
     T f;
 }
 

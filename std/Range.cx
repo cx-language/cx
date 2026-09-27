@@ -1,5 +1,5 @@
 /// A half-open range from start to end.
-struct Range<T>: Copyable {
+struct Range<T> {
     private T start;
     private T end;
 

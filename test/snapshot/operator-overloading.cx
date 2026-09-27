@@ -1,6 +1,6 @@
 // RUN: check-snapshots -Wno-unused
 
-struct vec2: Copyable {
+struct vec2 {
     int x
     int y
 
@@ -24,7 +24,7 @@ bool operator==(vec2 a, vec2 b) {
     return a.x == b.x
 }
 
-struct A<T>: Copyable {}
+struct A<T> {}
 
 bool operator==<T>(A<T> a, A<T> b) {
     return true

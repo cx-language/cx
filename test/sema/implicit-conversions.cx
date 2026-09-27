@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
-struct U: Copyable {
+struct U {
     int x;
 
     implicit U(V v) {
@@ -8,7 +8,7 @@ struct U: Copyable {
     }
 }
 
-struct V: Copyable {
+struct V {
     int x;
 
     implicit V(int v) {
@@ -23,7 +23,7 @@ struct V: Copyable {
 void takeU(U u) {
 }
 
-struct Tiny: Copyable {
+struct Tiny {
     int8 x;
 
     implicit Tiny(int8 v) {

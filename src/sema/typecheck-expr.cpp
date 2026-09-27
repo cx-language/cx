@@ -7,6 +7,7 @@
 #pragma warning(push, 0)
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
@@ -2012,14 +2013,9 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
         for (Type constraint : genericParam.constraints) {
             auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
 
-            // Pack arguments are heterogeneous: a pointer pack argument (e.g. `println("x", &value)`)
-            // dispatches to the pointer overloads once the loop is unrolled. Pointers are always copyable.
-            if (genericArg.getType().removeOptional().isPointerType() && !genericArg.getType().removeOptional().isReferenceType()
-                && interface->getName() == "Copyable") {
-                continue;
-            }
-
-            if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase)) {
+            if (interface->getName() == "Copyable") {
+                if (satisfiesCopyable(genericArg.getType())) continue;
+            } else if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase)) {
                 auto* typeDecl = getTypeDecl(*basicType);
                 if (typeDecl && typeDecl->hasInterface(*interface)) continue;
             }
@@ -2077,9 +2073,12 @@ std::string cx::narrowingHint(Type source, Type target) {
     return " (use '" + target.toString() + "(...)' to convert explicitly)";
 }
 
-std::string cx::copyableHint(Type type) {
-    if (!type || type.containsUnresolvedPlaceholder()) return "";
-    if (type.isImplicitlyCopyable()) return "";
+bool cx::satisfiesCopyable(Type type) {
+    // Copyable constraints are structural. References are never storable enough to satisfy them.
+    return type.isImplicitlyCopyable() && !type.removeOptional().isReferenceType();
+}
+
+static Type unwrapCopyable(Type type) {
     Type unwrapped = type.removeReference();
     while (unwrapped.isOptionalType()) {
         unwrapped = unwrapped.getWrappedType();
@@ -2090,28 +2089,65 @@ std::string cx::copyableHint(Type type) {
             unwrapped = unwrapped.getWrappedType();
         }
     }
+    return unwrapped;
+}
+
+// In-progress nonCopyableRoot queries; see copyableQueries in decl.cpp for why cycles must terminate.
+static thread_local std::vector<const TypeDecl*> nonCopyableRootQueries;
+
+// The destructor-owning type that makes `type` non-copyable. A destructor is the only
+// opt-out from Copyable-by-default, so every non-copyable type bottoms out at one.
+static Type nonCopyableRoot(Type type) {
+    Type unwrapped = unwrapCopyable(type);
     if (unwrapped.isAnonymousStructType()) {
         for (auto& element : unwrapped.getAnonymousStructElements()) {
-            if (!element.type.containsUnresolvedPlaceholder() && !element.type.isImplicitlyCopyable()) return copyableHint(element.type);
+            if (!element.type.containsUnresolvedPlaceholder() && !element.type.isImplicitlyCopyable()) {
+                if (Type root = nonCopyableRoot(element.type)) return root;
+            }
         }
-        return "";
+        return Type();
     }
-    if (unwrapped.isImplicitlyCopyable()) return "";
     auto* decl = unwrapped.getDecl();
+    if (!decl || unwrapped.isImplicitlyCopyable()) return Type();
+    if (decl->getDestructor()) return unwrapped;
+    if (llvm::is_contained(nonCopyableRootQueries, decl)) return Type();
+    nonCopyableRootQueries.push_back(decl);
+    llvm::scope_exit pop([&] { nonCopyableRootQueries.pop_back(); });
+    for (auto& field : decl->fields) {
+        if (!field.type.containsUnresolvedPlaceholder() && !field.type.isImplicitlyCopyable()) {
+            if (Type root = nonCopyableRoot(field.type)) return root;
+        }
+    }
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl)) {
+        for (auto& enumCase : enumDecl->cases) {
+            if (enumCase.associatedType && !enumCase.associatedType.containsUnresolvedPlaceholder() && !enumCase.associatedType.isImplicitlyCopyable()) {
+                if (Type root = nonCopyableRoot(enumCase.associatedType)) return root;
+            }
+        }
+    }
+    return Type();
+}
+
+std::string cx::copyableHint(Type type) {
+    if (!type || type.containsUnresolvedPlaceholder() || type.isImplicitlyCopyable()) return "";
+    Type outer = type.removeReference();
+    auto* decl = unwrapCopyable(type).getDecl();
     if (!decl) return " (type '" + type.toString() + "' is not Copyable)";
     if (decl->isClosure()) {
         for (auto& field : decl->fields) {
             if (field.getName().starts_with("__capture_") && !field.type.containsUnresolvedPlaceholder() && !field.type.isImplicitlyCopyable()) {
-                return copyableHint(field.type);
+                return " (closure cannot be copied because it captures '" + field.getName().substr(sizeof("__capture_") - 1).str()
+                     + "', which is not Copyable)";
             }
         }
-        return " (closure captures a non-Copyable type; make the captured type Copyable to allow copies)";
+        return " (closure captures a non-Copyable type)";
     }
-    if (unwrapped.getName() == "Optional" || unwrapped.getName() == "Array") return " (type '" + unwrapped.toString() + "' is not Copyable)";
-    if (decl->getModule() && (decl->getModule()->name == "std" || decl->getModule()->isCHeaderImport)) {
-        return " (type '" + unwrapped.toString() + "' is not Copyable)";
+    Type root = nonCopyableRoot(type);
+    if (!root) return " (type '" + outer.toString() + "' is not Copyable)";
+    if (auto* outerDecl = outer.getDecl(); outerDecl && outerDecl->getDestructor()) {
+        return " (type '" + outer.toString() + "' has a destructor, so its values cannot be copied)";
     }
-    return " (type '" + unwrapped.toString() + "' is not Copyable; add ': Copyable' to '" + decl->getName().str() + "' to allow copies)";
+    return " (type '" + outer.toString() + "' is not Copyable because it holds '" + root.toString() + "', which has a destructor)";
 }
 
 // Suggests '&' when a call would match a concrete candidate by taking addresses.
@@ -2185,9 +2221,8 @@ bool Typechecker::genericArgSatisfiesConstraints(const GenericParamDecl& generic
 
     for (Type constraint : genericParam.constraints) {
         if (!constraint.isBasicType()) return false;
-        if (constraint.getName() == "Copyable"
-            && ((genericArg.getType().removeOptional().isPointerType() && !genericArg.getType().removeOptional().isReferenceType())
-                || genericArg.getType().isArrayPointer())) {
+        if (constraint.getName() == "Copyable") {
+            if (!satisfiesCopyable(genericArg.getType())) return false;
             continue;
         }
 
@@ -2206,10 +2241,8 @@ bool Typechecker::validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> ge
         if (genericParam.isValueParam || !genericArg || genericArg.isInt() || genericArg.getType().isUnresolvedType()) continue;
         for (Type constraint : genericParam.constraints) {
             bool satisfies = false;
-            if (constraint.isBasicType() && constraint.getName() == "Copyable"
-                && ((genericArg.getType().removeOptional().isPointerType() && !genericArg.getType().removeOptional().isReferenceType())
-                    || genericArg.getType().isArrayPointer())) {
-                satisfies = true;
+            if (constraint.isBasicType() && constraint.getName() == "Copyable") {
+                satisfies = satisfiesCopyable(genericArg.getType());
             } else if (constraint.isBasicType()) {
                 auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
                 auto* basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase);
@@ -3786,14 +3819,10 @@ static Type createClosureType(FunctionDecl& lambdaDecl, Location location) {
     }
     Type fnType = FunctionType::get(lambdaDecl.getReturnType(), std::move(fnParamTypes), false);
 
-    std::vector<Type> interfaces;
-    if (llvm::all_of(lambdaDecl.captures, [](auto* captured) { return captured->type.isImplicitlyCopyable(); })) {
-        interfaces.push_back(BasicType::get("Copyable", {}));
-    }
-
+    // Copyability derives from the capture fields: no explicit ': Copyable' list needed.
     // Default access: closures are anonymous, so they can't leak through API surfaces the way named private types can.
     auto* closureDecl =
-        makeAST<TypeDecl>(TypeTag::Struct, std::move(name), std::vector<GenericArg>(), std::move(interfaces), AccessLevel::Default, module, nullptr, location);
+        makeAST<TypeDecl>(TypeTag::Struct, std::move(name), std::vector<GenericArg>(), std::vector<Type>(), AccessLevel::Default, module, nullptr, location);
     closureDecl->addField(FieldDecl(fnType, "__fn", nullptr, *closureDecl, AccessLevel::Private, location));
     for (auto* captured : lambdaDecl.captures) {
         closureDecl->addField(

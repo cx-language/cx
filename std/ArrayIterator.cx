@@ -1,5 +1,5 @@
 /// Iterates over the elements of an array.
-struct ArrayIterator<Element>: Copyable, Iterator<Element&> {
+struct ArrayIterator<Element>: Iterator<Element&> {
     private Element[*] current;
     private Element[*] end;
 

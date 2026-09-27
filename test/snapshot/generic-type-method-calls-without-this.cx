@@ -1,6 +1,6 @@
 // RUN: check-snapshots
 
-struct S<T>: Copyable {
+struct S<T> {
     void f() { g() }
     void g() {}
 }

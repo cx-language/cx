@@ -1,6 +1,6 @@
 // RUN: check_exit_status 21 %cx run %s
 
-struct Foo: Copyable {
+struct Foo {
     int value;
 
     int add(int number) {
