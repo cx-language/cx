@@ -3265,6 +3265,12 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         if (decls.empty() && expr.kind == ExprKind::UnwrapExpr) {
+            // Narrowing only tracks locals, so only they can reach this already unwrapped.
+            if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getReceiver())) {
+                if (varExpr->decl && narrowedTypes.contains(varExpr->decl)) {
+                    ERROR(expr.location, "'" << varExpr->identifier << "' is already non-null; remove the '!'");
+                }
+            }
             ERROR(expr.location, "type '" << receiverType << "' is not optional and has no 'unwrap' method");
         }
 
