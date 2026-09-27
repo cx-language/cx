@@ -1,0 +1,13 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+// CHECK: void f();
+// CHECK: void g(int32_t x, ...);
+
+// C requires a named parameter before '...', so a varargs-only extern keeps
+// an empty declarator (unspecified arguments) instead of the invalid 'f(, ...)'.
+extern void f(...);
+extern void g(int x, ...);
+
+void main() {
+    f(1, 2);
+    g(1, 2, 3);
+}

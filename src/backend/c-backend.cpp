@@ -1260,7 +1260,10 @@ void CGenerator::codegenFunctionPrototype(const Function* function) {
             codegenTempDeclarationForType(param.type, param.name);
             if (&param != &function->params.back()) stream << ", ";
         }
-        if (function->isVariadic) stream << ", ...";
+        // C requires a named parameter before '...', so a varargs-only extern
+        // (declarable but never definable in cx) keeps an empty declarator,
+        // which declares unspecified arguments.
+        if (function->isVariadic && (!function->params.empty() || returnsArray)) stream << ", ...";
     };
 
     if (returnsArray) {
