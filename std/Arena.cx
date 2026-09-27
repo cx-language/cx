@@ -16,7 +16,9 @@ struct Arena {
         while chunks != null {
             var chunk = chunks;
             chunks = chunk.next;
-            cxFree(chunk);
+            // Raw free: chunks bypass the context allocator, since an arena
+            // installed as the context allocator must not allocate from itself.
+            free(chunk);
         }
         current = null;
     }
@@ -101,7 +103,8 @@ struct Arena {
             return null;
         }
 
-        var memory = cxMalloc(c_size_t(dataOffset + capacity));
+        // Raw malloc, bypassing the context allocator like the destructor.
+        var memory = malloc(c_size_t(dataOffset + capacity));
         if memory == null {
             return null;
         }

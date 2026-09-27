@@ -18,6 +18,50 @@ void main() {
 }
 ```
 
+## The ambient context
+
+Like Odin and Jai, cx has an ambient context: process-wide settings implicitly
+used by the standard library. The context holds an allocator, initially the
+default one, and `allocate` and friends allocate through it. The default
+allocator uses malloc.
+
+Install a custom allocator with `withAllocator` to route a stretch of code
+through it, for example to count allocations or serve them from an arena:
+
+```cs
+int allocCount = 0;
+
+void*? countingAlloc(void*? state, c_size_t size) {
+    allocCount++;
+    var def = defaultAllocator();
+    return def.alloc(def.state, size);
+}
+
+void countingFree(void*? state, void*? ptr) {
+    var def = defaultAllocator();
+    def.free(def.state, ptr);
+}
+
+void makeList() {
+    var list = List<int>();
+    list.push(1);
+}
+
+void main() {
+    var allocator = Allocator(state = null, alloc = countingAlloc, free = countingFree);
+    withAllocator(allocator, makeList);
+    println(allocCount); // prints 1
+}
+```
+
+Each allocation must be freed with the same allocator that allocated it, so
+values must not outlive the `withAllocator` call that allocated them.
+Allocators must return 16-aligned pointers and tolerate freeing null.
+A custom allocator must not call back into context-allocating standard library
+functions, or allocation recurses forever; use `defaultAllocator()` for
+passthrough as above. One exception: `Arena` chunks always use malloc, so an
+arena installed as the context allocator never allocates from itself.
+
 ## Memory arenas
 
 `Arena` is a move-only, chunked bump allocator for short-lived groups of allocations. It grows by adding chunks, so pointers returned by earlier allocations stay valid until the arena is destroyed or explicitly deinitialized.

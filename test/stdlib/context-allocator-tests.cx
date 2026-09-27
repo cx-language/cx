@@ -1,0 +1,131 @@
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --release %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror --release --backend=c %s
+
+uint8[65536] bumpMemory = undefined;
+uint64 bumpUsed = 0;
+int bumpFrees = 0;
+
+void*? bumpAlloc(void*? state, c_size_t size) {
+    var aligned = (bumpUsed + 15) / 16 * 16;
+    if aligned + uint64(size) > 65536 {
+        return null;
+    }
+    bumpUsed = aligned + uint64(size);
+    var bytes = cast<uint8[*]>(&bumpMemory[0]);
+    return cast<void*>(&bytes[aligned]);
+}
+
+void bumpFree(void*? state, void*? ptr) {
+    bumpFrees++;
+}
+
+Allocator bumpAllocator() {
+    return Allocator(state = null, alloc = bumpAlloc, free = bumpFree);
+}
+
+struct AllocStats {
+    int allocs;
+    int frees;
+}
+
+AllocStats stats = undefined;
+
+void*? statefulAlloc(void*? state, c_size_t size) {
+    var counter = cast<AllocStats*>(state);
+    counter.allocs = counter.allocs + 1;
+    var def = defaultAllocator();
+    return def.alloc(def.state, size);
+}
+
+void statefulFree(void*? state, void*? ptr) {
+    var counter = cast<AllocStats*>(state);
+    counter.frees = counter.frees + 1;
+    var def = defaultAllocator();
+    def.free(def.state, ptr);
+}
+
+Allocator statefulAllocator() {
+    return Allocator(state = cast<void*>(&stats), alloc = statefulAlloc, free = statefulFree);
+}
+
+void pushTwo() {
+    var list = List<int>();
+    list.push(1);
+    list.push(2);
+    assert(list[0] + list[1] == 3);
+}
+
+@test
+void testStdlibUsesContextAllocator() {
+    var usedBefore = bumpUsed;
+    var freesBefore = bumpFrees;
+    withAllocator(bumpAllocator(), pushTwo);
+    // Two list growths allocated, and both were freed before the restore.
+    // Exact counts depend on List doubling from capacity 1.
+    assert(bumpUsed > usedBefore);
+    assert(bumpFrees == freesBefore + 2);
+}
+
+@test
+void testDefaultAllocatorRestored() {
+    withAllocator(bumpAllocator(), pushTwo);
+    var usedBefore = bumpUsed;
+    pushTwo();
+    assert(bumpUsed == usedBefore);
+}
+
+@test
+void testDirectContextAssignment() {
+    var old = context().allocator;
+    if true {
+        context().allocator = bumpAllocator();
+        defer context().allocator = old;
+        var usedBefore = bumpUsed;
+        pushTwo();
+        assert(bumpUsed > usedBefore);
+    }
+    var usedAfterRestore = bumpUsed;
+    pushTwo();
+    assert(bumpUsed == usedAfterRestore);
+}
+
+Allocator innerAllocator = undefined;
+
+void outerBody() {
+    pushTwo();
+    withAllocator(innerAllocator, pushTwo);
+}
+
+@test
+void testNestedWithAllocator() {
+    stats.allocs = 0;
+    stats.frees = 0;
+    innerAllocator = statefulAllocator();
+    var usedBefore = bumpUsed;
+    var freesBefore = bumpFrees;
+    withAllocator(bumpAllocator(), outerBody);
+    // Outer body used the bump allocator; inner body used the stateful one.
+    // Exact counts depend on List doubling from capacity 1.
+    assert(bumpUsed > usedBefore);
+    assert(bumpFrees == freesBefore + 2);
+    assert(stats.allocs == 2 && stats.frees == 2);
+    var usedAfterRestore = bumpUsed;
+    pushTwo();
+    assert(bumpUsed == usedAfterRestore);
+}
+
+@test
+void testArenaBypassesContextAllocator() {
+    var usedBefore = bumpUsed;
+    withAllocator(bumpAllocator(), useArena);
+    assert(bumpUsed == usedBefore);
+}
+
+void useArena() {
+    var arena = Arena();
+    var ints = arena.allocate<int>(10)!;
+    ints[0] = 42;
+    assert(ints[0] == 42);
+}

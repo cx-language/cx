@@ -1,3 +1,67 @@
+/// A (possibly stateful) memory allocator: allocation and deallocation function
+/// pointers plus an opaque state pointer passed to both. Function pointers
+/// instead of an interface because interfaces cannot be stored in variables.
+struct Allocator: Copyable {
+    void*? state;
+    void*?(void*?, c_size_t) alloc;
+    void(void*?, void*?) free;
+}
+
+/// The ambient context: process-wide settings implicitly used by the standard
+/// library. Like in Odin and Jai, library code allocates through the
+/// allocator found here instead of calling malloc directly.
+struct Context {
+    Allocator allocator;
+}
+
+// The ambient context, initialized to the default context on first use.
+// ponytail: plain global, threads would need this to be thread-local instead.
+private Context? ambientContext = null;
+
+/// Returns the ambient context, creating it on first use.
+Context& context() {
+    if ambientContext == null {
+        ambientContext = Context(defaultAllocator());
+    }
+    return ambientContext!;
+}
+
+/// Returns the default allocator, which allocates with malloc and frees with free.
+Allocator defaultAllocator() {
+    return Allocator(state = null, alloc = defaultAlloc, free = defaultFree);
+}
+
+private void*? defaultAlloc(void*? state, c_size_t size) {
+    return malloc(size);
+}
+
+private void defaultFree(void*? state, void*? ptr) {
+    free(ptr);
+}
+
+/// Runs `body` with the given allocator installed in the ambient context,
+/// restoring the previous allocator afterwards.
+void withAllocator(Allocator allocator, void() body) {
+    var old = context().allocator;
+    context().allocator = allocator;
+    body();
+    context().allocator = old;
+}
+
+/// Allocates through the ambient context's allocator. The returned pointer
+/// must be 16-aligned; custom allocators must uphold that.
+private void*? rawAlloc(c_size_t size) {
+    var allocator = context().allocator;
+    return allocator.alloc(allocator.state, size);
+}
+
+/// Frees through the ambient context's allocator. Must tolerate null like free.
+/// Each allocation must be freed with the same allocator that allocated it.
+private void rawFree(void*? ptr) {
+    var allocator = context().allocator;
+    allocator.free(allocator.state, ptr);
+}
+
 #if LeakCheck
 // Size header for leak tracking. Stored immediately before the user pointer;
 // the header size is rounded up to 16 bytes so the user pointer stays 16-aligned.
@@ -22,7 +86,7 @@ private void*? cxMalloc(c_size_t size) {
     if userSize > uint64(-1) - headerSize {
         return null;
     }
-    var raw = malloc(c_size_t(headerSize + userSize));
+    var raw = rawAlloc(c_size_t(headerSize + userSize));
     if raw == null {
         return null;
     }
@@ -42,7 +106,7 @@ private void cxFree(void*? ptr) {
     var header = cast<LeakHeader*>(cast<uint64>(ptr) - headerSize);
     leakCount--;
     leakBytes -= header.size;
-    free(header);
+    rawFree(header);
 }
 
 // Called by the compiler at the end of main in debug builds. Reports leaks
@@ -69,11 +133,14 @@ private void*? cxMalloc(c_size_t size) {
     if size == 0 {
         size = c_size_t(1);
     }
-    return malloc(size);
+    return rawAlloc(size);
 }
 
 private void cxFree(void*? ptr) {
-    free(ptr);
+    if ptr == null {
+        return;
+    }
+    rawFree(ptr);
 }
 #endif
 
@@ -89,6 +156,8 @@ private bool checkedArraySize<T>(uint64 count, uint64& size) {
 
 /// Allocates uninitialized storage for `count` values and returns a pointer to it.
 /// The block can be freed by passing the returned pointer to `deallocate`.
+///
+/// The allocation goes through the ambient context's allocator.
 ///
 /// If the size overflows or the allocation fails, the program aborts.
 ///
@@ -141,7 +210,7 @@ T*? tryAllocateValue<T>(T value) {
 
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
 /// `tryAllocate`, `allocateValue`, or `tryAllocateValue`. If the argument is null, no operation
-/// is performed.
+/// is performed. The ambient context's allocator must be the same one that allocated the block.
 void deallocate<T>(T allocation) {
     cxFree(allocation);
 }

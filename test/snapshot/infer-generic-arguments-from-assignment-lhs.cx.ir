@@ -280,7 +280,7 @@ int32* _CX1N3std8allocateIM3std5int32EEAM3std5int321_M3std6uint64(uint64 count) 
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "allocation size overflow at allocate.cx:97:5
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "allocation size overflow at allocate.cx:166:5
 ")
     unreachable
 
@@ -292,7 +292,7 @@ assert.success:
     br assert.condition_0, assert.fail, assert.success
 
 assert.fail_0:
-    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:98:47
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:167:47
 ")
     unreachable
 
@@ -384,7 +384,7 @@ overflow.end(bool overflowed):
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:86:25
+    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:153:25
 ")
     unreachable
 
