@@ -1,5 +1,5 @@
 // File system operations: existence checks, directories, renaming,
-// the current directory, and directory listing.
+// the current directory, directory listing, and whole-file reading/writing.
 // Lexical path manipulation without file system access lives in path.cx.
 
 #if Windows
@@ -94,6 +94,46 @@ bool changeDirectory(string path) {
     return chdir(pathBuf.cString()) == 0;
 }
 #endif
+
+/// An error reading a file.
+enum FileError : Printable {
+    CouldNotOpen,
+
+    /// Writes the error as text.
+    void print(OutputStream& stream) {
+        switch this {
+            case CouldNotOpen: stream.append("couldn't open file");
+        }
+    }
+}
+
+/// Reads the entire file into a string, or returns an error if the file can't be opened.
+Result<StringBuf, FileError> readFile(string path) {
+    var pathBuf = CStringBuffer(path);
+    var file = fopen(pathBuf.cString(), "rb");
+    if !file return Err(FileError.CouldNotOpen);
+    defer fclose(file);
+
+    fseek(file, 0, SEEK_END);
+    var size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    var content = StringBuf(uninitializedSize = int(size));
+    fread(content.data(), sizeof(char), c_size_t(size), file);
+
+    return Ok(content);
+}
+
+/// Writes the string to the named file.
+bool writeFile(string path, string content) {
+    var pathBuf = CStringBuffer(path);
+    var file = fopen(pathBuf.cString(), "wb");
+    if !file return false;
+    defer fclose(file);
+
+    fwrite(content.data(), sizeof(char), c_size_t(content.size()), file);
+    return true;
+}
 
 /// Returns the size of the file, or null if it can't be opened.
 int64? fileSize(string path) {

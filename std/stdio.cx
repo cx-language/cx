@@ -155,52 +155,6 @@ StringBuf readLine() {
     return line;
 }
 
-/// An error reading a file.
-enum FileError : Printable {
-    CouldNotOpen,
-
-    /// Writes the error as text.
-    void print(OutputStream& stream) {
-        switch this {
-            case CouldNotOpen: stream.append("couldn't open file");
-        }
-    }
-}
-
-/// Reads the entire file into a string, or returns an error if the file can't be opened.
-Result<StringBuf, FileError> readFile(string path) {
-    var pathBuf = CStringBuffer(path);
-    var file = fopen(pathBuf.cString(), "rb");
-    if !file return Err(FileError.CouldNotOpen);
-    defer fclose(file);
-
-    fseek(file, 0, SEEK_END);
-    var size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    var content = StringBuf(uninitializedSize = int(size));
-    fread(content.data(), sizeof(char), c_size_t(size), file);
-
-    return Ok(content);
-}
-
-/// Writes the string to the named file.
-bool writeFile(string path, string content) {
-    var pathBuf = CStringBuffer(path);
-    var file = fopen(pathBuf.cString(), "wb");
-    if !file return false;
-    defer fclose(file);
-
-    fwrite(content.data(), sizeof(char), c_size_t(content.size()), file);
-    return true;
-}
-
-/// Deletes the named file, returning true on success.
-bool removeFile(string path) {
-    var pathBuf = CStringBuffer(path);
-    return remove(pathBuf.cString()) == 0;
-}
-
 /// Prints the message to stderr and aborts.
 private never assertFail(const char* message) {
     var stream = fdopen(2, "w");

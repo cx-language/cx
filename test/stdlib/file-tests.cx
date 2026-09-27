@@ -6,7 +6,7 @@ void testReadWriteFile() {
     bool success = writeFile("test.txt", text);
     assert(success);
     var content = readFile("test.txt").unwrap();
-    removeFile("test.txt");
+    remove("test.txt");
     assert(string(content) == text);
 }
 
