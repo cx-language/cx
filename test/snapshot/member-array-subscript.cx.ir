@@ -178,7 +178,7 @@ never _CX1N3std5abortIM3std6stringM3std6stringM3std6stringM3std5int32M3std6strin
     store _26 to _6
     store char 10 to _7
     void _27 = call _CX1N3stdM3std16OutputFileStream5writeIM3std4charEE4void1_RM3std4char(OutputFileStream* _6, char* _7)
-    never _28 = call _CX1N3std12abortWrapperEM3std5never0_()
-    void _29 = call _CX1N3stdM3std16OutputFileStream6deinitE4void0_(OutputFileStream* _6)
+    void _28 = call _CX1N3stdM3std16OutputFileStream6deinitE4void0_(OutputFileStream* _6)
+    never _29 = call _CX1N3std12abortWrapperEM3std5never0_()
     unreachable
 }

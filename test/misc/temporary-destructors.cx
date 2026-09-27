@@ -40,6 +40,14 @@
 // CHECK-NEXT:28
 // CHECK-NEXT:29
 // CHECK-NEXT:32
+// CHECK-NEXT:39
+// CHECK-NEXT:33
+// CHECK-NEXT:40
+// CHECK-NEXT:33
+// CHECK-NEXT:34
+// CHECK-NEXT:41
+// CHECK-NEXT:34
+// CHECK-NEXT:35
 // CHECK-NEXT:end
 // CHECK-NEXT:take
 
@@ -49,6 +57,15 @@ struct C {
     int i;
     ~C() {
         deaths = deaths + 1;
+    }
+    int get() {
+        return i;
+    }
+    int& getRef() {
+        return i;
+    }
+    int& operator[](int index) {
+        return i;
     }
 }
 
@@ -242,6 +259,26 @@ void main() {
 
     // Dropped operator results die too; both operands were moved.
     make(37) + make(38);
+    println(deaths);
+
+    // A method call on a temporary destroys the receiver at statement end.
+    println(make(39).get());
+    println(deaths);
+
+    // A borrow of a temporary keeps the receiver alive until scope end.
+    {
+        int& r = make(40).getRef();
+        println(r);
+        println(deaths);
+    }
+    println(deaths);
+
+    // Same for subscript borrows, whose reference type sema erases.
+    {
+        int& s = make(41)[0];
+        println(s);
+        println(deaths);
+    }
     println(deaths);
     println("end");
 }

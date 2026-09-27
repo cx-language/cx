@@ -989,6 +989,20 @@ Value* IRGenerator::emitClosureCallExpr(const CallExpr& expr) {
     return maybeRegisterResultTemp(createCall(function, args, &expr), expr);
 }
 
+// Whether a value of this type retains no borrow of whatever it was computed from: plain
+// scalars and compositions of them, holding neither pointers nor nominal types that could
+// hide them. Conservative: anything else is assumed to possibly alias its source, e.g. an
+// iterator holding raw pointers into its container.
+static bool cannotBorrowReceiver(Type type) {
+    if (type.isBuiltinType() && !type.isPointerType()) return true;
+    if (type.isOptionalType()) return cannotBorrowReceiver(type.getWrappedType());
+    if (type.isFixedArray()) return cannotBorrowReceiver(type.getElementType());
+    if (type.isAnonymousStructType()) {
+        return llvm::all_of(type.getAnonymousStructElements(), [](auto& element) { return cannotBorrowReceiver(element.type); });
+    }
+    return false;
+}
+
 Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit) {
     if (auto* variableDecl = llvm::dyn_cast_or_null<VariableDecl>(expr.calleeDecl)) {
         if (variableDecl->type.isClosureType()) {
@@ -1083,7 +1097,10 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
                 args.emplace_back(tempAlloca);
             }
         } else if (expr.getReceiver()) {
-            llvm::SaveAndRestore saveEmittingReceiver(emittingReceiver, true);
+            // The declared return type, not expr.type: the latter erases operator[]
+            // borrows, which would strand subscript results of temporaries.
+            auto* callee = llvm::cast<FunctionDecl>(calleeDecl);
+            llvm::SaveAndRestore saveEmittingReceiver(emittingReceiver, !cannotBorrowReceiver(callee->getReturnType()));
             args.emplace_back(emitExprForPassing(*expr.getReceiver(), *param));
         } else {
             args.emplace_back(getThis());
