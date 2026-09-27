@@ -11,9 +11,9 @@ struct HasPrintConst {
 void main() {
     var h = HasPrintField(9);
     // Print synthesis declines when a member already owns the name, so this stays an error.
-    // CHECK: error: no matching function 'print(HasPrintField&)'
+    // CHECK: error: no matching function 'print(HasPrintField)'
     println(h);
     var c = HasPrintConst();
-    // CHECK: error: no matching function 'print(HasPrintConst&)'
+    // CHECK: error: no matching function 'print(HasPrintConst)'
     println(c);
 }
