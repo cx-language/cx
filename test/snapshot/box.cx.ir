@@ -27,7 +27,11 @@ void _CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE6deinitE4void0_(Box<Box<int32>>* 
     Box<Box<int32>>* this.load = load this_0
     Box<int32>** pointer = getelementptr this.load, 0
     Box<int32>* pointer.load = load pointer
-    void _0 = call _CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E(Box<int32>* pointer.load)
+    void _0 = call _CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(Box<int32>* pointer.load)
+    Box<Box<int32>>* this.load_0 = load this_0
+    Box<int32>** pointer_0 = getelementptr this.load_0, 0
+    Box<int32>* pointer.load_0 = load pointer_0
+    void _1 = call _CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E(Box<int32>* pointer.load_0)
     return void
 }
 

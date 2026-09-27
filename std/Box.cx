@@ -13,6 +13,7 @@ struct Box<T> {
 
     /// Frees the owned value.
     ~Box() {
+        (*pointer).deinit();
         deallocate(pointer);
     }
 

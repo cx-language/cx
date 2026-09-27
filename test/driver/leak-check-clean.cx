@@ -12,6 +12,10 @@ void main() {
     var box = Box(42);
     assert(*box.get() == 42);
 
+    // Box destroys its payload: a heap string must not leak.
+    var sbox = Box(StringBuf("heap-string-long-enough-to-allocate"));
+    assert(string(*sbox.get()) == "heap-string-long-enough-to-allocate");
+
     var arena = Arena(chunkSize = 32);
     var v = arena.allocateValue(7);
     assert(*v! == 7);
