@@ -30,3 +30,25 @@ void singleBranchMoveIsAllowed(bool b, S s, S t) {
     }
     baz(t);
 }
+
+void elseOnlyMoveAfterDivergingThen(bool b, S s) {
+    if (b) {
+        return;
+    } else {
+        bar(s);
+    }
+
+    // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
+    bar(s);
+}
+
+void thenOnlyMoveAfterDivergingElse(bool b, S s) {
+    if (b) {
+        bar(s);
+    } else {
+        return;
+    }
+
+    // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
+    bar(s);
+}

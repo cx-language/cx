@@ -468,25 +468,26 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         narrowedTypes = outerNarrowings;
     }
 
-    llvm::SmallPtrSet<Decl*, 32> mergedMovedDecls;
-    for (auto* decl : thenMovedDecls) {
-        if (elseMovedDecls.count(decl)) {
-            mergedMovedDecls.insert(decl);
-        }
-    }
-    movedDecls = std::move(mergedMovedDecls);
-
-    // A narrowing holds after the if only if it holds on every path reaching past it.
-    // When one branch diverges (e.g. `if x == null return;`), the other branch decides.
+    // A move holds after the if only if it holds on every path reaching past it.
+    // When one branch diverges (e.g. `if b return;`), the other branch decides.
     bool thenDiverges = allPathsDiverge(ifStmt.thenBody);
     bool elseDiverges = !ifStmt.elseBody.empty() && allPathsDiverge(ifStmt.elseBody);
     if (thenDiverges && !elseDiverges) {
+        movedDecls = elseMovedDecls;
         narrowedTypes = elseNarrowings;
         definitelyAssignedDecls = elseAssignedDecls;
     } else if (elseDiverges && !thenDiverges) {
+        movedDecls = thenMovedDecls;
         narrowedTypes = thenNarrowings;
         definitelyAssignedDecls = thenAssignedDecls;
     } else if (!thenDiverges && !elseDiverges) {
+        llvm::SmallPtrSet<Decl*, 32> mergedMovedDecls;
+        for (auto* decl : thenMovedDecls) {
+            if (elseMovedDecls.count(decl)) {
+                mergedMovedDecls.insert(decl);
+            }
+        }
+        movedDecls = std::move(mergedMovedDecls);
         narrowedTypes = thenNarrowings;
         intersectNarrowings(elseNarrowings);
         llvm::SmallPtrSet<Decl*, 32> mergedAssignedDecls;
