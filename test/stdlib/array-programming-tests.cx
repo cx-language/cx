@@ -218,7 +218,9 @@ void testLargeArrays() {
     assert((x / 3)[60] == 20);
     assert((x % 7)[60] == 4);
     assert((x %% 7)[42] == 0);
-    assert((100 %% y)[10] == 10);
+    // y[0] is 0, so shift the divisor: lane 10 computes 100 %% 31 == 7.
+    // (A zero divisor traps on x86 but not ARM, so keep all lanes nonzero.)
+    assert((100 %% (y + 1))[10] == 7);
     assert(x == x);
     assert(x != y);
 
