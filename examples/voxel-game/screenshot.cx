@@ -47,6 +47,7 @@ int runScreenshot(string path) {
     checkGlError("screenshot draw");
 
     uint8[640 * 480 * 3] pixels = undefined;
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, 640, 480, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
     var sky = 0;
     for i in 0..307200 {
