@@ -1,0 +1,31 @@
+// RUN: %cx -typecheck -Werror %s
+// Inferred constructor calls on multi-param generics must find the existing
+// instantiation regardless of generic parameter name hashing.
+
+struct Pair<Element, int N> {
+    Element? first;
+    Pair() {
+        first = null;
+    }
+    Wrapped<Element, N> wrap() {
+        return Wrapped(this);
+    }
+}
+
+struct Wrapped<Element, int N> {
+    Pair<Element, N>* inner;
+    Wrapped(Pair<Element, N>& inner) {
+        this.inner = &inner;
+    }
+    bool hasFirst() {
+        return inner.first != null;
+    }
+}
+
+int main() {
+    var pair = Pair<int32, 2>();
+    pair.first = 1;
+    var wrapped = pair.wrap();
+    assert(wrapped.hasFirst());
+    return 0;
+}

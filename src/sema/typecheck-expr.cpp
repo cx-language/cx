@@ -2707,7 +2707,9 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             for (auto& genericArgs : genericArgSets) {
                 TypeDecl* typeDecl = nullptr;
 
-                auto genericArgTypes = map(genericArgs, [](auto& entry) { return entry.getValue(); });
+                // Order by genericParams: StringMap iteration order is arbitrary, and a
+                // misordered lookup would miss the existing instantiation below.
+                auto genericArgTypes = map(typeTemplate->genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
                 auto typeDecls = findDecls(getQualifiedTypeName(typeTemplate->typeDecl->getName(), genericArgTypes));
 
                 if (typeDecls.empty()) {
