@@ -1,0 +1,14 @@
+// RUN: %cx %s -o %T/double-free 2>&1 | %FileCheck --allow-empty --check-prefix=BUILD %s
+// RUN: %not %T/double-free 2>&1 | %FileCheck %s
+// RUN: %not %cx run --backend=c %s 2>&1 | %FileCheck %s
+// UNSUPPORTED: windows
+// Runs the built binary instead of `cx run`: JITed code has no symbol table for backtrace_symbols.
+// BUILD-NOT: {{(warning|error)}}:
+
+void main() {
+    var p = allocateValue(42);
+    deallocate(p);
+    deallocate(p);
+}
+
+// CHECK: double free or invalid free detected

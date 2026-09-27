@@ -65,8 +65,17 @@ private void rawFree(void*? ptr) {
 #if LeakCheck
 // Size header for leak tracking. Stored immediately before the user pointer;
 // the header size is rounded up to 16 bytes so the user pointer stays 16-aligned.
+// The magic tells live allocations from anything else, so double frees (and
+// frees of foreign pointers) abort with a message instead of corrupting the
+// counts or crashing inside malloc. The mark cannot distinguish the two:
+// malloc reuses freed blocks for its own bookkeeping, clobbering any
+// would-be "freed" marker. A pointer freed, reallocated, and freed again
+// looks live and is not caught.
+private const uint64 allocatedMagic = 0x4C4956454C495645; // "LIVE" x2
+
 private struct LeakHeader {
     uint64 size;
+    uint64 magic;
 }
 
 private int leakCount = 0;
@@ -91,7 +100,7 @@ private void*? cxMalloc(c_size_t size) {
         return null;
     }
     var header = cast<LeakHeader*>(raw);
-    header.init(LeakHeader(size = userSize));
+    header.init(LeakHeader(size = userSize, magic = allocatedMagic));
     leakCount++;
     leakBytes += userSize;
     var bytes = cast<uint8[*]>(raw);
@@ -104,6 +113,9 @@ private void cxFree(void*? ptr) {
     }
     var headerSize = leakHeaderSize();
     var header = cast<LeakHeader*>(cast<uint64>(ptr) - headerSize);
+    if header.magic != allocatedMagic {
+        abort("double free or invalid free detected");
+    }
     leakCount--;
     leakBytes -= header.size;
     rawFree(header);
