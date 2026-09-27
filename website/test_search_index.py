@@ -73,6 +73,9 @@ class PageIdTest(unittest.TestCase):
     def test_docs_page(self):
         self.assertEqual(page_id(Path("/docs/list.md"), Path("/docs")), "list")
 
+    def test_docs_page_strips_ordering_prefix(self):
+        self.assertEqual(page_id(Path("/docs/120-list.md"), Path("/docs")), "list")
+
     def test_std_index(self):
         self.assertEqual(page_id(Path("/gen/std.md"), Path("/gen")), "std")
 

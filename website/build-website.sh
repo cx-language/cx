@@ -61,6 +61,8 @@ build_page() {
         ../docs/*)
             relpath="${file#../docs/}"
             relpath="${relpath%.md}"
+            # Strip the ordering prefix: 010-foo.md lives at ./foo.
+            relpath="$(printf '%s' "$relpath" | sed 's/^[0-9][0-9]*-//')"
             ;;
         .generated/*)
             relpath="${file#.generated/}"
@@ -139,6 +141,7 @@ build_page() {
     # no file system access, and no float-to-int conversions of unbounded
     # values (those trap on WebAssembly). The first entry is shown by default.
     python3 - "$outpath" <<'EOF' || return 1
+import glob
 import html
 import json
 import os
@@ -148,6 +151,15 @@ import sys
 REPO_URL = "https://github.com/cx-language/cx"
 
 outpath = sys.argv[1]
+
+
+def docs_source(page):
+    """Source file for a guide page id, with or without an ordering prefix."""
+    direct = "../docs/%s.md" % page
+    if os.path.isfile(direct):
+        return direct
+    matches = glob.glob("../docs/[0-9]*-%s.md" % page)
+    return matches[0] if matches else None
 path = "build/" + outpath + ".html"
 with open(path) as file:
     template = file.read()
@@ -172,10 +184,11 @@ def page_links(outpath):
     if "/" not in outpath:
         # bench.html has no docs/ source; skip its edit link instead of
         # pointing at a nonexistent file.
-        if not os.path.isfile("../docs/%s.md" % outpath):
+        source_file = docs_source(outpath)
+        if source_file is None:
             source = None
         else:
-            source = "docs/%s.md" % outpath
+            source = "docs/" + os.path.basename(source_file)
     elif os.path.isfile("../std/%s.cx" % outpath[4:]):
         source = "std/%s.cx" % outpath[4:]
     else:
@@ -195,11 +208,11 @@ def docs_order():
     """Guide reading order: sidebar links backed by a docs/ source file."""
     toc = open("toc.html").read()
     ids = re.findall(r'href="\./([^"#]+)"', toc)
-    return [page for page in ids if os.path.isfile("../docs/%s.md" % page)]
+    return [page for page in ids if docs_source(page) is not None]
 
 
 def page_title(page):
-    with open("../docs/%s.md" % page) as file:
+    with open(docs_source(page)) as file:
         for line in file:
             if line.startswith("# "):
                 return re.sub(r"^\[(.*)\]\(.*", r"\1", line[2:].strip())

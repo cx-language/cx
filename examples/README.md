@@ -2,7 +2,7 @@
 
 This directory contains example cx programs, from single-file demos to full
 applications. Each subdirectory is a `cx build` project (see
-[Build system](../docs/build-system.md)); single `.cx` files compile with
+[Build system](../docs/290-build-system.md)); single `.cx` files compile with
 `cx <file>`.
 
 ## Single-file programs

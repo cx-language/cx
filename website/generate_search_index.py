@@ -90,7 +90,10 @@ def page_id(path, base_dir):
     relpath = path.relative_to(base_dir).as_posix()
     if relpath == "std.md":
         return "std"
-    return relpath.removesuffix(".md")
+    name = relpath.removesuffix(".md")
+    # Strip the docs ordering prefix: 010-foo.md lives at ./foo.
+    # Generated ids never match this pattern, so stripping is safe for both.
+    return re.sub(r"^[0-9]+-", "", name)
 
 
 def collect_pages(docs_dir, generated_dir):

@@ -87,7 +87,7 @@ For the fastest clean build of just the compiler, configure with
 ### Editor support
 
 For diagnostics, hover, go to definition, completions, find references, and semantic highlighting
-in any LSP-capable editor, see the [language server setup guide](docs/lsp.md).
+in any LSP-capable editor, see the [language server setup guide](docs/310-lsp.md).
 The `cx-lsp` binary is built alongside `cx`.
 
 ## Contributing
