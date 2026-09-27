@@ -81,3 +81,26 @@ void main() {
     println(doubled); // prints [0, 4, 8]
 }
 ```
+
+## SmallList
+
+`SmallList<T, N>` is a `List`-like container that stores up to `N` elements
+inline, without heap allocation, and spills to the heap when it grows past that.
+It works like `llvm::SmallVector` in LLVM. Use it when a list usually stays
+small and you want to avoid the allocator in the common case.
+
+```cs
+void main() {
+    var list = SmallList<int, 4>();
+    list.push(1);
+    list.push(2);
+    println(list.size()); // prints 2, no heap allocation so far
+}
+```
+
+The API mirrors `List`: `push`, `pop`, `removeAt`, indexing, iteration,
+and the `map`/`filter`/`find` helpers all work the same.
+Two differences: unlike `List`, a `SmallList` cannot be passed as a slice
+(`T[]`), since inline elements are not stored contiguously; and the heap
+spill buffer stores each element as an `Optional`, so a spilled `SmallList`
+uses more memory per element than a `List`.

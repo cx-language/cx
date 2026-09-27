@@ -1,0 +1,7 @@
+// RUN: %not %cx run %s 2>&1 | %FileCheck %s
+
+int main() {
+    return SmallList<int, 2>()[0];
+}
+
+// CHECK: SmallList index 0 is out of bounds, size is 0

@@ -53,6 +53,20 @@ void print<T: Printable>(List<T>& list) {
     print(Slice(list));
 }
 
+/// Prints the given value.
+void print<T: Printable, int N>(SmallList<T, N>& list) {
+    print('[');
+
+    for index in 0..list.size() {
+        print(list[index]);
+
+        if index != list.size() - 1
+            print(", ");
+    }
+
+    print(']');
+}
+
 /// Joins the array elements into a string with the given separator.
 StringBuf join<T: Printable>(Slice<T> array, string separator) {
     var result = StringBuf();

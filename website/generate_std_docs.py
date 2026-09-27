@@ -475,6 +475,7 @@ STD_CATEGORIES = [
             "OrderedSet.cx",
             "Queue.cx",
             "Set.cx",
+            "SmallList.cx",
         ],
     ),
     (
