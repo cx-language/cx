@@ -4756,12 +4756,9 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     }
 
     if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(expr)) {
-        // Dereferences copy out of borrowed storage, so moving out of one leaves two
-        // owners. Structs keep legacy leniency (containers like Map move out of
-        // element borrows while element destruction is still a no-op; see the Triage
-        // card for the remaining double-free hole), but enums destroy their payloads,
-        // so those moves are rejected loudly, not silently.
-        if (isMoved && consumes(expr) && unaryExpr->op == Token::Star && trackVars && !inMoveInit && unaryExpr->type.removeOptional().isEnumType()) {
+        // Dereferences copy out of borrowed storage, so moving owning bits out of one
+        // leaves two owners. Non-owning bits copy out freely.
+        if (isMoved && consumes(expr) && unaryExpr->op == Token::Star && trackVars && !inMoveInit) {
             ERROR(expr->location, "cannot move out of dereference; borrow it instead");
         }
         return;

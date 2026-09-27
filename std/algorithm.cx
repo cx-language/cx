@@ -29,10 +29,18 @@ T& min<T: Comparable>(T& a, T& b) {
 }
 
 /// Swaps two items in place. Takes pointers because it mutates its arguments.
+// Bytewise through heap scratch: moving out of the dereferences would leave
+// two owners behind for owning element types.
+// ponytail: malloc per swap; switch to stack scratch once the language can
+// suppress a temporary's destructor.
 void swap<E>(E* a, E* b) {
-    var t = *a;
-    *a = *b;
-    *b = t;
+    if a == b return;
+    var size = c_size_t(sizeof(E));
+    var t = allocate<E>(uint64(1));
+    memcpy(t, a, size);
+    memcpy(a, b, size);
+    memcpy(b, t, size);
+    deallocate(t);
 }
 
 // TODO: Use Slice instead of List.

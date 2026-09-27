@@ -30,3 +30,17 @@ void arrayOfNonowningValues(Asteroid a) {
     takeAsteroid(a);
     takeAsteroid(arr[0]);
 }
+
+void copyNonowningOutOfDeref(Asteroid& borrow) {
+    var copy = *borrow;
+    takeAsteroid(copy);
+}
+
+enum Order {
+    Asc,
+    Desc,
+}
+
+void copyPayloadlessEnumOutOfDeref(Order& borrow) {
+    var copy = *borrow;
+}

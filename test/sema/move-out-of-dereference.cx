@@ -1,0 +1,12 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+struct Holder {
+    List<int> items;
+}
+
+void moveStructOutOfDeref() {
+    var h = Holder(items = List([1, 2, 3]));
+    Holder& borrow = h;
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: cannot move out of dereference; borrow it instead
+    var copy = *borrow;
+}

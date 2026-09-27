@@ -49,6 +49,19 @@ void testQuickSort() {
 }
 
 @test
+void testSwapOwningValues() {
+    // swap() is bytewise, so swapping owning values must neither double-free
+    // nor leak. Heap strings defeat small-string optimization.
+    var x = StringBuf("heap-string-one-long-enough");
+    var y = StringBuf("heap-string-two-long-enough");
+    swap(&x, &y);
+    assert(x == "heap-string-two-long-enough");
+    assert(y == "heap-string-one-long-enough");
+    swap(&x, &x);
+    assert(x == "heap-string-two-long-enough");
+}
+
+@test
 void testMax() {
     var a = 7;
     var b = 9;
