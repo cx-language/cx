@@ -59,6 +59,13 @@ Module* Typechecker::findModuleForFile(const char* file) const {
     return nullptr;
 }
 
+// An unnarrowed value-optional member base implicitly unwraps so codegen addresses the
+// payload; the null analyzer warns when it may be null. References, pointer-implemented
+// payloads, and already-narrowed bases (which have the wrapped type) skip this.
+static bool needsImplicitMemberUnwrap(Type type) {
+    return type.isOptionalType() && !type.isReferenceType() && !type.getWrappedType().isImplementedAsPointer();
+}
+
 void Typechecker::maybeCaptureVariable(VariableDecl& variableDecl) {
     if (!currentFunction || !currentFunction->isLambda()) return;
     if (variableDecl.kind != DeclKind::VarDecl && variableDecl.kind != DeclKind::ParamDecl) return;
@@ -3393,6 +3400,15 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         // Null callee only arises under an overload probe: re-throw silently instead of propagating a null type.
         if (!decl) throw CompileError::dependentError();
 
+        // A method found on the wrapped type needs an unwrapped receiver.
+        if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
+            functionDecl && functionDecl->getTypeDecl() && !llvm::isa<DestructorDecl>(decl) && needsImplicitMemberUnwrap(receiverType)
+            && functionDecl->getTypeDecl()->getType().equalsIgnoreTopLevelMutable(receiverType.removeOptional().removePointer())) {
+            if (Expr* converted = convert(expr.getReceiver(), receiverType.removeOptional())) {
+                llvm::cast<MemberExpr>(*expr.callee).base = converted;
+            }
+        }
+
         Type arrayReceiverType = receiverType.removeOptional().removePointer();
         if (arrayReceiverType.isFixedArray() && !arrayReceiverType.isMutable() && expr.getFunctionName() == "data") {
             returnTypeOverride = ArrayPointerType::get(arrayReceiverType.getElementType(), arrayReceiverType.location);
@@ -3974,6 +3990,12 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
             }
         }
     } else if (auto* baseDecl = baseType.getDecl()) {
+        // Implicitly unwrap an unnarrowed value-optional base. Placed here so the swizzle-optional error fires first.
+        if (!expr.base->isThis() && needsImplicitMemberUnwrap(expr.base->type)) {
+            if (Expr* converted = convert(expr.base, expr.base->type.removeOptional())) {
+                expr.base = converted;
+            }
+        }
         // Instance fields cannot be accessed via the type name (e.g. `S.x`);
         // only static constants are. Without this, field access via a type
         // would typecheck but crash codegen which expects an instance.

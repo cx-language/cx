@@ -391,6 +391,10 @@ bool Expr::isLvalue() const {
         if (unwrapExpr.calleeDecl) return false;
         return unwrapExpr.getReceiver()->isLvalue();
     }
+    case ExprKind::ImplicitCastExpr: {
+        auto& cast = llvm::cast<ImplicitCastExpr>(*this);
+        return cast.castKind == ImplicitCastExpr::OptionalUnwrap && cast.operand->isLvalue();
+    }
     default:
         return false;
     }

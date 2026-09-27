@@ -1,0 +1,23 @@
+// RUN: %cx run -w %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -w --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Box {
+    int v;
+    int w;
+    int sum() { return v + w; }
+}
+
+void main() {
+    Box? o = Box(v = 5, w = 7);
+    // CHECK:5
+    println(o.v);
+    // CHECK-NEXT:7
+    println(o.w);
+    // CHECK-NEXT:12
+    println(o.sum());
+    o.v = 50;
+    // CHECK-NEXT:50
+    println(o.v);
+    // CHECK-NEXT:57
+    println(o.sum());
+}
