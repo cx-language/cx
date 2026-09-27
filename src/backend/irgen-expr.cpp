@@ -545,8 +545,11 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     // Skip when an overload was selected (calleeDecl set, e.g. `char[N] == string`
     // via string overloads); only builtin element-wise ops reach here.
     if (expr.calleeDecl == nullptr) {
-        Type leftT = expr.getLHS().type.removeOptional().removePointer();
-        Type rightT = expr.getRHS().type.removeOptional().removePointer();
+        // Match the typechecker's test: raw operand types, so optional arrays
+        // compared against null reach the tag test below and pointers compare
+        // as pointers instead of element-wise.
+        Type leftT = expr.getLHS().type;
+        Type rightT = expr.getRHS().type;
         bool leftIsArray = leftT.isArrayType() && leftT.isConcreteArray();
         bool rightIsArray = rightT.isArrayType() && rightT.isConcreteArray();
         bool isArrayOp = (leftIsArray || rightIsArray)
