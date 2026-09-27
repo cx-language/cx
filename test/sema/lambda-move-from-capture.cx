@@ -40,3 +40,16 @@ int recheckAfterError() {
     return 0;
 }
 
+void useVoid(void() f) {
+    f();
+}
+
+int recheckAfterLocalMove() {
+    var n = NC(1);
+    useVoid(() => {
+        // CHECK: [[@LINE+1]]:17: error: cannot move from captured variable 'n'
+        var m = n;
+    });
+    return 0;
+}
+
