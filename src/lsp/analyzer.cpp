@@ -994,11 +994,44 @@ bool isReadonlyVariable(const Decl& decl) {
     return type && !type.isMutable();
 }
 
-/// Tolerant single-pass scanner for syntax-only tokens (comments, strings,
-/// numbers, keywords). Deliberately independent of Lexer: it never reports
-/// errors or throws, so half-typed code still highlights something sane.
-/// Identifiers are left to the AST pass, which knows their semantic type.
-void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>& out) {
+/// Tolerant scanner for syntax-only tokens (comments, strings, numbers,
+/// keywords). Deliberately independent of Lexer: it never reports errors or
+/// throws, so half-typed code still highlights something sane. Identifiers
+/// are left to the AST pass, which knows their semantic type. Interpolated
+/// `${...}` interiors recurse as code (nesting included); `$name` names are
+/// left to the AST pass like normal identifiers.
+struct SyntaxScanner {
+    const std::string& content;
+    std::vector<SemanticToken>& out;
+    size_t i = 0;
+    int line = 0;
+    int col = 0;
+
+    void emitToken(int tokenLine, int start, int length, const char* type) {
+        if (length <= 0) return;
+        SemanticToken token;
+        token.line = tokenLine;
+        token.start = start;
+        token.length = length;
+        token.type = type;
+        out.push_back(std::move(token));
+    }
+
+    // Scans normal code. With stopAtBrace, `{` nests and the `}` closing the
+    // interpolation ends the scan (left for the caller to consume). Braces
+    // inside nested strings and comments never surface: those branches
+    // consume through their terminators.
+    void scanContent(bool stopAtBrace);
+
+    // Scans a `"` string from its opening quote, splitting base chunks around
+    // `$name` and `${...}` interpolations. Delimiters highlight as keywords:
+    // the legend has no punctuation type, and keywords render distinctly from
+    // strings in every theme. Mirrors lex.cpp's trigger rules: `$$` and
+    // `$` before anything but `{`/identifier-start are literal.
+    void scanString();
+};
+
+void SyntaxScanner::scanContent(bool stopAtBrace) {
     // Mirrors the keyword table in lex.cpp; hash-directives highlight as macros.
     static const llvm::StringMap<const char*> keywords = {
         {"break", "keyword"},    {"case", "keyword"},   {"const", "keyword"},     {"continue", "keyword"},  {"default", "keyword"}, {"defer", "keyword"},
@@ -1008,21 +1041,23 @@ void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>&
         {"this", "keyword"},     {"true", "keyword"},   {"undefined", "keyword"}, {"using", "keyword"},     {"var", "keyword"},     {"while", "keyword"},
         {"#if", "macro"},        {"#else", "macro"},    {"#endif", "macro"},
     };
-    auto emit = [&](int line, int start, int length, const char* type) {
-        if (length <= 0) return;
-        SemanticToken token;
-        token.line = line;
-        token.start = start;
-        token.length = length;
-        token.type = type;
-        out.push_back(std::move(token));
-    };
 
-    size_t i = 0;
-    int line = 0;
-    int col = 0;
+    int braceDepth = 0;
     while (i < content.size()) {
         char ch = content[i];
+        if (stopAtBrace && ch == '{') {
+            ++braceDepth;
+            ++i;
+            ++col;
+            continue;
+        }
+        if (stopAtBrace && ch == '}') {
+            if (braceDepth == 0) return;
+            --braceDepth;
+            ++i;
+            ++col;
+            continue;
+        }
         if (ch == '\n') {
             ++i;
             ++line;
@@ -1039,7 +1074,7 @@ void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>&
                 if (content[i] != '\r') ++col;
                 ++i;
             }
-            emit(line, start, col - start, "comment");
+            emitToken(line, start, col - start, "comment");
             continue;
         }
         if (ch == '/' && i + 1 < content.size() && content[i + 1] == '*') {
@@ -1049,7 +1084,7 @@ void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>&
             int segStart = col;
             while (i < content.size()) {
                 if (content[i] == '\n') {
-                    emit(segLine, segStart, col - segStart, "comment");
+                    emitToken(segLine, segStart, col - segStart, "comment");
                     ++i;
                     ++line;
                     col = 0;
@@ -1077,11 +1112,14 @@ void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>&
                 ++i;
                 ++col;
             }
-            emit(segLine, segStart, col - segStart, "comment");
+            emitToken(segLine, segStart, col - segStart, "comment");
             continue;
         }
-        if (ch == '"' || ch == '\'') {
-            char delimiter = ch;
+        if (ch == '"') {
+            scanString();
+            continue;
+        }
+        if (ch == '\'') {
             int start = col;
             ++i;
             ++col;
@@ -1095,9 +1133,9 @@ void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>&
                 }
                 ++i;
                 ++col;
-                if (c == delimiter) break;
+                if (c == '\'') break;
             }
-            emit(line, start, col - start, "string");
+            emitToken(line, start, col - start, "string");
             continue;
         }
         if (ch >= '0' && ch <= '9') {
@@ -1125,7 +1163,7 @@ void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>&
                 }
                 break;
             }
-            emit(line, start, col - start, "number");
+            emitToken(line, start, col - start, "number");
             continue;
         }
         if (std::isalpha(static_cast<unsigned char>(ch)) || ch == '_' || ch == '#') {
@@ -1138,12 +1176,78 @@ void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>&
                 ++col;
             }
             auto it = keywords.find(llvm::StringRef(content.data() + begin, i - begin));
-            if (it != keywords.end()) emit(line, start, col - start, it->second);
+            if (it != keywords.end()) emitToken(line, start, col - start, it->second);
             continue;
         }
         ++i;
         ++col;
     }
+}
+
+void SyntaxScanner::scanString() {
+    int segStart = col;
+    int segLine = line;
+    ++i; // Consume the opening quote.
+    ++col;
+    auto isIdentChar = [](char c) { return std::isalnum(static_cast<unsigned char>(c)) || c == '_'; };
+    while (i < content.size()) {
+        char c = content[i];
+        if (c == '\n' || c == '\r') break; // Unterminated: highlight to end of line.
+        if (c == '\\' && i + 1 < content.size() && content[i + 1] != '\n' && content[i + 1] != '\r') {
+            i += 2;
+            col += 2;
+            continue;
+        }
+        if (c == '"') {
+            ++i;
+            ++col;
+            break;
+        }
+        if (c == '$' && i + 1 < content.size()) {
+            char next = content[i + 1];
+            if (next == '$') {
+                i += 2;
+                col += 2;
+                continue;
+            }
+            if (next == '{') {
+                emitToken(segLine, segStart, col - segStart, "string");
+                emitToken(line, col, 2, "keyword");
+                i += 2;
+                col += 2;
+                scanContent(true);
+                if (i < content.size() && content[i] == '}') {
+                    emitToken(line, col, 1, "keyword");
+                    ++i;
+                    ++col;
+                }
+                segStart = col;
+                segLine = line;
+                continue;
+            }
+            if (std::isalpha(static_cast<unsigned char>(next)) || next == '_') {
+                emitToken(segLine, segStart, col - segStart, "string");
+                emitToken(line, col, 1, "keyword");
+                ++i;
+                ++col;
+                while (i < content.size() && isIdentChar(content[i])) {
+                    ++i;
+                    ++col;
+                }
+                segStart = col;
+                segLine = line;
+                continue;
+            }
+        }
+        ++i;
+        ++col;
+    }
+    emitToken(segLine, segStart, col - segStart, "string");
+}
+
+void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>& out) {
+    SyntaxScanner scanner{content, out};
+    scanner.scanContent(false);
 }
 
 /// Emits one highlight token per declaration and reference in the target file.

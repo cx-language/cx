@@ -166,6 +166,15 @@ var f = /* unterminated;
 
 TOKENS_CRLF_SOURCE = "int add(int x, int y) {\r\n    return x;\r\n}\r\n"
 
+TOKENS_INTERP_SOURCE = """\
+void main() {
+    var name = "world";
+    println("hello $name, ${1 + 2}!");
+    println("nested ${"in $name"} out");
+    println("escapes $$x $ lit");
+}
+"""
+
 GENERIC_DEF_SOURCE = """\
 struct Box<T> {
     T value;
@@ -385,6 +394,31 @@ def test_query_modes(cx_lsp, path):
         (0, 4, 3, "function") in tokens and (1, 4, 6, "keyword") in tokens and (1, 11, 1, "parameter") in tokens,
         json.dumps(result.get("tokens"))[:300],
     )
+
+    result = run_query(cx_lsp, base_query("semanticTokens", path, TOKENS_INTERP_SOURCE))
+    tokens = {(t["line"], t["start"], t["length"], t["type"]) for t in result.get("tokens", [])}
+    check(
+        "query-tokens-interp-split",
+        (2, 12, 7, "string") in tokens and (2, 24, 2, "string") in tokens and (2, 34, 2, "string") in tokens,
+        json.dumps(result.get("tokens"))[:300],
+    )
+    check(
+        "query-tokens-interp-delims",
+        (2, 19, 1, "keyword") in tokens and (2, 26, 2, "keyword") in tokens and (2, 33, 1, "keyword") in tokens,
+    )
+    check(
+        "query-tokens-interp-expr",
+        (2, 20, 4, "variable") in tokens and (2, 28, 1, "number") in tokens and (2, 32, 1, "number") in tokens,
+    )
+    check(
+        "query-tokens-interp-nested",
+        (3, 20, 2, "keyword") in tokens
+        and (3, 22, 4, "string") in tokens
+        and (3, 26, 1, "keyword") in tokens
+        and (3, 27, 4, "variable") in tokens
+        and (3, 32, 1, "keyword") in tokens,
+    )
+    check("query-tokens-interp-escapes", (4, 12, 19, "string") in tokens)
 
     # The scanner's keyword table must cover every keyword completion offers.
     result = run_query(cx_lsp, base_query("completion", path, "void main() {\n}\n", (0, 0)))
