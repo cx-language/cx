@@ -1,5 +1,4 @@
 var name = "voxel-game"
-var outputDirectory = "bin"
 var pkgConfigDependencies = ["glfw3"]
 #if macOS
 var defines = ["GLFW_INCLUDE_GLCOREARB", "GL_SILENCE_DEPRECATION"]

@@ -28,7 +28,6 @@ wasm/dist/
 *.pdb
 *.ilk
 *.dSYM/
-examples/*/bin/
 
 # Generated documentation
 website/html/

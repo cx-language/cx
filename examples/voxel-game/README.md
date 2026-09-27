@@ -12,7 +12,7 @@ into a texture atlas (see `texture.cx`).
 ## Building
 
 Install pkg-config and GLFW3, then run `cx build`. This creates a
-`bin/voxel-game` executable.
+`voxel-game` executable.
 
 On Ubuntu, install the prerequisites with
 `sudo apt-get install -y pkg-config libglfw3-dev libgl1-mesa-dev`.
@@ -25,13 +25,13 @@ On macOS, install the prerequisites with
 Run from this directory so the game finds `assets/`:
 
 ```sh
-./bin/voxel-game
+./voxel-game
 ```
 
 ## Testing
 
 ```sh
-./bin/voxel-game --self-test
+./voxel-game --self-test
 ```
 
 checks math, noise, player physics, mouse look, raycasting, block
@@ -44,7 +44,7 @@ block) and unbuffered break/place/selection events while playing.
 A spawn-view screenshot (binary PPM) with scene-framing checks:
 
 ```sh
-./bin/voxel-game --screenshot shot.ppm
+./voxel-game --screenshot shot.ppm
 ```
 
 ## Controls
