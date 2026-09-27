@@ -17,7 +17,7 @@ FunctionProto FunctionProto::instantiate(const llvm::StringMap<GenericArg>& gene
     auto params = instantiateParams(this->params, genericArgs);
     auto returnType = this->returnType.resolve(genericArgs);
     std::vector<GenericParamDecl> genericParams;
-    return FunctionProto(name, std::move(params), returnType, varArg, external);
+    return FunctionProto(name, std::move(params), returnType, varArg, external, cppLinkage);
 }
 
 FunctionDecl* FunctionTemplate::instantiate(const llvm::StringMap<GenericArg>& genericArgs) {

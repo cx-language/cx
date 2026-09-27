@@ -1,0 +1,63 @@
+// RUN: check_exit_status 0 %cx test -Werror %s
+
+int sumView(const CxxVector<int>& v) {
+    var total = 0;
+    for i in 0..v.size() {
+        total += v[i];
+    }
+    return total;
+}
+
+@test
+void testViewOverList() {
+    var xs = List<int>();
+    xs.push(10);
+    xs.push(20);
+    xs.push(30);
+    var v = CxxVector(xs);
+    assert(v.size() == 3);
+    assert(!v.empty());
+    assert(v.capacity() == xs.capacity());
+    assert(v[0] == 10 && v[1] == 20 && v[2] == 30);
+    assert(v.data() != null);
+    v[1] = 99;
+    assert(xs[1] == 99);
+}
+
+@test
+void testViewOverEmptyList() {
+    var xs = List<int>();
+    var v = CxxVector(xs);
+    assert(v.size() == 0);
+    assert(v.empty());
+    assert(v.capacity() == 0);
+    assert(v.data() == null);
+}
+
+@test
+void testViewOverSlice() {
+    int[3] arr = [1, 2, 3];
+    int[] s = arr;
+    var v = CxxVector(s);
+    assert(v.size() == 3);
+    assert(v.capacity() == 3);
+    assert(v[2] == 3);
+    v[0] = 42;
+    assert(arr[0] == 42);
+}
+
+@test
+void testListConvertsImplicitly() {
+    var xs = List<int>();
+    xs.push(1);
+    xs.push(2);
+    xs.push(3);
+    assert(sumView(xs) == 6);
+}
+
+@test
+void testSliceConvertsImplicitly() {
+    int[2] arr = [10, 20];
+    int[] s = arr;
+    assert(sumView(s) == 30);
+}

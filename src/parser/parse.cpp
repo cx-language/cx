@@ -1648,7 +1648,7 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
 
 /// function-proto ::= type id param-list
 FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, std::vector<GenericParamDecl>* genericParams,
-                                         Type returnType, llvm::StringRef name, Location location) {
+                                         Type returnType, llvm::StringRef name, Location location, bool cppLinkage) {
     if (currentToken() == Token::Less) {
         parseGenericParamList(*genericParams);
     }
@@ -1662,7 +1662,7 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
                                                                   << "' is not allowed in extern functions, use a bare '...' (C-style varargs) instead");
         }
     }
-    FunctionProto proto(name, std::move(params), returnType, isVariadic, isExtern);
+    FunctionProto proto(name, std::move(params), returnType, isVariadic, isExtern, cppLinkage);
 
     if (receiverTypeDecl) {
         return makeAST<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<GenericArg>(), accessLevel, location);
@@ -1708,11 +1708,11 @@ FunctionTemplate* Parser::parseFunctionTemplate(TypeDecl* receiverTypeDecl, Acce
     return decl;
 }
 
-/// extern-function-decl ::= 'private'? 'extern' function-proto (block | ('\n' | ';'))
-FunctionDecl* Parser::parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location) {
-    auto decl = parseFunctionProto(true, nullptr, accessLevel, nullptr, type, name, location);
+/// extern-function-decl ::= 'private'? 'extern' ('"C"' | '"C++"')? function-proto (block | ('\n' | ';'))
+FunctionDecl* Parser::parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool cppLinkage) {
+    auto decl = parseFunctionProto(true, nullptr, accessLevel, nullptr, type, name, location, cppLinkage);
     if (currentToken() == Token::LeftBrace) {
-        // A body makes this a definition with C linkage, callable from C.
+        // A body makes this a definition with C or C++ linkage, callable from C or C++.
         decl->body = parseBlock(decl);
     }
     if (lookAhead(-1) != Token::RightBrace) {
@@ -2187,6 +2187,14 @@ start:
     case Token::Extern:
         if (isTest) ERROR(getCurrentLocation(), "test functions must have a body");
         consumeToken();
+        if (currentToken() == Token::StringLiteral) {
+            auto linkage = currentToken().getString().drop_back().drop_front();
+            consumeToken();
+            if (linkage == "C++") {
+                return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel, true);
+            }
+            if (linkage != "C") ERROR(getCurrentLocation(), "expected \"C\" or \"C++\" after 'extern'");
+        }
         return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel);
     case Token::Struct:
     case Token::Interface:
@@ -2248,7 +2256,7 @@ start:
     return decl;
 }
 
-Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel) {
+Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel, bool cppLinkage) {
     Decl* decl;
     // A call-shaped `name(...)` here is a misplaced statement, not a function
     // type; report that instead of a confusing type error from inside the
@@ -2265,7 +2273,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
     switch (currentToken()) {
     case Token::LeftParen:
         if (isExtern) {
-            decl = parseExternFunctionDecl(accessLevel, type, name, location);
+            decl = parseExternFunctionDecl(accessLevel, type, name, location, cppLinkage);
         } else {
             decl = parseFunctionDecl(nullptr, accessLevel, false, type, name, location);
         }
@@ -2277,6 +2285,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionTemplate>(*decl));
         break;
     default:
+        if (cppLinkage) ERROR(location, "extern \"C++\" is only supported for functions, not variables");
         decl = parseVarDeclAfterName(nullptr, accessLevel, type, name, location);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
         break;

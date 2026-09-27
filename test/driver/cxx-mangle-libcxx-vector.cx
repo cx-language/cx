@@ -1,0 +1,14 @@
+// RUN: %cx --print-llvm %s | %FileCheck %s
+// UNSUPPORTED: linux, windows
+
+extern "C++" c_int m_vecsum(const CxxVector<c_int>& v);
+extern "C++" void m_vecptr(CxxVector<c_double>*? v);
+
+void main() {
+    var xs = List<c_int>();
+    m_vecsum(xs);
+    m_vecptr(null);
+}
+
+// CHECK: declare i32 @"\01{{_?}}_Z8m_vecsumRKNSt3__16vectorIiNS_9allocatorIiEEEE"(ptr)
+// CHECK: declare void @"\01{{_?}}_Z8m_vecptrPNSt3__16vectorIdNS_9allocatorIdEEEE"(ptr)

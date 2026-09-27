@@ -157,12 +157,12 @@ private:
     void parseGenericParamList(std::vector<GenericParamDecl>& genericParams);
     llvm::StringRef parseFunctionName(TypeDecl* receiverTypeDecl);
     FunctionDecl* parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, std::vector<GenericParamDecl>* genericParams,
-                                     Type returnType, llvm::StringRef name, Location location);
+                                     Type returnType, llvm::StringRef name, Location location, bool cppLinkage = false);
     FunctionTemplate* parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location);
     FunctionDecl* parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody, Type type, llvm::StringRef name, Location location,
                                     bool isImplicit = false);
     FunctionTemplate* parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location);
-    FunctionDecl* parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location);
+    FunctionDecl* parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool cppLinkage = false);
     ConstructorDecl* parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit = false);
     DestructorDecl* parseDestructorDecl(TypeDecl& receiverTypeDecl);
     FieldDecl parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location);
@@ -176,7 +176,7 @@ private:
     void parseIfdefBody(std::vector<Decl*>* activeDecls);
     void parseIfdef(std::vector<Decl*>* activeDecls);
     Decl* parseTopLevelDecl(bool addToSymbolTable);
-    Decl* parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel);
+    Decl* parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel, bool cppLinkage = false);
     void parseTestAttribute(bool& isTest, Location& testLocation);
 
 private:

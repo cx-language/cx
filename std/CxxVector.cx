@@ -1,0 +1,97 @@
+/// An ABI-compatible mirror of C++ `std::vector<Element>` for C++ interop.
+///
+/// The layout matches `std::vector` on all supported targets (three pointers:
+/// begin, end, and capacity-end), so a `CxxVector` passes directly to and from
+/// C++ functions taking `std::vector`, without a C wrapper. It never owns its
+/// elements: values either view cx storage (built implicitly from a `List` or
+/// `Slice`) or view a C++-owned vector across the boundary.
+///
+/// Views are meant for `const std::vector&` parameters. Growing a C++ vector
+/// through a view reallocates inside C++ and silently detaches from the cx
+/// storage, so never pass a view where C++ may grow it.
+struct CxxVector<Element> {
+    private Element[*]? begin_;
+    private Element[*]? end_;
+    private Element[*]? cap_;
+
+    /// Initializes a vector viewing the elements of the given list. The view
+    /// borrows the list's buffer; it must not outlive the list.
+    implicit CxxVector(List<Element>& list) {
+        if list.empty() {
+            begin_ = null;
+            end_ = null;
+            cap_ = null;
+        } else {
+            var data = list.data();
+            begin_ = &data[0];
+            end_ = &data[list.size()];
+            cap_ = &data[list.capacity()];
+        }
+    }
+
+    /// Initializes a vector viewing the elements of the given slice. The view
+    /// borrows the slice's storage; it must not outlive it. The capacity is the
+    /// slice length, so growing through this view reallocates inside C++.
+    implicit CxxVector(Slice<Element> slice) {
+        if slice.empty() {
+            begin_ = null;
+            end_ = null;
+            cap_ = null;
+        } else {
+            var data = slice.data();
+            begin_ = &data[0];
+            end_ = &data[slice.size()];
+            cap_ = end_;
+        }
+    }
+
+    /// Returns the number of elements in the vector.
+    int size() {
+        var begin = begin_;
+        var end = end_;
+        if begin == null || end == null {
+            return 0;
+        }
+        return int((cast<uint64>(end) - cast<uint64>(begin)) / sizeof(Element));
+    }
+
+    /// Returns true if the vector has no elements, otherwise false.
+    bool empty() {
+        return size() == 0;
+    }
+
+    /// Returns the number of elements the vector can hold without reallocating.
+    int capacity() {
+        var begin = begin_;
+        var cap = cap_;
+        if begin == null || cap == null {
+            return 0;
+        }
+        return int((cast<uint64>(cap) - cast<uint64>(begin)) / sizeof(Element));
+    }
+
+    /// Returns a pointer to the first element, or null if the vector is empty.
+    Element[*]? data() {
+        return begin_;
+    }
+
+    /// Returns the element at the given index.
+    Element& operator[](int index) {
+        if index < 0 || begin_ == null || index >= size() {
+            indexOutOfBounds(index);
+        }
+        return begin_[index];
+    }
+
+    /// Sets the element at the given index.
+    void operator[]=(int index, Element element) {
+        if index < 0 || begin_ == null || index >= size() {
+            indexOutOfBounds(index);
+        }
+        begin_[index] = element;
+    }
+
+    private void indexOutOfBounds(int index) {
+        abort("CxxVector index ", index, " is out of bounds, size is ", size());
+    }
+}

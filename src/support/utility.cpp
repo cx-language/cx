@@ -153,6 +153,20 @@ std::optional<std::string> cx::findExternalCCompiler() {
     return std::nullopt;
 }
 
+std::optional<std::string> cx::findExternalCxxCompiler() {
+#ifdef _WIN32
+    auto compilers = {"clang++", "g++"};
+#else
+    auto compilers = {"c++", "clang++", "g++"};
+#endif
+    for (const char* compiler : compilers) {
+        if (auto path = llvm::sys::findProgramByName(compiler)) {
+            return std::move(*path);
+        }
+    }
+    return std::nullopt;
+}
+
 int cx::exec(const char* command, std::string& output) {
     FILE* pipe = popen(command, "r");
     if (!pipe) {
@@ -253,6 +267,40 @@ const std::vector<std::string>& cx::getCCompilerSearchPaths() {
         llvm::StringRef compilerName = cCompilerPath ? llvm::sys::path::filename(*cCompilerPath) : "";
         if (!compilerName.empty() && compilerName != "cl.exe" && compilerName != "clang-cl.exe") {
             std::string command = "echo | " + *cCompilerPath + " -E -v - 2>&1 | grep '^ /'";
+            std::string output;
+            exec(command.c_str(), output);
+            llvm::SmallVector<llvm::StringRef, 8> lines;
+            llvm::SplitString(output, lines, "\n");
+            for (auto line : lines) {
+                auto path = line.trim();
+                if (llvm::sys::fs::is_directory(path)) {
+                    paths.push_back(path.str());
+                }
+            }
+        }
+#endif
+    }
+    return paths;
+}
+
+bool cx::isCxxHeader(llvm::StringRef headerName) {
+    return headerName.ends_with(".hpp") || headerName.ends_with(".hh") || headerName.ends_with(".hxx") || headerName.ends_with(".h++")
+        || headerName.ends_with(".H");
+}
+
+const std::vector<std::string>& cx::getCxxCompilerSearchPaths() {
+    static std::vector<std::string> paths;
+    static bool queried = false;
+    if (!queried) {
+        queried = true;
+#ifdef __EMSCRIPTEN__
+        // No host toolchain inside the cx-wasm module, so there is nothing to query.
+        return paths;
+#else
+        auto cxxCompilerPath = findExternalCxxCompiler();
+        if (cxxCompilerPath) {
+            // -x c++ is required: reading from stdin defaults to C.
+            std::string command = "echo | " + *cxxCompilerPath + " -E -x c++ -v - 2>&1 | grep '^ /'";
             std::string output;
             exec(command.c_str(), output);
             llvm::SmallVector<llvm::StringRef, 8> lines;

@@ -4,6 +4,7 @@
 #pragma warning(pop)
 #include "../ast/mangle.h"
 #include "../ast/module.h"
+#include "../support/utility.h"
 
 using namespace cx;
 
@@ -336,7 +337,8 @@ void IRGenerator::emitDecl(const Decl& decl) {
         llvm_unreachable("handled via TypeDecl");
     case DeclKind::ImportDecl: {
         auto& importDecl = llvm::cast<ImportDecl>(decl);
-        if (!importDecl.importedHeaderPath.empty()) {
+        // C++ headers can't be included in generated C; declarations are emitted instead.
+        if (!importDecl.importedHeaderPath.empty() && !isCxxHeader(importDecl.importedHeaderPath)) {
             module->includedHeaders.push_back(importDecl.importedHeaderPath);
         }
         break;

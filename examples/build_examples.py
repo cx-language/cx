@@ -32,43 +32,51 @@ def _call(cmd, **kwargs):
         return 1
 
 
-# The c-interop example links a small C static library; build it first
-# so `cx build` finds libc-interop-math.a via build.cx.
-def build_c_interop_lib():
-    # The example is skipped on Windows (see the loop below), so its
-    # library is not needed there either.
-    if platform.system() == "Windows":
-        return
-    directory = "c-interop"
-    if not os.path.isdir(directory):
-        return
-    cc = shutil.which("cc") or shutil.which("clang") or shutil.which("gcc")
-    if not cc:
-        print("warning: no C compiler found, skipping c-interop C library build")
-        return
-    result = _call([cc, "-O2", "-c", "mathlib.c", "-o", "mathlib.o"], cwd=directory)
-    if result != 0:
-        sys.exit(result)
-    result = _call(["ar", "rcs", "libc-interop-math.a", "mathlib.o"], cwd=directory)
-    if result != 0:
-        sys.exit(result)
+def _find_compiler(compilers):
+    for name in compilers:
+        path = shutil.which(name)
+        if path:
+            return path
+    return None
 
 
-# The c-interop example also exports cx functions to C; compile cxlib.cx to
-# an object file, link it into main.c, and check the output.
-def check_c_calls_cx():
+# The interop examples link small static libraries; build them first
+# so `cx build` finds them via build.cx.
+def build_interop_lib(directory, lib, sources, compilers, flags):
+    # The examples are skipped on Windows (see the loop below), so their
+    # libraries are not needed there either.
     if platform.system() == "Windows":
         return
-    directory = "c-interop"
     if not os.path.isdir(directory):
         return
-    cc = shutil.which("cc") or shutil.which("clang") or shutil.which("gcc")
+    cc = _find_compiler(compilers)
     if not cc:
-        print("warning: no C compiler found, skipping c-interop C caller check")
+        print(f"warning: no compiler found ({', '.join(compilers)}), skipping {directory} library build")
+        return
+    objects = []
+    for src in sources:
+        obj = os.path.splitext(src)[0] + ".o"
+        if _call([cc, *flags, "-c", src, "-o", obj], cwd=directory) != 0:
+            sys.exit(1)
+        objects.append(obj)
+    if _call(["ar", "rcs", lib, *objects], cwd=directory) != 0:
+        sys.exit(1)
+
+
+# The interop examples also export cx functions; compile cxlib.cx to an
+# object file, link it into the caller's main file, and check the output.
+def check_calls_cx(directory, caller, binary, expected, compilers, gen_flags, link_flags, link_suffix=[]):
+    if platform.system() == "Windows":
+        return
+    if not os.path.isdir(directory):
+        return
+    cc = _find_compiler(compilers)
+    if not cc:
+        print(f"warning: no compiler found ({', '.join(compilers)}), skipping {directory} caller check")
         return
     if "--backend=c" in cx_args:
         # The C backend's -c output is C source, so compile it to an object
-        # with the C compiler instead of linking it directly.
+        # instead of linking it directly.
         gen = subprocess.run([args.cx, "cxlib.cx", "--backend=c", "--print-c", "-Werror"],
                              cwd=directory, capture_output=True, text=True, timeout=600)
         if gen.returncode != 0:
@@ -77,24 +85,28 @@ def check_c_calls_cx():
             sys.exit(1)
         with open(os.path.join(directory, "cxlib_gen.c"), "w") as file:
             file.write(gen.stdout)
-        steps = [[cc, "-O2", "-c", "cxlib_gen.c", "-o", "cxlib.o"]]
+        steps = [[cc, *gen_flags, "-c", "cxlib_gen.c", "-o", "cxlib.o"]]
     else:
         steps = [[args.cx, "cxlib.cx", "-c", "-o", "cxlib.o", "-Werror"]]
-    steps.append([cc, "main.c", "cxlib.o", "-o", "c-caller", "-lm"])
+    steps.append([cc, *link_flags, caller, "cxlib.o", "-o", binary, *link_suffix])
     for cmd in steps:
         if _call(cmd, cwd=directory) != 0:
             sys.exit(1)
     try:
-        run = subprocess.run(["./c-caller"], cwd=directory, capture_output=True, text=True, timeout=600)
+        run = subprocess.run([f"./{binary}"], cwd=directory, capture_output=True, text=True, timeout=600)
     except subprocess.TimeoutExpired:
-        print("timed out: ./c-caller")
+        print(f"timed out: ./{binary}")
         sys.exit(1)
-    if run.returncode != 0 or run.stdout != "1\n5.000000\n":
-        print(f"c-interop C caller failed: exit {run.returncode}, output {run.stdout!r}")
+    if run.returncode != 0 or run.stdout != expected:
+        print(f"{directory} caller failed: exit {run.returncode}, output {run.stdout!r}")
         sys.exit(1)
 
 
-build_c_interop_lib()
+C_COMPILERS = ["cc", "clang", "gcc"]
+CXX_COMPILERS = ["c++", "clang++", "g++"]
+
+build_interop_lib("c-interop", "libc-interop-math.a", ["mathlib.c"], C_COMPILERS, ["-O2"])
+build_interop_lib("cxx-interop", "libcxx-interop-vec.a", ["veclib.cpp"], CXX_COMPILERS, ["-std=c++17", "-O2"])
 
 is_windows = platform.system() == "Windows"
 
@@ -103,7 +115,7 @@ def build_example(file):
     # Returns the file on failure, None on success. Each example builds in
     # its own directory with its own output files, so examples are
     # independent and can build in parallel worker threads.
-    if is_windows and file in ["tree.cx", "asteroids", "opengl", "voxel-game", "c-interop", "fractal", "boids"]:
+    if is_windows and file in ["tree.cx", "asteroids", "opengl", "voxel-game", "c-interop", "cxx-interop", "fractal", "boids"]:
         return None
 
     if file.endswith(".cx"):
@@ -140,14 +152,19 @@ if failures:
     print(f"failed to build: {', '.join(sorted(failures))}")
     sys.exit(1)
 
-check_c_calls_cx()
+check_calls_cx("c-interop", "main.c", "c-caller", "1\n5.000000\n", C_COMPILERS, ["-O2"], [], ["-lm"])
+check_calls_cx("cxx-interop", "main.cpp", "cxx-caller", "1\n0\n60\n", CXX_COMPILERS, ["-O2", "-x", "c"], ["-std=c++17"])
 
-# Clean the intermediate objects for c-interop (built before/after the loop,
-# so the per-directory before/after cleanup above does not see them).
-for artifact in ["mathlib.o", "libc-interop-math.a", "cxlib.o", "cxlib_gen.c", "c-caller"]:
-    try:
-        os.remove(os.path.join("c-interop", artifact))
-    except FileNotFoundError:
-        pass
+# Clean the intermediate objects for the interop examples (built before/after
+# the loop, so the per-directory before/after cleanup above does not see them).
+for directory, artifacts in [
+    ("c-interop", ["mathlib.o", "libc-interop-math.a", "cxlib.o", "cxlib_gen.c", "c-caller"]),
+    ("cxx-interop", ["veclib.o", "libcxx-interop-vec.a", "cxlib.o", "cxlib_gen.c", "cxx-caller"]),
+]:
+    for artifact in artifacts:
+        try:
+            os.remove(os.path.join(directory, artifact))
+        except FileNotFoundError:
+            pass
 
 print("All examples built successfully.")

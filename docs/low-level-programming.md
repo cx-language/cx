@@ -178,3 +178,88 @@ Signatures crossing the boundary must be C-compatible: plain numbers,
 pointers, and C structs. Generic functions cannot be `extern`.
 See the [`c-interop` example](https://github.com/emillaine/cx/tree/main/examples/c-interop)
 for a complete project calling in both directions.
+
+## Using C++ libraries
+
+C++ headers can be imported the same way as C headers.
+A header with a C++ extension (`.hpp`, `.hh`, `.hxx`, `.h++`, or `.H`)
+is parsed as C++, and its global-scope functions and plain structs become
+available, including overloads (from the `cxx-interop` example):
+
+```cs {.noCompile}
+import "veclib.hpp";
+
+void main() {
+    var xs = List<int>();
+    xs.push(3);
+    xs.push(1);
+    println(vec_sum(xs)); // prints 4
+}
+```
+
+Only declarations written in the imported header itself are imported.
+Headers it includes are parsed for context, so their types work in
+signatures, but their declarations are not imported; import each header
+you use directly. Unsupported declarations (namespaces, templates,
+globals, and non-POD types) are skipped with a warning naming how many
+were skipped.
+
+Signatures crossing the boundary must be C++-compatible: plain numbers,
+pointers, references, function pointers, and plain structs. Structs
+cross by value only when they are small (up to 16 bytes), normally
+aligned, and hold no floats; anything else must cross behind a pointer
+or reference. The same rules apply to extra arguments passed through
+`...`. Structs are never returned by value; return through an
+out-parameter instead. A cx function can be passed where a C++ function
+pointer is expected. `extern "C"` functions in C++ headers keep
+their plain names and work as usual. Classes with member functions and
+exceptions are not supported.
+
+`std::vector` parameters map to the standard library `CxxVector` type.
+A `const std::vector<T>&` parameter imports as `const CxxVector<T>&`,
+and `List` and slice values convert to it implicitly, so they pass
+directly. `CxxVector` is a non-owning view: it borrows the cx storage
+and must not outlive it, and it must not be passed where C++ may grow
+the vector. Vectors never cross by value, and `vector<bool>` and custom
+allocators are not supported.
+
+Individual functions can also be declared with `extern "C++"`, without
+importing a header. The compiler mangles the name with the Itanium C++
+ABI, so it links against the C++ definition. Declare parameters and
+return types with the `c_` prefixed types so the signature matches on
+every target:
+
+```cs {.noCompile}
+extern "C++" c_int cpp_sum(const CxxVector<c_int>& v);
+```
+
+## Calling cx from C++
+
+An `extern "C++"` function with a body is exported under its
+Itanium-mangled name, so C++ callers declare and link it like any C++
+function. It stays callable from cx too:
+
+```cs
+extern "C++" c_int cx_is_even(c_int n) {
+    return n % 2 == 0 ? 1 : 0;
+}
+
+void main() {
+    println(cx_is_even(42)); // prints 1
+}
+```
+
+```cpp
+int cx_is_even(int n);
+```
+
+```sh
+cx cxlib.cx -c -o cxlib.o
+c++ main.cpp cxlib.o -o cxx-caller
+```
+
+The same signature rules apply in both directions. Only free functions
+can be `extern "C++"`; generic functions cannot be `extern`. C++
+interop uses the Itanium ABI and is not supported on MSVC targets.
+See the [`cxx-interop` example](https://github.com/emillaine/cx/tree/main/examples/cxx-interop)
+for a complete project calling in both directions.

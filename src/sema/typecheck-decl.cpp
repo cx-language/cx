@@ -5,6 +5,8 @@
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/SaveAndRestore.h>
+#include <llvm/TargetParser/Host.h>
+#include <llvm/TargetParser/Triple.h>
 #pragma warning(pop)
 #include "../ast/arena.h"
 #include "../ast/module.h"
@@ -644,6 +646,392 @@ static void checkMainSignature(const FunctionDecl& decl) {
     }
 }
 
+// True when the type holds a CxxVector in a copied position (directly, or inside a
+// struct, union, or fixed array). Such a value is non-trivially copyable on the C++
+// side, so C++ passes it indirectly while cx would pass the bytes directly.
+static bool containsCxxVector(Type type) {
+    // Fixed arrays carry the fieldless Array decl, so check them before getDecl.
+    if (type.isFixedArray()) return containsCxxVector(type.getElementType());
+    if (TypeDecl* typeDecl = type.getDecl()) {
+        if (typeDecl->isStruct() && typeDecl->getName() == "CxxVector" && typeDecl->getModule() && typeDecl->getModule()->name == "std") return true;
+        if (typeDecl->isStruct() || typeDecl->tag == TypeTag::Union) {
+            for (const FieldDecl& field : typeDecl->fields) {
+                if (containsCxxVector(field.type)) return true;
+            }
+        }
+        return false;
+    }
+    return false;
+}
+
+// True when a by-value `extern "C++"` type holds a float anywhere. The LLVM backend expands
+// float-containing aggregates element-wise, but the C++ ABI packs small ones into shared
+// registers, so only aggregates without floats cross by value.
+static bool containsFloat(Type type) {
+    if (type.isFloatingPoint()) return true;
+    // Fixed arrays carry the fieldless Array decl, so check them before getDecl.
+    if (type.isFixedArray()) return containsFloat(type.getElementType());
+    if (TypeDecl* typeDecl = type.getDecl()) {
+        if (typeDecl->isStruct() || typeDecl->tag == TypeTag::Union) {
+            for (const FieldDecl& field : typeDecl->fields) {
+                if (containsFloat(field.type)) return true;
+            }
+        }
+        return false;
+    }
+    return false;
+}
+
+// C layout of a type crossing an `extern "C++"` boundary by value: size and alignment in
+// bytes, assuming natural alignment like LLVM's struct lowering. The frontend only targets
+// its host, so host sizes are target sizes (see Type::getIntegerBitWidth).
+struct CxxValueLayout {
+    uint64_t size;
+    uint64_t align;
+};
+
+// Computes the C layout of a by-value `extern "C++"` type, or nullopt when a member has no C++
+// counterpart (slices, strings, containers, enums with payloads, ...). Packed structs compute
+// their unpacked layout, which only ever errs towards rejection.
+static std::optional<CxxValueLayout> cxxValueLayout(Type type) {
+    if (type.isInteger()) {
+        uint64_t size = (uint64_t)type.getIntegerBitWidth() / 8;
+        return CxxValueLayout{size, size};
+    }
+    if (type.isInt128() || type.isUInt128()) return CxxValueLayout{16, 16};
+    if (type.isBool() || type.isChar()) return CxxValueLayout{1, 1};
+    if (type.isFloat32() || type.isCFloat()) return CxxValueLayout{4, 4};
+    if (type.isFloat64() || type.isCDouble()) return CxxValueLayout{8, 8};
+    if (type.isFloat80()) return CxxValueLayout{16, 16};
+    if (type.isPointerType() || type.isReferenceType() || type.isFunctionType() || type.isArrayPointer()
+        || (type.isOptionalType() && type.isImplementedAsPointer())) {
+        return CxxValueLayout{sizeof(void*), sizeof(void*)};
+    }
+    if (type.isFixedArray()) {
+        auto element = cxxValueLayout(type.getElementType());
+        int64_t count = type.getArraySize();
+        if (!element || count <= 0) return std::nullopt;
+        return CxxValueLayout{element->size * (uint64_t)count, element->align};
+    }
+    // Generic instantiations (slices, containers, optionals, ...) may have measurable cx layouts
+    // but no C++ counterpart, so they cannot cross by value.
+    if (!type.getGenericArgs().empty()) return std::nullopt;
+    if (TypeDecl* typeDecl = type.getDecl()) {
+        if (typeDecl->isEnumDecl()) {
+            auto& enumDecl = llvm::cast<EnumDecl>(*typeDecl);
+            if (enumDecl.hasAssociatedValues()) return std::nullopt;
+            return cxxValueLayout(enumDecl.getTagType());
+        }
+        auto padTo = [](uint64_t offset, uint64_t align) { return (offset + align - 1) / align * align; };
+        if (typeDecl->isStruct()) {
+            CxxValueLayout layout{0, 1};
+            for (const FieldDecl& field : typeDecl->fields) {
+                auto member = cxxValueLayout(field.type);
+                if (!member) return std::nullopt;
+                layout.size = padTo(layout.size, member->align) + member->size;
+                layout.align = std::max(layout.align, member->align);
+            }
+            layout.size = padTo(layout.size, layout.align);
+            return layout;
+        }
+        if (typeDecl->tag == TypeTag::Union) {
+            CxxValueLayout layout{0, 1};
+            for (const FieldDecl& field : typeDecl->fields) {
+                auto member = cxxValueLayout(field.type);
+                if (!member) return std::nullopt;
+                layout.size = std::max(layout.size, member->size);
+                layout.align = std::max(layout.align, member->align);
+            }
+            return layout;
+        }
+    }
+    return std::nullopt;
+}
+
+void cx::validateCppVariadicExtra(Type type, Location location, llvm::StringRef callee) {
+    // Fixed arrays decay to pointers in variadic calls, and scalars, pointers, and references
+    // cross opaquely; only by-value aggregates need the signature rules.
+    if (type.isFixedArray()) return;
+    if (type.isSlice()) {
+        ERROR(location,
+              "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee << "'; pass a pointer and length instead");
+    }
+    TypeDecl* typeDecl = type.getDecl();
+    if (!typeDecl || (!typeDecl->isStruct() && typeDecl->tag != TypeTag::Union)) return;
+    if (type.needsDestruction()) {
+        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                                 << "' because it needs destruction; pass it behind a pointer instead");
+    }
+    if (containsCxxVector(type)) {
+        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                                 << "' because it holds a CxxVector, which C++ passes indirectly; pass it behind a pointer instead");
+    }
+    if (containsFloat(type)) {
+        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                                 << "' because it contains floating-point members; pass it behind a pointer instead");
+    }
+    auto layout = cxxValueLayout(type);
+    if (!layout) {
+        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                                 << "' because it has a member with no C++ counterpart; pass it behind a pointer instead");
+    }
+    if (layout->size == 0) {
+        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                                 << "' because it is empty; pass it behind a pointer instead");
+    }
+    if (layout->size > 16) {
+        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee << "' because it is "
+                                 << layout->size << " bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer instead");
+    }
+    if (layout->align > 8) {
+        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee << "' because it requires "
+                                 << layout->align << "-byte alignment; pass it behind a pointer instead");
+    }
+}
+
+// Maps an `extern "C++"` parameter, return, or nested type to its Itanium ABI
+// encoding. Only types with a C++ counterpart are accepted: C-compatible
+// scalars, pointers, references, plain structs, and function pointers. Anything
+// else (slices, strings, enums, closures, fixed-width 64/128-bit integers, ...)
+// has no C++ type to mangle as, so it is a compile error rather than a miscompile.
+// Structs crossing by value must not need destruction: the boundary copies bytes,
+// so each side would destroy its own copy.
+static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::Triple& triple, bool byValue, bool isReturn) {
+    if (type.isPointerType()) {
+        Type pointee = type.getPointee();
+        out << (type.getPointerKind() == PointerKind::Reference ? 'R' : 'P');
+        // `const` spelled on the pointee (`const T*`, `const T&`) is part of the
+        // signature; top-level const on the pointer or reference itself is not.
+        if (!type.isMutable() || !pointee.isMutable()) out << 'K';
+        mangleCppType(out, pointee.withMutability(Mutability::Mutable), triple, false, false);
+        return;
+    }
+    type = type.withMutability(Mutability::Mutable);
+    if (type.isVoid() || type.isNeverType()) {
+        out << 'v';
+        return;
+    }
+    if (type.isBool()) {
+        out << 'b';
+        return;
+    }
+    if (type.isChar()) {
+        out << 'c';
+        return;
+    }
+    if (type.isInt8() || type.isCSChar()) {
+        out << 'a';
+        return;
+    }
+    if (type.isUInt8() || type.isCUChar()) {
+        out << 'h';
+        return;
+    }
+    if (type.isInt16() || type.isCShort()) {
+        out << 's';
+        return;
+    }
+    if (type.isUInt16() || type.isCUShort()) {
+        out << 't';
+        return;
+    }
+    if (type.isInt32() || type.isCInt()) {
+        out << 'i';
+        return;
+    }
+    if (type.isUInt32() || type.isCUInt()) {
+        out << 'j';
+        return;
+    }
+    if (type.isCLong()) {
+        out << 'l';
+        return;
+    }
+    if (type.isCULong()) {
+        out << 'm';
+        return;
+    }
+    if (type.isCLongLong()) {
+        out << 'x';
+        return;
+    }
+    if (type.isCULongLong()) {
+        out << 'y';
+        return;
+    }
+    if (type.isFloat32() || type.isCFloat()) {
+        out << 'f';
+        return;
+    }
+    if (type.isFloat64() || type.isCDouble()) {
+        out << 'd';
+        return;
+    }
+    if (type.isCSizeT()) {
+        // size_t mangles as its underlying integer type, which is platform-dependent.
+        out << (!triple.isArch64Bit() ? 'j' : triple.isOSWindows() ? 'y' : 'm');
+        return;
+    }
+    if (type.isInt64() || type.isUInt64() || type.isInt128() || type.isUInt128()) {
+        ERROR(type.location,
+              "integer type '" << type << "' has no single C++ counterpart; use c_long, c_ulong, c_longlong, or c_ulonglong in extern \"C++\" signatures");
+    }
+    if (type.isFloat80()) {
+        ERROR(type.location, "'float80' has no C++ counterpart; use c_double in extern \"C++\" signatures");
+    }
+    // Slices and arrays are generic types with declarations, so reject them before the struct rule below.
+    if (type.isSlice()) ERROR(type.location, "slices cannot be used in extern \"C++\" signatures; pass a pointer and length instead");
+    if (type.isArrayType()) {
+        ERROR(type.location, "arrays cannot be used in extern \"C++\" signatures; pass a pointer instead");
+    }
+    if (type.isOptionalType()) {
+        Type wrapped = type.getWrappedType();
+        if (wrapped.isPointerType() && wrapped.getPointerKind() == PointerKind::Pointer) {
+            mangleCppType(out, wrapped, triple, false, false); // nullable pointers pass as raw pointers
+            return;
+        }
+        ERROR(type.location, "type '" << type << "' cannot be used in extern \"C++\" signatures");
+    }
+    if (type.isFunctionType()) {
+        auto& functionType = llvm::cast<FunctionType>(*type);
+        if (byValue && isReturn) ERROR(type.location, "functions cannot be returned in extern \"C++\" signatures; return a function pointer instead");
+        // Function parameters decay to pointers, like array parameters in C.
+        if (byValue) out << 'P';
+        out << 'F';
+        mangleCppType(out, functionType.returnType, triple, true, true);
+        for (Type paramType : functionType.paramTypes)
+            mangleCppType(out, paramType, triple, true, false);
+        if (functionType.paramTypes.empty() && !functionType.isVariadic) out << 'v';
+        if (functionType.isVariadic) out << 'z';
+        out << 'E';
+        return;
+    }
+    if (TypeDecl* typeDecl = type.getDecl()) {
+        // CxxVector mirrors std::vector, so it mangles as the vector specialization with the
+        // default allocator, in the platform-default standard library form (libc++ on Darwin and
+        // the BSDs, libstdc++ elsewhere). Compound elements would need substitution compression
+        // to mangle exactly, so those must come through a header import, where Clang mangles.
+        if (typeDecl->isStruct() && typeDecl->getName() == "CxxVector" && type.getGenericArgs().size() == 1 && type.getGenericArgs()[0].isType()
+            && typeDecl->getModule() && typeDecl->getModule()->name == "std") {
+            // std::vector is non-trivially copyable, so C++ passes it indirectly (by invisible
+            // reference) while cx would pass the bytes directly; only references and pointers agree.
+            if (byValue && isReturn) {
+                ERROR(type.location, "type '" << type << "' cannot be returned by value in extern \"C++\" signatures; use an out-parameter instead");
+            }
+            if (byValue) {
+                ERROR(type.location, "type '" << type << "' cannot be passed by value in extern \"C++\" signatures; use a reference or pointer instead");
+            }
+            Type elementType = type.getGenericArgs()[0].getType();
+            if (!elementType.isMutable()) ERROR(type.location, "std::vector cannot hold const elements");
+            if (elementType.isVoid() || elementType.isBool()) {
+                ERROR(type.location,
+                      "type '" << type << "' cannot be used in extern \"C++\" signatures: std::vector<bool> is bit-packed and std::vector<void> is ill-formed");
+            }
+            std::string elementCode;
+            llvm::raw_string_ostream elementStream(elementCode);
+            mangleCppType(elementStream, elementType, triple, false, false);
+            elementStream.flush();
+            if (elementCode.size() != 1) {
+                ERROR(
+                    type.location,
+                    "type '"
+                        << type
+                        << "' cannot be named in extern \"C++\" signatures; declare it through a C++ header import instead, where the exact mangling is known");
+            }
+            bool isLibcxx = triple.isOSDarwin() || triple.isOSFreeBSD() || triple.isOSOpenBSD();
+            if (isLibcxx) {
+                out << "NSt3__16vectorI" << elementCode << "NS_9allocatorI" << elementCode << "EEEE";
+            } else {
+                out << "St6vectorI" << elementCode << "SaI" << elementCode << "EE";
+            }
+            return;
+        }
+        if (typeDecl->isEnumDecl()) ERROR(type.location, "enums cannot be used in extern \"C++\" signatures; pass the underlying integer instead");
+        if (!type.getGenericArgs().empty()) ERROR(type.location, "generic type '" << type << "' cannot be used in extern \"C++\" signatures");
+        if (!typeDecl->isStruct() && typeDecl->tag != TypeTag::Union) ERROR(type.location, "type '" << type << "' cannot be used in extern \"C++\" signatures");
+        // Small-struct returns miscompile (returns lack the parameter integer-chunk
+        // coercion), so reject all by-value struct returns until that is fixed.
+        if (byValue && isReturn) {
+            ERROR(type.location, "type '" << type << "' cannot be returned by value in extern \"C++\" signatures; use an out-parameter instead");
+        }
+        if (byValue && type.needsDestruction()) {
+            ERROR(
+                type.location,
+                "type '"
+                    << type
+                    << "' cannot be passed by value in extern \"C++\" signatures because it needs destruction; pass it behind a pointer or reference instead");
+        }
+        if (byValue && containsCxxVector(type)) {
+            ERROR(type.location, "type '" << type
+                                          << "' cannot be passed by value in extern \"C++\" signatures because it holds a CxxVector, which C++ passes "
+                                             "indirectly; pass it behind a pointer or reference instead");
+        }
+        if (byValue && containsFloat(type)) {
+            ERROR(type.location, "type '" << type
+                                          << "' cannot be passed by value in extern \"C++\" signatures because it contains floating-point members; pass it "
+                                             "behind a pointer or reference instead");
+        }
+        if (byValue) {
+            // Larger or over-aligned aggregates cross indirectly in cx but in memory or registers
+            // in C++, so only small, normally-aligned structs cross by value.
+            auto layout = cxxValueLayout(type);
+            if (!layout) {
+                ERROR(type.location, "type '" << type
+                                              << "' cannot be passed by value in extern \"C++\" signatures because it has a member with no C++ counterpart; "
+                                                 "pass it behind a pointer or reference instead");
+            }
+            if (layout->size == 0) {
+                ERROR(
+                    type.location,
+                    "type '" << type
+                             << "' cannot be passed by value in extern \"C++\" signatures because it is empty; pass it behind a pointer or reference instead");
+            }
+            if (layout->size > 16) {
+                ERROR(type.location, "type '" << type << "' cannot be passed by value in extern \"C++\" signatures because it is " << layout->size
+                                              << " bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer or reference instead");
+            }
+            if (layout->align > 8) {
+                ERROR(type.location, "type '" << type << "' cannot be passed by value in extern \"C++\" signatures because it requires " << layout->align
+                                              << "-byte alignment; pass it behind a pointer or reference instead");
+            }
+        }
+        out << typeDecl->getName().size() << typeDecl->getName();
+        return;
+    }
+    ERROR(type.location, "type '" << type << "' cannot be used in extern \"C++\" signatures");
+}
+
+// Computes the Itanium-mangled symbol for an `extern "C++"` declaration, used
+// both when importing a C++ function and when exporting a cx one to C++.
+static void mangleCppFunction(FunctionDecl& decl) {
+    llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
+    if (triple.isWindowsMSVCEnvironment()) {
+        ERROR(decl.getLocation(), "extern \"C++\" uses the Itanium ABI, which is not supported on MSVC targets");
+    }
+    llvm::StringRef name = decl.getName();
+    auto isIdentifierChar = [](char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; };
+    if (name.empty() || !llvm::all_of(name, isIdentifierChar)) {
+        ERROR(decl.getLocation(), "extern \"C++\" functions must have a plain identifier name");
+    }
+    std::string mangled;
+    llvm::raw_string_ostream out(mangled);
+    out << "_Z" << name.size() << name;
+    for (const ParamDecl& param : decl.getParams())
+        mangleCppType(out, param.type, triple, true, false);
+    if (decl.getParams().empty() && !decl.isVariadic()) out << 'v';
+    if (decl.isVariadic()) out << 'z';
+    out.flush();
+    if (decl.getReturnType()) {
+        // The return type is not part of the symbol, but it must still have a C++ counterpart.
+        std::string discarded;
+        llvm::raw_string_ostream discard(discarded);
+        mangleCppType(discard, decl.getReturnType(), triple, true, true);
+    }
+    // The \01 marker bypasses LLVM's target symbol prefix, so add the Mach-O/MinGW '_' explicitly.
+    if (triple.isOSBinFormatMachO() || triple.isOSCygMing()) mangled = "_" + mangled;
+    decl.proto.asmLabel = std::move(mangled);
+}
+
 void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
     if (decl.checkState != Decl::CheckState::Unchecked) return;
     decl.checkState = Decl::CheckState::CheckingSignature;
@@ -669,6 +1057,10 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
         if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
             // Element accessors (e.g. List.front, Map.operator[]) return borrows into the container.
             typecheckType(decl.getReturnType(), decl.accessLevel, true, true);
+        }
+
+        if (decl.proto.cppLinkage) {
+            mangleCppFunction(decl);
         }
 
         if ((!decl.isExtern() || decl.body) && decl.isMain() && !decl.isMethodDecl() && decl.getModule() == mainModule && decl.genericArgs.empty()) {
@@ -1410,10 +1802,11 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
 }
 
 void Typechecker::typecheckImportDecl(ImportDecl& decl) {
-    if (decl.target.ends_with(".h")) {
+    if (decl.target.ends_with(".h") || isCxxHeader(decl.target)) {
         const int errorsBefore = errors;
         if (!importCHeader(*currentSourceFile, decl, *this) && errors == errorsBefore) {
-            REPORT_ERROR(decl.getLocation(), "couldn't import C header file '" << decl.target << "'");
+            auto language = isCxxHeader(decl.target) ? "C++" : "C";
+            REPORT_ERROR(decl.getLocation(), "couldn't import " << language << " header file '" << decl.target << "'");
         }
     } else {
         if (dependencies) {

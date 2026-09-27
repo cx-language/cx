@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
+
+#include "../support/utility.h"
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/Path.h>
@@ -142,6 +144,15 @@ std::string getFieldName(IRType* type, int index) {
 // name instead; the declaration comes from the included header.
 llvm::StringRef getCFunctionName(const Function* function) {
     if (!function->mangledName.empty() && function->mangledName[0] == '\01') {
+        // C++ headers and cx files aren't included, so call the mangled symbol directly. The
+        // mangled name carries the Mach-O/MinGW '_' that LLVM's \01 marker suppresses; C adds it back.
+        if (isCxxHeader(function->location.file) || llvm::StringRef(function->location.file).ends_with(".cx")) {
+            auto label = llvm::StringRef(function->mangledName).drop_front(1);
+#if defined(__APPLE__) || defined(__CYGWIN__) || defined(__MINGW32__)
+            if (label.starts_with("_")) label = label.drop_front(1);
+#endif
+            return label;
+        }
         return function->name;
     }
     return function->mangledName;
@@ -467,7 +478,17 @@ void CGenerator::codegenCall(const CallInst* inst) {
         stream << "(&" << returnName << ")";
         if (!inst->args.empty()) stream << ", ";
     }
+    auto paramTypes = inst->function->getType()->getPointee()->getParamTypes();
     for (size_t i = 0; i < inst->args.size(); ++i) {
+        // cx has no const methods, so a method call on a const receiver passes a const pointer to a
+        // mutable parameter; cast the const away (the LLVM backend ignores pointee constness too).
+        auto* argType = llvm::dyn_cast<IRPointerType>(inst->args[i]->getType());
+        auto* paramType = i < paramTypes.size() ? llvm::dyn_cast<IRPointerType>(paramTypes[i]) : nullptr;
+        if (argType && !argType->mutablePointee && paramType && paramType->mutablePointee && argType->getPointee()->equals(paramType->getPointee())) {
+            stream << "(";
+            codegenTypeExpression(stream, paramTypes[i], true);
+            stream << ") ";
+        }
         codegenArgument(inst->args[i]);
         if (i + 1 < inst->args.size()) stream << ", ";
     }

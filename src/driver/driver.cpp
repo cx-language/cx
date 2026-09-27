@@ -186,6 +186,7 @@ static void appendSystemImportSearchPaths(std::vector<std::string>& paths) {
     paths.push_back("/usr/local/include");
     addHeaderSearchPathsFromEnvVar("CPATH", paths);
     addHeaderSearchPathsFromEnvVar("C_INCLUDE_PATH", paths);
+    addHeaderSearchPathsFromEnvVar("CPLUS_INCLUDE_PATH", paths);
     addHeaderSearchPathsFromEnvVar("INCLUDE", paths);
     // Compiler-reported header paths are queried lazily on first C import
     // (see getCCompilerSearchPaths): most builds never import C headers.

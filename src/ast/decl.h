@@ -190,8 +190,9 @@ struct GenericParamDecl : Decl {
 };
 
 struct FunctionProto {
-    FunctionProto(llvm::StringRef name = {}, std::vector<ParamDecl> params = {}, Type returnType = {}, bool varArg = false, bool external = false)
-    : name(internString(name)), params(std::move(params)), returnType(returnType), varArg(varArg), external(external) {}
+    FunctionProto(llvm::StringRef name = {}, std::vector<ParamDecl> params = {}, Type returnType = {}, bool varArg = false, bool external = false,
+                  bool cppLinkage = false)
+    : name(internString(name)), params(std::move(params)), returnType(returnType), varArg(varArg), external(external), cppLinkage(cppLinkage) {}
     FunctionProto instantiate(const llvm::StringMap<GenericArg>& genericArgs) const;
 
     llvm::StringRef name;
@@ -199,6 +200,8 @@ struct FunctionProto {
     Type returnType;
     bool varArg;
     bool external;
+    // Set for `extern "C++"` declarations, which use Itanium name mangling.
+    bool cppLinkage;
     std::string asmLabel;
 };
 

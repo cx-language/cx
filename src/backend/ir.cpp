@@ -85,7 +85,8 @@ IRType* cx::getIRType(Type astType) {
                 unionType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name.str()}; });
                 return unionType;
             } else {
-                bool isImportedFromC = decl->module.isCHeaderImport;
+                // C++ headers aren't included in generated code, so their structs are emitted like cx structs.
+                bool isImportedFromC = decl->module.isCHeaderImport && !decl->module.isCxxHeaderImport;
                 auto structType = new IRStructType{IRTypeKind::IRStructType,
                                                    {},
                                                    astType.getQualifiedTypeName(),

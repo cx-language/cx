@@ -1,0 +1,3 @@
+var name = "cxx-interop"
+var libraries = ["cxx-interop-vec"]
+var librarySearchPaths = ["."]

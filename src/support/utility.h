@@ -166,6 +166,7 @@ void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<No
     }
 
 std::optional<std::string> findExternalCCompiler();
+std::optional<std::string> findExternalCxxCompiler();
 
 /// Runs a shell command, capturing stdout into `output`. Returns the exit status.
 int exec(const char* command, std::string& output);
@@ -174,6 +175,14 @@ int exec(const char* command, std::string& output);
 /// queried once on first use. Most builds never import C headers, so eager
 /// querying would waste ~25ms per invocation.
 const std::vector<std::string>& getCCompilerSearchPaths();
+
+/// Header search paths reported by the external C++ compiler
+/// (`c++ -E -x c++ -v`), queried once on first use. Only C++ header imports
+/// pay for this query.
+const std::vector<std::string>& getCxxCompilerSearchPaths();
+
+/// True for C++ header names, recognized by extension (.hpp, .hh, .hxx, .h++, .H).
+bool isCxxHeader(llvm::StringRef headerName);
 
 /// Locates the directory containing the `std/` standard-library directory.
 /// `CX_ROOT` wins, then directories relative to the running executable are

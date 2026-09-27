@@ -71,8 +71,12 @@ for filename in sorted(os.listdir(docs_dir)):
         continue
 
     with open(os.path.join(docs_dir, filename)) as file:
-        blocks = re.findall(r"^```cs( \{\.noRun\})?\n(.*?)^```", file.read(), re.M | re.S)
+        blocks = re.findall(r"^```cs( \{\.(?:noRun|noCompile)\})?\n(.*?)^```", file.read(), re.M | re.S)
         for index, (marker, code) in enumerate(blocks):
+            if marker == " {.noCompile}":
+                # Snippets that cannot stand alone (e.g. importing a header from
+                # an example project) are still highlighted as cs; just not built.
+                continue
             snippets.append((filename, index, code, bool(marker)))
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:

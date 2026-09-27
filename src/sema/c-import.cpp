@@ -11,7 +11,9 @@
 #include <vector>
 #pragma warning(push, 0)
 #include <clang/AST/Decl.h>
+#include <clang/AST/DeclCXX.h>
 #include <clang/AST/DeclGroup.h>
+#include <clang/AST/Mangle.h>
 #include <clang/AST/PrettyPrinter.h>
 #include <clang/AST/Type.h>
 #include <clang/Basic/Builtins.h>
@@ -19,6 +21,7 @@
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <clang/Lex/HeaderSearch.h>
+#include <clang/Lex/LiteralSupport.h>
 #include <clang/Lex/Preprocessor.h>
 #include <clang/Lex/PreprocessorOptions.h>
 #include <clang/Parse/ParseAST.h>
@@ -45,8 +48,9 @@ using namespace llvm::sys;
 namespace {
 
 struct CToCxConverter final : clang::ASTConsumer {
-    CToCxConverter(Module& module, Typechecker& typechecker, clang::TargetInfo* targetInfo, clang::SourceManager& sourceManager)
-    : module(module), typechecker(typechecker), targetInfo(targetInfo), sourceManager(sourceManager) {}
+    CToCxConverter(Module& module, Typechecker& typechecker, clang::TargetInfo* targetInfo, clang::SourceManager& sourceManager, bool cxxMode,
+                   clang::MangleContext* mangleContext)
+    : module(module), typechecker(typechecker), targetInfo(targetInfo), sourceManager(sourceManager), cxxMode(cxxMode), mangleContext(mangleContext) {}
 
     void Initialize(clang::ASTContext& context) override { astContext = &context; }
 
@@ -148,6 +152,35 @@ struct CToCxConverter final : clang::ASTConsumer {
             if (mutability == Mutability::Const) desugared.addConst();
             return toCx(desugared);
         }
+        case clang::Type::TemplateSpecialization: {
+            // std::vector<T> (with the default allocator) maps to the ABI-compatible CxxVector<T>.
+            // The check reads the instantiated declaration rather than the sugar, so written
+            // sugar omissions (the defaulted allocator), typedefs, and alias templates all work.
+            // Inline namespaces (e.g. libc++'s std::__1) are transparent to the redecl context.
+            bool isStdVector = false;
+            clang::QualType elementType;
+            if (auto* specDecl = llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(type.getAsCXXRecordDecl())) {
+                auto* templateDecl = specDecl->getSpecializedTemplate();
+                auto fullArgs = specDecl->getTemplateArgs().asArray();
+                if (templateDecl && templateDecl->getName() == "vector" && templateDecl->getDeclContext()->getRedeclContext()->isStdNamespace()
+                    && fullArgs.size() == 2 && fullArgs[0].getKind() == clang::TemplateArgument::Type && fullArgs[1].getKind() == clang::TemplateArgument::Type
+                    && isStdAllocatorOf(fullArgs[1].getAsType(), fullArgs[0].getAsType())) {
+                    isStdVector = true;
+                    elementType = fullArgs[0].getAsType();
+                }
+            }
+            if (isStdVector && !elementType.getCanonicalType()->isBooleanType()) {
+                std::vector<GenericArg> cxArgs;
+                cxArgs.emplace_back(toCx(elementType));
+                return BasicType::get("CxxVector", cxArgs, mutability);
+            }
+            if (cxxMode) {
+                conversionFailed = true;
+                return Type::getInt32();
+            }
+            WARN(Location(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualType.getAsString() << "')");
+            return Type::getInt32();
+        }
         case clang::Type::Record: {
             auto& recordType = llvm::cast<clang::RecordType>(type);
             auto* recordDecl = recordType.getDecl();
@@ -199,7 +232,20 @@ struct CToCxConverter final : clang::ASTConsumer {
             args.push_back(GenericArg::fromInt(vectorType.getNumElements(), Location()));
             return BasicType::get("Array", args, mutability);
         }
+        case clang::Type::LValueReference:
+        case clang::Type::RValueReference: {
+            auto pointeeType = llvm::cast<clang::ReferenceType>(type).getPointeeType();
+            return PointerType::get(toCx(pointeeType), PointerKind::Reference, mutability);
+        }
+        case clang::Type::SubstTemplateTypeParm:
+            return toCx(llvm::cast<clang::SubstTemplateTypeParmType>(type).desugar());
         default:
+            if (cxxMode) {
+                // A wrongly-typed field or parameter would corrupt the ABI, so C++ declarations
+                // using unhandled types are skipped (counted in the end-of-import summary).
+                conversionFailed = true;
+                return Type::getInt32();
+            }
             WARN(Location(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualType.getAsString() << "')");
             return Type::getInt32();
         }
@@ -256,6 +302,9 @@ struct CToCxConverter final : clang::ASTConsumer {
             }
             return true;
         }
+        // Bit widths, field alignment, and [[no_unique_address]] change the layout in ways cx
+        // fields cannot express, so records using them have no cx counterpart.
+        if (cxxMode && (field.isBitField() || field.hasAttr<clang::AlignedAttr>() || field.hasAttr<clang::NoUniqueAddressAttr>())) return false;
         auto fieldDecl = toCx(field, typeDecl);
         if (!fieldDecl) return false;
         if (auto* fieldRecord = field.getType()->getAsRecordDecl()) {
@@ -297,6 +346,18 @@ struct CToCxConverter final : clang::ASTConsumer {
         // most once per struct; structs without a definition (opaque types
         // used only through pointers) stay empty as before.
         if (const clang::RecordDecl* def = canonical->getDefinition()) {
+            if (cxxMode) {
+                if (auto* cxxDef = llvm::dyn_cast<clang::CXXRecordDecl>(def)) {
+                    // Only standard-layout structs with a trivial destructor map to cx structs:
+                    // bases would be missed by the field walk. User constructors are fine (cx
+                    // initializes fields directly); by-value passing is gated separately on
+                    // trivial copyability, since C++ passes non-trivial values indirectly.
+                    if (cxxDef->getNumBases() > 0 || !cxxDef->isStandardLayout() || !cxxDef->hasTrivialDestructor()) {
+                        conversionFailed = true;
+                        return nullptr;
+                    }
+                }
+            }
             if (completedRecordDecls.insert(canonical).second) {
                 TypeDecl* typeDecl = it->second;
                 typeDecl->packed = def->hasAttr<clang::PackedAttr>();
@@ -425,29 +486,203 @@ struct CToCxConverter final : clang::ASTConsumer {
         return true;
     }
 
+    // True when the record is verifiably trivially copyable using only syntactic queries
+    // (no instantiation, which is lazily unavailable during importing): a complete
+    // definition, no virtuals, no virtual bases, no user-declared copy/move constructor
+    // or destructor, and all value-position members and bases recursively trivial.
+    // Anything unverifiable returns false (fail closed). Value-position type cycles are
+    // ill-formed, so the recursion terminates without a visited set.
+    static bool isVerifiablyTrivialRecord(const clang::CXXRecordDecl* record) {
+        auto* def = record->getDefinition();
+        if (!def) return false;
+        record = def;
+        if (record->isPolymorphic() || record->getNumVBases() != 0 || record->hasUserDeclaredCopyConstructor() || record->hasUserDeclaredMoveConstructor()
+            || record->hasUserDeclaredDestructor()) {
+            return false;
+        }
+        for (const auto& base : record->bases()) {
+            auto* baseRecord = base.getType()->getAsCXXRecordDecl();
+            if (!baseRecord || !isVerifiablyTrivialRecord(baseRecord)) return false;
+        }
+        for (const auto* field : record->fields()) {
+            clang::QualType fieldType = field->getType().getCanonicalType();
+            while (fieldType->isArrayType())
+                fieldType = llvm::cast<clang::ArrayType>(fieldType.getTypePtr())->getElementType();
+            if (fieldType->isPointerType() || fieldType->isReferenceType()) continue;
+            if (auto* fieldRecord = fieldType->getAsCXXRecordDecl()) {
+                if (!isVerifiablyTrivialRecord(fieldRecord)) return false;
+            }
+        }
+        return true;
+    }
+
+    static bool isRecordPassedByValue(clang::QualType type) {
+        type = type.getCanonicalType();
+        if (type->isReferenceType() || type->isPointerType() || type->isArrayType() || type->isFunctionType()) return false;
+        return type->getAsCXXRecordDecl() != nullptr;
+    }
+
+    // True when a record holds a float anywhere. The LLVM backend expands float-containing
+    // aggregates element-wise, but the C++ ABI packs small ones into shared registers.
+    // Value-position type cycles are ill-formed, so the recursion terminates without a visited set.
+    static bool recordContainsFloat(const clang::RecordDecl* def) {
+        for (const auto* field : def->fields()) {
+            clang::QualType fieldType = field->getType().getCanonicalType();
+            while (fieldType->isArrayType())
+                fieldType = llvm::cast<clang::ArrayType>(fieldType.getTypePtr())->getElementType();
+            if (fieldType->hasFloatingRepresentation()) return true;
+            if (auto* fieldRecord = fieldType->getAsRecordDecl()) {
+                if (auto* fieldDef = fieldRecord->getDefinition()) {
+                    if (recordContainsFloat(fieldDef)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // True when a trivially copyable record crosses by value exactly: non-empty, at most 16
+    // bytes, at most 8-aligned, and holding no floats. Larger or over-aligned aggregates cross
+    // indirectly in cx but in memory or registers in C++.
+    bool recordCrossesByValue(clang::QualType type, const clang::CXXRecordDecl* record) {
+        auto* def = record->getDefinition();
+        if (!def || def->field_empty()) return false;
+        auto info = astContext->getTypeInfoInChars(type);
+        if (info.Width.alignTo(info.Align).getQuantity() > 16 || info.Align.getQuantity() > 8) return false;
+        return !recordContainsFloat(def);
+    }
+
+    bool recordParamIsUnsupported(clang::QualType type) {
+        type = type.getCanonicalType();
+        if (type->isReferenceType() || type->isPointerType() || type->isArrayType() || type->isFunctionType()) return false;
+        auto* record = type->getAsCXXRecordDecl();
+        return record && (!isVerifiablyTrivialRecord(record) || !recordCrossesByValue(type, record));
+    }
+
+    // True when a function signature crosses a record by value in a way the backends cannot
+    // reproduce, so the declaration must be skipped: a non-trivial, large, over-aligned, or
+    // float-containing record as a parameter, or any record as the return value (returns lack
+    // the parameter integer-chunk coercion). Function pointers recurse on both sides: a cx
+    // callback receives the same call, so its signature must cross too, and a returned function
+    // pointer is only callable through cx with a crossing signature. Passing the record behind
+    // a pointer or reference (or returning through an out-parameter) works.
+    bool passesUnsupportedRecordByValue(clang::QualType type) {
+        type = type.getCanonicalType();
+        if (type->isReferenceType() || type->isPointerType()) {
+            // Only function signatures matter through indirection; other pointees cross opaquely.
+            clang::QualType pointee = type->getPointeeType().getCanonicalType();
+            return pointee->isFunctionProtoType() && passesUnsupportedRecordByValue(pointee);
+        }
+        if (auto* proto = type->getAs<clang::FunctionProtoType>()) {
+            clang::QualType returnType = proto->getReturnType();
+            if (isRecordPassedByValue(returnType) || passesUnsupportedRecordByValue(returnType)) return true;
+            for (clang::QualType paramType : proto->getParamTypes()) {
+                if (recordParamIsUnsupported(paramType) || passesUnsupportedRecordByValue(paramType)) return true;
+            }
+        }
+        return false;
+    }
+
+    // True when the type is std::allocator<Element> (the default vector allocator).
+    static bool isStdAllocatorOf(clang::QualType type, clang::QualType elementType) {
+        auto* specDecl = llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(type->getAsCXXRecordDecl());
+        if (!specDecl) return false;
+        auto* templateDecl = specDecl->getSpecializedTemplate();
+        auto args = specDecl->getTemplateArgs().asArray();
+        return templateDecl && templateDecl->getName() == "allocator" && templateDecl->getDeclContext()->getRedeclContext()->isStdNamespace()
+            && args.size() == 1 && args[0].getKind() == clang::TemplateArgument::Type
+            && args[0].getAsType().getCanonicalType() == elementType.getCanonicalType();
+    }
+
+    // True for declarations directly in the global scope. Linkage specifications
+    // (e.g. `extern "C"` blocks) don't count as scopes for this purpose.
+    static bool isGlobalScope(const clang::Decl& decl) {
+        auto* context = decl.getDeclContext();
+        while (llvm::isa<clang::LinkageSpecDecl>(context))
+            context = context->getParent();
+        return context->isTranslationUnit();
+    }
+
+    // True when an identical function (same signature) was already imported,
+    // so re-inclusion doesn't produce duplicate declarations. Differing
+    // signatures are overloads, which are all imported.
+    bool isAlreadyImported(const FunctionDecl& functionDecl) {
+        for (auto* existing : module.symbolTable.findInTopLevelScope(functionDecl.getName())) {
+            auto* existingFunction = llvm::dyn_cast<FunctionDecl>(existing);
+            if (!existingFunction || existingFunction->isVariadic() != functionDecl.isVariadic()
+                || existingFunction->getParams().size() != functionDecl.getParams().size()) {
+                continue;
+            }
+            bool sameParams = true;
+            for (size_t i = 0; i < existingFunction->getParams().size(); ++i) {
+                if (existingFunction->getParams()[i].type != functionDecl.getParams()[i].type) {
+                    sameParams = false;
+                    break;
+                }
+            }
+            if (sameParams && existingFunction->getReturnType() == functionDecl.getReturnType()) return true;
+        }
+        return false;
+    }
+
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) override {
-        for (clang::Decl* decl : declGroup) {
+        std::vector<clang::Decl*> pending(declGroup.begin(), declGroup.end());
+        for (size_t i = 0; i < pending.size(); ++i) {
+            clang::Decl* decl = pending[i];
+            // Linkage specifications (e.g. `extern "C"` blocks) wrap their declarations; unwrap
+            // them so the contents import like the surrounding declarations.
+            if (auto* linkage = llvm::dyn_cast<clang::LinkageSpecDecl>(decl)) {
+                pending.insert(pending.end(), linkage->decls_begin(), linkage->decls_end());
+                continue;
+            }
+            conversionFailed = false;
+            // Only declarations written in the imported header itself are imported; headers it includes
+            // contribute nothing nameable from cx. (Everything is entered as C_System, so system-ness can't
+            // tell them apart; the main file ID can.) Referenced types still convert on demand.
+            if (cxxMode && sourceManager.getFileID(sourceManager.getExpansionLoc(decl->getLocation())) != sourceManager.getMainFileID()) continue;
             try {
                 switch (decl->getKind()) {
                 case clang::Decl::Function: {
                     auto& clangDecl = llvm::cast<clang::FunctionDecl>(*decl);
+                    if (cxxMode && (!clangDecl.getDeclName().isIdentifier() || !isGlobalScope(clangDecl))) {
+                        countSkippedCxxDecl(clangDecl);
+                        break;
+                    }
+                    if (cxxMode && passesUnsupportedRecordByValue(clangDecl.getType())) {
+                        countSkippedCxxDecl(clangDecl);
+                        break;
+                    }
                     if (skipIfUsesFloat16(clangDecl.getType(), clangDecl.getNameAsString(), toCx(clangDecl.getLocation()))) break;
                     auto functionDecl = toCx(clangDecl);
-                    if (module.symbolTable.findInTopLevelScope(functionDecl->getName()).empty()) {
+                    if (conversionFailed) {
+                        countSkippedCxxDecl(clangDecl);
+                        break;
+                    }
+                    if (cxxMode ? !isAlreadyImported(*functionDecl) : module.symbolTable.findInTopLevelScope(functionDecl->getName()).empty()) {
                         module.addToSymbolTable(functionDecl);
                         module.sourceFiles.front().topLevelDecls.push_back(functionDecl);
                     }
                     break;
                 }
-                case clang::Decl::Record: {
+                case clang::Decl::Record:
+                case clang::Decl::CXXRecord: {
                     auto& recordDecl = llvm::cast<clang::RecordDecl>(*decl);
                     // Convert definitions even when a forward declaration came
                     // first; toCx unifies them via the canonical declaration.
                     if (!decl->isFirstDecl() && !recordDecl.isCompleteDefinition()) break;
+                    if (cxxMode && !isGlobalScope(recordDecl)) {
+                        countSkippedCxxDecl(recordDecl);
+                        break;
+                    }
                     if (skipIfUsesFloat16(recordDecl)) break;
-                    toCx(recordDecl);
+                    auto* converted = toCx(recordDecl);
+                    if (cxxMode && !converted) countSkippedCxxDecl(recordDecl);
                     break;
                 }
+                case clang::Decl::Namespace:
+                case clang::Decl::ClassTemplate:
+                case clang::Decl::FunctionTemplate:
+                    if (cxxMode) countSkippedCxxDecl(*decl);
+                    break;
                 case clang::Decl::Enum: {
                     auto& enumDecl = llvm::cast<clang::EnumDecl>(*decl);
                     bool isAnonymous = getName(enumDecl).empty();
@@ -472,6 +707,11 @@ struct CToCxConverter final : clang::ASTConsumer {
                 case clang::Decl::Var: {
                     auto& varDecl = llvm::cast<clang::VarDecl>(*decl);
                     if (varDecl.getLinkageInternal() != clang::Linkage::External) break;
+                    if (cxxMode) {
+                        // C++ globals have mangled names with no import support yet.
+                        countSkippedCxxDecl(varDecl);
+                        break;
+                    }
                     if (skipIfUsesFloat16(varDecl.getType(), varDecl.getNameAsString(), toCx(varDecl.getLocation()))) break;
                     auto* cxVarDecl = toCx(varDecl);
                     module.addToSymbolTable(*cxVarDecl);
@@ -482,6 +722,10 @@ struct CToCxConverter final : clang::ASTConsumer {
                     auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);
                     if (skipIfUsesFloat16(typedefDecl.getUnderlyingType(), typedefDecl.getNameAsString(), toCx(typedefDecl.getLocation()))) break;
                     auto underlyingType = toCx(typedefDecl.getUnderlyingType());
+                    if (conversionFailed) {
+                        countSkippedCxxDecl(typedefDecl);
+                        break;
+                    }
                     if (underlyingType.isBasicType()) {
                         // HACK: This defines a type alias in a hacky way
                         llvm::cast<BasicType>(BasicType::get(typedefDecl.getName(), {}).typeBase)->name = underlyingType.getName();
@@ -514,6 +758,13 @@ struct CToCxConverter final : clang::ASTConsumer {
         FunctionProto proto(decl.getName(), std::move(params), toCx(decl.getReturnType()), decl.isVariadic(), true);
         if (auto asmLabelAttr = decl.getAttr<clang::AsmLabelAttr>()) {
             proto.asmLabel = asmLabelAttr->getLabel().str();
+        } else if (cxxMode && decl.getLanguageLinkage() == clang::CXXLanguageLinkage && mangleContext->shouldMangleDeclName(&decl)) {
+            std::string mangled;
+            llvm::raw_string_ostream stream(mangled);
+            mangleContext->mangleName(&decl, stream);
+            // The \01 marker bypasses LLVM's target symbol prefix, so add the Mach-O/MinGW '_' explicitly.
+            if (targetInfo->getTriple().isOSBinFormatMachO() || targetInfo->getTriple().isOSCygMing()) mangled = "_" + mangled;
+            proto.asmLabel = std::move(mangled);
         }
         return makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), AccessLevel::Default, module, toCx(decl.getLocation()));
     }
@@ -532,6 +783,21 @@ private:
     std::unordered_map<const clang::RecordDecl*, TypeDecl*> importedRecordDecls;
     std::unordered_set<const clang::RecordDecl*> completedRecordDecls;
     unsigned anonymousRecordCount = 0;
+    const bool cxxMode;
+    clang::MangleContext* mangleContext;
+    // Set when a C++ declaration uses a type with no cx counterpart; the declaration is skipped.
+    bool conversionFailed = false;
+    // Skipped C++ declarations written in the imported header itself, reported once per import.
+    unsigned skippedCxxDecls = 0;
+
+    // Counts a skipped C++ declaration, but only ones written in the imported header
+    // itself are reported; skipping standard-library internals is expected, not newsworthy.
+    void countSkippedCxxDecl(const clang::Decl& decl) {
+        if (sourceManager.getFileID(sourceManager.getExpansionLoc(decl.getLocation())) == sourceManager.getMainFileID()) skippedCxxDecls++;
+    }
+
+public:
+    unsigned getSkippedCxxDecls() const { return skippedCxxDecls; }
 };
 
 struct MacroImporter final : clang::PPCallbacks {
@@ -556,15 +822,88 @@ struct MacroImporter final : clang::PPCallbacks {
 
 private:
     void importMacroConstant(llvm::StringRef name, const clang::Token& token) {
-        auto result = compilerInstance.getSema().ActOnNumericConstant(token);
-        if (!result.isUsable()) return;
-        clang::Expr* parsed = result.get();
+        // Parsed with NumericLiteralParser instead of Sema::ActOnNumericConstant: the latter
+        // crashes in Sema::Diag when the literal needs a diagnostic (e.g. out of range).
+        auto spelling = clang::Lexer::getSpelling(token, compilerInstance.getSourceManager(), compilerInstance.getLangOpts());
+        clang::NumericLiteralParser parser(spelling, token.getLocation(), compilerInstance.getSourceManager(), compilerInstance.getLangOpts(),
+                                           compilerInstance.getTarget(), compilerInstance.getDiagnostics());
+        if (parser.hadError || parser.hasUDSuffix()) return;
 
-        if (auto* intLiteral = llvm::dyn_cast<clang::IntegerLiteral>(parsed)) {
-            llvm::APSInt value(intLiteral->getValue(), parsed->getType()->isUnsignedIntegerType());
-            cToCxConverter.addIntegerConstantToSymbolTable(name, std::move(value), parsed->getType());
-        } else if (auto* floatLiteral = llvm::dyn_cast<clang::FloatingLiteral>(parsed)) {
-            cToCxConverter.addFloatConstantToSymbolTable(name, floatLiteral->getValue());
+        if (parser.isIntegerLiteral()) {
+            if (parser.isBitInt || parser.isSizeT) return;
+            llvm::APInt rawValue(128, 0);
+            if (parser.GetIntegerValue(rawValue)) return;
+            auto& context = compilerInstance.getASTContext();
+            auto fitsSigned = [&](unsigned width) { return rawValue.isSignedIntN(width); };
+            auto fitsUnsigned = [&](unsigned width) { return rawValue.isIntN(width); };
+            unsigned intWidth = context.getTypeSize(context.IntTy), longWidth = context.getTypeSize(context.LongTy),
+                     longLongWidth = context.getTypeSize(context.LongLongTy);
+            bool hexOrOctal = parser.getRadix() != 10;
+            clang::QualType type;
+            if (!parser.isUnsigned && !parser.isLong && !parser.isLongLong) {
+                if (fitsSigned(intWidth))
+                    type = context.IntTy;
+                else if (hexOrOctal && fitsUnsigned(intWidth))
+                    type = context.UnsignedIntTy;
+                else if (fitsSigned(longWidth))
+                    type = context.LongTy;
+                else if (hexOrOctal && fitsUnsigned(longWidth))
+                    type = context.UnsignedLongTy;
+                else if (fitsSigned(longLongWidth))
+                    type = context.LongLongTy;
+                else if (fitsUnsigned(longLongWidth))
+                    type = context.UnsignedLongLongTy;
+            } else if (parser.isUnsigned && !parser.isLong && !parser.isLongLong) {
+                if (fitsUnsigned(intWidth))
+                    type = context.UnsignedIntTy;
+                else if (fitsUnsigned(longWidth))
+                    type = context.UnsignedLongTy;
+                else if (fitsUnsigned(longLongWidth))
+                    type = context.UnsignedLongLongTy;
+            } else if (!parser.isUnsigned && parser.isLong) {
+                if (fitsSigned(longWidth))
+                    type = context.LongTy;
+                else if (hexOrOctal && fitsUnsigned(longWidth))
+                    type = context.UnsignedLongTy;
+                else if (fitsSigned(longLongWidth))
+                    type = context.LongLongTy;
+                else if (hexOrOctal && fitsUnsigned(longLongWidth))
+                    type = context.UnsignedLongLongTy;
+            } else if (parser.isUnsigned && parser.isLong) {
+                if (fitsUnsigned(longWidth))
+                    type = context.UnsignedLongTy;
+                else if (fitsUnsigned(longLongWidth))
+                    type = context.UnsignedLongLongTy;
+            } else if (!parser.isUnsigned && parser.isLongLong) {
+                if (fitsSigned(longLongWidth))
+                    type = context.LongLongTy;
+                else if (hexOrOctal && fitsUnsigned(longLongWidth))
+                    type = context.UnsignedLongLongTy;
+            } else if (fitsUnsigned(longLongWidth)) {
+                type = context.UnsignedLongLongTy;
+            }
+            if (type.isNull()) {
+                if (fitsSigned(128))
+                    type = context.Int128Ty;
+                else if (fitsUnsigned(128))
+                    type = context.UnsignedInt128Ty;
+                else
+                    return;
+            }
+            cToCxConverter.addIntegerConstantToSymbolTable(name, llvm::APSInt(rawValue, type->isUnsignedIntegerType()), type);
+        } else if (parser.isFloatingLiteral()) {
+            auto& context = compilerInstance.getASTContext();
+            const llvm::fltSemantics* semantics = &context.getFloatTypeSemantics(context.DoubleTy);
+            // Suffix-less floats always end in a digit, so a trailing letter is a suffix.
+            char last = spelling.back();
+            if (last == 'f' || last == 'F')
+                semantics = &context.getFloatTypeSemantics(context.FloatTy);
+            else if (last == 'l' || last == 'L')
+                semantics = &context.getFloatTypeSemantics(context.LongDoubleTy);
+            llvm::APFloat value(*semantics);
+            auto status = parser.GetFloatValue(value, llvm::RoundingMode::NearestTiesToEven);
+            if (status != llvm::APFloat::opOK && status != llvm::APFloat::opInexact) return;
+            cToCxConverter.addFloatConstantToSymbolTable(name, value);
         }
     }
 
@@ -603,11 +942,19 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     auto* diagClient = new ErrorIgnoringTextDiagPrinter(llvm::errs(), diagOpts);
     ci.createDiagnostics(diagClient);
 
+    bool cxxMode = isCxxHeader(headerName);
     auto args = map(typechecker.options.cflags, [](auto& cflag) { return cflag.c_str(); });
     args.push_back("-fgnuc-version=4.2.1"); // Enable compatibility with GCC macros in imported headers.
 #ifdef _WIN32
     args.push_back("-fms-extensions"); // Needed to parse MSVC system headers.
 #endif
+    if (cxxMode) {
+        args.push_back("-x");
+        args.push_back("c++");
+        if (!llvm::any_of(typechecker.options.cflags, [](auto& cflag) { return cflag.starts_with("-std="); })) {
+            args.push_back("-std=c++17");
+        }
+    }
     clang::CompilerInvocation::CreateFromArgs(ci.getInvocation(), args, ci.getDiagnostics());
 
     clang::TargetOptions pto;
@@ -623,10 +970,15 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     fs::real_path(importer.filePath, importerDirectory);
     ci.getHeaderSearchOpts().AddPath(path::parent_path(importerDirectory), clang::frontend::Quoted, false, true);
 
-    for (llvm::StringRef includePath : llvm::concat<const std::string>(typechecker.options.importSearchPaths, getCCompilerSearchPaths())) {
+    auto addSystemPath = [&](llvm::StringRef includePath) {
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, true);
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
-    }
+    };
+    for (llvm::StringRef includePath : llvm::concat<const std::string>(typechecker.options.importSearchPaths, getCCompilerSearchPaths()))
+        addSystemPath(includePath);
+    if (cxxMode)
+        for (llvm::StringRef includePath : getCxxCompilerSearchPaths())
+            addSystemPath(includePath);
     for (llvm::StringRef frameworkPath : typechecker.options.frameworkSearchPaths) {
         ci.getHeaderSearchOpts().AddPath(frameworkPath, clang::frontend::System, true, true);
         ci.getHeaderSearchOpts().AddPath(frameworkPath, clang::frontend::System, true, false);
@@ -647,7 +999,9 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
             searchDirs += '\n';
             searchDirs += searchDir.getName();
         }
-        REPORT_ERROR(importDecl.location, "couldn't find C header file '" << importDecl.target << "' in the following locations:" << searchDirs);
+        auto language = cxxMode ? "C++" : "C";
+        REPORT_ERROR(importDecl.location,
+                     "couldn't find " << language << " header file '" << importDecl.target << "' in the following locations:" << searchDirs);
         return false;
     }
 
@@ -659,11 +1013,14 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     llvm::replace(headerModuleName, '.', '_');
     auto module = new Module(std::move(headerModuleName));
     module->isCHeaderImport = true;
+    module->isCxxHeaderImport = cxxMode;
     module->addSourceFile(SourceFile(headerPath.str(), module));
 
-    auto cToCxConverter = new CToCxConverter(*module, typechecker, targetInfo, ci.getSourceManager());
-    ci.setASTConsumer(std::unique_ptr<CToCxConverter>(cToCxConverter));
     ci.createASTContext();
+    std::unique_ptr<clang::MangleContext> mangleContext;
+    if (cxxMode) mangleContext.reset(ci.getASTContext().createMangleContext());
+    auto cToCxConverter = new CToCxConverter(*module, typechecker, targetInfo, ci.getSourceManager(), cxxMode, mangleContext.get());
+    ci.setASTConsumer(std::unique_ptr<CToCxConverter>(cToCxConverter));
     ci.createSema(clang::TU_Complete, nullptr);
     pp.addPPCallbacks(std::make_unique<MacroImporter>(*module, *cToCxConverter, ci));
 
@@ -676,6 +1033,11 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
 
     if (ci.getDiagnosticClient().getNumErrors() > 0) {
         return false;
+    }
+
+    if (auto skipped = cToCxConverter->getSkippedCxxDecls()) {
+        WARN(importDecl.location,
+             "skipped " << skipped << " C++ declarations in '" << headerName << "' (namespaces, templates, globals, and non-POD types are not supported)");
     }
 
     importer.addImportedModule(module);

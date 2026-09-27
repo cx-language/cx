@@ -1197,6 +1197,15 @@ Expr* Typechecker::convertWithUserConversion(Expr* expr, Type target, bool diagn
 }
 
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange, bool allowOperatorBorrow, bool allowUserConversion) {
+    // Borrow a converted temporary (e.g. a List as const CxxVector&): convert to the
+    // pointee, then borrow the result. Only for const borrows; borrowing a temporary
+    // mutably would let the mutation vanish with it.
+    if (type.isReferenceType() && !type.getPointee().isMutable() && !expr->type.equalsIgnoreTopLevelMutable(type.getPointee())) {
+        if (Expr* converted =
+                convert(expr, type.getPointee(), /*allowPointerToTemporary=*/true, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion)) {
+            return makeAST<ImplicitCastExpr>(converted, type, ImplicitCastExpr::AutoReference);
+        }
+    }
     // Array borrows decay to views without copying: dereferencing first
     // would take the address of a temporary, breaking mutation through data()
     // and dangling slices built from the copy. Only constant-array borrows
@@ -1554,6 +1563,18 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         && source.getWrappedType().getPointee().equalsIgnoreTopLevelMutable(target.getWrappedType().getPointee())) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::Reborrow;
         return target;
+    }
+
+    // Borrowing a converted temporary composes conversion with the borrow rule above
+    // (e.g. a List as const CxxVector&). Only for const borrows; borrowing a temporary
+    // mutably would let the mutation vanish with it.
+    if (target.isReferenceType() && !target.getPointee().isMutable() && !source.equalsIgnoreTopLevelMutable(target.getPointee())) {
+        std::optional<ImplicitCastExpr::Kind> pointeeCastKind;
+        if (isImplicitlyConvertible(expr, source, target.getPointee(), /*allowPointerToTemporary=*/true, &pointeeCastKind, diagnoseOutOfRange,
+                                    allowOperatorBorrow, allowUserConversion, usesUserConversion)) {
+            if (implicitCastKind) *implicitCastKind = pointeeCastKind;
+            return target;
+        }
     }
 
     // Borrows read through implicitly; raw pointers require explicit '*'. Copying out of a
@@ -3677,9 +3698,16 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
 
     switch (result.error) {
     case ArgumentValidation::None: {
+        // Variadic extras to C++ callees obey the by-value rules: the signature cannot name them.
+        bool isCppCallee = false;
+        if (auto* functionDecl = llvm::dyn_cast_or_null<FunctionDecl>(calleeDecl)) isCppCallee = functionDecl->proto.cppLinkage;
+        if (!isCppCallee && calleeDecl && calleeDecl->getModule()) isCppCallee = calleeDecl->getModule()->isCxxHeaderImport;
         for (size_t i = 0; i < expr.args.size(); ++i) {
             int paramIndex = argToParam[i];
-            if (paramIndex == -1) continue;
+            if (paramIndex == -1) {
+                if (isCppCallee) validateCppVariadicExtra(expr.args[i].value->type, expr.args[i].location, callee);
+                continue;
+            }
             // Committing can still fail when probing succeeded (e.g. a user conversion whose
             // operand no longer converts); report it as a mismatch rather than storing null.
             if (Expr* converted = convert(expr.args[i].value, params[size_t(paramIndex)].type, true, true, allowOperatorBorrow)) {

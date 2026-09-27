@@ -313,5 +313,7 @@ std::string narrowingHint(Type source, Type target);
 std::string copyableHint(Type type);
 // Whether a type satisfies a ': Copyable' generic constraint. Structural, not name-based.
 bool satisfiesCopyable(Type type);
+// Rejects a variadic extra that cannot cross to an `extern "C++"` callee by value.
+void validateCppVariadicExtra(Type type, Location location, llvm::StringRef callee);
 
 } // namespace cx

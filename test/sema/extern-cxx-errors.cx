@@ -1,0 +1,146 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct Point {
+    c_int x;
+    c_int y;
+}
+
+struct Own {
+    List<int> xs;
+}
+
+enum Color {
+    Red,
+    Green,
+}
+
+struct Wrap {
+    CxxVector<c_int> v;
+    c_int x;
+}
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: slices cannot be used in extern "C++" signatures; pass a pointer and length instead
+extern "C++" void sliceParam(int[] xs);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: arrays cannot be used in extern "C++" signatures; pass a pointer instead
+extern "C++" void arrayParam(int[4] xs);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: integer type 'int64' has no single C++ counterpart; use c_long, c_ulong, c_longlong, or c_ulonglong in extern "C++" signatures
+extern "C++" void wideIntParam(int64 x);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: 'float80' has no C++ counterpart; use c_double in extern "C++" signatures
+extern "C++" void wideFloatParam(float80 x);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'StringBuf' cannot be passed by value in extern "C++" signatures because it needs destruction; pass it behind a pointer or reference instead
+extern "C++" void owningParam(StringBuf sb);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Own' cannot be passed by value in extern "C++" signatures because it needs destruction; pass it behind a pointer or reference instead
+extern "C++" void transitiveOwningParam(Own o);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: enums cannot be used in extern "C++" signatures; pass the underlying integer instead
+extern "C++" void enumParam(Color c);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: generic type 'List<int>' cannot be used in extern "C++" signatures
+extern "C++" void genericParam(List<int> xs);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'CxxVector<c_int>' cannot be passed by value in extern "C++" signatures; use a reference or pointer instead
+extern "C++" c_int byValueVectorParam(CxxVector<c_int> v);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'CxxVector<c_int>' cannot be returned by value in extern "C++" signatures; use an out-parameter instead
+extern "C++" CxxVector<c_int> byValueVectorReturn();
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Wrap' cannot be passed by value in extern "C++" signatures because it holds a CxxVector, which C++ passes indirectly; pass it behind a pointer or reference instead
+extern "C++" void wrappedVectorParam(Wrap w);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'CxxVector<Point>' cannot be named in extern "C++" signatures; declare it through a C++ header import instead, where the exact mangling is known
+extern "C++" void compoundVectorParam(const CxxVector<Point>& v);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'CxxVector<bool>' cannot be used in extern "C++" signatures: std::vector<bool> is bit-packed and std::vector<void> is ill-formed
+extern "C++" void boolVectorParam(const CxxVector<bool>& v);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: functions cannot be returned in extern "C++" signatures; return a function pointer instead
+extern "C++" void(c_int) fnReturn();
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Point' cannot be returned by value in extern "C++" signatures; use an out-parameter instead
+extern "C++" Point structReturn();
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: extern "C++" functions must have a plain identifier name
+extern "C++" int operator+(int a, int b);
+
+struct Big {
+    c_int[8] vals;
+}
+
+struct FPair {
+    float32 x;
+    float32 y;
+}
+
+struct Empty {}
+
+struct OverAligned {
+    int128 x;
+}
+
+struct HasSlice {
+    int[] s;
+}
+
+struct FArr {
+    float32[4] vals;
+}
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Big' cannot be passed by value in extern "C++" signatures because it is 32 bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer or reference instead
+extern "C++" void bigParam(Big b);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'FPair' cannot be passed by value in extern "C++" signatures because it contains floating-point members; pass it behind a pointer or reference instead
+extern "C++" void floatParam(FPair p);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Empty' cannot be passed by value in extern "C++" signatures because it is empty; pass it behind a pointer or reference instead
+extern "C++" void emptyParam(Empty e);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'OverAligned' cannot be passed by value in extern "C++" signatures because it requires 16-byte alignment; pass it behind a pointer or reference instead
+extern "C++" void alignedParam(OverAligned o);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'HasSlice' cannot be passed by value in extern "C++" signatures because it has a member with no C++ counterpart; pass it behind a pointer or reference instead
+extern "C++" void badMemberParam(HasSlice h);
+
+// Floats hiding in fixed array members are found too.
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'FArr' cannot be passed by value in extern "C++" signatures because it contains floating-point members; pass it behind a pointer or reference instead
+extern "C++" void floatArrayParam(FArr f);
+
+// Callback signatures cross the same boundary, so their by-value structs are checked too.
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Big' cannot be passed by value in extern "C++" signatures because it is 32 bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer or reference instead
+extern "C++" void badCallbackParam(void(Big) callback);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Point' cannot be returned by value in extern "C++" signatures; use an out-parameter instead
+extern "C++" void badCallbackReturn(Point() callback);
+
+extern "C++" void m_log(c_int level, ...);
+
+void variadicExtrasAreChecked() {
+    Point p;
+    p.x = 1;
+    p.y = 2;
+    m_log(1, p);
+    Big b;
+    b.vals[0] = 1;
+    b.vals[1] = 2;
+    b.vals[2] = 3;
+    b.vals[3] = 4;
+    b.vals[4] = 5;
+    b.vals[5] = 6;
+    b.vals[6] = 7;
+    b.vals[7] = 8;
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Big' cannot be passed as a variadic argument to extern "C++" function 'm_log' because it is 32 bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer instead
+    m_log(1, b);
+}
+
+void takeMutableVector(CxxVector<c_int>& v) {
+}
+
+void mutableBorrowRejectsConversion() {
+    var xs = List<c_int>();
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: invalid argument #1 type 'List<c_int>' to 'takeMutableVector', expected 'CxxVector<c_int>&'
+    takeMutableVector(xs);
+}
