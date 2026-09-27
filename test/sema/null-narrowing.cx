@@ -84,6 +84,14 @@ void structTest() {
     }
 }
 
+void memberWriteTest() {
+    S? s = S(x = 5);
+    if s != null {
+        s.x = 10;
+        assert(s.x == 10);
+    }
+}
+
 void switchTest(int? v) {
     if v {
         switch v {
@@ -194,6 +202,7 @@ void main() {
     continueTest();
     whileTest();
     structTest();
+    memberWriteTest();
     // CHECK: thirtysix
     switchTest(findAge("ada"));
     exhaustiveSwitchDivergeTest(Outcome.Ok(value = 1), findAge("ada"));

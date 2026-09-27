@@ -3853,11 +3853,17 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
     Type baseType = typecheckExpr(*expr.base, useIsWriteOnly);
     if (useIsWriteOnly) {
         if (auto* baseVar = llvm::dyn_cast<VarExpr>(expr.base)) {
-            if (auto narrowed = narrowedTypes.find(baseVar->decl);
-                narrowed != narrowedTypes.end() && EnumDecl::isPayloadView(baseVar->assignableType, narrowed->second)) {
-                // A member base is read to form the address, so enum narrowing applies on write paths too.
-                baseVar->type = narrowed->second;
-                baseType = narrowed->second;
+            if (auto narrowed = narrowedTypes.find(baseVar->decl); narrowed != narrowedTypes.end()) {
+                // A member base is read to form the address, so narrowing applies on write
+                // paths too. The optional case mirrors emitLvalueExpr: pointer-implemented
+                // payloads need no access adjustment.
+                bool isNarrowedPayloadView = EnumDecl::isPayloadView(baseVar->assignableType, narrowed->second)
+                                          || (baseVar->assignableType.isOptionalType() && narrowed->second == baseVar->assignableType.getWrappedType()
+                                              && !narrowed->second.isImplementedAsPointer());
+                if (isNarrowedPayloadView) {
+                    baseVar->type = narrowed->second;
+                    baseType = narrowed->second;
+                }
             }
         }
     }
