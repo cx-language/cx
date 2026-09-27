@@ -3400,9 +3400,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         // Null callee only arises under an overload probe: re-throw silently instead of propagating a null type.
         if (!decl) throw CompileError::dependentError();
 
-        // A method found on the wrapped type needs an unwrapped receiver.
+        // A method found on the wrapped type needs an unwrapped receiver. Destructors are
+        // included: deinit on an optional destroys the payload, and setMoved below
+        // propagates through the unwrap to consume the source.
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
-            functionDecl && functionDecl->getTypeDecl() && !llvm::isa<DestructorDecl>(decl) && needsImplicitMemberUnwrap(receiverType)
+            functionDecl && functionDecl->getTypeDecl() && needsImplicitMemberUnwrap(receiverType)
             && functionDecl->getTypeDecl()->getType().equalsIgnoreTopLevelMutable(receiverType.removeOptional().removePointer())) {
             if (Expr* converted = convert(expr.getReceiver(), receiverType.removeOptional())) {
                 llvm::cast<MemberExpr>(*expr.callee).base = converted;

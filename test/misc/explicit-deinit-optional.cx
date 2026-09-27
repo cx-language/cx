@@ -1,0 +1,33 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:1
+// CHECK-NEXT:1
+// CHECK-NEXT:1
+
+int deaths = 0;
+
+struct S {
+    int x;
+    ~S() {
+        deaths++;
+    }
+}
+
+void main() {
+    // deinit through a dereferenced optional buffer destroys the payload once.
+    var buf = allocate<S?>(1);
+    buf[0] = S(x = 5);
+    var before = deaths;
+    (*buf).deinit();
+    println(deaths - before);
+    deallocate(buf);
+
+    // deinit on an optional local destroys the payload and suppresses the scope destructor.
+    {
+        S? o = S(x = 5);
+        before = deaths;
+        o.deinit();
+        println(deaths - before);
+    }
+    println(deaths - before);
+}
