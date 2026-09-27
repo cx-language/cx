@@ -584,6 +584,15 @@ void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase*
     definitelyAssignedDecls.insert(associatedValue);
 }
 
+void Typechecker::narrowEnumSubjectToCase(const Expr* subject, const EnumCase& enumCase) {
+    auto* varExpr = llvm::dyn_cast<VarExpr>(subject);
+    if (!varExpr) return;
+    auto* varDecl = getEnumNarrowableDecl(*varExpr);
+    if (!varDecl) return;
+    if (enumCase.getEnumDecl() != llvm::cast<EnumDecl>(varDecl->type.getDecl())) return;
+    narrowedTypes[varDecl] = enumCase.associatedType ? enumCase.associatedType : AnonymousStructType::get({});
+}
+
 bool Typechecker::subjectBorrows(Expr* subject) {
     // Borrow subjects read through: an implicit dereference cast (e.g. `switch this`)
     // or an explicit dereference (e.g. `switch *p`). Both borrow the original storage.
@@ -600,6 +609,10 @@ bool Typechecker::subjectBorrows(Expr* subject) {
 // they accept neither string conditions nor null cases.
 Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
     Type conditionType = typecheckExpr(*condition);
+    // A subject narrowed to a case payload isn't switchable; restore the whole enum.
+    // (Optional narrowings are kept: switching on the unwrapped value is intended there.)
+    unnarrowEnumView(*condition);
+    conditionType = condition->type;
 
     if (conditionType.isReferenceType()) {
         // Borrows read through implicitly (e.g. `switch this`, where receivers are borrows).
@@ -625,6 +638,10 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
 
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(*stmt.condition);
+    // A subject narrowed to a case payload isn't switchable; restore the whole enum.
+    // (Optional narrowings are kept: switching on the unwrapped value is intended there.)
+    unnarrowEnumView(*stmt.condition);
+    conditionType = stmt.condition->type;
 
     if (conditionType.isReferenceType()) {
         // Borrows read through implicitly (e.g. `switch this`, where receivers are borrows).
@@ -709,6 +726,9 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
 
         typecheckSwitchCaseBinding(switchCase.associatedValue, enumCase, stmt.condition);
+        if (!switchCase.associatedValue && enumCase) {
+            narrowEnumSubjectToCase(stmt.condition, *enumCase);
+        }
 
         for (auto& caseStmt : switchCase.stmts) {
             typecheckStmt(caseStmt);
@@ -773,6 +793,9 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
 
         typecheckSwitchCaseBinding(arm.associatedValue, enumCase, expr.condition);
+        if (!arm.associatedValue && enumCase) {
+            narrowEnumSubjectToCase(expr.condition, *enumCase);
+        }
         typecheckExpr(*arm.expr, false, expectedType);
         narrowedTypes = outerNarrowings;
         if (!arm.expr->type.isNeverType()) {

@@ -173,6 +173,35 @@ void main() {
 }
 ```
 
+When a case binds no name, the switched variable narrows to the matched case's
+payload inside that arm (a payloadless case narrows to `()`), so its fields are
+available directly. The same narrowing applies to `==` and `!=` comparisons
+against a case in `if` and `while` conditions:
+
+```cs
+enum Event {
+    Click(int x, int y),
+    Quit,
+}
+
+void handle(Event event) {
+    switch event {
+        case Click:
+            println("fire at ", event.x, ", ", event.y);
+        case Quit:
+            println("bye");
+    }
+
+    if event == Click {
+        println("fire at ", event.x, ", ", event.y);
+    }
+}
+
+void main() {
+    handle(Event.Click(x = 3, y = 4));
+}
+```
+
 ## defer
 
 `defer` defers the execution of a statement to the exits of the current scope.

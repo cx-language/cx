@@ -521,6 +521,16 @@ EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) {
     return nullptr;
 }
 
+bool EnumDecl::isPayloadView(Type declared, Type viewed) {
+    if (!declared.isEnumType() || declared.isOptionalType()) return false;
+    auto* enumDecl = llvm::cast<EnumDecl>(declared.getDecl());
+    for (auto& enumCase : enumDecl->cases) {
+        if (enumCase.associatedType && enumCase.associatedType == viewed) return true;
+    }
+    return viewed.isAnonymousStructType() && viewed.getAnonymousStructElements().empty()
+        && llvm::any_of(enumDecl->cases, [](auto& enumCase) { return !enumCase.associatedType; });
+}
+
 bool EnumDecl::hasAssociatedValues() const {
     for (auto& enumCase : cases) {
         if (enumCase.associatedType) {

@@ -219,6 +219,12 @@ struct Typechecker {
     void applyNarrowings(const Expr& condition, bool polarity);
     void intersectNarrowings(const NarrowMap& other);
     void dropNarrowingsForNames(const llvm::StringSet<>& names);
+    static VariableDecl* getEnumNarrowableDecl(const VarExpr& varExpr);
+    void narrowEnumCaseComparison(const Expr& lhs, const Expr& rhs, BinaryOperator op, bool polarity);
+    void narrowEnumSubjectToCase(const Expr* subject, const EnumCase& enumCase);
+    // Restores the whole enum type of an expression narrowed to a case payload.
+    // Used where the full value is consumed: switch conditions, `is`, and `&`.
+    static void unnarrowEnumView(Expr& expr);
     bool genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg);
     bool validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
                                     Location location);

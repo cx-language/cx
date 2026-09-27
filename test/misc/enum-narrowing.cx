@@ -1,0 +1,97 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+enum Event {
+    Click(int x, int y),
+    Keypress(char key),
+    Quit,
+}
+
+enum Outcome<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+string describe(Event event) {
+    switch event {
+        case Click:
+            return "click";
+        case Keypress:
+            return "key";
+        case Quit:
+            return "quit";
+    }
+}
+
+void handle(Event event) {
+    switch event {
+        case Click:
+            println("fire at ", event.x, ", ", event.y);
+        case Keypress:
+            println("move ", event.key);
+        case Quit:
+            println("bye");
+    }
+}
+
+void main() {
+    handle(Event.Click(x = 3, y = 4)); // CHECK:fire at 3, 4
+    handle(Event.Keypress(key = 'q')); // CHECK-NEXT:move q
+    handle(Event.Quit); // CHECK-NEXT:bye
+    assert(describe(Event.Click(x = 0, y = 0)) == "click");
+
+    var event = Event.Click(x = 1, y = 2);
+    if event == Click {
+        println("fire at ", event.x, ", ", event.y); // CHECK-NEXT:fire at 1, 2
+    }
+    // != narrows the else-branch.
+    if event != Click {
+        println("not click");
+    } else {
+        println("click ", event.x); // CHECK-NEXT:click 1
+    }
+    // Writes through the narrowed view take effect.
+    if event == Click {
+        event.x += 1;
+        println("x=", event.x); // CHECK-NEXT:x=2
+    }
+    // Reassignment drops the narrowing.
+    event = Event.Keypress(key = 'a');
+    while event == Keypress {
+        println("key ", event.key); // CHECK-NEXT:key a
+        event = Event.Quit;
+    }
+    // A narrowed subject still switches and matches as the whole enum.
+    if event == Quit {
+        switch event {
+            case Quit: println("still quit"); // CHECK-NEXT:still quit
+            default: println("changed?!");
+        }
+        if event is Quit {
+            println("is quit"); // CHECK-NEXT:is quit
+        }
+    }
+    // A binding leaves the subject at the enum type.
+    event = Event.Click(x = 5, y = 6);
+    switch event {
+        case Click c:
+            println("bound ", c.x, " ", describe(event)); // CHECK-NEXT:bound 5 click
+        default: println("other");
+    }
+    // Switch expressions narrow their arms too.
+    var sum = switch event {
+        case Click: event.x + event.y,
+        default: 0,
+    };
+    println("sum ", sum); // CHECK-NEXT:sum 11
+    // Generic enums narrow to the substituted payload.
+    Outcome<int> outcome = Outcome.Ok(41);
+    switch outcome {
+        case Ok: println("ok ", outcome.value); // CHECK-NEXT:ok 41
+        case Err: println("err ", outcome.code);
+    }
+    if outcome == Ok {
+        outcome.value += 1;
+        println("ok ", outcome.value); // CHECK-NEXT:ok 42
+    }
+}

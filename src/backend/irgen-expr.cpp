@@ -1637,6 +1637,13 @@ Value* IRGenerator::emitLvalueExpr(const Expr& expr) {
         return emitOptionalPayloadPtr(value, expr.assignableType.getWrappedType());
     }
 
+    // Handle enums narrowed to a case payload due to data-flow analysis: project the payload slot.
+    if (expr.hasAssignableType() && EnumDecl::isPayloadView(expr.assignableType, expr.type)) {
+        // Temporaries are SSA values, not memory; spill to a temp so the payload access works.
+        if (!value->getType()->isPointerType()) value = createTempAlloca(value);
+        return createCast(createGEP(value, 1, nullptr, "associatedValue"), expr.type.getPointerTo());
+    }
+
     if (value && expr.hasType()) {
         auto type = getIRType(expr.type);
 

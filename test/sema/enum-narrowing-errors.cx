@@ -1,0 +1,32 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+enum Event {
+    Click(int x, int y),
+    Quit,
+}
+
+void useEvent(Event e) {
+}
+
+void noNarrowingOutsideMatch(Event event) {
+    // CHECK: error: no member named 'x' in 'Event'
+    println(event.x);
+}
+
+void assignmentDropsNarrowing(Event event) {
+    if event == Click {
+        event = Event.Quit;
+        // CHECK: error: no member named 'x' in 'Event'
+        println(event.x);
+    }
+}
+
+void payloadlessCaseNarrowsToUnit(Event event) {
+    switch event {
+        case Click:
+            println(event.x);
+        case Quit:
+            // CHECK: error: invalid argument #1 type '()' to 'useEvent', expected 'Event'
+            useEvent(event);
+    }
+}

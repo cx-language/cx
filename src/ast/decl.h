@@ -420,6 +420,10 @@ struct EnumDecl : TypeDecl {
     }
     void addCase(EnumCase&& enumCase);
     bool hasAssociatedValues() const;
+    // True when `viewed` is a value-narrowed view of a `declared`-typed variable: one case's
+    // associated type, or `()` when the enum has a payloadless case. Optional unwrapping is a
+    // separate narrowing with its own handling, so optionals never match here.
+    static bool isPayloadView(Type declared, Type viewed);
     bool hasDestructiblePayload() const;
     EnumCase* getCaseByName(llvm::StringRef name);
     // TODO: Select tag type to be able to hold all enum values.

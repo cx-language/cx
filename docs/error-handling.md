@@ -51,6 +51,8 @@ void main() {
 ```
 
 Use `== Ok` and `== Err` to test which case a result holds.
+Inside the branch, the variable narrows to the matched case's payload,
+so the success value is available directly as `digit.value`.
 The `unwrap` method returns the success value, or aborts with the error:
 
 ```cs
@@ -64,7 +66,7 @@ Result<int, string> parseDigit(char c) {
 void main() {
     var digit = parseDigit('7');
     if digit == Ok {
-        println(digit.unwrap()); // prints 7
+        println(digit.value); // prints 7
     }
     println(parseDigit('7')!); // prints 7, shorthand for .unwrap()
 

@@ -83,6 +83,17 @@ static VariableDecl* getNarrowableDecl(const VarExpr& varExpr) {
     return varDecl;
 }
 
+VariableDecl* Typechecker::getEnumNarrowableDecl(const VarExpr& varExpr) {
+    auto* decl = varExpr.decl;
+    if (!decl || (decl->kind != DeclKind::VarDecl && decl->kind != DeclKind::ParamDecl)) return nullptr;
+    auto* varDecl = llvm::cast<VariableDecl>(decl);
+    // Globals can be reassigned by any call, so narrowing them without a runtime check is unsound.
+    if (varDecl->isGlobal()) return nullptr;
+    if (!varDecl->type || !varDecl->type.isEnumType() || varDecl->type.isOptionalType()) return nullptr;
+    if (!llvm::cast<EnumDecl>(varDecl->type.getDecl())->hasAssociatedValues()) return nullptr;
+    return varDecl;
+}
+
 void Typechecker::applyNarrowings(const Expr& condition, bool polarity) {
     switch (condition.kind) {
     case ExprKind::VarExpr: {
@@ -123,6 +134,7 @@ void Typechecker::applyNarrowings(const Expr& condition, bool polarity) {
         } else if (rhs->isNullLiteralExpr() && !lhs->isNullLiteralExpr()) {
             operand = lhs;
         } else {
+            narrowEnumCaseComparison(*lhs, *rhs, binary.op, polarity);
             return;
         }
         auto* varExpr = llvm::dyn_cast<VarExpr>(operand);
@@ -167,10 +179,41 @@ void Typechecker::dropNarrowingsForNames(const llvm::StringSet<>& names) {
     }
 }
 
-// Restores the optional type of a narrowed expression. Only used where the address
-// (not the value) is consumed: `&x` denotes the whole optional.
+void Typechecker::unnarrowEnumView(Expr& expr) {
+    if (expr.hasAssignableType() && EnumDecl::isPayloadView(expr.assignableType, expr.type)) {
+        expr.type = expr.assignableType;
+    }
+}
+
+void Typechecker::narrowEnumCaseComparison(const Expr& lhs, const Expr& rhs, BinaryOperator op, bool polarity) {
+    for (auto [varSide, caseSide] : {std::pair{&lhs, &rhs}, {&rhs, &lhs}}) {
+        auto* varExpr = llvm::dyn_cast<VarExpr>(varSide);
+        if (!varExpr) continue;
+        auto* varDecl = getEnumNarrowableDecl(*varExpr);
+        if (!varDecl) continue;
+        Decl* caseDecl = nullptr;
+        if (auto* caseVar = llvm::dyn_cast<VarExpr>(caseSide)) {
+            caseDecl = caseVar->decl;
+        } else if (auto* caseMember = llvm::dyn_cast<MemberExpr>(caseSide)) {
+            caseDecl = caseMember->decl;
+        }
+        auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(caseDecl);
+        if (!enumCase || enumCase->getEnumDecl() != llvm::cast<EnumDecl>(varDecl->type.getDecl())) continue;
+        if ((op == Token::Equal) == polarity) {
+            narrowedTypes[varDecl] = enumCase->associatedType ? enumCase->associatedType : AnonymousStructType::get({});
+        } else if (op == Token::Equal) {
+            narrowedTypes.erase(varDecl);
+        }
+        return;
+    }
+}
+
+// Restores the declared type of a narrowed expression. Only used where the address
+// (not the value) is consumed: `&x` denotes the whole optional or enum.
 static void unnarrow(Expr& expr) {
     if (expr.hasAssignableType() && expr.assignableType.isOptionalType() && expr.type == expr.assignableType.getWrappedType()) {
+        expr.type = expr.assignableType;
+    } else if (expr.hasAssignableType() && EnumDecl::isPayloadView(expr.assignableType, expr.type)) {
         expr.type = expr.assignableType;
     }
 }
@@ -609,6 +652,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (op == Token::Is) {
         Type leftType = typecheckExpr(expr.getLHS());
+        // A subject narrowed to a case payload isn't matchable; restore the whole enum.
+        unnarrowEnumView(expr.getLHS());
+        leftType = expr.getLHS().type;
         Type enumType = leftType.removeReference();
         if (!enumType.isEnumType()) {
             ERROR(expr.getLHS().location, "left side of 'is' must be an enum, got '" << leftType << "'");
@@ -984,10 +1030,11 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
               "cannot assign '" << rhsType << "' to '" << lhsType << "'" << narrowingHint(rhsType, lhsType) << ambiguousConversionHint(rhs, rhsType, lhsType));
     }
 
-    // Assigning a possibly-null value invalidates narrowing; assigning a non-null value preserves it.
+    // Assigning a possibly-null value invalidates optional narrowing; assigning a non-null value preserves it.
+    // Any assignment to an enum-narrowed variable invalidates it: the new value's case is unknown.
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
         auto narrowed = narrowedTypes.find(varExpr->decl);
-        if (narrowed != narrowedTypes.end() && (rhsType.isOptionalType() || rhsType.isNull())) {
+        if (narrowed != narrowedTypes.end() && (rhsType.isOptionalType() || rhsType.isNull() || EnumDecl::isPayloadView(lhsType, narrowed->second))) {
             narrowedTypes.erase(narrowed);
         }
     }
@@ -3728,6 +3775,16 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
     }
 
     Type baseType = typecheckExpr(*expr.base, useIsWriteOnly);
+    if (useIsWriteOnly) {
+        if (auto* baseVar = llvm::dyn_cast<VarExpr>(expr.base)) {
+            if (auto narrowed = narrowedTypes.find(baseVar->decl);
+                narrowed != narrowedTypes.end() && EnumDecl::isPayloadView(baseVar->assignableType, narrowed->second)) {
+                // A member base is read to form the address, so enum narrowing applies on write paths too.
+                baseVar->type = narrowed->second;
+                baseType = narrowed->second;
+            }
+        }
+    }
     if (!expr.base->isThis()) baseType = baseType.removeOptional();
     baseType = baseType.removePointer();
 
