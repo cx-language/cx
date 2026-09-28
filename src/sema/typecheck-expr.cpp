@@ -2869,11 +2869,14 @@ static bool hasComparisonFallback(const CallExpr& expr) {
 }
 
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry) {
-    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr); binaryExpr && expr.calleeDecl) {
+    if (llvm::isa<BinaryExpr>(&expr) && expr.calleeDecl) {
         // Argument validation probes typecheck arguments and then clear their types, so
         // operators resolve twice. Derivation swaps operands in place, which would toggle
         // back on the second pass. BinaryExpr resolution ignores expectedType, so the
-        // first result is final.
+        // first result is final. Re-validation still runs: re-typechecking clobbers the
+        // in-place conversions the first pass applied (e.g. a widened literal re-derives
+        // its natural type), so the arguments must be converted again.
+        validateAndConvertArguments(expr, *expr.calleeDecl);
         return expr.calleeDecl;
     }
 

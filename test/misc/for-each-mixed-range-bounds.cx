@@ -1,0 +1,37 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:0
+// CHECK-NEXT:1
+// CHECK-NEXT:2
+// CHECK-NEXT:3
+// CHECK-NEXT:0
+// CHECK-NEXT:1
+// CHECK-NEXT:2
+// CHECK-NEXT:3
+// CHECK-NEXT:ok
+
+// Mixed-width range bounds unify to the wider type. The for-each lowering
+// typechecks the range twice; the second pass must re-apply the first pass's
+// conversions instead of asserting on unconverted arguments.
+void bswap<E>(E* a, E* b) {
+    var pa = cast<char[*]>(a);
+    var pb = cast<char[*]>(b);
+    for i in 0..sizeof(E) {
+        var t = pa[i];
+        pa[i] = pb[i];
+        pb[i] = t;
+    }
+}
+
+void main() {
+    for i in 0..uint64(4) {
+        println(i);
+    }
+    for i in uint64(0)..4 {
+        println(i);
+    }
+    int x = 1;
+    int y = 2;
+    bswap(&x, &y);
+    println("ok");
+}
