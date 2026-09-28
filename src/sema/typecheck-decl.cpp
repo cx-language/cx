@@ -1114,6 +1114,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         llvm::SaveAndRestore saveMovedDecls(movedDecls, movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls, maybeMovedDecls);
         llvm::SaveAndRestore saveMoveLocations(moveLocations, moveLocations);
+        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls, ternaryWarnedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls, definitelyAssignedDecls);
         // 'break' and 'continue' must not cross function boundaries into enclosing loops or switches.
         llvm::SaveAndRestore saveControlStmts(currentControlStmts, std::vector<Stmt*>());
@@ -1202,6 +1203,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             movedDecls.clear();
             maybeMovedDecls.clear();
             moveLocations.clear();
+            ternaryWarnedDecls.clear();
         }
 
         if (decl.isConstructorDecl() && !delegatedInit) {

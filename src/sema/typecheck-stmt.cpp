@@ -430,38 +430,43 @@ void Typechecker::typecheckVarStmt(VarStmt& stmt) {
     }
 }
 
-void Typechecker::warnAboutConditionalMove(Decl* decl, ConditionalMoveSite site, size_t branchEntryLocalCount,
-                                           const llvm::DenseMap<Decl*, Location>& locations) {
+std::optional<Location> Typechecker::locateConditionalMoveWarning(Decl* decl, size_t branchEntryLocalCount, const llvm::DenseMap<Decl*, Location>& locations) {
     // Payload bindings borrow their subject's storage and run no destructor,
     // so only the subject's leak warns.
-    if (bindingSources.count(decl)) return;
+    if (bindingSources.count(decl)) return std::nullopt;
     // Values declared inside the branch die there; moving one there is final.
     auto found = std::find(localVarDecls.begin(), localVarDecls.end(), decl);
-    if (found != localVarDecls.end() && size_t(found - localVarDecls.begin()) >= branchEntryLocalCount) return;
+    if (found != localVarDecls.end() && size_t(found - localVarDecls.begin()) >= branchEntryLocalCount) return std::nullopt;
     auto loc = locations.find(decl);
-    if (loc == locations.end()) return;
+    if (loc == locations.end()) return std::nullopt;
+    return loc->second;
+}
+
+void Typechecker::warnAboutConditionalMove(Decl* decl, ConditionalMoveSite site, size_t branchEntryLocalCount,
+                                           const llvm::DenseMap<Decl*, Location>& locations) {
+    auto loc = locateConditionalMoveWarning(decl, branchEntryLocalCount, locations);
+    if (!loc) return;
     auto name = decl->getName();
     switch (site) {
     case ConditionalMoveSite::IfThen:
-        WARN(loc->second, "value '" << name
-                                    << "' is moved in the 'then' branch but not the 'else' branch; it may leak when the condition is false (add 'else { drop("
-                                    << name << "); }' if this was intended)");
+        WARN(*loc, "value '" << name << "' is moved in the 'then' branch but not the 'else' branch; it may leak when the condition is false (add 'else { drop("
+                             << name << "); }' if this was intended)");
         break;
     case ConditionalMoveSite::IfThenNoElse:
-        WARN(loc->second,
-             "value '" << name << "' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop("
-                       << name << "); }' if this was intended)");
+        WARN(*loc, "value '" << name
+                             << "' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop("
+                             << name << "); }' if this was intended)");
         break;
     case ConditionalMoveSite::IfElse:
-        WARN(loc->second, "value '" << name << "' is moved in the 'else' branch but not the 'then' branch; it may leak when the condition is true (add 'drop("
-                                    << name << ");' to the 'then' branch if this was intended)");
+        WARN(*loc, "value '" << name << "' is moved in the 'else' branch but not the 'then' branch; it may leak when the condition is true (add 'drop(" << name
+                             << ");' to the 'then' branch if this was intended)");
         break;
     case ConditionalMoveSite::Switch:
-        WARN(loc->second, "value '" << name << "' is moved in only some arms of this 'switch'; it may leak on the other paths (add 'drop(" << name
-                                    << ");' to the other arms if this was intended)");
+        WARN(*loc, "value '" << name << "' is moved in only some arms of this 'switch'; it may leak on the other paths (add 'drop(" << name
+                             << ");' to the other arms if this was intended)");
         break;
     case ConditionalMoveSite::SwitchExpr:
-        WARN(loc->second,
+        WARN(*loc,
              "value '"
                  << name
                  << "' is moved in only some arms of this 'switch' expression; it may leak on the other paths (move it on every path if this was intended)");
@@ -493,6 +498,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
+        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, true);
         if (ifStmt.isBinding) {
@@ -515,6 +521,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
+        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, false);
         for (auto& stmt : ifStmt.elseBody) {
@@ -852,6 +859,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
+        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
 
         typecheckSwitchCaseBinding(switchCase.associatedValue, enumCase, stmt.condition);
         if (!switchCase.associatedValue && enumCase) {
@@ -875,6 +883,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
+        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
         for (auto& defaultStmt : stmt.defaultStmts) {
             typecheckStmt(defaultStmt);
         }
@@ -939,6 +948,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
+        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
 
         typecheckSwitchCaseBinding(arm.associatedValue, enumCase, expr.condition);
         if (!arm.associatedValue && enumCase) {
@@ -958,6 +968,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
+        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
         typecheckExpr(*expr.defaultExpr, false, expectedType);
         narrowedTypes = outerNarrowings;
         if (!expr.defaultExpr->type.isNeverType()) {

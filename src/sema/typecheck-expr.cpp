@@ -4814,6 +4814,8 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location,
             current = cast->operand;
             continue;
         }
+        // Moves through a ternary (e.g. out of `(b ? s1 : s2).field`) mark like
+        // setMoved's, but warn only there; projections off a ternary stay silent.
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(current)) {
             if (moveConsumesSource(ifExpr->thenExpr)) propagateMove(ifExpr->thenExpr, trackVars, location, checkLoop);
             if (moveConsumesSource(ifExpr->elseExpr)) propagateMove(ifExpr->elseExpr, trackVars, location, checkLoop);
@@ -4871,6 +4873,29 @@ void Typechecker::markMoved(Decl* decl, Location location) {
     movedDecls.insert(decl);
     moveLocations[decl] = location;
     maybeMovedDecls.erase(decl);
+}
+
+static bool hasTakeMethod(const Decl* decl) {
+    auto* varDecl = llvm::dyn_cast<VariableDecl>(decl);
+    if (!varDecl) return false;
+    auto* typeDecl = llvm::dyn_cast_or_null<TypeDecl>(varDecl->type.removeReference().getDecl());
+    if (!typeDecl) return false;
+    return llvm::any_of(typeDecl->methods, [](auto* method) {
+        if (method->getName() != "take") return false;
+        auto* func = llvm::dyn_cast<FunctionDecl>(method);
+        return func && func->getParams().empty();
+    });
+}
+
+void Typechecker::warnTernaryMove(Decl* decl, bool isThenArm, size_t branchEntryLocalCount) {
+    auto loc = locateConditionalMoveWarning(decl, branchEntryLocalCount, moveLocations);
+    if (!loc || !ternaryWarnedDecls.insert(decl).second) return;
+    auto name = decl->getName();
+    std::string fix = hasTakeMethod(decl) ? (StringBuilder() << "use '" << name << ".take()'").string
+                                          : (StringBuilder() << "use 'takeFrom(&" << name << ", ...)', or restructure with 'drop()'").string;
+    WARN(*loc, "value '" << name << "' is moved in the '" << (isThenArm ? "then" : "else") << "' arm of this ternary but not the '"
+                         << (isThenArm ? "else" : "then") << "' arm; it may leak when the condition is " << (isThenArm ? "false" : "true") << " (" << fix
+                         << " if this was intended)");
 }
 
 void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
@@ -4954,8 +4979,46 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     // A moved branch value comes from exactly one arm, but move checking is
     // conservative like Rust: a conditional move consumes both arms' bindings.
     if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-        if (consumes(ifExpr->thenExpr)) setMoved(ifExpr->thenExpr, isMoved, trackVars);
-        if (consumes(ifExpr->elseExpr)) setMoved(ifExpr->elseExpr, isMoved, trackVars);
+        if (!isMoved || !trackVars) {
+            if (consumes(ifExpr->thenExpr)) setMoved(ifExpr->thenExpr, isMoved, trackVars);
+            if (consumes(ifExpr->elseExpr)) setMoved(ifExpr->elseExpr, isMoved, trackVars);
+            return;
+        }
+        // Both arms' bindings end up marked moved, so a value moved in only
+        // one arm is never destroyed when the other arm is taken. Values moved
+        // in both arms transfer to the result on every path and stay silent,
+        // as do moves whose other arm diverges. Moves are detected by recorded
+        // location changes: re-marking an already-moved value leaves the moved
+        // set unchanged, so set diffs alone would miss second-arm moves.
+        llvm::SmallPtrSet<Decl*, 32> preDecls = movedDecls;
+        size_t branchEntryLocalCount = localVarDecls.size();
+        bool thenReaches = !ifExpr->thenExpr->type.isNeverType();
+        bool elseReaches = !ifExpr->elseExpr->type.isNeverType();
+        auto collectArmMoves = [&](Expr* arm) {
+            llvm::SmallPtrSet<Decl*, 32> armMoves;
+            if (!consumes(arm)) return armMoves;
+            llvm::DenseMap<Decl*, Location> before = moveLocations;
+            setMoved(arm, isMoved, trackVars);
+            for (auto& [decl, loc] : moveLocations) {
+                if (preDecls.count(decl)) continue;
+                auto prev = before.find(decl);
+                // Line and column suffice: both moves are in this function.
+                if (prev == before.end() || prev->second.line != loc.line || prev->second.column != loc.column) armMoves.insert(decl);
+            }
+            return armMoves;
+        };
+        llvm::SmallPtrSet<Decl*, 32> thenMoves = collectArmMoves(ifExpr->thenExpr);
+        llvm::SmallPtrSet<Decl*, 32> elseMoves = collectArmMoves(ifExpr->elseExpr);
+        if (elseReaches) {
+            for (auto* decl : thenMoves) {
+                if (!elseMoves.count(decl)) warnTernaryMove(decl, /*isThenArm=*/true, branchEntryLocalCount);
+            }
+        }
+        if (thenReaches) {
+            for (auto* decl : elseMoves) {
+                if (!thenMoves.count(decl)) warnTernaryMove(decl, /*isThenArm=*/false, branchEntryLocalCount);
+            }
+        }
         return;
     }
 
@@ -5057,6 +5120,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         } else {
             movedDecls.erase(varExpr->decl);
             maybeMovedDecls.erase(varExpr->decl);
+            ternaryWarnedDecls.erase(varExpr->decl);
         }
     }
 }

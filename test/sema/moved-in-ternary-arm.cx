@@ -8,6 +8,8 @@ struct T {
 void f(T t) {}
 
 void ternaryConsumesBothArms(bool b, T a, T c) {
+    // CHECK: [[@LINE+2]]:17: warning: value 'a' is moved in the 'then' arm of this ternary but not the 'else' arm; it may leak when the condition is false (use 'takeFrom(&a, ...)', or restructure with 'drop()' if this was intended)
+    // CHECK: [[@LINE+1]]:21: warning: value 'c' is moved in the 'else' arm of this ternary but not the 'then' arm; it may leak when the condition is true (use 'takeFrom(&c, ...)', or restructure with 'drop()' if this was intended)
     var t = b ? a : c;
     // CHECK: [[@LINE+1]]:7: error: use of moved value 'a'
     f(a);

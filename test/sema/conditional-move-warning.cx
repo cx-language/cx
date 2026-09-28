@@ -105,3 +105,30 @@ void switchBindingWarnsSubject(E e) {
             println("b");
     }
 }
+
+void ternaryBothArmsWarn(bool b, StringBuf a, StringBuf c) {
+    // CHECK: [[@LINE+2]]:17: warning: value 'a' is moved in the 'then' arm of this ternary but not the 'else' arm; it may leak when the condition is false (use 'a.take()' if this was intended)
+    // CHECK: [[@LINE+1]]:21: warning: value 'c' is moved in the 'else' arm of this ternary but not the 'then' arm; it may leak when the condition is true (use 'c.take()' if this was intended)
+    var t = b ? a : c;
+    println(string(t));
+}
+
+void nestedTernaryWarnsOnceEach(bool b1, bool b2, StringBuf a, StringBuf d, StringBuf e) {
+    // CHECK-COUNT-1: warning: value 'a' is moved in the 'then' arm of this ternary
+    // CHECK-COUNT-1: warning: value 'd' is moved in the 'else' arm of this ternary
+    // CHECK-COUNT-1: warning: value 'e' is moved in the 'else' arm of this ternary
+    var t = b1 ? (b2 ? a : d) : e;
+    println(string(t));
+}
+
+void siblingBranchTernariesWarnTwice(bool c, bool b1, bool b2, StringBuf a) {
+    if c {
+        // CHECK: [[@LINE+1]]:23: warning: value 'a' is moved in the 'then' arm of this ternary but not the 'else' arm; it may leak when the condition is false (use 'a.take()' if this was intended)
+        var t1 = b1 ? a : StringBuf("x");
+        println(string(t1));
+    } else {
+        // CHECK: [[@LINE+1]]:23: warning: value 'a' is moved in the 'then' arm of this ternary but not the 'else' arm; it may leak when the condition is false (use 'a.take()' if this was intended)
+        var t2 = b2 ? a : StringBuf("y");
+        println(string(t2));
+    }
+}

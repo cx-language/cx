@@ -280,6 +280,16 @@ struct Typechecker {
     // Marks a declaration moved-from at the given move site.
     void markMoved(Decl* decl, Location location);
     enum class ConditionalMoveSite { IfThen, IfThenNoElse, IfElse, Switch, SwitchExpr };
+    // Guards and move-site lookup shared by conditional-move warnings: skips
+    // payload bindings and branch-locals, returns the move site if recorded.
+    std::optional<Location> locateConditionalMoveWarning(Decl* decl, size_t branchEntryLocalCount, const llvm::DenseMap<Decl*, Location>& locations);
+    // Declarations already warned for a ternary arm move. Nested ternaries warn
+    // for their own arms; the outer arms would only repeat them, so each move
+    // warns once until the value is reassigned.
+    llvm::SmallPtrSet<Decl*, 32> ternaryWarnedDecls;
+    // Warns that a value is moved in one ternary arm and leaks when the other
+    // arm is taken. Each move warns once (see ternaryWarnedDecls).
+    void warnTernaryMove(Decl* decl, bool isThenArm, size_t branchEntryLocalCount);
     // Warns that a value is moved on only some paths through a branch, pointing
     // at its move in the given branch's move map. Branch-local values and
     // payload bindings (which borrow) never leak, so only values declared

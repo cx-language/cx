@@ -84,3 +84,22 @@ void switchExprAllArmsIsSilent(int c, StringBuf x) {
     };
     println(n);
 }
+
+void ternaryTakeWorkaroundIsSilent(bool b, StringBuf a, StringBuf c) {
+    var t = b ? a.take() : c.take();
+    println(string(t));
+}
+
+void ternarySameVarBothArmsIsSilent(bool b, StringBuf a) {
+    var t = b ? a : a;
+    println(string(t));
+}
+
+void ternaryTempArmsIsSilent(bool b) {
+    var t = b ? StringBuf("a") : StringBuf("c");
+    println(string(t));
+}
+
+void ternaryNeverArmsIsSilent(bool b, StringBuf a, StringBuf c) {
+    _ = b ? abort(a) : abort(c);
+}
