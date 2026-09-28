@@ -1,0 +1,10 @@
+// RUN: %cx --print-c %s 2>&1 | %FileCheck %s
+
+void main() {
+    var m = Map<string, int>();
+    m.set("hello", 1);
+    println(m["hello"]!);
+}
+
+// String hashing must not use 128-bit integers: MSVC has no __int128.
+// CHECK-NOT: __int128

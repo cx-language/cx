@@ -1,3 +1,11 @@
+/// Adds two integers modulo 2^64. The halves stay below 2^33, so the
+/// checked + never aborts. Shifts and bitwise ops are unchecked.
+private uint64 wrappingAdd(uint64 a, uint64 b) {
+    uint64 lo = (a & 0xFFFFFFFF) + (b & 0xFFFFFFFF);
+    uint64 hi = (a >> 32) + (b >> 32) + (lo >> 32);
+    return ((hi & 0xFFFFFFFF) << 32) | (lo & 0xFFFFFFFF);
+}
+
 /// A non-owning string view.
 struct string: Comparable, Hashable, Printable {
     private Slice<char> characters;
@@ -149,8 +157,9 @@ struct string: Comparable, Hashable, Printable {
         uint64 hashValue = 5381;
 
         for index in 0..characters.size() {
-            // djb2 wraps on overflow; compute in 128 bits and truncate instead.
-            hashValue = uint64(uint128(hashValue << 5) + uint128(hashValue) + uint128(uint64(this[index])));
+            // djb2 wraps on overflow, but + aborts on overflow; add in 32-bit
+            // halves that cannot overflow instead.
+            hashValue = wrappingAdd(wrappingAdd(hashValue << 5, hashValue), uint64(this[index]));
         }
 
         return hashValue;
