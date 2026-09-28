@@ -67,6 +67,21 @@ struct LLVMGenerator {
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getStructType(IRStructType* type);
 
+    // Allocates stack space in the function entry block. Allocas use the
+    // current insert point by default, but inside a loop that executes every
+    // iteration and walks the stack down until it faults.
+    llvm::AllocaInst* createEntryAlloca(llvm::Type* type, const llvm::Twine& name) {
+        ASSERT(builder.GetInsertBlock());
+        llvm::IRBuilder<>::InsertPointGuard guard(builder);
+        auto& entryBlock = builder.GetInsertBlock()->getParent()->getEntryBlock();
+        if (!entryBlock.empty() && entryBlock.back().isTerminator())
+            builder.SetInsertPoint(entryBlock.getTerminator());
+        else
+            builder.SetInsertPoint(&entryBlock);
+        builder.SetCurrentDebugLocation(nullptr);
+        return builder.CreateAlloca(type, nullptr, name);
+    }
+
     // False in release modes: skip debug info emission entirely. Frame pointers
     // are still kept so backtrace() unwinds past cx frames.
     bool emitDebugInfo = true;

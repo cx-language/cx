@@ -1,0 +1,29 @@
+// RUN: %cx -print-llvm %s | %FileCheck %s
+
+struct Two {
+    c_int a;
+    c_int b;
+}
+
+void sink(Two p) {
+}
+
+void main() {
+    var p = Two(1, 2);
+    for _ in 0..10 {
+        sink(p);
+    }
+}
+
+// Allocas must live in the entry block: an alloca executes every time
+// control reaches it, so a temporary created in a loop body allocates fresh
+// stack space per iteration and walks off the stack.
+// CHECK-LABEL: define i32 @main()
+// CHECK: alloca
+// CHECK: br label %loop.condition
+// CHECK-LABEL: loop.body:
+// CHECK-NOT: alloca
+// The call still coerces the struct to an integer chunk (if it stopped, the
+// CHECK-NOT above would pass vacuously).
+// CHECK: call void @{{.*}}sink{{.*}}(i64 {{.*}})
+// CHECK: br label %loop.increment

@@ -223,7 +223,7 @@ llvm::Type* LLVMGenerator::getAbiCoercedType(IRType* type) {
 llvm::Value* LLVMGenerator::coerceAggregateToChunk(llvm::Value* value, IRType* type, llvm::Type* chunkType) {
     auto* structType = getLLVMType(type);
     // Size the slot for the chunk, which covers the struct for non-power-of-two sizes.
-    auto* slot = builder.CreateAlloca(chunkType, nullptr, "coerce.slot");
+    auto* slot = createEntryAlloca(chunkType, "coerce.slot");
     // The slot serves both layouts; align it for the stricter one.
     auto structAlign = getHostDataLayout().getABITypeAlign(structType).value();
     auto chunkAlign = getHostDataLayout().getABITypeAlign(chunkType).value();
@@ -237,7 +237,7 @@ llvm::Value* LLVMGenerator::coerceAggregateToChunk(llvm::Value* value, IRType* t
 
 llvm::Value* LLVMGenerator::coerceChunkToAggregate(llvm::Value* chunk, IRType* type) {
     auto* structType = getLLVMType(type);
-    auto* slot = builder.CreateAlloca(chunk->getType(), nullptr, "coerce.slot");
+    auto* slot = createEntryAlloca(chunk->getType(), "coerce.slot");
     auto structAlign = getHostDataLayout().getABITypeAlign(structType).value();
     auto chunkAlign = getHostDataLayout().getABITypeAlign(chunk->getType()).value();
     slot->setAlignment(llvm::Align(std::max(structAlign, chunkAlign)));
@@ -265,9 +265,13 @@ void LLVMGenerator::emitMemcpy(llvm::Value* dest, llvm::Value* src, llvm::Type* 
 }
 
 llvm::Value* LLVMGenerator::materializeConstant(llvm::Constant* constant, llvm::Type* type) {
-    auto* alloca = builder.CreateAlloca(type, nullptr, "const.alloca");
+    auto* alloca = createEntryAlloca(type, "const.alloca");
     // Undef needs no store: uninitialized memory already represents it.
     if (!llvm::isa<llvm::UndefValue>(constant)) {
+        // Store next to the alloca, not at the caller's insert point: the PHI
+        // caller positions the builder at the top of the entry block.
+        llvm::IRBuilder<>::InsertPointGuard guard(builder);
+        builder.SetInsertPoint(alloca->getParent(), ++alloca->getIterator());
         builder.CreateStore(constant, alloca);
     }
     return alloca;
@@ -336,12 +340,9 @@ void LLVMGenerator::codegenFunctionBody(const Function* function, llvm::Function
                 auto continueIt = blockContinueBlocks.find(pred);
                 auto target = continueIt != blockContinueBlocks.end() ? continueIt->second : getBasicBlock(pred);
                 if (indirect && llvm::isa<llvm::Constant>(value)) {
-                    // Constants have no dependencies, so materialize them at the top of the
-                    // entry block, which dominates the PHI. (The current insert point past
-                    // the PHI does not.)
-                    llvm::IRBuilder<>::InsertPointGuard guard(builder);
-                    auto& entryBlock = llvmFunction->getEntryBlock();
-                    builder.SetInsertPoint(&entryBlock, entryBlock.begin());
+                    // Constants have no dependencies, so materialize them in the
+                    // entry block, which dominates the PHI. (The current insert
+                    // point past the PHI does not.)
                     value = materializeConstant(llvm::cast<llvm::Constant>(value), paramLLVMType);
                 }
                 phi->addIncoming(value, target);
@@ -400,7 +401,7 @@ llvm::BasicBlock* LLVMGenerator::getBasicBlock(const BasicBlock* block) {
 }
 
 llvm::Value* LLVMGenerator::codegenAlloca(const AllocaInst* inst) {
-    return builder.CreateAlloca(getLLVMType(inst->allocatedType), nullptr, inst->name);
+    return createEntryAlloca(getLLVMType(inst->allocatedType), inst->name);
 }
 
 llvm::Value* LLVMGenerator::codegenReturn(const ReturnInst* inst) {
@@ -454,7 +455,7 @@ llvm::Value* LLVMGenerator::codegenLoad(const LoadInst* inst) {
         // Larger aggregates stay in memory to avoid materializing large SSA
         // copies that expand during codegen. Copy to a fresh alloca: returning
         // the source pointer would let later stores observably mutate the value.
-        auto dest = builder.CreateAlloca(llvmType, nullptr, inst->name);
+        auto dest = createEntryAlloca(llvmType, inst->name);
         emitMemcpy(dest, getValue(inst->value), llvmType);
         return dest;
     }
@@ -491,7 +492,7 @@ llvm::Value* LLVMGenerator::codegenInsert(const InsertInst* inst) {
             return builder.CreateInsertValue(aggregate, value, inst->index);
         }
         ASSERT(builder.GetInsertBlock());
-        auto tempAlloca = builder.CreateAlloca(aggregateLLVMType, nullptr, "insert.alloca");
+        auto tempAlloca = createEntryAlloca(aggregateLLVMType, "insert.alloca");
         if (inst->aggregate->kind != ValueKind::Undefined) {
             if (auto* constant = llvm::dyn_cast<llvm::Constant>(aggregate)) {
                 builder.CreateStore(constant, tempAlloca);
@@ -529,7 +530,7 @@ llvm::Value* LLVMGenerator::codegenExtract(const ExtractInst* inst) {
         auto fieldPtr = builder.CreateConstInBoundsGEP2_32(aggregateLLVMType, aggregatePtr, 0, inst->index, inst->name);
         auto fieldLLVMType = getLLVMType(inst->getType());
         if (shouldPassIndirectly(fieldLLVMType)) {
-            auto tempAlloca = builder.CreateAlloca(fieldLLVMType, nullptr, "extract.alloca");
+            auto tempAlloca = createEntryAlloca(fieldLLVMType, "extract.alloca");
             emitMemcpy(tempAlloca, fieldPtr, fieldLLVMType);
             return tempAlloca;
         }
@@ -586,7 +587,7 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
     }
     if (isSret) {
         auto sretType = getLLVMType(cxFunctionType->getReturnType());
-        auto sretAlloca = builder.CreateAlloca(sretType, nullptr, "sret.alloca");
+        auto sretAlloca = createEntryAlloca(sretType, "sret.alloca");
         args.insert(args.begin(), sretAlloca);
         auto* call = builder.CreateCall(llvmFunctionType, function, args);
         // Direct calls inherit this from the callee, but indirect calls through function pointers can't.
@@ -781,7 +782,7 @@ llvm::Value* LLVMGenerator::codegenArrayOp(const ArrayOpInst* inst) {
 
     if (size == 0) {
         if (isComparison) return llvm::ConstantInt::get(i1, foldAnd);
-        return builder.CreateAlloca(arrayLLVMType, nullptr, inst->name);
+        return createEntryAlloca(arrayLLVMType, inst->name);
     }
 
     unsigned count = static_cast<unsigned>(size);
@@ -790,7 +791,7 @@ llvm::Value* LLVMGenerator::codegenArrayOp(const ArrayOpInst* inst) {
         llvm::Value* r = rightIsArray ? loadChunk(rhsPtr, zero, count) : splat(rhsScalar, count);
         llvm::Value* vec = codegenArrayOpElement(inst->op, l, r, elemType);
         if (isComparison) return foldMask(vec, count, nullptr);
-        auto* resultAlloca = builder.CreateAlloca(arrayLLVMType, nullptr, inst->name);
+        auto* resultAlloca = createEntryAlloca(arrayLLVMType, inst->name);
         storeChunk(vec, resultAlloca, zero);
         return resultAlloca;
     }
@@ -798,14 +799,14 @@ llvm::Value* LLVMGenerator::codegenArrayOp(const ArrayOpInst* inst) {
     llvm::Value* resultAlloca = nullptr;
     llvm::Value* accAlloca = nullptr;
     if (isComparison) {
-        accAlloca = builder.CreateAlloca(i1, nullptr, "arrayop.acc");
+        accAlloca = createEntryAlloca(i1, "arrayop.acc");
         builder.CreateStore(llvm::ConstantInt::get(i1, foldAnd), accAlloca);
     } else {
-        resultAlloca = builder.CreateAlloca(arrayLLVMType, nullptr, inst->name);
+        resultAlloca = createEntryAlloca(arrayLLVMType, inst->name);
     }
 
     int chunks = size / static_cast<int>(lanes);
-    auto* indexAlloca = builder.CreateAlloca(i32, nullptr, "arrayop.i");
+    auto* indexAlloca = createEntryAlloca(i32, "arrayop.i");
     builder.CreateStore(zero, indexAlloca);
     auto* function = builder.GetInsertBlock()->getParent();
     auto* cond = llvm::BasicBlock::Create(ctx, "arrayop.cond", function);

@@ -1,0 +1,23 @@
+// RUN: %cx run %s 2>&1 | %FileCheck %s
+
+bool g = true;
+
+bool cond() {
+    return g;
+}
+
+int sum(int[8] a) {
+    var s = 0;
+    for x in a {
+        s += x;
+    }
+    return s;
+}
+
+void main() {
+    var a = if cond() then [1, 2, 3, 4, 5, 6, 7, 8] else [0, 0, 0, 0, 0, 0, 0, 0];
+    println(sum(a));
+}
+
+// The constant branches materialize into entry-block slots dominating the PHI.
+// CHECK: 36
