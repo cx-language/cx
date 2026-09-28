@@ -63,6 +63,7 @@ struct StringBuilder : llvm::raw_string_ostream {
 };
 
 std::string readLineFromFile(Location location);
+std::string readLineFromFile(const std::string& filePath, int line1Based);
 void renameFile(llvm::Twine sourcePath, llvm::Twine targetPath);
 void printDiagnostic(Location location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message, Location endLocation = {});
 
