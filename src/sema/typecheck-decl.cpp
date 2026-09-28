@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <limits>
 #pragma warning(push, 0)
+#include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/SaveAndRestore.h>
@@ -1829,6 +1830,14 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
 }
 
 void Typechecker::typecheckVarDecl(VarDecl& decl) {
+    if (decl.checkState == Decl::CheckState::Checked) return;
+    if (decl.checkState == Decl::CheckState::CheckingBody) {
+        ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "cyclic reference to '" << decl.getName() << "' in its initializer");
+    }
+    decl.checkState = Decl::CheckState::CheckingBody;
+    // Checked on every exit, including errors (like signatures): the error
+    // reports once and later uses see the partial state instead of rechecking.
+    auto markChecked = llvm::make_scope_exit([&decl] { decl.checkState = Decl::CheckState::Checked; });
     decl.type = resolveTypeAliases(decl.type, decl.isGlobal() ? decl.accessLevel : AccessLevel::None, /*foldArraySizes=*/true);
     if (!decl.isGlobal()) {
         localVarDecls.push_back(&decl);

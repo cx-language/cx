@@ -6,6 +6,11 @@
 // CHECK-NEXT:true
 // CHECK-NEXT:4
 // CHECK-NEXT:42
+// CHECK-NEXT:42
+
+// Global initializers may reference later declarations.
+const usesLater = definedLater * 2;
+const definedLater = 21;
 
 int gi = 41;
 float gf = 1.5;
@@ -24,4 +29,5 @@ void main() {
     println(gb);
     println(si);
     println(f(gi));
+    println(usesLater);
 }

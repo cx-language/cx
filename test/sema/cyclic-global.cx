@@ -1,0 +1,15 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:7: error: cyclic reference to 'a' in its initializer
+const a = b;
+const b = a;
+
+// CHECK: [[@LINE+1]]:7: error: cyclic reference to 's' in its initializer
+const s = s;
+
+// CHECK: [[@LINE+1]]:5: error: cyclic reference to 'v1' in its initializer
+var v1 = v2;
+var v2 = v1;
+
+void main() {
+}

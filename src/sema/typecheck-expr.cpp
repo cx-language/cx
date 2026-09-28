@@ -294,6 +294,20 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
     switch (decl->kind) {
     case DeclKind::VarDecl: {
         auto* varDecl = llvm::cast<VarDecl>(decl);
+        auto* homeModule = varDecl->getModule();
+        // C-imported constants are pre-typed with literal initializers, which
+        // cannot cycle; they never went through checking and must not start now.
+        bool needsCheck =
+            varDecl->isGlobal() && varDecl->initializer && varDecl->checkState != Decl::CheckState::Checked && (!homeModule || !homeModule->isCHeaderImport);
+        if (needsCheck) {
+            // Global initializers may reference later declarations; check on
+            // demand in the declaration's own module. Cyclic references error
+            // via the declaration's check state instead of recursing forever.
+            llvm::SaveAndRestore saveModule(currentModule);
+            llvm::SaveAndRestore saveFile(currentSourceFile);
+            setDeclContext(*varDecl);
+            typecheckVarDecl(*varDecl);
+        }
         if (!useIsWriteOnly) checkNotMoved(*decl, expr);
         if (!useIsWriteOnly && !varDecl->isGlobal() && !varDecl->initializer && !definitelyAssignedDecls.count(decl)) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "use of uninitialized variable '" << expr.identifier << "'");
