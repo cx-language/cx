@@ -1,0 +1,73 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:dtor
+// CHECK-NEXT:end
+// CHECK-NEXT:end
+// CHECK-NEXT:dtor
+// CHECK-NEXT:reassigned
+// CHECK-NEXT:dtor
+// CHECK-NEXT:reassigned
+// CHECK-NEXT:dtor
+// CHECK-NEXT:dtor
+// CHECK-NEXT:dtor
+// CHECK-NEXT:before return
+// CHECK-NEXT:before return
+
+struct C {
+    int i;
+    ~C() {
+        println("dtor");
+    }
+}
+
+void sink(C c) {}
+
+// A value moved on only one branch is destroyed on neither path past the
+// merge: no double-free on the moved path, no destructor on the live one.
+void condMove(bool b) {
+    var c = C(i = 1);
+    if (b) {
+        sink(c);
+    }
+    println("end");
+}
+
+// Reassigning a maybe-moved value overwrites without destroying the old one,
+// which may already be gone.
+void condMoveReassign(bool b) {
+    var c = C(i = 2);
+    if (b) {
+        sink(c);
+    }
+    c = C(i = 3);
+    println("reassigned");
+}
+
+// Using a maybe-moved value warns but still compiles and runs.
+void useOnLivePath() {
+    var c = C(i = 4);
+    if (false) {
+        sink(c);
+    }
+    sink(c);
+}
+
+// Returning past a maybe-moved value skips its destructor on the return path.
+void earlyReturn(bool b) {
+    var c = C(i = 5);
+    if (b) {
+        sink(c);
+    }
+    println("before return");
+    return;
+}
+
+void main() {
+    condMove(true);
+    condMove(false);
+    condMoveReassign(true);
+    condMoveReassign(false);
+    useOnLivePath();
+    earlyReturn(true);
+    earlyReturn(false);
+}

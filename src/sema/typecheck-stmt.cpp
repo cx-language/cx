@@ -420,6 +420,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
         setMoved(stmt.value, true, trackVars);
     }
     stmt.movedDecls.insert(movedDecls.begin(), movedDecls.end());
+    stmt.movedDecls.insert(maybeMovedDecls.begin(), maybeMovedDecls.end());
 }
 
 void Typechecker::typecheckVarStmt(VarStmt& stmt) {
@@ -434,9 +435,11 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     currentControlStmts.push_back(&ifStmt);
 
     // A value moved in every branch is moved after the if statement. Moves from only one
-    // branch are discarded: the value may still be live on the other path. An empty else
-    // body moves nothing, so then-only moves never propagate.
+    // branch leave the value maybe-moved: using it warns, and its destructor is
+    // skipped like a moved value. An empty else body moves nothing, so then-only
+    // moves always produce maybe-moved values.
     llvm::SmallPtrSet<Decl*, 32> thenMovedDecls, elseMovedDecls;
+    llvm::SmallPtrSet<Decl*, 32> thenMaybeMovedDecls, elseMaybeMovedDecls;
     NarrowMap outerNarrowings = narrowedTypes;
     NarrowMap thenNarrowings, elseNarrowings;
     llvm::SmallPtrSet<Decl*, 32> thenAssignedDecls, elseAssignedDecls;
@@ -444,6 +447,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     {
         Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
+        llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, true);
         if (ifStmt.isBinding) {
@@ -455,6 +459,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
             typecheckStmt(stmt);
         }
         thenMovedDecls = movedDecls;
+        thenMaybeMovedDecls = maybeMovedDecls;
         thenNarrowings = narrowedTypes;
         thenAssignedDecls = definitelyAssignedDecls;
         narrowedTypes = outerNarrowings;
@@ -463,12 +468,14 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     {
         Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
+        llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, false);
         for (auto& stmt : ifStmt.elseBody) {
             typecheckStmt(stmt);
         }
         elseMovedDecls = movedDecls;
+        elseMaybeMovedDecls = maybeMovedDecls;
         elseNarrowings = narrowedTypes;
         elseAssignedDecls = definitelyAssignedDecls;
         narrowedTypes = outerNarrowings;
@@ -480,10 +487,12 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     bool elseDiverges = !ifStmt.elseBody.empty() && allPathsDiverge(ifStmt.elseBody);
     if (thenDiverges && !elseDiverges) {
         movedDecls = elseMovedDecls;
+        maybeMovedDecls = elseMaybeMovedDecls;
         narrowedTypes = elseNarrowings;
         definitelyAssignedDecls = elseAssignedDecls;
     } else if (elseDiverges && !thenDiverges) {
         movedDecls = thenMovedDecls;
+        maybeMovedDecls = thenMaybeMovedDecls;
         narrowedTypes = thenNarrowings;
         definitelyAssignedDecls = thenAssignedDecls;
     } else if (!thenDiverges && !elseDiverges) {
@@ -494,6 +503,18 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
             }
         }
         movedDecls = std::move(mergedMovedDecls);
+        maybeMovedDecls = std::move(thenMaybeMovedDecls);
+        maybeMovedDecls.insert(elseMaybeMovedDecls.begin(), elseMaybeMovedDecls.end());
+        for (auto* decl : thenMovedDecls) {
+            if (!elseMovedDecls.count(decl)) {
+                maybeMovedDecls.insert(decl);
+            }
+        }
+        for (auto* decl : elseMovedDecls) {
+            if (!thenMovedDecls.count(decl)) {
+                maybeMovedDecls.insert(decl);
+            }
+        }
         narrowedTypes = thenNarrowings;
         intersectNarrowings(elseNarrowings);
         llvm::SmallPtrSet<Decl*, 32> mergedAssignedDecls;

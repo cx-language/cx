@@ -1130,11 +1130,23 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
     }
 
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
-        expr.lhsIsMoved = movedDecls.count(varExpr->decl);
+        // Reassigning a maybe-moved value overwrites without destroying: the old
+        // value may already be gone, so destroying it would double-free.
+        expr.lhsIsMoved = movedDecls.count(varExpr->decl) || maybeMovedDecls.count(varExpr->decl);
     }
     if (auto* baseVarExpr = getAssignmentBaseVarExpr(*lhs)) {
         if (baseVarExpr->decl->isVarDecl()) {
             definitelyAssignedDecls.insert(baseVarExpr->decl);
+        }
+        // Member and index bases are read to form the address even though the
+        // member itself is only written, so a moved base is an error here (and
+        // a maybe-moved base warns). Destroying the old value is skipped for
+        // the same reason as direct reassignment above.
+        if (baseVarExpr != lhs && baseVarExpr->decl) {
+            checkNotMoved(*baseVarExpr->decl, *baseVarExpr);
+            if (movedDecls.count(baseVarExpr->decl) || maybeMovedDecls.count(baseVarExpr->decl)) {
+                expr.lhsIsMoved = true;
+            }
         }
     }
 
@@ -4270,6 +4282,12 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
         if (varExpr->decl->isVarDecl()) {
             definitelyAssignedDecls.insert(varExpr->decl);
         }
+        // The base is read to form the address even though the element is only
+        // written, so a moved base is an error here (and a maybe-moved base
+        // warns). Nothing is destroyed, so no skip flag is needed.
+        if (varExpr->decl) {
+            checkNotMoved(*varExpr->decl, *varExpr);
+        }
     }
 
     return Type::getVoid();
@@ -4345,9 +4363,12 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
     for (auto* captured : expr.functionDecl->captures) {
         if (!captured->type) throw CompileError::dependentError();
         VarExpr use(captured->getName(), expr.location);
-        checkNotMoved(*captured, use);
+        // The body already warned for a maybe-moved capture when it was checked
+        // above; only error here, so the capture doesn't warn twice.
+        if (!maybeMovedDecls.count(captured)) checkNotMoved(*captured, use);
         if (!captured->type.isImplicitlyCopyable()) {
             movedDecls.insert(captured);
+            maybeMovedDecls.erase(captured);
             // A captured payload binding owns a copy, so its subject is consumed whole.
             if (auto it = bindingSources.find(captured); it != bindingSources.end()) {
                 propagateMove(it->second, /*trackVars=*/true, expr.location);
@@ -4811,7 +4832,10 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location)
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) {
             if (!varExpr->decl) return;
             if (auto it = bindingSources.find(varExpr->decl); it != bindingSources.end()) {
-                if (trackVars) movedDecls.insert(varExpr->decl);
+                if (trackVars) {
+                    movedDecls.insert(varExpr->decl);
+                    maybeMovedDecls.erase(varExpr->decl);
+                }
                 current = it->second;
                 continue;
             }
@@ -4819,7 +4843,10 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location)
                 if (trackVars && !inMoveInit) ERROR(location, "cannot move out of borrowed value; borrow it instead");
                 return;
             }
-            if (trackVars) movedDecls.insert(varExpr->decl);
+            if (trackVars) {
+                movedDecls.insert(varExpr->decl);
+                maybeMovedDecls.erase(varExpr->decl);
+            }
             return;
         }
         // Temporaries and fresh values (calls, literals): flagging elides their
@@ -4987,6 +5014,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         if (isMoved && trackVars && varExpr->type && !varExpr->type.removeReference().isImplicitlyCopyable()) {
             if (auto it = bindingSources.find(varExpr->decl); it != bindingSources.end()) {
                 movedDecls.insert(varExpr->decl);
+                maybeMovedDecls.erase(varExpr->decl);
                 propagateMove(it->second, trackVars, varExpr->location);
                 return;
             }
@@ -5008,8 +5036,10 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         if (!trackVars) return;
         if (isMoved) {
             movedDecls.insert(varExpr->decl);
+            maybeMovedDecls.erase(varExpr->decl);
         } else {
             movedDecls.erase(varExpr->decl);
+            maybeMovedDecls.erase(varExpr->decl);
         }
     }
 }
@@ -5022,5 +5052,8 @@ void Typechecker::checkNotMoved(const Decl& decl, const VarExpr& expr) {
         }
         if (hint.empty() && expr.type) hint = copyableHint(expr.type);
         ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "use of moved value '" << expr.identifier << "'" << hint);
+    }
+    if (maybeMovedDecls.count(&decl)) {
+        WARN_RANGE(expr.location, expr.endLocation, "use of possibly-moved value '" << expr.identifier << "'");
     }
 }

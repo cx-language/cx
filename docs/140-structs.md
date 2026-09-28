@@ -283,6 +283,11 @@ team.members;` fails to compile, suggesting `.take()`, a borrow, or a
 copy instead. The same holds for moving elements out of collections and
 payloads out of optionals.
 
+Moving a value on only one branch of a conditional makes later uses warn:
+the value may already be gone. Its destructor is skipped in that case,
+which leaks the value on paths where it is still live. Reassigning the
+value clears that state, but the overwritten value is not destroyed.
+
 ## Printing
 
 Structs print generically: `print` renders the struct name followed by

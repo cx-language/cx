@@ -1112,6 +1112,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         // Lambda bodies are checked inline within the enclosing function; moves they record
         // must not clobber the enclosing move state, which is restored when the body is done.
         llvm::SaveAndRestore saveMovedDecls(movedDecls, movedDecls);
+        llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls, maybeMovedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls, definitelyAssignedDecls);
         // 'break' and 'continue' must not cross function boundaries into enclosing loops or switches.
         llvm::SaveAndRestore saveControlStmts(currentControlStmts, std::vector<Stmt*>());
@@ -1177,7 +1178,10 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                 decl.proto.returnType = Type::getVoid();
             }
 
-            // This prevents creating destructors calls during codegen.
+            // This prevents creating destructors calls during codegen. Maybe-moved
+            // values are destroyed on no path: skipping the call is sound but
+            // leaks the value on paths where it is still live.
+            movedDecls.insert(maybeMovedDecls.begin(), maybeMovedDecls.end());
             for (auto* movedDecl : movedDecls) {
                 switch (movedDecl->kind) {
                 case DeclKind::ParamDecl:
@@ -1192,6 +1196,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             }
 
             movedDecls.clear();
+            maybeMovedDecls.clear();
         }
 
         if (decl.isConstructorDecl() && !delegatedInit) {

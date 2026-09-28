@@ -1,0 +1,104 @@
+// RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+struct S {
+    int n;
+    ~S() {}
+}
+
+void bar(S s) {}
+void baz(S s) {}
+void sinkArr(S[2] a) {}
+
+void singleBranchMoveWarnsOnUse(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:9: warning: use of possibly-moved value 's'
+    bar(s);
+}
+
+void elseOnlyMoveWarnsOnUse(bool b, S t) {
+    if (b) {
+    } else {
+        baz(t);
+    }
+    // CHECK: [[@LINE+1]]:9: warning: use of possibly-moved value 't'
+    baz(t);
+}
+
+void nestedMaybeWarnsOnUse(bool b1, bool b2, S s) {
+    if (b1) {
+        if (b2) {
+            bar(s);
+        }
+    }
+    // CHECK: [[@LINE+1]]:9: warning: use of possibly-moved value 's'
+    bar(s);
+}
+
+void reassignAfterMaybeMoveIsSilent(bool b, S s, S t) {
+    if (b) {
+        bar(s);
+    }
+    s = t;
+    bar(s);
+}
+
+void moveInBothBranchesIsSilentWithoutLaterUse(bool b, S s) {
+    if (b) {
+        bar(s);
+    } else {
+        baz(s);
+    }
+}
+
+void divergingBranchStaysSilent(bool b, S s) {
+    if (b) {
+        bar(s);
+        return;
+    }
+    bar(s);
+}
+
+void borrowOfMaybeWarns(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:14: warning: use of possibly-moved value 's'
+    var r = &s;
+    println(r.n);
+}
+
+void captureOfMaybeWarnsOnce(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:19: warning: use of possibly-moved value 's'
+    var f = () => s.n;
+    println(f());
+}
+
+void memberReadOfMaybeWarns(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:13: warning: use of possibly-moved value 's'
+    println(s.n);
+}
+
+void memberAssignToMaybeWarns(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:5: warning: use of possibly-moved value 's'
+    s.n = 1;
+}
+
+void indexAssignToMaybeWarns(bool b) {
+    var a = [S(n = 1), S(n = 2)];
+    if (b) {
+        sinkArr(a);
+    }
+    // CHECK: [[@LINE+1]]:5: warning: use of possibly-moved value 'a'
+    a[0] = S(n = 3);
+}

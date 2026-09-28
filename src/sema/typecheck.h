@@ -271,6 +271,9 @@ struct Typechecker {
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     llvm::SmallPtrSet<Decl*, 32> movedDecls;
+    // Values moved on only one side of a conditional: using one warns, and its
+    // destructor is skipped like a moved value (leaking the live path).
+    llvm::SmallPtrSet<Decl*, 32> maybeMovedDecls;
     // Switch-case and `is` bindings borrow their subject's payload; moving out of
     // one consumes the whole subject like moving out of a member does.
     llvm::DenseMap<const Decl*, Expr*> bindingSources;

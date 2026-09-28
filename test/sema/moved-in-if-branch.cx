@@ -1,11 +1,13 @@
 // RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
 
 struct S {
+    int n;
     ~S() {}
 }
 
 void bar(S s) {}
 void baz(S s) {}
+void sinkArr(S[2] a) {}
 
 void foo(bool b, S s) {
     if (b) {
@@ -18,17 +20,14 @@ void foo(bool b, S s) {
     bar(s);
 }
 
-void singleBranchMoveIsAllowed(bool b, S s, S t) {
+void secondMoveAfterMaybeMoveErrors(bool b, S s) {
     if (b) {
         bar(s);
     }
+    // CHECK: [[@LINE+1]]:9: warning: use of possibly-moved value 's'
     bar(s);
-
-    if (b) {
-    } else {
-        baz(t);
-    }
-    baz(t);
+    // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
+    bar(s);
 }
 
 void elseOnlyMoveAfterDivergingThen(bool b, S s) {
@@ -51,4 +50,17 @@ void thenOnlyMoveAfterDivergingElse(bool b, S s) {
 
     // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
     bar(s);
+}
+
+void memberAssignToMovedErrors(S s) {
+    bar(s);
+    // CHECK: [[@LINE+1]]:5: error: use of moved value 's'
+    s.n = 1;
+}
+
+void indexAssignToMovedErrors() {
+    var a = [S(n = 1), S(n = 2)];
+    sinkArr(a);
+    // CHECK: [[@LINE+1]]:5: error: use of moved value 'a'
+    a[0] = S(n = 3);
 }
