@@ -76,7 +76,6 @@ struct CGenerator {
     // Resets per-function value naming: restarts the suffix counter and
     // claims the parameter names, which are emitted verbatim.
     void resetValueNaming(const Function* function);
-    const std::string& getTempName(const Value* inst, llvm::StringRef prefix);
     // Returns the C name for a struct or union type, generating and registering
     // one for anonymous types (anonymous structs, enum payload unions) on first use.
     const std::string& getOrCreateTypeName(IRType* type, const std::string& name, llvm::StringRef prefix);
