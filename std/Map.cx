@@ -14,7 +14,19 @@ struct Map<Key: Hashable, Value> {
     /// Initializes an empty map
     Map() {
         size = 0;
-        hashTable = List(128, List<MapEntry<Key, Value>>());
+        hashTable = createTable(128);
+    }
+
+    /// Allocates a bucket table, constructing each bucket in place. Buckets
+    /// cannot come from the fill constructor: moving one value into every
+    /// bucket would consume it on the first iteration.
+    private List<List<MapEntry<Key, Value>>> createTable(int bucketCount) {
+        var table = List<List<MapEntry<Key, Value>>>();
+        table.reserve(bucketCount);
+        for i in 0..bucketCount {
+            table.push(List());
+        }
+        return table;
     }
 
     /// Moves the map out, leaving an empty map in its place.
@@ -110,7 +122,7 @@ struct Map<Key: Hashable, Value> {
     /// Resizes the map. This includes copying the old table into a new, bigger one
     void resize() {
         var newCapacity = capacity() * 2;
-        var newTable = List(newCapacity, List<MapEntry<Key, Value>>());
+        var newTable = createTable(newCapacity);
 
         for i in 0..capacity() {
             var slot = &hashTable[i];

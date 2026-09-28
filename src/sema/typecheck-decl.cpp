@@ -1117,6 +1117,9 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         // 'break' and 'continue' must not cross function boundaries into enclosing loops or switches.
         llvm::SaveAndRestore saveControlStmts(currentControlStmts, std::vector<Stmt*>());
         llvm::SaveAndRestore saveLocalVarDecls(localVarDecls, std::vector<VarDecl*>());
+        llvm::SaveAndRestore saveLoopEntryLocalCount(loopEntryLocalCount, std::optional<size_t>());
+        llvm::SaveAndRestore saveAssignTarget(assignTarget, static_cast<Decl*>(nullptr));
+        llvm::SaveAndRestore saveInReturnValue(inReturnValue, false);
 
         TypeDecl* receiverTypeDecl = decl.getTypeDecl();
         // Methods reached by name (e.g. interface copies in the module table)

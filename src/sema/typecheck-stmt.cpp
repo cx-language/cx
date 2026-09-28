@@ -382,6 +382,7 @@ void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
 }
 
 void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
+    llvm::SaveAndRestore saveInReturnValue(inReturnValue, true);
     Type returnValueType = stmt.value ? typecheckExpr(*stmt.value, false, currentFunction->getReturnType()) : Type::getVoid();
 
     if (!currentFunction->getReturnType()) {
@@ -1019,6 +1020,8 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
         typecheckVarStmt(*forStmt.variable);
     }
 
+    llvm::SaveAndRestore saveLoopEntryLocalCount(loopEntryLocalCount, std::optional<size_t>(localVarDecls.size()));
+
     // Assignments in the condition, body, or increment also execute on later iterations,
     // so narrowings for variables assigned there don't hold on loop entry or after the loop.
     llvm::StringSet<> assignedNames;
@@ -1066,6 +1069,8 @@ void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
         collectAssignedNames(stmt, assignedNames);
     NarrowMap outerNarrowings = narrowedTypes;
     dropNarrowingsForNames(assignedNames);
+
+    llvm::SaveAndRestore saveLoopEntryLocalCount(loopEntryLocalCount, std::optional<size_t>(localVarDecls.size()));
 
     // The body runs before the first check, so unlike while loops its assignments hold after.
     currentControlStmts.push_back(&doWhileStmt);
@@ -1136,6 +1141,7 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
             break;
         case StmtKind::WhileStmt: {
             auto* whileStmt = llvm::cast<WhileStmt>(stmt);
+            // The lowered ForStmt installs the loop-entry move snapshot.
             stmt = whileStmt->lower();
             typecheckStmt(stmt);
             break;
@@ -1152,6 +1158,7 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
                 typecheckExpr(*forEachStmt->range);
             }
             auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isForStmt(); });
+            // The lowered ForStmt installs the loop-entry move snapshot.
             stmt = forEachStmt->lower(nestLevel);
             typecheckStmt(stmt);
             break;

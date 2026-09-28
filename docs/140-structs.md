@@ -288,6 +288,13 @@ the value may already be gone. Its destructor is skipped in that case,
 which leaks the value on paths where it is still live. Reassigning the
 value clears that state, but the overwritten value is not destroyed.
 
+Moving a value declared outside a loop inside the loop is rejected:
+the loop may run more than once, moving it again. Values declared inside
+the body and moves into `return` are still allowed, as is reassigning a
+pre-loop accumulator itself; moving a different pre-loop value into it
+(`result = x`) is still rejected. The check is lexical: reassigning a
+value before moving it later in the same iteration is still rejected.
+
 ## Printing
 
 Structs print generically: `print` renders the struct name followed by

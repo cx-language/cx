@@ -227,7 +227,7 @@ struct Typechecker {
     // Moves ownership out of a projection source (member/index base, unwrap operand,
     // binding subject): owned roots are consumed, temporaries are flagged for
     // destructor elision, and borrowed roots are an error (nothing skips for them).
-    void propagateMove(Expr* source, bool trackVars, Location location);
+    void propagateMove(Expr* source, bool trackVars, Location location, bool checkLoop = false);
     void checkNotMoved(const Decl& decl, const VarExpr& expr);
 
     void applyNarrowings(const Expr& condition, bool polarity);
@@ -274,6 +274,17 @@ struct Typechecker {
     // Values moved on only one side of a conditional: using one warns, and its
     // destructor is skipped like a moved value (leaking the live path).
     llvm::SmallPtrSet<Decl*, 32> maybeMovedDecls;
+    // localVarDecls size at the innermost enclosing loop-body entry, if any;
+    // moving a value declared before it is rejected, since the loop may
+    // move it again on the next iteration.
+    std::optional<size_t> loopEntryLocalCount;
+    void errorIfLoopMove(Decl* decl, Location location);
+    // Assignment target whose right-hand side is being checked: moving it there
+    // is safe even in a loop, since the assignment replenishes it immediately.
+    Decl* assignTarget = nullptr;
+    // True while checking a return value: it runs once, so loop moves in it
+    // cannot execute again on the next iteration.
+    bool inReturnValue = false;
     // Switch-case and `is` bindings borrow their subject's payload; moving out of
     // one consumes the whole subject like moving out of a member does.
     llvm::DenseMap<const Decl*, Expr*> bindingSources;

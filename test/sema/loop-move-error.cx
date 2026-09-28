@@ -1,0 +1,179 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+bool sink(StringBuf s) {
+    return true;
+}
+
+struct Pair {
+    StringBuf a;
+    StringBuf b;
+}
+
+void whileBodyMoveIsRejected(bool b, StringBuf x) {
+    while b {
+        // CHECK: [[@LINE+1]]:14: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+        sink(x);
+    }
+}
+
+void forBodyMoveIsRejected(StringBuf x) {
+    for i in 0..3 {
+        // CHECK: [[@LINE+1]]:14: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+        sink(x);
+    }
+}
+
+void doWhileBodyMoveIsRejected(bool b, StringBuf x) {
+    do {
+        // CHECK: [[@LINE+1]]:14: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+        sink(x);
+    } while b;
+}
+
+void cStyleForMoveIsRejected(StringBuf s) {
+    for (var i = 0; i < 3; i++) {
+        // CHECK: [[@LINE+1]]:14: error: cannot move 's' inside a loop; move it before the loop or recreate it inside
+        sink(s);
+    }
+}
+
+void conditionMoveIsRejected(StringBuf x) {
+    // CHECK: [[@LINE+1]]:16: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+    while sink(x) {
+        println("y");
+    }
+}
+
+void doWhileConditionMoveIsRejected(StringBuf x) {
+    do {
+        println("y");
+    // CHECK: [[@LINE+1]]:18: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+    } while sink(x);
+}
+
+void captureMoveInLoopIsRejected(bool b, StringBuf x) {
+    while b {
+        // CHECK: [[@LINE+1]]:17: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+        var f = () => string(x);
+        println(f());
+    }
+}
+
+void nestedLoopMoveIsRejected(bool a, bool b, StringBuf x) {
+    while a {
+        while b {
+            // CHECK: [[@LINE+1]]:18: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+            sink(x);
+        }
+    }
+}
+
+void outerDeclaredMoveInInnerIsRejected(bool a, bool b) {
+    while a {
+        var y = StringBuf("fresh");
+        while b {
+            // CHECK: [[@LINE+1]]:18: error: cannot move 'y' inside a loop; move it before the loop or recreate it inside
+            sink(y);
+        }
+    }
+}
+
+void insideDeclaredMoveIsAllowed(bool b) {
+    while b {
+        var y = StringBuf("fresh");
+        sink(y);
+    }
+}
+
+void accumulatorIsAllowed(bool b) {
+    var result = StringBuf();
+    while b {
+        result += "x";
+        b = false;
+    }
+    println(string(result));
+}
+
+void selfAssignIsAllowed(bool b, StringBuf x) {
+    while b {
+        x = x + "!";
+        b = false;
+    }
+    println(string(x));
+}
+
+StringBuf returnMoveInLoopIsAllowed(bool b) {
+    var out = StringBuf("v");
+    while true {
+        if b {
+            return out;
+        }
+        b = true;
+    }
+}
+
+void borrowInLoopIsAllowed(bool b, StringBuf x) {
+    while b {
+        println(string(x));
+    }
+}
+
+void copyableMoveInLoopIsAllowed(bool b, int n) {
+    var total = 0;
+    while b {
+        total += n;
+        b = false;
+    }
+    println(total);
+}
+
+void foreachElementUseIsAllowed() {
+    var l = List<StringBuf>();
+    l.push(StringBuf("a"));
+    for e in l {
+        println(string(e));
+    }
+}
+
+void wrapMoveInLoopIsRejected(bool b, StringBuf x) {
+    while b {
+        // CHECK: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+        StringBuf? o = x;
+    }
+}
+
+void incrementMoveIsRejected(StringBuf x) {
+    // CHECK: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+    for (var i = 0; i < 3; sink(x)) {
+    }
+}
+
+void crossVarAssignIsRejected(StringBuf x, StringBuf y) {
+    var b = true;
+    while b {
+        // CHECK: error: cannot move 'y' inside a loop; move it before the loop or recreate it inside
+        x = y;
+    }
+}
+
+void memberDeinitInLoopIsRejected(Pair p) {
+    var b = true;
+    while b {
+        // CHECK: error: cannot move 'p' inside a loop; move it before the loop or recreate it inside
+        p.a.deinit();
+    }
+}
+
+void localDeinitInLoopIsRejected(StringBuf x) {
+    var b = true;
+    while b {
+        // CHECK: error: cannot move 'x' inside a loop; move it before the loop or recreate it inside
+        x.deinit();
+    }
+}
+
+void preLoopRangeIsAllowed(List<StringBuf> l) {
+    for e in l {
+        println(string(e));
+    }
+}

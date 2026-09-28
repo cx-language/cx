@@ -1089,6 +1089,11 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
         }
     }
     Type lhsType = lhs->assignableType;
+    // A direct `x = <moves x>` replenishes x immediately, so the move cannot
+    // observe a previous iteration. Member targets don't count: only the
+    // member is rewritten, not the moved base.
+    auto* lhsVar = llvm::dyn_cast<VarExpr>(lhs);
+    llvm::SaveAndRestore saveAssignTarget(assignTarget, lhsVar ? lhsVar->decl : nullptr);
     Type rhsType = typecheckExpr(*rhs, false, lhsType);
 
     if (rhs->isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(*lhs, currentFunction)) {
@@ -4367,11 +4372,12 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
         // above; only error here, so the capture doesn't warn twice.
         if (!maybeMovedDecls.count(captured)) checkNotMoved(*captured, use);
         if (!captured->type.isImplicitlyCopyable()) {
+            errorIfLoopMove(captured, expr.location);
             movedDecls.insert(captured);
             maybeMovedDecls.erase(captured);
             // A captured payload binding owns a copy, so its subject is consumed whole.
             if (auto it = bindingSources.find(captured); it != bindingSources.end()) {
-                propagateMove(it->second, /*trackVars=*/true, expr.location);
+                propagateMove(it->second, /*trackVars=*/true, expr.location, /*checkLoop=*/true);
             }
         }
     }
@@ -4778,18 +4784,23 @@ bool cx::isArrayBorrow(Type source, Type target) {
     return t.isSlice() || t.isArrayPointer() || (t.isPointerType() && !t.isReferenceType());
 }
 
-void Typechecker::propagateMove(Expr* source, bool trackVars, Location location) {
+void Typechecker::propagateMove(Expr* source, bool trackVars, Location location, bool checkLoop) {
     Expr* current = source;
     while (current) {
+        // Projections and dereferences belong to the place and dereference
+        // rules; only directly consumed bindings are loop-checked.
         if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(current)) {
+            checkLoop = false;
             current = memberExpr->base;
             continue;
         }
         if (auto* indexExpr = llvm::dyn_cast<IndexExpr>(current)) {
+            checkLoop = false;
             current = indexExpr->getBase();
             continue;
         }
         if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(current)) {
+            checkLoop = false;
             current = unwrapExpr->getReceiver();
             continue;
         }
@@ -4800,32 +4811,33 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location)
                 current->isMovedFrom = true;
                 return;
             }
+            checkLoop = false;
             current = cast->operand;
             continue;
         }
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(current)) {
-            if (moveConsumesSource(ifExpr->thenExpr)) propagateMove(ifExpr->thenExpr, trackVars, location);
-            if (moveConsumesSource(ifExpr->elseExpr)) propagateMove(ifExpr->elseExpr, trackVars, location);
+            if (moveConsumesSource(ifExpr->thenExpr)) propagateMove(ifExpr->thenExpr, trackVars, location, checkLoop);
+            if (moveConsumesSource(ifExpr->elseExpr)) propagateMove(ifExpr->elseExpr, trackVars, location, checkLoop);
             return;
         }
         if (auto* switchExpr = llvm::dyn_cast<SwitchExpr>(current)) {
             for (auto& arm : switchExpr->arms) {
-                if (moveConsumesSource(arm.expr)) propagateMove(arm.expr, trackVars, location);
+                if (moveConsumesSource(arm.expr)) propagateMove(arm.expr, trackVars, location, checkLoop);
             }
             if (switchExpr->defaultExpr && moveConsumesSource(switchExpr->defaultExpr)) {
-                propagateMove(switchExpr->defaultExpr, trackVars, location);
+                propagateMove(switchExpr->defaultExpr, trackVars, location, checkLoop);
             }
             return;
         }
         if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(current)) {
             for (auto& element : arrayLiteral->elements) {
-                if (moveConsumesSource(element)) propagateMove(element, trackVars, location);
+                if (moveConsumesSource(element)) propagateMove(element, trackVars, location, checkLoop);
             }
             return;
         }
         if (auto* anonStruct = llvm::dyn_cast<AnonymousStructExpr>(current)) {
             for (auto& element : anonStruct->elements) {
-                if (moveConsumesSource(element.value)) propagateMove(element.value, trackVars, location);
+                if (moveConsumesSource(element.value)) propagateMove(element.value, trackVars, location, checkLoop);
             }
             return;
         }
@@ -4833,6 +4845,7 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location)
             if (!varExpr->decl) return;
             if (auto it = bindingSources.find(varExpr->decl); it != bindingSources.end()) {
                 if (trackVars) {
+                    if (checkLoop) errorIfLoopMove(varExpr->decl, varExpr->location);
                     movedDecls.insert(varExpr->decl);
                     maybeMovedDecls.erase(varExpr->decl);
                 }
@@ -4844,6 +4857,7 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location)
                 return;
             }
             if (trackVars) {
+                if (checkLoop) errorIfLoopMove(varExpr->decl, varExpr->location);
                 movedDecls.insert(varExpr->decl);
                 maybeMovedDecls.erase(varExpr->decl);
             }
@@ -4929,7 +4943,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         // conversion was built; IRGen reads the flag off the cast itself) stop here.
         if (isMoved && (cast->castKind == ImplicitCastExpr::OptionalWrap || cast->castKind == ImplicitCastExpr::OptionalUnwrap) && consumes(cast->operand)) {
             errorIfIllegalPlaceMove(cast->operand);
-            propagateMove(cast->operand, trackVars, expr->location);
+            propagateMove(cast->operand, trackVars, expr->location, /*checkLoop=*/true);
         }
         return;
     }
@@ -4955,7 +4969,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(expr)) {
         if (isMoved && consumes(expr)) {
             errorIfIllegalPlaceMove(expr);
-            propagateMove(memberExpr->base, trackVars, expr->location);
+            propagateMove(memberExpr->base, trackVars, expr->location, /*checkLoop=*/true);
         }
         return;
     }
@@ -4963,7 +4977,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     if (auto* indexExpr = llvm::dyn_cast<IndexExpr>(expr)) {
         if (isMoved && consumes(expr)) {
             errorIfIllegalPlaceMove(expr);
-            propagateMove(indexExpr->getBase(), trackVars, expr->location);
+            propagateMove(indexExpr->getBase(), trackVars, expr->location, /*checkLoop=*/true);
         }
         return;
     }
@@ -4974,7 +4988,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(expr)) {
         if (isMoved && consumes(expr)) {
             errorIfIllegalPlaceMove(expr);
-            propagateMove(unwrapExpr->getReceiver(), trackVars, expr->location);
+            propagateMove(unwrapExpr->getReceiver(), trackVars, expr->location, /*checkLoop=*/true);
         }
         return;
     }
@@ -5013,9 +5027,10 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         // via the binding. Copyable bindings copy out freely like any copyable value.
         if (isMoved && trackVars && varExpr->type && !varExpr->type.removeReference().isImplicitlyCopyable()) {
             if (auto it = bindingSources.find(varExpr->decl); it != bindingSources.end()) {
+                errorIfLoopMove(varExpr->decl, varExpr->location);
                 movedDecls.insert(varExpr->decl);
                 maybeMovedDecls.erase(varExpr->decl);
-                propagateMove(it->second, trackVars, varExpr->location);
+                propagateMove(it->second, trackVars, varExpr->location, /*checkLoop=*/true);
                 return;
             }
         }
@@ -5035,12 +5050,22 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
 
         if (!trackVars) return;
         if (isMoved) {
+            errorIfLoopMove(varExpr->decl, varExpr->location);
             movedDecls.insert(varExpr->decl);
             maybeMovedDecls.erase(varExpr->decl);
         } else {
             movedDecls.erase(varExpr->decl);
             maybeMovedDecls.erase(varExpr->decl);
         }
+    }
+}
+
+void Typechecker::errorIfLoopMove(Decl* decl, Location location) {
+    if (!loopEntryLocalCount || !decl || inReturnValue || decl == assignTarget) return;
+    size_t entryCount = *loopEntryLocalCount;
+    auto it = std::find(localVarDecls.begin(), localVarDecls.end(), decl);
+    if (it == localVarDecls.end() || size_t(it - localVarDecls.begin()) < entryCount) {
+        ERROR(location, "cannot move '" << decl->getName() << "' inside a loop; move it before the loop or recreate it inside");
     }
 }
 
