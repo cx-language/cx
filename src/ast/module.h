@@ -167,12 +167,15 @@ struct Module {
     void print(llvm::raw_ostream& stream) const;
 
     static std::vector<Module*> getAllImportedModules();
-    static llvm::StringMap<Module*>& getAllImportedModulesMap() { return allImportedModules; }
+    static Module* findImportedModule(llvm::StringRef name);
+    static void registerImportedModule(llvm::StringRef name, Module* module);
     static Module* getStdlibModule();
 
 private:
     // Returns true when the name was already defined and a redefinition was reported.
     bool addToSymbolTableWithName(Decl& decl, llvm::StringRef name);
+
+    static llvm::StringMap<Module*> allImportedModules;
 
 public:
     std::string name;
@@ -181,7 +184,6 @@ public:
     bool isCxxHeaderImport = false;
     SymbolTable symbolTable;
     std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;
-    static llvm::StringMap<Module*> allImportedModules;
 };
 
 } // namespace cx

@@ -2251,7 +2251,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         // importModule's lookup order, so it only triggers when the import
         // would actually find this directory.
         if (registerAsStd) {
-            Module::getAllImportedModulesMap()["std"] = module;
+            Module::registerImportedModule("std", module);
         }
 
         Typechecker typechecker(options, buildDir.empty() ? nullptr : &projectConfig.resolvedDependencies);

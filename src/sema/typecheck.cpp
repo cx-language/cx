@@ -69,10 +69,9 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
 }
 
 llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, llvm::StringRef moduleName) {
-    auto it = Module::getAllImportedModulesMap().find(moduleName);
-    if (it != Module::getAllImportedModulesMap().end()) {
-        if (importer) importer->addImportedModule(it->second);
-        return *it->second;
+    if (Module* cached = Module::findImportedModule(moduleName)) {
+        if (importer) importer->addImportedModule(cached);
+        return *cached;
     }
 
     PhaseTimer timer("import-" + moduleName.str());
@@ -111,7 +110,7 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, llv
 done:
     if (error) return error;
     if (importer) importer->addImportedModule(module);
-    Module::getAllImportedModulesMap()[module->name] = module;
+    Module::registerImportedModule(module->name, module);
     typecheckModule(*module, *packageOptions, false);
     return *module;
 }

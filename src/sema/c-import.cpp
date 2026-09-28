@@ -931,9 +931,8 @@ struct ErrorIgnoringTextDiagPrinter final : clang::TextDiagnosticPrinter {
 
 bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker& typechecker) {
     llvm::StringRef headerName = importDecl.target;
-    auto it = Module::getAllImportedModulesMap().find(headerName);
-    if (it != Module::getAllImportedModulesMap().end()) {
-        importer.addImportedModule(it->second);
+    if (Module* cached = Module::findImportedModule(headerName)) {
+        importer.addImportedModule(cached);
         return true;
     }
 
@@ -1041,7 +1040,7 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     }
 
     importer.addImportedModule(module);
-    Module::getAllImportedModulesMap()[headerName] = module;
+    Module::registerImportedModule(headerName, module);
     return true;
 }
 
