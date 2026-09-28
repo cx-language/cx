@@ -1635,10 +1635,17 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            if (isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
-                                        allowUserConversion, usesUserConversion)
-                && isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
-                                           allowUserConversion, usesUserConversion)) {
+            // A diverging arm carries no value, so only live arms must convert.
+            // Both-diverging still converts nothing, as before.
+            bool thenLive = !ifExpr->thenExpr->type.isNeverType();
+            bool elseLive = !ifExpr->elseExpr->type.isNeverType();
+            if ((thenLive || elseLive)
+                && (!thenLive
+                    || isImplicitlyConvertible(ifExpr->thenExpr, ifExpr->thenExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
+                                               allowUserConversion, usesUserConversion))
+                && (!elseLive
+                    || isImplicitlyConvertible(ifExpr->elseExpr, ifExpr->elseExpr->type, target, false, nullptr, diagnoseOutOfRange, allowOperatorBorrow,
+                                               allowUserConversion, usesUserConversion))) {
                 return target;
             }
         }
@@ -4501,7 +4508,15 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     definitelyAssignedDecls = outerAssignedDecls;
     applyNarrowings(*expr.condition, false);
     auto elseType = typecheckExpr(*expr.elseExpr);
-    intersectNarrowings(thenNarrowings);
+    // A diverging arm never runs on, so the surviving arm alone decides the
+    // narrowings and assignments after the ternary (like IfStmt).
+    if (!thenType.isNeverType() && elseType.isNeverType()) {
+        narrowedTypes = thenNarrowings;
+    } else if (thenType.isNeverType() && !elseType.isNeverType()) {
+        // narrowedTypes already holds the else arm's set.
+    } else {
+        intersectNarrowings(thenNarrowings);
+    }
     if (!thenType.isNeverType() && elseType.isNeverType()) {
         definitelyAssignedDecls = thenAssignedDecls;
     } else if (!thenType.isNeverType() && !elseType.isNeverType()) {
@@ -4512,6 +4527,17 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
                 definitelyAssignedDecls.erase(decl);
             }
         }
+    } else if (thenType.isNeverType() && !elseType.isNeverType()) {
+        // Only the else arm runs on; definitelyAssignedDecls already holds its set.
+    }
+
+    // A diverging arm contributes no value to the join (like switch arms);
+    // it stays unconverted so codegen can see the divergence.
+    if (thenType.isNeverType()) {
+        return elseType;
+    }
+    if (elseType.isNeverType()) {
+        return thenType;
     }
 
     if (auto convertedElse = convert(expr.elseExpr, thenType, false, false)) {

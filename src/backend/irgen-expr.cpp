@@ -1383,24 +1383,39 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
     auto* outerGuard = tempGuard;
     createCondBr(condition, thenBlock, elseBlock);
 
+    // A diverging arm contributes no value to the join; like switch arms, it
+    // terminates its block instead of branching out.
+    bool thenDiverges = expr.thenExpr->type.isNeverType();
+    bool elseDiverges = expr.elseExpr->type.isNeverType();
+
     setInsertPoint(thenBlock);
     createStore(createConstantBool(true), thenGuard);
     tempGuard = thenGuard;
     auto* thenValue = emitExpr(*expr.thenExpr);
     // Void branches produce no value to join; like void calls, the result is only usable in discard positions.
     bool isVoid = !thenValue || thenValue->getType()->isVoid();
-    createBr(endIfBlock, isVoid ? nullptr : thenValue);
+    if (thenDiverges) {
+        createUnreachable();
+    } else {
+        createBr(endIfBlock, isVoid ? nullptr : thenValue);
+    }
 
     setInsertPoint(elseBlock);
     createStore(createConstantBool(true), elseGuard);
     tempGuard = elseGuard;
     auto* elseValue = emitExpr(*expr.elseExpr);
-    createBr(endIfBlock, isVoid ? nullptr : elseValue);
+    bool elseIsVoid = !elseValue || elseValue->getType()->isVoid();
+    if (elseDiverges) {
+        createUnreachable();
+    } else {
+        createBr(endIfBlock, elseIsVoid ? nullptr : elseValue);
+    }
     tempGuard = outerGuard;
 
     setInsertPoint(endIfBlock);
-    if (isVoid) return thenValue;
-    endIfBlock->parameter = new Parameter{ValueKind::Parameter, thenValue->getType(), "if.result"};
+    Value* joinValue = thenDiverges ? elseValue : thenValue;
+    if (!joinValue || joinValue->getType()->isVoid()) return joinValue;
+    endIfBlock->parameter = new Parameter{ValueKind::Parameter, joinValue->getType(), "if.result"};
     return endIfBlock->parameter;
 }
 

@@ -94,6 +94,9 @@ void main() {
 }
 ```
 
+An arm that diverges (calls a `never`-returning function like `abort`)
+contributes no value: the ternary takes the other arm's type.
+
 The `is` operator tests whether an enum value is a specific case.
 Appending a name binds the case's payload in the then-branch,
 using the same semantics as `switch` case bindings.

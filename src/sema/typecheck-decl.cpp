@@ -1757,8 +1757,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         } else {
             std::string hint;
 
-            if (initializerType.isNull()) {
-                ASSERT(!declaredType.isOptionalType());
+            if (initializerType.isNull() && !declaredType.isOptionalType()) {
                 hint = " (add '?' to the type to make it nullable)";
             } else {
                 hint = narrowingHint(initializerType, declaredType);
