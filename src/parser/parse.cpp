@@ -1212,6 +1212,9 @@ VarDecl* Parser::parseVarDecl(Decl* parent, AccessLevel accessLevel, bool requir
     }
 
     if (currentToken() == Token::Var) {
+        if (mutability == Mutability::Const) {
+            ERROR_CURRENT_TOKEN("'const' and 'var' cannot be combined");
+        }
         consumeToken();
     } else if (lookAhead(1) != Token::Assignment) {
         type = parseType();
@@ -2340,7 +2343,8 @@ start:
     case Token::Const:
         if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
         // Determine if this is a constant declaration or if the const is part of a type.
-        if (currentToken() == Token::Const && lookAhead(2) != Token::Assignment) {
+        // `const var` goes to parseVarDecl for the dedicated error, never a function type.
+        if (currentToken() == Token::Const && lookAhead(1) != Token::Var && lookAhead(2) != Token::Assignment) {
             return parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
         }
         decl = parseVarDecl(nullptr, accessLevel);
