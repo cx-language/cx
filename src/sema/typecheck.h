@@ -274,6 +274,21 @@ struct Typechecker {
     // Values moved on only one side of a conditional: using one warns, and its
     // destructor is skipped like a moved value (leaking the live path).
     llvm::SmallPtrSet<Decl*, 32> maybeMovedDecls;
+    // Most recent move site per declaration, so branch merges can warn where
+    // a value was conditionally moved.
+    llvm::DenseMap<Decl*, Location> moveLocations;
+    // Marks a declaration moved-from at the given move site.
+    void markMoved(Decl* decl, Location location);
+    enum class ConditionalMoveSite { IfThen, IfThenNoElse, IfElse, Switch, SwitchExpr };
+    // Warns that a value is moved on only some paths through a branch, pointing
+    // at its move in the given branch's move map. Branch-local values and
+    // payload bindings (which borrow) never leak, so only values declared
+    // before the branch warn.
+    void warnAboutConditionalMove(Decl* decl, ConditionalMoveSite site, size_t branchEntryLocalCount, const llvm::DenseMap<Decl*, Location>& locations);
+    // Merges per-path move sets after a switch: moves on every path stay moved,
+    // moves on some paths become maybe-moved and warn.
+    void mergeConditionalMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved, const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe,
+                               const llvm::SmallPtrSet<Decl*, 32>& entryMoved, ConditionalMoveSite site, size_t branchEntryLocalCount);
     // localVarDecls size at the innermost enclosing loop-body entry, if any;
     // moving a value declared before it is rejected, since the loop may
     // move it again on the next iteration.

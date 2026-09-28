@@ -285,8 +285,10 @@ payloads out of optionals.
 
 Moving a value on only one branch of a conditional makes later uses warn:
 the value may already be gone. Its destructor is skipped in that case,
-which leaks the value on paths where it is still live. Reassigning the
-value clears that state, but the overwritten value is not destroyed.
+which leaks the value on paths where it is still live. The move itself
+also warns, suggesting `drop()` on the other paths when the conditional
+move was intended. Reassigning the value clears that state, but the
+overwritten value is not destroyed.
 
 Moving a value declared outside a loop inside the loop is rejected:
 the loop may run more than once, moving it again. Values declared inside

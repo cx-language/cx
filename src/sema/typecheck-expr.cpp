@@ -4373,8 +4373,7 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
         if (!maybeMovedDecls.count(captured)) checkNotMoved(*captured, use);
         if (!captured->type.isImplicitlyCopyable()) {
             errorIfLoopMove(captured, expr.location);
-            movedDecls.insert(captured);
-            maybeMovedDecls.erase(captured);
+            markMoved(captured, expr.location);
             // A captured payload binding owns a copy, so its subject is consumed whole.
             if (auto it = bindingSources.find(captured); it != bindingSources.end()) {
                 propagateMove(it->second, /*trackVars=*/true, expr.location, /*checkLoop=*/true);
@@ -4846,8 +4845,7 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location,
             if (auto it = bindingSources.find(varExpr->decl); it != bindingSources.end()) {
                 if (trackVars) {
                     if (checkLoop) errorIfLoopMove(varExpr->decl, varExpr->location);
-                    movedDecls.insert(varExpr->decl);
-                    maybeMovedDecls.erase(varExpr->decl);
+                    markMoved(varExpr->decl, location);
                 }
                 current = it->second;
                 continue;
@@ -4858,8 +4856,7 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location,
             }
             if (trackVars) {
                 if (checkLoop) errorIfLoopMove(varExpr->decl, varExpr->location);
-                movedDecls.insert(varExpr->decl);
-                maybeMovedDecls.erase(varExpr->decl);
+                markMoved(varExpr->decl, location);
             }
             return;
         }
@@ -4868,6 +4865,12 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location,
         current->isMovedFrom = true;
         return;
     }
+}
+
+void Typechecker::markMoved(Decl* decl, Location location) {
+    movedDecls.insert(decl);
+    moveLocations[decl] = location;
+    maybeMovedDecls.erase(decl);
 }
 
 void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
@@ -5028,8 +5031,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         if (isMoved && trackVars && varExpr->type && !varExpr->type.removeReference().isImplicitlyCopyable()) {
             if (auto it = bindingSources.find(varExpr->decl); it != bindingSources.end()) {
                 errorIfLoopMove(varExpr->decl, varExpr->location);
-                movedDecls.insert(varExpr->decl);
-                maybeMovedDecls.erase(varExpr->decl);
+                markMoved(varExpr->decl, varExpr->location);
                 propagateMove(it->second, trackVars, varExpr->location, /*checkLoop=*/true);
                 return;
             }
@@ -5051,8 +5053,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         if (!trackVars) return;
         if (isMoved) {
             errorIfLoopMove(varExpr->decl, varExpr->location);
-            movedDecls.insert(varExpr->decl);
-            maybeMovedDecls.erase(varExpr->decl);
+            markMoved(varExpr->decl, varExpr->location);
         } else {
             movedDecls.erase(varExpr->decl);
             maybeMovedDecls.erase(varExpr->decl);

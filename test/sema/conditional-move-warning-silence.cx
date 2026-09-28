@@ -1,0 +1,86 @@
+// RUN: %cx -typecheck -Werror %s -Wno-unused
+
+void sink(StringBuf s) {}
+int use(StringBuf s) {
+    return 1;
+}
+int dropToInt(StringBuf s) {
+    drop(s);
+    return 0;
+}
+
+void dropInElseIsSilent(bool b, StringBuf x) {
+    if b {
+        sink(x);
+    } else {
+        drop(x);
+    }
+}
+
+void moveInBothBranchesIsSilent(bool b, StringBuf x) {
+    if b {
+        sink(x);
+    } else {
+        sink(x);
+    }
+}
+
+void divergingBranchIsSilent(bool b, StringBuf x) {
+    if b {
+        sink(x);
+        return;
+    }
+    println(string(x));
+}
+
+void branchLocalMoveIsSilent(bool b) {
+    if b {
+        var y = StringBuf("y");
+        sink(y);
+    }
+}
+
+void reassignInBranchIsSilent(bool b, StringBuf x) {
+    sink(x);
+    if b {
+        x = StringBuf("fresh");
+    }
+}
+
+void switchDropInAllArmsIsSilent(int c, StringBuf x) {
+    switch c {
+        case 1:
+            sink(x);
+        default:
+            drop(x);
+    }
+}
+
+void switchDivergingArmIsSilent(int c, StringBuf x) {
+    switch c {
+        case 1:
+            sink(x);
+            return;
+        default:
+            println("d");
+    }
+    println(string(x));
+}
+
+void switchArmLocalIsSilent(int c) {
+    switch c {
+        case 1:
+            var y = StringBuf("y");
+            sink(y);
+        default:
+            println("d");
+    }
+}
+
+void switchExprAllArmsIsSilent(int c, StringBuf x) {
+    var n = switch c {
+        case 1: use(x),
+        default: dropToInt(x),
+    };
+    println(n);
+}

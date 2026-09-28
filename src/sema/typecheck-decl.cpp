@@ -1113,6 +1113,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         // must not clobber the enclosing move state, which is restored when the body is done.
         llvm::SaveAndRestore saveMovedDecls(movedDecls, movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls, maybeMovedDecls);
+        llvm::SaveAndRestore saveMoveLocations(moveLocations, moveLocations);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls, definitelyAssignedDecls);
         // 'break' and 'continue' must not cross function boundaries into enclosing loops or switches.
         llvm::SaveAndRestore saveControlStmts(currentControlStmts, std::vector<Stmt*>());
@@ -1200,6 +1201,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
             movedDecls.clear();
             maybeMovedDecls.clear();
+            moveLocations.clear();
         }
 
         if (decl.isConstructorDecl() && !delegatedInit) {
