@@ -40,6 +40,11 @@ Comparison operators are synthesized, so only `==` and `<` need overloads:
 swapped. `a > b` checks `b < a`, `a >= b` checks `!(a < b)`,
 and `a <= b` checks `!(b < a)`.
 
+Structs also get a default `==` that compares every member with `==` and `&&`s
+the results together, so a custom `operator==` is only needed for different
+behavior. The default covers `!=` too (members compared with `!=`, `||`ed).
+Comparing structs of different types is still an error.
+
 The subscript operator is overloaded with a member function,
 so it can access the instance through `this`.
 A typical use is indexed access to a type's components,

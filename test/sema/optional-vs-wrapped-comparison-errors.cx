@@ -1,20 +1,8 @@
 // RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
 
-struct NoEq {
-    int x;
-}
-
-void main() {
-    NoEq? o = NoEq(x = 1);
-    NoEq p = NoEq(x = 1);
-    // The error names the wrapped types, since that comparison is what's missing.
-    // CHECK: [[@LINE+1]]:11: error: no matching operator '==' with arguments 'NoEq' and 'NoEq'
-    if (o == p) {
-    }
-    // CHECK: [[@LINE+1]]:11: error: unknown identifier '!='
-    if (o != p) {
-    }
-}
+// Note: plain structs without operator== used to error here, but they now get
+// the default memberwise == (see struct-default-equality.cx), so only the
+// ambiguity case below still fails.
 
 struct Point {
     int x;

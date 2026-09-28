@@ -654,6 +654,17 @@ static bool isOptionalVsWrappedComparison(Type leftType, Type rightType) {
         || (rightType.isOptionalType() && rightType.getWrappedType().equalsIgnoreTopLevelMutable(leftType));
 }
 
+static bool isSameStructComparison(Type leftType, Type rightType) {
+    TypeDecl* leftDecl = leftType.removeReference().getDecl();
+    TypeDecl* rightDecl = rightType.removeReference().getDecl();
+    return leftDecl && leftDecl == rightDecl && leftDecl->isStruct();
+}
+
+static bool isNoMatchingOverloadError(const CompileError& error) {
+    return error.message.starts_with("no matching operator ") || error.message.starts_with("unknown identifier ")
+        || error.message.ends_with("is not a function");
+}
+
 ComparisonTemps Typechecker::createComparisonTemps(BinaryExpr& expr) {
     ComparisonTemps temps{nullptr, nullptr, &expr.getLHS(), &expr.getRHS()};
     if (!currentFunction) return temps;
@@ -666,6 +677,8 @@ ComparisonTemps Typechecker::createComparisonTemps(BinaryExpr& expr) {
                                      AccessLevel::None, *currentModule, expr.location);
     temps.rhsTemp = makeAST<VarDecl>(expr.getRHS().type, "__comparison_rhs_" + std::to_string(comparisonTempCounter++), nullptr, currentFunction,
                                      AccessLevel::None, *currentModule, expr.location);
+    temps.lhsTemp->isImplicitlyBound = true;
+    temps.rhsTemp->isImplicitlyBound = true;
     typecheckVarDecl(*temps.lhsTemp);
     typecheckVarDecl(*temps.rhsTemp);
     // The temporaries have no initializer; codegen binds them to the operand values.
@@ -715,6 +728,30 @@ Type Typechecker::typecheckOptionalComparison(BinaryExpr& expr) {
     nullCheck->endLocation = wrappedCmp->endLocation = result->endLocation = expr.endLocation;
     // The wrapped comparison reuses the source operator, so its callee covers it for operator errors.
     wrappedCmp->callee->endLocation = getIdentifierEndLocation(expr.location, toString(op));
+    return finishComparisonLowering(expr, result, temps.lhsTemp, temps.rhsTemp);
+}
+
+Type Typechecker::typecheckStructComparison(BinaryExpr& expr) {
+    // Structs without a matching overload compare memberwise: `a == b` lowers to
+    // `a.m1 == b.m1 && ...`, `!=` mirrors with `||`. Only reached when overload
+    // resolution found nothing, so an explicit operator== still wins. Member
+    // access is the compiler's own, not the user's, so access warnings are off.
+    Token::Kind op = expr.op;
+    auto combiner = op == Token::Equal ? Token::AndAnd : Token::OrOr;
+    TypeDecl* structDecl = expr.getLHS().type.removeReference().getDecl();
+    ASSERT(structDecl && structDecl->isStruct());
+    ComparisonTemps temps = createComparisonTemps(expr);
+    Expr* result = nullptr;
+    llvm::SaveAndRestore suppress(suppressAccessWarnings, true);
+    for (FieldDecl& field : structDecl->fields) {
+        auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(temps.lhsBase, field.getName(), expr.location),
+                                               makeAST<MemberExpr>(temps.rhsBase, field.getName(), expr.location), expr.location);
+        result = result ? makeAST<BinaryExpr>(combiner, result, comparison, expr.location) : comparison;
+    }
+    if (!result) {
+        // An empty struct has nothing to compare: == is true, != is false.
+        result = makeAST<BoolLiteralExpr>(op == Token::Equal, expr.location);
+    }
     return finishComparisonLowering(expr, result, temps.lhsTemp, temps.rhsTemp);
 }
 
@@ -975,10 +1012,17 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             } catch (const CompileError& error) {
                 // Fall back only when nothing matched; ambiguity and argument errors still report.
                 // (Locked by optional-vs-wrapped-comparison-errors.cx.)
-                bool noMatch = error.message.starts_with("no matching operator ") || error.message.starts_with("unknown identifier ")
-                            || error.message.ends_with("is not a function");
-                if (!noMatch) throw;
+                if (!isNoMatchingOverloadError(error)) throw;
                 return typecheckOptionalComparison(expr);
+            }
+        }
+        if ((op == Token::Equal || op == Token::NotEqual) && isSameStructComparison(leftType, rightType)) {
+            try {
+                return typecheckCallExpr(expr);
+            } catch (const CompileError& error) {
+                // Custom operator== overloads win; lower memberwise only when nothing matched.
+                if (!isNoMatchingOverloadError(error)) throw;
+                return typecheckStructComparison(expr);
             }
         }
         return typecheckCallExpr(expr);

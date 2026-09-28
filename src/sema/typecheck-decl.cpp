@@ -1736,7 +1736,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
             ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
                         "couldn't infer type of '" << decl.getName() << "', add a type annotation or initializer");
         }
-        if (declaredType.isReferenceType() && !decl.isGlobal() && !decl.isPayloadBinding) {
+        if (declaredType.isReferenceType() && !decl.isGlobal() && !decl.isImplicitlyBound) {
             ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
                         "reference variable '" << decl.getName() << "' must be initialized (borrows cannot be rebound)");
         }

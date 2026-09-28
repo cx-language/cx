@@ -145,6 +145,7 @@ struct Typechecker {
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
     Type typecheckOptionalComparison(BinaryExpr& expr);
+    Type typecheckStructComparison(BinaryExpr& expr);
     ComparisonTemps createComparisonTemps(BinaryExpr& expr);
     Type finishComparisonLowering(BinaryExpr& expr, Expr* result, VarDecl* lhsTemp, VarDecl* rhsTemp);
     Type typecheckNullCoalescingExpr(BinaryExpr& expr);

@@ -652,7 +652,7 @@ void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase*
     if (!associatedValue) return;
     // The parser has no enclosing declaration for bindings in switch expressions; adopt them here.
     associatedValue->parent = currentFunction;
-    associatedValue->isPayloadBinding = true;
+    associatedValue->isImplicitlyBound = true;
     if (!enumCase) {
         ERROR_RANGE(associatedValue->location, getIdentifierEndLocation(associatedValue->location, associatedValue->getName()),
                     "only enum cases can bind associated values");

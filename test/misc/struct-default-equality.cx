@@ -1,0 +1,82 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:explicit
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:2
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+
+// Structs get a default == that compares every member and &&s the results.
+// An explicit operator== still wins over the default.
+
+struct Vec2 {
+    int x;
+    int y;
+}
+
+struct Custom {
+    int x;
+}
+
+bool operator==(Custom& a, Custom& b) {
+    println("explicit");
+    return a.x == b.x;
+}
+
+struct Nested {
+    Vec2 v;
+    string name;
+}
+
+struct Empty {}
+
+struct Box<T> {
+    T v;
+}
+
+int calls = 0;
+
+Vec2 getVec(int x) {
+    calls = calls + 1;
+    return Vec2(x, 0);
+}
+
+bool eqBorrows(Vec2& a, Vec2& b) {
+    return a == b;
+}
+
+void main() {
+    var a = Vec2(1, 2);
+    var b = Vec2(1, 2);
+    var c = Vec2(1, 3);
+    println(a == b);
+    println(a == c);
+    println(a != c);
+    println(a != b);
+    println(Custom(1) == Custom(2));
+    var n1 = Nested(Vec2(1, 2), "hi");
+    var n2 = Nested(Vec2(1, 2), "hi");
+    var n3 = Nested(Vec2(1, 2), "bye");
+    println(n1 == n2);
+    println(n1 == n3);
+    println(Empty() == Empty());
+    println(Empty() != Empty());
+    println(Box<int>(1) == Box<int>(1));
+    println(Box<int>(1) == Box<int>(2));
+    println(getVec(1) == getVec(1));
+    println(calls);
+    println(eqBorrows(a, b));
+    Vec2? o = Vec2(1, 2);
+    println(o == Vec2(1, 2));
+}

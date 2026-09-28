@@ -451,9 +451,10 @@ struct VarDecl : VariableDecl, Movable {
     // True for lowered for-loop element variables yielding a borrow: the variable aliases
     // the element instead of copying it out, so reference types are preserved, not dereferenced.
     bool isForLoopElement = false;
-    // True for switch-case and `is` payload bindings: bound implicitly by the switch,
+    // True for bindings established implicitly by the compiler (switch-case and `is`
+    // payload bindings, comparison temporaries): codegen binds them to their values,
     // so a borrow-typed binding needs no initializer.
-    bool isPayloadBinding = false;
+    bool isImplicitlyBound = false;
 };
 
 struct ImportDecl : Decl {
