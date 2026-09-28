@@ -1,0 +1,44 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct NoEq {
+    int x;
+}
+
+void main() {
+    NoEq? o = NoEq(x = 1);
+    NoEq p = NoEq(x = 1);
+    // The error names the wrapped types, since that comparison is what's missing.
+    // CHECK: [[@LINE+1]]:11: error: no matching operator '==' with arguments 'NoEq' and 'NoEq'
+    if (o == p) {
+    }
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier '!='
+    if (o != p) {
+    }
+}
+
+struct Point {
+    int x;
+    int y;
+}
+
+bool operator==(Point? a, Point& b) {
+    return true;
+}
+
+bool operator==(Point? a, const Point& b) {
+    return false;
+}
+
+bool operator==(Point& a, Point& b) {
+    return a.x == b.x;
+}
+
+// Ambiguous overloads still report instead of silently falling back, even though
+// the wrapped comparison alone would resolve.
+void ambiguous() {
+    Point? o = Point(x = 1, y = 2);
+    Point p = Point(x = 1, y = 2);
+    // CHECK: [[@LINE+1]]:11: error: ambiguous reference to '=='
+    if (o == p) {
+    }
+}

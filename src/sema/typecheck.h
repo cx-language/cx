@@ -67,6 +67,15 @@ struct VariadicGenericArgs {
 // Variables proven non-null by an enclosing null check, mapped to their unwrapped type.
 using NarrowMap = llvm::DenseMap<Decl*, Type>;
 
+// Compiler-generated temporaries a lowered `==`/`!=` reads its operands through.
+// Null in global initializers, where the lowering reads the operands directly.
+struct ComparisonTemps {
+    VarDecl* lhsTemp = nullptr;
+    VarDecl* rhsTemp = nullptr;
+    Expr* lhsBase;
+    Expr* rhsBase;
+};
+
 struct Typechecker {
     Typechecker(const CompileOptions& options, const std::vector<BuildConfig::ResolvedDependency>* dependencies = nullptr)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
@@ -135,6 +144,9 @@ struct Typechecker {
     Type typecheckAnonymousStructExpr(AnonymousStructExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
+    Type typecheckOptionalComparison(BinaryExpr& expr);
+    ComparisonTemps createComparisonTemps(BinaryExpr& expr);
+    Type finishComparisonLowering(BinaryExpr& expr, Expr* result, VarDecl* lhsTemp, VarDecl* rhsTemp);
     Type typecheckNullCoalescingExpr(BinaryExpr& expr);
     void typecheckAssignment(BinaryExpr& expr, Location location);
     Type typecheckCallExpr(CallExpr& expr, Type expectedType = Type());

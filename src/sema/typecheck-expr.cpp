@@ -649,6 +649,75 @@ EnumCase* cx::getIsEnumCase(Expr& expr) {
     return nullptr;
 }
 
+static bool isOptionalVsWrappedComparison(Type leftType, Type rightType) {
+    return (leftType.isOptionalType() && leftType.getWrappedType().equalsIgnoreTopLevelMutable(rightType))
+        || (rightType.isOptionalType() && rightType.getWrappedType().equalsIgnoreTopLevelMutable(leftType));
+}
+
+ComparisonTemps Typechecker::createComparisonTemps(BinaryExpr& expr) {
+    ComparisonTemps temps{nullptr, nullptr, &expr.getLHS(), &expr.getRHS()};
+    if (!currentFunction) return temps;
+    // Bind each side to a compiler-generated temporary so operands with side effects
+    // evaluate once; codegen binds the temporaries to the operand values before
+    // emitting the lowering. (`__`-prefixed identifiers are reserved for the compiler,
+    // so these can't collide with user declarations.)
+    static uint64_t comparisonTempCounter = 0;
+    temps.lhsTemp = makeAST<VarDecl>(expr.getLHS().type, "__comparison_lhs_" + std::to_string(comparisonTempCounter++), nullptr, currentFunction,
+                                     AccessLevel::None, *currentModule, expr.location);
+    temps.rhsTemp = makeAST<VarDecl>(expr.getRHS().type, "__comparison_rhs_" + std::to_string(comparisonTempCounter++), nullptr, currentFunction,
+                                     AccessLevel::None, *currentModule, expr.location);
+    typecheckVarDecl(*temps.lhsTemp);
+    typecheckVarDecl(*temps.rhsTemp);
+    // The temporaries have no initializer; codegen binds them to the operand values.
+    definitelyAssignedDecls.insert(temps.lhsTemp);
+    definitelyAssignedDecls.insert(temps.rhsTemp);
+    temps.lhsBase = makeAST<VarExpr>(temps.lhsTemp->getName(), expr.location);
+    temps.rhsBase = makeAST<VarExpr>(temps.rhsTemp->getName(), expr.location);
+    return temps;
+}
+
+Type Typechecker::finishComparisonLowering(BinaryExpr& expr, Expr* result, VarDecl* lhsTemp, VarDecl* rhsTemp) {
+    result->endLocation = expr.endLocation;
+    if (!currentFunction) {
+        expr = llvm::cast<BinaryExpr>(*result);
+        return typecheckBinaryExpr(expr);
+    }
+    Type loweredType = typecheckExpr(*result);
+    ASSERT(loweredType.isBool());
+    expr.comparisonTempLHS = lhsTemp;
+    expr.comparisonTempRHS = rhsTemp;
+    expr.comparisonLowering = result;
+    return Type::getBool();
+}
+
+Type Typechecker::typecheckOptionalComparison(BinaryExpr& expr) {
+    // `o == p` with o: T?, p: T lowers to `o != null && o == p`, so comparing against
+    // an optional never requires unwrapping first. The null check narrows the optional
+    // side to T, so the wrapped comparison resolves whatever `==` T itself has (derived
+    // operators included). `!=` mirrors with `||`, as do RHS optionals. Only reached
+    // when no overload (e.g. the Comparable-constrained stdlib one) matched.
+    Token::Kind op = expr.op;
+    bool optionalIsLHS = expr.getLHS().type.isOptionalType();
+    ComparisonTemps temps = createComparisonTemps(expr);
+    Expr* optBase = optionalIsLHS ? temps.lhsBase : temps.rhsBase;
+    Expr* otherBase = optionalIsLHS ? temps.rhsBase : temps.lhsBase;
+
+    // The wrapped comparison reads the optional side again through a second node.
+    // Global initializers have no narrowable temporaries, so unwrap explicitly there;
+    // globals never narrow, and reusing the narrowing form here would recurse.
+    VarDecl* optTemp = optionalIsLHS ? temps.lhsTemp : temps.rhsTemp;
+    Expr* narrowedBase = optTemp ? static_cast<Expr*>(makeAST<VarExpr>(optTemp->getName(), expr.location)) : makeAST<UnwrapExpr>(optBase, expr.location);
+
+    auto* nullCheck = makeAST<BinaryExpr>(op == Token::Equal ? Token::NotEqual : Token::Equal, optBase, makeAST<NullLiteralExpr>(expr.location), expr.location);
+    // The optional side is narrowed to T by the null check; keep the operand order.
+    auto* wrappedCmp = makeAST<BinaryExpr>(op, optionalIsLHS ? narrowedBase : otherBase, optionalIsLHS ? otherBase : narrowedBase, expr.location);
+    auto* result = makeAST<BinaryExpr>(op == Token::Equal ? Token::AndAnd : Token::OrOr, nullCheck, wrappedCmp, expr.location);
+    nullCheck->endLocation = wrappedCmp->endLocation = result->endLocation = expr.endLocation;
+    // The wrapped comparison reuses the source operator, so its callee covers it for operator errors.
+    wrappedCmp->callee->endLocation = getIdentifierEndLocation(expr.location, toString(op));
+    return finishComparisonLowering(expr, result, temps.lhsTemp, temps.rhsTemp);
+}
+
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.op;
 
@@ -758,50 +827,15 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         if (namesMatch) {
             // Lower anonymous struct comparison to elementwise comparison (e.g. `(a == b) && (c == d)`).
             auto combiner = op == Token::Equal ? Token::AndAnd : Token::OrOr;
-            // Bind each side to a compiler-generated temporary so operands with
-            // side effects evaluate once; the element accesses below read the
-            // temporaries. (`__`-prefixed identifiers are reserved for the
-            // compiler, so these can't collide with user declarations.)
-            // Outside functions there is no scope for temporaries, but global
-            // initializers can only be constants, so comparing the operands
-            // directly is harmless there.
-            VarDecl* lhsTemp = nullptr;
-            VarDecl* rhsTemp = nullptr;
-            Expr* lhsBase = &expr.getLHS();
-            Expr* rhsBase = &expr.getRHS();
-            if (currentFunction) {
-                static uint64_t anonymousStructTempCounter = 0;
-                lhsTemp = makeAST<VarDecl>(leftType, "__anonymous_struct_lhs_" + std::to_string(anonymousStructTempCounter++), nullptr, currentFunction,
-                                           AccessLevel::None, *currentModule, expr.location);
-                rhsTemp = makeAST<VarDecl>(rightType, "__anonymous_struct_rhs_" + std::to_string(anonymousStructTempCounter++), nullptr, currentFunction,
-                                           AccessLevel::None, *currentModule, expr.location);
-                typecheckVarDecl(*lhsTemp);
-                typecheckVarDecl(*rhsTemp);
-                // The temporaries have no initializer; codegen binds them to
-                // the operand values before emitting the lowering.
-                definitelyAssignedDecls.insert(lhsTemp);
-                definitelyAssignedDecls.insert(rhsTemp);
-                lhsBase = makeAST<VarExpr>(lhsTemp->getName(), expr.location);
-                rhsBase = makeAST<VarExpr>(rhsTemp->getName(), expr.location);
-            }
+            ComparisonTemps temps = createComparisonTemps(expr);
             Expr* result = nullptr;
             for (size_t i = 0; i < leftElements.size(); ++i) {
-                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(lhsBase, leftElements[i].name, expr.location),
-                                                       makeAST<MemberExpr>(rhsBase, rightElements[i].name, expr.location), expr.location);
+                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(temps.lhsBase, leftElements[i].name, expr.location),
+                                                       makeAST<MemberExpr>(temps.rhsBase, rightElements[i].name, expr.location), expr.location);
                 result = result ? makeAST<BinaryExpr>(combiner, result, comparison, expr.location) : comparison;
             }
             ASSERT(result);
-            result->endLocation = expr.endLocation;
-            if (!currentFunction) {
-                expr = llvm::cast<BinaryExpr>(*result);
-                return typecheckBinaryExpr(expr);
-            }
-            Type loweredType = typecheckBinaryExpr(llvm::cast<BinaryExpr>(*result));
-            ASSERT(loweredType.isBool());
-            expr.anonymousStructTempLHS = lhsTemp;
-            expr.anonymousStructTempRHS = rhsTemp;
-            expr.anonymousStructComparisonLowering = result;
-            return Type::getBool();
+            return finishComparisonLowering(expr, result, temps.lhsTemp, temps.rhsTemp);
         }
     }
 
@@ -933,6 +967,20 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     }
 
     if (!isBuiltinOp(op, leftType, rightType)) {
+        // `T? == T` never requires unwrapping first: if no overload matches, lower to
+        // a null check plus comparison of the unwrapped value (see typecheckOptionalComparison).
+        if ((op == Token::Equal || op == Token::NotEqual) && isOptionalVsWrappedComparison(leftType, rightType)) {
+            try {
+                return typecheckCallExpr(expr);
+            } catch (const CompileError& error) {
+                // Fall back only when nothing matched; ambiguity and argument errors still report.
+                // (Locked by optional-vs-wrapped-comparison-errors.cx.)
+                bool noMatch = error.message.starts_with("no matching operator ") || error.message.starts_with("unknown identifier ")
+                            || error.message.ends_with("is not a function");
+                if (!noMatch) throw;
+                return typecheckOptionalComparison(expr);
+            }
+        }
         return typecheckCallExpr(expr);
     }
 

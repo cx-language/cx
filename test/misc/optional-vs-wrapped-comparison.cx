@@ -1,0 +1,72 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:eq1
+// CHECK-NEXT:ne1
+// CHECK-NEXT:eq2
+// CHECK-NEXT:ne2
+// CHECK-NEXT:ok-null-eq
+// CHECK-NEXT:ok-eq-ne
+// CHECK-NEXT:ok-neq
+// CHECK-NEXT:2
+
+// Comparing 'T?' against 'T' never requires unwrapping first, even when T is
+// not Comparable (i.e. the stdlib Optional overloads don't apply).
+
+struct Point {
+    int x;
+    int y;
+}
+
+bool operator==(Point& a, Point& b) {
+    return a.x == b.x && a.y == b.y;
+}
+
+Point? maybeNull(bool b) {
+    if (b) {
+        return Point(x = 1, y = 2);
+    }
+    return null;
+}
+
+int sideEffects = 0;
+
+Point? counting(bool b) {
+    sideEffects = sideEffects + 1;
+    return maybeNull(b);
+}
+
+void main() {
+    Point p = Point(x = 1, y = 2);
+    Point q = Point(x = 9, y = 9);
+    if (maybeNull(true) == p) {
+        println("eq1");
+    }
+    if (maybeNull(false) != p) {
+        println("ne1");
+    }
+    if (p == maybeNull(true)) {
+        println("eq2");
+    }
+    if (p != maybeNull(false)) {
+        println("ne2");
+    }
+    if (maybeNull(false) == p) {
+        println("BAD1");
+    } else {
+        println("ok-null-eq");
+    }
+    if (maybeNull(true) != p) {
+        println("BAD2");
+    } else {
+        println("ok-eq-ne");
+    }
+    if (maybeNull(true) == q) {
+        println("BAD3");
+    } else {
+        println("ok-neq");
+    }
+    // Each side evaluates once despite appearing twice in the lowering.
+    _ = counting(true) == p;
+    _ = counting(true) != p;
+    println(sideEffects);
+}

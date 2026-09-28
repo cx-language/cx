@@ -31,6 +31,22 @@ void main() {
 void takeInt(int n) {}
 ```
 
+## Comparing against plain values
+
+Comparing a nullable value against a plain value with `==` or `!=` never requires unwrapping first.
+A null value compares unequal to every plain value.
+The wrapped type only needs its own `==` operator; it does not need to be `Comparable`.
+
+```cs
+struct Point { int x; int y; }
+bool operator==(Point& a, Point& b) { return a.x == b.x && a.y == b.y; }
+void main() {
+    Point? o = Point(x = 1, y = 2);
+    if (o == Point(x = 1, y = 2)) { println("equal"); }
+    if (o != Point(x = 0, y = 0)) { println("not equal"); }
+}
+```
+
 ## Non-null assertion operator
 
 In some cases, we know that a value of nullable type is non-null, but the compiler cannot verify it.

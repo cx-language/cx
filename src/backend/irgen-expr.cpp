@@ -535,21 +535,20 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
         return emitAssignment(expr);
     }
 
-    if (expr.anonymousStructComparisonLowering) {
-        // Anonymous struct comparison was lowered to elementwise comparison over
-        // compiler-generated temporaries during typechecking. Evaluate each
-        // side once and bind the temporaries to the values, so operands with
-        // side effects run only once no matter how many elements are compared.
+    if (expr.comparisonLowering) {
+        // The comparison was lowered to a replacement AST over compiler-generated
+        // temporaries during typechecking. Evaluate each side once and bind the
+        // temporaries to the values, so operands with side effects run only once.
         // The bindings alias the values (no copies), so there is nothing to
         // destroy; they are removed right after the lowering is emitted.
         auto* lhsValue = emitExpr(expr.getLHS());
         auto* rhsValue = emitExpr(expr.getRHS());
         auto& bindings = scopes.back().valuesByDecl;
-        bindings[expr.anonymousStructTempLHS] = lhsValue;
-        bindings[expr.anonymousStructTempRHS] = rhsValue;
-        auto* result = emitExpr(*expr.anonymousStructComparisonLowering);
-        bindings.erase(expr.anonymousStructTempLHS);
-        bindings.erase(expr.anonymousStructTempRHS);
+        bindings[expr.comparisonTempLHS] = lhsValue;
+        bindings[expr.comparisonTempRHS] = rhsValue;
+        auto* result = emitExpr(*expr.comparisonLowering);
+        bindings.erase(expr.comparisonTempLHS);
+        bindings.erase(expr.comparisonTempRHS);
         return result;
     }
 

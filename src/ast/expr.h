@@ -262,13 +262,13 @@ struct BinaryExpr : CallExpr {
     bool lhsIsMoved = false;
     // True when the operator is derived from its counterpart (e.g. != from ==) and the result must be negated.
     bool negateResult = false;
-    // For anonymous struct `==`/`!=`: elementwise lowering over compiler-generated temporaries.
-    // Codegen binds the temporaries to the operand values, so operands with side
-    // effects evaluate once no matter how many elements are compared. Null when
-    // the comparison wasn't lowered this way (e.g. in global initializers).
-    VarDecl* anonymousStructTempLHS = nullptr;
-    VarDecl* anonymousStructTempRHS = nullptr;
-    Expr* anonymousStructComparisonLowering = nullptr;
+    // For lowered `==`/`!=` (anonymous struct elementwise comparison, optional-vs-wrapped
+    // comparison): replacement AST over compiler-generated temporaries. Codegen binds
+    // the temporaries to the operand values, so operands with side effects evaluate
+    // once. Null when the comparison wasn't lowered this way (e.g. in global initializers).
+    VarDecl* comparisonTempLHS = nullptr;
+    VarDecl* comparisonTempRHS = nullptr;
+    Expr* comparisonLowering = nullptr;
     // NOTE: Array programming (`float[3] + float[3]`, etc.) does NOT use lowering
     // AST fields; typechecking validates and returns the type directly, and IRGen
     // emits element-wise directly (see emitBinaryExpr). No temporaries needed

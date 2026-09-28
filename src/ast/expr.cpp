@@ -110,8 +110,8 @@ bool Expr::isConstant() const {
         auto binaryExpr = llvm::cast<BinaryExpr>(this);
         // Like IfExpr, `??` always emits branches and is never folded.
         if (binaryExpr->op == Token::QuestionQuestion) return false;
-        // Lowered anonymous struct comparisons keep anonymous struct operands, which the getConstant* accessors can't evaluate.
-        if (binaryExpr->anonymousStructComparisonLowering) return false;
+        // Lowered comparisons keep the original operands, which the getConstant* accessors can't evaluate.
+        if (binaryExpr->comparisonLowering) return false;
         return binaryExpr->op != Token::Assignment && binaryExpr->getLHS().isConstant() && binaryExpr->getRHS().isConstant();
     }
 
