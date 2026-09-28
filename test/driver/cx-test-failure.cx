@@ -10,5 +10,7 @@ void testFail() {
     assert(1 == 2);
 }
 
-// CHECK:Assertion failed
-// CHECK:ok testPass
+// "ok" goes to buffered stdout while the failure goes to unbuffered stderr,
+// so their merged order varies by platform; accept either.
+// CHECK-DAG:Assertion failed
+// CHECK-DAG:ok testPass
