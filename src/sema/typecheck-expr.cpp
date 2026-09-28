@@ -654,6 +654,10 @@ static bool isOptionalVsWrappedComparison(Type leftType, Type rightType) {
         || (rightType.isOptionalType() && rightType.getWrappedType().equalsIgnoreTopLevelMutable(leftType));
 }
 
+static bool isOptionalVsOptionalComparison(Type leftType, Type rightType) {
+    return leftType.isOptionalType() && rightType.isOptionalType() && leftType.getWrappedType().equalsIgnoreTopLevelMutable(rightType.getWrappedType());
+}
+
 static bool isSameStructComparison(Type leftType, Type rightType) {
     TypeDecl* leftDecl = leftType.removeReference().getDecl();
     TypeDecl* rightDecl = rightType.removeReference().getDecl();
@@ -711,7 +715,38 @@ Type Typechecker::typecheckOptionalComparison(BinaryExpr& expr) {
     // when no overload (e.g. the Comparable-constrained stdlib one) matched.
     Token::Kind op = expr.op;
     bool optionalIsLHS = expr.getLHS().type.isOptionalType();
+    bool optionalIsRHS = expr.getRHS().type.isOptionalType();
     ComparisonTemps temps = createComparisonTemps(expr);
+
+    if (optionalIsLHS && optionalIsRHS) {
+        // `a == b` with both sides T? lowers to `(a == null && b == null) || (a != null && b != null && a == b)`,
+        // so each null check narrows its side to T for the wrapped comparison, which resolves whatever
+        // `==` T itself has (memberwise included). `!=` mirrors with flipped operators. Each temps-path
+        // use gets a fresh node: sharing one across differently-narrowed positions would reuse a stale type.
+        auto nullOp = op == Token::Equal ? Token::Equal : Token::NotEqual;
+        auto guardOp = op == Token::Equal ? Token::NotEqual : Token::Equal;
+        auto innerCombiner = op == Token::Equal ? Token::AndAnd : Token::OrOr;
+        auto outerCombiner = op == Token::Equal ? Token::OrOr : Token::AndAnd;
+        auto makeBase = [&](VarDecl* temp, Expr* fallback) -> Expr* {
+            return temp ? static_cast<Expr*>(makeAST<VarExpr>(temp->getName(), expr.location)) : fallback;
+        };
+        auto makeNullCheck = [&](VarDecl* temp, Expr* fallback, Token::Kind nullCheckOp) {
+            return makeAST<BinaryExpr>(nullCheckOp, makeBase(temp, fallback), makeAST<NullLiteralExpr>(expr.location), expr.location);
+        };
+        auto* nullOutcome = makeAST<BinaryExpr>(innerCombiner, makeNullCheck(temps.lhsTemp, temps.lhsBase, nullOp),
+                                                makeNullCheck(temps.rhsTemp, temps.rhsBase, nullOp), expr.location);
+        auto* guards = makeAST<BinaryExpr>(innerCombiner, makeNullCheck(temps.lhsTemp, temps.lhsBase, guardOp),
+                                           makeNullCheck(temps.rhsTemp, temps.rhsBase, guardOp), expr.location);
+        Expr* narrowedLHS = temps.lhsTemp ? makeBase(temps.lhsTemp, temps.lhsBase) : makeAST<UnwrapExpr>(temps.lhsBase, expr.location);
+        Expr* narrowedRHS = temps.rhsTemp ? makeBase(temps.rhsTemp, temps.rhsBase) : makeAST<UnwrapExpr>(temps.rhsBase, expr.location);
+        auto* wrappedCmp = makeAST<BinaryExpr>(op, narrowedLHS, narrowedRHS, expr.location);
+        auto* guardedCmp = makeAST<BinaryExpr>(innerCombiner, guards, wrappedCmp, expr.location);
+        auto* result = makeAST<BinaryExpr>(outerCombiner, nullOutcome, guardedCmp, expr.location);
+        nullOutcome->endLocation = guards->endLocation = guardedCmp->endLocation = wrappedCmp->endLocation = result->endLocation = expr.endLocation;
+        wrappedCmp->callee->endLocation = getIdentifierEndLocation(expr.location, toString(op));
+        return finishComparisonLowering(expr, result, temps.lhsTemp, temps.rhsTemp);
+    }
+
     Expr* optBase = optionalIsLHS ? temps.lhsBase : temps.rhsBase;
     Expr* otherBase = optionalIsLHS ? temps.rhsBase : temps.lhsBase;
 
@@ -1005,8 +1040,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (!isBuiltinOp(op, leftType, rightType)) {
         // `T? == T` never requires unwrapping first: if no overload matches, lower to
-        // a null check plus comparison of the unwrapped value (see typecheckOptionalComparison).
-        if ((op == Token::Equal || op == Token::NotEqual) && isOptionalVsWrappedComparison(leftType, rightType)) {
+        // null checks plus comparison of the unwrapped values (see typecheckOptionalComparison).
+        // The same fallback covers `T? == T?` with equal wrapped types.
+        if ((op == Token::Equal || op == Token::NotEqual)
+            && (isOptionalVsWrappedComparison(leftType, rightType) || isOptionalVsOptionalComparison(leftType, rightType))) {
             try {
                 return typecheckCallExpr(expr);
             } catch (const CompileError& error) {

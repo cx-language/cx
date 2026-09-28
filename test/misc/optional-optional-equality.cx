@@ -1,0 +1,79 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:2
+// CHECK-NEXT:true
+// CHECK-NEXT:4
+// CHECK-NEXT:explicit
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+
+// Two nullables with the same wrapped type compare without unwrapping: null
+// equals null, and two non-null values compare their wrapped values with
+// whatever == the wrapped type has (memberwise included). Each side with
+// side effects still evaluates once.
+
+struct Box {
+    int x;
+}
+
+struct Custom {
+    int x;
+}
+
+bool operator==(Custom& a, Custom& b) {
+    println("explicit");
+    return a.x == b.x;
+}
+
+int calls = 0;
+
+Box? getBox(int x) {
+    calls = calls + 1;
+    return Box(x);
+}
+
+void main() {
+    Box? a = Box(1);
+    Box? b = Box(1);
+    Box? c = Box(2);
+    Box? nil = null;
+    Box? nil2 = null;
+    println(a == b);
+    println(a == c);
+    println(a != c);
+    println(a != b);
+    println(nil == nil2);
+    println(nil != nil2);
+    println(a == nil);
+    println(a != nil);
+    println(nil == a);
+    println(getBox(1) == getBox(1));
+    println(calls);
+    println(getBox(1) != getBox(2));
+    println(calls);
+    Custom? x = Custom(1);
+    Custom? y = Custom(1);
+    println(x == y);
+    int?? n1 = 1;
+    int?? n2 = 1;
+    int?? n3 = null;
+    println(n1 == n2);
+    println(n1 == n3);
+    println(n3 == n3);
+    println(n1 != n3);
+    println(n1 != n2);
+}

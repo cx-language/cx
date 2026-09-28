@@ -36,6 +36,8 @@ void takeInt(int n) {}
 Comparing a nullable value against a plain value with `==` or `!=` never requires unwrapping first.
 A null value compares unequal to every plain value.
 The wrapped type only needs its own `==` operator; it does not need to be `Comparable`.
+Two nullable values with the same wrapped type compare the same way:
+null equals null, and two non-null values compare their wrapped values.
 
 ```cs
 struct Point { int x; int y; }
