@@ -11,6 +11,7 @@ void sinkArr(S[2] a) {}
 
 void singleBranchMoveWarnsOnUse(bool b, S s) {
     if (b) {
+    // CHECK: [[@LINE+1]]:13: warning: value 's' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(s); }' if this was intended)
         bar(s);
     }
     // CHECK: [[@LINE+1]]:9: warning: use of possibly-moved value 's'
@@ -20,6 +21,7 @@ void singleBranchMoveWarnsOnUse(bool b, S s) {
 void elseOnlyMoveWarnsOnUse(bool b, S t) {
     if (b) {
     } else {
+    // CHECK: [[@LINE+1]]:13: warning: value 't' is moved in the 'else' branch but not the 'then' branch; it may leak when the condition is true (add 'drop(t);' to the 'then' branch if this was intended)
         baz(t);
     }
     // CHECK: [[@LINE+1]]:9: warning: use of possibly-moved value 't'
@@ -29,6 +31,7 @@ void elseOnlyMoveWarnsOnUse(bool b, S t) {
 void nestedMaybeWarnsOnUse(bool b1, bool b2, S s) {
     if (b1) {
         if (b2) {
+    // CHECK: [[@LINE+1]]:17: warning: value 's' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(s); }' if this was intended)
             bar(s);
         }
     }
@@ -36,8 +39,9 @@ void nestedMaybeWarnsOnUse(bool b1, bool b2, S s) {
     bar(s);
 }
 
-void reassignAfterMaybeMoveIsSilent(bool b, S s, S t) {
+void reassignAfterMaybeMoveWarnsAtMoveOnly(bool b, S s, S t) {
     if (b) {
+    // CHECK: [[@LINE+1]]:13: warning: value 's' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(s); }' if this was intended)
         bar(s);
     }
     s = t;
@@ -62,6 +66,7 @@ void divergingBranchStaysSilent(bool b, S s) {
 
 void borrowOfMaybeWarns(bool b, S s) {
     if (b) {
+    // CHECK: [[@LINE+1]]:13: warning: value 's' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(s); }' if this was intended)
         bar(s);
     }
     // CHECK: [[@LINE+1]]:14: warning: use of possibly-moved value 's'
@@ -71,6 +76,7 @@ void borrowOfMaybeWarns(bool b, S s) {
 
 void captureOfMaybeWarnsOnce(bool b, S s) {
     if (b) {
+    // CHECK: [[@LINE+1]]:13: warning: value 's' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(s); }' if this was intended)
         bar(s);
     }
     // CHECK: [[@LINE+1]]:19: warning: use of possibly-moved value 's'
@@ -80,6 +86,7 @@ void captureOfMaybeWarnsOnce(bool b, S s) {
 
 void memberReadOfMaybeWarns(bool b, S s) {
     if (b) {
+    // CHECK: [[@LINE+1]]:13: warning: value 's' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(s); }' if this was intended)
         bar(s);
     }
     // CHECK: [[@LINE+1]]:13: warning: use of possibly-moved value 's'
@@ -88,6 +95,7 @@ void memberReadOfMaybeWarns(bool b, S s) {
 
 void memberAssignToMaybeWarns(bool b, S s) {
     if (b) {
+    // CHECK: [[@LINE+1]]:13: warning: value 's' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(s); }' if this was intended)
         bar(s);
     }
     // CHECK: [[@LINE+1]]:5: warning: use of possibly-moved value 's'
@@ -97,6 +105,7 @@ void memberAssignToMaybeWarns(bool b, S s) {
 void indexAssignToMaybeWarns(bool b) {
     var a = [S(n = 1), S(n = 2)];
     if (b) {
+    // CHECK: [[@LINE+1]]:17: warning: value 'a' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(a); }' if this was intended)
         sinkArr(a);
     }
     // CHECK: [[@LINE+1]]:5: warning: use of possibly-moved value 'a'

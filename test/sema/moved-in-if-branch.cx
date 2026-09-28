@@ -22,6 +22,7 @@ void foo(bool b, S s) {
 
 void secondMoveAfterMaybeMoveErrors(bool b, S s) {
     if (b) {
+        // CHECK: [[@LINE+1]]:13: warning: value 's' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(s); }' if this was intended)
         bar(s);
     }
     // CHECK: [[@LINE+1]]:9: warning: use of possibly-moved value 's'

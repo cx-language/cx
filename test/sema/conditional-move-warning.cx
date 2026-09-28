@@ -1,0 +1,107 @@
+// RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+void sink(StringBuf s) {}
+int use(StringBuf s) {
+    return 1;
+}
+
+enum E { A(StringBuf v), B }
+
+void thenOnlyMoveWarns(bool b, StringBuf x) {
+    if b {
+        // CHECK: [[@LINE+1]]:14: warning: value 'x' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(x); }' if this was intended)
+        sink(x);
+    }
+}
+
+void thenOnlyMoveWithElseWarns(bool b, StringBuf x) {
+    if b {
+        // CHECK: [[@LINE+1]]:14: warning: value 'x' is moved in the 'then' branch but not the 'else' branch; it may leak when the condition is false (add 'else { drop(x); }' if this was intended)
+        sink(x);
+    } else {
+    }
+}
+
+void elseOnlyMoveWarns(bool b, StringBuf x) {
+    if b {
+    } else {
+        // CHECK: [[@LINE+1]]:14: warning: value 'x' is moved in the 'else' branch but not the 'then' branch; it may leak when the condition is true (add 'drop(x);' to the 'then' branch if this was intended)
+        sink(x);
+    }
+}
+
+void elseIfChainWarnsOnce(int c, StringBuf x) {
+    if c == 1 {
+        // CHECK-COUNT-1: warning: value 'x' is moved in the 'then' branch but not the 'else' branch
+        sink(x);
+    } else if c == 2 {
+        println("two");
+    } else {
+        println("other");
+    }
+}
+
+void nestedMoveWarnsOnce(bool a, bool b, StringBuf x) {
+    if a {
+        if b {
+            // CHECK-COUNT-1: warning: value 'x' is moved in the 'then' branch but there is no 'else' branch
+            sink(x);
+        }
+    }
+}
+
+void captureInBranchWarns(bool b, StringBuf x) {
+    if b {
+        // CHECK: [[@LINE+1]]:17: warning: value 'x' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(x); }' if this was intended)
+        var f = () => string(x);
+        println(f());
+    }
+}
+
+void switchOneArmWarns(int c, StringBuf x) {
+    switch c {
+        case 1:
+            // CHECK: [[@LINE+1]]:18: warning: value 'x' is moved in only some arms of this 'switch'; it may leak on the other paths (add 'drop(x);' to the other arms if this was intended)
+            sink(x);
+        default:
+            println("d");
+    }
+}
+
+void switchNoDefaultWarns(int c, StringBuf x) {
+    switch c {
+        case 1:
+            sink(x);
+        case 2:
+            // CHECK: warning: value 'x' is moved in only some arms of this 'switch'; it may leak on the other paths (add 'drop(x);' to the other arms if this was intended)
+            drop(x);
+    }
+}
+
+void switchExprWarns(int c, StringBuf x) {
+    // CHECK: [[@LINE+2]]:21: warning: value 'x' is moved in only some arms of this 'switch' expression; it may leak on the other paths (move it on every path if this was intended)
+    var n = switch c {
+        case 1: use(x),
+        default: 0,
+    };
+    println(n);
+}
+
+void bindingMoveWarnsSubject(E e, bool b) {
+    if e is A name {
+        if b {
+            // CHECK-COUNT-1: warning: value 'e' is moved in the 'then' branch but there is no 'else' branch
+            sink(name);
+        }
+    }
+}
+
+void switchBindingWarnsSubject(E e) {
+    switch e {
+        case A name:
+            // CHECK-COUNT-1: warning: value 'e' is moved in only some arms of this 'switch'
+            sink(name);
+        case B:
+            println("b");
+    }
+}
