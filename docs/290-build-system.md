@@ -139,11 +139,10 @@ the platform allows it. On macOS the debug info for `cx build` output is
 collected into a `.dSYM` bundle next to the binary. On Windows the debug
 info is CodeView in a `.pdb` file next to the binary; pass
 `--dwarf-debug-info` for DWARF instead.
-`cx run` and `cx test` usually execute through an in-process JIT for speed (except
-on Windows, which links and executes a binary), so their abort traces show
-addresses (plus compiler frames) rather than function names. Pass `--no-jit` to
-link and execute a binary with named traces instead; `cx build` output always
-names functions.
+`cx run` and `cx test` usually execute through an in-process JIT for speed, so
+their abort traces show addresses (plus compiler frames) rather than function
+names. Pass `--no-jit` to link and execute a binary with named traces instead;
+`cx build` output always names functions.
 
 Traces and debugger output show mangled symbol names (such as
 `_CX1N4main5innerE4void0_`). `cx demangle` decodes them back to
