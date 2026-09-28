@@ -4839,11 +4839,69 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     // Direct moves of non-copyable bindings still always track (see VarExpr).
     auto consumes = [](const Expr* e) { return moveConsumesSource(e); };
 
+    // Moving a non-copyable field, element, or payload out by value would leave
+    // the source slot moved-from where the container cannot see it, so those
+    // implicit place moves are rejected: `.take()` moves one explicitly
+    // (leaving a fresh default behind), while borrows and copies keep working.
+    // Only projections rooted at a named binding count as places: enum cases,
+    // temporaries, and call results keep the old consume-the-temporary
+    // behavior, as do dereference roots (an explicit `*` names no slot, so the
+    // dereference rule owns those) and raw-pointer indexing, which is
+    // dereference-equivalent. Explicit `.deinit()` still consumes the whole
+    // base. Assigning through a projection does not resurrect a moved base the
+    // way whole-value reassignment does.
+    auto errorIfIllegalPlaceMove = [&](const Expr* e) {
+        if (!trackVars || inExplicitDeinit || !e->type || e->type.removeReference().isImplicitlyCopyable()) return;
+        const char* kind;
+        if (llvm::isa<IndexExpr>(e)) {
+            kind = "element";
+        } else if (llvm::isa<UnwrapExpr>(e)) {
+            kind = "optional payload";
+        } else if (llvm::isa<MemberExpr>(e)) {
+            kind = "field";
+        } else {
+            return;
+        }
+        auto isRawPointerBase = [](const Expr* indexBase) {
+            Type baseType = indexBase->type.removeOptional();
+            return (baseType.isPointerType() && !baseType.isReferenceType()) || baseType.isArrayPointer();
+        };
+        const Expr* root = e;
+        while (true) {
+            if (auto* member = llvm::dyn_cast<MemberExpr>(root)) {
+                root = member->base;
+            } else if (auto* index = llvm::dyn_cast<IndexExpr>(root)) {
+                // Indexing through a raw pointer is dereference-equivalent, so it
+                // keeps dereference leniency even nested inside a place.
+                if (isRawPointerBase(index->getBase())) return;
+                root = index->getBase();
+            } else if (auto* unwrap = llvm::dyn_cast<UnwrapExpr>(root)) {
+                root = unwrap->getReceiver();
+            } else if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(root)) {
+                if (cast->castKind != ImplicitCastExpr::AutoDereference) return;
+                root = cast->operand;
+            } else {
+                break;
+            }
+        }
+        auto* rootVar = llvm::dyn_cast<VarExpr>(root);
+        if (rootVar && rootVar->decl && !rootVar->decl->isTypeDecl() && rootVar->decl->kind != DeclKind::TypeTemplate
+            && rootVar->decl->kind != DeclKind::EnumCase) {
+            if (auto* member = llvm::dyn_cast<MemberExpr>(e)) {
+                ERROR(e->location,
+                      "cannot move field '" << member->member << "' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead");
+            } else {
+                ERROR(e->location, "cannot move " << kind << " implicitly; use '.take()' to move it explicitly, or borrow or copy it instead");
+            }
+        }
+    };
+
     if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
         // Ownership transfers through value casts. Borrow casts (AutoReference,
         // AutoDereference, Reborrow) and conversions (already marked where the
         // conversion was built; IRGen reads the flag off the cast itself) stop here.
         if (isMoved && (cast->castKind == ImplicitCastExpr::OptionalWrap || cast->castKind == ImplicitCastExpr::OptionalUnwrap) && consumes(cast->operand)) {
+            errorIfIllegalPlaceMove(cast->operand);
             propagateMove(cast->operand, trackVars, expr->location);
         }
         return;
@@ -4865,17 +4923,21 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         return;
     }
 
-    // Moving a member or element moves the whole base: there are no partial
-    // moves, so consuming `base.field` consumes `base` (and flags a temporary
-    // base so its destructor is skipped). Assigning through a projection does
-    // not resurrect a moved base the way whole-value reassignment does.
+    // There are no partial moves, so consuming `base.field` consumes `base`
+    // (and flags a temporary base so its destructor is skipped).
     if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(expr)) {
-        if (isMoved && consumes(expr)) propagateMove(memberExpr->base, trackVars, expr->location);
+        if (isMoved && consumes(expr)) {
+            errorIfIllegalPlaceMove(expr);
+            propagateMove(memberExpr->base, trackVars, expr->location);
+        }
         return;
     }
 
     if (auto* indexExpr = llvm::dyn_cast<IndexExpr>(expr)) {
-        if (isMoved && consumes(expr)) propagateMove(indexExpr->getBase(), trackVars, expr->location);
+        if (isMoved && consumes(expr)) {
+            errorIfIllegalPlaceMove(expr);
+            propagateMove(indexExpr->getBase(), trackVars, expr->location);
+        }
         return;
     }
 
@@ -4883,7 +4945,10 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     // of it consumes the whole optional. Dereferences (`*p`) copy out of
     // borrowed storage, so only borrowing uses may escape one.
     if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(expr)) {
-        if (isMoved && consumes(expr)) propagateMove(unwrapExpr->getReceiver(), trackVars, expr->location);
+        if (isMoved && consumes(expr)) {
+            errorIfIllegalPlaceMove(expr);
+            propagateMove(unwrapExpr->getReceiver(), trackVars, expr->location);
+        }
         return;
     }
 

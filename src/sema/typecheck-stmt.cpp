@@ -413,7 +413,9 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     }
 
     checkReturnPointerToLocal(stmt.value);
-    bool trackVars = !stmt.value || !stmt.value->type || !stmt.value->type.removeReference().isImplicitlyCopyable();
+    // Returning a borrow transfers no ownership, so reborrows never track moves.
+    bool trackVars = (!stmt.value || !stmt.value->type || !stmt.value->type.removeReference().isImplicitlyCopyable())
+                  && !currentFunction->getReturnType().removeOptional().isReferenceType();
     if (stmt.value && stmt.value->type && !isArrayBorrow(stmt.value->type, currentFunction->getReturnType())) {
         setMoved(stmt.value, true, trackVars);
     }

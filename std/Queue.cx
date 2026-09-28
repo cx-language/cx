@@ -52,7 +52,10 @@ struct Queue<T> {
     /// Retrieve and remove head of the queue
     T pop() {
         if empty() abort("Called pop() on empty Queue\n");
-        var value = head!.value;
+        // The node is deallocated below, so the value moves out of the dead
+        // storage directly; no default is left behind.
+        T value = undefined;
+        memcpy(&value, &head!.value, c_size_t(sizeof(T)));
         var next = head.next;
         deallocate(head);
         head = next;

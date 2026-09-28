@@ -54,9 +54,10 @@ struct Map<Key: Hashable, Value> {
 
         for entry, i in slot {
             if entry.key == *e {
-                var removed = slot.removeAt(i);
+                // Move the value out of the removed entry in place: naming the
+                // entry would require `.take()`, which generic values may not provide.
                 size--;
-                return removed.value;
+                return slot.removeAt(i).value;
             }
         }
 

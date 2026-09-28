@@ -278,6 +278,11 @@ void main() {
 }
 ```
 
+Moving a field out without `take()` is rejected: `var members =
+team.members;` fails to compile, suggesting `.take()`, a borrow, or a
+copy instead. The same holds for moving elements out of collections and
+payloads out of optionals.
+
 ## Printing
 
 Structs print generically: `print` renders the struct name followed by

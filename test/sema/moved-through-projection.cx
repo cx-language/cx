@@ -1,8 +1,12 @@
-// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
 
 struct C {
     int i;
     ~C() {
+    }
+
+    C take() {
+        return takeFrom(&this, C(i = 0));
     }
 }
 
@@ -10,11 +14,104 @@ struct Wrap {
     C c;
 }
 
-void take(C c) {}
+void sink(C c) {}
 
-void projectionMovesWholeBase(Wrap w) {
-    take(w.c);
-    // CHECK: [[@LINE+1]]:13: error: use of moved value 'w'
+void fieldMoveIntoCallIsRejected(Wrap w) {
+    // CHECK: [[@LINE+1]]:12: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    sink(w.c);
+}
+
+void fieldMoveIntoVarIsRejected(Wrap w) {
+    // CHECK: [[@LINE+1]]:15: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    var c = w.c;
+}
+
+void elementMoveIsRejected() {
+    var l = List<StringBuf>();
+    // CHECK: [[@LINE+1]]:14: error: cannot move element implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    var x = l[0];
+}
+
+void payloadMoveIsRejected() {
+    Optional<StringBuf> o = Optional.Some(value = StringBuf("hi"));
+    // CHECK: [[@LINE+1]]:14: error: cannot move optional payload implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    var x = o!;
+}
+
+struct Person {
+    StringBuf name;
+}
+
+StringBuf fieldMoveIntoReturnIsRejected(Person p) {
+    // CHECK: [[@LINE+1]]:14: error: cannot move field 'name' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    return p.name;
+}
+
+Optional<StringBuf> fieldMoveIntoOptionalReturnIsRejected(Person p) {
+    // CHECK: [[@LINE+1]]:14: error: cannot move field 'name' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    return p.name;
+}
+
+void fieldMoveIntoInitIsRejected(Wrap w) {
+    var storage = C(i = 0);
+    // CHECK: [[@LINE+1]]:23: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    (&storage).init(w.c);
+}
+
+struct WrapWrap {
+    Wrap w;
+}
+
+void nestedFieldMoveIsRejected(WrapWrap ww) {
+    // CHECK: [[@LINE+1]]:18: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    var c = ww.w.c;
+}
+
+void elementFieldMoveIsRejected() {
+    var l = List<Wrap>();
+    // CHECK: [[@LINE+1]]:18: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    var c = l[0].c;
+}
+
+void payloadFieldMoveIsRejected() {
+    Optional<Wrap> o = Optional.Some(value = Wrap(c = C(i = 1)));
+    // CHECK: [[@LINE+1]]:16: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    var c = o!.c;
+}
+
+void branchMoveIsRejected(Wrap w, bool b) {
+    // Only the first arm errors; reporting stops at the first move in an expression.
+    // CHECK: [[@LINE+1]]:19: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    var c = b ? w.c : w.c;
+}
+
+void switchMoveIsRejected(Wrap w, int n) {
+    var c = switch n {
+        // CHECK: [[@LINE+1]]:19: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+        case 0: w.c
+        default: w.c
+    };
+}
+
+void literalElementMoveIsRejected(Wrap w) {
+    // CHECK: [[@LINE+1]]:18: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    var arr = [w.c];
+}
+
+void fieldMoveIntoAssignIsRejected(Wrap w) {
+    var c = C(i = 0);
+    // CHECK: [[@LINE+1]]:11: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    c = w.c;
+}
+
+void fieldMoveIntoOptionalInitIsRejected(Wrap w) {
+    // CHECK: [[@LINE+1]]:14: error: cannot move field 'c' implicitly; use '.take()' to move it explicitly, or borrow or copy it instead
+    C? o = w.c;
+}
+
+void explicitTakeStillMoves(Wrap w) {
+    var c = w.c.take();
+    println(c.i);
     println(w.c.i);
 }
 
@@ -22,4 +119,40 @@ void copyableProjectionLeavesBaseAlone(Wrap w) {
     var i = w.c.i;
     println(w.c.i);
     println(i);
+}
+
+void borrowAndCopyStillWork(Wrap w) {
+    var r = &w.c;
+    println(r.i);
+    var q = Queue<StringBuf>();
+    q.push(StringBuf("a"));
+    var first = q.first();
+    println(string(*first));
+}
+
+void tempAndDerefMovesStayAllowed(Wrap* w) {
+    var c = Wrap(c = C(i = 1)).c;
+    var d = (*w).c;
+    println(c.i + d.i);
+}
+
+void bareEnumCaseStaysAllowed() {
+    Optional<StringBuf> e = Optional.None;
+    println(e == null);
+}
+
+void rawPointerIndexStaysAllowed() {
+    var buf = allocate<StringBuf>(uint64(1));
+    var s = buf[0];
+    println("ok");
+}
+
+C& fieldBorrowReturnIsAllowed(Wrap& w) {
+    return w.c;
+}
+
+void explicitDeinitStillConsumes(Wrap w) {
+    w.c.deinit();
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'w'
+    println(w.c.i);
 }
