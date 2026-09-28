@@ -7,6 +7,9 @@ const _CALL_REPORTFAULT = 0x2;
 /// Prints the current stack trace.
 void printStackTrace() {
     // TODO: Implement stack trace on Windows.
+    // abort() doesn't flush stdio buffers on all paths; flush now so pending
+    // output isn't lost.
+    fflush(null);
     // Reference Range so IR emission matches posix (its printStackTrace uses
     // `for i in 0..frames`), keeping snapshot output consistent across platforms.
     for _ in 0..0 {
