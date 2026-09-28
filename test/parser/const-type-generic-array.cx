@@ -1,0 +1,9 @@
+// RUN: %cx -parse %s
+
+// A fixed-size array preserves element constness, so a generic one is a
+// valid typed constant declarator even though `[` follows the `<>`.
+struct W<T> { T v; }
+const W<int>[4] arr;
+struct S {
+    const W<int>[4] data = arr;
+}

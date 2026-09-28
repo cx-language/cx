@@ -16,6 +16,9 @@ const c = 0.1; // global constant, type inferred as 'float'
 const float d = 0.2; // global constant, explicit type
 ```
 
+An explicit type on a global or member constant cannot be a slice or
+optional type; omit it and let the type be inferred.
+
 Global variables are initialized before the program starts,
 so their initializers must be constant expressions:
 literals, arithmetic on constants, and references to other constants,

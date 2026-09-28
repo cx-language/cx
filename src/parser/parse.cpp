@@ -25,6 +25,17 @@ using namespace cx;
 namespace {
 // Reported wherever `implicit` appears outside a struct constructor or member function.
 constexpr char implicitMemberOnly[] = "only struct constructors and member functions can be marked 'implicit'";
+// Reported for `const` in types that doesn't qualify a pointee.
+constexpr char constPointeeOnly[] = "'const' in a type is only allowed to make the pointee const ('const T*', 'const T[*]' or 'const T&')";
+
+// Rejects a `const` type that isn't pointee-const. An array-pointer inherits
+// its element's constness, so `const T[*]` is exempt. Callers decide when a
+// bare `const` is acceptable (constant declarators with `=`).
+void rejectBareConstType(const Type& type) {
+    if (!type.isMutable() && !type.isArrayPointer()) {
+        ERROR_RANGE(type.location, getIdentifierEndLocation(type.location, "const"), constPointeeOnly);
+    }
+}
 } // namespace
 
 Parser::Parser(llvm::MemoryBufferRef input, Module& module, const CompileOptions& options)
@@ -643,8 +654,8 @@ Type Parser::parseFunctionType(Type returnType) {
     return FunctionType::get(returnType, std::move(paramTypes), false, Mutability::Mutable, returnType.location);
 }
 
-/// type ::= simple-type | 'const' simple-type | type '*' | type '&' | type '?' | function-type | anonymous-struct-type
-Type Parser::parseType() {
+/// type ::= simple-type | 'const' simple-type ('*' | '[*]' | '&') | type '*' | type '&' | type '?' | function-type | anonymous-struct-type
+Type Parser::parseType(bool allowBareConst) {
     Type type;
     auto location = getCurrentLocation();
 
@@ -652,10 +663,27 @@ Type Parser::parseType() {
     case Token::Identifier:
         type = parseSimpleType(Mutability::Mutable);
         break;
-    case Token::Const:
-        consumeToken();
+    case Token::Const: {
+        auto constToken = parse(Token::Const);
         type = parseSimpleType(Mutability::Const);
+        // `const` in types only qualifies pointees (for C/C++ API matching).
+        // parseSimpleType consumes a directly following `[*]` itself, so a
+        // resulting array-pointer counts as pointee-const too.
+        bool isPointeeConst =
+            currentToken().is({Token::Star, Token::And}) || (currentToken() == Token::LeftBracket && lookAhead(1) == Token::Star) || type.isArrayPointer();
+        // (AndAnd is deliberately absent: `const T&&` falls through to the
+        // suffix loop's nested-references error, which is more specific.)
+        // parseSimpleType leaves `[` unconsumed after generic arguments; only
+        // `[]` is excluded (a slice forces Mutable, so the `const` would be
+        // meaningless), while `[N]` preserves constness for the declarator.
+        bool isSliceSuffix = currentToken() == Token::LeftBracket && lookAhead(1) == Token::RightBracket;
+        bool isTentativeBareConst =
+            allowBareConst && !type.isMutable() && !currentToken().is({Token::QuestionMark, Token::QuestionQuestion, Token::LeftParen}) && !isSliceSuffix;
+        if (!isPointeeConst && !isTentativeBareConst) {
+            ERROR_RANGE(constToken.location, getTokenEndLocation(constToken), constPointeeOnly);
+        }
         break;
+    }
     case Token::LeftParen:
         type = parseAnonymousStructType();
         break;
@@ -2000,10 +2028,11 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             LLVM_FALLTHROUGH;
         default: {
             size_t returnTypeIndex = currentTokenIndex;
-            auto type = parseType();
+            auto type = parseType(/*allowBareConst=*/true);
             auto location = getCurrentLocation();
             auto name = parseFunctionName(&*typeDecl);
             auto requireBody = tag != TypeTag::Interface;
+            if (currentToken() != Token::Assignment) rejectBareConstType(type);
 
             switch (currentToken()) {
             case Token::LeftParen:
@@ -2131,9 +2160,10 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 ERROR_CURRENT_TOKEN("enums cannot have destructors");
             }
             size_t returnTypeIndex = currentTokenIndex;
-            auto type = parseType();
+            auto type = parseType(/*allowBareConst=*/true);
             auto location = getCurrentLocation();
             auto methodName = parseFunctionName(enumDecl);
+            if (currentToken() != Token::Assignment) rejectBareConstType(type);
 
             // A const-qualified member with an initializer is a static constant.
             if (currentToken() == Token::Assignment && !type.isMutable()) {
@@ -2393,12 +2423,13 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
         ERROR_CURRENT_TOKEN("statements are not allowed in global scope");
     }
     size_t returnTypeIndex = currentTokenIndex;
-    auto type = parseType();
+    auto type = parseType(/*allowBareConst=*/true);
     auto location = getCurrentLocation();
     auto name = parseFunctionName(nullptr);
 
     switch (currentToken()) {
     case Token::LeftParen:
+        rejectBareConstType(type);
         if (isExtern) {
             decl = parseExternFunctionDecl(accessLevel, type, name, location, cppLinkage);
         } else {

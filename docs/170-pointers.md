@@ -37,6 +37,13 @@ void main() {
 }
 ```
 
+## Const pointees
+
+To match `const` in C/C++ APIs, the pointed-to type can be marked `const`:
+`const T*`, `const T[*]`, and `const T&` all mean the pointee cannot be
+written through. This is the only use of `const` in types; a bare `const T`
+is rejected. Named constants still use the `const` declarator (`const x = ...`).
+
 ## Borrowed parameters
 
 Functions that only use a value for the duration of the call take it by borrow, written `T&`.

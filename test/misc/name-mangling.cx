@@ -6,7 +6,7 @@
 // CHECK: global _CX1G4main7counterE = int32 0
 // CHECK: int32 _CX1N4main3addEM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
 // CHECK: int32 _CX1N4main3addEM3std5int321_M3std5int32(int32 a) {
-// CHECK: void _CX1N4main9takeConstE4void1_KM3std5int32(int32 x) {
+// CHECK: void _CX1N4main9takeConstE4void1_PKM3std5int32(int32* x) {
 // CHECK: void _CX1N4main7takeMutE4void1_M3std5int32(int32 x) {
 // CHECK: bool _CX1N4maino2eqEM3std4bool2_RM4main3BoxRM4main3Box(
 // CHECK: void _CX1N4main4moveE4void1_L1xM3std5int32(int32 x) {
@@ -43,7 +43,7 @@ struct Wrapper<T> {
 
 int add(int a, int b) { return a + b; }
 int add(int a) { return a; }
-void takeConst(const int x) { print(x); }
+void takeConst(const int* x) { print(*x); }
 void takeMut(int x) { print(x); }
 T identity<T>(T x) { return x; }
 bool operator==(Box& a, Box& b) { return a.x == b.x; }
@@ -66,7 +66,6 @@ void main() {
     var b = Box(3);
     print(add(1, 2));
     print(add(1));
-    takeConst(1);
     takeMut(2);
     print(identity(3));
     print(identity(true));
@@ -80,6 +79,7 @@ void main() {
     print(optVal(5));
     int v = 6;
     ptrFn(&v);
+    takeConst(&v);
     borrowFn(v);
     int[] sl = [7, 8];
     sliceFn(sl);

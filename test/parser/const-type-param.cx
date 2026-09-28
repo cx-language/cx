@@ -1,0 +1,5 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:8: error: 'const' in a type is only allowed to make the pointee const ('const T*', 'const T[*]' or 'const T&')
+void f(const int x) {
+}
