@@ -189,9 +189,9 @@ struct Typechecker {
                                                                 llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     ArgumentValidation getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic);
     std::optional<Match> matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params = {});
-    void validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", Location location = Location());
+    void validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "");
     void validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee = "",
-                                     Location location = Location(), const Decl* calleeDecl = nullptr);
+                                     const Decl* calleeDecl = nullptr);
     TypeDecl* getTypeDecl(const BasicType& type);
     EnumCase* getEnumCase(const Expr& expr, Type expectedType = Type(), CallExpr* call = nullptr);
     EnumCase* getExpectedEnumCase(llvm::StringRef name, Type expectedType);
@@ -306,7 +306,7 @@ bool containsGenericParam(Type type, llvm::StringRef genericParam);
 // consumer borrows the elements without taking ownership, so the source must
 // still die at its own site instead of being flagged as moved.
 bool isArrayBorrow(Type source, Type target);
-void diagnoseClosureConversion(Type source, Type target, Location location);
+void diagnoseClosureConversion(Type source, Type target, const Expr& expr);
 // Suggests an explicit conversion when a value of one numeric type is used where another is expected.
 std::string narrowingHint(Type source, Type target);
 // Explains why a type is not Copyable when a use fails because the value was moved.
@@ -314,6 +314,6 @@ std::string copyableHint(Type type);
 // Whether a type satisfies a ': Copyable' generic constraint. Structural, not name-based.
 bool satisfiesCopyable(Type type);
 // Rejects a variadic extra that cannot cross to an `extern "C++"` callee by value.
-void validateCppVariadicExtra(Type type, Location location, llvm::StringRef callee);
+void validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef callee);
 
 } // namespace cx

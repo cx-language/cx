@@ -3,6 +3,6 @@
 struct A {}
 
 void main() {
-    // CHECK: [[@LINE+1]]:5: error: unknown identifier 'A.iterator'
+    // CHECK: [[@LINE+1]]:14: error: unknown identifier 'A.iterator'
     for i in A() {}
 }

@@ -1,7 +1,7 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
 void main() {
-    // CHECK: [[@LINE+1]]:11: error: division by zero in array size
+    // CHECK: [[@LINE+1]]:9: error: division by zero in array size
     int[1 / 0] a;
 }
 

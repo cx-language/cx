@@ -1,7 +1,7 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
 void main() {
-    // CHECK: [[@LINE+1]]:11: error: array size must be non-negative
+    // CHECK: [[@LINE+1]]:9: error: array size must be non-negative
     int[1 - 2] a;
 }
 

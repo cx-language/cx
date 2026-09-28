@@ -4,10 +4,10 @@ float[2] getVec() { return [1.0, 2.0]; }
 float[2]? getOptVec() { return [1.0, 2.0]; }
 
 void main() {
-    // CHECK: [[@LINE+1]]:13: error: cannot assign to element of rvalue of type 'float[2]'
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to element of rvalue of type 'float[2]'
     getVec()[0] = 5.0;
     // Unwrapping an rvalue optional is still an rvalue.
-    // CHECK: [[@LINE+1]]:17: error: cannot assign to element of rvalue of type 'float[2]'
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to element of rvalue of type 'float[2]'
     getOptVec()![0] = 5.0;
     // But unwrapping an lvalue optional designates the payload, so this is fine.
     float[2]? opt = [1.0, 2.0];

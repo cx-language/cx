@@ -116,6 +116,30 @@ template<typename T> void printColored(const T& text, llvm::raw_ostream::Colors 
 
 void printStackTrace();
 [[noreturn]] void abort(llvm::StringRef message);
+
+/// Returns one past the end of the identifier starting at `location`.
+inline Location getIdentifierEndLocation(Location location, llvm::StringRef name) {
+    Location end = location;
+    end.column += int(name.size());
+    return end;
+}
+
+/// Returns one past the end of `decl`'s name. Only valid for declarations
+/// whose location is the start of their name (the common case). Operator
+/// declarations (whose name is punctuation at the `operator` keyword),
+/// lambdas/constructors/destructors (whose names are synthesized), and
+/// nameless declarations degrade to a caret.
+template<typename T> Location getIdentifierEndLocation(const T& decl) {
+    // ParamDecl and friends have no kind helpers; the branch below only exists for Decl subclasses.
+    if constexpr (requires { decl.isLambda(); }) {
+        if (decl.isLambda() || decl.isConstructorDecl() || decl.isDestructorDecl()) return decl.getLocation();
+    }
+    llvm::StringRef name = decl.getName();
+    char first = name.empty() ? '\0' : name.front();
+    bool identifierStart = (first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z') || first == '_';
+    if (!identifierStart) return decl.getLocation();
+    return getIdentifierEndLocation(decl.getLocation(), name);
+}
 void reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes = {}, Location endLocation = {});
 void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes = {}, Location endLocation = {});
 
@@ -158,6 +182,24 @@ void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<No
     { \
         printStackTrace(); \
         throw CompileError(begin, std::move((StringBuilder() << args).string), {}, end); \
+    }
+
+#define ERROR_WITH_NOTES_RANGE(begin, end, notes, args) \
+    { \
+        printStackTrace(); \
+        throw CompileError(begin, std::move((StringBuilder() << args).string), notes, end); \
+    }
+
+#define REPORT_ERROR_RANGE(begin, end, args) \
+    { \
+        printStackTrace(); \
+        reportError(begin, StringBuilder() << args, {}, end); \
+    }
+
+#define REPORT_ERROR_WITH_NOTES_RANGE(begin, end, notes, args) \
+    { \
+        printStackTrace(); \
+        reportError(begin, StringBuilder() << args, notes, end); \
     }
 
 #define WARN_RANGE(begin, end, args) \

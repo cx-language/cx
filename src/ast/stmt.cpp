@@ -146,7 +146,9 @@ Stmt* ForEachStmt::lower(int nestLevel) {
         iteratorValue = range;
     } else {
         auto iteratorMemberExpr = makeAST<MemberExpr>(range, "iterator", location);
+        iteratorMemberExpr->endLocation = range->endLocation;
         iteratorValue = makeAST<CallExpr>(iteratorMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
+        iteratorValue->endLocation = range->endLocation;
     }
 
     auto iteratorVarDecl = makeAST<VarDecl>(Type(nullptr, Mutability::Mutable, location), iteratorVariableName, iteratorValue, variable->parent,

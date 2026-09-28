@@ -299,7 +299,7 @@ static bool synthesizeTestMain(Module& mainModule) {
             FunctionDecl* functionDecl = nullptr;
             if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
                 if (!functionTemplate->functionDecl->isTest) continue;
-                REPORT_ERROR(decl->getLocation(), "generic test functions are not supported");
+                REPORT_ERROR_RANGE(decl->getLocation(), getIdentifierEndLocation(*decl), "generic test functions are not supported");
                 return false;
             } else if (auto* function = llvm::dyn_cast<FunctionDecl>(decl)) {
                 if (!function->isTest) continue;
@@ -308,11 +308,13 @@ static bool synthesizeTestMain(Module& mainModule) {
                 continue;
             }
             if (!functionDecl->getParams().empty() || !functionDecl->getReturnType().isVoid()) {
-                REPORT_ERROR(functionDecl->getLocation(), "test function '" << functionDecl->getName() << "' must take no parameters and return void");
+                REPORT_ERROR_RANGE(functionDecl->getLocation(), getIdentifierEndLocation(*functionDecl),
+                                   "test function '" << functionDecl->getName() << "' must take no parameters and return void");
                 return false;
             }
             if (functionDecl->accessLevel == AccessLevel::Private) {
-                REPORT_ERROR(functionDecl->getLocation(), "test function '" << functionDecl->getName() << "' cannot be private");
+                REPORT_ERROR_RANGE(functionDecl->getLocation(), getIdentifierEndLocation(*functionDecl),
+                                   "test function '" << functionDecl->getName() << "' cannot be private");
                 return false;
             }
             tests.push_back(functionDecl);

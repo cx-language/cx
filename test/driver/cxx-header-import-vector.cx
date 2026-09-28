@@ -32,7 +32,7 @@ void main() {
 // including substitution compression.
 // CHECK: declare i32 @"\01{{_?}}_Z11if_compoundRKSt6vectorIP4ItemSaIS1_EE"(ptr)
 // Trivially copyable structs still import by value.
-// CHECK: declare i32 @"\01{{_?}}_Z7if_pdot6FPoint"([1 x i64])
+// CHECK: declare i32 @"\01{{_?}}_Z7if_pdot6FPoint"(i64)
 // A 16-byte struct crosses in two integer chunks.
 // CHECK: declare i32 @"\01{{_?}}_Z10if_sixteen7Sixteen"([2 x i64])
 // extern "C" functions in C++ headers keep their plain names.

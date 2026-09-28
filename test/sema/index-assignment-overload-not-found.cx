@@ -5,6 +5,6 @@ struct S {}
 void main() {
     var s = S()
 
-    // CHECK: [[@LINE+1]]:6: error: 'S' doesn't provide an operator[]=
+    // CHECK: [[@LINE+1]]:5: error: 'S' doesn't provide an operator[]=
     s[1] = 2
 }

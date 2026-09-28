@@ -2,7 +2,7 @@
 
 void main() {
     int[*]? p = null;
-    // CHECK: [[@LINE+1]]:7: warning: value may be null; unwrap it with a postfix '!' to silence this warning
+    // CHECK: [[@LINE+1]]:5: warning: value may be null; unwrap it with a postfix '!' to silence this warning
     p.data()[0];
     if (p != null) {
         p.data()[0];

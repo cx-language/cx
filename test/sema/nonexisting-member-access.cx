@@ -6,6 +6,6 @@ struct Foo {
 
 void main() {
     var foo = Foo(1);
-    // CHECK: [[@LINE+1]]:19: error: no member named 'bar' in 'Foo'
+    // CHECK: [[@LINE+1]]:15: error: no member named 'bar' in 'Foo'
     var bar = foo.bar;
 }

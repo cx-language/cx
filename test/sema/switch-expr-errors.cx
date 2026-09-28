@@ -29,7 +29,7 @@ void voidArms(int n) {
     };
 }
 
-// CHECK: [[@LINE+2]]:12: error: incompatible arm types ('int' and 'string')
+// CHECK: [[@LINE+3]]:17: error: incompatible arm types ('int' and 'string')
 int incompatibleArms(int n) {
     return switch n {
         case 0: 1

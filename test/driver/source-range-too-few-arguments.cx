@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+int add(int a, int b) { return a + b; }
+void main() {
+    add(1);
+}
+// CHECK: [[@LINE-2]]:5: error: too few arguments to 'add', expected 2
+// CHECK-NEXT: add(1);
+// CHECK-NEXT: ~~~
+// CHECK: note: 'add' declared here

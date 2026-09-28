@@ -69,7 +69,7 @@ void main() {
 // CHECK: declare void @"\01{{_?}}_Z6m_voidv"()
 // CHECK: declare void @"\01{{_?}}_Z10m_variadiciz"(i32, ...)
 // CHECK: declare void @"\01{{_?}}_Z13m_onlyvarargsz"(...)
-// CHECK: declare i32 @"\01{{_?}}_Z7m_byval5Point"([1 x i64])
+// CHECK: declare i32 @"\01{{_?}}_Z7m_byval5Point"(i64)
 // CHECK: declare i32 @"\01{{_?}}_Z6m_wide4Wide"([2 x i64])
 // CHECK: declare void @"\01{{_?}}_Z8m_cbwidePFv5PointE"(ptr)
 // CHECK: declare i32 @"\01{{_?}}_Z7m_byrefRK5Point"(ptr)
@@ -81,4 +81,4 @@ void main() {
 // CHECK: declare void @m_c_linkage(i32)
 // CHECK: define i32 @"\01{{_?}}_Z8m_exporti"(i32 %a)
 // Struct extras in variadic calls coerce like named parameters.
-// CHECK: call void (i32, ...) @"\01{{_?}}_Z10m_variadiciz"(i32 2, [1 x i64] %{{.*}})
+// CHECK: call void (i32, ...) @"\01{{_?}}_Z10m_variadiciz"(i32 2, i64 %{{.*}})

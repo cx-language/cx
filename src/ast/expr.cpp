@@ -1,6 +1,8 @@
 #include "expr.h"
 #pragma warning(push, 0)
 #include <llvm/Support/ErrorHandling.h>
+
+#include <tuple>
 #pragma warning(pop)
 #include "arena.h"
 #include "ast.h"
@@ -17,6 +19,30 @@ bool Expr::isAssignment() const {
 bool Expr::isReferenceExpr() const {
     auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(this);
     return unaryExpr && unaryExpr->op == Token::And;
+}
+
+static bool startsBefore(Location a, Location b) {
+    return std::tie(a.line, a.column) < std::tie(b.line, b.column);
+}
+
+Location cx::getExprRangeStart(const Expr& expr) {
+    if (auto* binary = llvm::dyn_cast<BinaryExpr>(&expr)) return getExprRangeStart(binary->getLHS());
+    if (auto* index = llvm::dyn_cast<IndexExpr>(&expr)) return getExprRangeStart(*index->getBase());
+    if (auto* indexAssign = llvm::dyn_cast<IndexAssignmentExpr>(&expr)) return getExprRangeStart(*indexAssign->getBase());
+    if (auto* unary = llvm::dyn_cast<UnaryExpr>(&expr)) {
+        // Postfix '++'/'--' follow the operand; prefix operators precede it.
+        // Checked before CallExpr: UnaryExpr is a CallExpr subclass whose callee is the operator itself.
+        if (startsBefore(unary->getOperand().location, unary->location)) return getExprRangeStart(unary->getOperand());
+        return expr.location;
+    }
+    if (auto* member = llvm::dyn_cast<MemberExpr>(&expr)) return getExprRangeStart(*member->base);
+    if (auto* call = llvm::dyn_cast<CallExpr>(&expr)) return getExprRangeStart(*call->callee);
+    if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(&expr)) return getExprRangeStart(*cast->operand);
+    if (auto* ifExpr = llvm::dyn_cast<IfExpr>(&expr)) {
+        // Ternary '?:' location is the '?' token; 'if-then-else' location is the 'if' keyword.
+        if (startsBefore(ifExpr->condition->location, ifExpr->location)) return getExprRangeStart(*ifExpr->condition);
+    }
+    return expr.location;
 }
 
 bool Expr::isConstant() const {

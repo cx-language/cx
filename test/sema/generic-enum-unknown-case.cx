@@ -7,7 +7,7 @@ enum Outcome<T> {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:21: error: enum 'Outcome' has no case named 'Bogus'
+    // CHECK: [[@LINE+1]]:13: error: enum 'Outcome' has no case named 'Bogus'
     var x = Outcome.Bogus;
 }
 

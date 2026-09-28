@@ -401,4 +401,12 @@ struct VarDeclExpr : Expr {
     VarDecl* varDecl;
 };
 
+/// Returns the source start of the whole expression. Most expressions start at
+/// their location, but BinaryExpr (operator token), IndexExpr and
+/// IndexAssignmentExpr ('[' token), MemberExpr ('.' token), CallExpr (via a
+/// MemberExpr callee), and ternary IfExpr ('?' token) store a mid-expression
+/// location, and postfix '++'/'--'/'!' sit after their operand, so those
+/// descend to the LHS/base/callee/condition.
+Location getExprRangeStart(const Expr& expr);
+
 } // namespace cx

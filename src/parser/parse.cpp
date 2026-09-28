@@ -98,9 +98,14 @@ static std::string formatList(llvm::ArrayRef<Token::Kind> tokens) {
     return result;
 }
 
+// Reports an error underlining the current token.
+#define ERROR_CURRENT_TOKEN(args) ERROR_RANGE(getCurrentLocation(), getTokenEndLocation(currentToken()), args)
+// Reports a warning underlining the current token.
+#define WARN_CURRENT_TOKEN(args) WARN_RANGE(getCurrentLocation(), getTokenEndLocation(currentToken()), args)
+
 [[noreturn]] static void unexpectedToken(Token token, llvm::ArrayRef<Token::Kind> expected = {}, const char* contextInfo = nullptr) {
     if (expected.size() == 0) {
-        ERROR(token.location, "unexpected " << quote(token) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : ""));
+        ERROR_RANGE(token.location, getTokenEndLocation(token), "unexpected " << quote(token) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : ""));
     } else {
         // Naming something with a keyword (e.g. a parameter called `in`) reports
         // "expected identifier"; say outright that the word is reserved.
@@ -108,8 +113,8 @@ static std::string formatList(llvm::ArrayRef<Token::Kind> tokens) {
         if (expected.size() == 1 && expected[0] == Token::Identifier && token.kind >= Token::Break && token.kind <= Token::While) {
             hint = " (reserved word, cannot be used as an identifier)";
         }
-        ERROR(token.location,
-              "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "") << ", got " << quote(token) << hint);
+        ERROR_RANGE(token.location, getTokenEndLocation(token),
+                    "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "") << ", got " << quote(token) << hint);
     }
 }
 
@@ -256,18 +261,18 @@ Expr* Parser::parseInterpolationRest(Expr* acc) {
         consumeToken();
         Expr* value = parseExpr();
         Token endToken = parse(Token::InterpEnd);
-        auto* member = makeAST<MemberExpr>(value, "toString", value->location);
-        auto* stringified = makeAST<CallExpr>(member, std::vector<NamedValue>(), std::vector<GenericArg>(), value->location);
+        auto* member = makeExpr<MemberExpr>(value, "toString", value->location);
+        auto* stringified = makeExpr<CallExpr>(member, std::vector<NamedValue>(), std::vector<GenericArg>(), value->location);
         Expr* piece = stringified;
-        acc = acc ? makeAST<BinaryExpr>(Token::Plus, acc, piece, interpLocation) : piece;
+        acc = acc ? makeExpr<BinaryExpr>(Token::Plus, acc, piece, interpLocation) : piece;
 
         // A chunk on the same line continues this literal; anything else
         // starts a new (possibly erroneous) construct.
         if (currentToken() == Token::StringLiteral && currentToken().location.line == endToken.location.line) {
             auto continuation = currentToken();
             consumeToken();
-            Expr* chunk = makeStringLiteralExpr(continuation.getString(), getCurrentLocation());
-            acc = makeAST<BinaryExpr>(Token::Plus, acc, chunk, interpLocation);
+            Expr* chunk = makeStringLiteralExpr(continuation.getString(), continuation.location);
+            acc = makeExpr<BinaryExpr>(Token::Plus, acc, chunk, interpLocation);
         }
     }
     return acc;
@@ -276,7 +281,7 @@ Expr* Parser::parseInterpolationRest(Expr* acc) {
 CharacterLiteralExpr* Parser::parseCharacterLiteral() {
     ASSERT(currentToken() == Token::CharacterLiteral);
     auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
-    if (content.size() != 1) ERROR(getCurrentLocation(), "character literal must consist of a single UTF-8 byte");
+    if (content.size() != 1) ERROR_CURRENT_TOKEN("character literal must consist of a single UTF-8 byte");
     auto expr = makeAST<CharacterLiteralExpr>(content[0], getCurrentLocation());
     expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
@@ -400,10 +405,10 @@ std::vector<GenericArg> Parser::parseGenericArgumentList() {
             llvm::APSInt value = currentToken().getIntegerValue();
             consumeToken();
             if (value.isNegative()) {
-                ERROR(location, "integer generic argument must be non-negative");
+                ERROR_RANGE(location, getLastTokenEndLocation(), "integer generic argument must be non-negative");
             }
             if (value.getActiveBits() > 63) {
-                ERROR(location, "integer generic argument is too large");
+                ERROR_RANGE(location, getLastTokenEndLocation(), "integer generic argument is too large");
             }
             genericArgs.push_back(GenericArg::fromInt(value.getSExtValue(), location));
         } else {
@@ -436,14 +441,14 @@ static void checkArraySizeDivisors(const Expr& expr) {
         case Token::Modulo:
         case Token::PositiveModulo:
             if (binaryExpr->getRHS().getConstantIntegerValue().isZero()) {
-                ERROR(binaryExpr->location, "division by zero in array size");
+                ERROR_RANGE(getExprRangeStart(*binaryExpr), binaryExpr->endLocation, "division by zero in array size");
             }
             break;
         case Token::LeftShift:
         case Token::RightShift: {
             auto shift = binaryExpr->getRHS().getConstantIntegerValue();
             if (shift.isNegative() || shift.ugt(255)) {
-                ERROR(binaryExpr->location, "shift amount out of range in array size");
+                ERROR_RANGE(getExprRangeStart(*binaryExpr), binaryExpr->endLocation, "shift amount out of range in array size");
             }
             break;
         }
@@ -490,14 +495,14 @@ Type Parser::parseArrayType(Type elementType) {
             return BasicType::get("Array", args, elementType.mutability, elementType.location);
         }
         if (!sizeExpr->isFoldableIntConstant()) {
-            ERROR(sizeExpr->location, "array size must be a constant integer expression");
+            ERROR_RANGE(getExprRangeStart(*sizeExpr), sizeExpr->endLocation, "array size must be a constant integer expression");
         }
         llvm::APSInt size = sizeExpr->getConstantIntegerValue();
         if (size.isNegative()) {
-            ERROR(sizeExpr->location, "array size must be non-negative");
+            ERROR_RANGE(getExprRangeStart(*sizeExpr), sizeExpr->endLocation, "array size must be non-negative");
         }
         if (size.getActiveBits() > 63) {
-            ERROR(sizeExpr->location, "array size is too large");
+            ERROR_RANGE(getExprRangeStart(*sizeExpr), sizeExpr->endLocation, "array size is too large");
         }
         return BasicType::getArray(elementType, size.getSExtValue(), elementType.location);
     }
@@ -573,7 +578,7 @@ Type Parser::parseType() {
         type = parseAnonymousStructType();
         break;
     default:
-        ERROR(getCurrentLocation(), "expected type, got " << quote(currentToken()));
+        ERROR_CURRENT_TOKEN("expected type, got " << quote(currentToken()));
     }
 
     while (true) {
@@ -601,13 +606,13 @@ Type Parser::parseType() {
             // The lexer only produces AndAnd for adjacent `&&`, so `T& &` arrives here as two
             // separate borrows; reject it the same way rather than building a reference to a reference.
             if (type.isReferenceType()) {
-                ERROR(getCurrentLocation(), "nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
+                ERROR_CURRENT_TOKEN("nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
             }
             type = PointerType::get(type, PointerKind::Reference, Mutability::Mutable, location);
             consumeToken();
             break;
         case Token::AndAnd:
-            ERROR(getCurrentLocation(), "nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
+            ERROR_CURRENT_TOKEN("nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
         default:
             return type.withLocation(location);
         }
@@ -642,7 +647,7 @@ Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
     consumeToken();
     llvm::SaveAndRestore allowBlockLambdaInIndex(allowBlockLambda, true);
     auto index = parseExpr();
-    parse(Token::RightBracket);
+    auto rightBracket = parse(Token::RightBracket);
 
     // A leading minus marks a from-end index. Strip it so operator[-]
     // receives the plain offset; this is known statically, so unlike a
@@ -655,12 +660,16 @@ Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
         }
     }
 
+    Expr* expr;
     if (currentToken() == Token::Assignment) {
         consumeToken();
-        return makeExpr<IndexAssignmentExpr>(base, index, parseExpr(), location, fromEnd);
+        expr = makeExpr<IndexAssignmentExpr>(base, index, parseExpr(), location, fromEnd);
+    } else {
+        expr = makeExpr<IndexExpr>(base, index, location, fromEnd);
     }
-
-    return makeExpr<IndexExpr>(base, index, location, fromEnd);
+    // The callee covers 'base[...]'; operator errors underline it without the assigned value.
+    llvm::cast<CallExpr>(expr)->callee->endLocation = getTokenEndLocation(rightBracket);
+    return expr;
 }
 
 /// unwrap-expr ::= expr '!'
@@ -668,7 +677,9 @@ UnwrapExpr* Parser::parseUnwrapExpr(Expr* operand) {
     ASSERT(currentToken() == Token::Not);
     auto location = getCurrentLocation();
     consumeToken();
-    return makeExpr<UnwrapExpr>(operand, location);
+    auto* expr = makeExpr<UnwrapExpr>(operand, location);
+    expr->callee->endLocation = expr->endLocation;
+    return expr;
 }
 
 /// call-expr ::= expr generic-argument-list? argument-list
@@ -694,7 +705,7 @@ LambdaExpr* Parser::parseLambdaExpr() {
         params = parseParamList(nullptr, false);
         for (auto& param : params) {
             if (param.defaultValue) {
-                ERROR(param.getLocation(), "lambda parameters cannot have default values");
+                ERROR_RANGE(param.getLocation(), getIdentifierEndLocation(param), "lambda parameters cannot have default values");
             }
         }
     }
@@ -739,7 +750,7 @@ IfExpr* Parser::parseIfThenElseExpr() {
         condition = parseExpr();
     }
     if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-        ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not if expressions");
+        ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not if expressions");
     }
     parse(Token::Then);
     auto thenExpr = parseExpr();
@@ -992,7 +1003,9 @@ Expr* Parser::parsePostfixExpr() {
 UnaryExpr* Parser::parsePrefixExpr() {
     ASSERT(isUnaryOperator(currentToken()));
     auto op = consumeToken();
-    return makeExpr<UnaryExpr>(op.kind, parsePreOrPostfixExpr(), op.location);
+    auto* expr = makeExpr<UnaryExpr>(op.kind, parsePreOrPostfixExpr(), op.location);
+    expr->callee->endLocation = getTokenEndLocation(op);
+    return expr;
 }
 
 Expr* Parser::parsePreOrPostfixExpr() {
@@ -1003,7 +1016,9 @@ Expr* Parser::parsePreOrPostfixExpr() {
 /// dec-expr ::= expr '--'
 UnaryExpr* Parser::parseIncrementOrDecrementExpr(Expr* operand) {
     auto op = parse({Token::Increment, Token::Decrement});
-    return makeExpr<UnaryExpr>(op.kind, operand, op.location);
+    auto* expr = makeExpr<UnaryExpr>(op.kind, operand, op.location);
+    expr->callee->endLocation = getTokenEndLocation(op);
+    return expr;
 }
 
 /// Warns when && and || are mixed without clarifying parentheses.
@@ -1014,7 +1029,7 @@ static void warnAboutMixedLogicalOperators(const Token& op, Expr* lhs, Expr* rhs
         auto* binary = llvm::dyn_cast<BinaryExpr>(operand);
         if (!binary || binary->parenthesized) return;
         if ((op.kind == Token::OrOr && binary->op == Token::AndAnd) || (op.kind == Token::AndAnd && binary->op == Token::OrOr)) {
-            WARN(operand->location, "mixing '&&' and '||' without parentheses; add parentheses to clarify");
+            WARN_RANGE(getExprRangeStart(*operand), operand->endLocation, "mixing '&&' and '||' without parentheses; add parentheses to clarify");
         }
     };
     checkOperand(lhs);
@@ -1046,7 +1061,9 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
         }
 
         warnAboutMixedLogicalOperators(op, lhs, rhs);
-        lhs = makeExpr<BinaryExpr>(op.kind, lhs, rhs, op.location);
+        auto* binary = makeExpr<BinaryExpr>(op.kind, lhs, rhs, op.location);
+        binary->callee->endLocation = getTokenEndLocation(op);
+        lhs = binary;
     }
 
     return lhs;
@@ -1210,10 +1227,10 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
     }
     if (currentToken() == Token::Then) {
         if (isBinding) {
-            ERROR(isBinding->location, "an 'is' binding is only allowed in if statements, not if expressions");
+            ERROR_RANGE(isBinding->location, getIdentifierEndLocation(*isBinding), "an 'is' binding is only allowed in if statements, not if expressions");
         }
         if (condition->isVarDeclExpr()) {
-            ERROR(condition->location, "variable declaration conditions are not supported in if expressions");
+            ERROR_RANGE(getExprRangeStart(*condition), condition->endLocation, "variable declaration conditions are not supported in if expressions");
         }
         consumeToken();
         auto thenExpr = parseExpr();
@@ -1232,7 +1249,7 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
         elseStmts = parseBlockOrStmt(parent);
     } else if (!thenIsBlock && thenStmts.size() == 1) {
         if (auto* innerIf = llvm::dyn_cast<IfStmt>(thenStmts.front()); innerIf && !innerIf->elseBody.empty()) {
-            WARN(innerIf->elseLocation, "add explicit braces to avoid dangling else");
+            WARN_RANGE(innerIf->elseLocation, getIdentifierEndLocation(innerIf->elseLocation, "else"), "add explicit braces to avoid dangling else");
         }
     }
     auto* ifStmt = makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts), elseLocation);
@@ -1251,12 +1268,12 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExprOrVarDecl(parent);
         if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-            ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
+            ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not while loops");
         }
         if (parens) parse(Token::RightParen);
     }
     if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-        ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
+        ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not while loops");
     }
     auto body = parseBlockOrStmt(parent);
     return makeAST<WhileStmt>(condition, std::move(body), location);
@@ -1275,12 +1292,12 @@ DoWhileStmt* Parser::parseDoWhileStmt(Decl* parent) {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExpr();
         if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-            ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
+            ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not while loops");
         }
         if (parens) parse(Token::RightParen);
     }
     if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-        ERROR(getCurrentLocation(), "an 'is' binding is only allowed in if statements, not while loops");
+        ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not while loops");
     }
     parseStmtTerminator();
     return makeAST<DoWhileStmt>(condition, std::move(body), location);
@@ -1343,8 +1360,8 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         auto body = parseBlockOrStmt(parent);
         return makeAST<ForStmt>(varStmt, condition, std::move(increments), std::move(body), location);
     } else if (currentToken() == Token::In) {
-        ERROR(varStmt->decls.front()->getLocation(),
-              "for-each loop variable must be a bare identifier, write 'for " << varStmt->decls.front()->getName() << " in ...'");
+        ERROR_RANGE(varStmt->decls.front()->getLocation(), getIdentifierEndLocation(*varStmt->decls.front()),
+                    "for-each loop variable must be a bare identifier, write 'for " << varStmt->decls.front()->getName() << " in ...'");
     } else {
         parse(Token::In);
         llvm_unreachable("parse() throws on mismatch");
@@ -1391,14 +1408,14 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
             cases.push_back(SwitchCase(value, associatedValue, std::move(stmts)));
         } else if (currentToken() == Token::Default) {
             if (defaultSeen) {
-                ERROR(getCurrentLocation(), "switch-statement may only contain one 'default' case");
+                ERROR_CURRENT_TOKEN("switch-statement may only contain one 'default' case");
             }
             consumeToken();
             parse(Token::Colon);
             defaultStmts = parseStmtsUntilOneOf(Token::Case, Token::Default, Token::RightBrace, parent);
             defaultSeen = true;
         } else {
-            ERROR(getCurrentLocation(), "expected 'case' or 'default'");
+            ERROR_CURRENT_TOKEN("expected 'case' or 'default'");
         }
 
         if (currentToken() == Token::RightBrace) break;
@@ -1427,7 +1444,7 @@ SwitchExpr* Parser::parseSwitchExpr() {
             // Expression parsing has no enclosing declaration; the binding's parent is set during typechecking.
             auto [value, associatedValue] = parseSwitchCaseHeader(nullptr);
             if (currentToken().is({Token::Case, Token::Default, Token::RightBrace})) {
-                ERROR(getCurrentLocation(), "switch expression case must have a value");
+                ERROR_CURRENT_TOKEN("switch expression case must have a value");
             }
             auto armExpr = parseExpr();
             if (currentToken() == Token::Comma) consumeToken();
@@ -1435,19 +1452,19 @@ SwitchExpr* Parser::parseSwitchExpr() {
             arms.push_back(SwitchExprArm(value, associatedValue, armExpr));
         } else if (currentToken() == Token::Default) {
             if (defaultSeen) {
-                ERROR(getCurrentLocation(), "switch-expression may only contain one 'default' case");
+                ERROR_CURRENT_TOKEN("switch-expression may only contain one 'default' case");
             }
             consumeToken();
             parse(Token::Colon);
             if (currentToken().is({Token::Case, Token::Default, Token::RightBrace})) {
-                ERROR(getCurrentLocation(), "switch expression default case must have a value");
+                ERROR_CURRENT_TOKEN("switch expression default case must have a value");
             }
             defaultExpr = parseExpr();
             if (currentToken() == Token::Comma) consumeToken();
             parseStmtTerminator("in switch expression default case");
             defaultSeen = true;
         } else {
-            ERROR(getCurrentLocation(), "expected 'case' or 'default'");
+            ERROR_CURRENT_TOKEN("expected 'case' or 'default'");
         }
 
         if (currentToken() == Token::RightBrace) break;
@@ -1545,7 +1562,7 @@ ParamDecl Parser::parseParam(bool requireType) {
     param.isPack = isPack;
     if (currentToken() == Token::Assignment) {
         if (isPack) {
-            ERROR(name.location, "variadic parameter cannot have a default value");
+            ERROR_RANGE(name.location, getTokenEndLocation(name), "variadic parameter cannot have a default value");
         }
         consumeToken();
         param.defaultValue = parseExpr();
@@ -1567,14 +1584,15 @@ std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireType
         }
         params.emplace_back(parseParam(requireTypes));
         if (params.back().isPack && currentToken() != Token::RightParen) {
-            ERROR(params.back().getLocation(), "variadic parameter must be the last parameter");
+            ERROR_RANGE(params.back().getLocation(), getIdentifierEndLocation(params.back()), "variadic parameter must be the last parameter");
         }
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
     parse(Token::RightParen);
     for (size_t i = 1; i < params.size(); ++i) {
         if (params[i - 1].defaultValue && !params[i].defaultValue && !params[i].isPack) {
-            ERROR(params[i].getLocation(), "parameter '" << params[i].getName() << "' without a default value follows a parameter with a default value");
+            ERROR_RANGE(params[i].getLocation(), getIdentifierEndLocation(params[i]),
+                        "parameter '" << params[i].getName() << "' without a default value follows a parameter with a default value");
         }
     }
     return params;
@@ -1637,7 +1655,7 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
                 unexpectedToken(op, {}, "as function name");
             }
             if (receiverTypeDecl) {
-                ERROR(name.location, "operator functions other than 'operator[]' must be non-member functions");
+                ERROR_RANGE(name.location, getTokenEndLocation(name), "operator functions other than 'operator[]' must be non-member functions");
             }
             return toString(op);
         }
@@ -1658,8 +1676,9 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
     if (isExtern) {
         for (const ParamDecl& param : params) {
             if (param.isPack)
-                ERROR(param.getLocation(), "variadic parameter '" << param.type << "... " << param.getName()
-                                                                  << "' is not allowed in extern functions, use a bare '...' (C-style varargs) instead");
+                ERROR_RANGE(param.getLocation(), getIdentifierEndLocation(param),
+                            "variadic parameter '" << param.type << "... " << param.getName()
+                                                   << "' is not allowed in extern functions, use a bare '...' (C-style varargs) instead");
         }
     }
     FunctionProto proto(name, std::move(params), returnType, isVariadic, isExtern, cppLinkage);
@@ -1685,8 +1704,8 @@ FunctionDecl* Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel 
                                         Location location, bool isImplicit) {
     auto decl = parseFunctionProto(false, receiverTypeDecl, accessLevel, nullptr, type, name, location);
     if (isImplicit) {
-        if (!decl->getParams().empty()) ERROR(location, "implicit conversion functions cannot take parameters");
-        if (decl->getReturnType().isVoid()) ERROR(location, "implicit conversion functions must return a value");
+        if (!decl->getParams().empty()) ERROR_RANGE(location, getIdentifierEndLocation(*decl), "implicit conversion functions cannot take parameters");
+        if (decl->getReturnType().isVoid()) ERROR_RANGE(location, getIdentifierEndLocation(*decl), "implicit conversion functions must return a value");
         decl->isImplicit = true;
     }
 
@@ -1726,7 +1745,8 @@ ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, Access
     ASSERT(currentToken() == Token::Identifier);
     auto location = consumeToken().location;
     auto params = parseParamList(nullptr);
-    if (isImplicit && (params.size() != 1 || params[0].isPack)) ERROR(location, "implicit constructors must take exactly one parameter");
+    if (isImplicit && (params.size() != 1 || params[0].isPack))
+        ERROR_RANGE(location, getIdentifierEndLocation(location, receiverTypeDecl.getName()), "implicit constructors must take exactly one parameter");
     auto decl = makeAST<ConstructorDecl>(receiverTypeDecl, std::move(params), accessLevel, location);
     decl->isImplicit = isImplicit;
     decl->body = parseBlock(decl);
@@ -1829,24 +1849,24 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
         switch (currentToken()) {
         case Token::Private:
             if (tag == TypeTag::Interface) {
-                WARN(getCurrentLocation(), "interface members cannot be private");
+                WARN_CURRENT_TOKEN("interface members cannot be private");
             }
             if (accessLevel != AccessLevel::Default) {
-                WARN(getCurrentLocation(), "duplicate access specifier");
+                WARN_CURRENT_TOKEN("duplicate access specifier");
             }
             accessLevel = AccessLevel::Private;
             consumeToken();
             goto start;
         case Token::At: {
             parseTestAttribute(isTest, testLocation);
-            ERROR(testLocation, "only top-level functions can be marked as tests");
+            ERROR_RANGE(testLocation, getIdentifierEndLocation(testLocation, "@test"), "only top-level functions can be marked as tests");
         }
         case Token::Implicit:
             if (tag == TypeTag::Interface) {
-                ERROR(getCurrentLocation(), implicitMemberOnly);
+                ERROR_CURRENT_TOKEN(implicitMemberOnly);
             }
             if (isImplicit) {
-                WARN(getCurrentLocation(), "duplicate 'implicit' specifier");
+                WARN_CURRENT_TOKEN("duplicate 'implicit' specifier");
             }
             isImplicit = true;
             implicitLocation = getCurrentLocation();
@@ -1854,10 +1874,10 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             goto start;
         case Token::Tilde:
             if (isImplicit) {
-                ERROR(implicitLocation, implicitMemberOnly);
+                ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), implicitMemberOnly);
             }
             if (accessLevel != AccessLevel::Default) {
-                WARN(lookAhead(-1).location, "destructors cannot be " << accessLevel);
+                WARN_RANGE(lookAhead(-1).location, getLastTokenEndLocation(), "destructors cannot be " << accessLevel);
             }
             typeDecl->addMethod(parseDestructorDecl(*typeDecl));
             break;
@@ -1871,10 +1891,10 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
         case Token::Const:
             if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
                 if (isImplicit) {
-                    ERROR(implicitLocation, implicitMemberOnly);
+                    ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), implicitMemberOnly);
                 }
                 if (genericParams && !genericParams->empty()) {
-                    ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                    ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
                 }
                 consumeToken();
                 auto name = parse(Token::Identifier);
@@ -1898,18 +1918,18 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 break;
             case Token::Less:
                 if (isImplicit) {
-                    ERROR(implicitLocation, "implicit conversions cannot be generic");
+                    ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), "implicit conversions cannot be generic");
                 }
                 typeDecl->addMethod(parseFunctionTemplate(typeDecl, accessLevel, type, name, location));
                 break;
             default:
                 if (isImplicit) {
-                    ERROR(implicitLocation, implicitMemberOnly);
+                    ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), implicitMemberOnly);
                 }
                 // A const-qualified member with an initializer is a static constant.
                 if (currentToken() == Token::Assignment && !type.isMutable()) {
                     if (genericParams && !genericParams->empty()) {
-                        ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                        ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
                     }
                     consumeToken();
                     auto* initializer = parseExpr();
@@ -1963,20 +1983,20 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
         Location testLocation;
         parseTestAttribute(isTest, testLocation);
         while (currentToken() == Token::Private) {
-            if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
+            if (accessLevel != AccessLevel::Default) WARN_CURRENT_TOKEN("duplicate access specifier");
             accessLevel = AccessLevel::Private;
             consumeToken();
         }
         parseTestAttribute(isTest, testLocation);
-        if (isTest) ERROR(testLocation, "only top-level functions can be marked as tests");
+        if (isTest) ERROR_RANGE(testLocation, getIdentifierEndLocation(testLocation, "@test"), "only top-level functions can be marked as tests");
         if (currentToken() == Token::Implicit) {
-            ERROR(getCurrentLocation(), implicitMemberOnly);
+            ERROR_CURRENT_TOKEN(implicitMemberOnly);
         }
 
         // A `const` name followed by `=` declares a constant scoped under the enum name.
         if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
             if (genericParams && !genericParams->empty()) {
-                ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
             }
             consumeToken();
             auto name = parse(Token::Identifier);
@@ -1993,7 +2013,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             && (lookAhead(1).is({Token::Comma, Token::LeftParen, Token::Semicolon, Token::RightBrace})
                 || lookAhead(1).location.line != currentToken().location.line)) {
             if (accessLevel != AccessLevel::Default) {
-                WARN(getCurrentLocation(), "enum cases cannot be private");
+                WARN_CURRENT_TOKEN("enum cases cannot be private");
             }
             auto caseName = parse(Token::Identifier);
             Type associatedType;
@@ -2013,7 +2033,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             }
         } else {
             if (currentToken() == Token::Tilde) {
-                ERROR(getCurrentLocation(), "enums cannot have destructors");
+                ERROR_CURRENT_TOKEN("enums cannot have destructors");
             }
             auto type = parseType();
             auto location = getCurrentLocation();
@@ -2022,7 +2042,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             // A const-qualified member with an initializer is a static constant.
             if (currentToken() == Token::Assignment && !type.isMutable()) {
                 if (genericParams && !genericParams->empty()) {
-                    ERROR(getCurrentLocation(), "static constants are not supported in generic types");
+                    ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
                 }
                 consumeToken();
                 auto* initializer = parseExpr();
@@ -2039,7 +2059,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 enumDecl->addMethod(parseFunctionTemplate(enumDecl, accessLevel, type, methodName, location));
                 break;
             default:
-                ERROR(location, "enums cannot have fields");
+                ERROR_RANGE(location, getIdentifierEndLocation(location, methodName), "enums cannot have fields");
                 break;
             }
         }
@@ -2060,7 +2080,7 @@ ImportDecl* Parser::parseImportDecl() {
     std::string importTarget;
 
     if (currentToken() == Token::InterpStart) {
-        ERROR(getCurrentLocation(), "string interpolation is not allowed in import paths");
+        ERROR_CURRENT_TOKEN("string interpolation is not allowed in import paths");
     }
 
     if (currentToken() == Token::StringLiteral) {
@@ -2070,7 +2090,7 @@ ImportDecl* Parser::parseImportDecl() {
     }
 
     if (currentToken() == Token::InterpStart) {
-        ERROR(getCurrentLocation(), "string interpolation is not allowed in import paths");
+        ERROR_CURRENT_TOKEN("string interpolation is not allowed in import paths");
     }
 
     parseStmtTerminator("after 'import' declaration");
@@ -2124,7 +2144,7 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
     } else {
         condition = llvm::is_contained(options.defines, identifier.getString());
         if (options.warnUndefinedMacros && !condition && currentModule->name != "std") {
-            WARN(identifier.location, "undefined macro '" << identifier.getString() << "', assuming false");
+            WARN_RANGE(identifier.location, getTokenEndLocation(identifier), "undefined macro '" << identifier.getString() << "', assuming false");
         }
     }
 
@@ -2153,10 +2173,10 @@ void Parser::parseTestAttribute(bool& isTest, Location& testLocation) {
         auto atLocation = getCurrentLocation();
         consumeToken();
         auto name = parse(Token::Identifier, "after '@'");
-        if (name.getString() != "test") ERROR(name.location, "unknown attribute '" << name.getString() << "'");
-        if (currentToken() == Token::LeftParen) ERROR(getCurrentLocation(), "attributes do not take arguments");
+        if (name.getString() != "test") ERROR_RANGE(name.location, getTokenEndLocation(name), "unknown attribute '" << name.getString() << "'");
+        if (currentToken() == Token::LeftParen) ERROR_CURRENT_TOKEN("attributes do not take arguments");
         if (isTest) {
-            WARN(atLocation, "duplicate '@test' attribute");
+            WARN_RANGE(atLocation, getIdentifierEndLocation(atLocation, "@test"), "duplicate '@test' attribute");
         } else {
             testLocation = atLocation;
         }
@@ -2175,7 +2195,7 @@ Decl* Parser::parseTopLevelDecl(bool addToSymbolTable) {
 start:
     switch (currentToken()) {
     case Token::Private:
-        if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
+        if (accessLevel != AccessLevel::Default) WARN_CURRENT_TOKEN("duplicate access specifier");
         accessLevel = AccessLevel::Private;
         consumeToken();
         goto start;
@@ -2183,9 +2203,9 @@ start:
         parseTestAttribute(isTest, testLocation);
         goto start;
     case Token::Implicit:
-        ERROR(getCurrentLocation(), implicitMemberOnly);
+        ERROR_CURRENT_TOKEN(implicitMemberOnly);
     case Token::Extern:
-        if (isTest) ERROR(getCurrentLocation(), "test functions must have a body");
+        if (isTest) ERROR_CURRENT_TOKEN("test functions must have a body");
         consumeToken();
         if (currentToken() == Token::StringLiteral) {
             auto linkage = currentToken().getString().drop_back().drop_front();
@@ -2193,12 +2213,12 @@ start:
             if (linkage == "C++") {
                 return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel, true);
             }
-            if (linkage != "C") ERROR(getCurrentLocation(), "expected \"C\" or \"C++\" after 'extern'");
+            if (linkage != "C") ERROR_CURRENT_TOKEN("expected \"C\" or \"C++\" after 'extern'");
         }
         return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel);
     case Token::Struct:
     case Token::Interface:
-        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
+        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
         if (lookAhead(2) == Token::Less) {
             decl = parseTypeTemplate(accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
@@ -2208,7 +2228,7 @@ start:
         }
         break;
     case Token::Enum:
-        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
+        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
         if (lookAhead(2) == Token::Less) {
             decl = parseEnumTemplate(accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
@@ -2218,13 +2238,13 @@ start:
         }
         break;
     case Token::Using:
-        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
+        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
         decl = parseTypeAliasDecl(accessLevel);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeAliasDecl>(*decl));
         break;
     case Token::Var:
     case Token::Const:
-        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
+        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
         // Determine if this is a constant declaration or if the const is part of a type.
         if (currentToken() == Token::Const && lookAhead(2) != Token::Assignment) {
             return parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
@@ -2233,9 +2253,9 @@ start:
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
         break;
     case Token::Import:
-        if (isTest) ERROR(getCurrentLocation(), "only functions can be marked as tests");
+        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
         if (accessLevel != AccessLevel::Default) {
-            WARN(lookAhead(-1).location, "imports cannot have access specifiers");
+            WARN_RANGE(lookAhead(-1).location, getLastTokenEndLocation(), "imports cannot have access specifiers");
         }
         return parseImportDecl();
     default: {
@@ -2246,7 +2266,7 @@ start:
             } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
                 functionTemplate->functionDecl->isTest = true;
             } else {
-                ERROR(decl->getLocation(), "only functions can be marked as tests");
+                ERROR_RANGE(decl->getLocation(), getIdentifierEndLocation(*decl), "only functions can be marked as tests");
             }
         }
         return decl;
@@ -2264,7 +2284,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
     // list keep the normal path.
     if (currentToken() == Token::Identifier && lookAhead(1) == Token::LeftParen
         && !lookAhead(2).is({Token::Identifier, Token::Const, Token::LeftParen, Token::RightParen, Token::DotDotDot})) {
-        ERROR(getCurrentLocation(), "statements are not allowed in global scope");
+        ERROR_CURRENT_TOKEN("statements are not allowed in global scope");
     }
     auto type = parseType();
     auto location = getCurrentLocation();
@@ -2280,12 +2300,12 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionDecl>(*decl));
         break;
     case Token::Less:
-        if (isExtern) ERROR(location, "extern functions cannot be generic");
+        if (isExtern) ERROR_RANGE(location, getIdentifierEndLocation(location, name), "extern functions cannot be generic");
         decl = parseFunctionTemplate(nullptr, accessLevel, type, name, location);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionTemplate>(*decl));
         break;
     default:
-        if (cppLinkage) ERROR(location, "extern \"C++\" is only supported for functions, not variables");
+        if (cppLinkage) ERROR_RANGE(location, getIdentifierEndLocation(location, name), "extern \"C++\" is only supported for functions, not variables");
         decl = parseVarDeclAfterName(nullptr, accessLevel, type, name, location);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
         break;

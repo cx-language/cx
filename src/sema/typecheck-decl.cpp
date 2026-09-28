@@ -105,7 +105,7 @@ static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> me
     llvm::SmallPtrSet<const TypeDecl*, 8> visiting;
     visiting.insert(&target);
     if (llvm::any_of(memberTypes, [&](Type type) { return containsItselfByValue(type, target, visiting); })) {
-        ERROR(target.getLocation(), "'" << target.getName() << "' has infinite size because it contains itself");
+        ERROR_RANGE(target.getLocation(), getIdentifierEndLocation(target), "'" << target.getName() << "' has infinite size because it contains itself");
     }
 }
 
@@ -632,7 +632,7 @@ void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, Acces
 // can materialize from argc/argv are accepted.
 static void checkMainSignature(const FunctionDecl& decl) {
     if (!decl.getReturnType().isVoid() && !decl.getReturnType().isInt32()) {
-        ERROR(decl.getLocation(), "'main' must return 'void' or 'int'");
+        ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "'main' must return 'void' or 'int'");
     }
 
     auto params = decl.getParams();
@@ -642,7 +642,7 @@ static void checkMainSignature(const FunctionDecl& decl) {
         validParams = elementType.isBasicType() && elementType.getName() == "string";
     }
     if (!validParams) {
-        ERROR(decl.getLocation(), "'main' must take no parameters or '(string[] args)'");
+        ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "'main' must take no parameters or '(string[] args)'");
     }
 }
 
@@ -748,44 +748,52 @@ static std::optional<CxxValueLayout> cxxValueLayout(Type type) {
     return std::nullopt;
 }
 
-void cx::validateCppVariadicExtra(Type type, Location location, llvm::StringRef callee) {
+void cx::validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef callee) {
     // Fixed arrays decay to pointers in variadic calls, and scalars, pointers, and references
     // cross opaquely; only by-value aggregates need the signature rules.
     if (type.isFixedArray()) return;
     if (type.isSlice()) {
-        ERROR(location,
-              "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee << "'; pass a pointer and length instead");
+        ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
+                    "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                             << "'; pass a pointer and length instead");
     }
     TypeDecl* typeDecl = type.getDecl();
     if (!typeDecl || (!typeDecl->isStruct() && typeDecl->tag != TypeTag::Union)) return;
     if (type.needsDestruction()) {
-        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
-                                 << "' because it needs destruction; pass it behind a pointer instead");
+        ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
+                    "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                             << "' because it needs destruction; pass it behind a pointer instead");
     }
     if (containsCxxVector(type)) {
-        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
-                                 << "' because it holds a CxxVector, which C++ passes indirectly; pass it behind a pointer instead");
+        ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
+                    "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                             << "' because it holds a CxxVector, which C++ passes indirectly; pass it behind a pointer instead");
     }
     if (containsFloat(type)) {
-        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
-                                 << "' because it contains floating-point members; pass it behind a pointer instead");
+        ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
+                    "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                             << "' because it contains floating-point members; pass it behind a pointer instead");
     }
     auto layout = cxxValueLayout(type);
     if (!layout) {
-        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
-                                 << "' because it has a member with no C++ counterpart; pass it behind a pointer instead");
+        ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
+                    "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                             << "' because it has a member with no C++ counterpart; pass it behind a pointer instead");
     }
     if (layout->size == 0) {
-        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
-                                 << "' because it is empty; pass it behind a pointer instead");
+        ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
+                    "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
+                             << "' because it is empty; pass it behind a pointer instead");
     }
     if (layout->size > 16) {
-        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee << "' because it is "
-                                 << layout->size << " bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer instead");
+        ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
+                    "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee << "' because it is " << layout->size
+                             << " bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer instead");
     }
     if (layout->align > 8) {
-        ERROR(location, "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee << "' because it requires "
-                                 << layout->align << "-byte alignment; pass it behind a pointer instead");
+        ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
+                    "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee << "' because it requires "
+                             << layout->align << "-byte alignment; pass it behind a pointer instead");
     }
 }
 
@@ -1006,12 +1014,12 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
 static void mangleCppFunction(FunctionDecl& decl) {
     llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
     if (triple.isWindowsMSVCEnvironment()) {
-        ERROR(decl.getLocation(), "extern \"C++\" uses the Itanium ABI, which is not supported on MSVC targets");
+        ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "extern \"C++\" uses the Itanium ABI, which is not supported on MSVC targets");
     }
     llvm::StringRef name = decl.getName();
     auto isIdentifierChar = [](char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'; };
     if (name.empty() || !llvm::all_of(name, isIdentifierChar)) {
-        ERROR(decl.getLocation(), "extern \"C++\" functions must have a plain identifier name");
+        ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "extern \"C++\" functions must have a plain identifier name");
     }
     std::string mangled;
     llvm::raw_string_ostream out(mangled);
@@ -1046,7 +1054,7 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
         decl.proto.returnType = resolveTypeAliases(decl.proto.returnType, decl.accessLevel);
 
         if (decl.hasPack()) {
-            ERROR(decl.getPackParam()->getLocation(), "variadic parameter requires a generic function");
+            ERROR_RANGE(decl.getPackParam()->getLocation(), getIdentifierEndLocation(*decl.getPackParam()), "variadic parameter requires a generic function");
         }
 
         Scope scope(&decl, &currentModule->symbolTable);
@@ -1189,16 +1197,18 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         if (decl.isConstructorDecl() && !delegatedInit) {
             for (auto& field : decl.getTypeDecl()->fields) {
                 if (!field.defaultValue && initializedFields.count(&field) == 0) {
-                    WARN(decl.getLocation(), "constructor doesn't initialize member variable '" << field.getName() << "'");
+                    // Constructors are spelled with the type name, not the synthetic "init".
+                    WARN_RANGE(decl.getLocation(), getIdentifierEndLocation(decl.getLocation(), decl.getTypeDecl()->getName()),
+                               "constructor doesn't initialize member variable '" << field.getName() << "'");
                 }
             }
         }
 
         if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(*decl.body)) {
             if (decl.getReturnType().isNeverType()) {
-                WARN(decl.getLocation(), "'" << decl.getName() << "' is declared to never return but it does return");
+                WARN_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "'" << decl.getName() << "' is declared to never return but it does return");
             } else {
-                REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' is missing a return statement");
+                REPORT_ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "'" << decl.getName() << "' is missing a return statement");
             }
         }
 
@@ -1206,7 +1216,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         if (errors == errorsBefore && decl.getModule()->name != "std" && !options.noUnusedWarnings) {
             for (auto* varDecl : localVarDecls) {
                 if (!varDecl->isReferenced() && !varDecl->getName().starts_with("_")) {
-                    WARN(varDecl->getLocation(), "unused variable '" << varDecl->getName() << "'");
+                    WARN_RANGE(varDecl->getLocation(), getIdentifierEndLocation(*varDecl), "unused variable '" << varDecl->getName() << "'");
                 }
             }
         }
@@ -1222,7 +1232,7 @@ void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
     if (decl.checkState == Decl::CheckState::Checked) return;
     decl.checkState = Decl::CheckState::Checked;
     if (decl.functionDecl->isMain() && !decl.functionDecl->isMethodDecl() && decl.getModule() == mainModule) {
-        ERROR(decl.getLocation(), "'main' cannot be generic");
+        ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "'main' cannot be generic");
     }
     typecheckGenericParamDecls(decl.genericParams, decl.accessLevel);
 
@@ -1242,7 +1252,8 @@ void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
             }
         }
         if (inPack && inFixed) {
-            ERROR(params.back().getLocation(), "generic parameter '" << genericParam.getName() << "' cannot be used in both fixed and variadic parameters");
+            ERROR_RANGE(params.back().getLocation(), getIdentifierEndLocation(params.back()),
+                        "generic parameter '" << genericParam.getName() << "' cannot be used in both fixed and variadic parameters");
         }
         if (inPack && functionDecl->getReturnType() && containsGenericParam(functionDecl->getReturnType(), genericParam.getName())) {
             ERROR(functionDecl->getReturnType().location, "variadic generic parameter '" << genericParam.getName() << "' cannot be used in return type");
@@ -1349,7 +1360,8 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
 
             std::string errorReason;
             if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-                REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
+                REPORT_ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
+                                   "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
             }
         }
 
@@ -1391,12 +1403,12 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
             auto* constant = realDecl->staticConsts[i];
             for (size_t j = 0; j < i; ++j) {
                 if (realDecl->staticConsts[j]->getName() == constant->getName()) {
-                    ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+                    ERROR_RANGE(constant->getLocation(), getIdentifierEndLocation(*constant), "redefinition of '" << constant->getName() << "'");
                 }
             }
             for (auto& field : realDecl->fields) {
                 if (field.getName() == constant->getName()) {
-                    ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+                    ERROR_RANGE(constant->getLocation(), getIdentifierEndLocation(*constant), "redefinition of '" << constant->getName() << "'");
                 }
             }
         }
@@ -1481,7 +1493,8 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
 
             std::string errorReason;
             if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-                REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
+                REPORT_ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
+                                   "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
             }
         }
 
@@ -1494,7 +1507,7 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
         auto it = std::ranges::adjacent_find(cases, [](auto* a, auto* b) { return a->getName() == b->getName(); });
 
         if (it != cases.end()) {
-            ERROR((*it)->getLocation(), "duplicate enum case '" << (*it)->getName() << "'");
+            ERROR_RANGE((*it)->getLocation(), getIdentifierEndLocation((**it)), "duplicate enum case '" << (*it)->getName() << "'");
         }
 
         bool allowReference = allowsSubstitutedReference(decl);
@@ -1527,12 +1540,12 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
             auto* constant = decl.staticConsts[i];
             for (size_t j = 0; j < i; ++j) {
                 if (decl.staticConsts[j]->getName() == constant->getName()) {
-                    ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+                    ERROR_RANGE(constant->getLocation(), getIdentifierEndLocation(*constant), "redefinition of '" << constant->getName() << "'");
                 }
             }
             for (auto& enumCase : decl.cases) {
                 if (enumCase.getName() == constant->getName()) {
-                    ERROR(constant->getLocation(), "redefinition of '" << constant->getName() << "'");
+                    ERROR_RANGE(constant->getLocation(), getIdentifierEndLocation(*constant), "redefinition of '" << constant->getName() << "'");
                 }
             }
         }
@@ -1708,13 +1721,15 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     if (!decl.isGlobal()) currentModule->addToSymbolTable(decl);
     if (!decl.initializer) {
         if (!declaredType) {
-            ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation or initializer");
+            ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
+                        "couldn't infer type of '" << decl.getName() << "', add a type annotation or initializer");
         }
         if (declaredType.isReferenceType() && !decl.isGlobal() && !decl.isPayloadBinding) {
-            ERROR(decl.getLocation(), "reference variable '" << decl.getName() << "' must be initialized (borrows cannot be rebound)");
+            ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
+                        "reference variable '" << decl.getName() << "' must be initialized (borrows cannot be rebound)");
         }
         if (decl.isGlobal()) {
-            WARN(decl.getLocation(), "missing initializer");
+            WARN_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "missing initializer");
         }
         return;
     }
@@ -1737,13 +1752,14 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
                 hint = narrowingHint(initializerType, declaredType);
             }
 
-            diagnoseClosureConversion(initializerType, declaredType, decl.initializer->location);
-            ERROR(decl.initializer->location, "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint
-                                                                << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
+            diagnoseClosureConversion(initializerType, declaredType, *decl.initializer);
+            ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
+                        "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint
+                                          << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
         }
     } else {
         if (initializerType.isNull()) {
-            ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation");
+            ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "couldn't infer type of '" << decl.getName() << "', add a type annotation");
         }
 
         // An array pointer is a pointer view, not a value copy. Preserve its
@@ -1779,7 +1795,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     if (decl.isGlobal() && decl.initializer) {
         llvm::SmallPtrSet<const VarDecl*, 8> seen;
         if (!isSupportedGlobalInitializer(*decl.initializer, seen)) {
-            ERROR(decl.initializer->location, "global variable initializer must be a constant expression");
+            ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation, "global variable initializer must be a constant expression");
         }
     }
 }
@@ -1795,8 +1811,8 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
         if (Expr* converted = convert(decl.defaultValue, decl.type)) {
             decl.defaultValue = converted;
         } else {
-            ERROR(decl.defaultValue->location,
-                  "cannot assign '" << decl.defaultValue->type << "' to '" << decl.type << "'" << narrowingHint(decl.defaultValue->type, decl.type));
+            ERROR_RANGE(getExprRangeStart(*decl.defaultValue), decl.defaultValue->endLocation,
+                        "cannot assign '" << decl.defaultValue->type << "' to '" << decl.type << "'" << narrowingHint(decl.defaultValue->type, decl.type));
         }
     }
 }

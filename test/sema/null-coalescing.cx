@@ -10,10 +10,10 @@ void main() {
 
     int? o = null;
     float? f = null;
-    // CHECK: [[@LINE+1]]:15: error: incompatible operand types ('int?' and 'float?')
+    // CHECK: [[@LINE+1]]:13: error: incompatible operand types ('int?' and 'float?')
     println(o ?? f);
 
-    // CHECK: [[@LINE+1]]:15: error: incompatible operand types ('int?' and 'string')
+    // CHECK: [[@LINE+1]]:13: error: incompatible operand types ('int?' and 'string')
     println(o ?? "s");
 }
 

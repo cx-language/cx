@@ -10,6 +10,6 @@ void main() {
     var s = S(x = 3);
     println(s.x);
     println(s.y);
-    // CHECK: [[@LINE+1]]:15: error: no member named 'x' in 'S'
+    // CHECK: [[@LINE+1]]:13: error: no member named 'x' in 'S'
     println(S.x);
 }

@@ -36,7 +36,7 @@ void unitCaseBinding() {
 
 void crossEnumCase() {
     var o = Outcome.Ok(value = 1);
-    // CHECK: [[@LINE+1]]:19: error: right side of 'is' must be a case of enum 'Outcome'
+    // CHECK: [[@LINE+1]]:13: error: right side of 'is' must be a case of enum 'Outcome'
     if o is Color.Red {
     }
 }

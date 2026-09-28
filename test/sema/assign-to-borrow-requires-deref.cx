@@ -13,9 +13,9 @@ void assignToBorrow(int& x) {
 
 void g() {
     var a = List([1, 2, 3]);
-    // CHECK: [[@LINE+1]]:7: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
     a.first() = 99;
-    // CHECK: [[@LINE+1]]:7: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
     a.first() += 1;
     *a.first() = 99;
     *a.first() += 1;

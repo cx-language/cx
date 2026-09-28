@@ -5,6 +5,6 @@ void foo(int*? p) {
         return;
     }
     defer println("foo");
-    // CHECK: [[@LINE+1]]:16: error: 'p' is already non-null; remove the '!'
+    // CHECK: [[@LINE+1]]:15: error: 'p' is already non-null; remove the '!'
     var a = *(p!);
 }

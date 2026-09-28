@@ -1,0 +1,7 @@
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+void main() {
+    var unusedVar = 1;
+}
+// CHECK: [[@LINE-2]]:9: warning: unused variable 'unusedVar'
+// CHECK-NEXT: var unusedVar = 1;
+// CHECK-NEXT: ~~~~~~~~~

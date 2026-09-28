@@ -1,21 +1,21 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
 void f(int* p, int* q, int[*] s, int[*] t, int x) {
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:9: error: invalid operands 'int*' and 'int' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     _ = p + 1;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int' and 'int*' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:9: error: invalid operands 'int' and 'int*' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     _ = 1 + p;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int*' to '-'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:9: error: invalid operands 'int*' and 'int*' to '-'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     _ = p - q;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int' to '&'; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:9: error: invalid operands 'int*' and 'int' to '&'; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value
     _ = p & x;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int' to '<<'; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:9: error: invalid operands 'int*' and 'int' to '<<'; bitwise operations on pointers are not supported; dereference with '*' to operate on the pointed-to value
     _ = p << 1;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int[*]' and 'int[*]' to '-'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:9: error: invalid operands 'int[*]' and 'int[*]' to '-'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     _ = s - t;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'int' to '=='; to compare the pointed-to value, dereference with '*'
+    // CHECK: [[@LINE+1]]:9: error: invalid operands 'int*' and 'int' to '=='; to compare the pointed-to value, dereference with '*'
     _ = p == 1;
-    // CHECK: [[@LINE+1]]:7: error: invalid operands 'int*' and 'int' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
+    // CHECK: [[@LINE+1]]:5: error: invalid operands 'int*' and 'int' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
     p += 1;
 }
 

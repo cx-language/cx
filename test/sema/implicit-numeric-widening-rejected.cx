@@ -28,7 +28,7 @@ void main() {
     // CHECK: [[@LINE+1]]:16: error: cannot assign 'int8' to 'int64*'
     int64* p = i;
 
-    // CHECK: [[@LINE+1]]:7: error: cannot assign 'int64' to 'int' (use 'int(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:5: error: cannot assign 'int64' to 'int' (use 'int(...)' to convert explicitly)
     b = a;
 
     int[2] arr = [0, 0];
@@ -48,6 +48,6 @@ void takeInt(int x) {
 
 int retInt() {
     int64 a = 5;
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int64', expected 'int' (use 'int(...)' to convert explicitly)
+    // CHECK: [[@LINE+1]]:12: error: mismatching return type 'int64', expected 'int' (use 'int(...)' to convert explicitly)
     return a;
 }

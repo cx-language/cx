@@ -83,7 +83,7 @@ void Lexer::readBlockComment(Location startLocation) {
             }
         } else if (ch == '\0') {
             unreadChar(ch);
-            REPORT_ERROR(startLocation, "unterminated block comment");
+            REPORT_ERROR_RANGE(startLocation, getIdentifierEndLocation(startLocation, "/*"), "unterminated block comment");
             break;
         }
     }
@@ -272,6 +272,7 @@ Token Lexer::readNumber() {
     const char* const begin = currentFilePosition;
     const char* end = begin + 1;
     bool isFloat = false;
+    bool sawOverflow = false;
     bool sawSeparator = false;
     bool sawNonSeparator = false;
     bool sawExponent = false;
@@ -279,9 +280,8 @@ Token Lexer::readNumber() {
     char ch = readChar();
 
     auto appendDigit = [&](uint64_t digit, uint64_t base) {
-        if (intValue > (std::numeric_limits<uint64_t>::max() - digit) / base) {
-            ERROR(firstLocation, "integer literal is too large");
-        }
+        // Deferred to the end of the literal so the range covers all digits.
+        if (intValue > (std::numeric_limits<uint64_t>::max() - digit) / base) sawOverflow = true;
         intValue = intValue * base + digit;
     };
 
@@ -301,7 +301,9 @@ Token Lexer::readNumber() {
                 continue;
             }
             if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in binary literal");
-            if (end == begin + 2 || !sawNonSeparator) ERROR(firstLocation, "binary literal must have at least one digit after '0b'");
+            if (end == begin + 2 || !sawNonSeparator)
+                ERROR_RANGE(firstLocation, getIdentifierEndLocation(firstLocation, {begin, size_t(end - begin)}),
+                            "binary literal must have at least one digit after '0b'");
             goto end;
         }
         break;
@@ -320,28 +322,30 @@ Token Lexer::readNumber() {
                 continue;
             }
             if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in octal literal");
-            if (end == begin + 2 || !sawNonSeparator) ERROR(firstLocation, "octal literal must have at least one digit after '0o'");
+            if (end == begin + 2 || !sawNonSeparator)
+                ERROR_RANGE(firstLocation, getIdentifierEndLocation(firstLocation, {begin, size_t(end - begin)}),
+                            "octal literal must have at least one digit after '0o'");
             goto end;
         }
         break;
     default:
         if (std::isdigit(ch) && begin[0] == '0') {
-            ERROR(firstLocation, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
+            ERROR_RANGE(firstLocation, lastLocation.nextColumn(), "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
         }
 
         while (true) {
             if (ch == '.' && !isFloat) {
-                if (sawSeparator) ERROR(firstLocation, "float literals cannot contain separators");
+                if (sawSeparator) ERROR_RANGE(firstLocation, lastLocation.nextColumn(), "float literals cannot contain separators");
                 isFloat = true;
             } else if ((ch == 'e' || ch == 'E') && !sawExponent) {
-                if (sawSeparator) ERROR(firstLocation, "float literals cannot contain separators");
+                if (sawSeparator) ERROR_RANGE(firstLocation, lastLocation.nextColumn(), "float literals cannot contain separators");
                 end++;
                 ch = readChar();
                 if (ch == '+' || ch == '-') {
                     end++;
                     ch = readChar();
                 }
-                if (!std::isdigit(ch)) ERROR(firstLocation, "float literal exponent must have at least one digit");
+                if (!std::isdigit(ch)) ERROR_RANGE(firstLocation, lastLocation.nextColumn(), "float literal exponent must have at least one digit");
                 isFloat = true;
                 sawExponent = true;
                 end++;
@@ -354,7 +358,7 @@ Token Lexer::readNumber() {
                     appendDigit(ch - '0', 10);
                 }
             } else if (ch == '_') {
-                if (isFloat) ERROR(firstLocation, "float literals cannot contain separators");
+                if (isFloat) ERROR_RANGE(firstLocation, lastLocation.nextColumn(), "float literals cannot contain separators");
                 sawSeparator = true;
             } else {
                 goto end;
@@ -390,7 +394,9 @@ Token Lexer::readNumber() {
                 lettercase = 1;
             } else {
                 if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in hex literal");
-                if (end == begin + 2 || !sawNonSeparator) ERROR(firstLocation, "hex literal must have at least one digit after '0x'");
+                if (end == begin + 2 || !sawNonSeparator)
+                    ERROR_RANGE(firstLocation, getIdentifierEndLocation(firstLocation, {begin, size_t(end - begin)}),
+                                "hex literal must have at least one digit after '0x'");
                 goto end;
             }
         }
@@ -408,6 +414,10 @@ end:
         isFloat = false;
     } else {
         unreadChar(ch);
+    }
+
+    if (sawOverflow) {
+        ERROR_RANGE(firstLocation, getIdentifierEndLocation(firstLocation, {begin, size_t(end - begin)}), "integer literal is too large");
     }
 
     if (isFloat) return Token(Token::FloatLiteral, getCurrentLocation(), llvm::StringRef(begin, end - begin));
@@ -496,7 +506,8 @@ Token Lexer::lexToken() {
                 // '->' was the lambda arrow before it was changed to '=>', and C
                 // programmers reach for it for member access; recover as a fat
                 // arrow so parsing continues and only this error is reported.
-                REPORT_ERROR(getCurrentLocation(), "unexpected '->', use '=>' for lambdas or '.' for member access");
+                REPORT_ERROR_RANGE(getCurrentLocation(), getIdentifierEndLocation(getCurrentLocation(), "->"),
+                                   "unexpected '->', use '=>' for lambdas or '.' for member access");
                 return Token(Token::FatArrow, getCurrentLocation());
             }
             unreadChar(ch);
@@ -643,7 +654,8 @@ Token Lexer::lexToken() {
             }
 
             if (string.starts_with("__")) {
-                ERROR(getCurrentLocation(), "'__'-prefixed identifiers are reserved for the compiler");
+                ERROR_RANGE(getCurrentLocation(), getIdentifierEndLocation(getCurrentLocation(), string),
+                            "'__'-prefixed identifiers are reserved for the compiler");
             }
 
             return Token(Token::Identifier, getCurrentLocation(), string);

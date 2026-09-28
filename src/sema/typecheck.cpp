@@ -210,7 +210,7 @@ static void checkUnusedDeclsInModule(const Module& module) {
                 if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl); functionTemplate && functionTemplate->functionDecl->isTest) {
                     continue;
                 }
-                WARN(decl->getLocation(), "unused declaration '" << decl->getName() << "'");
+                WARN_RANGE(decl->getLocation(), getIdentifierEndLocation(*decl), "unused declaration '" << decl->getName() << "'");
             }
         }
     }
@@ -434,7 +434,7 @@ static Decl* findDeclInModules(llvm::StringRef name, Location location, llvm::Ar
         // Duplicate declarations of the same thing from C headers resolve to the last one.
         return decls.back();
     } else {
-        ERROR(location, "ambiguous reference to '" << name << "'");
+        ERROR_RANGE(location, getIdentifierEndLocation(location, name), "ambiguous reference to '" << name << "'");
     }
 }
 

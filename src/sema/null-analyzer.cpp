@@ -160,8 +160,8 @@ void NullAnalyzer::analyze(Value* value) {
             if (auto receiverType = callExpr->receiverType) {
                 if (receiverType.isOptionalType() && analyzeNullability(call->args[0], call) == Nullability::DefinitelyNullable) {
                     // TODO: Store the implicit 'this' receiver to the call expr during typechecking to simplify this code.
-                    auto location = callExpr->getReceiver() ? callExpr->getReceiver()->location : callExpr->location;
-                    WARN(location, "receiver may be null; unwrap it with a postfix '!' to silence this warning");
+                    const Expr* target = callExpr->getReceiver() ? callExpr->getReceiver() : callExpr;
+                    WARN_RANGE(getExprRangeStart(*target), target->endLocation, "receiver may be null; unwrap it with a postfix '!' to silence this warning");
                 }
             }
         }
@@ -171,12 +171,13 @@ void NullAnalyzer::analyze(Value* value) {
         auto binary = llvm::cast<BinaryInst>(value);
         if (llvm::StringRef(binary->name).starts_with("__implicit_unwrap")) {
             if (binary->getExpr() && analyzeNullability(binary->left, binary) == Nullability::DefinitelyNullable) {
-                WARN(binary->getExpr()->location, "value may be null; unwrap it with a postfix '!' to silence this warning");
+                WARN_RANGE(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation,
+                           "value may be null; unwrap it with a postfix '!' to silence this warning");
             }
         } else if (llvm::isa<ConstantNull>(binary->right)) {
             ASSERT(binary->op == Token::Equal || binary->op == Token::NotEqual);
             if (binary->getExpr() && analyzeNullability(binary->left, binary) == Nullability::DefinitelyNotNull) {
-                WARN(binary->getExpr()->location, "value cannot be null here; null check can be removed");
+                WARN_RANGE(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation, "value cannot be null here; null check can be removed");
             }
         }
         break;
@@ -185,7 +186,8 @@ void NullAnalyzer::analyze(Value* value) {
         auto load = llvm::cast<LoadInst>(value);
         if (auto expr = llvm::dyn_cast_or_null<UnaryExpr>(load->expr)) {
             if (expr->getOperand().type.isOptionalType() && analyzeNullability(load->value, load) == Nullability::DefinitelyNullable) {
-                WARN(expr->location, "dereferenced pointer may be null; unwrap it with a postfix '!' to silence this warning");
+                WARN_RANGE(getExprRangeStart(*expr), expr->endLocation,
+                           "dereferenced pointer may be null; unwrap it with a postfix '!' to silence this warning");
             }
         }
         break;
@@ -195,7 +197,7 @@ void NullAnalyzer::analyze(Value* value) {
         auto* call = gep->expr ? llvm::dyn_cast<CallExpr>(gep->expr) : nullptr;
         if (call && call->isMethodCall() && call->getFunctionName() == "data" && call->type.isOptionalType()
             && analyzeNullability(gep->pointer, gep) == Nullability::DefinitelyNullable) {
-            WARN(call->location, "value may be null; unwrap it with a postfix '!' to silence this warning");
+            WARN_RANGE(getExprRangeStart(*call), call->endLocation, "value may be null; unwrap it with a postfix '!' to silence this warning");
         }
         break;
     }
@@ -204,7 +206,8 @@ void NullAnalyzer::analyze(Value* value) {
         if (gep->expr) {
             if (gep->expr->base->type.isOptionalType() && !gep->expr->base->isThis()
                 && analyzeNullability(gep->pointer, gep) == Nullability::DefinitelyNullable) {
-                WARN(gep->expr->base->location, "value may be null; unwrap it with a postfix '!' to silence this warning");
+                WARN_RANGE(getExprRangeStart(*gep->expr->base), gep->expr->base->endLocation,
+                           "value may be null; unwrap it with a postfix '!' to silence this warning");
             }
         }
         break;

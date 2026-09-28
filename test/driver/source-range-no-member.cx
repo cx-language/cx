@@ -7,6 +7,6 @@ void main() {
     var p = Point(x = 1, y = 2);
     println(p.z);
 }
-// CHECK: [[@LINE-2]]:15: error: no member named 'z' in 'Point'
+// CHECK: [[@LINE-2]]:13: error: no member named 'z' in 'Point'
 // CHECK-NEXT: println(p.z);
-// CHECK-NEXT: ~
+// CHECK-NEXT:         ~~~

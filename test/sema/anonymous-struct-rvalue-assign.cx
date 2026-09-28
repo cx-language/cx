@@ -3,7 +3,7 @@
 (int x, int y) make() { return (x = 1, y = 2); }
 
 void main() {
-    // CHECK: [[@LINE+1]]:12: error: cannot assign to expression of type 'int'
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to expression of type 'int'
     make().x = 99;
     // Assigning through an lvalue base is fine.
     var point = (x = 1, y = 2);

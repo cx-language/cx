@@ -13,7 +13,7 @@ struct W {
 
     uint64 same() {
         if p == null { return 0; }
-        // CHECK: [[@LINE+1]]:30: warning: value cannot be null here; null check can be removed
+        // CHECK: [[@LINE+1]]:29: warning: value cannot be null here; null check can be removed
         return cast<uint64>(p!);
     }
 }

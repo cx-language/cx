@@ -107,10 +107,10 @@ static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Str
             }
 
             if (auto loc = findBreakTargetingPackLoop(forEach->body)) {
-                ERROR(*loc, "break cannot be used in a loop over a variadic parameter");
+                ERROR_RANGE(*loc, getIdentifierEndLocation(*loc, "break"), "break cannot be used in a loop over a variadic parameter");
             }
             if (auto loc = findContinueTargetingPackLoop(forEach->body)) {
-                ERROR(*loc, "continue cannot be used in a loop over a variadic parameter");
+                ERROR_RANGE(*loc, getIdentifierEndLocation(*loc, "continue"), "continue cannot be used in a loop over a variadic parameter");
             }
 
             bool loopVarShadowsPack = forEach->variable->getName() == packName || (forEach->indexVariable && forEach->indexVariable->getName() == packName);

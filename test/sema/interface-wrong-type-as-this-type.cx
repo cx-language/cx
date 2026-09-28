@@ -4,7 +4,7 @@ interface Interface {
     S* f();
 
     This* bar() {
-        // CHECK: [[@LINE+1]]:9: error: mismatching return type 'S*', expected 'Interface*'
+        // CHECK: [[@LINE+1]]:16: error: mismatching return type 'S*', expected 'Interface*'
         return f();
     }
 }

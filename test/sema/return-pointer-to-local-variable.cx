@@ -8,7 +8,7 @@ int* f0() {
 
 int* f1() {
     var a = 3;
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
+    // CHECK: [[@LINE+1]]:12: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
     return a;
 }
 
@@ -21,7 +21,7 @@ struct S {
     }
 
     int* f3() {
-        // CHECK: [[@LINE+1]]:9: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
+        // CHECK: [[@LINE+1]]:16: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
         return i;
     }
 }
@@ -32,7 +32,7 @@ int* f4(int a) {
 }
 
 int* f5(int a) {
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
+    // CHECK: [[@LINE+1]]:12: error: mismatching return type 'int', expected 'int*' (use '&' to take the address explicitly)
     return a;
 }
 
@@ -47,7 +47,7 @@ int** f7(int* a) {
 }
 
 int** f8(int* a) {
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int*', expected 'int**' (use '&' to take the address explicitly)
+    // CHECK: [[@LINE+1]]:12: error: mismatching return type 'int*', expected 'int**' (use '&' to take the address explicitly)
     return a;
 }
 
@@ -58,7 +58,7 @@ int* f9(int& a) {
 
 StringBuf& f10() {
     var r = Result.Ok<StringBuf, string>(value = StringBuf("hi"));
-    // CHECK: [[@LINE+1]]:14: warning: returning pointer to local variable
+    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
     return r.unwrap();
 }
 
@@ -74,7 +74,7 @@ struct WrapBox {
 
 StringBuf& f12() {
     var w = WrapBox(s = StringBuf("hi"));
-    // CHECK: [[@LINE+1]]:14: warning: returning pointer to local variable
+    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
     return w.s;
 }
 

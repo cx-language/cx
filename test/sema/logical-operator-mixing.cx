@@ -4,9 +4,9 @@ void main() {
     var a = true;
     var b = false;
     var c = true;
-    // CHECK: [[@LINE+1]]:15: warning: mixing '&&' and '||' without parentheses; add parentheses to clarify
+    // CHECK: [[@LINE+1]]:13: warning: mixing '&&' and '||' without parentheses; add parentheses to clarify
     println(a && b || c);
-    // CHECK: [[@LINE+1]]:20: warning: mixing '&&' and '||' without parentheses; add parentheses to clarify
+    // CHECK: [[@LINE+1]]:18: warning: mixing '&&' and '||' without parentheses; add parentheses to clarify
     println(a || b && c);
     println((a && b) || c);
     println(a && (b || c));

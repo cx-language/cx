@@ -4,14 +4,14 @@ void takesInt(int i) {}
 
 void redundantUnwrap(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:18: error: 'v' is already non-null; remove the '!'
+        // CHECK: [[@LINE+1]]:17: error: 'v' is already non-null; remove the '!'
         var x = v!;
     }
 }
 
 void redundantNullCheck(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
+        // CHECK: [[@LINE+1]]:12: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
         if v == null {
         }
     }
@@ -54,7 +54,7 @@ void useAfterBranchAssignment(int? v, bool c) {
 void inferredVarIsNonOptional(int? v) {
     if v {
         var c = v;
-        // CHECK: [[@LINE+1]]:11: error: cannot assign 'null' to 'int'
+        // CHECK: [[@LINE+1]]:9: error: cannot assign 'null' to 'int'
         c = null;
     }
 }
@@ -97,10 +97,10 @@ void useInDefer(int? v) {
 
 void redundantNullCheckAfterNotEqual(int? v) {
     if (v != null) {
-        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
+        // CHECK: [[@LINE+1]]:12: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
         if v == null {
         }
-        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int' and 'null' to '!=' (non-optional type 'int' cannot be null)
+        // CHECK: [[@LINE+1]]:12: error: invalid operands 'int' and 'null' to '!=' (non-optional type 'int' cannot be null)
         if v != null {
         }
     }

@@ -7,7 +7,7 @@ int y = x;
 
 enum E { a, b(int value) }
 
-// CHECK: [[@LINE+1]]:11: error: global variable initializer must be a constant expression
+// CHECK: [[@LINE+1]]:9: error: global variable initializer must be a constant expression
 var v = E.b;
 
 int getAnswer() {
@@ -17,7 +17,7 @@ int getAnswer() {
 // CHECK: [[@LINE+1]]:9: error: global variable initializer must be a constant expression
 int z = getAnswer();
 
-// CHECK: [[@LINE+1]]:15: error: global variable initializer must be a constant expression
+// CHECK: [[@LINE+1]]:9: error: global variable initializer must be a constant expression
 int w = x > 1 ? 2 : 3;
 
 const int* p = &x;

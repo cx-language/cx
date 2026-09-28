@@ -4,13 +4,13 @@ float[3] getVec() { return [1.0, 2.0, 3.0]; }
 
 void main() {
     float[3] v = [1.0, 2.0, 3.0];
-    // CHECK: [[@LINE+1]]:10: error: cannot assign to expression of type 'float'
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to expression of type 'float'
     v.xy.x = 5.0;
-    // CHECK: [[@LINE+1]]:9: error: cannot assign to element of rvalue of type 'float[2]'
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to element of rvalue of type 'float[2]'
     v.xy[0] = 5.0;
-    // CHECK: [[@LINE+1]]:14: error: cannot assign to expression of type 'float'
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to expression of type 'float'
     getVec().x = 5.0;
-    // CHECK: [[@LINE+1]]:22: error: cannot take address of rvalue of type 'float[2]'
+    // CHECK: [[@LINE+1]]:20: error: cannot take address of rvalue of type 'float[2]'
     float[2]* q = &v.xy;
 }
 

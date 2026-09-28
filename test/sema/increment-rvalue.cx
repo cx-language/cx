@@ -4,15 +4,15 @@ float[3] getVec() { return [1.0, 2.0, 3.0]; }
 
 void main() {
     float[3] v = [1.0, 2.0, 3.0];
-    // CHECK: [[@LINE+1]]:11: error: cannot increment rvalue of type 'float'
+    // CHECK: [[@LINE+1]]:5: error: cannot increment rvalue of type 'float'
     v.xy.x++;
-    // CHECK: [[@LINE+1]]:12: error: cannot increment rvalue of type 'float'
+    // CHECK: [[@LINE+1]]:5: error: cannot increment rvalue of type 'float'
     v.xy[0]++;
-    // CHECK: [[@LINE+1]]:16: error: cannot increment rvalue of type 'float'
+    // CHECK: [[@LINE+1]]:5: error: cannot increment rvalue of type 'float'
     getVec()[0]++;
-    // CHECK: [[@LINE+1]]:15: error: cannot increment rvalue of type 'float'
+    // CHECK: [[@LINE+1]]:5: error: cannot increment rvalue of type 'float'
     getVec().x++;
-    // CHECK: [[@LINE+1]]:11: error: cannot decrement rvalue of type 'float'
+    // CHECK: [[@LINE+1]]:5: error: cannot decrement rvalue of type 'float'
     v.xy.x--;
 
     var i = 0;

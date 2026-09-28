@@ -2,9 +2,9 @@
 
 void main() {
     const float[3] v = [1.0, 2.0, 3.0];
-    // CHECK: [[@LINE+1]]:9: error: cannot assign to immutable variable 'x' of type 'const float'
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable variable 'x' of type 'const float'
     v.x = 5.0;
-    // CHECK: [[@LINE+1]]:10: error: cannot assign to immutable variable 'xy' of type 'const float[2]'
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable variable 'xy' of type 'const float[2]'
     v.xy = [1.0, 2.0];
 }
 

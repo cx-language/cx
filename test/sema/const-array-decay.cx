@@ -2,6 +2,6 @@
 
 void main() {
     const int[2] a = [1, 2];
-    // CHECK: [[@LINE+1]]:18: error: cannot assign 'const int[*]' to 'int[*]'
+    // CHECK: [[@LINE+1]]:16: error: cannot assign 'const int[*]' to 'int[*]'
     int[*] p = a.data();
 }

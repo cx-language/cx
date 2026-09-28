@@ -187,7 +187,8 @@ llvm::APSInt Token::getIntegerValue() const {
 
 Location cx::getTokenEndLocation(const Token& token) {
     Location end = token.location;
-    if (!end.isValid()) return end;
+    // None has no source text; toString would give the 11-char "end-of-file" description.
+    if (!end.isValid() || token.kind == Token::None) return end;
 
     if (token.kind == Token::IntegerLiteral) {
         end.column += token.getIntegerLength();

@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+int add(int a, int b) { return a + b; }
+void main() {
+    add(a = 1, c = 2);
+}
+// CHECK: [[@LINE-2]]:16: error: invalid argument name 'c'
+// CHECK-NEXT: add(a = 1, c = 2);
+// CHECK-NEXT: ~
+// CHECK: note: 'add' declared here

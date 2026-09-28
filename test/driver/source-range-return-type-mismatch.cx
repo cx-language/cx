@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+string f() {
+    return 1 + 2;
+}
+// CHECK: [[@LINE-2]]:12: error: mismatching return type 'int', expected 'string'
+// CHECK-NEXT: return 1 + 2;
+// CHECK-NEXT: ~~~~~
