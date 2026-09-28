@@ -35,46 +35,8 @@
 
 #include "../driver/compile.h"
 #include "../lsp/analyzer.h"
-#include <cstdio>
 #include <exception>
 #include <string>
-
-namespace {
-
-void appendJsonEscaped(std::string& out, const std::string& value) {
-    out += '"';
-    for (char ch : value) {
-        switch (ch) {
-        case '"':
-            out += "\\\"";
-            break;
-        case '\\':
-            out += "\\\\";
-            break;
-        case '\n':
-            out += "\\n";
-            break;
-        case '\r':
-            out += "\\r";
-            break;
-        case '\t':
-            out += "\\t";
-            break;
-        default:
-            if (ch >= 0 && ch < 0x20) {
-                char escaped[7] = {};
-                std::snprintf(escaped, sizeof(escaped), "\\u%04x", ch);
-                out += escaped;
-            } else {
-                out += ch;
-            }
-            break;
-        }
-    }
-    out += '"';
-}
-
-} // namespace
 
 std::string cxCompileToC(const std::string& source, const std::string& importSearchPath) {
     try {
@@ -85,19 +47,17 @@ std::string cxCompileToC(const std::string& source, const std::string& importSea
         options.dispatchMode = true;
         auto result = cx::compileToC("main.cx", source.c_str(), options);
 
-        std::string json = "{\"status\":";
-        json += (result.status == 0 ? '0' : '1');
+        cx::lsp::JsonObject root;
+        root["status"] = result.status;
         if (result.status == 0) {
-            json += ",\"cCode\":";
-            appendJsonEscaped(json, result.cCode);
+            root["cCode"] = result.cCode;
         }
-        json += '}';
-        return json;
+        return cx::lsp::serializeJson(cx::lsp::JsonValue(std::move(root)));
     } catch (const std::exception& error) {
-        std::string json = "{\"status\":1,\"internalError\":";
-        appendJsonEscaped(json, error.what());
-        json += '}';
-        return json;
+        cx::lsp::JsonObject root;
+        root["status"] = 1;
+        root["internalError"] = error.what();
+        return cx::lsp::serializeJson(cx::lsp::JsonValue(std::move(root)));
     } catch (...) {
         return "{\"status\":1,\"internalError\":\"unknown internal compiler error\"}";
     }
@@ -130,10 +90,10 @@ std::string cxComplete(const std::string& source, const std::string& importSearc
         json += '}';
         return json;
     } catch (const std::exception& error) {
-        std::string json = "{\"status\":1,\"internalError\":";
-        appendJsonEscaped(json, error.what());
-        json += '}';
-        return json;
+        cx::lsp::JsonObject root;
+        root["status"] = 1;
+        root["internalError"] = error.what();
+        return cx::lsp::serializeJson(cx::lsp::JsonValue(std::move(root)));
     } catch (...) {
         return "{\"status\":1,\"internalError\":\"unknown internal compiler error\"}";
     }

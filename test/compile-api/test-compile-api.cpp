@@ -11,7 +11,11 @@
 
 #include "../../src/driver/compile.h"
 #include <iostream>
+#include <optional>
 #include <string>
+#pragma warning(push, 0)
+#include <llvm/Support/JSON.h>
+#pragma warning(pop)
 
 namespace {
 
@@ -101,13 +105,21 @@ std::string cxCompileToC(const std::string& source, const std::string& importSea
 std::string cxComplete(const std::string& source, const std::string& importSearchPath, int line, int character);
 
 void testJson() {
-    // The WebAssembly API entry point returns JSON.
-    std::string json = cxCompileToC("void main() {\n    println(\"hi\");\n}\n", CX_TEST_SOURCE_DIR);
-    check(json.rfind("{\"status\":0,\"cCode\":\"", 0) == 0, "wasm API returns success JSON");
-    check(json.find("hi") != std::string::npos, "wasm API JSON contains the generated C code");
-    check(json.back() == '}', "wasm API JSON is complete");
-    std::string jsonError = cxCompileToC("void main() {\n    nope;\n}\n", CX_TEST_SOURCE_DIR);
-    check(jsonError == "{\"status\":1}", "wasm API returns failure JSON for erroneous input");
+    // The WebAssembly API entry point returns JSON. Parsed like the
+    // playground (JSON.parse), so key order is insignificant.
+    auto success = llvm::json::parse(cxCompileToC("void main() {\n    println(\"hi\");\n}\n", CX_TEST_SOURCE_DIR));
+    check(!!success, "wasm API returns valid success JSON");
+    const llvm::json::Object* root = success ? success->getAsObject() : nullptr;
+    auto status = root ? root->getInteger("status") : std::nullopt;
+    check(status && *status == 0, "wasm API success JSON has status 0");
+    auto cCode = root ? root->getString("cCode") : std::nullopt;
+    check(cCode && cCode->contains("hi"), "wasm API JSON contains the generated C code");
+    auto failure = llvm::json::parse(cxCompileToC("void main() {\n    nope;\n}\n", CX_TEST_SOURCE_DIR));
+    check(!!failure, "wasm API returns valid failure JSON");
+    const llvm::json::Object* errorRoot = failure ? failure->getAsObject() : nullptr;
+    auto errorStatus = errorRoot ? errorRoot->getInteger("status") : std::nullopt;
+    check(errorStatus && *errorStatus == 1, "wasm API failure JSON has status 1");
+    check(errorRoot && !errorRoot->getString("cCode"), "wasm API failure JSON has no C code");
 }
 
 void testComplete() {
