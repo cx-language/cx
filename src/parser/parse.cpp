@@ -440,52 +440,23 @@ std::vector<GenericArg> Parser::parseGenericArgumentList() {
     }
 }
 
-// Rejects zero divisors and out-of-range shift amounts in an array bound
-// before constant evaluation, where they would assert instead of erroring.
-static void checkArraySizeDivisors(const Expr& expr) {
-    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
-        checkArraySizeDivisors(binaryExpr->getLHS());
-        checkArraySizeDivisors(binaryExpr->getRHS());
-        if (!binaryExpr->getLHS().isFoldableIntConstant() || !binaryExpr->getRHS().isFoldableIntConstant()) return;
-
-        switch (binaryExpr->op) {
-        case Token::Slash:
-        case Token::Modulo:
-        case Token::PositiveModulo:
-            if (binaryExpr->getRHS().getConstantIntegerValue().isZero()) {
-                ERROR_RANGE(getExprRangeStart(*binaryExpr), binaryExpr->endLocation, "division by zero in array size");
-            }
-            break;
-        case Token::LeftShift:
-        case Token::RightShift: {
-            auto shift = binaryExpr->getRHS().getConstantIntegerValue();
-            if (shift.isNegative() || shift.ugt(255)) {
-                ERROR_RANGE(getExprRangeStart(*binaryExpr), binaryExpr->endLocation, "shift amount out of range in array size");
-            }
-            break;
-        }
-        default:
-            break;
-        }
-    } else if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&expr)) {
-        checkArraySizeDivisors(unaryExpr->getOperand());
-    }
-}
-
-void Parser::resolveSizeExprDecls(Expr& expr, std::vector<VarDecl*>& resolutionStack) {
+bool Parser::resolveSizeExprDecls(Expr& expr, std::vector<VarDecl*>& resolutionStack) {
     // Binds names in an array size to already-parsed top-level constants so
     // they fold. Only called outside binder scopes (see inBinderScope), where
     // no local or generic parameter can shadow a global. Sema re-resolves
     // every VarExpr unconditionally, so these bindings never leak into
     // typechecking. Revisiting a constant on the current path is a genuine
     // cycle, reported here since the constant folder itself has no cycle guard.
+    // Returns whether any name stayed unbound: it may be a generic parameter
+    // declared later in '<...>' (a return type parses before its parameter
+    // list), in which case the size defers to sema instead of erroring here.
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(&expr)) {
         if (!varExpr->decl) {
             auto found = currentModule->symbolTable.findInTopLevelScope(varExpr->identifier);
             if (found.size() == 1) {
                 if (auto* varDecl = llvm::dyn_cast<VarDecl>(found.front())) {
                     // Mutable variables never fold, so only consts bind.
-                    if (varDecl->type.isMutable()) return;
+                    if (varDecl->type.isMutable()) return true;
                     if (llvm::is_contained(resolutionStack, varDecl)) {
                         ERROR_RANGE(varExpr->location, varExpr->endLocation, "cyclic constant '" << varDecl->getName() << "'");
                     }
@@ -495,35 +466,35 @@ void Parser::resolveSizeExprDecls(Expr& expr, std::vector<VarDecl*>& resolutionS
                         resolveSizeExprDecls(*varDecl->initializer, resolutionStack);
                         resolutionStack.pop_back();
                     }
+                    return false;
                 }
             }
+            return true;
         }
-        return;
+        return false;
     }
-    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) {
-        resolveSizeExprDecls(*memberExpr->base, resolutionStack);
-        return;
-    }
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) return resolveSizeExprDecls(*memberExpr->base, resolutionStack);
     if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(&expr)) {
+        bool unbound = false;
         for (Expr* element : arrayLiteral->elements)
-            resolveSizeExprDecls(*element, resolutionStack);
-        return;
+            unbound |= resolveSizeExprDecls(*element, resolutionStack);
+        return unbound;
     }
-    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&expr)) {
-        resolveSizeExprDecls(unaryExpr->getOperand(), resolutionStack);
-        return;
-    }
+    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&expr)) return resolveSizeExprDecls(unaryExpr->getOperand(), resolutionStack);
     if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
-        resolveSizeExprDecls(binaryExpr->getLHS(), resolutionStack);
-        resolveSizeExprDecls(binaryExpr->getRHS(), resolutionStack);
-        return;
+        // Evaluate both sides so every name still binds.
+        bool lhs = resolveSizeExprDecls(binaryExpr->getLHS(), resolutionStack);
+        bool rhs = resolveSizeExprDecls(binaryExpr->getRHS(), resolutionStack);
+        return lhs || rhs;
     }
     if (auto* ifExpr = llvm::dyn_cast<IfExpr>(&expr)) {
-        resolveSizeExprDecls(*ifExpr->condition, resolutionStack);
-        resolveSizeExprDecls(*ifExpr->thenExpr, resolutionStack);
-        resolveSizeExprDecls(*ifExpr->elseExpr, resolutionStack);
-        return;
+        // Evaluate every arm so all names still bind.
+        bool condition = resolveSizeExprDecls(*ifExpr->condition, resolutionStack);
+        bool then = resolveSizeExprDecls(*ifExpr->thenExpr, resolutionStack);
+        bool else_ = resolveSizeExprDecls(*ifExpr->elseExpr, resolutionStack);
+        return condition || then || else_;
     }
+    return false;
 }
 
 Type Parser::parseArrayType(Type elementType) {
@@ -576,9 +547,10 @@ Type Parser::parseArrayType(Type elementType) {
 
         Expr* sizeExpr = parseExpr();
         parse(Token::RightBracket);
+        bool hasUnboundName = false;
         if (!inBinderScope) {
             std::vector<VarDecl*> resolutionStack;
-            resolveSizeExprDecls(*sizeExpr, resolutionStack);
+            hasUnboundName = resolveSizeExprDecls(*sizeExpr, resolutionStack);
         }
         checkArraySizeDivisors(*sizeExpr);
         if (auto* sizeofExpr = llvm::dyn_cast<SizeofExpr>(sizeExpr); sizeofExpr && !sizeExpr->isFoldableIntConstant()) {
@@ -588,6 +560,16 @@ Type Parser::parseArrayType(Type elementType) {
             return BasicType::get("Array", args, elementType.mutability, elementType.location);
         }
         if (!sizeExpr->isFoldableIntConstant()) {
+            // Inside binder scopes a name may denote a local or shadowed
+            // constant, which only sema can resolve; defer the size there.
+            // Everywhere else the size must fold now, unless it mentions an
+            // unbound name that may be a later-declared generic parameter.
+            if (inBinderScope || hasUnboundName) {
+                std::vector<GenericArg> args;
+                args.emplace_back(elementType);
+                args.emplace_back(UnresolvedType::getDeferredSize(sizeExpr, currentModule, sizeExpr->location));
+                return BasicType::get("Array", args, elementType.mutability, elementType.location);
+            }
             ERROR_RANGE(getExprRangeStart(*sizeExpr), sizeExpr->endLocation, "array size must be a constant integer expression");
         }
         llvm::APSInt size = sizeExpr->getConstantIntegerValue();

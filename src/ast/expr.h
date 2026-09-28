@@ -434,4 +434,8 @@ struct VarDeclExpr : Expr {
 /// descend to the LHS/base/callee/condition.
 Location getExprRangeStart(const Expr& expr);
 
+// Reports division by zero and out-of-range shifts in a (possibly partly)
+// folded array size. Shared by the parser and sema's deferred-size folding.
+void checkArraySizeDivisors(const Expr& expr);
+
 } // namespace cx

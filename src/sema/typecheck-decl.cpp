@@ -131,12 +131,113 @@ TypeAliasDecl* Typechecker::findTypeAlias(Type type) {
     return firstType && firstType->isTypeAliasDecl() ? llvm::cast<TypeAliasDecl>(firstType) : nullptr;
 }
 
-Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel) {
-    llvm::SmallPtrSet<const TypeAliasDecl*, 8> resolving;
-    return resolveTypeAliases(std::move(type), userAccessLevel, resolving);
+// tryFindDecl restricted to globals for signatures: the size's home-module
+// top level, then its imports, then stdlib, with tryFindDecl's precedence.
+// Throws on ambiguity like the module lookup it mirrors; the caller swallows
+// that. A null home module (bare size names) falls back to checker scope.
+static Decl* findSizeDeclInSignature(Typechecker& checker, llvm::StringRef name, Location location, Module* homeModule) {
+    Module* scope = homeModule ? homeModule : checker.currentModule;
+    auto top = scope->symbolTable.findInTopLevelScope(name);
+    if (top.size() == 1) return top[0];
+    if (top.size() > 1) ERROR_RANGE(location, getIdentifierEndLocation(location, name), "ambiguous reference to '" << name << "'");
+    if (homeModule) {
+        // The size's own file isn't recoverable from the module, so union
+        // every file's imports; same-module names need no import anyway.
+        std::vector<Module*> imports;
+        for (auto& file : homeModule->sourceFiles) {
+            for (Module* imported : file.importedModules) {
+                if (std::find(imports.begin(), imports.end(), imported) == imports.end()) imports.push_back(imported);
+            }
+        }
+        if (Decl* match = findDeclInModules(name, location, imports)) return match;
+    } else if (checker.currentSourceFile) {
+        if (Decl* match = findDeclInModules(name, location, checker.currentSourceFile->importedModules)) return match;
+    }
+    return findDeclInModules(name, location, Module::getStdlibModule());
 }
 
-Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving) {
+// Binds the names in a deferred array size to the constants they denote in
+// the current scope. Names that don't resolve to a single immutable variable
+// stay unbound, so folding simply fails for them; nothing here throws.
+static void bindArraySizeNames(Typechecker& checker, Expr& expr, Module* homeModule) {
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(&expr)) {
+        if (varExpr->decl) return;
+        // Same lookup as value uses, so shadowing matches exactly; ambiguous
+        // or unknown names simply stay unbound. Signatures resolve in the
+        // size's home module (folding can run under another module's
+        // instantiation), so they see globals only: no caller locals,
+        // parameters, or receiver members.
+        Decl* decl;
+        try {
+            llvm::SaveAndRestore suppress(checker.suppressEnsureSignature, true);
+            if (checker.checkingFunctionSignature) {
+                decl = findSizeDeclInSignature(checker, varExpr->identifier, varExpr->location, homeModule);
+            } else {
+                decl = checker.tryFindDecl(varExpr->identifier, varExpr->location);
+            }
+        } catch (const CompileError&) {
+            return;
+        }
+        if (!decl) return;
+        auto* varDecl = llvm::dyn_cast<VarDecl>(decl);
+        // Mutable variables never fold; an unset type means an unchecked
+        // inferred constant, whose value isn't known yet either.
+        if (!varDecl || !varDecl->type || varDecl->type.isMutable()) return;
+        checker.markReferenced(varDecl);
+        varExpr->decl = varDecl;
+        return;
+    }
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) {
+        bindArraySizeNames(checker, *memberExpr->base, homeModule);
+        return;
+    }
+    if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(&expr)) {
+        for (Expr* element : arrayLiteral->elements)
+            bindArraySizeNames(checker, *element, homeModule);
+        return;
+    }
+    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&expr)) {
+        bindArraySizeNames(checker, unaryExpr->getOperand(), homeModule);
+        return;
+    }
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+        bindArraySizeNames(checker, binaryExpr->getLHS(), homeModule);
+        bindArraySizeNames(checker, binaryExpr->getRHS(), homeModule);
+        return;
+    }
+    if (auto* ifExpr = llvm::dyn_cast<IfExpr>(&expr)) {
+        bindArraySizeNames(checker, *ifExpr->condition, homeModule);
+        bindArraySizeNames(checker, *ifExpr->thenExpr, homeModule);
+        bindArraySizeNames(checker, *ifExpr->elseExpr, homeModule);
+        return;
+    }
+}
+
+Type Typechecker::resolveArraySize(Expr& sizeExpr, Type elementType, Location location, Module* homeModule) {
+    // The payload is shared (aliases, repeated resolves, substituted clones),
+    // so bind a clone; attempts stay independent and idempotent.
+    Expr* attempt = sizeExpr.instantiate({});
+    bindArraySizeNames(*this, *attempt, homeModule);
+    if (!attempt->isFoldableIntConstant()) {
+        ERROR_RANGE(getExprRangeStart(sizeExpr), sizeExpr.endLocation, "array size must be a constant integer expression");
+    }
+    checkArraySizeDivisors(*attempt);
+    llvm::APSInt size = attempt->getConstantIntegerValue();
+    if (size.isNegative()) {
+        ERROR_RANGE(getExprRangeStart(sizeExpr), sizeExpr.endLocation, "array size must be non-negative");
+    }
+    if (size.getActiveBits() > 63) {
+        ERROR_RANGE(getExprRangeStart(sizeExpr), sizeExpr.endLocation, "array size is too large");
+    }
+    return BasicType::getArray(elementType, size.getSExtValue(), location);
+}
+
+Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, bool foldArraySizes) {
+    llvm::SmallPtrSet<const TypeAliasDecl*, 8> resolving;
+    return resolveTypeAliases(std::move(type), userAccessLevel, resolving, foldArraySizes);
+}
+
+Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving, bool foldArraySizes) {
     if (!type) return type;
 
     switch (type.getKind()) {
@@ -155,7 +256,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
 
             checkHasAccess(*alias, type.location, userAccessLevel);
             markReferenced(alias);
-            Type resolved = resolveTypeAliases(alias->aliasedType, userAccessLevel, resolving);
+            Type resolved = resolveTypeAliases(alias->aliasedType, userAccessLevel, resolving, foldArraySizes);
             resolving.erase(alias);
 
             // An alias preserves the aliased type's mutability, while a const
@@ -174,7 +275,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
 
         auto genericArgs = map(basicType->genericArgs, [&](GenericArg arg) {
             if (!arg.isType()) return arg;
-            arg.type = resolveTypeAliases(arg.type, userAccessLevel, resolving);
+            arg.type = resolveTypeAliases(arg.type, userAccessLevel, resolving, foldArraySizes);
             return arg;
         });
         Type rebuilt = BasicType::get(basicType->name, genericArgs, type.mutability, type.location);
@@ -184,30 +285,47 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
                 return BasicType::getArray(rebuilt.getElementType(), int64_t(*size), type.location);
             }
         }
+        // Fold deferred sizes and bare size names at real declaration sites.
+        // Probes keep them symbolic; typecheckType diagnoses leftovers.
+        if (foldArraySizes && rebuilt.isFixedArray() && !rebuilt.hasSizeofArraySize()) {
+            if (rebuilt.hasDeferredArraySize()) {
+                try {
+                    return resolveArraySize(*rebuilt.getDeferredArraySize(), rebuilt.getElementType(), type.location, rebuilt.getDeferredArraySizeHome());
+                } catch (const CompileError&) {
+                }
+            } else if (!rebuilt.getArraySizeParam().empty()) {
+                auto* name = makeAST<VarExpr>(rebuilt.getArraySizeParam(), rebuilt.getGenericArgs()[1].location);
+                name->endLocation = getIdentifierEndLocation(name->location, name->identifier);
+                try {
+                    return resolveArraySize(*name, rebuilt.getElementType(), type.location, nullptr);
+                } catch (const CompileError&) {
+                }
+            }
+        }
         if (rebuilt == type) return type;
         return rebuilt;
     }
     case TypeKind::ArrayPointerType: {
-        auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving);
+        auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving, foldArraySizes);
         if (elementType == type.getElementType()) return type;
         Type resolved = ArrayPointerType::get(elementType, type.location);
         return resolved.withMutability(type.mutability).withLocation(type.location);
     }
     case TypeKind::AnonymousStructType: {
         auto elements = map(type.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
-            return AnonymousStructElement{element.name, resolveTypeAliases(element.type, userAccessLevel, resolving)};
+            return AnonymousStructElement{element.name, resolveTypeAliases(element.type, userAccessLevel, resolving, foldArraySizes)};
         });
         if (llvm::equal(elements, type.getAnonymousStructElements())) return type;
         return AnonymousStructType::get(std::move(elements), type.mutability, type.location);
     }
     case TypeKind::FunctionType: {
-        auto returnType = resolveTypeAliases(type.getReturnType(), userAccessLevel, resolving);
-        auto paramTypes = map(type.getParamTypes(), [&](Type paramType) { return resolveTypeAliases(paramType, userAccessLevel, resolving); });
+        auto returnType = resolveTypeAliases(type.getReturnType(), userAccessLevel, resolving, foldArraySizes);
+        auto paramTypes = map(type.getParamTypes(), [&](Type paramType) { return resolveTypeAliases(paramType, userAccessLevel, resolving, foldArraySizes); });
         if (returnType == type.getReturnType() && llvm::equal(paramTypes, type.getParamTypes())) return type;
         return FunctionType::get(returnType, std::move(paramTypes), llvm::cast<FunctionType>(type.typeBase)->isVariadic, type.mutability, type.location);
     }
     case TypeKind::PointerType: {
-        auto pointeeType = resolveTypeAliases(type.getPointee(), userAccessLevel, resolving);
+        auto pointeeType = resolveTypeAliases(type.getPointee(), userAccessLevel, resolving, foldArraySizes);
         if (pointeeType == type.getPointee()) return type;
         return PointerType::get(pointeeType, type.getPointerKind(), type.mutability, type.location);
     }
@@ -352,6 +470,9 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 }
             } else if (!type.getArraySizeParam().empty()) {
                 ERROR(type.location, "array size must be a constant integer expression");
+            } else if (type.hasDeferredArraySize()) {
+                // Resolution already tried folding this; diagnose the reason it cannot fold.
+                resolveArraySize(*type.getDeferredArraySize(), type.getElementType(), type.location, type.getDeferredArraySizeHome());
             }
             if (type.getGenericArgs()[1].isInt() && type.getArraySize() > std::numeric_limits<int>::max()) {
                 ERROR(type.location, "array size is too large");
@@ -1049,9 +1170,9 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
     setDeclContext(decl);
     try {
         for (auto& param : decl.proto.params) {
-            param.type = resolveTypeAliases(param.type, decl.accessLevel);
+            param.type = resolveTypeAliases(param.type, decl.accessLevel, /*foldArraySizes=*/true);
         }
-        decl.proto.returnType = resolveTypeAliases(decl.proto.returnType, decl.accessLevel);
+        decl.proto.returnType = resolveTypeAliases(decl.proto.returnType, decl.accessLevel, /*foldArraySizes=*/true);
 
         if (decl.hasPack()) {
             ERROR_RANGE(decl.getPackParam()->getLocation(), getIdentifierEndLocation(*decl.getPackParam()), "variadic parameter requires a generic function");
@@ -1537,7 +1658,7 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
             typecheckExpr(*enumCase.value);
 
             if (enumCase.associatedType) {
-                enumCase.associatedType = resolveTypeAliases(enumCase.associatedType, enumCase.accessLevel);
+                enumCase.associatedType = resolveTypeAliases(enumCase.associatedType, enumCase.accessLevel, /*foldArraySizes=*/true);
                 typecheckType(enumCase.associatedType, enumCase.accessLevel, true, allowReference);
             }
         }
@@ -1708,7 +1829,7 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
 }
 
 void Typechecker::typecheckVarDecl(VarDecl& decl) {
-    decl.type = resolveTypeAliases(decl.type, decl.isGlobal() ? decl.accessLevel : AccessLevel::None);
+    decl.type = resolveTypeAliases(decl.type, decl.isGlobal() ? decl.accessLevel : AccessLevel::None, /*foldArraySizes=*/true);
     if (!decl.isGlobal()) {
         localVarDecls.push_back(&decl);
     }
@@ -1812,7 +1933,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 }
 
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
-    decl.type = resolveTypeAliases(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel));
+    decl.type = resolveTypeAliases(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel), /*foldArraySizes=*/true);
     bool allowReference = false;
     if (auto* parent = llvm::dyn_cast<TypeDecl>(decl.getParentDecl())) allowReference = allowsSubstitutedReference(*parent);
     typecheckType(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel), true, allowReference);

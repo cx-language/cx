@@ -5,6 +5,7 @@
 
 #include <tuple>
 #pragma warning(pop)
+#include "../support/utility.h"
 #include "arena.h"
 #include "ast.h"
 #include "decl.h"
@@ -804,4 +805,34 @@ const Expr* AnonymousStructExpr::getElementByName(llvm::StringRef name) const {
         }
     }
     return nullptr;
+}
+
+void cx::checkArraySizeDivisors(const Expr& expr) {
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+        checkArraySizeDivisors(binaryExpr->getLHS());
+        checkArraySizeDivisors(binaryExpr->getRHS());
+        if (!binaryExpr->getLHS().isFoldableIntConstant() || !binaryExpr->getRHS().isFoldableIntConstant()) return;
+
+        switch (binaryExpr->op) {
+        case Token::Slash:
+        case Token::Modulo:
+        case Token::PositiveModulo:
+            if (binaryExpr->getRHS().getConstantIntegerValue().isZero()) {
+                ERROR_RANGE(getExprRangeStart(*binaryExpr), binaryExpr->endLocation, "division by zero in array size");
+            }
+            break;
+        case Token::LeftShift:
+        case Token::RightShift: {
+            auto shift = binaryExpr->getRHS().getConstantIntegerValue();
+            if (shift.isNegative() || shift.ugt(255)) {
+                ERROR_RANGE(getExprRangeStart(*binaryExpr), binaryExpr->endLocation, "shift amount out of range in array size");
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    } else if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&expr)) {
+        checkArraySizeDivisors(unaryExpr->getOperand());
+    }
 }

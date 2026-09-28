@@ -1838,6 +1838,28 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     return Type();
 }
 
+// Whether a deferred array size mentions a generic parameter. Compared by
+// identifier: no global can share the name (that is a redefinition error),
+// so a matching name denotes the parameter. Anything else answers false:
+// calls and other non-constant forms can never fold, so they can neither
+// source inference nor put a parameter in two places at once.
+static bool deferredSizeMentions(Expr& expr, llvm::StringRef genericParam) {
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(&expr)) return varExpr->identifier == genericParam;
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) return deferredSizeMentions(*memberExpr->base, genericParam);
+    if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(&expr)) {
+        return llvm::any_of(arrayLiteral->elements, [&](Expr* element) { return deferredSizeMentions(*element, genericParam); });
+    }
+    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&expr)) return deferredSizeMentions(unaryExpr->getOperand(), genericParam);
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+        return deferredSizeMentions(binaryExpr->getLHS(), genericParam) || deferredSizeMentions(binaryExpr->getRHS(), genericParam);
+    }
+    if (auto* ifExpr = llvm::dyn_cast<IfExpr>(&expr)) {
+        return deferredSizeMentions(*ifExpr->condition, genericParam) || deferredSizeMentions(*ifExpr->thenExpr, genericParam)
+            || deferredSizeMentions(*ifExpr->elseExpr, genericParam);
+    }
+    return false;
+}
+
 bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
     switch (type.getKind()) {
     case TypeKind::BasicType:
@@ -1868,6 +1890,9 @@ bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
         return containsGenericParam(type.getPointee(), genericParam);
 
     case TypeKind::UnresolvedType:
+        if (auto* deferredSize = llvm::cast<UnresolvedType>(type.typeBase)->deferredSize) {
+            return deferredSizeMentions(*deferredSize, genericParam);
+        }
         llvm_unreachable("invalid unresolved type");
     }
 
@@ -3098,6 +3123,11 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 auto* functionDecl = functionTemplate->instantiateVariadic(variadicArgs->fixedArgs, variadicArgs->packArgs, std::move(variadicArgs->cacheKey));
 
                 if (decls.size() == 1) {
+                    // Substitution leaves non-generic names (e.g. global constants in array
+                    // sizes) folded only by a checker; ensure the signature now so matching
+                    // and the call type see concrete types. Never throws, so probing still
+                    // relies on matchArguments below to reject losers.
+                    ensureSignature(*functionDecl);
                     if (!matchArguments(expr, functionDecl) && hasComparisonFallback(expr)) continue;
                     validateAndConvertArguments(expr, *functionDecl, callee);
                     deferTypechecking(functionDecl);
@@ -3132,6 +3162,11 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             auto* functionDecl = functionTemplate->instantiate(genericArgs);
 
             if (decls.size() == 1) {
+                // Substitution leaves non-generic names (e.g. global constants in array
+                // sizes) folded only by a checker; ensure the signature now so matching
+                // and the call type see concrete types. Never throws, so probing still
+                // relies on matchArguments below to reject losers.
+                ensureSignature(*functionDecl);
                 if (!matchArguments(expr, functionDecl) && hasComparisonFallback(expr)) continue;
                 validateAndConvertArguments(expr, *functionDecl, callee);
                 deferTypechecking(functionDecl);
@@ -3419,6 +3454,10 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     }
 
     if (matches.size() == 1) {
+        // Candidates match on raw substituted types; the winner's signature must be
+        // ensured before use so deferred names (e.g. in array sizes) fold in the
+        // callee's scope. Never throws; errors report once, here.
+        ensureSignature(*matches.front().decl);
         validateAndConvertArguments(expr, *matches.front().decl);
         deferTypechecking(matches.front().decl);
         return matches.front().decl;
@@ -4036,7 +4075,7 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
 }
 
 Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
-    expr.operandType = resolveTypeAliases(std::move(expr.operandType));
+    expr.operandType = resolveTypeAliases(std::move(expr.operandType), AccessLevel::None, /*foldArraySizes=*/true);
     // `sizeof` accepts a variable as well as a type, e.g. `sizeof(x)`. A type
     // with the same name takes precedence, so previously valid `sizeof(T)`
     // expressions are unaffected even if a variable shadows the type name.
@@ -4556,7 +4595,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
     if (expr.isCallExpr()) {
         auto& call = llvm::cast<CallExpr>(expr);
         for (auto& genericArg : call.genericArgs) {
-            if (genericArg.isType()) genericArg.getType() = resolveTypeAliases(genericArg.getType());
+            if (genericArg.isType()) genericArg.getType() = resolveTypeAliases(genericArg.getType(), AccessLevel::None, /*foldArraySizes=*/true);
         }
     }
 
@@ -4638,6 +4677,9 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         break;
     }
 
+    // No size folding here: expression types belong to their declaration
+    // sites (callee signatures, field declarations), which fold in their own
+    // scope; folding here would use the caller's scope instead.
     type = resolveTypeAliases(std::move(type));
     expr.type = type;
     expr.assignableType = type;

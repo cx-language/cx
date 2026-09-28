@@ -108,7 +108,7 @@ private:
     std::vector<Type> parseNonEmptyTypeList();
     std::vector<GenericArg> parseGenericArgumentList();
     Type parseArrayType(Type elementType);
-    void resolveSizeExprDecls(Expr& expr, std::vector<VarDecl*>& resolutionStack);
+    bool resolveSizeExprDecls(Expr& expr, std::vector<VarDecl*>& resolutionStack);
     // Reparses a function return type and name under the binder guard once `<`
     // reveals the function is generic; generic parameters may shadow globals
     // the first parse folded against. `returnTypeIndex` is the token index

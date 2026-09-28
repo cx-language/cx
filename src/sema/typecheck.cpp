@@ -420,7 +420,7 @@ static llvm::SmallVector<Decl*, 8> findDeclsInModules(llvm::StringRef name, llvm
     return decls;
 }
 
-static Decl* findDeclInModules(llvm::StringRef name, Location location, llvm::ArrayRef<Module*> modules) {
+Decl* cx::findDeclInModules(llvm::StringRef name, Location location, llvm::ArrayRef<Module*> modules) {
     ASSERT(!name.empty());
     auto decls = findDeclsInModules(name, modules);
 

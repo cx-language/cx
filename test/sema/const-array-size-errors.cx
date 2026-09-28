@@ -6,17 +6,26 @@ uint8[M] a = undefined;
 
 const N = 8;
 
-void f() {
-    // Named constants don't resolve inside functions, where a local could shadow them.
-    // CHECK: [[@LINE+1]]:5: error: array size must be a constant integer expression
-    uint8[N] b = undefined;
-}
-
 void g() {
     var N = 5;
     // Must not fold against the shadowed global.
     // CHECK: [[@LINE+1]]:5: error: array size must be a constant integer expression
     uint8[N] c = undefined;
+}
+
+void unknownName() {
+    // CHECK: [[@LINE+1]]:5: error: array size must be a constant integer expression
+    uint8[Nope] u = undefined;
+}
+
+void divByZero() {
+    // CHECK: [[@LINE+1]]:11: error: division by zero in array size
+    uint8[N / 0] v = undefined;
+}
+
+void negativeSize() {
+    // CHECK: [[@LINE+1]]:11: error: array size must be non-negative
+    uint8[1 - N] w = undefined;
 }
 
 const Q = 8;

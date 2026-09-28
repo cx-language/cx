@@ -195,8 +195,15 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
     }
     case TypeKind::PointerType:
         return preserveSpelling(PointerType::get(getPointee().resolve(replacements), getPointerKind(), mutability, location));
-    case TypeKind::UnresolvedType:
-        llvm_unreachable("invalid unresolved type");
+    case TypeKind::UnresolvedType: {
+        // A deferred size substitutes like any other expression, so generic
+        // value parameters keep their usual textual-substitution meaning.
+        // (Folding to an integer happens in GenericArg::resolve, which is the
+        // only caller that can change the argument kind.)
+        auto* unresolved = llvm::cast<UnresolvedType>(typeBase);
+        if (!unresolved->deferredSize) llvm_unreachable("invalid unresolved type");
+        return preserveSpelling(UnresolvedType::getDeferredSize(unresolved->deferredSize->instantiate(replacements), unresolved->homeModule, location));
+    }
     }
     llvm_unreachable("all cases handled");
 }
@@ -327,6 +334,28 @@ Type UnresolvedType::get(Mutability mutability, Location location) {
     return getType(UnresolvedType(), mutability, location);
 }
 
+Type UnresolvedType::getDeferredSize(Expr* sizeExpr, Module* homeModule, Location location) {
+    UnresolvedType base;
+    base.deferredSize = sizeExpr;
+    base.homeModule = homeModule;
+    return getType(std::move(base), Mutability::Mutable, location);
+}
+
+bool Type::hasDeferredArraySize() const {
+    return isFixedArray() && getGenericArgs()[1].isType() && getGenericArgs()[1].getType().isUnresolvedType()
+        && llvm::cast<UnresolvedType>(getGenericArgs()[1].getType().typeBase)->deferredSize;
+}
+
+Expr* Type::getDeferredArraySize() const {
+    ASSERT(hasDeferredArraySize());
+    return llvm::cast<UnresolvedType>(getGenericArgs()[1].getType().typeBase)->deferredSize;
+}
+
+Module* Type::getDeferredArraySizeHome() const {
+    ASSERT(hasDeferredArraySize());
+    return llvm::cast<UnresolvedType>(getGenericArgs()[1].getType().typeBase)->homeModule;
+}
+
 bool cx::operator==(const AnonymousStructElement& a, const AnonymousStructElement& b) {
     return a.name == b.name && a.type == b.type;
 }
@@ -362,6 +391,30 @@ GenericArg GenericArg::resolve(const llvm::StringMap<GenericArg>& replacements) 
     if (type.isBasicType()) {
         if (auto it = replacements.find(type.getName()); it != replacements.end()) {
             return it->second;
+        }
+    }
+    if (type.isUnresolvedType()) {
+        // Deferred sizes only occur in size position; fold when substitution
+        // leaves nothing name-like, so per-instantiation checks see concrete
+        // sizes. Anything else (globals, errors) is sema's job at the use
+        // site. Never throws: substitution also runs speculatively during
+        // overload matching.
+        auto* unresolved = llvm::cast<UnresolvedType>(type.typeBase);
+        if (unresolved->deferredSize) {
+            Expr* substituted = unresolved->deferredSize->instantiate(replacements);
+            try {
+                if (substituted->isFoldableIntConstant()) {
+                    checkArraySizeDivisors(*substituted);
+                    llvm::APSInt size = substituted->getConstantIntegerValue();
+                    if (!size.isNegative() && size.getActiveBits() <= 63) {
+                        return GenericArg::fromInt(size.getSExtValue(), location);
+                    }
+                }
+            } catch (const CompileError&) {
+            }
+            GenericArg result = *this;
+            result.type = UnresolvedType::getDeferredSize(substituted, unresolved->homeModule, location);
+            return result;
         }
     }
     GenericArg result = *this;

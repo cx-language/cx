@@ -18,10 +18,12 @@
 namespace cx {
 
 struct ParamDecl;
+struct Module;
 struct TypeDecl;
 struct DestructorDecl;
 struct AnonymousStructElement;
 struct GenericArg;
+struct Expr;
 
 enum class Mutability { Mutable, Const };
 
@@ -165,6 +167,9 @@ struct Type {
     bool hasSizeofArraySize() const;
     Type getSizeofArrayOperand() const;
     static Type getSizeofMarker(Type operand);
+    bool hasDeferredArraySize() const;
+    Expr* getDeferredArraySize() const;
+    Module* getDeferredArraySizeHome() const;
     llvm::ArrayRef<AnonymousStructElement> getAnonymousStructElements() const;
     llvm::ArrayRef<GenericArg> getGenericArgs() const;
     Type getReturnType() const;
@@ -354,7 +359,16 @@ Type get(Type wrappedType, Mutability mutability = Mutability::Mutable, Location
 
 struct UnresolvedType : TypeBase {
     static Type get(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getDeferredSize(Expr* sizeExpr, Module* homeModule, Location location);
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::UnresolvedType; }
+
+    // Array-size expression awaiting sema folding (null for plain placeholders).
+    // Unresolved types never intern together, so each occurrence keeps its own.
+    Expr* deferredSize = nullptr;
+    // Module whose globals the size expression resolves against. Folding can
+    // run under another module (e.g. a stdlib instantiation triggered by this
+    // type), so the scope travels with the node instead of the checker.
+    Module* homeModule = nullptr;
 
 private:
     UnresolvedType() : TypeBase(TypeKind::UnresolvedType) {}

@@ -124,8 +124,11 @@ struct Typechecker {
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
     void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true, bool allowReference = false);
-    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel = AccessLevel::None);
-    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving);
+    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel = AccessLevel::None, bool foldArraySizes = false);
+    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving, bool foldArraySizes = false);
+    // Folds a deferred array size (or bare size name) using visible named
+    // constants. Throws the specific diagnostic when it cannot.
+    Type resolveArraySize(Expr& sizeExpr, Type elementType, Location location, Module* homeModule);
     TypeAliasDecl* findTypeAlias(Type type);
     void canonicalizeTypeAliases();
     void typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel);
@@ -368,5 +371,7 @@ std::string copyableHint(Type type);
 bool satisfiesCopyable(Type type);
 // Rejects a variadic extra that cannot cross to an `extern "C++"` callee by value.
 void validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef callee);
+// Single match (or C-header duplicates) across modules; throws on ambiguity. No scope lookup.
+Decl* findDeclInModules(llvm::StringRef name, Location location, llvm::ArrayRef<Module*> modules);
 
 } // namespace cx

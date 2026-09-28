@@ -11,8 +11,21 @@
 // CHECK-NEXT:5
 // CHECK-NEXT:4
 // CHECK-NEXT:8
+// CHECK-NEXT:8
+// CHECK-NEXT:8
+// CHECK-NEXT:17
+// CHECK-NEXT:100
+// CHECK-NEXT:5
+// CHECK-NEXT:10
+// CHECK-NEXT:800
+// CHECK-NEXT:5
+// CHECK-NEXT:5
+// CHECK-NEXT:20
+// CHECK-NEXT:17
 
-// Array sizes accept top-level named constants and member access on them.
+// Array sizes accept named constants and member access on them, at top
+// level and inside functions. Locals shadow globals; signatures and generic
+// instantiations resolve in their own scope.
 
 const N = 8;
 const M = N * 2;
@@ -38,12 +51,35 @@ struct G<int K> {
     uint8[K] buf;
 }
 
+struct B<int K> {
+    uint8[K + 1] buf;
+}
+
 using Buf = uint8[N * 2];
 
 uint8[N] glob() {
     uint8[8] buf = undefined;
     return buf;
 }
+
+void takeSized(uint8[N] x) {
+    println(x.size());
+}
+
+uint8[M + 1] useBufSize<T>(T x) {
+    uint8[M + 1] buf = undefined;
+    return buf;
+}
+
+uint8[M + K] mixSize<int K>() {
+    uint8[M + K] buf = undefined;
+    return buf;
+}
+
+void takeBuf<T>(uint8[M + 1] x, T y) {
+    println(x.size());
+}
+
 
 void main() {
     println(pixels.size());
@@ -60,4 +96,26 @@ void main() {
     var h = G<4>([0, 0, 0, 0]);
     println(h.buf.size());
     println(glob().size());
+    takeSized([0, 0, 0, 0, 0, 0, 0, 0]);
+    {
+        const N = 100;
+        const M = 100;
+        takeSized([0, 0, 0, 0, 0, 0, 0, 0]);
+        println(useBufSize(0).size());
+        uint8[N] shadowed = undefined;
+        println(shadowed.size());
+    }
+    const N = 5;
+    uint8[N] la = undefined;
+    println(la.size());
+    uint8[N * 2] lb = undefined;
+    println(lb.size());
+    uint8[res.x] lc = undefined;
+    println(lc.size());
+    uint8[N > 0 ? N : 1] ld = undefined;
+    println(ld.size());
+    var b4 = B<4>([0, 0, 0, 0, 0]);
+    println(b4.buf.size());
+    println(mixSize<4>().size());
+    takeBuf(useBufSize(0), 0);
 }
