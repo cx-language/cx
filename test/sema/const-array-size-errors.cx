@@ -1,0 +1,30 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+var M = 8;
+// CHECK: [[@LINE+1]]:1: error: array size must be a constant integer expression
+uint8[M] a = undefined;
+
+const N = 8;
+
+void f() {
+    // Named constants don't resolve inside functions, where a local could shadow them.
+    // CHECK: [[@LINE+1]]:5: error: array size must be a constant integer expression
+    uint8[N] b = undefined;
+}
+
+void g() {
+    var N = 5;
+    // Must not fold against the shadowed global.
+    // CHECK: [[@LINE+1]]:5: error: array size must be a constant integer expression
+    uint8[N] c = undefined;
+}
+
+const Q = 8;
+
+// The generic parameter collides with the global, so only the redefinition
+// fires; the return type stays symbolic (no mis-folded size cascade).
+// CHECK: [[@LINE+1]]:21: error: redefinition of 'Q'
+uint8[Q] shadow<int Q>(int x) {
+    uint8[Q] d = undefined;
+    return d;
+}

@@ -1,0 +1,63 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:1440000
+// CHECK-NEXT:8
+// CHECK-NEXT:17
+// CHECK-NEXT:600
+// CHECK-NEXT:8
+// CHECK-NEXT:8
+// CHECK-NEXT:16
+// CHECK-NEXT:800
+// CHECK-NEXT:5
+// CHECK-NEXT:4
+// CHECK-NEXT:8
+
+// Array sizes accept top-level named constants and member access on them.
+
+const N = 8;
+const M = N * 2;
+const res = [800, 600];
+const alias = res;
+const e = 5;
+const e2 = 600;
+const res2 = [e, e2];
+
+uint8[res.x * res.y * 3] pixels = undefined;
+uint8[N] a = undefined;
+uint8[M + 1] b = undefined;
+uint8[res.y] c = undefined;
+uint8[N > 0 ? N : 1] d = undefined;
+uint8[alias.x] f = undefined;
+uint8[res2.x] g = undefined;
+
+struct S {
+    uint8[N] buf;
+}
+
+struct G<int K> {
+    uint8[K] buf;
+}
+
+using Buf = uint8[N * 2];
+
+uint8[N] glob() {
+    uint8[8] buf = undefined;
+    return buf;
+}
+
+void main() {
+    println(pixels.size());
+    println(a.size());
+    println(b.size());
+    println(c.size());
+    println(d.size());
+    var s = S([0, 0, 0, 0, 0, 0, 0, 0]);
+    println(s.buf.size());
+    Buf t = undefined;
+    println(t.size());
+    println(f.size());
+    println(g.size());
+    var h = G<4>([0, 0, 0, 0]);
+    println(h.buf.size());
+    println(glob().size());
+}

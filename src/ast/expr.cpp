@@ -1,5 +1,6 @@
 #include "expr.h"
 #pragma warning(push, 0)
+#include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/ErrorHandling.h>
 
 #include <tuple>
@@ -23,6 +24,41 @@ bool Expr::isReferenceExpr() const {
 
 static bool startsBefore(Location a, Location b) {
     return std::tie(a.line, a.column) < std::tie(b.line, b.column);
+}
+
+// Follows a const-variable chain to the array literal it denotes, for folding
+// swizzles like `res.x` over `const res = [800, 600]`. Circular constants
+// resolve to null instead of looping forever.
+static const ArrayLiteralExpr* getConstantArrayLiteral(const Expr& base) {
+    const Expr* current = &base;
+    llvm::SmallPtrSet<const VarDecl*, 4> seen;
+    while (true) {
+        if (auto* literal = llvm::dyn_cast<ArrayLiteralExpr>(current)) return literal;
+        auto* var = llvm::dyn_cast<VarExpr>(current);
+        if (!var || !var->decl) return nullptr;
+        auto* varDecl = llvm::dyn_cast<VarDecl>(var->decl);
+        if (!varDecl || varDecl->type.isMutable() || !varDecl->initializer || !seen.insert(varDecl).second) return nullptr;
+        current = varDecl->initializer;
+    }
+}
+
+// A single-element swizzle over a constant array folds to the selected element.
+static const Expr* getConstantSwizzleElement(const MemberExpr& expr) {
+    if (expr.member.size() != 1) return nullptr;
+    int index = swizzleIndexFor(expr.member[0]);
+    if (index < 0) return nullptr;
+    const auto* array = getConstantArrayLiteral(*expr.base);
+    if (!array || (size_t)index >= array->elements.size()) return nullptr;
+    return array->elements[(size_t)index];
+}
+
+// The constant a member access denotes: a swizzle element, or a const
+// variable's initializer. Null when the member isn't a constant.
+static const Expr* getConstantMemberTarget(const MemberExpr& expr) {
+    if (const Expr* element = getConstantSwizzleElement(expr)) return element;
+    auto* varDecl = expr.decl ? llvm::dyn_cast<VarDecl>(expr.decl) : nullptr;
+    if (varDecl && !varDecl->type.isMutable() && varDecl->initializer) return varDecl->initializer;
+    return nullptr;
 }
 
 Location cx::getExprRangeStart(const Expr& expr) {
@@ -153,9 +189,8 @@ bool Expr::isFoldableIntConstant() const {
         return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableIntConstant();
     }
     case ExprKind::MemberExpr: {
-        auto* decl = llvm::cast<MemberExpr>(this)->decl;
-        auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
-        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableIntConstant();
+        const Expr* target = getConstantMemberTarget(*llvm::cast<MemberExpr>(this));
+        return target && target->isFoldableIntConstant();
     }
     case ExprKind::IntLiteralExpr:
     case ExprKind::CharacterLiteralExpr:
@@ -208,7 +243,8 @@ bool Expr::isFoldableIntConstant() const {
 bool Expr::isFoldableBoolConstant() const {
     switch (kind) {
     case ExprKind::VarExpr: {
-        auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl);
+        auto* decl = llvm::cast<VarExpr>(this)->decl;
+        auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
         return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableBoolConstant();
     }
     case ExprKind::MemberExpr: {
@@ -261,15 +297,11 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
             }
         }
         llvm_unreachable("not a constant integer");
-    case ExprKind::MemberExpr:
-        if (auto* decl = llvm::cast<MemberExpr>(this)->decl) {
-            if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
-                if (!varDecl->type.isMutable() && varDecl->initializer) {
-                    return varDecl->initializer->getConstantIntegerValue();
-                }
-            }
-        }
+    case ExprKind::MemberExpr: {
+        const Expr* target = getConstantMemberTarget(*llvm::cast<MemberExpr>(this));
+        if (target) return target->getConstantIntegerValue();
         llvm_unreachable("not a constant integer");
+    }
     case ExprKind::CharacterLiteralExpr:
         return llvm::APSInt::get(llvm::cast<CharacterLiteralExpr>(this)->value);
     case ExprKind::IntLiteralExpr:

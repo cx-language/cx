@@ -5,6 +5,7 @@
 #pragma warning(push, 0)
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/FileSystem.h>
@@ -460,6 +461,60 @@ static void checkArraySizeDivisors(const Expr& expr) {
     }
 }
 
+void Parser::resolveSizeExprDecls(Expr& expr, std::vector<VarDecl*>& resolutionStack) {
+    // Binds names in an array size to already-parsed top-level constants so
+    // they fold. Only called outside binder scopes (see inBinderScope), where
+    // no local or generic parameter can shadow a global. Sema re-resolves
+    // every VarExpr unconditionally, so these bindings never leak into
+    // typechecking. Revisiting a constant on the current path is a genuine
+    // cycle, reported here since the constant folder itself has no cycle guard.
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(&expr)) {
+        if (!varExpr->decl) {
+            auto found = currentModule->symbolTable.findInTopLevelScope(varExpr->identifier);
+            if (found.size() == 1) {
+                if (auto* varDecl = llvm::dyn_cast<VarDecl>(found.front())) {
+                    // Mutable variables never fold, so only consts bind.
+                    if (varDecl->type.isMutable()) return;
+                    if (llvm::is_contained(resolutionStack, varDecl)) {
+                        ERROR_RANGE(varExpr->location, varExpr->endLocation, "cyclic constant '" << varDecl->getName() << "'");
+                    }
+                    varExpr->decl = varDecl;
+                    if (varDecl->initializer) {
+                        resolutionStack.push_back(varDecl);
+                        resolveSizeExprDecls(*varDecl->initializer, resolutionStack);
+                        resolutionStack.pop_back();
+                    }
+                }
+            }
+        }
+        return;
+    }
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) {
+        resolveSizeExprDecls(*memberExpr->base, resolutionStack);
+        return;
+    }
+    if (auto* arrayLiteral = llvm::dyn_cast<ArrayLiteralExpr>(&expr)) {
+        for (Expr* element : arrayLiteral->elements)
+            resolveSizeExprDecls(*element, resolutionStack);
+        return;
+    }
+    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&expr)) {
+        resolveSizeExprDecls(unaryExpr->getOperand(), resolutionStack);
+        return;
+    }
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+        resolveSizeExprDecls(binaryExpr->getLHS(), resolutionStack);
+        resolveSizeExprDecls(binaryExpr->getRHS(), resolutionStack);
+        return;
+    }
+    if (auto* ifExpr = llvm::dyn_cast<IfExpr>(&expr)) {
+        resolveSizeExprDecls(*ifExpr->condition, resolutionStack);
+        resolveSizeExprDecls(*ifExpr->thenExpr, resolutionStack);
+        resolveSizeExprDecls(*ifExpr->elseExpr, resolutionStack);
+        return;
+    }
+}
+
 Type Parser::parseArrayType(Type elementType) {
     ASSERT(currentToken() == Token::LeftBracket);
     consumeToken();
@@ -477,7 +532,30 @@ Type Parser::parseArrayType(Type elementType) {
     default: {
         if (currentToken() == Token::Identifier && lookAhead(1) == Token::RightBracket) {
             // A bare identifier may name an integer generic parameter; parse it
-            // as the type-shaped placeholder used by Array<T, N>.
+            // as the type-shaped placeholder used by Array<T, N>. Outside
+            // binder scopes no generic parameter can be in scope, so fold a
+            // top-level constant instead when the name denotes one.
+            if (!inBinderScope) {
+                auto found = currentModule->symbolTable.findInTopLevelScope(currentToken().getString());
+                if (found.size() == 1) {
+                    if (auto* varDecl = llvm::dyn_cast<VarDecl>(found.front())) {
+                        std::vector<VarDecl*> resolutionStack{varDecl};
+                        if (varDecl->initializer) resolveSizeExprDecls(*varDecl->initializer, resolutionStack);
+                        if (!varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableIntConstant()) {
+                            llvm::APSInt size = varDecl->initializer->getConstantIntegerValue();
+                            auto name = parse(Token::Identifier);
+                            parse(Token::RightBracket);
+                            if (size.isNegative()) {
+                                ERROR_RANGE(name.location, getTokenEndLocation(name), "array size must be non-negative");
+                            }
+                            if (size.getActiveBits() > 63) {
+                                ERROR_RANGE(name.location, getTokenEndLocation(name), "array size is too large");
+                            }
+                            return BasicType::getArray(elementType, size.getSExtValue(), elementType.location);
+                        }
+                    }
+                }
+            }
             std::vector<GenericArg> args;
             args.emplace_back(elementType);
             args.emplace_back(parseType());
@@ -485,8 +563,12 @@ Type Parser::parseArrayType(Type elementType) {
             return BasicType::get("Array", args, elementType.mutability, elementType.location);
         }
 
-        const Expr* sizeExpr = parseExpr();
+        Expr* sizeExpr = parseExpr();
         parse(Token::RightBracket);
+        if (!inBinderScope) {
+            std::vector<VarDecl*> resolutionStack;
+            resolveSizeExprDecls(*sizeExpr, resolutionStack);
+        }
         checkArraySizeDivisors(*sizeExpr);
         if (auto* sizeofExpr = llvm::dyn_cast<SizeofExpr>(sizeExpr); sizeofExpr && !sizeExpr->isFoldableIntConstant()) {
             std::vector<GenericArg> args;
@@ -694,6 +776,7 @@ CallExpr* Parser::parseCallExpr(Expr* callee) {
 
 /// lambda-expr ::= param-list '=>' expr | param-list ('=>')? block | id '=>' expr | id '=>' block
 LambdaExpr* Parser::parseLambdaExpr() {
+    llvm::SaveAndRestore inScope(inBinderScope, true);
     ASSERT(currentToken().is({Token::LeftParen, Token::Identifier}));
     auto location = getCurrentLocation();
     std::vector<ParamDecl> params;
@@ -1172,6 +1255,7 @@ ExprStmt* Parser::parseExprStmt() {
 
 /// block ::= '{' stmt* '}'
 std::vector<Stmt*> Parser::parseBlock(Decl* parent) {
+    llvm::SaveAndRestore inScope(inBinderScope, true);
     parse(Token::LeftBrace);
     std::vector<Stmt*> stmts;
     while (currentToken() != Token::RightBrace) {
@@ -1446,6 +1530,8 @@ SwitchExpr* Parser::parseSwitchExpr() {
             if (currentToken().is({Token::Case, Token::Default, Token::RightBrace})) {
                 ERROR_CURRENT_TOKEN("switch expression case must have a value");
             }
+            // The case binding shadows globals in the arm expression.
+            llvm::SaveAndRestore inScope(inBinderScope, true);
             auto armExpr = parseExpr();
             if (currentToken() == Token::Comma) consumeToken();
             parseStmtTerminator("in switch expression case");
@@ -1574,6 +1660,7 @@ ParamDecl Parser::parseParam(bool requireType) {
 /// params ::= '' | non-empty-params
 /// non-empty-params ::= param-decl | param-decl ',' non-empty-params
 std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireTypes) {
+    llvm::SaveAndRestore inScope(inBinderScope, true);
     parse(Token::LeftParen);
     std::vector<ParamDecl> params;
     while (currentToken() != Token::RightParen) {
@@ -1667,6 +1754,7 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
 /// function-proto ::= type id param-list
 FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, std::vector<GenericParamDecl>* genericParams,
                                          Type returnType, llvm::StringRef name, Location location, bool cppLinkage) {
+    llvm::SaveAndRestore inScope(inBinderScope, true);
     if (currentToken() == Token::Less) {
         parseGenericParamList(*genericParams);
     }
@@ -1794,6 +1882,7 @@ TypeAliasDecl* Parser::parseTypeAliasDecl(AccessLevel accessLevel) {
 
 /// type-template-decl ::= ('struct' | 'interface') id generic-param-list? '{' member-decl* '}' ';'?
 TypeTemplate* Parser::parseTypeTemplate(AccessLevel accessLevel) {
+    llvm::SaveAndRestore inScope(inBinderScope, true);
     std::vector<GenericParamDecl> genericParams;
     auto typeDecl = parseTypeDecl(&genericParams, accessLevel);
     return makeAST<TypeTemplate>(std::move(genericParams), typeDecl, accessLevel);
@@ -1907,6 +1996,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             }
             LLVM_FALLTHROUGH;
         default: {
+            size_t returnTypeIndex = currentTokenIndex;
             auto type = parseType();
             auto location = getCurrentLocation();
             auto name = parseFunctionName(&*typeDecl);
@@ -1920,6 +2010,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 if (isImplicit) {
                     ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), "implicit conversions cannot be generic");
                 }
+                reparseGenericReturnType(type, location, name, returnTypeIndex, &*typeDecl);
                 typeDecl->addMethod(parseFunctionTemplate(typeDecl, accessLevel, type, name, location));
                 break;
             default:
@@ -1957,6 +2048,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
 /// enum-template-decl ::= 'enum' id generic-param-list? '{' enum-case-decl* '}' ';'?
 TypeTemplate* Parser::parseEnumTemplate(AccessLevel accessLevel) {
+    llvm::SaveAndRestore inScope(inBinderScope, true);
     std::vector<GenericParamDecl> genericParams;
     auto enumDecl = parseEnumDecl(&genericParams, accessLevel);
     return makeAST<TypeTemplate>(std::move(genericParams), enumDecl, accessLevel);
@@ -2035,6 +2127,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             if (currentToken() == Token::Tilde) {
                 ERROR_CURRENT_TOKEN("enums cannot have destructors");
             }
+            size_t returnTypeIndex = currentTokenIndex;
             auto type = parseType();
             auto location = getCurrentLocation();
             auto methodName = parseFunctionName(enumDecl);
@@ -2056,6 +2149,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 enumDecl->addMethod(parseFunctionDecl(enumDecl, accessLevel, /*requireBody=*/true, type, methodName, location));
                 break;
             case Token::Less:
+                reparseGenericReturnType(type, location, methodName, returnTypeIndex, enumDecl);
                 enumDecl->addMethod(parseFunctionTemplate(enumDecl, accessLevel, type, methodName, location));
                 break;
             default:
@@ -2276,6 +2370,14 @@ start:
     return decl;
 }
 
+void Parser::reparseGenericReturnType(Type& type, Location& location, llvm::StringRef& name, size_t returnTypeIndex, TypeDecl* receiver) {
+    currentTokenIndex = returnTypeIndex;
+    llvm::SaveAndRestore inScope(inBinderScope, true);
+    type = parseType();
+    location = getCurrentLocation();
+    name = parseFunctionName(receiver);
+}
+
 Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel, bool cppLinkage) {
     Decl* decl;
     // A call-shaped `name(...)` here is a misplaced statement, not a function
@@ -2286,6 +2388,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
         && !lookAhead(2).is({Token::Identifier, Token::Const, Token::LeftParen, Token::RightParen, Token::DotDotDot})) {
         ERROR_CURRENT_TOKEN("statements are not allowed in global scope");
     }
+    size_t returnTypeIndex = currentTokenIndex;
     auto type = parseType();
     auto location = getCurrentLocation();
     auto name = parseFunctionName(nullptr);
@@ -2301,6 +2404,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
         break;
     case Token::Less:
         if (isExtern) ERROR_RANGE(location, getIdentifierEndLocation(location, name), "extern functions cannot be generic");
+        reparseGenericReturnType(type, location, name, returnTypeIndex, nullptr);
         decl = parseFunctionTemplate(nullptr, accessLevel, type, name, location);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionTemplate>(*decl));
         break;

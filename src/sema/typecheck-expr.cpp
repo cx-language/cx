@@ -4085,28 +4085,6 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         // Single-char returns the element (an lvalue when the base is);
         // multi-char returns a new array, writable only by direct assignment.
         if (baseType.isConcreteArray() && expr.member.size() >= 1 && expr.member.size() <= 4) {
-            auto swizzleIndex = [](char c) -> int {
-                switch (c) {
-                case 'x':
-                case 'r':
-                case 's':
-                    return 0;
-                case 'y':
-                case 'g':
-                case 't':
-                    return 1;
-                case 'z':
-                case 'b':
-                case 'p':
-                    return 2;
-                case 'w':
-                case 'a':
-                case 'q':
-                    return 3;
-                default:
-                    return -1;
-                }
-            };
             auto swizzleSet = [](char c) -> int {
                 if (c == 'x' || c == 'y' || c == 'z' || c == 'w') return 0;
                 if (c == 'r' || c == 'g' || c == 'b' || c == 'a') return 1;
@@ -4117,7 +4095,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
             int firstSet = -1;
             std::vector<int> indices;
             for (char c : expr.member) {
-                int idx = swizzleIndex(c);
+                int idx = swizzleIndexFor(c);
                 int set = swizzleSet(c);
                 if (idx < 0 || set < 0) {
                     isSwizzle = false;
@@ -4164,7 +4142,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
             if (looksLikeSwizzle) {
                 bool allSwizzleChars = true;
                 for (char c : expr.member) {
-                    if (swizzleIndex(c) < 0) {
+                    if (swizzleIndexFor(c) < 0) {
                         allSwizzleChars = false;
                         break;
                     }

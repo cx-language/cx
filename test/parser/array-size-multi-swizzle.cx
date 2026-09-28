@@ -1,0 +1,10 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+const res = [800, 600];
+
+// Multi-element swizzles are arrays, not integers.
+// CHECK: [[@LINE+1]]:7: error: array size must be a constant integer expression
+uint8[res.xy] x = undefined;
+
+void main() {
+}

@@ -1,0 +1,10 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+const a = b;
+const b = a;
+
+// CHECK: [[@LINE-2]]:11: error: cyclic constant 'a'
+uint8[a] x = undefined;
+
+void main() {
+}

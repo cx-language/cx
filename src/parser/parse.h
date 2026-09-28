@@ -108,6 +108,13 @@ private:
     std::vector<Type> parseNonEmptyTypeList();
     std::vector<GenericArg> parseGenericArgumentList();
     Type parseArrayType(Type elementType);
+    void resolveSizeExprDecls(Expr& expr, std::vector<VarDecl*>& resolutionStack);
+    // Reparses a function return type and name under the binder guard once `<`
+    // reveals the function is generic; generic parameters may shadow globals
+    // the first parse folded against. `returnTypeIndex` is the token index
+    // from before the first parse. Reparsing is side-effect-free (pure token
+    // consumption plus arena garbage), so rewinding is safe.
+    void reparseGenericReturnType(Type& type, Location& location, llvm::StringRef& name, size_t returnTypeIndex, TypeDecl* receiver);
     Type parseSimpleType(Mutability mutability);
     Type parseAnonymousStructType();
     Type parseFunctionType(Type returnType);
@@ -186,6 +193,11 @@ private:
     size_t currentTokenIndex;
     const CompileOptions& options;
     bool allowBlockLambda = true;
+    // True inside scopes binding names that shadow top-level constants
+    // (function signatures and bodies, lambdas, generic declarations), where
+    // parser-time size-expression resolution stays off so an array size can
+    // never fold against a shadowed global.
+    bool inBinderScope = false;
 };
 
 } // namespace cx

@@ -21,6 +21,31 @@ struct FunctionDecl;
 struct VarDecl;
 struct Module;
 
+// Maps an array swizzle component to its element index, or -1 for other
+// characters. Shared by swizzle typechecking and constant folding.
+inline int swizzleIndexFor(char c) {
+    switch (c) {
+    case 'x':
+    case 'r':
+    case 's':
+        return 0;
+    case 'y':
+    case 'g':
+    case 't':
+        return 1;
+    case 'z':
+    case 'b':
+    case 'p':
+        return 2;
+    case 'w':
+    case 'a':
+    case 'q':
+        return 3;
+    default:
+        return -1;
+    }
+}
+
 enum class ExprKind {
     VarExpr,
     StringLiteralExpr,
