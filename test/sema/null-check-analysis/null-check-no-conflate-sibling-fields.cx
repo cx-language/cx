@@ -1,0 +1,28 @@
+// RUN: %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+// CHECK-NOT: warning
+
+struct W {
+    int[*]? p;
+    int[*]? q;
+
+    // A null check on one field must not narrow a sibling field: no warning here.
+    uint64 sibling() {
+        if p == null { return 0; }
+        return cast<uint64>(q!);
+    }
+
+    uint64 same() {
+        if p == null { return 0; }
+        // CHECK: [[@LINE+1]]:30: warning: value cannot be null here; null check can be removed
+        return cast<uint64>(p!);
+    }
+}
+
+// CHECK-NOT: warning
+
+void main() {
+    int x = 5;
+    var w = W(&x, &x);
+    println(w.sibling());
+    println(w.same());
+}

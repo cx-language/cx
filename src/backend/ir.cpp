@@ -600,10 +600,12 @@ bool Value::loads(Value* value, int gepIndex) {
         } else {
             if (auto gep = llvm::dyn_cast<ConstGEPInst>(load->value)) {
                 if (gep->pointer == value && gep->index == gepIndex) return true;
-                if (auto valueLoad = llvm::dyn_cast<LoadInst>(value)) {
-                    if (auto gepPointerLoad = llvm::dyn_cast<LoadInst>(gep->pointer)) {
-                        if (valueLoad->value == gepPointerLoad->value) {
-                            return true;
+                if (gep->index == gepIndex) {
+                    if (auto valueLoad = llvm::dyn_cast<LoadInst>(value)) {
+                        if (auto gepPointerLoad = llvm::dyn_cast<LoadInst>(gep->pointer)) {
+                            if (valueLoad->value == gepPointerLoad->value) {
+                                return true;
+                            }
                         }
                     }
                 }
