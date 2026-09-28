@@ -1057,7 +1057,13 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     if (expr.isMoveInit()) {
-        auto* receiverValue = loadThroughStorageAddress(emitExprAsPointer(*expr.getReceiver()), expr.getReceiver()->type);
+        auto* receiverPtr = emitExprAsPointer(*expr.getReceiver());
+        // Through-pointer init (e.g. ptrVar.init(x)) loads the destination out
+        // of its slot; exact-type init already holds the slot address, and
+        // loading would dereference uninitialized storage for pointer-typed slots.
+        auto* receiverValue = expr.args[0].value->type.equalsIgnoreTopLevelMutable(expr.getReceiver()->type)
+                                ? receiverPtr
+                                : loadThroughStorageAddress(receiverPtr, expr.getReceiver()->type);
         auto* argumentValue = emitExpr(*expr.args[0].value);
         createStore(argumentValue, receiverValue);
         return nullptr;

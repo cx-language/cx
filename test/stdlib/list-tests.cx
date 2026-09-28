@@ -335,6 +335,27 @@ void testChain() {
     assert(chained == expectedChained);
 }
 
+@test
+void testPushNullableAndPointerElements() {
+    var a = C(1);
+    var ps = List<C*?>();
+    ps.push(&a);
+    ps.push(null);
+    assert(ps.size() == 2);
+    assert(ps[0]!.i == 1);
+    assert(ps[1] == null);
+
+    var l = List<int?>();
+    l.push(1);
+    l.push(null);
+    assert(l[0]! == 1);
+    assert(l[1] == null);
+
+    var raw = List<C*>();
+    raw.push(&a);
+    assert(raw[0].i == 1);
+}
+
 var destroyed = 0;
 
 struct DestructionTester {

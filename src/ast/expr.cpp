@@ -642,6 +642,11 @@ std::string CallExpr::getQualifiedFunctionName() const {
 bool CallExpr::isMoveInit() const {
     if (getFunctionName() != "init") return false;
     if (args.size() != 1) return false;
+    if (!callee->isMemberExpr()) return false;
+
+    // Exact match initializes the storage itself, e.g. an Optional slot whose
+    // type the look-through below would strip to the wrapped type.
+    if (args[0].value->type.equalsIgnoreTopLevelMutable(getReceiver()->type)) return true;
 
     if (Type receiverType = ::getReceiverType(*this)) {
         return args[0].value->type.equalsIgnoreTopLevelMutable(receiverType);
