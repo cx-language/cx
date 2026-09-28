@@ -92,9 +92,28 @@
         return await runner.run(wasmBytes);
     }
 
+    // Query completions at a 0-based (line, character) cursor position.
+    // Like compileCxToC, this instantiates a fresh compiler module per call.
+    // Returns {status, items, diagnostics}; items is present on success.
+    async function completeCx(createModule, source, line, character) {
+        var diagnostics = { stdout: "", stderr: "" };
+        var cxWasmModule = await createModule({
+            print: function (text) {
+                diagnostics.stdout += text + "\n";
+            },
+            printErr: function (text) {
+                diagnostics.stderr += text + "\n";
+            },
+        });
+        var result = JSON.parse(cxWasmModule.cxComplete(source, "/cx", line, character));
+        result.diagnostics = diagnostics;
+        return result;
+    }
+
     var api = {
         createCompilerFs: createCompilerFs,
         compileCxToC: compileCxToC,
+        completeCx: completeCx,
         compileCToWasm: compileCToWasm,
         runWasm: runWasm,
     };

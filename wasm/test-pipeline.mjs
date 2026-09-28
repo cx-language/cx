@@ -57,6 +57,31 @@ async function main() {
     check(compiled.status === 0, "stage 1 succeeds");
     check(compiled.cCode.includes("int main(void)"), "stage 1 returns generated C");
 
+    // Completions: the same factory serves cxComplete queries.
+    const CompleteFactory = async (config) => {
+        check(typeof config.print === "function" && typeof config.printErr === "function", "completion factory receives diagnostic hooks");
+        return {
+            cxComplete: (source, importSearchPath, line, character) => {
+                check(source.includes("fib"), "completion receives the cx source");
+                check(importSearchPath === "/cx", "completion receives the std search path");
+                check(line === 0 && character === 17, "completion receives the cursor position");
+                return JSON.stringify({ status: 0, items: [{ label: "fib", kind: "function", detail: "int fib(int n)", hasParams: true }] });
+            },
+        };
+    };
+    const completed = await CxPipeline.completeCx(CompleteFactory, "void main() { fib(); }\n", 0, 17);
+    check(completed.status === 0, "completion succeeds");
+    check(completed.items.length === 1 && completed.items[0].label === "fib", "completion returns the items");
+    check(completed.items[0].detail === "int fib(int n)", "completion keeps the item detail");
+
+    // A failing completion passes the status through for the worker to map.
+    const FailingFactory = async () => ({
+        cxComplete: () => JSON.stringify({ status: 1 }),
+    });
+    const failed = await CxPipeline.completeCx(FailingFactory, "void main() { fib(); }\n", 0, 17);
+    check(failed.status !== 0, "failing completion passes the status through");
+    check(failed.items === undefined, "failing completion returns no items");
+
     // Stage 2+3 setup: toolchain files like the browser loads them.
     const wccFiles = {};
     const zipPath = path.join(toolchainDir, "wcc-files.zip");

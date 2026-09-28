@@ -34,5 +34,9 @@
   color: var(--text-color) !important;
 }
 
+.CodeMirror-hints.cx .CodeMirror-hint-detail {
+  color: var(--text-color-subtle);
+}
+
 .CodeMirror-selected { background-color: var(--background-color-3) !important; }
 .CodeMirror-cursor { border-color: var(--text-color); }

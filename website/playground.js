@@ -8,6 +8,8 @@
 // Usage: CxPlayground.run(code) returns a promise of {stdout, stderr}.
 // CxPlayground.check(code) returns a promise of {stdout, stderr} with the
 // stage-1 diagnostics only, for live error display while editing.
+// CxPlayground.complete(code, line, character) returns a promise of {items}
+// with the completion items at the 0-based cursor position.
 (function (global) {
     "use strict";
 
@@ -15,6 +17,7 @@
     var WARMUP_TIMEOUT_MS = 120000;
     var RUN_TIMEOUT_MS = 60000;
     var CHECK_TIMEOUT_MS = 60000;
+    var COMPLETE_TIMEOUT_MS = 60000;
 
     var worker = null;
     var nextId = 0;
@@ -138,10 +141,26 @@
         });
     }
 
+    // Queries completions at a 0-based (line, character) cursor position,
+    // resolving to {items}. Never rejects; internal failures resolve to no
+    // items with failed set, so background completion stays silent (same
+    // as check) while the editor knows not to cache the empty list.
+    function complete(code, line, character) {
+        if (!isSupported()) {
+            return Promise.resolve({ items: [], failed: true });
+        }
+        return postMessage({ action: "complete", code: code, line: line, character: character }, COMPLETE_TIMEOUT_MS).then(function (message) {
+            return { items: message.items || [], failed: message.failed === true };
+        }, function () {
+            return { items: [], failed: true };
+        });
+    }
+
     global.CxPlayground = {
         warmUp: warmUp,
         run: run,
         check: check,
+        complete: complete,
         isSupported: isSupported,
     };
 })(typeof globalThis !== "undefined" ? globalThis : this);

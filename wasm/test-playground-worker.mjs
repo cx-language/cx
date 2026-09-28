@@ -38,6 +38,18 @@ const sandbox = {
             }
             return result;
         },
+        completeCx: async (factory, source, line, character) => {
+            check(factory === sandbox.CxWasm, "worker passes the compiler factory to complete");
+            check(source === "sent code", "worker passes the source to complete");
+            check(line === 3 && character === 7, "worker passes the cursor position to complete");
+            if (stage1.mode === "throw") {
+                throw new Error("kaboom");
+            }
+            if (stage1.mode === "ok") {
+                return { status: 0, items: [{ label: "println" }], diagnostics: { stdout: "", stderr: "" } };
+            }
+            return { status: 1, diagnostics: { stdout: "", stderr: "" } };
+        },
     },
     fetch: async () => {
         fetchCalls++;
@@ -89,6 +101,26 @@ fetchCalls = 0;
 response = await send({ action: "run", id: 4, code: "sent code" });
 check(fetchCalls === 1, "successful stage 1 loads the C toolchain");
 check(response.stderr.startsWith("error: "), "toolchain failure is reported, got: " + JSON.stringify(response.stderr));
+
+// "complete" answers with the items and touches no toolchain files.
+fetchCalls = 0;
+response = await send({ action: "complete", id: 5, code: "sent code", line: 3, character: 7 });
+check(response.id === 5, "complete answers with the request id");
+check(response.items.length === 1 && response.items[0].label === "println", "complete returns the completion items");
+check(!response.failed, "successful complete is not flagged failed");
+check(fetchCalls === 0, "complete loads no toolchain files");
+
+// A failed completion resolves to no items instead of an error, flagged
+// so the editor doesn't cache the empty list.
+stage1.mode = "error";
+response = await send({ action: "complete", id: 6, code: "sent code", line: 3, character: 7 });
+check(response.id === 6 && Array.isArray(response.items) && response.items.length === 0, "failed complete returns no items");
+check(response.failed === true, "failed complete is flagged failed");
+
+// A throwing completion resolves the same way.
+stage1.mode = "throw";
+response = await send({ action: "complete", id: 7, code: "sent code", line: 3, character: 7 });
+check(response.id === 7 && response.items.length === 0 && response.failed === true, "throwing complete returns flagged no items");
 
 if (failures > 0) {
     console.error(failures + " test(s) failed");

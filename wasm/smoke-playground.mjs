@@ -46,6 +46,19 @@ async function main() {
     check(compiled.status === 0, "stage 1 (cx to C) succeeds");
     check(compiled.cCode.includes("Hello from the playground"), "stage 1 generates C");
 
+    // Completions with the real Emscripten module.
+    const completed = await CxPipeline.completeCx(createModule, "void main() {\n    pri\n}\n", 1, 7);
+    check(completed.status === 0, "completion succeeds");
+    const labels = (completed.items || []).map((item) => item.label);
+    check(labels.includes("println"), "completion includes stdlib functions, got " + labels.length + " items");
+    check(labels.includes("while"), "completion includes keywords");
+
+    // Member completions exercise the placeholder path end to end.
+    const member = await CxPipeline.completeCx(createModule, "struct P { int x; }\nvoid main() {\n    P p = P(0);\n    p.\n}\n", 3, 6);
+    check(member.status === 0, "member completion succeeds");
+    const memberLabels = (member.items || []).map((item) => item.label);
+    check(memberLabels.length === 1 && memberLabels[0] === "x", "member completion lists the field, got: " + JSON.stringify(memberLabels));
+
     // Stages 2+3 with the real toolchain distribution.
     const unzipped = fflate.unzipSync(await readFile(path.join(distDir, "wcc-files.zip")));
     const wccFiles = {};
