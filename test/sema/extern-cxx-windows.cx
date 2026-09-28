@@ -1,0 +1,5 @@
+// REQUIRES: windows
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: extern "C++" uses the Itanium ABI, which is not supported on MSVC targets
+extern "C++" c_int cpp_add(c_int a, c_int b);

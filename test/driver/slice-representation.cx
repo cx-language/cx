@@ -1,3 +1,4 @@
+// UNSUPPORTED: windows
 // RUN: %cx -print-llvm %s | %FileCheck %s
 
 void take(int[] ints) {

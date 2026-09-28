@@ -237,9 +237,10 @@ extern "C++" c_int cpp_sum(const CxxVector<c_int>& v);
 
 An `extern "C++"` function with a body is exported under its
 Itanium-mangled name, so C++ callers declare and link it like any C++
-function. It stays callable from cx too:
+function. It stays callable from cx too. The Itanium ABI is not
+supported on Windows/MSVC targets, so this does not work there:
 
-```cs
+```cs {.noWindows}
 extern "C++" c_int cx_is_even(c_int n) {
     return n % 2 == 0 ? 1 : 0;
 }

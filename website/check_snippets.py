@@ -71,13 +71,17 @@ for filename in sorted(os.listdir(docs_dir)):
         continue
 
     with open(os.path.join(docs_dir, filename)) as file:
-        blocks = re.findall(r"^```cs( \{\.(?:noRun|noCompile)\})?\n(.*?)^```", file.read(), re.M | re.S)
+        blocks = re.findall(r"^```cs( \{\.(?:noRun|noCompile|noWindows)\})?\n(.*?)^```", file.read(), re.M | re.S)
         for index, (marker, code) in enumerate(blocks):
             if marker == " {.noCompile}":
                 # Snippets that cannot stand alone (e.g. importing a header from
                 # an example project) are still highlighted as cs; just not built.
                 continue
-            snippets.append((filename, index, code, bool(marker)))
+            if marker == " {.noWindows}" and platform.system() == "Windows":
+                # Snippets using platform-specific features (e.g. the Itanium
+                # C++ ABI) are still built elsewhere; just not on Windows.
+                continue
+            snippets.append((filename, index, code, marker == " {.noRun}"))
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
     list(executor.map(lambda snippet: check_snippet(*snippet), snippets))

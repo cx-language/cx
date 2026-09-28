@@ -17,4 +17,4 @@ void main() {
 // Win64 returns 9-16 byte aggregates in caller-allocated memory, so they use
 // sret there (SysV coerces them to integer chunks; see
 // extern-struct-abi-large.cx).
-// CHECK: declare void @c_quad(ptr sret(%"Quad") align 4)
+// CHECK: declare void @c_quad(ptr sret(%Quad) align 4)

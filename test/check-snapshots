@@ -54,6 +54,11 @@ if "LLVM" in sections:
 
 for check in checks_to_run:
     snapshot_path = test_file + check.extension
+    # Some output is platform-dependent (e.g. Win64 passes aggregates larger
+    # than 8 bytes indirectly); a .windows snapshot overrides the shared one.
+    windows_path = test_file + ".windows" + check.extension
+    if sys.platform == "win32" and os.path.exists(windows_path):
+        snapshot_path = windows_path
     output = sections[check.name]
 
     if "UPDATE_SNAPSHOTS" in os.environ:

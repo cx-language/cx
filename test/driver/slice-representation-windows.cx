@@ -1,0 +1,20 @@
+// REQUIRES: windows
+// RUN: %cx -print-llvm %s | %FileCheck %s
+
+void take(int[] ints) {
+    _ = ints[1];
+}
+
+void main() {
+    var three = [0, 42, 0];
+    take(three);
+}
+
+// A slice is a {data pointer, length} pair. Win64 passes aggregates larger
+// than 8 bytes indirectly, so slices cross as byval pointers there (SysV
+// coerces them to integer chunks; see slice-representation.cx).
+// CHECK: %"Slice<int32>" = type { ptr, i32 }
+// CHECK-LABEL: define void @{{.*}}take{{.*}}(ptr byval(%"Slice<int32>") align 8 {{.*}})
+// CHECK-LABEL: define i32 @main()
+// CHECK: alloca %"Slice<int32>", align 8
+// CHECK: call void @{{.*}}take{{.*}}(ptr byval(%"Slice<int32>") align 8 {{.*}})
