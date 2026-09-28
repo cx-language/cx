@@ -51,10 +51,11 @@ one half:
 ./wasm/build-xcc-dist.sh [output-dir]   # cc.wasm + wcc-files.zip
 ```
 
-`build-frontend.sh` builds LLVM's `LLVMSupport` for WebAssembly from source
-(matching `LLVM_VERSION`, default 23.1.1) and links it with the embeddable
-frontend translation units globbed in the script. The cx standard library
-(`std/`) is preloaded into the module's file system at `/cx/std`.
+`build-frontend.sh` builds LLVM's `LLVMSupport` and `LLVMTargetParser` for
+WebAssembly from source (matching `LLVM_VERSION`, default 23.1.1) and links
+them with the embeddable frontend translation units globbed in the script.
+The cx standard library (`std/`) is preloaded into the module's file system
+at `/cx/std`.
 
 `build-xcc-dist.sh` clones xcc at the pinned revision (`XCC_REF`), builds
 `wcc` natively, self-hosts it to `cc.wasm` (`make wcc-gen2`), and packs its

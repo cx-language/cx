@@ -41,8 +41,8 @@ if [ ! -f "$LLVM_SRC/llvm/CMakeLists.txt" ]; then
     git clone --depth 1 --branch "llvmorg-$LLVM_VERSION" https://github.com/llvm/llvm-project.git "$LLVM_SRC"
 fi
 
-if [ ! -f "$LLVM_BUILD/lib/libLLVMSupport.a" ]; then
-    echo "Building LLVMSupport for WebAssembly (this takes a while)..."
+if [ ! -f "$LLVM_BUILD/lib/libLLVMSupport.a" ] || [ ! -f "$LLVM_BUILD/lib/libLLVMTargetParser.a" ]; then
+    echo "Building LLVMSupport and LLVMTargetParser for WebAssembly (this takes a while)..."
     emcmake cmake -S "$LLVM_SRC/llvm" -B "$LLVM_BUILD" -G "Unix Makefiles" \
         -DCMAKE_BUILD_TYPE=Release \
         -DLLVM_TARGETS_TO_BUILD="" \
@@ -58,7 +58,9 @@ if [ ! -f "$LLVM_BUILD/lib/libLLVMSupport.a" ]; then
         -DLLVM_ENABLE_TERMINFO=OFF \
         -DLLVM_ENABLE_LIBEDIT=OFF \
         -DLLVM_ENABLE_FFI=OFF
-    cmake --build "$LLVM_BUILD" --target LLVMSupport -j "$LLVM_JOBS"
+    # TargetParser holds llvm::Triple (used for C++ name mangling); Support
+    # alone no longer links since Triple moved out of it.
+    cmake --build "$LLVM_BUILD" --target LLVMSupport LLVMTargetParser -j "$LLVM_JOBS"
 fi
 
 echo "Compiling the cx frontend to WebAssembly..."
@@ -90,6 +92,7 @@ em++ -std=c++20 -O2 -fno-rtti -fvisibility-inlines-hidden -fexceptions \
     -I"$LLVM_SRC/llvm/include" \
     -I"$LLVM_BUILD/include" \
     $SRCS \
+    "$LLVM_BUILD/lib/libLLVMTargetParser.a" \
     "$LLVM_BUILD/lib/libLLVMSupport.a" \
     -lembind \
     --no-entry \
