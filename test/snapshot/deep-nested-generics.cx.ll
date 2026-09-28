@@ -25,20 +25,29 @@ define void @_CX1N4mainM4main1SIM4main1RE1sE4void0_(ptr %this) #0 !dbg !11 {
   store ptr %this, ptr %this1, align 8
   %this.load = load ptr, ptr %this1, align 8
   %a = getelementptr inbounds %"S<R>", ptr %this.load, i32 0, i32 0
-  %1 = call %"A<R>" @_CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M3std5int32(ptr %a, i32 0), !dbg !12
-  store %"A<R>" %1, ptr %t, align 4
-  %2 = call %R @_CX1N4mainM4main1AIM4main1REo2ixEM4main1R1_M3std5int32(ptr %t, i32 0), !dbg !13
-  store %R %2, ptr %tt, align 4
-  %this.load2 = load ptr, ptr %this1, align 8
-  %a3 = getelementptr inbounds %"S<R>", ptr %this.load2, i32 0, i32 0
+  %1 = call i32 @_CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M3std5int32(ptr %a, i32 0), !dbg !12
+  %coerce.slot = alloca i32, align 4, !dbg !12
+  store i32 %1, ptr %coerce.slot, align 4, !dbg !12
+  %coerce.agg = load %"A<R>", ptr %coerce.slot, align 4, !dbg !12
+  store %"A<R>" %coerce.agg, ptr %t, align 4
+  %2 = call i32 @_CX1N4mainM4main1AIM4main1REo2ixEM4main1R1_M3std5int32(ptr %t, i32 0), !dbg !13
+  %coerce.slot2 = alloca i32, align 4, !dbg !13
+  store i32 %2, ptr %coerce.slot2, align 4, !dbg !13
+  %coerce.agg3 = load %R, ptr %coerce.slot2, align 4, !dbg !13
+  store %R %coerce.agg3, ptr %tt, align 4
+  %this.load4 = load ptr, ptr %this1, align 8
+  %a5 = getelementptr inbounds %"S<R>", ptr %this.load4, i32 0, i32 0
   %3 = call i32 @_CX1N4mainM4main1R1hEM3std5int320_(ptr %tt), !dbg !14
-  %4 = call %"A<R>" @_CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M3std5int32(ptr %a3, i32 %3), !dbg !15
+  %4 = call i32 @_CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M3std5int32(ptr %a5, i32 %3), !dbg !15
+  %coerce.slot6 = alloca i32, align 4, !dbg !15
+  store i32 %4, ptr %coerce.slot6, align 4, !dbg !15
+  %coerce.agg7 = load %"A<R>", ptr %coerce.slot6, align 4, !dbg !15
   ret void
 }
 
 declare void @_CX1N3std10checkLeaksE4void0_() #0
 
-define %"A<R>" @_CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M3std5int32(ptr %this, i32 %i) #0 !dbg !16 {
+define i32 @_CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M3std5int32(ptr %this, i32 %i) #0 !dbg !16 {
   %this1 = alloca ptr, align 8
   %i2 = alloca i32, align 4
   store ptr %this, ptr %this1, align 8
@@ -46,10 +55,13 @@ define %"A<R>" @_CX1N4mainM4main1AIM4main1AIM4main1REEo2ixEM4main1AIM4main1RE1_M
   %this.load = load ptr, ptr %this1, align 8
   %t = getelementptr inbounds %"A<A<R>>", ptr %this.load, i32 0, i32 0
   %t.load = load %"A<R>", ptr %t, align 4
-  ret %"A<R>" %t.load
+  %coerce.slot = alloca i32, align 4
+  store %"A<R>" %t.load, ptr %coerce.slot, align 4
+  %coerce.chunk = load i32, ptr %coerce.slot, align 4
+  ret i32 %coerce.chunk
 }
 
-define %R @_CX1N4mainM4main1AIM4main1REo2ixEM4main1R1_M3std5int32(ptr %this, i32 %i) #0 !dbg !17 {
+define i32 @_CX1N4mainM4main1AIM4main1REo2ixEM4main1R1_M3std5int32(ptr %this, i32 %i) #0 !dbg !17 {
   %this1 = alloca ptr, align 8
   %i2 = alloca i32, align 4
   store ptr %this, ptr %this1, align 8
@@ -57,7 +69,10 @@ define %R @_CX1N4mainM4main1AIM4main1REo2ixEM4main1R1_M3std5int32(ptr %this, i32
   %this.load = load ptr, ptr %this1, align 8
   %t = getelementptr inbounds %"A<R>", ptr %this.load, i32 0, i32 0
   %t.load = load %R, ptr %t, align 4
-  ret %R %t.load
+  %coerce.slot = alloca i32, align 4
+  store %R %t.load, ptr %coerce.slot, align 4
+  %coerce.chunk = load i32, ptr %coerce.slot, align 4
+  ret i32 %coerce.chunk
 }
 
 define i32 @_CX1N4mainM4main1R1hEM3std5int320_(ptr %this) #0 !dbg !18 {

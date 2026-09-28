@@ -1,0 +1,21 @@
+// UNSUPPORTED: windows
+// RUN: %cx -print-llvm %s | %FileCheck %s
+
+struct Quad {
+    c_int a;
+    c_int b;
+    c_int c;
+    c_int d;
+}
+
+extern Quad c_quad();
+
+void main() {
+    println(c_quad().a);
+}
+
+// 9-16 byte integer-only aggregates coerce to two integer chunks on SysV
+// platforms (Win64 returns them in memory instead; see
+// extern-struct-abi-windows.cx).
+// CHECK: declare [2 x i64] @c_quad()
+// CHECK: call [2 x i64] @c_quad()

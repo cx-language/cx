@@ -59,6 +59,9 @@ struct LLVMGenerator {
     llvm::Type* getLLVMType(IRType* type, bool* isSret = nullptr);
     bool shouldUseSret(llvm::Type* returnType);
     bool shouldPassIndirectly(llvm::Type* type);
+    llvm::Type* getAbiCoercedType(IRType* type);
+    llvm::Value* coerceAggregateToChunk(llvm::Value* value, IRType* type, llvm::Type* chunkType);
+    llvm::Value* coerceChunkToAggregate(llvm::Value* chunk, IRType* type);
     void emitMemcpy(llvm::Value* dest, llvm::Value* src, llvm::Type* type);
     llvm::Value* materializeConstant(llvm::Constant* constant, llvm::Type* type);
     llvm::Type* getBuiltinType(llvm::StringRef name);

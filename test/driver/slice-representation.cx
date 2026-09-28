@@ -10,10 +10,10 @@ void main() {
 }
 
 // A slice is a {data pointer, length} pair, constructed with insertvalue and
-// passed by value.
+// passed by value as integer chunks per the C ABI.
 // CHECK: %"Slice<int32>" = type { ptr, i32 }
-// CHECK-LABEL: define void @{{.*}}take{{.*}}(%"Slice<int32>" {{.*}})
+// CHECK-LABEL: define void @{{.*}}take{{.*}}([2 x i64] {{.*}})
 // CHECK-LABEL: define i32 @main()
 // CHECK: insertvalue %"Slice<int32>" undef, ptr {{.*}}, 0
 // CHECK: insertvalue %"Slice<int32>" {{.*}}, i32 3, 1
-// CHECK: call void @{{.*}}take{{.*}}(%"Slice<int32>" {{.*}})
+// CHECK: call void @{{.*}}take{{.*}}([2 x i64] {{.*}})

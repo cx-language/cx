@@ -1,0 +1,20 @@
+// REQUIRES: windows
+// RUN: %cx -print-llvm %s | %FileCheck %s
+
+struct Quad {
+    c_int a;
+    c_int b;
+    c_int c;
+    c_int d;
+}
+
+extern Quad c_quad();
+
+void main() {
+    println(c_quad().a);
+}
+
+// Win64 returns 9-16 byte aggregates in caller-allocated memory, so they use
+// sret there (SysV coerces them to integer chunks; see
+// extern-struct-abi-large.cx).
+// CHECK: declare void @c_quad(ptr sret(%"Quad") align 4)

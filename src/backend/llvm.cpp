@@ -105,10 +105,12 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
     case IRTypeKind::IRFunctionType: {
         auto functionType = llvm::cast<IRFunctionType>(type);
         auto returnType = getLLVMType(functionType->returnType);
+        if (auto* coerced = getAbiCoercedType(functionType->returnType)) returnType = coerced;
         std::vector<llvm::Type*> paramTypes;
         paramTypes.reserve(functionType->paramTypes.size() + 1);
         for (IRType* param : functionType->paramTypes) {
             auto paramLLVMType = getLLVMType(param);
+            if (auto* coerced = getAbiCoercedType(param)) paramLLVMType = coerced;
             // Larger aggregates are passed indirectly to avoid materializing
             // large SSA copies that expand during codegen.
             if (shouldPassIndirectly(paramLLVMType)) {
@@ -169,14 +171,90 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
 }
 
 bool LLVMGenerator::shouldUseSret(llvm::Type* returnType) {
+    // Win64 returns aggregates larger than 8 bytes in caller-allocated memory.
+#ifdef _WIN32
+    return !returnType->isVoidTy() && getHostDataLayout().getTypeAllocSize(returnType) > 8;
+#else
     return !returnType->isVoidTy() && getHostDataLayout().getTypeAllocSize(returnType) > 16;
+#endif
+}
+
+// True when every scalar in the aggregate is integer-like, so the value can
+// cross the C ABI as integer chunks. Floats classify to vector registers,
+// which chunk coercion cannot represent.
+static bool isIntegerOnlyAggregate(IRType* type) {
+    switch (type->kind) {
+    case IRTypeKind::IRBasicType:
+        return type->isInteger() || type->isBool() || type->isChar();
+    case IRTypeKind::IRPointerType:
+        return true;
+    case IRTypeKind::IRArrayType:
+        return isIntegerOnlyAggregate(llvm::cast<IRArrayType>(type)->elementType);
+    case IRTypeKind::IRStructType:
+    case IRTypeKind::IRUnionType:
+        return llvm::all_of(type->getFields(), [](const IRField& field) { return isIntegerOnlyAggregate(field.type); });
+    default:
+        return false;
+    }
+}
+
+llvm::Type* LLVMGenerator::getAbiCoercedType(IRType* type) {
+    // Small integer-only aggregates cross the C ABI in integer registers, so
+    // declare them as integer chunks like clang does. Without this a direct
+    // struct declaration miscompiles against C, which returns one integer per
+    // eightbyte. Larger aggregates already go indirect (byval/sret), and
+    // float-containing ones keep direct lowering. Win64 returns 9-16 byte
+    // aggregates in memory rather than registers, so only coerce up to 8 there.
+    if (!type->isStruct() && !type->isUnion()) return nullptr;
+    if (!isIntegerOnlyAggregate(type)) return nullptr;
+    uint64_t size = getHostDataLayout().getTypeAllocSize(getLLVMType(type));
+#ifdef _WIN32
+    if (size == 0 || size > 8) return nullptr;
+#else
+    if (size == 0 || size > 16) return nullptr;
+#endif
+    if (size <= 1) return llvm::Type::getInt8Ty(ctx);
+    if (size <= 2) return llvm::Type::getInt16Ty(ctx);
+    if (size <= 4) return llvm::Type::getInt32Ty(ctx);
+    if (size <= 8) return llvm::Type::getInt64Ty(ctx);
+    return llvm::ArrayType::get(llvm::Type::getInt64Ty(ctx), 2);
+}
+
+llvm::Value* LLVMGenerator::coerceAggregateToChunk(llvm::Value* value, IRType* type, llvm::Type* chunkType) {
+    auto* structType = getLLVMType(type);
+    // Size the slot for the chunk, which covers the struct for non-power-of-two sizes.
+    auto* slot = builder.CreateAlloca(chunkType, nullptr, "coerce.slot");
+    // The slot serves both layouts; align it for the stricter one.
+    auto structAlign = getHostDataLayout().getABITypeAlign(structType).value();
+    auto chunkAlign = getHostDataLayout().getABITypeAlign(chunkType).value();
+    slot->setAlignment(llvm::Align(std::max(structAlign, chunkAlign)));
+    // Undef needs no store: uninitialized memory already represents it.
+    if (!llvm::isa<llvm::UndefValue>(value)) {
+        builder.CreateStore(value, slot);
+    }
+    return builder.CreateLoad(chunkType, slot, "coerce.chunk");
+}
+
+llvm::Value* LLVMGenerator::coerceChunkToAggregate(llvm::Value* chunk, IRType* type) {
+    auto* structType = getLLVMType(type);
+    auto* slot = builder.CreateAlloca(chunk->getType(), nullptr, "coerce.slot");
+    auto structAlign = getHostDataLayout().getABITypeAlign(structType).value();
+    auto chunkAlign = getHostDataLayout().getABITypeAlign(chunk->getType()).value();
+    slot->setAlignment(llvm::Align(std::max(structAlign, chunkAlign)));
+    builder.CreateStore(chunk, slot);
+    return builder.CreateLoad(structType, slot, "coerce.agg");
 }
 
 bool LLVMGenerator::shouldPassIndirectly(llvm::Type* type) {
     if (type->isVoidTy()) return false;
     // Only aggregates can be large; scalars are always passed directly.
     if (!type->isStructTy() && !type->isArrayTy()) return false;
+    // Win64 passes aggregates larger than 8 bytes by pointer.
+#ifdef _WIN32
+    return getHostDataLayout().getTypeAllocSize(type) > 8;
+#else
     return getHostDataLayout().getTypeAllocSize(type) > 16;
+#endif
 }
 
 void LLVMGenerator::emitMemcpy(llvm::Value* dest, llvm::Value* src, llvm::Type* type) {
@@ -271,6 +349,14 @@ void LLVMGenerator::codegenFunctionBody(const Function* function, llvm::Function
             generatedValues.emplace(block->parameter, phi);
         }
 
+        if (block == function->body.front()) {
+            // ABI-coerced parameters arrive as integer chunks; materialize the
+            // aggregates here so the entry block top dominates all uses.
+            for (auto& param : function->params) {
+                if (getAbiCoercedType(param.type)) generatedValues[&param] = coerceChunkToAggregate(generatedValues[&param], param.type);
+            }
+        }
+
         for (auto* inst : block->body) {
             auto llvmValue = codegenInst(inst);
             generatedValues.emplace(inst, llvmValue);
@@ -330,7 +416,10 @@ llvm::Value* LLVMGenerator::codegenReturn(const ReturnInst* inst) {
         }
         return builder.CreateRetVoid();
     }
-    return inst->value ? builder.CreateRet(getValue(inst->value)) : builder.CreateRetVoid();
+    if (!inst->value) return builder.CreateRetVoid();
+    auto* value = getValue(inst->value);
+    if (auto* chunkType = getAbiCoercedType(inst->value->getType())) value = coerceAggregateToChunk(value, inst->value->getType(), chunkType);
+    return builder.CreateRet(value);
 }
 
 llvm::Value* LLVMGenerator::codegenBranch(const BranchInst* inst) {
@@ -479,8 +568,11 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         // Named arguments are reordered to parameter order, so fixed parameters
         // line up positionally and variadic extras come last.
         bool isExtra = i >= paramTypes.size();
-        auto argLLVMType = isExtra ? getLLVMType(inst->args[i]->getType()) : getLLVMType(paramTypes[i]);
-        if (shouldPassIndirectly(argLLVMType)) {
+        IRType* argIRType = isExtra ? inst->args[i]->getType() : paramTypes[i];
+        auto argLLVMType = getLLVMType(argIRType);
+        if (auto* chunkType = getAbiCoercedType(argIRType)) {
+            value = coerceAggregateToChunk(value, argIRType, chunkType);
+        } else if (shouldPassIndirectly(argLLVMType)) {
             if (isExtra) {
                 // C varargs passes aggregates by value rather than by pointer.
                 if (!llvm::isa<llvm::Constant>(value)) {
@@ -526,6 +618,7 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
                 call->addParamAttr(index, llvm::Attribute::getWithAlignment(ctx, llvm::Align(paramAlign)));
             }
         }
+        if (getAbiCoercedType(cxFunctionType->getReturnType())) return coerceChunkToAggregate(call, cxFunctionType->getReturnType());
         return call;
     }
 }
