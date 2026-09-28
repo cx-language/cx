@@ -21,10 +21,18 @@ std::vector<Module*> Module::getAllImportedModules() {
     return modules;
 }
 
-Module* Module::getStdlibModule() {
-    auto it = allImportedModules.find("std");
+Module* Module::findImportedModule(llvm::StringRef name) {
+    auto it = allImportedModules.find(name);
     if (it == allImportedModules.end()) return nullptr;
     return it->second;
+}
+
+void Module::registerImportedModule(llvm::StringRef name, Module* module) {
+    allImportedModules[name] = module;
+}
+
+Module* Module::getStdlibModule() {
+    return findImportedModule("std");
 }
 
 bool Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) {

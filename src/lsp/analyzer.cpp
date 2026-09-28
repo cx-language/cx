@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
-#include <fstream>
 #include <optional>
 #include <sstream>
 #pragma warning(push, 0)
@@ -130,18 +129,6 @@ struct DiagnosticCollectorScope {
     explicit DiagnosticCollectorScope(std::vector<CollectedDiagnostic>* d) { diagnosticCollector = d; }
     ~DiagnosticCollectorScope() { diagnosticCollector = nullptr; }
 };
-
-std::string readLineFromDisk(const std::string& filePath, int line1Based) {
-    std::ifstream file(filePath);
-    if (!file) return "";
-    std::string line;
-    for (int i = 1; i <= line1Based; ++i) {
-        if (!std::getline(file, line)) return "";
-    }
-    // Strip trailing \r for CRLF files.
-    if (!line.empty() && line.back() == '\r') line.pop_back();
-    return line;
-}
 
 /// Finds the build root governing filePath by walking up from parentDir to the
 /// outermost directory whose build.cx target roots contain the file, or nullopt
@@ -2264,7 +2251,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         // importModule's lookup order, so it only triggers when the import
         // would actually find this directory.
         if (registerAsStd) {
-            Module::getAllImportedModulesMap()["std"] = module;
+            Module::registerImportedModule("std", module);
         }
 
         Typechecker typechecker(options, buildDir.empty() ? nullptr : &projectConfig.resolvedDependencies);
@@ -2327,7 +2314,7 @@ std::vector<LspDiagnostic> toLspDiagnostics(const std::vector<CollectedDiagnosti
                 lineText = contentLines[diagnostic.location.line - 1];
             }
         } else {
-            lineText = readLineFromDisk(diagFile, diagnostic.location.line);
+            lineText = readLineFromFile(diagFile, diagnostic.location.line);
         }
         if (diagnostic.location.isValid()) {
             out.range = locationToRange(diagnostic.location, lineText);

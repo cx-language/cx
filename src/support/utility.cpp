@@ -40,16 +40,20 @@ std::ostream& cx::operator<<(std::ostream& stream, llvm::StringRef string) {
     return stream.write(string.data(), string.size());
 }
 
-std::string cx::readLineFromFile(Location location) {
-    std::ifstream file(location.file);
-
-    while (--location.line) {
-        file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+std::string cx::readLineFromFile(const std::string& filePath, int line1Based) {
+    std::ifstream file(filePath);
+    if (!file) return "";
+    std::string line;
+    for (int i = 1; i <= line1Based; ++i) {
+        if (!std::getline(file, line)) return "";
     }
+    // Strip trailing \r for CRLF files.
+    if (!line.empty() && line.back() == '\r') line.pop_back();
+    return line;
+}
 
-    std::string lineContent;
-    std::getline(file, lineContent);
-    return lineContent;
+std::string cx::readLineFromFile(Location location) {
+    return readLineFromFile(location.file ? location.file : "", location.line);
 }
 
 void cx::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
