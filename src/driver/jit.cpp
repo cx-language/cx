@@ -10,7 +10,14 @@
 #include "../ast/mangle.h"
 #include "../support/utility.h"
 #ifdef _WIN32
-#include <libloaderapi.h>
+// Exclude the min/max, GDI, and OLE APIs: their macros would otherwise break
+// LLVM and cx headers (same as api.cpp).
+#define NOMINMAX
+#define NOGDI
+#define WIN32_LEAN_AND_MEAN
+#pragma warning(push, 0)
+#include <windows.h>
+#pragma warning(pop)
 #endif
 
 using namespace cx;
