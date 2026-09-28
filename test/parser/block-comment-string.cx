@@ -1,0 +1,18 @@
+// RUN: %cx -parse %s
+
+// Comment markers inside strings don't affect block comment nesting, so
+// commenting out code with globs like "dir/*.txt" just works.
+/*
+void commentedOut() {
+    listFiles("dir/*.txt");
+    listFiles("dir/*/foo");
+    emit("/* " + doc + " */");
+    println("\"${dir}/*.txt\"");
+}
+*/
+
+// A quote unterminated on its line is an ordinary char, not a string start.
+/* e.g. 24" monitor */
+
+// Nesting still works alongside strings.
+/* outer "dir/*.txt" /* real nest */ */

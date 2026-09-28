@@ -112,6 +112,8 @@ cx has two kinds of comments:
 
 - Line comments, starting with `//` and extending until the end of the line.
 - Block comments, enclosed within `/*` and `*/`, with the ability to be nested.
+  Comment markers inside `"..."` strings don't affect nesting, so commenting
+  out code with `/*` or `*/` in a string just works.
 
 ## Where to go next
 

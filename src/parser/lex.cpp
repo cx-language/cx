@@ -81,6 +81,27 @@ void Lexer::readBlockComment(Location startLocation) {
             } else {
                 unreadChar(next);
             }
+        } else if (ch == '"') {
+            // Skip string literals so comment markers inside strings don't
+            // affect nesting. Mirrors string lexing: backslash escapes the
+            // next char, while a quote unterminated on its line is an
+            // ordinary char instead of starting a string.
+            const char* p = currentFilePosition + 1;
+            while (p < buffer.getBufferEnd()) {
+                char c = *p;
+                if (c == '\\') {
+                    if (p + 1 >= buffer.getBufferEnd()) break;
+                    p += 2;
+                } else if (c == '"' || c == '\0' || c == '\n' || c == '\r') {
+                    break;
+                } else {
+                    ++p;
+                }
+            }
+            if (p < buffer.getBufferEnd() && *p == '"') {
+                while (currentFilePosition < p)
+                    readChar();
+            }
         } else if (ch == '\0') {
             unreadChar(ch);
             REPORT_ERROR_RANGE(startLocation, getIdentifierEndLocation(startLocation, "/*"), "unterminated block comment");
