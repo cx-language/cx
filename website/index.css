@@ -623,7 +623,8 @@ section {
     overflow-x: auto;
 }
 
-.example-tabs button {
+.example-tabs button,
+.os-tabs button {
     font: inherit;
     font-size: 13px;
     background: transparent;
@@ -636,7 +637,9 @@ section {
 }
 
 .example-tabs button[aria-pressed="true"],
-.example-tabs button:hover {
+.example-tabs button:hover,
+.os-tabs button[aria-pressed="true"],
+.os-tabs button:hover {
     background: var(--background-color-3);
     color: var(--text-color);
 }
@@ -659,6 +662,12 @@ section {
 .example-tabs a.more:hover {
     background: var(--background-color-3);
     color: var(--text-color);
+}
+
+.os-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
 }
 
 /* The runnable editor keeps its docs-page look inside the window:
@@ -756,7 +765,8 @@ body.frontpage .part {
     scroll-margin-top: 84px;
 }
 
-.cards {
+.cards,
+.steps {
     display: grid;
     grid-gap: 20px;
 }
@@ -765,17 +775,24 @@ body.frontpage .part {
     grid-template-columns: repeat(2, 1fr);
 }
 
+.steps {
+    grid-template-columns: repeat(3, 1fr);
+    counter-reset: step;
+}
+
 @media screen and (max-width: 800px) {
-    .cards {
+    .cards,
+    .steps {
         grid-template-columns: 1fr;
     }
 }
 
-/* Cards with a leading heading come out of pandoc as sections
+/* Cards with a leading heading and steps come out of pandoc as sections
    (it sectionizes classed heading-led divs; image-led gallery cards stay
    divs), so neutralize the base section margin. */
 .card,
-.cards > div {
+.cards > div,
+.step {
     min-width: 0;
     margin: 0;
 }
@@ -817,12 +834,14 @@ body.frontpage .part {
     background-color: var(--background-color) !important;
 }
 
-.cards h3 {
+.cards h3,
+.step h3 {
     font-size: 1rem;
     margin: 0 0 6px;
 }
 
-.cards p {
+.cards p,
+.step p {
     font-size: 0.92rem;
     margin: 0 0 10px;
 }
@@ -870,6 +889,23 @@ pre.snippet {
     padding: 10px 12px;
     overflow-x: auto;
     margin: 0;
+}
+
+.step {
+    padding-top: 12px;
+}
+
+.step h3::before {
+    counter-increment: step;
+    content: counter(step) ". ";
+    color: var(--text-color-subtle);
+}
+
+/* Long commands wrap instead of scrolling; copy-paste is unaffected. */
+.step pre.snippet {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin-bottom: 10px;
 }
 
 .CodeMirror {
