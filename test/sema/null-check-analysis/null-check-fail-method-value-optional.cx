@@ -1,0 +1,14 @@
+// RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+void methodOnValueOptional() {
+    string? name = "afds";
+    // Only one warning: the receiver and unwrap checks share one range.
+    // CHECK: [[@LINE+1]]:13: warning: value may be null; unwrap it with a postfix '!' to silence this warning
+    println(name.startsWith("S"));
+}
+
+void dataOnValueOptional() {
+    int[]? a = null;
+    // CHECK: [[@LINE+1]]:13: warning: value may be null; unwrap it with a postfix '!' to silence this warning
+    var d = a.data();
+}

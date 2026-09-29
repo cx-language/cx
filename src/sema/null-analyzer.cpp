@@ -144,12 +144,21 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
 // emitting warnings for null-safety violations.
 void NullAnalyzer::analyze(IRModule* module) {
     for (auto function : module->functions) {
+        // The analyzer is reused across modules, so sites must re-warn.
+        warnedRanges.clear();
         for (auto block : function->body) {
             for (auto inst : block->body) {
                 analyze(inst);
             }
         }
     }
+}
+
+void NullAnalyzer::warnNullabilityOnce(Location begin, Location end, const char* message) {
+    uint64_t packed = (uint64_t(uint16_t(begin.line)) << 48) | (uint64_t(uint16_t(begin.column)) << 32) | (uint64_t(uint16_t(end.line)) << 16)
+                    | uint64_t(uint16_t(end.column));
+    if (!warnedRanges.insert({begin.file, packed}).second) return;
+    reportWarning(begin, message, {}, end);
 }
 
 void NullAnalyzer::analyze(Value* value) {
@@ -161,7 +170,8 @@ void NullAnalyzer::analyze(Value* value) {
                 if (receiverType.isOptionalType() && analyzeNullability(call->args[0], call) == Nullability::DefinitelyNullable) {
                     // TODO: Store the implicit 'this' receiver to the call expr during typechecking to simplify this code.
                     const Expr* target = callExpr->getReceiver() ? callExpr->getReceiver() : callExpr;
-                    WARN_RANGE(getExprRangeStart(*target), target->endLocation, "receiver may be null; unwrap it with a postfix '!' to silence this warning");
+                    warnNullabilityOnce(getExprRangeStart(*target), target->endLocation,
+                                        "receiver may be null; unwrap it with a postfix '!' to silence this warning");
                 }
             }
         }
@@ -171,13 +181,14 @@ void NullAnalyzer::analyze(Value* value) {
         auto binary = llvm::cast<BinaryInst>(value);
         if (llvm::StringRef(binary->name).starts_with("__implicit_unwrap")) {
             if (binary->getExpr() && analyzeNullability(binary->left, binary) == Nullability::DefinitelyNullable) {
-                WARN_RANGE(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation,
-                           "value may be null; unwrap it with a postfix '!' to silence this warning");
+                warnNullabilityOnce(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation,
+                                    "value may be null; unwrap it with a postfix '!' to silence this warning");
             }
         } else if (llvm::isa<ConstantNull>(binary->right)) {
             ASSERT(binary->op == Token::Equal || binary->op == Token::NotEqual);
             if (binary->getExpr() && analyzeNullability(binary->left, binary) == Nullability::DefinitelyNotNull) {
-                WARN_RANGE(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation, "value cannot be null here; null check can be removed");
+                warnNullabilityOnce(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation,
+                                    "value cannot be null here; null check can be removed");
             }
         }
         break;
@@ -186,8 +197,8 @@ void NullAnalyzer::analyze(Value* value) {
         auto load = llvm::cast<LoadInst>(value);
         if (auto expr = llvm::dyn_cast_or_null<UnaryExpr>(load->expr)) {
             if (expr->getOperand().type.isOptionalType() && analyzeNullability(load->value, load) == Nullability::DefinitelyNullable) {
-                WARN_RANGE(getExprRangeStart(*expr), expr->endLocation,
-                           "dereferenced pointer may be null; unwrap it with a postfix '!' to silence this warning");
+                warnNullabilityOnce(getExprRangeStart(*expr), expr->endLocation,
+                                    "dereferenced pointer may be null; unwrap it with a postfix '!' to silence this warning");
             }
         }
         break;
@@ -197,7 +208,7 @@ void NullAnalyzer::analyze(Value* value) {
         auto* call = gep->expr ? llvm::dyn_cast<CallExpr>(gep->expr) : nullptr;
         if (call && call->isMethodCall() && call->getFunctionName() == "data" && call->type.isOptionalType()
             && analyzeNullability(gep->pointer, gep) == Nullability::DefinitelyNullable) {
-            WARN_RANGE(getExprRangeStart(*call), call->endLocation, "value may be null; unwrap it with a postfix '!' to silence this warning");
+            warnNullabilityOnce(getExprRangeStart(*call), call->endLocation, "value may be null; unwrap it with a postfix '!' to silence this warning");
         }
         break;
     }
@@ -206,8 +217,8 @@ void NullAnalyzer::analyze(Value* value) {
         if (gep->expr) {
             if (gep->expr->base->type.isOptionalType() && !gep->expr->base->isThis()
                 && analyzeNullability(gep->pointer, gep) == Nullability::DefinitelyNullable) {
-                WARN_RANGE(getExprRangeStart(*gep->expr->base), gep->expr->base->endLocation,
-                           "value may be null; unwrap it with a postfix '!' to silence this warning");
+                warnNullabilityOnce(getExprRangeStart(*gep->expr->base), gep->expr->base->endLocation,
+                                    "value may be null; unwrap it with a postfix '!' to silence this warning");
             }
         }
         break;
