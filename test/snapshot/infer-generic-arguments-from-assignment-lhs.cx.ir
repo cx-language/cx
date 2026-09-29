@@ -159,8 +159,8 @@ void _CX1N3stdM3std4ListIM3std5int32E7reserveE4void1_M3std5int32(List<int32>* th
 
 if.then:
     int32 minimumCapacity.load_0 = load minimumCapacity_0
-    uint64 _2 = cast minimumCapacity.load_0 to uint64
-    int32* _3 = call _CX1N3std8allocateIM3std5int32EEAM3std5int321_M3std6uint64(uint64 _2)
+    int64 _2 = cast minimumCapacity.load_0 to int64
+    int32* _3 = call _CX1N3std8allocateIM3std5int32EEAM3std5int321_M3std5int64(int64 _2)
     store _3 to newBuffer
     List<int32>* this.load_0 = load this_0
     int32* size = getelementptr this.load_0, 1
@@ -268,19 +268,19 @@ void _CX1N3stdM3std5SliceIM3std5int32E4initE4void1_RM3std4ListIM3std5int32E(Slic
     return void
 }
 
-int32* _CX1N3std8allocateIM3std5int32EEAM3std5int321_M3std6uint64(uint64 count) {
-    uint64* count_0 = alloca uint64
+int32* _CX1N3std8allocateIM3std5int32EEAM3std5int321_M3std5int64(int64 count) {
+    int64* count_0 = alloca int64
     uint64* size = alloca uint64
     store count to count_0
     uint64 _0 = cast int32 0 to uint64
     store _0 to size
-    uint64 count.load = load count_0
-    bool _1 = call _CX1N3std16checkedArraySizeIM3std5int32EEM3std4bool2_M3std6uint64RM3std6uint64(uint64 count.load, uint64* size)
+    int64 count.load = load count_0
+    bool _1 = call _CX1N3std16checkedArraySizeIM3std5int32EEM3std4bool2_M3std5int64RM3std6uint64(int64 count.load, uint64* size)
     bool assert.condition = _1 == bool false
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "allocation size overflow at allocate.cx:178:5
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "allocation size overflow at allocate.cx:182:5
 ")
     unreachable
 
@@ -292,7 +292,7 @@ assert.success:
     br assert.condition_0, assert.fail, assert.success
 
 assert.fail_0:
-    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:179:47
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:183:47
 ")
     unreachable
 
@@ -337,27 +337,16 @@ int32 _CX1N3stdM3std4ListIM3std5int32E4sizeEM3std5int320_(List<int32>* this) {
     return size.load
 }
 
-bool _CX1N3std16checkedArraySizeIM3std5int32EEM3std4bool2_M3std6uint64RM3std6uint64(uint64 count, uint64* size) {
-    uint64* count_0 = alloca uint64
+bool _CX1N3std16checkedArraySizeIM3std5int32EEM3std4bool2_M3std5int64RM3std6uint64(int64 count, uint64* size) {
+    int64* count_0 = alloca int64
     uint64** size_0 = alloca uint64*
     uint64* elementSize = alloca uint64
+    uint64* ucount = alloca uint64
     store count to count_0
     store size to size_0
-    store uint64 4 to elementSize
-    uint64 count.load = load count_0
-    bool _0 = count.load != uint64 0
-    br _0, and.rhs(_0), and.end(_0)
-
-and.rhs:
-    uint64 elementSize.load = load elementSize
-    uint64 _1 = cast int32 -1 to uint64
-    uint64 count.load_0 = load count_0
-    uint64 _2 = _1 / count.load_0
-    bool _3 = elementSize.load > _2
-    br and.end(_3)
-
-and.end(bool and):
-    br and, if.then, if.else
+    int64 count.load = load count_0
+    bool _0 = count.load < int64 0
+    br _0, if.then, if.else
 
 if.then:
     return bool false
@@ -366,29 +355,55 @@ if.else:
     br if.end
 
 if.end:
+    store uint64 4 to elementSize
+    int64 count.load_0 = load count_0
+    uint64 _1 = cast count.load_0 to uint64
+    store _1 to ucount
+    uint64 ucount.load = load ucount
+    bool _2 = ucount.load != uint64 0
+    br _2, and.rhs(_2), and.end(_2)
+
+and.rhs:
+    uint64 elementSize.load = load elementSize
+    uint64 _3 = cast int32 -1 to uint64
+    uint64 ucount.load_0 = load ucount
+    uint64 _4 = _3 / ucount.load_0
+    bool _5 = elementSize.load > _4
+    br and.end(_5)
+
+and.end(bool and):
+    br and, if.then, if.else
+
+if.then_0:
+    return bool false
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
     uint64* size.load = load size_0
     uint64 elementSize.load_0 = load elementSize
-    uint64 count.load_1 = load count_0
-    uint64 _4 = elementSize.load_0 * count.load_1
-    bool _5 = count.load_1 == uint64 0
-    br _5, overflow.end(bool false), overflow.check(bool false)
+    uint64 ucount.load_1 = load ucount
+    uint64 _6 = elementSize.load_0 * ucount.load_1
+    bool _7 = ucount.load_1 == uint64 0
+    br _7, overflow.end(bool false), overflow.check(bool false)
 
 overflow.check:
-    uint64 _6 = _4 / count.load_1
-    bool _7 = _6 != elementSize.load_0
-    br overflow.end(_7)
+    uint64 _8 = _6 / ucount.load_1
+    bool _9 = _8 != elementSize.load_0
+    br overflow.end(_9)
 
 overflow.end(bool overflowed):
-    bool _8 = !overflowed
-    bool overflow.condition = _8 == bool false
+    bool _10 = !overflowed
+    bool overflow.condition = _10 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:165:25
+    never _11 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:169:25
 ")
     unreachable
 
 overflow.success:
-    store _4 to size.load
+    store _6 to size.load
     return bool true
 }

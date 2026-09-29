@@ -391,7 +391,7 @@ struct CStringBuffer {
             spilled = false;
         } else {
             inlineStorage = undefined;
-            heapBuffer = allocate<char>(count = uint64(text.size() + 1));
+            heapBuffer = allocate<char>(count = text.size() + 1);
             copyInto(heapBuffer, text);
             spilled = true;
         }

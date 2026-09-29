@@ -5,7 +5,7 @@
 
 
 void main() {
-    var numbers = allocate<uint64>(uint64(-1));
+    var numbers = allocate<uint64>(int64(1) << 61);
     _ = numbers;
 }
 

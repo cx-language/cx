@@ -142,7 +142,7 @@ void bareEnumCaseStaysAllowed() {
 }
 
 void rawPointerIndexStaysAllowed() {
-    var buf = allocate<StringBuf>(uint64(1));
+    var buf = allocate<StringBuf>(1);
     var s = buf[0];
     println("ok");
 }

@@ -161,7 +161,7 @@ struct SmallList<Element, int N> {
     void reserve(int minimumCapacity) {
         if minimumCapacity <= capacity() return;
 
-        var newBuffer = allocate<Element>(count = uint64(minimumCapacity));
+        var newBuffer = allocate<Element>(count = minimumCapacity);
 
         for i in 0..size {
             (&newBuffer[i]).init(*slot(i));

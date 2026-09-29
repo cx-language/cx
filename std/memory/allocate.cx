@@ -156,13 +156,17 @@ private void cxFree(void*? ptr) {
 }
 #endif
 
-// Computes `sizeof(T) * count` into `size`, returning false if it overflows.
-private bool checkedArraySize<T>(uint64 count, uint64& size) {
-    var elementSize = sizeof(T);
-    if count != 0 && elementSize > uint64(-1) / count {
+// Computes `sizeof(T) * count` into `size`, returning false for negative counts or on overflow.
+private bool checkedArraySize<T>(int64 count, uint64& size) {
+    if count < 0 {
         return false;
     }
-    *size = elementSize * count;
+    var elementSize = sizeof(T);
+    var ucount = uint64(count);
+    if ucount != 0 && elementSize > uint64(-1) / ucount {
+        return false;
+    }
+    *size = elementSize * ucount;
     return true;
 }
 
@@ -171,9 +175,9 @@ private bool checkedArraySize<T>(uint64 count, uint64& size) {
 ///
 /// The allocation goes through the ambient context's allocator.
 ///
-/// If the size overflows or the allocation fails, the program aborts.
+/// If the count is negative, the size overflows, or the allocation fails, the program aborts.
 ///
-T[*] allocate<T>(uint64 count) {
+T[*] allocate<T>(int64 count) {
     var size = uint64(0);
     assert(checkedArraySize<T>(count, size), "allocation size overflow");
     return cast<T[*]>(cxMalloc(c_size_t(size))!);
@@ -182,9 +186,9 @@ T[*] allocate<T>(uint64 count) {
 /// Allocates uninitialized storage for `count` values and returns a pointer to it.
 /// The block can be freed by passing the returned pointer to `deallocate`.
 ///
-/// If the size overflows or the allocation fails, null is returned.
+/// If the count is negative, the size overflows, or the allocation fails, null is returned.
 ///
-T[*]? tryAllocate<T>(uint64 count) {
+T[*]? tryAllocate<T>(int64 count) {
     var size = uint64(0);
     if !checkedArraySize<T>(count, size) {
         return null;

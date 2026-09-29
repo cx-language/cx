@@ -5,11 +5,12 @@
 
 @test
 void testAllocate() {
-    var numbers = allocate<int>(4);
-    for i in 0..4 {
+    int n = 4;
+    var numbers = allocate<int>(n);
+    for i in 0..n {
         numbers[i] = i * 10;
     }
-    for i in 0..4 {
+    for i in 0..n {
         assert(numbers[i] == i * 10);
     }
     deallocate(numbers);
@@ -38,7 +39,8 @@ void testTryAllocate() {
     numbers![0] = 7;
     assert(numbers[0] == 7);
     deallocate(numbers);
-    assert(tryAllocate<uint64>(uint64(-1)) == null);
+    assert(tryAllocate<uint64>(int64(1) << 61) == null);
+    assert(tryAllocate<int>(-1) == null);
 }
 
 @test

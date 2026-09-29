@@ -66,7 +66,7 @@ arena installed as the context allocator never allocates from itself.
 
 `Arena` is a move-only, chunked bump allocator for short-lived groups of allocations. It grows by adding chunks, so pointers returned by earlier allocations stay valid until the arena is destroyed or explicitly deinitialized.
 
-Allocation results are nullable. A null result means that the requested size overflowed or that the system allocator could not provide another chunk. Array counts use `uint64`, and the element-size multiplication is checked before requesting memory. Returned storage is aligned to 16 bytes. A zero-count array returns a valid pointer to zero-length storage.
+Allocation results are nullable. A null result means that the count was negative, that the requested size overflowed, or that the system allocator could not provide another chunk. Array counts use `int64`, and the element-size multiplication is checked before requesting memory. Returned storage is aligned to 16 bytes. A zero-count array returns a valid pointer to zero-length storage.
 
 ```cs
 void main() {
