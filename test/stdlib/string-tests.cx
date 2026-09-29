@@ -304,3 +304,23 @@ void testStringBufComparison() {
     assert(StringBuf("hello") == slice);
     assert(slice != StringBuf("other"));
 }
+
+@test
+void testCaseConversion() {
+    string s = "Hello, World! 123";
+    assert(s.toUpper() == "HELLO, WORLD! 123");
+    assert(s.toLower() == "hello, world! 123");
+    assert(s == "Hello, World! 123");
+    string empty = "";
+    assert(empty.toUpper() == "");
+    assert(empty.toLower() == "");
+
+    var b = StringBuf("Hello, World! 123");
+    b.toUpper();
+    assert(b == "HELLO, WORLD! 123");
+    b.toLower();
+    assert(b == "hello, world! 123");
+    var e = StringBuf("");
+    e.toUpper();
+    assert(e == "");
+}

@@ -24,3 +24,17 @@ void testIsWhitespace() {
     assert('\r'.isWhitespace());
     assert(!'\0'.isWhitespace());
 }
+
+@test
+void testToUpperLower() {
+    assert('a'.toUpper() == 'A');
+    assert('z'.toUpper() == 'Z');
+    assert('A'.toUpper() == 'A');
+    assert('0'.toUpper() == '0');
+    assert('_'.toUpper() == '_');
+    assert('A'.toLower() == 'a');
+    assert('Z'.toLower() == 'z');
+    assert('a'.toLower() == 'a');
+    assert('0'.toLower() == '0');
+    assert('_'.toLower() == '_');
+}

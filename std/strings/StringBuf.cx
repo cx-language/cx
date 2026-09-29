@@ -141,6 +141,20 @@ struct StringBuf: Comparable, Hashable, Printable {
         characters.push('\0');
     }
 
+    /// Converts all characters to uppercase in place (ASCII only).
+    void toUpper() {
+        for i in 0..size() {
+            characters[i] = characters[i].toUpper();
+        }
+    }
+
+    /// Converts all characters to lowercase in place (ASCII only).
+    void toLower() {
+        for i in 0..size() {
+            characters[i] = characters[i].toLower();
+        }
+    }
+
     /// Returns the first character.
     char first() {
         assert(!empty(), "Called first() on empty StringBuf");

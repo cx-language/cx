@@ -15,6 +15,24 @@ struct char: Comparable, Printable, Hashable {
         return this == ' ' || (this >= char(0x9) && this <= char(0xD));
     }
 
+    /// Returns the uppercase version of this character (ASCII only;
+    /// other characters are returned unchanged).
+    char toUpper() {
+        if this >= 'a' && this <= 'z' {
+            return char(int(this - 'a') + int('A'));
+        }
+        return this;
+    }
+
+    /// Returns the lowercase version of this character (ASCII only;
+    /// other characters are returned unchanged).
+    char toLower() {
+        if this >= 'A' && this <= 'Z' {
+            return char(int(this - 'A') + int('a'));
+        }
+        return this;
+    }
+
     /// Compares this value to another.
     Ordering compare(char& other) {
         return int(this).compare(int(other));

@@ -146,6 +146,24 @@ struct string: Comparable, Hashable, Printable {
         return string(&characters.data()[range.start()], range.size());
     }
 
+    /// Returns a copy of the string with all characters converted to uppercase (ASCII only).
+    StringBuf toUpper() {
+        StringBuf result = StringBuf(uninitializedSize = size());
+        for i in 0..size() {
+            result[i] = this[i].toUpper();
+        }
+        return result;
+    }
+
+    /// Returns a copy of the string with all characters converted to lowercase (ASCII only).
+    StringBuf toLower() {
+        StringBuf result = StringBuf(uninitializedSize = size());
+        for i in 0..size() {
+            result[i] = this[i].toLower();
+        }
+        return result;
+    }
+
     /// Supports using strings with sets and dicts
     uint64 hash() {
         uint64 hashValue = 5381;
