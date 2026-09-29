@@ -9,8 +9,8 @@ private extern c_int setenv(const char* name, const char* value, c_int overwrite
 
 /// Returns the value of the environment variable, or null if it's not set.
 string? getenv(string name) {
-    var nameBuf = CStringBuffer(name);
-    var value = getenv(nameBuf.cString());
+    var nameBuf = toCString(name);
+    var value = getenv(nameBuf.data());
     if !value return null;
     return string(value);
 }
@@ -24,9 +24,9 @@ void setenv(string name, string value) {
 #else
 /// Sets the environment variable, aborting on failure.
 void setenv(string name, string value) {
-    var nameBuf = CStringBuffer(name);
-    var valueBuf = CStringBuffer(value);
-    if setenv(nameBuf.cString(), valueBuf.cString(), 1) != 0 abort("setenv failed for ", name);
+    var nameBuf = toCString(name);
+    var valueBuf = toCString(value);
+    if setenv(nameBuf.data(), valueBuf.data(), 1) != 0 abort("setenv failed for ", name);
 }
 #endif
 
@@ -41,8 +41,8 @@ struct ProcessResult {
 /// Standard error is inherited, not captured. Status is -1 if the process
 /// was killed by a signal.
 ProcessResult run(string command) {
-    var commandBuf = CStringBuffer(command);
-    var pipe = popen(commandBuf.cString(), "r");
+    var commandBuf = toCString(command);
+    var pipe = popen(commandBuf.data(), "r");
     if !pipe abort("run failed for command: ", command);
 
     var output = StringBuf();

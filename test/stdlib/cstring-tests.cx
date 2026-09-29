@@ -4,25 +4,25 @@
 // RUN: check_exit_status 0 %cx test -Werror --release --backend=c %s
 
 void checkRoundTrip(string text) {
-    var buf = CStringBuffer(text);
-    assert(string(buf.cString()) == text);
+    var buf = toCString(text);
+    assert(string(buf.data()) == text);
 }
 
 @test
-void testCStringBufferShortString() {
+void testToCStringShortString() {
     checkRoundTrip("");
     checkRoundTrip("hello");
     checkRoundTrip("" + "a".repeat(255));
 }
 
 @test
-void testCStringBufferSpillsToHeap() {
+void testToCStringSpillsToHeap() {
     checkRoundTrip("" + "b".repeat(256));
     checkRoundTrip("" + "c".repeat(1000));
 }
 
 @test
-void testCStringBufferSpillPathSuccess() {
+void testToCStringSpillPathSuccess() {
     // A >255 digit number lexeme exercises the spill path through strtod and must still parse.
     var digits = StringBuf(capacity = 310);
     digits.push('1');
@@ -42,7 +42,7 @@ void testCStringBufferSpillPathSuccess() {
 }
 
 @test
-void testCStringBufferThroughRealCalls() {
+void testToCStringThroughRealCalls() {
     // Exercises both paths through real C calls.
     assert(!exists("definitely-not-a-real-file-name-12345"));
     assert(!exists("" + "x".repeat(500)));
