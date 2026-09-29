@@ -1,10 +1,8 @@
 // RUN: %cx run -Werror --release %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run -Werror --release --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:-2147483648
-// CHECK-NEXT:2147483647
 
 void main() {
     int x = 2147483647;
-    println(x + 1);
-    println(x + 0);
+    println(x + 1); // CHECK:-2147483648
+    println(x + 0); // CHECK-NEXT:2147483647
 }

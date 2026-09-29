@@ -1,12 +1,6 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:41
-// CHECK-NEXT:1.5
-// CHECK-NEXT:true
-// CHECK-NEXT:4
-// CHECK-NEXT:42
-// CHECK-NEXT:42
 
 // Global initializers may reference later declarations.
 const usesLater = definedLater * 2;
@@ -24,10 +18,10 @@ int addOne(int x) {
 var f = addOne;
 
 void main() {
-    println(gi);
-    println(gf);
-    println(gb);
-    println(si);
-    println(f(gi));
-    println(usesLater);
+    println(gi); // CHECK:41
+    println(gf); // CHECK-NEXT:1.5
+    println(gb); // CHECK-NEXT:true
+    println(si); // CHECK-NEXT:4
+    println(f(gi)); // CHECK-NEXT:42
+    println(usesLater); // CHECK-NEXT:42
 }

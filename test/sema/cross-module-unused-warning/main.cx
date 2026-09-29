@@ -1,9 +1,8 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
-// CHECK: {{.*}}main.cx:7:6: warning: unused declaration 'mainUnused'
-
 import mod;
 
+// CHECK: {{.*}}main.cx:[[@LINE+1]]:6: warning: unused declaration 'mainUnused'
 void mainUnused() {
 }
 

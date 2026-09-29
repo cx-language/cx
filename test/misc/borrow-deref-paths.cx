@@ -1,25 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:yes
-// CHECK-NEXT:no
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:3
-// CHECK-NEXT:2
-// CHECK-NEXT:1
-// CHECK-NEXT:0
-// CHECK-NEXT:two
-// CHECK-NEXT:green
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-
 // Borrows auto-deref in conditions and switches; &this gives a storable pointer.
 
 string yesNo(bool& value) {
@@ -98,27 +78,30 @@ struct Node {
 
 void main() {
     var flag = true;
-    println(yesNo(flag));
+    println(yesNo(flag)); // CHECK:yes
     flag = false;
-    println(yesNo(flag));
-    println(negate(true));
-    println(negate(false));
-    println(both(true, true));
-    println(both(true, false));
+    println(yesNo(flag)); // CHECK-NEXT:no
+    println(negate(true)); // CHECK-NEXT:false
+    println(negate(false)); // CHECK-NEXT:true
+    println(both(true, true)); // CHECK-NEXT:true
+    println(both(true, false)); // CHECK-NEXT:false
     var fuel = 3;
+    // CHECK-NEXT:3
+    // CHECK-NEXT:2
+    // CHECK-NEXT:1
     drain(fuel);
-    println(fuel);
-    println(describe(2));
+    println(fuel); // CHECK-NEXT:0
+    println(describe(2)); // CHECK-NEXT:two
     var color = Color.Green;
-    println(color.name());
-    println(Outcome.Ok.isOk());
-    println(Outcome.Fail.isOk());
+    println(color.name()); // CHECK-NEXT:green
+    println(Outcome.Ok.isOk()); // CHECK-NEXT:true
+    println(Outcome.Fail.isOk()); // CHECK-NEXT:false
     var found = Request.Found(200);
-    println(found.isFound());
-    println(Request.Missing.isFound());
+    println(found.isFound()); // CHECK-NEXT:true
+    println(Request.Missing.isFound()); // CHECK-NEXT:false
     var node = Node(7);
-    println(node.isSelf(node.self()));
-    println(node.isSelf(&node));
+    println(node.isSelf(node.self())); // CHECK-NEXT:true
+    println(node.isSelf(&node)); // CHECK-NEXT:true
     var other = Node(8);
-    println(node.isSelf(&other));
+    println(node.isSelf(&other)); // CHECK-NEXT:false
 }

@@ -1,20 +1,15 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:5
-// CHECK-NEXT:7
-// CHECK-NEXT:5
-// CHECK-NEXT:5
-// CHECK-NEXT:true
 
 void main() {
     int?? d = 5;
-    println(d!!);
+    println(d!!); // CHECK:5
     int??? t = 7;
-    println(t!!!);
+    println(t!!!); // CHECK-NEXT:7
     int? o = 5;
     int?? w = o;
-    println(w!!);
+    println(w!!); // CHECK-NEXT:5
     int? mid = d!;
-    println(mid!);
-    println(d! != null);
+    println(mid!); // CHECK-NEXT:5
+    println(d! != null); // CHECK-NEXT:true
 }

@@ -1,30 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:104
-// CHECK-NEXT:7
-// CHECK-NEXT:43
-// CHECK-NEXT:151
-// CHECK-NEXT:1
-// CHECK-NEXT:1
-// CHECK-NEXT:11
-// CHECK-NEXT:21
-// CHECK-NEXT:hi
-// CHECK-NEXT:5
-// CHECK-NEXT:11
-// CHECK-NEXT:22
-// CHECK-NEXT:11
-// CHECK-NEXT:12
-// CHECK-NEXT:13
-// CHECK-NEXT:call 7
-// CHECK-NEXT:call 7
-// CHECK-NEXT:end
-// CHECK-NEXT:deinit 7
-// CHECK-NEXT:3
-// CHECK-NEXT:5
-// CHECK-NEXT:7
-// CHECK-NEXT:1
-// CHECK-NEXT:1
-
 void capturesParam(int p) {
     var d = 3;
     var b = (int c) => c + p + d;
@@ -186,31 +161,40 @@ void structFieldStoreIsLocal() {
 }
 
 void main() {
-    capturesParam(100);
+    capturesParam(100); // CHECK:104
     var s = S(d = 5);
-    println(s.get(1));
-    println(s.callMethod(21));
-    nested();
-    capturesAreCopies();
+    println(s.get(1)); // CHECK-NEXT:7
+    println(s.callMethod(21)); // CHECK-NEXT:43
+    nested(); // CHECK-NEXT:151
+    capturesAreCopies(); // CHECK-NEXT:1
+    // CHECK-NEXT:1
+    // CHECK-NEXT:11
+    // CHECK-NEXT:21
     loopCapture();
+    // CHECK-NEXT:hi
+    // CHECK-NEXT:5
     stringAndOptional();
-    pointerSeesMutations();
-    closureCallsClosure();
+    pointerSeesMutations(); // CHECK-NEXT:11
+    closureCallsClosure(); // CHECK-NEXT:22
     var a = 10;
     var f = (int c) => c + a;
-    callIt(f, 1);
+    callIt(f, 1); // CHECK-NEXT:11
     var g = f;
-    println(g(2));
-    structCapture();
+    println(g(2)); // CHECK-NEXT:12
+    structCapture(); // CHECK-NEXT:13
+    // CHECK-NEXT:call 7
+    // CHECK-NEXT:call 7
+    // CHECK-NEXT:end
+    // CHECK-NEXT:deinit 7
     destructorRunsOnce();
     var c = Counter(n = 0);
     c.bump(3);
-    println(c.n);
+    println(c.n); // CHECK-NEXT:3
     var cc = CopyableCounter(n = 0);
     cc.bump();
-    println(cc.n);
+    println(cc.n); // CHECK-NEXT:5
     cc.bumpNested();
-    println(cc.n);
-    captureStoreIsLocal();
-    structFieldStoreIsLocal();
+    println(cc.n); // CHECK-NEXT:7
+    captureStoreIsLocal(); // CHECK-NEXT:1
+    structFieldStoreIsLocal(); // CHECK-NEXT:1
 }

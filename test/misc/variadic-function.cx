@@ -1,10 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:a1b2
-// CHECK:single
-// CHECK-EMPTY:
-// CHECK:a|12
-// CHECK:0a1b2c
 
 void printAll<T: Printable>(T&... args) {
     for arg in args {
@@ -31,9 +26,9 @@ void printIndexed<T: Printable>(T&... args) {
 }
 
 void main() {
-    printAll("a", 1, "b", 2);
-    printAll("single");
-    printAll();
-    printFirstAndRest("a", 1, 2);
-    printIndexed("a", "b", "c");
+    printAll("a", 1, "b", 2); // CHECK:a1b2
+    printAll("single"); // CHECK:single
+    printAll(); // CHECK-EMPTY:
+    printFirstAndRest("a", 1, 2); // CHECK:a|12
+    printIndexed("a", "b", "c"); // CHECK:0a1b2c
 }

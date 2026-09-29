@@ -1,8 +1,5 @@
 // RUN: %cx run --backend=c --no-leak-check %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c --c-dispatch --no-leak-check %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:[0, 4, 8]
-// CHECK-NEXT:[4, 6]
-// CHECK-NEXT:[0, 2, 4]
 
 // Passing a lambda to filter must not corrupt IR emission for the enclosing
 // function: temporaries created after the lambda argument (such as the
@@ -14,11 +11,11 @@
 
 void main() {
     var doubled = List([0, 1, 2, 3, 4]).filter(n => n % 2 == 0).map(n => n * 2).toList();
-    println(doubled);
+    println(doubled); // CHECK:[0, 4, 8]
 
     var filtered = List([0, 1, 2, 3, 4, 5, 6]).filter(n => n % 2 == 0 && n > 2).toList();
-    println(filtered);
+    println(filtered); // CHECK-NEXT:[4, 6]
 
     var even = List([0, 1, 2, 3, 4]).filter(n => n % 2 == 0).toList();
-    println(even);
+    println(even); // CHECK-NEXT:[0, 2, 4]
 }

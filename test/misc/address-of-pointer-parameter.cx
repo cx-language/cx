@@ -1,15 +1,13 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:42
-// CHECK-NEXT:43
 
 void bar(int*?* pp) {
     int*? p = *pp;
-    println(p!);
+    println(p!); // CHECK:42
 }
 
 void barPlain(int** pp) {
     int* p = *pp;
-    println(*p);
+    println(*p); // CHECK-NEXT:43
 }
 
 void fooAddr(int*? p) {

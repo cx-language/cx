@@ -1,9 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:compute
-// CHECK-NEXT:deferred
-// CHECK-NEXT:dtor
-// CHECK-NEXT:dtor
 
 struct S {
     int x;
@@ -29,6 +25,9 @@ int g() {
 }
 
 void main() {
+    // CHECK:compute
+    // CHECK-NEXT:deferred
+    // CHECK-NEXT:dtor
     assert(f() == 42);
-    assert(g() == 42);
+    assert(g() == 42); // CHECK-NEXT:dtor
 }

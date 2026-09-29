@@ -1,5 +1,4 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:1
 
 struct Rectangle {
     int x;
@@ -12,5 +11,5 @@ Rectangle Rectangle(int a) {
 
 void main() {
     var r = Rectangle(1);
-    println(r.x);
+    println(r.x); // CHECK:1
 }

@@ -2,7 +2,6 @@
 // RUN: %cx run -Werror --release %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run -Werror --release-safe --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run -Werror --release --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:10000000
 
 // Release modes optimize the tail recursion below into a loop (the LLVM
 // pipeline, or -O3 from the C compiler with the C backend). Debug builds
@@ -17,5 +16,5 @@ int countdown(int n, int acc) {
 }
 
 void main() {
-    println(countdown(10000000, 0));
+    println(countdown(10000000, 0)); // CHECK:10000000
 }

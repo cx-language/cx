@@ -1,11 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:world
-// CHECK-NEXT:cx
-// CHECK-NEXT:1
-// CHECK-NEXT:2
-// CHECK-NEXT:10
-// CHECK-NEXT:10
 
 int counter = 0;
 
@@ -32,12 +26,12 @@ struct S {
 }
 
 void main() {
-    greet();
-    greet(name = "cx");
-    count();
-    count();
-    count(10);
+    greet(); // CHECK:world
+    greet(name = "cx"); // CHECK-NEXT:cx
+    count(); // CHECK-NEXT:1
+    count(); // CHECK-NEXT:2
+    count(10); // CHECK-NEXT:10
 
     var s = S(x = 1);
-    println(s.y);
+    println(s.y); // CHECK-NEXT:10
 }

@@ -1,21 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:42
-// CHECK-NEXT:7
-// CHECK-NEXT:99
-// CHECK-NEXT:1
-// CHECK-NEXT:102
-// CHECK-NEXT:2
-// CHECK-NEXT:null
-// CHECK-NEXT:3
-// CHECK-NEXT:3
-// CHECK-NEXT:3
-// CHECK-NEXT:65
-// CHECK-NEXT:0.5
-// CHECK-NEXT:5
-// CHECK-NEXT:6
-// CHECK-NEXT:5
-// CHECK-NEXT:5
 
 // `??` evaluates the left side once and uses the right side only when it is null.
 
@@ -32,35 +16,35 @@ int? next() {
 void main() {
     int? a = 42;
     int? b = null;
-    println(a ?? 0);
-    println(b ?? 7);
+    println(a ?? 0); // CHECK:42
+    println(b ?? 7); // CHECK-NEXT:7
 
-    println(next() ?? 99);
-    println(calls);
-    println(next() ?? 99);
-    println(calls);
+    println(next() ?? 99); // CHECK-NEXT:99
+    println(calls); // CHECK-NEXT:1
+    println(next() ?? 99); // CHECK-NEXT:102
+    println(calls); // CHECK-NEXT:2
 
     int? d = null;
     int? e = null;
-    println(d ?? e);
+    println(d ?? e); // CHECK-NEXT:null
 
     int? g = 3;
-    println(d ?? g);
-    println(g ?? d);
-    println(d ?? g ?? 9);
+    println(d ?? g); // CHECK-NEXT:3
+    println(g ?? d); // CHECK-NEXT:3
+    println(d ?? g ?? 9); // CHECK-NEXT:3
 
     char? ch = null;
-    println(ch ?? 65);
-    println(ch ?? 0.5);
+    println(ch ?? 65); // CHECK-NEXT:65
+    println(ch ?? 0.5); // CHECK-NEXT:0.5
 
     int?? n = null;
-    println(n ?? 5);
+    println(n ?? 5); // CHECK-NEXT:5
     int?? m = 6;
-    println(m ?? 5);
+    println(m ?? 5); // CHECK-NEXT:6
 
     int x = 5;
     int*? p = &x;
     int*? q = null;
-    println((p ?? q)!);
-    println((q ?? p)!);
+    println((p ?? q)!); // CHECK-NEXT:5
+    println((q ?? p)!); // CHECK-NEXT:5
 }

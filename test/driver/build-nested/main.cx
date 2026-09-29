@@ -1,9 +1,6 @@
 // RUN: cd %S && %cx run 2>&1 | %FileCheck -match-full-lines -strict-whitespace %s
 
-// CHECK:hello
-// CHECK:nested
-
 void main() {
-    println("hello");
-    nestedHelper();
+    println("hello"); // CHECK:hello
+    nestedHelper(); // CHECK:nested
 }

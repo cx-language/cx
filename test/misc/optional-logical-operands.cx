@@ -1,19 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:narrowed
-// CHECK-NEXT:false
-// CHECK-NEXT:0
 
 // Like if conditions, && and || operands may be optionals, testing for
 // non-null. A null-checked operand is narrowed on the right side.
@@ -32,23 +18,23 @@ bool bothPresent(int? a, int? b) {
 void main() {
     int? o = 5;
     int? n = null;
-    println(o && true);
-    println(n && true);
-    println(o || false);
-    println(n || false);
-    println(o && n);
-    println(o || n);
-    println(bothPresent(3, 3));
-    println(bothPresent(3, 4));
-    println(bothPresent(null, 3));
+    println(o && true); // CHECK:true
+    println(n && true); // CHECK-NEXT:false
+    println(o || false); // CHECK-NEXT:true
+    println(n || false); // CHECK-NEXT:false
+    println(o && n); // CHECK-NEXT:false
+    println(o || n); // CHECK-NEXT:true
+    println(bothPresent(3, 3)); // CHECK-NEXT:true
+    println(bothPresent(3, 4)); // CHECK-NEXT:false
+    println(bothPresent(null, 3)); // CHECK-NEXT:false
     int x = 5;
     int*? p = &x;
     int*? q = null;
-    println((p && q) || p);
-    println(q && p);
+    println((p && q) || p); // CHECK-NEXT:true
+    println(q && p); // CHECK-NEXT:false
     if (o && o == 5) {
-        println("narrowed");
+        println("narrowed"); // CHECK-NEXT:narrowed
     }
-    println(false && tick(true));
-    println(calls);
+    println(false && tick(true)); // CHECK-NEXT:false
+    println(calls); // CHECK-NEXT:0
 }

@@ -1,10 +1,4 @@
 // RUN: %cx test -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:one
-// CHECK:two
-// CHECK:logline 1 2.5 true
-// CHECK:logline 2 3.5 false
-// CHECK:survived
-// CHECK:ok testStdoutReuse
 
 void logLine<T: Printable>(T&... args) {
     var out = stdout();
@@ -16,9 +10,10 @@ void logLine<T: Printable>(T&... args) {
 
 @test
 void testStdoutReuse() {
-    stdout().write("one\n");
-    stdout().write("two\n");
-    logLine("logline ", 1, " ", 2.5, " ", true);
-    logLine("logline ", 2, " ", 3.5, " ", false);
-    println("survived");
+    stdout().write("one\n"); // CHECK:one
+    stdout().write("two\n"); // CHECK:two
+    logLine("logline ", 1, " ", 2.5, " ", true); // CHECK:logline 1 2.5 true
+    logLine("logline ", 2, " ", 3.5, " ", false); // CHECK:logline 2 3.5 false
+    println("survived"); // CHECK:survived
+    // CHECK:ok testStdoutReuse
 }

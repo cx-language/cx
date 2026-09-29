@@ -1,7 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:some
-// CHECK-NEXT:all
 
 enum E {
     Some(int),
@@ -17,14 +15,14 @@ enum Multi {
 void main() {
     var e = E.Some(42);
     if e is Some {
-        println("some");
+        println("some"); // CHECK:some
     } else {
         println("none");
     }
     var a = Multi.Pair(1, "x");
     var b = Multi.Arr([7, 8]);
     if a is Pair && b is Arr {
-        println("all");
+        println("all"); // CHECK-NEXT:all
     } else {
         println("none");
     }

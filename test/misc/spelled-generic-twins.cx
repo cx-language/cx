@@ -1,13 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:7
-// CHECK-NEXT:4
-// CHECK-NEXT:true
-// CHECK-NEXT:dtor
-// CHECK-NEXT:reassigned
-// CHECK-NEXT:42
-// CHECK-NEXT:Err(bad)
-// CHECK-NEXT:dtor
 
 void takeInts(List<int32> list) {
     println(list.size() + 1);
@@ -33,20 +25,21 @@ void main() {
     List<int> li = List([4, 5]);
     l32.push(4);
     li.push(6);
-    println(l32.size() + li.size());
-    takeInts(li);
+    println(l32.size() + li.size()); // CHECK:7
+    takeInts(li); // CHECK-NEXT:4
     int*? p = null;
     int32*? q = p;
-    println(q == null);
+    println(q == null); // CHECK-NEXT:true
 
     // Reassigning a spelled instantiation destroys the old value.
     var b = Box<int>(value = 1);
-    b = Box<int>(value = 2);
-    println("reassigned");
+    b = Box<int>(value = 2); // CHECK-NEXT:dtor
+    println("reassigned"); // CHECK-NEXT:reassigned
 
     // Generic enums lower through spelled arguments.
     var r = compute(true);
-    println(r.unwrap());
+    println(r.unwrap()); // CHECK-NEXT:42
     var e = compute(false);
-    println(e);
+    println(e); // CHECK-NEXT:Err(bad)
+    // CHECK-NEXT:dtor
 }

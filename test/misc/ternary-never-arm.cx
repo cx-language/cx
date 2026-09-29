@@ -1,15 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:hi
-// CHECK-NEXT:else
-// CHECK-NEXT:42
-// CHECK-NEXT:logged
-// CHECK-NEXT:after void-never
-// CHECK-NEXT:7
-// CHECK-NEXT:1
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:7
 
 // A diverging arm (e.g. abort) contributes no value to the join: the ternary
 // takes the other arm's type. Only value arms run here; the diverging arms
@@ -31,20 +21,20 @@ void main() {
     bool b = true;
     string a = "hi";
     var t = b ? a : abort("x");
-    println(t);
-    println(getStr(false));
-    println(getNum(true));
-    b ? log("logged") : abort("y");
-    println("after void-never");
+    println(t); // CHECK:hi
+    println(getStr(false)); // CHECK-NEXT:else
+    println(getNum(true)); // CHECK-NEXT:42
+    b ? log("logged") : abort("y"); // CHECK-NEXT:logged
+    println("after void-never"); // CHECK-NEXT:after void-never
     int x = b ? 7 : abort("z");
-    println(x);
-    println(b ? (b ? 1 : abort("w")) : 3);
+    println(x); // CHECK-NEXT:7
+    println(b ? (b ? 1 : abort("w")) : 3); // CHECK-NEXT:1
     // Conversions through a diverging ternary only check the live arm.
     bool f = false;
     int? n = f ? abort("x") : null;
-    println(n == null);
+    println(n == null); // CHECK-NEXT:true
     int? m = b ? null : abort("y");
-    println(m == null);
+    println(m == null); // CHECK-NEXT:true
     uint8 u = f ? abort("z") : 7;
-    println(u);
+    println(u); // CHECK-NEXT:7
 }

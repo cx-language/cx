@@ -1,10 +1,5 @@
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:9
-// CHECK-NEXT:6
-// CHECK-NEXT:21
-// CHECK-NEXT:5
-// CHECK-NEXT:4
 
 // Exercises fixed-size array struct fields (which the C backend addresses as
 // pointers to arrays), nested arrays, arrays in anonymous structs, and
@@ -29,18 +24,18 @@ void main() {
         p.pos[i] = float(i) * 1.5;
         p.vel[i] = float(i) + 0.5;
     }
-    println(sum(&p));
+    println(sum(&p)); // CHECK:9
 
     var q = Particle(undefined, undefined);
     q.pos[0] = 6;
-    println(q.pos[0]);
+    println(q.pos[0]); // CHECK-NEXT:6
 
     var r = Particle([1, 2, 3], [4, 5, 6]);
-    println(sum(&r));
+    println(sum(&r)); // CHECK-NEXT:21
 
     int[2][2] m = [[1, 2], [3, 4]];
-    println(m[0][1] + m[1][0]);
+    println(m[0][1] + m[1][0]); // CHECK-NEXT:5
 
     var t = (a = [1, 2, 3]);
-    println(t.a[0] + t.a[2]);
+    println(t.a[0] + t.a[2]); // CHECK-NEXT:4
 }

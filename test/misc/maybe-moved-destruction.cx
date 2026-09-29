@@ -1,18 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:dtor
-// CHECK-NEXT:end
-// CHECK-NEXT:end
-// CHECK-NEXT:dtor
-// CHECK-NEXT:reassigned
-// CHECK-NEXT:dtor
-// CHECK-NEXT:reassigned
-// CHECK-NEXT:dtor
-// CHECK-NEXT:dtor
-// CHECK-NEXT:dtor
-// CHECK-NEXT:before return
-// CHECK-NEXT:before return
-
 struct C {
     int i;
     ~C() {
@@ -63,11 +50,20 @@ void earlyReturn(bool b) {
 }
 
 void main() {
+    // CHECK:dtor
+    // CHECK-NEXT:end
     condMove(true);
-    condMove(false);
+    condMove(false); // CHECK-NEXT:end
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:reassigned
+    // CHECK-NEXT:dtor
     condMoveReassign(true);
+    // CHECK-NEXT:reassigned
+    // CHECK-NEXT:dtor
     condMoveReassign(false);
-    useOnLivePath();
+    useOnLivePath(); // CHECK-NEXT:dtor
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:before return
     earlyReturn(true);
-    earlyReturn(false);
+    earlyReturn(false); // CHECK-NEXT:before return
 }

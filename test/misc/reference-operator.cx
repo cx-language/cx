@@ -1,5 +1,4 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:Bar
 
 extern int puts(uint8* s);
 
@@ -10,5 +9,5 @@ void main() {
     ptr[1] = 0x61;
     ptr[2] = 0o162;
     ptr[3] = 0b0;
-    puts(&buffer[0]);
+    puts(&buffer[0]); // CHECK:Bar
 }

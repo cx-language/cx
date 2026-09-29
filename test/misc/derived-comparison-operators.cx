@@ -1,16 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:explicit
-// CHECK-NEXT:true
 
 // !=, >, >=, and <= derive from == and < so only those need overloads.
 // An explicit overload still wins over a derived one.
@@ -43,16 +32,17 @@ bool operator!=(W& a, W& b) {
 void main() {
     var v = V(1);
     var w = V(2);
-    println(v != w);
-    println(v > w);
-    println(w > v);
-    println(v >= w);
-    println(w >= v);
-    println(v <= w);
-    println(w <= v);
-    println(v >= v);
-    println(v <= v);
+    println(v != w); // CHECK:true
+    println(v > w); // CHECK-NEXT:false
+    println(w > v); // CHECK-NEXT:true
+    println(v >= w); // CHECK-NEXT:false
+    println(w >= v); // CHECK-NEXT:true
+    println(v <= w); // CHECK-NEXT:true
+    println(w <= v); // CHECK-NEXT:false
+    println(v >= v); // CHECK-NEXT:true
+    println(v <= v); // CHECK-NEXT:true
     var a = W(1);
     var b = W(2);
-    println(a != b);
+    // CHECK-NEXT:explicit
+    println(a != b); // CHECK-NEXT:true
 }

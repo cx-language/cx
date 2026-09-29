@@ -1,11 +1,4 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:3
-// CHECK-NEXT:3
-// CHECK-NEXT:3
-// CHECK-NEXT:1
-// CHECK-NEXT:3
-// CHECK-NEXT:1
-// CHECK-NEXT:1
 
 enum E {
     A,
@@ -21,14 +14,14 @@ void useAnonymousStruct((int a, float b,) t) {
 }
 
 void main() {
-    add(1, 2,);
-    add(a = 1, b = 2,);
+    add(1, 2,); // CHECK:3
+    add(a = 1, b = 2,); // CHECK-NEXT:3
     var array = [1, 2,];
-    println(array[0] + array[1]);
+    println(array[0] + array[1]); // CHECK-NEXT:3
     var single = [1,];
-    println(single[0]);
+    println(single[0]); // CHECK-NEXT:1
     var anonymousStruct = (a = 1, b = 2,);
-    println(anonymousStruct.a + anonymousStruct.b);
-    println((1,));
-    useAnonymousStruct((a = 1, b = 2.5,));
+    println(anonymousStruct.a + anonymousStruct.b); // CHECK-NEXT:3
+    println((1,)); // CHECK-NEXT:1
+    useAnonymousStruct((a = 1, b = 2.5,)); // CHECK-NEXT:1
 }

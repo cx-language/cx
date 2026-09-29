@@ -1,11 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:[hello]
-// CHECK-NEXT:got 1
-// CHECK-NEXT:dtor 1
-// CHECK-NEXT:got 2
-// CHECK-NEXT:dtor 2
-// CHECK-NEXT:dtor 1
 
 Result<StringBuf, StringBuf> parse(string input) {
     int pos = 1;
@@ -44,12 +38,14 @@ C f(bool b) {
 void main() {
     var r = parse("\"hello\"");
     switch (r) {
-        case Ok s: println("[", s, "]");
+        case Ok s: println("[", s, "]"); // CHECK:[hello]
         case Err e: println("err: ", e);
     }
 
     var t = f(true);
-    println("got ", t.i);
-    var s = f(false);
-    println("got ", s.i);
+    println("got ", t.i); // CHECK-NEXT:got 1
+    var s = f(false); // CHECK-NEXT:dtor 1
+    println("got ", s.i); // CHECK-NEXT:got 2
+    // CHECK-NEXT:dtor 2
+    // CHECK-NEXT:dtor 1
 }

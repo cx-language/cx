@@ -1,21 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:explicit
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:2
-// CHECK-NEXT:true
-// CHECK-NEXT:true
 
 // Structs get a default == that compares every member and &&s the results.
 // An explicit operator== still wins over the default.
@@ -60,23 +44,24 @@ void main() {
     var a = Vec2(1, 2);
     var b = Vec2(1, 2);
     var c = Vec2(1, 3);
-    println(a == b);
-    println(a == c);
-    println(a != c);
-    println(a != b);
-    println(Custom(1) == Custom(2));
+    println(a == b); // CHECK:true
+    println(a == c); // CHECK-NEXT:false
+    println(a != c); // CHECK-NEXT:true
+    println(a != b); // CHECK-NEXT:false
+    // CHECK-NEXT:explicit
+    println(Custom(1) == Custom(2)); // CHECK-NEXT:false
     var n1 = Nested(Vec2(1, 2), "hi");
     var n2 = Nested(Vec2(1, 2), "hi");
     var n3 = Nested(Vec2(1, 2), "bye");
-    println(n1 == n2);
-    println(n1 == n3);
-    println(Empty() == Empty());
-    println(Empty() != Empty());
-    println(Box<int>(1) == Box<int>(1));
-    println(Box<int>(1) == Box<int>(2));
-    println(getVec(1) == getVec(1));
-    println(calls);
-    println(eqBorrows(a, b));
+    println(n1 == n2); // CHECK-NEXT:true
+    println(n1 == n3); // CHECK-NEXT:false
+    println(Empty() == Empty()); // CHECK-NEXT:true
+    println(Empty() != Empty()); // CHECK-NEXT:false
+    println(Box<int>(1) == Box<int>(1)); // CHECK-NEXT:true
+    println(Box<int>(1) == Box<int>(2)); // CHECK-NEXT:false
+    println(getVec(1) == getVec(1)); // CHECK-NEXT:true
+    println(calls); // CHECK-NEXT:2
+    println(eqBorrows(a, b)); // CHECK-NEXT:true
     Vec2? o = Vec2(1, 2);
-    println(o == Vec2(1, 2));
+    println(o == Vec2(1, 2)); // CHECK-NEXT:true
 }

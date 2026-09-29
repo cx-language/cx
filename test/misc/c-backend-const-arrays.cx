@@ -1,10 +1,6 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:[2.5, 3.5, 4.5]
-// CHECK-NEXT:[0.875, 0.875, 0.875]
-// CHECK-NEXT:[1.5, 3, 4.5]
-// CHECK-NEXT:0.75
 
 // Array literals nested in expressions and const globals with non-trivial
 // initializers must not emit declarations inside C expressions.
@@ -21,8 +17,8 @@ float[3] shade(float[3] c) {
 }
 
 void main() {
-    println(blend(0.5, 0.5));
-    println(shade([0.5, 0.5, 0.5]));
-    println([2.0, 4.0, 6.0] * (quarter * 3.0));
-    println(tripleQuarter);
+    println(blend(0.5, 0.5)); // CHECK:[2.5, 3.5, 4.5]
+    println(shade([0.5, 0.5, 0.5])); // CHECK-NEXT:[0.875, 0.875, 0.875]
+    println([2.0, 4.0, 6.0] * (quarter * 3.0)); // CHECK-NEXT:[1.5, 3, 4.5]
+    println(tripleQuarter); // CHECK-NEXT:0.75
 }

@@ -1,16 +1,12 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:4
-// CHECK:50
-// CHECK:7
-// CHECK:4
 
 void main() {
     float[4] arr = [4.0, 5.0, 6.0, 7.0];
     var p = arr.data();
-    println(p[0]);
+    println(p[0]); // CHECK:4
     p[1] = 50.0;
-    println(arr[1]);
-    println(p[3]);
+    println(arr[1]); // CHECK:50
+    println(p[3]); // CHECK:7
     float[*] u = arr.data();
-    println(u.data()[0]);
+    println(u.data()[0]); // CHECK:4
 }

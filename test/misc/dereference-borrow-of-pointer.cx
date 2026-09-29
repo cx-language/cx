@@ -1,9 +1,5 @@
 // RUN: %cx run %s | %FileCheck %s
 // RUN: %cx run --backend=c %s | %FileCheck %s
-// CHECK: 41
-// CHECK-NEXT: 41
-// CHECK-NEXT: true
-// CHECK-NEXT: 42
 
 // Dereferencing a borrow of a pointer peels one level: `*p` is the pointer,
 // `**p` is the pointee.
@@ -30,9 +26,9 @@ void main() {
     var a = 41;
     var b = 42;
     int* p = &a;
-    println(readTwice(p));
-    println(readPointer(p));
-    println(addressOf(p) == &p);
+    println(readTwice(p)); // CHECK: 41
+    println(readPointer(p)); // CHECK-NEXT: 41
+    println(addressOf(p) == &p); // CHECK-NEXT: true
     reseat(p, &b);
-    println(*p);
+    println(*p); // CHECK-NEXT: 42
 }

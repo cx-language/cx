@@ -1,11 +1,9 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:3
-// CHECK-NEXT:6
 
 void foo(Slice<int> x) {
-    println(x.size());
-    println(x[0] + x[1] + x[2]);
+    println(x.size()); // CHECK:3
+    println(x[0] + x[1] + x[2]); // CHECK-NEXT:6
 }
 
 void main() {

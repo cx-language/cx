@@ -1,5 +1,4 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:1
 
 struct Wrapper<T> {
     T value;
@@ -11,5 +10,5 @@ Wrapper<int> Wrapper(int a) {
 
 void main() {
     var b = Wrapper(1);
-    println(b.value);
+    println(b.value); // CHECK:1
 }

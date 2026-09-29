@@ -1,19 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:0
-// CHECK-NEXT:2
-// CHECK-NEXT:4
-// CHECK-NEXT:6
-// CHECK-NEXT:6
-// CHECK-NEXT:8
-// CHECK-NEXT:8
-// CHECK-NEXT:10
-// CHECK-NEXT:2
-// CHECK-NEXT:12
-// CHECK-NEXT:2
-// CHECK-NEXT:14
-// CHECK-NEXT:14
-// CHECK-NEXT:16
 
 int deaths = 0;
 
@@ -45,38 +31,38 @@ void main() {
     {
         var arr = [C(i = 1), C(i = 2)];
         assert(arr.size() == 2);
-        println(deaths);
+        println(deaths); // CHECK:0
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:2
     {
         var arr = [C(i = 1), C(i = 2)];
         arr = [C(i = 3), C(i = 4)];
         assert(arr.size() == 2);
-        println(deaths);
+        println(deaths); // CHECK-NEXT:4
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:6
     {
         var w = WithArray(items = [C(i = 1), C(i = 2)]);
         assert(w.items.size() == 2);
-        println(deaths);
+        println(deaths); // CHECK-NEXT:6
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:8
     {
         var nested = [[C(i = 1)], [C(i = 2)]];
         assert(nested.size() == 2);
-        println(deaths);
+        println(deaths); // CHECK-NEXT:8
     }
-    println(deaths);
-    println(useSlice([C(i = 1), C(i = 2)]));
-    println(deaths);
-    println(takeArray([C(i = 1), C(i = 2)]));
-    println(deaths);
+    println(deaths); // CHECK-NEXT:10
+    println(useSlice([C(i = 1), C(i = 2)])); // CHECK-NEXT:2
+    println(deaths); // CHECK-NEXT:12
+    println(takeArray([C(i = 1), C(i = 2)])); // CHECK-NEXT:2
+    println(deaths); // CHECK-NEXT:14
     {
         var e = MaybeBufs.Some([C(i = 1), C(i = 2)]);
         if e == None {
             println("bad");
         }
-        println(deaths);
+        println(deaths); // CHECK-NEXT:14
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:16
 }

@@ -1,7 +1,5 @@
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:6
-// CHECK-NEXT:0
 
 struct S {
     float[3] arr;
@@ -21,8 +19,8 @@ float[3] maybeArray(bool b) {
 void main() {
     // Extracting an array-typed field needs a copy, C arrays don't assign.
     var x = makeS().arr;
-    println(x[0] + x[1] + x[2]);
+    println(x[0] + x[1] + x[2]); // CHECK:6
 
     // Returning undefined must compile (zeroed) rather than crash codegen.
-    println(maybeArray(false)[0]);
+    println(maybeArray(false)[0]); // CHECK-NEXT:0
 }

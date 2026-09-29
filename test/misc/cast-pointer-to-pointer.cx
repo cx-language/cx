@@ -1,6 +1,4 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:42
-// CHECK:ok
 
 import "stdlib.h";
 
@@ -10,12 +8,12 @@ void main() {
     *ip = 42;
     // Pointers reinterpret between any two pointee types without going through void*.
     uint* up = cast<uint*>(ip);
-    println(*up);
+    println(*up); // CHECK:42
     float* fp = cast<float*>(ip);
     var cp = cast<const uint8*>(p);
     var s = cast<const char*>(cp);
     _ = fp;
     _ = s;
-    println("ok");
+    println("ok"); // CHECK:ok
     free(p);
 }

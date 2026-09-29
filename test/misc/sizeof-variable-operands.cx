@@ -1,9 +1,4 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:true
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:true
 
 struct S {
     int x;
@@ -18,11 +13,11 @@ void checkParam(int p) {
 
 void main() {
     var x = 42;
-    println(sizeof(x) == sizeof(int));
-    println(sizeof(g) == sizeof(int));
+    println(sizeof(x) == sizeof(int)); // CHECK:true
+    println(sizeof(g) == sizeof(int)); // CHECK-NEXT:true
     var s = S(x = 1, y = 2);
-    println(sizeof(s) == sizeof(S));
+    println(sizeof(s) == sizeof(S)); // CHECK-NEXT:true
     var px = &x;
-    println(sizeof(px) == sizeof(int*));
-    checkParam(7);
+    println(sizeof(px) == sizeof(int*)); // CHECK-NEXT:true
+    checkParam(7); // CHECK-NEXT:true
 }

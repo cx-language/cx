@@ -1,12 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:working anon
-// CHECK-NEXT:anon closed
-// CHECK-NEXT:working wrapped
-// CHECK-NEXT:wrapped closed
-// CHECK-NEXT:first closed
-// CHECK-NEXT:end
-// CHECK-NEXT:second closed
 
 struct Logger {
     string prefix;
@@ -36,7 +29,14 @@ void withReassignment() {
 }
 
 void main() {
+    // CHECK:working anon
+    // CHECK-NEXT:anon closed
     withAnonymousStruct();
+    // CHECK-NEXT:working wrapped
+    // CHECK-NEXT:wrapped closed
     withWrapper();
+    // CHECK-NEXT:first closed
+    // CHECK-NEXT:end
+    // CHECK-NEXT:second closed
     withReassignment();
 }

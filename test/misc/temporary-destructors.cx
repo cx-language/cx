@@ -1,55 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:take
-// CHECK-NEXT:1
-// CHECK-NEXT:2
-// CHECK-NEXT:2
-// CHECK-NEXT:10
-// CHECK-NEXT:6
-// CHECK-NEXT:7
-// CHECK-NEXT:8
-// CHECK-NEXT:8
-// CHECK-NEXT:9
-// CHECK-NEXT:9
-// CHECK-NEXT:10
-// CHECK-NEXT:1
-// CHECK-NEXT:100
-// CHECK-NEXT:11
-// CHECK-NEXT:12
-// CHECK-NEXT:13
-// CHECK-NEXT:14
-// CHECK-NEXT:true
-// CHECK-NEXT:15
-// CHECK-NEXT:15
-// CHECK-NEXT:16
-// CHECK-NEXT:19
-// CHECK-NEXT:22
-// CHECK-NEXT:18
-// CHECK-NEXT:24
-// CHECK-NEXT:23
-// CHECK-NEXT:19
-// CHECK-NEXT:21
-// CHECK-NEXT:22
-// CHECK-NEXT:24
-// CHECK-NEXT:25
-// CHECK-NEXT:32
-// CHECK-NEXT:25
-// CHECK-NEXT:true
-// CHECK-NEXT:26
-// CHECK-NEXT:27
-// CHECK-NEXT:28
-// CHECK-NEXT:29
-// CHECK-NEXT:32
-// CHECK-NEXT:39
-// CHECK-NEXT:33
-// CHECK-NEXT:40
-// CHECK-NEXT:33
-// CHECK-NEXT:34
-// CHECK-NEXT:41
-// CHECK-NEXT:34
-// CHECK-NEXT:35
-// CHECK-NEXT:end
-// CHECK-NEXT:take
 
 int deaths = 0;
 
@@ -122,26 +72,26 @@ void main() {
     // Temporaries moved into a variable, argument, or return value are owned by
     // the consumer: nothing dies here.
     var t = make(1);
-    take(Wrap(c = C(i = 2)));
-    println(deaths);
+    take(Wrap(c = C(i = 2))); // CHECK:take
+    println(deaths); // CHECK-NEXT:1
 
     // A bare temporary dies at the end of its statement.
     C(i = 3);
-    println(deaths);
+    println(deaths); // CHECK-NEXT:2
 
     // Ternary and array-literal elements are moved, not destroyed.
     var b = true;
     var u = b ? C(i = 4) : C(i = 5);
     var arr = [C(i = 6)];
-    println(deaths);
-    println(u.i + arr[0].i);
+    println(deaths); // CHECK-NEXT:2
+    println(u.i + arr[0].i); // CHECK-NEXT:10
 
     // Loop conditions destroy their temporaries every iteration.
     var n = 3;
     while pred(C(i = 7)) && n > 0 {
         n = n - 1;
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:6
 
     // break and continue unwind temporaries created inside the loop body.
     while true {
@@ -149,7 +99,7 @@ void main() {
             break;
         }
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:7
     var m = 0;
     while m < 1 {
         m = m + 1;
@@ -157,30 +107,30 @@ void main() {
             continue;
         }
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:8
 
     // if and switch subjects live through their branches, then die.
     if C(i = 10).i > 0 {
-        println(deaths);
+        println(deaths); // CHECK-NEXT:8
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:9
     switch C(i = 11).i {
         case 11:
-            println(deaths);
+            println(deaths); // CHECK-NEXT:9
         default:
             println("no");
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:10
 
     // Returning abandons the if condition temporary too.
-    borrow(t);
-    println(early());
-    println(deaths);
+    borrow(t); // CHECK-NEXT:1
+    println(early()); // CHECK-NEXT:100
+    println(deaths); // CHECK-NEXT:11
 
     // Borrowed temporaries die after the call; explicit deinit runs exactly once.
-    borrow(C(i = 12));
+    borrow(C(i = 12)); // CHECK-NEXT:12
     C(i = 13).deinit();
-    println(deaths);
+    println(deaths); // CHECK-NEXT:13
 
     // Deferred and lambda-body temporaries die in their own scope.
     defer take(Wrap(c = C(i = 14)));
@@ -188,32 +138,32 @@ void main() {
         C(i = 15);
     };
     f();
-    println(deaths);
+    println(deaths); // CHECK-NEXT:14
 
     // Moving a member out of a temporary consumes the whole temporary.
-    println(pred(Wrap(c = C(i = 16)).c));
-    println(deaths);
+    println(pred(Wrap(c = C(i = 16)).c)); // CHECK-NEXT:true
+    println(deaths); // CHECK-NEXT:15
 
     // Short-circuit right sides destroy their temporaries only when they run.
     if false && C(i = 17).i > 0 {
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:15
     if true && C(i = 18).i > 0 {
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:16
 
     // Borrowed ternary arms live to statement end; untaken arms destroy nothing.
     var nb = false;
-    borrow(b ? C(i = 19) : C(i = 20));
-    borrow(nb ? C(i = 21) : C(i = 22));
-    println(deaths);
+    borrow(b ? C(i = 19) : C(i = 20)); // CHECK-NEXT:19
+    borrow(nb ? C(i = 21) : C(i = 22)); // CHECK-NEXT:22
+    println(deaths); // CHECK-NEXT:18
 
     // `??` defaults are guarded the same way.
     C? nopt = null;
     C? sopt = C(i = 23);
-    borrow(nopt ?? C(i = 24));
-    borrow(sopt ?? C(i = 25));
-    println(deaths);
+    borrow(nopt ?? C(i = 24)); // CHECK-NEXT:24
+    borrow(sopt ?? C(i = 25)); // CHECK-NEXT:23
+    println(deaths); // CHECK-NEXT:19
 
     // Break unwinds guarded temporaries; fallthrough still destroys them.
     var k = 0;
@@ -225,60 +175,61 @@ void main() {
             }
         }
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:21
 
     // Copyable types with owning fields move their temporaries whole.
     takeCopyable(W(c = C(i = 28)));
-    println(deaths);
+    println(deaths); // CHECK-NEXT:22
 
     // Discarded literals destroy their element temporaries.
     (y = C(i = 29));
     [C(i = 30)];
-    println(deaths);
+    println(deaths); // CHECK-NEXT:24
 
     // Dropped function and method results die at statement end; bound,
     // borrowed, passed, and returned ones are owned by their consumer.
     make(31);
-    println(deaths);
+    println(deaths); // CHECK-NEXT:25
     var c31 = make(32);
-    borrow(c31);
-    println(deaths);
-    println(pred(make(33)));
-    println(deaths);
+    borrow(c31); // CHECK-NEXT:32
+    println(deaths); // CHECK-NEXT:25
+    println(pred(make(33))); // CHECK-NEXT:true
+    println(deaths); // CHECK-NEXT:26
     var mm = M(i = 0);
     mm.get(34);
-    println(deaths);
+    println(deaths); // CHECK-NEXT:27
     var mk = (int x) => make(x);
     mk(35);
-    println(deaths);
+    println(deaths); // CHECK-NEXT:28
 
     // A dropped closure destroys what it captured.
     var c36 = make(36);
     (int x) => x + c36.i;
-    println(deaths);
+    println(deaths); // CHECK-NEXT:29
 
     // Dropped operator results die too; both operands were moved.
     make(37) + make(38);
-    println(deaths);
+    println(deaths); // CHECK-NEXT:32
 
     // A method call on a temporary destroys the receiver at statement end.
-    println(make(39).get());
-    println(deaths);
+    println(make(39).get()); // CHECK-NEXT:39
+    println(deaths); // CHECK-NEXT:33
 
     // A borrow of a temporary keeps the receiver alive until scope end.
     {
         int& r = make(40).getRef();
-        println(r);
-        println(deaths);
+        println(r); // CHECK-NEXT:40
+        println(deaths); // CHECK-NEXT:33
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:34
 
     // Same for subscript borrows, whose reference type sema erases.
     {
         int& s = make(41)[0];
-        println(s);
-        println(deaths);
+        println(s); // CHECK-NEXT:41
+        println(deaths); // CHECK-NEXT:34
     }
-    println(deaths);
-    println("end");
+    println(deaths); // CHECK-NEXT:35
+    println("end"); // CHECK-NEXT:end
+    // CHECK-NEXT:take
 }

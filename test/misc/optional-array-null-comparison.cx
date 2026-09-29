@@ -1,32 +1,19 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:true
-// CHECK-NEXT:false
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:false
-// CHECK-NEXT:6
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:false
 
 void main() {
     float[3]? n = null;
     float[3]? s = [1.0, 2.0, 3.0];
-    println(n == null);
-    println(n != null);
-    println(s == null);
-    println(s != null);
-    println(null == n);
-    println(null != s);
-    println(null == s);
-    println(null != n);
+    println(n == null); // CHECK:true
+    println(n != null); // CHECK-NEXT:false
+    println(s == null); // CHECK-NEXT:false
+    println(s != null); // CHECK-NEXT:true
+    println(null == n); // CHECK-NEXT:true
+    println(null != s); // CHECK-NEXT:true
+    println(null == s); // CHECK-NEXT:false
+    println(null != n); // CHECK-NEXT:false
     if s {
-        println(s[0] + s[1] + s[2]);
+        println(s[0] + s[1] + s[2]); // CHECK-NEXT:6
     }
 
     // Pointers compare by address, not element-wise.
@@ -34,9 +21,9 @@ void main() {
     float[3] b = [1.0, 2.0, 3.0];
     var p1 = &a;
     var p2 = &b;
-    println(p1 == p2);
-    println(p1 == p1);
+    println(p1 == p2); // CHECK-NEXT:false
+    println(p1 == p1); // CHECK-NEXT:true
     float[3]*? q = null;
-    println(q == null);
-    println(p1 == q);
+    println(q == null); // CHECK-NEXT:true
+    println(p1 == q); // CHECK-NEXT:false
 }

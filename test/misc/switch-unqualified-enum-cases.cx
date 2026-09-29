@@ -1,17 +1,4 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:red
-// CHECK-NEXT:green
-// CHECK-NEXT:blue
-// CHECK-NEXT:circle 2
-// CHECK-NEXT:rect 3 4
-// CHECK-NEXT:red
-// CHECK-NEXT:green
-// CHECK-NEXT:other
-// CHECK-NEXT:case
-// CHECK-NEXT:eq
-// CHECK-NEXT:eq
-// CHECK-NEXT:ne
-// CHECK-NEXT:ne
 
 enum Color {
     Red,
@@ -80,15 +67,19 @@ void shadowing() {
 }
 
 void main() {
-    plain(Color.Red);
-    plain(Color.Green);
-    plain(Color.Blue);
-    bound(Shape.Circle(radius = 2));
-    bound(Shape.Rect(width = 3, height = 4));
-    mixed(Color.Red);
-    mixed(Color.Green);
-    mixed(Color.Blue);
-    shadowing();
+    plain(Color.Red); // CHECK:red
+    plain(Color.Green); // CHECK-NEXT:green
+    plain(Color.Blue); // CHECK-NEXT:blue
+    bound(Shape.Circle(radius = 2)); // CHECK-NEXT:circle 2
+    bound(Shape.Rect(width = 3, height = 4)); // CHECK-NEXT:rect 3 4
+    mixed(Color.Red); // CHECK-NEXT:red
+    mixed(Color.Green); // CHECK-NEXT:green
+    mixed(Color.Blue); // CHECK-NEXT:other
+    shadowing(); // CHECK-NEXT:case
+    // CHECK-NEXT:eq
+    // CHECK-NEXT:eq
     equality(Shape.Circle(radius = 1));
+    // CHECK-NEXT:ne
+    // CHECK-NEXT:ne
     equality(Shape.Rect(width = 1, height = 2));
 }

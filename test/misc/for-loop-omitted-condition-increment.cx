@@ -1,25 +1,24 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:0
-// CHECK-NEXT:1
-// CHECK-NEXT:2
-// CHECK-NEXT:0
-// CHECK-NEXT:1
-// CHECK-NEXT:2
-// CHECK-NEXT:0
-// CHECK-NEXT:1
-// CHECK-NEXT:2
 
 void main() {
+    // CHECK:0
+    // CHECK-NEXT:1
+    // CHECK-NEXT:2
     for (var i = 0;; i++) {
         if (i >= 3) {
             break;
         }
         println(i);
     }
+    // CHECK-NEXT:0
+    // CHECK-NEXT:1
+    // CHECK-NEXT:2
     for (var j = 0; j < 3;) {
         println(j);
         j++;
     }
+    // CHECK-NEXT:0
+    // CHECK-NEXT:1
     for (var k = 0;;) {
         if (k >= 2) {
             break;
@@ -27,6 +26,7 @@ void main() {
         println(k);
         k++;
     }
+    // CHECK-NEXT:2
     for (var s = 0;; s++) {
         if (s < 2) {
             continue;

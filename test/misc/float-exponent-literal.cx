@@ -1,20 +1,13 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:true
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:true
 
 void main() {
-    println(1e10 == 10000000000.0);
-    println(1E10 == 10000000000.0);
-    println(1.0e10 == 10000000000.0);
-    println(1e-3 == 0.001);
-    println(2.5e+2 == 250.0);
-    println(1e0 == 1.0);
+    println(1e10 == 10000000000.0); // CHECK:true
+    println(1E10 == 10000000000.0); // CHECK-NEXT:true
+    println(1.0e10 == 10000000000.0); // CHECK-NEXT:true
+    println(1e-3 == 0.001); // CHECK-NEXT:true
+    println(2.5e+2 == 250.0); // CHECK-NEXT:true
+    println(1e0 == 1.0); // CHECK-NEXT:true
     float f = 1e10;
-    println(f == 10000000000.0);
+    println(f == 10000000000.0); // CHECK-NEXT:true
 }

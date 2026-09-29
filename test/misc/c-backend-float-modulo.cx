@@ -1,14 +1,10 @@
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:1.5
-// CHECK-NEXT:0.5
-// CHECK-NEXT:1.5
-// CHECK-NEXT:2
 
 // Float % and %% lower to fmod() in the C backend (C has no % on floats).
 void main() {
-    println(5.5 % 2.0);
-    println(-1.5 %% 2.0);
-    println(5.5 %% 2.0);
-    println(-7 %% 3);
+    println(5.5 % 2.0); // CHECK:1.5
+    println(-1.5 %% 2.0); // CHECK-NEXT:0.5
+    println(5.5 %% 2.0); // CHECK-NEXT:1.5
+    println(-7 %% 3); // CHECK-NEXT:2
 }

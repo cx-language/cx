@@ -1,19 +1,5 @@
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:89
-// CHECK-NEXT:16
-// CHECK-NEXT:10
-// CHECK-NEXT:20
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:0
-// CHECK-NEXT:100
-// CHECK-NEXT:200
-// CHECK-NEXT:300
-// CHECK-NEXT:120
-// CHECK-NEXT:50
-// CHECK-NEXT:false
-// CHECK-NEXT:true
 
 // Exercises control flow through both C code generation modes: the default
 // one using gotos and the goto-free dispatch mode (--c-dispatch) used by the
@@ -93,18 +79,18 @@ bool either(bool a, bool b, bool c) {
 }
 
 void main() {
-    println(fib(10));
-    println(sumOdd(10));
-    println(pick(5));
-    println(pick(-5));
-    println(true && false);
-    println(true || false);
-    println(!(5 > 3) ? 1 : 0);
-    println(classify(1));
-    println(classify(2));
-    println(classify(9));
-    println(factorial(5));
-    println(pick2(5, -5));
-    println(both(true, true, false));
-    println(either(false, false, true));
+    println(fib(10)); // CHECK:89
+    println(sumOdd(10)); // CHECK-NEXT:16
+    println(pick(5)); // CHECK-NEXT:10
+    println(pick(-5)); // CHECK-NEXT:20
+    println(true && false); // CHECK-NEXT:false
+    println(true || false); // CHECK-NEXT:true
+    println(!(5 > 3) ? 1 : 0); // CHECK-NEXT:0
+    println(classify(1)); // CHECK-NEXT:100
+    println(classify(2)); // CHECK-NEXT:200
+    println(classify(9)); // CHECK-NEXT:300
+    println(factorial(5)); // CHECK-NEXT:120
+    println(pick2(5, -5)); // CHECK-NEXT:50
+    println(both(true, true, false)); // CHECK-NEXT:false
+    println(either(false, false, true)); // CHECK-NEXT:true
 }

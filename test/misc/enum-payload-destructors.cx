@@ -1,9 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:1
-// CHECK-NEXT:1
-// CHECK-NEXT:2
-// CHECK-NEXT:2
 
 int deaths = 0;
 
@@ -26,7 +22,7 @@ void main() {
             println("bad");
         }
     }
-    println(deaths);
+    println(deaths); // CHECK:1
     {
         // Comparing against a payloadless case must not destroy anything.
         var r = R.Err;
@@ -34,13 +30,13 @@ void main() {
             println("bad");
         }
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:1
     {
         var r = R.Ok(C(i = 2));
         switch r {
-            case Ok value: println(value.i);
+            case Ok value: println(value.i); // CHECK-NEXT:2
             case Err: println("bad");
         }
     }
-    println(deaths);
+    println(deaths); // CHECK-NEXT:2
 }

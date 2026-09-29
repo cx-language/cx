@@ -1,7 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:99
-// CHECK-NEXT:8
 
 void fill(Slice<int> s) {
     s.data()[0] = 99;
@@ -19,8 +17,8 @@ int readThroughView(int*& p) {
 void main() {
     int[2] a = [8, 9];
     fillSlice(a);
-    println(a[0]);
+    println(a[0]); // CHECK:99
     int i = 8;
     int* p = &i;
-    println(readThroughView(p));
+    println(readThroughView(p)); // CHECK-NEXT:8
 }

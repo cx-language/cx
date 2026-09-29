@@ -1,7 +1,7 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:foo
 
 int main() {
+    // CHECK:foo
     putchar(102);
     putchar(111);
     putchar(111);

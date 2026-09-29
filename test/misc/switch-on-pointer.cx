@@ -1,14 +1,6 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:red
-// CHECK-NEXT:1
-// CHECK-NEXT:a
-// CHECK-NEXT:one
-// CHECK-NEXT:b
-// CHECK-NEXT:null
-// CHECK-NEXT:one
-// CHECK-NEXT:other
 
 enum Color {
     Red,
@@ -82,19 +74,19 @@ void quuz(int*? i) {
 
 void main() {
     Color c = Color.Red;
-    foo(&c);
+    foo(&c); // CHECK:red
     int i = 1;
-    bar(&i);
+    bar(&i); // CHECK-NEXT:1
     char ch = 'a';
-    baz(&ch);
+    baz(&ch); // CHECK-NEXT:a
     int*? o = &i;
-    qux(o);
+    qux(o); // CHECK-NEXT:one
     char ch2 = 'b';
     char*? oc = &ch2;
-    quux(oc);
-    quuz(null);
-    quuz(o);
+    quux(oc); // CHECK-NEXT:b
+    quuz(null); // CHECK-NEXT:null
+    quuz(o); // CHECK-NEXT:one
     int j = 2;
     int*? t = &j;
-    quuz(t);
+    quuz(t); // CHECK-NEXT:other
 }

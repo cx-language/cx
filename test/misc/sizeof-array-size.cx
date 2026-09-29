@@ -1,14 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:8
-// CHECK-NEXT:7
-// CHECK-NEXT:4
-// CHECK-NEXT:16
-// CHECK-NEXT:8
-// CHECK-NEXT:12
-// CHECK-NEXT:12
-// CHECK-NEXT:8
-// CHECK-NEXT:true
 
 struct Pair {
     int a;
@@ -36,25 +27,25 @@ int scratchSize<E>() {
 void main() {
     // Sizeof sizes fold with target layout on both backends.
     uint8[sizeof(Pair)] buf = undefined;
-    println(buf.size());
+    println(buf.size()); // CHECK:8
     buf[0] = 7;
-    println(buf[0]);
+    println(buf[0]); // CHECK-NEXT:7
 
     // Aliased scalars fold in sema like any constant size.
     uint8[sizeof(int)] tiny = undefined;
-    println(tiny.size());
+    println(tiny.size()); // CHECK-NEXT:4
 
     // Generic operands resolve per instantiation.
-    println(scratchSize<StringBuf>());
-    println(scratchSize<Pair>());
+    println(scratchSize<StringBuf>()); // CHECK-NEXT:16
+    println(scratchSize<Pair>()); // CHECK-NEXT:8
 
     // Struct fields, globals, and narrowed optionals work too.
     Holder h = undefined;
     h.buf[0] = 12;
-    println(h.buf.size());
-    println(h.buf[0]);
+    println(h.buf.size()); // CHECK-NEXT:12
+    println(h.buf[0]); // CHECK-NEXT:12
     g[0] = 3;
-    println(g.size());
+    println(g.size()); // CHECK-NEXT:8
     uint8[sizeof(Pair)]? o = null;
-    println(o == null);
+    println(o == null); // CHECK-NEXT:true
 }

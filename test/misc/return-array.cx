@@ -1,5 +1,4 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:Bar
 
 extern int puts(uint8* s);
 
@@ -14,5 +13,5 @@ uint8[4] foo() {
 
 void main() {
     var array = foo();
-    puts(&array[0]);
+    puts(&array[0]); // CHECK:Bar
 }

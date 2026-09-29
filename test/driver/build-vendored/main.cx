@@ -1,10 +1,9 @@
 // RUN: cd %S && %cx run 2>&1 | %FileCheck -match-full-lines -strict-whitespace %s
 
-// CHECK:greet helper
-// CHECK:hello from vendor
-
 import greet;
 
 void main() {
+    // CHECK:greet helper
+    // CHECK:hello from vendor
     greet();
 }

@@ -1,24 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:1
-// CHECK-NEXT:2
-// CHECK-NEXT:3
-// CHECK-NEXT:hello
-// CHECK-NEXT:42
-// CHECK-NEXT:null
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:3
-// CHECK-NEXT:false
-// CHECK-NEXT:4
-// CHECK-NEXT:-1.5
-// CHECK-NEXT:true
-// CHECK-NEXT:1
-// CHECK-NEXT:-1
-// CHECK-NEXT:0
-// CHECK-NEXT:5
-// CHECK-NEXT:1
-// CHECK-NEXT:1
 
 int[3] numbers = [1, 2, 3];
 string greeting = "hello";
@@ -45,23 +26,23 @@ int five = two + three;
 int[2] pair = [one, one];
 
 void main() {
-    println(numbers[0]);
-    println(numbers[1]);
-    println(numbers[2]);
-    println(greeting);
-    println(answer!);
-    println(nothing);
-    println(both);
-    println(either);
-    println(t);
-    println(b);
-    println(f);
-    println(neg);
-    println(less);
-    println(*ptr);
-    println(inverted);
-    println(negated);
-    println(five);
-    println(pair[0]);
-    println(pair[1]);
+    println(numbers[0]); // CHECK:1
+    println(numbers[1]); // CHECK-NEXT:2
+    println(numbers[2]); // CHECK-NEXT:3
+    println(greeting); // CHECK-NEXT:hello
+    println(answer!); // CHECK-NEXT:42
+    println(nothing); // CHECK-NEXT:null
+    println(both); // CHECK-NEXT:false
+    println(either); // CHECK-NEXT:true
+    println(t); // CHECK-NEXT:3
+    println(b); // CHECK-NEXT:false
+    println(f); // CHECK-NEXT:4
+    println(neg); // CHECK-NEXT:-1.5
+    println(less); // CHECK-NEXT:true
+    println(*ptr); // CHECK-NEXT:1
+    println(inverted); // CHECK-NEXT:-1
+    println(negated); // CHECK-NEXT:0
+    println(five); // CHECK-NEXT:5
+    println(pair[0]); // CHECK-NEXT:1
+    println(pair[1]); // CHECK-NEXT:1
 }

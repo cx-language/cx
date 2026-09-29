@@ -1,25 +1,5 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:2
-// CHECK-NEXT:true
-// CHECK-NEXT:4
-// CHECK-NEXT:explicit
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:false
-// CHECK-NEXT:true
-// CHECK-NEXT:true
-// CHECK-NEXT:false
 
 // Two nullables with the same wrapped type compare without unwrapping: null
 // equals null, and two non-null values compare their wrapped values with
@@ -52,28 +32,29 @@ void main() {
     Box? c = Box(2);
     Box? nil = null;
     Box? nil2 = null;
-    println(a == b);
-    println(a == c);
-    println(a != c);
-    println(a != b);
-    println(nil == nil2);
-    println(nil != nil2);
-    println(a == nil);
-    println(a != nil);
-    println(nil == a);
-    println(getBox(1) == getBox(1));
-    println(calls);
-    println(getBox(1) != getBox(2));
-    println(calls);
+    println(a == b); // CHECK:true
+    println(a == c); // CHECK-NEXT:false
+    println(a != c); // CHECK-NEXT:true
+    println(a != b); // CHECK-NEXT:false
+    println(nil == nil2); // CHECK-NEXT:true
+    println(nil != nil2); // CHECK-NEXT:false
+    println(a == nil); // CHECK-NEXT:false
+    println(a != nil); // CHECK-NEXT:true
+    println(nil == a); // CHECK-NEXT:false
+    println(getBox(1) == getBox(1)); // CHECK-NEXT:true
+    println(calls); // CHECK-NEXT:2
+    println(getBox(1) != getBox(2)); // CHECK-NEXT:true
+    println(calls); // CHECK-NEXT:4
     Custom? x = Custom(1);
     Custom? y = Custom(1);
-    println(x == y);
+    // CHECK-NEXT:explicit
+    println(x == y); // CHECK-NEXT:true
     int?? n1 = 1;
     int?? n2 = 1;
     int?? n3 = null;
-    println(n1 == n2);
-    println(n1 == n3);
-    println(n3 == n3);
-    println(n1 != n3);
-    println(n1 != n2);
+    println(n1 == n2); // CHECK-NEXT:true
+    println(n1 == n3); // CHECK-NEXT:false
+    println(n3 == n3); // CHECK-NEXT:true
+    println(n1 != n3); // CHECK-NEXT:true
+    println(n1 != n2); // CHECK-NEXT:false
 }

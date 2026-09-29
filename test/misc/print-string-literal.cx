@@ -1,16 +1,4 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// CHECK:foo
-// CHECK-NEXT:bar
-// CHECK-NEXT:baz
-// CHECK-NEXT:qux
-// CHECK-NEXT:foo
-// CHECK-NEXT:foo_opt
-// CHECK-NEXT:foo_array
-// CHECK-NEXT:foo_array_opt
-// CHECK-NEXT:foo_opt
-// CHECK-NEXT:hi
-// CHECK-NEXT:null
-// CHECK-NEXT:hi
 
 const char* foo() { return "foo"; }
 const char*? foo_opt() { return "foo_opt"; }
@@ -19,26 +7,27 @@ const char[*]? foo_array_opt() { return "foo_array_opt"; }
 string bar() { return "bar"; }
 
 void main() {
-    puts(foo());
-    println(bar());
-    puts("baz");
-    println("qux");
-    println(foo());
-    println(foo_opt());
-    println(foo_array());
-    println(foo_array_opt());
+    puts(foo()); // CHECK:foo
+    println(bar()); // CHECK-NEXT:bar
+    puts("baz"); // CHECK-NEXT:baz
+    println("qux"); // CHECK-NEXT:qux
+    println(foo()); // CHECK-NEXT:foo
+    println(foo_opt()); // CHECK-NEXT:foo_opt
+    println(foo_array()); // CHECK-NEXT:foo_array
+    println(foo_array_opt()); // CHECK-NEXT:foo_array_opt
+    // CHECK-NEXT:foo_opt
     print(foo_opt());
     print('\n');
     StringBuf sb = StringBuf(uninitializedSize = 3);
     sb[0] = 'h';
     sb[1] = 'i';
     sb[2] = char(0);
-    println(sb.data());
+    println(sb.data()); // CHECK-NEXT:hi
     char*? n = null;
-    println(n);
+    println(n); // CHECK-NEXT:null
     StringBuf sb2 = StringBuf(uninitializedSize = 3);
     sb2[0] = 'h';
     sb2[1] = 'i';
     sb2[2] = char(0);
-    println(sb2.cString());
+    println(sb2.cString()); // CHECK-NEXT:hi
 }
