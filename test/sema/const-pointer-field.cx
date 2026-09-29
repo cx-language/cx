@@ -1,0 +1,44 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct ConstPtrHolder {
+    const int[*] p;
+}
+
+struct ExplicitCtorHolder {
+    const int[*] p;
+    ExplicitCtorHolder(const int[*] p) {
+        this.p = p;
+    }
+}
+
+void ctorsAssignConstPtrField() {
+    // No error: assigning a const-pointer value to a const-pointer field.
+    var arr = [1, 2, 3];
+    var s = ConstPtrHolder(p = arr.data());
+    var t = ExplicitCtorHolder(p = arr.data());
+}
+
+void memberKeepsPointeeConst(ConstPtrHolder s) {
+    // CHECK: [[@LINE+1]]:16: error: cannot assign 'const int[*]' to 'int[*]'
+    int[*] q = s.p;
+}
+
+void mutateThroughConstPtrIsRejected(ConstPtrHolder s) {
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable array of type 'const int[*]'
+    s.p[0] = 42;
+}
+
+void constPtrFlowsToConstTarget(ConstPtrHolder s) {
+    // No error: pointee const is preserved, not dropped.
+    const int[*] r = s.p;
+}
+
+struct MutablePtrHolder {
+    int[*] p;
+}
+
+void mutableMemberStaysMutable(MutablePtrHolder s) {
+    // No error: mutable field, mutable member.
+    int[*] q = s.p;
+    s.p[0] = 42;
+}

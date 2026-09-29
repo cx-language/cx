@@ -130,7 +130,7 @@ struct Type {
     // Size in bytes for types with target-independent layout, null otherwise.
     std::optional<uint64_t> getSizeInBytes() const;
     bool isMutable() const { return mutability == Mutability::Mutable; }
-    Type withMutability(Mutability m) const { return Type(typeBase, m, location, aliasSpelling); }
+    Type withMutability(Mutability m) const;
     Type getPointerTo() const;
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeReference() const { return isReferenceType() ? getPointee() : *this; }
@@ -302,6 +302,20 @@ private:
 public:
     Type elementType;
 };
+
+inline Type Type::withMutability(Mutability m) const {
+    // Const array pointers live on the const-element base: a bare top-level
+    // flag would not survive the next withMutability(Mutable) (member access).
+    if (m == Mutability::Const && typeBase && getKind() == TypeKind::ArrayPointerType) {
+        Type element = llvm::cast<ArrayPointerType>(typeBase)->elementType;
+        if (element.isMutable()) {
+            Type canonical = ArrayPointerType::get(element.withMutability(Mutability::Const), location);
+            canonical.aliasSpelling = aliasSpelling;
+            return canonical;
+        }
+    }
+    return Type(typeBase, m, location, aliasSpelling);
+}
 
 struct AnonymousStructElement {
     AnonymousStructElement(llvm::StringRef name, Type type) : name(internString(name)), type(type) {}

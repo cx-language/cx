@@ -230,7 +230,8 @@ static bool spellingsEqual(Type a, Type b) {
         return true;
     }
     case TypeKind::ArrayPointerType:
-        return spellingsEqual(a.getElementType(), b.getElementType());
+        // Stored elements: getElementType() interns via withMutability, forbidden mid-scan.
+        return spellingsEqual(llvm::cast<ArrayPointerType>(a.typeBase)->elementType, llvm::cast<ArrayPointerType>(b.typeBase)->elementType);
     case TypeKind::AnonymousStructType: {
         auto elementsA = a.getAnonymousStructElements(), elementsB = b.getAnonymousStructElements();
         for (size_t i = 0; i < elementsA.size(); ++i) {
@@ -656,8 +657,11 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
         if (getName().empty()) return false;
         // TODO: Should probably compare the referenced decl instead of just the name.
         return other.isBasicType() && getName() == other.getName() && getGenericArgs() == other.getGenericArgs();
-    case TypeKind::ArrayPointerType:
-        return other.getKind() == TypeKind::ArrayPointerType && getElementType() == other.getElementType();
+    case TypeKind::ArrayPointerType: {
+        if (other.getKind() != TypeKind::ArrayPointerType) return false;
+        // Stored elements: the derived getElementType() form can't tell bases apart.
+        return llvm::cast<ArrayPointerType>(typeBase)->elementType == llvm::cast<ArrayPointerType>(other.typeBase)->elementType;
+    }
     case TypeKind::AnonymousStructType:
         return other.isAnonymousStructType() && getAnonymousStructElements() == other.getAnonymousStructElements();
     case TypeKind::FunctionType:
