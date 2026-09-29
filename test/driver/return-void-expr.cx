@@ -1,0 +1,25 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+// RUN: check_exit_status 0 %cx run -Werror --backend=c %s
+
+int calls = 0;
+
+void f() {
+    calls++;
+}
+
+// Returning a void expression from a void function evaluates it for its
+// side effects, like C++.
+void g(bool early) {
+    if early {
+        return f();
+    }
+    f();
+    return;
+}
+
+void main() {
+    g(true);
+    assert(calls == 1);
+    g(false);
+    assert(calls == 2);
+}

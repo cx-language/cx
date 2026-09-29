@@ -30,7 +30,9 @@ void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
 
     if (llvm::cast<FunctionDecl>(currentDecl)->isEntryPoint) emitLeakCheckIfNeeded();
 
-    if (stmt.value) {
+    // A void function has no value to return; a void-typed return value was
+    // already evaluated above for its side effects (`return f();`).
+    if (stmt.value && !insertBlock->parent->returnType->isVoid()) {
         createReturn(returnValue);
     } else {
         createReturn(llvm::cast<FunctionDecl>(currentDecl)->isEntryPoint ? createConstantInt(Type::getInt32(), 0) : nullptr);
