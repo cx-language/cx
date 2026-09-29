@@ -8,8 +8,9 @@
             simple C-like syntax, and type-safe constructs as efficient as hand-written C.
         </p>
         <div class="cta">
-            <a class="button primary" href="https://github.com/cx-language/cx" target="_blank">Source code</a>
+            <a class="button primary" href="#get-cx">Download</a>
             <a class="button" href="./language-overview">Language overview</a>
+            <a class="button" href="https://github.com/cx-language/cx" target="_blank">Source code</a>
         </div>
     </div>
     <div class="showcase window">
@@ -182,6 +183,56 @@ void mathWorks() {
             <h3><a href="https://github.com/cx-language/cx/tree/main/examples/boids" target="_blank">Boids</a></h3>
             <p>Flocking simulation: 1500 agents with separation, alignment, and cohesion over a uniform grid, colored by
                 speed. SDL3 for graphics, imported as a plain C header.</p>
+        </div>
+    </div>
+</section>
+
+<section class="part" id="get-cx">
+    <h2>Installing</h2>
+    <p class="sub">Prebuilt binaries for Linux (x64), macOS (Apple Silicon), and Windows (x64). To build from source, visit <a href="https://github.com/cx-language/cx" target="_blank">GitHub</a>.</p>
+    ##OSTABS##
+    <div class="os-pane" data-os="unix">
+        <div class="steps">
+            <div class="step">
+                <h3>Install</h3>
+                <pre class="snippet"><code>$ curl https://cx-language.github.io/cx/install.sh | bash</code></pre>
+                <p>Installs into <code>~/.cx</code>, adds itself to your <code>PATH</code>, and smoke-tests the result.</p>
+            </div>
+            <div class="step">
+                <h3>Write hello.cx</h3>
+                <pre class="snippet"><code>void main() {
+    println("Hello world");
+}</code></pre>
+            </div>
+            <div class="step">
+                <h3>Run it</h3>
+                <pre class="snippet"><code>$ export PATH="$HOME/.cx:$PATH"
+$ cx run hello.cx
+Hello world</code></pre>
+                <p>New shells get the <code>PATH</code> automatically; this shell needs one <code>export</code> first. Then <code>cx run</code> JIT-compiles and executes in one step. Point your editor at the bundled <code>cx-lsp</code> - see <a href="./lsp">Editor setup</a>.</p>
+            </div>
+        </div>
+    </div>
+    <div class="os-pane" data-os="windows" hidden>
+        <div class="steps">
+            <div class="step">
+                <h3>Download</h3>
+                <p>Download <a href="https://github.com/cx-language/cx/releases/latest/download/cx-windows-x64.zip">cx-windows-x64.zip</a> from the latest release and unpack it.</p>
+                <pre class="snippet"><code>&gt; Expand-Archive cx-windows-x64.zip
+&gt; cd cx-windows-x64</code></pre>
+            </div>
+            <div class="step">
+                <h3>Write hello.cx</h3>
+                <pre class="snippet"><code>void main() {
+    println("Hello world");
+}</code></pre>
+            </div>
+            <div class="step">
+                <h3>Run it</h3>
+                <pre class="snippet"><code>&gt; .\cx.exe run hello.cx
+Hello world</code></pre>
+                <p><code>cx run</code> builds and executes in one step. Point your editor at the bundled <code>cx-lsp.exe</code> - see <a href="./lsp">Editor setup</a>.</p>
+            </div>
         </div>
     </div>
 </section>

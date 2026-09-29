@@ -26,7 +26,9 @@ The [cx extension for VS Code](https://marketplace.visualstudio.com/items?itemNa
 
 ## Building from source
 
-Compiling cx requires a C++20 compiler, [CMake](https://cmake.org) 3.16 or newer,
+Prebuilt Linux, macOS, and Windows binaries are published on the [releases page](https://github.com/cx-language/cx/releases)
+(the fastest install on Linux/macOS is `curl https://cx-language.github.io/cx/install.sh | bash`).
+Otherwise, compiling cx requires a C++20 compiler, [CMake](https://cmake.org) 3.16 or newer,
 and [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 23.
 
 ### Linux
