@@ -159,7 +159,15 @@ async function scenario(
     check(name, tip.hidden, "tooltip hides");
     canvas.handlers.mousemove({ clientX: hoverX, clientY: 100 });
     canvas.handlers.click();
-    check(name, opened === "https://github.com/cx-language/cx/commit/" + sha(wantIndex), `click ${opened}`);
+    const wantUrl =
+        wantIndex === 0
+            ? "https://github.com/cx-language/cx/commit/" + sha(0)
+            : "https://github.com/cx-language/cx/compare/" + sha(wantIndex - 1) + "..." + sha(wantIndex);
+    check(name, opened === wantUrl, `click ${opened}`);
+    // The first point of a multi-record chart has no previous record.
+    canvas.handlers.mousemove({ clientX: 64, clientY: 100 });
+    canvas.handlers.click();
+    check(name, opened === "https://github.com/cx-language/cx/commit/" + sha(0), `first click ${opened}`);
     // Resize must repaint at new geometry, not stretch the old store.
     canvas.clientWidth = 400;
     globalThis.__resize();

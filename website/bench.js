@@ -4,6 +4,7 @@
     "use strict";
 
     var COMMIT_URL = "https://github.com/cx-language/cx/commit/";
+    var COMPARE_URL = "https://github.com/cx-language/cx/compare/";
     var COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#a855f7", "#06b6d4"];
     var PAD = { left: 64, right: 16, top: 12, bottom: 26 };
     var HEIGHT = 260;
@@ -191,7 +192,15 @@
             draw();
         });
         canvas.addEventListener("click", function () {
-            if (selected >= 0) window.open(COMMIT_URL + records[selected].sha, "_blank");
+            if (selected < 0) return;
+            // Consecutive data points can be many commits apart, so link the
+            // range, not the single commit. The first point has no previous
+            // record to compare against.
+            if (selected === 0) {
+                window.open(COMMIT_URL + records[0].sha, "_blank");
+            } else {
+                window.open(COMPARE_URL + records[selected - 1].sha + "..." + records[selected].sha, "_blank");
+            }
         });
 
         legend();
