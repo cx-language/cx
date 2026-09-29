@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from generate_std_docs import (
     STD_CATEGORIES,
     UNCATEGORIZED_PAGES,
+    category_members,
     category_page,
     category_slug,
     first_sentence,
@@ -384,7 +385,7 @@ class RootIndexTest(unittest.TestCase):
         cls.markdown = render_root_index(
             "Standard library reference",
             [
-                ("bool.cx", bool_types, {}, [], False),
+                ("primitive-types/bool.cx", bool_types, {}, [], False),
                 ("fixture.cx", types, functions, constants, False),
             ],
         )
@@ -438,15 +439,15 @@ class TocTest(unittest.TestCase):
             items,
             [
                 '                <li><a href="./std/future">future</a></li>',
-                '                <li><a href="./std/future/nested">future/nested</a></li>',
+                '                <li><a href="./std/future/nested">nested</a></li>',
             ],
         )
 
     def test_categories_render_nested_before_uncategorized(self):
         items = render_toc_items(
             [
-                ("List.cx", [], {}, [], False),
-                ("bool.cx", [], {}, [], False),
+                ("containers/List.cx", [], {}, [], False),
+                ("primitive-types/bool.cx", [], {}, [], False),
                 ("future.cx", [], {}, [], False),
             ]
         )
@@ -455,12 +456,12 @@ class TocTest(unittest.TestCase):
             [
                 '                <li><a href="./std/primitive-types">Primitive types</a>\n'
                 "                    <ul>\n"
-                '                        <li><a href="./std/bool">bool</a></li>\n'
+                '                        <li><a href="./std/primitive-types/bool">bool</a></li>\n'
                 "                    </ul>\n"
                 "                </li>",
                 '                <li><a href="./std/containers">Containers</a>\n'
                 "                    <ul>\n"
-                '                        <li><a href="./std/List">List</a></li>\n'
+                '                        <li><a href="./std/containers/List">List</a></li>\n'
                 "                    </ul>\n"
                 "                </li>",
                 '                <li><a href="./std/future">future</a></li>',
@@ -482,16 +483,16 @@ class StdlibTest(unittest.TestCase):
             sorted(self.by_path), sorted(p.relative_to(STD_DIR).as_posix() for p in STD_DIR.rglob("*.cx"))
         )
 
-    def test_os_files_included(self):
-        self.assertIn("os/posix.cx", self.by_path)
-        self.assertIn("os/windows.cx", self.by_path)
+    def test_system_files_included(self):
+        self.assertIn("system/posix.cx", self.by_path)
+        self.assertIn("system/windows.cx", self.by_path)
 
     def test_known_entries(self):
         # Smoke test: the real List.cx parses and renders. Only pin structure
         # derived from member names, which survives signature, prose, and line
         # number changes. Exact rendering is covered by the fixture tests above.
-        page = self.rendered["List.cx"]
-        base = "https://github.com/cx-language/cx/blob/main/std/List.cx"
+        page = self.rendered["containers/List.cx"]
+        base = "https://github.com/cx-language/cx/blob/main/std/containers/List.cx"
         for snippet in [
             f'# [List]({base}){{target="_blank"}}',
             "## [struct List\\<Element\\>]",
@@ -505,14 +506,14 @@ class StdlibTest(unittest.TestCase):
         self.assertIsNotNone(push_signature)
 
     def test_overloads_grouped(self):
-        stdio = self.rendered["stdio.cx"]
+        stdio = self.rendered["input-output/stdio.cx"]
         println_heading = re.findall(
-            r"## \[println\]\(https://github\.com/cx-language/cx/blob/main/std/stdio\.cx#L\d+\)"
+            r"## \[println\]\(https://github\.com/cx-language/cx/blob/main/std/input-output/stdio\.cx#L\d+\)"
             r'\{target="_blank"\} \{#fn-println\}',
             stdio,
         )
         self.assertEqual(len(println_heading), 1)
-        self.assertGreater(len(self.by_path["stdio.cx"][1]["println"].declarations), 1)
+        self.assertGreater(len(self.by_path["input-output/stdio.cx"][1]["println"].declarations), 1)
 
     def test_private_declarations_omitted(self):
         combined = "\n".join(self.rendered.values())
@@ -537,16 +538,18 @@ class StdlibTest(unittest.TestCase):
             ids = re.findall(r"\{#(.*?)\}", markdown)
             self.assertEqual(len(ids), len(set(ids)), relpath)
 
-    def test_categories_reference_known_files_once(self):
+    def test_categories_reference_known_folders_once(self):
         seen = set()
-        for label, paths in STD_CATEGORIES:
-            for path in paths:
-                self.assertIn(path, self.by_path, f"{label}: {path}")
+        for label, folder in STD_CATEGORIES:
+            self.assertTrue((STD_DIR / folder).is_dir(), f"{label}: {folder}")
+            members = category_members(self.by_path, folder)
+            self.assertTrue(members, f"{label}: {folder}")
+            for path in members:
                 self.assertNotIn(path, seen, f"{label}: {path}")
                 seen.add(path)
 
     def test_all_pages_categorized_or_allowlisted(self):
-        categorized = {path for _, paths in STD_CATEGORIES for path in paths}
+        categorized = {path for _, folder in STD_CATEGORIES for path in category_members(self.by_path, folder)}
         self.assertEqual(set(self.by_path) - categorized, set(UNCATEGORIZED_PAGES))
 
     def test_category_links_rendered(self):
@@ -577,7 +580,8 @@ class StagingTest(unittest.TestCase):
     def test_main_writes_index_pages_and_toc(self):
         with tempfile.TemporaryDirectory() as std_dir, tempfile.TemporaryDirectory() as output_dir:
             Path(std_dir, "fixture.cx").write_text(FIXTURE)
-            Path(std_dir, "bool.cx").write_text("struct bool {\n    bool value;\n}\n")
+            Path(std_dir, "primitive-types").mkdir()
+            Path(std_dir, "primitive-types", "bool.cx").write_text("struct bool {\n    bool value;\n}\n")
             self.assertEqual(main(["--std-dir", std_dir, "--output-dir", output_dir]), 0)
             out = Path(output_dir)
             index = (out / "std.md").read_text()
@@ -591,8 +595,8 @@ class StagingTest(unittest.TestCase):
         self.assertIn("## [struct Widget]", page)
         self.assertIn("# Primitive types", category)
         self.assertNotIn("Auto-generated from", category)
-        self.assertIn("## [bool](./std/bool)", category)
-        self.assertIn("[`bool`](./std/bool#type-bool)", category)
+        self.assertIn("## [bool](./std/primitive-types/bool)", category)
+        self.assertIn("[`bool`](./std/primitive-types/bool#type-bool)", category)
         self.assertNotIn("fixture", category)
         self.assertIn('<li><a href="./std/fixture">fixture</a></li>', toc)
         self.assertIn('<a href="./std/primitive-types">Primitive types</a>', toc)

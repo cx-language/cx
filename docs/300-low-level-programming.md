@@ -116,7 +116,7 @@ void main() {
 ```
 
 Individual functions can also be declared with `extern`, without importing a header.
-The standard library uses `extern` declarations in `std/libc.cx`
+The standard library uses `extern` declarations in `std/system/libc.cx`
 to give common C functions more precise cx types.
 Declare parameters and return types with the `c_` prefixed types
 (`c_int`, `c_uint`, `c_long`, `c_double`, and the rest: see

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate the website's standard library reference from the stdlib sources.
 
-Reads the public declarations and /// doc comments in std/*.cx and writes
-them as Markdown to a staging directory for the website build.
+Reads the public declarations and /// doc comments in the std/ subfolders
+and writes them as Markdown to a staging directory for the website build.
 Private declarations are omitted.
 Only single-line declarations are recognized; anything else is ignored.
 
@@ -237,7 +237,7 @@ def page_name(relpath):
 
 
 def display_name(relpath):
-    return relpath.removesuffix(".cx")
+    return relpath.rsplit("/", 1)[-1].removesuffix(".cx")
 
 
 def render_doc(doc, out):
@@ -434,8 +434,8 @@ def render_root_index(title, pages):
     ]
     by_path = {relpath: (types, functions, constants) for relpath, types, functions, constants, _ in pages}
     categorized = set()
-    for label, paths in STD_CATEGORIES:
-        members = [path for path in paths if path in by_path]
+    for label, folder in STD_CATEGORIES:
+        members = category_members(by_path, folder)
         if not members:
             continue
         categorized.update(members)
@@ -456,64 +456,34 @@ def render_root_index(title, pages):
 
 TOC_PLACEHOLDER = "<!--STD-PAGES-->"
 
-# Sidebar grouping of the stdlib pages. Files listed here render nested
-# under their category; anything else renders directly under the
-# Standard library entry in filename order.
+# Sidebar grouping of the stdlib pages, derived from the std/ subfolder
+# structure: each category lists the .cx files directly inside its folder,
+# rendered nested under the category. Order is the sidebar order. Anything
+# else renders directly under the Standard library entry in filename order.
 STD_CATEGORIES = [
-    ("Primitive types", ["bool.cx", "char.cx", "integers.cx", "floats.cx", "never.cx"]),
-    ("Strings", ["string.cx", "StringBuf.cx"]),
-    (
-        "Containers",
-        [
-            "Array.cx",
-            "Slice.cx",
-            "Box.cx",
-            "List.cx",
-            "Map.cx",
-            "Optional.cx",
-            "OrderedMap.cx",
-            "OrderedSet.cx",
-            "Queue.cx",
-            "Set.cx",
-            "SmallList.cx",
-            "CxxVector.cx",
-        ],
-    ),
-    (
-        "Ranges & iterators",
-        [
-            "Range.cx",
-            "ClosedRange.cx",
-            "Iterator.cx",
-            "ArrayIterator.cx",
-            "ByteIterator.cx",
-            "ChainIterator.cx",
-            "ClosedRangeIterator.cx",
-            "EnumeratedIterator.cx",
-            "FilterIterator.cx",
-            "LineIterator.cx",
-            "MappedIterator.cx",
-            "RangeIterator.cx",
-            "RepeatIterator.cx",
-            "StringIterator.cx",
-        ],
-    ),
-    (
-        "Interfaces",
-        ["Addable.cx", "Comparable.cx", "Copyable.cx", "Equatable.cx", "Hashable.cx", "Printable.cx"],
-    ),
-    ("Input/output", ["stdio.cx", "FileStream.cx"]),
-    ("Math & algorithms", ["math.cx", "algorithm.cx"]),
-    ("Memory", ["Arena.cx", "allocate.cx", "drop.cx", "take.cx"]),
-    ("Errors", ["error.cx", "Result.cx"]),
-    ("Filesystem & processes", ["fs.cx", "path.cx", "process.cx"]),
-    ("Serialization", ["json.cx"]),
-    ("System", ["libc.cx", "os/posix.cx", "os/windows.cx"]),
+    ("Primitive types", "primitive-types"),
+    ("Strings", "strings"),
+    ("Containers", "containers"),
+    ("Ranges & iterators", "ranges-iterators"),
+    ("Interfaces", "interfaces"),
+    ("Input/output", "input-output"),
+    ("Math & algorithms", "math-algorithms"),
+    ("Memory", "memory"),
+    ("Errors", "errors"),
+    ("Filesystem & processes", "filesystem-processes"),
+    ("Serialization", "serialization"),
+    ("System", "system"),
 ]
 
 
+def category_members(by_path, folder):
+    """Sorted relpaths of the .cx files directly inside a category folder."""
+    prefix = folder + "/"
+    return sorted(path for path in by_path if path.startswith(prefix) and "/" not in path[len(prefix):])
+
+
 # Pages deliberately left outside any category (rendered flat in the
-# sidebar). New stdlib files must either join a category above or be
+# sidebar). New stdlib files must either join a category folder above or be
 # listed here; the coverage test fails otherwise.
 UNCATEGORIZED_PAGES = []
 
@@ -531,10 +501,10 @@ def render_toc_items(pages):
         relpath: f'<li><a href="./{page_name(relpath)}">{display_name(relpath)}</a></li>'
         for relpath, *_ in pages
     }
-    categorized = {path for _, paths in STD_CATEGORIES for path in paths}
+    categorized = {path for _, folder in STD_CATEGORIES for path in category_members(entries, folder)}
     items = []
-    for label, paths in STD_CATEGORIES:
-        members = [entries[path] for path in paths if path in entries]
+    for label, folder in STD_CATEGORIES:
+        members = [entries[path] for path in category_members(entries, folder)]
         if not members:
             continue
         nested = "\n".join(f"                        {member}" for member in members)
@@ -564,8 +534,9 @@ def main(argv=None):
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "std.md").write_text(render_root_index("Standard library reference", pages))
-    for label, paths in STD_CATEGORIES:
-        members = [page for page in pages if page[0] in paths]
+    by_path = {page[0]: page for page in pages}
+    for label, folder in STD_CATEGORIES:
+        members = [by_path[path] for path in category_members(by_path, folder)]
         if members:
             category_path = output_dir / f"{category_page(label)}.md"
             category_path.parent.mkdir(parents=True, exist_ok=True)

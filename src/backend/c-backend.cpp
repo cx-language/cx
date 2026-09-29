@@ -158,7 +158,7 @@ llvm::StringRef getCFunctionName(const Function* function) {
     return function->mangledName;
 }
 
-// The stdlib's opaque 'struct FILE {}' (std/libc.cx) denotes C's FILE. Every use of the
+// The stdlib's opaque 'struct FILE {}' (std/system/libc.cx) denotes C's FILE. Every use of the
 // name resolves to it, so an empty struct named FILE can only be that type (a C-imported
 // FILE means the same thing). Emit the FILE typedef from stdio.h instead of a conflicting
 // mangled 'struct _M...' definition, which would warn on every conversion to and from real FILE*.
@@ -181,7 +181,7 @@ void CGenerator::codegenModule(const IRModule& module) {
         // as the Windows fdopen wrapper) needs a forward declaration, since
         // use-before-definition is an error in strict C dialects and MSVC.
         llvm::StringRef filePath = function->location.file;
-        bool fromCHeader = path::filename(path::parent_path(filePath)) == "std" && path::filename(filePath) == "libc.cx";
+        bool fromCHeader = path::filename(filePath) == "libc.cx";
         fromCHeader = fromCHeader || path::extension(filePath) == ".h";
         if (function->isExtern && fromCHeader) {
             continue;
