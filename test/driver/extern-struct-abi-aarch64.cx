@@ -7,6 +7,7 @@ struct Big {
 }
 
 extern "C" c_long sum_big(Big b);
+extern "C" void c_vsum(c_long tag, ...);
 
 // AArch64 C passes large structs as a pointer to a caller copy, while
 // byval lowers to the stack convention, so extern callees take a plain
@@ -21,6 +22,9 @@ extern c_long cx_sum_big(Big b) {
 // CHECK: %extern.copy = alloca %Big
 // CHECK: call void @llvm.memcpy.{{.*}}(ptr {{.*}} %extern.copy, ptr {{.*}}, i64 24, i1 false)
 // CHECK: call {{.*}} @sum_big(ptr %extern.copy)
+// Large variadic extras take the same pointer path (C passes those
+// indirectly too); passing the struct value would miscompile:
+// CHECK: call {{.*}} @c_vsum(i64 2, ptr %extern.copy{{[0-9]*}})
 
 int main() {
     Big b;
@@ -29,5 +33,6 @@ int main() {
     b.c = 3;
     println(sum_big(b));
     println(cx_sum_big(b));
+    c_vsum(2, b);
     return 0;
 }

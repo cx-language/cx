@@ -12,11 +12,16 @@ struct Big {
 extern Pair c_mkpair(c_int x);
 extern c_int c_sumpair(Pair p);
 extern Big c_big();
+extern void c_vprint(c_int level, ...);
 
 void main() {
     var p = c_mkpair(0);
     println(c_sumpair(p));
     println(c_big().a[0]);
+    float f = 1.5;
+    int8 n = -1;
+    char ch = 'A';
+    c_vprint(1, f, n, ch);
 }
 
 // Small integer-only aggregates cross the C ABI in integer registers, so
@@ -29,3 +34,9 @@ void main() {
 // CHECK: declare void @c_big(ptr sret(%Big) align 4)
 // CHECK: call i64 @c_mkpair(i32 0)
 // CHECK: call i32 @c_sumpair(i64 %coerce.chunk)
+// Variadic extras get C default argument promotions (float to double, small
+// integers to int); without the sign-aware small-int promotion LLVM would
+// zero-extend signed values:
+// CHECK: fpext float {{.*}} to double
+// CHECK: sext i8 {{.*}} to i32
+// CHECK: call void (i32, ...) @c_vprint(i32 1, double {{.*}}, i32 {{.*}}, i32 {{.*}})

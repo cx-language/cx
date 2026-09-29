@@ -3,7 +3,8 @@ int32 main() {
     float32* f = alloca float32
     store float32 4.19999981 to f
     float32 f.load = load f
-    c_int _0 = call printf(char* "%d %f", int32 -3, float32 f.load)
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    c_double _0 = cast f.load to c_double
+    c_int _1 = call printf(char* "%d %f", int32 -3, c_double _0)
+    void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

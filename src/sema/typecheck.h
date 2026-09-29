@@ -433,6 +433,8 @@ std::string copyableHint(Type type);
 bool satisfiesCopyable(Type type);
 // Rejects a variadic extra that cannot cross to an `extern "C++"` callee by value.
 void validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef callee);
+// Rejects a variadic extra that cannot cross to an `extern "C"` callee by value.
+void validateCVariadicExtra(Type type, const Expr& arg);
 // Single match (or C-header duplicates) across modules; throws on ambiguity. No scope lookup.
 Decl* findDeclInModules(llvm::StringRef name, Location location, llvm::ArrayRef<Module*> modules);
 

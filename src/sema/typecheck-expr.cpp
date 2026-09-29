@@ -3949,6 +3949,16 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& callee
     }
 }
 
+// C default argument promotions for one variadic extra: float to double,
+// small integers to int. Empty when no promotion applies. LLVM promotes
+// extras itself but cannot know signedness, so signed types would
+// zero-extend. Bools already cross correctly (0/1), so they are left alone.
+static Type variadicPromotionType(Type from) {
+    if (from.isFloat32() || from.isCFloat()) return Type::getCDouble();
+    if (from.isChar() || (from.isInteger() && from.getIntegerBitWidth() < 32)) return Type::getCInt();
+    return Type();
+}
+
 void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee,
                                               const Decl* calleeDecl) {
     bool allowOperatorBorrow = isOperatorCall(expr);
@@ -3993,12 +4003,25 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
     case ArgumentValidation::None: {
         // Variadic extras to C++ callees obey the by-value rules: the signature cannot name them.
         bool isCppCallee = false;
-        if (auto* functionDecl = llvm::dyn_cast_or_null<FunctionDecl>(calleeDecl)) isCppCallee = functionDecl->proto.cppLinkage;
+        bool isExternCallee = false;
+        if (auto* functionDecl = llvm::dyn_cast_or_null<FunctionDecl>(calleeDecl)) {
+            isCppCallee = functionDecl->proto.cppLinkage;
+            isExternCallee = functionDecl->isExtern();
+        }
         if (!isCppCallee && calleeDecl && calleeDecl->getModule()) isCppCallee = calleeDecl->getModule()->isCxxHeaderImport;
         for (size_t i = 0; i < expr.args.size(); ++i) {
             int paramIndex = argToParam[i];
             if (paramIndex == -1) {
-                if (isCppCallee) validateCppVariadicExtra(expr.args[i].value->type, *expr.args[i].value, callee);
+                if (isExternCallee) {
+                    if (Type to = variadicPromotionType(expr.args[i].value->type)) {
+                        if (Expr* promoted = convert(expr.args[i].value, to, true, true, allowOperatorBorrow)) expr.args[i].value = promoted;
+                    }
+                }
+                Type extraType = expr.args[i].value->type;
+                if (isCppCallee)
+                    validateCppVariadicExtra(extraType, *expr.args[i].value, callee);
+                else if (isExternCallee)
+                    validateCVariadicExtra(extraType, *expr.args[i].value);
                 continue;
             }
             // Committing can still fail when probing succeeded (e.g. a user conversion whose

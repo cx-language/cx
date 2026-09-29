@@ -7,6 +7,7 @@ struct Big {
 }
 
 extern "C" c_long sum_big(Big b);
+extern "C" void c_vsum(c_long tag, ...);
 
 // x86-64 keeps byval: it matches the stack-based SysV convention, unlike on
 // AArch64 where C passes a pointer to a caller copy (see
@@ -18,6 +19,9 @@ extern c_long cx_sum_big(Big b) {
 
 // CHECK: define {{.*}} @cx_sum_big(ptr byval(%Big) align 8 %b)
 // CHECK: call {{.*}} @sum_big(ptr byval(%Big) align 8 {{.*}})
+// Large variadic extras pass by value (correct on SysV, where they go on the
+// stack); only AArch64 needs the pointer path:
+// CHECK: call {{.*}} @c_vsum(i64 2, %Big {{.*}})
 
 int main() {
     Big b;
@@ -26,5 +30,6 @@ int main() {
     b.c = 3;
     println(sum_big(b));
     println(cx_sum_big(b));
+    c_vsum(2, b);
     return 0;
 }

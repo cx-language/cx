@@ -597,8 +597,9 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         if (auto* chunkType = getAbiCoercedType(argIRType)) {
             value = coerceAggregateToChunk(value, argIRType, chunkType);
         } else if (shouldPassIndirectly(argLLVMType)) {
-            if (isExtra) {
+            if (isExtra && !useExternIndirectPointer(callee)) {
                 // C varargs passes aggregates by value rather than by pointer.
+                // AArch64 C passes those indirectly too.
                 if (!llvm::isa<llvm::Constant>(value)) {
                     value = builder.CreateLoad(argLLVMType, value);
                 }

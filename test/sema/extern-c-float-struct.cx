@@ -84,3 +84,10 @@ void useAsValue() {
     var c = cpp_fn;
     var p = plain;
 }
+// Variadic extras obey the same rules, located at the argument:
+extern "C" void vtake(c_int level, ...);
+void callVarargs() {
+    // CHECK: [[@LINE+1]]:14: error: type 'Mixed' cannot be passed by value in extern "C" signatures because it is 8 bytes and contains floating-point members; pass it behind a pointer or reference instead
+    vtake(1, Mixed(1, 2.0));
+    vtake(2, BigF(1.0, 2.0, 3.0));
+}

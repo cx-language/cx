@@ -1,3 +1,4 @@
+// REQUIRES: x86_64
 // RUN: %cx -print-llvm %s | %FileCheck %s
 
 extern void sink(...);
@@ -15,4 +16,6 @@ void main() {
     sink(b);
 }
 
+// AArch64 passes the struct as a pointer instead; that shape is pinned in
+// driver/extern-struct-abi-aarch64.cx.
 // CHECK: call void (...) @sink(%Big %{{[0-9]+}})

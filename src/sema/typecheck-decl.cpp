@@ -1160,6 +1160,13 @@ static void validateExternCByValue(Type type, bool isReturn) {
                                   << " bytes and contains floating-point members; " << instead);
 }
 
+void cx::validateCVariadicExtra(Type type, const Expr& arg) {
+    // Fixed arrays decay to pointers in variadic calls; everything else obeys
+    // the signature rules, located at the argument instead of a parameter.
+    if (type.isFixedArray()) return;
+    validateExternCByValue(type.withLocation(getExprRangeStart(arg)), false);
+}
+
 // Computes the Itanium-mangled symbol for an `extern "C++"` declaration, used
 // both when importing a C++ function and when exporting a cx one to C++.
 static void mangleCppFunction(FunctionDecl& decl) {
