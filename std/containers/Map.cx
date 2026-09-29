@@ -184,7 +184,7 @@ struct Map<Key: Hashable, Value> {
 }
 
 /// Converts a hash into a bucket index.
-int convertHash(uint64 hash) {
+private int convertHash(uint64 hash) {
     return int(hash) & int.max;
 }
 

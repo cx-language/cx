@@ -5,7 +5,7 @@ never _CX1N4main1fEM3std5never0_() {
 }
 
 never _CX1N4main1gEM3std5never0_() {
-    never _0 = call _CX1N3std12abortWrapperEM3std5never0_()
+    never _0 = call _CX1N3std4todoEM3std5never0_()
     unreachable
 }
 

@@ -6,7 +6,7 @@ private extern c_int backtrace(void** array, c_int size);
 private extern char*[*]? backtrace_symbols(void** array, c_int size);
 
 /// Prints the current stack trace.
-void printStackTrace() {
+private void printStackTrace() {
     void*[128] callstack = undefined;
     var frames = backtrace(&callstack[0], callstack.size());
     var strings = backtrace_symbols(&callstack[0], frames);
@@ -28,13 +28,13 @@ void printStackTrace() {
 #else
 
 /// Prints the current stack trace.
-void printStackTrace() {
+private void printStackTrace() {
 }
 
 #endif
 
 /// Configures abort behavior. Does nothing on this platform.
-void setAbortBehavior() {
+private void setAbortBehavior() {
 }
 
 #endif

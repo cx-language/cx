@@ -2,10 +2,10 @@
 
 private extern c_uint _set_abort_behavior(c_uint flags, c_uint mask);
 /// Flag disabling the crash dialog.
-const _CALL_REPORTFAULT = 0x2;
+private const _CALL_REPORTFAULT = 0x2;
 
 /// Prints the current stack trace.
-void printStackTrace() {
+private void printStackTrace() {
     // TODO: Implement stack trace on Windows.
     // abort() doesn't flush stdio buffers on all paths; flush now so pending
     // output isn't lost.
@@ -17,7 +17,7 @@ void printStackTrace() {
 }
 
 /// Disables the crash dialog on abort.
-void setAbortBehavior() {
+private void setAbortBehavior() {
     // Disable "*.exe has stopped working" popup window which prevents testing the output of the program.
     _set_abort_behavior(0, _CALL_REPORTFAULT);
 }

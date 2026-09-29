@@ -1,5 +1,5 @@
 /// Prints a stack trace and aborts.
-never abortWrapper() {
+private never abortWrapper() {
     printStackTrace();
     setAbortBehavior();
     abort();

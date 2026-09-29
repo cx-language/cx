@@ -3,7 +3,7 @@
 
 never f() { f() }
 
-never g() { abortWrapper() }
+never g() { todo() }
 
 // CHECK: [[@LINE+1]]:7: warning: 'h' is declared to never return but it does return
 never h() {}
