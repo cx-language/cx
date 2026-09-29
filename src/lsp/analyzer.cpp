@@ -136,14 +136,15 @@ struct DiagnosticCollectorScope {
 /// the project root and compiles nested build.cx files as ordinary sources;
 /// dependencies are still resolved via import search paths, never fetched.
 /// When found, buildDir receives the directory holding that build.cx file.
-std::optional<std::string> findBuildRoot(const std::string& filePath, const std::string& parentDir, std::string* buildDir = nullptr) {
+std::optional<std::string> findBuildRoot(const std::string& filePath, const std::string& parentDir, std::string* buildDir = nullptr,
+                                         const std::vector<std::string>& defines = {}) {
     std::string dir = parentDir;
     std::optional<std::string> outermost;
     while (true) {
         std::string buildFilePath = dir + "/" + BuildConfig::buildFileName;
         bool isFile = false;
         if (!llvm::sys::fs::is_regular_file(buildFilePath, isFile) && isFile) {
-            BuildConfig config{std::string(dir)};
+            BuildConfig config{std::string(dir), defines};
             for (auto& root : config.getTargetRootDirectories()) {
                 // Either separator: file paths may use backslashes on Windows
                 // while roots built from URIs use forward slashes.
@@ -2127,6 +2128,15 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             baseOptions.defines.push_back("Debug");
             baseOptions.defines.push_back("LeakCheck");
         }
+        // Platform settings (defines, SDK sysroot/frameworks), matching the
+        // driver so C-header imports and #if platform branches resolve identically.
+        auto platformOptions = getPlatformCompileOptions();
+        for (auto& define : platformOptions.defines)
+            baseOptions.defines.push_back(define);
+        for (auto& cflag : platformOptions.cflags)
+            baseOptions.cflags.push_back(cflag);
+        for (auto& path : platformOptions.frameworkSearchPaths)
+            baseOptions.frameworkSearchPaths.push_back(path);
         // Shared search paths: workspace folders, then explicit extras, then the
         // distribution root (for std/) and system paths. The file's directory
         // joins the main module's options below, not dependencies'.
@@ -2179,14 +2189,14 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
                 }
             }
             if (!registerAsStd) {
-                moduleDir = findBuildRoot(filePath, parentDir, &buildDir);
+                moduleDir = findBuildRoot(filePath, parentDir, &buildDir, baseOptions.defines);
             }
         }
 
         // The project build file contributes its settings to the main module;
         // dependencies bring theirs through the closure. pkg-config is queried
         // like in the driver so C-header imports resolve the same headers.
-        BuildConfig projectConfig{buildDir.empty() ? std::string() : std::string(buildDir), query.defines};
+        BuildConfig projectConfig{buildDir.empty() ? std::string() : std::string(buildDir), baseOptions.defines};
         if (!buildDir.empty()) {
             for (auto& define : projectConfig.defines) {
                 options.defines.push_back(define);

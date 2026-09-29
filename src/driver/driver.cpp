@@ -1040,21 +1040,13 @@ static void addPlatformCompileOptions() {
         defines.push_back("Debug");
         if (!noLeakCheck) defines.push_back("LeakCheck");
     }
-#ifdef _WIN32
-    defines.push_back("Windows");
-#endif
-#ifdef __APPLE__
-    defines.push_back("macOS");
-    std::string sdkPath;
-    exec("xcrun --show-sdk-path", sdkPath);
-    sdkPath = llvm::StringRef(sdkPath).trim();
-    if (!sdkPath.empty()) {
-        cflags.push_back("-isysroot");
-        cflags.push_back(sdkPath);
-        // The Clang driver implicitly searches the SDK frameworks directories, so do the same to find framework headers when importing C headers.
-        frameworkSearchPaths.push_back(sdkPath + "/System/Library/Frameworks");
-    }
-#endif
+    auto platformOptions = getPlatformCompileOptions();
+    for (auto& define : platformOptions.defines)
+        defines.push_back(define);
+    for (auto& cflag : platformOptions.cflags)
+        cflags.push_back(cflag);
+    for (auto& path : platformOptions.frameworkSearchPaths)
+        frameworkSearchPaths.push_back(path);
 }
 
 int cx::driverMain(int argc, const char** argv) {

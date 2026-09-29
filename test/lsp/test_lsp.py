@@ -853,6 +853,60 @@ def test_pkg_config_headers(cx_lsp):
         )
 
 
+def test_platform_c_headers(cx_lsp):
+    # The server applies the same platform settings as the driver (platform
+    # defines, macOS SDK sysroot/frameworks), so C-header imports resolve
+    # identically - including transitive framework includes like
+    # glfw3.h -> <OpenGL/gl3.h> on macOS.
+    import shutil
+
+    if sys.platform == "win32" or shutil.which("pkg-config") is None:
+        print("SKIP query-platform-c-headers (needs pkg-config)")
+        return
+    if subprocess.run(["pkg-config", "--exists", "glfw3"]).returncode != 0:
+        print("SKIP query-platform-c-headers (needs glfw3)")
+        return
+
+    with tempfile.TemporaryDirectory() as root:
+        with open(os.path.join(root, "build.cx"), "w") as file:
+            file.write('var name = "gltest"\nvar pkgConfigDependencies = ["glfw3"]\nvar defines = ["GLFW_INCLUDE_GLCOREARB"]\n')
+        main_path = os.path.join(root, "main.cx")
+        main_content = 'import "GLFW/glfw3.h";\nvoid main() {\n    GLFWwindow*? window = null;\n    var shader = glCreateShader(0);\n    println(shader);\n    println(window == null);\n}\n'
+        with open(main_path, "w") as file:
+            file.write(main_content)
+        result = run_query(cx_lsp, base_query("check", main_path, main_content))
+        check(
+            "query-platform-c-headers",
+            result["diagnostics"] == [],
+            json.dumps(result["diagnostics"])[:500],
+        )
+
+    # Platform defines reach #if evaluation like in the driver.
+    with tempfile.TemporaryDirectory() as root:
+        main_path = os.path.join(root, "main.cx")
+        for platform, branch_taken in (("macOS", sys.platform == "darwin"), ("Windows", sys.platform == "win32")):
+            main_content = (
+                f"#if {platform}\nint platformCode = 1;\n#else\nint platformCode = nosuchidentifier;\n#endif\n"
+                "void main() {\n    println(platformCode);\n}\n"
+            )
+            with open(main_path, "w") as file:
+                file.write(main_content)
+            result = run_query(cx_lsp, base_query("check", main_path, main_content))
+            messages = [d["message"] for d in result["diagnostics"]]
+            if branch_taken:
+                check(
+                    f"query-platform-define-{platform}",
+                    result["diagnostics"] == [],
+                    json.dumps(messages)[:500],
+                )
+            else:
+                check(
+                    f"query-platform-define-{platform}",
+                    any("nosuchidentifier" in m for m in messages),
+                    json.dumps(messages)[:500],
+                )
+
+
 class LspSession:
     def __init__(self, command):
         self.proc = subprocess.Popen(
@@ -1273,6 +1327,7 @@ def main():
             list(executor.map(lambda group: run_group(*group), groups))
         test_fetched_dependency(args.cx_lsp)
         test_pkg_config_headers(args.cx_lsp)
+        test_platform_c_headers(args.cx_lsp)
 
     if FAILURES:
         print(f"\n{len(FAILURES)} failure(s): {', '.join(FAILURES)}")

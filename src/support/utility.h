@@ -227,6 +227,16 @@ const std::vector<std::string>& getCxxCompilerSearchPaths();
 /// True for C++ header names, recognized by extension (.hpp, .hh, .hxx, .h++, .H).
 bool isCxxHeader(llvm::StringRef headerName);
 
+/// Platform compile settings shared by the driver and the language server so
+/// both analyze the same code: platform defines plus, on macOS, the SDK
+/// sysroot and framework path the Clang driver would search implicitly.
+struct PlatformCompileOptions {
+    std::vector<std::string> defines;
+    std::vector<std::string> cflags;
+    std::vector<std::string> frameworkSearchPaths;
+};
+PlatformCompileOptions getPlatformCompileOptions();
+
 /// Locates the directory containing the `std/` standard-library directory.
 /// `CX_ROOT` wins, then directories relative to the running executable are
 /// probed (installed `<prefix>/bin` + `<prefix>/share/cx` layouts and in-tree

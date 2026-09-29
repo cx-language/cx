@@ -292,6 +292,26 @@ bool cx::isCxxHeader(llvm::StringRef headerName) {
         || headerName.ends_with(".H");
 }
 
+PlatformCompileOptions cx::getPlatformCompileOptions() {
+    PlatformCompileOptions result;
+#ifdef _WIN32
+    result.defines.push_back("Windows");
+#endif
+#ifdef __APPLE__
+    result.defines.push_back("macOS");
+    std::string sdkPath;
+    exec("xcrun --show-sdk-path", sdkPath);
+    sdkPath = llvm::StringRef(sdkPath).trim();
+    if (!sdkPath.empty()) {
+        result.cflags.push_back("-isysroot");
+        result.cflags.push_back(sdkPath);
+        // The Clang driver implicitly searches the SDK frameworks directories, so do the same to find framework headers when importing C headers.
+        result.frameworkSearchPaths.push_back(sdkPath + "/System/Library/Frameworks");
+    }
+#endif
+    return result;
+}
+
 const std::vector<std::string>& cx::getCxxCompilerSearchPaths() {
     static std::vector<std::string> paths;
     static bool queried = false;
