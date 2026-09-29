@@ -92,6 +92,9 @@ bool Type::needsDestruction() const {
     llvm::scope_exit pop([&] { destructionQueries.pop_back(); });
     if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(typeDecl)) return enumDecl->hasDestructiblePayload();
     for (auto& field : typeDecl->fields) {
+        // Manually-destroyed fields never count: a struct holding only those
+        // either declares a destructor (which runs) or is rejected in sema.
+        if (field.isManuallyDestroy) continue;
         if (field.type.needsDestruction()) return true;
     }
     return false;

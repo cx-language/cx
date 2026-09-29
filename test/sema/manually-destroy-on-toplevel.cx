@@ -1,0 +1,5 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:1: error: only struct fields can be marked as '@manuallyDestroy'
+@manuallyDestroy
+void foo() {}

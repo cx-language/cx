@@ -1,4 +1,7 @@
 // RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --release %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror --release --backend=c %s
 
 @test
 void testSmallListStaysInline() {
@@ -188,4 +191,79 @@ void testSmallListDestroysHeapElements() {
         assert(destroyedCount == 1);
     }
     assert(destroyedCount == 3);
+}
+
+@test
+void testSmallListDestroysOnlyLiveInlineElements() {
+    destroyedCount = 0;
+    if true {
+        var list = SmallList<Droppable, 4>();
+        list.push(Droppable());
+    }
+    assert(destroyedCount == 1);
+}
+
+@test
+void testSmallListDestructionAcrossMoves() {
+    destroyedCount = 0;
+    if true {
+        var list = SmallList<Droppable, 4>();
+        list.push(Droppable());
+        list.push(Droppable());
+        list.push(Droppable());
+        assert(destroyedCount == 0);
+
+        // removeAt moves the element out; the shift moves the rest.
+        var removed = list.removeAt(1);
+        assert(destroyedCount == 0);
+        removed.deinit();
+        assert(destroyedCount == 1);
+
+        // clear() destroys the rest; the list stays usable.
+        list.clear();
+        assert(destroyedCount == 3);
+        list.push(Droppable());
+        assert(destroyedCount == 3);
+
+        // Index overwrite destroys the old element.
+        list[0] = Droppable();
+        assert(destroyedCount == 4);
+    }
+    assert(destroyedCount == 5);
+
+    destroyedCount = 0;
+    if true {
+        var spilled = SmallList<Droppable, 1>();
+        spilled.push(Droppable());
+        spilled.push(Droppable());
+        spilled.push(Droppable());
+        assert(destroyedCount == 0);
+
+        var first = spilled.removeAt(0);
+        assert(destroyedCount == 0);
+        first.deinit();
+        assert(destroyedCount == 1);
+
+        // take() moves the list out, leaving an empty list behind.
+        var taken = spilled.take();
+        assert(spilled.empty() && taken.size() == 2);
+        assert(destroyedCount == 1);
+    }
+    assert(destroyedCount == 3);
+}
+
+@test
+void testSmallListDataIsContiguous() {
+    var list = SmallList<int32, 4>([1, 2, 3]);
+    var data = list.data();
+    assert(data[0] == 1 && data[1] == 2 && data[2] == 3);
+    data[1] = 20;
+    assert(list[1] == 20);
+
+    // Same through the heap spill path.
+    var spilled = SmallList<int32, 2>([1, 2, 3]);
+    var spilledData = spilled.data();
+    assert(spilledData[0] == 1 && spilledData[2] == 3);
+    spilledData[0] = 10;
+    assert(spilled[0] == 10);
 }

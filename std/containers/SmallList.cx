@@ -1,11 +1,12 @@
 /// A resizable array that stores up to `N` elements inline, spilling to the heap
 /// when it grows past that. Like `List`, but avoids heap allocation while small.
 struct SmallList<Element, int N> {
-    // Inline slots; the first `size` hold values while inline, the rest are null.
-    // Destroyed as a field, so vacated slots must be nulled, never deinited.
-    private Element?[N] inlineStorage;
+    // Inline slots; the first `size` hold live values while inline, the rest
+    // are uninitialized. Manually destroyed: the destructor deinits only the
+    // live prefix.
+    @manuallyDestroy private Element[N] inlineStorage;
     // Heap spill buffer, allocated once size exceeds N. Undefined while inline.
-    private Element?[*] heapBuffer;
+    private Element[*] heapBuffer;
     private int size;
     // Heap capacity, or 0 while using inline storage.
     private int heapCapacity;
@@ -13,9 +14,6 @@ struct SmallList<Element, int N> {
     /// Initializes an empty list.
     SmallList() {
         inlineStorage = undefined;
-        for i in 0..N {
-            clearSlot(&inlineStorage[i]);
-        }
         heapBuffer = undefined;
         size = 0;
         heapCapacity = 0;
@@ -39,11 +37,8 @@ struct SmallList<Element, int N> {
 
     /// Frees the elements and backing storage.
     ~SmallList() {
-        // Inline elements are destroyed as fields; only heap elements need explicit destruction.
+        clear();
         if onHeap() {
-            for element in this {
-                element.deinit();
-            }
             deallocate(heapBuffer);
         }
     }
@@ -85,7 +80,7 @@ struct SmallList<Element, int N> {
         if index < 0 || index >= size {
             indexOutOfBounds(index);
         }
-        return (*slot(index))!;
+        return *slot(index);
     }
 
     /// Sets the element at the given index.
@@ -93,7 +88,7 @@ struct SmallList<Element, int N> {
         if index < 0 || index >= size {
             indexOutOfBounds(index);
         }
-        *slot(index) = Optional.Some(element);
+        *slot(index) = element;
     }
 
     /// Returns a reference to the element at the given offset from the end.
@@ -127,12 +122,20 @@ struct SmallList<Element, int N> {
         return this[size - 1];
     }
 
+    /// Returns a pointer to the first element.
+    Element[*] data() {
+        if onHeap() {
+            return heapBuffer;
+        }
+        return inlineStorage.data();
+    }
+
     /// Adds the given element to the end of the list, returning a reference to it.
     Element& push(Element element) {
         if size == capacity() {
             grow();
         }
-        slot(size).init(Optional.Some(element));
+        slot(size).init(element);
         size++;
         return this[size - 1];
     }
@@ -141,9 +144,7 @@ struct SmallList<Element, int N> {
     Element pop() {
         if size == 0 abort("Called pop() on empty SmallList\n");
         size--;
-        var value = (*slot(size))!;
-        clearSlot(slot(size));
-        return value;
+        return moveOut(size);
     }
 
     /// Adds all elements from the given array to the end of the list.
@@ -160,17 +161,13 @@ struct SmallList<Element, int N> {
     void reserve(int minimumCapacity) {
         if minimumCapacity <= capacity() return;
 
-        var newBuffer = allocate<Element?>(count = uint64(minimumCapacity));
-        var wasOnHeap = onHeap();
+        var newBuffer = allocate<Element>(count = uint64(minimumCapacity));
 
         for i in 0..size {
             (&newBuffer[i]).init(*slot(i));
-            if !wasOnHeap {
-                clearSlot(&inlineStorage[i]);
-            }
         }
 
-        if wasOnHeap {
+        if onHeap() {
             deallocate(heapBuffer);
         }
 
@@ -211,15 +208,13 @@ struct SmallList<Element, int N> {
     void removeLast() {
         if size == 0 abort("Called removeLast() on empty SmallList\n");
         size--;
-        // Live slot: nulling destroys the payload. (clearSlot is only for
-        // already-moved-from slots, which must not be destroyed again.)
-        *slot(size) = null;
+        (*slot(size)).deinit();
     }
 
     /// Removes all elements from the list, keeping the allocated buffer.
     void clear() {
-        for i in 0..size {
-            *slot(i) = null;
+        for element in this {
+            element.deinit();
         }
         size = 0;
     }
@@ -235,14 +230,13 @@ struct SmallList<Element, int N> {
     }
 
     private Element unsafeRemoveAt(int index) {
-        var removed = (*slot(index))!;
+        var removed = moveOut(index);
 
         for i in (index + 1)..size {
             slot(i - 1).init(*slot(i));
         }
 
         size--;
-        clearSlot(slot(size));
         return removed;
     }
 
@@ -331,19 +325,21 @@ struct SmallList<Element, int N> {
     bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
 
     /// Returns a pointer to the slot holding the element at the given index.
-    private Element?* slot(int index) {
+    private Element* slot(int index) {
         if onHeap() {
             return &heapBuffer[index];
         }
         return &inlineStorage[index];
     }
 
-    /// Resets a slot to null without destroying its payload. Only for slots
-    /// holding no live value: fresh or never-written storage, or storage the
-    /// value was already moved out of. Null-assign live slots instead.
-    private void clearSlot(Element?* target) {
-        Element? empty = null;
-        target.init(empty);
+    /// Moves the element out of its slot. The caller must shrink the live
+    /// range past the slot, as the shift in removeAt does. (Explicit `*`
+    /// moves are rejected; only placement `init` may move out of a
+    /// dereference, so this copies bytes instead.)
+    private Element moveOut(int index) {
+        Element value = undefined;
+        memcpy(&value, slot(index), c_size_t(sizeof(Element)));
+        return value;
     }
 
     private bool onHeap() {

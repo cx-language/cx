@@ -347,7 +347,7 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<GenericArg>& genericAr
 FieldDecl FieldDecl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, TypeDecl& typeDecl) const {
     auto type = this->type.resolve(genericArgs);
     auto defaultValue = this->defaultValue ? this->defaultValue->instantiate(genericArgs) : nullptr;
-    return FieldDecl(type, getName(), defaultValue, typeDecl, accessLevel, location);
+    return FieldDecl(type, getName(), defaultValue, typeDecl, accessLevel, location, isManuallyDestroy);
 }
 
 std::vector<ParamDecl> cx::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<GenericArg>& genericArgs) {
@@ -459,6 +459,7 @@ DestructorDecl* TypeDecl::getOrSynthesizeDefaultDestructor() {
     }
 
     for (auto& field : fields) {
+        if (field.isManuallyDestroy) continue;
         if (field.type.needsDestruction()) {
             return synthesize();
         }
@@ -549,8 +550,9 @@ bool EnumDecl::hasDestructiblePayload() const {
     return false;
 }
 
-FieldDecl::FieldDecl(Type type, llvm::StringRef name, Expr* defaultValue, TypeDecl& parent, AccessLevel accessLevel, Location location)
-: VariableDecl(DeclKind::FieldDecl, accessLevel, &parent, type), name(internString(name)), defaultValue(defaultValue), location(location) {}
+FieldDecl::FieldDecl(Type type, llvm::StringRef name, Expr* defaultValue, TypeDecl& parent, AccessLevel accessLevel, Location location, bool isManuallyDestroy)
+: VariableDecl(DeclKind::FieldDecl, accessLevel, &parent, type), name(internString(name)), defaultValue(defaultValue), location(location),
+  isManuallyDestroy(isManuallyDestroy) {}
 
 Module* FieldDecl::getModule() const {
     return getParentDecl()->getModule();
@@ -598,8 +600,8 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
                                                typeDecl, typeDecl->getLocation());
         for (auto& field : typeDecl->fields) {
             auto defaultValue = field.defaultValue ? field.defaultValue->instantiate(genericArgs) : nullptr;
-            instantiation->addField(
-                FieldDecl(field.type.resolve(genericArgs), field.getName(), defaultValue, *instantiation, field.accessLevel, field.getLocation()));
+            instantiation->addField(FieldDecl(field.type.resolve(genericArgs), field.getName(), defaultValue, *instantiation, field.accessLevel,
+                                              field.getLocation(), field.isManuallyDestroy));
         }
 
         for (auto& method : typeDecl->methods) {

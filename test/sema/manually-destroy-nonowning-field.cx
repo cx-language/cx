@@ -1,0 +1,6 @@
+// RUN: %cx -typecheck %s
+
+struct S {
+    @manuallyDestroy
+    int x;
+}

@@ -203,6 +203,37 @@ void main() {
 }
 ```
 
+### Manual destruction
+
+Fields are destroyed automatically when the destructor finishes. Marking a
+field `@manuallyDestroy` opts it out: the destructor must then destroy the
+field explicitly with `.deinit()`. This is for storage that is only
+partially initialized, such as the inline buffer of `SmallList`, where
+destroying every slot would destroy uninitialized memory. A struct with a
+manually-destroyed owning field but no destructor is a compile error. The
+compiler does not check that the destructor actually destroys the field;
+forgetting `.deinit()` leaks it silently.
+
+```cs
+struct Buffer {
+    @manuallyDestroy
+    List<int> items;
+
+    Buffer() {
+        items = List([1, 2, 3]);
+    }
+
+    ~Buffer() {
+        items.deinit();
+    }
+}
+
+void main() {
+    var buffer = Buffer();
+    println(buffer.items.size()); // prints 3
+}
+```
+
 ## Copying and moving
 
 Struct and enum values are copied by default: passing one to a function,

@@ -1,0 +1,11 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+struct Foo<T> {
+    @manuallyDestroy
+    // CHECK: [[@LINE+1]]:7: error: struct 'Foo' has a '@manuallyDestroy' field but declares no destructor
+    T item;
+}
+
+void main() {
+    var f = Foo<List<int>>(List());
+}

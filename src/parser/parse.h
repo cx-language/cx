@@ -175,7 +175,7 @@ private:
     FunctionDecl* parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool cppLinkage = false);
     ConstructorDecl* parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit = false);
     DestructorDecl* parseDestructorDecl(TypeDecl& receiverTypeDecl);
-    FieldDecl parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location);
+    FieldDecl parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool isManuallyDestroy);
     TypeTemplate* parseTypeTemplate(AccessLevel accessLevel);
     Token parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams);
     TypeDecl* parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
@@ -187,7 +187,8 @@ private:
     void parseIfdef(std::vector<Decl*>* activeDecls);
     Decl* parseTopLevelDecl(bool addToSymbolTable);
     Decl* parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel, bool cppLinkage = false);
-    void parseTestAttribute(bool& isTest, Location& testLocation);
+    void parseAttributes(bool& isTest, Location& testLocation, bool& isManuallyDestroy, Location& manuallyDestroyLocation);
+    [[noreturn]] void errorMisplacedManuallyDestroy(Location location);
 
 private:
     Lexer lexer;
