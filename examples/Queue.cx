@@ -1,3 +1,5 @@
+import "string.h";
+
 /// First-in-first-out data structure
 struct Queue<T> {
     private Node<T>*? head;
@@ -95,4 +97,97 @@ struct Node<T> {
         this.value = val;
         this.next = null;
     }
+}
+
+@test
+void testPushPop() {
+    var q = Queue<int>();
+
+    assert(q.size() == 0);
+    q.push(23);
+    q.push(48);
+
+    assert(q.size() == 2);
+
+    var elem = q.pop();
+    assert(q.size() == 1);
+    assert(elem == 23);
+
+    elem = q.pop();
+
+    assert(elem == 48);
+    assert(q.size() == 0);
+}
+
+@test
+void testEmpty() {
+    var q = Queue<string>();
+
+    assert(q.empty());
+
+    q.push("foo");
+    assert(!q.empty());
+    q.push("bar");
+    assert(!q.empty());
+    q.pop();
+    q.pop();
+    assert(q.empty());
+}
+
+@test
+void testPushAfterPop() {
+    var q = Queue<string>();
+
+    q.push("foo");
+    assert(q.size() == 1);
+    q.pop();
+    assert(q.size() == 0);
+    q.push("bar");
+    assert(q.size() == 1);
+    q.pop();
+    assert(q.size() == 0);
+}
+
+@test
+void testFirst() {
+    var q = Queue<string>();
+
+    q.push("foo");
+    q.push("bar");
+    assert(q.first() == "foo");
+    assert(q.pop() == "foo");
+    assert(q.first() == "bar");
+    assert(q.pop() == "bar");
+}
+
+@test
+void testClear() {
+    var q = Queue<string>();
+    q.push("foo");
+    q.push("bar");
+
+    q.clear();
+    assert(q.size() == 0);
+    assert(q.empty());
+
+    q.push("baz");
+    assert(q.first() == "baz");
+    assert(q.pop() == "baz");
+    assert(q.empty());
+}
+
+@test
+void testOwningValues() {
+    var q = Queue<StringBuf>();
+    q.push(StringBuf("a"));
+    q.push(StringBuf("bb"));
+    assert(string(q.pop()) == "a");
+
+    q.push(StringBuf("ccc"));
+    q.clear();
+    assert(q.empty());
+
+    // Destroyed with entries still in it.
+    q.push(StringBuf("dd"));
+    assert(string(q.first()) == "dd");
 }

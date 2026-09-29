@@ -54,37 +54,7 @@ void testTakeMapAndSet() {
 }
 
 @test
-void testTakeOrderedContainers() {
-    var m = OrderedMap<string, int>();
-    m.insert("k", 2);
-    var taken = m.take();
-    assert(taken.size() == 1);
-    var key = "k";
-    assert(taken[key]! == 2);
-    assert(m.size() == 0);
-    m.insert("after", 3);
-    var keyAfter = "after";
-    assert(m[keyAfter]! == 3);
-
-    var s = OrderedSet<string>();
-    s.insert("x");
-    var takenSet = s.take();
-    assert(takenSet.size() == 1);
-    assert(s.size() == 0);
-    s.insert("y");
-    assert(s.size() == 1);
-}
-
-@test
-void testTakeQueueAndSmallList() {
-    var q = Queue<int>();
-    q.push(7);
-    var taken = q.take();
-    assert(taken.pop() == 7);
-    assert(q.size() == 0);
-    q.push(8);
-    assert(q.pop() == 8);
-
+void testTakeSmallList() {
     // Push past inline capacity so the take moves a heap spill.
     var l = SmallList<int, 4>();
     for i in 0..6 {

@@ -458,3 +458,277 @@ struct OrderedMapIterator<Key, Value>: Iterator<MapEntry<Key, Value>&> {
         current = map.higherNode(current!);
     }
 }
+
+@test
+void testInsertAndContains() {
+    var m = OrderedMap<int, int>();
+    assert(m.size() == 0);
+
+    m.insert(7, 8);
+    assert(m.contains(7));
+
+    for i in 0..10 {
+        m.insert(i, i);
+        assert(m.contains(i));
+    }
+
+    assert(!m.contains(42));
+    assert(m.size() == 10);
+}
+
+@test
+void testInsertAndDelete() {
+    var m = OrderedMap<int, int>();
+
+    m.insert(42, 39);
+    assert(m.contains(42));
+
+    m.remove(42);
+    assert(!m.contains(42));
+
+    for i in 42..79 {
+        m.insert(i, 42);
+    }
+
+    for i in 42..79 {
+        assert(m.contains(i));
+        m.remove(i);
+        assert(!m.contains(i));
+    }
+}
+
+@test
+void testInsertAndIndex() {
+    var m = OrderedMap<int, int>();
+
+    m.insert(42, 39);
+    assert(m[42]! == 39);
+
+    m.remove(42);
+
+    for i in 42..79 {
+        m.insert(i, i+7);
+    }
+
+    for i in 42..79 {
+        assert(m[i]! == i+7);
+
+        m.remove(i);
+        assert(m[i] == null);
+    }
+}
+
+@test
+void testLowerAndHigher() {
+    var m = OrderedMap<int, int>();
+
+    for i in 0..100 {
+        m.insert(i, i+6);
+    }
+
+    assert(m.lowerKey(0) == null);
+    for i in 1..100 {
+        assert(m.lowerKey(i)! == i-1);
+    }
+
+    assert(m.higherKey(99) == null);
+    for i in 0..99 {
+        assert(m.higherKey(i)! == i+1);
+    }
+}
+
+@test
+void testFirstLast() {
+    var m = OrderedMap<int, int>();
+
+    m.insert(63, 3);
+    m.insert(69, 3);
+    m.insert(1, 3);
+    m.insert(53, 3);
+
+    assert(m.first()! == 1);
+    assert(m.last()! == 69);
+}
+
+@test
+void testEmptyMapFunctions() {
+    var m = OrderedMap<int, int>();
+
+    assert(m.first() == null);
+    assert(m.last() == null);
+    assert(m.higherKey(48) == null);
+    assert(m.lowerKey(42) == null);
+}
+
+@test
+void testEmptyMapIterator() {
+    var map = OrderedMap<int, int>();
+    map.insert(1, 2);
+    map.insert(1, 2);
+    map.remove(1);
+
+    for _ in map {
+        assert(false);
+    }
+}
+
+@test
+void testIteratorOrder() {
+    var map = OrderedMap<int, int>();
+
+    for i in 0..100 {
+        map.insert(i, i-12);
+    }
+
+    var called = 0;
+    for e in map {
+        assert(e.key == called);
+        assert(e.value == called - 12);
+        called++;
+    }
+
+    assert(called == 100);
+
+    map = OrderedMap();
+
+    for i in 0..100 {
+        map.insert(99 - i, i-12);
+    }
+
+    called = 0;
+    // Still in correct order
+    for e in map {
+        assert(e.key == called);
+        assert(e.value == 99 - called - 12);
+        called++;
+    }
+
+    assert(called == 100);
+
+
+}
+
+@test
+void testUnitMapIterator() {
+    var map = OrderedMap<int, int>();
+    map.insert(1, 2);
+    map.insert(1, 4);
+
+    var count = 0;
+
+    for e in map {
+        count++;
+        assert(e.key == 1);
+    }
+
+    assert(count == 1);
+}
+
+@test
+void testRemoveReturnValue() {
+    var m = OrderedMap<int, int>();
+    m.insert(1, 10);
+    m.insert(2, 20);
+
+    assert(m.remove(1)! == 10);
+    assert(m.size() == 1);
+    assert(!m.contains(1));
+    assert(m[2]! == 20);
+
+    assert(m.remove(99) == null);
+    assert(m.size() == 1);
+}
+
+@test
+void testClear() {
+    var m = OrderedMap<int, int>();
+    m.insert(1, 10);
+    m.insert(2, 20);
+
+    m.clear();
+    assert(m.size() == 0);
+    assert(m.empty());
+    assert(!m.contains(1));
+
+    m.insert(3, 30);
+    assert(m[3]! == 30);
+}
+
+@test
+void testAllAnyNone() {
+    var m = OrderedMap<int, int>();
+    m.insert(1, 2);
+    m.insert(2, 4);
+
+    assert(m.all(e => e.value % 2 == 0));
+    assert(!m.all(e => e.value > 2));
+    assert(m.any(e => e.key == 2));
+    assert(!m.any(e => e.key == 9));
+    assert(m.none(e => e.value % 2 == 1));
+    assert(!m.none(e => e.value == 4));
+
+    assert(m.all((MapEntry<int, int>& e) => e.value > 0));
+    assert(m.any((MapEntry<int, int>& e) => e.key == 1));
+    assert(m.none((MapEntry<int, int>& e) => e.value < 0));
+}
+
+void churnHeap() {
+    var junk = List<StringBuf>();
+    for i in 0..500 {
+        var s = StringBuf();
+        s.append("zzzzzzzzzzzzzzzzzzzz");
+        s.append(i);
+        junk.push(s);
+    }
+}
+
+@test
+void testStringBufKeys() {
+    var m = OrderedMap<StringBuf, int>();
+
+    var words = ["delta", "albe", "charlie", "bravo"];
+    for i in 0..words.size() {
+        var word = StringBuf();
+        word.append(words[i]);
+        m.insert(word, i);
+    }
+
+    churnHeap();
+
+    assert(m.size() == 4);
+    for i in 0..words.size() {
+        var lookup = StringBuf();
+        lookup.append(words[i]);
+        assert(m.contains(lookup));
+        assert(m[lookup]! == i);
+    }
+
+    var previous = StringBuf();
+    for e in m {
+        assert(previous < e.key);
+        previous = StringBuf(string(e.key));
+    }
+}
+
+@test
+void testOwningEntriesClear() {
+    var m = OrderedMap<StringBuf, StringBuf>();
+
+    var k1 = StringBuf("one");
+    var v1 = StringBuf("1");
+    m.insert(k1, v1);
+    var k2 = StringBuf("two");
+    var v2 = StringBuf("2");
+    m.insert(k2, v2);
+    assert(m.size() == 2);
+
+    m.clear();
+    assert(m.size() == 0);
+    assert(m.empty());
+
+    // Destroyed with entries still in it.
+    var k3 = StringBuf("three");
+    var v3 = StringBuf("3");
+    m.insert(k3, v3);
+    assert(m.size() == 1);
+}

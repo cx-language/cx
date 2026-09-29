@@ -17,10 +17,6 @@ void testSum() {
     set.insert(4);
     set.insert(5);
     println(set.sum()); // CHECK-NEXT: 9
-    var ordered = OrderedSet<int>();
-    ordered.insert(4);
-    ordered.insert(5);
-    println(ordered.sum()); // CHECK-NEXT: 9
     var small = SmallList<int, 4>();
     small.push(1);
     small.push(2);

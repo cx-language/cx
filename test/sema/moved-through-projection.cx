@@ -124,7 +124,7 @@ void copyableProjectionLeavesBaseAlone(Wrap w) {
 void borrowAndCopyStillWork(Wrap w) {
     var r = &w.c;
     println(r.i);
-    var q = Queue<StringBuf>();
+    var q = List<StringBuf>();
     q.push(StringBuf("a"));
     var first = q.first();
     println(string(*first));

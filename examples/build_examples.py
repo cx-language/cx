@@ -18,6 +18,14 @@ args, cx_args = arg_parser.parse_known_args()
 
 os.chdir(os.path.dirname(__file__))
 ignored_dirs = ["inputs"]
+# Demoted containers carry their own @test suites; run them with `cx test`
+# instead of building them as standalone programs. OrderedSet is
+# implemented on top of OrderedMap, so its tests need both files.
+container_tests = {
+    "OrderedMap.cx": [],
+    "OrderedSet.cx": ["OrderedMap.cx"],
+    "Queue.cx": [],
+}
 # The embedding example's entry point is called from the C++ host, so unused
 # declarations are expected there; all other warnings are still errors.
 no_unused_dirs = ["embedding"]
@@ -118,7 +126,11 @@ def build_example(file):
     if is_windows and file in ["tree.cx", "asteroids", "opengl", "voxel-game", "c-interop", "cxx-interop", "fractal", "boids"]:
         return None
 
-    if file.endswith(".cx"):
+    if file in container_tests:
+        # The container's own @test suite runs with any containers it
+        # is implemented on top of.
+        exit_status = _call([args.cx, "test", *container_tests[file], file, "-Werror"] + cx_args)
+    elif file.endswith(".cx"):
         output = os.path.splitext(file)[0] + (".exe" if is_windows else "")
         exit_status = _call([args.cx, file, "-o", output, "-Werror"] + cx_args)
         try:

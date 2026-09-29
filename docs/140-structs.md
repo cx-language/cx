@@ -261,8 +261,7 @@ void main() {
 Values stored in a struct field or behind a pointer can be moved out
 explicitly with `take()`, which leaves a fresh default value behind so
 the container stays usable. The stdlib collections provide it
-(`List`, `Map`, `Set`, `OrderedMap`, `OrderedSet`, `Queue`,
-`SmallList`, `StringBuf`, `Optional`, `Arena`):
+(`List`, `Map`, `Set`, `SmallList`, `StringBuf`, `Optional`, `Arena`):
 
 ```cs
 struct Team {
