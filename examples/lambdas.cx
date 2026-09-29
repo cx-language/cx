@@ -1,0 +1,27 @@
+// How many bytes are still free in this arena?
+struct Block {
+    int offset;
+    int size;
+    bool isFree;
+}
+
+void main() {
+    var blocks = List([
+        Block(offset = 0, size = 64, isFree = false),
+        Block(offset = 64, size = 128, isFree = true),
+        Block(offset = 192, size = 32, isFree = true)
+    ]);
+    var spare = blocks.filter(b => b.isFree).toList();
+    var sizes = spare.map(b => b.size).toList();
+    println(sizes.sum(), " bytes free");
+    int threshold = 100;
+    // Stored lambdas capture locals by copy.
+    var isBig = (Block b) => b.isFree && b.size >= threshold;
+    int big = 0;
+    for b in blocks {
+        if isBig(b) {
+            big += b.size;
+        }
+    }
+    println(big, " bytes in big free blocks");
+}

@@ -1,0 +1,6 @@
+// Cleanup that runs no matter how the scope exits.
+void main() {
+    println("open");
+    defer println("close");
+    println("work");
+}

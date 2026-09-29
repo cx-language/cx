@@ -1,0 +1,11 @@
+// Fixed-size arrays double as vectors: element-wise math, dot
+// products, and swizzles. Element-wise ops compile to SIMD.
+void main() {
+    float[3] pos = [1.0, 2.0, 3.0];
+    float[3] vel = [0.5, 1.0, -1.0];
+    pos = pos + vel * 2.0; // [2, 4, 1], scalars broadcast
+    println(pos.dot(vel)); // prints 4
+    println(pos.xy); // prints [2, 4], swizzle read
+    pos.z = 9.0; // swizzle write
+    println(pos); // prints [2, 4, 9]
+}

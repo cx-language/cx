@@ -1,0 +1,14 @@
+// Parse and validate a server port number.
+int? parsePort(string text) {
+    int? port = text.parseInt();
+    if port == null || port < 1 || port > 65535 {
+        return null;
+    }
+    return port;
+}
+
+void main() {
+    println(parsePort("8080")); // 8080
+    println(parsePort("99999")); // null
+    println(parsePort("http")); // null
+}

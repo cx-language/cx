@@ -1,0 +1,30 @@
+// Build a texture; reject bogus dimensions as values.
+struct Image {
+    int width;
+    int height;
+}
+
+Result<Image, string> makeImage(int width, int height) {
+    if width <= 0 || height <= 0 {
+        return Err("dimensions must be positive");
+    }
+    if width > 8192 || height > 8192 {
+        return Err("dimensions must be 8192 or less");
+    }
+    return Ok(Image(width = width, height = height));
+}
+
+void main() {
+    switch makeImage(1920, 1080) {
+        case Ok img:
+            println(img.width, "x", img.height);
+        case Err e:
+            println("rejected: ", e);
+    }
+    switch makeImage(-4, 1080) {
+        case Ok img:
+            println(img.width, "x", img.height);
+        case Err e:
+            println("rejected: ", e);
+    }
+}

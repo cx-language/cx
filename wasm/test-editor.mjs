@@ -6,7 +6,6 @@ import vm from "node:vm";
 const repoRoot = new URL("..", import.meta.url).pathname;
 
 function makeElement(tag) {
-    const classes = [];
     const el = {
         tagName: tag,
         children: [],
@@ -14,10 +13,10 @@ function makeElement(tag) {
         className: "",
         classList: {
             add(...names) {
-                classes.push(...names);
+                el.className = (el.className + " " + names.join(" ")).trim();
             },
             contains(name) {
-                return classes.includes(name);
+                return (" " + el.className + " ").includes(" " + name + " ");
             },
         },
         _text: "",
@@ -25,21 +24,24 @@ function makeElement(tag) {
         blurred: false,
         parentNode: null,
         onclick: null,
-        onchange: null,
         onmessage: null,
         listeners: {},
         addEventListener(name, fn) {
             (el.listeners[name] = el.listeners[name] || []).push(fn);
         },
-        fireEvent(name) {
-            (el.listeners[name] || []).forEach((fn) => fn());
-        },
-        blur() {
-            el.blurred = true;
+        fireEvent(name, arg) {
+            (el.listeners[name] || []).forEach((fn) => fn(arg));
         },
         appendChild(child) {
             child.parentNode = el;
             el.children.push(child);
+            return child;
+        },
+        insertBefore(child, ref) {
+            child.parentNode = el;
+            const i = ref ? el.children.indexOf(ref) : -1;
+            if (i < 0) el.children.push(child);
+            else el.children.splice(i, 0, child);
             return child;
         },
         replaceChild(nw, old) {
@@ -49,19 +51,22 @@ function makeElement(tag) {
             old.parentNode = null;
             return old;
         },
+        replaceWith(nw) {
+            el.parentNode.replaceChild(nw, el);
+        },
         querySelector(sel) {
+            return el.querySelectorAll(sel)[0] || null;
+        },
+        querySelectorAll(sel) {
             const all = [];
             const walk = (node) => node.children.forEach((c) => {
                 all.push(c);
                 walk(c);
             });
             walk(el);
-            if (sel === "#example-selector") return all.find((c) => c.attrsId === "example-selector") || null;
-            if (sel === "select") return all.find((c) => c.tagName === "select") || null;
-            return null;
-        },
-        querySelectorAll() {
-            return [];
+            if (!sel) return [];
+            if (sel[0] === ".") return all.filter((c) => c.classList.contains(sel.slice(1)));
+            return all.filter((c) => c.tagName === sel);
         },
         closest(sel) {
             const dot = sel.indexOf(".");
@@ -70,7 +75,7 @@ function makeElement(tag) {
             let node = el;
             while (node) {
                 const tagOk = !tag || node.tagName === tag;
-                const clsOk = !cls || (" " + (node.className || "") + " ").includes(" " + cls + " ");
+                const clsOk = !cls || node.classList.contains(cls);
                 if (tagOk && clsOk) return node;
                 node = node.parentNode;
             }
@@ -80,8 +85,13 @@ function makeElement(tag) {
         click() {
             el.onclick && el.onclick();
         },
-        attrsId: null,
-        setAttribute() {},
+        attrs: {},
+        setAttribute(name, value) {
+            el.attrs[name] = value;
+        },
+        getAttribute(name) {
+            return el.attrs[name];
+        },
     };
     // innerText renders the element's children like the real DOM, so the
     // output container reads back the concatenated stdout/stderr divs.
@@ -146,6 +156,8 @@ const fakeEditor = {
     },
 };
 function FakeCodeMirror(wrapper, opts) {
+    cmCalls.push({ wrapper, opts });
+    if (typeof wrapper === "function") wrapper(makeElement("div"));
     editorValue = opts.value;
     editorOpts = opts;
     return fakeEditor;
@@ -155,21 +167,41 @@ FakeCodeMirror.registerHelper = (type, mode, fn) => {
 };
 FakeCodeMirror.Pos = (line, ch) => ({ line, ch });
 
-// Build: <div class="showcase"><label><select id=...>[2 options]</select></label><pre .../></div>
+// Build: <div class="showcase"><div class="example-tabs">[2 buttons]</div><div class="sourceCode"><pre .../></div></div>
+// (pandoc wraps showcase code in div.sourceCode in production; mirror that).
 const showcase = makeElement("div");
 showcase.className = "showcase";
-const label = makeElement("label");
-const selector = makeElement("select");
-selector.attrsId = "example-selector";
-selector.value = "0";
-label.appendChild(selector);
-showcase.appendChild(label);
+const tabs = makeElement("div");
+tabs.className = "example-tabs";
+function makeTab(index, selected) {
+    const button = makeElement("button");
+    button.setAttribute("data-tab", String(index));
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+    tabs.appendChild(button);
+    return button;
+}
+const tab0 = makeTab(0, true);
+const tab1 = makeTab(1, false);
+const moreLink = makeElement("a");
+moreLink.className = "more";
+tabs.appendChild(moreLink);
+showcase.appendChild(tabs);
+const codeWrap = makeElement("div");
+codeWrap.className = "sourceCode";
 const block = makeElement("pre");
 block.className = "sourceCode";
 block.innerText = "old code";
-showcase.appendChild(block);
+codeWrap.appendChild(block);
+showcase.appendChild(codeWrap);
+
+const snippetWrap = makeElement("div");
+const snippetPre = makeElement("pre");
+snippetPre.className = "snippet cx";
+snippetPre.innerText = "int? x = null;";
+snippetWrap.appendChild(snippetPre);
 
 const ranWith = [];
+const cmCalls = [];
 let scriptedResult = null;
 const checkedWith = [];
 let scriptedCheck = { stdout: "", stderr: "" };
@@ -213,7 +245,8 @@ const sandbox = {
         addEventListener(name, fn) {
             sandbox.document.listeners[name] = fn;
         },
-        querySelectorAll() {
+        querySelectorAll(sel) {
+            if (sel === "pre.snippet.cx") return [snippetPre];
             return [block];
         },
         createElement: makeElement,
@@ -233,28 +266,51 @@ sandbox.document.listeners["DOMContentLoaded"]();
 await new Promise((resolve) => setTimeout(resolve, 10));
 
 check(editorValue === "old code", "editor initialized from block content");
+check(
+    cmCalls.some((c) => typeof c.wrapper === "function" && c.opts.value === "int? x = null;" && c.opts.readOnly === "nocursor"),
+    "card snippets get a read-only highlight pass"
+);
+check(
+    snippetWrap.children.length === 1 && snippetWrap.children[0].classList.contains("snippet"),
+    "highlight pass swaps the pre for a snippet box"
+);
 
-selector.value = "1";
-selector.fireEvent("pointerdown");
-selector.onchange();
+const runButton = showcase.querySelector(".run");
+check(runButton && runButton.parentNode === codeWrap, "run button lands in the code wrapper");
+check(
+    codeWrap.querySelector(".output") !== null,
+    "run output lands in the code wrapper"
+);
+
+tabs.fireEvent("click", { target: tab1 });
 await new Promise((resolve) => setTimeout(resolve, 10));
 
-check(editorValue === "hello code", "switching selector sets editor content");
+check(editorValue === "hello code", "switching tabs sets editor content");
 check(ranWith.length === 1 && ranWith[0] === "hello code", "switching auto-runs the new example, got: " + JSON.stringify(ranWith));
-check(selector.blurred, "focus is dropped after pointer selection");
+check(
+    tab0.getAttribute("aria-pressed") === "false" && tab1.getAttribute("aria-pressed") === "true",
+    "aria-pressed follows the active tab"
+);
 
-selector.blurred = false;
-selector.value = "0";
-selector.fireEvent("keydown");
-selector.onchange();
+tabs.fireEvent("click", { target: tab0 });
 await new Promise((resolve) => setTimeout(resolve, 10));
 
-check(editorValue === "sieve code", "keyboard switching sets editor content");
-check(selector.blurred === false, "focus is kept after keyboard selection");
+check(editorValue === "sieve code", "switching back sets editor content");
+
+tabs.fireEvent("click", { target: tabs });
+await new Promise((resolve) => setTimeout(resolve, 10));
+
+check(editorValue === "sieve code", "clicking between tabs keeps editor content");
+check(ranWith.length === 2, "clicking between tabs runs nothing, got: " + JSON.stringify(ranWith));
+
+tabs.fireEvent("click", { target: moreLink });
+await new Promise((resolve) => setTimeout(resolve, 10));
+
+check(editorValue === "sieve code", "more link keeps editor content");
+check(ranWith.length === 2, "more link runs nothing, got: " + JSON.stringify(ranWith));
 
 // Diagnostic widgets: the compiler underlines ranges with '~' and points
 // with '^'; both must render without an "undefined" prefix.
-const runButton = showcase.children.find((c) => c.tagName === "button");
 async function runWithStderr(stderr) {
     widgets.length = 0;
     scriptedResult = { stdout: "", stderr };
@@ -543,6 +599,23 @@ check(fakeEditor.showHintCalls === 1, "typing other text does not open completio
 editorListeners.change(fakeEditor, { origin: "paste", text: ["."], removed: [""] });
 await flushTimers();
 check(fakeEditor.showHintCalls === 1, "pasting a dot does not open completions");
+
+// Tabs hide when the example data failed to load. Runs last: it re-runs the
+// script with CxExamples deleted, which rebinds the shared fakes.
+const showcase2 = makeElement("div");
+showcase2.className = "showcase";
+const tabs2 = makeElement("div");
+tabs2.className = "example-tabs";
+showcase2.appendChild(tabs2);
+const block2 = makeElement("pre");
+block2.className = "sourceCode";
+block2.innerText = "fallback code";
+showcase2.appendChild(block2);
+delete sandbox.CxExamples;
+sandbox.document.querySelectorAll = (sel) => (sel === "pre.snippet.cx" ? [] : [block2]);
+vm.runInContext(await readFile(repoRoot + "website/editor.js", "utf8"), sandbox);
+sandbox.document.listeners["DOMContentLoaded"]();
+check(tabs2.style.display === "none", "tabs hide without example data");
 
 if (failures > 0) {
     console.error(failures + " test(s) failed");

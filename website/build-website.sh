@@ -2,15 +2,20 @@
 # To develop the website locally, run this script after each change,
 # and serve the generated HTML from the build directory using e.g. 'npx serve'.
 # Or run with --serve to build and serve in one step:
-#   website/build-website.sh --serve [--port <port>]
+#   website/build-website.sh --serve [--port <port>] [--no-open]
 
 SERVE=0
 PORT=8000
+OPEN=1
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --serve)
             SERVE=1
+            shift
+            ;;
+        --no-open)
+            OPEN=0
             shift
             ;;
         --port|-p)
@@ -22,7 +27,7 @@ while [ $# -gt 0 ]; do
             shift
             ;;
         -h|--help)
-            echo "Usage: $(basename "$0") [--serve] [--port <port>]"
+            echo "Usage: $(basename "$0") [--serve] [--port <port>] [--no-open]"
             exit 0
             ;;
         *)
@@ -139,7 +144,8 @@ build_page() {
     # The showcase examples must all compile warning-free (enforced by
     # check_examples) and run in the browser playground: no C header imports,
     # no file system access, and no float-to-int conversions of unbounded
-    # values (those trap on WebAssembly). The first entry is shown by default.
+    # values (those trap on WebAssembly). Keep lines short: the hero window
+    # fits about 60 columns. The first entry is shown by default.
     python3 - "$outpath" <<'EOF' || return 1
 import glob
 import html
@@ -239,37 +245,46 @@ def next_page(outpath):
 if "##NEXTPAGE##" in template:
     template = template.replace("##NEXTPAGE##", next_page(outpath))
 
-showcase = [
-    ("Filter and map", "filter-map.cx"),
-    ("Tagged unions", "tagged-union.cx"),
-    ("Null safety", "null-safety.cx"),
-    ("String interpolation", "interpolation.cx"),
-    ("Result", "result.cx"),
-    ("Printable", "printable.cx"),
-    ("Structs", "structs.cx"),
-    ("Ranges and loops", "ranges.cx"),
-    ("Operator overloading", "operator-overloading.cx"),
-]
+showcase = ["nullables.cx", "errors.cx", "vectors.cx", "unions.cx", "lambdas.cx", "defer.cx"]
 
 if "##EXAMPLECODE##" in template:
-    with open("../examples/" + showcase[0][1]) as file:
+    with open("../examples/" + showcase[0]) as file:
         example = html.escape(file.read().rstrip("\n"), quote=False)
     template = template.replace("##EXAMPLECODE##", example)
 
-if "##EXAMPLESELECTOR##" in template:
-    options = "".join(
-        '<option value="{}"{}>{}</option>'.format(index, " selected" if index == 0 else "", html.escape(name))
-        for index, (name, _) in enumerate(showcase)
-    ) + '<option value="more">More examples...</option>'
-    template = template.replace(
-        "##EXAMPLESELECTOR##", '<select id="example-selector" aria-label="Example">' + options + "</select>"
+if "##EXAMPLETABS##" in template:
+    # Tab labels drop the .cx suffix ("Nullables", not "nullables.cx")
+    # so more tabs fit the row.
+    buttons = "".join(
+        '<button aria-pressed="{}" data-tab="{}">{}</button>'.format(
+            "true" if index == 0 else "false", index, html.escape(name[:-3].capitalize())
+        )
+        for index, name in enumerate(showcase)
     )
+    # Plain link, not a tab: editor.js only binds button elements, so this
+    # navigates without touching the playground.
+    more = '<a class="more" href="https://github.com/cx-language/cx/tree/main/examples" target="_blank">more...</a>'
+    template = template.replace(
+        "##EXAMPLETABS##", '<div class="example-tabs">' + buttons + more + "</div>"
+    )
+
+# Inline markup inside code does not survive pandoc either, so grey the
+# shell prompts here. Only line-leading "$ "/"&gt; " match, which cx code
+# never has (interpolation is always mid-line).
+template = re.sub(
+    r"<pre ([^>]*class=\"snippet[^\"]*\"[^>]*)><code>(.*?)</code></pre>",
+    lambda m: "<pre " + m.group(1) + "><code>" + re.sub(
+        r"(?m)^(\$|&gt;)(?= )", r'<span class="prompt">\1</span>', m.group(2)
+    ) + "</code></pre>",
+    template,
+    flags=re.S,
+)
 
 with open(path, "w") as file:
     file.write(template)
 
 if outpath == "index":
-    examples = [{"name": name, "code": open("../examples/" + filename).read().rstrip("\n")} for name, filename in showcase]
+    examples = [{"name": name, "code": open("../examples/" + name).read().rstrip("\n")} for name in showcase]
     for example in examples:
         assert "</script" not in example["code"], "example breaks out of playground-examples.js: " + example["name"]
     with open("build/playground-examples.js", "w") as file:
@@ -306,6 +321,12 @@ python3 generate_search_index.py || exit
 
 cp -r *.css *.js lib build
 
+# Gallery screenshots served from the site root.
+cp ../examples/fractal/screenshot.jpg build/fractal-screenshot.jpg
+cp ../examples/voxel-game/screenshot.jpg build/voxel-screenshot.jpg
+cp ../examples/raytracer/screenshot.png build/raytracer-screenshot.png
+cp ../examples/boids/screenshot.png build/boids-screenshot.png
+
 # Local graph preview: drop a bench-data.json next to this script (e.g. saved
 # from the deployed site) and it is served with the preview build.
 if [ -f "bench-data.json" ]; then
@@ -328,7 +349,7 @@ if [ "$SERVE" = 1 ]; then
     # The site links pages without the .html suffix (./introduction), which
     # GitHub Pages resolves to introduction.html. Plain 'http.server' does a
     # literal lookup and would 404, so resolve 'path' to 'path.html' as well.
-    exec python3 - "$PORT" <<'EOF'
+    exec python3 - "$PORT" "$OPEN" <<'EOF'
 import functools
 import http.server
 import os
@@ -347,7 +368,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return translated
 
 
-threading.Timer(1.0, lambda: webbrowser.open("http://localhost:" + sys.argv[1] + "/")).start()
+if sys.argv[2] == "1":
+    threading.Timer(1.0, lambda: webbrowser.open("http://localhost:" + sys.argv[1] + "/")).start()
 http.server.ThreadingHTTPServer(
     ("", int(sys.argv[1])),
     functools.partial(Handler, directory="build"),

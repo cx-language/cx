@@ -10,12 +10,12 @@ in-browser C toolchain, and the tests for the browser runtime.
 cx source --(1)--> C code --(2)--> WebAssembly module --(3)--> output
 ```
 
-1. **cx to cx* (`src/wasm/api.cpp` compiled with Emscripten to
+1. **cx to C** (`src/wasm/api.cpp` compiled with Emscripten to
    `cx-wasm.js`): runs the cx frontend (parsing, type checking, IR
    generation, C code generation) in the browser. Always generates goto-free
-   dispatch code (`CompileToCOptions::dispatchMode`), and rejects C header
-   imports (`CX_NO_C_IMPORT`). Diagnostics go to stdout/stderr, which the
-   worker captures.
+   dispatch code (with `CompileToCOptions::dispatchMode` enabled), and
+   rejects C header imports (`CX_NO_C_IMPORT`). Diagnostics go to
+   stdout/stderr, which the worker captures.
 2. **C to WebAssembly** (`cc.wasm` + `wcc-files.zip`, built from
    [xcc](https://github.com/tyfkda/xcc)): xcc's single-file C compiler,
    self-hosted to WebAssembly, compiles the generated C to a WASI module.

@@ -1,0 +1,14 @@
+// Greet by nickname when the user set one.
+string displayName(string name, string? nickname) {
+    return nickname ?? name;
+}
+
+void main() {
+    string? nick = null;
+    // string n = nick; // warning: value may be null
+    println("hi, ", displayName("ada", nick));
+    nick = "ace";
+    if nick {
+        println("hi, ", nick); // narrowed to string
+    }
+}

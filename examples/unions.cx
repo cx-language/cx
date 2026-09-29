@@ -1,0 +1,33 @@
+// Dispatch input events without vtables or visitors.
+enum Event {
+    Click(int x, int y),
+    Keypress(char key),
+    Quit,
+}
+
+void handle(Event event) {
+    switch event {
+        case Click:
+            println("fire at ", event.x, ", ", event.y);
+        case Keypress:
+            println("move ", event.key);
+        case Quit:
+            println("bye");
+    }
+}
+
+enum MouseButton {
+    Left,
+    Middle,
+    Right,
+}
+
+void main() {
+    handle(Click(10, 20));
+    handle(Keypress('q'));
+    handle(Quit);
+    // Fieldless enums iterate all cases; cases print by name.
+    for button in MouseButton {
+        println(button);
+    }
+}

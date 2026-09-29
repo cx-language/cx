@@ -1,4 +1,17 @@
 document.addEventListener("DOMContentLoaded", function() {
+    // Static snippets (front-page cards): highlight only, no Run button.
+    document.querySelectorAll("pre.snippet.cx").forEach(function(pre) {
+        CodeMirror(function(node) {
+            node.classList.add("snippet");
+            pre.replaceWith(node);
+        }, {
+            mode: "cx",
+            theme: "cx",
+            value: pre.innerText,
+            readOnly: "nocursor",
+            viewportMargin: Infinity
+        });
+    });
     const codeBlocks = document.querySelectorAll("pre.sourceCode:not(.sh):not(.noRun)");
     for (const block of codeBlocks) {
         initializeCodeEditor(block);
@@ -164,38 +177,23 @@ function initializeCodeEditor(block) {
     block.parentNode.replaceChild(editorWrapper, block);
 
     // The front-page showcase lets the reader switch between runnable
-    // examples. Its <select> is baked into index.html at website build time;
+    // examples. Its tab bar is baked into index.html at website build time;
     // the example sources come from playground-examples.js.
     var showcase = editorWrapper.closest("div.showcase");
     if (showcase) {
-        var selector = showcase.querySelector("#example-selector");
-        if (selector) {
+        var tabs = showcase.querySelector(".example-tabs");
+        if (tabs) {
             if (typeof CxExamples === "undefined") {
-                selector.style.display = "none";
+                tabs.style.display = "none";
             } else {
-                // Chromium keeps showing the focus ring on selects after mouse
-                // selection, so drop focus then. Keyboard selection keeps focus
-                // so arrow keys keep navigating the options.
-                var selectedWithPointer = false;
-                selector.addEventListener("pointerdown", function() {
-                    selectedWithPointer = true;
-                });
-                selector.addEventListener("keydown", function() {
-                    selectedWithPointer = false;
-                });
-                var currentExample = selector.value;
-                selector.onchange = function() {
-                    if (selectedWithPointer) {
-                        selectedWithPointer = false;
-                        selector.blur();
-                    }
-                    if (selector.value === "more") {
-                        window.open("https://github.com/cx-language/cx/tree/main/examples", "_blank");
-                        selector.value = currentExample;
-                        return;
-                    }
-                    currentExample = selector.value;
-                    var example = CxExamples[Number(selector.value)];
+                var buttons = tabs.querySelectorAll("button");
+                tabs.addEventListener("click", function(event) {
+                    var button = event.target.closest("button");
+                    if (!button) return;
+                    buttons.forEach(function(other) {
+                        other.setAttribute("aria-pressed", other === button ? "true" : "false");
+                    });
+                    var example = CxExamples[Number(button.getAttribute("data-tab"))];
                     if (!example) return;
                     editor.setValue(example.code);
                     removeErrors();
@@ -203,7 +201,7 @@ function initializeCodeEditor(block) {
                     stdout.innerText = "";
                     stderr.innerText = "";
                     runButton.click();
-                };
+                });
             }
         }
     }
