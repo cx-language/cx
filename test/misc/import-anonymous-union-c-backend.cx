@@ -1,0 +1,31 @@
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+import "inputs/anonymous-union-makers.h";
+
+void main() {
+    var w = makeWithAnon();
+    println(w.tag); // CHECK:1
+    println(w.unnamed_0.a); // CHECK:11
+    w.unnamed_0.a = 111;
+    println(w.unnamed_0.a); // CHECK:111
+    var o = makeOnlyUnion();
+    println(o.unnamed_0.b); // CHECK:22
+    var f = makeFlat();
+    println(f.x); // CHECK:1
+    println(f.y); // CHECK:2
+    println(f.z); // CHECK:3
+    var n = makeNestedFlat();
+    println(n.z); // CHECK:3
+    var t = makeTwoUnions();
+    println(t.unnamed_0.a); // CHECK:10
+    println(t.unnamed_1.b); // CHECK:20
+    var s = makeStructInUnion();
+    println(s.unnamed_0.x); // CHECK:1
+    println(s.unnamed_0.y); // CHECK:2
+    var c = makeNameClash();
+    println(c.unnamed_1.a); // CHECK:30
+    println(c.unnamed_0); // CHECK:40
+    println(makeWithAnon().unnamed_0.a); // CHECK:11
+    var u = w.unnamed_0;
+    println(u.a); // CHECK:111
+}

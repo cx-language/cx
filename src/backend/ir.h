@@ -103,6 +103,9 @@ struct IRArrayType : IRType {
 struct IRField {
     IRType* type;
     std::string name;
+    // True for generated members standing in for anonymous C structs/unions;
+    // the name exists only in cx, C promotes the members (see FieldDecl).
+    bool isAnonymous = false;
 };
 
 struct IRStructType : IRType {
@@ -119,6 +122,7 @@ struct IRStructType : IRType {
 struct IRUnionType : IRType {
     std::vector<IRField> fields;
     std::string name;
+    bool isImportedFromC = false;
 
     static bool classof(const IRType* t) { return t->kind == IRTypeKind::IRUnionType; }
 };

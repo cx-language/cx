@@ -316,6 +316,10 @@ struct FieldDecl : VariableDecl {
     // Set by '@manuallyDestroy': the destructor skips this field, so the
     // struct's own destructor must destroy it explicitly.
     bool isManuallyDestroy = false;
+    // Set by the C importer for generated members standing in for anonymous
+    // structs/unions. The name (unnamed_N) exists only on the cx side; C
+    // promotes the members, so the C backend addresses them directly.
+    bool isAnonymousMember = false;
 };
 
 enum class TypeTag { Struct, Interface, Union, Enum };
@@ -367,6 +371,10 @@ struct TypeDecl : Decl {
     Module& module;
     const TypeDecl* instantiatedFrom;
     bool packed = false;
+    // Set by the C importer for generated records standing in for anonymous
+    // structs/unions. No header defines them, so the C backend emits its own
+    // definitions instead of using the header's.
+    bool isAnonymousRecord = false;
     // Interface field/method materialization runs once: the main-module
     // prepass and lazy use both funnel through ensureInterfaces.
     bool interfacesEnsured = false;

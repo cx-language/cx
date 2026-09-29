@@ -295,6 +295,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                 auto nestedType = BasicType::get(nested->getName(), {}, Mutability::Mutable);
                 llvm::cast<BasicType>(nestedType.typeBase)->decl = nested;
                 typeDecl.fields.emplace_back(nestedType, fieldName, nullptr, typeDecl, AccessLevel::Default, Location());
+                typeDecl.fields.back().isAnonymousMember = true;
             } else {
                 for (auto* subfield : anonDef->fields()) {
                     if (!appendField(*subfield, typeDecl, hasAnonymousMember, usedNames, anonymousMemberCount)) return false;
@@ -335,6 +336,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                 name = anonymousName;
             }
             auto* typeDecl = makeAST<TypeDecl>(tag, name, std::vector<GenericArg>(), std::vector<Type>(), AccessLevel::Default, module, nullptr, Location());
+            typeDecl->isAnonymousRecord = !anonymousName.empty();
             it = importedRecordDecls.emplace(canonical, typeDecl).first;
 
             // Add to symbol table before type-checking so that type-checker finds the struct decl.

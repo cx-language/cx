@@ -78,15 +78,16 @@ IRType* cx::getIRType(Type astType) {
                 irType = tagType;
             }
         } else if (auto decl = astType.getDecl()) {
+            // C++ headers aren't included in generated code, so their records are emitted like cx records.
+            // Generated anonymous records are defined by no header either.
+            bool isImportedFromC = decl->module.isCHeaderImport && !decl->module.isCxxHeaderImport && !decl->isAnonymousRecord;
             if (decl->isUnion()) {
-                auto unionType = new IRUnionType{IRTypeKind::IRUnionType, {}, astType.getQualifiedTypeName()};
+                auto unionType = new IRUnionType{IRTypeKind::IRUnionType, {}, astType.getQualifiedTypeName(), isImportedFromC};
                 irTypes.emplace(astType.typeBase, unionType);
                 // Fields are set late to handle recursive types.
-                unionType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name.str()}; });
+                unionType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name.str(), f.isAnonymousMember}; });
                 return unionType;
             } else {
-                // C++ headers aren't included in generated code, so their structs are emitted like cx structs.
-                bool isImportedFromC = decl->module.isCHeaderImport && !decl->module.isCxxHeaderImport;
                 auto structType = new IRStructType{IRTypeKind::IRStructType,
                                                    {},
                                                    astType.getQualifiedTypeName(),
@@ -95,7 +96,7 @@ IRType* cx::getIRType(Type astType) {
                                                    isImportedFromC};
                 irTypes.emplace(astType.typeBase, structType);
                 // Fields are set late to handle recursive types.
-                structType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name.str()}; });
+                structType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name.str(), f.isAnonymousMember}; });
                 return structType;
             }
         } else {

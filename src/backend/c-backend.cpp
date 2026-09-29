@@ -139,6 +139,24 @@ std::string getFieldName(IRType* type, int index) {
     return fieldName.empty() ? "_" + std::to_string(index) : fieldName;
 }
 
+// A name addressing an anonymous C member in its header-defined parent: all
+// union members share an address, and an anonymous struct member starts at
+// its parent's address, so the first named one (recursing through nested
+// anonymous members) addresses the whole member. Empty when the member has
+// no named fields at any depth.
+std::string firstNamedMemberNameOrEmpty(IRType* type) {
+    for (auto& field : type->getFields()) {
+        if (!field.isAnonymous) return field.name;
+        if (std::string nested = firstNamedMemberNameOrEmpty(field.type); !nested.empty()) return nested;
+    }
+    return "";
+}
+
+std::string firstNamedMemberName(IRType* type) {
+    if (std::string name = firstNamedMemberNameOrEmpty(type); !name.empty()) return name;
+    abort("cannot address anonymous C member with no named fields");
+}
+
 // Extern C functions with asm labels mangle to '\01' + label for LLVM, where
 // the marker suppresses mangling. C has no such marker, so emit the declared
 // name instead; the declaration comes from the included header.
@@ -439,10 +457,23 @@ void CGenerator::codegenExtract(const ExtractInst* inst) {
         stream << ", sizeof(" << name << "));\n";
         return;
     }
+    IRType* aggregateType = inst->aggregate->getType();
+    auto* irStruct = llvm::dyn_cast<IRStructType>(aggregateType);
+    if (irStruct && irStruct->isImportedFromC && aggregateType->getFields()[inst->index].isAnonymous) {
+        // The generated member name exists only in cx; read the whole union
+        // through its first named member, which shares its address in C.
+        codegenTempDeclaration(inst, name);
+        stream << " = *(";
+        codegenTypeExpression(stream, inst->getType(), true);
+        stream << "*)&(";
+        codegenInst(inst->aggregate);
+        stream << "." << firstNamedMemberName(aggregateType->getFields()[inst->index].type) << ");\n";
+        return;
+    }
     codegenTempDeclaration(inst, name);
     stream << " = ";
     codegenInst(inst->aggregate);
-    stream << "." << getFieldName(inst->aggregate->getType(), inst->index);
+    stream << "." << getFieldName(aggregateType, inst->index);
     stream << ";\n";
 }
 
@@ -728,18 +759,32 @@ void CGenerator::codegenConstGEP(const ConstGEPInst* inst) {
     if (deadValues.contains(inst)) return;
     stream.indent(4);
     const std::string& name = getOrCreateTempName(inst, "_const_get_element_ptr");
+    IRType* pointee = inst->pointer->getType()->getPointee();
+    auto* irStruct = llvm::dyn_cast<IRStructType>(pointee);
+    bool anonymousHop = irStruct && irStruct->isImportedFromC && pointee->getFields()[inst->index].isAnonymous;
     if (dispatchMode) {
         // The declaration is hoisted (see codegenFunctionDispatch).
-        stream << name << " = &";
+        stream << name << " = ";
     } else {
         codegenTempDeclarationForType(inst->getType(), name);
-        stream << " = &";
+        stream << " = ";
     }
+    if (anonymousHop) {
+        // The generated member name exists only in cx; address the union
+        // through its first named member, which shares its address in C.
+        stream << "(";
+        codegenTypeExpression(stream, inst->getType(), true);
+        stream << ")&(";
+        codegenInst(inst->pointer);
+        stream << "->" << firstNamedMemberName(pointee->getFields()[inst->index].type) << ");\n";
+        return;
+    }
+    stream << "&";
     codegenInst(inst->pointer);
-    if (inst->pointer->getType()->getPointee()->isArrayType()) {
+    if (pointee->isArrayType()) {
         stream << "[0][" << inst->index << "];\n";
     } else {
-        stream << "->" << getFieldName(inst->pointer->getType()->getPointee(), inst->index) << ";\n";
+        stream << "->" << getFieldName(pointee, inst->index) << ";\n";
     }
 }
 
@@ -1707,7 +1752,9 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
     }
     case IRTypeKind::IRUnionType: {
         auto* unionType = llvm::cast<IRUnionType>(type);
-        if (alreadyEmittedTypes.contains(type)) break;
+        // Named unions are defined in C headers; enum payload unions and
+        // generated anonymous records need definitions here.
+        if (unionType->isImportedFromC || alreadyEmittedTypes.contains(type)) break;
         if (!forwardDeclaredTypes.contains(type)) {
             stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << ";\n";
             forwardDeclaredTypes.insert(type);
@@ -1720,17 +1767,14 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
             codegenTypeDefinition(stream, field.type, true);
         }
 
-        // Named unions are defined in C headers; only anonymous enum payload unions need definitions here.
-        if (unionType->name.empty()) {
-            stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << " {\n";
-            for (size_t i = 0; i < unionType->fields.size(); ++i) {
-                auto& field = unionType->fields[i];
-                stream.indent(4);
-                codegenDeclaration(stream, field.type, getFieldName(type, int(i)), !field.type->isPointerType());
-                stream << ";\n";
-            }
-            stream << "};\n";
+        stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << " {\n";
+        for (size_t i = 0; i < unionType->fields.size(); ++i) {
+            auto& field = unionType->fields[i];
+            stream.indent(4);
+            codegenDeclaration(stream, field.type, getFieldName(type, int(i)), !field.type->isPointerType());
+            stream << ";\n";
         }
+        stream << "};\n";
         break;
     }
     }
