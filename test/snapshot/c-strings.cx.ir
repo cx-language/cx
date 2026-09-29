@@ -2,22 +2,25 @@
 int32 main() {
     S* s = alloca S
     string* __str = alloca string
-    StringBuf* _0 = alloca StringBuf
+    string* _0 = alloca string
+    StringBuf* _1 = alloca StringBuf
     string* __str_0 = alloca string
     char[1024]* a = getelementptr s, 0
-    char* _1 = cast a to char*
-    void _2 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "x", int32 1)
+    char* _2 = cast a to char*
+    void _3 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "x", int32 1)
     string __str.load = load __str
-    bool _3 = call _CX1N3stdo2eqEM3std4bool2_PM3std4charM3std6string(char* _1, string __str.load)
+    bool _4 = call _CX1N3stdo2eqEM3std4bool2_PM3std4charM3std6string(char* _2, string __str.load)
     char[1024]* a_0 = getelementptr s, 0
-    char* _4 = cast a_0 to char*
-    void _5 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str_0, char* "x", int32 1)
+    char* _5 = cast a_0 to char*
+    void _6 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str_0, char* "x", int32 1)
     string __str.load_0 = load __str_0
-    void _6 = call _CX1N3stdM3std9StringBuf4initE4void1_M3std6string(StringBuf* _0, string __str.load_0)
-    bool _7 = call _CX1N3stdo2eqEM3std4bool2_AM3std4charRM3std9StringBuf(char* _4, StringBuf* _0)
-    bool _8 = !_7
-    void _9 = call _CX1N3stdM3std9StringBuf6deinitE4void0_(StringBuf* _0)
-    void _10 = call _CX1N3std10checkLeaksE4void0_()
+    void _7 = call _CX1N3stdM3std9StringBuf4initE4void1_M3std6string(StringBuf* _1, string __str.load_0)
+    void _8 = call _CX1N3stdM3std6string4initE4void1_RM3std9StringBuf(string* _0, StringBuf* _1)
+    string .load = load _0
+    bool _9 = call _CX1N3stdo2eqEM3std4bool2_PM3std4charM3std6string(char* _5, string .load)
+    bool _10 = !_9
+    void _11 = call _CX1N3stdM3std9StringBuf6deinitE4void0_(StringBuf* _1)
+    void _12 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 

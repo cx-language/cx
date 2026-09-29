@@ -376,31 +376,6 @@ StringBuf operator+(RepeatIterator<string> a, RepeatIterator<string> b) {
     return result;
 }
 
-/// Returns true if both strings are equal.
-bool operator==(StringBuf& a, StringBuf& b) {
-    return string(a) == string(b);
-}
-
-/// Returns true if both strings are equal.
-bool operator==(StringBuf& a, string b) {
-    return string(a) == b;
-}
-
-/// Returns true if both strings are equal.
-bool operator==(string a, StringBuf& b) {
-    return a == string(b);
-}
-
-/// Returns true if both strings are equal.
-bool operator==(char[*] a, StringBuf& b) {
-    return string(a) == string(b);
-}
-
-/// Returns true if both strings are equal.
-bool operator==(StringBuf& a, char[*] b) {
-    return string(a) == string(b);
-}
-
 /// A null-terminated copy of a string for passing to C functions.
 /// Strings shorter than 256 characters use inline storage, avoiding heap
 /// allocation; longer ones spill to a heap buffer.

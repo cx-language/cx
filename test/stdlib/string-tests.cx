@@ -285,3 +285,22 @@ void testStringBufClear() {
     b.push('x');
     assert(b == "x");
 }
+
+@test
+void testStringBufComparison() {
+    // Separately allocated but content-equal buffers compare by content
+    // (via the implicit StringBuf-to-string conversion), not memberwise.
+    var grown = StringBuf("he");
+    grown.append("llo");
+    assert(StringBuf("hello") == grown);
+    assert(!(StringBuf("hello") != grown));
+    assert(StringBuf("hello") != StringBuf("hell"));
+    assert(StringBuf("hello") == "hello");
+    assert("hello" == StringBuf("hello"));
+    assert(StringBuf("hello") != "other");
+    var chars = ['h', 'e', 'l', 'l', 'o', '\0'];
+    char[*] slice = chars;
+    assert(slice == StringBuf("hello"));
+    assert(StringBuf("hello") == slice);
+    assert(slice != StringBuf("other"));
+}
