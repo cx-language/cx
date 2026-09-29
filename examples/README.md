@@ -58,7 +58,7 @@ applications. Each subdirectory is a `cx build` project (see
   sprint, Space to jump, left/right click to break/place, 1–6 to select block,
   Esc to quit.
 
-  ![Voxel game screenshot](https://github.com/user-attachments/assets/c21f64b3-3d0c-44db-a742-b896d4ab1c17)
+  ![Voxel game screenshot](voxel-game/screenshot.jpg)
 - [`raytracer/`](raytracer/) — CPU ray tracer with zero dependencies:
   reflective spheres over a checkered ground plane, hard shadows,
   Blinn-Phong highlights, and a gradient sky, rendered to a PPM file.
@@ -79,7 +79,7 @@ applications. Each subdirectory is a `cx build` project (see
   [`fractal/README.md`](fractal/README.md) for building and
   `--screenshot`.
 
-  ![Mandelbrot close-up](fractal/screenshot.png)
+  ![Mandelbrot close-up](fractal/screenshot.jpg)
 - [`boids/`](boids/) — flocking simulation with 1500 boids
   (separation/alignment/cohesion over a uniform grid) in a toroidal
   world, rendered with SDL3 and colored by speed. See

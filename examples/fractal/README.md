@@ -1,6 +1,6 @@
 # fractal
 
-![Mandelbrot close-up](screenshot.png)
+![Mandelbrot close-up](screenshot.jpg)
 
 A GPU Mandelbrot explorer written in cx: the fragment shader
 evaluates the set per pixel with smooth iteration-count coloring,
@@ -27,9 +27,6 @@ Run from this directory so the program finds `assets/`:
 ```
 
 ## Testing
-
-A seahorse-valley close-up screenshot (binary PPM) with
-scene-framing checks:
 
 ```sh
 ./fractal --screenshot shot.ppm
