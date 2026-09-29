@@ -2,8 +2,23 @@
 
 ## Installing cx
 
-Compiling cx requires a C++20 compiler, [CMake](https://cmake.org) 3.16 or newer,
-and [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 23.
+The fastest install on Linux and macOS is the install script, which downloads
+the prebuilt binary for your platform into `~/.cx` and smoke-tests it:
+
+```sh
+curl https://cx-language.github.io/cx/install.sh | bash
+```
+
+It adds itself to your `PATH` (bash, zsh, and fish), so new shells pick it up
+automatically; in the current shell, run the `export` it prints first.
+Prebuilt binaries cover Linux (x64), macOS (Apple Silicon), and Windows (x64).
+The Windows archive and manual downloads for all platforms are on the
+[releases page](https://github.com/cx-language/cx/releases); each archive also
+contains the [`cx-lsp` language server](./lsp) and the standard library.
+
+To build from source instead (required on Intel Macs and other platforms
+without a prebuilt binary), you need a C++20 compiler, [CMake](https://cmake.org)
+3.16 or newer, and [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 23.
 
 On Ubuntu/Debian, install the prerequisites with:
 

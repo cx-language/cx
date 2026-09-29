@@ -268,6 +268,17 @@ if "##EXAMPLETABS##" in template:
         "##EXAMPLETABS##", '<div class="example-tabs">' + buttons + more + "</div>"
     )
 
+# Button elements do not survive the pandoc round-trip (only their text
+# does), so the install tabs are injected here, after rendering.
+if "##OSTABS##" in template:
+    template = template.replace(
+        "##OSTABS##",
+        '<div class="os-tabs">'
+        '<button aria-pressed="true" data-os="unix">Linux and macOS</button>'
+        '<button aria-pressed="false" data-os="windows">Windows</button>'
+        "</div>",
+    )
+
 # Inline markup inside code does not survive pandoc either, so grey the
 # shell prompts here. Only line-leading "$ "/"&gt; " match, which cx code
 # never has (interpolation is always mid-line).
@@ -320,6 +331,9 @@ done
 python3 generate_search_index.py || exit
 
 cp -r *.css *.js lib build
+
+# Installer served at /install.sh so the install command stays short.
+cp ../install.sh build/
 
 # Gallery screenshots served from the site root.
 cp ../examples/fractal/screenshot.jpg build/fractal-screenshot.jpg
