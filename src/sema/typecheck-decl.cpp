@@ -1848,7 +1848,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     decl.checkState = Decl::CheckState::CheckingBody;
     // Checked on every exit, including errors (like signatures): the error
     // reports once and later uses see the partial state instead of rechecking.
-    auto markChecked = llvm::make_scope_exit([&decl] { decl.checkState = Decl::CheckState::Checked; });
+    llvm::scope_exit markChecked([&decl] { decl.checkState = Decl::CheckState::Checked; });
     decl.type = resolveTypeAliases(decl.type, decl.isGlobal() ? decl.accessLevel : AccessLevel::None, /*foldArraySizes=*/true);
     if (!decl.isGlobal()) {
         localVarDecls.push_back(&decl);

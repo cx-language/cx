@@ -812,7 +812,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     if (op == Token::Plus || op == Token::Minus || op == Token::Star) implicitUses.checkedArithmetic = true;
 
     if (op == Token::Assignment) {
-        typecheckAssignment(expr, expr.location);
+        typecheckAssignment(expr);
         return Type::getVoid();
     }
 
@@ -1154,7 +1154,7 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
     }
 }
 
-void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
+void Typechecker::typecheckAssignment(BinaryExpr& expr) {
     auto* lhs = &expr.getLHS();
     auto* rhs = &expr.getRHS();
 

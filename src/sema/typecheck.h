@@ -152,7 +152,7 @@ struct Typechecker {
     ComparisonTemps createComparisonTemps(BinaryExpr& expr);
     Type finishComparisonLowering(BinaryExpr& expr, Expr* result, VarDecl* lhsTemp, VarDecl* rhsTemp);
     Type typecheckNullCoalescingExpr(BinaryExpr& expr);
-    void typecheckAssignment(BinaryExpr& expr, Location location);
+    void typecheckAssignment(BinaryExpr& expr);
     Type typecheckCallExpr(CallExpr& expr, Type expectedType = Type());
     Type typecheckBuiltinConversion(CallExpr& expr, Type targetType = Type());
     Type typecheckBuiltinCast(CallExpr& expr);
