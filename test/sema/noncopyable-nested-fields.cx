@@ -1,0 +1,105 @@
+// RUN: %not %cx -typecheck -Wno-unused --error-limit=0 %s 2>&1 | %FileCheck %s
+
+// Copyability of nested generic field types must resolve the same regardless
+// of query order. The first two calls use instantiations mentioned nowhere
+// else, so they query during the creating statement, before signature
+// checking can register the nested types (pre-fix they passed silently).
+// The moves below query later and pin the diagnostics.
+
+void takesCopyable<T: Copyable>(T value) {}
+
+using M = Map<string, int>;
+
+struct HoldsMap {
+    Map<string, int> m;
+}
+
+struct HoldsSet {
+    Set<string> s;
+}
+
+struct HoldsOpt {
+    Map<string, int>? o;
+}
+
+struct HoldsArr {
+    Array<Map<string, int>, 2> arr;
+}
+
+struct HoldsTuple {
+    (Map<string, int> first, int second) t;
+}
+
+struct HoldsAlias {
+    M m;
+}
+
+struct Inner {
+    List<int> l;
+}
+
+struct Outer {
+    Inner inner;
+}
+
+struct StillCopyable {
+    Array<int, 4> a;
+    int n;
+}
+
+void useMap(HoldsMap& w) {}
+void useSet(HoldsSet& s) {}
+void useOpt(HoldsOpt& h) {}
+void useArr(HoldsArr& h) {}
+void useTuple(HoldsTuple& h) {}
+void useAlias(HoldsAlias& h) {}
+void useOuter(Outer& o) {}
+void useCopyable(StillCopyable& p) {}
+
+int main() {
+    // CHECK: [[@LINE+1]]:5: error: type 'Map<int, string>' doesn't implement interface 'Copyable'
+    takesCopyable(Map<int, string>());
+    // CHECK: [[@LINE+1]]:5: error: type 'Set<int>' doesn't implement interface 'Copyable'
+    takesCopyable(Set<int>());
+
+    var w = HoldsMap(m = Map());
+    var w2 = w;
+    // CHECK: [[@LINE+1]]:12: error: use of moved value 'w'
+    useMap(w);
+
+    var s = HoldsSet(s = Set());
+    var s2 = s;
+    // CHECK: [[@LINE+1]]:12: error: use of moved value 's'
+    useSet(s);
+
+    var ho = HoldsOpt(o = null);
+    var ho2 = ho;
+    // CHECK: [[@LINE+1]]:12: error: use of moved value 'ho'
+    useOpt(ho);
+
+    var ha = HoldsArr(arr = [Map<string, int>(), Map<string, int>()]);
+    var ha2 = ha;
+    // CHECK: [[@LINE+1]]:12: error: use of moved value 'ha'
+    useArr(ha);
+
+    var ht = HoldsTuple(t = (first = Map<string, int>(), second = 1));
+    var ht2 = ht;
+    // CHECK: [[@LINE+1]]:14: error: use of moved value 'ht'
+    useTuple(ht);
+
+    var hal = HoldsAlias(m = Map());
+    var hal2 = hal;
+    // CHECK: [[@LINE+1]]:14: error: use of moved value 'hal'
+    useAlias(hal);
+
+    var o = Outer(inner = Inner(l = List<int>()));
+    var o2 = o;
+    // CHECK: [[@LINE+1]]:14: error: use of moved value 'o'
+    useOuter(o);
+
+    var p = StillCopyable(a = [1, 2, 3, 4], n = 1);
+    var p2 = p;
+    useCopyable(p);
+    useCopyable(p2);
+    return 0;
+}

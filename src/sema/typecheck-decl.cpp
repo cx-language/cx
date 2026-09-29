@@ -542,6 +542,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 auto instantiation = typeTemplate->instantiate(basicType->genericArgs);
                 currentModule->addToSymbolTable(*instantiation);
                 deferTypechecking(instantiation);
+                ensureNestedInstantiations(*instantiation);
                 checkHasAccess(*decl, type.location, userAccessLevel);
                 // This first-mention path breaks out before the destructor
                 // marking below, so mark here too.
@@ -1453,6 +1454,9 @@ void Typechecker::ensureInterfaces(TypeDecl& decl) {
             }
         }
     }
+    // Inherited fields arrived after instantiation, so their nested generics
+    // were never walked.
+    ensureNestedInstantiations(decl);
 }
 
 void Typechecker::typecheckTypeSignature(TypeDecl& decl) {

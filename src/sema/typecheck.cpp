@@ -2,6 +2,7 @@
 #include <system_error>
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
@@ -34,7 +35,54 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     // Array is a builtin-backed declaration. Resolve its methods on demand so
     // using one array operation does not typecheck every Array method.
     if (type.name != "Array") deferTypechecking(instantiation);
+    ensureNestedInstantiations(*instantiation);
     return instantiation;
+}
+
+void Typechecker::ensureNestedInstantiations(TypeDecl& instantiation) {
+    thread_local std::vector<const TypeDecl*> inProgress;
+    if (llvm::is_contained(inProgress, &instantiation)) return;
+    inProgress.push_back(&instantiation);
+    llvm::scope_exit pop([&] { inProgress.pop_back(); });
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(&instantiation)) {
+        for (auto& enumCase : enumDecl->cases) {
+            if (enumCase.associatedType) ensureNestedInstantiations(enumCase.associatedType);
+        }
+    } else {
+        for (auto& field : instantiation.fields)
+            ensureNestedInstantiations(field.type);
+    }
+}
+
+void Typechecker::ensureNestedInstantiations(Type type) {
+    if (type.isFixedArray()) {
+        ensureNestedInstantiations(type.getElementType());
+        return;
+    }
+    if (type.isAnonymousStructType()) {
+        for (auto& element : type.getAnonymousStructElements())
+            ensureNestedInstantiations(element.type);
+        return;
+    }
+    // Pointers, references and functions are verdict-neutral: unconditionally
+    // copyable, with no destruction to discover.
+    auto* basicType = llvm::dyn_cast<BasicType>(type.typeBase);
+    if (!basicType || type.containsUnresolvedPlaceholder()) return;
+    if (basicType->genericArgs.empty()) {
+        if (auto* nested = getTypeDecl(*basicType)) ensureNestedInstantiations(*nested);
+        return;
+    }
+    // Only instantiate valid targets: invalid code was already diagnosed during
+    // resolution, and instantiating it would assert (non-template, arity).
+    auto decls = findDecls(basicType->name);
+    if (decls.size() != 1) return;
+    auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(decls[0]);
+    if (!typeTemplate || typeTemplate->genericParams.size() != basicType->genericArgs.size()) return;
+    if (getTypeDecl(*basicType)) {
+        for (auto& arg : basicType->genericArgs) {
+            if (arg.isType()) ensureNestedInstantiations(arg.getType());
+        }
+    }
 }
 
 static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, const CompileOptions& options) {

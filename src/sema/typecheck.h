@@ -229,6 +229,11 @@ struct Typechecker {
     void validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee = "",
                                      const Decl* calleeDecl = nullptr);
     TypeDecl* getTypeDecl(const BasicType& type);
+    // Instantiates and registers the generic types nested in field position
+    // (transitively), so memberless queries (copyability, destruction) resolve
+    // instead of defaulting. Placeholder-containing types keep today's leniency.
+    void ensureNestedInstantiations(TypeDecl& instantiation);
+    void ensureNestedInstantiations(Type type);
     EnumCase* getEnumCase(const Expr& expr, Type expectedType = Type(), CallExpr* call = nullptr);
     EnumCase* getExpectedEnumCase(llvm::StringRef name, Type expectedType);
     VarDecl* getStaticConst(const Expr& expr);

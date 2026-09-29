@@ -3291,6 +3291,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     typeDecl = typeTemplate->instantiate(genericArgs);
                     currentModule->addToSymbolTable(*typeDecl);
                     deferTypechecking(typeDecl);
+                    ensureNestedInstantiations(*typeDecl);
                 } else {
                     typeDecl = llvm::cast<TypeDecl>(typeDecls[0]);
                 }
@@ -4926,6 +4927,7 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
         enumDecl = llvm::cast<EnumDecl>(typeTemplate.instantiate(genericArgs));
         currentModule->addToSymbolTable(*enumDecl);
         deferTypechecking(enumDecl);
+        ensureNestedInstantiations(*enumDecl);
     }
 
     auto* enumCase = enumDecl->getCaseByName(caseName);

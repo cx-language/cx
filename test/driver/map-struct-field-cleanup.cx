@@ -1,0 +1,19 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines %s
+
+// Constructing a struct holding a Map must move (not destroy) the constructor
+// argument into the field: pre-fix the argument was destroyed after moving,
+// leaving the field dangling and aborting at scope end.
+struct W {
+    Map<string, int> m;
+    void use() { println("used"); }
+}
+
+void sink(W w) { w.use(); }
+
+int main() {
+    // CHECK: used
+    var w = W(m = Map());
+    w.m.insert("b", 2);
+    sink(w);
+    return 0;
+}
