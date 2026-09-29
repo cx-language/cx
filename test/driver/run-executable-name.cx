@@ -1,0 +1,9 @@
+// RUN: %cx run --no-jit %s | %FileCheck %s
+// RUN: %cx run --no-jit --backend=c %s | %FileCheck %s
+// RUN: %cx run --no-jit -o customname %s | %FileCheck %s --check-prefix=CUSTOM
+
+int main(string[] args) {
+    // CUSTOM: customname
+    println(args[0]); // CHECK: run-executable-name{{(\.out|\.exe)}}
+    return 0;
+}

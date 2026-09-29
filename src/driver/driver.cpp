@@ -355,6 +355,23 @@ static bool synthesizeTestMain(Module& mainModule) {
     return true;
 }
 
+// The executable file name `cx build` would output: the -o name when given,
+// otherwise the source stem (or "main") with the platform executable extension.
+static std::string getOutputFileName(const BuildParams& buildParams, const Module& mainModule, bool isWindows) {
+    if (!buildParams.outputFileName.empty()) return buildParams.outputFileName;
+    std::string fileName;
+    if (mainModule.fileBuffers.size() == 1) {
+        fileName = llvm::sys::path::stem(mainModule.fileBuffers.front()->getBufferIdentifier()).str();
+    }
+    if (fileName.empty()) fileName = "main";
+    if (buildParams.createSharedLib) {
+        fileName.append(isWindows ? ".dll" : ".so");
+    } else {
+        fileName.append(isWindows ? ".exe" : ".out");
+    }
+    return fileName;
+}
+
 int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     PhaseTimer totalTimer("buildModule-total");
     if (mainModule.fileBuffers.empty()) {
@@ -766,7 +783,21 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     }
 
     if (run || testSubcommand) {
-        std::string command = tempOutputFilePath.str().str();
+        // Execute under the same file name `cx build` would output, inside a unique
+        // directory so concurrent runs never collide.
+        llvm::SmallString<128> runDirectory;
+        if (auto error = llvm::sys::fs::createUniqueDirectory("cx-run-%%%%%%%%", runDirectory)) {
+            ABORT("couldn't create temporary directory: " << error.message());
+        }
+        // A -o path with no usable file name (e.g. "-o some/dir/") falls back to the default name.
+        llvm::StringRef requestedName = llvm::sys::path::filename(buildParams.outputFileName);
+        if (!buildParams.outputFileName.empty() && (requestedName.empty() || requestedName == "." || requestedName == "..")) {
+            buildParams.outputFileName.clear();
+        }
+        llvm::SmallString<128> runPath = runDirectory;
+        llvm::sys::path::append(runPath, llvm::sys::path::filename(getOutputFileName(buildParams, mainModule, isWindows)));
+        renameFile(tempOutputFilePath, runPath);
+        std::string command = shellEscape(runPath.str());
         for (const auto& arg : programArgs) {
             command += " " + shellEscape(arg);
         }
@@ -775,7 +806,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         int executableExitStatus = exec(command.c_str(), output);
         llvm::outs() << output;
         llvm::sys::fs::remove(tempIntermediateFilePath);
-        llvm::sys::fs::remove(tempOutputFilePath);
+        llvm::sys::fs::remove(runPath);
 
         if (isWindows) {
             for (llvm::StringRef extension : {"ilk", "pdb"}) {
@@ -784,6 +815,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
                 llvm::sys::fs::remove(path);
             }
         }
+        llvm::sys::fs::remove(runDirectory);
 
         return executableExitStatus;
     }
@@ -793,20 +825,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         outputPathPrefix.append(llvm::sys::path::get_separator());
     }
 
-    if (buildParams.outputFileName.empty()) {
-        if (mainModule.fileBuffers.size() == 1) {
-            buildParams.outputFileName = llvm::sys::path::stem(mainModule.fileBuffers.front()->getBufferIdentifier()).str();
-        }
-        if (buildParams.outputFileName.empty()) {
-            buildParams.outputFileName = "main";
-        }
-
-        if (buildParams.createSharedLib) {
-            buildParams.outputFileName.append(isWindows ? ".dll" : ".so");
-        } else {
-            buildParams.outputFileName.append(isWindows ? ".exe" : ".out");
-        }
-    }
+    buildParams.outputFileName = getOutputFileName(buildParams, mainModule, isWindows);
 
     // An absolute -o path is used as is; otherwise the output directory is prepended.
     llvm::SmallString<128> outputPath;
