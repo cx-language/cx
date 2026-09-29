@@ -280,6 +280,8 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
             return arg;
         });
         Type rebuilt = BasicType::get(basicType->name, genericArgs, type.mutability, type.location);
+        // A non-type element cannot fold; typecheckType diagnoses it below.
+        if (rebuilt.isFixedArray() && !rebuilt.getGenericArgs()[0].isType()) return rebuilt;
         // Fold sizeof sizes whose operand now has a known size.
         if (rebuilt.isFixedArray() && rebuilt.hasSizeofArraySize()) {
             if (auto size = rebuilt.getSizeofArrayOperand().getSizeInBytes()) {

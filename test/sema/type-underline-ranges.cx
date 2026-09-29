@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:5: error: array size must be a constant integer expression
+    Array<5, int> z;
+    // CHECK: [[@LINE+1]]:5: error: array element type must be a type, not an integer
+    Array<5, 3> w;
+}
