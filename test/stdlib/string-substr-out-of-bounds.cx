@@ -5,4 +5,4 @@ void main() {
     s.substr(0..5);
 }
 
-// CHECK: StringBuf.substr: index 5 is out of bounds, size is 2
+// CHECK: StringBuf.substr: range end out of bounds

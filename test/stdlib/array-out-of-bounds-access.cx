@@ -1,0 +1,10 @@
+// RUN: %not %cx run %s 2>&1 | %FileCheck %s
+// RUN: %not %cx run --backend=c %s 2>&1 | %FileCheck %s
+
+void main() {
+    int[3] numbers = [10, 20, 30];
+    int i = 5;
+    println(numbers[i]);
+}
+
+// CHECK: index out of bounds

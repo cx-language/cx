@@ -77,21 +77,14 @@ struct CxxVector<Element> {
 
     /// Returns the element at the given index.
     Element& operator[](int index) {
-        if index < 0 || begin_ == null || index >= size() {
-            indexOutOfBounds(index);
-        }
+        assert(index >= 0 && begin_ != null && index < size(), "CxxVector index out of bounds");
         return begin_[index];
     }
 
     /// Sets the element at the given index.
     void operator[]=(int index, Element element) {
-        if index < 0 || begin_ == null || index >= size() {
-            indexOutOfBounds(index);
-        }
+        assert(index >= 0 && begin_ != null && index < size(), "CxxVector index out of bounds");
         begin_[index] = element;
     }
 
-    private void indexOutOfBounds(int index) {
-        abort("CxxVector index ", index, " is out of bounds, size is ", size());
-    }
 }

@@ -7,16 +7,27 @@ int32 main() {
     int32[3] _1 = insertvalue _0, 1, int32 2
     int32[3] _2 = insertvalue _1, 2, int32 3
     store _2 to a
-    int32* _3 = getelementptr a, int32 0, int32 0
-    store _3 to p
-    int32* _4 = cast a to int32*
-    store _4 to p
-    int32* _5 = cast a to int32*
-    store _5 to p
+    uint64 _3 = cast int32 0 to uint64
+    bool _4 = _3 < uint64 3
+    bool bounds.condition = _4 == bool false
+    br bounds.condition, bounds.fail, bounds.success
+
+bounds.fail:
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at pointer-to-array-with-unknown-size.cx:5:19
+")
+    unreachable
+
+bounds.success:
+    int32* _6 = getelementptr a, int32 0, int32 0
+    store _6 to p
+    int32* _7 = cast a to int32*
+    store _7 to p
+    int32* _8 = cast a to int32*
+    store _8 to p
     int32* p.load = load p
-    int32* _6 = getelementptr p.load, int32 1
-    int32 .load = load _6
+    int32* _9 = getelementptr p.load, int32 1
+    int32 .load = load _9
     store .load to t
-    void _7 = call _CX1N3std10checkLeaksE4void0_()
+    void _10 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

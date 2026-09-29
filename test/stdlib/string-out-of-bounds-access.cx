@@ -1,0 +1,9 @@
+// RUN: %not %cx run %s 2>&1 | %FileCheck %s
+
+void main() {
+    string s = "hi";
+    int i = 9;
+    println(s[i]);
+}
+
+// CHECK: Slice index out of bounds

@@ -5,42 +5,64 @@ int32 main() {
     int32[3] _1 = insertvalue _0, 1, int32 20
     int32[3] _2 = insertvalue _1, 2, int32 30
     store _2 to a
-    int32* _3 = getelementptr a, int32 0, int32 0
-    int32 .load = load _3
-    int64 _4 = cast int32 3 to int64
-    int64 _5 = cast .load to int64
-    int64 _6 = _4 + _5
-    int32 _7 = cast _6 to int32
-    int64 _8 = cast _7 to int64
-    bool _9 = _6 != _8
-    bool _10 = !_9
-    bool overflow.condition = _10 == bool false
+    uint64 _3 = cast int32 0 to uint64
+    bool _4 = _3 < uint64 3
+    bool bounds.condition = _4 == bool false
+    br bounds.condition, bounds.fail, bounds.success
+
+bounds.fail:
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at array-generic.cx:5:25
+")
+    unreachable
+
+bounds.success:
+    int32* _6 = getelementptr a, int32 0, int32 0
+    int32 .load = load _6
+    int64 _7 = cast int32 3 to int64
+    int64 _8 = cast .load to int64
+    int64 _9 = _7 + _8
+    int32 _10 = cast _9 to int32
+    int64 _11 = cast _10 to int64
+    bool _12 = _9 != _11
+    bool _13 = !_12
+    bool overflow.condition = _13 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _11 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-generic.cx:5:21
+    never _14 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-generic.cx:5:21
 ")
     unreachable
 
 overflow.success:
-    int32* _12 = getelementptr a, int32 0, int32 2
-    int32 .load_0 = load _12
-    int64 _13 = cast _7 to int64
-    int64 _14 = cast .load_0 to int64
-    int64 _15 = _13 + _14
-    int32 _16 = cast _15 to int32
-    int64 _17 = cast _16 to int64
-    bool _18 = _15 != _17
-    bool _19 = !_18
-    bool overflow.condition_0 = _19 == bool false
+    uint64 _15 = cast int32 2 to uint64
+    bool _16 = _15 < uint64 3
+    bool bounds.condition_0 = _16 == bool false
+    br bounds.condition_0, bounds.fail, bounds.success
+
+bounds.fail_0:
+    never _17 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at array-generic.cx:5:32
+")
+    unreachable
+
+bounds.success_0:
+    int32* _18 = getelementptr a, int32 0, int32 2
+    int32 .load_0 = load _18
+    int64 _19 = cast _10 to int64
+    int64 _20 = cast .load_0 to int64
+    int64 _21 = _19 + _20
+    int32 _22 = cast _21 to int32
+    int64 _23 = cast _22 to int64
+    bool _24 = _21 != _23
+    bool _25 = !_24
+    bool overflow.condition_0 = _25 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _20 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-generic.cx:5:28
+    never _26 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-generic.cx:5:28
 ")
     unreachable
 
 overflow.success_0:
-    void _21 = call _CX1N3std10checkLeaksE4void0_()
-    return _16
+    void _27 = call _CX1N3std10checkLeaksE4void0_()
+    return _22
 }

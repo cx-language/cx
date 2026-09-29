@@ -2,6 +2,6 @@
 void main() {
     var list = SmallList<int, 2>();
     list.push(10);
-    // CHECK: SmallList index 4 is out of bounds, size is 1
+    // CHECK: SmallList index out of bounds
     println(list[-4]);
 }

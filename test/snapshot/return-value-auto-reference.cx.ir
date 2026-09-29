@@ -21,8 +21,19 @@ bool* _CX1N4mainM4main1A2ffEPM3std4bool0_(A* this) {
     store this to this_0
     A* this.load = load this_0
     bool[2]* b = getelementptr this.load, 0
-    bool* _0 = getelementptr b, int32 0, int32 1
-    return _0
+    uint64 _0 = cast int32 1 to uint64
+    bool _1 = _0 < uint64 2
+    bool bounds.condition = _1 == bool false
+    br bounds.condition, bounds.fail, bounds.success
+
+bounds.fail:
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at return-value-auto-reference.cx:15:19
+")
+    unreachable
+
+bounds.success:
+    bool* _3 = getelementptr b, int32 0, int32 1
+    return _3
 }
 
 void _CX1N4mainM4main1A4initE4void1_5ArrayIM3std4boolN2_E(A* this, bool[2] b) {

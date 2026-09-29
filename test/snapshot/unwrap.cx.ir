@@ -30,8 +30,19 @@ assert.fail_0:
 
 assert.success_0:
     uint8[1]* ptr.load_0 = load ptr
-    uint8* _6 = getelementptr ptr.load_0, int32 0, int32 0
-    store uint8 1 to _6
-    void _7 = call _CX1N3std10checkLeaksE4void0_()
+    uint64 _6 = cast int32 0 to uint64
+    bool _7 = _6 < uint64 1
+    bool bounds.condition = _7 == bool false
+    br bounds.condition, bounds.fail, bounds.success
+
+bounds.fail:
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at unwrap.cx:8:10
+")
+    unreachable
+
+bounds.success:
+    uint8* _9 = getelementptr ptr.load_0, int32 0, int32 0
+    store uint8 1 to _9
+    void _10 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

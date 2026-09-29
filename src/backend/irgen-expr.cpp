@@ -1278,12 +1278,23 @@ Value* IRGenerator::emitSwizzleAssignment(const MemberExpr& lhs, const Expr& rhs
 
 Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
     auto* value = emitArrayBasePtr(base);
+    auto* indexValue = emitExpr(index);
 
     Value* gep;
     if (base.type.removeOptional().isArrayPointer()) {
-        gep = createGEP(value, {emitExpr(index)});
+        gep = createGEP(value, {indexValue});
     } else {
-        gep = createGEP(value, {createConstantInt(Type::getInt32(), 0), emitExpr(index)});
+        Type arrayType = base.type.removeOptional().removePointer();
+        if (arrayType.isConcreteArray()) {
+            auto* enclosingFunction = llvm::dyn_cast_or_null<FunctionDecl>(currentDecl);
+            if (assertsEnabled(options.mode, enclosingFunction && enclosingFunction->isTest)) {
+                // A single unsigned comparison catches negative indices too: they wrap to huge values.
+                auto* wideIndex = createCastIfNeeded(indexValue, Type::getUInt64());
+                auto* size = createConstantInt(Type::getUInt64(), arrayType.getArraySize());
+                emitAssert(createBinaryOp(Token::Less, wideIndex, size, &index), &index, index.location, "index out of bounds", "bounds");
+            }
+        }
+        gep = createGEP(value, {createConstantInt(Type::getInt32(), 0), indexValue});
     }
     if (auto* call = llvm::dyn_cast<CallExpr>(&base); call && call->isMethodCall() && call->getFunctionName() == "data") {
         llvm::cast<GEPInst>(gep)->expr = &base;

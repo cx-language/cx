@@ -59,27 +59,27 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     /// Returns the character at the given index.
     char operator[](int index) {
-        if index < 0 || index >= size() indexOutOfBounds("operator[]", index);
+        assert(index >= 0 && index < size(), "StringBuf index out of bounds");
         return characters[index];
     }
 
     /// Returns the character at the given offset from the end.
-    /// Offset 1 is the last character; offsets outside 1..size() abort.
+    /// Offset 1 is the last character; out-of-bounds access aborts in debug and release-safe builds.
     char operator[-](int index) {
-        if index < 1 || index > size() indexOutOfBounds("operator[-]", index);
+        assert(index >= 1 && index <= size(), "StringBuf index out of bounds");
         return characters[size() - index];
     }
 
     /// Sets the character at the given index.
     void operator[]=(int index, char c) {
-        if index < 0 || index >= size() indexOutOfBounds("operator[]=", index);
+        assert(index >= 0 && index < size(), "StringBuf index out of bounds");
         characters[index] = c;
     }
 
     /// Sets the character at the given offset from the end.
-    /// Offset 1 is the last character; offsets outside 1..size() abort.
+    /// Offset 1 is the last character; out-of-bounds access aborts in debug and release-safe builds.
     void operator[-]=(int index, char c) {
-        if index < 1 || index > size() indexOutOfBounds("operator[-]=", index);
+        assert(index >= 1 && index <= size(), "StringBuf index out of bounds");
         characters[size() - index] = c;
     }
 
@@ -143,26 +143,26 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     /// Returns the first character.
     char first() {
-        if empty() indexOutOfBounds("first", 0);
+        assert(!empty(), "Called first() on empty StringBuf");
         return characters[0];
     }
 
     /// Returns the last character.
     char last() {
-        if empty() indexOutOfBounds("last", 0);
+        assert(!empty(), "Called last() on empty StringBuf");
         return characters[size() - 1];
     }
 
     /// Removes the first character from the string and returns it.
     /// Other characters are moved towards the beginning of the string by one index.
     char removeFirst() {
-        if empty() indexOutOfBounds("removeFirst", 0);
+        assert(!empty(), "Called removeFirst() on empty StringBuf");
         return characters.removeFirst();
     }
 
     /// Removes and returns the last character.
     char pop() {
-        if empty() indexOutOfBounds("pop", 0);
+        assert(!empty(), "Called pop() on empty StringBuf");
         return characters.removeAt(characters.size() - 2);
     }
 
@@ -198,20 +198,14 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     /// Returns the substring of the string starting from the given index, until the end of the string.
     string substr(int start) {
-        if start < 0 || start > size() {
-            indexOutOfBounds("substr", start);
-        }
+        assert(start >= 0 && start <= size(), "StringBuf.substr: start index out of bounds");
         return string(&characters.data()[start], size() - start);
     }
 
     /// Returns the substring of the string in the given range, [inclusive, exclusive]
     string substr(Range<int> range) {
-        if range.start() < 0 || range.start() > size() {
-            indexOutOfBounds("substr", range.start());
-        }
-        if range.end() < 0 || range.end() > size() {
-            indexOutOfBounds("substr", range.end());
-        }
+        assert(range.start() >= 0 && range.start() <= size(), "StringBuf.substr: range start out of bounds");
+        assert(range.end() >= 0 && range.end() <= size(), "StringBuf.substr: range end out of bounds");
         return string(&characters.data()[range.start()], range.size());
     }
 
@@ -270,9 +264,6 @@ struct StringBuf: Comparable, Hashable, Printable {
     /// Returns true if no character satisfies the predicate.
     bool none(bool(char&) predicate) { return none(iterator(), predicate); }
 
-    private void indexOutOfBounds(string function, int index) {
-        abort("StringBuf.", function, ": index ", index, " is out of bounds, size is ", size());
-    }
 }
 
 /// Concatenates the two strings.

@@ -34,13 +34,13 @@ struct Slice<Element> {
 
     /// Returns the first element in the array.
     Element& first() {
-        if empty() indexOutOfBounds("first", 0);
+        assert(!empty(), "Called first() on empty Slice");
         return data[0];
     }
 
     /// Returns the last element in the array.
     Element& last() {
-        if empty() indexOutOfBounds("last", 0);
+        assert(!empty(), "Called last() on empty Slice");
         return data[size() - 1];
     }
 
@@ -61,14 +61,14 @@ struct Slice<Element> {
 
     /// Returns a reference to the element at the given index.
     Element& operator[](int index) {
-        if index < 0 || index >= size() indexOutOfBounds("operator[]", index);
+        assert(index >= 0 && index < size(), "Slice index out of bounds");
         return data[index];
     }
 
     /// Returns a reference to the element at the given offset from the end.
-    /// Offset 1 is the last element; offsets outside 1..size() abort.
+    /// Offset 1 is the last element; out-of-bounds access aborts in debug and release-safe builds.
     Element& operator[-](int index) {
-        if index < 1 || index > size() indexOutOfBounds("operator[-]", index);
+        assert(index >= 1 && index <= size(), "Slice index out of bounds");
         return data[size() - index];
     }
 
@@ -163,9 +163,6 @@ struct Slice<Element> {
     /// Returns true if no element satisfies the predicate.
     bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
 
-    private void indexOutOfBounds(string function, int index) {
-        abort("Slice.", function, ": index ", index, " is out of bounds, size is ", size());
-    }
 }
 
 /// Returns true if both arrays have equal elements.

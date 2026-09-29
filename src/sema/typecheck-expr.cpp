@@ -4367,6 +4367,8 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
                            "accessing array out-of-bounds with index " << index << ", array size is " << arrayType.getArraySize());
             }
         }
+        // The backend emits a bounds check for these; keep assertFail linked.
+        if (assertsEnabled(options.mode, currentFunction && currentFunction->isTest)) implicitUses.assertCall = true;
     }
 
     return arrayType.getElementType();

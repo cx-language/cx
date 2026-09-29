@@ -5,8 +5,19 @@ int32 main() {
     int32[3] _1 = insertvalue _0, 1, int32 2
     int32[3] _2 = insertvalue _1, 2, int32 3
     store _2 to a
-    int32* _3 = getelementptr a, int32 0, int32 1
-    int32 .load = load _3
-    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    uint64 _3 = cast int32 1 to uint64
+    bool _4 = _3 < uint64 3
+    bool bounds.condition = _4 == bool false
+    br bounds.condition, bounds.fail, bounds.success
+
+bounds.fail:
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at array-literal.cx:5:14
+")
+    unreachable
+
+bounds.success:
+    int32* _6 = getelementptr a, int32 0, int32 1
+    int32 .load = load _6
+    void _7 = call _CX1N3std10checkLeaksE4void0_()
     return .load
 }
