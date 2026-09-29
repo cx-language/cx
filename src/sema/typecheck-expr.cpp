@@ -3579,7 +3579,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     if (expr.getFunctionName() == "assert") {
-        implicitUses.assertCall = true;
+        if (assertsEnabled(options.mode, currentFunction && currentFunction->isTest)) implicitUses.assertCall = true;
         llvm::SmallVector<ParamDecl, 2> assertParams;
         assertParams.emplace_back(Type::getBool(), "", false, Location());
         assertParams.emplace_back(BasicType::get("string", {}), "message", false, Location());

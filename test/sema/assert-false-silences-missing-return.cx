@@ -1,5 +1,8 @@
 // RUN: %cx -print-llvm %s
+// RUN: %cx -print-llvm --release-safe %s
+// RUN: %not %cx -typecheck -Wno-unused --release %s 2>&1 | %FileCheck %s --check-prefix=RELEASE
 
+// RELEASE: [[@LINE+1]]:5: error: 'f' is missing a return statement
 int f(bool b) {
     if (b) {
         return 1;

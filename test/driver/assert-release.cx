@@ -1,0 +1,34 @@
+// RUN: %cx run -Werror --release %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %not %cx run -Werror --release-safe %s 2>&1 | %FileCheck %s --check-prefix=DEBUG
+// RUN: %cx run -Werror --release --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %not %cx run -Werror --release-safe --backend=c %s 2>&1 | %FileCheck %s --check-prefix=DEBUG
+// RUN: %not %cx run -Werror %s 2>&1 | %FileCheck %s --check-prefix=DEBUG
+// RUN: %not %cx test --release %s 2>&1 | %FileCheck %s --check-prefix=TEST
+// RUN: %not %cx test --release-safe %s 2>&1 | %FileCheck %s --check-prefix=TEST
+// DEBUG: Assertion failed
+// TEST: Assertion failed
+// TEST-NOT: condition not evaluated
+
+int calls = 0;
+
+bool bump() {
+    calls++;
+    return true;
+}
+
+void main() {
+    assert(bump());
+    assert(calls == 1);
+    assert(false);
+    assert(bump());
+    println(calls); // CHECK:0
+    bump();
+    println(calls); // CHECK-NEXT:1
+}
+
+@test
+void testAssertKeptInRelease() {
+    assert(bump());
+    assert(calls == 1, "condition not evaluated");
+    assert(false);
+}

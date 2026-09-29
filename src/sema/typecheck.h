@@ -69,6 +69,23 @@ using NarrowMap = llvm::DenseMap<Decl*, Type>;
 
 // Compiler-generated temporaries a lowered `==`/`!=` reads its operands through.
 // Null in global initializers, where the lowering reads the operands directly.
+// True for a builtin `assert` call whose condition is the literal `false`, allowing for named arguments.
+inline bool isFalseAssert(const CallExpr& call) {
+    if (call.isMethodCall() || call.getFunctionName() != "assert" || call.args.empty()) return false;
+    for (size_t i = 0; i < call.args.size() && i < call.argParamIndices.size(); ++i) {
+        if (call.argParamIndices[i] != 0) continue;
+        if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call.args[i].value)) {
+            return !condition->value;
+        }
+    }
+    if (call.argParamIndices.empty()) {
+        if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call.args[0].value)) {
+            return !condition->value;
+        }
+    }
+    return false;
+}
+
 struct ComparisonTemps {
     VarDecl* lhsTemp = nullptr;
     VarDecl* rhsTemp = nullptr;

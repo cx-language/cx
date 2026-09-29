@@ -122,6 +122,11 @@ void main() {
 }
 ```
 
+Asserts run in debug and release-safe builds. `--release` skips them without
+evaluating the condition, except in `@test` functions, which keep their asserts
+in all modes so `cx test --release` still checks them.
+Code that must abort in release builds should call `abort` explicitly.
+
 ## Unimplemented code
 
 Use `todo` to mark code that isn't written yet.

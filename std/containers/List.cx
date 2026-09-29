@@ -144,10 +144,15 @@ struct List<Element> {
         if elements.empty() return;
         // Checked explicitly: release builds don't instrument integer overflow.
         var newSize = uint64(size) + uint64(elements.size());
-        assert(newSize <= uint64(int.max), "List size overflow");
+        // Aborts rather than asserts: proceeding with a truncated size would corrupt the heap in release builds.
+        if newSize > uint64(int.max) {
+            abort("List size overflow");
+        }
         reserve(int(newSize));
         var byteSize = uint64(0);
-        assert(checkedArraySize<Element>(elements.size(), byteSize), "allocation size overflow");
+        if !checkedArraySize<Element>(elements.size(), byteSize) {
+            abort("allocation size overflow");
+        }
         memcpy(&buffer[size], elements.data(), c_size_t(byteSize));
         size += elements.size();
     }
@@ -339,7 +344,10 @@ struct List<Element> {
         if capacity == 0 {
             reserve(1);
         } else {
-            assert(capacity <= int.max / 2, "List capacity overflow");
+            // Aborts rather than asserts: proceeding with a wrapped capacity would corrupt the heap in release builds.
+            if capacity > int.max / 2 {
+                abort("List capacity overflow");
+            }
             reserve(capacity * 2);
         }
     }

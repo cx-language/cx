@@ -18,6 +18,11 @@ struct BuildConfig;
 
 enum class BuildMode { Debug, ReleaseSafe, ReleaseFast };
 
+// Asserts run everywhere except --release builds; test functions keep them in all modes.
+inline bool assertsEnabled(BuildMode mode, bool isTestFunction) {
+    return mode != BuildMode::ReleaseFast || isTestFunction;
+}
+
 struct CompileOptions {
     BuildMode mode = BuildMode::Debug;
     bool noUnusedWarnings = false;

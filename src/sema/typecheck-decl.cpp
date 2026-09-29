@@ -656,7 +656,7 @@ static bool blockCanBreak(llvm::ArrayRef<Stmt*> block) {
     return false;
 }
 
-static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
+static bool allPathsReturn(llvm::ArrayRef<Stmt*> block, bool assertsOn) {
     if (block.empty()) return false;
 
     switch (block.back()->kind) {
@@ -671,30 +671,18 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
         // the function body instead of bailing out).
         if (call->type && call->type.isNeverType()) return true;
         // Builtin `assert(false)` branches to `assertFail`, which aborts, so it terminates all paths.
-        if (!call->isMethodCall() && call->getFunctionName() == "assert" && !call->args.empty()) {
-            for (size_t i = 0; i < call->args.size() && i < call->argParamIndices.size(); ++i) {
-                if (call->argParamIndices[i] != 0) continue;
-                if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->args[i].value)) {
-                    return !condition->value;
-                }
-            }
-            if (call->argParamIndices.empty()) {
-                if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->args[0].value)) {
-                    return !condition->value;
-                }
-            }
-        }
+        if (assertsOn && isFalseAssert(*call)) return true;
         return false;
     }
     case StmtKind::IfStmt: {
         auto& ifStmt = llvm::cast<IfStmt>(*block.back());
-        return allPathsReturn(ifStmt.thenBody) && allPathsReturn(ifStmt.elseBody);
+        return allPathsReturn(ifStmt.thenBody, assertsOn) && allPathsReturn(ifStmt.elseBody, assertsOn);
     }
     case StmtKind::SwitchStmt: {
         auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
-        if (!llvm::all_of(switchStmt.cases, [](SwitchCase& c) { return allPathsReturn(c.stmts); })) return false;
+        if (!llvm::all_of(switchStmt.cases, [&](SwitchCase& c) { return allPathsReturn(c.stmts, assertsOn); })) return false;
         if (switchStmt.defaultStmts.empty()) return switchStmt.coversAllEnumCases;
-        return allPathsReturn(switchStmt.defaultStmts);
+        return allPathsReturn(switchStmt.defaultStmts, assertsOn);
     }
     case StmtKind::ForStmt: {
         // 'while' loops are lowered into 'for' loops before this runs. A missing condition ('for(;;)') never terminates.
@@ -1341,7 +1329,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             }
         }
 
-        if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(*decl.body)) {
+        bool assertsOn = assertsEnabled(options.mode, decl.isTest);
+        if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(*decl.body, assertsOn)) {
             if (decl.getReturnType().isNeverType()) {
                 WARN_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "'" << decl.getName() << "' is declared to never return but it does return");
             } else {

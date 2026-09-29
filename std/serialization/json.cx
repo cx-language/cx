@@ -208,7 +208,7 @@ private struct JsonParser {
                 return Err(JsonError.ExpectedCommaOrBrace(pos));
             }
         }
-        assert(false);
+        abort("unreachable");
     }
 
     Result<JsonValue, JsonError> parseArray(int depth) {
@@ -238,7 +238,7 @@ private struct JsonParser {
                 return Err(JsonError.ExpectedCommaOrBracket(pos));
             }
         }
-        assert(false);
+        abort("unreachable");
     }
 
     Result<StringBuf, JsonError> parseString() {
@@ -304,7 +304,7 @@ private struct JsonParser {
                 pos++;
             }
         }
-        assert(false);
+        abort("unreachable");
     }
 
     // Parses 4 hex digits at pos, advancing past them. Returns -1 if invalid.

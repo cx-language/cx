@@ -1018,6 +1018,9 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     if (expr.getFunctionName() == "assert") {
+        // --release strips asserts, except in test functions, which keep them in all modes. Stripped asserts don't evaluate the condition.
+        auto* enclosingFunction = llvm::dyn_cast_or_null<FunctionDecl>(currentDecl);
+        if (!assertsEnabled(options.mode, enclosingFunction && enclosingFunction->isTest)) return nullptr;
         const Expr* condition = expr.args.front().value;
         const auto* messageExpr = llvm::cast<StringLiteralExpr>(expr.args[1].value);
         if (expr.argParamIndices.size() == expr.args.size()) {

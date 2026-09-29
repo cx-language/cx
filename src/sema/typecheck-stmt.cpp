@@ -43,7 +43,7 @@ static bool switchCaseMayFallThrough(llvm::ArrayRef<Stmt*> block) {
 // True when no path through the block falls through to the next statement: every path
 // returns, calls a never-returning function, or breaks/continues past the analyzed block.
 // `break`/`continue` inside a nested loop or switch target that construct instead.
-static bool allPathsDiverge(llvm::ArrayRef<Stmt*> block, int nestLevel = 0) {
+static bool allPathsDiverge(llvm::ArrayRef<Stmt*> block, bool assertsOn, int nestLevel = 0) {
     if (block.empty()) return false;
 
     switch (block.back()->kind) {
@@ -57,33 +57,21 @@ static bool allPathsDiverge(llvm::ArrayRef<Stmt*> block, int nestLevel = 0) {
         auto call = llvm::dyn_cast<CallExpr>(exprStmt.expr);
         if (!call) return false;
         if (call->type && call->type.isNeverType()) return true;
-        if (!call->isMethodCall() && call->getFunctionName() == "assert" && !call->args.empty()) {
-            for (size_t i = 0; i < call->args.size() && i < call->argParamIndices.size(); ++i) {
-                if (call->argParamIndices[i] != 0) continue;
-                if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->args[i].value)) {
-                    return !condition->value;
-                }
-            }
-            if (call->argParamIndices.empty()) {
-                if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->args[0].value)) {
-                    return !condition->value;
-                }
-            }
-        }
+        if (assertsOn && isFalseAssert(*call)) return true;
         return false;
     }
     case StmtKind::IfStmt: {
         auto& ifStmt = llvm::cast<IfStmt>(*block.back());
-        return allPathsDiverge(ifStmt.thenBody, nestLevel) && allPathsDiverge(ifStmt.elseBody, nestLevel);
+        return allPathsDiverge(ifStmt.thenBody, assertsOn, nestLevel) && allPathsDiverge(ifStmt.elseBody, assertsOn, nestLevel);
     }
     case StmtKind::SwitchStmt: {
         auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
-        if (!llvm::all_of(switchStmt.cases, [&](SwitchCase& c) { return allPathsDiverge(c.stmts, nestLevel + 1); })) return false;
+        if (!llvm::all_of(switchStmt.cases, [&](SwitchCase& c) { return allPathsDiverge(c.stmts, assertsOn, nestLevel + 1); })) return false;
         if (switchStmt.defaultStmts.empty()) return switchStmt.coversAllEnumCases;
-        return allPathsDiverge(switchStmt.defaultStmts, nestLevel + 1);
+        return allPathsDiverge(switchStmt.defaultStmts, assertsOn, nestLevel + 1);
     }
     case StmtKind::CompoundStmt:
-        return allPathsDiverge(llvm::cast<CompoundStmt>(*block.back()).body, nestLevel);
+        return allPathsDiverge(llvm::cast<CompoundStmt>(*block.back()).body, assertsOn, nestLevel);
     default:
         return false;
     }
@@ -537,8 +525,9 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
 
     // A move holds after the if only if it holds on every path reaching past it.
     // When one branch diverges (e.g. `if b return;`), the other branch decides.
-    bool thenDiverges = allPathsDiverge(ifStmt.thenBody);
-    bool elseDiverges = !ifStmt.elseBody.empty() && allPathsDiverge(ifStmt.elseBody);
+    bool assertsOn = assertsEnabled(options.mode, currentFunction && currentFunction->isTest);
+    bool thenDiverges = allPathsDiverge(ifStmt.thenBody, assertsOn);
+    bool elseDiverges = !ifStmt.elseBody.empty() && allPathsDiverge(ifStmt.elseBody, assertsOn);
     if (thenDiverges && !elseDiverges) {
         movedDecls = elseMovedDecls;
         maybeMovedDecls = elseMaybeMovedDecls;

@@ -179,7 +179,10 @@ private bool checkedArraySize<T>(int64 count, uint64& size) {
 ///
 T[*] allocate<T>(int64 count) {
     var size = uint64(0);
-    assert(checkedArraySize<T>(count, size), "allocation size overflow");
+    // Aborts rather than asserts: proceeding with an unchecked size would corrupt the heap in release builds.
+    if !checkedArraySize<T>(count, size) {
+        abort("allocation size overflow");
+    }
     return cast<T[*]>(cxMalloc(c_size_t(size))!);
 }
 
