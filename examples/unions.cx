@@ -1,0 +1,26 @@
+enum Event {
+    Click(int x, int y),
+    Keypress(char key),
+    Quit,
+}
+
+void handle(Event event) {
+    switch event {
+        case Click:    println("fire at ", event.x, ", ", event.y);
+        case Keypress: println("pressed ", event.key);
+        case Quit:     println("quit");
+    }
+}
+
+void main() {
+    handle(Click(6, 7));
+    handle(Keypress('W'));
+    handle(Quit);
+
+    // Fieldless enums iterate all cases; cases print by name.
+    for button in MouseButton {
+        println(button);
+    }
+}
+
+enum MouseButton { Left, Middle, Right }

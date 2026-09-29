@@ -24,8 +24,8 @@
     :root {
         color-scheme: dark;
         --background-color: hsl(220, 6%, 9%);
-        --background-color-2: hsla(0, 0%, 100%, 0.04);
-        --background-color-3: hsla(0, 0%, 100%, 0.12);
+        --background-color-2: hsl(220, 6%, 13%);
+        --background-color-3: hsl(220, 6%, 20%);
         --text-color: #e4e7ec;
         --text-color-subtle: hsla(230, 15%, 80%, 0.6);
         --blue: hsl(213, 70%, 66%);
@@ -186,9 +186,9 @@ pre, code, .sourceCode {
     line-height: 1.6;
 }
 
-/* Pandoc leaves unknown languages (```cx) as a bare pre without the
-   div.sourceCode wrapper, so style that form identically. */
-div.sourceCode, pre.cx {
+/* Pandoc leaves unknown languages (```cx, ```jsonc) as a bare pre
+   without the div.sourceCode wrapper, so style that form identically. */
+div.sourceCode, pre.cx, pre.jsonc {
     position: relative;
     background: var(--background-color-2);
     border: 1px solid var(--background-color-3);
@@ -205,18 +205,22 @@ pre.sourceCode.cs code span.dt {
     color: var(--blue);
     font-weight: normal;
 }
+
 pre.sourceCode.cs code span.fu,
 pre.sourceCode.cs code span.op {
     color: var(--text-color);
 }
+
 pre.sourceCode.cs code span.co {
     color: var(--text-color-subtle);
     font-style: normal;
 }
+
 pre.sourceCode.cs code span.dv,
 pre.sourceCode.cs code span.fl {
     color: var(--number-color);
 }
+
 pre.sourceCode.cs code span.st,
 pre.sourceCode.cs code span.ch {
     color: var(--string-color);
@@ -248,7 +252,10 @@ blockquote p:last-child {
 }
 
 table {
-    display: table;
+    /* Block + scroll: wide tables keep their columns on phones instead
+       of squeezing them. Narrow tables are unaffected. */
+    display: block;
+    overflow-x: auto;
     width: 100%;
     margin: 1.6em 0;
     border-collapse: collapse;
@@ -493,105 +500,146 @@ section {
     margin: 30px 0;
 }
 
-.intro {
-    margin-top: 0;
-}
-
-.intro-grid {
+.hero {
     display: grid;
-    grid-gap: 32px;
-    grid-template-rows: auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+    grid-gap: 40px;
+    align-items: start;
+    padding: 40px 0 8px;
 }
 
-@media screen and (min-width: 900px) {
-    .intro-grid {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
-        grid-template-rows: none;
-        align-items: start;
+@media screen and (max-width: 900px) {
+    .hero {
+        grid-template-columns: 1fr;
     }
 }
 
-.intro-grid section,
-.intro-grid .sourceCode {
+/* Pandoc hoists classless heading-led divs, so the hero text column needs
+   a class to survive as one grid item (it comes out as a section). */
+.hero-text {
     margin: 0;
+    min-width: 0;
 }
 
-.intro-grid div.sourceCode {
-    margin: 0;
-}
-
-.intro h1 {
-    font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem);
+.hero h1 {
+    font-size: clamp(1.8rem, 1.2rem + 2vw, 2.4rem);
     font-weight: 450;
     line-height: 1.25;
     letter-spacing: -0.02em;
-    margin: 8px 0 18px;
+    margin: 0 0 16px;
+    text-wrap: balance;
 }
 
-.intro h1 strong {
-    font-weight: 750;
-}
-
-.intro p {
+.hero p {
     font-size: 1.03rem;
     line-height: 1.7;
     max-width: 58ch;
-    margin: 0;
+    margin: 0 0 24px;
 }
 
-.intro .CodeMirror-scroll {
+.hero .CodeMirror-scroll {
     max-height: 400px;
 }
 
-.features {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-gap: 28px;
-    margin: 56px 0;
+.cta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
-.features .block {
-    border-top: 1px solid var(--background-color-3);
-    padding-top: 18px;
-    font-size: 0.94rem;
-    line-height: 1.65;
+.cta.end {
+    justify-content: center;
 }
 
-.features h2 {
+.window {
+    position: relative;
+    background: var(--background-color-2);
+    border: 1px solid var(--background-color-3);
+    border-radius: var(--radius-md);
+    min-width: 0;
+}
+
+.example-tabs {
+    display: flex;
+    gap: 3px;
+    padding: 8px;
+    border-bottom: 1px solid var(--background-color-3);
+    overflow-x: auto;
+}
+
+.example-tabs button {
+    font: inherit;
+    font-size: 13px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    color: var(--text-color-subtle);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.example-tabs button[aria-pressed="true"],
+.example-tabs button:hover {
+    background: var(--background-color-3);
     color: var(--text-color);
-    font-size: 1.05rem;
-    font-weight: 650;
-    letter-spacing: -0.01em;
-    margin: 0 0 8px;
 }
 
-.features .block p {
+/* Six tabs share one row: tighter than the OS switcher. */
+.example-tabs button,
+.example-tabs a.more {
+    font-size: 12px;
+    padding: 5px 7px;
+}
+
+.example-tabs a.more {
+    color: var(--text-color-subtle);
+    text-decoration: none;
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    align-self: center;
+}
+
+.example-tabs a.more:hover {
+    background: var(--background-color-3);
+    color: var(--text-color);
+}
+
+/* The runnable editor keeps its docs-page look inside the window:
+   flatten pandoc's wrapper so there is only one box. */
+.window div.sourceCode {
+    border: none;
+    background: transparent;
     margin: 0;
+    box-shadow: none;
 }
 
-.features .block p + p {
-    margin-top: 0.7em;
+/* Pandoc drops classes on ul/li, so the chips list (the only ul on the
+   front page) is styled positionally. */
+body.frontpage main > ul {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 48px 0 0;
+    padding: 0;
+    list-style: none;
 }
 
-@media screen and (min-width: 768px) {
-    .features {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-
-    /* On desktop the columns stand on their own; the top rules only serve
-       as delimiters in the stacked mobile layout. */
-    .features .block {
-        border-top: none;
-        padding-top: 0;
-    }
+body.frontpage main > ul > li {
+    font-size: 13px;
+    border: 1px solid var(--background-color-3);
+    border-radius: 999px;
+    padding: 4px 14px;
+    background: var(--background-color-2);
 }
 
-.block {
-    margin: 0;
+body.frontpage main > ul > li + li {
+    margin-top: 0;
 }
 
-.block.wide {
-    grid-column: 1 / -1;
+.snippet .prompt {
+    color: var(--text-color-subtle);
+    user-select: none;
 }
 
 button, a.button {
@@ -613,10 +661,14 @@ a.button {
     text-decoration: none;
 }
 
-a.button:hover, button:hover {
+a.button:hover:not(:active), button:hover:not(:active) {
     background: var(--background-color-2);
     border-color: var(--text-color-subtle);
     text-decoration: none;
+}
+
+.example-tabs button:hover {
+    background: var(--background-color-3);
 }
 
 .button.primary {
@@ -625,7 +677,7 @@ a.button:hover, button:hover {
     color: var(--on-accent-strong);
 }
 
-.button.primary:hover {
+.button.primary:hover:not(:active) {
     background: var(--accent-strong-hover);
     border-color: transparent;
     color: var(--on-accent-strong);
@@ -636,29 +688,109 @@ a.button:hover, button:hover {
     tab-size: 4;
 }
 
-#example-selector {
-    display: block;
+/* Pandoc drops classes on p, so section intros (always the p right after
+   the h2) are styled positionally. */
+.part > h2 + p {
+    color: var(--text-color-subtle);
+    margin: 0 0 20px;
+}
+
+body.frontpage .part {
+    margin-top: 56px;
+    scroll-margin-top: 84px;
+}
+
+.cards {
+    display: grid;
+    grid-gap: 20px;
+}
+
+.cards {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+@media screen and (max-width: 800px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Cards with a leading heading come out of pandoc as sections
+   (it sectionizes classed heading-led divs; image-led gallery cards stay
+   divs), so neutralize the base section margin. */
+.card,
+.cards > div {
+    min-width: 0;
+    margin: 0;
+}
+
+.card {
+    border: 1px solid var(--background-color-3);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    background-color: var(--background-color-2);
+}
+
+/* Snippets sit inset against the card background. */
+.card pre.snippet,
+.card div.CodeMirror.snippet {
+    background-color: var(--background-color) !important;
+}
+
+.cards h3 {
+    font-size: 1rem;
+    margin: 0 0 6px;
+}
+
+.cards p {
+    font-size: 0.92rem;
+    margin: 0 0 10px;
+}
+
+.cards p:last-child {
+    margin-bottom: 0;
+}
+
+.cards img,
+.cards .shot {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--radius-sm);
     margin-bottom: 12px;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-color);
-    background: var(--background-color) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M1 1l4 4 4-4" stroke="%23888" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>') no-repeat right 10px center;
+}
+
+.cards img {
+    display: block;
+    object-fit: cover;
+    border: 1px solid var(--background-color-3);
+    background: var(--background-color-2);
+}
+
+.cards .shot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--background-color-3);
+    color: var(--text-color-subtle);
+    font-size: 0.85rem;
+}
+
+/* Static frontpage snippets (display-only fragments): plain pre+code
+   passes pandoc through untouched, and editor.js only touches
+   pre.sourceCode, so these stay exactly as written. */
+pre.snippet,
+div.CodeMirror.snippet {
     border: 1px solid var(--background-color-3);
     border-radius: var(--radius-sm);
-    padding: 6px 30px 6px 10px;
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-    max-width: 100%;
+    font-family: var(--mono);
 }
 
-#example-selector:hover {
-    border-color: var(--text-color-subtle);
-}
-
-#example-selector option {
-    padding: 2px 8px;
+pre.snippet {
+    line-height: 1.6;
+    background: var(--background-color-2);
+    padding: 10px 12px;
+    overflow-x: auto;
+    margin: 0;
 }
 
 .CodeMirror {
@@ -680,6 +812,19 @@ a.button:hover, button:hover {
     padding: 0 18px !important;
 }
 
+/* Read-only highlighted card snippets reuse the snippet box. */
+div.CodeMirror.snippet {
+    background: var(--background-color-2) !important;
+}
+
+div.CodeMirror.snippet .CodeMirror-lines {
+    padding: 10px 0 !important;
+}
+
+div.CodeMirror.snippet .CodeMirror-line {
+    padding: 0 12px !important;
+}
+
 .diagnostic {
     color: var(--text-color);
     padding: 0 4px;
@@ -698,43 +843,43 @@ a.button:hover, button:hover {
     background-color: var(--warning-background-color);
 }
 
+/* Icon-only Run button: a square with a solid fill, so it reads as a
+   button against the editor background it floats over (the generic
+   button style is transparent). The label lives in aria-label. */
 button.run {
     position: absolute;
     right: 14px;
-    top: 10px;
+    top: 14px;
     z-index: 10;
+    width: 30px;
+    height: 30px;
     padding: 0;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    width: 32px;
-    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-color);
 }
 
+button.run:hover:not(:active) {
+    background: var(--background-color-2);
+}
+
+/* CSS triangle: no image asset to load. Nudged right so the
+   triangle's visual mass (heavy at the flat left edge) sits centered. */
 button.run::before {
     content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: var(--background-color-3);
-    background-image: url("lib/play-button.svg");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-    transition: transform 0.15s ease, filter 0.15s ease;
+    display: block;
+    transform: translateX(1px);
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 8px solid currentColor;
+    color: var(--text-color-subtle);
 }
 
-button.run:hover {
-    background: transparent;
-    border: none;
-}
-
-button.run:hover::before {
-    filter: brightness(0.94);
-}
-
-button.run:active::before {
-    transform: scale(0.9);
+button.run:hover:not(:active)::before {
+    color: var(--text-color);
 }
 
 .output {
@@ -751,19 +896,6 @@ button.run:active::before {
 
 .stderr {
     color: var(--error-text);
-}
-
-.bottom-links {
-    margin: 56px auto 24px;
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.bottom-links a {
-    width: fit-content;
 }
 
 .site-footer {
@@ -784,6 +916,20 @@ button.run:active::before {
 
 .page-links a + a {
     margin-left: 16px;
+}
+
+.footer-links {
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    gap: 6px 24px;
+}
+
+.footer-links a {
+    color: var(--text-color-subtle);
+}
+
+.footer-links a:hover {
+    color: var(--text-color);
 }
 
 .next-page {

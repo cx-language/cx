@@ -17,9 +17,17 @@ applications. Each subdirectory is a `cx build` project (see
 - [`operator-overloading.cx`](operator-overloading.cx) — complex numbers with `operator+`/`operator*`.
 - [`printable.cx`](printable.cx) — implement `Printable::print`, get `toString()` for free.
 - [`interpolation.cx`](interpolation.cx) — string interpolation (`$name`, `${expr}`).
-- [`null-safety.cx`](null-safety.cx) — nullable types (`int?`) with compile-time null-safety.
+- [`null-safety.cx`](null-safety.cx) — nullable types (`string?`) with compile-time null-safety, `??` fallback, and narrowing.
 - [`result.cx`](result.cx) — fallible functions returning `Result` instead of throwing.
-- [`tagged-union.cx`](tagged-union.cx) — tagged union (`enum` with payloads) and `switch` dispatch.
+- [`json.cx`](json.cx) — read render settings out of a JSON blob.
+- [`log-filter.cx`](log-filter.cx) — filter error lines out of application logs.
+- [`parse-port.cx`](parse-port.cx) — parse and validate a server port (`int?` narrowing).
+- [`signup.cx`](signup.cx) — signup validation returning errors as `Result` values.
+- [`unions.cx`](unions.cx) — dispatch input events with a tagged union and `switch`; iterate and print all cases of a fieldless `enum`.
+- [`lambdas.cx`](lambdas.cx) — lambdas, captures, and collection pipelines (`filter`/`map`/`sum()`).
+- [`errors.cx`](errors.cx) — fallible texture creation returning `Result` values.
+- [`vectors.cx`](vectors.cx) — fixed-size arrays as vectors: element-wise math, dot products, swizzles.
+- [`cleanup.cx`](cleanup.cx) — scope-exit cleanup with `defer` and destructors.
 - [`mandelbrot.cx`](mandelbrot.cx) — Mandelbrot set visualizer with a custom `Complex` type.
 - [`brainfuck.cx`](brainfuck.cx) — Brainfuck interpreter.
 - [`tree.cx`](tree.cx) — recursive directory listing using C APIs (`dirent.h`).

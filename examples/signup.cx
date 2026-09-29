@@ -1,0 +1,26 @@
+// Validate a signup form, returning errors as values.
+struct User {
+    string name;
+    int age;
+}
+
+Result<User, string> createUser(string name, int age) {
+    if name.empty() {
+        return Err("name must not be empty");
+    }
+    if age < 13 {
+        return Err("must be 13 or older to sign up");
+    }
+    return Ok(User(name = name, age = age));
+}
+
+void main() {
+    switch createUser("ada", 36) {
+        case Ok user: println("welcome, ", user.name);
+        case Err error: println("rejected: ", error);
+    }
+    switch createUser("", 9) {
+        case Ok user: println("welcome, ", user.name);
+        case Err error: println("rejected: ", error);
+    }
+}

@@ -1,0 +1,20 @@
+// A destructor releases a value's resources when it goes out of scope.
+struct Connection {
+    string host;
+    ~Connection() { println("closed ", host); }
+}
+
+void query(string server, bool fail) {
+    var _conn = Connection(host = server); // auto-closed at scope exit
+    defer println("finished ", server); // defer runs on every exit path
+    if fail {
+        println("error, returning early");
+        return; // both cleanups run right before this return
+    }
+    println("results from ", server);
+}
+
+void main() {
+    query("A", false);
+    query("B", true);
+}

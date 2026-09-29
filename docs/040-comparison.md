@@ -1,6 +1,17 @@
 # Comparison with related projects
 
-## Difference between cx and Rust
+|           | cx                                 | C++                                                  | Rust                           |
+|-----------|------------------------------------|------------------------------------------------------|--------------------------------|
+| Null      | `T?` types with auto-narrowing     | Pointers always nullable, `std::optional`, no safety | `Option`, explicit `Some(...)` |
+| Sum types | Tagged unions via `enum`           | `std::variant` + visitor helper                      | Tagged unions via `enum`       |
+| Errors    | `Result`                           | Exceptions, `std::expected`                          | `Result`                       |
+| C interop | `import "foo.h"`, no bindings      | Native                                               | Manual `extern` declarations   |
+| Build     | `cx build`, implicit module tree   | Headers + external build system                      | Cargo, explicit module tree    |
+| Safety    | Debug checks + sanitizers built in | Opt-in sanitizers                                    | Proven by the borrow checker   |
+
+## cx vs Rust
+
+- If you need guaranteed memory safety, pick Rust.
 
 - Compile-time memory safety is useful for certain types of projects,
   but it comes at a cost in language complexity (e.g. lifetime annotations)
@@ -39,7 +50,7 @@
 
 - Rust doesn't allow function overloading. cx does.
 
-## Difference between cx and Zig
+## cx vs Zig
 
 - Zig doesn't have operator overloading due to its "no hidden control flow" principle.
   cx allows operator overloading.
@@ -57,10 +68,10 @@
 - Zig is a more low-level-focused language, competing primarily with C.
   cx is more of a hybrid low-level/high-level language, competing primarily with C++.
 
-- Zig has no automatic type narrowing for accessing a nullable value inside a matching null check, 
+- Zig has no automatic type narrowing for accessing a nullable value inside a matching null check,
   instead opting for an additional syntax: `if (optional_foo) |foo| { ... }`
 
-## Difference between cx and Jai
+## cx vs Jai
 
 - cx has compile-time null-safety and nullable types.
 
@@ -75,8 +86,18 @@
 - cx doesn't require importing files from the same project.
   All cx files in the project source directory are by default assumed to belong to the project as a "convention over configuration".
 
-- cx has a more familiar C-style syntax, which:
-  - allows C/C++ programmers to be immediately productive with it
-  - allows existing syntax tools such as syntax highlighters and code formatters to be used with little to no changes.
+- cx has a syntax that is more familiar to C/C++ programmers, allowing them to adapt to the language more effortlessly.
+
+## cx vs Odin
+
+- cx has compile-time null-safety and nullable types with automatic narrowing.
+  Odin uses `Maybe(T)` with explicit handling.
+
+- cx has method call syntax.
+  Odin has no methods; procedures take the receiver as an explicit first argument.
+
+- cx has automatic importing of C headers, implemented using the Clang API.
+
+- cx has a syntax that is more familiar to C/C++ programmers, allowing them to adapt to the language more effortlessly.
 
 [^rust-modules]: <https://boats.gitlab.io/blog/post/2017-01-04-the-rust-module-system-is-too-confusing/>{target="_blank"}

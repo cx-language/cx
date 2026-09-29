@@ -45,6 +45,18 @@ void main() {
 }
 ```
 
-## Planned features
+## Captures
 
-- Capturing variables from the enclosing scope; for now, lambdas can only use their parameters.
+Stored lambdas capture variables from the enclosing scope by copy:
+
+```cs
+void main() {
+    int threshold = 100;
+    var isBig = (int n) => n >= threshold;
+    println(isBig(42)); // prints false
+    println(isBig(101)); // prints true
+}
+```
+
+Capturing lambdas cannot convert to function pointer types; they can be
+stored in variables and called directly.

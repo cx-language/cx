@@ -1,13 +1,33 @@
-// Nullable types with compile-time null-safety.
-int? findAge(string name) {
-    if name == "ada" return 36;
-    return null;
+void main() {
+    // Every type is non-null unless marked with '?'
+    string? lang = getSetting(Language);
+    // println(lang.startsWith("en")); // Try uncommenting for a warning
+    if lang {
+        // 'lang' has type 'string' in this branch, so this is now fine:
+        println(lang.startsWith("en"));
+    }
+    println(getSetting(Proxy) ?? "no proxy"); // fallback value
+
+    // Sure it isn't null? Assert with '!' (aborts if it is)
+    println(getSetting(Theme)! + " mode");
+
+    string? key = getSetting(ApiKey);
+    switch key { // Or match both cases
+        case Some:
+            // 'key' narrowed to 'string' in this branch
+        	println("key: ", key.substr(0..4), "...");
+        case None:
+            println("no API key set");
+    }
 }
 
-void main() {
-    int? age = findAge("ada");
-    if age {
-        println("ada is ", age);
+enum Setting { Theme, Language, Proxy, ApiKey }
+
+string? getSetting(Setting setting) {
+    switch setting {
+        case Theme: return "dark";
+        case Language: return "en";
+ 	    case ApiKey: return "cafebabe";
+        default: return null; // not configured
     }
-    println(findAge("grace")); // null
 }

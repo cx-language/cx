@@ -1,9 +1,9 @@
 // Errors are values: fallible functions return Result instead of throwing.
 Result<int, string> divide(int a, int b) {
     if b == 0 {
-        return Result.Err(error = "division by zero");
+        return Err("division by zero");
     }
-    return Result.Ok(value = a / b);
+    return Ok(a / b);
 }
 
 void main() {

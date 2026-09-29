@@ -1,54 +1,180 @@
 <link rel="stylesheet" href="index.css">
 
-<section class="intro">
-    <div class="intro-grid">
-        <div class="intro-text">
-            <h1>cx is a language designed for <strong>performance and productivity</strong>.</h1>
-            <p>
-                cx is a hybrid low-level / high-level programming language focused on runtime
-                performance and developer productivity, in this order of priority. The language is simple and
-                unopinionated, has a clean C-like syntax, and supports imperative, generic, data-oriented, functional,
-                and object-oriented programming.
-            </p>
+<div class="hero">
+    <div class="hero-text">
+        <h1>cx is a fast language that gets out of your way</h1>
+        <p>
+            Built for shipping high-performance software and enjoying the process, it features safety checks by default,
+            simple C-like syntax, and type-safe constructs as efficient as hand-written C.
+        </p>
+        <div class="cta">
+            <a class="button primary" href="https://github.com/cx-language/cx" target="_blank">Source code</a>
+            <a class="button" href="./language-overview">Language overview</a>
         </div>
-        <div class="showcase">
-            ##EXAMPLESELECTOR##
-            <pre class="sourceCode cs"><code class="sourceCode cs">##EXAMPLECODE##</code></pre>
+    </div>
+    <div class="showcase window">
+        ##EXAMPLETABS##
+        <pre class="sourceCode cs"><code class="sourceCode cs">##EXAMPLECODE##</code></pre>
+    </div>
+</div>
+
+<ul class="chips">
+    <li>No GC</li>
+    <li>Data-oriented</li>
+    <li>Direct C imports</li>
+    <li>Null-safe by default</li>
+    <li>LLVM + C backend</li>
+    <li>Tagged unions</li>
+    <li>Vector swizzles</li>
+    <li>Language server</li>
+    <li>Lazy iterators</li>
+    <li>Multi-paradigm</li>
+    <li>Generics with interfaces</li>
+    <li>Slice views</li>
+    <li>Errors as values</li>
+    <li>Checked debug builds</li>
+    <li>Joy of programming</li>
+</ul>
+
+<section class="part">
+    <div class="cards">
+        <div class="card">
+            <h3>Null safety at compile time</h3>
+            <p>Every type is non-nullable unless marked with <code>?</code>. The compiler analyzes the data-flow to
+                refine the type based on your null checks, so a forgotten
+                null check is a compile-time warning, not a crash.</p>
+            <pre class="snippet cx"><code>string? name = getName();
+println(name.toLower()); // warning, name may be null
+if name {
+    println(name.toLower()); // ok, name is non-null here
+}</code></pre>
+        </div>
+        <div class="card">
+            <h3>Catches leaks and double-frees in debug builds</h3>
+            <p>Debug builds track every allocation and fail the run at exit if any leaked, reporting how many
+                allocations and bytes went missing. No Valgrind round-trip for the common case.</p>
+            <pre class="snippet"><code>$ cx run
+memory leak: 1 allocation(s), 32 byte(s) leaked</code></pre>
+        </div>
+        <div class="card">
+            <h3>Type-safe tagged unions</h3>
+            <p>Tagged unions via <code>enum</code>, with direct <code>switch</code> matching and type-narrowing.
+                Polymorphism without vtables, allocation, or boilerplate.</p>
+            <pre class="snippet cx"><code>switch event {
+    case Click: println("fire at ", event.x, ", ", event.y);
+    case Keypress: println("move ", event.key);
+    case Quit: println(event.x); // error, no 'x' in Quit
+}</code></pre>
+        </div>
+        <div class="card">
+            <h3>Zero-allocation iterator chains</h3>
+            <p>Functions like <code>filter</code>, <code>map</code>, <code>chain</code> return pipeable lazy views. End
+                the chain with e.g. <code>sum</code>, <code>any</code>, or a plain <code>for</code> loop and the whole
+                pipeline runs without a single heap allocation.</p>
+            <pre class="snippet cx"><code>var total = numbers
+    .filter(n => n % 2 == 1)
+    .map(n => n * n)
+    .sum();
+println(total); // 117, zero heap allocations</code></pre>
+        </div>
+        <div class="card">
+            <h3>Import C headers directly</h3>
+            <p>C interop without bindings. Adopt cx file by file next to your existing C/C++ code.</p>
+            <pre class="snippet cx"><code>import "SDL3/SDL.h";
+SDL_Init(SDL_INIT_VIDEO);
+defer SDL_Quit();</code></pre>
+        </div>
+        <div class="card">
+            <h3>Vectors and swizzles</h3>
+            <p>Fixed-size arrays double as vectors: element-wise math, dot products, and GLSL-style swizzle reads and
+                writes. Larger element-wise loops vectorize in release builds.</p>
+            <pre class="snippet cx"><code>float[3] pos = [0.0, 10.0, 0.0];
+float[3] vel = [3.0, 4.0, 0.0];
+vel.y -= 9.8 * dt;
+pos += vel * dt;</code></pre>
+        </div>
+        <div class="card">
+            <h3>Zero-config builds</h3>
+            <p><code>cx run</code> finds every <code>.cx</code> file in your project and directly runs using JIT
+                compilation; no project files or build scripts needed. The <code>build.cx</code> build config file can
+                be added when you need to customize your build.</p>
+            <pre class="snippet"><code>$ ls
+main.cx  util.cx
+$ cx build && ./myproject
+Hello world</code></pre>
+        </div>
+        <div class="card">
+            <h3>Errors are values</h3>
+            <p>Fallible functions return <code>Result</code> by convention. Callers handle both cases with
+                <code>switch</code>: every
+                error path is visible in the code.</p>
+            <pre class="snippet cx"><code>switch makeImage(width, height) {
+    case Ok img: println(img.width, "x", img.height);
+    case Err e: println("rejected: ", e);
+}</code></pre>
         </div>
     </div>
 </section>
 
-<section class="features">
-    <div class="block">
-        <h2>Performance</h2>
-        <p>
-            cx compiles to efficient native code using LLVM. There's no garbage collection, hidden allocation, or runtime.
-            cx takes a performance-first approach to common programming patterns, such as subtyping (tagged unions),
-            map/filter/reduce (lazy iterators), and string/array handling (slices). Even fast compilation is a goal of cx.
-        </p>
-    </div>
-
-    <div class="block">
-        <h2>Expressiveness</h2>
-        <p>
-            cx is a simple yet expressive language, featuring a strong type system with compile-time null-safety, sum types,
-            and trait-like interfaces. It has both high-level programming constructs and support for systems-level
-            programming, such as pointers, destructors, and generics. There are no preprocessor or macros.
-        </p>
-    </div>
-
-    <div class="block">
-        <h2>Productivity</h2>
-        <p>
-            cx has great C interop: C headers can be imported directly without the need for bindings. The clean and familiar
-            C-like syntax avoids unnecessary boilerplate, and allows C/C++ programmers to instantly get productive
-            without a steep learning curve. Debug builds check for buffer or arithmetic overflows by default.
-        </p>
+<section class="part">
+    <h2>Tooling included</h2>
+    <div class="cards">
+        <div class="card">
+            <h3><code>cx-lsp</code> language server</h3>
+            <p>Diagnostics as you type, hover signatures, go to definition, completions, find references, and semantic
+                highlighting - in VS Code, Neovim, Emacs, Helix, Zed, anything speaking LSP.</p>
+            <p><a href="./lsp">Editor setup →</a></p>
+        </div>
+        <div class="card">
+            <h3><code>cx test</code> test runner</h3>
+            <p>Mark a top-level function with <code>@test</code> to make it a unit test, then run them all with <code>cx
+                test</code>. Nothing to install, no boilerplate.</p>
+            <pre class="snippet cx"><code>@test
+void mathWorks() {
+    assert(add(2, 3) == 5);
+}</code></pre>
+        </div>
     </div>
 </section>
 
-<section class="bottom-links">
-    <a class="button primary" href="./introduction">Why cx</a>
-    <a class="button" href="https://github.com/cx-language/cx/tree/main/examples" target="_blank">More examples</a>
-    <a class="button" href="https://github.com/cx-language/cx" target="_blank">Source code</a>
+<section class="part">
+    <h2>Built with cx</h2>
+    <div class="cards">
+        <!-- Unboxed: a real screenshot needs no placeholder chrome. -->
+        <div>
+            <img src="voxel-screenshot.jpg" alt="Voxel game screenshot" loading="lazy">
+            <h3><a href="https://github.com/cx-language/cx/tree/main/examples/voxel-game" target="_blank">Voxel game</a>
+            </h3>
+            <p>Minecraft-style voxel game: procedural terrain, first-person movement, block breaking and placing. OpenGL
+                3.3 + GLFW, imported as plain C headers.</p>
+        </div>
+        <div>
+            <img src="fractal-screenshot.jpg" alt="Fractal explorer screenshot" loading="lazy">
+            <h3><a href="https://github.com/cx-language/cx/tree/main/examples/fractal" target="_blank">Fractal
+                explorer</a></h3>
+            <p>GPU Mandelbrot explorer: the fragment shader evaluates the set per pixel with smooth coloring, so panning
+                and zooming stay fluid. OpenGL + GLFW, imported as plain C headers.</p>
+        </div>
+        <div>
+            <img src="raytracer-screenshot.png" alt="Raytracer output" loading="lazy">
+            <h3><a href="https://github.com/cx-language/cx/tree/main/examples/raytracer" target="_blank">Raytracer</a>
+            </h3>
+            <p>Whitted-style CPU ray tracer: three reflective spheres over a checkered ground plane, with shadows,
+                Blinn-Phong highlights, and reflections. Zero dependencies; renders 800x600 in about 0.3 seconds.</p>
+        </div>
+        <div>
+            <img src="boids-screenshot.png" alt="Boids flocking screenshot" loading="lazy">
+            <h3><a href="https://github.com/cx-language/cx/tree/main/examples/boids" target="_blank">Boids</a></h3>
+            <p>Flocking simulation: 1500 agents with separation, alignment, and cohesion over a uniform grid, colored by
+                speed. SDL3 for graphics, imported as a plain C header.</p>
+        </div>
+    </div>
+</section>
+
+<section class="part">
+    <div class="cta end">
+        <a class="button primary" href="./language-overview">Language overview</a>
+        <a class="button" href="https://github.com/cx-language/cx/tree/main/examples" target="_blank">See examples</a>
+        <a class="button" href="https://github.com/cx-language/cx" target="_blank">Source code</a>
+    </div>
 </section>
