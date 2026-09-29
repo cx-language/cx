@@ -143,6 +143,30 @@ void testRemoveReturnValue() {
 }
 
 @test
+void testRemoveDestroysKey() {
+    var map = Map<StringBuf, List<int>>();
+    map.insert(StringBuf("leak"), List<int>());
+    map[StringBuf("leak")]!.push(42);
+
+    var value = map.remove(StringBuf("leak"))!;
+    assert(value.size() == 1);
+    assert(value[0] == 42);
+    assert(map.size() == 0);
+}
+
+@test
+void testRemoveTrivialKeyDroppingValue() {
+    var map = Map<int, List<int>>();
+    map.insert(1, List<int>());
+    map[1]!.push(42);
+
+    var value = map.remove(1)!;
+    assert(value.size() == 1);
+    assert(value[0] == 42);
+    assert(map.size() == 0);
+}
+
+@test
 void testClear() {
     var map = Map<string, int>();
     map.insert("a", 1);

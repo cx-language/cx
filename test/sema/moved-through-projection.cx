@@ -156,3 +156,29 @@ void explicitDeinitStillConsumes(Wrap w) {
     // CHECK: [[@LINE+1]]:13: error: use of moved value 'w'
     println(w.c.i);
 }
+
+struct IntWrap {
+    int i;
+    List<int> l;
+}
+
+void explicitTrivialDeinitStillConsumes(IntWrap w) {
+    w.i.deinit();
+    // CHECK: [[@LINE+1]]:14: error: use of moved value 'w'
+    var w2 = w;
+}
+
+struct Trivial {
+    int x;
+}
+
+struct TrivialWrap {
+    Trivial t;
+    List<int> l;
+}
+
+void explicitTrivialStructDeinitStillConsumes(TrivialWrap w) {
+    w.t.deinit();
+    // CHECK: [[@LINE+1]]:14: error: use of moved value 'w'
+    var w2 = w;
+}

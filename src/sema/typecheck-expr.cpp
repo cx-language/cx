@@ -3613,6 +3613,37 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
         expr.receiverType = receiverType;
 
+        // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
+        // Unlike other moves this applies even to trivial receivers: the base may still
+        // hold destruction to skip. Borrowed bases keep the old ungated leniency.
+        auto consumeDeinitBase = [&](Expr* receiver) {
+            Expr* base = receiver;
+            while (true) {
+                if (auto* member = llvm::dyn_cast<MemberExpr>(base)) {
+                    base = member->base;
+                } else if (auto* index = llvm::dyn_cast<IndexExpr>(base)) {
+                    base = index->getBase();
+                } else {
+                    break;
+                }
+            }
+            llvm::SaveAndRestore saveInExplicitDeinit(inExplicitDeinit, true);
+            auto* baseVar = llvm::dyn_cast<VarExpr>(base);
+            bool track = base->type && base->type.needsDestruction();
+            if (baseVar && !(base->type && base->type.isReferenceType())) {
+                receiver->isMovedFrom = true;
+                if (auto* member = llvm::dyn_cast<MemberExpr>(receiver)) {
+                    propagateMove(member->base, track, receiver->location, /*checkLoop=*/true);
+                } else if (auto* index = llvm::dyn_cast<IndexExpr>(receiver)) {
+                    propagateMove(index->getBase(), track, receiver->location, /*checkLoop=*/true);
+                } else {
+                    propagateMove(receiver, track, receiver->location, /*checkLoop=*/true);
+                }
+            } else {
+                setMoved(receiver, true, track);
+            }
+        };
+
         // T[*] is a pointer view rather than an Array<T, N> value. Its data()
         // operation is the identity; fixed arrays use the stdlib declaration.
         if (receiverType.removeOptional().isArrayType() && !receiverType.removeOptional().isFixedArray() && expr.getFunctionName() == "data") {
@@ -3631,6 +3662,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         if (receiverType.removeOptional().removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
+            consumeDeinitBase(expr.getReceiver());
             return Type::getVoid();
         }
 
@@ -3678,6 +3710,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         if (decls.empty() && expr.getFunctionName() == "deinit") {
+            consumeDeinitBase(expr.getReceiver());
             return Type::getVoid();
         }
 
@@ -3701,22 +3734,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             returnTypeOverride = ArrayPointerType::get(arrayReceiverType.getElementType(), arrayReceiverType.location);
         }
 
-        // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
         // For projections only a base with destruction to skip is consumed: destroying an
         // element through a pointer (`buffer[0].deinit()`) must not consume the pointer.
         if (llvm::isa<DestructorDecl>(decl)) {
-            Expr* base = expr.getReceiver();
-            while (true) {
-                if (auto* member = llvm::dyn_cast<MemberExpr>(base)) {
-                    base = member->base;
-                } else if (auto* index = llvm::dyn_cast<IndexExpr>(base)) {
-                    base = index->getBase();
-                } else {
-                    break;
-                }
-            }
-            llvm::SaveAndRestore saveInExplicitDeinit(inExplicitDeinit, true);
-            setMoved(expr.getReceiver(), true, /*trackVars=*/base->type && base->type.needsDestruction());
+            consumeDeinitBase(expr.getReceiver());
         }
     } else {
         auto callee = expr.getFunctionName();

@@ -172,6 +172,15 @@ void localDeinitInLoopIsRejected(StringBuf x) {
     }
 }
 
+void indexDeinitInLoopIsRejected() {
+    var arr = [StringBuf("a")];
+    var b = true;
+    while b {
+        // CHECK: error: cannot move 'arr' inside a loop; move it before the loop or recreate it inside
+        arr[0].deinit();
+    }
+}
+
 void preLoopRangeIsAllowed(List<StringBuf> l) {
     for e in l {
         println(string(e));

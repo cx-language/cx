@@ -66,10 +66,15 @@ struct Map<Key: Hashable, Value> {
 
         for entry, i in slot {
             if entry.key == *e {
-                // Move the value out of the removed entry in place: naming the
-                // entry would require `.take()`, which generic values may not provide.
                 size--;
-                return slot.removeAt(i).value;
+                var removed = slot.removeAt(i);
+                // Bitwise-move the value out (naming the entry forbids field
+                // moves), then destroy the key: the entry itself is never
+                // destroyed after the deinit marks it moved.
+                Value out = undefined;
+                memcpy(&out, &removed.value, c_size_t(sizeof(Value)));
+                removed.key.deinit();
+                return out;
             }
         }
 
