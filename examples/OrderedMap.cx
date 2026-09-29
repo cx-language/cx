@@ -229,13 +229,21 @@ struct OrderedMap<Key, Value> {
         }
 
         if delNode != null {
-            var removedValue = delNode.entry.value;
-            delNode.entry.key = n.entry.key;
-            delNode.entry.value = n.entry.value;
+            // Move the value out; destroy the old key; shuffle the successor
+            // entry into delNode (skipped when delNode is n); free n raw.
+            Value removedValue = undefined;
+            (&removedValue).init((*delNode).entry.value);
+            delNode.entry.key.deinit();
+            if delNode != n {
+                (&(*delNode).entry.key).init((*n).entry.key);
+                (&(*delNode).entry.value).init((*n).entry.value);
+            }
 
             child = n.left != null ? n.left : n.right;
 
-            if root.entry.key == *key {
+            // n ends at root only when the search never descends, so delNode
+            // is root too (keys are unique). Keys can't be compared: dead.
+            if root == n {
                 root = child;
             } else {
                 if parent.left == n {
@@ -246,7 +254,6 @@ struct OrderedMap<Key, Value> {
 
                 rebalance(parent);
             }
-            n.deinit();
             deallocate(n);
             size--;
             return removedValue;
@@ -731,4 +738,53 @@ void testOwningEntriesClear() {
     var v3 = StringBuf("3");
     m.insert(k3, v3);
     assert(m.size() == 1);
+}
+
+StringBuf numKey(int i) {
+    var k = StringBuf("key");
+    k.push(char('0' + i));
+    return k;
+}
+
+@test
+void testOwningEntriesRemove() {
+    var m = OrderedMap<StringBuf, List<int>>();
+
+    for i in 0..10 {
+        var v = List<int>();
+        v.push(i);
+        m.insert(numKey(i), v);
+    }
+    assert(m.size() == 10);
+
+    // Remove from the middle (shuffles a successor entry into place).
+    var mid = numKey(5);
+    var midValue = m.remove(mid)!;
+    assert(midValue.size() == 1);
+    assert(midValue[0] == 5);
+    assert(m.size() == 9);
+    assert(!m.contains(mid));
+
+    // Survivors intact, in order.
+    var expected = 0;
+    for e in m {
+        if expected == 5 {
+            expected++;
+        }
+        assert(e.key == numKey(expected));
+        assert(e.value.size() == 1);
+        assert(e.value[0] == expected);
+        expected++;
+    }
+    assert(expected == 10);
+
+    // Remove everything else.
+    for i in 0..10 {
+        if i == 5 {
+            continue;
+        }
+        assert(m.remove(numKey(i))!.size() == 1);
+    }
+    assert(m.size() == 0);
+    assert(m.remove(mid) == null);
 }
