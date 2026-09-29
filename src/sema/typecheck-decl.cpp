@@ -615,6 +615,9 @@ void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLeve
     }
 
     typecheckType(decl.type, userAccessLevel, true, true);
+    if (resolveTypeAliases(decl.type).isVoid()) {
+        ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "cannot declare parameter '" << decl.getName() << "' of type 'void'");
+    }
     if (!decl.getName().empty()) {
         currentModule->symbolTable.add(decl.getName(), &decl);
     }
@@ -1963,6 +1966,9 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     bool allowReference = false;
     if (auto* parent = llvm::dyn_cast<TypeDecl>(decl.getParentDecl())) allowReference = allowsSubstitutedReference(*parent);
     typecheckType(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel), true, allowReference);
+    if (decl.type.isVoid()) {
+        ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "cannot declare field '" << decl.getName() << "' of type 'void'");
+    }
 
     if (decl.defaultValue) {
         typecheckExpr(*decl.defaultValue, false, decl.type);

@@ -16,3 +16,12 @@ void declaredVoidNoInitializer() {
     // CHECK: [[@LINE+1]]:10: error: cannot declare variable 't' of type 'void'
     void t;
 }
+
+// CHECK: [[@LINE+1]]:21: error: cannot declare parameter 'p' of type 'void'
+void voidParam(void p) {
+}
+
+struct VoidField {
+    // CHECK: [[@LINE+1]]:10: error: cannot declare field 'x' of type 'void'
+    void x;
+}
