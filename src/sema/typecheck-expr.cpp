@@ -3332,6 +3332,13 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         }
     }
 
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr); binaryExpr && (binaryExpr->op == Token::Equal || binaryExpr->op == Token::NotEqual)) {
+        // `==`/`!=` never unwrap optionals: drop matches that unwrap so a null-aware overload or the fallback wins.
+        auto dropsNullability = [](const Match& match) { return match.didUnwrapOptional; };
+        matches.erase(llvm::remove_if(matches, dropsNullability), matches.end());
+        templateMatches.erase(llvm::remove_if(templateMatches, dropsNullability), templateMatches.end());
+    }
+
     if (matches.empty()) {
         matches = std::move(templateMatches);
     }

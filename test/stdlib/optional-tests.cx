@@ -33,3 +33,61 @@ void testOptionalComparison() {
     assert(m != v);
     assert(v != m);
 }
+
+@test
+void testOptionalVsOptionalWithConcreteOverload() {
+    // string has a concrete operator==: resolving through it would unwrap and
+    // trap on null. The null-aware overload must win instead, warning-free.
+    string? a = "a";
+    string? b = "a";
+    string? c = "b";
+    string? n = null;
+    string? m = null;
+    assert(a == b);
+    assert(!(a == c));
+    assert(!(a == n));
+    assert(!(n == a));
+    assert(n == m);
+    assert(a != c);
+    assert(a != n);
+    assert(n != a);
+    assert(!(n != m));
+    assert(!(a != b));
+    // Optional against a plain value in both orders.
+    assert(a == "a");
+    assert("a" == a);
+    assert(!(n == "a"));
+    assert(!("a" == n));
+    assert(n != "a");
+    assert("a" != n);
+    assert(!(a != "a"));
+}
+
+struct Plain {
+    int x;
+}
+
+bool operator==(Plain& a, Plain& b) {
+    return a.x == b.x;
+}
+
+@test
+void testOptionalVsOptionalWithoutComparable() {
+    // Plain is not Comparable, so no overload matches: the fallback lowers to
+    // null checks plus the wrapped comparison.
+    Plain? a = Plain(x = 1);
+    Plain? b = Plain(x = 1);
+    Plain? c = Plain(x = 2);
+    Plain? n = null;
+    assert(a == b);
+    assert(!(a == c));
+    assert(!(a == n));
+    assert(!(n == a));
+    assert(n == n);
+    assert(a != c);
+    assert(a != n);
+    assert(n != a);
+    assert(!(a != b));
+    assert(a == Plain(x = 1));
+    assert(!(n == Plain(x = 1)));
+}
