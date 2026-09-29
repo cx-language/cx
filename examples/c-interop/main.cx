@@ -7,4 +7,9 @@ void main() {
     println(c_add(20.0, 10.0)); // prints 30
     println(c_multiply(6.0, 7.0)); // prints 42
     println(c_factorial(5)); // prints 120
+    Big b;
+    b.a = 1;
+    b.b = 2;
+    b.c = 3;
+    println(c_sum_big(b)); // prints 6
 }

@@ -35,6 +35,28 @@ static const llvm::DataLayout& getHostDataLayout() {
     return *dataLayout;
 }
 
+static bool isAArch64Target() {
+    static bool result = [] {
+        llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
+        return triple.isAArch64();
+    }();
+    return result;
+}
+
+// True when large aggregates cross to the callee as a plain pointer instead
+// of byval: on AArch64, C passes a pointer to a caller copy, while byval
+// lowers to cx's stack convention. x86-64 keeps byval (matching SysV), as
+// does Windows (untested there). Indirect calls can't see the callee and
+// sema rejects extern "C" functions as values, so those keep byval.
+static bool useExternIndirectPointer(const Function* callee) {
+#ifdef _WIN32
+    (void)callee;
+    return false;
+#else
+    return callee && callee->declaredExternC && isAArch64Target();
+#endif
+}
+
 llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
     // c_size_t matches C's size_t (pointer-sized); host width is target width.
     if (name == "c_size_t") return sizeof(void*) == 8 ? llvm::Type::getInt64Ty(ctx) : llvm::Type::getInt32Ty(ctx);
@@ -297,7 +319,7 @@ llvm::Function* LLVMGenerator::getFunction(const Function* function) {
     for (auto param = function->params.begin(); arg != argsEnd; ++param, ++arg) {
         arg->setName(param->name);
         auto paramLLVMType = getLLVMType(param->type);
-        if (shouldPassIndirectly(paramLLVMType)) {
+        if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(function)) {
             arg->addAttr(llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
             auto align = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
             arg->addAttr(llvm::Attribute::getWithAlignment(ctx, llvm::Align(align)));
@@ -558,6 +580,7 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
     auto cxFunctionType = inst->function->getType();
     if (cxFunctionType->isPointerType()) cxFunctionType = cxFunctionType->getPointee();
     ASSERT(cxFunctionType->isFunctionType());
+    auto* callee = llvm::dyn_cast<Function>(inst->function);
 
     bool isSret;
     auto* llvmFunctionType = llvm::cast<llvm::FunctionType>(getLLVMType(cxFunctionType, &isSret));
@@ -581,6 +604,11 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
                 }
             } else if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
                 value = materializeConstant(constant, argLLVMType);
+            } else if (useExternIndirectPointer(callee)) {
+                // The C callee may write its by-value copy; pass a copy, not the variable.
+                auto* copy = createEntryAlloca(argLLVMType, "extern.copy");
+                emitMemcpy(copy, value, argLLVMType);
+                value = copy;
             }
         }
         args.push_back(value);
@@ -596,7 +624,7 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         call->addParamAttr(0, llvm::Attribute::getWithAlignment(ctx, llvm::Align(align)));
         for (size_t i = 0; i < paramTypes.size(); ++i) {
             auto paramLLVMType = getLLVMType(paramTypes[i]);
-            if (shouldPassIndirectly(paramLLVMType)) {
+            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee)) {
                 // +1 for the hidden sret parameter.
                 unsigned index = static_cast<unsigned>(i + 1);
                 call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
@@ -612,7 +640,7 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         auto* call = builder.CreateCall(llvmFunctionType, function, args);
         for (size_t i = 0; i < paramTypes.size(); ++i) {
             auto paramLLVMType = getLLVMType(paramTypes[i]);
-            if (shouldPassIndirectly(paramLLVMType)) {
+            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee)) {
                 unsigned index = static_cast<unsigned>(i);
                 call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
                 auto paramAlign = getHostDataLayout().getABITypeAlign(paramLLVMType).value();

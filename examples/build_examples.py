@@ -164,7 +164,7 @@ if failures:
     print(f"failed to build: {', '.join(sorted(failures))}")
     sys.exit(1)
 
-check_calls_cx("c-interop", "main.c", "c-caller", "1\n5.000000\n", C_COMPILERS, ["-O2"], [], ["-lm"])
+check_calls_cx("c-interop", "main.c", "c-caller", "1\n5.000000\n6\n", C_COMPILERS, ["-O2"], [], ["-lm"])
 check_calls_cx("cxx-interop", "main.cpp", "cxx-caller", "1\n0\n60\n", CXX_COMPILERS, ["-O2", "-x", "c"], ["-std=c++17"])
 
 # Clean the intermediate objects for the interop examples (built before/after

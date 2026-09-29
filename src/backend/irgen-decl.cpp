@@ -83,8 +83,16 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     }
 
     auto function = new Function{
-        ValueKind::Function,           mangledName,       decl.getName().str(), returnType, std::move(params), {},
-        decl.isExtern() && !decl.body, decl.isVariadic(), decl.getLocation(),
+        ValueKind::Function,
+        mangledName,
+        decl.getName().str(),
+        returnType,
+        std::move(params),
+        {},
+        decl.isExtern() && !decl.body,
+        decl.isExtern() && !decl.proto.cppLinkage,
+        decl.isVariadic(),
+        decl.getLocation(),
     };
     if (!conflict) {
         module->functions.push_back(function);

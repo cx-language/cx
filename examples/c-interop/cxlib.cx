@@ -8,3 +8,11 @@ extern c_int cx_is_even(c_int n) {
 extern c_double cx_hypot(c_double a, c_double b) {
     return sqrt(a * a + b * b);
 }
+
+// Big comes from mathlib.h, shared with main.cx, so both directions agree
+// on one struct definition.
+import "mathlib.h";
+
+extern c_long cx_sum_big(Big b) {
+    return b.a + b.b + b.c;
+}

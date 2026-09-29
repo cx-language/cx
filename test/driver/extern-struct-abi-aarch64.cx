@@ -1,0 +1,33 @@
+// REQUIRES: aarch64
+// RUN: %cx --print-llvm %s | %FileCheck %s
+struct Big {
+    c_long a;
+    c_long b;
+    c_long c;
+}
+
+extern "C" c_long sum_big(Big b);
+
+// AArch64 C passes large structs as a pointer to a caller copy, while
+// byval lowers to the stack convention, so extern callees take a plain
+// pointer. The closing paren pins the absence of byval:
+// CHECK: declare {{.*}} @sum_big(ptr)
+extern c_long cx_sum_big(Big b) {
+    return b.a + b.b + b.c;
+}
+
+// CHECK: define {{.*}} @cx_sum_big(ptr %b)
+// The caller copies the argument so the callee can't mutate the caller's value:
+// CHECK: %extern.copy = alloca %Big
+// CHECK: call void @llvm.memcpy.{{.*}}(ptr {{.*}} %extern.copy, ptr {{.*}}, i64 24, i1 false)
+// CHECK: call {{.*}} @sum_big(ptr %extern.copy)
+
+int main() {
+    Big b;
+    b.a = 1;
+    b.b = 2;
+    b.c = 3;
+    println(sum_big(b));
+    println(cx_sum_big(b));
+    return 0;
+}

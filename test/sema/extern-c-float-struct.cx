@@ -1,0 +1,86 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct Mixed {
+    c_int i;
+    float f;
+}
+
+struct BigF {
+    c_double a;
+    c_double b;
+    c_double c;
+}
+
+struct Nested {
+    Mixed m;
+    c_int x;
+}
+
+struct Exact16 {
+    c_long a;
+    c_long b;
+}
+
+struct HasList {
+    float x;
+    List<int> y;
+}
+
+enum FloatResult {
+    Ok(float value),
+    Err,
+}
+
+enum IntResult {
+    Ok(c_int value),
+    Err,
+}
+
+enum Color {
+    Red,
+    Green,
+}
+
+// CHECK: [[@LINE+1]]:28: error: type 'Mixed' cannot be passed by value in extern "C" signatures because it is 8 bytes and contains floating-point members; pass it behind a pointer or reference instead
+extern "C" void take_mixed(Mixed m);
+// CHECK: [[@LINE+1]]:12: error: type 'Mixed' cannot be returned by value in extern "C" signatures because it is 8 bytes and contains floating-point members; use an out-parameter instead
+extern "C" Mixed make_mixed();
+// Indirectly-passed float aggregates are fine:
+extern "C" void take_bigf(BigF b);
+extern "C" BigF make_bigf();
+// CHECK: [[@LINE+1]]:29: error: type 'Nested' cannot be passed by value in extern "C" signatures because it is 12 bytes and contains floating-point members; pass it behind a pointer or reference instead
+extern "C" void take_nested(Nested n);
+extern "C" void take_exact16(Exact16 e);
+// CHECK: [[@LINE+1]]:28: error: type 'float[4]' cannot be passed by value in extern "C" signatures because it is 16 bytes and contains floating-point members; pass it behind a pointer or reference instead
+extern "C" void take_farr4(float[4] a);
+extern "C" void take_farr8(float[8] a);
+// CHECK: [[@LINE+1]]:30: error: type 'HasList' cannot be passed by value in extern "C" signatures because it contains floating-point members and has a member with no C counterpart; pass it behind a pointer or reference instead
+extern "C" void take_haslist(HasList h);
+// Pointers, borrows, and scalars cross opaquely and are fine:
+extern "C" void take_mixed_ptr(Mixed* m);
+extern "C" void take_mixed_ref(Mixed& m);
+extern "C" float take_float(float f);
+// CHECK: [[@LINE+1]]:27: error: type 'Mixed' cannot be passed by value in extern "C" signatures because it is 8 bytes and contains floating-point members; pass it behind a pointer or reference instead
+extern "C" void exp_mixed(Mixed m) {
+}
+// Enums with float payloads lower to float-containing structs, so they are
+// rejected too; plain and integer-payload enums are fine:
+extern "C" void take_color(Color c);
+extern "C" void take_intresult(IntResult r);
+// CHECK: [[@LINE+1]]:34: error: type 'FloatResult' cannot be passed by value in extern "C" signatures because it contains floating-point members and has a member with no C counterpart; pass it behind a pointer or reference instead
+extern "C" void take_floatresult(FloatResult r);
+// Referring to an extern "C" function as a value would call it indirectly,
+// which cannot use the callee's C convention, so it is rejected:
+extern "C" void exp_ok(BigF b) {
+}
+extern "C++" c_int cpp_fn(c_int x);
+void plain() {
+}
+void useAsValue() {
+    // CHECK: [[@LINE+1]]:13: error: cannot refer to extern "C" function 'take_bigf' as a value; call it directly
+    var g = take_bigf;
+    // CHECK: [[@LINE+1]]:13: error: cannot refer to extern "C" function 'exp_ok' as a value; call it directly
+    var h = exp_ok;
+    var c = cpp_fn;
+    var p = plain;
+}

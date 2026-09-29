@@ -15,3 +15,7 @@ double c_factorial(int n) {
     }
     return result;
 }
+
+long c_sum_big(Big b) {
+    return b.a + b.b + b.c;
+}

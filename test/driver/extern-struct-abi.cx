@@ -9,21 +9,14 @@ struct Big {
     c_int[8] a;
 }
 
-struct FPair {
-    c_float x;
-    c_float y;
-}
-
 extern Pair c_mkpair(c_int x);
 extern c_int c_sumpair(Pair p);
 extern Big c_big();
-extern FPair c_fpair();
 
 void main() {
     var p = c_mkpair(0);
     println(c_sumpair(p));
     println(c_big().a[0]);
-    println(c_fpair().x);
 }
 
 // Small integer-only aggregates cross the C ABI in integer registers, so
@@ -34,7 +27,5 @@ void main() {
 // CHECK: declare i32 @c_sumpair(i64)
 // Large aggregates still go indirect:
 // CHECK: declare void @c_big(ptr sret(%Big) align 4)
-// Float-containing aggregates keep direct lowering:
-// CHECK: declare %FPair @c_fpair()
 // CHECK: call i64 @c_mkpair(i32 0)
 // CHECK: call i32 @c_sumpair(i64 %coerce.chunk)

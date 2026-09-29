@@ -357,6 +357,7 @@ struct Function : Value {
     std::vector<Parameter> params;
     std::vector<BasicBlock*> body;
     bool isExtern;
+    bool declaredExternC;
     bool isVariadic;
     Location location;
 

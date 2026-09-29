@@ -6,5 +6,7 @@
 int main(void) {
     printf("%d\n", cx_is_even(42)); // prints 1
     printf("%f\n", cx_hypot(3.0, 4.0)); // prints 5.000000
+    Big b = {1, 2, 3};
+    printf("%ld\n", cx_sum_big(b)); // prints 6
     return 0;
 }

@@ -4,14 +4,14 @@ struct WithAnon {
     int tag;
     union {
         myint64 a;
-        double b;
+        int b;
     };
 };
 
 struct OnlyUnion {
     union {
         myint64 a;
-        double b;
+        int b;
     };
 };
 
@@ -38,7 +38,7 @@ struct TwoUnions {
         int a;
     };
     union {
-        float b;
+        int b;
     };
 };
 
@@ -47,7 +47,7 @@ union StructInUnion {
         int x;
         int y;
     };
-    double d;
+    myint64 d;
 };
 
 struct NameClash {

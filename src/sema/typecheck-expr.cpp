@@ -324,8 +324,16 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
         }
         return llvm::cast<ParamDecl>(decl)->type;
     case DeclKind::FunctionDecl:
-    case DeclKind::MethodDecl:
-        return Type(llvm::cast<FunctionDecl>(decl)->getFunctionType(), Mutability::Mutable, Location());
+    case DeclKind::MethodDecl: {
+        auto* functionDecl = llvm::cast<FunctionDecl>(decl);
+        // Indirect calls lower without seeing the callee, so they cannot use
+        // the plain-pointer convention extern "C" definitions use on AArch64.
+        if (functionDecl->isExtern() && !functionDecl->proto.cppLinkage) {
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                        "cannot refer to extern \"C\" function '" << expr.identifier << "' as a value; call it directly");
+        }
+        return Type(functionDecl->getFunctionType(), Mutability::Mutable, Location());
+    }
     case DeclKind::GenericParamDecl:
         ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot refer to generic parameter '" << expr.identifier << "' as a value");
     case DeclKind::ConstructorDecl:

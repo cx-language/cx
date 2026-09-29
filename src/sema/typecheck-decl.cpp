@@ -778,17 +778,28 @@ static bool containsCxxVector(Type type) {
     return false;
 }
 
-// True when a by-value `extern "C++"` type holds a float anywhere. The LLVM backend expands
-// float-containing aggregates element-wise, but the C++ ABI packs small ones into shared
-// registers, so only aggregates without floats cross by value.
+// True when a by-value `extern` type holds a float anywhere. The LLVM backend expands
+// float-containing aggregates element-wise, but the C ABI packs small ones into shared
+// registers.
 static bool containsFloat(Type type) {
     if (type.isFloatingPoint()) return true;
     // Fixed arrays carry the fieldless Array decl, so check them before getDecl.
     if (type.isFixedArray()) return containsFloat(type.getElementType());
+    // Enum payloads are parsed as one-element anonymous structs.
+    if (type.isAnonymousStructType()) {
+        for (const AnonymousStructElement& element : type.getAnonymousStructElements()) {
+            if (containsFloat(element.type)) return true;
+        }
+        return false;
+    }
     if (TypeDecl* typeDecl = type.getDecl()) {
         if (typeDecl->isStruct() || typeDecl->tag == TypeTag::Union) {
             for (const FieldDecl& field : typeDecl->fields) {
                 if (containsFloat(field.type)) return true;
+            }
+        } else if (typeDecl->isEnumDecl()) {
+            for (const EnumCase& enumCase : llvm::cast<EnumDecl>(typeDecl)->cases) {
+                if (enumCase.associatedType && containsFloat(enumCase.associatedType)) return true;
             }
         }
         return false;
@@ -796,51 +807,51 @@ static bool containsFloat(Type type) {
     return false;
 }
 
-// C layout of a type crossing an `extern "C++"` boundary by value: size and alignment in
+// C layout of a type crossing an `extern` boundary by value: size and alignment in
 // bytes, assuming natural alignment like LLVM's struct lowering. The frontend only targets
 // its host, so host sizes are target sizes (see Type::getIntegerBitWidth).
-struct CxxValueLayout {
+struct CValueLayout {
     uint64_t size;
     uint64_t align;
 };
 
-// Computes the C layout of a by-value `extern "C++"` type, or nullopt when a member has no C++
+// Computes the C layout of a by-value `extern` type, or nullopt when a member has no C
 // counterpart (slices, strings, containers, enums with payloads, ...). Packed structs compute
 // their unpacked layout, which only ever errs towards rejection.
-static std::optional<CxxValueLayout> cxxValueLayout(Type type) {
+static std::optional<CValueLayout> cValueLayout(Type type) {
     if (type.isInteger()) {
         uint64_t size = (uint64_t)type.getIntegerBitWidth() / 8;
-        return CxxValueLayout{size, size};
+        return CValueLayout{size, size};
     }
-    if (type.isInt128() || type.isUInt128()) return CxxValueLayout{16, 16};
-    if (type.isBool() || type.isChar()) return CxxValueLayout{1, 1};
-    if (type.isFloat32() || type.isCFloat()) return CxxValueLayout{4, 4};
-    if (type.isFloat64() || type.isCDouble()) return CxxValueLayout{8, 8};
-    if (type.isFloat80()) return CxxValueLayout{16, 16};
+    if (type.isInt128() || type.isUInt128()) return CValueLayout{16, 16};
+    if (type.isBool() || type.isChar()) return CValueLayout{1, 1};
+    if (type.isFloat32() || type.isCFloat()) return CValueLayout{4, 4};
+    if (type.isFloat64() || type.isCDouble()) return CValueLayout{8, 8};
+    if (type.isFloat80()) return CValueLayout{16, 16};
     if (type.isPointerType() || type.isReferenceType() || type.isFunctionType() || type.isArrayPointer()
         || (type.isOptionalType() && type.isImplementedAsPointer())) {
-        return CxxValueLayout{sizeof(void*), sizeof(void*)};
+        return CValueLayout{sizeof(void*), sizeof(void*)};
     }
     if (type.isFixedArray()) {
-        auto element = cxxValueLayout(type.getElementType());
+        auto element = cValueLayout(type.getElementType());
         int64_t count = type.getArraySize();
         if (!element || count <= 0) return std::nullopt;
-        return CxxValueLayout{element->size * (uint64_t)count, element->align};
+        return CValueLayout{element->size * (uint64_t)count, element->align};
     }
     // Generic instantiations (slices, containers, optionals, ...) may have measurable cx layouts
-    // but no C++ counterpart, so they cannot cross by value.
+    // but no C counterpart, so they cannot cross by value.
     if (!type.getGenericArgs().empty()) return std::nullopt;
     if (TypeDecl* typeDecl = type.getDecl()) {
         if (typeDecl->isEnumDecl()) {
             auto& enumDecl = llvm::cast<EnumDecl>(*typeDecl);
             if (enumDecl.hasAssociatedValues()) return std::nullopt;
-            return cxxValueLayout(enumDecl.getTagType());
+            return cValueLayout(enumDecl.getTagType());
         }
         auto padTo = [](uint64_t offset, uint64_t align) { return (offset + align - 1) / align * align; };
         if (typeDecl->isStruct()) {
-            CxxValueLayout layout{0, 1};
+            CValueLayout layout{0, 1};
             for (const FieldDecl& field : typeDecl->fields) {
-                auto member = cxxValueLayout(field.type);
+                auto member = cValueLayout(field.type);
                 if (!member) return std::nullopt;
                 layout.size = padTo(layout.size, member->align) + member->size;
                 layout.align = std::max(layout.align, member->align);
@@ -849,9 +860,9 @@ static std::optional<CxxValueLayout> cxxValueLayout(Type type) {
             return layout;
         }
         if (typeDecl->tag == TypeTag::Union) {
-            CxxValueLayout layout{0, 1};
+            CValueLayout layout{0, 1};
             for (const FieldDecl& field : typeDecl->fields) {
-                auto member = cxxValueLayout(field.type);
+                auto member = cValueLayout(field.type);
                 if (!member) return std::nullopt;
                 layout.size = std::max(layout.size, member->size);
                 layout.align = std::max(layout.align, member->align);
@@ -888,7 +899,7 @@ void cx::validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef ca
                     "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
                              << "' because it contains floating-point members; pass it behind a pointer instead");
     }
-    auto layout = cxxValueLayout(type);
+    auto layout = cValueLayout(type);
     if (!layout) {
         ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
                     "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
@@ -1096,7 +1107,7 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
         if (byValue) {
             // Larger or over-aligned aggregates cross indirectly in cx but in memory or registers
             // in C++, so only small, normally-aligned structs cross by value.
-            auto layout = cxxValueLayout(type);
+            auto layout = cValueLayout(type);
             if (!layout) {
                 ERROR(type.location, "type '" << type
                                               << "' cannot be passed by value in extern \"C++\" signatures because it has a member with no C++ counterpart; "
@@ -1121,6 +1132,32 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
         return;
     }
     ERROR(type.location, "type '" << type << "' cannot be used in extern \"C++\" signatures");
+}
+
+// Rejects aggregate types that the LLVM backend miscompiles across an
+// `extern "C"` boundary: float-containing aggregates that fit in 16 bytes
+// expand element-wise instead of packing into shared registers. Larger ones
+// cross indirectly (memory on both sides) and are fine.
+static void validateExternCByValue(Type type, bool isReturn) {
+    // Bare floating-point scalars cross in their own register; only aggregates need the check below.
+    if (type.isFloatingPoint()) return;
+    bool aggregate = type.isFixedArray();
+    if (!aggregate) {
+        if (TypeDecl* typeDecl = type.getDecl()) aggregate = typeDecl->isStruct() || typeDecl->tag == TypeTag::Union || typeDecl->isEnumDecl();
+    }
+    if (!aggregate || !containsFloat(type)) return;
+    const char* action = isReturn ? "returned" : "passed";
+    const char* instead = isReturn ? "use an out-parameter instead" : "pass it behind a pointer or reference instead";
+    auto layout = cValueLayout(type);
+    if (!layout) {
+        ERROR(type.location, "type '" << type << "' cannot be " << action
+                                      << " by value in extern \"C\" signatures because it contains "
+                                         "floating-point members and has a member with no C counterpart; "
+                                      << instead);
+    }
+    if (layout->size > 16) return;
+    ERROR(type.location, "type '" << type << "' cannot be " << action << " by value in extern \"C\" signatures because it is " << layout->size
+                                  << " bytes and contains floating-point members; " << instead);
 }
 
 // Computes the Itanium-mangled symbol for an `extern "C++"` declaration, used
@@ -1183,6 +1220,12 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
 
         if (decl.proto.cppLinkage) {
             mangleCppFunction(decl);
+        }
+
+        if (decl.isExtern() && !decl.proto.cppLinkage) {
+            for (const ParamDecl& param : decl.getParams())
+                validateExternCByValue(param.type, false);
+            if (decl.getReturnType()) validateExternCByValue(decl.getReturnType(), true);
         }
 
         if ((!decl.isExtern() || decl.body) && decl.isMain() && !decl.isMethodDecl() && decl.getModule() == mainModule && decl.genericArgs.empty()) {

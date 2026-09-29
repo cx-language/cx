@@ -29,6 +29,7 @@ Expected output:
 30
 42
 120
+6
 ```
 
 ## Calling cx from C
@@ -47,4 +48,5 @@ Expected output:
 ```
 1
 5.000000
+6
 ```

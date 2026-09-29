@@ -1,0 +1,30 @@
+// REQUIRES: x86_64
+// RUN: %cx --print-llvm %s | %FileCheck %s
+struct Big {
+    c_long a;
+    c_long b;
+    c_long c;
+}
+
+extern "C" c_long sum_big(Big b);
+
+// x86-64 keeps byval: it matches the stack-based SysV convention, unlike on
+// AArch64 where C passes a pointer to a caller copy (see
+// extern-struct-abi-aarch64.cx).
+// CHECK: declare {{.*}} @sum_big(ptr byval(%Big) align 8)
+extern c_long cx_sum_big(Big b) {
+    return b.a + b.b + b.c;
+}
+
+// CHECK: define {{.*}} @cx_sum_big(ptr byval(%Big) align 8 %b)
+// CHECK: call {{.*}} @sum_big(ptr byval(%Big) align 8 {{.*}})
+
+int main() {
+    Big b;
+    b.a = 1;
+    b.b = 2;
+    b.c = 3;
+    println(sum_big(b));
+    println(cx_sum_big(b));
+    return 0;
+}
