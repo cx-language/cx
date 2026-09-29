@@ -422,7 +422,7 @@ std::vector<GenericArg> Parser::parseGenericArgumentList() {
             if (value.getActiveBits() > 63) {
                 ERROR_RANGE(location, getLastTokenEndLocation(), "integer generic argument is too large");
             }
-            genericArgs.push_back(GenericArg::fromInt(value.getSExtValue(), location));
+            genericArgs.push_back(GenericArg::fromInt(value.getSExtValue(), location, getLastTokenEndLocation()));
         } else {
             genericArgs.push_back(parseType());
         }
@@ -567,7 +567,7 @@ Type Parser::parseArrayType(Type elementType) {
             if (inBinderScope || hasUnboundName) {
                 std::vector<GenericArg> args;
                 args.emplace_back(elementType);
-                args.emplace_back(UnresolvedType::getDeferredSize(sizeExpr, currentModule, sizeExpr->location));
+                args.emplace_back(UnresolvedType::getDeferredSize(sizeExpr, currentModule, sizeExpr->location, sizeExpr->endLocation));
                 return BasicType::get("Array", args, elementType.mutability, elementType.location);
             }
             ERROR_RANGE(getExprRangeStart(*sizeExpr), sizeExpr->endLocation, "array size must be a constant integer expression");
@@ -706,7 +706,7 @@ Type Parser::parseType(bool allowBareConst) {
         case Token::AndAnd:
             ERROR_CURRENT_TOKEN("nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
         default:
-            return type.withLocation(location);
+            return type.withLocation(location, getLastTokenEndLocation());
         }
     }
 }

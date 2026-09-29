@@ -162,12 +162,13 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
             // TODO: Handle generic arguments for type placeholders.
             Type resolved = it->second.getType().withMutability(mutability);
             resolved.location = location;
+            resolved.endLocation = endLocation;
             return preserveSpelling(resolved);
         }
         // An integer parameter reference isn't a type; leave it for the use site to diagnose.
 
         auto genericArgs = map(getGenericArgs(), [&](GenericArg arg) { return arg.resolve(replacements); });
-        return preserveSpelling(BasicType::get(getName(), std::move(genericArgs), mutability, location));
+        return preserveSpelling(BasicType::get(getName(), std::move(genericArgs), mutability, location, endLocation));
     }
     case TypeKind::ArrayPointerType: {
         Type elementType = llvm::cast<ArrayPointerType>(typeBase)->elementType;
@@ -183,21 +184,21 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         } else {
             elementType = elementType.resolve(replacements);
         }
-        return preserveSpelling(ArrayPointerType::get(elementType, location));
+        return preserveSpelling(ArrayPointerType::get(elementType, location, endLocation));
     }
 
     case TypeKind::AnonymousStructType: {
         auto elements =
             map(getAnonymousStructElements(), [&](auto& element) { return AnonymousStructElement{element.name, element.type.resolve(replacements)}; });
-        return preserveSpelling(AnonymousStructType::get(std::move(elements), mutability, location));
+        return preserveSpelling(AnonymousStructType::get(std::move(elements), mutability, location, endLocation));
     }
     case TypeKind::FunctionType: {
         auto paramTypes = map(getParamTypes(), [&](Type t) { return t.resolve(replacements); });
         return preserveSpelling(FunctionType::get(getReturnType().resolve(replacements), std::move(paramTypes), llvm::cast<FunctionType>(typeBase)->isVariadic,
-                                                  mutability, location));
+                                                  mutability, location, endLocation));
     }
     case TypeKind::PointerType:
-        return preserveSpelling(PointerType::get(getPointee().resolve(replacements), getPointerKind(), mutability, location));
+        return preserveSpelling(PointerType::get(getPointee().resolve(replacements), getPointerKind(), mutability, location, endLocation));
     case TypeKind::UnresolvedType: {
         // A deferred size substitutes like any other expression, so generic
         // value parameters keep their usual textual-substitution meaning.
@@ -205,7 +206,8 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         // only caller that can change the argument kind.)
         auto* unresolved = llvm::cast<UnresolvedType>(typeBase);
         if (!unresolved->deferredSize) llvm_unreachable("invalid unresolved type");
-        return preserveSpelling(UnresolvedType::getDeferredSize(unresolved->deferredSize->instantiate(replacements), unresolved->homeModule, location));
+        return preserveSpelling(
+            UnresolvedType::getDeferredSize(unresolved->deferredSize->instantiate(replacements), unresolved->homeModule, location, endLocation));
     }
     }
     llvm_unreachable("all cases handled");
@@ -254,14 +256,14 @@ static bool spellingsEqual(Type a, Type b) {
     llvm_unreachable("all cases handled");
 }
 
-template<typename T> static Type getType(T&& typeBase, Mutability mutability, Location location) {
-    Type newType(&typeBase, mutability, location);
+template<typename T> static Type getType(T&& typeBase, Mutability mutability, Location location, Location endLocation = Location()) {
+    Type newType(&typeBase, mutability, location, endLocation);
 
     // ponytail: linear interning scan, multiplied by spelling-twin bases; hash-cons the bases if compile time regresses.
     // typeBases is creation-ordered, so the first structural match is the earliest twin.
     TypeBase* firstTwin = nullptr;
     for (auto* existingTypeBase : typeBases) {
-        Type existingType(existingTypeBase, mutability, location);
+        Type existingType(existingTypeBase, mutability, location, endLocation);
         if (existingType.equalsIgnoreTopLevelMutable(newType)) {
             if (spellingsEqual(existingType, newType)) return existingType;
             if (!firstTwin) firstTwin = existingTypeBase;
@@ -278,18 +280,18 @@ template<typename T> static Type getType(T&& typeBase, Mutability mutability, Lo
             freshBasic->decl = llvm::cast<BasicType>(firstTwin)->decl;
         }
     }
-    return Type(typeBases.back(), mutability, location);
+    return Type(typeBases.back(), mutability, location, endLocation);
 }
 
-Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs, Mutability mutability, Location location) {
-    return getType(BasicType(name, genericArgs), mutability, location);
+Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs, Mutability mutability, Location location, Location endLocation) {
+    return getType(BasicType(name, genericArgs), mutability, location, endLocation);
 }
 
-Type BasicType::getArray(Type elementType, int64_t size, Location location) {
+Type BasicType::getArray(Type elementType, int64_t size, Location location, Location endLocation) {
     std::vector<GenericArg> args;
     args.emplace_back(elementType);
     args.push_back(GenericArg::fromInt(size, location));
-    return BasicType::get("Array", args, elementType.mutability, location);
+    return BasicType::get("Array", args, elementType.mutability, location, endLocation);
 }
 
 Type Type::getSizeofMarker(Type operand) {
@@ -314,20 +316,20 @@ Type Type::getSizeofArrayOperand() const {
     return getGenericArgs()[1].getType().getSizeofOperand();
 }
 
-Type ArrayPointerType::get(Type elementType, Location location) {
-    return getType(ArrayPointerType(elementType), elementType.mutability, location);
+Type ArrayPointerType::get(Type elementType, Location location, Location endLocation) {
+    return getType(ArrayPointerType(elementType), elementType.mutability, location, endLocation);
 }
 
-Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Mutability mutability, Location location) {
-    return getType(AnonymousStructType(std::move(elements)), mutability, location);
+Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Mutability mutability, Location location, Location endLocation) {
+    return getType(AnonymousStructType(std::move(elements)), mutability, location, endLocation);
 }
 
-Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic, Mutability mutability, Location location) {
-    return getType(FunctionType(returnType, std::move(paramTypes), isVariadic), mutability, location);
+Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic, Mutability mutability, Location location, Location endLocation) {
+    return getType(FunctionType(returnType, std::move(paramTypes), isVariadic), mutability, location, endLocation);
 }
 
-Type PointerType::get(Type pointeeType, PointerKind kind, Mutability mutability, Location location) {
-    return getType(PointerType(pointeeType, kind), mutability, location);
+Type PointerType::get(Type pointeeType, PointerKind kind, Mutability mutability, Location location, Location endLocation) {
+    return getType(PointerType(pointeeType, kind), mutability, location, endLocation);
 }
 
 Type OptionalType::get(Type wrappedType, Mutability mutability, Location location) {
@@ -338,11 +340,11 @@ Type UnresolvedType::get(Mutability mutability, Location location) {
     return getType(UnresolvedType(), mutability, location);
 }
 
-Type UnresolvedType::getDeferredSize(Expr* sizeExpr, Module* homeModule, Location location) {
+Type UnresolvedType::getDeferredSize(Expr* sizeExpr, Module* homeModule, Location location, Location endLocation) {
     UnresolvedType base;
     base.deferredSize = sizeExpr;
     base.homeModule = homeModule;
-    return getType(std::move(base), Mutability::Mutable, location);
+    return getType(std::move(base), Mutability::Mutable, location, endLocation);
 }
 
 bool Type::hasDeferredArraySize() const {
@@ -417,7 +419,7 @@ GenericArg GenericArg::resolve(const llvm::StringMap<GenericArg>& replacements) 
             } catch (const CompileError&) {
             }
             GenericArg result = *this;
-            result.type = UnresolvedType::getDeferredSize(substituted, unresolved->homeModule, location);
+            result.type = UnresolvedType::getDeferredSize(substituted, unresolved->homeModule, location, endLocation);
             return result;
         }
     }
@@ -539,11 +541,11 @@ std::string Type::getDisplayName() const {
 Type Type::getElementType() const {
     if (isSlice()) return getGenericArgs()[0].getType();
     if (isFixedArray()) {
-        Type elementType = getGenericArgs()[0].getType().withLocation(location);
+        Type elementType = getGenericArgs()[0].getType().withLocation(location, endLocation);
         return isMutable() ? elementType : elementType.withMutability(Mutability::Const);
     }
     ASSERT(getKind() == TypeKind::ArrayPointerType);
-    Type elementType = llvm::cast<ArrayPointerType>(typeBase)->elementType.withLocation(location);
+    Type elementType = llvm::cast<ArrayPointerType>(typeBase)->elementType.withLocation(location, endLocation);
     return isMutable() ? elementType : elementType.withMutability(Mutability::Const);
 }
 
@@ -577,7 +579,7 @@ llvm::ArrayRef<GenericArg> Type::getGenericArgs() const {
 }
 
 Type Type::getReturnType() const {
-    return llvm::cast<FunctionType>(typeBase)->returnType.withLocation(location);
+    return llvm::cast<FunctionType>(typeBase)->returnType.withLocation(location, endLocation);
 }
 
 llvm::ArrayRef<Type> Type::getParamTypes() const {
@@ -585,7 +587,7 @@ llvm::ArrayRef<Type> Type::getParamTypes() const {
 }
 
 Type Type::getPointee() const {
-    return llvm::cast<PointerType>(typeBase)->pointeeType.withLocation(location);
+    return llvm::cast<PointerType>(typeBase)->pointeeType.withLocation(location, endLocation);
 }
 
 bool Type::isReferenceType() const {
@@ -641,7 +643,7 @@ bool Type::isImplementedAsPointer() const {
 
 Type Type::getWrappedType() const {
     ASSERT(isOptionalType());
-    return getGenericArgs().front().getType().withLocation(location);
+    return getGenericArgs().front().getType().withLocation(location, endLocation);
 }
 
 bool cx::operator==(Type lhs, Type rhs) {

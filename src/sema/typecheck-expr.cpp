@@ -2824,11 +2824,13 @@ bool Typechecker::validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericPa
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
         if (genericParam.isValueParam && !genericArg.isInt()) {
             if (!isBareName(genericArg) || genericArg.getType().isBuiltinType() || !findDecls(genericArg.getType().getName()).empty()) {
-                REPORT_ERROR(genericArg.location, "expected integer generic argument for parameter '" << genericParam.getName() << "' of '" << name << "'");
+                REPORT_ERROR_RANGE(genericArg.location, genericArg.endLocation,
+                                   "expected integer generic argument for parameter '" << genericParam.getName() << "' of '" << name << "'");
                 valid = false;
             }
         } else if (!genericParam.isValueParam && genericArg.isInt()) {
-            REPORT_ERROR(genericArg.location, "expected type generic argument for parameter '" << genericParam.getName() << "' of '" << name << "'");
+            REPORT_ERROR_RANGE(genericArg.location, genericArg.endLocation,
+                               "expected type generic argument for parameter '" << genericParam.getName() << "' of '" << name << "'");
             valid = false;
         }
     }
@@ -2881,8 +2883,9 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
     } else {
         for (GenericArg arg : call.genericArgs) {
             if (arg.isType() && arg.getType().storesBorrow()) {
-                ERROR(arg.location,
-                      "reference type '" << arg.getType() << "' may only appear as a function parameter, return type, local variable, or interface argument");
+                ERROR_RANGE(arg.location, arg.endLocation,
+                            "reference type '" << arg.getType()
+                                               << "' may only appear as a function parameter, return type, local variable, or interface argument");
             }
         }
         if (!genericArgsMatch(genericParams, call.genericArgs)) return {};

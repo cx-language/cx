@@ -23,7 +23,9 @@ struct Wrap {
 // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: slices cannot be used in extern "C++" signatures; pass a pointer and length instead
 extern "C++" void sliceParam(int[] xs);
 
-// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: arrays cannot be used in extern "C++" signatures; pass a pointer instead
+// CHECK: [[@LINE+3]]:{{[0-9]+}}: error: arrays cannot be used in extern "C++" signatures; pass a pointer instead
+// CHECK-NEXT: {{^}}extern "C++" void arrayParam(int[4] xs);
+// CHECK-NEXT: {{^                             ~~~~~~$}}
 extern "C++" void arrayParam(int[4] xs);
 
 // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: integer type 'int64' has no single C++ counterpart; use c_long, c_ulong, c_longlong, or c_ulonglong in extern "C++" signatures

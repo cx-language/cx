@@ -40,15 +40,15 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
     decls.erase(std::remove_if(decls.begin(), decls.end(), [](Decl* d) { return !d->isTypeTemplate() && !d->isTypeDecl(); }), decls.end());
 
     if (decls.empty()) {
-        ERROR(type.location, "'" << type << "' is not a type");
+        ERROR_RANGE(type.location, type.endLocation, "'" << type << "' is not a type");
     }
 
     if (!decls[0]->isTypeTemplate()) {
-        ERROR(type.location, "too many generic arguments to '" << type.getName() << "', expected 0");
+        ERROR_RANGE(type.location, type.endLocation, "too many generic arguments to '" << type.getName() << "', expected 0");
     }
 
     if (decls.size() > 1) {
-        ERROR_WITH_NOTES(type.location, getTypeCandidateNotes(decls), "ambiguous reference to '" << type.getName() << "'");
+        ERROR_WITH_NOTES_RANGE(type.location, type.endLocation, getTypeCandidateNotes(decls), "ambiguous reference to '" << type.getName() << "'");
     }
 
     return llvm::cast<TypeTemplate>(decls[0]);
@@ -214,7 +214,7 @@ static void bindArraySizeNames(Typechecker& checker, Expr& expr, Module* homeMod
     }
 }
 
-Type Typechecker::resolveArraySize(Expr& sizeExpr, Type elementType, Location location, Module* homeModule) {
+Type Typechecker::resolveArraySize(Expr& sizeExpr, Type elementType, Location location, Location endLocation, Module* homeModule) {
     // The payload is shared (aliases, repeated resolves, substituted clones),
     // so bind a clone; attempts stay independent and idempotent.
     Expr* attempt = sizeExpr.instantiate({});
@@ -230,7 +230,7 @@ Type Typechecker::resolveArraySize(Expr& sizeExpr, Type elementType, Location lo
     if (size.getActiveBits() > 63) {
         ERROR_RANGE(getExprRangeStart(sizeExpr), sizeExpr.endLocation, "array size is too large");
     }
-    return BasicType::getArray(elementType, size.getSExtValue(), location);
+    return BasicType::getArray(elementType, size.getSExtValue(), location, endLocation);
 }
 
 Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, bool foldArraySizes) {
@@ -250,7 +250,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
                 if (!alias->cycleReported) {
                     for (auto* resolvingAlias : resolving)
                         const_cast<TypeAliasDecl*>(resolvingAlias)->cycleReported = true;
-                    REPORT_ERROR(type.location, "cyclic type alias '" << alias->getName() << "'");
+                    REPORT_ERROR_RANGE(type.location, type.endLocation, "cyclic type alias '" << alias->getName() << "'");
                 }
                 return type;
             }
@@ -267,7 +267,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
             }
             // Outermost alias wins: inner resolution already attached its own
             // spelling, so this overwrites it with the name used at this site.
-            resolved = resolved.withLocation(type.location);
+            resolved = resolved.withLocation(type.location, type.endLocation);
             resolved.aliasSpelling = alias->getName();
             return resolved;
         }
@@ -279,13 +279,13 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
             arg.type = resolveTypeAliases(arg.type, userAccessLevel, resolving, foldArraySizes);
             return arg;
         });
-        Type rebuilt = BasicType::get(basicType->name, genericArgs, type.mutability, type.location);
+        Type rebuilt = BasicType::get(basicType->name, genericArgs, type.mutability, type.location, type.endLocation);
         // A non-type element cannot fold; typecheckType diagnoses it below.
         if (rebuilt.isFixedArray() && !rebuilt.getGenericArgs()[0].isType()) return rebuilt;
         // Fold sizeof sizes whose operand now has a known size.
         if (rebuilt.isFixedArray() && rebuilt.hasSizeofArraySize()) {
             if (auto size = rebuilt.getSizeofArrayOperand().getSizeInBytes()) {
-                return BasicType::getArray(rebuilt.getElementType(), int64_t(*size), type.location);
+                return BasicType::getArray(rebuilt.getElementType(), int64_t(*size), type.location, type.endLocation);
             }
         }
         // Fold deferred sizes and bare size names at real declaration sites.
@@ -293,14 +293,15 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
         if (foldArraySizes && rebuilt.isFixedArray() && !rebuilt.hasSizeofArraySize()) {
             if (rebuilt.hasDeferredArraySize()) {
                 try {
-                    return resolveArraySize(*rebuilt.getDeferredArraySize(), rebuilt.getElementType(), type.location, rebuilt.getDeferredArraySizeHome());
+                    return resolveArraySize(*rebuilt.getDeferredArraySize(), rebuilt.getElementType(), type.location, type.endLocation,
+                                            rebuilt.getDeferredArraySizeHome());
                 } catch (const CompileError&) {
                 }
             } else if (!rebuilt.getArraySizeParam().empty()) {
                 auto* name = makeAST<VarExpr>(rebuilt.getArraySizeParam(), rebuilt.getGenericArgs()[1].location);
                 name->endLocation = getIdentifierEndLocation(name->location, name->identifier);
                 try {
-                    return resolveArraySize(*name, rebuilt.getElementType(), type.location, nullptr);
+                    return resolveArraySize(*name, rebuilt.getElementType(), type.location, type.endLocation, nullptr);
                 } catch (const CompileError&) {
                 }
             }
@@ -312,25 +313,26 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
         auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving, foldArraySizes);
         if (elementType == type.getElementType()) return type;
         Type resolved = ArrayPointerType::get(elementType, type.location);
-        return resolved.withMutability(type.mutability).withLocation(type.location);
+        return resolved.withMutability(type.mutability).withLocation(type.location, type.endLocation);
     }
     case TypeKind::AnonymousStructType: {
         auto elements = map(type.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
             return AnonymousStructElement{element.name, resolveTypeAliases(element.type, userAccessLevel, resolving, foldArraySizes)};
         });
         if (llvm::equal(elements, type.getAnonymousStructElements())) return type;
-        return AnonymousStructType::get(std::move(elements), type.mutability, type.location);
+        return AnonymousStructType::get(std::move(elements), type.mutability, type.location, type.endLocation);
     }
     case TypeKind::FunctionType: {
         auto returnType = resolveTypeAliases(type.getReturnType(), userAccessLevel, resolving, foldArraySizes);
         auto paramTypes = map(type.getParamTypes(), [&](Type paramType) { return resolveTypeAliases(paramType, userAccessLevel, resolving, foldArraySizes); });
         if (returnType == type.getReturnType() && llvm::equal(paramTypes, type.getParamTypes())) return type;
-        return FunctionType::get(returnType, std::move(paramTypes), llvm::cast<FunctionType>(type.typeBase)->isVariadic, type.mutability, type.location);
+        return FunctionType::get(returnType, std::move(paramTypes), llvm::cast<FunctionType>(type.typeBase)->isVariadic, type.mutability, type.location,
+                                 type.endLocation);
     }
     case TypeKind::PointerType: {
         auto pointeeType = resolveTypeAliases(type.getPointee(), userAccessLevel, resolving, foldArraySizes);
         if (pointeeType == type.getPointee()) return type;
-        return PointerType::get(pointeeType, type.getPointerKind(), type.mutability, type.location);
+        return PointerType::get(pointeeType, type.getPointerKind(), type.mutability, type.location, type.endLocation);
     }
     case TypeKind::UnresolvedType:
         return type;
@@ -443,16 +445,17 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     type = resolveTypeAliases(std::move(type), userAccessLevel);
     if (auto* alias = findTypeAlias(type)) {
         if (type.isBasicType() && !type.getGenericArgs().empty()) {
-            ERROR(type.location, "type alias '" << alias->getName() << "' does not take generic arguments");
+            ERROR_RANGE(type.location, type.endLocation, "type alias '" << alias->getName() << "' does not take generic arguments");
         }
-        if (!alias->cycleReported) ERROR(type.location, "cyclic type alias '" << alias->getName() << "'");
+        if (!alias->cycleReported) ERROR_RANGE(type.location, type.endLocation, "cyclic type alias '" << alias->getName() << "'");
         throw CompileError::dependentError();
     }
 
     if (!allowReference && type.storesBorrow()) {
         // Report the outermost type (e.g. 'int&?' rather than the nested 'int&')
         // so the diagnostic matches what the user wrote.
-        ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
+        ERROR_RANGE(type.location, type.endLocation,
+                    "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
@@ -462,26 +465,26 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         if (type.isFixedArray()) {
             if (type.hasSizeofArraySize()) {
                 Type operand = type.getSizeofArrayOperand();
-                typecheckType(operand.withLocation(type.location), userAccessLevel, recheckGenericArgs);
+                typecheckType(operand.withLocation(type.location, type.endLocation), userAccessLevel, recheckGenericArgs);
                 if (resolveTypeAliases(operand).isVoid()) {
-                    ERROR(type.location, "cannot take sizeof of 'void'");
+                    ERROR_RANGE(type.location, type.endLocation, "cannot take sizeof of 'void'");
                 }
                 // Element destructors are emitted per element with a static count,
                 // which a backend-folded size cannot provide.
                 if (type.getElementType().needsDestruction()) {
-                    ERROR(type.location, "arrays with sizeof-computed size cannot hold owning elements");
+                    ERROR_RANGE(type.location, type.endLocation, "arrays with sizeof-computed size cannot hold owning elements");
                 }
             } else if (!type.getArraySizeParam().empty()) {
-                ERROR(type.location, "array size must be a constant integer expression");
+                ERROR_RANGE(type.location, type.endLocation, "array size must be a constant integer expression");
             } else if (type.hasDeferredArraySize()) {
                 // Resolution already tried folding this; diagnose the reason it cannot fold.
-                resolveArraySize(*type.getDeferredArraySize(), type.getElementType(), type.location, type.getDeferredArraySizeHome());
+                resolveArraySize(*type.getDeferredArraySize(), type.getElementType(), type.location, type.endLocation, type.getDeferredArraySizeHome());
             }
             if (type.getGenericArgs()[1].isInt() && type.getArraySize() > std::numeric_limits<int>::max()) {
-                ERROR(type.location, "array size is too large");
+                ERROR_RANGE(type.location, type.endLocation, "array size is too large");
             }
             if (!type.getGenericArgs()[0].isType()) {
-                ERROR(type.location, "array element type must be a type, not an integer");
+                ERROR_RANGE(type.location, type.endLocation, "array element type must be a type, not an integer");
             }
             typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
             break;
@@ -500,7 +503,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 // Optional is transparent to the placement rule: 'T&?' is still just a borrow.
                 bool nestedAllowReference = allowReference && (type.isOptionalType() || allowsBorrowArgs(decl));
                 for (auto genericArg : basicType->genericArgs) {
-                    if (genericArg.isType()) typecheckType(genericArg.getType().withLocation(type.location), userAccessLevel, true, nestedAllowReference);
+                    if (genericArg.isType())
+                        typecheckType(genericArg.getType().withLocation(type.location, type.endLocation), userAccessLevel, true, nestedAllowReference);
                 }
             }
         } else {
@@ -523,7 +527,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 // Type nodes are canonicalized, so the stored arguments may carry another use's
                 // locations (the first use wins at parse time, but laziness may check a later use
                 // first); relocate them to the current use, mirroring the recheck above.
-                if (genericArg.isType()) typecheckType(genericArg.getType().withLocation(type.location), userAccessLevel, true, nestedAllowReference);
+                if (genericArg.isType())
+                    typecheckType(genericArg.getType().withLocation(type.location, type.endLocation), userAccessLevel, true, nestedAllowReference);
             }
 
             auto decls = findDecls(basicType->getQualifiedName());
@@ -533,7 +538,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 auto decls = findDecls(basicType->name);
 
                 if (decls.empty()) {
-                    ERROR(type.location, "unknown type '" << type << "'" << Type::didYouMeanBuiltin(basicType->name));
+                    ERROR_RANGE(type.location, type.endLocation, "unknown type '" << type << "'" << Type::didYouMeanBuiltin(basicType->name));
                 }
                 auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));
                 decl = typeTemplate;
@@ -555,7 +560,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 }
                 break;
             } else if (decls.size() > 1) {
-                ERROR_WITH_NOTES(type.location, getTypeCandidateNotes(decls), "ambiguous reference to '" << type.getName() << "'");
+                ERROR_WITH_NOTES_RANGE(type.location, type.endLocation, getTypeCandidateNotes(decls), "ambiguous reference to '" << type.getName() << "'");
             } else {
                 decl = decls.front();
             }
@@ -564,7 +569,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         if (decl->isTypeTemplate()) {
             validateGenericArgs(llvm::cast<TypeTemplate>(decl)->genericParams, basicType->genericArgs, basicType->name, type.location);
         } else if (!decl->isTypeDecl()) {
-            ERROR(type.location, "'" << type << "' is not a type");
+            ERROR_RANGE(type.location, type.endLocation, "'" << type << "' is not a type");
         }
 
         // IRGen drops values of destructor types at scope exit without going through
@@ -600,7 +605,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         break;
     case TypeKind::PointerType: {
         if (type.isReferenceType() && !allowReference) {
-            ERROR(type.location, "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
+            ERROR_RANGE(type.location, type.endLocation,
+                        "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
         }
         typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
@@ -715,7 +721,7 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
                 typecheckType(genericParam.valueType, userAccessLevel);
 
                 if (errors == errorsBefore && !genericParam.valueType.isInteger()) {
-                    ERROR(genericParam.valueType.location, "generic parameters must be types or integers");
+                    ERROR_RANGE(genericParam.valueType.location, genericParam.valueType.endLocation, "generic parameters must be types or integers");
                 }
             } catch (const CompileError& error) {
                 error.report();
@@ -729,7 +735,7 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
                 typecheckType(constraint, userAccessLevel);
 
                 if (errors == errorsBefore && !constraint.getDecl()->isInterface()) {
-                    ERROR(constraint.location, "only interface types can be used as generic constraints");
+                    ERROR_RANGE(constraint.location, constraint.endLocation, "only interface types can be used as generic constraints");
                 }
             } catch (const CompileError& error) {
                 error.report();
@@ -1008,16 +1014,17 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
         return;
     }
     if (type.isInt64() || type.isUInt64() || type.isInt128() || type.isUInt128()) {
-        ERROR(type.location,
-              "integer type '" << type << "' has no single C++ counterpart; use c_long, c_ulong, c_longlong, or c_ulonglong in extern \"C++\" signatures");
+        ERROR_RANGE(type.location, type.endLocation,
+                    "integer type '" << type
+                                     << "' has no single C++ counterpart; use c_long, c_ulong, c_longlong, or c_ulonglong in extern \"C++\" signatures");
     }
     if (type.isFloat80()) {
-        ERROR(type.location, "'float80' has no C++ counterpart; use c_double in extern \"C++\" signatures");
+        ERROR_RANGE(type.location, type.endLocation, "'float80' has no C++ counterpart; use c_double in extern \"C++\" signatures");
     }
     // Slices and arrays are generic types with declarations, so reject them before the struct rule below.
-    if (type.isSlice()) ERROR(type.location, "slices cannot be used in extern \"C++\" signatures; pass a pointer and length instead");
+    if (type.isSlice()) ERROR_RANGE(type.location, type.endLocation, "slices cannot be used in extern \"C++\" signatures; pass a pointer and length instead");
     if (type.isArrayType()) {
-        ERROR(type.location, "arrays cannot be used in extern \"C++\" signatures; pass a pointer instead");
+        ERROR_RANGE(type.location, type.endLocation, "arrays cannot be used in extern \"C++\" signatures; pass a pointer instead");
     }
     if (type.isOptionalType()) {
         Type wrapped = type.getWrappedType();
@@ -1025,11 +1032,12 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
             mangleCppType(out, wrapped, triple, false, false); // nullable pointers pass as raw pointers
             return;
         }
-        ERROR(type.location, "type '" << type << "' cannot be used in extern \"C++\" signatures");
+        ERROR_RANGE(type.location, type.endLocation, "type '" << type << "' cannot be used in extern \"C++\" signatures");
     }
     if (type.isFunctionType()) {
         auto& functionType = llvm::cast<FunctionType>(*type);
-        if (byValue && isReturn) ERROR(type.location, "functions cannot be returned in extern \"C++\" signatures; return a function pointer instead");
+        if (byValue && isReturn)
+            ERROR_RANGE(type.location, type.endLocation, "functions cannot be returned in extern \"C++\" signatures; return a function pointer instead");
         // Function parameters decay to pointers, like array parameters in C.
         if (byValue) out << 'P';
         out << 'F';
@@ -1051,24 +1059,27 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
             // std::vector is non-trivially copyable, so C++ passes it indirectly (by invisible
             // reference) while cx would pass the bytes directly; only references and pointers agree.
             if (byValue && isReturn) {
-                ERROR(type.location, "type '" << type << "' cannot be returned by value in extern \"C++\" signatures; use an out-parameter instead");
+                ERROR_RANGE(type.location, type.endLocation,
+                            "type '" << type << "' cannot be returned by value in extern \"C++\" signatures; use an out-parameter instead");
             }
             if (byValue) {
-                ERROR(type.location, "type '" << type << "' cannot be passed by value in extern \"C++\" signatures; use a reference or pointer instead");
+                ERROR_RANGE(type.location, type.endLocation,
+                            "type '" << type << "' cannot be passed by value in extern \"C++\" signatures; use a reference or pointer instead");
             }
             Type elementType = type.getGenericArgs()[0].getType();
-            if (!elementType.isMutable()) ERROR(type.location, "std::vector cannot hold const elements");
+            if (!elementType.isMutable()) ERROR_RANGE(type.location, type.endLocation, "std::vector cannot hold const elements");
             if (elementType.isVoid() || elementType.isBool()) {
-                ERROR(type.location,
-                      "type '" << type << "' cannot be used in extern \"C++\" signatures: std::vector<bool> is bit-packed and std::vector<void> is ill-formed");
+                ERROR_RANGE(type.location, type.endLocation,
+                            "type '" << type
+                                     << "' cannot be used in extern \"C++\" signatures: std::vector<bool> is bit-packed and std::vector<void> is ill-formed");
             }
             std::string elementCode;
             llvm::raw_string_ostream elementStream(elementCode);
             mangleCppType(elementStream, elementType, triple, false, false);
             elementStream.flush();
             if (elementCode.size() != 1) {
-                ERROR(
-                    type.location,
+                ERROR_RANGE(
+                    type.location, type.endLocation,
                     "type '"
                         << type
                         << "' cannot be named in extern \"C++\" signatures; declare it through a C++ header import instead, where the exact mangling is known");
@@ -1081,59 +1092,68 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
             }
             return;
         }
-        if (typeDecl->isEnumDecl()) ERROR(type.location, "enums cannot be used in extern \"C++\" signatures; pass the underlying integer instead");
-        if (!type.getGenericArgs().empty()) ERROR(type.location, "generic type '" << type << "' cannot be used in extern \"C++\" signatures");
-        if (!typeDecl->isStruct() && typeDecl->tag != TypeTag::Union) ERROR(type.location, "type '" << type << "' cannot be used in extern \"C++\" signatures");
+        if (typeDecl->isEnumDecl())
+            ERROR_RANGE(type.location, type.endLocation, "enums cannot be used in extern \"C++\" signatures; pass the underlying integer instead");
+        if (!type.getGenericArgs().empty())
+            ERROR_RANGE(type.location, type.endLocation, "generic type '" << type << "' cannot be used in extern \"C++\" signatures");
+        if (!typeDecl->isStruct() && typeDecl->tag != TypeTag::Union)
+            ERROR_RANGE(type.location, type.endLocation, "type '" << type << "' cannot be used in extern \"C++\" signatures");
         // Small-struct returns miscompile (returns lack the parameter integer-chunk
         // coercion), so reject all by-value struct returns until that is fixed.
         if (byValue && isReturn) {
-            ERROR(type.location, "type '" << type << "' cannot be returned by value in extern \"C++\" signatures; use an out-parameter instead");
+            ERROR_RANGE(type.location, type.endLocation,
+                        "type '" << type << "' cannot be returned by value in extern \"C++\" signatures; use an out-parameter instead");
         }
         if (byValue && type.needsDestruction()) {
-            ERROR(
-                type.location,
+            ERROR_RANGE(
+                type.location, type.endLocation,
                 "type '"
                     << type
                     << "' cannot be passed by value in extern \"C++\" signatures because it needs destruction; pass it behind a pointer or reference instead");
         }
         if (byValue && containsCxxVector(type)) {
-            ERROR(type.location, "type '" << type
-                                          << "' cannot be passed by value in extern \"C++\" signatures because it holds a CxxVector, which C++ passes "
-                                             "indirectly; pass it behind a pointer or reference instead");
+            ERROR_RANGE(type.location, type.endLocation,
+                        "type '" << type
+                                 << "' cannot be passed by value in extern \"C++\" signatures because it holds a CxxVector, which C++ passes "
+                                    "indirectly; pass it behind a pointer or reference instead");
         }
         if (byValue && containsFloat(type)) {
-            ERROR(type.location, "type '" << type
-                                          << "' cannot be passed by value in extern \"C++\" signatures because it contains floating-point members; pass it "
-                                             "behind a pointer or reference instead");
+            ERROR_RANGE(type.location, type.endLocation,
+                        "type '" << type
+                                 << "' cannot be passed by value in extern \"C++\" signatures because it contains floating-point members; pass it "
+                                    "behind a pointer or reference instead");
         }
         if (byValue) {
             // Larger or over-aligned aggregates cross indirectly in cx but in memory or registers
             // in C++, so only small, normally-aligned structs cross by value.
             auto layout = cValueLayout(type);
             if (!layout) {
-                ERROR(type.location, "type '" << type
-                                              << "' cannot be passed by value in extern \"C++\" signatures because it has a member with no C++ counterpart; "
-                                                 "pass it behind a pointer or reference instead");
+                ERROR_RANGE(type.location, type.endLocation,
+                            "type '" << type
+                                     << "' cannot be passed by value in extern \"C++\" signatures because it has a member with no C++ counterpart; "
+                                        "pass it behind a pointer or reference instead");
             }
             if (layout->size == 0) {
-                ERROR(
-                    type.location,
+                ERROR_RANGE(
+                    type.location, type.endLocation,
                     "type '" << type
                              << "' cannot be passed by value in extern \"C++\" signatures because it is empty; pass it behind a pointer or reference instead");
             }
             if (layout->size > 16) {
-                ERROR(type.location, "type '" << type << "' cannot be passed by value in extern \"C++\" signatures because it is " << layout->size
-                                              << " bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer or reference instead");
+                ERROR_RANGE(type.location, type.endLocation,
+                            "type '" << type << "' cannot be passed by value in extern \"C++\" signatures because it is " << layout->size
+                                     << " bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer or reference instead");
             }
             if (layout->align > 8) {
-                ERROR(type.location, "type '" << type << "' cannot be passed by value in extern \"C++\" signatures because it requires " << layout->align
-                                              << "-byte alignment; pass it behind a pointer or reference instead");
+                ERROR_RANGE(type.location, type.endLocation,
+                            "type '" << type << "' cannot be passed by value in extern \"C++\" signatures because it requires " << layout->align
+                                     << "-byte alignment; pass it behind a pointer or reference instead");
             }
         }
         out << typeDecl->getName().size() << typeDecl->getName();
         return;
     }
-    ERROR(type.location, "type '" << type << "' cannot be used in extern \"C++\" signatures");
+    ERROR_RANGE(type.location, type.endLocation, "type '" << type << "' cannot be used in extern \"C++\" signatures");
 }
 
 // Rejects aggregate types that the LLVM backend miscompiles across an
@@ -1152,21 +1172,23 @@ static void validateExternCByValue(Type type, bool isReturn) {
     const char* instead = isReturn ? "use an out-parameter instead" : "pass it behind a pointer or reference instead";
     auto layout = cValueLayout(type);
     if (!layout) {
-        ERROR(type.location, "type '" << type << "' cannot be " << action
-                                      << " by value in extern \"C\" signatures because it contains "
-                                         "floating-point members and has a member with no C counterpart; "
-                                      << instead);
+        ERROR_RANGE(type.location, type.endLocation,
+                    "type '" << type << "' cannot be " << action
+                             << " by value in extern \"C\" signatures because it contains "
+                                "floating-point members and has a member with no C counterpart; "
+                             << instead);
     }
     if (layout->size > 16) return;
-    ERROR(type.location, "type '" << type << "' cannot be " << action << " by value in extern \"C\" signatures because it is " << layout->size
-                                  << " bytes and contains floating-point members; " << instead);
+    ERROR_RANGE(type.location, type.endLocation,
+                "type '" << type << "' cannot be " << action << " by value in extern \"C\" signatures because it is " << layout->size
+                         << " bytes and contains floating-point members; " << instead);
 }
 
 void cx::validateCVariadicExtra(Type type, const Expr& arg) {
     // Fixed arrays decay to pointers in variadic calls; everything else obeys
     // the signature rules, located at the argument instead of a parameter.
     if (type.isFixedArray()) return;
-    validateExternCByValue(type.withLocation(getExprRangeStart(arg)), false);
+    validateExternCByValue(type.withLocation(getExprRangeStart(arg), arg.endLocation), false);
 }
 
 // Computes the Itanium-mangled symbol for an `extern "C++"` declaration, used
@@ -1434,8 +1456,10 @@ void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
             ERROR_RANGE(params.back().getLocation(), getIdentifierEndLocation(params.back()),
                         "generic parameter '" << genericParam.getName() << "' cannot be used in both fixed and variadic parameters");
         }
-        if (inPack && functionDecl->getReturnType() && containsGenericParam(functionDecl->getReturnType(), genericParam.getName())) {
-            ERROR(functionDecl->getReturnType().location, "variadic generic parameter '" << genericParam.getName() << "' cannot be used in return type");
+        Type returnType = functionDecl->getReturnType();
+        if (inPack && returnType && containsGenericParam(returnType, genericParam.getName())) {
+            ERROR_RANGE(returnType.location, returnType.endLocation,
+                        "variadic generic parameter '" << genericParam.getName() << "' cannot be used in return type");
         }
     }
 }
@@ -1527,8 +1551,9 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
         // raw signatures on both sides.
         for (Type interface : decl.interfaces) {
             if (interface.isBasicType() && interface.getName() == "Copyable") {
-                REPORT_ERROR(interface.location, "': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold "
-                                                 "a non-Copyable field");
+                REPORT_ERROR_RANGE(interface.location, interface.endLocation,
+                                   "': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold "
+                                   "a non-Copyable field");
                 continue;
             }
             // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
@@ -1536,7 +1561,7 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
             auto* interfaceDecl = interface.getDecl();
 
             if (!interfaceDecl->isInterface()) {
-                REPORT_ERROR(interface.location, "'" << interface << "' is not an interface");
+                REPORT_ERROR_RANGE(interface.location, interface.endLocation, "'" << interface << "' is not an interface");
                 continue;
             }
 
@@ -1671,8 +1696,9 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
 
         for (Type interface : decl.interfaces) {
             if (interface.isBasicType() && interface.getName() == "Copyable") {
-                REPORT_ERROR(interface.location, "': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold "
-                                                 "a non-Copyable field");
+                REPORT_ERROR_RANGE(interface.location, interface.endLocation,
+                                   "': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold "
+                                   "a non-Copyable field");
                 continue;
             }
             // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
@@ -1680,7 +1706,7 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
             auto* interfaceDecl = interface.getDecl();
 
             if (!interfaceDecl->isInterface()) {
-                REPORT_ERROR(interface.location, "'" << interface << "' is not an interface");
+                REPORT_ERROR_RANGE(interface.location, interface.endLocation, "'" << interface << "' is not an interface");
                 continue;
             }
 

@@ -145,7 +145,7 @@ struct Typechecker {
     Type resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving, bool foldArraySizes = false);
     // Folds a deferred array size (or bare size name) using visible named
     // constants. Throws the specific diagnostic when it cannot.
-    Type resolveArraySize(Expr& sizeExpr, Type elementType, Location location, Module* homeModule);
+    Type resolveArraySize(Expr& sizeExpr, Type elementType, Location location, Location endLocation, Module* homeModule);
     TypeAliasDecl* findTypeAlias(Type type);
     void canonicalizeTypeAliases();
     void typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel);

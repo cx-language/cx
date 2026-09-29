@@ -1,8 +1,93 @@
 // RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
 
+struct Box<T> {
+    T value;
+}
+
+struct FixedArray<T, int N> {
+    T[N] elements;
+}
+
+struct MyBox<T> {
+    T value;
+}
+
+struct Foo {}
+
+// CHECK: [[@LINE+3]]:11: error: only interface types can be used as generic constraints
+// CHECK-NEXT: void f<T: Foo>() {}
+// CHECK-NEXT: {{^          ~~~$}}
+void f<T: Foo>() {}
+
+// CHECK: [[@LINE+3]]:9: error: 'int' is not an interface
+// CHECK-NEXT: {{^}}enum Z: int {
+// CHECK-NEXT: {{^        ~~~$}}
+enum Z: int {
+    A,
+}
+
+// CHECK: [[@LINE+3]]:11: error: array size must be a constant integer expression
+// CHECK-NEXT: {{^}}using A = Array<int, N>;
+// CHECK-NEXT: {{^          ~~~~~~~~~~~~~$}}
+using A = Array<int, N>;
+
+// CHECK: [[@LINE+3]]:12: error: cyclic type alias 'C2'
+// CHECK-NEXT: {{^}}using C1 = C2;
+// CHECK-NEXT: {{^           ~~$}}
+using C1 = C2;
+using C2 = C1;
+
 void main() {
-    // CHECK: [[@LINE+1]]:5: error: array size must be a constant integer expression
+    // CHECK: [[@LINE+3]]:5: error: unknown type 'FooBar'
+    // CHECK-NEXT: {{^}}    FooBar x;
+    // CHECK-NEXT: {{^    ~~~~~~$}}
+    FooBar x;
+    // CHECK: [[@LINE+3]]:5: error: unknown type 'FooBar<5>'
+    // CHECK-NEXT: {{^}}    FooBar<5> y;
+    // CHECK-NEXT: {{^    ~~~~~~~~~$}}
+    FooBar<5> y;
+    // CHECK: [[@LINE+3]]:5: error: array size must be a constant integer expression
+    // CHECK-NEXT: {{^}}    Array<5, int> z;
+    // CHECK-NEXT: {{^    ~~~~~~~~~~~~~$}}
     Array<5, int> z;
-    // CHECK: [[@LINE+1]]:5: error: array element type must be a type, not an integer
+    // CHECK: [[@LINE+3]]:5: error: array element type must be a type, not an integer
+    // CHECK-NEXT: {{^}}    Array<5, 3> w;
+    // CHECK-NEXT: {{^    ~~~~~~~~~~~$}}
     Array<5, 3> w;
+    // CHECK: [[@LINE+3]]:5: error: unknown type 'FooBar'
+    // CHECK-NEXT: {{^}}    Array<FooBar, 3> u;
+    // CHECK-NEXT: {{^    ~~~~~~~~~~~~~~~~$}}
+    Array<FooBar, 3> u;
+    // CHECK: [[@LINE+3]]:5: error: unknown type 'Nope'
+    // CHECK-NEXT: {{^}}    Nope* p;
+    // CHECK-NEXT: {{^    ~~~~~$}}
+    Nope* p;
+    // CHECK: [[@LINE+3]]:5: error: unknown type 'Nope'
+    // CHECK-NEXT: {{^}}    Nope? q;
+    // CHECK-NEXT: {{^    ~~~~~$}}
+    Nope? q;
+    // CHECK: [[@LINE+3]]:5: error: unknown type 'Nope'
+    // CHECK-NEXT: {{^}}    Nope[sizeof(int)] r;
+    // CHECK-NEXT: {{^    ~~~~~~~~~~~~~~~~~$}}
+    Nope[sizeof(int)] r;
+    // CHECK: [[@LINE+3]]:5: error: array size must be a constant integer expression
+    // CHECK-NEXT: {{^}}    A t;
+    // CHECK-NEXT: {{^    ~$}}
+    A t;
+    // CHECK: [[@LINE+3]]:5: error: ambiguous reference to 'Box'
+    // CHECK-NEXT: {{^}}    Box? s = null;
+    // CHECK-NEXT: {{^    ~~~~$}}
+    Box? s = null;
+    // CHECK: [[@LINE+3]]:19: error: expected type generic argument for parameter 'T' of 'MyBox'
+    // CHECK-NEXT: {{^}}    var b = MyBox<3>(value = 1);
+    // CHECK-NEXT: {{^                  ~$}}
+    var b = MyBox<3>(value = 1);
+    // CHECK: [[@LINE+3]]:29: error: expected integer generic argument for parameter 'N' of 'FixedArray'
+    // CHECK-NEXT: {{^}}    var c = FixedArray<int, string>(elements = [1]);
+    // CHECK-NEXT: {{^                            ~~~~~~$}}
+    var c = FixedArray<int, string>(elements = [1]);
+    // CHECK: [[@LINE+3]]:17: error: reference type 'int&' may only appear as a function parameter, return type, local variable, or interface argument
+    // CHECK-NEXT: {{^}}    var d = Box<int&>(value = 1);
+    // CHECK-NEXT: {{^                ~~~~$}}
+    var d = Box<int&>(value = 1);
 }
