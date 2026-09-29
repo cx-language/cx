@@ -369,10 +369,6 @@ class CategoryPageTest(unittest.TestCase):
     def test_no_blurb(self):
         self.assertNotIn("Auto-generated from", self.markdown)
 
-    def test_empty_file_noted(self):
-        markdown = render_category_page("Test category", [("empty.cx", [], {}, [], False)])
-        self.assertIn("*No public declarations.*", markdown)
-
 
 class RootIndexTest(unittest.TestCase):
     @classmethod
@@ -416,6 +412,15 @@ class RootIndexTest(unittest.TestCase):
             "[`answer`](./std/fixture#const-answer)",
             self.markdown,
         )
+
+
+class EmptyFileTest(unittest.TestCase):
+    def test_files_without_public_declarations_skipped(self):
+        with tempfile.TemporaryDirectory() as std_dir:
+            Path(std_dir, "impl.cx").write_text("private void helper() {}\nprivate struct Detail {}\n")
+            Path(std_dir, "api.cx").write_text("void f() {}\n")
+            pages = parse_std(Path(std_dir))
+        self.assertEqual([relpath for relpath, *_ in pages], ["api.cx"])
 
 
 class FileOrderTest(unittest.TestCase):
@@ -478,14 +483,12 @@ class StdlibTest(unittest.TestCase):
             relpath: render_file_page(relpath, *rest) for relpath, rest in cls.by_path.items()
         }
 
-    def test_one_page_per_file(self):
+    def test_files_without_public_declarations_excluded(self):
+        all_files = {p.relative_to(STD_DIR).as_posix() for p in STD_DIR.rglob("*.cx")}
         self.assertEqual(
-            sorted(self.by_path), sorted(p.relative_to(STD_DIR).as_posix() for p in STD_DIR.rglob("*.cx"))
+            sorted(all_files - set(self.by_path)),
+            ["system/libc.cx", "system/posix.cx", "system/windows.cx"],
         )
-
-    def test_system_files_included(self):
-        self.assertIn("system/posix.cx", self.by_path)
-        self.assertIn("system/windows.cx", self.by_path)
 
     def test_known_entries(self):
         # Smoke test: the real List.cx parses and renders. Only pin structure

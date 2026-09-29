@@ -217,7 +217,9 @@ def parse_file(path):
 
 
 def parse_std(std_dir):
-    """Returns one (path, types, functions, constants, conditional) tuple per .cx file.
+    """Returns one (path, types, functions, constants, conditional) tuple per .cx file
+    with public declarations. Files without any (all-private implementation
+    details like libc.cx) are skipped.
 
     Path is relative to std_dir with forward slashes; conditional marks files
     containing #if directives, whose declarations may be platform-specific.
@@ -225,6 +227,8 @@ def parse_std(std_dir):
     pages = []
     for path in sorted(std_dir.rglob("*.cx")):
         types, functions, constants = parse_file(path)
+        if not types and not functions and not constants:
+            continue
         conditional = any(
             strip_line_comment(line).strip().startswith("#if") for line in path.read_text().splitlines()
         )
@@ -385,9 +389,6 @@ def render_category_page(label, pages):
         page = page_name(relpath)
         out.append(f"## [{display_name(relpath)}](./{page})")
         out.append("")
-        if not types and not functions and not constants:
-            out.append("*No public declarations.*")
-            out.append("")
         for entry in types:
             # The backslash joins the type line and its member links into one
             # paragraph so they group visually.
@@ -472,7 +473,6 @@ STD_CATEGORIES = [
     ("Errors", "errors"),
     ("Filesystem & processes", "filesystem-processes"),
     ("Serialization", "serialization"),
-    ("System", "system"),
 ]
 
 
