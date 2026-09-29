@@ -94,4 +94,21 @@ void main() {
         outcome.value += 1;
         println("ok ", outcome.value); // CHECK-NEXT:ok 42
     }
+    // Optionals narrow like other enums, but unwrap to the wrapped type.
+    string? key = "asfd";
+    switch key {
+        case Some:
+            println("key: ", key.substr(0..4)); // CHECK-NEXT:key: asfd
+        case None:
+    }
+    key = null;
+    switch key {
+        case Some:
+        case None:
+            println("none ", key); // CHECK-NEXT:none null
+    }
+    // == None erases like a failed null check, keeping the optional usable.
+    if key == None {
+        println("still ", key); // CHECK-NEXT:still null
+    }
 }

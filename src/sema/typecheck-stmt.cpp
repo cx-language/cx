@@ -636,13 +636,25 @@ void Typechecker::typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase*
     definitelyAssignedDecls.insert(associatedValue);
 }
 
+void Typechecker::applyEnumCaseNarrowing(VariableDecl* varDecl, const EnumCase& enumCase) {
+    if (varDecl->type.isOptionalType()) {
+        if (enumCase.associatedType) {
+            narrowedTypes[varDecl] = varDecl->type.getWrappedType();
+        } else {
+            narrowedTypes.erase(varDecl);
+        }
+        return;
+    }
+    narrowedTypes[varDecl] = enumCase.associatedType ? enumCase.associatedType : AnonymousStructType::get({});
+}
+
 void Typechecker::narrowEnumSubjectToCase(const Expr* subject, const EnumCase& enumCase) {
     auto* varExpr = llvm::dyn_cast<VarExpr>(subject);
     if (!varExpr) return;
     auto* varDecl = getEnumNarrowableDecl(*varExpr);
     if (!varDecl) return;
     if (enumCase.getEnumDecl() != llvm::cast<EnumDecl>(varDecl->type.getDecl())) return;
-    narrowedTypes[varDecl] = enumCase.associatedType ? enumCase.associatedType : AnonymousStructType::get({});
+    applyEnumCaseNarrowing(varDecl, enumCase);
 }
 
 bool Typechecker::subjectBorrows(Expr* subject) {

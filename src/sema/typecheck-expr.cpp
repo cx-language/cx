@@ -96,7 +96,7 @@ VariableDecl* Typechecker::getEnumNarrowableDecl(const VarExpr& varExpr) {
     auto* varDecl = llvm::cast<VariableDecl>(decl);
     // Globals can be reassigned by any call, so narrowing them without a runtime check is unsound.
     if (varDecl->isGlobal()) return nullptr;
-    if (!varDecl->type || !varDecl->type.isEnumType() || varDecl->type.isOptionalType()) return nullptr;
+    if (!varDecl->type || !varDecl->type.isEnumType()) return nullptr;
     if (!llvm::cast<EnumDecl>(varDecl->type.getDecl())->hasAssociatedValues()) return nullptr;
     return varDecl;
 }
@@ -207,7 +207,7 @@ void Typechecker::narrowEnumCaseComparison(const Expr& lhs, const Expr& rhs, Bin
         auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(caseDecl);
         if (!enumCase || enumCase->getEnumDecl() != llvm::cast<EnumDecl>(varDecl->type.getDecl())) continue;
         if ((op == Token::Equal) == polarity) {
-            narrowedTypes[varDecl] = enumCase->associatedType ? enumCase->associatedType : AnonymousStructType::get({});
+            applyEnumCaseNarrowing(varDecl, *enumCase);
         } else if (op == Token::Equal) {
             narrowedTypes.erase(varDecl);
         }

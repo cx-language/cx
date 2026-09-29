@@ -265,6 +265,9 @@ struct Typechecker {
     static VariableDecl* getEnumNarrowableDecl(const VarExpr& varExpr);
     void narrowEnumCaseComparison(const Expr& lhs, const Expr& rhs, BinaryOperator op, bool polarity);
     void narrowEnumSubjectToCase(const Expr* subject, const EnumCase& enumCase);
+    // Narrows a subject to a matched case payload (empty view if payload-less).
+    // Optionals unwrap to the wrapped type instead; None erases.
+    void applyEnumCaseNarrowing(VariableDecl* varDecl, const EnumCase& enumCase);
     // Restores the whole enum type of an expression narrowed to a case payload.
     // Used where the full value is consumed: switch conditions, `is`, and `&`.
     static void unnarrowEnumView(Expr& expr);
