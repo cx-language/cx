@@ -36,4 +36,15 @@ void main() {
         println(deaths - before); // CHECK-NEXT:1
     }
     println(deaths - before); // CHECK-NEXT:1
+
+    // deinit through a dereference of a local pointer consumes the target
+    // like a direct deinit: exactly one destruction, no scope-exit double-destroy.
+    {
+        var c = S(x = 7);
+        var p = &c;
+        before = deaths;
+        (*p).deinit();
+        println(deaths - before); // CHECK-NEXT:1
+    }
+    println(deaths - before); // CHECK-NEXT:1
 }

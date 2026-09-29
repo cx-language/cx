@@ -1,0 +1,234 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct C {
+    int x;
+    ~C() {
+    }
+}
+
+struct W {
+    C* p;
+}
+
+void takePtr(C** pp) {}
+void reseat(C*& q) {}
+
+void doubleDeinitThroughPtrIsRejected() {
+    var c = C(x = 1);
+    var p = &c;
+    (*p).deinit();
+    // CHECK: [[@LINE+1]]:6: error: use of moved value 'c'
+    (*p).deinit();
+}
+
+void useAfterDeinitThroughPtrIsRejected() {
+    var c = C(x = 1);
+    var p = &c;
+    (*p).deinit();
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'c'
+    println(c);
+}
+
+void reassignedPtrDeinitIsRejected() {
+    var c = C(x = 1);
+    var d = C(x = 2);
+    var p = &c;
+    p = &d;
+    // CHECK: [[@LINE+1]]:6: error: cannot deinit through pointer 'p' with untracked target; deinit the value directly
+    (*p).deinit();
+}
+
+void branchReassignedPtrDeinitIsRejected(bool b) {
+    var c = C(x = 1);
+    var d = C(x = 2);
+    var p = &c;
+    if b {
+        p = &d;
+    }
+    // CHECK: [[@LINE+1]]:6: error: cannot deinit through pointer 'p' with untracked target; deinit the value directly
+    (*p).deinit();
+}
+
+void conditionalDeinitThroughPtrWarnsLikeDirect(bool b) {
+    var c = C(x = 1);
+    var p = &c;
+    if b {
+        // CHECK: [[@LINE+1]]:10: warning: value 'c' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(c); }' if this was intended)
+        (*p).deinit();
+    }
+    // CHECK: [[@LINE+1]]:13: warning: use of possibly-moved value 'c'
+    println(c);
+}
+
+void lambdaDeinitThroughPtrMarksOuter() {
+    var c = C(x = 1);
+    var p = &c;
+    var g = () => (*p).deinit();
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'c'
+    println(c);
+}
+
+void lambdaDeinitThroughPtrAfterMoveIsRejected() {
+    var c = C(x = 1);
+    var p = &c;
+    c.deinit();
+    // CHECK: [[@LINE+1]]:20: error: use of moved value 'c'
+    var g = () => (*p).deinit();
+}
+
+void lambdaAssignToOuterPtrTaints() {
+    var c = C(x = 1);
+    var d = C(x = 2);
+    var p = &c;
+    var f = () => { p = &d; };
+    // CHECK: [[@LINE+1]]:6: error: cannot deinit through pointer 'p' with untracked target; deinit the value directly
+    (*p).deinit();
+}
+
+void loopDeinitThroughPtrIsRejected() {
+    var c = C(x = 1);
+    var p = &c;
+    while true {
+        // CHECK: [[@LINE+1]]:10: error: cannot move 'c' inside a loop; move it before the loop or recreate it inside
+        (*p).deinit();
+        break;
+    }
+}
+
+void addrTakenPtrDeinitIsRejected() {
+    var c = C(x = 1);
+    var p = &c;
+    takePtr(&p);
+    // CHECK: [[@LINE+1]]:6: error: cannot deinit through pointer 'p' with untracked target; deinit the value directly
+    (*p).deinit();
+}
+
+void mutBorrowArgTaints() {
+    var c = C(x = 1);
+    var p = &c;
+    reseat(p);
+    // CHECK: [[@LINE+1]]:6: error: cannot deinit through pointer 'p' with untracked target; deinit the value directly
+    (*p).deinit();
+}
+
+void starStarWriteTaints() {
+    var d = C(x = 2);
+    var p = allocate<C>(1);
+    var pp = &p;
+    *pp = &d;
+    // CHECK: [[@LINE+1]]:6: error: cannot deinit through pointer 'p' with untracked target; deinit the value directly
+    (*p).deinit();
+}
+
+void taintedCopyStaysTainted() {
+    var c = C(x = 1);
+    var d = C(x = 2);
+    var p = &c;
+    p = &d;
+    var q = p;
+    // CHECK: [[@LINE+1]]:6: error: cannot deinit through pointer 'q' with untracked target; deinit the value directly
+    (*q).deinit();
+}
+
+void borrowTargetIsRejected() {
+    var c = C(x = 1);
+    C& r = c;
+    var p = &r;
+    // CHECK: [[@LINE+1]]:6: error: cannot deinit through pointer to borrow 'r'
+    (*p).deinit();
+}
+
+void multiHopTaintedMidIsRejected() {
+    var c = C(x = 1);
+    var p = &c;
+    var pp = &p;
+    // CHECK: [[@LINE+1]]:6: error: cannot deinit through pointer 'pp' with untracked target; deinit the value directly
+    (**pp).deinit();
+}
+
+void branchLambdaDoesNotContaminate(bool b) {
+    var c = C(x = 1);
+    var p = &c;
+    if b {
+        // CHECK: [[@LINE+1]]:17: warning: value 'c' is moved in the 'then' branch but not the 'else' branch; it may leak when the condition is false (add 'else { drop(c); }' if this was intended)
+        var g = () => (*p).deinit();
+    } else {
+        var h = () => 42;
+    }
+    // CHECK: [[@LINE+1]]:13: warning: use of possibly-moved value 'c'
+    println(c);
+}
+
+void loopLambdaDeinitThroughPtrIsRejected() {
+    var c = C(x = 1);
+    var p = &c;
+    while true {
+        // CHECK: [[@LINE+1]]:17: error: cannot move 'c' inside a loop; move it before the loop or recreate it inside
+        var g = () => (*p).deinit();
+        break;
+    }
+}
+
+void lambdaDeinitTrivialThroughPtrIsUntracked() {
+    // No error: trivial targets track nothing, like a direct deinit.
+    var x = 42;
+    var p = &x;
+    var g = () => (*p).deinit();
+    println(x);
+}
+
+void multiHopMissStaysLenient(C* p) {
+    // No error: a mid-chain miss stays lenient like other unknown targets.
+    var pp = &p;
+    (**pp).deinit();
+}
+
+void copiedPtrDeinitWorks() {
+    // No error: the copy carries the same known target.
+    var c = C(x = 1);
+    var p = &c;
+    var q = p;
+    (*q).deinit();
+}
+
+void heapPtrDeinitStaysLenient() {
+    // No error: heap pointers were never tracked; the container escape hatch.
+    var buf = allocate<C>(1);
+    buf[0] = C(x = 1);
+    (*buf).deinit();
+    deallocate(buf);
+}
+
+void paramPtrDeinitStaysLenient(C* p) {
+    // No error: params are never bound; interprocedural tracking is out of scope.
+    (*p).deinit();
+}
+
+void memberPtrDeinitStaysLenient(W w) {
+    // No error: member pointers are never bound.
+    (*w.p).deinit();
+}
+
+struct Holder {
+    C* p;
+    void reset() {
+        // No error: bare field names stay untracked like other member paths,
+        // so the heap escape hatch keeps working through them.
+        p = allocate<C>(1);
+        (*p).deinit();
+    }
+}
+
+void paramTargetDeinitWorks(C c) {
+    // No error: a by-value param is a stack local like any other.
+    var p = &c;
+    (*p).deinit();
+}
+
+void indexThroughPtrStaysLenient() {
+    // No error: only whole-value `*p` consumes; projections stay lenient.
+    var arr = [C(x = 1)];
+    var p = &arr;
+    p[0].deinit();
+    println(arr);
+}

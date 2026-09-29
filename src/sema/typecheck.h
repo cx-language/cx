@@ -350,6 +350,32 @@ struct Typechecker {
     // Switch-case and `is` bindings borrow their subject's payload; moving out of
     // one consumes the whole subject like moving out of a member does.
     llvm::DenseMap<const Decl*, Expr*> bindingSources;
+    // Address-of targets of init-bound local pointer variables, so deinit
+    // through a dereference can consume a stack target like a direct deinit
+    // does. Null means forgotten (reseated or address-taken: deinit through
+    // it is an error). Anything else (params, members, heap, globals,
+    // complex initializers) stays absent and lenient.
+    llvm::DenseMap<const Decl*, Decl*> deinitPtrTargets;
+    // Outer locals a closure body deinits through a dereference. The body
+    // names only the pointer, so they are not captures; the lambda epilogue
+    // marks them moved like the capture loop does. Entries from finished
+    // functions are inert: move state is decl-keyed and unnameable decls are
+    // never queried.
+    std::vector<Decl*> closureMovedDecls;
+    // Binds an initializing `&local`/tracked-pointer right-hand side;
+    // anything else leaves the pointer untracked (lenient).
+    void bindDeinitPtrTarget(VarDecl& decl);
+    // A definite value change (assignment, write through an alias): forgets
+    // the target even for untracked pointers.
+    void reseatDeinitPtrTarget(Decl* ptrDecl);
+    // A possible value change (address taken, mutable borrow): forgets the
+    // target only when one was tracked.
+    void taintDeinitPtrTarget(Decl* ptrDecl);
+    // Consumes the target of a deinit receiver dereferencing a tracked
+    // pointer, like a direct deinit of the target. Returns false (leaving the
+    // receiver to the lenient untracked path) when no tracked dereference is
+    // crossed; tainted pointers are an error.
+    bool consumeTrackedDeinitTarget(Expr* receiver);
     // True while checking a placement-`init` argument, which moves out of raw
     // container storage with no owner, so borrow/dereference moves are allowed.
     bool inMoveInit = false;

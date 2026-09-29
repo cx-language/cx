@@ -512,6 +512,10 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         if (expr.isConstant()) {
             operandType = operandType.withMutability(Mutability::Mutable);
         }
+        // Taking a tracked pointer's address exposes it for reassignment.
+        if (auto* varOperand = llvm::dyn_cast<VarExpr>(&expr.getOperand()); varOperand && varOperand->decl) {
+            taintDeinitPtrTarget(varOperand->decl);
+        }
         // Taking the address of a borrow exposes the borrowed address; it never nests.
         return PointerType::get(operandType.removeReference());
 
@@ -1260,6 +1264,18 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
     if (currentInitializedFields) {
         if (auto fieldDecl = lhs->getFieldDecl()) {
             currentInitializedFields->insert(fieldDecl);
+        }
+    }
+
+    if (lhsVar && lhsVar->decl) {
+        reseatDeinitPtrTarget(lhsVar->decl);
+    } else if (auto* unaryLhs = llvm::dyn_cast<UnaryExpr>(lhs); unaryLhs && unaryLhs->op == Token::Star) {
+        // Writing through a tracked pointer (`*pp = `) reseats its target,
+        // so the target is forgotten instead. (Raw pointers reject `pp[i]`,
+        // and indexable array pointers only ever bind array targets, which
+        // reseats ignore, so indexing needs no arm.)
+        if (auto* baseVar = llvm::dyn_cast<VarExpr>(&unaryLhs->getOperand()); baseVar && baseVar->decl) {
+            if (auto it = deinitPtrTargets.find(baseVar->decl); it != deinitPtrTargets.end()) reseatDeinitPtrTarget(it->second);
         }
     }
 }
@@ -3617,6 +3633,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         // Unlike other moves this applies even to trivial receivers: the base may still
         // hold destruction to skip. Borrowed bases keep the old ungated leniency.
         auto consumeDeinitBase = [&](Expr* receiver) {
+            if (consumeTrackedDeinitTarget(receiver)) return;
             Expr* base = receiver;
             while (true) {
                 if (auto* member = llvm::dyn_cast<MemberExpr>(base)) {
@@ -3980,6 +3997,14 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             // operand no longer converts); report it as a mismatch rather than storing null.
             if (Expr* converted = convert(expr.args[i].value, params[size_t(paramIndex)].type, true, true, allowOperatorBorrow)) {
                 expr.args[i].value = converted;
+                // Passing a tracked pointer by mutable borrow exposes it for
+                // reseating. Only a direct autoreference counts: borrows of
+                // dereferences or temporaries don't expose the variable.
+                const Type& paramType = params[size_t(paramIndex)].type;
+                if (auto* refCast = llvm::dyn_cast<ImplicitCastExpr>(converted);
+                    paramType.isReferenceType() && paramType.getPointee().isMutable() && refCast && refCast->castKind == ImplicitCastExpr::AutoReference) {
+                    if (auto* argVar = llvm::dyn_cast<VarExpr>(refCast->operand); argVar && argVar->decl) taintDeinitPtrTarget(argVar->decl);
+                }
             } else {
                 reportInvalidType(i);
             }
@@ -4516,11 +4541,22 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
     }
 
     expr.functionDecl->parentFunction = currentFunction;
+    size_t closureMovesBefore = closureMovedDecls.size();
     typecheckFunctionDecl(*expr.functionDecl);
 
     // A failed first check marks the lambda Checked while leaving the return type (or a
     // capture's type) unset; re-entrant checks must bail instead of interning null types.
     if (!expr.functionDecl->getReturnType()) throw CompileError::dependentError();
+
+    // Deinit through a dereference names only the pointer, so an outer target
+    // is no capture; mark what this body moved explicitly like the capture
+    // loop below (which also loop-checks, since the body check runs with a
+    // fresh loop count). Only new entries: older ones belong to finished
+    // lambdas, whose branch state must not leak in here.
+    for (size_t i = closureMovesBefore; i < closureMovedDecls.size(); ++i) {
+        errorIfLoopMove(closureMovedDecls[i], expr.location);
+        markMoved(closureMovedDecls[i], expr.location);
+    }
 
     if (expr.functionDecl->captures.empty()) {
         return Type(expr.functionDecl->getFunctionType(), Mutability::Mutable, expr.location);
@@ -5080,6 +5116,90 @@ void Typechecker::warnTernaryMove(Decl* decl, bool isThenArm, size_t branchEntry
     WARN(*loc, "value '" << name << "' is moved in the '" << (isThenArm ? "then" : "else") << "' arm of this ternary but not the '"
                          << (isThenArm ? "else" : "then") << "' arm; it may leak when the condition is " << (isThenArm ? "false" : "true") << " (" << fix
                          << " if this was intended)");
+}
+
+static bool isStorablePointer(Type type) {
+    return type && ((type.isPointerType() && !type.isReferenceType()) || type.isArrayPointer());
+}
+
+void Typechecker::bindDeinitPtrTarget(VarDecl& decl) {
+    if (decl.isGlobal() || !isStorablePointer(decl.type) || !decl.initializer) return;
+    Expr* rhs = decl.initializer;
+    while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(rhs))
+        rhs = cast->operand;
+    // ponytail: only `&local` and copies of tracked pointers bind; anything
+    // fancier stays untracked (lenient). Reassignment never re-binds, even to
+    // a known `&local`, so branch/loop-conditional reseats need no join
+    // logic; the forgotten-target error tells the user to deinit directly.
+    if (auto* unary = llvm::dyn_cast<UnaryExpr>(rhs); unary && unary->op == Token::And) {
+        auto* target = llvm::dyn_cast<VarExpr>(&unary->getOperand());
+        if (target && target->decl && (target->decl->kind == DeclKind::VarDecl || target->decl->kind == DeclKind::ParamDecl) && !target->decl->isGlobal()) {
+            deinitPtrTargets[&decl] = target->decl;
+        }
+    } else if (auto* rhsVar = llvm::dyn_cast<VarExpr>(rhs); rhsVar && rhsVar->decl) {
+        if (auto it = deinitPtrTargets.find(rhsVar->decl); it != deinitPtrTargets.end()) {
+            deinitPtrTargets[&decl] = it->second;
+        }
+    }
+}
+
+void Typechecker::reseatDeinitPtrTarget(Decl* ptrDecl) {
+    auto* varDecl = llvm::dyn_cast_or_null<VariableDecl>(ptrDecl);
+    // Fields (including bare `this`-field names) stay untracked like members
+    // everywhere else, so the heap escape hatch keeps working through them.
+    if (!varDecl || (varDecl->kind != DeclKind::VarDecl && varDecl->kind != DeclKind::ParamDecl) || varDecl->isGlobal() || !isStorablePointer(varDecl->type)) {
+        return;
+    }
+    deinitPtrTargets[ptrDecl] = nullptr;
+}
+
+void Typechecker::taintDeinitPtrTarget(Decl* ptrDecl) {
+    if (auto it = deinitPtrTargets.find(ptrDecl); it != deinitPtrTargets.end()) it->second = nullptr;
+}
+
+bool Typechecker::consumeTrackedDeinitTarget(Expr* receiver) {
+    // Only whole-value dereferences (`*p`, `**pp`, ...): projections
+    // through one keep the lenient untracked path.
+    Expr* current = receiver;
+    unsigned stars = 0;
+    while (true) {
+        auto* star = llvm::dyn_cast<UnaryExpr>(current);
+        if (!star || star->op != Token::Star) break;
+        current = &star->getOperand();
+        ++stars;
+    }
+    auto* baseVar = llvm::dyn_cast<VarExpr>(current);
+    if (!baseVar || !baseVar->decl || stars == 0) return false;
+    // Each `&p` taints a bound p, so a fully bound multi-hop chain cannot
+    // exist; the reachable outcomes below are a mid-chain miss (lenient) or
+    // a forgotten/borrowed hop (error), plus the single-hop consume.
+    Decl* target = baseVar->decl;
+    for (unsigned i = 0; i < stars; ++i) {
+        auto it = deinitPtrTargets.find(target);
+        if (it == deinitPtrTargets.end()) return false;
+        if (!it->second) {
+            ERROR(receiver->location, "cannot deinit through pointer '" << baseVar->decl->getName() << "' with untracked target; deinit the value directly");
+        }
+        target = it->second;
+        Type hopType = llvm::cast<VariableDecl>(target)->type;
+        if (hopType && hopType.isReferenceType() && hopType.getPointee().needsDestruction()) {
+            ERROR_RANGE(getExprRangeStart(*receiver), receiver->endLocation, "cannot deinit through pointer to borrow '" << target->getName() << "'");
+        }
+    }
+    auto* targetVar = llvm::cast<VariableDecl>(target);
+    Type targetType = targetVar->type;
+    // Deinit through the pointer is exactly a direct deinit of the target:
+    // check and consume through the existing move machinery.
+    auto* use = makeAST<VarExpr>(target->getName(), receiver->location);
+    use->decl = target;
+    use->type = targetType;
+    use->endLocation = receiver->endLocation;
+    checkNotMoved(*target, *use);
+    llvm::SaveAndRestore saveInExplicitDeinit(inExplicitDeinit, true);
+    propagateMove(use, targetType && targetType.needsDestruction(), receiver->location, /*checkLoop=*/true);
+    receiver->isMovedFrom = true;
+    if (targetVar->parent != currentFunction && targetType && targetType.needsDestruction()) closureMovedDecls.push_back(target);
+    return true;
 }
 
 void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {

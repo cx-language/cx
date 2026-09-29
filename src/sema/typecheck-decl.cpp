@@ -1952,6 +1952,8 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
             ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation, "global variable initializer must be a constant expression");
         }
     }
+
+    bindDeinitPtrTarget(decl);
 }
 
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
