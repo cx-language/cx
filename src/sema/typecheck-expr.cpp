@@ -1201,7 +1201,7 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
     } else {
         diagnoseClosureConversion(rhsType, lhsType, *rhs);
         ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
-                    "cannot assign '" << rhsType << "' to '" << lhsType << "'" << narrowingHint(rhsType, lhsType)
+                    "cannot assign '" << stripIrrelevantConst(rhs, rhsType, lhsType) << "' to '" << lhsType << "'" << narrowingHint(rhsType, lhsType)
                                       << ambiguousConversionHint(rhs, rhsType, lhsType));
     }
 
@@ -1512,6 +1512,14 @@ std::string Typechecker::ambiguousConversionHint(const Expr* expr, Type source, 
     int viableCount = 0;
     if (findUserConversion(expr, source, target, &viableCount) || viableCount < 2) return "";
     return " (ambiguous implicit conversion)";
+}
+
+Type Typechecker::stripIrrelevantConst(const Expr* expr, Type source, Type target, bool allowPointerToTemporary, bool allowOperatorBorrow) const {
+    Type stripped = source.withMutability(Mutability::Mutable);
+    if (stripped != source && !isImplicitlyConvertible(expr, stripped, target, allowPointerToTemporary, nullptr, false, allowOperatorBorrow)) {
+        return stripped;
+    }
+    return source;
 }
 
 FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Type target, int* viableCount, bool diagnoseOutOfRange) const {
@@ -3928,8 +3936,9 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         // since probing already failed, so discarding the result is safe.
         (void)convert(arg.value, param.type, true, true, allowOperatorBorrow);
         ERROR_WITH_NOTES_RANGE(getExprRangeStart(*arg.value), arg.value->endLocation, std::move(declNote),
-                               "invalid argument #" << (argIndex + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type
-                                                    << "'" << narrowingHint(arg.value->type, param.type)
+                               "invalid argument #" << (argIndex + 1) << " type '"
+                                                    << stripIrrelevantConst(arg.value, arg.value->type, param.type, true, allowOperatorBorrow) << "' to '"
+                                                    << callee << "', expected '" << param.type << "'" << narrowingHint(arg.value->type, param.type)
                                                     << ambiguousConversionHint(arg.value, arg.value->type, param.type));
     };
 
@@ -3963,7 +3972,8 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                 defaultArg = converted;
             } else {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
-                            "cannot assign '" << defaultArg->type << "' to '" << param.type << "'" << narrowingHint(defaultArg->type, param.type)
+                            "cannot assign '" << stripIrrelevantConst(defaultArg, defaultArg->type, param.type, true) << "' to '" << param.type << "'"
+                                              << narrowingHint(defaultArg->type, param.type)
                                               << ambiguousConversionHint(defaultArg, defaultArg->type, param.type));
             }
             argToParam.push_back(int(j));
@@ -4408,7 +4418,8 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
         expr.setValue(converted);
     } else {
         ERROR_RANGE(getExprRangeStart(*expr.getValue()), expr.getValue()->endLocation,
-                    "cannot assign '" << expr.getValue()->type << "' to '" << elementType << "'" << narrowingHint(expr.getValue()->type, elementType));
+                    "cannot assign '" << stripIrrelevantConst(expr.getValue(), expr.getValue()->type, elementType) << "' to '" << elementType << "'"
+                                      << narrowingHint(expr.getValue()->type, elementType));
     }
 
     if (auto* varExpr = getAssignmentBaseVarExpr(*expr.getBase())) {

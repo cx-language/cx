@@ -1901,7 +1901,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 
             diagnoseClosureConversion(initializerType, declaredType, *decl.initializer);
             ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
-                        "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint
+                        "cannot assign '" << stripIrrelevantConst(decl.initializer, initializerType, declaredType) << "' to '" << declaredType << "'" << hint
                                           << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
         }
     } else {
@@ -1965,7 +1965,8 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
             decl.defaultValue = converted;
         } else {
             ERROR_RANGE(getExprRangeStart(*decl.defaultValue), decl.defaultValue->endLocation,
-                        "cannot assign '" << decl.defaultValue->type << "' to '" << decl.type << "'" << narrowingHint(decl.defaultValue->type, decl.type));
+                        "cannot assign '" << stripIrrelevantConst(decl.defaultValue, decl.defaultValue->type, decl.type) << "' to '" << decl.type << "'"
+                                          << narrowingHint(decl.defaultValue->type, decl.type));
         }
     }
 }

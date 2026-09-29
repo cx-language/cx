@@ -1,0 +1,46 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+const gci = 1;
+const cf = 1.5;
+
+struct S {
+    // CHECK: [[@LINE+1]]:16: error: cannot assign 'float' to 'uint64'
+    uint64 f = cf;
+}
+
+void genericDefault<T>(T p = gci) {}
+
+void takesUint64(uint64 p) {}
+
+int getIndex() {
+    return 0;
+}
+
+uint64 returnMismatch() {
+    const x = [1];
+    // CHECK: [[@LINE+1]]:12: error: mismatching return type 'int', expected 'uint64'
+    return x[0];
+}
+
+void keepConst() {
+    const x = [1, 2];
+    int i = getIndex();
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'const int' to 'int&'
+    int& r = x[i];
+}
+
+void main() {
+    const x = [1];
+    // CHECK: [[@LINE+1]]:16: error: cannot assign 'int' to 'uint64'
+    uint64 y = x[0];
+    uint64 a = 0;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign 'int' to 'uint64'
+    a = x[0];
+    var arr = [1, 2];
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'float' to 'int'
+    arr[0] = cf;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign 'int' to 'bool'
+    genericDefault<bool>();
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'int' to 'takesUint64', expected 'uint64'
+    takesUint64(x[0]);
+}

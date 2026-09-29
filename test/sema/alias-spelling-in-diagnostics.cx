@@ -32,7 +32,7 @@ void main() {
     // CHECK: [[@LINE+1]]:19: error: cannot assign 'int' to 'List<int>'
     List<int> g = 0;
     const int ci = 1;
-    // CHECK: [[@LINE+1]]:14: error: cannot assign 'const int' to 'bool'
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'int' to 'bool'
     bool h = ci;
     var x = 1;
     int* p = &x;

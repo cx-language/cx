@@ -396,8 +396,8 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     } else {
         diagnoseClosureConversion(returnValueType, currentFunction->getReturnType(), *stmt.value);
         ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
-                    "mismatching return type '" << returnValueType << "', expected '" << currentFunction->getReturnType() << "'"
-                                                << narrowingHint(returnValueType, currentFunction->getReturnType())
+                    "mismatching return type '" << stripIrrelevantConst(stmt.value, returnValueType, currentFunction->getReturnType()) << "', expected '"
+                                                << currentFunction->getReturnType() << "'" << narrowingHint(returnValueType, currentFunction->getReturnType())
                                                 << ambiguousConversionHint(stmt.value, returnValueType, currentFunction->getReturnType()));
     }
 
