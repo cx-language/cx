@@ -152,6 +152,8 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
         } else {
             for (auto& field : decl.getTypeDecl()->fields) {
                 if (!field.type.needsDestruction()) continue;
+                // '@manuallyDestroy' fields are destroyed explicitly in the destructor body.
+                if (field.isManuallyDestroy) continue;
                 deferDestructorCall(emitMemberAccess(&function.params[0], &field), &field);
             }
         }

@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+struct Buffer {
+    @manuallyDestroy
+    // CHECK: [[@LINE+1]]:15: error: struct 'Buffer' has a '@manuallyDestroy' field but declares no destructor
+    List<int> items;
+}

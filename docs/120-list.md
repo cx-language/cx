@@ -99,8 +99,8 @@ void main() {
 ```
 
 The API mirrors `List`: `push`, `pop`, `removeAt`, indexing, iteration,
-and the `map`/`filter`/`find` helpers all work the same.
-Two differences: unlike `List`, a `SmallList` cannot be passed as a slice
-(`T[]`), since inline elements are not stored contiguously; and the heap
-spill buffer stores each element as an `Optional`, so a spilled `SmallList`
-uses more memory per element than a `List`.
+and the `map`/`filter`/`find` helpers all work the same. Elements stay
+contiguous in both modes - inline elements sit in a fixed array, spilled
+ones in a heap buffer just like `List` - so `data()` hands out a pointer
+to the first element. One difference: unlike `List`, a `SmallList`
+cannot be passed as a slice (`T[]`).

@@ -1,0 +1,11 @@
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+
+struct S {
+    // CHECK: [[@LINE+1]]:22: warning: duplicate '@manuallyDestroy' attribute
+    @manuallyDestroy @manuallyDestroy
+    List<int> items;
+
+    ~S() {
+        items.deinit();
+    }
+}

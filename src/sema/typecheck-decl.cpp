@@ -1526,6 +1526,17 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
             typecheckFieldDecl(fieldDecl);
         }
 
+        // A manually-destroyed owning field is never destroyed automatically,
+        // so the struct must declare a destructor that destroys it explicitly.
+        if (decl.getDestructor() == nullptr) {
+            for (auto& fieldDecl : realDecl->fields) {
+                if (fieldDecl.isManuallyDestroy && fieldDecl.type.needsDestruction()) {
+                    ERROR_RANGE(fieldDecl.getLocation(), getIdentifierEndLocation(fieldDecl),
+                                "struct '" << decl.getName() << "' has a '@manuallyDestroy' field but declares no destructor");
+                }
+            }
+        }
+
         for (auto& methodDecl : realDecl->methods) {
             ensureSignature(*methodDecl);
         }
