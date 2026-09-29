@@ -1,0 +1,18 @@
+// RUN: %not %cx -typecheck -Wno-unused %s --error-limit=0 2>&1 | %FileCheck %s
+
+void f() {}
+
+void inferredVoid() {
+    // CHECK: [[@LINE+1]]:9: error: cannot infer type of 't' from expression of type 'void'
+    var t = f();
+}
+
+void declaredVoid() {
+    // CHECK: [[@LINE+1]]:10: error: cannot declare variable 't' of type 'void'
+    void t = f();
+}
+
+void declaredVoidNoInitializer() {
+    // CHECK: [[@LINE+1]]:10: error: cannot declare variable 't' of type 'void'
+    void t;
+}

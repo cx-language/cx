@@ -1860,6 +1860,9 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         // types ('int&?', containers of borrows) stay rejected, as do all borrows in globals.
         bool allowReference = !decl.isGlobal() && declaredType.isReferenceType();
         typecheckType(declaredType, !decl.isGlobal() ? AccessLevel::None : decl.accessLevel, true, allowReference);
+        if (declaredType.isVoid()) {
+            ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "cannot declare variable '" << decl.getName() << "' of type 'void'");
+        }
     }
 
     if (decl.initializer) {
@@ -1912,6 +1915,9 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     } else {
         if (initializerType.isNull()) {
             ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "couldn't infer type of '" << decl.getName() << "', add a type annotation");
+        }
+        if (initializerType.isVoid()) {
+            ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "cannot infer type of '" << decl.getName() << "' from expression of type 'void'");
         }
 
         // An array pointer is a pointer view, not a value copy. Preserve its
