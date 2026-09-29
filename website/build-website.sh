@@ -1,8 +1,8 @@
 #!/bin/sh
-# To develop the website locally, run this script after each change,
-# and serve the generated HTML from the build directory using e.g. 'npx serve'.
-# Or run with --serve to build and serve in one step:
+# To develop the website locally, run with --serve: it builds once, serves
+# the result, and rebuilds and reloads open pages whenever sources change:
 #   website/build-website.sh --serve [--port <port>] [--no-open]
+# Without --serve it performs a single build (as CI does for deploys).
 
 SERVE=0
 PORT=8000
@@ -359,34 +359,9 @@ for artifact in cx-wasm.js cx-wasm.wasm cx-wasm.data cc.wasm wcc-files.zip; do
 done
 
 if [ "$SERVE" = 1 ]; then
-    echo "Serving build/ at http://localhost:$PORT"
-    # The site links pages without the .html suffix (./introduction), which
-    # GitHub Pages resolves to introduction.html. Plain 'http.server' does a
-    # literal lookup and would 404, so resolve 'path' to 'path.html' as well.
-    exec python3 - "$PORT" "$OPEN" <<'EOF'
-import functools
-import http.server
-import os
-import sys
-import threading
-import webbrowser
-
-
-class Handler(http.server.SimpleHTTPRequestHandler):
-    def translate_path(self, path):
-        translated = super().translate_path(path)
-        if not os.path.exists(translated):
-            html_path = translated + ".html"
-            if os.path.isfile(html_path):
-                return html_path
-        return translated
-
-
-if sys.argv[2] == "1":
-    threading.Timer(1.0, lambda: webbrowser.open("http://localhost:" + sys.argv[1] + "/")).start()
-http.server.ThreadingHTTPServer(
-    ("", int(sys.argv[1])),
-    functools.partial(Handler, directory="build"),
-).serve_forever()
-EOF
+    if [ "$OPEN" = 0 ]; then
+        exec python3 serve.py --port "$PORT" --no-open
+    else
+        exec python3 serve.py --port "$PORT"
+    fi
 fi
