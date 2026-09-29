@@ -1,0 +1,16 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+// List.from-slice copies each element, so owning element types are rejected
+// instead of aliasing the temporary's storage (use-after-free). Push owning
+// values one at a time instead.
+
+void pushConstructedOwningListWorks() {
+    // No error: push moves each owning value in.
+    var a = List<StringBuf>();
+    a.push(StringBuf("pear"));
+}
+
+void listLiteralOfOwningValuesIsRejected() {
+    // CHECK: error: invalid argument #1 type 'StringBuf&' to 'push', expected 'StringBuf'
+    var a = List([StringBuf("pear"), StringBuf("apple")]);
+}
