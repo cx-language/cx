@@ -10,36 +10,6 @@
 
 using namespace cx;
 
-// True when a switch case body may fall through to the code after the switch.
-// Unlike allPathsDiverge, 'break' falls through (it exits the switch), while
-// 'continue' doesn't (it skips past the switch to the loop increment).
-static bool switchCaseMayFallThrough(llvm::ArrayRef<Stmt*> block) {
-    if (block.empty()) return true;
-
-    switch (block.back()->kind) {
-    case StmtKind::ReturnStmt:
-    case StmtKind::ContinueStmt:
-        return false;
-    case StmtKind::BreakStmt:
-        return true;
-    case StmtKind::ExprStmt: {
-        auto& exprStmt = llvm::cast<ExprStmt>(*block.back());
-        auto* call = llvm::dyn_cast<CallExpr>(exprStmt.expr);
-        return !call || !call->type || !call->type.isNeverType();
-    }
-    case StmtKind::IfStmt: {
-        auto& ifStmt = llvm::cast<IfStmt>(*block.back());
-        return switchCaseMayFallThrough(ifStmt.thenBody) || switchCaseMayFallThrough(ifStmt.elseBody);
-    }
-    case StmtKind::SwitchStmt:
-        return true;
-    case StmtKind::CompoundStmt:
-        return switchCaseMayFallThrough(llvm::cast<CompoundStmt>(*block.back()).body);
-    default:
-        return true;
-    }
-}
-
 // True when no path through the block falls through to the next statement: every path
 // returns, calls a never-returning function, or breaks/continues past the analyzed block.
 // `break`/`continue` inside a nested loop or switch target that construct instead.
@@ -793,6 +763,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         collectAssignedNames(defaultStmt, bodyAssignedNames);
 
     currentControlStmts.push_back(&stmt);
+    llvm::SaveAndRestore saveBreakPaths(switchBreakPaths, std::vector<SwitchBreakPath>());
 
     std::vector<llvm::SmallPtrSet<Decl*, 32>> bodyAssignedDecls;
     // Arms run independently (there is no fallthrough), so each is checked
@@ -801,6 +772,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     llvm::SmallPtrSet<Decl*, 32> entryMovedDecls = movedDecls;
     llvm::SmallPtrSet<Decl*, 32> entryMaybeMovedDecls = maybeMovedDecls;
     size_t branchEntryLocalCount = localVarDecls.size();
+    bool assertsOn = assertsEnabled(options.mode, currentFunction && currentFunction->isTest);
 
     for (auto& switchCase : stmt.cases) {
         if (conditionType.isEnumType()) {
@@ -859,7 +831,10 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             typecheckStmt(caseStmt);
         }
         narrowedTypes = outerNarrowings;
-        if (switchCaseMayFallThrough(switchCase.stmts)) {
+        // Arms reaching their end contribute their end state; arms exiting
+        // only via break contribute just their captured break paths below
+        // (a break reaches past the switch, unlike return/continue).
+        if (!allPathsDiverge(switchCase.stmts, assertsOn)) {
             bodyAssignedDecls.push_back(definitelyAssignedDecls);
             pathMovedDecls.push_back(movedDecls);
             pathMaybeMovedDecls.push_back(maybeMovedDecls);
@@ -877,7 +852,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             typecheckStmt(defaultStmt);
         }
         narrowedTypes = outerNarrowings;
-        if (!stmt.defaultStmts.empty() && switchCaseMayFallThrough(stmt.defaultStmts)) {
+        if (!stmt.defaultStmts.empty() && !allPathsDiverge(stmt.defaultStmts, assertsOn)) {
             bodyAssignedDecls.push_back(definitelyAssignedDecls);
             pathMovedDecls.push_back(movedDecls);
             pathMaybeMovedDecls.push_back(maybeMovedDecls);
@@ -894,6 +869,11 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     if (stmt.defaultStmts.empty() && !stmt.coversAllEnumCases) {
         pathMovedDecls.push_back(entryMovedDecls);
         pathMaybeMovedDecls.push_back(entryMaybeMovedDecls);
+    }
+    for (auto& path : switchBreakPaths) {
+        pathMovedDecls.push_back(path.moved);
+        pathMaybeMovedDecls.push_back(path.maybeMoved);
+        bodyAssignedDecls.push_back(path.assigned);
     }
     if (!pathMovedDecls.empty()) {
         mergeConditionalMoves(pathMovedDecls, pathMaybeMovedDecls, entryMovedDecls, ConditionalMoveSite::Switch, branchEntryLocalCount);
@@ -1209,9 +1189,15 @@ void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
 }
 
 void Typechecker::typecheckBreakStmt(BreakStmt& breakStmt) {
-    if (llvm::none_of(currentControlStmts, [](const Stmt* stmt) { return stmt->isBreakable(); })) {
+    auto innermostBreakable = std::find_if(currentControlStmts.rbegin(), currentControlStmts.rend(), [](const Stmt* stmt) { return stmt->isBreakable(); });
+    if (innermostBreakable == currentControlStmts.rend()) {
         ERROR_RANGE(breakStmt.location, getIdentifierEndLocation(breakStmt.location, "break"),
                     "'break' is only allowed inside 'while', 'do-while', 'for', and 'switch' statements");
+    }
+    // A break out of a switch arm reaches past the switch; capture its move
+    // state for the switch merge (the if-merge drops it as diverging).
+    if ((*innermostBreakable)->kind == StmtKind::SwitchStmt) {
+        switchBreakPaths.push_back({movedDecls, maybeMovedDecls, definitelyAssignedDecls});
     }
 }
 

@@ -1,0 +1,44 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines %s
+
+// A move on a break path out of a switch arm must count as moved past the
+// switch: pre-fix the if-merge dropped it, emitting a destructor on the
+// moved-from value (double-free). (The conditional-move warning this
+// produces is checked in sema/conditional-move-warning.cx.)
+void sink(List<int> l) {
+    println("sunk");
+}
+
+int main() {
+    var x = List<int>();
+    x.push(1);
+    var c = 1;
+    var b = true;
+    switch c {
+        case 1:
+            if b {
+                sink(x);
+                break;
+            } else {
+                println("else");
+            }
+        default:
+            println("default");
+    }
+    // CHECK: sunk
+    // CHECK-NEXT: after
+    println("after");
+    // Definite assignment also flows through break paths: each arm assigns
+    // y before breaking, so using it after the switch must not error.
+    int y;
+    switch c {
+        case 1:
+            y = 10;
+            break;
+        default:
+            y = 20;
+            break;
+    }
+    // CHECK-NEXT: 10
+    println(y);
+    return 0;
+}

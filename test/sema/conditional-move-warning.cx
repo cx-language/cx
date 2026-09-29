@@ -106,6 +106,59 @@ void switchBindingWarnsSubject(E e) {
     }
 }
 
+void switchBreakPathWarns(int c, bool b, StringBuf x) {
+    switch c {
+        case 1:
+            if b {
+                // CHECK: [[@LINE+1]]:22: warning: value 'x' is moved in only some arms of this 'switch'; it may leak on the other paths (add 'drop(x);' to the other arms if this was intended)
+                sink(x);
+                break;
+            } else {
+                println("e");
+            }
+        default:
+            println("d");
+    }
+}
+
+void switchAllBreakPathsMoveIsSilent(int c, bool b, StringBuf x) {
+    // No check line: any warning here fails via implicit-check-not.
+    switch c {
+        case 1:
+            if b {
+                sink(x);
+                break;
+            } else {
+                drop(x);
+                break;
+            }
+        default:
+            drop(x);
+            break;
+    }
+    // x moved on every path reaching past the switch: no warning, no use.
+}
+
+void switchNestedBreakIsolation(int c, int d, StringBuf x) {
+    switch c {
+        case 1:
+            switch d {
+                case 1:
+                    sink(x);
+                    break;
+                default:
+                    drop(x);
+                    break;
+            }
+            break;
+        default:
+            drop(x);
+            break;
+    }
+    // Inner-switch breaks target the inner switch only; x moved on every
+    // outer path, so silence here is also covered by implicit-check-not.
+}
+
 void ternaryBothArmsWarn(bool b, StringBuf a, StringBuf c) {
     // CHECK: [[@LINE+2]]:17: warning: value 'a' is moved in the 'then' arm of this ternary but not the 'else' arm; it may leak when the condition is false (use 'a.take()' if this was intended)
     // CHECK: [[@LINE+1]]:21: warning: value 'c' is moved in the 'else' arm of this ternary but not the 'then' arm; it may leak when the condition is true (use 'c.take()' if this was intended)

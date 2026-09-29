@@ -303,6 +303,14 @@ struct Typechecker {
     // Values moved on only one side of a conditional: using one warns, and its
     // destructor is skipped like a moved value (leaking the live path).
     llvm::SmallPtrSet<Decl*, 32> maybeMovedDecls;
+    // Move state captured at each `break` out of a switch arm: breaks reach
+    // past the switch, but the if-merge drops them as diverging. Reset per
+    // switch (breaks target the innermost one); the merge unions them as
+    // extra paths.
+    struct SwitchBreakPath {
+        llvm::SmallPtrSet<Decl*, 32> moved, maybeMoved, assigned;
+    };
+    std::vector<SwitchBreakPath> switchBreakPaths;
     // Most recent move site per declaration, so branch merges can warn where
     // a value was conditionally moved.
     llvm::DenseMap<Decl*, Location> moveLocations;
