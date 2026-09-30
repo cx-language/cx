@@ -481,7 +481,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
-        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
+        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, true);
         if (ifStmt.isBinding) {
@@ -504,7 +504,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         Scope scope(currentFunction, &currentModule->symbolTable);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
-        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
+        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         applyNarrowings(*ifStmt.condition, false);
         for (auto& stmt : ifStmt.elseBody) {
@@ -792,7 +792,7 @@ Type Typechecker::typecheckShortCircuitRHS(llvm::function_ref<Type()> checkRHS, 
     {
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
-        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
+        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
         rightType = checkRHS();
         rhsMovedDecls = movedDecls;
         rhsMaybeMovedDecls = maybeMovedDecls;
@@ -977,7 +977,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
-        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
+        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
 
         typecheckSwitchCaseBinding(switchCase.associatedValue, enumCase, stmt.condition);
         if (!switchCase.associatedValue && enumCase) {
@@ -1005,7 +1005,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
-        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
+        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
         for (auto& defaultStmt : stmt.defaultStmts) {
             typecheckStmt(defaultStmt);
         }
@@ -1108,7 +1108,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
-        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
+        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
 
         typecheckSwitchCaseBinding(arm.associatedValue, enumCase, expr.condition);
         if (!arm.associatedValue && enumCase) {
@@ -1128,7 +1128,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
         llvm::SaveAndRestore saveMovedDecls(movedDecls);
         llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
-        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
+        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
         typecheckExpr(*expr.defaultExpr, false, expectedType);
         narrowedTypes = outerNarrowings;
         if (!expr.defaultExpr->type.isNeverType()) {

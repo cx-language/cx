@@ -5130,6 +5130,12 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location,
             if (moveConsumesSource(ifExpr->elseExpr)) propagateMove(ifExpr->elseExpr, trackVars, location, checkLoop);
             return;
         }
+        // Same for `??` (e.g. wrapped `T? w = o ?? z`, or `(o ?? z).field`).
+        if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(current); binaryExpr && binaryExpr->op == Token::QuestionQuestion) {
+            if (moveConsumesSource(&binaryExpr->getLHS())) propagateMove(&binaryExpr->getLHS(), trackVars, location, checkLoop);
+            if (moveConsumesSource(&binaryExpr->getRHS())) propagateMove(&binaryExpr->getRHS(), trackVars, location, checkLoop);
+            return;
+        }
         if (auto* switchExpr = llvm::dyn_cast<SwitchExpr>(current)) {
             for (auto& arm : switchExpr->arms) {
                 if (moveConsumesSource(arm.expr)) propagateMove(arm.expr, trackVars, location, checkLoop);
@@ -5198,7 +5204,7 @@ static bool hasTakeMethod(const Decl* decl) {
 
 void Typechecker::warnTernaryMove(Decl* decl, bool isThenArm, size_t branchEntryLocalCount) {
     auto loc = locateConditionalMoveWarning(decl, branchEntryLocalCount, moveLocations);
-    if (!loc || !ternaryWarnedDecls.insert(decl).second) return;
+    if (!loc || !condWarnedDecls.insert(decl).second) return;
     auto name = decl->getName();
     std::string fix = hasTakeMethod(decl) ? (StringBuilder() << "use '" << name << ".take()'").string
                                           : (StringBuilder() << "use 'takeFrom(&" << name << ", ...)', or restructure with 'drop()'").string;
@@ -5319,6 +5325,20 @@ bool Typechecker::consumeTrackedDeinitTarget(Expr* receiver) {
     return true;
 }
 
+llvm::SmallPtrSet<Decl*, 32> Typechecker::collectBranchMoves(Expr* branch, const llvm::SmallPtrSet<Decl*, 32>& preDecls, bool isMoved, bool trackVars) {
+    llvm::SmallPtrSet<Decl*, 32> branchMoves;
+    if (!moveConsumesSource(branch)) return branchMoves;
+    llvm::DenseMap<Decl*, Location> before = moveLocations;
+    setMoved(branch, isMoved, trackVars);
+    for (auto& [decl, loc] : moveLocations) {
+        if (preDecls.count(decl)) continue;
+        auto prev = before.find(decl);
+        // Line and column suffice: both moves are in this function.
+        if (prev == before.end() || prev->second.line != loc.line || prev->second.column != loc.column) branchMoves.insert(decl);
+    }
+    return branchMoves;
+}
+
 void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     if (!expr) return;
     expr->isMovedFrom = isMoved;
@@ -5408,28 +5428,13 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         // Both arms' bindings end up marked moved, so a value moved in only
         // one arm is never destroyed when the other arm is taken. Values moved
         // in both arms transfer to the result on every path and stay silent,
-        // as do moves whose other arm diverges. Moves are detected by recorded
-        // location changes: re-marking an already-moved value leaves the moved
-        // set unchanged, so set diffs alone would miss second-arm moves.
+        // as do moves whose other arm diverges.
         llvm::SmallPtrSet<Decl*, 32> preDecls = movedDecls;
         size_t branchEntryLocalCount = localVarDecls.size();
         bool thenReaches = !ifExpr->thenExpr->type.isNeverType();
         bool elseReaches = !ifExpr->elseExpr->type.isNeverType();
-        auto collectArmMoves = [&](Expr* arm) {
-            llvm::SmallPtrSet<Decl*, 32> armMoves;
-            if (!consumes(arm)) return armMoves;
-            llvm::DenseMap<Decl*, Location> before = moveLocations;
-            setMoved(arm, isMoved, trackVars);
-            for (auto& [decl, loc] : moveLocations) {
-                if (preDecls.count(decl)) continue;
-                auto prev = before.find(decl);
-                // Line and column suffice: both moves are in this function.
-                if (prev == before.end() || prev->second.line != loc.line || prev->second.column != loc.column) armMoves.insert(decl);
-            }
-            return armMoves;
-        };
-        llvm::SmallPtrSet<Decl*, 32> thenMoves = collectArmMoves(ifExpr->thenExpr);
-        llvm::SmallPtrSet<Decl*, 32> elseMoves = collectArmMoves(ifExpr->elseExpr);
+        llvm::SmallPtrSet<Decl*, 32> thenMoves = collectBranchMoves(ifExpr->thenExpr, preDecls, isMoved, trackVars);
+        llvm::SmallPtrSet<Decl*, 32> elseMoves = collectBranchMoves(ifExpr->elseExpr, preDecls, isMoved, trackVars);
         if (elseReaches) {
             for (auto* decl : thenMoves) {
                 if (!elseMoves.count(decl)) warnTernaryMove(decl, /*isThenArm=*/true, branchEntryLocalCount);
@@ -5439,6 +5444,33 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
             for (auto* decl : elseMoves) {
                 if (!thenMoves.count(decl)) warnTernaryMove(decl, /*isThenArm=*/false, branchEntryLocalCount);
             }
+        }
+        return;
+    }
+
+    // `??` consumes both sides conservatively like a ternary: the left side
+    // moves when non-null, the right side when null. Right-only moves warn
+    // (the value is live on the left path); left-only moves stay silent (the
+    // null path leaves nothing to leak).
+    if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(expr); binaryExpr && binaryExpr->op == Token::QuestionQuestion) {
+        Expr* lhs = &binaryExpr->getLHS();
+        Expr* rhs = &binaryExpr->getRHS();
+        if (!isMoved || !trackVars) {
+            if (consumes(lhs)) setMoved(lhs, isMoved, trackVars);
+            if (consumes(rhs)) setMoved(rhs, isMoved, trackVars);
+            return;
+        }
+        llvm::SmallPtrSet<Decl*, 32> preDecls = movedDecls;
+        size_t branchEntryLocalCount = localVarDecls.size();
+        llvm::SmallPtrSet<Decl*, 32> lhsMoves = collectBranchMoves(lhs, preDecls, isMoved, trackVars);
+        llvm::SmallPtrSet<Decl*, 32> rhsMoves = collectBranchMoves(rhs, preDecls, isMoved, trackVars);
+        for (auto* decl : rhsMoves) {
+            if (lhsMoves.count(decl)) continue;
+            // Locate before inserting: never-warn declarations (bindings,
+            // temps, locals) must not consume the dedup slot.
+            if (!locateConditionalMoveWarning(decl, branchEntryLocalCount, moveLocations)) continue;
+            if (!condWarnedDecls.insert(decl).second) continue;
+            warnAboutConditionalMove(decl, ConditionalMoveSite::NullCoalescing, branchEntryLocalCount, moveLocations);
         }
         return;
     }
@@ -5541,7 +5573,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         } else {
             movedDecls.erase(varExpr->decl);
             maybeMovedDecls.erase(varExpr->decl);
-            ternaryWarnedDecls.erase(varExpr->decl);
+            condWarnedDecls.erase(varExpr->decl);
         }
     }
 }

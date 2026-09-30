@@ -232,6 +232,23 @@ void andUnderIfWarnsOnce(bool c, bool b, StringBuf x) {
     }
 }
 
+void nullCoalescingBareRhsWarns(StringBuf? o, StringBuf z) {
+    // CHECK: [[@LINE+1]]:18: warning: value 'z' is moved in the right-hand side of this '??' but it may not execute; it may leak when the left side is not null (restructure with 'if' if this was intended)
+    var w = o ?? z;
+    println(string(w));
+}
+
+void nullCoalescingLhsOnlySilent(StringBuf? o) {
+    // The left side always evaluates; the null path leaves nothing to leak.
+    var w = o ?? StringBuf("d");
+    println(string(w));
+}
+
+void nullCoalescingBothSidesSilent(StringBuf? o) {
+    var w = o ?? o;
+    println(w == null);
+}
+
 void andLhsMoveNoWarning(bool b, StringBuf l) {
     // Unconditional move, so no short-circuit warning; later uses still error.
     var r = consumeBool(l) && b;

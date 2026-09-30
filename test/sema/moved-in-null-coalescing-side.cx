@@ -1,0 +1,34 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+struct T {
+    StringBuf v = StringBuf("");
+    ~T() {
+    }
+}
+
+void f(T t) {}
+
+void coalescingConsumesBothSides(T? o, T z) {
+    // CHECK: [[@LINE+1]]:18: warning: value 'z' is moved in the right-hand side of this '??' but it may not execute; it may leak when the left side is not null (restructure with 'if' if this was intended)
+    var w = o ?? z;
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'z'
+    f(z);
+}
+
+void coalescingWrappedMarksSides(T? o, T z) {
+    // Silent like a ternary through a wrap, but still marked.
+    T? w = o ?? z;
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'z'
+    f(z);
+}
+
+void coalescingProjectionMarksSides(T? o, T z) {
+    var v = (o ?? z).v;
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'z'
+    f(z);
+}
+
+void coalescingTemporaryIsConsumed(T? o) {
+    var w = o ?? T();
+    f(w);
+}

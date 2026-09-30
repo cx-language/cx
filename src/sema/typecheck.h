@@ -257,6 +257,12 @@ struct Typechecker {
     // named declarations as moved when trackVars holds, so copies into copyable
     // consumers keep working while their temps are still recognized as consumed.
     void setMoved(Expr* expr, bool isMoved, bool trackVars = true);
+    // Marks the moves in one conditional branch operand (ternary arm, `??`
+    // side), returning the declarations newly moved there. Moves are detected
+    // by recorded location changes: re-marking an already-moved value leaves
+    // the moved set unchanged, so set diffs alone would miss second-branch
+    // moves. Declarations in preDecls (moved before the construct) are skipped.
+    llvm::SmallPtrSet<Decl*, 32> collectBranchMoves(Expr* branch, const llvm::SmallPtrSet<Decl*, 32>& preDecls, bool isMoved, bool trackVars);
     // Moves ownership out of a projection source (member/index base, unwrap operand,
     // binding subject): owned roots are consumed, temporaries are flagged for
     // destructor elision, and borrowed roots are an error (nothing skips for them).
@@ -331,12 +337,13 @@ struct Typechecker {
     // Guards and move-site lookup shared by conditional-move warnings: skips
     // payload bindings and branch-locals, returns the move site if recorded.
     std::optional<Location> locateConditionalMoveWarning(Decl* decl, size_t branchEntryLocalCount, const llvm::DenseMap<Decl*, Location>& locations);
-    // Declarations already warned for a ternary arm move. Nested ternaries warn
-    // for their own arms; the outer arms would only repeat them, so each move
-    // warns once until the value is reassigned.
-    llvm::SmallPtrSet<Decl*, 32> ternaryWarnedDecls;
+    // Declarations already warned for a conditional-expression move (ternary
+    // arm, `??` side). Nested expressions warn for their own branches; the
+    // outer ones would only repeat them, so each move warns once until the
+    // value is reassigned.
+    llvm::SmallPtrSet<Decl*, 32> condWarnedDecls;
     // Warns that a value is moved in one ternary arm and leaks when the other
-    // arm is taken. Each move warns once (see ternaryWarnedDecls).
+    // arm is taken. Each move warns once (see condWarnedDecls).
     void warnTernaryMove(Decl* decl, bool isThenArm, size_t branchEntryLocalCount);
     // Warns that a value is moved on only some paths through a branch, pointing
     // at its move in the given branch's move map. Branch-local values and
