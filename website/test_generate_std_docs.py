@@ -21,6 +21,7 @@ from generate_std_docs import (
     page_name,
     parse_file,
     parse_std,
+    render_api_toc_items,
     render_category_page,
     render_file_page,
     render_root_index,
@@ -434,6 +435,45 @@ class FileOrderTest(unittest.TestCase):
         self.assertLess(markdown.index("{#const-zed}"), markdown.index("{#const-aardvark}"))
 
 
+class ApiTocTest(unittest.TestCase):
+    def test_uncategorized_pages_render_flat(self):
+        items = render_api_toc_items(
+            [("future.cx", [], {}, [], False), ("future/nested.cx", [], {}, [], False)]
+        )
+        self.assertEqual(
+            items,
+            [
+                '                <li><a href="./std/future">future</a></li>',
+                '                <li><a href="./std/future/nested">nested</a></li>',
+            ],
+        )
+
+    def test_categories_render_nested_before_uncategorized(self):
+        items = render_api_toc_items(
+            [
+                ("containers/List.cx", [], {}, [], False),
+                ("primitive-types/bool.cx", [], {}, [], False),
+                ("future.cx", [], {}, [], False),
+            ]
+        )
+        self.assertEqual(
+            items,
+            [
+                '                <li><a href="./std/primitive-types">Primitive types</a>\n'
+                "                    <ul>\n"
+                '                        <li><a href="./std/primitive-types/bool">bool</a></li>\n'
+                "                    </ul>\n"
+                "                </li>",
+                '                <li><a href="./std/containers">Containers</a>\n'
+                "                    <ul>\n"
+                '                        <li><a href="./std/containers/List">List</a></li>\n'
+                "                    </ul>\n"
+                "                </li>",
+                '                <li><a href="./std/future">future</a></li>',
+            ],
+        )
+
+
 class StdlibTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -540,7 +580,7 @@ class StdlibTest(unittest.TestCase):
 
 
 class StagingTest(unittest.TestCase):
-    def test_main_writes_index_and_pages(self):
+    def test_main_writes_index_pages_and_toc(self):
         with tempfile.TemporaryDirectory() as std_dir, tempfile.TemporaryDirectory() as output_dir:
             Path(std_dir, "fixture.cx").write_text(FIXTURE)
             Path(std_dir, "primitive-types").mkdir()
@@ -550,6 +590,7 @@ class StagingTest(unittest.TestCase):
             index = (out / "std.md").read_text()
             page = (out / "std/fixture.md").read_text()
             category = (out / "std/primitive-types.md").read_text()
+            toc = (out / "api-toc.html").read_text()
         self.assertIn("# API reference", index)
         self.assertIn("Auto-generated from", index)
         self.assertIn("## [Primitive types](./std/primitive-types)", index)
@@ -560,6 +601,11 @@ class StagingTest(unittest.TestCase):
         self.assertIn("## [bool](./std/primitive-types/bool)", category)
         self.assertIn("[`bool`](./std/primitive-types/bool#type-bool)", category)
         self.assertNotIn("fixture", category)
+        self.assertIn('<div class="side-nav">', toc)
+        self.assertIn('<li><a href="./std">API reference</a>', toc)
+        self.assertIn('<li><a href="./std/fixture">fixture</a></li>', toc)
+        self.assertIn('<a href="./std/primitive-types">Primitive types</a>', toc)
+        self.assertIn("<script>", toc)
 
 
 if __name__ == "__main__":

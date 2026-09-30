@@ -76,11 +76,14 @@ build_page() {
             ;;
     esac
 
-    # The guide sidebar covers the language documentation only; API
-    # reference pages navigate through the std index instead.
+    # The guide sidebar covers the language documentation; API reference
+    # pages get the generated stdlib sidebar instead.
     case $relpath in
-        index|bench|std*)
+        index|bench)
             toc=""
+            ;;
+        std*)
+            toc=--include-before-body=".generated/api-toc.html"
             ;;
         *)
             toc=--include-before-body="toc.html"
@@ -113,10 +116,14 @@ build_page() {
         esac
     fi
 
-    # The std index page lives at std/index.html: build/std.html would be
-    # shadowed by the build/std/ subpage directory.
+    # A page owning a subpage directory (the std index, the std category
+    # pages) renders as that directory's index: build/std/containers.html
+    # would be shadowed by the build/std/containers/ file-page directory,
+    # serving a redirect to a listing instead of the page.
     if [ "$relpath" = "std" ]; then
         outpath="std/index"
+    elif [ -d ".generated/$relpath" ]; then
+        outpath="$relpath/index"
     else
         outpath="$relpath"
     fi

@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import html
 import pathlib
 import re
 import sys
@@ -493,6 +494,49 @@ def category_page(label):
     return "std/" + category_slug(label)
 
 
+def render_api_toc_items(pages):
+    entries = {
+        relpath: f'<li><a href="./{page_name(relpath)}">{display_name(relpath)}</a></li>'
+        for relpath, *_ in pages
+    }
+    categorized = {path for _, folder in STD_CATEGORIES for path in category_members(entries, folder)}
+    items = []
+    for label, folder in STD_CATEGORIES:
+        members = [entries[path] for path in category_members(entries, folder)]
+        if not members:
+            continue
+        nested = "\n".join(f"                        {member}" for member in members)
+        items.append(
+            f'<li><a href="./{category_page(label)}">{html.escape(label)}</a>\n'
+            f"                    <ul>\n{nested}\n                    </ul>\n                </li>"
+        )
+    items += [entries[relpath] for relpath, *_ in pages if relpath not in categorized]
+    return [f"                {item}" for item in items]
+
+
+def write_api_toc(output_dir, pages):
+    """Sidebar for the API reference pages, listing the stdlib categories and files."""
+    items = "\n".join(render_api_toc_items(pages))
+    toc = (
+        '<div class="side-nav">\n'
+        '    <ul>\n'
+        '        <li><a href="./std">API reference</a>\n'
+        '            <ul>\n'
+        f"{items}\n"
+        '            </ul>\n'
+        '        </li>\n'
+        '    </ul>\n'
+        '</div>\n'
+    )
+    # The guide sidebar script (active link, sticky height, scroll restore)
+    # only depends on the .side-nav and .site-footer classes, so reuse it
+    # verbatim instead of maintaining a second copy.
+    guide = (ROOT / "website" / "toc.html").read_text()
+    if "<script>" in guide:
+        toc += "\n<script>" + guide.split("<script>", 1)[1]
+    (output_dir / "api-toc.html").write_text(toc)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Generate the standard library reference.")
     parser.add_argument("--std-dir", default=STD_DIR, help="stdlib source directory")
@@ -514,6 +558,7 @@ def main(argv=None):
         page_path = output_dir / f"{page_name(relpath)}.md"
         page_path.parent.mkdir(parents=True, exist_ok=True)
         page_path.write_text(render_file_page(relpath, types, functions, constants, conditional))
+    write_api_toc(output_dir, pages)
     print(f"Wrote {len(pages)} stdlib pages to {output_dir}.")
     return 0
 
