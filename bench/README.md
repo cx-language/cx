@@ -38,12 +38,13 @@ further if small regressions ever need bisecting.
 
 ## Language comparison
 
-`bench` ports the corpus programs to C, C++, Rust, Go and Odin, written
+`bench` ports the corpus programs to C, C++, Rust, Go, Odin and Zig, written
 idiomatically per language. Each program lives in its own directory with
 all its ports, e.g. `bench/fib/fib.cx`, `fib.c`, `fib.cpp`, `fib.rs`,
-`fib.go`, `fib.odin`. `jsonparse` is ported only to Go and Odin; C, C++,
-and Rust have no JSON parser in the standard library. `mapfilter` is
-omitted for C, Go, and Odin, which have no capturing lambdas.
+`fib.go`, `fib.odin`, `fib.zig`. `jsonparse` is ported only to Go, Odin,
+and Zig; C, C++, and Rust have no JSON parser in the standard library.
+`mapfilter` is omitted for C, Go, Odin, and Zig, which have no capturing
+lambdas.
 `scripts/bench-langs.py` builds each port twice, runs it, and records
 medians plus a self-contained HTML report with a chart per build. The
 optimized build is the release configuration. The unoptimized debug build
@@ -51,9 +52,9 @@ is the development configuration: cx's default build with `--no-leak-check`
 (safety checks stay on, and both the LLVM IR pipeline and codegen
 optimizations are skipped; the leak detector would otherwise exit these
 programs for memory they leave to the OS), C and C++ at `-O0 -g`, Rust at
-opt-level 0 with debug assertions
-and overflow checks, Go with `-gcflags=all=-N -l`, and Odin with `-debug`
-(`-o:none`).
+opt-level 0 with debug assertions and overflow checks, Go with
+`-gcflags=all=-N -l`, Odin with `-debug` (`-o:none`), and Zig with
+`-ODebug` (release is `-OReleaseFast`).
 
 ```sh
 python3 scripts/bench-langs.py --cx build/cx

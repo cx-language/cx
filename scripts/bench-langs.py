@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run-time benchmark: cx vs C, C++, Rust, Go and Odin on the bench corpus subset.
+"""Run-time benchmark: cx vs C, C++, Rust, Go, Odin and Zig on the bench corpus subset.
 
 Usage:
     scripts/bench-langs.py --cx build/cx [--runs 3] [--programs fib,sieve]
@@ -14,7 +14,7 @@ self-contained HTML report with graphs (open it straight from disk).
 fib/sieve/wordcount/mapfilter/jsonparse must print EXPECTED exactly in every
 language that implements them; mandelbrot checks self-consistency only
 (float-to-int conversion of huge values is platform-defined, so its checksum
-legitimately differs). mapfilter is omitted for C, Go, and Odin, which have
+legitimately differs). mapfilter is omitted for C, Go, Odin, and Zig, which have
 no capturing lambdas. jsonparse is omitted for C, C++, and Rust, which have
 no JSON parser in the standard library.
 """
@@ -45,7 +45,7 @@ EXPECTED = {
 # The report states the reason; a missing file alone does not.
 OMIT_REASON = {
     "mapfilter": {
-        "langs": ("c", "go", "odin"),
+        "langs": ("c", "go", "odin", "zig"),
         "because": "that benchmark times a capturing-lambda pipeline, which {who} cannot express",
     },
     "jsonparse": {
@@ -62,6 +62,7 @@ LANGS = {
     "rust": {"label": "Rust", "color": "#dea584", "tool": "rustc", "ext": ".rs"},
     "go": {"label": "Go", "color": "#00ADD8", "tool": "go", "ext": ".go"},
     "odin": {"label": "Odin", "color": "#60AFFE", "tool": "odin", "ext": ".odin"},
+    "zig": {"label": "Zig", "color": "#ec915c", "tool": "zig", "ext": ".zig"},
 }
 MODES = ["release", "debug"]
 MODE_LABEL = {"release": "optimized", "debug": "unoptimized debug"}
@@ -75,7 +76,8 @@ DEBUG_NOTE = (
     "C and C++ use -O0 -g. "
     "Rust uses opt-level 0 with debug assertions, overflow checks, and full debug info. "
     "Go disables optimizations and inlining with -gcflags=all=-N -l, including the standard library. "
-    "Odin uses -debug, which selects -o:none."
+    "Odin uses -debug, which selects -o:none. "
+    "Zig uses -ODebug; its release build is -OReleaseFast."
 )
 
 
@@ -141,6 +143,13 @@ def build_command(lang, mode, cx, src, binary):
             cmd.append("-o:none")
         cmd.append("-out:" + binary)
         return cmd
+    if lang == "zig":
+        # Local cache stays next to the binary so a run from the repo does not
+        # leave .zig-cache behind. The global cache still holds the stdlib.
+        return [
+            "zig", "build-exe", src, "--cache-dir", binary + ".cache",
+            "-femit-bin=" + binary, "-OReleaseFast" if release else "-ODebug",
+        ]
     raise AssertionError("unknown language " + lang)
 
 
@@ -153,9 +162,9 @@ def describe_build(lang, mode):
         if skip_next:
             skip_next = False
             continue
-        if arg in ("SRC", "BIN") or arg.startswith("-out:"):
+        if arg in ("SRC", "BIN") or arg.startswith("-out:") or arg.startswith("-femit-bin="):
             continue
-        if arg == "-o":
+        if arg in ("-o", "--cache-dir"):
             skip_next = True
             continue
         shown.append(arg)
@@ -163,7 +172,7 @@ def describe_build(lang, mode):
 
 
 def tool_version(tool):
-    cmd = [tool, "version"] if tool in ("go", "odin") else [tool, "--version"]
+    cmd = [tool, "version"] if tool in ("go", "odin", "zig") else [tool, "--version"]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         lines = result.stdout.splitlines()
@@ -274,7 +283,7 @@ def render_html(record):
 <head>
 <meta charset="utf-8">
 <meta name="color-scheme" content="light dark">
-<title>cx vs C, C++, Rust, Go, Odin: run-time comparison</title>
+<title>cx vs C, C++, Rust, Go, Odin, Zig: run-time comparison</title>
 <style>
 :root {{ color-scheme: light dark; --bg: #ffffff; --fg: #000000; --muted: #444444; --pre-bg: #f4f4f4; --cx-bar: #000000; }}
 @media (prefers-color-scheme: dark) {{
@@ -294,7 +303,7 @@ pre {{ background: var(--pre-bg); padding: 1rem; overflow-x: auto; }}
 </style>
 </head>
 <body>
-<h1>cx vs C, C++, Rust, Go, Odin: run-time comparison</h1>
+<h1>cx vs C, C++, Rust, Go, Odin, Zig: run-time comparison</h1>
 <p class="meta">{html.escape(record["timestamp"])} · {html.escape(record["platform"])} · median of {record["runs"]} runs<br>{tools}<br>cx at {html.escape(record["cx_sha"])}</p>
 <p>Each chart is one build. The ratio on each bar is against the fastest language in that chart.</p>
 <p class="note">{html.escape(DEBUG_NOTE)}</p>
