@@ -69,8 +69,7 @@ MODE_LABEL = {"release": "optimized", "debug": "unoptimized debug"}
 # leak report, which would exit these programs for memory they leave to the OS.
 DEBUG_NOTE = (
     "Unoptimized debug is the development build. "
-    "cx omits --release, so safety checks stay on and the LLVM IR optimization pipeline is skipped; "
-    "instruction selection still uses LLVM's default codegen optimization level. "
+    "cx omits --release, so safety checks stay on and both the LLVM IR pipeline and codegen optimizations are skipped. "
     "--no-leak-check keeps the leak detector from exiting when a program leaves memory to the OS, "
     "which the release build already allows. "
     "C and C++ use -O0 -g. "

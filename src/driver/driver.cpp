@@ -231,7 +231,9 @@ static llvm::TargetMachine* createTargetMachine(llvm::Module& module, llvm::Relo
     // dsymutil needs to collect DWARF into .dSYM bundles.
     options.DebuggerTuning = llvm::DebuggerKind::LLDB;
 #endif
-    auto optLevel = mode == BuildMode::Debug ? llvm::CodeGenOptLevel::Default : llvm::CodeGenOptLevel::Aggressive;
+    // Debug is unoptimized (-O0). Release keeps aggressive codegen; the IR
+    // pipeline is applied separately, and skipped entirely in debug.
+    auto optLevel = mode == BuildMode::Debug ? llvm::CodeGenOptLevel::None : llvm::CodeGenOptLevel::Aggressive;
     auto* targetMachine = target->createTargetMachine(triple, "generic", "", options, relocModel, std::nullopt, optLevel);
     module.setDataLayout(targetMachine->createDataLayout());
     return targetMachine;
