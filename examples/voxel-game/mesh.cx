@@ -3,11 +3,11 @@ import "GLFW/glfw3.h";
 // Non-indexed triangle mesh with separate position, normal, color, and
 // UV buffers (one vertex per corner, three corners per triangle).
 struct Mesh {
-    uint vao;
-    uint positionVbo;
-    uint normalVbo;
-    uint colorVbo;
-    uint uvVbo;
+    c_uint vao;
+    c_uint positionVbo;
+    c_uint normalVbo;
+    c_uint colorVbo;
+    c_uint uvVbo;
     int vertexCount;
 }
 

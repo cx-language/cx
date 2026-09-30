@@ -3,9 +3,9 @@
 import "inputs/extern-merge-a.h";
 import "inputs/extern-merge-b.h";
 
-// Same C name, ABI-compatible spellings (int32 vs uint32): one symbol, no error.
-// CHECK: call pick(int32 1)
-// CHECK: call pick(uint32
+// Same C name, ABI-compatible spellings (c_int vs c_uint): one symbol, no error.
+// CHECK: call pick(c_int 1)
+// CHECK: call pick(c_uint
 
 void main() {
     print(pick(1));

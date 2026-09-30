@@ -100,11 +100,11 @@ void LoadShader(GLuint shaderID, string path) {
     }
 }
 
-void ErrorCallback(int error, const char*? description) {
+void ErrorCallback(c_int error, const char*? description) {
     println(description);
 }
 
-void KeyCallback(GLFWwindow*? window, int key, int scancode, int action, int mods) {
+void KeyCallback(GLFWwindow*? window, c_int key, c_int scancode, c_int action, c_int mods) {
     if key == GLFW_KEY_ESCAPE && action == GLFW_PRESS
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }

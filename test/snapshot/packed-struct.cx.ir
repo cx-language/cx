@@ -1,12 +1,12 @@
 
 int32 main() {
     S* s = alloca S
-    uint8* a = getelementptr s, 0
-    store uint8 171 to a
-    uint16* b = getelementptr s, 1
-    store uint16 52719 to b
-    uint8* c = getelementptr s, 2
-    store uint8 0 to c
+    c_uchar* a = getelementptr s, 0
+    store c_uchar 171 to a
+    c_ushort* b = getelementptr s, 1
+    store c_ushort 52719 to b
+    c_uchar* c = getelementptr s, 2
+    store c_uchar 0 to c
     bool _0 = sizeof(S) == uint64 4
     bool assert.condition = _0 == bool false
     br assert.condition, assert.fail, assert.success

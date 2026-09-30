@@ -2,35 +2,37 @@
 int32 _CX1N4main3fooEM3std5int321_M26union_2Dmember_2Daccess__h1U(U u) {
     U* u_0 = alloca U
     store u to u_0
-    int32* b = cast u_0 to int32*
-    int32 b.load = load b
-    return b.load
+    c_int* b = cast u_0 to c_int*
+    c_int b.load = load b
+    int32 _0 = cast b.load to int32
+    return _0
 }
 
 int32 main() {
     U* u = alloca U
-    int32* a = cast u to int32*
-    store int32 21 to a
+    c_int* a = cast u to c_int*
+    store c_int 21 to a
     U u.load = load u
     int32 _0 = call _CX1N4main3fooEM3std5int321_M26union_2Dmember_2Daccess__h1U(U u.load)
-    int32* b = cast u to int32*
-    int32 b.load = load b
-    int64 _1 = cast _0 to int64
-    int64 _2 = cast b.load to int64
-    int64 _3 = _1 + _2
-    int32 _4 = cast _3 to int32
-    int64 _5 = cast _4 to int64
-    bool _6 = _3 != _5
-    bool _7 = !_6
-    bool overflow.condition = _7 == bool false
+    c_int* b = cast u to c_int*
+    c_int b.load = load b
+    int32 _1 = cast b.load to int32
+    int64 _2 = cast _0 to int64
+    int64 _3 = cast _1 to int64
+    int64 _4 = _2 + _3
+    int32 _5 = cast _4 to int32
+    int64 _6 = cast _5 to int64
+    bool _7 = _4 != _6
+    bool _8 = !_7
+    bool overflow.condition = _8 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at union-member-access.cx:13:19
+    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at union-member-access.cx:13:19
 ")
     unreachable
 
 overflow.success:
-    void _9 = call _CX1N3std10checkLeaksE4void0_()
-    return _4
+    void _10 = call _CX1N3std10checkLeaksE4void0_()
+    return _5
 }

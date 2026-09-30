@@ -54,20 +54,6 @@ struct CToCxConverter final : clang::ASTConsumer {
 
     void Initialize(clang::ASTContext& context) override { astContext = &context; }
 
-    Type getIntTypeByWidth(unsigned widthInBits, bool asSigned) {
-        switch (widthInBits) {
-        case 8:
-            return asSigned ? Type::getInt8() : Type::getUInt8();
-        case 16:
-            return asSigned ? Type::getInt16() : Type::getUInt16();
-        case 32:
-            return asSigned ? Type::getInt32() : Type::getUInt32();
-        case 64:
-            return asSigned ? Type::getInt64() : Type::getUInt64();
-        }
-        llvm_unreachable("unsupported integer width");
-    }
-
     Type toCx(const clang::BuiltinType& type) {
         switch (type.getKind()) {
         case clang::BuiltinType::Void:
@@ -77,20 +63,21 @@ struct CToCxConverter final : clang::ASTConsumer {
         case clang::BuiltinType::Char_S:
         case clang::BuiltinType::Char_U:
             return Type::getChar();
+        // Varying-width C integers keep their identity (instead of mapping by
+        // width) so they stay ABI-compatible and the C backend spells
+        // header-compatible types.
         case clang::BuiltinType::SChar:
-            return getIntTypeByWidth(targetInfo->getCharWidth(), true);
+            return Type::getCSChar();
         case clang::BuiltinType::UChar:
-            return getIntTypeByWidth(targetInfo->getCharWidth(), false);
+            return Type::getCUChar();
         case clang::BuiltinType::Short:
-            return getIntTypeByWidth(targetInfo->getShortWidth(), true);
+            return Type::getCShort();
         case clang::BuiltinType::UShort:
-            return getIntTypeByWidth(targetInfo->getShortWidth(), false);
+            return Type::getCUShort();
         case clang::BuiltinType::Int:
-            return Type::getInt32();
+            return Type::getCInt();
         case clang::BuiltinType::UInt:
-            return Type::getUInt32();
-        // C longs keep their identity (instead of mapping by width) so the C
-        // backend spells header-compatible types.
+            return Type::getCUInt();
         case clang::BuiltinType::Long:
             return Type::getCLong();
         case clang::BuiltinType::ULong:

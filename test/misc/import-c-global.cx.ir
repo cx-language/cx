@@ -1,8 +1,17 @@
-extern global int32 my_global
+extern global c_int my_global
 
 int32 main() {
-    int32 my_global.load = load my_global
-    void _0 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 my_global.load)
+    c_int my_global.load = load my_global
+    void _0 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int my_global.load)
     void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
+}
+
+void _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int value) {
+    c_int* value_0 = alloca c_int
+    OutputStream* stream = alloca OutputStream
+    store value to value_0
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    void _1 = call _CX1N3stdM3std6c__int5printE4void1_RM3std12OutputStream(c_int* value_0, OutputStream* stream)
+    return void
 }

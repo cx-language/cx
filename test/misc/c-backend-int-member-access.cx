@@ -1,0 +1,20 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+
+// CHECK: int* {{[_A-Za-z0-9]+}} = &(&s0)->a;
+// CHECK: unsigned int* {{[_A-Za-z0-9]+}} = &(&s0)->b;
+// CHECK: short* {{[_A-Za-z0-9]+}} = &(&s0)->c;
+// CHECK: unsigned short* {{[_A-Za-z0-9]+}} = &(&s0)->d;
+// CHECK: signed char* {{[_A-Za-z0-9]+}} = &(&s0)->e;
+// CHECK: unsigned char* {{[_A-Za-z0-9]+}} = &(&s0)->f;
+
+import "inputs/c-int-struct.h";
+
+void main() {
+    IS s;
+    s.a = 1;
+    s.b = 2;
+    s.c = 3;
+    s.d = 4;
+    s.e = 5;
+    s.f = 6;
+}

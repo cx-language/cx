@@ -2,7 +2,7 @@
 
 import "c-callback-function.h";
 
-int f(int a) {
+c_int f(c_int a) {
     return a;
 }
 

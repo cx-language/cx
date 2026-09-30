@@ -189,8 +189,8 @@ int runGame(bool debug) {
         prevLeft = left;
         prevRight = right;
 
-        int width = undefined;
-        int height = undefined;
+        c_int width = undefined;
+        c_int height = undefined;
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
         glClearColor(0.45, 0.65, 1.0, 1.0);

@@ -9,9 +9,9 @@ int32 main() {
     NameClash* c = alloca NameClash
     WithAnon _0 = call makeWithAnon()
     store _0 to w
-    int32* tag = getelementptr w, 0
-    int32 tag.load = load tag
-    void _1 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 tag.load)
+    c_int* tag = getelementptr w, 0
+    c_int tag.load = load tag
+    void _1 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int tag.load)
     AnonymousRecord0* unnamed_0 = getelementptr w, 1
     c_longlong* a = cast unnamed_0 to c_longlong*
     c_longlong a.load = load a
@@ -19,59 +19,68 @@ int32 main() {
     OnlyUnion _3 = call makeOnlyUnion()
     store _3 to o
     AnonymousRecord1* unnamed_0_0 = getelementptr o, 0
-    int32* b = cast unnamed_0_0 to int32*
-    int32 b.load = load b
-    void _4 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 b.load)
+    c_int* b = cast unnamed_0_0 to c_int*
+    c_int b.load = load b
+    void _4 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int b.load)
     Flat _5 = call makeFlat()
     store _5 to f
-    int32* x = getelementptr f, 0
-    int32 x.load = load x
-    void _6 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 x.load)
-    int32* y = getelementptr f, 1
-    int32 y.load = load y
-    void _7 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 y.load)
-    int32* z = getelementptr f, 2
-    int32 z.load = load z
-    void _8 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 z.load)
+    c_int* x = getelementptr f, 0
+    c_int x.load = load x
+    void _6 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int x.load)
+    c_int* y = getelementptr f, 1
+    c_int y.load = load y
+    void _7 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int y.load)
+    c_int* z = getelementptr f, 2
+    c_int z.load = load z
+    void _8 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int z.load)
     NestedFlat _9 = call makeNestedFlat()
     store _9 to n
-    int32* z_0 = getelementptr n, 2
-    int32 z.load_0 = load z_0
-    void _10 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 z.load_0)
+    c_int* z_0 = getelementptr n, 2
+    c_int z.load_0 = load z_0
+    void _10 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int z.load_0)
     TwoUnions _11 = call makeTwoUnions()
     store _11 to t
     AnonymousRecord2* unnamed_0_1 = getelementptr t, 0
-    int32* a_0 = cast unnamed_0_1 to int32*
-    int32 a.load_0 = load a_0
-    void _12 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 a.load_0)
+    c_int* a_0 = cast unnamed_0_1 to c_int*
+    c_int a.load_0 = load a_0
+    void _12 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int a.load_0)
     AnonymousRecord3* unnamed_1 = getelementptr t, 1
-    int32* b_0 = cast unnamed_1 to int32*
-    int32 b.load_0 = load b_0
-    void _13 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 b.load_0)
+    c_int* b_0 = cast unnamed_1 to c_int*
+    c_int b.load_0 = load b_0
+    void _13 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int b.load_0)
     StructInUnion _14 = call makeStructInUnion()
     store _14 to s
     AnonymousRecord4* unnamed_0_2 = cast s to AnonymousRecord4*
-    int32* x_0 = getelementptr unnamed_0_2, 0
-    int32 x.load_0 = load x_0
-    void _15 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 x.load_0)
+    c_int* x_0 = getelementptr unnamed_0_2, 0
+    c_int x.load_0 = load x_0
+    void _15 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int x.load_0)
     AnonymousRecord4* unnamed_0_3 = cast s to AnonymousRecord4*
-    int32* y_0 = getelementptr unnamed_0_3, 1
-    int32 y.load_0 = load y_0
-    void _16 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 y.load_0)
+    c_int* y_0 = getelementptr unnamed_0_3, 1
+    c_int y.load_0 = load y_0
+    void _16 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int y.load_0)
     c_longlong* d = cast s to c_longlong*
     c_longlong d.load = load d
     void _17 = call _CX1N3std5printIM3std11c__longlongEE4void1_M3std11c__longlong(c_longlong d.load)
     NameClash _18 = call makeNameClash()
     store _18 to c
     AnonymousRecord5* unnamed_1_0 = getelementptr c, 0
-    int32* a_1 = cast unnamed_1_0 to int32*
-    int32 a.load_1 = load a_1
-    void _19 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 a.load_1)
-    int32* unnamed_0_4 = getelementptr c, 1
-    int32 unnamed_0.load = load unnamed_0_4
-    void _20 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 unnamed_0.load)
+    c_int* a_1 = cast unnamed_1_0 to c_int*
+    c_int a.load_1 = load a_1
+    void _19 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int a.load_1)
+    c_int* unnamed_0_4 = getelementptr c, 1
+    c_int unnamed_0.load = load unnamed_0_4
+    void _20 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int unnamed_0.load)
     void _21 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
+}
+
+void _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int value) {
+    c_int* value_0 = alloca c_int
+    OutputStream* stream = alloca OutputStream
+    store value to value_0
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    void _1 = call _CX1N3stdM3std6c__int5printE4void1_RM3std12OutputStream(c_int* value_0, OutputStream* stream)
+    return void
 }
 
 void _CX1N3std5printIM3std11c__longlongEE4void1_M3std11c__longlong(c_longlong value) {

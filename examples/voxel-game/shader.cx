@@ -10,7 +10,7 @@ uint compileShader(string path, uint kind) {
     // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
     glShaderSource(shader, 1, cast<const char*?*>(&cstr), null);
     glCompileShader(shader);
-    int status = undefined;
+    c_int status = undefined;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if status == 0 {
         char[512] log = undefined;
@@ -28,7 +28,7 @@ uint createProgram(string vertPath, string fragPath) {
     glAttachShader(program, vert);
     glAttachShader(program, frag);
     glLinkProgram(program);
-    int status = undefined;
+    c_int status = undefined;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
     if status == 0 {
         char[512] log = undefined;

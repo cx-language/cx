@@ -21,7 +21,7 @@ uint compileShader(string path, uint kind) {
     // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
     glShaderSource(shader, 1, cast<const char*?*>(&cstr), null);
     glCompileShader(shader);
-    int status = undefined;
+    c_int status = undefined;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if status == 0 {
         char[512] log = undefined;
@@ -39,7 +39,7 @@ uint createProgram(string vertPath, string fragPath) {
     glAttachShader(program, vert);
     glAttachShader(program, frag);
     glLinkProgram(program);
-    int status = undefined;
+    c_int status = undefined;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
     if status == 0 {
         char[512] log = undefined;
@@ -103,7 +103,7 @@ int runExplorer() {
     var viewHLoc = uniformLoc(program, "uViewH");
     var aspectLoc = uniformLoc(program, "uAspect");
     var iterLoc = uniformLoc(program, "uMaxIter");
-    uint vao = undefined;
+    c_uint vao = undefined;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
@@ -134,8 +134,8 @@ int runExplorer() {
         }
         prevDown = down;
 
-        int width = undefined;
-        int height = undefined;
+        c_int width = undefined;
+        c_int height = undefined;
         glfwGetFramebufferSize(window, &width, &height);
         if width <= 0 || height <= 0 {
             glfwPollEvents();
@@ -147,8 +147,8 @@ int runExplorer() {
         glfwGetCursorPos(window, &mx, &my);
         // Cursor and window sizes share screen coordinates; the framebuffer
         // is scaled up on HiDPI displays, so it would misplace the cursor.
-        int winWidth = undefined;
-        int winHeight = undefined;
+        c_int winWidth = undefined;
+        c_int winHeight = undefined;
         glfwGetWindowSize(window, &winWidth, &winHeight);
 
         if pendingZoom != 0.0 {
@@ -221,7 +221,7 @@ int runScreenshot(string path) {
     glfwMakeContextCurrent(window);
 
     var program = createProgram("assets/fractal.vert", "assets/fractal.frag");
-    uint vao = undefined;
+    c_uint vao = undefined;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     var centerLoc = uniformLoc(program, "uCenter");

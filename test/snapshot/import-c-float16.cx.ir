@@ -1,16 +1,25 @@
 
 int32 main() {
-    int32 _0 = call plain(int32 41)
-    void _1 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _0)
+    c_int _0 = call plain(c_int 41)
+    void _1 = call _CX1N3std7printlnIM3std6c__intEE4void1_M3std6c__int(c_int _0)
     void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 
-void _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 value) {
-    int32* value_0 = alloca int32
+void _CX1N3std7printlnIM3std6c__intEE4void1_M3std6c__int(c_int value) {
+    c_int* value_0 = alloca c_int
     store value to value_0
-    int32 value.load = load value_0
-    void _0 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 value.load)
+    c_int value.load = load value_0
+    void _0 = call _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int value.load)
     void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
+    return void
+}
+
+void _CX1N3std5printIM3std6c__intEE4void1_M3std6c__int(c_int value) {
+    c_int* value_0 = alloca c_int
+    OutputStream* stream = alloca OutputStream
+    store value to value_0
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    void _1 = call _CX1N3stdM3std6c__int5printE4void1_RM3std12OutputStream(c_int* value_0, OutputStream* stream)
     return void
 }

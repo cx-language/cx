@@ -1,13 +1,13 @@
 
 int32 main() {
     Foo* f = alloca Foo
-    uint32* bar = alloca uint32
-    int32 _0 = call puts(char* "foo bar")
-    int32* bar_0 = getelementptr f, 0
-    store int32 47 to bar_0
+    c_uint* bar = alloca c_uint
+    c_int _0 = call puts(char* "foo bar")
+    c_int* bar_0 = getelementptr f, 0
+    store c_int 47 to bar_0
     char** baz = getelementptr f, 1
     store char* "foo" to baz
-    uint32 _1 = call getBar(Foo* f)
+    c_uint _1 = call getBar(Foo* f)
     store _1 to bar
     void _2 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0

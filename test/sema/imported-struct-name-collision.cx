@@ -7,7 +7,7 @@ import "inputs/c-struct-big.h";
 // CHECK: {{.*}}c-struct-big.h:2:8: error: redefinition of 'Big'
 // CHECK: {{.*}}imported-struct-name-collision.cx:9:8: note: previous definition here
 struct Big {
-    int32[4] vals;
+    c_int[4] vals;
 }
 
 // CHECK: {{.*}}imported-struct-name-collision.cx:9:8: warning: constructor doesn't initialize member variable 'vals'
