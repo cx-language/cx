@@ -573,6 +573,21 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
 
         return Type::getVoid();
 
+    case Token::MinusWrap:
+        if (operandType.removeOptional().isReferenceType()) {
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                        "cannot apply unary '-%' to borrow of type '" << operandType << "'; dereference it explicitly (e.g. '-%*x')");
+        }
+        if (operandType.removeOptional().isPointerType() || operandType.removeOptional().isArrayPointer()) {
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                        "cannot apply unary '-%' to pointer of type '" << operandType << "'; dereference it explicitly (e.g. '-%*p')");
+        }
+        operandType = operandType.removePointer();
+        if (!operandType.isInteger() && !operandType.isInt128() && !operandType.isUInt128() && !operandType.isChar()) {
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-%' to type '" << operandType << "'");
+        }
+        return operandType;
+
     default:
         if (operandType.removeOptional().isReferenceType()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
@@ -821,6 +836,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     // Conservative: the backend emits overflow checks for integer +,-,* (see
     // emitCheckedArithmetic), and compound assignment desugars through here.
+    // Wrapping and saturating operators never abort on overflow.
     if (op == Token::Plus || op == Token::Minus || op == Token::Star) implicitUses.checkedArithmetic = true;
 
     if (op == Token::Assignment) {
@@ -954,10 +970,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         bool hasSymbolicArray = isSymbolicArray(leftType) || isSymbolicArray(rightType);
         bool isArrayOp = (leftIsArray || rightIsArray || hasSymbolicArray)
                       && (op == Token::Plus || op == Token::Minus || op == Token::Star || op == Token::Slash || op == Token::Modulo
-                          || op == Token::PositiveModulo || op == Token::Equal || op == Token::NotEqual);
+                          || op == Token::PositiveModulo || op == Token::Equal || op == Token::NotEqual || isWrappingOrSaturatingOperator(op));
         // Bitwise ops on integer arrays are also element-wise.
         if ((leftIsArray || rightIsArray || hasSymbolicArray)
-            && (op == Token::And || op == Token::Or || op == Token::Xor || op == Token::LeftShift || op == Token::RightShift)) {
+            && (op == Token::And || op == Token::Or || op == Token::Xor || op == Token::LeftShift || op == Token::RightShift || op == Token::LeftShiftSat)) {
             isArrayOp = true;
         }
         if (isArrayOp) {
@@ -1039,6 +1055,11 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                 if (!isComparisonOperator(op) && (isPointerElement(elementType) || isPointerElement(scalarType))) {
                     goto not_array_programming;
                 }
+            }
+
+            if (isWrappingOrSaturatingOperator(op) && !elementType.isInteger() && !elementType.isInt128() && !elementType.isUInt128()
+                && !elementType.isChar()) {
+                goto not_array_programming;
             }
 
             // Comparison returns bool (all elements equal for ==, any different for !=).
@@ -1133,8 +1154,12 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     Type resultType = isComparisonOperator(op) ? Type::getBool() : expr.getLHS().type.removeOptional().removePointer();
 
-    if ((op == Token::Plus || op == Token::Minus || op == Token::Star) && (resultType.isInteger() || resultType.isInt128() || resultType.isUInt128())
-        && expr.isConstant()) {
+    if (isWrappingOrSaturatingOperator(op)) {
+        if (!resultType.isInteger() && !resultType.isInt128() && !resultType.isUInt128() && !resultType.isChar()) {
+            throwInvalidOperandsToBinaryExpr(expr, op);
+        }
+    } else if ((op == Token::Plus || op == Token::Minus || op == Token::Star) && (resultType.isInteger() || resultType.isInt128() || resultType.isUInt128())
+               && expr.isConstant()) {
         // Like the runtime overflow check, diagnose overflowing constant arithmetic at compile time.
         checkRange(expr, expr.getConstantIntegerValue(), resultType, /* diagnoseOutOfRange: */ true);
     }

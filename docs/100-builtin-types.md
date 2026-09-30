@@ -66,17 +66,34 @@ void main() {
 ## Arithmetic operators
 
 There are the usual arithmetic operators `+`, `-`, `*`, `/`, `%`, `%%`, `&&`, `||`,
-`!`, `&`, `|`, `^`, `~`, `<<`, `>>`, and the compound assignment counterparts
+`!`, `&`, `|`, `^`, `~`, `<<`, `>>`, wrapping operators `+%`, `-%`, `*%`, saturating
+operators `+|`, `-|`, `*|`, `<<|`, and the compound assignment counterparts
 for the binary operators: `+=`, `-=`, `*=`, `/=`, `%=`, `&&=`, `||=`, `&=`,
-`|=`, `^=`, `<<=`, `>>=`.
+`|=`, `^=`, `<<=`, `>>=`, `+%=`, `-%=`, `*%=`, `+|=`, `-|=`, `*|=`, `<<|=`.
 
 An important thing to note about `+`, `-`, and `*` is that they don't silently
 wrap on overflow. Instead they abort with an "integer overflow" error, except in
 release mode (`--release`), where overflow is unchecked and wraps.
 Constant arithmetic is checked at compile time: a constant `+`, `-`, or `*`
-whose result doesn't fit its type is an error in every build mode. The wrapping
-behavior can be enabled for individual operations with a special syntax (not
-implemented yet).
+whose result doesn't fit its type is an error in every build mode.
+
+Wrapping operators `+%`, `-%`, and `*%` (and `+%=`, `-%=`, `*%=`) wrap on overflow
+with two's-complement wraparound. Unary `-%` is wrapping
+negation. Saturating operators `+|`, `-|`, `*|`, and `<<|` (and `+|=`, `-|=`,
+`*|=`, `<<|=`) clamp to the type's minimum or maximum instead. These operators
+work on integers only, in every build mode, including on constant expressions:
+
+```cs
+void main() {
+    println(byte(255) +% 1); // prints 0
+    println(byte(255) +| 1); // prints 255
+    println(byte(200) *% 2); // prints 144
+    println(byte(200) *| 2); // prints 255
+    int8 min = -128;
+    println(-%min); // prints -128
+    println(byte(1) <<| 8); // prints 255
+}
+```
 
 The `%` operator is a truncated remainder: its result takes the sign of
 the dividend, so `-7 % 3` is `-1`. The `%%` operator is a positive

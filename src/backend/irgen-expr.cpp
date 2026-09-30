@@ -224,6 +224,14 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
         return emitExpr(expr.getOperand());
     case Token::Minus:
         return createNeg(emitExpr(expr.getOperand()));
+    case Token::MinusWrap: {
+        if (expr.isFoldableIntConstant()) {
+            return createConstantInt(expr.type, expr.getConstantIntegerValue());
+        }
+        auto* operand = emitExpr(expr.getOperand());
+        auto* zero = createConstantInt(operand->getType(), 0);
+        return emitWrappingArithmetic(Token::Minus, zero, operand, expr);
+    }
     case Token::Star: {
         auto operand = emitExpr(expr.getOperand());
         if (auto load = llvm::dyn_cast<LoadInst>(operand)) {
@@ -413,11 +421,27 @@ static Type getUnsignedIntegerType(int width) {
     }
 }
 
-Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const BinaryExpr& expr) {
+Value* IRGenerator::createSelect(Value* condition, Value* trueValue, Value* falseValue) {
+    ASSERT(trueValue->getType()->equals(falseValue->getType()));
+    auto* function = insertBlock->parent;
+    auto* trueBlock = new BasicBlock("select.true", function);
+    auto* falseBlock = new BasicBlock("select.false", function);
+    auto* endBlock = new BasicBlock("select.end");
+    createCondBr(condition, trueBlock, falseBlock);
+    setInsertPoint(trueBlock);
+    createBr(endBlock, trueValue);
+    setInsertPoint(falseBlock);
+    createBr(endBlock, falseValue);
+    setInsertPoint(endBlock);
+    endBlock->parameter = new Parameter{ValueKind::Parameter, trueValue->getType(), "select"};
+    return endBlock->parameter;
+}
+
+Value* IRGenerator::emitWrappingArithmetic(Token::Kind op, Value* left, Value* right, const Expr& expr, Value** overflowedOut) {
     auto* type = left->getType();
     bool resultIsChar = type->isChar();
     if (resultIsChar) {
-        // Chars compare as unsigned, so check them as 8-bit unsigned integers.
+        // Chars compare as unsigned, so wrap and check them as 8-bit unsigned integers.
         auto* uint8Type = getIRType(Type::getUInt8());
         left = createCast(left, uint8Type);
         right = createCast(right, uint8Type);
@@ -427,9 +451,10 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
     int width = getIntegerBitWidth(type);
     ASSERT(width != 0);
     bool isSigned = type->isSignedInteger();
+    bool detectOverflow = overflowedOut != nullptr;
 
     Value* result;
-    Value* overflowed;
+    Value* overflowed = nullptr;
 
     if (width < 64) {
         // The operation is exact in 64 bits, so any loss in the round trip is an overflow.
@@ -440,7 +465,7 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
         auto* wideRight = createCast(right, wideType);
         auto* wideResult = createBinaryOp(op, wideLeft, wideRight, &expr);
         result = createCast(wideResult, type);
-        overflowed = createBinaryOp(Token::NotEqual, wideResult, createCast(result, wideType), &expr);
+        if (detectOverflow) overflowed = createBinaryOp(Token::NotEqual, wideResult, createCast(result, wideType), &expr);
     } else if (op != Token::Star) {
         // Compute in the unsigned domain so the wrapping step isn't signed overflow in the C backend.
         auto* unsignedType = getIRType(getUnsignedIntegerType(width));
@@ -448,59 +473,154 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
         auto* b = createCastIfNeeded(right, unsignedType);
         auto* r = createBinaryOp(op, a, b, &expr);
         result = createCastIfNeeded(r, type);
-        if (!isSigned) {
-            overflowed = createBinaryOp(Token::Less, op == Token::Plus ? r : a, op == Token::Plus ? a : b, &expr);
-        } else {
-            // Add and subtract set the sign bit of (a^r)&(b^r) and (a^b)&(a^r) respectively on overflow.
-            auto* x = createBinaryOp(Token::Xor, a, op == Token::Plus ? r : b, &expr);
-            auto* y = createBinaryOp(Token::Xor, op == Token::Plus ? b : a, r, &expr);
-            // Cast the 1 up from 32 bits: the C backend prints integer constants without a type,
-            // so a bare 1 would shift as a C int.
-            auto* one = createCast(createConstantInt(Type::getUInt32(), 1), unsignedType);
-            auto* signBit = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
-            auto* signBitSet = createBinaryOp(Token::And, createBinaryOp(Token::And, x, y, &expr), signBit, &expr);
-            overflowed = createBinaryOp(Token::NotEqual, signBitSet, createConstantInt(unsignedType, 0), &expr);
+        if (detectOverflow) {
+            if (!isSigned) {
+                overflowed = createBinaryOp(Token::Less, op == Token::Plus ? r : a, op == Token::Plus ? a : b, &expr);
+            } else {
+                // Add and subtract set the sign bit of (a^r)&(b^r) and (a^b)&(a^r) respectively on overflow.
+                auto* x = createBinaryOp(Token::Xor, a, op == Token::Plus ? r : b, &expr);
+                auto* y = createBinaryOp(Token::Xor, op == Token::Plus ? b : a, r, &expr);
+                // Cast the 1 up from 32 bits: the C backend prints integer constants without a type,
+                // so a bare 1 would shift as a C int.
+                auto* one = createCast(createConstantInt(Type::getUInt32(), 1), unsignedType);
+                auto* signBit = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
+                auto* signBitSet = createBinaryOp(Token::And, createBinaryOp(Token::And, x, y, &expr), signBit, &expr);
+                overflowed = createBinaryOp(Token::NotEqual, signBitSet, createConstantInt(unsignedType, 0), &expr);
+            }
         }
     } else {
         // 64-bit multiply can't widen (MSVC and xcc lack __int128) and 128-bit multiply
-        // has no wider type; check the wrapped result against division instead: with b != 0,
-        // result / b != a exactly when the multiply overflowed. Operands are nonzero below,
-        // and the MIN / -1 division trap is guarded, so the division is safe.
+        // has no wider type. Wrapping multiply is the unsigned product; overflow is
+        // result / b != a when b != 0, with the MIN / -1 division trap guarded.
         auto* unsignedType = getIRType(getUnsignedIntegerType(width));
         auto* a = createCastIfNeeded(left, unsignedType);
         auto* b = createCastIfNeeded(right, unsignedType);
         result = createCastIfNeeded(createBinaryOp(Token::Star, a, b, &expr), type);
 
-        auto* function = insertBlock->parent;
-        auto* checkBlock = new BasicBlock("overflow.check", function);
-        auto* endBlock = new BasicBlock("overflow.end");
-        auto* divisorIsZero = createBinaryOp(Token::Equal, right, createConstantInt(type, 0), &expr);
-        createCondBr(divisorIsZero, endBlock, checkBlock, createConstantBool(false));
+        if (detectOverflow) {
+            auto* function = insertBlock->parent;
+            auto* checkBlock = new BasicBlock("overflow.check", function);
+            auto* endBlock = new BasicBlock("overflow.end");
+            auto* divisorIsZero = createBinaryOp(Token::Equal, right, createConstantInt(type, 0), &expr);
+            createCondBr(divisorIsZero, endBlock, checkBlock, createConstantBool(false));
 
-        setInsertPoint(checkBlock);
-        if (isSigned) {
-            auto* minusOne = createConstantInt(type, -1);
-            auto* one = createCast(createConstantInt(Type::getUInt32(), 1), unsignedType);
-            auto* minValue = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
-            auto* min = createCast(minValue, type);
-            auto* leftIsMinusOne = createBinaryOp(Token::Equal, left, minusOne, &expr);
-            auto* rightIsMin = createBinaryOp(Token::Equal, right, min, &expr);
-            auto* minCase1 = createBinaryOp(Token::And, leftIsMinusOne, rightIsMin, &expr);
-            auto* leftIsMin = createBinaryOp(Token::Equal, left, min, &expr);
-            auto* rightIsMinusOne = createBinaryOp(Token::Equal, right, minusOne, &expr);
-            auto* minCase2 = createBinaryOp(Token::And, leftIsMin, rightIsMinusOne, &expr);
-            auto* divBlock = new BasicBlock("overflow.div", function);
-            createCondBr(createBinaryOp(Token::Or, minCase1, minCase2, &expr), endBlock, divBlock, createConstantBool(true));
-            setInsertPoint(divBlock);
+            setInsertPoint(checkBlock);
+            if (isSigned) {
+                auto* minusOne = createConstantInt(type, -1);
+                auto* one = createCast(createConstantInt(Type::getUInt32(), 1), unsignedType);
+                auto* minValue = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
+                auto* min = createCast(minValue, type);
+                auto* leftIsMinusOne = createBinaryOp(Token::Equal, left, minusOne, &expr);
+                auto* rightIsMin = createBinaryOp(Token::Equal, right, min, &expr);
+                auto* minCase1 = createBinaryOp(Token::And, leftIsMinusOne, rightIsMin, &expr);
+                auto* leftIsMin = createBinaryOp(Token::Equal, left, min, &expr);
+                auto* rightIsMinusOne = createBinaryOp(Token::Equal, right, minusOne, &expr);
+                auto* minCase2 = createBinaryOp(Token::And, leftIsMin, rightIsMinusOne, &expr);
+                auto* divBlock = new BasicBlock("overflow.div", function);
+                createCondBr(createBinaryOp(Token::Or, minCase1, minCase2, &expr), endBlock, divBlock, createConstantBool(true));
+                setInsertPoint(divBlock);
+            }
+            createBr(endBlock, createBinaryOp(Token::NotEqual, createBinaryOp(Token::Slash, result, right, &expr), left, &expr));
+
+            setInsertPoint(endBlock);
+            endBlock->parameter = new Parameter{ValueKind::Parameter, getIRType(Type::getBool()), "overflowed"};
+            overflowed = endBlock->parameter;
         }
-        createBr(endBlock, createBinaryOp(Token::NotEqual, createBinaryOp(Token::Slash, result, right, &expr), left, &expr));
-
-        setInsertPoint(endBlock);
-        endBlock->parameter = new Parameter{ValueKind::Parameter, getIRType(Type::getBool()), "overflowed"};
-        overflowed = endBlock->parameter;
     }
 
+    if (resultIsChar) result = createCast(result, getIRType(Type::getChar()));
+    if (overflowedOut) *overflowedOut = overflowed;
+    return result;
+}
+
+Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const BinaryExpr& expr) {
+    Value* overflowed = nullptr;
+    auto* result = emitWrappingArithmetic(op, left, right, expr, &overflowed);
     emitAssert(createNot(overflowed), &expr, expr.location, "integer overflow", "overflow");
+    return result;
+}
+
+Value* IRGenerator::emitSaturatingArithmetic(Token::Kind op, Value* left, Value* right, const Expr& expr) {
+    Value* overflowed = nullptr;
+    auto* wrapped = emitWrappingArithmetic(op, left, right, expr, &overflowed);
+
+    auto* type = wrapped->getType();
+    bool resultIsChar = type->isChar();
+    IRType* limitType = type;
+    if (resultIsChar) limitType = getIRType(Type::getUInt8());
+    int width = getIntegerBitWidth(limitType);
+    bool isSigned = limitType->isSignedInteger();
+    auto min = llvm::APSInt::getMinValue(width, !isSigned);
+    auto max = llvm::APSInt::getMaxValue(width, !isSigned);
+    auto* minVal = createConstantInt(limitType, min);
+    auto* maxVal = createConstantInt(limitType, max);
+    if (resultIsChar) {
+        minVal = createCast(minVal, type);
+        maxVal = createCast(maxVal, type);
+    }
+
+    Value* sat;
+    if (!isSigned) {
+        sat = op == Token::Minus ? minVal : maxVal;
+    } else {
+        auto* zero = createConstantInt(left->getType(), 0);
+        Value* towardMin;
+        if (op == Token::Star) {
+            auto* leftNeg = createBinaryOp(Token::Less, left, zero, &expr);
+            auto* rightNeg = createBinaryOp(Token::Less, right, zero, &expr);
+            towardMin = createBinaryOp(Token::NotEqual, leftNeg, rightNeg, &expr);
+        } else {
+            towardMin = createBinaryOp(Token::Less, left, zero, &expr);
+        }
+        sat = createSelect(towardMin, minVal, maxVal);
+    }
+    return createSelect(overflowed, sat, wrapped);
+}
+
+Value* IRGenerator::emitSaturatingLeftShift(Value* left, Value* right, const Expr& expr) {
+    auto* type = left->getType();
+    bool resultIsChar = type->isChar();
+    if (resultIsChar) {
+        auto* uint8Type = getIRType(Type::getUInt8());
+        left = createCast(left, uint8Type);
+        right = createCast(right, uint8Type);
+        type = uint8Type;
+    }
+
+    int width = getIntegerBitWidth(type);
+    ASSERT(width != 0);
+    bool isSigned = type->isSignedInteger();
+    auto* unsignedType = getIRType(getUnsignedIntegerType(width));
+    auto* zero = createConstantInt(type, 0);
+    auto* isZero = createBinaryOp(Token::Equal, left, zero, &expr);
+    auto* minVal = createConstantInt(type, llvm::APSInt::getMinValue(width, !isSigned));
+    auto* maxVal = createConstantInt(type, llvm::APSInt::getMaxValue(width, !isSigned));
+    Value* sat = isSigned ? createSelect(createBinaryOp(Token::Less, left, zero, &expr), minVal, maxVal) : maxVal;
+
+    auto* b = createCastIfNeeded(right, unsignedType);
+    auto* shiftTooBig = createBinaryOp(Token::GreaterOrEqual, b, createConstantInt(unsignedType, width), &expr);
+
+    auto* function = insertBlock->parent;
+    auto* inRange = new BasicBlock("shl_sat.inrange", function);
+    auto* tooBig = new BasicBlock("shl_sat.toobig", function);
+    auto* end = new BasicBlock("shl_sat.end");
+    createCondBr(shiftTooBig, tooBig, inRange);
+
+    setInsertPoint(tooBig);
+    createBr(end, createSelect(isZero, zero, sat));
+
+    setInsertPoint(inRange);
+    auto* a = createCastIfNeeded(left, unsignedType);
+    auto* shiftedU = createBinaryOp(Token::LeftShift, a, b, &expr);
+    auto* shifted = createCastIfNeeded(shiftedU, type);
+    auto* shiftAmount = createCastIfNeeded(b, type);
+    auto* recovered = createBinaryOp(Token::RightShift, shifted, shiftAmount, &expr);
+    auto* overflowed = createBinaryOp(Token::NotEqual, recovered, left, &expr);
+    createBr(end, createSelect(overflowed, sat, shifted));
+
+    setInsertPoint(end);
+    end->parameter = new Parameter{ValueKind::Parameter, type, "shl_sat"};
+    Value* result = end->parameter;
     if (resultIsChar) result = createCast(result, getIRType(Type::getChar()));
     return result;
 }
@@ -565,10 +685,11 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
         Type rightT = expr.getRHS().type;
         bool leftIsArray = leftT.isArrayType() && leftT.isConcreteArray();
         bool rightIsArray = rightT.isArrayType() && rightT.isConcreteArray();
-        bool isArrayOp = (leftIsArray || rightIsArray)
-                      && (expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star || expr.op == Token::Slash || expr.op == Token::Modulo
-                          || expr.op == Token::PositiveModulo || expr.op == Token::Equal || expr.op == Token::NotEqual || expr.op == Token::And
-                          || expr.op == Token::Or || expr.op == Token::Xor || expr.op == Token::LeftShift || expr.op == Token::RightShift);
+        bool isArrayOp =
+            (leftIsArray || rightIsArray)
+            && (expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star || expr.op == Token::Slash || expr.op == Token::Modulo
+                || expr.op == Token::PositiveModulo || expr.op == Token::Equal || expr.op == Token::NotEqual || expr.op == Token::And || expr.op == Token::Or
+                || expr.op == Token::Xor || expr.op == Token::LeftShift || expr.op == Token::RightShift || isWrappingOrSaturatingOperator(expr.op));
         if (isArrayOp && (leftIsArray || rightIsArray)) {
             Type arrayT = leftIsArray ? leftT : rightT;
             int64_t arraySize = arrayT.getArraySize();
@@ -594,16 +715,22 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
             // Vector-friendly elements stay whole in one node; the LLVM
             // backend emits SIMD for it directly, in every build mode.
             auto* arrayIRType = getIRType(arrayT);
-            if (isVectorFriendlyElement(arrayIRType->getElementType())) {
+            // Wrapping ops lower to the same SIMD add/sub/mul as wrapping array `+`/`-`/`*`.
+            // Saturating ops need overflow clamps, so they stay on the scalar path.
+            if (isVectorFriendlyElement(arrayIRType->getElementType()) && !isSaturatingOperator(expr.op)) {
                 Value* left = leftIsArray ? lhsPtr : lhsScalar;
                 Value* right = rightIsArray ? rhsPtr : rhsScalar;
-                return createArrayOp(expr.op, left, right, arrayIRType, &expr);
+                Token::Kind vectorOp = isWrappingOperator(expr.op) ? getWrappingOrSaturatingBaseOp(expr.op) : static_cast<Token::Kind>(expr.op);
+                return createArrayOp(vectorOp, left, right, arrayIRType, &expr);
             }
 
             // Scalar fallback for the rest. PositiveModulo has no IR
             // instruction; expand ((a % b) + b) % b per element like scalars.
             // Element ops are unchecked (matching existing array semantics).
             auto emitElementOp = [&](Value* l, Value* r) -> Value* {
+                if (isWrappingOperator(expr.op)) return emitWrappingArithmetic(getWrappingOrSaturatingBaseOp(expr.op), l, r, expr);
+                if (expr.op == Token::LeftShiftSat) return emitSaturatingLeftShift(l, r, expr);
+                if (isSaturatingOperator(expr.op)) return emitSaturatingArithmetic(getWrappingOrSaturatingBaseOp(expr.op), l, r, expr);
                 if (expr.op != Token::PositiveModulo) return createBinaryOp(expr.op, l, r, &expr);
                 if (l->getType()->isUnsignedInteger()) return createBinaryOp(Token::Modulo, l, r, &expr);
                 auto* rem = createBinaryOp(Token::Modulo, l, r, &expr);
@@ -738,6 +865,10 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     }
 
     default:
+        if (isWrappingOrSaturatingOperator(expr.op) && expr.isFoldableIntConstant()) {
+            return createConstantInt(expr.type, expr.getConstantIntegerValue());
+        }
+
         auto left = emitExprOrEnumTag(expr.getLHS(), nullptr);
         auto right = emitExprOrEnumTag(expr.getRHS(), nullptr);
 
@@ -747,6 +878,15 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
             right = createLoad(right);
         }
 
+        if (isWrappingOperator(expr.op) && (left->getType()->isInteger() || left->getType()->isChar())) {
+            return emitWrappingArithmetic(getWrappingOrSaturatingBaseOp(expr.op), left, right, expr);
+        }
+        if (expr.op == Token::LeftShiftSat && (left->getType()->isInteger() || left->getType()->isChar())) {
+            return emitSaturatingLeftShift(left, right, expr);
+        }
+        if (isSaturatingOperator(expr.op) && (left->getType()->isInteger() || left->getType()->isChar())) {
+            return emitSaturatingArithmetic(getWrappingOrSaturatingBaseOp(expr.op), left, right, expr);
+        }
         if ((expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star) && options.mode != BuildMode::ReleaseFast
             && (left->getType()->isInteger() || left->getType()->isChar())) {
             return emitCheckedArithmetic(expr.op, left, right, expr);

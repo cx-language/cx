@@ -91,6 +91,10 @@ struct IRGenerator {
     Value* emitBoolConvertibleOperand(const Expr& expr);
     Value* emitBinaryExpr(const BinaryExpr& expr);
     Value* emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const BinaryExpr& expr);
+    Value* emitWrappingArithmetic(Token::Kind op, Value* left, Value* right, const Expr& expr, Value** overflowed = nullptr);
+    Value* emitSaturatingArithmetic(Token::Kind op, Value* left, Value* right, const Expr& expr);
+    Value* emitSaturatingLeftShift(Value* left, Value* right, const Expr& expr);
+    Value* createSelect(Value* condition, Value* trueValue, Value* falseValue);
     Value* emitAssignment(const BinaryExpr& expr);
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);
     Value* emitOptionalConstruction(Type wrappedType, Expr* arg, bool isMovedFrom);

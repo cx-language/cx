@@ -1,0 +1,10 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: invalid operands 'float' and 'float' to '+%'
+    var a = 1.0 +% 2.0;
+    // CHECK: [[@LINE+1]]:13: error: invalid operands 'float' and 'float' to '+|'
+    var b = 1.0 +| 2.0;
+    // CHECK: [[@LINE+1]]:13: error: cannot apply unary '-%' to type 'float'
+    var c = -%1.0;
+}

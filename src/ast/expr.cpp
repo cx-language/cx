@@ -137,6 +137,7 @@ bool Expr::isConstant() const {
         switch (unaryExpr->op) {
         case Token::Plus:
         case Token::Minus:
+        case Token::MinusWrap:
         case Token::Tilde:
             return unaryExpr->getOperand().isConstant();
         default:
@@ -201,6 +202,7 @@ bool Expr::isFoldableIntConstant() const {
         switch (unaryExpr->op) {
         case Token::Plus:
         case Token::Minus:
+        case Token::MinusWrap:
         case Token::Tilde:
             return unaryExpr->getOperand().isFoldableIntConstant();
         default:
@@ -221,6 +223,13 @@ bool Expr::isFoldableIntConstant() const {
         case Token::Xor:
         case Token::LeftShift:
         case Token::RightShift:
+        case Token::PlusWrap:
+        case Token::MinusWrap:
+        case Token::StarWrap:
+        case Token::PlusSat:
+        case Token::MinusSat:
+        case Token::StarSat:
+        case Token::LeftShiftSat:
             return binaryExpr.getLHS().isFoldableIntConstant() && binaryExpr.getRHS().isFoldableIntConstant();
         default:
             return false;
@@ -724,6 +733,50 @@ Expr* CallExpr::getReceiver() {
     return llvm::cast<MemberExpr>(*callee).base;
 }
 
+static bool getIntegerLikeWidth(Type type, int& width, bool& isUnsigned) {
+    type = type.removeReference();
+    if (type.isInteger()) {
+        width = type.getIntegerBitWidth();
+        isUnsigned = type.isUnsigned();
+        return true;
+    }
+    if (type.isInt128()) {
+        width = 128;
+        isUnsigned = false;
+        return true;
+    }
+    if (type.isUInt128()) {
+        width = 128;
+        isUnsigned = true;
+        return true;
+    }
+    if (type.isChar()) {
+        width = 8;
+        isUnsigned = true;
+        return true;
+    }
+    return false;
+}
+
+static llvm::APSInt wrapOrSaturateToType(llvm::APSInt value, Type type, bool saturate) {
+    int width;
+    bool isUnsigned;
+    if (!getIntegerLikeWidth(type, width, isUnsigned)) return value;
+    if (saturate) {
+        auto min = llvm::APSInt::getMinValue(width, isUnsigned);
+        auto max = llvm::APSInt::getMaxValue(width, isUnsigned);
+        if (llvm::APSInt::compareValues(value, min) < 0) return min;
+        if (llvm::APSInt::compareValues(value, max) > 0) return max;
+    }
+    auto truncated = value.trunc(width);
+    truncated.setIsUnsigned(isUnsigned);
+    return truncated;
+}
+
+static Type typeForIntegerFold(const Expr& expr, const Expr& operand) {
+    return operand.hasType() ? operand.type : expr.type;
+}
+
 llvm::APSInt UnaryExpr::getConstantIntegerValue() const {
     auto operand = getOperand().getConstantIntegerValue();
 
@@ -732,6 +785,8 @@ llvm::APSInt UnaryExpr::getConstantIntegerValue() const {
         return operand;
     case Token::Minus:
         return -operand;
+    case Token::MinusWrap:
+        return wrapOrSaturateToType(-operand, typeForIntegerFold(*this, getOperand()), /*saturate=*/false);
     case Token::Tilde:
         return ~operand;
     default:
@@ -769,6 +824,18 @@ llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
         return lhs - rhs;
     case Token::Star:
         return lhs * rhs;
+    case Token::PlusWrap:
+        return wrapOrSaturateToType(lhs + rhs, typeForIntegerFold(*this, getLHS()), /*saturate=*/false);
+    case Token::MinusWrap:
+        return wrapOrSaturateToType(lhs - rhs, typeForIntegerFold(*this, getLHS()), /*saturate=*/false);
+    case Token::StarWrap:
+        return wrapOrSaturateToType(lhs * rhs, typeForIntegerFold(*this, getLHS()), /*saturate=*/false);
+    case Token::PlusSat:
+        return wrapOrSaturateToType(lhs + rhs, typeForIntegerFold(*this, getLHS()), /*saturate=*/true);
+    case Token::MinusSat:
+        return wrapOrSaturateToType(lhs - rhs, typeForIntegerFold(*this, getLHS()), /*saturate=*/true);
+    case Token::StarSat:
+        return wrapOrSaturateToType(lhs * rhs, typeForIntegerFold(*this, getLHS()), /*saturate=*/true);
     case Token::Slash:
         return lhs / rhs;
     case Token::Modulo:
@@ -785,6 +852,20 @@ llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
         return lhs << static_cast<unsigned>(rhs.getZExtValue());
     case Token::RightShift:
         return lhs >> static_cast<unsigned>(rhs.getZExtValue());
+    case Token::LeftShiftSat: {
+        Type type = typeForIntegerFold(*this, getLHS());
+        int width;
+        bool isUnsigned;
+        if (!getIntegerLikeWidth(type, width, isUnsigned)) {
+            return lhs << static_cast<unsigned>(rhs.getZExtValue());
+        }
+        auto a = wrapOrSaturateToType(lhs, type, /*saturate=*/false);
+        if (rhs.isNegative() || rhs.uge(width)) {
+            if (a.isZero()) return a;
+            return a.isNegative() ? llvm::APSInt::getMinValue(width, isUnsigned) : llvm::APSInt::getMaxValue(width, isUnsigned);
+        }
+        return wrapOrSaturateToType(lhs << static_cast<unsigned>(rhs.getZExtValue()), type, /*saturate=*/true);
+    }
     default:
         llvm_unreachable("invalid constant integer binary operator");
     }

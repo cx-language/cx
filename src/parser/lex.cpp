@@ -476,12 +476,36 @@ Token Lexer::lexToken() {
             ch = readChar();
             if (ch == '+') return Token(Token::Increment, getCurrentLocation());
             if (ch == '=') return Token(Token::PlusEqual, getCurrentLocation());
+            if (ch == '%') {
+                ch = readChar();
+                if (ch == '=') return Token(Token::PlusWrapEqual, getCurrentLocation());
+                unreadChar(ch);
+                return Token(Token::PlusWrap, getCurrentLocation());
+            }
+            if (ch == '|') {
+                ch = readChar();
+                if (ch == '=') return Token(Token::PlusSatEqual, getCurrentLocation());
+                unreadChar(ch);
+                return Token(Token::PlusSat, getCurrentLocation());
+            }
             unreadChar(ch);
             return Token(Token::Plus, getCurrentLocation());
         case '-':
             ch = readChar();
             if (ch == '-') return Token(Token::Decrement, getCurrentLocation());
             if (ch == '=') return Token(Token::MinusEqual, getCurrentLocation());
+            if (ch == '%') {
+                ch = readChar();
+                if (ch == '=') return Token(Token::MinusWrapEqual, getCurrentLocation());
+                unreadChar(ch);
+                return Token(Token::MinusWrap, getCurrentLocation());
+            }
+            if (ch == '|') {
+                ch = readChar();
+                if (ch == '=') return Token(Token::MinusSatEqual, getCurrentLocation());
+                unreadChar(ch);
+                return Token(Token::MinusSat, getCurrentLocation());
+            }
             if (ch == '>') {
                 // '->' was the lambda arrow before it was changed to '=>', and C
                 // programmers reach for it for member access; recover as a fat
@@ -495,6 +519,18 @@ Token Lexer::lexToken() {
         case '*':
             ch = readChar();
             if (ch == '=') return Token(Token::StarEqual, getCurrentLocation());
+            if (ch == '%') {
+                ch = readChar();
+                if (ch == '=') return Token(Token::StarWrapEqual, getCurrentLocation());
+                unreadChar(ch);
+                return Token(Token::StarWrap, getCurrentLocation());
+            }
+            if (ch == '|') {
+                ch = readChar();
+                if (ch == '=') return Token(Token::StarSatEqual, getCurrentLocation());
+                unreadChar(ch);
+                return Token(Token::StarSat, getCurrentLocation());
+            }
             unreadChar(ch);
             return Token(Token::Star, getCurrentLocation());
         case '%':
@@ -509,6 +545,12 @@ Token Lexer::lexToken() {
             if (ch == '<') {
                 ch = readChar();
                 if (ch == '=') return Token(Token::LeftShiftEqual, getCurrentLocation());
+                if (ch == '|') {
+                    ch = readChar();
+                    if (ch == '=') return Token(Token::LeftShiftSatEqual, getCurrentLocation());
+                    unreadChar(ch);
+                    return Token(Token::LeftShiftSat, getCurrentLocation());
+                }
                 unreadChar(ch);
                 return Token(Token::LeftShift, getCurrentLocation());
             }

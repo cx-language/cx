@@ -42,11 +42,17 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
         return PrecedenceGroup::Range;
     case Token::Plus:
     case Token::Minus:
+    case Token::PlusWrap:
+    case Token::MinusWrap:
+    case Token::PlusSat:
+    case Token::MinusSat:
         return PrecedenceGroup::AddSub;
     case Token::Star:
     case Token::Slash:
     case Token::Modulo:
     case Token::PositiveModulo:
+    case Token::StarWrap:
+    case Token::StarSat:
         return PrecedenceGroup::MulDiv;
     case Token::AndAnd:
         return PrecedenceGroup::LogicalAnd;
@@ -58,6 +64,7 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
         return PrecedenceGroup::Bitwise;
     case Token::LeftShift:
     case Token::RightShift:
+    case Token::LeftShiftSat:
         return PrecedenceGroup::Bitwise;
     case Token::QuestionMark:
         return PrecedenceGroup::IfExpr;
@@ -94,6 +101,12 @@ bool cx::isBinaryOperator(Token::Kind tokenKind) {
     case Token::Slash:
     case Token::Modulo:
     case Token::PositiveModulo:
+    case Token::PlusWrap:
+    case Token::MinusWrap:
+    case Token::StarWrap:
+    case Token::PlusSat:
+    case Token::MinusSat:
+    case Token::StarSat:
     case Token::And:
     case Token::AndAnd:
     case Token::Or:
@@ -101,6 +114,7 @@ bool cx::isBinaryOperator(Token::Kind tokenKind) {
     case Token::Xor:
     case Token::LeftShift:
     case Token::RightShift:
+    case Token::LeftShiftSat:
     case Token::DotDot:
     case Token::DotDotDot:
     case Token::QuestionQuestion:
@@ -114,6 +128,7 @@ bool cx::isUnaryOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
     case Token::Plus:
     case Token::Minus:
+    case Token::MinusWrap:
     case Token::Star:
     case Token::And:
     case Token::Not:
@@ -144,6 +159,13 @@ bool cx::isCompoundAssignmentOperator(Token::Kind tokenKind) {
     case Token::XorEqual:
     case Token::LeftShiftEqual:
     case Token::RightShiftEqual:
+    case Token::PlusWrapEqual:
+    case Token::MinusWrapEqual:
+    case Token::StarWrapEqual:
+    case Token::PlusSatEqual:
+    case Token::MinusSatEqual:
+    case Token::StarSatEqual:
+    case Token::LeftShiftSatEqual:
         return true;
     default:
         return false;
@@ -250,9 +272,56 @@ bool cx::isBitwiseOperator(Token::Kind tokenKind) {
     case Token::LeftShiftEqual:
     case Token::RightShift:
     case Token::RightShiftEqual:
+    case Token::LeftShiftSat:
+    case Token::LeftShiftSatEqual:
         return true;
     default:
         return false;
+    }
+}
+
+bool cx::isWrappingOperator(Token::Kind tokenKind) {
+    switch (tokenKind) {
+    case Token::PlusWrap:
+    case Token::MinusWrap:
+    case Token::StarWrap:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool cx::isSaturatingOperator(Token::Kind tokenKind) {
+    switch (tokenKind) {
+    case Token::PlusSat:
+    case Token::MinusSat:
+    case Token::StarSat:
+    case Token::LeftShiftSat:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool cx::isWrappingOrSaturatingOperator(Token::Kind tokenKind) {
+    return isWrappingOperator(tokenKind) || isSaturatingOperator(tokenKind);
+}
+
+Token::Kind cx::getWrappingOrSaturatingBaseOp(Token::Kind tokenKind) {
+    switch (tokenKind) {
+    case Token::PlusWrap:
+    case Token::PlusSat:
+        return Token::Plus;
+    case Token::MinusWrap:
+    case Token::MinusSat:
+        return Token::Minus;
+    case Token::StarWrap:
+    case Token::StarSat:
+        return Token::Star;
+    case Token::LeftShiftSat:
+        return Token::LeftShift;
+    default:
+        llvm_unreachable("not a wrapping or saturating operator");
     }
 }
 
@@ -348,6 +417,20 @@ const char* cx::toString(Token::Kind tokenKind) {
         "<<=",
         ">>",
         ">>=",
+        "+%",
+        "+%=",
+        "-%",
+        "-%=",
+        "*%",
+        "*%=",
+        "+|",
+        "+|=",
+        "-|",
+        "-|=",
+        "*|",
+        "*|=",
+        "<<|",
+        "<<|=",
         "=",
         "(",
         ")",

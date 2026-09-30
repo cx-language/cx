@@ -96,6 +96,20 @@ struct Token {
         LeftShiftEqual,
         RightShift,
         RightShiftEqual,
+        PlusWrap,
+        PlusWrapEqual,
+        MinusWrap,
+        MinusWrapEqual,
+        StarWrap,
+        StarWrapEqual,
+        PlusSat,
+        PlusSatEqual,
+        MinusSat,
+        MinusSatEqual,
+        StarSat,
+        StarSatEqual,
+        LeftShiftSat,
+        LeftShiftSatEqual,
         Assignment,
         LeftParen,
         RightParen,
@@ -163,13 +177,25 @@ bool isAssignmentOperator(Token::Kind tokenKind);
 bool isCompoundAssignmentOperator(Token::Kind tokenKind);
 bool isComparisonOperator(Token::Kind tokenKind);
 bool isBitwiseOperator(Token::Kind tokenKind);
+bool isWrappingOperator(Token::Kind tokenKind);
+bool isSaturatingOperator(Token::Kind tokenKind);
+bool isWrappingOrSaturatingOperator(Token::Kind tokenKind);
 bool isOverloadable(Token::Kind tokenKind);
 int getPrecedence(Token::Kind tokenKind);
 llvm::StringRef getFunctionName(Token::Kind tokenKind);
+/// Maps `+%`/`+|` to `+`, `<<|` to `<<`, and so on.
+Token::Kind getWrappingOrSaturatingBaseOp(Token::Kind tokenKind);
 
 /// Strips the trailing '=' from a compound assignment operator.
 /// E.g. given '+=', returns '+', and so on.
 inline Token::Kind withoutCompoundEqSuffix(Token::Kind tokenKind) {
+    static_assert(Token::PlusWrapEqual == Token::PlusWrap + 1);
+    static_assert(Token::MinusWrapEqual == Token::MinusWrap + 1);
+    static_assert(Token::StarWrapEqual == Token::StarWrap + 1);
+    static_assert(Token::PlusSatEqual == Token::PlusSat + 1);
+    static_assert(Token::MinusSatEqual == Token::MinusSat + 1);
+    static_assert(Token::StarSatEqual == Token::StarSat + 1);
+    static_assert(Token::LeftShiftSatEqual == Token::LeftShiftSat + 1);
     return static_cast<Token::Kind>(static_cast<int>(tokenKind) - 1);
 }
 
