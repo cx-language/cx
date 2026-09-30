@@ -1,4 +1,5 @@
 // REQUIRES: x86_64
+// UNSUPPORTED: windows
 // RUN: %cx --print-llvm %s | %FileCheck %s
 struct Big {
     c_long a;
