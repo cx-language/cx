@@ -9,8 +9,8 @@ func main() {
 	for i := range isPrime {
 		isPrime[i] = true
 	}
-	primes := 0
-	for i := 2; i < count; i++ {
+	var primes int32
+	for i := int32(2); i < count; i++ {
 		if !isPrime[i] {
 			continue
 		}

@@ -1,5 +1,6 @@
 // Word frequency counter, matching wordcount.cx: xorshift64 word stream,
-// open-addressing string table, order-independent aggregate.
+// per-word allocations, growing open-addressing table, order-independent
+// aggregate. Keys are views into the owning word list, like Map<string, int>.
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -26,32 +27,57 @@ typedef struct {
 } Entry;
 
 static Entry* table;
-static size_t tableMask;
-// At most 32*32 distinct words ever land in the 4096-entry table, so the
-// insert loop below always terminates; no full-table guard needed.
+static size_t tableCap;
+static size_t tableSize;
 
-static void tableInsert(const char* key, size_t keyLen) {
-    size_t i = fnv1a(key, keyLen) & tableMask;
-    while (table[i].used) {
+static void tableReinsert(const char* key, size_t keyLen, int count) {
+    size_t mask = tableCap - 1;
+    size_t i = fnv1a(key, keyLen) & mask;
+    while (table[i].used)
+        i = (i + 1) & mask;
+    table[i].used = true;
+    table[i].key = key;
+    table[i].keyLen = keyLen;
+    table[i].count = count;
+}
+
+static void tableGrow(void) {
+    size_t oldCap = tableCap;
+    Entry* old = table;
+    tableCap *= 2;
+    table = calloc(tableCap, sizeof(Entry));
+    for (size_t i = 0; i < oldCap; i++) {
+        if (old[i].used) tableReinsert(old[i].key, old[i].keyLen, old[i].count);
+    }
+    free(old);
+}
+
+static void tableAdd(const char* key, size_t keyLen) {
+    if ((tableSize + 1) * 4 >= tableCap * 3) tableGrow();
+    size_t mask = tableCap - 1;
+    size_t i = fnv1a(key, keyLen) & mask;
+    for (;;) {
+        if (!table[i].used) {
+            table[i].used = true;
+            table[i].key = key;
+            table[i].keyLen = keyLen;
+            table[i].count = 1;
+            tableSize++;
+            return;
+        }
         if (table[i].keyLen == keyLen && memcmp(table[i].key, key, keyLen) == 0) {
             table[i].count++;
             return;
         }
-        i = (i + 1) & tableMask;
+        i = (i + 1) & mask;
     }
-    table[i].used = true;
-    table[i].key = key;
-    table[i].keyLen = keyLen;
-    table[i].count = 1;
 }
 
 int main(void) {
     const size_t syllableCount = sizeof(syllables) / sizeof(syllables[0]);
-    // 4M words of at most 6 chars plus NUL, pooled like the cx List<StringBuf>.
-    char* pool = malloc(4000000u * 7u);
-    char* poolNext = pool;
-    table = calloc(4096, sizeof(Entry));
-    tableMask = 4095;
+    char** words = malloc(4000000u * sizeof(char*));
+    tableCap = 128;
+    table = calloc(tableCap, sizeof(Entry));
 
     uint64_t state = 0x12345678u;
     for (int n = 0; n < 4000000; n++) {
@@ -63,28 +89,27 @@ int main(void) {
         state ^= state >> 7;
         state ^= state << 17;
         size_t b = (size_t)(state % syllableCount);
-        char* word = poolNext;
-        size_t len = 0;
-        for (const char* s = syllables[a]; *s; s++)
-            word[len++] = *s;
-        for (const char* s = syllables[b]; *s; s++)
-            word[len++] = *s;
-        word[len] = '\0';
-        poolNext += len + 1;
-        tableInsert(word, len);
+        size_t lenA = strlen(syllables[a]);
+        size_t lenB = strlen(syllables[b]);
+        char* word = malloc(lenA + lenB + 1);
+        memcpy(word, syllables[a], lenA);
+        memcpy(word + lenA, syllables[b], lenB);
+        word[lenA + lenB] = '\0';
+        words[n] = word;
+        tableAdd(word, lenA + lenB);
     }
 
     long long total = 0;
     long long sumSquares = 0;
-    long long distinct = 0;
-    for (size_t i = 0; i < 4096; i++) {
+    for (size_t i = 0; i < tableCap; i++) {
         if (!table[i].used) continue;
-        distinct++;
         total += table[i].count;
         sumSquares += (long long)table[i].count * table[i].count;
     }
-    printf("%lld\n", distinct * 1000000000000LL + total * 1000000LL + sumSquares);
-    free(pool);
+    printf("%lld\n", (long long)tableSize * 1000000000000LL + total * 1000000LL + sumSquares);
+    for (int n = 0; n < 4000000; n++)
+        free(words[n]);
+    free(words);
     free(table);
     return 0;
 }

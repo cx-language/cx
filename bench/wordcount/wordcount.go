@@ -9,7 +9,7 @@ var syllables = []string{"al", "be", "cor", "di", "el", "for", "gi", "ha", "il",
 
 func main() {
 	words := make([]string, 0, 4000000)
-	counts := make(map[string]int)
+	counts := make(map[string]int32)
 	state := uint64(0x12345678)
 	for range 4000000 {
 		state ^= state << 13

@@ -24,11 +24,11 @@ void main() {
         word.append(syllables[b]);
         words.push(word);
         var key = string(words[-1]);
-        var count = 0;
-        if counts.contains(key) {
-            count = counts[key]!;
+        if counts[key] {
+            *counts[key]! += 1;
+        } else {
+            counts.insert(key, 1);
         }
-        counts.set(key, count + 1);
     }
     // Order-independent aggregate: distinct words, total words, sum of squares.
     var total = int64(0);
