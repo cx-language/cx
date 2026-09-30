@@ -869,7 +869,8 @@ def test_platform_c_headers(cx_lsp):
 
     with tempfile.TemporaryDirectory() as root:
         with open(os.path.join(root, "build.cx"), "w") as file:
-            file.write('var name = "gltest"\nvar pkgConfigDependencies = ["glfw3"]\nvar defines = ["GLFW_INCLUDE_GLCOREARB"]\n')
+            # GL_GLEXT_PROTOTYPES makes Linux GL headers emit function prototypes (macOS gl3.h declares them unconditionally).
+            file.write('var name = "gltest"\nvar pkgConfigDependencies = ["glfw3"]\nvar defines = ["GLFW_INCLUDE_GLCOREARB", "GL_GLEXT_PROTOTYPES"]\n')
         main_path = os.path.join(root, "main.cx")
         main_content = 'import "GLFW/glfw3.h";\nvoid main() {\n    GLFWwindow*? window = null;\n    var shader = glCreateShader(0);\n    println(shader);\n    println(window == null);\n}\n'
         with open(main_path, "w") as file:
