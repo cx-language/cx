@@ -1,0 +1,19 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// The C backend must define the struct before the List buffer's pointer to
+// an array of it; a forward declaration is an incomplete element type.
+struct Loud {
+    string s;
+
+    ~Loud() {
+        println("x");
+    }
+}
+
+void main() {
+    var a = List<Loud[2]>();
+    a.push([Loud(s = "a"), Loud(s = "b")]);
+    println(a.size()); // CHECK:1
+} // CHECK-NEXT:x
+// CHECK-NEXT:x

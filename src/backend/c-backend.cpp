@@ -1693,10 +1693,18 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
     switch (type->kind) {
     case IRTypeKind::IRBasicType:
         break;
-    case IRTypeKind::IRPointerType:
+    case IRTypeKind::IRPointerType: {
+        auto* pointee = llvm::cast<IRPointerType>(type)->pointee;
         // Pointers only need their pointee declared, which also cuts reference cycles.
-        codegenTypeDefinition(stream, llvm::cast<IRPointerType>(type)->pointee, false);
+        // The exception is pointers to arrays: C requires array element types to be
+        // complete (`struct S (*p)[2]` is an error when S is only forward-declared).
+        auto* stripped = pointee;
+        while (auto* nested = llvm::dyn_cast<IRPointerType>(stripped)) {
+            stripped = nested->pointee;
+        }
+        codegenTypeDefinition(stream, pointee, define && llvm::isa<IRArrayType>(stripped));
         break;
+    }
     case IRTypeKind::IRFunctionType:
         codegenTypeDefinition(stream, llvm::cast<IRFunctionType>(type)->returnType, define);
         for (auto paramType : llvm::cast<IRFunctionType>(type)->paramTypes) {
@@ -1722,7 +1730,9 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
         }
         if (!define) break;
         // Mark as emitted before generating dependencies: re-entry happens only through pointers,
-        // for which the forward declaration above suffices. By-value cycles are rejected during typechecking.
+        // and this guard cuts it. Plain-pointer re-entry is satisfied by the forward declaration
+        // above; pointers to arrays need the definition, which the dependency pass emits before
+        // this body. By-value cycles are rejected during typechecking.
         alreadyEmittedTypes.insert(type);
 
         // Generate type dependencies first.
@@ -1741,8 +1751,9 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
         for (size_t i = 0; i < irStruct->fields.size(); ++i) {
             auto& field = irStruct->fields[i];
             stream.indent(4);
-            // Pointer members only need their pointee declared, which also keeps in-progress
-            // ancestor types from being re-entered here; by-value members need full definitions.
+            // Plain pointer members only need their pointee declared, which also keeps in-progress
+            // ancestor types from being re-entered here; pointers to arrays get their definition
+            // from the dependency pass above. By-value members need full definitions.
             // Unnamed fields (e.g. enum payloads) use the same _N fallback as use sites.
             codegenDeclaration(stream, field.type, getFieldName(type, int(i)), !field.type->isPointerType());
             stream << ";\n";
