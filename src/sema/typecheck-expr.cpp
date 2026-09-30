@@ -1709,6 +1709,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                 return adjustedTarget;
             }
 
+            // Same-type only, so int-to-char stays rejected like before.
+            if (adjustedTarget.isChar() && expr->type.isChar()) return adjustedTarget;
+
             if (adjustedTarget.isFloatingPoint()) {
                 // TODO: Check that the integer value is losslessly convertible to the target type?
                 return adjustedTarget;

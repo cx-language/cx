@@ -3,6 +3,9 @@
 void foo(public int a) { }
 void foo(public int b) { }
 
+void mix(char a, int& b) { }
+void mix(char& a, int b) { }
+
 void main() {
     // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'foo'
     // CHECK: 3:6: note: candidate function:
@@ -11,4 +14,14 @@ void main() {
     // CHECK-NEXT: void foo(public int b) { }
     // CHECK-NOT: note
     foo(1)
+
+    // Char constants bind to borrows conversion-free like ints, so neither
+    // overload wins the no-conversion tie-break here.
+    // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'mix'
+    // CHECK: 6:6: note: candidate function:
+    // CHECK-NEXT: void mix(char a, int& b) { }
+    // CHECK: 7:6: note: candidate function:
+    // CHECK-NEXT: void mix(char& a, int b) { }
+    // CHECK-NOT: note
+    mix('a', 1)
 }
