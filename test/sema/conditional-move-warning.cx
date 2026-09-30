@@ -249,6 +249,32 @@ void nullCoalescingBothSidesSilent(StringBuf? o) {
     println(w == null);
 }
 
+void ternaryArmCallWarns(bool c, StringBuf x) {
+    // CHECK: [[@LINE+1]]:29: warning: value 'x' is moved in the 'then' arm of this ternary but not the 'else' arm; it may leak when the condition is false (use 'x.take()' if this was intended)
+    var r = c ? consumeBool(x) : false;
+    // CHECK: [[@LINE+1]]:20: warning: use of possibly-moved value 'x'
+    println(string(x));
+    println(r);
+}
+
+void ternaryBothArmCallsSilent(bool c, StringBuf x) {
+    // Consumed on every path: silent, later uses still error.
+    var r = c ? consumeBool(x) : consumeBool(x);
+    println(r);
+}
+
+void nestedTernaryArmWarnsOnce(bool c1, bool c2, StringBuf x) {
+    // CHECK-COUNT-1: warning: value 'x' is moved in the 'then' arm of this ternary
+    var r = c1 ? consumeBool(c2 ? x : StringBuf("d")) : false;
+    println(r);
+}
+
+void ternaryDivergingArmSilent(bool c, StringBuf y) {
+    // Only the else arm runs on; its moves are unconditional there.
+    var r = c ? abort("x") : consumeBool(y);
+    println(r);
+}
+
 void andLhsMoveNoWarning(bool b, StringBuf l) {
     // Unconditional move, so no short-circuit warning; later uses still error.
     var r = consumeBool(l) && b;

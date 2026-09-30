@@ -4720,26 +4720,73 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     typecheckImplicitlyBoolConvertibleExpr(expr.condition);
     auto outerNarrowings = narrowedTypes;
     auto outerAssignedDecls = definitelyAssignedDecls;
+    size_t branchEntryLocalCount = localVarDecls.size();
+    DeclSet entryMovedDecls = movedDecls;
     applyNarrowings(*expr.condition, true);
-    auto thenType = typecheckExpr(*expr.thenExpr);
+    DeclSet thenMovedDecls, thenMaybeMovedDecls, thenWarnedDecls;
+    Type thenType;
+    {
+        llvm::SaveAndRestore saveMovedDecls(movedDecls);
+        llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
+        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
+        thenType = typecheckExpr(*expr.thenExpr);
+        thenMovedDecls = movedDecls;
+        thenMaybeMovedDecls = maybeMovedDecls;
+        thenWarnedDecls = condWarnedDecls;
+    }
     auto thenNarrowings = narrowedTypes;
     auto thenAssignedDecls = definitelyAssignedDecls;
     narrowedTypes = outerNarrowings;
     definitelyAssignedDecls = outerAssignedDecls;
     applyNarrowings(*expr.condition, false);
-    auto elseType = typecheckExpr(*expr.elseExpr);
+    DeclSet elseMovedDecls, elseMaybeMovedDecls, elseWarnedDecls;
+    Type elseType;
+    {
+        llvm::SaveAndRestore saveMovedDecls(movedDecls);
+        llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
+        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
+        elseType = typecheckExpr(*expr.elseExpr);
+        elseMovedDecls = movedDecls;
+        elseMaybeMovedDecls = maybeMovedDecls;
+        elseWarnedDecls = condWarnedDecls;
+    }
+    // Arm-local warnings merge back so nested moves warn once; without this
+    // the merge below would repeat a nested warning at the same site.
+    condWarnedDecls.insert(thenWarnedDecls.begin(), thenWarnedDecls.end());
+    condWarnedDecls.insert(elseWarnedDecls.begin(), elseWarnedDecls.end());
+    bool thenDiverges = thenType.isNeverType();
+    bool elseDiverges = elseType.isNeverType();
+    // Like switch expressions, arms are expressions with nowhere to destroy
+    // live paths: partial moves keep the maybe state and warn. A diverging
+    // arm contributes nothing; the surviving arm alone decides.
+    if (thenDiverges && !elseDiverges) {
+        movedDecls = elseMovedDecls;
+        maybeMovedDecls = elseMaybeMovedDecls;
+    } else if (!thenDiverges && elseDiverges) {
+        movedDecls = thenMovedDecls;
+        maybeMovedDecls = thenMaybeMovedDecls;
+    } else if (!thenDiverges && !elseDiverges) {
+        DeclSet symdiff = mergeConditionalMoves({thenMovedDecls, elseMovedDecls}, {thenMaybeMovedDecls, elseMaybeMovedDecls});
+        for (auto* decl : symdiff) {
+            maybeMovedDecls.insert(decl);
+            // Values already moved before the ternary get no warning: the
+            // asymmetry comes from reassignment in the other arm, not a move.
+            if (entryMovedDecls.count(decl)) continue;
+            warnTernaryMove(decl, /*isThenArm=*/thenMovedDecls.count(decl) != 0, branchEntryLocalCount);
+        }
+    }
     // A diverging arm never runs on, so the surviving arm alone decides the
     // narrowings and assignments after the ternary (like IfStmt).
-    if (!thenType.isNeverType() && elseType.isNeverType()) {
+    if (!thenDiverges && elseDiverges) {
         narrowedTypes = thenNarrowings;
-    } else if (thenType.isNeverType() && !elseType.isNeverType()) {
+    } else if (thenDiverges && !elseDiverges) {
         // narrowedTypes already holds the else arm's set.
     } else {
         intersectNarrowings(thenNarrowings);
     }
-    if (!thenType.isNeverType() && elseType.isNeverType()) {
+    if (!thenDiverges && elseDiverges) {
         definitelyAssignedDecls = thenAssignedDecls;
-    } else if (!thenType.isNeverType() && !elseType.isNeverType()) {
+    } else if (!thenDiverges && !elseDiverges) {
         auto elseAssignedDecls = definitelyAssignedDecls;
         definitelyAssignedDecls = thenAssignedDecls;
         for (auto* decl : llvm::to_vector(definitelyAssignedDecls)) {
@@ -4747,16 +4794,16 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
                 definitelyAssignedDecls.erase(decl);
             }
         }
-    } else if (thenType.isNeverType() && !elseType.isNeverType()) {
+    } else if (thenDiverges && !elseDiverges) {
         // Only the else arm runs on; definitelyAssignedDecls already holds its set.
     }
 
     // A diverging arm contributes no value to the join (like switch arms);
     // it stays unconverted so codegen can see the divergence.
-    if (thenType.isNeverType()) {
+    if (thenDiverges) {
         return elseType;
     }
-    if (elseType.isNeverType()) {
+    if (elseDiverges) {
         return thenType;
     }
 
