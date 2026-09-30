@@ -181,9 +181,14 @@ pre, code, .sourceCode {
     white-space: nowrap;
 }
 
-.sourceCode, pre code {
+.sourceCode, pre, pre code {
     font-size: 13px;
-    line-height: 1.6;
+}
+
+/* One line-height for all code: static blocks, runnable editors,
+   frontpage snippets, and run output. */
+.sourceCode, pre code, pre.snippet, .CodeMirror, .output {
+    line-height: 1.4;
 }
 
 /* Pandoc leaves unknown languages (```cx, ```jsonc) as a bare pre
@@ -786,7 +791,6 @@ div.CodeMirror.snippet {
 }
 
 pre.snippet {
-    line-height: 1.6;
     background: var(--background-color-2);
     padding: 10px 12px;
     overflow-x: auto;
@@ -800,7 +804,6 @@ pre.snippet {
     height: auto;
     width: 100%;
     font-size: 13px;
-    line-height: 1.6;
 }
 
 .CodeMirror-lines {
@@ -891,7 +894,6 @@ button.run:hover:not(:active)::before {
     overflow: auto;
     font-family: var(--mono);
     font-size: 12.5px;
-    line-height: 1.6;
 }
 
 .stderr {
