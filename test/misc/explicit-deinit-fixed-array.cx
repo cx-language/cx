@@ -29,3 +29,5 @@ void main() {
     }
     println("done"); // CHECK-NEXT:done
 }
+
+// CHECK-NOT: dtor

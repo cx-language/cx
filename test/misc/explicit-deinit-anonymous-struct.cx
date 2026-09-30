@@ -1,0 +1,19 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Loud {
+    string s;
+    ~Loud() {
+        println("dtor");
+    }
+}
+
+void main() {
+    // Explicit deinit destroys owning fields and suppresses scope-exit destruction.
+    var p = (x = Loud(s = "a"), y = Loud(s = "b"));
+    p.deinit(); // CHECK:dtor
+    // CHECK-NEXT:dtor
+    println("after"); // CHECK-NEXT:after
+}
+
+// CHECK-NOT: dtor

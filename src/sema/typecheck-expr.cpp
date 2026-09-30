@@ -3742,9 +3742,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
         if (decls.empty() && expr.getFunctionName() == "deinit") {
             consumeDeinitBase(expr.getReceiver());
-            // Arrays declare no destructor, so IRGen destroys owning elements
-            // structurally; mark their destructors like implicit destruction.
-            if (strippedReceiverType.isFixedArray()) markDestructorFor(strippedReceiverType);
+            // Arrays and anonymous structs declare no destructor, so IRGen
+            // destroys owning elements structurally; mark their destructors
+            // like implicit destruction.
+            if (strippedReceiverType.isFixedArray() || strippedReceiverType.isAnonymousStructType()) markDestructorFor(strippedReceiverType);
             return Type::getVoid();
         }
 

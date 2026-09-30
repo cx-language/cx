@@ -1071,16 +1071,16 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
         return nullptr;
     }
 
-    // Explicit deinit on a fixed array destroys owning elements structurally,
-    // like implicit destruction; leniency left no callee since arrays declare
-    // no destructor. Through a borrow (e.g. a for-loop element) the value is
-    // already the element address.
+    // Explicit deinit on a fixed array or anonymous struct destroys owning
+    // elements structurally, like implicit destruction; leniency left no
+    // callee since they declare no destructor. Through a borrow (e.g. a
+    // for-loop element) the value is already the element address.
     if (!expr.calleeDecl && expr.getFunctionName() == "deinit" && expr.getReceiver()) {
         const Expr* receiver = expr.getReceiver();
-        Type arrayType = receiver->type.removeReference();
-        if (arrayType.isFixedArray() && arrayType.needsDestruction()) {
+        Type aggregateType = receiver->type.removeReference();
+        if ((aggregateType.isFixedArray() || aggregateType.isAnonymousStructType()) && aggregateType.needsDestruction()) {
             Value* base = receiver->type.isReferenceType() ? emitExpr(*receiver) : emitLvalueExpr(*receiver);
-            destroyElementsForAssignment(base, arrayType);
+            destroyElementsForAssignment(base, aggregateType);
             return nullptr;
         }
     }

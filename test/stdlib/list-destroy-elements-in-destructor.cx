@@ -31,3 +31,5 @@ void testDestroyFixedArrayElementsInDestructor() {
         a.push([S(), S()]);
     }
 }
+
+// CHECK-NOT: dd
