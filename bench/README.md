@@ -35,3 +35,22 @@ GitHub-hosted runners are noisy neighbors: single data points wobble,
 trends and large step changes are the signal. Medians over repeated runs
 dampen the wobble. A pinned self-hosted runner would tighten this
 further if small regressions ever need bisecting.
+
+## Language comparison
+
+`bench/langs` ports five corpus programs (everything but `jsonparse`,
+which needs third-party JSON libraries elsewhere) to C, C++, Rust and
+Go (1.23 or newer for the iterator-based `mapfilter` port), written
+idiomatically per language. `scripts/bench-langs.py` builds
+each port with release optimizations, runs it, and records medians plus
+a self-contained HTML report with graphs:
+
+```sh
+python3 scripts/bench-langs.py --cx build/cx
+open bench/langs/report.html
+```
+
+Missing toolchains are skipped with a warning. Ports must print the
+same output as cx, except `mandelbrot`, whose checksum depends on
+platform-defined float-to-int conversion and is only checked for
+self-consistency.
