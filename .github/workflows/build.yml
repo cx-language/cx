@@ -14,9 +14,9 @@ jobs:
         build_type: [ Debug, RelWithDebInfo ]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.12
 
@@ -24,11 +24,16 @@ jobs:
       # user-owned dir; the default archive dir is root-owned and the
       # cache action could not restore into it. Stale entries are safe:
       # apt re-downloads anything not matching the package index.
+      # The lock file and partial/ dir stay excluded: apt recreates them
+      # as root, and tar cannot read them back as the runner user.
       - name: Cache apt archives (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
-          path: /tmp/apt-archives
+          path: |
+            /tmp/apt-archives
+            !/tmp/apt-archives/lock
+            !/tmp/apt-archives/partial
           key: apt-archives-llvm-23-sdl-glfw
 
       - name: Redirect apt archives (Ubuntu)
@@ -50,7 +55,7 @@ jobs:
       # full cellar layout is too version-sensitive to restore blindly).
       - name: Cache Homebrew downloads (macOS)
         if: matrix.os == 'macos-latest'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/Library/Caches/Homebrew
           key: homebrew-downloads-llvm-23-sdl3-glfw3
@@ -70,7 +75,7 @@ jobs:
       # Bump the key when the URL below changes.
       - name: Cache LLVM (Windows)
         if: matrix.os == 'windows-latest'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: clang+llvm-23.1.1-x86_64-pc-windows-msvc
           key: llvm-windows-23.1.1
@@ -91,9 +96,10 @@ jobs:
 
       # LLVM 22+ locates the DIA SDK via $VSINSTALLDIR (see llvm/cmake/modules/FindDIASDK.cmake),
       # which is only set inside a Visual Studio developer environment.
+      # vs-shell is composite (no Node runtime); ilammy/msvc-dev-cmd is abandoned on node20.
       - name: Set up MSVC environment (Windows)
         if: matrix.os == 'windows-latest'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: egor-tensin/vs-shell@v2
 
       - name: Provide DIA SDK (Windows)
         if: matrix.os == 'windows-latest'
@@ -162,7 +168,7 @@ jobs:
       # impossible.
       - name: Cache vcpkg binaries (Windows)
         if: matrix.os == 'windows-latest'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}/vcpkg-binary-cache
           key: vcpkg-${{ steps.vcpkg-baseline.outputs.sha }}-zlib-zstd-static
@@ -225,7 +231,7 @@ jobs:
       # with the branch below. Release-only, like the Test step that uses it.
       - name: Cache SDL build (Linux)
         if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/SDL
           key: sdl-release-3.4.16
@@ -283,7 +289,7 @@ jobs:
 
       - name: Upload benchmark record
         if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bench-record
           path: ${{ runner.temp }}/bench.json
@@ -295,10 +301,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download benchmark record
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: bench-record
           path: bench-record
@@ -350,13 +356,13 @@ jobs:
   build-playground:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.12
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
 
@@ -369,7 +375,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/emsdk/upstream/emscripten" >> $GITHUB_PATH
 
       - name: Cache LLVM for WebAssembly
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: wasm/build/llvm-build
           key: llvm-wasm-23.1.1-${{ hashFiles('wasm/build-frontend.sh') }}
@@ -396,7 +402,7 @@ jobs:
           node wasm/smoke-playground.mjs wasm/dist
 
       - name: Upload playground artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playground
           path: |
@@ -420,10 +426,10 @@ jobs:
       group: pages
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download playground artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: playground
           path: wasm/dist
@@ -457,4 +463,4 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
