@@ -725,7 +725,9 @@ struct CToCxConverter final : clang::ASTConsumer {
     }
 
     Location toCx(clang::SourceLocation location) {
+        if (location.isInvalid()) return Location();
         auto presumedLocation = sourceManager.getPresumedLoc(location);
+        if (presumedLocation.isInvalid()) return Location();
         return Location(internString(presumedLocation.getFilename()).data(), presumedLocation.getLine(), presumedLocation.getColumn());
     }
 
