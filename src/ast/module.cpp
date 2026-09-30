@@ -76,8 +76,8 @@ void Module::addToSymbolTable(TypeTemplate& decl) {
 }
 
 void Module::addToSymbolTable(TypeDecl& decl) {
-    llvm::cast<BasicType>(decl.getType().typeBase)->decl = &decl;
     if (addToSymbolTableWithName(decl, decl.getQualifiedName())) return;
+    bindTypeSpelling(decl.getType(), decl);
 
     for (auto& memberDecl : decl.methods) {
         if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl)) {
@@ -91,8 +91,8 @@ void Module::addToSymbolTable(TypeAliasDecl& decl) {
 }
 
 void Module::addToSymbolTable(EnumDecl& decl) {
-    llvm::cast<BasicType>(decl.getType().typeBase)->decl = &decl;
     if (addToSymbolTableWithName(decl, decl.getQualifiedName())) return;
+    bindTypeSpelling(decl.getType(), decl);
 
     for (auto& memberDecl : decl.methods) {
         if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl)) {
@@ -109,7 +109,7 @@ void Module::addToSymbolTable(Decl* decl) {
     symbolTable.add(decl->getName(), decl);
 
     if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-        llvm::cast<BasicType>(*typeDecl->getType()).decl = typeDecl;
+        bindTypeSpelling(typeDecl->getType(), *typeDecl);
     }
 }
 

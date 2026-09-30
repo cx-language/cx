@@ -1,0 +1,13 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+import "inputs/c-struct-big.h";
+
+// A cx struct sharing its name with an imported C struct is a redefinition:
+// type spellings denote one declaration compilation-wide.
+// CHECK: {{.*}}c-struct-big.h:2:8: error: redefinition of 'Big'
+// CHECK: {{.*}}imported-struct-name-collision.cx:9:8: note: previous definition here
+struct Big {
+    int32[4] vals;
+}
+
+// CHECK: {{.*}}imported-struct-name-collision.cx:9:8: warning: constructor doesn't initialize member variable 'vals'

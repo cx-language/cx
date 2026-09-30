@@ -104,6 +104,10 @@ void main() {
 ```
 
 Imported functions are called like ordinary cx functions.
+An imported struct, union, or enum shares its name with any cx type of the
+same spelling, so defining both is a redefinition error; use the imported
+type from all files instead of defining a second one. An empty struct or union
+is exempt as an opaque placeholder for the imported type.
 Memory allocation functions work the same way:
 
 ```cs

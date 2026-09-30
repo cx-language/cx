@@ -486,4 +486,10 @@ struct ImportDecl : Decl {
 
 std::vector<Note> getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls);
 
+// Binds a type spelling to its declaration. Type nodes are interned by spelling
+// across the whole compilation, so registering a different declaration under an
+// already-bound spelling (e.g. a cx struct colliding with an imported C struct)
+// would silently resolve one to the other; that is a redefinition error.
+void bindTypeSpelling(Type type, TypeDecl& decl);
+
 } // namespace cx

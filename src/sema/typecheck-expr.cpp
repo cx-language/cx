@@ -4560,7 +4560,7 @@ static Type createClosureType(FunctionDecl& lambdaDecl, Location location) {
     }
 
     Type closureType = BasicType::get(closureDecl->getName(), {});
-    llvm::cast<BasicType>(closureType.typeBase)->decl = closureDecl;
+    bindTypeSpelling(closureType, *closureDecl);
     return closureType.withLocation(location);
 }
 
