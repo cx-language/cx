@@ -10,6 +10,10 @@ struct W {
     C* p;
 }
 
+struct H {
+    C c;
+}
+
 void takePtr(C** pp) {}
 void reseat(C*& q) {}
 
@@ -223,10 +227,44 @@ void paramTargetDeinitWorks(C c) {
     (*p).deinit();
 }
 
-void indexThroughPtrStaysLenient() {
-    // No error: only whole-value `*p` consumes; projections stay lenient.
+void indexThroughPtrConsumesTarget() {
+    // Like the direct form, `p[0].deinit()` consumes the whole target.
     var arr = [C(x = 1)];
     var p = &arr;
     p[0].deinit();
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'arr'
     println(arr);
+}
+
+void memberThroughPtrConsumesTarget() {
+    var h = H(c = C(x = 1));
+    var p = &h;
+    (*p).c.deinit();
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'h'
+    println(h);
+}
+
+void doubleProjectionDeinitThroughPtrIsRejected() {
+    var arr = [C(x = 1)];
+    var p = &arr;
+    p[0].deinit();
+    // CHECK: [[@LINE+1]]:6: error: use of moved value 'arr'
+    p[0].deinit();
+}
+
+void starIndexThroughPtrConsumesTarget() {
+    // The explicit star already dereferences; the index adds no extra hop.
+    var arr = [C(x = 1)];
+    var p = &arr;
+    (*p)[0].deinit();
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'arr'
+    println(arr);
+}
+
+void heapIndexDeinitStaysLenient() {
+    // No error: heap pointers were never tracked; the container escape hatch.
+    var buf = allocate<C>(1);
+    buf[0] = C(x = 1);
+    buf[0].deinit();
+    deallocate(buf);
 }

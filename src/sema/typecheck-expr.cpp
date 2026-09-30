@@ -5195,9 +5195,26 @@ void Typechecker::taintDeinitPtrTarget(Decl* ptrDecl) {
 }
 
 bool Typechecker::consumeTrackedDeinitTarget(Expr* receiver) {
-    // Only whole-value dereferences (`*p`, `**pp`, ...): projections
-    // through one keep the lenient untracked path.
+    // Peel projections (`p[0]`, `(*p).field`, ...) down to the dereference
+    // chain; the projection applies to the resolved target exactly like the
+    // direct form (`arr[0].deinit()` consumes `arr`).
     Expr* current = receiver;
+    bool sawProjection = false;
+    while (true) {
+        if (auto* member = llvm::dyn_cast<MemberExpr>(current)) {
+            current = member->base;
+        } else if (auto* index = llvm::dyn_cast<IndexExpr>(current)) {
+            current = index->getBase();
+        } else if (auto* unwrap = llvm::dyn_cast<UnwrapExpr>(current)) {
+            current = unwrap->getReceiver();
+        } else if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(current); cast && cast->castKind == ImplicitCastExpr::AutoDereference) {
+            current = cast->operand;
+        } else {
+            break;
+        }
+        sawProjection = true;
+    }
+    Expr* derefChain = current;
     unsigned stars = 0;
     while (true) {
         auto* star = llvm::dyn_cast<UnaryExpr>(current);
@@ -5205,13 +5222,17 @@ bool Typechecker::consumeTrackedDeinitTarget(Expr* receiver) {
         current = &star->getOperand();
         ++stars;
     }
+    // A projection directly on a pointer (`p[0]`) carries one implicit
+    // dereference; direct projections (`arr[0]`) resolve zero hops and keep
+    // the direct path below.
+    unsigned hops = stars + (sawProjection && isStorablePointer(derefChain->type) ? 1 : 0);
     auto* baseVar = llvm::dyn_cast<VarExpr>(current);
-    if (!baseVar || !baseVar->decl || stars == 0) return false;
+    if (!baseVar || !baseVar->decl || hops == 0) return false;
     // Each `&p` taints a bound p, so a fully bound multi-hop chain cannot
     // exist; the reachable outcomes below are a mid-chain miss (lenient) or
     // a forgotten/borrowed hop (error), plus the single-hop consume.
     Decl* target = baseVar->decl;
-    for (unsigned i = 0; i < stars; ++i) {
+    for (unsigned i = 0; i < hops; ++i) {
         auto it = deinitPtrTargets.find(target);
         if (it == deinitPtrTargets.end()) return false;
         if (!it->second) {
