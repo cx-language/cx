@@ -1,9 +1,18 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck %s -Wno-unused
 
+int&? maybe(int& x, bool b) {
+    if (b) {
+        return x;
+    }
+    return null;
+}
 
 void main() {
     var x = 1;
-    // CHECK: [[@LINE+1]]:5: error: reference type 'int&?' may only appear as a function parameter, return type, local variable, or interface argument
-    int&? r = x;
+    int&? r = maybe(x, true);
+    if (r != null) {
+        *r += 1;
+        println(*r);
+    }
+    r = null;
 }
-

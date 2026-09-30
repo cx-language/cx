@@ -1860,9 +1860,10 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 
     Type declaredType = decl.type;
     if (declaredType) {
-        // Locals may declare plain reference types ('int& r = x;'). Other borrow-storing
-        // types ('int&?', containers of borrows) stay rejected, as do all borrows in globals.
-        bool allowReference = !decl.isGlobal() && declaredType.isReferenceType();
+        // Locals may declare plain borrows ('int& r = x;') and optional borrows
+        // ('int&? r = ...'). Other borrow-storing types stay rejected, as do all
+        // borrows in globals.
+        bool allowReference = !decl.isGlobal() && declaredType.isBorrowOrOptionalBorrow();
         typecheckType(declaredType, !decl.isGlobal() ? AccessLevel::None : decl.accessLevel, true, allowReference);
         if (declaredType.isVoid()) {
             ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "cannot declare variable '" << decl.getName() << "' of type 'void'");
@@ -1939,13 +1940,14 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     // `Element&`, so writes through `x` affect the element. Globals still read the value
     // out (copying or moving it) since borrows cannot live in globals. Explicitly declared
     // reference locals and for-loop element variables are exempt for plain borrows; they
-    // alias the referent in place. Optional borrows stay rejected: naming one cannot unwrap it.
-    bool explicitLocalReference = declaredType && declaredType.isReferenceType() && !decl.isGlobal();
-    bool inferredPlainBorrow = !declaredType && !decl.isGlobal() && decl.type.isReferenceType();
-    if (decl.type.isReferenceType() && !decl.isForLoopElement && !explicitLocalReference && !inferredPlainBorrow) {
+    // alias the referent in place. Optional borrows name the borrow-or-null value, which
+    // uses null-check and unwrap like any optional. Other borrow-storing types stay rejected.
+    bool explicitLocalBorrow = declaredType && declaredType.isBorrowOrOptionalBorrow() && !decl.isGlobal();
+    bool inferredBorrow = !declaredType && !decl.isGlobal() && decl.type.isBorrowOrOptionalBorrow();
+    if (decl.type.isReferenceType() && !decl.isForLoopElement && !explicitLocalBorrow && !inferredBorrow) {
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
-    } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType()) && !explicitLocalReference && !inferredPlainBorrow) {
+    } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType()) && !explicitLocalBorrow && !inferredBorrow) {
         ERROR(decl.getLocation(),
               "reference type '" << decl.type << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }

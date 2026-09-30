@@ -48,6 +48,13 @@ int getOrNegOne(int&? o) {
     return -1;
 }
 
+int&? maybeBorrow(bool b, int& x) {
+    if (b) {
+        return x;
+    }
+    return null;
+}
+
 int pickOverload(int& r) {
     return 1;
 }
@@ -117,6 +124,31 @@ void main() {
     assert(getOrNegOne(q2) == 4);
     int*? n = null;
     assert(getOrNegOne(n) == -1);
+
+    // Nullable borrows work as locals, inferred or explicit; writes alias.
+    var ib = maybeBorrow(true, x);
+    assert(ib != null);
+    if (ib) {
+        *ib = 42;
+    }
+    assert(x == 42);
+    var nb = maybeBorrow(false, x);
+    assert(nb == null);
+    int&? ex = maybeBorrow(true, x);
+    assert(ex != null);
+    ex = null;
+    assert(ex == null);
+
+    // Direct initialization borrows; copies and rebinds alias the referent.
+    int&? direct = x;
+    assert(getOrNegOne(direct) == 42);
+    direct = y;
+    assert(getOrNegOne(direct) == 4);
+    int&? aliasCopy = direct;
+    if (aliasCopy) {
+        *aliasCopy = 7;
+    }
+    assert(y == 7);
 
     // Overload resolution prefers the non-nullable borrow when both match.
     assert(pickOverload(x) == 1);

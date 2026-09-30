@@ -1,12 +1,19 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck %s -Wno-unused
 
-
-void f(int&? o) {
-    // CHECK: [[@LINE+1]]:9: error: reference type 'int&?' may only appear as a function parameter, return type, local variable, or interface argument
+void fromParam(int&? o) {
     var r = o;
+    if (r != null) {
+        *r += 1;
+        println(*r);
+    }
 }
 
 void main() {
+    var counts = Map<string, int>();
+    string key = "a";
+    var count = counts[key];
+    if (count != null) {
+        *count += 1;
+        println(*count);
+    }
 }
-
-// CHECK: 4:6: warning: unused declaration 'f'

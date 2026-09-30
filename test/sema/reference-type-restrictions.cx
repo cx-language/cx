@@ -25,6 +25,13 @@ void localBorrow() {
     *r = 2;
 }
 
+// Containers of borrows stay rejected as locals.
+void localContainerOfBorrow() {
+    // CHECK: [[@LINE+1]]:5: error: reference type 'List<int&>' may only appear as a function parameter, return type, local variable, or interface argument
+    List<int&> l;
+}
+
 // CHECK: 11:6: warning: unused declaration 'returnsBorrow'
 // CHECK: 18:6: warning: unused declaration 'optionalBorrow'
 // CHECK: 22:6: warning: unused declaration 'localBorrow'
+// CHECK: 29:6: warning: unused declaration 'localContainerOfBorrow'
