@@ -794,8 +794,12 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         if (!buildParams.outputFileName.empty() && (requestedName.empty() || requestedName == "." || requestedName == "..")) {
             buildParams.outputFileName.clear();
         }
+        std::string runFileName = llvm::sys::path::filename(getOutputFileName(buildParams, mainModule, isWindows)).str();
+        // Windows only executes files with an executable extension, which an
+        // explicit -o name or directory build/test name may omit.
+        if (isWindows && llvm::sys::path::extension(runFileName).compare_insensitive(".exe") != 0) runFileName += ".exe";
         llvm::SmallString<128> runPath = runDirectory;
-        llvm::sys::path::append(runPath, llvm::sys::path::filename(getOutputFileName(buildParams, mainModule, isWindows)));
+        llvm::sys::path::append(runPath, runFileName);
         renameFile(tempOutputFilePath, runPath);
         std::string command = shellEscape(runPath.str());
         for (const auto& arg : programArgs) {
