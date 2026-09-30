@@ -236,7 +236,7 @@ IRType* Value::getType() const {
         return arrayOp->arrayType->getPointerTo();
     }
     case ValueKind::SizeofInst:
-        return getIRType(Type::getUInt64());
+        return llvm::cast<SizeofInst>(this)->resultType;
     case ValueKind::BasicBlock:
         llvm_unreachable("unhandled BasicBlock");
     case ValueKind::Function: {

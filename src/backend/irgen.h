@@ -254,7 +254,7 @@ struct IRGenerator {
         return module->globalVariables.emplace_back(new GlobalVariable{ValueKind::GlobalVariable, getIRType(type), value, name.str()});
     }
     Value* createGlobalStringPtr(llvm::StringRef value) { return new ConstantString{ValueKind::ConstantString, value.str()}; }
-    Value* createSizeof(Type type) { return new SizeofInst{ValueKind::SizeofInst, getIRType(type), ""}; }
+    Value* createSizeof(Type type) { return new SizeofInst{ValueKind::SizeofInst, getIRType(type), getIRType(Type::getUInt64()), ""}; }
     SwitchInst* createSwitch(Value* condition, BasicBlock* defaultBlock) {
         return insertBlock->add(new SwitchInst{ValueKind::SwitchInst, condition, defaultBlock, {}});
     }

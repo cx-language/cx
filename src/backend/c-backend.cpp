@@ -822,9 +822,13 @@ void CGenerator::codegenUnreachable(const UnreachableInst* inst) {
 }
 
 void CGenerator::codegenSizeof(const SizeofInst* inst) {
-    stream << "sizeof(";
+    // C sizeof is size_t. Cast to the cx result type, which is int unless a
+    // peer operand or an explicit conversion decided otherwise.
+    stream << "((";
+    codegenTypeExpression(stream, inst->getType(), true);
+    stream << ")sizeof(";
     codegenTypeExpression(stream, inst->type, true);
-    stream << ")";
+    stream << "))";
 }
 
 void CGenerator::codegenTempDeclaration(const Value* value, const std::string& name) {

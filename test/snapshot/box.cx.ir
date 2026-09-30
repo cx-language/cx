@@ -117,7 +117,7 @@ int32* _CX1N3std13allocateValueIM3std5int32EEPM3std5int321_M3std5int32(int32 val
     int32* value_0 = alloca int32
     int32** allocation = alloca int32*
     store value to value_0
-    c_size_t _0 = cast uint64 4 to c_size_t
+    c_size_t _0 = cast int32 4 to c_size_t
     void* _1 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t _0)
     bool assert.condition = _1 == void* null
     br assert.condition, assert.fail, assert.success

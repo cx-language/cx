@@ -360,21 +360,22 @@ if.else:
     br if.end
 
 if.end:
-    store uint64 4 to elementSize
+    uint64 _1 = cast int32 4 to uint64
+    store _1 to elementSize
     int64 count.load_0 = load count_0
-    uint64 _1 = cast count.load_0 to uint64
-    store _1 to ucount
+    uint64 _2 = cast count.load_0 to uint64
+    store _2 to ucount
     uint64 ucount.load = load ucount
-    bool _2 = ucount.load != uint64 0
-    br _2, and.rhs(_2), and.end(_2)
+    bool _3 = ucount.load != uint64 0
+    br _3, and.rhs(_3), and.end(_3)
 
 and.rhs:
     uint64 elementSize.load = load elementSize
-    uint64 _3 = cast int32 -1 to uint64
+    uint64 _4 = cast int32 -1 to uint64
     uint64 ucount.load_0 = load ucount
-    uint64 _4 = _3 / ucount.load_0
-    bool _5 = elementSize.load > _4
-    br and.end(_5)
+    uint64 _5 = _4 / ucount.load_0
+    bool _6 = elementSize.load > _5
+    br and.end(_6)
 
 and.end(bool and):
     br and, if.then, if.else
@@ -389,26 +390,26 @@ if.end_0:
     uint64* size.load = load size_0
     uint64 elementSize.load_0 = load elementSize
     uint64 ucount.load_1 = load ucount
-    uint64 _6 = elementSize.load_0 * ucount.load_1
-    bool _7 = ucount.load_1 == uint64 0
-    br _7, overflow.end(bool false), overflow.check(bool false)
+    uint64 _7 = elementSize.load_0 * ucount.load_1
+    bool _8 = ucount.load_1 == uint64 0
+    br _8, overflow.end(bool false), overflow.check(bool false)
 
 overflow.check:
-    uint64 _8 = _6 / ucount.load_1
-    bool _9 = _8 != elementSize.load_0
-    br overflow.end(_9)
+    uint64 _9 = _7 / ucount.load_1
+    bool _10 = _9 != elementSize.load_0
+    br overflow.end(_10)
 
 overflow.end(bool overflowed):
-    bool _10 = !overflowed
-    bool overflow.condition = _10 == bool false
+    bool _11 = !overflowed
+    bool overflow.condition = _11 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _11 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:169:25
+    never _12 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:169:25
 ")
     unreachable
 
 overflow.success:
-    store _6 to size.load
+    store _7 to size.load
     return bool true
 }

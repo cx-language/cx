@@ -23,8 +23,8 @@ void _CX1N4mainM4main1CIM3std4boolE1fE4void0_(C<bool>* this) {
 
 void _CX1N4mainM4main1CIM3std4boolE1gE4void0_(C<bool>* this) {
     C<bool>** this_0 = alloca C<bool>*
-    uint64* a = alloca uint64
+    int32* a = alloca int32
     store this to this_0
-    store uint64 1 to a
+    store int32 1 to a
     return void
 }

@@ -82,7 +82,7 @@ private int leakCount = 0;
 private uint64 leakBytes = 0;
 
 private uint64 leakHeaderSize() {
-    return (sizeof(LeakHeader) + 15) / 16 * 16;
+    return (uint64(sizeof(LeakHeader)) + 15) / 16 * 16;
 }
 
 private void*? cxMalloc(c_size_t size) {
@@ -161,7 +161,7 @@ private bool checkedArraySize<T>(int64 count, uint64& size) {
     if count < 0 {
         return false;
     }
-    var elementSize = sizeof(T);
+    var elementSize = uint64(sizeof(T));
     var ucount = uint64(count);
     if ucount != 0 && elementSize > uint64(-1) / ucount {
         return false;

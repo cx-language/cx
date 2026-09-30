@@ -1086,7 +1086,7 @@ void IRGenerator::zeroEnumPayload(Value* enumValue, Type enumType) {
     auto* payloadPtr = createCastIfNeeded(createGEP(enumValue, 1, nullptr, "associatedValue"), params[0].type);
     auto* zero = createCastIfNeeded(createConstantInt(Type::getInt32(), 0), params[1].type);
     IRType* payloadType = getIRType(enumType)->getFields()[optionalPayloadFieldIndex].type;
-    auto* size = createCastIfNeeded(new SizeofInst{ValueKind::SizeofInst, payloadType, ""}, params[2].type);
+    auto* size = createCastIfNeeded(new SizeofInst{ValueKind::SizeofInst, payloadType, getIRType(Type::getUInt64()), ""}, params[2].type);
     createCall(memsetFunction, {payloadPtr, zero, size}, nullptr);
 }
 
@@ -1324,7 +1324,9 @@ Value* IRGenerator::emitBuiltinCast(const CallExpr& expr) {
 }
 
 Value* IRGenerator::emitSizeofExpr(const SizeofExpr& expr) {
-    return createSizeof(expr.operandType);
+    // The cx type is int by default and adopts a peer numeric type, so the
+    // size value is not fixed as uint64.
+    return new SizeofInst{ValueKind::SizeofInst, getIRType(expr.operandType), getIRType(expr.type), ""};
 }
 
 Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr) {

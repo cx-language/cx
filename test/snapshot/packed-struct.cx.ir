@@ -7,7 +7,7 @@ int32 main() {
     store c_ushort 52719 to b
     c_uchar* c = getelementptr s, 2
     store c_uchar 0 to c
-    bool _0 = sizeof(S) == uint64 4
+    bool _0 = sizeof(S) == int32 4
     bool assert.condition = _0 == bool false
     br assert.condition, assert.fail, assert.success
 

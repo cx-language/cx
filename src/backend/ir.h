@@ -325,7 +325,8 @@ struct ArrayOpInst : Instruction {
 };
 
 struct SizeofInst : Instruction {
-    IRType* type;
+    IRType* type; ///< The type whose size is taken.
+    IRType* resultType; ///< Type of the size value. Internal uses stay uint64.
     std::string name;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::SizeofInst; }

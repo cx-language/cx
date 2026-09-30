@@ -1,0 +1,41 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Element {
+    int x;
+    int y;
+}
+
+int which(int x) { return 32; }
+int which(int64 x) { return 64; }
+int which(uint x) { return 1; }
+int which(uint64 x) { return 2; }
+
+void main() {
+    int n = 3;
+    int64 wide = 3;
+    uint u = 3;
+    uint64 big = 3;
+    Element e = Element(1, 2);
+
+    // CHECK:32
+    println(which(sizeof(Element) * n));
+    // CHECK-NEXT:64
+    println(which(sizeof(Element) * wide));
+    // CHECK-NEXT:1
+    println(which(sizeof(Element) * u));
+    // CHECK-NEXT:2
+    println(which(sizeof(Element) * big));
+    // CHECK-NEXT:32
+    println(which(n * sizeof(e)));
+    // CHECK-NEXT:64
+    println(which(wide * sizeof(e)));
+
+    var s = sizeof(Element);
+    // CHECK-NEXT:32
+    println(which(s));
+    // CHECK-NEXT:12
+    println(sizeof(int) * n);
+    // CHECK-NEXT:12
+    println(sizeof(int) * wide);
+}

@@ -978,7 +978,18 @@ llvm::Value* LLVMGenerator::codegenUnreachable() {
 }
 
 llvm::Value* LLVMGenerator::codegenSizeof(const SizeofInst* inst) {
-    return llvm::ConstantExpr::getSizeOf(getLLVMType(inst->type));
+    auto* sized = llvm::ConstantExpr::getSizeOf(getLLVMType(inst->type));
+    auto* destType = getLLVMType(inst->getType());
+    if (sized->getType() == destType) return sized;
+    unsigned opcode;
+    if (destType->isFloatingPointTy()) {
+        opcode = llvm::Instruction::UIToFP;
+    } else if (destType->getIntegerBitWidth() < sized->getType()->getIntegerBitWidth()) {
+        opcode = llvm::Instruction::Trunc;
+    } else {
+        opcode = llvm::Instruction::ZExt;
+    }
+    return llvm::ConstantExpr::getCast(opcode, sized, destType);
 }
 
 llvm::Value* LLVMGenerator::codegenBasicBlock(const BasicBlock* block) {

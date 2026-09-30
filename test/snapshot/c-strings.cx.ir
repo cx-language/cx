@@ -89,57 +89,6 @@ ArrayIterator<char> _CX1N3stdM3std4ListIM3std4charE8iteratorEM3std13ArrayIterato
     return .load_0
 }
 
-bool _CX1N3stdM3std13ArrayIteratorIM3std4charE8hasValueEM3std4bool0_(ArrayIterator<char>* this) {
-    ArrayIterator<char>** this_0 = alloca ArrayIterator<char>*
-    store this to this_0
-    ArrayIterator<char>* this.load = load this_0
-    char** current = getelementptr this.load, 0
-    char* current.load = load current
-    ArrayIterator<char>* this.load_0 = load this_0
-    char** end = getelementptr this.load_0, 1
-    char* end.load = load end
-    bool _0 = current.load != end.load
-    return _0
-}
-
-char* _CX1N3stdM3std13ArrayIteratorIM3std4charE5valueERM3std4char0_(ArrayIterator<char>* this) {
-    ArrayIterator<char>** this_0 = alloca ArrayIterator<char>*
-    store this to this_0
-    ArrayIterator<char>* this.load = load this_0
-    char** current = getelementptr this.load, 0
-    char* current.load = load current
-    return current.load
-}
-
-void _CX1N3stdM3std13ArrayIteratorIM3std4charE9incrementE4void0_(ArrayIterator<char>* this) {
-    ArrayIterator<char>** this_0 = alloca ArrayIterator<char>*
-    store this to this_0
-    ArrayIterator<char>* this.load = load this_0
-    char** current = getelementptr this.load, 0
-    char* current.load = load current
-    char* _0 = getelementptr current.load, int32 1
-    store _0 to current
-    return void
-}
-
-void _CX1N3stdM3std13ArrayIteratorIM3std4charE4initE4void1_M3std5SliceIM3std4charE(ArrayIterator<char>* this, Slice<char> array) {
-    ArrayIterator<char>** this_0 = alloca ArrayIterator<char>*
-    Slice<char>* array_0 = alloca Slice<char>
-    store this to this_0
-    store array to array_0
-    ArrayIterator<char>* this.load = load this_0
-    char** current = getelementptr this.load, 0
-    char* _0 = call _CX1N3stdM3std5SliceIM3std4charE4dataEAM3std4char0_(Slice<char>* array_0)
-    store _0 to current
-    ArrayIterator<char>* this.load_0 = load this_0
-    char** end = getelementptr this.load_0, 1
-    char* _1 = call _CX1N3stdM3std5SliceIM3std4charE4dataEAM3std4char0_(Slice<char>* array_0)
-    int32 _2 = call _CX1N3stdM3std5SliceIM3std4charE4sizeEM3std5int320_(Slice<char>* array_0)
-    char* _3 = getelementptr _1, _2
-    store _3 to end
-    return void
-}
-
 void _CX1N3stdM3std5SliceIM3std4charE4initE4void1_RM3std4ListIM3std4charE(Slice<char>* this, List<char>* list) {
     Slice<char>** this_0 = alloca Slice<char>*
     List<char>** list_0 = alloca List<char>*

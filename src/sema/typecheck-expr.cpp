@@ -831,6 +831,10 @@ Type Typechecker::typecheckStructComparison(BinaryExpr& expr) {
     return finishComparisonLowering(expr, result, temps.lhsTemp, temps.rhsTemp);
 }
 
+static bool isIntegerLike(Type type) {
+    return type.isInteger() || type.isInt128() || type.isUInt128();
+}
+
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.op;
 
@@ -1144,12 +1148,34 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         throwInvalidOperandsToBinaryExpr(expr, op);
     } else if (leftType.isVoid() || rightType.isVoid()) {
         throwInvalidOperandsToBinaryExpr(expr, op);
-    } else if (auto convertedRHS = convert(&expr.getRHS(), leftType, true, false)) {
-        expr.setRHS(convertedRHS);
-    } else if (auto convertedLHS = convert(&expr.getLHS(), rightType, true, false)) {
-        expr.setLHS(convertedLHS);
-    } else if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
-        throwInvalidOperandsToBinaryExpr(expr, op);
+    } else {
+        // sizeof is an int constant. Prefer the other operand's numeric type
+        // over widening that operand up to int, so `sizeof(T) * size` has
+        // the type of `size`.
+        bool lhsIsSizeof = expr.getLHS().isSizeofExpr();
+        bool rhsIsSizeof = expr.getRHS().isSizeofExpr();
+        if (lhsIsSizeof != rhsIsSizeof) {
+            Type peer = lhsIsSizeof ? rightType : leftType;
+            if (isIntegerLike(peer) || peer.isFloatingPoint()) {
+                Expr* side = lhsIsSizeof ? &expr.getLHS() : &expr.getRHS();
+                if (Expr* converted = convert(side, peer, true, false)) {
+                    if (lhsIsSizeof) {
+                        expr.setLHS(converted);
+                        leftType = converted->type;
+                    } else {
+                        expr.setRHS(converted);
+                        rightType = converted->type;
+                    }
+                }
+            }
+        }
+        if (auto convertedRHS = convert(&expr.getRHS(), leftType, true, false)) {
+            expr.setRHS(convertedRHS);
+        } else if (auto convertedLHS = convert(&expr.getLHS(), rightType, true, false)) {
+            expr.setLHS(convertedLHS);
+        } else if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
+            throwInvalidOperandsToBinaryExpr(expr, op);
+        }
     }
 
     Type resultType = isComparisonOperator(op) ? Type::getBool() : expr.getLHS().type.removeOptional().removePointer();
@@ -1723,6 +1749,13 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         // Auto-cast integer constants to target type if within range, error out if not within range.
+        // sizeof of a layout-dependent type is still a compile-time constant, but sema does not
+        // know the number of bytes, so it converts to any numeric type without a range check.
+        if (expr->isSizeofExpr() && !expr->isConstant()) {
+            auto adjustedTarget = allowPointerToTemporary ? target.removeReference() : target;
+            if (isIntegerLike(adjustedTarget) || adjustedTarget.isFloatingPoint()) return adjustedTarget;
+        }
+
         if ((expr->type.isInteger() || expr->type.isChar() || (expr->type.isEnumType() && !llvm::cast<EnumDecl>(expr->type.getDecl())->hasAssociatedValues()))
             && expr->isConstant()) {
             auto value = expr->getConstantIntegerValue();
@@ -4299,7 +4332,12 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
     if (resolveTypeAliases(expr.operandType).isVoid()) {
         ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot take sizeof of 'void'");
     }
-    return Type::getUInt64();
+    // int is the default integer type. Context (a peer operand, or a target
+    // type the constant converts to) can still give the expression another
+    // numeric type.
+    Type type = Type::getInt32();
+    type.aliasSpelling = internString("int");
+    return type;
 }
 
 Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool useIsWriteOnly) {

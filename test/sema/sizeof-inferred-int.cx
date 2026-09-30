@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+void take(uint64 x) {}
+
+void main() {
+    var s = sizeof(int);
+    // CHECK: [[@LINE+1]]:10: error: invalid argument #1 type 'int' to 'take', expected 'uint64'
+    take(s);
+}
