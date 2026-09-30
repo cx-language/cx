@@ -89,14 +89,16 @@ struct CToCxConverter final : clang::ASTConsumer {
             return Type::getInt32();
         case clang::BuiltinType::UInt:
             return Type::getUInt32();
+        // C longs keep their identity (instead of mapping by width) so the C
+        // backend spells header-compatible types.
         case clang::BuiltinType::Long:
-            return getIntTypeByWidth(targetInfo->getLongWidth(), true);
+            return Type::getCLong();
         case clang::BuiltinType::ULong:
-            return getIntTypeByWidth(targetInfo->getLongWidth(), false);
+            return Type::getCULong();
         case clang::BuiltinType::LongLong:
-            return getIntTypeByWidth(targetInfo->getLongLongWidth(), true);
+            return Type::getCLongLong();
         case clang::BuiltinType::ULongLong:
-            return getIntTypeByWidth(targetInfo->getLongLongWidth(), false);
+            return Type::getCULongLong();
         case clang::BuiltinType::Float16:
         case clang::BuiltinType::BFloat16:
             ASSERT(false); // Skipped before conversion; float32 as a fallback.

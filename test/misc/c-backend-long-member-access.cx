@@ -1,0 +1,16 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+
+// CHECK: long* {{[_A-Za-z0-9]+}} = &(&s0)->a;
+// CHECK: unsigned long* {{[_A-Za-z0-9]+}} = &(&s0)->b;
+// CHECK: long long* {{[_A-Za-z0-9]+}} = &(&s0)->c;
+// CHECK: unsigned long long* {{[_A-Za-z0-9]+}} = &(&s0)->d;
+
+import "inputs/c-long-struct.h";
+
+void main() {
+    LS s;
+    s.a = 5;
+    s.b = 7;
+    s.c = 9;
+    s.d = 11;
+}
