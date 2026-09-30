@@ -30,15 +30,14 @@ T& min<T: Comparable>(T& a, T& b) {
 
 /// Swaps two items in place. Takes pointers because it mutates its arguments.
 // Bytewise through stack scratch: moving out of the dereferences would leave
-// two owners behind for owning element types. Plain bytes carry no destructor,
-// so no temporary owns anything here.
+// two owners behind for owning element types. The scratch has E's alignment
+// (a byte buffer does not) and is not destroyed, so it never owns the copied bytes.
 void swap<E>(E* a, E* b) {
     if a == b return;
-    uint8[sizeof(E)] t = undefined;
-    var size = c_size_t(sizeof(E));
-    memcpy(&t[0], a, size);
-    memcpy(a, b, size);
-    memcpy(b, &t[0], size);
+    @manuallyDestroy E t = undefined;
+    memcpy(&t, a, sizeof(E));
+    memcpy(a, b, sizeof(E));
+    memcpy(b, &t, sizeof(E));
 }
 
 // TODO: Use Slice instead of List.

@@ -12,6 +12,8 @@ The size may also be `sizeof(T)`, which folds once the operand type is known.
 Generic code uses this to reserve scratch space for a value of unknown type,
 as in `uint8[sizeof(E)]`. Such arrays cannot hold owning elements or be
 initialized from literals, since their size is only known to the backends.
+The buffer is aligned as `uint8`. Scratch that must hold an `E` with `E`'s
+alignment is a local `@manuallyDestroy E` (see [Structs](structs)).
 
 ```cs
 void main() {

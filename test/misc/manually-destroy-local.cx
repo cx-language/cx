@@ -1,0 +1,116 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+int deaths = 0;
+
+struct C {
+    ~C() {
+        deaths = deaths + 1;
+    }
+}
+
+struct Wrap {
+    C inner;
+}
+
+struct Aligned {
+    int64 word;
+    ~Aligned() {
+        deaths = deaths + 1;
+    }
+}
+
+void leave() {
+    var kept = C();
+    @manuallyDestroy var scratch = C();
+    _ = &kept;
+    _ = &scratch;
+    return;
+}
+
+void scratch<T>() {
+    @manuallyDestroy T t = undefined;
+    _ = &t;
+}
+
+C give() {
+    @manuallyDestroy var c = C();
+    return c;
+}
+
+void main() {
+    {
+        var tracked = C();
+        _ = &tracked;
+    }
+    println(deaths); // CHECK:1
+
+    {
+        @manuallyDestroy var scratch = C();
+        _ = &scratch;
+    }
+    println(deaths); // CHECK-NEXT:1
+
+    {
+        @manuallyDestroy
+        C a = C(), b = C();
+        _ = &a;
+        _ = &b;
+    }
+    println(deaths); // CHECK-NEXT:1
+
+    {
+        @manuallyDestroy var scratch = C();
+        scratch.deinit();
+    }
+    println(deaths); // CHECK-NEXT:2
+
+    {
+        @manuallyDestroy var scratch = C();
+        scratch = C();
+        _ = &scratch;
+    }
+    println(deaths); // CHECK-NEXT:3
+
+    {
+        @manuallyDestroy var items = [C(), C()];
+        _ = &items;
+    }
+    println(deaths); // CHECK-NEXT:3
+
+    {
+        @manuallyDestroy var pair = (left = C(), right = C());
+        _ = &pair;
+    }
+    println(deaths); // CHECK-NEXT:3
+
+    {
+        @manuallyDestroy var w = Wrap(inner = C());
+        _ = &w;
+    }
+    println(deaths); // CHECK-NEXT:3
+
+    {
+        C raw = undefined;
+        _ = &raw;
+    }
+    println(deaths); // CHECK-NEXT:4
+
+    leave();
+    println(deaths); // CHECK-NEXT:5
+
+    scratch<C>();
+    println(deaths); // CHECK-NEXT:5
+
+    {
+        var owned = give();
+        _ = &owned;
+    }
+    println(deaths); // CHECK-NEXT:6
+
+    {
+        @manuallyDestroy Aligned slot = undefined;
+        println(cast<uint64>(&slot) % 8 == 0); // CHECK-NEXT:true
+    }
+    println(deaths); // CHECK-NEXT:6
+}

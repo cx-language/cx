@@ -1,0 +1,7 @@
+// RUN: %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:22: warning: duplicate '@manuallyDestroy' attribute
+    @manuallyDestroy @manuallyDestroy
+    int x = 1;
+}

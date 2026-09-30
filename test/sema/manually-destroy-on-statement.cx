@@ -1,7 +1,7 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
-struct S {
+void main() {
     // CHECK: [[@LINE+1]]:5: error: only struct fields and local variables can be marked as '@manuallyDestroy'
     @manuallyDestroy
-    void method() {}
+    return;
 }

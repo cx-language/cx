@@ -1591,10 +1591,24 @@ ContinueStmt* Parser::parseContinueStmt() {
     return makeAST<ContinueStmt>(location);
 }
 
-/// stmt ::= var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
+/// stmt ::= var-stmt | '@manuallyDestroy' var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
 ///          while-stmt | do-while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt | block
 Stmt* Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
+    case Token::At: {
+        bool isTest = false;
+        Location testLocation;
+        bool isManuallyDestroy = false;
+        Location manuallyDestroyLocation;
+        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
+        if (isTest) ERROR_RANGE(testLocation, getIdentifierEndLocation(testLocation, "@test"), "only functions can be marked as tests");
+        // The attribute covers every name in the declaration (`T a = ..., b = ...`).
+        if (!isManuallyDestroy || !shouldParseVarStmt()) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+        auto* stmt = parseVarStmt(parent);
+        for (auto* decl : stmt->decls)
+            decl->isManuallyDestroy = true;
+        return stmt;
+    }
     case Token::LeftBrace:
         return makeAST<CompoundStmt>(parseBlock(parent));
     case Token::Return:
@@ -2288,10 +2302,10 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
     consumeToken();
 }
 
-/// Reports `@manuallyDestroy` on anything but a struct field.
+/// Reports `@manuallyDestroy` on anything but a struct field or local variable.
 /// @throws CompileError
 [[noreturn]] void Parser::errorMisplacedManuallyDestroy(Location location) {
-    ERROR_RANGE(location, getIdentifierEndLocation(location, "@manuallyDestroy"), "only struct fields can be marked as '@manuallyDestroy'");
+    ERROR_RANGE(location, getIdentifierEndLocation(location, "@manuallyDestroy"), "only struct fields and local variables can be marked as '@manuallyDestroy'");
 }
 
 /// Parses leading `@attribute`s. Only `@test` and `@manuallyDestroy` exist;

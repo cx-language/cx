@@ -221,6 +221,15 @@ manually-destroyed owning field but no destructor is a compile error. The
 compiler does not check that the destructor actually destroys the field;
 forgetting `.deinit()` leaks it silently.
 
+A local variable marked `@manuallyDestroy` stays alive when its scope ends,
+including on `return`. Assignment still destroys the previous value, so
+assigning over uninitialized scratch would destroy uninitialized memory.
+This is for storage that must use the value's alignment and must not own
+the bytes, such as swapping two values by copying their representation. A
+`uint8` buffer is aligned as a byte, so it is the wrong scratch for that.
+The compiler does not check that the variable is destroyed; forgetting
+`.deinit()` on a value that should be destroyed leaks it.
+
 ```cs
 struct Buffer {
     @manuallyDestroy
@@ -238,6 +247,28 @@ struct Buffer {
 void main() {
     var buffer = Buffer();
     println(buffer.items.size()); // prints 3
+}
+```
+
+```cs
+struct Probe {
+    int id;
+
+    ~Probe() {
+        println("drop");
+    }
+}
+
+void main() {
+    {
+        var tracked = Probe(id = 1);
+        println(tracked.id); // prints 1
+    } // prints "drop"
+
+    @manuallyDestroy
+    var scratch = Probe(id = 2);
+    println(scratch.id); // prints 2
+    println("done"); // prints "done"
 }
 ```
 

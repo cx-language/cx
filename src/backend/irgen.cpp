@@ -246,6 +246,10 @@ void IRGenerator::deferDestructionForType(Value* base, Type type, const Variable
 
 void IRGenerator::deferDestructorCall(Value* receiver, const VariableDecl* decl) {
     ASSERT(decl->type);
+    // '@manuallyDestroy' locals are raw storage: the scope must not destroy them.
+    if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+        if (varDecl->isManuallyDestroy) return;
+    }
     deferDestructionForType(receiver, decl->type, decl, {});
 }
 

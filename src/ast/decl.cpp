@@ -680,7 +680,10 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
         auto* varDecl = llvm::cast<VarDecl>(this);
         auto type = varDecl->type.resolve(genericArgs);
         auto initializer = varDecl->initializer ? varDecl->initializer->instantiate(genericArgs) : nullptr;
-        return makeAST<VarDecl>(type, varDecl->getName(), initializer, varDecl->parent, accessLevel, *varDecl->getModule(), varDecl->getLocation());
+        auto* instantiation =
+            makeAST<VarDecl>(type, varDecl->getName(), initializer, varDecl->parent, accessLevel, *varDecl->getModule(), varDecl->getLocation());
+        instantiation->isManuallyDestroy = varDecl->isManuallyDestroy;
+        return instantiation;
     }
     case DeclKind::FieldDecl:
         llvm_unreachable("handled via TypeDecl");

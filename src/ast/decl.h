@@ -468,6 +468,9 @@ struct VarDecl : VariableDecl, Movable {
     // payload bindings, comparison temporaries): codegen binds them to their values,
     // so a borrow-typed binding needs no initializer.
     bool isImplicitlyBound = false;
+    // Set by '@manuallyDestroy': scope exit does not run this variable's destructor.
+    // Assignment still destroys the previous value.
+    bool isManuallyDestroy = false;
 };
 
 struct ImportDecl : Decl {
