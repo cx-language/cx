@@ -3,8 +3,8 @@
 
 Usage:
     scripts/bench-langs.py --cx build/cx [--runs 3] [--programs fib,sieve]
-        [--languages cx,c] [--output bench/langs/results.json]
-        [--html bench/langs/report.html]
+        [--languages cx,c] [--output bench/results.json]
+        [--html bench/report.html]
 
 Builds each program for each language with release optimizations, runs each
 binary --runs times (median kept), and writes a JSON record plus a
@@ -40,12 +40,16 @@ EXPECTED = {
 TIMEOUT = 600
 
 LANGS = {
-    "cx": {"label": "cx", "color": "var(--cx-bar)", "tool": None, "ext": ".cx", "dir": "bench"},
-    "c": {"label": "C", "color": "#555555", "tool": "cc", "ext": ".c", "dir": "bench/langs/c"},
-    "cxx": {"label": "C++", "color": "#f34b7d", "tool": "c++", "ext": ".cpp", "dir": "bench/langs/cxx"},
-    "rust": {"label": "Rust", "color": "#dea584", "tool": "rustc", "ext": ".rs", "dir": "bench/langs/rust"},
-    "go": {"label": "Go", "color": "#00ADD8", "tool": "go", "ext": ".go", "dir": "bench/langs/go"},
+    "cx": {"label": "cx", "color": "var(--cx-bar)", "tool": None, "ext": ".cx"},
+    "c": {"label": "C", "color": "#555555", "tool": "cc", "ext": ".c"},
+    "cxx": {"label": "C++", "color": "#f34b7d", "tool": "c++", "ext": ".cpp"},
+    "rust": {"label": "Rust", "color": "#dea584", "tool": "rustc", "ext": ".rs"},
+    "go": {"label": "Go", "color": "#00ADD8", "tool": "go", "ext": ".go"},
 }
+
+
+def lang_source(program, lang):
+    return os.path.join(ROOT, "bench", program, program + LANGS[lang]["ext"])
 
 
 def parse_args():
@@ -54,8 +58,8 @@ def parse_args():
     parser.add_argument("--runs", type=int, default=3, help="runs per binary (median kept)")
     parser.add_argument("--programs", default=",".join(PROGRAMS), help="comma-separated subset")
     parser.add_argument("--languages", default=",".join(LANGS), help="comma-separated subset")
-    parser.add_argument("--output", default="bench/langs/results.json", help="where to write the JSON record")
-    parser.add_argument("--html", default="bench/langs/report.html", help="where to write the HTML report")
+    parser.add_argument("--output", default="bench/results.json", help="where to write the JSON record")
+    parser.add_argument("--html", default="bench/report.html", help="where to write the HTML report")
     return parser.parse_args()
 
 
@@ -198,7 +202,7 @@ def main():
         for program in programs:
             results[program] = {}
             for lang in languages:
-                src = os.path.join(ROOT, LANGS[lang]["dir"], program + LANGS[lang]["ext"])
+                src = lang_source(program, lang)
                 if not os.path.isfile(src):
                     continue
                 binary = os.path.join(workdir, f"{program}-{lang}{suffix}")

@@ -1,4 +1,4 @@
-// Sieve of Eratosthenes below 1e8, matching bench/sieve.cx.
+// Sieve of Eratosthenes below 1e8, matching sieve.cx.
 package main
 
 import "fmt"

@@ -26,6 +26,10 @@ CORPUS = ["sieve", "mandelbrot", "fib", "wordcount", "mapfilter", "jsonparse"]
 TIMEOUT = 600
 
 
+def corpus_source(name):
+    return os.path.join(ROOT, "bench", name, name + ".cx")
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cx", required=True, help="path to cx compiler executable")
@@ -68,7 +72,7 @@ def main():
 
     with tempfile.TemporaryDirectory(prefix="cx-bench-") as workdir:
         for name in CORPUS:
-            src = os.path.join(ROOT, "bench", name + ".cx")
+            src = corpus_source(name)
             binary = os.path.join(workdir, name + suffix)
             compile_cmd = [args.cx, src, "-o", binary, "--release", "-Werror"]
             times = []

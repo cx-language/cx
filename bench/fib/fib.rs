@@ -1,4 +1,4 @@
-// Naive recursive Fibonacci, matching bench/fib.cx.
+// Naive recursive Fibonacci, matching fib.cx.
 fn fib(n: i32) -> i32 {
     if n < 2 {
         n

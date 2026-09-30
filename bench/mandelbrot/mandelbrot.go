@@ -1,4 +1,4 @@
-// Mandelbrot checksum, matching bench/mandelbrot.cx. float32 loop counters and
+// Mandelbrot checksum, matching mandelbrot.cx. float32 loop counters and
 // int32 sum like the cx version; the printed checksum is only self-consistent
 // (float-to-int conversion of huge values is platform-defined).
 package main

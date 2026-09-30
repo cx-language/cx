@@ -1,4 +1,4 @@
-// Word frequency counter, matching bench/wordcount.cx: xorshift64 word stream,
+// Word frequency counter, matching wordcount.cx: xorshift64 word stream,
 // hash map inserts and lookups, order-independent aggregate.
 package main
 

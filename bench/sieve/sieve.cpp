@@ -1,4 +1,4 @@
-// Sieve of Eratosthenes below 1e8, matching bench/sieve.cx.
+// Sieve of Eratosthenes below 1e8, matching sieve.cx.
 // vector<char> keeps one byte per flag like the cx version (vector<bool> would
 // pack bits and measure something else).
 #include <cstdio>

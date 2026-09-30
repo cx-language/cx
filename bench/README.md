@@ -9,12 +9,12 @@ the website renders history graphs at `/bench`.
 
 | Program | Workload | Output |
 | --- | --- | --- |
-| `sieve.cx` | Sieve of Eratosthenes below 1e8 | prime count |
-| `mandelbrot.cx` | Mandelbrot grid, 1000 iterations per point | checksum |
-| `fib.cx` | Naive recursive `fib(40)` | 102334155 |
-| `wordcount.cx` | Word frequencies over 4M pseudo-random words | checksum |
-| `mapfilter.cx` | map/filter chains plus capturing closure calls | checksum |
-| `jsonparse.cx` | Parse a 5000-user JSON document 100 times | checksum |
+| `sieve/sieve.cx` | Sieve of Eratosthenes below 1e8 | prime count |
+| `mandelbrot/mandelbrot.cx` | Mandelbrot grid, 1000 iterations per point | checksum |
+| `fib/fib.cx` | Naive recursive `fib(40)` | 102334155 |
+| `wordcount/wordcount.cx` | Word frequencies over 4M pseudo-random words | checksum |
+| `mapfilter/mapfilter.cx` | map/filter chains plus capturing closure calls | checksum |
+| `jsonparse/jsonparse.cx` | Parse a 5000-user JSON document 100 times | checksum |
 
 Each program prints a single deterministic value. The bench script fails
 if runs disagree, since unstable output means a meaningless benchmark.
@@ -38,16 +38,18 @@ further if small regressions ever need bisecting.
 
 ## Language comparison
 
-`bench/langs` ports the corpus programs (everything but `jsonparse`,
+`bench` ports the corpus programs (everything but `jsonparse`,
 which needs third-party JSON libraries elsewhere) to C, C++, Rust and
-Go, written idiomatically per language. `mapfilter` is omitted for C
+Go, written idiomatically per language. Each program lives in its own
+directory with all its ports, e.g. `bench/fib/fib.cx`,
+`fib.c`, `fib.cpp`, `fib.rs`, `fib.go`. `mapfilter` is omitted for C
 and Go, which have no lambdas. `scripts/bench-langs.py` builds
 each port with release optimizations, runs it, and records medians plus
 a self-contained HTML report with graphs:
 
 ```sh
 python3 scripts/bench-langs.py --cx build/cx
-open bench/langs/report.html
+open bench/report.html
 ```
 
 Missing toolchains are skipped with a warning. Ports must print the

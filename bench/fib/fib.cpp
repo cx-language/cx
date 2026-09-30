@@ -1,4 +1,4 @@
-// Naive recursive Fibonacci, matching bench/fib.cx.
+// Naive recursive Fibonacci, matching fib.cx.
 #include <cstdio>
 
 namespace {

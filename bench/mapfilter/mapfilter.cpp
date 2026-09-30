@@ -1,4 +1,4 @@
-// Filter/map pipeline plus capturing closure, matching bench/mapfilter.cx.
+// Filter/map pipeline plus capturing closure, matching mapfilter.cx.
 #include <cstdio>
 #include <ranges>
 #include <vector>

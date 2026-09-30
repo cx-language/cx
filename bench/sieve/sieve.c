@@ -1,4 +1,4 @@
-// Sieve of Eratosthenes below 1e8, matching bench/sieve.cx.
+// Sieve of Eratosthenes below 1e8, matching sieve.cx.
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>

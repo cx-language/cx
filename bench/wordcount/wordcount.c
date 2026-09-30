@@ -1,4 +1,4 @@
-// Word frequency counter, matching bench/wordcount.cx: xorshift64 word stream,
+// Word frequency counter, matching wordcount.cx: xorshift64 word stream,
 // open-addressing string table, order-independent aggregate.
 #include <stdbool.h>
 #include <stdint.h>

@@ -1,4 +1,4 @@
-// Sieve of Eratosthenes below 1e8, matching bench/sieve.cx.
+// Sieve of Eratosthenes below 1e8, matching sieve.cx.
 fn main() {
     const COUNT: usize = 100_000_000;
     let mut is_prime = vec![true; COUNT];

@@ -1,4 +1,4 @@
-// Filter/map pipeline plus capturing closure, matching bench/mapfilter.cx.
+// Filter/map pipeline plus capturing closure, matching mapfilter.cx.
 const DIVISOR: i32 = 7;
 const FACTOR: i32 = 3;
 
