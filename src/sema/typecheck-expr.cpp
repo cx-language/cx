@@ -5249,8 +5249,15 @@ bool Typechecker::consumeTrackedDeinitTarget(Expr* receiver) {
     }
     // A projection directly on a pointer (`p[0]`) carries one implicit
     // dereference; direct projections (`arr[0]`) resolve zero hops and keep
-    // the direct path below.
+    // the direct path below. So does a direct call on a raw pointer
+    // (`p.deinit()`, one implicit dereference like `(*p).deinit()`); views
+    // (`T[*]`) stay out since deinit on a view destroys nothing.
     unsigned hops = stars + (sawProjection && isStorablePointer(derefChain->type) ? 1 : 0);
+    if (hops == 0 && isStorablePointer(derefChain->type) && !derefChain->type.isArrayPointer()) hops = 1;
+    Type deinitType = derefChain->type;
+    if (hops > stars) deinitType = deinitType.removePointer();
+    // Deinit through a void pointer destroys nothing, so never consume there.
+    if (deinitType && deinitType.isVoid()) return false;
     auto* baseVar = llvm::dyn_cast<VarExpr>(current);
     if (!baseVar || !baseVar->decl || hops == 0) return false;
     // Each `&p` taints a bound p, so a fully bound multi-hop chain cannot

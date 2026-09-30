@@ -268,3 +268,60 @@ void heapIndexDeinitStaysLenient() {
     buf[0].deinit();
     deallocate(buf);
 }
+
+void directDoubleDeinitThroughPtrIsRejected() {
+    var c = C(x = 1);
+    var p = &c;
+    p.deinit();
+    // CHECK: [[@LINE+1]]:5: error: use of moved value 'c'
+    p.deinit();
+}
+
+void directReassignedPtrDeinitIsRejected() {
+    var c = C(x = 1);
+    var d = C(x = 2);
+    var p = &c;
+    p = &d;
+    // CHECK: [[@LINE+1]]:5: error: cannot deinit through pointer 'p' with untracked target; deinit the value directly
+    p.deinit();
+}
+
+void directHeapPtrDeinitStaysLenient() {
+    // No error: heap pointers were never tracked; the container escape hatch.
+    var buf = allocate<C>(1);
+    buf[0] = C(x = 1);
+    buf.deinit();
+    deallocate(buf);
+}
+
+void directBorrowTargetIsRejected() {
+    var c = C(x = 1);
+    C& r = c;
+    var p = &r;
+    // CHECK: [[@LINE+1]]:5: error: cannot deinit through pointer to borrow 'r'
+    p.deinit();
+}
+
+void directSliceDeinitStaysLenient() {
+    // No error: deinit on a view destroys nothing, so the target keeps
+    // its scope-exit destruction.
+    var arr = [C(x = 1)];
+    var p = &arr;
+    C[*] s = p;
+    s.deinit();
+}
+
+void directVoidPtrDeinitStaysLenient() {
+    // No error: deinit through void* destroys nothing.
+    var c = C(x = 1);
+    void* p = &c;
+    p.deinit();
+}
+
+void starVoidPtrDeinitStaysLenient() {
+    // No error: same leniency as the direct form.
+    var c = C(x = 1);
+    void* p = &c;
+    (*p).deinit();
+}
+

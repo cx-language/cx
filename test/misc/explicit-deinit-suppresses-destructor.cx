@@ -15,5 +15,17 @@ void main() {
 
     var d = C(i = 2);
     println("done"); // CHECK-NEXT:done
+
+    var e = C(i = 3);
+    var pe = &e;
+    pe.deinit(); // CHECK-NEXT:dtor
+    println("pointer done"); // CHECK-NEXT:pointer done
+
+    var a = [C(i = 4)];
+    var pa = &a;
+    C[*] s = pa;
+    s.deinit();
+    println("slice done"); // CHECK-NEXT:slice done
+    // CHECK-NEXT:dtor
     // CHECK-NEXT:dtor
 }
