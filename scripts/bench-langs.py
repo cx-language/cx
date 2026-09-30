@@ -150,16 +150,21 @@ def render_html(record):
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
 <title>cx vs C, C++, Rust, Go: run-time comparison</title>
 <style>
-body {{ font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }}
-.meta {{ color: #444; }}
+:root {{ color-scheme: light dark; --bg: #ffffff; --fg: #000000; --muted: #444444; --pre-bg: #f4f4f4; }}
+@media (prefers-color-scheme: dark) {{
+  :root {{ --bg: #1a1a1a; --fg: #e8e8e8; --muted: #aaaaaa; --pre-bg: #2a2a2a; }}
+}}
+body {{ font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background: var(--bg); color: var(--fg); }}
+.meta {{ color: var(--muted); }}
 h2 {{ margin-top: 2rem; font-size: 1.2rem; }}
-.note {{ font-weight: normal; font-size: 0.85rem; color: #444; }}
-svg text {{ font-size: 14px; }}
+.note {{ font-weight: normal; font-size: 0.85rem; color: var(--muted); }}
+svg text {{ font-size: 14px; fill: var(--fg); }}
 svg text.value {{ font-variant-numeric: tabular-nums; }}
 details {{ margin-top: 2rem; }}
-pre {{ background: #f4f4f4; padding: 1rem; overflow-x: auto; }}
+pre {{ background: var(--pre-bg); padding: 1rem; overflow-x: auto; }}
 </style>
 </head>
 <body>
