@@ -3714,17 +3714,18 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
         auto callee = expr.getQualifiedFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
+        Type strippedReceiverType = receiverType.removeOptional().removePointer();
 
         // Synthesize `print` for concrete structs and enums on first use (`toString` comes with it via Printable), then retry.
         if (decls.empty() && (expr.getFunctionName() == "print" || expr.getFunctionName() == "toString")) {
-            if (auto* basicType = llvm::dyn_cast<BasicType>(receiverType.removeOptional().removePointer().typeBase)) {
+            if (auto* basicType = llvm::dyn_cast<BasicType>(strippedReceiverType.typeBase)) {
                 if (auto* typeDecl = getTypeDecl(*basicType)) {
                     if (trySynthesizePrintMethod(*typeDecl, /*silent=*/false)) decls = findCalleeCandidates(expr, callee);
                 }
             }
         }
 
-        if (decls.empty() && receiverType.removeOptional().removePointer().isFixedArray()) {
+        if (decls.empty() && strippedReceiverType.isFixedArray() && expr.getFunctionName() != "deinit") {
             ERROR_RANGE(getExprRangeStart(*expr.getReceiver()), expr.getReceiver()->endLocation,
                         "type '" << receiverType.removePointer() << "' has no member function '" << expr.getFunctionName() << "'");
         }
@@ -3741,6 +3742,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
         if (decls.empty() && expr.getFunctionName() == "deinit") {
             consumeDeinitBase(expr.getReceiver());
+            // Arrays declare no destructor, so IRGen destroys owning elements
+            // structurally; mark their destructors like implicit destruction.
+            if (strippedReceiverType.isFixedArray()) markDestructorFor(strippedReceiverType);
             return Type::getVoid();
         }
 
@@ -3759,9 +3763,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             }
         }
 
-        Type arrayReceiverType = receiverType.removeOptional().removePointer();
-        if (arrayReceiverType.isFixedArray() && !arrayReceiverType.isMutable() && expr.getFunctionName() == "data") {
-            returnTypeOverride = ArrayPointerType::get(arrayReceiverType.getElementType(), arrayReceiverType.location);
+        if (strippedReceiverType.isFixedArray() && !strippedReceiverType.isMutable() && expr.getFunctionName() == "data") {
+            returnTypeOverride = ArrayPointerType::get(strippedReceiverType.getElementType(), strippedReceiverType.location);
         }
 
         // For projections only a base with destruction to skip is consumed: destroying an
