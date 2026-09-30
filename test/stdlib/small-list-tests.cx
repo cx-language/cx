@@ -267,3 +267,25 @@ void testSmallListDataIsContiguous() {
     spilledData[0] = 10;
     assert(spilled[0] == 10);
 }
+
+struct CopyablePayload {
+    int n;
+    string s;
+}
+
+@test
+void testSmallListCopyablePayloadRemoval() {
+    var a = SmallList<CopyablePayload, 4>();
+    for i in 0..10 {
+        a.push(CopyablePayload(i, "x"));
+    }
+    a.reserve(100);
+    assert(a.size() == 10 && a[0].s == "x");
+    assert(a.pop().n == 9);
+    assert(a.removeAt(0).n == 0);
+    assert(a.removeFirst().n == 1);
+    assert(a.size() == 7);
+    for i in 0..a.size() {
+        assert(a[i].n == i + 2);
+    }
+}

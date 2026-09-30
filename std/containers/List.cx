@@ -1,4 +1,11 @@
 /// A resizable array.
+//
+// Move-out paths (pop, removeAt/removeFirst, reserve) never destroy the
+// abandoned source slot. For owned Element the extraction moves, leaving
+// the slot dead; for Copyable Element the live copy left behind is
+// trivially destructible (Copyable types declare no destructor and hold
+// no destructible fields), so there is nothing to run. The old buffer in
+// reserve is always freed wholesale.
 struct List<Element> {
     private Element[*] buffer;
     private int size;

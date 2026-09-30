@@ -1,5 +1,11 @@
 /// A resizable array that stores up to `N` elements inline, spilling to the heap
 /// when it grows past that. Like `List`, but avoids heap allocation while small.
+//
+// Move-out paths (pop, removeAt/removeFirst, reserve) never destroy the
+// abandoned source slot: the extraction moves owned payloads out (see
+// moveOut), and Copyable payloads left behind are trivially destructible
+// (Copyable types declare no destructor and hold no destructible fields),
+// so there is nothing to run.
 struct SmallList<Element, int N> {
     // Inline slots; the first `size` hold live values while inline, the rest
     // are uninitialized. Manually destroyed: the destructor deinits only the
