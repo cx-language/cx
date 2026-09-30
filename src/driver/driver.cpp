@@ -892,8 +892,10 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     // Collect DWARF from the object files into a .dSYM bundle so debuggers
     // show cx functions with file and line info (the linker leaves it behind).
     // Debug-only: release builds emit no DWARF, so there is nothing to collect
-    // (and a failed dsymutil would warn spuriously).
-    if (!buildParams.createSharedLib && options.mode == BuildMode::Debug) {
+    // (and a failed dsymutil would warn spuriously). Test harnesses set
+    // CX_SKIP_DSYMUTIL for throwaway binaries: each skipped dsymutil saves
+    // spawning a shell, xcrun, and dsymutil for debug info nobody reads.
+    if (!buildParams.createSharedLib && options.mode == BuildMode::Debug && std::getenv("CX_SKIP_DSYMUTIL") == nullptr) {
         PhaseTimer timer("dsymutil");
         std::string dsymutilCommand = "xcrun dsymutil " + shellEscape(outputPath.str()) + " 2>/dev/null";
         std::string dsymutilOutput;

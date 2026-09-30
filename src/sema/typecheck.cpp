@@ -588,17 +588,24 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
     // such as the structs behind builtin types: literals using them perform no lookup.
     if (receiverTypeDecl) ensureInterfaces(*receiverTypeDecl);
 
+    // Qualified candidate names are only comparable when the lookup is qualified:
+    // every member qualified name contains the receiver separator '.', so an
+    // unqualified lookup can never match one. Guarding avoids building a
+    // qualified-name string (with canonical generic args) per member per
+    // lookup, which dominates call-heavy compiles.
+    bool matchQualified = name.contains('.');
+
     if (receiverTypeDecl) {
         for (auto& decl : receiverTypeDecl->methods) {
             if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
                 // Unqualified for implicit-receiver lookup, qualified for explicit member access.
                 // The qualified match matters when the instantiation's methods were registered in a
                 // different module's symbol table than the one this lookup searches.
-                if (functionDecl->getName() == name || functionDecl->getQualifiedName() == name) {
+                if (functionDecl->getName() == name || (matchQualified && functionDecl->getQualifiedName() == name)) {
                     decls.emplace_back(decl);
                 }
             } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
-                if (functionTemplate->getQualifiedName() == name) {
+                if (matchQualified && functionTemplate->getQualifiedName() == name) {
                     decls.emplace_back(decl);
                 }
             }
@@ -606,7 +613,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
 
         for (auto& field : receiverTypeDecl->fields) {
             // Unqualified for implicit-receiver lookup, qualified for explicit member access.
-            if (field.getName() == name || field.getQualifiedName() == name) {
+            if (field.getName() == name || (matchQualified && field.getQualifiedName() == name)) {
                 decls.emplace_back(&field);
             }
         }

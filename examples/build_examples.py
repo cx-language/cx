@@ -16,6 +16,11 @@ arg_parser.add_argument("--jobs", type=int, default=os.cpu_count() or 4,
                              "so matching the core count does not oversubscribe; override as needed)")
 args, cx_args = arg_parser.parse_known_args()
 
+# Built binaries are smoke-tested and deleted: skip dsymutil (macOS-only
+# debug-info collection, ~80ms per binary) via the driver's harness
+# opt-out. Subprocesses inherit this environment.
+os.environ["CX_SKIP_DSYMUTIL"] = "1"
+
 os.chdir(os.path.dirname(__file__))
 ignored_dirs = ["inputs"]
 # Demoted containers carry their own @test suites; run them with `cx test`
