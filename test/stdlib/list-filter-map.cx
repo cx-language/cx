@@ -17,3 +17,18 @@ void testFilterMap() {
     // CHECK-NEXT: ok testFilterMap
     println(doubled);
 }
+
+@test
+void testMapOwningOutput() {
+    var strings = List([1, 2]).map(n => StringBuf("x"));
+    // CHECK-NEXT: x
+    println(strings.value());
+    strings.increment();
+    // CHECK-NEXT: x
+    println(strings.value());
+    strings.increment();
+    // An empty source never fills the cache; destroying it must be clean too.
+    var empty = List<int>().map(n => StringBuf("y"));
+    assert(!empty.hasValue());
+    // CHECK-NEXT: ok testMapOwningOutput
+}

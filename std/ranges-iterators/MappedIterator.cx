@@ -3,13 +3,14 @@
 struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&>, Printable {
     private It source;
     private Transform transform;
-    private Output current;
+    // None at start; a plain field would destroy garbage on first assign for owning outputs.
+    private Output? current;
 
     /// Initializes an iterator transforming the source's elements.
     MappedIterator(It source, Transform transform) {
         this.source = source;
         this.transform = transform;
-        this.current = undefined;
+        this.current = None;
     }
 
     /// Returns true if there are more elements.
@@ -20,7 +21,7 @@ struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&>, Printabl
     /// Returns the next transformed element.
     Output& value() {
         current = transform(*source.value());
-        return &current;
+        return &current!;
     }
 
     /// Advances to the next element.
