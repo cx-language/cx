@@ -12,7 +12,6 @@ Usage:
 """
 
 import argparse
-import html
 import pathlib
 import re
 import sys
@@ -455,12 +454,10 @@ def render_root_index(title, pages):
     return finish(out)
 
 
-TOC_PLACEHOLDER = "<!--STD-PAGES-->"
-
-# Sidebar grouping of the stdlib pages, derived from the std/ subfolder
-# structure: each category lists the .cx files directly inside its folder,
-# rendered nested under the category. Order is the sidebar order. Anything
-# else renders directly under the Standard library entry in filename order.
+# Index grouping of the stdlib pages, derived from the std/ subfolder
+# structure: each category lists the .cx files directly inside its folder.
+# Order is the index order. Anything else renders under an "Other" section
+# in filename order.
 STD_CATEGORIES = [
     ("Primitive types", "primitive-types"),
     ("Strings", "strings"),
@@ -482,9 +479,9 @@ def category_members(by_path, folder):
     return sorted(path for path in by_path if path.startswith(prefix) and "/" not in path[len(prefix):])
 
 
-# Pages deliberately left outside any category (rendered flat in the
-# sidebar). New stdlib files must either join a category folder above or be
-# listed here; the coverage test fails otherwise.
+# Pages deliberately left outside any category (rendered flat under "Other"
+# in the index). New stdlib files must either join a category folder above or
+# be listed here; the coverage test fails otherwise.
 UNCATEGORIZED_PAGES = []
 
 
@@ -496,34 +493,6 @@ def category_page(label):
     return "std/" + category_slug(label)
 
 
-def render_toc_items(pages):
-    entries = {
-        relpath: f'<li><a href="./{page_name(relpath)}">{display_name(relpath)}</a></li>'
-        for relpath, *_ in pages
-    }
-    categorized = {path for _, folder in STD_CATEGORIES for path in category_members(entries, folder)}
-    items = []
-    for label, folder in STD_CATEGORIES:
-        members = [entries[path] for path in category_members(entries, folder)]
-        if not members:
-            continue
-        nested = "\n".join(f"                        {member}" for member in members)
-        items.append(
-            f'<li><a href="./{category_page(label)}">{html.escape(label)}</a>\n'
-            f"                    <ul>\n{nested}\n                    </ul>\n                </li>"
-        )
-    items += [entries[relpath] for relpath, *_ in pages if relpath not in categorized]
-    return [f"                {item}" for item in items]
-
-
-def write_toc(output_dir, pages):
-    toc = (ROOT / "website" / "toc.html").read_text()
-    if TOC_PLACEHOLDER not in toc:
-        raise SystemExit(f"website/toc.html lacks the {TOC_PLACEHOLDER} marker")
-    items = "\n".join(render_toc_items(pages))
-    (output_dir / "toc.html").write_text(re.sub(r"[ \t]*" + re.escape(TOC_PLACEHOLDER), items, toc))
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Generate the standard library reference.")
     parser.add_argument("--std-dir", default=STD_DIR, help="stdlib source directory")
@@ -533,7 +502,7 @@ def main(argv=None):
     pages = parse_std(pathlib.Path(args.std_dir))
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "std.md").write_text(render_root_index("Standard library reference", pages))
+    (output_dir / "std.md").write_text(render_root_index("API reference", pages))
     by_path = {page[0]: page for page in pages}
     for label, folder in STD_CATEGORIES:
         members = [by_path[path] for path in category_members(by_path, folder)]
@@ -545,7 +514,6 @@ def main(argv=None):
         page_path = output_dir / f"{page_name(relpath)}.md"
         page_path.parent.mkdir(parents=True, exist_ok=True)
         page_path.write_text(render_file_page(relpath, types, functions, constants, conditional))
-    write_toc(output_dir, pages)
     print(f"Wrote {len(pages)} stdlib pages to {output_dir}.")
     return 0
 

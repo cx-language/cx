@@ -76,12 +76,14 @@ build_page() {
             ;;
     esac
 
+    # The guide sidebar covers the language documentation only; API
+    # reference pages navigate through the std index instead.
     case $relpath in
-        index|bench)
+        index|bench|std*)
             toc=""
             ;;
         *)
-            toc=--include-before-body=".generated/toc.html"
+            toc=--include-before-body="toc.html"
             ;;
     esac
 

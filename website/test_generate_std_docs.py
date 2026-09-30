@@ -24,7 +24,6 @@ from generate_std_docs import (
     render_category_page,
     render_file_page,
     render_root_index,
-    render_toc_items,
 )
 
 WEBSITE_DIR = Path(__file__).resolve().parent
@@ -379,7 +378,7 @@ class RootIndexTest(unittest.TestCase):
             "struct bool {\n    bool value;\n}\n"
         )
         cls.markdown = render_root_index(
-            "Standard library reference",
+            "API reference",
             [
                 ("primitive-types/bool.cx", bool_types, {}, [], False),
                 ("fixture.cx", types, functions, constants, False),
@@ -433,45 +432,6 @@ class FileOrderTest(unittest.TestCase):
             markdown = render_file_page(relpath, types, functions, constants, False)
         self.assertLess(markdown.index("{#fn-zebra}"), markdown.index("{#fn-apple}"))
         self.assertLess(markdown.index("{#const-zed}"), markdown.index("{#const-aardvark}"))
-
-
-class TocTest(unittest.TestCase):
-    def test_uncategorized_pages_render_flat(self):
-        items = render_toc_items(
-            [("future.cx", [], {}, [], False), ("future/nested.cx", [], {}, [], False)]
-        )
-        self.assertEqual(
-            items,
-            [
-                '                <li><a href="./std/future">future</a></li>',
-                '                <li><a href="./std/future/nested">nested</a></li>',
-            ],
-        )
-
-    def test_categories_render_nested_before_uncategorized(self):
-        items = render_toc_items(
-            [
-                ("containers/List.cx", [], {}, [], False),
-                ("primitive-types/bool.cx", [], {}, [], False),
-                ("future.cx", [], {}, [], False),
-            ]
-        )
-        self.assertEqual(
-            items,
-            [
-                '                <li><a href="./std/primitive-types">Primitive types</a>\n'
-                "                    <ul>\n"
-                '                        <li><a href="./std/primitive-types/bool">bool</a></li>\n'
-                "                    </ul>\n"
-                "                </li>",
-                '                <li><a href="./std/containers">Containers</a>\n'
-                "                    <ul>\n"
-                '                        <li><a href="./std/containers/List">List</a></li>\n'
-                "                    </ul>\n"
-                "                </li>",
-                '                <li><a href="./std/future">future</a></li>',
-            ],
-        )
 
 
 class StdlibTest(unittest.TestCase):
@@ -556,15 +516,15 @@ class StdlibTest(unittest.TestCase):
         self.assertEqual(set(self.by_path) - categorized, set(UNCATEGORIZED_PAGES))
 
     def test_category_links_rendered(self):
-        toc = "\n".join(render_toc_items(self.pages))
+        index = render_root_index("API reference", self.pages)
         for label, slug in [
             ("Primitive types", "primitive-types"),
-            ("Ranges &amp; iterators", "ranges-iterators"),
+            ("Ranges & iterators", "ranges-iterators"),
             ("Input/output", "input-output"),
-            ("Math &amp; algorithms", "math-algorithms"),
-            ("Filesystem &amp; processes", "filesystem-processes"),
+            ("Math & algorithms", "math-algorithms"),
+            ("Filesystem & processes", "filesystem-processes"),
         ]:
-            self.assertIn(f'<a href="./std/{slug}">{label}</a>', toc)
+            self.assertIn(f"## [{label}](./std/{slug})", index)
 
     def test_category_slug(self):
         self.assertEqual(category_slug("Primitive types"), "primitive-types")
@@ -580,7 +540,7 @@ class StdlibTest(unittest.TestCase):
 
 
 class StagingTest(unittest.TestCase):
-    def test_main_writes_index_pages_and_toc(self):
+    def test_main_writes_index_and_pages(self):
         with tempfile.TemporaryDirectory() as std_dir, tempfile.TemporaryDirectory() as output_dir:
             Path(std_dir, "fixture.cx").write_text(FIXTURE)
             Path(std_dir, "primitive-types").mkdir()
@@ -590,8 +550,7 @@ class StagingTest(unittest.TestCase):
             index = (out / "std.md").read_text()
             page = (out / "std/fixture.md").read_text()
             category = (out / "std/primitive-types.md").read_text()
-            toc = (out / "toc.html").read_text()
-        self.assertIn("# Standard library reference", index)
+        self.assertIn("# API reference", index)
         self.assertIn("Auto-generated from", index)
         self.assertIn("## [Primitive types](./std/primitive-types)", index)
         self.assertIn("- [`fixture`](./std/fixture): ", index)
@@ -601,9 +560,6 @@ class StagingTest(unittest.TestCase):
         self.assertIn("## [bool](./std/primitive-types/bool)", category)
         self.assertIn("[`bool`](./std/primitive-types/bool#type-bool)", category)
         self.assertNotIn("fixture", category)
-        self.assertIn('<li><a href="./std/fixture">fixture</a></li>', toc)
-        self.assertIn('<a href="./std/primitive-types">Primitive types</a>', toc)
-        self.assertNotIn("<!--STD-PAGES-->", toc)
 
 
 if __name__ == "__main__":
