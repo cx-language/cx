@@ -6,6 +6,9 @@ void foo(public int b) { }
 void mix(char a, int& b) { }
 void mix(char& a, int b) { }
 
+void sob(string a, int& b) { }
+void sob(string& a, int b) { }
+
 void main() {
     // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'foo'
     // CHECK: 3:6: note: candidate function:
@@ -24,4 +27,13 @@ void main() {
     // CHECK-NEXT: void mix(char& a, int b) { }
     // CHECK-NOT: note
     mix('a', 1)
+
+    // String literals bind to borrows conversion-free too.
+    // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'sob'
+    // CHECK: 9:6: note: candidate function:
+    // CHECK-NEXT: void sob(string a, int& b) { }
+    // CHECK: 10:6: note: candidate function:
+    // CHECK-NEXT: void sob(string& a, int b) { }
+    // CHECK-NOT: note
+    sob("a", 1)
 }

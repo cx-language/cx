@@ -1736,6 +1736,13 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             return target;
         }
 
+        // Same-type string literals bind to borrows with no conversion, like
+        // integer and char constants above.
+        if (expr->isStringLiteralExpr() && expr->type.isBasicType() && expr->type.getName() == "string") {
+            auto adjustedTarget = allowPointerToTemporary ? target.removeReference() : target;
+            if (adjustedTarget.isBasicType() && adjustedTarget.getName() == "string") return adjustedTarget;
+        }
+
         if (expr->isArrayLiteralExpr() && target.isConcreteArray()) {
             auto arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(expr);
             if (arrayLiteralExpr->elements.size() != static_cast<size_t>(target.getArraySize())) return Type();
