@@ -57,6 +57,12 @@ static bool useExternIndirectPointer(const Function* callee) {
 #endif
 }
 
+// C decays fixed-array parameters to element pointers; cx declares them by
+// value, so extern C signatures and calls must decay explicitly.
+static bool isDecayedArrayParam(IRType* param, const Function* function) {
+    return function && function->declaredExternC && param->isArrayType();
+}
+
 llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
     // c_size_t matches C's size_t (pointer-sized); host width is target width.
     if (name == "c_size_t") return sizeof(void*) == 8 ? llvm::Type::getInt64Ty(ctx) : llvm::Type::getInt32Ty(ctx);
@@ -110,7 +116,7 @@ llvm::Type* LLVMGenerator::getStructType(IRStructType* type) {
     return llvmStruct;
 }
 
-llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
+llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret, bool decayArrayParams) {
     switch (type->kind) {
     case IRTypeKind::IRBasicType: {
         return NOTNULL(getBuiltinType(type->getName()));
@@ -131,6 +137,10 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
         std::vector<llvm::Type*> paramTypes;
         paramTypes.reserve(functionType->paramTypes.size() + 1);
         for (IRType* param : functionType->paramTypes) {
+            if (decayArrayParams && param->isArrayType()) {
+                paramTypes.push_back(llvm::PointerType::get(ctx, 0));
+                continue;
+            }
             auto paramLLVMType = getLLVMType(param);
             if (auto* coerced = getAbiCoercedType(param)) paramLLVMType = coerced;
             // Larger aggregates are passed indirectly to avoid materializing
@@ -303,7 +313,7 @@ llvm::Function* LLVMGenerator::getFunction(const Function* function) {
     if (auto* llvmFunction = module->getFunction(function->mangledName)) return llvmFunction;
 
     bool isSret;
-    auto llvmFunctionType = llvm::cast<llvm::FunctionType>(getLLVMType(function->getType()->getPointee(), &isSret));
+    auto llvmFunctionType = llvm::cast<llvm::FunctionType>(getLLVMType(function->getType()->getPointee(), &isSret, function->declaredExternC));
     auto* llvmFunction = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage, function->mangledName, module);
 
     // Keep frame pointers so stack traces can always unwind past cx frames.
@@ -319,7 +329,7 @@ llvm::Function* LLVMGenerator::getFunction(const Function* function) {
     for (auto param = function->params.begin(); arg != argsEnd; ++param, ++arg) {
         arg->setName(param->name);
         auto paramLLVMType = getLLVMType(param->type);
-        if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(function)) {
+        if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(function) && !isDecayedArrayParam(param->type, function)) {
             arg->addAttr(llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
             auto align = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
             arg->addAttr(llvm::Attribute::getWithAlignment(ctx, llvm::Align(align)));
@@ -377,6 +387,14 @@ void LLVMGenerator::codegenFunctionBody(const Function* function, llvm::Function
             // aggregates here so the entry block top dominates all uses.
             for (auto& param : function->params) {
                 if (getAbiCoercedType(param.type)) generatedValues[&param] = coerceChunkToAggregate(generatedValues[&param], param.type);
+                // Decayed small arrays arrive as pointers; load the by-value
+                // copy (large ones already use the pointer representation).
+                if (isDecayedArrayParam(param.type, function)) {
+                    auto* arrayLLVMType = getLLVMType(param.type);
+                    if (!shouldPassIndirectly(arrayLLVMType)) {
+                        generatedValues[&param] = builder.CreateLoad(arrayLLVMType, generatedValues[&param], param.name + ".byval");
+                    }
+                }
             }
         }
 
@@ -583,7 +601,7 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
     auto* callee = llvm::dyn_cast<Function>(inst->function);
 
     bool isSret;
-    auto* llvmFunctionType = llvm::cast<llvm::FunctionType>(getLLVMType(cxFunctionType, &isSret));
+    auto* llvmFunctionType = llvm::cast<llvm::FunctionType>(getLLVMType(cxFunctionType, &isSret, callee && callee->declaredExternC));
     auto paramTypes = cxFunctionType->getParamTypes();
     std::vector<llvm::Value*> args;
     args.reserve(inst->args.size() + 1);
@@ -594,7 +612,19 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         bool isExtra = i >= paramTypes.size();
         IRType* argIRType = isExtra ? inst->args[i]->getType() : paramTypes[i];
         auto argLLVMType = getLLVMType(argIRType);
-        if (auto* chunkType = getAbiCoercedType(argIRType)) {
+        if (!isExtra && isDecayedArrayParam(argIRType, callee)) {
+            // Array-to-pointer decay: values need a home whose address is the
+            // element address; indirect values already are that address.
+            if (!value->getType()->isPointerTy()) {
+                if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
+                    value = materializeConstant(constant, argLLVMType);
+                } else {
+                    auto* home = createEntryAlloca(argLLVMType, "array.decay");
+                    builder.CreateStore(value, home);
+                    value = home;
+                }
+            }
+        } else if (auto* chunkType = getAbiCoercedType(argIRType)) {
             value = coerceAggregateToChunk(value, argIRType, chunkType);
         } else if (shouldPassIndirectly(argLLVMType)) {
             if (isExtra && !useExternIndirectPointer(callee)) {
@@ -625,7 +655,7 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         call->addParamAttr(0, llvm::Attribute::getWithAlignment(ctx, llvm::Align(align)));
         for (size_t i = 0; i < paramTypes.size(); ++i) {
             auto paramLLVMType = getLLVMType(paramTypes[i]);
-            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee)) {
+            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee) && !isDecayedArrayParam(paramTypes[i], callee)) {
                 // +1 for the hidden sret parameter.
                 unsigned index = static_cast<unsigned>(i + 1);
                 call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
@@ -641,7 +671,7 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         auto* call = builder.CreateCall(llvmFunctionType, function, args);
         for (size_t i = 0; i < paramTypes.size(); ++i) {
             auto paramLLVMType = getLLVMType(paramTypes[i]);
-            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee)) {
+            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee) && !isDecayedArrayParam(paramTypes[i], callee)) {
                 unsigned index = static_cast<unsigned>(i);
                 call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
                 auto paramAlign = getHostDataLayout().getABITypeAlign(paramLLVMType).value();

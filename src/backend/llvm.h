@@ -56,7 +56,7 @@ struct LLVMGenerator {
     llvm::DIFile* getDebugFile(llvm::StringRef path);
     llvm::DILocation* getDebugLocation(Location location);
     llvm::DISubprogram* createDebugSubprogram(const Function* function, llvm::Function* llvmFunction);
-    llvm::Type* getLLVMType(IRType* type, bool* isSret = nullptr);
+    llvm::Type* getLLVMType(IRType* type, bool* isSret = nullptr, bool decayArrayParams = false);
     bool shouldUseSret(llvm::Type* returnType);
     bool shouldPassIndirectly(llvm::Type* type);
     llvm::Type* getAbiCoercedType(IRType* type);

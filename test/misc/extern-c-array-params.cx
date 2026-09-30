@@ -1,0 +1,17 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+extern int cx_sum4(int[4] vals) {
+    return vals[0] + vals[1] + vals[2] + vals[3];
+}
+
+extern int cx_sum8(int[8] vals) {
+    return vals[0] + vals[7];
+}
+
+void main() {
+    int[4] vals = [1, 2, 3, 4];
+    println(cx_sum4(vals)); // CHECK:10
+    int[8] big = [1, 2, 3, 4, 5, 6, 7, 8];
+    println(cx_sum8(big)); // CHECK-NEXT:9
+}
