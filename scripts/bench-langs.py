@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run-time benchmark: cx vs C, C++, Rust and Go on the bench corpus subset.
+"""Run-time benchmark: cx vs C, C++, Rust, Go and Odin on the bench corpus subset.
 
 Usage:
     scripts/bench-langs.py --cx build/cx [--runs 3] [--programs fib,sieve]
@@ -13,7 +13,7 @@ self-contained HTML report with graphs (open it straight from disk).
 fib/sieve/wordcount/mapfilter must print EXPECTED exactly in every language
 that implements them; mandelbrot checks self-consistency only (float-to-int
 conversion of huge values is platform-defined, so its checksum legitimately
-differs). mapfilter is omitted for C and Go, which have no lambdas.
+differs). mapfilter is omitted for C, Go, and Odin, which have no capturing lambdas.
 """
 
 import argparse
@@ -45,6 +45,7 @@ LANGS = {
     "cxx": {"label": "C++", "color": "#f34b7d", "tool": "c++", "ext": ".cpp"},
     "rust": {"label": "Rust", "color": "#dea584", "tool": "rustc", "ext": ".rs"},
     "go": {"label": "Go", "color": "#00ADD8", "tool": "go", "ext": ".go"},
+    "odin": {"label": "Odin", "color": "#60AFFE", "tool": "odin", "ext": ".odin"},
 }
 
 
@@ -84,11 +85,13 @@ def build_command(lang, cx, src, binary):
         return ["rustc", "--edition=2021", "-C", "opt-level=3", "-o", binary, src]
     if lang == "go":
         return ["go", "build", "-o", binary, src]
+    if lang == "odin":
+        return ["odin", "build", src, "-file", "-o:speed", "-out:" + binary]
     raise AssertionError("unknown language " + lang)
 
 
 def tool_version(tool):
-    cmd = [tool, "version"] if tool == "go" else [tool, "--version"]
+    cmd = [tool, "version"] if tool in ("go", "odin") else [tool, "--version"]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         lines = result.stdout.splitlines()
@@ -156,7 +159,7 @@ def render_html(record):
 <head>
 <meta charset="utf-8">
 <meta name="color-scheme" content="light dark">
-<title>cx vs C, C++, Rust, Go: run-time comparison</title>
+<title>cx vs C, C++, Rust, Go, Odin: run-time comparison</title>
 <style>
 :root {{ color-scheme: light dark; --bg: #ffffff; --fg: #000000; --muted: #444444; --pre-bg: #f4f4f4; --cx-bar: #000000; }}
 @media (prefers-color-scheme: dark) {{
@@ -173,7 +176,7 @@ pre {{ background: var(--pre-bg); padding: 1rem; overflow-x: auto; }}
 </style>
 </head>
 <body>
-<h1>cx vs C, C++, Rust, Go: run-time comparison</h1>
+<h1>cx vs C, C++, Rust, Go, Odin: run-time comparison</h1>
 <p class="meta">{html.escape(record["timestamp"])} · {html.escape(record["platform"])} · median of {record["runs"]} runs<br>{tools}<br>cx at {html.escape(record["cx_sha"])}</p>
 {"".join(programs)}
 <details><summary>Raw data</summary><pre>{html.escape(json.dumps(record, indent=2))}</pre></details>

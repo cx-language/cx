@@ -39,11 +39,11 @@ further if small regressions ever need bisecting.
 ## Language comparison
 
 `bench` ports the corpus programs (everything but `jsonparse`,
-which needs third-party JSON libraries elsewhere) to C, C++, Rust and
-Go, written idiomatically per language. Each program lives in its own
+which needs third-party JSON libraries elsewhere) to C, C++, Rust, Go
+and Odin, written idiomatically per language. Each program lives in its own
 directory with all its ports, e.g. `bench/fib/fib.cx`,
-`fib.c`, `fib.cpp`, `fib.rs`, `fib.go`. `mapfilter` is omitted for C
-and Go, which have no lambdas. `scripts/bench-langs.py` builds
+`fib.c`, `fib.cpp`, `fib.rs`, `fib.go`, `fib.odin`. `mapfilter` is omitted
+for C, Go, and Odin, which have no capturing lambdas. `scripts/bench-langs.py` builds
 each port with release optimizations, runs it, and records medians plus
 a self-contained HTML report with graphs:
 
