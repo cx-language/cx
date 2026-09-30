@@ -40,6 +40,18 @@ EXPECTED = {
     "mapfilter": "164571298857200",
     "jsonparse": "939699517700",
 }
+# Languages with no source for a program, and why that program cannot be ported.
+# The report states the reason; a missing file alone does not.
+OMIT_REASON = {
+    "mapfilter": {
+        "langs": ("c", "go", "odin"),
+        "because": "that benchmark times a capturing-lambda pipeline, which {who} cannot express",
+    },
+    "jsonparse": {
+        "langs": ("c", "cxx", "rust"),
+        "because": "that benchmark times the standard-library JSON parser, which {who} {do} not have",
+    },
+}
 TIMEOUT = 600
 
 LANGS = {
@@ -115,6 +127,35 @@ def cx_sha(cx):
     return fallback or "unknown"
 
 
+def join_names(labels):
+    if len(labels) == 1:
+        return labels[0]
+    if len(labels) == 2:
+        return f"{labels[0]} and {labels[1]}"
+    return ", ".join(labels[:-1]) + ", and " + labels[-1]
+
+
+def omission_note(program, omitted):
+    if not omitted:
+        return ""
+    reason = OMIT_REASON.get(program)
+    explained = [lang for lang in omitted if reason and lang in reason["langs"]]
+    unknown = [lang for lang in omitted if lang not in explained]
+    sentences = []
+    if explained:
+        labels = [LANGS[lang]["label"] for lang in explained]
+        has = "has" if len(labels) == 1 else "have"
+        who = "it" if len(labels) == 1 else "they"
+        do = "does" if len(labels) == 1 else "do"
+        because = reason["because"].format(who=who, do=do)
+        sentences.append(f"{join_names(labels)} {has} no {program} source because {because}.")
+    if unknown:
+        labels = [LANGS[lang]["label"] for lang in unknown]
+        has = "has" if len(labels) == 1 else "have"
+        sentences.append(f"{join_names(labels)} {has} no {program} source.")
+    return " ".join(sentences)
+
+
 def format_seconds(seconds):
     if seconds < 1:
         return f"{seconds * 1000:.0f} ms"
@@ -147,7 +188,9 @@ def render_html(record):
     for program in record["program_order"]:
         medians = {lang: data["median_s"] for lang, data in record["programs"][program].items()}
         if not medians:
-            programs.append(f"<h2>{program}</h2>\n<p>no successful runs</p>")
+            omitted = omission_note(program, record.get("omissions", {}).get(program, []))
+            omitted_html = f'\n<p class="note">{html.escape(omitted)}</p>' if omitted else ""
+            programs.append(f"<h2>{program}</h2>{omitted_html}\n<p>no successful runs</p>")
             continue
         note = (
             ' <span class="note">checksums differ by design here (float-to-int conversion is '
@@ -155,7 +198,9 @@ def render_html(record):
             if program == "mandelbrot"
             else ""
         )
-        programs.append(f"<h2>{program}{note}</h2>\n{chart_svg(medians)}")
+        omitted = omission_note(program, record.get("omissions", {}).get(program, []))
+        omitted_html = f'\n<p class="note">{html.escape(omitted)}</p>' if omitted else ""
+        programs.append(f"<h2>{program}{note}</h2>{omitted_html}\n{chart_svg(medians)}")
     tools = " · ".join(f"{lang}: {html.escape(version)}" for lang, version in record["tools"].items())
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -172,6 +217,7 @@ body {{ font-family: system-ui, -apple-system, sans-serif; max-width: 900px; mar
 .meta {{ color: var(--muted); }}
 h2 {{ margin-top: 2rem; font-size: 1.2rem; }}
 .note {{ font-weight: normal; font-size: 0.85rem; color: var(--muted); }}
+p.note {{ margin: 0.2rem 0 0.6rem; }}
 svg text {{ font-size: 14px; fill: var(--fg); }}
 svg text.value {{ font-variant-numeric: tabular-nums; }}
 details {{ margin-top: 2rem; }}
@@ -203,13 +249,16 @@ def main():
     languages = [lang for lang in languages if lang not in missing]
 
     results = {}
+    omissions = {}
     failures = []
     with tempfile.TemporaryDirectory(prefix="cx-langs-") as workdir:
         for program in programs:
             results[program] = {}
+            omissions[program] = []
             for lang in languages:
                 src = lang_source(program, lang)
                 if not os.path.isfile(src):
+                    omissions[program].append(lang)
                     continue
                 binary = os.path.join(workdir, f"{program}-{lang}{suffix}")
                 compile_cmd = build_command(lang, args.cx, src, binary)
@@ -244,6 +293,7 @@ def main():
         "runs": args.runs,
         "tools": {lang: tool_version(LANGS[lang]["tool"]) for lang in languages if LANGS[lang]["tool"]},
         "program_order": programs,
+        "omissions": {program: langs for program, langs in omissions.items() if langs},
         "programs": results,
     }
     for path, content in [(args.output, json.dumps(record, indent=2) + "\n"), (args.html, render_html(record))]:
