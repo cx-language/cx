@@ -1,0 +1,17 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+void main() {
+    print("a", "b", "c"); // CHECK:abc
+    print('\n');
+    print('x', 'y'); // Chars print as characters, not C strings.
+    print('\n'); // CHECK-NEXT:xy
+    print(1, 2, 3);
+    print('\n'); // CHECK-NEXT:123
+    var first = StringBuf();
+    first.append("buf1");
+    var second = StringBuf();
+    second.append("buf2");
+    print(first, second);
+    print('\n'); // CHECK-NEXT:buf1buf2
+}
