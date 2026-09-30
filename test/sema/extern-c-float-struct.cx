@@ -73,7 +73,9 @@ extern "C" void take_floatresult(FloatResult r);
 // which cannot use the callee's C convention, so it is rejected:
 extern "C" void exp_ok(BigF b) {
 }
+#if !Windows
 extern "C++" c_int cpp_fn(c_int x);
+#endif
 void plain() {
 }
 void useAsValue() {
@@ -81,9 +83,13 @@ void useAsValue() {
     var g = take_bigf;
     // CHECK: [[@LINE+1]]:13: error: cannot refer to extern "C" function 'exp_ok' as a value; call it directly
     var h = exp_ok;
-    var c = cpp_fn;
     var p = plain;
 }
+#if !Windows
+void useCppAsValue() {
+    var c = cpp_fn;
+}
+#endif
 // Variadic extras obey the same rules, located at the argument:
 extern "C" void vtake(c_int level, ...);
 void callVarargs() {
