@@ -10,10 +10,12 @@ Builds each program for each language with release optimizations, runs each
 binary --runs times (median kept), and writes a JSON record plus a
 self-contained HTML report with graphs (open it straight from disk).
 
-fib/sieve/wordcount/mapfilter must print EXPECTED exactly in every language
-that implements them; mandelbrot checks self-consistency only (float-to-int
-conversion of huge values is platform-defined, so its checksum legitimately
-differs). mapfilter is omitted for C, Go, and Odin, which have no capturing lambdas.
+fib/sieve/wordcount/mapfilter/jsonparse must print EXPECTED exactly in every
+language that implements them; mandelbrot checks self-consistency only
+(float-to-int conversion of huge values is platform-defined, so its checksum
+legitimately differs). mapfilter is omitted for C, Go, and Odin, which have
+no capturing lambdas. jsonparse is omitted for C, C++, and Rust, which have
+no JSON parser in the standard library.
 """
 
 import argparse
@@ -30,12 +32,13 @@ import tempfile
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROGRAMS = ["fib", "sieve", "mandelbrot", "wordcount", "mapfilter"]
+PROGRAMS = ["fib", "sieve", "mandelbrot", "wordcount", "mapfilter", "jsonparse"]
 EXPECTED = {
     "fib": "102334155",
     "sieve": "5761455",
     "wordcount": "1028015628923350",
     "mapfilter": "164571298857200",
+    "jsonparse": "939699517700",
 }
 TIMEOUT = 600
 
