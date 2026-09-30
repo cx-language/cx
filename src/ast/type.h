@@ -122,6 +122,7 @@ struct Type {
     bool isNull() const;
     bool isUndefined() const;
     bool isNeverType() const { return isBasicType() && getName() == "never"; }
+    bool isString() const { return isBasicType() && getName() == "string"; }
 
     Type resolve(const llvm::StringMap<GenericArg>& replacements) const;
     bool isInteger() const;

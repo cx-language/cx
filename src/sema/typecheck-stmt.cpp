@@ -888,7 +888,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
     // Pointer-implemented optionals have no tag to switch on.
     bool isSwitchableEnum = conditionType.isEnumType() && !(conditionType.isOptionalType() && conditionType.isImplementedAsPointer());
-    bool isString = conditionType.isBasicType() && conditionType.getName() == "string";
+    bool isString = conditionType.isString();
     if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum && !isString) {
         ERROR_RANGE(getExprRangeStart(*stmt.condition), stmt.condition->endLocation,
                     "switch condition must have integer, char, string, or enum type, got '" << conditionType << "'");

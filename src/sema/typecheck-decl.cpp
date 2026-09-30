@@ -759,7 +759,7 @@ static void checkMainSignature(const FunctionDecl& decl) {
     bool validParams = params.empty();
     if (params.size() == 1 && params[0].type.isSlice()) {
         Type elementType = params[0].type.getElementType();
-        validParams = elementType.isBasicType() && elementType.getName() == "string";
+        validParams = elementType.isString();
     }
     if (!validParams) {
         ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "'main' must take no parameters or '(string[] args)'");

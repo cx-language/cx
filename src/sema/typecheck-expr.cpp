@@ -1738,9 +1738,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
         // Same-type string literals bind to borrows with no conversion, like
         // integer and char constants above.
-        if (expr->isStringLiteralExpr() && expr->type.isBasicType() && expr->type.getName() == "string") {
+        if (expr->isStringLiteralExpr() && expr->type.isString()) {
             auto adjustedTarget = allowPointerToTemporary ? target.removeReference() : target;
-            if (adjustedTarget.isBasicType() && adjustedTarget.getName() == "string") return adjustedTarget;
+            if (adjustedTarget.isString()) return adjustedTarget;
         }
 
         if (expr->isArrayLiteralExpr() && target.isConcreteArray()) {

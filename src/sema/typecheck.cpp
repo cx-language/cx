@@ -465,8 +465,7 @@ void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
             auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
             if (!functionDecl) continue;
             auto params = functionDecl->getParams();
-            if (params.size() == 2 && params[0].type.isBasicType() && params[0].type.getName() == "string" && params[1].type.isBasicType()
-                && params[1].type.getName() == "string") {
+            if (params.size() == 2 && params[0].type.isString() && params[1].type.isString()) {
                 markReferenced(decl);
             }
         }
