@@ -1,5 +1,5 @@
-// Lazily keeps the elements of another iterator that satisfy a predicate.
-// Get one from filter(); collect the results with toList().
+/// Lazily keeps the elements of another iterator that satisfy a predicate.
+/// Get one from filter(); collect the results with toList().
 struct FilterIterator<Input, It, Predicate>: Iterator<Input&>, Printable {
     private It source;
     private Predicate include;

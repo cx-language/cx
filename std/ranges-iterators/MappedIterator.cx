@@ -1,5 +1,5 @@
-// Lazily transforms the elements of another iterator.
-// Get one from map(); collect the results with toList().
+/// Lazily transforms the elements of another iterator.
+/// Get one from map(); collect the results with toList().
 struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&>, Printable {
     private It source;
     private Transform transform;

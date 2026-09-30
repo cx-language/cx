@@ -1,5 +1,5 @@
-// Lazily concatenates two iterators: yields all of the first's elements,
-// then all of the second's. Get one from chain(); collect with toList().
+/// Lazily concatenates two iterators: yields all of the first's elements,
+/// then all of the second's. Get one from chain(); collect with toList().
 struct ChainIterator<Element, First, Second>: Iterator<Element&>, Printable {
     private First first;
     private Second second;
