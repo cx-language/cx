@@ -24,12 +24,9 @@ private:
         // Opening quote, for error columns.
         const char* quotePos = nullptr;
     };
-    // An in-progress `${...}` or `$identifier` code span.
+    // An in-progress `{...}` code span.
     struct CodeFrame {
-        bool braceForm = false;
         int braceDepth = 0;
-        // `$identifier` ends after a single token.
-        bool firstTokenDone = false;
     };
     struct LexFrame {
         bool isCode = false;
@@ -58,7 +55,6 @@ private:
     std::vector<LexFrame> frameStack;
     // Set when a string loop stops at an interpolation trigger.
     bool pendingInterpStart = false;
-    bool pendingInterpBraceForm = false;
 };
 
 } // namespace cx

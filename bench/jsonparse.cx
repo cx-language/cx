@@ -30,12 +30,12 @@ int64 checksum(JsonValue& value) {
 
 StringBuf makeDocument() {
     var doc = StringBuf();
-    doc.append("{\"users\":[");
+    doc.append("\{\"users\":[");
     for i in 0..5000 {
         if i > 0 {
             doc.append(",");
         }
-        doc.append("{\"id\":");
+        doc.append("\{\"id\":");
         doc.append(i);
         doc.append(",\"name\":\"user");
         doc.append(i);
@@ -45,7 +45,7 @@ StringBuf makeDocument() {
         doc.append(i % 2 == 0 ? "true" : "false");
         doc.append("}");
     }
-    doc.append("],\"meta\":{\"version\":3,\"tags\":[\"alpha\",\"beta\",\"gamma\"]}}");
+    doc.append("],\"meta\":\{\"version\":3,\"tags\":[\"alpha\",\"beta\",\"gamma\"]}}");
     return doc;
 }
 

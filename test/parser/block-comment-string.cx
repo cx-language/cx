@@ -7,7 +7,7 @@ void commentedOut() {
     listFiles("dir/*.txt");
     listFiles("dir/*/foo");
     emit("/* " + doc + " */");
-    println("\"${dir}/*.txt\"");
+    println("\"{dir}/*.txt\"");
 }
 */
 

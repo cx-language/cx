@@ -1,6 +1,6 @@
 // Read render settings out of a JSON blob.
 void main() {
-    var text = "{\"width\": 1920, \"height\": 1080}";
+    var text = "\{\"width\": 1920, \"height\": 1080}";
     var config = parseJson(text).unwrap();
     switch config {
         case Object members:

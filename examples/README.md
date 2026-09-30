@@ -16,7 +16,7 @@ applications. Each subdirectory is a `cx build` project (see
 - [`structs.cx`](structs.cx) — structs with default values, named arguments, and methods.
 - [`operator-overloading.cx`](operator-overloading.cx) — complex numbers with `operator+`/`operator*`.
 - [`printable.cx`](printable.cx) — implement `Printable::print`, get `toString()` for free.
-- [`interpolation.cx`](interpolation.cx) — string interpolation (`$name`, `${expr}`).
+- [`interpolation.cx`](interpolation.cx) — string interpolation (`{expr}`).
 - [`null-safety.cx`](null-safety.cx) — nullable types (`string?`) with compile-time null-safety, `??` fallback, and narrowing.
 - [`result.cx`](result.cx) — fallible functions returning `Result` instead of throwing.
 - [`json.cx`](json.cx) — read render settings out of a JSON blob.

@@ -116,13 +116,11 @@ Token Lexer::nextToken() {
 
     if (pendingInterpStart) {
         pendingInterpStart = false;
-        readChar(); // Consume '$'.
-        if (pendingInterpBraceForm) readChar(); // Consume '{'.
+        readChar();
         LexFrame frame;
         frame.isCode = true;
-        frame.codeFrame.braceForm = pendingInterpBraceForm;
         frameStack.push_back(frame);
-        return Token(Token::InterpStart, getCurrentLocation(), pendingInterpBraceForm ? "${" : "$");
+        return Token(Token::InterpStart, getCurrentLocation(), "{");
     }
 
     if (!frameStack.empty() && frameStack.back().isCode) return lexCodeToken();
@@ -132,37 +130,24 @@ Token Lexer::nextToken() {
 
 Token Lexer::lexCodeToken() {
     size_t frameIndex = frameStack.size() - 1;
-
-    if (!frameStack[frameIndex].codeFrame.braceForm && frameStack[frameIndex].codeFrame.firstTokenDone) {
-        frameStack.pop_back();
-        frameStack.back().stringFrame.contentBegin = currentFilePosition + 1;
-        return Token(Token::InterpEnd, getCurrentLocation(), "$");
-    }
-
-    if (frameStack[frameIndex].codeFrame.braceForm) {
-        char ch = readChar();
-
-        if (ch == '}') {
-            if (frameStack[frameIndex].codeFrame.braceDepth == 0) {
-                frameStack.pop_back();
-                frameStack.back().stringFrame.contentBegin = currentFilePosition + 1;
-                return Token(Token::InterpEnd, getCurrentLocation(), "}");
-            }
-            frameStack[frameIndex].codeFrame.braceDepth--;
-            unreadChar(ch);
-        } else {
-            if (ch == '{') frameStack[frameIndex].codeFrame.braceDepth++;
-            unreadChar(ch);
-        }
-    }
-
     Token token = lexToken();
 
     if (token.kind == Token::None) {
         ERROR(getCurrentLocation(), "unterminated interpolation, expected '}'");
     }
 
-    if (!frameStack[frameIndex].codeFrame.braceForm) frameStack[frameIndex].codeFrame.firstTokenDone = true;
+    // Braces inside nested strings never surface as brace tokens, so only code
+    // braces reach the depth count, and trivia before `}` needs no peeking.
+    if (token.kind == Token::LeftBrace) {
+        frameStack[frameIndex].codeFrame.braceDepth++;
+    } else if (token.kind == Token::RightBrace) {
+        if (frameStack[frameIndex].codeFrame.braceDepth == 0) {
+            frameStack.pop_back();
+            frameStack.back().stringFrame.contentBegin = currentFilePosition + 1;
+            return Token(Token::InterpEnd, token.location, "}");
+        }
+        frameStack[frameIndex].codeFrame.braceDepth--;
+    }
     return token;
 }
 
@@ -200,26 +185,15 @@ Token Lexer::lexStringResume() {
             ERROR(newlineLocation, "newline inside string literal");
         }
 
-        if (stringFrame.delimiter == '"' && ch == '$') {
-            char next = readChar();
-
-            if (next != '$' && next != '{' && !std::isalpha(next) && next != '_') {
-                unreadChar(next);
-                continue;
-            }
-
-            if (next == '$') continue;
-
-            const char* dollarPos = currentFilePosition - 1;
-            // Interpolation trigger: unread back to '$' so InterpStart
+        if (stringFrame.delimiter == '"' && ch == '{') {
+            // Interpolation trigger: unread back to '{' so InterpStart
             // consumption stays uniform, then suspend with a flag.
-            unreadChar(next);
-            unreadChar('$');
+            const char* bracePos = currentFilePosition;
+            unreadChar('{');
             pendingInterpStart = true;
-            pendingInterpBraceForm = (next == '{');
 
-            if (dollarPos > stringFrame.contentBegin) {
-                return Token(Token::StringLiteral, getCurrentLocation(), llvm::StringRef(stringFrame.contentBegin, dollarPos - stringFrame.contentBegin));
+            if (bracePos > stringFrame.contentBegin) {
+                return Token(Token::StringLiteral, getCurrentLocation(), llvm::StringRef(stringFrame.contentBegin, bracePos - stringFrame.contentBegin));
             }
             return nextToken();
         }
@@ -248,28 +222,13 @@ Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
             Location newlineLocation = firstLocation;
             newlineLocation.column += end - begin - 1;
             ERROR(newlineLocation, "newline inside " << toString(literalKind));
-        } else if (delimiter == '"' && ch == '$') {
-            char next = readChar();
-
-            if (next == '$') {
-                end += 2;
-                continue;
-            }
-
-            if (next != '{' && !std::isalpha(next) && next != '_') {
-                unreadChar(next);
-                end++;
-                continue;
-            }
-
+        } else if (delimiter == '"' && ch == '{') {
             // Interpolation trigger: suspend with a flag and return the
-            // chunk before '$'. Chunks exclude quotes; the parser builds
+            // chunk before '{'. Chunks exclude quotes; the parser builds
             // them without quote-stripping (unlike plain literals below).
-            const char* dollarPos = currentFilePosition - 1;
-            unreadChar(next);
-            unreadChar('$');
+            const char* bracePos = currentFilePosition;
+            unreadChar('{');
             pendingInterpStart = true;
-            pendingInterpBraceForm = (next == '{');
 
             LexFrame frame;
             frame.isCode = false;
@@ -277,8 +236,8 @@ Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
             frame.stringFrame.quotePos = begin;
             frameStack.push_back(frame);
 
-            if (dollarPos > begin + 1) {
-                return Token(literalKind, getCurrentLocation(), llvm::StringRef(begin + 1, dollarPos - (begin + 1)));
+            if (bracePos > begin + 1) {
+                return Token(literalKind, getCurrentLocation(), llvm::StringRef(begin + 1, bracePos - (begin + 1)));
             }
             return nextToken();
         }

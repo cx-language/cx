@@ -41,16 +41,16 @@ void main() {
 
 ## Interpolation
 
-`$name` embeds a value and `${expr}` an arbitrary expression in a string literal.
-Interpolated values must implement `Printable`. Write `$$` for a literal dollar sign.
+`{expr}` embeds a value or an arbitrary expression in a string literal.
+Interpolated values must implement `Printable`. Write `\{` for a literal brace.
 
 ```cs
 void main() {
     var name = "world";
-    var greeting = "hello $name!";
+    var greeting = "hello {name}!";
     println(greeting); // prints "hello world!"
-    var math = "1 + 2 = ${1 + 2}";
+    var math = "1 + 2 = {1 + 2}";
     println(math); // prints "1 + 2 = 3"
-    println("$$5"); // prints "$5"
+    println("\{name}"); // prints "{name}"
 }
 ```

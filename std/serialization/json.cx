@@ -536,7 +536,7 @@ private void writeJson(OutputStream& out, JsonValue* value, int level, bool inde
             }
         case Object o:
             if o.empty() {
-                out.append("{}");
+                out.append("\{}");
             } else {
                 out.push('{');
                 bool first = true;

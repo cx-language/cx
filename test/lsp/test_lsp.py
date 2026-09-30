@@ -169,9 +169,9 @@ TOKENS_CRLF_SOURCE = "int add(int x, int y) {\r\n    return x;\r\n}\r\n"
 TOKENS_INTERP_SOURCE = """\
 void main() {
     var name = "world";
-    println("hello $name, ${1 + 2}!");
-    println("nested ${"in $name"} out");
-    println("escapes $$x $ lit");
+    println("hello {name}, {1 + 2}!");
+    println("nested {"in {name}"} out");
+    println("escapes \\{x} $ lit");
 }
 """
 
@@ -400,12 +400,15 @@ def test_query_modes(cx_lsp, path):
     tokens = {(t["line"], t["start"], t["length"], t["type"]) for t in result.get("tokens", [])}
     check(
         "query-tokens-interp-split",
-        (2, 12, 7, "string") in tokens and (2, 24, 2, "string") in tokens and (2, 34, 2, "string") in tokens,
+        (2, 12, 7, "string") in tokens and (2, 25, 2, "string") in tokens and (2, 34, 2, "string") in tokens,
         json.dumps(result.get("tokens"))[:300],
     )
     check(
         "query-tokens-interp-delims",
-        (2, 19, 1, "keyword") in tokens and (2, 26, 2, "keyword") in tokens and (2, 33, 1, "keyword") in tokens,
+        (2, 19, 1, "keyword") in tokens
+        and (2, 24, 1, "keyword") in tokens
+        and (2, 27, 1, "keyword") in tokens
+        and (2, 33, 1, "keyword") in tokens,
     )
     check(
         "query-tokens-interp-expr",
@@ -413,13 +416,14 @@ def test_query_modes(cx_lsp, path):
     )
     check(
         "query-tokens-interp-nested",
-        (3, 20, 2, "keyword") in tokens
-        and (3, 22, 4, "string") in tokens
-        and (3, 26, 1, "keyword") in tokens
-        and (3, 27, 4, "variable") in tokens
+        (3, 20, 1, "keyword") in tokens
+        and (3, 21, 4, "string") in tokens
+        and (3, 25, 1, "keyword") in tokens
+        and (3, 26, 4, "variable") in tokens
+        and (3, 30, 1, "keyword") in tokens
         and (3, 32, 1, "keyword") in tokens,
     )
-    check("query-tokens-interp-escapes", (4, 12, 19, "string") in tokens)
+    check("query-tokens-interp-escapes", (4, 12, 20, "string") in tokens)
 
     # The scanner's keyword table must cover every keyword completion offers.
     result = run_query(cx_lsp, base_query("completion", path, "void main() {\n}\n", (0, 0)))

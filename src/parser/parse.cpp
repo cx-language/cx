@@ -208,11 +208,6 @@ static std::string replaceEscapeChars(llvm::StringRef literalContent, Location l
     result.reserve(literalContent.size());
 
     for (auto it = literalContent.begin(), end = literalContent.end(); it != end; ++it) {
-        if (*it == '$' && it + 1 != end && *(it + 1) == '$') {
-            result += '$';
-            ++it;
-            continue;
-        }
         if (*it == '\\') {
             ++it;
             ASSERT(it != end);
@@ -238,6 +233,9 @@ static std::string replaceEscapeChars(llvm::StringRef literalContent, Location l
             case '\\':
                 result += '\\';
                 break;
+            case '{':
+                result += '{';
+                break;
             default:
                 auto itColumn = literalStartLocation.column + 1 + (it - literalContent.begin());
                 Location itLocation(literalStartLocation.file, literalStartLocation.line, itColumn);
@@ -252,7 +250,11 @@ static std::string replaceEscapeChars(llvm::StringRef literalContent, Location l
 
 StringLiteralExpr* Parser::parseStringLiteral() {
     ASSERT(currentToken() == Token::StringLiteral);
-    auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
+    // Import paths reject interpolation after parsing the literal, so a leading chunk
+    // (quote-free) can reach here; only strip quotes when they are actually present.
+    auto raw = currentToken().getString();
+    if (raw.starts_with("\"")) raw = raw.drop_back().drop_front();
+    auto content = replaceEscapeChars(raw, getCurrentLocation());
     auto expr = makeAST<StringLiteralExpr>(std::move(content), getCurrentLocation());
     expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();

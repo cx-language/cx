@@ -986,8 +986,7 @@ bool isReadonlyVariable(const Decl& decl) {
 /// keywords). Deliberately independent of Lexer: it never reports errors or
 /// throws, so half-typed code still highlights something sane. Identifiers
 /// are left to the AST pass, which knows their semantic type. Interpolated
-/// `${...}` interiors recurse as code (nesting included); `$name` names are
-/// left to the AST pass like normal identifiers.
+/// `{...}` interiors recurse as code (nesting included).
 struct SyntaxScanner {
     const std::string& content;
     std::vector<SemanticToken>& out;
@@ -1012,10 +1011,9 @@ struct SyntaxScanner {
     void scanContent(bool stopAtBrace);
 
     // Scans a `"` string from its opening quote, splitting base chunks around
-    // `$name` and `${...}` interpolations. Delimiters highlight as keywords:
-    // the legend has no punctuation type, and keywords render distinctly from
-    // strings in every theme. Mirrors lex.cpp's trigger rules: `$$` and
-    // `$` before anything but `{`/identifier-start are literal.
+    // `{...}` interpolations. Delimiters highlight as keywords: the legend has
+    // no punctuation type, and keywords render distinctly from strings in every
+    // theme. Mirrors lex.cpp's trigger rule: every unescaped `{` interpolates.
     void scanString();
 };
 
@@ -1177,7 +1175,6 @@ void SyntaxScanner::scanString() {
     int segLine = line;
     ++i; // Consume the opening quote.
     ++col;
-    auto isIdentChar = [](char c) { return std::isalnum(static_cast<unsigned char>(c)) || c == '_'; };
     while (i < content.size()) {
         char c = content[i];
         if (c == '\n' || c == '\r') break; // Unterminated: highlight to end of line.
@@ -1191,41 +1188,20 @@ void SyntaxScanner::scanString() {
             ++col;
             break;
         }
-        if (c == '$' && i + 1 < content.size()) {
-            char next = content[i + 1];
-            if (next == '$') {
-                i += 2;
-                col += 2;
-                continue;
-            }
-            if (next == '{') {
-                emitToken(segLine, segStart, col - segStart, "string");
-                emitToken(line, col, 2, "keyword");
-                i += 2;
-                col += 2;
-                scanContent(true);
-                if (i < content.size() && content[i] == '}') {
-                    emitToken(line, col, 1, "keyword");
-                    ++i;
-                    ++col;
-                }
-                segStart = col;
-                segLine = line;
-                continue;
-            }
-            if (std::isalpha(static_cast<unsigned char>(next)) || next == '_') {
-                emitToken(segLine, segStart, col - segStart, "string");
+        if (c == '{') {
+            emitToken(segLine, segStart, col - segStart, "string");
+            emitToken(line, col, 1, "keyword");
+            ++i;
+            ++col;
+            scanContent(true);
+            if (i < content.size() && content[i] == '}') {
                 emitToken(line, col, 1, "keyword");
                 ++i;
                 ++col;
-                while (i < content.size() && isIdentChar(content[i])) {
-                    ++i;
-                    ++col;
-                }
-                segStart = col;
-                segLine = line;
-                continue;
             }
+            segStart = col;
+            segLine = line;
+            continue;
         }
         ++i;
         ++col;

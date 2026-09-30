@@ -102,18 +102,18 @@ void testValues() {
     checkPretty("plus exponent", "-0.5e+2", "-50");
     checkPretty("upper exponent", "1E3", "1000");
     checkPretty("big int to float", "12345678901234567890123", "1.2345678901234568e+22");
-    checkPretty("duplicate keys", "{\"a\": 1, \"a\": 2}", "{\n  \"a\": 1,\n  \"a\": 2\n}");
+    checkPretty("duplicate keys", "\{\"a\": 1, \"a\": 2}", "\{\n  \"a\": 1,\n  \"a\": 2\n}");
     checkPretty("empty string", "\"\"", "\"\"");
     checkPretty("string", "\"hello\"", "\"hello\"");
     checkPretty("escapes", "\"a\\\"b\\\\c\\/d\\b\\f\\n\\r\\t\"", "\"a\\\"b\\\\c/d\\b\\f\\n\\r\\t\"");
     checkPretty("unicode", "\"caf\\u00e9\"", "\"café\"");
     checkPretty("surrogate pair", "\"\\uD834\\uDD1E\"", "\"𝄞\"");
     checkPretty("empty array", "[]", "[]");
-    checkPretty("empty object", "{}", "{}");
+    checkPretty("empty object", "\{}", "\{}");
     checkPretty("array", "[1, true, null]", "[\n  1,\n  true,\n  null\n]");
-    checkPretty("nested", "{\"a\": [1, {\"b\": null}]}", "{\n  \"a\": [\n    1,\n    {\n      \"b\": null\n    }\n  ]\n}");
-    checkPretty("whitespace", "  { \"a\" : 1 }  ", "{\n  \"a\": 1\n}");
-    checkCompact("compact", "{\"a\": [1, 2]}", "{\"a\":[1,2]}");
+    checkPretty("nested", "\{\"a\": [1, \{\"b\": null}]}", "\{\n  \"a\": [\n    1,\n    \{\n      \"b\": null\n    }\n  ]\n}");
+    checkPretty("whitespace", "  \{ \"a\" : 1 }  ", "\{\n  \"a\": 1\n}");
+    checkCompact("compact", "\{\"a\": [1, 2]}", "\{\"a\":[1,2]}");
     checkCompact("compact escapes", "\"\\u0001\"", "\"\\u0001\"");
 }
 
@@ -122,20 +122,20 @@ void testRawUtf8() {
     checkPretty("raw utf-8", "\"café\"", "\"café\"");
     checkPretty("raw astral", "\"𝄞\"", "\"𝄞\"");
     checkCompact("raw utf-8 compact", "[\"café\",\"𝄞\"]", "[\"café\",\"𝄞\"]");
-    checkRoundTrip("raw utf-8 round trip", "{\"s\": \"café 𝄞\"}");
+    checkRoundTrip("raw utf-8 round trip", "\{\"s\": \"café 𝄞\"}");
 }
 
 @test
 void testErrors() {
     checkError("empty input", "", JsonError.UnexpectedCharacter(0));
     checkError("blank input", "   ", JsonError.UnexpectedCharacter(3));
-    checkError("lone brace", "{", JsonError.ExpectedStringKey(1));
+    checkError("lone brace", "\{", JsonError.ExpectedStringKey(1));
     checkError("lone bracket", "[", JsonError.UnexpectedCharacter(1));
     checkError("trailing comma", "[1,]", JsonError.UnexpectedCharacter(3));
     checkError("missing comma array", "[1 2]", JsonError.ExpectedCommaOrBracket(3));
-    checkError("missing comma object", "{\"a\": 1 2}", JsonError.ExpectedCommaOrBrace(8));
-    checkError("missing colon", "{\"a\"}", JsonError.ExpectedColon(4));
-    checkError("missing key", "{1: 2}", JsonError.ExpectedStringKey(1));
+    checkError("missing comma object", "\{\"a\": 1 2}", JsonError.ExpectedCommaOrBrace(8));
+    checkError("missing colon", "\{\"a\"}", JsonError.ExpectedColon(4));
+    checkError("missing key", "\{1: 2}", JsonError.ExpectedStringKey(1));
     checkError("bad literal", "tru", JsonError.InvalidLiteral(3));
     checkError("bad escape", "\"\\x\"", JsonError.InvalidEscape(3));
     checkError("unpaired surrogate", "\"\\uD834\"", JsonError.UnpairedSurrogate(7));
@@ -151,8 +151,8 @@ void testErrors() {
     checkError("trailing garbage", "1 2", JsonError.UnexpectedTrailingCharacters(2));
     checkError("single quotes", "'x'", JsonError.UnexpectedCharacter(0));
     checkError("huge exponent", "1e999", JsonError.NumberOutOfRange(0));
-    checkError("message position", "{\"a\": tru}", JsonError.InvalidLiteral(9));
-    checkError("message nested", "[1, {\"b\": 2}] trailing", JsonError.UnexpectedTrailingCharacters(14));
+    checkError("message position", "\{\"a\": tru}", JsonError.InvalidLiteral(9));
+    checkError("message nested", "[1, \{\"b\": 2}] trailing", JsonError.UnexpectedTrailingCharacters(14));
 }
 
 @test
@@ -185,19 +185,19 @@ void testDepth() {
 
 @test
 void testRoundTrips() {
-    checkRoundTrip("round trip", "{\"s\": \"a\\\"b\\\\c\\u00e9\\uD834\\uDD1E\\u0001\", \"i\": -42, \"f\": 3.141592653589793, \"e\": 1e10, \"a\": [1, true, null, {}, []], \"o\": {}}");
+    checkRoundTrip("round trip", "\{\"s\": \"a\\\"b\\\\c\\u00e9\\uD834\\uDD1E\\u0001\", \"i\": -42, \"f\": 3.141592653589793, \"e\": 1e10, \"a\": [1, true, null, \{}, []], \"o\": \{}}");
 }
 
 @test
 void testPrint() {
-    var r = parseJson("{\"a\": [1, true, null]}");
+    var r = parseJson("\{\"a\": [1, true, null]}");
     switch (r) {
         case Ok v:
             print(&v);
             println("");
             println(&v);
             // Printable's automatic toString() renders compact JSON.
-            assert(v.toString() == "{\"a\":[1,true,null]}");
+            assert(v.toString() == "\{\"a\":[1,true,null]}");
         case Err e:
             println("FAIL print: unexpected error: ", e.toString());
             assert(false);

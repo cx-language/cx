@@ -19,15 +19,18 @@ void testInterpolation() {
     var name = "world";
     var p = Point(x = 3, y = 4);
     var x = 42;
-    println("hello $name!"); // CHECK: hello world!
-    println("$name"); // CHECK-NEXT: world
-    println("1 + 2 = ${1 + 2}"); // CHECK-NEXT: 1 + 2 = 3
-    println("$p"); // CHECK-NEXT: (3, 4)
-    println("point: $p!"); // CHECK-NEXT: point: (3, 4)!
-    println("nested: ${"inner $p"}"); // CHECK-NEXT: nested: inner (3, 4)
-    println("a$"); // CHECK-NEXT: a$
-    println("$$p"); // CHECK-NEXT: $p
-    println("$5"); // CHECK-NEXT: $5
-    println("$p$x"); // CHECK-NEXT: (3, 4)42
+    println("hello {name}!"); // CHECK: hello world!
+    println("{name}"); // CHECK-NEXT: world
+    println("1 + 2 = {1 + 2}"); // CHECK-NEXT: 1 + 2 = 3
+    println("{p}"); // CHECK-NEXT: (3, 4)
+    println("point: {p}!"); // CHECK-NEXT: point: (3, 4)!
+    println("nested: {"inner {p}"}"); // CHECK-NEXT: nested: inner (3, 4)
+    println("$p"); // CHECK-NEXT: $p
+    println("{p}{x}"); // CHECK-NEXT: (3, 4)42
+    println("\{p}"); // CHECK-NEXT: {p}
+    println("}"); // CHECK-NEXT: }
+    println("{name }"); // CHECK-NEXT: world
+    var n = 1;
+    println("{switch n { case 1: 10; default: 20 }}"); // CHECK-NEXT: 10
     // CHECK-NEXT: ok testInterpolation
 }

@@ -260,7 +260,7 @@ int runScreenshot(string path) {
         }
     }
     var body = string(cast<char*>(&flipped[0]), res.x * res.y * 3);
-    var out = StringBuf("P6\n${res.x} ${res.y}\n255\n");
+    var out = StringBuf("P6\n{res.x} {res.y}\n255\n");
     out.append(body);
     if !writeFile(path, string(out)) {
         abort("screenshot: cannot write file");

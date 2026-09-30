@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// A leading chunk is quote-free; parsing it must not crash before the check below fires.
+// CHECK: [[@LINE+1]]:9: error: string interpolation is not allowed in import paths
+import "a{x}";
+
+void main() {}
