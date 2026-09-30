@@ -1,0 +1,24 @@
+// RUN: %cx -print-llvm-optimized %s | %FileCheck %s --check-prefix=DEBUG
+// RUN: %cx -print-llvm-optimized --release %s | %FileCheck %s --check-prefix=RELEASE
+// RUN: %cx -print-llvm-optimized --release-safe %s | %FileCheck %s --check-prefix=RELEASE
+// RUN: %cx --backend=c -print-llvm-optimized --release %s | %FileCheck %s --check-prefix=RELEASE
+// RUN: %cx -print-llvm --print-llvm-optimized --release %s | %FileCheck %s --check-prefix=COMBINED
+
+void callee() {}
+
+void main() {
+    callee();
+}
+
+// DEBUG: define i32 @main()
+// DEBUG: call void @_CX{{.*}}callee
+// DEBUG-NOT: local_unnamed_addr
+
+// RELEASE: define {{.*}} @main() local_unnamed_addr
+// RELEASE: local_unnamed_addr
+
+// COMBINED: === BEGIN LLVM ===
+// COMBINED: define i32 @main()
+// COMBINED: === END LLVM ===
+// COMBINED: === BEGIN LLVM-optimized ===
+// COMBINED: local_unnamed_addr

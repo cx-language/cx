@@ -75,14 +75,16 @@ cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"), cl::
 cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"), cl::cat(stageSelectionCategory));
 
 cl::OptionCategory outputCategory("Output Options");
-enum class PrintOpt { AST, IR, IRAll, C, LLVM, LLVMAll };
+enum class PrintOpt { AST, IR, IRAll, C, LLVM, LLVMAll, LLVMOptimized };
 cl::bits<PrintOpt> printOpts(cl::desc("Print output from intermediate steps:"), cl::sub(build), cl::sub(cl::SubCommand::getTopLevel()), cl::cat(outputCategory),
                              cl::values(clEnumValN(PrintOpt::AST, "print-ast", "Print the abstract syntax tree of main module"),
                                         clEnumValN(PrintOpt::IR, "print-ir", "Print cx intermediate representation of main module"),
                                         clEnumValN(PrintOpt::IRAll, "print-ir-all", "Print cx intermediate representation of all compiled modules"),
                                         clEnumValN(PrintOpt::C, "print-c", "Print generated C code"),
                                         clEnumValN(PrintOpt::LLVM, "print-llvm", "Print LLVM intermediate representation of main module"),
-                                        clEnumValN(PrintOpt::LLVMAll, "print-llvm-all", "Print LLVM intermediate representation of all compiled modules")));
+                                        clEnumValN(PrintOpt::LLVMAll, "print-llvm-all", "Print LLVM intermediate representation of all compiled modules"),
+                                        clEnumValN(PrintOpt::LLVMOptimized, "print-llvm-optimized",
+                                                   "Print LLVM IR of linked module after optimization (O3 in release builds)")));
 enum class Backend { LLVM, C };
 cl::opt<Backend> backend("backend", cl::desc("Select code-generation backend to use:"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
                          cl::values(clEnumValN(Backend::LLVM, "llvm", "LLVM backend (default)"), clEnumValN(Backend::C, "c", "C backend")));
@@ -513,6 +515,18 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         return false;
     };
 
+    auto printLLVMOptimizedSection = [&](llvm::Module& linkedModule) {
+        if (handlePrintOpt(PrintOpt::LLVMOptimized)) {
+            printSection("LLVM-optimized", [&] {
+                linkedModule.setModuleIdentifier("");
+                linkedModule.setSourceFileName("");
+                linkedModule.print(llvm::outs(), nullptr);
+            });
+            return true;
+        }
+        return false;
+    };
+
     switch (backend.getValue()) {
     case Backend::C: {
         CGenerator cGen(cDispatch);
@@ -523,14 +537,30 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
         bool printed = printCSection(cCode);
 
-        if (printOpts.isSet(PrintOpt::LLVM) || printOpts.isSet(PrintOpt::LLVMAll)) {
-            LLVMGenerator printLLVMGenerator;
+        LLVMGenerator printLLVMGenerator;
+        if (printOpts.isSet(PrintOpt::LLVM) || printOpts.isSet(PrintOpt::LLVMAll) || printOpts.isSet(PrintOpt::LLVMOptimized)) {
             printLLVMGenerator.emitDebugInfo = options.mode == BuildMode::Debug;
             printLLVMGenerator.useCodeViewDebugInfo = isWindows && !options.dwarfDebugInfo;
             for (auto* irModule : irGenerator.generatedModules) {
                 printLLVMGenerator.codegenModule(*irModule);
             }
+        }
+
+        if (printOpts.isSet(PrintOpt::LLVM) || printOpts.isSet(PrintOpt::LLVMAll)) {
             printed = printLLVMSections(printLLVMGenerator) || printed;
+        }
+
+        if (printOpts.isSet(PrintOpt::LLVMOptimized)) {
+            llvm::Module linkedModule("", printLLVMGenerator.ctx);
+            llvm::Linker linker(linkedModule);
+            for (auto& module : printLLVMGenerator.generatedModules) {
+                bool error = linker.linkInModule(std::unique_ptr<llvm::Module>(module));
+                if (error) ABORT("LLVM module linking failed");
+            }
+            auto relocModel = noPIE ? llvm::Reloc::Model::Static : llvm::Reloc::Model::PIC_;
+            llvm::TargetMachine* targetMachine = createTargetMachine(linkedModule, relocModel, options.mode);
+            optimizeLLVMModule(linkedModule, options.mode, targetMachine);
+            printed = printLLVMOptimizedSection(linkedModule) || printed;
         }
 
         if (printed && !remainingPrintOpts) return 0;
@@ -590,6 +620,10 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
             targetMachine = createTargetMachine(*linkedModule, relocModel, options.mode);
             optimizeLLVMModule(*linkedModule, options.mode, targetMachine);
         }
+
+        printed = printLLVMOptimizedSection(*linkedModule) || printed;
+
+        if (printed && !remainingPrintOpts) return 0;
 
         if (emitBitcode) {
             emitLLVMBitcode(*linkedModule, "output.bc");
