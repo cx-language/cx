@@ -3065,6 +3065,23 @@ static bool isStdlibDecl(const Match& match) {
     return match.decl->getModule() && match.decl->getModule()->name == "std";
 }
 
+// Returns the only pack instantiation taking every argument by borrow, or null when there
+// isn't exactly one. By-value/borrow pack pairs (e.g. print/println/abort) tie when borrow-typed
+// arguments and values needing borrows split exact matches evenly. Borrowing avoids copying out
+// of the borrow-typed arguments, so it wins the tie.
+static const Match* findUniqueBorrowPackMatch(llvm::ArrayRef<Match> matches) {
+    const Match* result = nullptr;
+    for (auto& match : matches) {
+        auto* functionDecl = llvm::dyn_cast<FunctionDecl>(match.decl);
+        if (!functionDecl || !functionDecl->isPackInstantiation) return nullptr;
+        auto params = functionDecl->getParams();
+        if (params.empty() || !llvm::all_of(params, [](const ParamDecl& param) { return param.type.isReferenceType(); })) continue;
+        if (result) return nullptr;
+        result = &match;
+    }
+    return result;
+}
+
 static bool isCHeaderDecl(const Match& match) {
     return match.decl->getModule() && match.decl->getModule()->isCHeaderImport;
 }
@@ -3091,6 +3108,8 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
     } else if (auto match = findMatchWithFewestUserConversions(matches, call)) {
         return match;
     } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) {
+        return match;
+    } else if (auto match = findUniqueBorrowPackMatch(matches)) {
         return match;
     } else {
         return nullptr;

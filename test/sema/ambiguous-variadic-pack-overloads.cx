@@ -1,0 +1,22 @@
+// RUN: %not %cx -typecheck -Wno-unused --error-limit=0 %s 2>&1 | %FileCheck %s
+
+void tag<T: Printable>(T&... args) {
+}
+
+void tag<T: Copyable>(T... args) {
+}
+
+void two<T: Printable>(T&... args) {
+}
+
+void two<T: Copyable>(T&... args) {
+}
+
+void main() {
+    // A zero-argument call matches no borrow uniquely, so it stays ambiguous.
+    // CHECK: [[@LINE+1]]:5: error: ambiguous reference to 'tag'
+    tag();
+    // Two all-borrow packs are not unique either.
+    // CHECK: [[@LINE+1]]:5: error: ambiguous reference to 'two'
+    two(1, 2);
+}

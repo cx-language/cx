@@ -1,6 +1,8 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 
+enum MouseButton { Left, Middle, Right }
+
 void main() {
     print("a", "b", "c"); // CHECK:abc
     print('\n');
@@ -14,4 +16,23 @@ void main() {
     second.append("buf2");
     print(first, second);
     print('\n'); // CHECK-NEXT:buf1buf2
+    // Mixing a borrow-typed loop variable with values used to be ambiguous between
+    // the by-value and borrow variadic overloads.
+    for button in MouseButton {
+        print(button, 'x');
+        print('\n'); // CHECK-NEXT:Leftx
+        // Dead branch, but still typechecked: locks the abort pair resolving too.
+        if false {
+            abort(button, 'x');
+        }
+    } // CHECK-NEXT:Middlex
+    // CHECK-NEXT:Rightx
+    for button in MouseButton {
+        println(button, 120); // CHECK-NEXT:Left120
+    } // CHECK-NEXT:Middle120
+    // CHECK-NEXT:Right120
+    for button in MouseButton {
+        println(">", button); // CHECK-NEXT:>Left
+    } // CHECK-NEXT:>Middle
+    // CHECK-NEXT:>Right
 }
