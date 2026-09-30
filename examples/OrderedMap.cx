@@ -245,11 +245,17 @@ struct OrderedMap<Key, Value> {
             // is root too (keys are unique). Keys can't be compared: dead.
             if root == n {
                 root = child;
+                if child != null {
+                    child.parent = null;
+                }
             } else {
                 if parent.left == n {
                     parent.left = child;
                 } else {
                     parent.right = child;
+                }
+                if child != null {
+                    child.parent = parent;
                 }
 
                 rebalance(parent);
@@ -541,6 +547,41 @@ void testLowerAndHigher() {
     assert(m.higherKey(99) == null);
     for i in 0..99 {
         assert(m.higherKey(i)! == i+1);
+    }
+}
+
+@test
+void testRemoveRepairsChildParent() {
+    // Removing 1 promotes a child; parent walks must see the rewired link.
+    var m = OrderedMap<int, int>();
+    for i in 0..4 {
+        m.insert(i, i * 10);
+    }
+    m.remove(1);
+    assert(m.size() == 3);
+    assert(m.lowerKey(3)! == 2);
+    assert(m.higherKey(0)! == 2);
+    assert(m.higherKey(2)! == 3);
+    assert(m.lowerKey(0) == null);
+    assert(m.higherKey(3) == null);
+    var expected = 0;
+    for e in m {
+        if expected == 1 {
+            expected++;
+        }
+        assert(e.key == expected);
+        expected++;
+    }
+    // Promoting to root clears the parent.
+    var r = OrderedMap<int, int>();
+    r.insert(1, 10);
+    r.insert(0, 0);
+    r.remove(1);
+    assert(r.size() == 1);
+    assert(r.lowerKey(0) == null);
+    assert(r.higherKey(0) == null);
+    for e in r {
+        assert(e.key == 0);
     }
 }
 
