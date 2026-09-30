@@ -1,6 +1,6 @@
 // Lazily transforms the elements of another iterator.
 // Get one from map(); collect the results with toList().
-struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&> {
+struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&>, Printable {
     private It source;
     private Transform transform;
     private Output current;
@@ -51,6 +51,11 @@ struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&> {
     /// Lazily appends another iterator's elements.
     ChainIterator<Output, MappedIterator<Output, Input, It, Transform>, Other> chain<Other>(Other other) {
         return ChainIterator(*this, other);
+    }
+
+    /// Prints the remaining values in list form, e.g. [1, 2, 3].
+    void print(OutputStream& stream) {
+        printRemaining(*this, stream);
     }
 
     /// Collects the remaining elements into a list by copying them; only sound for Copyable elements.

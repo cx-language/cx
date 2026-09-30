@@ -139,3 +139,23 @@ void testSynthesizedEnumPrintDoesNotMove() {
     println(event);
     assert(string(event.toString()) == "Hold([1, 2])");
 }
+
+@test
+void testIteratorPrint() {
+    assert(string((0..3).iterator().toString()) == "[0, 1, 2]");
+    assert(string((0..0).iterator().toString()) == "[]");
+    assert(string(Slice(List([1, 2])).iterator().toString()) == "[1, 2]");
+    assert(string(List([1, 2, 3, 4]).filter(n => n % 2 == 0).toString()) == "[2, 4]");
+    assert(string(List([1, 2]).map(n => n * 10).toString()) == "[10, 20]");
+    assert(string(RepeatIterator(7, 2).toString()) == "[7, 7]");
+    assert(string("abc".iterator().toString()) == "[a, b, c]");
+    var rest = (0..3).iterator();
+    rest.increment();
+    assert(string(rest.toString()) == "[1, 2]");
+    var keep = (0..3).iterator();
+    assert(string(keep.toString()) == "[0, 1, 2]");
+    assert(string(keep.toString()) == "[0, 1, 2]");
+    var keepPrint = (0..2).iterator();
+    println(keepPrint);
+    assert(string(keepPrint.toString()) == "[0, 1]");
+}

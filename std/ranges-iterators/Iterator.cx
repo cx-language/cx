@@ -83,3 +83,20 @@ private T sumRemaining<T, I>(I& it, T zero) {
     }
     return total;
 }
+
+/// Prints the iterator's remaining values in list form, e.g. [1, 2, 3],
+/// streaming them instead of collecting a temporary list. Takes the iterator
+/// by value so printing never consumes the caller's iterator.
+private void printRemaining<I: Copyable>(I it, OutputStream& stream) {
+    stream.push('[');
+    var first = true;
+    while it.hasValue() {
+        if !first {
+            stream.append(", ");
+        }
+        first = false;
+        it.value().print(stream);
+        it.increment();
+    }
+    stream.push(']');
+}

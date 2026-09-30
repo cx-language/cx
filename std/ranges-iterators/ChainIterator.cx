@@ -1,6 +1,6 @@
 // Lazily concatenates two iterators: yields all of the first's elements,
 // then all of the second's. Get one from chain(); collect with toList().
-struct ChainIterator<Element, First, Second>: Iterator<Element&> {
+struct ChainIterator<Element, First, Second>: Iterator<Element&>, Printable {
     private First first;
     private Second second;
 
@@ -55,6 +55,11 @@ struct ChainIterator<Element, First, Second>: Iterator<Element&> {
     /// Lazily keeps the elements satisfying the predicate.
     FilterIterator<Element, ChainIterator<Element, First, Second>, bool(T)> filter<T: Copyable>(bool(T) include) {
         return FilterIterator<Element, ChainIterator<Element, First, Second>, bool(T)>(*this, include);
+    }
+
+    /// Prints the remaining values in list form, e.g. [1, 2, 3].
+    void print(OutputStream& stream) {
+        printRemaining(*this, stream);
     }
 
     /// Collects the remaining elements into a list by copying them; only sound for Copyable elements.

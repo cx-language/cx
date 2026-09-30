@@ -1,6 +1,6 @@
 // Lazily keeps the elements of another iterator that satisfy a predicate.
 // Get one from filter(); collect the results with toList().
-struct FilterIterator<Input, It, Predicate>: Iterator<Input&> {
+struct FilterIterator<Input, It, Predicate>: Iterator<Input&>, Printable {
     private It source;
     private Predicate include;
 
@@ -44,6 +44,11 @@ struct FilterIterator<Input, It, Predicate>: Iterator<Input&> {
     /// Lazily appends another iterator's elements.
     ChainIterator<Input, FilterIterator<Input, It, Predicate>, Other> chain<Other>(Other other) {
         return ChainIterator(*this, other);
+    }
+
+    /// Prints the remaining values in list form, e.g. [1, 2, 3].
+    void print(OutputStream& stream) {
+        printRemaining(*this, stream);
     }
 
     /// Collects the remaining elements into a list by copying them; only sound for Copyable elements.

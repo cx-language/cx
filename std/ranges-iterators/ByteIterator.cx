@@ -1,5 +1,5 @@
 /// Iterates over the bytes of a string.
-struct ByteIterator: Iterator<uint8> {
+struct ByteIterator: Iterator<uint8>, Printable {
     private string stream;
 
     /// Initializes an iterator over the given string.
@@ -20,6 +20,11 @@ struct ByteIterator: Iterator<uint8> {
     /// Advances to the next byte.
     void increment() {
         stream = stream.substr(1);
+    }
+
+    /// Prints the remaining values in list form, e.g. [1, 2, 3].
+    void print(OutputStream& stream) {
+        printRemaining(*this, stream);
     }
 
     /// Collects the remaining bytes into a list.

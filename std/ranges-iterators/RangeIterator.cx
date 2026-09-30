@@ -1,5 +1,5 @@
 /// Iterates over the values of a range.
-struct RangeIterator<T>: Iterator<T> {
+struct RangeIterator<T>: Iterator<T>, Printable {
     private T current;
     private T end;
 
@@ -24,6 +24,11 @@ struct RangeIterator<T>: Iterator<T> {
     /// Advances to the next value.
     void increment() {
         current++;
+    }
+
+    /// Prints the remaining values in list form, e.g. [1, 2, 3].
+    void print(OutputStream& stream) {
+        printRemaining(*this, stream);
     }
 
     /// Collects the remaining values into a list.

@@ -1,5 +1,5 @@
 /// Iterates over the elements of an array.
-struct ArrayIterator<Element>: Iterator<Element&> {
+struct ArrayIterator<Element>: Iterator<Element&>, Printable {
     private Element[*] current;
     private Element[*] end;
 
@@ -22,6 +22,11 @@ struct ArrayIterator<Element>: Iterator<Element&> {
     /// Advances to the next element.
     void increment() {
         current++;
+    }
+
+    /// Prints the remaining values in list form, e.g. [1, 2, 3].
+    void print(OutputStream& stream) {
+        printRemaining(*this, stream);
     }
 
     /// Collects the remaining elements into a list by copying them; only sound for Copyable elements.

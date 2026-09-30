@@ -1,5 +1,5 @@
 /// Iterates over the lines of a string.
-struct LineIterator: Iterator<string> {
+struct LineIterator: Iterator<string>, Printable {
     private string stream;
     private int end;
 
@@ -27,6 +27,11 @@ struct LineIterator: Iterator<string> {
             stream = stream.substr(end + 1);
         }
         end = stream.indexOf('\n') ?? stream.size();
+    }
+
+    /// Prints the remaining values in list form, e.g. [1, 2, 3].
+    void print(OutputStream& stream) {
+        printRemaining(*this, stream);
     }
 
     /// Collects the remaining lines into a list.

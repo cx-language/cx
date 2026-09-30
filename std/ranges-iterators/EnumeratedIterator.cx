@@ -1,5 +1,5 @@
 /// Iterates over elements with their indices.
-struct EnumeratedIterator<Element>: Iterator<EnumeratedIteratorEntry<Element>> {
+struct EnumeratedIterator<Element>: Iterator<EnumeratedIteratorEntry<Element>>, Printable {
     private ArrayIterator<Element> base;
     private int index;
 
@@ -23,6 +23,11 @@ struct EnumeratedIterator<Element>: Iterator<EnumeratedIteratorEntry<Element>> {
     void increment() {
         base.increment();
         index++;
+    }
+
+    /// Prints the remaining values in list form, e.g. [1, 2, 3].
+    void print(OutputStream& stream) {
+        printRemaining(*this, stream);
     }
 }
 
