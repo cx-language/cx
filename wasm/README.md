@@ -86,17 +86,16 @@ node wasm/smoke-playground.mjs wasm/dist
 ```
 
 `test-editor.mjs` covers the docs code editors (example switching, diagnostic
-widgets, live checks, autocompletion) with a fake DOM and a mocked playground.
-`test-playground-worker.mjs` covers the worker protocol's compile-only and
-completion paths with a stubbed pipeline, and `test-playground.mjs` covers
-the main-thread run/check/complete timeout behavior with a stubbed worker.
-`test-search.mjs` covers
+widgets, live checks) with a fake DOM and a mocked playground.
+`test-playground-worker.mjs` covers the worker protocol's compile-only paths
+with a stubbed pipeline, and `test-playground.mjs` covers the main-thread
+run/check timeout behavior with a stubbed worker. `test-search.mjs` covers
 the site search with a fake DOM and a stubbed index. `test-wasi-shim.mjs`
 compiles the committed fixture (`wasm/fixtures/smoke.c`,
 representative cx output) with the real `cc.wasm` on the real shim and runs
 the result. `test-pipeline.mjs` additionally covers the shared pipeline
-stages with a mocked frontend. `smoke-playground.mjs` covers stage 1 and
-completions with the real Emscripten build.
+stages with a mocked frontend. `smoke-playground.mjs` covers stage 1 with the
+real Emscripten build.
 
 The compiler side is covered natively: `cmake --build build --target check`
 runs the lit suite (including `--c-dispatch` mode) and

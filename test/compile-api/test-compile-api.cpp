@@ -99,10 +99,9 @@ void testDispatch() {
 
 } // namespace
 
-// The WebAssembly API entry points (defined in src/wasm/api.cpp, without the
+// The WebAssembly API entry point (defined in src/wasm/api.cpp, without the
 // Emscripten bindings when built natively).
 std::string cxCompileToC(const std::string& source, const std::string& importSearchPath);
-std::string cxComplete(const std::string& source, const std::string& importSearchPath, int line, int character);
 
 void testJson() {
     // The WebAssembly API entry point returns JSON. Parsed like the
@@ -122,59 +121,9 @@ void testJson() {
     check(errorRoot && !errorRoot->getString("cCode"), "wasm API failure JSON has no C code");
 }
 
-void testComplete() {
-    // In-scope completions: keywords, locals, top-level decls, stdlib.
-    std::string json = cxComplete("int add(int x, int y) {\n"
-                                  "    return x + y;\n"
-                                  "}\n"
-                                  "\n"
-                                  "void main() {\n"
-                                  "    int result = add(1, 2);\n"
-                                  "    pri\n"
-                                  "}\n",
-                                  CX_TEST_SOURCE_DIR, 6, 7);
-    check(json.rfind("{\"status\":0,\"items\":[", 0) == 0, "completion returns success JSON");
-    check(json.find("\"label\":\"while\"") != std::string::npos, "completion includes keywords");
-    check(json.find("\"label\":\"add\"") != std::string::npos, "completion includes top-level functions");
-    check(json.find("\"label\":\"result\"") != std::string::npos, "completion includes enclosing locals");
-    check(json.find("\"label\":\"println\"") != std::string::npos, "completion includes stdlib functions");
-}
-
-void testCompleteMember() {
-    // Member completions after a dot.
-    std::string json = cxComplete("struct Point {\n"
-                                  "    int x;\n"
-                                  "    int y;\n"
-                                  "}\n"
-                                  "void main() {\n"
-                                  "    Point p = Point(0, 0);\n"
-                                  "    p.\n"
-                                  "}\n",
-                                  CX_TEST_SOURCE_DIR, 6, 6);
-    check(json.rfind("{\"status\":0,\"items\":[", 0) == 0, "member completion returns success JSON");
-    check(json.find("\"label\":\"x\"") != std::string::npos, "member completion includes field x");
-    check(json.find("\"label\":\"y\"") != std::string::npos, "member completion includes field y");
-    check(json.find("\"label\":\"while\"") == std::string::npos, "member completion lists no keywords");
-    check(json.find("\"label\":\"println\"") == std::string::npos, "member completion lists no scope functions");
-}
-
-void testCompleteClamp() {
-    // Out-of-range cursors clamp instead of failing.
-    std::string json = cxComplete("void main() {\n}\n", CX_TEST_SOURCE_DIR, -3, -1);
-    check(json.rfind("{\"status\":0,\"items\":[", 0) == 0, "negative cursor returns success JSON");
-    check(json.find("\"label\":\"while\"") != std::string::npos, "negative cursor completes from the start");
-}
-
-void testCompleteError() {
-    // Completion succeeds despite errors in the code.
-    std::string json = cxComplete("void main() {\n    nope;\n}\n", CX_TEST_SOURCE_DIR, 1, 8);
-    check(json.rfind("{\"status\":0,\"items\":[", 0) == 0, "erroneous code returns success JSON");
-    check(json.find("\"label\":\"while\"") != std::string::npos, "erroneous code still completes keywords");
-}
-
 int main(int argc, const char** argv) {
     if (argc != 2) {
-        std::cerr << "usage: test_compile_api <hello|error|struct|warning|dispatch|json|complete|complete-member|complete-clamp|complete-error>\n";
+        std::cerr << "usage: test_compile_api <hello|error|struct|warning|dispatch|json>\n";
         return 2;
     }
 
@@ -191,14 +140,6 @@ int main(int argc, const char** argv) {
         testDispatch();
     } else if (testCase == "json") {
         testJson();
-    } else if (testCase == "complete") {
-        testComplete();
-    } else if (testCase == "complete-member") {
-        testCompleteMember();
-    } else if (testCase == "complete-clamp") {
-        testCompleteClamp();
-    } else if (testCase == "complete-error") {
-        testCompleteError();
     } else {
         std::cerr << "unknown test case '" << testCase << "'\n";
         return 2;

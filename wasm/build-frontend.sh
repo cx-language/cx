@@ -72,10 +72,8 @@ mkdir -p "$WORK/frontend-obj" "$OUT"
 # rejected with an error in WebAssembly builds). Globbed rather than listed so
 # new frontend files are picked up automatically; keep LLVM-backend files out
 # of the globbed directories or extend the exclusion below.
-# The LSP analyzer is listed explicitly (not globbed): the server and main()
-# entry point in the same directory don't belong in the module.
 SRCS=""
-for src in src/ast/*.cpp src/backend/*.cpp src/build/*.cpp src/driver/compile.cpp src/lsp/analyzer.cpp src/parser/*.cpp src/sema/*.cpp src/support/*.cpp src/wasm/api.cpp; do
+for src in src/ast/*.cpp src/backend/*.cpp src/build/*.cpp src/driver/compile.cpp src/parser/*.cpp src/sema/*.cpp src/support/*.cpp src/wasm/api.cpp; do
     case "$src" in
     src/backend/llvm.cpp) continue ;;
     esac

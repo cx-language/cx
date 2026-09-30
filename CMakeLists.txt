@@ -212,7 +212,7 @@ add_executable(test_compile_api test/compile-api/test-compile-api.cpp src/wasm/a
 target_include_directories(test_compile_api PRIVATE src)
 target_compile_definitions(test_compile_api PRIVATE CX_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(test_compile_api libcx)
-foreach(test_case hello error struct warning dispatch json complete complete-member complete-clamp complete-error)
+foreach(test_case hello error struct warning dispatch json)
     add_test(NAME compile-api-${test_case} COMMAND test_compile_api ${test_case})
 endforeach()
 

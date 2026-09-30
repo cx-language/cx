@@ -13,8 +13,6 @@
 // "ready": true} once all artifacts are loaded (used to warm up).
 // {"action": "check", "id", "code"} answers {"id", "stdout", "stderr"} with
 // the stage-1 diagnostics only, without compiling to WebAssembly or running.
-// {"action": "complete", "id", "code", "line", "character"} answers
-// {"id", "items"} with the completion items at the cursor.
 
 /* global importScripts, CxWasm, CxWasi, CxPipeline, fflate, postMessage, onmessage, fetch */
 
@@ -123,21 +121,6 @@ onmessage = function (event) {
             postMessage({ id: message.id, stdout: compiled.stdout, stderr: compiled.stderr });
         }, function (error) {
             postMessage({ id: message.id, stdout: "", stderr: "error: " + String((error && error.stack) || error) + "\n" });
-        });
-    }
-    if (message.action === "complete") {
-        CxPipeline.completeCx(CxWasm, message.code, message.line, message.character).then(function (completed) {
-            // Failures resolve to no completions so background
-            // completion stays silent like background checks; the
-            // failed flag tells the editor not to cache the
-            // empty list.
-            if (completed.status === 0) {
-                postMessage({ id: message.id, items: completed.items });
-            } else {
-                postMessage({ id: message.id, items: [], failed: true });
-            }
-        }, function () {
-            postMessage({ id: message.id, items: [], failed: true });
         });
     }
 };
