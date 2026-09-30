@@ -40,11 +40,11 @@ EXPECTED = {
 TIMEOUT = 600
 
 LANGS = {
-    "cx": {"label": "cx", "color": "#1f77b4", "tool": None, "ext": ".cx", "dir": "bench"},
-    "c": {"label": "C", "color": "#ff7f0e", "tool": "cc", "ext": ".c", "dir": "bench/langs/c"},
-    "cxx": {"label": "C++", "color": "#2ca02c", "tool": "c++", "ext": ".cpp", "dir": "bench/langs/cxx"},
-    "rust": {"label": "Rust", "color": "#d62728", "tool": "rustc", "ext": ".rs", "dir": "bench/langs/rust"},
-    "go": {"label": "Go", "color": "#17becf", "tool": "go", "ext": ".go", "dir": "bench/langs/go"},
+    "cx": {"label": "cx", "color": "var(--cx-bar)", "tool": None, "ext": ".cx", "dir": "bench"},
+    "c": {"label": "C", "color": "#555555", "tool": "cc", "ext": ".c", "dir": "bench/langs/c"},
+    "cxx": {"label": "C++", "color": "#f34b7d", "tool": "c++", "ext": ".cpp", "dir": "bench/langs/cxx"},
+    "rust": {"label": "Rust", "color": "#dea584", "tool": "rustc", "ext": ".rs", "dir": "bench/langs/rust"},
+    "go": {"label": "Go", "color": "#00ADD8", "tool": "go", "ext": ".go", "dir": "bench/langs/go"},
 }
 
 
@@ -124,7 +124,7 @@ def chart_svg(medians):
         color = LANGS[lang]["color"]
         rows.append(
             f'<text x="0" y="{y + 20}" class="lang">{LANGS[lang]["label"]}</text>'
-            f'<rect x="{label_w}" y="{y + 6}" width="{length:.1f}" height="18" fill="{color}"/>'
+            f'<rect x="{label_w}" y="{y + 6}" width="{length:.1f}" height="18" style="fill:{color}"/>'
             f'<text x="{label_w + length + 8:.1f}" y="{y + 20}" class="value">{format_seconds(seconds)}'
             f" ({seconds / fastest:.2f}x)</text>"
         )
@@ -154,9 +154,9 @@ def render_html(record):
 <meta name="color-scheme" content="light dark">
 <title>cx vs C, C++, Rust, Go: run-time comparison</title>
 <style>
-:root {{ color-scheme: light dark; --bg: #ffffff; --fg: #000000; --muted: #444444; --pre-bg: #f4f4f4; }}
+:root {{ color-scheme: light dark; --bg: #ffffff; --fg: #000000; --muted: #444444; --pre-bg: #f4f4f4; --cx-bar: #000000; }}
 @media (prefers-color-scheme: dark) {{
-  :root {{ --bg: #1a1a1a; --fg: #e8e8e8; --muted: #aaaaaa; --pre-bg: #2a2a2a; }}
+  :root {{ --bg: #1a1a1a; --fg: #e8e8e8; --muted: #aaaaaa; --pre-bg: #2a2a2a; --cx-bar: #ffffff; }}
 }}
 body {{ font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background: var(--bg); color: var(--fg); }}
 .meta {{ color: var(--muted); }}
