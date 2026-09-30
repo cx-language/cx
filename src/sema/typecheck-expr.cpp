@@ -1414,7 +1414,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
     Type unwrappedTarget = type.removeOptional();
     bool decaysToView =
         expr->type.isReferenceType() && expr->type.getPointee().isConcreteArray() && (unwrappedTarget.isArrayPointer() || unwrappedTarget.isSlice());
-    if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !type.removeOptional().isPointerType() && !decaysToView) {
+    if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !unwrappedTarget.isPointerType() && !decaysToView) {
         auto* dereferenced = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
         return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion);
     }
@@ -1657,7 +1657,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     Type unwrappedTarget = target.removeOptional();
     bool decaysToView = source.isReferenceType() && source.getPointee().isConcreteArray() && (unwrappedTarget.isArrayPointer() || unwrappedTarget.isSlice());
-    if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !target.removeOptional().isPointerType() && !decaysToView) {
+    if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !unwrappedTarget.isPointerType() && !decaysToView) {
         // Operator borrows stay disabled through the dereference, as before; only the user-conversion flag passes through.
         return isImplicitlyConvertible(expr, source.getPointee(), target, allowPointerToTemporary, implicitCastKind, diagnoseOutOfRange, false,
                                        allowUserConversion, usesUserConversion);
@@ -1729,10 +1729,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         // Special case: allow passing string literals as C-strings (const char* or const char[*]).
-        if (expr->isStringLiteralExpr() && !target.removeOptional().isReferenceType()
-            && ((target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() && !target.removeOptional().getPointee().isMutable())
-                || (target.removeOptional().isArrayPointer() && target.removeOptional().getElementType().isChar()
-                    && !target.removeOptional().getElementType().isMutable()))) {
+        if (expr->isStringLiteralExpr() && !unwrappedTarget.isReferenceType()
+            && ((unwrappedTarget.isPointerType() && unwrappedTarget.getPointee().isChar() && !unwrappedTarget.getPointee().isMutable())
+                || (unwrappedTarget.isArrayPointer() && unwrappedTarget.getElementType().isChar() && !unwrappedTarget.getElementType().isMutable()))) {
             return target;
         }
 
@@ -1842,7 +1841,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if (source.isArrayType() && target.removeOptional().isPointerType() && isReinterpretible(source.getElementType(), target.removeOptional().getPointee())) {
+    if (source.isArrayType() && unwrappedTarget.isPointerType() && isReinterpretible(source.getElementType(), unwrappedTarget.getPointee())) {
         return source;
     }
 
@@ -1852,14 +1851,15 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isPointerType() && source.getPointee().isArrayType() && target.removeOptional().isPointerType()
-        && isReinterpretible(source.getPointee().getElementType(), target.removeOptional().getPointee())) {
+    if (source.isPointerType() && source.getPointee().isArrayType() && unwrappedTarget.isPointerType()
+        && isReinterpretible(source.getPointee().getElementType(), unwrappedTarget.getPointee())) {
         return source;
     }
 
     // Allow conversion from T[*]? to T* and void*
-    if (source.removeOptional().isArrayPointer() && target.isPointerType()
-        && (source.removeOptional().getElementType() == target.getPointee() || target.getPointee().isVoid())) {
+    Type unwrappedSource = source.removeOptional();
+    if (unwrappedSource.isArrayPointer() && target.isPointerType()
+        && (unwrappedSource.getElementType() == target.getPointee() || target.getPointee().isVoid())) {
         return source;
     }
 
