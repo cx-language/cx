@@ -38,10 +38,10 @@ further if small regressions ever need bisecting.
 
 ## Language comparison
 
-`bench/langs` ports five corpus programs (everything but `jsonparse`,
+`bench/langs` ports the corpus programs (everything but `jsonparse`,
 which needs third-party JSON libraries elsewhere) to C, C++, Rust and
-Go (1.23 or newer for the iterator-based `mapfilter` port), written
-idiomatically per language. `scripts/bench-langs.py` builds
+Go, written idiomatically per language. `mapfilter` is omitted for C
+and Go, which have no lambdas. `scripts/bench-langs.py` builds
 each port with release optimizations, runs it, and records medians plus
 a self-contained HTML report with graphs:
 

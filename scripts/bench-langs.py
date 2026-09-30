@@ -10,9 +10,10 @@ Builds each program for each language with release optimizations, runs each
 binary --runs times (median kept), and writes a JSON record plus a
 self-contained HTML report with graphs (open it straight from disk).
 
-fib/sieve/wordcount/mapfilter must print EXPECTED exactly in every language;
-mandelbrot checks self-consistency only (float-to-int conversion of huge
-values is platform-defined, so its checksum legitimately differs).
+fib/sieve/wordcount/mapfilter must print EXPECTED exactly in every language
+that implements them; mandelbrot checks self-consistency only (float-to-int
+conversion of huge values is platform-defined, so its checksum legitimately
+differs). mapfilter is omitted for C and Go, which have no lambdas.
 """
 
 import argparse
@@ -198,6 +199,8 @@ def main():
             results[program] = {}
             for lang in languages:
                 src = os.path.join(ROOT, LANGS[lang]["dir"], program + LANGS[lang]["ext"])
+                if not os.path.isfile(src):
+                    continue
                 binary = os.path.join(workdir, f"{program}-{lang}{suffix}")
                 compile_cmd = build_command(lang, args.cx, src, binary)
                 _, completed = run_timed(compile_cmd, capture_output=True, text=True)

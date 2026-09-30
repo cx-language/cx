@@ -17,13 +17,10 @@ int main() {
         numbers.push_back(i);
     long long total = 0;
     for (int round = 0; round < 40; round++) {
-        std::vector<int> selected;
-        for (int n : numbers | std::views::filter([](int n) { return n % divisor == 0; }) | std::views::transform([](int n) { return n * factor + 1; })
+        for (int x : numbers | std::views::filter([](int n) { return n % divisor == 0; }) | std::views::transform([](int n) { return n * factor + 1; })
                          | std::views::filter([](int n) { return n % 2 == 0; })) {
-            selected.push_back(n);
-        }
-        for (int x : selected)
             total += x;
+        }
     }
     int offset = 1;
     auto adjust = [&](int n) { return n * factor + offset; };

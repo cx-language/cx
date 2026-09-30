@@ -12,8 +12,7 @@ void main() {
     }
     var total = int64(0);
     for _ in 0..40 {
-        var selected = numbers.filter(n => n % divisor == 0).map(n => n * factor + 1).filter(n => n % 2 == 0).toList();
-        for x in selected {
+        for x in numbers.filter(n => n % divisor == 0).map(n => n * factor + 1).filter(n => n % 2 == 0) {
             total += x;
         }
     }

@@ -9,13 +9,12 @@ fn main() {
     }
     let mut total: i64 = 0;
     for _ in 0..40 {
-        let selected: Vec<i32> = numbers
+        for x in numbers
             .iter()
             .filter(|n| *n % DIVISOR == 0)
             .map(|n| n * FACTOR + 1)
             .filter(|n| *n % 2 == 0)
-            .collect();
-        for x in selected {
+        {
             total += x as i64;
         }
     }
