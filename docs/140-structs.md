@@ -188,6 +188,13 @@ reassigned first.
 
 Explicit destruction is for values the compiler won't destroy,
 such as elements in manually allocated memory.
+Destroying through a local pointer is tracked: when `p` points at a
+stack variable, `(*p).deinit()` consumes it like a direct deinit.
+Through a function parameter or struct member the compiler cannot know
+the target, so it stays unchecked: if the pointer reaches a stack
+variable that later dies at scope exit, the value is destroyed twice.
+Only deinit through such pointers when nothing else owns the target,
+as container internals do with heap memory.
 This is how containers destroy their elements:
 
 ```cs
