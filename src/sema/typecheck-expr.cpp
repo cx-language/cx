@@ -3582,9 +3582,11 @@ std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm:
     auto decls = findDecls(callee, receiverTypeDecl, isPostProcessing);
     // An explicit `x.deinit()` lowers to the default destructor when the type
     // declares none, so containers destroy elements that only have one.
+    // Checking the declaration marks member destructors transitively.
     if (decls.empty() && expr.getFunctionName() == "deinit" && receiverTypeDecl && !receiverTypeDecl->getDestructor()) {
         if (auto* defaultDestructor = receiverTypeDecl->getOrSynthesizeDefaultDestructor()) {
             decls.push_back(defaultDestructor);
+            deferTypechecking(receiverTypeDecl);
         }
     }
     return decls;

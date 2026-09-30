@@ -578,9 +578,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         // body instead (see typecheckFunctionDecl), and no other values materialize
         // from a signature mention.
         if (!checkingFunctionSignature) {
-            if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-                if (DestructorDecl* dtor = typeDecl->getDestructor()) markReferenced(dtor);
-            }
+            markDestructorFor(type);
         }
 
         checkHasAccess(*decl, type.location, userAccessLevel);
@@ -1288,7 +1286,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     // types are only mentioned in the signature, where destructor marking is
     // skipped (see checkingFunctionSignature).
     for (auto& param : decl.getParams()) {
-        if (DestructorDecl* dtor = param.type.getDestructor()) markReferenced(dtor);
+        markDestructorFor(param.type);
     }
     decl.checkState = Decl::CheckState::CheckingBody;
     llvm::SaveAndRestore saveModule(currentModule);
@@ -1746,6 +1744,8 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
 
             if (enumCase.associatedType) {
                 enumCase.associatedType = resolveTypeAliases(enumCase.associatedType, enumCase.accessLevel, /*foldArraySizes=*/true);
+                // Payloads are storage, like fields: mark even during signature checks.
+                llvm::SaveAndRestore unguard(checkingFunctionSignature, false);
                 typecheckType(enumCase.associatedType, enumCase.accessLevel, true, allowReference);
             }
         }
@@ -2032,6 +2032,9 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         }
     }
 
+    // Locals materialize storage (inferred types have no other mention), so
+    // their destructors mark here. Globals never scope-exit-destroy.
+    if (!decl.isGlobal()) markDestructorFor(decl.type);
     bindDeinitPtrTarget(decl);
 }
 
@@ -2039,6 +2042,9 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     decl.type = resolveTypeAliases(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel), /*foldArraySizes=*/true);
     bool allowReference = false;
     if (auto* parent = llvm::dyn_cast<TypeDecl>(decl.getParentDecl())) allowReference = allowsSubstitutedReference(*parent);
+    // Fields are storage, not signature mentions: their types mark destructors
+    // even when the declaration is checked during a signature check.
+    llvm::SaveAndRestore unguard(checkingFunctionSignature, false);
     typecheckType(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel), true, allowReference);
     if (decl.type.isVoid()) {
         ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "cannot declare field '" << decl.getName() << "' of type 'void'");

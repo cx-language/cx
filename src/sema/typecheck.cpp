@@ -178,6 +178,22 @@ void Typechecker::deferTypechecking(Decl* decl) {
     declsToTypecheck.push_back(decl);
 }
 
+void Typechecker::markDestructorFor(Type type) {
+    if (DestructorDecl* dtor = type.getDestructor()) {
+        markReferenced(dtor);
+        return;
+    }
+    if (!type.needsDestruction()) return;
+    if (type.isFixedArray()) return markDestructorFor(type.getElementType());
+    if (type.isAnonymousStructType()) {
+        for (auto& element : type.getAnonymousStructElements())
+            markDestructorFor(element.type);
+        return;
+    }
+    if (type.isOptionalType()) return markDestructorFor(type.removeOptional());
+    if (auto* typeDecl = type.getDecl(); typeDecl && !typeDecl->isTypeTemplate()) deferTypechecking(typeDecl);
+}
+
 void Typechecker::markReferenced(Decl* decl) {
     decl->referenced = true;
     // Body-bearing declarations are checked on demand; everything else is

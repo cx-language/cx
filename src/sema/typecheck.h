@@ -117,6 +117,9 @@ struct Typechecker {
     void ensureSignatureImpl(Decl& decl);
     void ensureInterfaces(TypeDecl& decl);
     void markReferenced(Decl* decl);
+    // Marks the destructor destroying a value of the given type at scope exit.
+    // Explicit destructors mark directly; implicit ones check so members mark.
+    void markDestructorFor(Type type);
     // Whole-checks std declarations IRGen references without going through
     // sema name resolution (malloc, assertFail, string.init, operator==),
     // limited to the ones the checked code can actually reach.

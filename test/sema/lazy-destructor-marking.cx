@@ -1,0 +1,53 @@
+// RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s -allow-empty
+// Unreferenced declarations over lazily-checked types with destructors:
+// scope-exit destruction must mark member destructors, or irgen aborts
+// with "implicit runtime use 'deinit' was not checked". No diagnostics
+// expected. Note: no case here may construct a StringBuf, construction
+// marks the destructor and would vaccinate the other cases.
+void sink(StringBuf s) {}
+
+void nestedConditionalMove(bool a, bool b, StringBuf x) {
+    if a {
+        sink(x);
+    } else {
+        if b {
+            sink(x);
+        }
+    }
+}
+
+void unusedParam(StringBuf x) {}
+
+void unusedLocal() {
+    StringBuf x;
+}
+
+void unusedOptionalLocal() {
+    StringBuf? x;
+}
+
+void unusedArrayParam(StringBuf[2] x) {}
+
+void unusedAnonStructParam((StringBuf buf) x) {}
+
+void explicitDeinit(StringBuf x) {
+    x.deinit();
+}
+
+void inferredLocal(StringBuf p) {
+    var x = p;
+}
+
+enum MaybeBuf {
+    Some(StringBuf),
+    None
+}
+
+void enumPayloadParam(MaybeBuf e) {}
+
+void enumPayloadLocal() {
+    MaybeBuf e;
+}
+
+// Imported enums check payloads the same way (JsonValue owns a StringBuf).
+void importedEnumPayload(JsonValue x) {}
