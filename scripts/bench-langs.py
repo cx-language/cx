@@ -3,11 +3,12 @@
 
 Usage:
     scripts/bench-langs.py --cx build/cx [--runs 3] [--programs fib,sieve]
-        [--languages cx,c] [--output bench/results.json]
+        [--languages cx,c] [--modes release,debug] [--output bench/results.json]
         [--html bench/report.html]
 
-Builds each program for each language with release optimizations, runs each
-binary --runs times (median kept), and writes a JSON record plus a
+Builds each program for each language twice: an optimized release build and
+an unoptimized debug build (the configuration used during development). Runs
+each binary --runs times (median kept), and writes a JSON record plus a
 self-contained HTML report with graphs (open it straight from disk).
 
 fib/sieve/wordcount/mapfilter/jsonparse must print EXPECTED exactly in every
@@ -62,6 +63,21 @@ LANGS = {
     "go": {"label": "Go", "color": "#00ADD8", "tool": "go", "ext": ".go"},
     "odin": {"label": "Odin", "color": "#60AFFE", "tool": "odin", "ext": ".odin"},
 }
+MODES = ["release", "debug"]
+MODE_LABEL = {"release": "optimized", "debug": "unoptimized debug"}
+# cx debug keeps safety checks. --no-leak-check only skips the end-of-main
+# leak report, which would exit these programs for memory they leave to the OS.
+DEBUG_NOTE = (
+    "Unoptimized debug is the development build. "
+    "cx omits --release, so safety checks stay on and the LLVM IR optimization pipeline is skipped; "
+    "instruction selection still uses LLVM's default codegen optimization level. "
+    "--no-leak-check keeps the leak detector from exiting when a program leaves memory to the OS, "
+    "which the release build already allows. "
+    "C and C++ use -O0 -g. "
+    "Rust uses opt-level 0 with debug assertions, overflow checks, and full debug info. "
+    "Go disables optimizations and inlining with -gcflags=all=-N -l, including the standard library. "
+    "Odin uses -debug, which selects -o:none."
+)
 
 
 def lang_source(program, lang):
@@ -74,6 +90,7 @@ def parse_args():
     parser.add_argument("--runs", type=int, default=3, help="runs per binary (median kept)")
     parser.add_argument("--programs", default=",".join(PROGRAMS), help="comma-separated subset")
     parser.add_argument("--languages", default=",".join(LANGS), help="comma-separated subset")
+    parser.add_argument("--modes", default=",".join(MODES), help="comma-separated: release, debug")
     parser.add_argument("--output", default="bench/results.json", help="where to write the JSON record")
     parser.add_argument("--html", default="bench/report.html", help="where to write the HTML report")
     return parser.parse_args()
@@ -89,20 +106,61 @@ def run_timed(cmd, **kwargs):
     return time.perf_counter() - start, result
 
 
-def build_command(lang, cx, src, binary):
+def build_command(lang, mode, cx, src, binary):
+    release = mode == "release"
     if lang == "cx":
-        return [cx, src, "-o", binary, "--release", "-Werror"]
+        cmd = [cx, src, "-o", binary]
+        if release:
+            cmd.append("--release")
+        else:
+            cmd.append("--no-leak-check")
+        cmd.append("-Werror")
+        return cmd
     if lang == "c":
-        return ["cc", "-O3", "-fwrapv", "-std=c11", "-o", binary, src]
+        opt = ["-O3"] if release else ["-O0", "-g"]
+        return ["cc", *opt, "-fwrapv", "-std=c11", "-o", binary, src]
     if lang == "cxx":
-        return ["c++", "-O3", "-fwrapv", "-std=c++20", "-o", binary, src]
+        opt = ["-O3"] if release else ["-O0", "-g"]
+        return ["c++", *opt, "-fwrapv", "-std=c++20", "-o", binary, src]
     if lang == "rust":
-        return ["rustc", "--edition=2021", "-C", "opt-level=3", "-o", binary, src]
+        if release:
+            return ["rustc", "--edition=2021", "-C", "opt-level=3", "-o", binary, src]
+        return [
+            "rustc", "--edition=2021", "-C", "opt-level=0", "-C", "debug-assertions=yes",
+            "-C", "overflow-checks=yes", "-C", "debuginfo=2", "-o", binary, src,
+        ]
     if lang == "go":
-        return ["go", "build", "-o", binary, src]
+        cmd = ["go", "build"]
+        if not release:
+            cmd.append("-gcflags=all=-N -l")
+        cmd.extend(["-o", binary, src])
+        return cmd
     if lang == "odin":
-        return ["odin", "build", src, "-file", "-o:speed", "-out:" + binary]
+        cmd = ["odin", "build", src, "-file"]
+        cmd.append("-o:speed" if release else "-debug")
+        if not release:
+            cmd.append("-o:none")
+        cmd.append("-out:" + binary)
+        return cmd
     raise AssertionError("unknown language " + lang)
+
+
+def describe_build(lang, mode):
+    # Flags only, so the report can show the configuration without paths.
+    cmd = build_command(lang, mode, "cx", "SRC", "BIN")
+    shown = []
+    skip_next = False
+    for arg in cmd:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in ("SRC", "BIN") or arg.startswith("-out:"):
+            continue
+        if arg == "-o":
+            skip_next = True
+            continue
+        shown.append(arg)
+    return " ".join(shown)
 
 
 def tool_version(tool):
@@ -186,12 +244,7 @@ def chart_svg(medians):
 def render_html(record):
     programs = []
     for program in record["program_order"]:
-        medians = {lang: data["median_s"] for lang, data in record["programs"][program].items()}
-        if not medians:
-            omitted = omission_note(program, record.get("omissions", {}).get(program, []))
-            omitted_html = f'\n<p class="note">{html.escape(omitted)}</p>' if omitted else ""
-            programs.append(f"<h2>{program}</h2>{omitted_html}\n<p>no successful runs</p>")
-            continue
+        by_mode = record["programs"][program]
         note = (
             ' <span class="note">checksums differ by design here (float-to-int conversion is '
             "platform-defined); times remain comparable.</span>"
@@ -200,8 +253,23 @@ def render_html(record):
         )
         omitted = omission_note(program, record.get("omissions", {}).get(program, []))
         omitted_html = f'\n<p class="note">{html.escape(omitted)}</p>' if omitted else ""
-        programs.append(f"<h2>{program}{note}</h2>{omitted_html}\n{chart_svg(medians)}")
+        if not any(by_mode.get(mode) for mode in record["mode_order"]):
+            programs.append(f"<h2>{program}</h2>{omitted_html}\n<p>no successful runs</p>")
+            continue
+        charts = []
+        for mode in record["mode_order"]:
+            medians = {lang: data["median_s"] for lang, data in by_mode.get(mode, {}).items()}
+            body = chart_svg(medians) if medians else "<p>no successful runs</p>"
+            charts.append(f"<h3>{MODE_LABEL[mode]}</h3>\n{body}")
+        programs.append(f"<h2>{program}{note}</h2>{omitted_html}\n{''.join(charts)}")
     tools = " · ".join(f"{lang}: {html.escape(version)}" for lang, version in record["tools"].items())
+    builds = []
+    for mode in record["mode_order"]:
+        items = "".join(
+            f"<li>{html.escape(LANGS[lang]['label'])}: <code>{html.escape(command)}</code></li>"
+            for lang, command in record["builds"][mode].items()
+        )
+        builds.append(f"<h3>{MODE_LABEL[mode]}</h3><ul>{items}</ul>")
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -216,8 +284,10 @@ def render_html(record):
 body {{ font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background: var(--bg); color: var(--fg); }}
 .meta {{ color: var(--muted); }}
 h2 {{ margin-top: 2rem; font-size: 1.2rem; }}
+h3 {{ margin: 1rem 0 0.3rem; font-size: 1rem; }}
 .note {{ font-weight: normal; font-size: 0.85rem; color: var(--muted); }}
 p.note {{ margin: 0.2rem 0 0.6rem; }}
+code {{ font-size: 0.9em; }}
 svg text {{ font-size: 14px; fill: var(--fg); }}
 svg text.value {{ font-variant-numeric: tabular-nums; }}
 details {{ margin-top: 2rem; }}
@@ -227,7 +297,10 @@ pre {{ background: var(--pre-bg); padding: 1rem; overflow-x: auto; }}
 <body>
 <h1>cx vs C, C++, Rust, Go, Odin: run-time comparison</h1>
 <p class="meta">{html.escape(record["timestamp"])} · {html.escape(record["platform"])} · median of {record["runs"]} runs<br>{tools}<br>cx at {html.escape(record["cx_sha"])}</p>
+<p>Each chart is one build. The ratio on each bar is against the fastest language in that chart.</p>
+<p class="note">{html.escape(DEBUG_NOTE)}</p>
 {"".join(programs)}
+<details><summary>Build configurations</summary>{"".join(builds)}</details>
 <details><summary>Raw data</summary><pre>{html.escape(json.dumps(record, indent=2))}</pre></details>
 </body>
 </html>
@@ -239,8 +312,9 @@ def main():
     args.runs = max(1, args.runs)
     programs = [p.strip() for p in args.programs.split(",") if p.strip() in PROGRAMS]
     languages = [lang.strip() for lang in args.languages.split(",") if lang.strip() in LANGS]
-    if not programs or not languages:
-        print("no programs or languages selected")
+    modes = [mode.strip() for mode in args.modes.split(",") if mode.strip() in MODES]
+    if not programs or not languages or not modes:
+        print("no programs, languages, or modes selected")
         sys.exit(1)
     suffix = ".exe" if platform.system() == "Windows" else ""
     missing = [lang for lang in languages if LANGS[lang]["tool"] and not shutil.which(LANGS[lang]["tool"])]
@@ -260,31 +334,36 @@ def main():
                 if not os.path.isfile(src):
                     omissions[program].append(lang)
                     continue
-                binary = os.path.join(workdir, f"{program}-{lang}{suffix}")
-                compile_cmd = build_command(lang, args.cx, src, binary)
-                _, completed = run_timed(compile_cmd, capture_output=True, text=True)
-                if completed.returncode != 0:
-                    failures.append(f"{lang}/{program}: compile failed:\n{completed.stderr}")
-                    continue
-                times, outputs = [], set()
-                for _ in range(args.runs):
-                    elapsed, completed = run_timed([binary], capture_output=True, text=True)
+                for mode in modes:
+                    binary = os.path.join(workdir, f"{program}-{lang}-{mode}{suffix}")
+                    compile_cmd = build_command(lang, mode, args.cx, src, binary)
+                    _, completed = run_timed(compile_cmd, capture_output=True, text=True)
                     if completed.returncode != 0:
-                        failures.append(f"{lang}/{program} exited with status {completed.returncode}")
-                        break
-                    times.append(elapsed)
-                    outputs.add(completed.stdout.strip())
-                else:
-                    if len(outputs) != 1:
-                        failures.append(f"{lang}/{program} printed {len(outputs)} distinct outputs, benchmark invalid")
+                        failures.append(f"{lang}/{program}/{mode}: compile failed:\n{completed.stderr}")
                         continue
-                    output = outputs.pop()
-                    if program in EXPECTED and output != EXPECTED[program]:
-                        failures.append(f"{lang}/{program} printed {output}, expected {EXPECTED[program]}")
-                        continue
-                    median = statistics.median(times)
-                    results[program][lang] = {"median_s": median, "runs_s": times, "output": output}
-                    print(f"{program}/{lang}: {format_seconds(median)} (output {output})")
+                    times, outputs = [], set()
+                    for _ in range(args.runs):
+                        elapsed, completed = run_timed([binary], capture_output=True, text=True)
+                        if completed.returncode != 0:
+                            detail = completed.stderr.strip()
+                            suffix_note = f"\n{detail}" if detail else ""
+                            failures.append(f"{lang}/{program}/{mode} exited with status {completed.returncode}{suffix_note}")
+                            break
+                        times.append(elapsed)
+                        outputs.add(completed.stdout.strip())
+                    else:
+                        if len(outputs) != 1:
+                            failures.append(f"{lang}/{program}/{mode} printed {len(outputs)} distinct outputs, benchmark invalid")
+                            continue
+                        output = outputs.pop()
+                        if program in EXPECTED and output != EXPECTED[program]:
+                            failures.append(f"{lang}/{program}/{mode} printed {output}, expected {EXPECTED[program]}")
+                            continue
+                        median = statistics.median(times)
+                        results[program].setdefault(mode, {})[lang] = {
+                            "median_s": median, "runs_s": times, "output": output,
+                        }
+                        print(f"{program}/{lang}/{mode}: {format_seconds(median)} (output {output})")
 
     record = {
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -292,6 +371,8 @@ def main():
         "cx_sha": cx_sha(args.cx),
         "runs": args.runs,
         "tools": {lang: tool_version(LANGS[lang]["tool"]) for lang in languages if LANGS[lang]["tool"]},
+        "mode_order": modes,
+        "builds": {mode: {lang: describe_build(lang, mode) for lang in languages} for mode in modes},
         "program_order": programs,
         "omissions": {program: langs for program, langs in omissions.items() if langs},
         "programs": results,

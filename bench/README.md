@@ -44,9 +44,16 @@ all its ports, e.g. `bench/fib/fib.cx`, `fib.c`, `fib.cpp`, `fib.rs`,
 `fib.go`, `fib.odin`. `jsonparse` is ported only to Go and Odin; C, C++,
 and Rust have no JSON parser in the standard library. `mapfilter` is
 omitted for C, Go, and Odin, which have no capturing lambdas.
-`scripts/bench-langs.py` builds
-each port with release optimizations, runs it, and records medians plus
-a self-contained HTML report with graphs:
+`scripts/bench-langs.py` builds each port twice, runs it, and records
+medians plus a self-contained HTML report with a chart per build. The
+optimized build is the release configuration. The unoptimized debug build
+is the development configuration: cx's default build with `--no-leak-check`
+(safety checks stay on and the LLVM IR optimization pipeline is skipped;
+instruction selection still uses LLVM's default codegen optimization level;
+the leak detector would otherwise exit these programs for memory they leave
+to the OS), C and C++ at `-O0 -g`, Rust at opt-level 0 with debug assertions
+and overflow checks, Go with `-gcflags=all=-N -l`, and Odin with `-debug`
+(`-o:none`).
 
 ```sh
 python3 scripts/bench-langs.py --cx build/cx
