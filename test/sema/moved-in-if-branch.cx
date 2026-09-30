@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
 
 struct S {
     int n;
@@ -9,59 +9,136 @@ void bar(S s) {}
 void baz(S s) {}
 void sinkArr(S[2] a) {}
 
-void foo(bool b, S s) {
+void moveInOneBranchThenUseErrors(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
+    bar(s);
+}
+
+void elseMoveThenUseErrors(bool b, S t) {
+    if (b) {
+    } else {
+        baz(t);
+    }
+    // CHECK: [[@LINE+1]]:9: error: use of moved value 't'
+    baz(t);
+}
+
+void nestedIfMoveThenUseErrors(bool b1, bool b2, S s) {
+    if (b1) {
+        if (b2) {
+            bar(s);
+        }
+    }
+    // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
+    bar(s);
+}
+
+void borrowAfterPartialMoveErrors(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:14: error: use of moved value 's'
+    var r = &s;
+    println(r.n);
+}
+
+void captureAfterPartialMoveErrors(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:19: error: use of moved value 's'
+    var f = () => s.n;
+    println(f());
+}
+
+void memberReadAfterPartialMoveErrors(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 's'
+    println(s.n);
+}
+
+void memberAssignAfterPartialMoveErrors(bool b, S s) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:5: error: use of moved value 's'
+    s.n = 1;
+}
+
+void indexAssignAfterPartialMoveErrors(bool b, S[2] a) {
+    if (b) {
+        sinkArr(a);
+    }
+    // CHECK: [[@LINE+1]]:5: error: use of moved value 'a'
+    a[0] = S(n = 3);
+}
+
+void reassignAfterPartialMoveIsSilent(bool b, S s, S t) {
+    if (b) {
+        bar(s);
+    }
+    // Destroyed at the merge, then reassigned: no error, no warning.
+    s = t;
+    bar(s);
+}
+
+void moveInBothBranchesThenUseErrors(bool b, S s) {
     if (b) {
         bar(s);
     } else {
         baz(s);
     }
-
     // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
     bar(s);
 }
 
-void secondMoveAfterMaybeMoveErrors(bool b, S s) {
+void divergingThenStaysSilent(bool b, S s) {
     if (b) {
-        // CHECK: [[@LINE+1]]:13: warning: value 's' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(s); }' if this was intended)
         bar(s);
-    }
-    // CHECK: [[@LINE+1]]:9: warning: use of possibly-moved value 's'
-    bar(s);
-    // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
-    bar(s);
-}
-
-void elseOnlyMoveAfterDivergingThen(bool b, S s) {
-    if (b) {
         return;
-    } else {
-        bar(s);
     }
-
-    // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
     bar(s);
 }
 
-void thenOnlyMoveAfterDivergingElse(bool b, S s) {
+void divergingElseStaysSilent(bool b, S s) {
+    if (b) {
+        println("t");
+    } else {
+        baz(s);
+        return;
+    }
+    bar(s);
+}
+
+void moveInBothBranchesIsSilentWithoutLaterUse(bool b, S s) {
     if (b) {
         bar(s);
     } else {
-        return;
+        baz(s);
     }
+}
 
+void useAfterUnassignedPartialMoveReportsUninitialized(bool b) {
+    S s;
+    if (b) {
+        // CHECK: [[@LINE+1]]:13: error: use of uninitialized variable 's'
+        bar(s);
+    }
+    // CHECK: [[@LINE+1]]:9: error: use of uninitialized variable 's'
+    bar(s);
+}
+
+void assignedOnOnePathReportsMoved(bool b) {
+    S s;
+    if (b) {
+        s = S(n = 1);
+        bar(s);
+    }
     // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
     bar(s);
-}
-
-void memberAssignToMovedErrors(S s) {
-    bar(s);
-    // CHECK: [[@LINE+1]]:5: error: use of moved value 's'
-    s.n = 1;
-}
-
-void indexAssignToMovedErrors() {
-    var a = [S(n = 1), S(n = 2)];
-    sinkArr(a);
-    // CHECK: [[@LINE+1]]:5: error: use of moved value 'a'
-    a[0] = S(n = 3);
 }

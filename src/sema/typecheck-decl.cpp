@@ -1372,8 +1372,9 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             }
 
             // This prevents creating destructors calls during codegen. Maybe-moved
-            // values are destroyed on no path: skipping the call is sound but
-            // leaks the value on paths where it is still live.
+            // values (only from conditional expressions now) are destroyed on
+            // no path: skipping the call is sound but leaks the value on
+            // paths where it is still live.
             movedDecls.insert(maybeMovedDecls.begin(), maybeMovedDecls.end());
             for (auto* movedDecl : movedDecls) {
                 switch (movedDecl->kind) {

@@ -7,6 +7,13 @@ enum Color {
     Blue
 }
 
+struct S {
+    int n;
+    ~S() {}
+}
+
+void sink(S s) {}
+
 void foo(Color c) {
     // CHECK: [[@LINE+1]]:13: warning: enumeration value 'Blue' not handled in switch
     switch (c) {
@@ -54,11 +61,24 @@ void unqualifiedFullyCovered(Color c) {
     }
 }
 
+void partialMoveKeepsWarning(Color c, S s) {
+    // The merge synthesizes drops into a default body, but the warning still
+    // fires: the user wrote no default.
+    // CHECK: [[@LINE+1]]:13: warning: enumeration value 'Blue' not handled in switch
+    switch (c) {
+    case Color.Red:
+        sink(s);
+    case Color.Green:
+        break;
+    }
+}
+
 void main() {
     foo(Color.Red);
     bar(Color.Red);
     baz(Color.Red);
     unqualified(Color.Red);
     unqualifiedFullyCovered(Color.Red);
+    partialMoveKeepsWarning(Color.Red, S(n = 1));
 }
 

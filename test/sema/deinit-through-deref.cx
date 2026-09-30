@@ -49,14 +49,13 @@ void branchReassignedPtrDeinitIsRejected(bool b) {
     (*p).deinit();
 }
 
-void conditionalDeinitThroughPtrWarnsLikeDirect(bool b) {
+void conditionalDeinitThroughPtrThenUseErrors(bool b) {
     var c = C(x = 1);
     var p = &c;
     if b {
-        // CHECK: [[@LINE+1]]:10: warning: value 'c' is moved in the 'then' branch but there is no 'else' branch; it may leak when the condition is false (add 'else { drop(c); }' if this was intended)
         (*p).deinit();
     }
-    // CHECK: [[@LINE+1]]:13: warning: use of possibly-moved value 'c'
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'c'
     println(c);
 }
 
@@ -146,16 +145,15 @@ void multiHopTaintedMidIsRejected() {
     (**pp).deinit();
 }
 
-void branchLambdaDoesNotContaminate(bool b) {
+void branchLambdaCaptureThenUseErrors(bool b) {
     var c = C(x = 1);
     var p = &c;
     if b {
-        // CHECK: [[@LINE+1]]:17: warning: value 'c' is moved in the 'then' branch but not the 'else' branch; it may leak when the condition is false (add 'else { drop(c); }' if this was intended)
         var g = () => (*p).deinit();
     } else {
         var h = () => 42;
     }
-    // CHECK: [[@LINE+1]]:13: warning: use of possibly-moved value 'c'
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'c'
     println(c);
 }
 

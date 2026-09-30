@@ -3769,7 +3769,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
     } else {
         auto callee = expr.getFunctionName();
-        auto decls = findCalleeCandidates(expr, callee);
+        // A pre-selected template skips lookup (synthesized calls pinning one
+        // overload); resolution never leaves a template behind, so this only
+        // triggers for those.
+        auto decls = llvm::dyn_cast_or_null<FunctionTemplate>(expr.calleeDecl) ? std::vector<Decl*>{expr.calleeDecl} : findCalleeCandidates(expr, callee);
 
         if (decls.empty()) {
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.callee)) {

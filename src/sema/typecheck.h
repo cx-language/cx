@@ -5,6 +5,7 @@
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/FunctionExtras.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringSet.h>
@@ -135,7 +136,7 @@ struct Typechecker {
     EnumCase* typecheckSwitchCaseValue(Expr*& value, Type conditionType);
     void typecheckSwitchCaseBinding(VarDecl* associatedValue, EnumCase* enumCase, Expr* subject);
     bool subjectBorrows(Expr* subject);
-    void warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const;
+    void warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType, bool hadDefault) const;
     void typecheckForStmt(ForStmt& forStmt);
     void typecheckDoWhileStmt(DoWhileStmt& doWhileStmt);
     void typecheckBreakStmt(BreakStmt& breakStmt);
@@ -303,8 +304,11 @@ struct Typechecker {
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     llvm::SmallPtrSet<Decl*, 32> movedDecls;
-    // Values moved on only one side of a conditional: using one warns, and its
-    // destructor is skipped like a moved value (leaking the live path).
+    // Values moved on only some paths through a conditional expression (ternary,
+    // switch expression), where no statement can destroy the live paths: using
+    // one warns, and its destructor is skipped like a moved value (leaking
+    // the live paths). Statement branches instead destroy live paths at the
+    // merge and mark the value moved (see makeMergeDrop).
     llvm::SmallPtrSet<Decl*, 32> maybeMovedDecls;
     // Move state captured at each `break` out of a switch arm: breaks reach
     // past the switch, but the if-merge drops them as diverging. Reset per
@@ -312,6 +316,7 @@ struct Typechecker {
     // extra paths.
     struct SwitchBreakPath {
         llvm::SmallPtrSet<Decl*, 32> moved, maybeMoved, assigned;
+        BreakStmt* breakStmt = nullptr;
     };
     std::vector<SwitchBreakPath> switchBreakPaths;
     // Most recent move site per declaration, so branch merges can warn where
@@ -336,9 +341,25 @@ struct Typechecker {
     // before the branch warn.
     void warnAboutConditionalMove(Decl* decl, ConditionalMoveSite site, size_t branchEntryLocalCount, const llvm::DenseMap<Decl*, Location>& locations);
     // Merges per-path move sets after a switch: moves on every path stay moved,
-    // moves on some paths become maybe-moved and warn.
-    void mergeConditionalMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved, const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe,
-                               const llvm::SmallPtrSet<Decl*, 32>& entryMoved, ConditionalMoveSite site, size_t branchEntryLocalCount);
+    // nested maybe-moves union into maybeMovedDecls. Returns the declarations
+    // moved on some but not all paths; the caller resolves each (destroy on
+    // live paths for statements, maybe-move and warn for expressions).
+    llvm::SmallPtrSet<Decl*, 32> mergeConditionalMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved,
+                                                       const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe);
+    // Builds and typechecks a `drop(decl)` statement destroying a value that is
+    // live on one merge path but moved on another, so it dies exactly once.
+    // Checked with the path's move/assignment state; merge state is restored.
+    // The call pins std's `drop`, so user overloads cannot hijack
+    // compiler-inserted destruction.
+    Stmt* makeMergeDrop(Decl* decl, const llvm::SmallPtrSet<Decl*, 32>& pathMoved, const llvm::SmallPtrSet<Decl*, 32>& pathAssigned, Location location);
+    // Resolves one declaration moved on some merge paths but live on others,
+    // warning through warn when it keeps maybe-move (nested expression
+    // merges, exotics). Bindings and branch-locals silently mark moved; the
+    // rest return true so the caller destroys them on the live paths.
+    bool resolveMergeDecl(Decl* decl, size_t branchEntryLocalCount, bool anyPathMaybe, llvm::function_ref<void()> warn);
+    // Deterministic destruction order for merge drops: reverse declaration
+    // order like scope exit (locals, then parameters), leftovers by position.
+    std::vector<Decl*> orderMergeDestroys(const llvm::SmallPtrSet<Decl*, 32>& symdiff);
     // localVarDecls size at the innermost enclosing loop-body entry, if any;
     // moving a value declared before it is rejected, since the loop may
     // move it again on the next iteration.

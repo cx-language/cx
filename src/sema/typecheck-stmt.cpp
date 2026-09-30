@@ -432,15 +432,21 @@ void Typechecker::warnAboutConditionalMove(Decl* decl, ConditionalMoveSite site,
     }
 }
 
+// Parameters arrive initialized but never enter definitelyAssignedDecls;
+// every path may destroy them.
+static bool isAssignedOnPath(Decl* decl, const llvm::SmallPtrSet<Decl*, 32>& pathAssigned) {
+    return decl->kind == DeclKind::ParamDecl || pathAssigned.count(decl);
+}
+
 void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     typecheckExpr(*ifStmt.condition);
     typecheckImplicitlyBoolConvertibleExpr(ifStmt.condition);
     currentControlStmts.push_back(&ifStmt);
 
-    // A value moved in every branch is moved after the if statement. Moves from only one
-    // branch leave the value maybe-moved: using it warns, and its destructor is
-    // skipped like a moved value. An empty else body moves nothing, so then-only
-    // moves always produce maybe-moved values.
+    // A value moved in every branch is moved after the if statement. Moves from
+    // only one branch destroy the value on the other branch and mark it moved,
+    // so later uses error. An empty else body moves nothing, so then-only
+    // moves always destroy on the else path.
     llvm::SmallPtrSet<Decl*, 32> thenMovedDecls, elseMovedDecls;
     llvm::SmallPtrSet<Decl*, 32> thenMaybeMovedDecls, elseMaybeMovedDecls;
     llvm::DenseMap<Decl*, Location> thenMoveLocations, elseMoveLocations;
@@ -509,31 +515,26 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         narrowedTypes = thenNarrowings;
         definitelyAssignedDecls = thenAssignedDecls;
     } else if (!thenDiverges && !elseDiverges) {
-        llvm::SmallPtrSet<Decl*, 32> mergedMovedDecls;
-        for (auto* decl : thenMovedDecls) {
-            if (elseMovedDecls.count(decl)) {
-                mergedMovedDecls.insert(decl);
-            }
-        }
-        movedDecls = std::move(mergedMovedDecls);
-        maybeMovedDecls = std::move(thenMaybeMovedDecls);
-        maybeMovedDecls.insert(elseMaybeMovedDecls.begin(), elseMaybeMovedDecls.end());
-        for (auto* decl : thenMovedDecls) {
-            if (!elseMovedDecls.count(decl)) {
-                maybeMovedDecls.insert(decl);
-                if (!preMovedDecls.count(decl)) {
+        llvm::SmallPtrSet<Decl*, 32> symdiff = mergeConditionalMoves({thenMovedDecls, elseMovedDecls}, {thenMaybeMovedDecls, elseMaybeMovedDecls});
+        for (auto* decl : orderMergeDestroys(symdiff)) {
+            auto warnRemaining = [&] {
+                if (preMovedDecls.count(decl)) return;
+                if (thenMovedDecls.count(decl)) {
                     warnAboutConditionalMove(decl, ifStmt.elseLocation.isValid() ? ConditionalMoveSite::IfThen : ConditionalMoveSite::IfThenNoElse,
                                              branchEntryLocalCount, thenMoveLocations);
-                }
-            }
-        }
-        for (auto* decl : elseMovedDecls) {
-            if (!thenMovedDecls.count(decl)) {
-                maybeMovedDecls.insert(decl);
-                if (!preMovedDecls.count(decl)) {
+                } else {
                     warnAboutConditionalMove(decl, ConditionalMoveSite::IfElse, branchEntryLocalCount, elseMoveLocations);
                 }
+            };
+            bool anyPathMaybe = thenMaybeMovedDecls.count(decl) || elseMaybeMovedDecls.count(decl);
+            if (!resolveMergeDecl(decl, branchEntryLocalCount, anyPathMaybe, warnRemaining)) continue;
+            if (!thenMovedDecls.count(decl) && isAssignedOnPath(decl, thenAssignedDecls)) {
+                ifStmt.thenBody.push_back(makeMergeDrop(decl, thenMovedDecls, thenAssignedDecls, ifStmt.condition->location));
             }
+            if (!elseMovedDecls.count(decl) && isAssignedOnPath(decl, elseAssignedDecls)) {
+                ifStmt.elseBody.push_back(makeMergeDrop(decl, elseMovedDecls, elseAssignedDecls, ifStmt.condition->location));
+            }
+            if (isAssignedOnPath(decl, thenAssignedDecls) || isAssignedOnPath(decl, elseAssignedDecls)) movedDecls.insert(decl);
         }
         narrowedTypes = thenNarrowings;
         intersectNarrowings(elseNarrowings);
@@ -701,8 +702,37 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
     return conditionType;
 }
 
-void Typechecker::mergeConditionalMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved, const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe,
-                                        const llvm::SmallPtrSet<Decl*, 32>& entryMoved, ConditionalMoveSite site, size_t branchEntryLocalCount) {
+// Finds the statement list containing the target (for inserting drops before
+// a switch break). A break captured for this switch nests only under ifs and
+// compounds: anything under a loop or inner switch targets that instead.
+// Statement lowering preserves statement pointers, so captured break
+// pointers stay valid.
+static bool findStmtSlot(std::vector<Stmt*>& stmts, const Stmt* target, std::vector<Stmt*>*& outVec, size_t& outIndex) {
+    for (size_t i = 0; i < stmts.size(); ++i) {
+        if (stmts[i] == target) {
+            outVec = &stmts;
+            outIndex = i;
+            return true;
+        }
+        auto* stmt = stmts[i];
+        switch (stmt->kind) {
+        case StmtKind::IfStmt: {
+            auto& ifStmt = *llvm::cast<IfStmt>(stmt);
+            if (findStmtSlot(ifStmt.thenBody, target, outVec, outIndex) || findStmtSlot(ifStmt.elseBody, target, outVec, outIndex)) return true;
+            break;
+        }
+        case StmtKind::CompoundStmt:
+            if (findStmtSlot(llvm::cast<CompoundStmt>(stmt)->body, target, outVec, outIndex)) return true;
+            break;
+        default:
+            break;
+        }
+    }
+    return false;
+}
+
+llvm::SmallPtrSet<Decl*, 32> Typechecker::mergeConditionalMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved,
+                                                                const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe) {
     llvm::SmallPtrSet<Decl*, 32> mergedMovedDecls = pathMoved.front();
     llvm::SmallPtrSet<Decl*, 32> unionMovedDecls;
     maybeMovedDecls.clear();
@@ -715,17 +745,76 @@ void Typechecker::mergeConditionalMoves(const std::vector<llvm::SmallPtrSet<Decl
     for (auto& path : pathMaybe) {
         maybeMovedDecls.insert(path.begin(), path.end());
     }
+    llvm::SmallPtrSet<Decl*, 32> symdiff;
     for (auto* decl : unionMovedDecls) {
-        if (!mergedMovedDecls.count(decl)) {
-            maybeMovedDecls.insert(decl);
-            // Values already moved on entry get no warning: the asymmetry comes
-            // from reassignment on another path, not a new move.
-            if (!entryMoved.count(decl)) {
-                warnAboutConditionalMove(decl, site, branchEntryLocalCount, moveLocations);
-            }
-        }
+        if (!mergedMovedDecls.count(decl)) symdiff.insert(decl);
     }
     movedDecls = std::move(mergedMovedDecls);
+    return symdiff;
+}
+
+Stmt* Typechecker::makeMergeDrop(Decl* decl, const llvm::SmallPtrSet<Decl*, 32>& pathMoved, const llvm::SmallPtrSet<Decl*, 32>& pathAssigned,
+                                 Location location) {
+    llvm::SaveAndRestore saveMovedDecls(movedDecls, pathMoved);
+    llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls, llvm::SmallPtrSet<Decl*, 32>());
+    llvm::SaveAndRestore saveMoveLocations(moveLocations);
+    llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls, pathAssigned);
+    auto* call = makeAST<CallExpr>(makeAST<VarExpr>("drop", location), std::vector<NamedValue>{NamedValue(makeAST<VarExpr>(decl->getName(), location))},
+                                   std::vector<GenericArg>(), location);
+    // Pin std's drop: user overloads must not hijack compiler-inserted
+    // destruction. A template-valued calleeDecl skips lookup below.
+    if (auto* stdModule = Module::getStdlibModule()) {
+        if (Decl* stdDrop = stdModule->symbolTable.findOne("drop")) call->calleeDecl = stdDrop;
+    }
+    Stmt* stmt = makeAST<ExprStmt>(call);
+    typecheckStmt(stmt);
+    return stmt;
+}
+
+bool Typechecker::resolveMergeDecl(Decl* decl, size_t branchEntryLocalCount, bool anyPathMaybe, llvm::function_ref<void()> warn) {
+    auto* variableDecl = anyPathMaybe ? nullptr : llvm::dyn_cast<VariableDecl>(decl);
+    if (!variableDecl) {
+        maybeMovedDecls.insert(decl);
+        warn();
+        return false;
+    }
+    if (bindingSources.count(decl)) {
+        movedDecls.insert(decl);
+        return false;
+    }
+    bool isPreBranch = variableDecl->kind == DeclKind::ParamDecl;
+    if (!isPreBranch) {
+        auto found = std::find(localVarDecls.begin(), localVarDecls.end(), decl);
+        isPreBranch = found != localVarDecls.end() && size_t(found - localVarDecls.begin()) < branchEntryLocalCount;
+    }
+    if (!isPreBranch || !variableDecl->type.needsDestruction()) {
+        movedDecls.insert(decl);
+        return false;
+    }
+    return true;
+}
+
+std::vector<Decl*> Typechecker::orderMergeDestroys(const llvm::SmallPtrSet<Decl*, 32>& symdiff) {
+    std::vector<Decl*> ordered;
+    for (auto it = localVarDecls.rbegin(); it != localVarDecls.rend(); ++it) {
+        if (symdiff.count(*it)) ordered.push_back(*it);
+    }
+    if (currentFunction) {
+        auto params = currentFunction->getParams();
+        for (auto it = params.rbegin(); it != params.rend(); ++it) {
+            if (symdiff.count(&*it)) ordered.push_back(const_cast<ParamDecl*>(&*it));
+        }
+    }
+    std::vector<Decl*> leftovers;
+    for (auto* decl : symdiff) {
+        if (!llvm::is_contained(ordered, decl)) leftovers.push_back(decl);
+    }
+    llvm::sort(leftovers, [](const Decl* a, const Decl* b) {
+        auto locA = a->getLocation(), locB = b->getLocation();
+        return std::tie(locA.line, locA.column) < std::tie(locB.line, locB.column);
+    });
+    ordered.insert(ordered.end(), leftovers.begin(), leftovers.end());
+    return ordered;
 }
 
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
@@ -783,6 +872,14 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     std::vector<llvm::SmallPtrSet<Decl*, 32>> pathMovedDecls, pathMaybeMovedDecls;
     llvm::SmallPtrSet<Decl*, 32> entryMovedDecls = movedDecls;
     llvm::SmallPtrSet<Decl*, 32> entryMaybeMovedDecls = maybeMovedDecls;
+    llvm::SmallPtrSet<Decl*, 32> entryAssignedDecls = definitelyAssignedDecls;
+    // Where each path's merge drops go, parallel to pathMovedDecls: an arm or
+    // default body to append to, or a break to insert before.
+    struct MergePathTarget {
+        std::vector<Stmt*>* body = nullptr;
+        BreakStmt* breakStmt = nullptr;
+    };
+    std::vector<MergePathTarget> pathTargets;
     size_t branchEntryLocalCount = localVarDecls.size();
     bool assertsOn = assertsEnabled(options.mode, currentFunction && currentFunction->isTest);
 
@@ -850,6 +947,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             bodyAssignedDecls.push_back(definitelyAssignedDecls);
             pathMovedDecls.push_back(movedDecls);
             pathMaybeMovedDecls.push_back(maybeMovedDecls);
+            pathTargets.push_back({&switchCase.stmts});
         }
     }
 
@@ -868,6 +966,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             bodyAssignedDecls.push_back(definitelyAssignedDecls);
             pathMovedDecls.push_back(movedDecls);
             pathMaybeMovedDecls.push_back(maybeMovedDecls);
+            pathTargets.push_back({&stmt.defaultStmts});
         }
     }
 
@@ -881,16 +980,49 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     if (stmt.defaultStmts.empty() && !stmt.coversAllEnumCases) {
         pathMovedDecls.push_back(entryMovedDecls);
         pathMaybeMovedDecls.push_back(entryMaybeMovedDecls);
+        bodyAssignedDecls.push_back(entryAssignedDecls);
+        pathTargets.push_back({&stmt.defaultStmts});
     }
     for (auto& path : switchBreakPaths) {
         pathMovedDecls.push_back(path.moved);
         pathMaybeMovedDecls.push_back(path.maybeMoved);
         bodyAssignedDecls.push_back(path.assigned);
+        pathTargets.push_back({nullptr, path.breakStmt});
     }
+    // The merge below appends drops for the implicit path to defaultStmts;
+    // readers below mean the user-written default.
+    bool hadDefault = !stmt.defaultStmts.empty();
     if (!pathMovedDecls.empty()) {
-        mergeConditionalMoves(pathMovedDecls, pathMaybeMovedDecls, entryMovedDecls, ConditionalMoveSite::Switch, branchEntryLocalCount);
+        llvm::SmallPtrSet<Decl*, 32> symdiff = mergeConditionalMoves(pathMovedDecls, pathMaybeMovedDecls);
+        for (auto* decl : orderMergeDestroys(symdiff)) {
+            auto warnRemaining = [&] {
+                if (!entryMovedDecls.count(decl)) {
+                    warnAboutConditionalMove(decl, ConditionalMoveSite::Switch, branchEntryLocalCount, moveLocations);
+                }
+            };
+            bool anyPathMaybe = llvm::any_of(pathMaybeMovedDecls, [&](auto& path) { return path.count(decl); });
+            if (!resolveMergeDecl(decl, branchEntryLocalCount, anyPathMaybe, warnRemaining)) continue;
+            for (size_t i = 0; i < pathMovedDecls.size(); ++i) {
+                if (pathMovedDecls[i].count(decl) || !isAssignedOnPath(decl, bodyAssignedDecls[i])) continue;
+                Stmt* drop = makeMergeDrop(decl, pathMovedDecls[i], bodyAssignedDecls[i], stmt.condition->location);
+                auto& target = pathTargets[i];
+                if (target.body) {
+                    target.body->push_back(drop);
+                } else {
+                    std::vector<Stmt*>* slot = nullptr;
+                    size_t index = 0;
+                    for (auto& switchCase : stmt.cases) {
+                        if (findStmtSlot(switchCase.stmts, target.breakStmt, slot, index)) break;
+                    }
+                    if (!slot) findStmtSlot(stmt.defaultStmts, target.breakStmt, slot, index);
+                    ASSERT(slot);
+                    slot->insert(slot->begin() + index, drop);
+                }
+            }
+            if (llvm::any_of(bodyAssignedDecls, [&](auto& path) { return isAssignedOnPath(decl, path); })) movedDecls.insert(decl);
+        }
     }
-    if ((!stmt.defaultStmts.empty() || stmt.coversAllEnumCases) && !bodyAssignedDecls.empty()) {
+    if ((hadDefault || stmt.coversAllEnumCases) && !bodyAssignedDecls.empty()) {
         definitelyAssignedDecls = bodyAssignedDecls.front();
         for (auto& body : llvm::ArrayRef(bodyAssignedDecls).drop_front()) {
             for (auto* decl : llvm::to_vector(definitelyAssignedDecls)) {
@@ -900,7 +1032,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             }
         }
     }
-    warnAboutUnhandledEnumCases(stmt, conditionType);
+    warnAboutUnhandledEnumCases(stmt, conditionType, hadDefault);
 }
 
 Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
@@ -972,8 +1104,16 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
 
     // Every valid switch expression covers all paths (a default or all enum
     // cases), so there is no implicit path; on error below the merge is moot.
+    // Arms are expressions, so unlike statements there is nowhere to destroy
+    // live paths: partial moves keep the maybe state and warn.
     if (!armMovedDecls.empty()) {
-        mergeConditionalMoves(armMovedDecls, armMaybeMovedDecls, entryMovedDecls, ConditionalMoveSite::SwitchExpr, branchEntryLocalCount);
+        llvm::SmallPtrSet<Decl*, 32> symdiff = mergeConditionalMoves(armMovedDecls, armMaybeMovedDecls);
+        for (auto* decl : symdiff) {
+            maybeMovedDecls.insert(decl);
+            if (!entryMovedDecls.count(decl)) {
+                warnAboutConditionalMove(decl, ConditionalMoveSite::SwitchExpr, branchEntryLocalCount, moveLocations);
+            }
+        }
     }
 
     if (!expr.defaultExpr) {
@@ -1061,8 +1201,8 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
     return resultType;
 }
 
-void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const {
-    if (!stmt.defaultStmts.empty()) return;
+void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType, bool hadDefault) const {
+    if (hadDefault) return;
 
     auto handledCases = getHandledEnumCases(stmt, conditionType);
     if (!handledCases) return;
@@ -1209,7 +1349,7 @@ void Typechecker::typecheckBreakStmt(BreakStmt& breakStmt) {
     // A break out of a switch arm reaches past the switch; capture its move
     // state for the switch merge (the if-merge drops it as diverging).
     if ((*innermostBreakable)->kind == StmtKind::SwitchStmt) {
-        switchBreakPaths.push_back({movedDecls, maybeMovedDecls, definitelyAssignedDecls});
+        switchBreakPaths.push_back({movedDecls, maybeMovedDecls, definitelyAssignedDecls, &breakStmt});
     }
 }
 

@@ -313,13 +313,14 @@ team.members;` fails to compile, suggesting `.take()`, a borrow, or a
 copy instead. The same holds for moving elements out of collections and
 payloads out of optionals.
 
-Moving a value on only one branch of a conditional makes later uses warn:
-the value may already be gone. Its destructor is skipped in that case,
-which leaks the value on paths where it is still live. The move itself
-also warns, suggesting `drop()` on the other paths when the conditional
-move was intended. Moves in ternary arms warn the same way, suggesting
-`.take()` where the type offers it. Reassigning the value clears that
-state, but the overwritten value is not destroyed.
+Moving a value on only one branch of an `if` or `switch` statement destroys
+it on the other paths, so it dies exactly once; the value is moved after
+the statement, and later uses are rejected. Moves in ternary or `switch`
+expression arms still warn instead: no statement there can destroy the
+live paths, so the value may leak and later uses warn. Those warnings
+suggest `.take()` where the type offers it. Reassigning the value clears
+the moved state, overwriting without destroying the old one, which is
+already gone on every path.
 
 Moving a value declared outside a loop inside the loop is rejected:
 the loop may run more than once, moving it again. Values declared inside

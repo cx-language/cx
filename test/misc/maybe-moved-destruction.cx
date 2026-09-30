@@ -1,5 +1,5 @@
-// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
-// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run %s -Wno-unused | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s -Wno-unused | %FileCheck -match-full-lines -strict-whitespace %s
 struct C {
     int i;
     ~C() {
@@ -9,8 +9,19 @@ struct C {
 
 void sink(C c) {}
 
-// A value moved on only one branch is destroyed on neither path past the
-// merge: no double-free on the moved path, no destructor on the live one.
+// User overloads of `drop`, including a generic one that would be ambiguous
+// with std's: merge drops pin std's `drop`, so this file still compiles and
+// no merge calls these.
+void drop(C value) {
+    println("HIJACK");
+}
+
+void drop<T>(T value) {
+    println("HIJACK-GENERIC");
+}
+
+// A value moved on only one branch is destroyed on its live paths at the
+// merge, so it dies exactly once; later uses are use-after-move errors.
 void condMove(bool b) {
     var c = C(i = 1);
     if (b) {
@@ -19,8 +30,21 @@ void condMove(bool b) {
     println("end");
 }
 
-// Reassigning a maybe-moved value overwrites without destroying the old one,
-// which may already be gone.
+// By-value parameters destroy on live paths like locals.
+void condMoveParam(bool b, C c) {
+    if (b) {
+        sink(c);
+    }
+    println("end");
+}
+
+// Explicit `drop` calls still resolve to user overloads.
+void explicitDropStillCallsUserOverload() {
+    drop(C(i = 11));
+}
+
+// Reassigning after a conditional move overwrites without destroying the old
+// one, which is already gone on every path (moved or dropped at the merge).
 void condMoveReassign(bool b) {
     var c = C(i = 2);
     if (b) {
@@ -30,18 +54,21 @@ void condMoveReassign(bool b) {
     println("reassigned");
 }
 
-// Using a maybe-moved value warns but still compiles and runs.
-void useOnLivePath() {
+// Reassigning a moved value in one branch drops the fresh value at the merge
+// instead of leaking it.
+void reassignAfterMove(bool b) {
     var c = C(i = 4);
-    if (false) {
-        sink(c);
-    }
     sink(c);
+    if (b) {
+        c = C(i = 5);
+    }
+    println("end");
 }
 
-// Returning past a maybe-moved value skips its destructor on the return path.
+// Returning past a conditionally moved value: live paths already destroyed
+// at the merge, so the return path skips it.
 void earlyReturn(bool b) {
-    var c = C(i = 5);
+    var c = C(i = 6);
     if (b) {
         sink(c);
     }
@@ -49,21 +76,120 @@ void earlyReturn(bool b) {
     return;
 }
 
+// Switch arms resolve like if branches, including the implicit path when no
+// arm matches and there is no default.
+void switchMove(int n) {
+    var c = C(i = 7);
+    switch (n) {
+    case 1:
+        sink(c);
+    }
+    println("end");
+}
+
+// A break path is its own merge path: the live value drops before the break.
+void breakMove(int n) {
+    var c = C(i = 8);
+    switch (n) {
+    case 1: {
+        sink(c);
+        break;
+    }
+    case 2: {
+        println("two");
+        break;
+    }
+    }
+    println("end");
+}
+
+// A user-written default is a normal merge path: the live value drops at
+// its end.
+void switchDefaultMove(int n) {
+    var c = C(i = 12);
+    switch (n) {
+    case 1:
+        sink(c);
+    default:
+        println("def");
+    }
+    println("end");
+}
+
+void sinkArr(C[2] a) {}
+
+// Arrays destroy element-wise through the same merge drop.
+void condMoveArray(bool b) {
+    var a = [C(i = 13), C(i = 14)];
+    if (b) {
+        sinkArr(a);
+    }
+    println("end");
+}
+
 void main() {
     // CHECK:dtor
     // CHECK-NEXT:end
     condMove(true);
-    condMove(false); // CHECK-NEXT:end
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    condMove(false);
     // CHECK-NEXT:dtor
     // CHECK-NEXT:reassigned
     // CHECK-NEXT:dtor
     condMoveReassign(true);
+    // CHECK-NEXT:dtor
     // CHECK-NEXT:reassigned
     // CHECK-NEXT:dtor
     condMoveReassign(false);
-    useOnLivePath(); // CHECK-NEXT:dtor
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    reassignAfterMove(true);
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    reassignAfterMove(false);
     // CHECK-NEXT:dtor
     // CHECK-NEXT:before return
     earlyReturn(true);
-    earlyReturn(false); // CHECK-NEXT:before return
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:before return
+    earlyReturn(false);
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    switchMove(1);
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    switchMove(2);
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    breakMove(1);
+    // CHECK-NEXT:two
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    breakMove(2);
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    condMoveParam(true, C(i = 9));
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    condMoveParam(false, C(i = 10));
+    // CHECK-NEXT:HIJACK
+    // CHECK-NEXT:dtor
+    explicitDropStillCallsUserOverload();
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    switchDefaultMove(1);
+    // CHECK-NEXT:def
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    switchDefaultMove(2);
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    condMoveArray(true);
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:dtor
+    // CHECK-NEXT:end
+    condMoveArray(false);
 }
