@@ -4,11 +4,3 @@
 extern "C++" c_int cx_is_even(c_int n) {
     return n % 2 == 0 ? 1 : 0;
 }
-
-extern "C++" c_int cx_vec_sum(const CxxVector<c_int>& v) {
-    var total = c_int(0);
-    for i in 0..v.size() {
-        total += v[i];
-    }
-    return total;
-}

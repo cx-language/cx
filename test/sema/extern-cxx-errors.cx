@@ -15,11 +15,6 @@ enum Color {
     Green,
 }
 
-struct Wrap {
-    CxxVector<c_int> v;
-    c_int x;
-}
-
 // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: slices cannot be used in extern "C++" signatures; pass a pointer and length instead
 extern "C++" void sliceParam(int[] xs);
 
@@ -45,21 +40,6 @@ extern "C++" void enumParam(Color c);
 
 // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: generic type 'List<int>' cannot be used in extern "C++" signatures
 extern "C++" void genericParam(List<int> xs);
-
-// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'CxxVector<c_int>' cannot be passed by value in extern "C++" signatures; use a reference or pointer instead
-extern "C++" c_int byValueVectorParam(CxxVector<c_int> v);
-
-// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'CxxVector<c_int>' cannot be returned by value in extern "C++" signatures; use an out-parameter instead
-extern "C++" CxxVector<c_int> byValueVectorReturn();
-
-// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Wrap' cannot be passed by value in extern "C++" signatures because it holds a CxxVector, which C++ passes indirectly; pass it behind a pointer or reference instead
-extern "C++" void wrappedVectorParam(Wrap w);
-
-// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'CxxVector<Point>' cannot be named in extern "C++" signatures; declare it through a C++ header import instead, where the exact mangling is known
-extern "C++" void compoundVectorParam(const CxxVector<Point>& v);
-
-// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'CxxVector<bool>' cannot be used in extern "C++" signatures: std::vector<bool> is bit-packed and std::vector<void> is ill-formed
-extern "C++" void boolVectorParam(const CxxVector<bool>& v);
 
 // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: functions cannot be returned in extern "C++" signatures; return a function pointer instead
 extern "C++" void(c_int) fnReturn();
@@ -139,11 +119,11 @@ void variadicExtrasAreChecked() {
     m_log(1, b);
 }
 
-void takeMutableVector(CxxVector<c_int>& v) {
+void takeMutableString(string& s) {
 }
 
 void mutableBorrowRejectsConversion() {
-    var xs = List<c_int>();
-    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: invalid argument #1 type 'List<c_int>' to 'takeMutableVector', expected 'CxxVector<c_int>&'
-    takeMutableVector(xs);
+    var sb = StringBuf("x");
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: invalid argument #1 type 'StringBuf' to 'takeMutableString', expected 'string&'
+    takeMutableString(sb);
 }

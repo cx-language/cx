@@ -8,6 +8,8 @@ int sum(Slice<int> values) {
 
 int stringSize(string s) { return s.size(); }
 
+int constRefSize(const string& s) { return s.size(); }
+
 Slice<int> asRef(List<int>* list) { return *list; }
 
 void main() {
@@ -33,4 +35,8 @@ void main() {
     println(s);
     // CHECK-NEXT:5
     println(stringSize(buffer));
+    // Converted temporaries borrow for const references.
+    var other = StringBuf("world");
+    // CHECK-NEXT:5
+    println(constRefSize(other));
 }

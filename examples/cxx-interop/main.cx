@@ -1,13 +1,6 @@
 import "veclib.hpp";
 
 void main() {
-    var xs = List<int>();
-    for x in [3, 1, 4, 1, 5] {
-        xs.push(x);
-    }
-    // Lists convert to const vector references implicitly.
-    println(vec_sum(xs));
-    println(vec_mean(xs));
     Accum a;
     a.count = 3;
     a.total = 14;

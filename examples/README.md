@@ -46,9 +46,9 @@ applications. Each subdirectory is a `cx build` project (see
   (`mathlib.h`/`mathlib.c` called from `main.cx`), and cx from C through
   `extern` definitions (`cxlib.cx` exported to `main.c` via `cxlib.h`).
 - [`cxx-interop/`](cxx-interop/) — call C++ from cx through a header
-  import (`veclib.hpp`/`veclib.cpp` called from `main.cx`, including
-  `std::vector` parameters), and cx from C++ through `extern "C++"`
-  definitions (`cxlib.cx` exported to `main.cpp` via `cxlib.hpp`).
+  import (`veclib.hpp`/`veclib.cpp` called from `main.cx`), and cx from
+  C++ through `extern "C++"` definitions (`cxlib.cx` exported to
+  `main.cpp` via `cxlib.hpp`).
 - [`opengl/`](opengl/) — minimal OpenGL triangle using GLFW for window
   management. Needs `pkg-config` and GLFW3 (`apt install pkg-config
   libglfw3-dev libgl1-mesa-dev`, `brew install pkg-config glfw3`). Build with

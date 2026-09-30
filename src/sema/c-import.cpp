@@ -152,35 +152,6 @@ struct CToCxConverter final : clang::ASTConsumer {
             if (mutability == Mutability::Const) desugared.addConst();
             return toCx(desugared);
         }
-        case clang::Type::TemplateSpecialization: {
-            // std::vector<T> (with the default allocator) maps to the ABI-compatible CxxVector<T>.
-            // The check reads the instantiated declaration rather than the sugar, so written
-            // sugar omissions (the defaulted allocator), typedefs, and alias templates all work.
-            // Inline namespaces (e.g. libc++'s std::__1) are transparent to the redecl context.
-            bool isStdVector = false;
-            clang::QualType elementType;
-            if (auto* specDecl = llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(type.getAsCXXRecordDecl())) {
-                auto* templateDecl = specDecl->getSpecializedTemplate();
-                auto fullArgs = specDecl->getTemplateArgs().asArray();
-                if (templateDecl && templateDecl->getName() == "vector" && templateDecl->getDeclContext()->getRedeclContext()->isStdNamespace()
-                    && fullArgs.size() == 2 && fullArgs[0].getKind() == clang::TemplateArgument::Type && fullArgs[1].getKind() == clang::TemplateArgument::Type
-                    && isStdAllocatorOf(fullArgs[1].getAsType(), fullArgs[0].getAsType())) {
-                    isStdVector = true;
-                    elementType = fullArgs[0].getAsType();
-                }
-            }
-            if (isStdVector && !elementType.getCanonicalType()->isBooleanType()) {
-                std::vector<GenericArg> cxArgs;
-                cxArgs.emplace_back(toCx(elementType));
-                return BasicType::get("CxxVector", cxArgs, mutability);
-            }
-            if (cxxMode) {
-                conversionFailed = true;
-                return Type::getInt32();
-            }
-            WARN(Location(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualType.getAsString() << "')");
-            return Type::getInt32();
-        }
         case clang::Type::Record: {
             auto& recordType = llvm::cast<clang::RecordType>(type);
             auto* recordDecl = recordType.getDecl();
@@ -582,17 +553,6 @@ struct CToCxConverter final : clang::ASTConsumer {
             }
         }
         return false;
-    }
-
-    // True when the type is std::allocator<Element> (the default vector allocator).
-    static bool isStdAllocatorOf(clang::QualType type, clang::QualType elementType) {
-        auto* specDecl = llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(type->getAsCXXRecordDecl());
-        if (!specDecl) return false;
-        auto* templateDecl = specDecl->getSpecializedTemplate();
-        auto args = specDecl->getTemplateArgs().asArray();
-        return templateDecl && templateDecl->getName() == "allocator" && templateDecl->getDeclContext()->getRedeclContext()->isStdNamespace()
-            && args.size() == 1 && args[0].getKind() == clang::TemplateArgument::Type
-            && args[0].getAsType().getCanonicalType() == elementType.getCanonicalType();
     }
 
     // True for declarations directly in the global scope. Linkage specifications

@@ -766,24 +766,6 @@ static void checkMainSignature(const FunctionDecl& decl) {
     }
 }
 
-// True when the type holds a CxxVector in a copied position (directly, or inside a
-// struct, union, or fixed array). Such a value is non-trivially copyable on the C++
-// side, so C++ passes it indirectly while cx would pass the bytes directly.
-static bool containsCxxVector(Type type) {
-    // Fixed arrays carry the fieldless Array decl, so check them before getDecl.
-    if (type.isFixedArray()) return containsCxxVector(type.getElementType());
-    if (TypeDecl* typeDecl = type.getDecl()) {
-        if (typeDecl->isStruct() && typeDecl->getName() == "CxxVector" && typeDecl->getModule() && typeDecl->getModule()->name == "std") return true;
-        if (typeDecl->isStruct() || typeDecl->tag == TypeTag::Union) {
-            for (const FieldDecl& field : typeDecl->fields) {
-                if (containsCxxVector(field.type)) return true;
-            }
-        }
-        return false;
-    }
-    return false;
-}
-
 // True when a by-value `extern` type holds a float anywhere. The LLVM backend expands
 // float-containing aggregates element-wise, but the C ABI packs small ones into shared
 // registers.
@@ -894,11 +876,6 @@ void cx::validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef ca
         ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
                     "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
                              << "' because it needs destruction; pass it behind a pointer instead");
-    }
-    if (containsCxxVector(type)) {
-        ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
-                    "type '" << type << "' cannot be passed as a variadic argument to extern \"C++\" function '" << callee
-                             << "' because it holds a CxxVector, which C++ passes indirectly; pass it behind a pointer instead");
     }
     if (containsFloat(type)) {
         ERROR_RANGE(getExprRangeStart(arg), arg.endLocation,
@@ -1048,48 +1025,6 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
         return;
     }
     if (TypeDecl* typeDecl = type.getDecl()) {
-        // CxxVector mirrors std::vector, so it mangles as the vector specialization with the
-        // default allocator, in the platform-default standard library form (libc++ on Darwin and
-        // the BSDs, libstdc++ elsewhere). Compound elements would need substitution compression
-        // to mangle exactly, so those must come through a header import, where Clang mangles.
-        if (typeDecl->isStruct() && typeDecl->getName() == "CxxVector" && type.getGenericArgs().size() == 1 && type.getGenericArgs()[0].isType()
-            && typeDecl->getModule() && typeDecl->getModule()->name == "std") {
-            // std::vector is non-trivially copyable, so C++ passes it indirectly (by invisible
-            // reference) while cx would pass the bytes directly; only references and pointers agree.
-            if (byValue && isReturn) {
-                ERROR_RANGE(type.location, type.endLocation,
-                            "type '" << type << "' cannot be returned by value in extern \"C++\" signatures; use an out-parameter instead");
-            }
-            if (byValue) {
-                ERROR_RANGE(type.location, type.endLocation,
-                            "type '" << type << "' cannot be passed by value in extern \"C++\" signatures; use a reference or pointer instead");
-            }
-            Type elementType = type.getGenericArgs()[0].getType();
-            if (!elementType.isMutable()) ERROR_RANGE(type.location, type.endLocation, "std::vector cannot hold const elements");
-            if (elementType.isVoid() || elementType.isBool()) {
-                ERROR_RANGE(type.location, type.endLocation,
-                            "type '" << type
-                                     << "' cannot be used in extern \"C++\" signatures: std::vector<bool> is bit-packed and std::vector<void> is ill-formed");
-            }
-            std::string elementCode;
-            llvm::raw_string_ostream elementStream(elementCode);
-            mangleCppType(elementStream, elementType, triple, false, false);
-            elementStream.flush();
-            if (elementCode.size() != 1) {
-                ERROR_RANGE(
-                    type.location, type.endLocation,
-                    "type '"
-                        << type
-                        << "' cannot be named in extern \"C++\" signatures; declare it through a C++ header import instead, where the exact mangling is known");
-            }
-            bool isLibcxx = triple.isOSDarwin() || triple.isOSFreeBSD() || triple.isOSOpenBSD();
-            if (isLibcxx) {
-                out << "NSt3__16vectorI" << elementCode << "NS_9allocatorI" << elementCode << "EEEE";
-            } else {
-                out << "St6vectorI" << elementCode << "SaI" << elementCode << "EE";
-            }
-            return;
-        }
         if (typeDecl->isEnumDecl())
             ERROR_RANGE(type.location, type.endLocation, "enums cannot be used in extern \"C++\" signatures; pass the underlying integer instead");
         if (!type.getGenericArgs().empty())
@@ -1108,12 +1043,6 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
                 "type '"
                     << type
                     << "' cannot be passed by value in extern \"C++\" signatures because it needs destruction; pass it behind a pointer or reference instead");
-        }
-        if (byValue && containsCxxVector(type)) {
-            ERROR_RANGE(type.location, type.endLocation,
-                        "type '" << type
-                                 << "' cannot be passed by value in extern \"C++\" signatures because it holds a CxxVector, which C++ passes "
-                                    "indirectly; pass it behind a pointer or reference instead");
         }
         if (byValue && containsFloat(type)) {
             ERROR_RANGE(type.location, type.endLocation,

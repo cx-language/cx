@@ -197,10 +197,10 @@ available, including overloads (from the `cxx-interop` example):
 import "veclib.hpp";
 
 void main() {
-    var xs = List<int>();
-    xs.push(3);
-    xs.push(1);
-    println(vec_sum(xs)); // prints 4
+    Accum a;
+    a.count = 3;
+    a.total = 14;
+    println(accum_add(a, 1)); // prints 15
 }
 ```
 
@@ -222,14 +222,6 @@ pointer is expected. `extern "C"` functions in C++ headers keep
 their plain names and work as usual. Classes with member functions and
 exceptions are not supported.
 
-`std::vector` parameters map to the standard library `CxxVector` type.
-A `const std::vector<T>&` parameter imports as `const CxxVector<T>&`,
-and `List` and slice values convert to it implicitly, so they pass
-directly. `CxxVector` is a non-owning view: it borrows the cx storage
-and must not outlive it, and it must not be passed where C++ may grow
-the vector. Vectors never cross by value, and `vector<bool>` and custom
-allocators are not supported.
-
 Individual functions can also be declared with `extern "C++"`, without
 importing a header. The compiler mangles the name with the Itanium C++
 ABI, so it links against the C++ definition. Declare parameters and
@@ -237,7 +229,7 @@ return types with the `c_` prefixed types so the signature matches on
 every target:
 
 ```cs {.noCompile}
-extern "C++" c_int cpp_sum(const CxxVector<c_int>& v);
+extern "C++" c_int cpp_sum(const c_int* values, c_int count);
 ```
 
 ## Calling cx from C++

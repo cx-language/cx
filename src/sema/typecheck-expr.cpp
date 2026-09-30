@@ -1397,7 +1397,7 @@ Expr* Typechecker::convertWithUserConversion(Expr* expr, Type target, bool diagn
 }
 
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange, bool allowOperatorBorrow, bool allowUserConversion) {
-    // Borrow a converted temporary (e.g. a List as const CxxVector&): convert to the
+    // Borrow a converted temporary (e.g. a StringBuf as const string&): convert to the
     // pointee, then borrow the result. Only for const borrows; borrowing a temporary
     // mutably would let the mutation vanish with it.
     if (type.isReferenceType() && !type.getPointee().isMutable() && !expr->type.equalsIgnoreTopLevelMutable(type.getPointee())) {
@@ -1781,7 +1781,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     // Borrowing a converted temporary composes conversion with the borrow rule above
-    // (e.g. a List as const CxxVector&). Only for const borrows; borrowing a temporary
+    // (e.g. a StringBuf as const string&). Only for const borrows; borrowing a temporary
     // mutably would let the mutation vanish with it.
     if (target.isReferenceType() && !target.getPointee().isMutable() && !source.equalsIgnoreTopLevelMutable(target.getPointee())) {
         std::optional<ImplicitCastExpr::Kind> pointeeCastKind;
