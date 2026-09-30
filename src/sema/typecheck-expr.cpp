@@ -4673,7 +4673,7 @@ Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
 
     // User conversions below may mark moves; the RHS may not execute, so
     // those demote to maybe-moves too.
-    llvm::SmallPtrSet<Decl*, 32> preConvertMoved = movedDecls;
+    DeclSet preConvertMoved = movedDecls;
     auto demoteConvertMoves = [&] {
         for (auto* decl : llvm::to_vector(movedDecls)) {
             if (preConvertMoved.count(decl)) continue;
@@ -5325,8 +5325,8 @@ bool Typechecker::consumeTrackedDeinitTarget(Expr* receiver) {
     return true;
 }
 
-llvm::SmallPtrSet<Decl*, 32> Typechecker::collectBranchMoves(Expr* branch, const llvm::SmallPtrSet<Decl*, 32>& preDecls, bool isMoved, bool trackVars) {
-    llvm::SmallPtrSet<Decl*, 32> branchMoves;
+DeclSet Typechecker::collectBranchMoves(Expr* branch, const DeclSet& preDecls, bool isMoved, bool trackVars) {
+    DeclSet branchMoves;
     if (!moveConsumesSource(branch)) return branchMoves;
     llvm::DenseMap<Decl*, Location> before = moveLocations;
     setMoved(branch, isMoved, trackVars);
@@ -5429,12 +5429,12 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
         // one arm is never destroyed when the other arm is taken. Values moved
         // in both arms transfer to the result on every path and stay silent,
         // as do moves whose other arm diverges.
-        llvm::SmallPtrSet<Decl*, 32> preDecls = movedDecls;
+        DeclSet preDecls = movedDecls;
         size_t branchEntryLocalCount = localVarDecls.size();
         bool thenReaches = !ifExpr->thenExpr->type.isNeverType();
         bool elseReaches = !ifExpr->elseExpr->type.isNeverType();
-        llvm::SmallPtrSet<Decl*, 32> thenMoves = collectBranchMoves(ifExpr->thenExpr, preDecls, isMoved, trackVars);
-        llvm::SmallPtrSet<Decl*, 32> elseMoves = collectBranchMoves(ifExpr->elseExpr, preDecls, isMoved, trackVars);
+        DeclSet thenMoves = collectBranchMoves(ifExpr->thenExpr, preDecls, isMoved, trackVars);
+        DeclSet elseMoves = collectBranchMoves(ifExpr->elseExpr, preDecls, isMoved, trackVars);
         if (elseReaches) {
             for (auto* decl : thenMoves) {
                 if (!elseMoves.count(decl)) warnTernaryMove(decl, /*isThenArm=*/true, branchEntryLocalCount);
@@ -5460,10 +5460,10 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
             if (consumes(rhs)) setMoved(rhs, isMoved, trackVars);
             return;
         }
-        llvm::SmallPtrSet<Decl*, 32> preDecls = movedDecls;
+        DeclSet preDecls = movedDecls;
         size_t branchEntryLocalCount = localVarDecls.size();
-        llvm::SmallPtrSet<Decl*, 32> lhsMoves = collectBranchMoves(lhs, preDecls, isMoved, trackVars);
-        llvm::SmallPtrSet<Decl*, 32> rhsMoves = collectBranchMoves(rhs, preDecls, isMoved, trackVars);
+        DeclSet lhsMoves = collectBranchMoves(lhs, preDecls, isMoved, trackVars);
+        DeclSet rhsMoves = collectBranchMoves(rhs, preDecls, isMoved, trackVars);
         for (auto* decl : rhsMoves) {
             if (lhsMoves.count(decl)) continue;
             // Locate before inserting: never-warn declarations (bindings,

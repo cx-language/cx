@@ -31,6 +31,8 @@ struct SourceFile;
 struct Location;
 struct Type;
 
+using DeclSet = llvm::SmallPtrSet<Decl*, 32>;
+
 struct ArgumentValidation {
     enum Error { None, TooFew, TooMany, InvalidName, DuplicateName, InvalidType };
 
@@ -262,7 +264,7 @@ struct Typechecker {
     // by recorded location changes: re-marking an already-moved value leaves
     // the moved set unchanged, so set diffs alone would miss second-branch
     // moves. Declarations in preDecls (moved before the construct) are skipped.
-    llvm::SmallPtrSet<Decl*, 32> collectBranchMoves(Expr* branch, const llvm::SmallPtrSet<Decl*, 32>& preDecls, bool isMoved, bool trackVars);
+    DeclSet collectBranchMoves(Expr* branch, const DeclSet& preDecls, bool isMoved, bool trackVars);
     // Moves ownership out of a projection source (member/index base, unwrap operand,
     // binding subject): owned roots are consumed, temporaries are flagged for
     // destructor elision, and borrowed roots are an error (nothing skips for them).
@@ -312,19 +314,19 @@ struct Typechecker {
     Stmt** currentStmt; // Double-pointer so it refers to the correct statement after lowering.
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
-    llvm::SmallPtrSet<Decl*, 32> movedDecls;
+    DeclSet movedDecls;
     // Values moved on only some paths through a conditional expression (ternary,
     // switch expression), where no statement can destroy the live paths: using
     // one warns, and its destructor is skipped like a moved value (leaking
     // the live paths). Statement branches instead destroy live paths at the
     // merge and mark the value moved (see makeMergeDrop).
-    llvm::SmallPtrSet<Decl*, 32> maybeMovedDecls;
+    DeclSet maybeMovedDecls;
     // Move state captured at each `break` out of a switch arm: breaks reach
     // past the switch, but the if-merge drops them as diverging. Reset per
     // switch (breaks target the innermost one); the merge unions them as
     // extra paths.
     struct SwitchBreakPath {
-        llvm::SmallPtrSet<Decl*, 32> moved, maybeMoved, assigned;
+        DeclSet moved, maybeMoved, assigned;
         BreakStmt* breakStmt = nullptr;
     };
     std::vector<SwitchBreakPath> switchBreakPaths;
@@ -341,7 +343,7 @@ struct Typechecker {
     // arm, `??` side). Nested expressions warn for their own branches; the
     // outer ones would only repeat them, so each move warns once until the
     // value is reassigned.
-    llvm::SmallPtrSet<Decl*, 32> condWarnedDecls;
+    DeclSet condWarnedDecls;
     // Warns that a value is moved in one ternary arm and leaks when the other
     // arm is taken. Each move warns once (see condWarnedDecls).
     void warnTernaryMove(Decl* decl, bool isThenArm, size_t branchEntryLocalCount);
@@ -354,13 +356,12 @@ struct Typechecker {
     // nested maybe-moves union into maybeMovedDecls. Returns the declarations
     // moved on some but not all paths; the caller resolves each (destroy on
     // live paths for statements, maybe-move and warn for expressions).
-    llvm::SmallPtrSet<Decl*, 32> mergeConditionalMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved,
-                                                       const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe);
+    DeclSet mergeConditionalMoves(const std::vector<DeclSet>& pathMoved, const std::vector<DeclSet>& pathMaybe);
     // Merges expression-branch move sets (switch-expression arms, or a
     // short-circuit RHS against entry): moves on every path stay moved,
     // partial moves keep the maybe state and warn.
-    void mergeExpressionMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved, const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe,
-                              ConditionalMoveSite site, size_t branchEntryLocalCount);
+    void mergeExpressionMoves(const std::vector<DeclSet>& pathMoved, const std::vector<DeclSet>& pathMaybe, ConditionalMoveSite site,
+                              size_t branchEntryLocalCount);
     // Typechecks a short-circuit RHS under saved move state, then merges it
     // against the entry state (the RHS may not execute).
     Type typecheckShortCircuitRHS(llvm::function_ref<Type()> checkRHS, ConditionalMoveSite site);
@@ -369,7 +370,7 @@ struct Typechecker {
     // Checked with the path's move/assignment state; merge state is restored.
     // The call pins std's `drop`, so user overloads cannot hijack
     // compiler-inserted destruction.
-    Stmt* makeMergeDrop(Decl* decl, const llvm::SmallPtrSet<Decl*, 32>& pathMoved, const llvm::SmallPtrSet<Decl*, 32>& pathAssigned, Location location);
+    Stmt* makeMergeDrop(Decl* decl, const DeclSet& pathMoved, const DeclSet& pathAssigned, Location location);
     // Resolves one declaration moved on some merge paths but live on others,
     // warning through warn when it keeps maybe-move (nested expression
     // merges, exotics). Bindings and branch-locals silently mark moved; the
@@ -377,7 +378,7 @@ struct Typechecker {
     bool resolveMergeDecl(Decl* decl, size_t branchEntryLocalCount, bool anyPathMaybe, llvm::function_ref<void()> warn);
     // Deterministic destruction order for merge drops: reverse declaration
     // order like scope exit (locals, then parameters), leftovers by position.
-    std::vector<Decl*> orderMergeDestroys(const llvm::SmallPtrSet<Decl*, 32>& symdiff);
+    std::vector<Decl*> orderMergeDestroys(const DeclSet& symdiff);
     // localVarDecls size at the innermost enclosing loop-body entry, if any;
     // moving a value declared before it is rejected, since the loop may
     // move it again on the next iteration.
@@ -427,7 +428,7 @@ struct Typechecker {
     bool inExplicitDeinit = false;
     std::vector<VarDecl*> localVarDecls;
     NarrowMap narrowedTypes;
-    llvm::SmallPtrSet<Decl*, 32> definitelyAssignedDecls;
+    DeclSet definitelyAssignedDecls;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
     // Set while checking function signatures (parameters and return type).
