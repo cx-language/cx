@@ -1,34 +1,35 @@
 // RUN: %cx --print-llvm %s | %FileCheck %s
 
-extern int c_sum4(int[4] vals);
-// CHECK: declare {{.*}} @c_sum4(ptr)
+extern int c_sum2(int[2] vals);
+// CHECK: declare {{.*}} @c_sum2(ptr)
 
-extern int cx_sum4(int[4] vals) {
-// CHECK: define {{.*}} @cx_sum4(ptr %vals)
+extern int cx_sum2(int[2] vals) {
+// CHECK: define {{.*}} @cx_sum2(ptr %vals)
 // Small decayed arrays load the by-value copy at entry (large ones already use the pointer representation).
-// CHECK: %vals.byval = load [4 x i32], ptr %vals
-    return vals[0] + vals[1] + vals[2] + vals[3];
+// 8-byte arrays are small on both SysV (>16 goes indirect) and Win64 (>8 goes indirect).
+// CHECK: %vals.byval = load [2 x i32], ptr %vals
+    return vals[0] + vals[1];
 }
 
 extern int c_sum8(int[8] vals);
 // Large arrays decay without byval: C passes the caller's array, not a copy.
 // CHECK: declare {{.*}} @c_sum8(ptr)
 
-int plain_sum(int[4] vals) {
+int plain_sum(int[2] vals) {
 // Calls within cx keep by-value arrays.
-// CHECK: define {{.*}} @{{.*}}plain{{.*}}([4 x i32] %vals)
-    return vals[0] + vals[3];
+// CHECK: define {{.*}} @{{.*}}plain{{.*}}([2 x i32] %vals)
+    return vals[0] + vals[1];
 }
 
 void main() {
-    int[4] vals = [1, 2, 3, 4];
-    println(c_sum4(vals));
-// CHECK: call {{.*}} @c_sum4(ptr {{%array.decay[0-9]*}})
-    println(cx_sum4(vals));
-// CHECK: call {{.*}} @cx_sum4(ptr {{%array.decay[0-9]*}})
+    int[2] vals = [1, 2];
+    println(c_sum2(vals));
+// CHECK: call {{.*}} @c_sum2(ptr {{%array.decay[0-9]*}})
+    println(cx_sum2(vals));
+// CHECK: call {{.*}} @cx_sum2(ptr {{%array.decay[0-9]*}})
     int[8] big = [1, 2, 3, 4, 5, 6, 7, 8];
     println(c_sum8(big));
 // CHECK: call {{.*}} @c_sum8(ptr %big.load)
     println(plain_sum(vals));
-// CHECK: call {{.*}} @{{.*}}plain{{.*}}([4 x i32] {{%vals.load[0-9]*}})
+// CHECK: call {{.*}} @{{.*}}plain{{.*}}([2 x i32] {{%vals.load[0-9]*}})
 }
