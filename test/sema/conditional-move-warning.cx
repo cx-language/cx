@@ -4,6 +4,19 @@ void sink(StringBuf s) {}
 int use(StringBuf s) {
     return 1;
 }
+bool consumeBool(StringBuf s) { return true; }
+StringBuf identBuf(StringBuf s) { return s; }
+
+struct NCmp {
+    StringBuf v;
+    NCmp(StringBuf v) { this.v = v; }
+}
+bool operator==(NCmp a, NCmp b) { return a.v == b.v; }
+
+struct Wrap {
+    StringBuf v;
+    implicit Wrap(StringBuf v) { this.v = v; }
+}
 
 enum E { A(StringBuf v), B }
 
@@ -173,4 +186,60 @@ void siblingBranchTernariesWarnTwice(bool c, bool b1, bool b2, StringBuf a) {
         var t2 = b2 ? a : StringBuf("y");
         println(string(t2));
     }
+}
+
+void andRhsMoveWarns(bool b, StringBuf x) {
+    // CHECK: [[@LINE+1]]:30: warning: value 'x' is moved in the right-hand side of this '&&' but it may not execute; it may leak when the left side is false (restructure with 'if' if this was intended)
+    var r = b && consumeBool(x);
+    // CHECK: [[@LINE+1]]:20: warning: use of possibly-moved value 'x'
+    println(string(x));
+    println(r);
+}
+
+void orRhsMoveWarns(bool b, StringBuf y) {
+    // CHECK: [[@LINE+1]]:30: warning: value 'y' is moved in the right-hand side of this '||' but it may not execute; it may leak when the left side is true (restructure with 'if' if this was intended)
+    var r = b || consumeBool(y);
+    // CHECK: [[@LINE+1]]:20: warning: use of possibly-moved value 'y'
+    println(string(y));
+    println(r);
+}
+
+void nullCoalescingRhsMoveWarns(StringBuf? o, StringBuf z) {
+    // CHECK: [[@LINE+1]]:27: warning: value 'z' is moved in the right-hand side of this '??' but it may not execute; it may leak when the left side is not null (restructure with 'if' if this was intended)
+    var w = o ?? identBuf(z);
+    // CHECK: [[@LINE+1]]:20: warning: use of possibly-moved value 'z'
+    println(string(z));
+    println(string(w));
+}
+
+void nullCoalescingConvertWarns(Wrap? o, StringBuf z) {
+    // CHECK: [[@LINE+1]]:18: warning: value 'z' is moved in the right-hand side of this '??' but it may not execute; it may leak when the left side is not null (restructure with 'if' if this was intended)
+    var w = o ?? z;
+    // CHECK: [[@LINE+1]]:20: warning: use of possibly-moved value 'z'
+    println(string(z));
+}
+
+void optionalComparisonNoWarning(NCmp? o, NCmp? p) {
+    // Lowered && moves compiler temps; those never warn.
+    var r = o == p;
+    println(r);
+}
+
+void andUnderIfWarnsOnce(bool c, bool b, StringBuf x) {
+    // CHECK-COUNT-1: warning: value 'x' is moved in the right-hand side of this '&&'
+    if (c && consumeBool(x)) {
+        println("yes");
+    }
+}
+
+void andLhsMoveNoWarning(bool b, StringBuf l) {
+    // Unconditional move, so no short-circuit warning; later uses still error.
+    var r = consumeBool(l) && b;
+    println(r);
+}
+
+void nestedAndWarnsOnce(bool a, bool b, StringBuf n) {
+    // CHECK-COUNT-1: warning: value 'n' is moved in the right-hand side of this '&&'
+    var r = a && (b && consumeBool(n));
+    println(r);
 }

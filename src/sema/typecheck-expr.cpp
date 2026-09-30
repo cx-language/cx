@@ -871,7 +871,8 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             expr.setLHS(makeAST<ImplicitCastExpr>(&expr.getLHS(), leftType.getPointee(), ImplicitCastExpr::AutoDereference));
             leftType = leftType.getPointee();
         }
-        Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
+        Type rightType = typecheckShortCircuitRHS([&] { return typecheckExpr(expr.getRHS(), false, leftType); },
+                                                  op == Token::AndAnd ? ConditionalMoveSite::ShortCircuitAnd : ConditionalMoveSite::ShortCircuitOr);
         if (rightType.isReferenceType() && (rightType.getPointee().isBool() || rightType.getPointee().isOptionalType())) {
             expr.setRHS(makeAST<ImplicitCastExpr>(&expr.getRHS(), rightType.getPointee(), ImplicitCastExpr::AutoDereference));
             rightType = rightType.getPointee();
@@ -4658,9 +4659,22 @@ Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
     auto outerNarrowings = narrowedTypes;
     auto afterLHSAssignedDecls = definitelyAssignedDecls;
     applyNarrowings(expr.getLHS(), false);
-    Type rightType = typecheckExpr(expr.getRHS());
+    size_t branchEntryLocalCount = localVarDecls.size();
+    Type rightType = typecheckShortCircuitRHS([&] { return typecheckExpr(expr.getRHS()); }, ConditionalMoveSite::NullCoalescing);
     intersectNarrowings(outerNarrowings);
     definitelyAssignedDecls = afterLHSAssignedDecls;
+
+    // User conversions below may mark moves; the RHS may not execute, so
+    // those demote to maybe-moves too.
+    llvm::SmallPtrSet<Decl*, 32> preConvertMoved = movedDecls;
+    auto demoteConvertMoves = [&] {
+        for (auto* decl : llvm::to_vector(movedDecls)) {
+            if (preConvertMoved.count(decl)) continue;
+            movedDecls.erase(decl);
+            maybeMovedDecls.insert(decl);
+            warnAboutConditionalMove(decl, ConditionalMoveSite::NullCoalescing, branchEntryLocalCount, moveLocations);
+        }
+    };
 
     // Prefer the unwrapped left type, but never implicitly unwrap the right side: `o1 ?? o2`
     // must stay null when both are null, not trap unwrapping `o2`.
@@ -4673,18 +4687,21 @@ Type Typechecker::typecheckNullCoalescingExpr(BinaryExpr& expr) {
         }
         if (!unwrapsRHS) {
             expr.setRHS(convertedRHS);
+            demoteConvertMoves();
             return wrappedType;
         }
     }
 
     // Otherwise the unwrapped value widens to the right side's type (e.g. `char? ?? 0.5` is a float).
     if (!rightType.isOptionalType() && isSafeNumericWidening(wrappedType, rightType)) {
+        demoteConvertMoves();
         return rightType;
     }
 
     // Otherwise both sides stay optional (e.g. `int? ?? int?` is an `int?`).
     if (auto* convertedRHS = convert(&expr.getRHS(), leftType, false, false)) {
         expr.setRHS(convertedRHS);
+        demoteConvertMoves();
         return leftType;
     }
 

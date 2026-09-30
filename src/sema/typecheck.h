@@ -327,7 +327,7 @@ struct Typechecker {
     llvm::DenseMap<Decl*, Location> moveLocations;
     // Marks a declaration moved-from at the given move site.
     void markMoved(Decl* decl, Location location);
-    enum class ConditionalMoveSite { IfThen, IfThenNoElse, IfElse, Switch, SwitchExpr };
+    enum class ConditionalMoveSite { IfThen, IfThenNoElse, IfElse, Switch, SwitchExpr, ShortCircuitAnd, ShortCircuitOr, NullCoalescing };
     // Guards and move-site lookup shared by conditional-move warnings: skips
     // payload bindings and branch-locals, returns the move site if recorded.
     std::optional<Location> locateConditionalMoveWarning(Decl* decl, size_t branchEntryLocalCount, const llvm::DenseMap<Decl*, Location>& locations);
@@ -349,6 +349,14 @@ struct Typechecker {
     // live paths for statements, maybe-move and warn for expressions).
     llvm::SmallPtrSet<Decl*, 32> mergeConditionalMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved,
                                                        const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe);
+    // Merges expression-branch move sets (switch-expression arms, or a
+    // short-circuit RHS against entry): moves on every path stay moved,
+    // partial moves keep the maybe state and warn.
+    void mergeExpressionMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved, const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe,
+                              ConditionalMoveSite site, size_t branchEntryLocalCount);
+    // Typechecks a short-circuit RHS under saved move state, then merges it
+    // against the entry state (the RHS may not execute).
+    Type typecheckShortCircuitRHS(llvm::function_ref<Type()> checkRHS, ConditionalMoveSite site);
     // Builds and typechecks a `drop(decl)` statement destroying a value that is
     // live on one merge path but moved on another, so it dies exactly once.
     // Checked with the path's move/assignment state; merge state is restored.

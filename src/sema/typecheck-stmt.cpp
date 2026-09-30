@@ -389,6 +389,9 @@ void Typechecker::typecheckVarStmt(VarStmt& stmt) {
 }
 
 std::optional<Location> Typechecker::locateConditionalMoveWarning(Decl* decl, size_t branchEntryLocalCount, const llvm::DenseMap<Decl*, Location>& locations) {
+    // Compiler-generated temporaries (`__`-prefixed, lexer-reserved) are
+    // un-actionable: lowering-internal moves never warn.
+    if (decl->getName().starts_with("__")) return std::nullopt;
     // Payload bindings borrow their subject's storage and run no destructor,
     // so only the subject's leak warns.
     if (bindingSources.count(decl)) return std::nullopt;
@@ -428,6 +431,22 @@ void Typechecker::warnAboutConditionalMove(Decl* decl, ConditionalMoveSite site,
              "value '"
                  << name
                  << "' is moved in only some arms of this 'switch' expression; it may leak on the other paths (move it on every path if this was intended)");
+        break;
+    case ConditionalMoveSite::ShortCircuitAnd:
+        WARN(*loc, "value '" << name
+                             << "' is moved in the right-hand side of this '&&' but it may not execute; it may leak when the left side is false "
+                                "(restructure with 'if' if this was intended)");
+        break;
+    case ConditionalMoveSite::ShortCircuitOr:
+        WARN(*loc, "value '" << name
+                             << "' is moved in the right-hand side of this '||' but it may not execute; it may leak when the left side is true "
+                                "(restructure with 'if' if this was intended)");
+        break;
+    case ConditionalMoveSite::NullCoalescing:
+        // Split '??' across literals: ??' is a trigraph.
+        WARN(*loc, "value '" << name
+                             << "' is moved in the right-hand side of this '??"
+                                "' but it may not execute; it may leak when the left side is not null (restructure with 'if' if this was intended)");
         break;
     }
 }
@@ -753,6 +772,35 @@ llvm::SmallPtrSet<Decl*, 32> Typechecker::mergeConditionalMoves(const std::vecto
     return symdiff;
 }
 
+void Typechecker::mergeExpressionMoves(const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMoved, const std::vector<llvm::SmallPtrSet<Decl*, 32>>& pathMaybe,
+                                       ConditionalMoveSite site, size_t branchEntryLocalCount) {
+    // Branch checking restores the entry state, so it is still current here.
+    llvm::SmallPtrSet<Decl*, 32> entryMoved = movedDecls;
+    llvm::SmallPtrSet<Decl*, 32> symdiff = mergeConditionalMoves(pathMoved, pathMaybe);
+    for (auto* decl : symdiff) {
+        maybeMovedDecls.insert(decl);
+        if (!entryMoved.count(decl)) {
+            warnAboutConditionalMove(decl, site, branchEntryLocalCount, moveLocations);
+        }
+    }
+}
+
+Type Typechecker::typecheckShortCircuitRHS(llvm::function_ref<Type()> checkRHS, ConditionalMoveSite site) {
+    size_t branchEntryLocalCount = localVarDecls.size();
+    Type rightType;
+    llvm::SmallPtrSet<Decl*, 32> rhsMovedDecls, rhsMaybeMovedDecls;
+    {
+        llvm::SaveAndRestore saveMovedDecls(movedDecls);
+        llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
+        llvm::SaveAndRestore saveTernaryWarnedDecls(ternaryWarnedDecls);
+        rightType = checkRHS();
+        rhsMovedDecls = movedDecls;
+        rhsMaybeMovedDecls = maybeMovedDecls;
+    }
+    mergeExpressionMoves({movedDecls, rhsMovedDecls}, {maybeMovedDecls, rhsMaybeMovedDecls}, site, branchEntryLocalCount);
+    return rightType;
+}
+
 Stmt* Typechecker::makeMergeDrop(Decl* decl, const llvm::SmallPtrSet<Decl*, 32>& pathMoved, const llvm::SmallPtrSet<Decl*, 32>& pathAssigned,
                                  Location location) {
     llvm::SaveAndRestore saveMovedDecls(movedDecls, pathMoved);
@@ -1050,7 +1098,6 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
 
     std::vector<llvm::SmallPtrSet<Decl*, 32>> armAssignedDecls;
     std::vector<llvm::SmallPtrSet<Decl*, 32>> armMovedDecls, armMaybeMovedDecls;
-    llvm::SmallPtrSet<Decl*, 32> entryMovedDecls = movedDecls;
     size_t branchEntryLocalCount = localVarDecls.size();
 
     for (auto& arm : expr.arms) {
@@ -1107,13 +1154,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
     // Arms are expressions, so unlike statements there is nowhere to destroy
     // live paths: partial moves keep the maybe state and warn.
     if (!armMovedDecls.empty()) {
-        llvm::SmallPtrSet<Decl*, 32> symdiff = mergeConditionalMoves(armMovedDecls, armMaybeMovedDecls);
-        for (auto* decl : symdiff) {
-            maybeMovedDecls.insert(decl);
-            if (!entryMovedDecls.count(decl)) {
-                warnAboutConditionalMove(decl, ConditionalMoveSite::SwitchExpr, branchEntryLocalCount, moveLocations);
-            }
-        }
+        mergeExpressionMoves(armMovedDecls, armMaybeMovedDecls, ConditionalMoveSite::SwitchExpr, branchEntryLocalCount);
     }
 
     if (!expr.defaultExpr) {
