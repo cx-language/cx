@@ -1,0 +1,44 @@
+// RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+void switchNoneBranch() {
+    string? key = "asfd";
+    switch key {
+        case Some:
+            println("key: ", key.substr(0..4));
+        case None:
+            // CHECK: [[@LINE+1]]:30: warning: value is null here
+            println("key: ", key.substr(0..4));
+    }
+}
+
+void ifElseNoneBranch() {
+    string? key = "asfd";
+    if (key) {
+    } else {
+        // CHECK: [[@LINE+1]]:26: warning: value is null here
+        println("key: ", key.substr(0..4));
+    }
+}
+
+void switchDefaultArm() {
+    string? key = "asfd";
+    switch key {
+        case Some:
+            println("some");
+        default:
+            // CHECK: [[@LINE+1]]:30: warning: value is null here
+            println("key: ", key.substr(0..4));
+    }
+}
+
+void joinAfterSwitchWarnsMaybe() {
+    string? key = "asfd";
+    switch key {
+        case Some:
+            println("some");
+        case None:
+            println("none");
+    }
+    // CHECK: [[@LINE+1]]:22: warning: value may be null; unwrap it with a postfix '!' to silence this warning
+    println("key: ", key.substr(0..4));
+}

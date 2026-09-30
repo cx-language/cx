@@ -64,14 +64,19 @@ Nullability NullAnalyzer::analyzeNullability_recursive(Value* nullableValue, Ins
         }
     }
 
-    if (block->predecessors.empty()) {
+    llvm::SmallVector<BasicBlock*, 8> predecessors(block->predecessors.begin(), block->predecessors.end());
+    if (auto it = switchPredecessors.find(block); it != switchPredecessors.end()) {
+        predecessors.append(it->second.begin(), it->second.end());
+    }
+    if (predecessors.empty()) {
         return Nullability::DefinitelyNullable;
     }
 
     visited.insert(block);
     int notNullPredecessors = 0;
+    int nullPredecessors = 0;
 
-    for (auto predecessor : block->predecessors) {
+    for (auto predecessor : predecessors) {
         if (visited.count(predecessor)) {
             continue;
         }
@@ -80,11 +85,21 @@ Nullability NullAnalyzer::analyzeNullability_recursive(Value* nullableValue, Ins
             return nullability;
         } else if (nullability == Nullability::DefinitelyNotNull) {
             notNullPredecessors++;
+        } else if (nullability == Nullability::DefinitelyNull) {
+            nullPredecessors++;
         }
     }
 
-    if (notNullPredecessors == block->predecessors.size()) {
+    if (nullPredecessors == predecessors.size()) {
+        return Nullability::DefinitelyNull;
+    }
+    if (notNullPredecessors == predecessors.size()) {
         return Nullability::DefinitelyNotNull;
+    }
+    // Null on some path but not all is maybe-null; only unknown everywhere is
+    // indefinite.
+    if (nullPredecessors > 0) {
+        return Nullability::DefinitelyNullable;
     }
     return Nullability::IndefiniteNullability;
 }
@@ -128,10 +143,67 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
                 bool isSomeTag = tag == IRGenerator::getOptionalSomeTag();
                 bool isNoneTag = tag == IRGenerator::getOptionalNoneTag();
                 if (isSomeTag || isNoneTag) {
+                    // A resolved tag check is decisive: the None side is null, not maybe-null.
                     bool trueMeansNotNull = ((binary->op == Token::Equal) == isSomeTag) != negated;
-                    if (destination == condBr->trueBlock) return trueMeansNotNull ? Nullability::DefinitelyNotNull : Nullability::DefinitelyNullable;
-                    if (destination == condBr->falseBlock) return trueMeansNotNull ? Nullability::DefinitelyNullable : Nullability::DefinitelyNotNull;
+                    if (destination == condBr->trueBlock) return trueMeansNotNull ? Nullability::DefinitelyNotNull : Nullability::DefinitelyNull;
+                    if (destination == condBr->falseBlock) return trueMeansNotNull ? Nullability::DefinitelyNull : Nullability::DefinitelyNotNull;
                     return Nullability::IndefiniteNullability;
+                }
+            }
+        }
+    }
+
+    if (auto switchInst = llvm::dyn_cast<SwitchInst>(lastInst)) {
+        // Switches over optionals compare the tag field; cases carry the
+        // Optional Some/None tags as integers. (Pointer-implemented optionals
+        // cannot be switched on.)
+        bool switchesNullable = false;
+        if (auto load = llvm::dyn_cast<LoadInst>(switchInst->condition)) {
+            if (auto gep = llvm::dyn_cast<ConstGEPInst>(load->value)) {
+                switchesNullable =
+                    gep->index == IRGenerator::optionalTagFieldIndex && (gep->pointer == nullableValue || gep->pointer->loads(nullableValue, gepIndex));
+            }
+        }
+        if (switchesNullable) {
+            int64_t someTag = IRGenerator::getOptionalSomeTag();
+            int64_t noneTag = IRGenerator::getOptionalNoneTag();
+            bool hasSome = false, hasNone = false, hasOther = false;
+            for (auto& [caseValue, caseBlock] : switchInst->cases) {
+                if (caseBlock != destination) continue;
+                auto* constant = llvm::dyn_cast<ConstantInt>(caseValue);
+                if (!constant) {
+                    hasOther = true;
+                } else if (constant->value.getSExtValue() == someTag) {
+                    hasSome = true;
+                } else if (constant->value.getSExtValue() == noneTag) {
+                    hasNone = true;
+                } else {
+                    hasOther = true;
+                }
+            }
+            if (hasNone && !hasSome && !hasOther) return Nullability::DefinitelyNull;
+            if (hasSome && !hasNone && !hasOther) return Nullability::DefinitelyNotNull;
+            if (hasSome || hasNone || hasOther) return Nullability::DefinitelyNullable;
+            // Otherwise this is the default block, reached for any tag but the cased
+            // ones: with only Some cased the value is None and vice versa (like the
+            // tag comparison above, this assumes valid tags).
+            if (destination == switchInst->defaultBlock) {
+                bool someCased = false, noneCased = false, unknownCased = false;
+                for (auto& [caseValue, caseBlock] : switchInst->cases) {
+                    auto* constant = llvm::dyn_cast<ConstantInt>(caseValue);
+                    if (!constant) {
+                        unknownCased = true;
+                    } else if (constant->value.getSExtValue() == someTag) {
+                        someCased = true;
+                    } else if (constant->value.getSExtValue() == noneTag) {
+                        noneCased = true;
+                    } else {
+                        unknownCased = true;
+                    }
+                }
+                if (!unknownCased) {
+                    if (someCased && !noneCased) return Nullability::DefinitelyNull;
+                    if (noneCased && !someCased) return Nullability::DefinitelyNotNull;
                 }
             }
         }
@@ -143,6 +215,18 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
 // Runs after type-checking (which implicitly unwraps optionals as needed),
 // emitting warnings for null-safety violations.
 void NullAnalyzer::analyze(IRModule* module) {
+    switchPredecessors.clear();
+    for (auto function : module->functions) {
+        for (auto block : function->body) {
+            if (block->body.empty()) continue;
+            if (auto switchInst = llvm::dyn_cast<SwitchInst>(block->body.back())) {
+                switchPredecessors[switchInst->defaultBlock].push_back(block);
+                for (auto& [caseValue, caseBlock] : switchInst->cases) {
+                    switchPredecessors[caseBlock].push_back(block);
+                }
+            }
+        }
+    }
     for (auto function : module->functions) {
         // The analyzer is reused across modules, so sites must re-warn.
         warnedRanges.clear();
@@ -161,17 +245,25 @@ void NullAnalyzer::warnNullabilityOnce(Location begin, Location end, const char*
     reportWarning(begin, message, {}, end);
 }
 
+void NullAnalyzer::warnForNullability(Location begin, Location end, Nullability nullability, const char* nullMessage, const char* nullableMessage) {
+    if (nullability == Nullability::DefinitelyNull) {
+        warnNullabilityOnce(begin, end, nullMessage);
+    } else if (nullability == Nullability::DefinitelyNullable) {
+        warnNullabilityOnce(begin, end, nullableMessage);
+    }
+}
+
 void NullAnalyzer::analyze(Value* value) {
     switch (value->kind) {
     case ValueKind::CallInst: {
         auto call = llvm::cast<CallInst>(value);
         if (auto* callExpr = llvm::dyn_cast_or_null<CallExpr>(call->expr)) {
             if (auto receiverType = callExpr->receiverType) {
-                if (receiverType.isOptionalType() && analyzeNullability(call->args[0], call) == Nullability::DefinitelyNullable) {
+                if (receiverType.isOptionalType()) {
                     // TODO: Store the implicit 'this' receiver to the call expr during typechecking to simplify this code.
                     const Expr* target = callExpr->getReceiver() ? callExpr->getReceiver() : callExpr;
-                    warnNullabilityOnce(getExprRangeStart(*target), target->endLocation,
-                                        "receiver may be null; unwrap it with a postfix '!' to silence this warning");
+                    warnForNullability(getExprRangeStart(*target), target->endLocation, analyzeNullability(call->args[0], call), "receiver is null here",
+                                       "receiver may be null; unwrap it with a postfix '!' to silence this warning");
                 }
             }
         }
@@ -180,9 +272,20 @@ void NullAnalyzer::analyze(Value* value) {
     case ValueKind::BinaryInst: {
         auto binary = llvm::cast<BinaryInst>(value);
         if (llvm::StringRef(binary->name).starts_with("__implicit_unwrap")) {
-            if (binary->getExpr() && analyzeNullability(binary->left, binary) == Nullability::DefinitelyNullable) {
-                warnNullabilityOnce(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation,
-                                    "value may be null; unwrap it with a postfix '!' to silence this warning");
+            if (binary->getExpr()) {
+                // Value-implemented optionals unwrap through a tag comparison, so the
+                // operand here is the boolean result; analyze the optional it tests.
+                Value* unwrapped = binary->left;
+                if (auto compare = llvm::dyn_cast<BinaryInst>(unwrapped)) {
+                    auto* extract = llvm::dyn_cast<ExtractInst>(compare->left);
+                    auto* tag = llvm::dyn_cast<ConstantInt>(compare->right);
+                    if (compare->op == Token::Equal && extract && tag && extract->index == IRGenerator::optionalTagFieldIndex
+                        && tag->value.getSExtValue() == IRGenerator::getOptionalSomeTag()) {
+                        unwrapped = extract->aggregate;
+                    }
+                }
+                warnForNullability(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation, analyzeNullability(unwrapped, binary),
+                                   "value is null here", "value may be null; unwrap it with a postfix '!' to silence this warning");
             }
         } else if (llvm::isa<ConstantNull>(binary->right)) {
             ASSERT(binary->op == Token::Equal || binary->op == Token::NotEqual);
@@ -196,9 +299,9 @@ void NullAnalyzer::analyze(Value* value) {
     case ValueKind::LoadInst: {
         auto load = llvm::cast<LoadInst>(value);
         if (auto expr = llvm::dyn_cast_or_null<UnaryExpr>(load->expr)) {
-            if (expr->getOperand().type.isOptionalType() && analyzeNullability(load->value, load) == Nullability::DefinitelyNullable) {
-                warnNullabilityOnce(getExprRangeStart(*expr), expr->endLocation,
-                                    "dereferenced pointer may be null; unwrap it with a postfix '!' to silence this warning");
+            if (expr->getOperand().type.isOptionalType()) {
+                warnForNullability(getExprRangeStart(*expr), expr->endLocation, analyzeNullability(load->value, load), "dereferenced pointer is null here",
+                                   "dereferenced pointer may be null; unwrap it with a postfix '!' to silence this warning");
             }
         }
         break;
@@ -206,19 +309,18 @@ void NullAnalyzer::analyze(Value* value) {
     case ValueKind::GEPInst: {
         auto gep = llvm::cast<GEPInst>(value);
         auto* call = gep->expr ? llvm::dyn_cast<CallExpr>(gep->expr) : nullptr;
-        if (call && call->isMethodCall() && call->getFunctionName() == "data" && call->type.isOptionalType()
-            && analyzeNullability(gep->pointer, gep) == Nullability::DefinitelyNullable) {
-            warnNullabilityOnce(getExprRangeStart(*call), call->endLocation, "value may be null; unwrap it with a postfix '!' to silence this warning");
+        if (call && call->isMethodCall() && call->getFunctionName() == "data" && call->type.isOptionalType()) {
+            warnForNullability(getExprRangeStart(*call), call->endLocation, analyzeNullability(gep->pointer, gep), "value is null here",
+                               "value may be null; unwrap it with a postfix '!' to silence this warning");
         }
         break;
     }
     case ValueKind::ConstGEPInst: {
         auto gep = llvm::cast<ConstGEPInst>(value);
         if (gep->expr) {
-            if (gep->expr->base->type.isOptionalType() && !gep->expr->base->isThis()
-                && analyzeNullability(gep->pointer, gep) == Nullability::DefinitelyNullable) {
-                warnNullabilityOnce(getExprRangeStart(*gep->expr->base), gep->expr->base->endLocation,
-                                    "value may be null; unwrap it with a postfix '!' to silence this warning");
+            if (gep->expr->base->type.isOptionalType() && !gep->expr->base->isThis()) {
+                warnForNullability(getExprRangeStart(*gep->expr->base), gep->expr->base->endLocation, analyzeNullability(gep->pointer, gep),
+                                   "value is null here", "value may be null; unwrap it with a postfix '!' to silence this warning");
             }
         }
         break;
