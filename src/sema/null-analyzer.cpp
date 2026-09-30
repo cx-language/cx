@@ -1,7 +1,9 @@
 #include "null-analyzer.h"
 #include "../ast/decl.h"
+#include "../ast/module.h"
 #include "../backend/ir.h"
 #include "../backend/irgen.h"
+#include <optional>
 
 using namespace cx;
 
@@ -104,6 +106,56 @@ Nullability NullAnalyzer::analyzeNullability_recursive(Value* nullableValue, Ins
     return Nullability::IndefiniteNullability;
 }
 
+static bool isTagOf(Value* side, Value* nullableValue, int gepIndex) {
+    if (auto* extract = llvm::dyn_cast<ExtractInst>(side)) {
+        return extract->index == IRGenerator::optionalTagFieldIndex
+            && (extract->aggregate == nullableValue || extract->aggregate->loads(nullableValue, gepIndex));
+    }
+    if (auto* load = llvm::dyn_cast<LoadInst>(side)) {
+        auto* gep = llvm::dyn_cast<ConstGEPInst>(load->value);
+        return gep && gep->index == IRGenerator::optionalTagFieldIndex && (gep->pointer == nullableValue || gep->pointer->loads(nullableValue, gepIndex));
+    }
+    return false;
+}
+
+// Resolves a temp optional's tag from the constant stored to it before this use
+// (how `None` materializes in a condition). Strictly gives up on any other
+// call or store first: those could have overwritten the tag.
+static std::optional<int64_t> resolveTempTag(AllocaInst* temp, BasicBlock* block, Value* use) {
+    int useIndex = -1;
+    for (int i = 0; i < (int)block->body.size(); ++i) {
+        if (block->body[i] == use) {
+            useIndex = i;
+            break;
+        }
+    }
+    if (useIndex == -1) return std::nullopt;
+    for (int i = useIndex - 1; i >= 0; --i) {
+        Value* inst = block->body[i];
+        if (llvm::isa<CallInst>(inst)) return std::nullopt;
+        if (auto* store = llvm::dyn_cast<StoreInst>(inst)) {
+            auto* gep = llvm::dyn_cast<ConstGEPInst>(store->pointer);
+            if (gep && gep->pointer == temp && gep->index == IRGenerator::optionalTagFieldIndex) {
+                if (auto* constant = llvm::dyn_cast<ConstantInt>(store->value)) return constant->value.getSExtValue();
+                return std::nullopt;
+            }
+            return std::nullopt;
+        }
+    }
+    return std::nullopt;
+}
+
+static std::optional<int64_t> resolveTagConstant(Value* side, BasicBlock* block) {
+    if (auto* constant = llvm::dyn_cast<ConstantInt>(side)) return constant->value.getSExtValue();
+    auto* load = llvm::dyn_cast<LoadInst>(side);
+    if (!load) return std::nullopt;
+    auto* gep = llvm::dyn_cast<ConstGEPInst>(load->value);
+    if (!gep || gep->index != IRGenerator::optionalTagFieldIndex) return std::nullopt;
+    auto* temp = llvm::dyn_cast<AllocaInst>(gep->pointer);
+    if (!temp) return std::nullopt;
+    return resolveTempTag(temp, block, load);
+}
+
 Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValue, BasicBlock* predecessor, BasicBlock* destination, int gepIndex) {
     auto lastInst = predecessor->body.back();
 
@@ -135,18 +187,41 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
         }
 
         if (auto binary = llvm::dyn_cast<BinaryInst>(condition)) {
-            auto* extract = llvm::dyn_cast<ExtractInst>(binary->left);
-            auto* constant = llvm::dyn_cast<ConstantInt>(binary->right);
-            if (extract && constant && extract->index == IRGenerator::optionalTagFieldIndex
-                && (extract->aggregate == nullableValue || extract->aggregate->loads(nullableValue, gepIndex))) {
-                int64_t tag = constant->value.getSExtValue();
-                bool isSomeTag = tag == IRGenerator::getOptionalSomeTag();
-                bool isNoneTag = tag == IRGenerator::getOptionalNoneTag();
-                if (isSomeTag || isNoneTag) {
-                    // A resolved tag check is decisive: the None side is null, not maybe-null.
-                    bool trueMeansNotNull = ((binary->op == Token::Equal) == isSomeTag) != negated;
-                    if (destination == condBr->trueBlock) return trueMeansNotNull ? Nullability::DefinitelyNotNull : Nullability::DefinitelyNull;
-                    if (destination == condBr->falseBlock) return trueMeansNotNull ? Nullability::DefinitelyNull : Nullability::DefinitelyNotNull;
+            // Either side may hold the tag: `is` compares two loaded tags, so
+            // the constant side can be a temp whose stored tag must be resolved.
+            Value* sides[] = {binary->left, binary->right};
+            for (int s = 0; s < 2; ++s) {
+                if (!isTagOf(sides[s], nullableValue, gepIndex)) continue;
+                auto tag = resolveTagConstant(sides[1 - s], predecessor);
+                if (!tag) continue;
+                bool isSomeTag = *tag == IRGenerator::getOptionalSomeTag();
+                bool isNoneTag = *tag == IRGenerator::getOptionalNoneTag();
+                if (!isSomeTag && !isNoneTag) continue;
+                // A resolved tag check is decisive: the None side is null, not maybe-null.
+                bool trueMeansNotNull = ((binary->op == Token::Equal) == isSomeTag) != negated;
+                if (destination == condBr->trueBlock) return trueMeansNotNull ? Nullability::DefinitelyNotNull : Nullability::DefinitelyNull;
+                if (destination == condBr->falseBlock) return trueMeansNotNull ? Nullability::DefinitelyNull : Nullability::DefinitelyNotNull;
+                return Nullability::IndefiniteNullability;
+            }
+        }
+
+        // `x == None` lowers to a stdlib Optional== call on (x, None-temp); the
+        // callee check keeps user-defined equality (or shadowed overloads) out.
+        if (auto* call = llvm::dyn_cast<CallInst>(condition)) {
+            auto* binExpr = llvm::dyn_cast_or_null<BinaryExpr>(call->expr);
+            auto* callee = binExpr ? llvm::dyn_cast<FunctionDecl>(binExpr->calleeDecl) : nullptr;
+            if (binExpr && (binExpr->op == Token::Equal || binExpr->op == Token::NotEqual) && call->args.size() == 2 && binExpr->getLHS().type.isOptionalType()
+                && binExpr->getRHS().type.isOptionalType() && callee && callee->getModule() == Module::getStdlibModule()) {
+                for (int s = 0; s < 2; ++s) {
+                    Value* selfSide = call->args[s];
+                    if (selfSide != nullableValue && !selfSide->loads(nullableValue, gepIndex)) continue;
+                    auto* temp = llvm::dyn_cast<AllocaInst>(call->args[1 - s]);
+                    if (!temp) continue;
+                    auto tag = resolveTempTag(temp, predecessor, call);
+                    if (!tag || *tag != IRGenerator::getOptionalNoneTag()) continue;
+                    bool trueMeansNull = (binExpr->op == Token::Equal) != binExpr->negateResult != negated;
+                    if (destination == condBr->trueBlock) return trueMeansNull ? Nullability::DefinitelyNull : Nullability::DefinitelyNotNull;
+                    if (destination == condBr->falseBlock) return trueMeansNull ? Nullability::DefinitelyNotNull : Nullability::DefinitelyNull;
                     return Nullability::IndefiniteNullability;
                 }
             }
@@ -157,13 +232,7 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
         // Switches over optionals compare the tag field; cases carry the
         // Optional Some/None tags as integers. (Pointer-implemented optionals
         // cannot be switched on.)
-        bool switchesNullable = false;
-        if (auto load = llvm::dyn_cast<LoadInst>(switchInst->condition)) {
-            if (auto gep = llvm::dyn_cast<ConstGEPInst>(load->value)) {
-                switchesNullable =
-                    gep->index == IRGenerator::optionalTagFieldIndex && (gep->pointer == nullableValue || gep->pointer->loads(nullableValue, gepIndex));
-            }
-        }
+        bool switchesNullable = isTagOf(switchInst->condition, nullableValue, gepIndex);
         if (switchesNullable) {
             int64_t someTag = IRGenerator::getOptionalSomeTag();
             int64_t noneTag = IRGenerator::getOptionalNoneTag();

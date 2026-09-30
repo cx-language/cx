@@ -31,6 +31,22 @@ void switchDefaultArm() {
     }
 }
 
+void isNoneBranch() {
+    string? key = "asfd";
+    if key is None {
+        // CHECK: [[@LINE+1]]:26: warning: value is null here
+        println("key: ", key.substr(0..4));
+    }
+}
+
+void eqNoneBranch() {
+    string? key = "asfd";
+    if key == None {
+        // CHECK: [[@LINE+1]]:26: warning: value is null here
+        println("key: ", key.substr(0..4));
+    }
+}
+
 void joinAfterSwitchWarnsMaybe() {
     string? key = "asfd";
     switch key {

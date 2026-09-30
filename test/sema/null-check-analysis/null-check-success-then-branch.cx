@@ -6,3 +6,9 @@ void foo(int*? p) {
         *p = 42;
     }
 }
+
+void notNone(string? key) {
+    if key != None {
+        println("key: ", key.substr(0..4));
+    }
+}
