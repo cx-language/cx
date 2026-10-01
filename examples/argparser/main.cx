@@ -71,7 +71,7 @@ void runList(CommandSpec& cmd, List<Task>& tasks) {
     }
 }
 
-int runDone(CommandSpec& cmd, List<Task>& tasks, string dbPath) {
+int runDone(CommandSpec& cmd, List<Task>* tasks, string dbPath) {
     var parsed = cmd.positional("INDEX").parseInt();
     if parsed == null {
         stderr().write("invalid task index '");
@@ -145,7 +145,7 @@ int main(string[] argv) {
             return 0;
         }
         if cmd.name == "done" {
-            return runDone(cmd, tasks, parser.option("db"));
+            return runDone(cmd, &tasks, parser.option("db"));
         }
     }
     return 1;

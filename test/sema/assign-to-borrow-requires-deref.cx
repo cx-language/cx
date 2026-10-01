@@ -1,13 +1,14 @@
 // RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
 void assignToBorrow(int& x) {
-    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    // CHECK: [[@LINE+1]]:5: error: cannot rebind reference parameter 'x' of type 'int&' (take 'int*' instead and write '*x')
     x = 5;
     var y = 6;
-    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    // CHECK: [[@LINE+1]]:5: error: cannot rebind reference parameter 'x' of type 'int&' (take 'int*' instead and write '*x')
     x = y;
-    // CHECK: [[@LINE+1]]:5: error: cannot rebind borrow of type 'int&' (use '*' to write through it explicitly)
+    // CHECK: [[@LINE+1]]:5: error: cannot rebind reference parameter 'x' of type 'int&' (take 'int*' instead and write '*x')
     x += 1;
+    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'x' of type 'int&' hides the mutation from the call site; take 'int*' instead
     *x = 5;
 }
 

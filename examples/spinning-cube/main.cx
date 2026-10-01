@@ -85,7 +85,7 @@ uint8 toByte(float c) {
     return uint8(int(clamp(c, 0.0, 1.0) * 255.99));
 }
 
-void render(int width, int height, int angleDegrees, List<uint8>& pixels) {
+void render(int width, int height, int angleDegrees, List<uint8>* pixels) {
     var spin = float(angleDegrees) * pi / 180.0;
     var tilt = 28.0 * pi / 180.0;
     var distance = 5.5;
@@ -223,7 +223,7 @@ int runSelfTest() {
     check(abs(middle.x - 32.0) < 0.001 && abs(middle.y - 24.0) < 0.001, "projection");
     // The center pixel sees the red front face.
     var pixels = List<uint8>();
-    render(64, 48, 25, pixels);
+    render(64, 48, 25, &pixels);
     check(pixels.size() == 64 * 48 * 3, "pixel count");
     var r = channel(pixels, 64, 32, 24, 0);
     var g = channel(pixels, 64, 32, 24, 1);
@@ -236,7 +236,7 @@ int runSelfTest() {
     check(cr < 80 && cg < 80 && cb < 80, "corner is background");
     // Different angles render different frames: the cube spins.
     var other = List<uint8>();
-    render(64, 48, 115, other);
+    render(64, 48, 115, &other);
     var differ = false;
     for i in 0..pixels.size() {
         if pixels[i] != other[i] {
@@ -286,7 +286,7 @@ int main(string[] args) {
         }
     }
     var pixels = List<uint8>();
-    render(width, height, angle, pixels);
+    render(width, height, angle, &pixels);
     if !writePpm(path, width, height, pixels) {
         println("cannot write ", path);
         return 1;

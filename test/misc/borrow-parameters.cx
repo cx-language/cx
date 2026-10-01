@@ -1,7 +1,7 @@
 // RUN: check_exit_status 0 %cx run %s
 // RUN: check_exit_status 0 %cx run --backend=c %s
 
-void bump(int& x) {
+void bump(int* x) {
     *x += 1;
 }
 
@@ -13,7 +13,7 @@ int strLen(string& s) {
     return s.size();
 }
 
-void bumpForwarded(int& x) {
+void bumpForwarded(int* x) {
     bump(x);
 }
 
@@ -64,9 +64,9 @@ int pickOverload(int&? o) {
 }
 
 void main() {
-    // Values bind to borrows; mutation is visible to the caller.
+    // Values bind to borrows; mutation takes an explicit '&' at the call site.
     var x = 1;
-    bump(x);
+    bump(&x);
     assert(x == 2);
 
     // Temporaries and literals bind to borrows.
@@ -79,8 +79,8 @@ void main() {
     bump(p);
     assert(x == 3);
 
-    // Borrows forward to borrows without copying.
-    bumpForwarded(x);
+    // Pointers forward without copying.
+    bumpForwarded(&x);
     assert(x == 4);
 
     // An explicit type still copies a borrow out; an inferred `var` aliases it.

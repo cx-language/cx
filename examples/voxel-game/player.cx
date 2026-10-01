@@ -71,7 +71,7 @@ bool hasGround(World& w, Player& p) {
     return false;
 }
 
-void moveAxis(World& w, Player& p, int axis, float delta) {
+void moveAxis(World& w, Player* p, int axis, float delta) {
     var remaining = delta;
     while abs(remaining) > 0.0001 {
         var step = clamp(remaining, -0.3, 0.3);
@@ -115,7 +115,7 @@ void moveAxis(World& w, Player& p, int axis, float delta) {
     }
 }
 
-void updatePlayer(World& w, Player& p, Input& input, float dt) {
+void updatePlayer(World& w, Player* p, Input& input, float dt) {
     p.yaw += input.lookDX * 0.003;
     p.pitch -= input.lookDY * 0.003;
     if p.pitch > 1.55 {

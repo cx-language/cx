@@ -1,0 +1,16 @@
+// RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+struct Inner {
+    int v;
+}
+
+struct Outer {
+    Inner? opt;
+}
+
+// Both the borrow warning and the may-be-null warning fire on the same line.
+void nestedOptionalWrite(Outer& o) {
+    // CHECK: [[@LINE+2]]:5: warning: writing to reference parameter 'o' of type 'Outer&' hides the mutation from the call site; take 'Outer*' instead
+    // CHECK: [[@LINE+1]]:5: warning: value may be null; unwrap it with a postfix '!' to silence this warning
+    o.opt.v = 1;
+}

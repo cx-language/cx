@@ -12,8 +12,8 @@ int readPointer(int*& p) {
     return *q;
 }
 
-// Writing through peels the borrow, reseating the borrowed pointer itself.
-void reseat(int*& p, int* q) {
+// Reseating goes through a pointer so the '&' at the call site shows it.
+void reseat(int** p, int* q) {
     *p = q;
 }
 
@@ -29,6 +29,6 @@ void main() {
     println(readTwice(p)); // CHECK: 41
     println(readPointer(p)); // CHECK-NEXT: 41
     println(addressOf(p) == &p); // CHECK-NEXT: true
-    reseat(p, &b);
+    reseat(&p, &b);
     println(*p); // CHECK-NEXT: 42
 }

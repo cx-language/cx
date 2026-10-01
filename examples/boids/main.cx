@@ -87,7 +87,7 @@ float wrapDelta(float d, float max) {
     return d;
 }
 
-void stepFlock(Flock& flock, Grid& grid, float dt, bool attract, float mouseX, float mouseY) {
+void stepFlock(Flock* flock, Grid* grid, float dt, bool attract, float mouseX, float mouseY) {
     for i in 0..grid.head.size() {
         grid.head[i] = -1;
     }
@@ -233,7 +233,7 @@ void runInteractive() {
         float mouseY = 0;
         var buttons = SDL_GetMouseState(&mouseX, &mouseY);
         // SDL_BUTTON_LMASK is a function-like macro, so it doesn't import; its value is 1.
-        stepFlock(flock, grid, dt, (buttons & 1) != 0, mouseX, mouseY);
+        stepFlock(&flock, &grid, dt, (buttons & 1) != 0, mouseX, mouseY);
 
         SDL_SetRenderDrawColor(renderer, 10, 12, 20, 255);
         SDL_RenderClear(renderer);
@@ -268,7 +268,7 @@ int runScreenshot(string path) {
     var flock = makeFlock();
     var grid = makeGrid();
     for _ in 0..900 {
-        stepFlock(flock, grid, 1.0 / 60.0, false, 0.0, 0.0);
+        stepFlock(&flock, &grid, 1.0 / 60.0, false, 0.0, 0.0);
     }
     var pixels = List<uint8>();
     pixels.reserve(width * height * 3);

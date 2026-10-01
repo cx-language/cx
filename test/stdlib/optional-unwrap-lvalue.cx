@@ -11,7 +11,7 @@ struct Holder {
     int? field;
 }
 
-void setTo99(int& v) { *v = 99; }
+void setTo99(int* v) { *v = 99; }
 
 @test
 void testIndexAssign() {
@@ -55,7 +55,7 @@ void testAddressOf() {
 @test
 void testBorrowParam() {
     int? c = 0;
-    setTo99(c!);
+    setTo99(&c!);
     assert(c! == 99);
 }
 

@@ -3,7 +3,7 @@
 
 struct PlainPoint { int x; }
 
-void bump(int& x) {
+void bump(int* x) {
     *x += 1;
 }
 
@@ -17,7 +17,7 @@ void main() {
     println(x);
     // CHECK-NEXT:6
     println(r);
-    bump(r);
+    bump(&r);
     // CHECK-NEXT:7
     println(x);
 

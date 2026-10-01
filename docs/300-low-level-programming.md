@@ -7,13 +7,13 @@ The `undefined` keyword allows you to explicitly mark a variable as uninitialize
 This is useful for example when a variable is initialized through an out parameter.
 
 ```cs
-void init(int& value) {
+void init(int* value) {
     *value = 42;
 }
 
 void main() {
     int result = undefined;
-    init(result);
+    init(&result);
     println(result); // prints 42
 }
 ```

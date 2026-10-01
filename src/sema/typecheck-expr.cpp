@@ -66,6 +66,71 @@ static bool needsImplicitMemberUnwrap(Type type) {
     return type.isOptionalType() && !type.isReferenceType() && !type.getWrappedType().isImplementedAsPointer();
 }
 
+// Root variable of an assignment target. With seeThroughDeref also descends
+// through '*' and optional-unwrap casts, which is only used by the
+// borrow-write warning; move analysis keeps the strict walk.
+static VarExpr* getAssignmentBaseVarExpr(Expr& lhs, bool seeThroughDeref = false) {
+    Expr* current = &lhs;
+    while (true) {
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) return varExpr;
+        if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(current)) {
+            current = memberExpr->base;
+            continue;
+        }
+        if (auto* indexExpr = llvm::dyn_cast<IndexExpr>(current)) {
+            current = indexExpr->getBase();
+            continue;
+        }
+        if (auto* indexAssignExpr = llvm::dyn_cast<IndexAssignmentExpr>(current)) {
+            current = indexAssignExpr->getBase();
+            continue;
+        }
+        if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(current)) {
+            current = unwrapExpr->getReceiver();
+            continue;
+        }
+        if (seeThroughDeref) {
+            if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(current); unaryExpr && unaryExpr->op == Token::Star) {
+                current = &unaryExpr->getOperand();
+                continue;
+            }
+            // OptionalUnwrap is the only lvalue-preserving implicit cast.
+            if (auto* castExpr = llvm::dyn_cast<ImplicitCastExpr>(current); castExpr && castExpr->castKind == ImplicitCastExpr::OptionalUnwrap) {
+                current = castExpr->operand;
+                continue;
+            }
+        }
+        return nullptr;
+    }
+}
+
+// Writes through a reference parameter mutate the caller's argument without
+// any '&' at the call site, so warn in favor of raw pointers.
+static void warnOnBorrowParamWrite(Expr& lhs) {
+    auto* root = getAssignmentBaseVarExpr(lhs, /*seeThroughDeref=*/true);
+    if (!root || !root->decl || root->isThis()) return;
+    if (!llvm::isa<ParamDecl>(root->decl)) return;
+    Type refType = root->type.removeOptional();
+    if (!refType.isReferenceType() || !refType.getPointee().isMutable()) return;
+    WARN_RANGE(getExprRangeStart(lhs), lhs.endLocation,
+               "writing to reference parameter '" << root->identifier << "' of type '" << root->type << "' hides the mutation from the call site; take '"
+                                                  << refType.getPointee() << "*' instead");
+}
+
+// Throws the borrow-operand error for '++'/'--', suggesting 'T*' for reference parameters.
+static void diagnoseBorrowIncDec(UnaryExpr& expr, Type operandType) {
+    bool isIncrement = expr.op == Token::Increment;
+    llvm::StringRef verb = isIncrement ? "increment" : "decrement";
+    llvm::StringRef op = isIncrement ? "++" : "--";
+    if (auto* root = getAssignmentBaseVarExpr(expr.getOperand()); root && llvm::isa<ParamDecl>(root->decl)) {
+        ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                    "cannot " << verb << " reference parameter '" << root->identifier << "' (take '" << operandType.removeOptional().getPointee()
+                              << "*' instead and write '(*" << root->identifier << ")" << op << "')");
+    }
+    ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                "cannot " << verb << " borrow of type '" << operandType << "'; dereference it explicitly (e.g. '(*x)" << op << "')");
+}
+
 void Typechecker::maybeCaptureVariable(VariableDecl& variableDecl) {
     if (!currentFunction || !currentFunction->isLambda()) return;
     if (variableDecl.kind != DeclKind::VarDecl && variableDecl.kind != DeclKind::ParamDecl) return;
@@ -532,8 +597,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
 
     case Token::Increment:
         if (operandType.removeOptional().isReferenceType()) {
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
-                        "cannot increment borrow of type '" << operandType << "'; dereference it explicitly (e.g. '(*x)++')");
+            diagnoseBorrowIncDec(expr, operandType);
         }
         if (operandType.removeOptional().isPointerType()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
@@ -551,12 +615,12 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment '" << operandType << "'");
         }
 
+        warnOnBorrowParamWrite(expr.getOperand());
         return Type::getVoid();
 
     case Token::Decrement:
         if (operandType.removeOptional().isReferenceType()) {
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
-                        "cannot decrement borrow of type '" << operandType << "'; dereference it explicitly (e.g. '(*x)--')");
+            diagnoseBorrowIncDec(expr, operandType);
         }
         if (operandType.removeOptional().isPointerType()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
@@ -574,6 +638,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement '" << operandType << "'");
         }
 
+        warnOnBorrowParamWrite(expr.getOperand());
         return Type::getVoid();
 
     case Token::MinusWrap:
@@ -1197,30 +1262,6 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 }
 
 // Walks member and index bases to the underlying variable, if any.
-static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
-    Expr* current = &lhs;
-    while (true) {
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) return varExpr;
-        if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(current)) {
-            current = memberExpr->base;
-            continue;
-        }
-        if (auto* indexExpr = llvm::dyn_cast<IndexExpr>(current)) {
-            current = indexExpr->getBase();
-            continue;
-        }
-        if (auto* indexAssignExpr = llvm::dyn_cast<IndexAssignmentExpr>(current)) {
-            current = indexAssignExpr->getBase();
-            continue;
-        }
-        if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(current)) {
-            current = unwrapExpr->getReceiver();
-            continue;
-        }
-        return nullptr;
-    }
-}
-
 void Typechecker::typecheckAssignment(BinaryExpr& expr) {
     auto* lhs = &expr.getLHS();
     auto* rhs = &expr.getRHS();
@@ -1232,6 +1273,12 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
     // Assigning to a borrow would rebind it, like reseating a pointer. Borrows cannot be
     // rebound, so reject every borrow target here, whether or not it is an lvalue.
     if (lhs->assignableType.isReferenceType()) {
+        if (auto* root = getAssignmentBaseVarExpr(*lhs); root && llvm::isa<ParamDecl>(root->decl)) {
+            ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation,
+                        "cannot rebind reference parameter '" << root->identifier << "' of type '" << lhs->assignableType << "' (take '"
+                                                              << lhs->assignableType.removeOptional().getPointee() << "*' instead and write '*"
+                                                              << root->identifier << "')");
+        }
         ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation,
                     "cannot rebind borrow of type '" << lhs->assignableType << "' (use '*' to write through it explicitly)");
     }
@@ -1341,6 +1388,8 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
             if (auto it = deinitPtrTargets.find(baseVar->decl); it != deinitPtrTargets.end()) reseatDeinitPtrTarget(it->second);
         }
     }
+
+    warnOnBorrowParamWrite(*lhs);
 }
 
 static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange) {
@@ -4546,6 +4595,7 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
             }
         }
         typecheckCallExpr(expr);
+        warnOnBorrowParamWrite(expr);
         return Type::getVoid();
     }
 
@@ -4571,6 +4621,7 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
         }
     }
 
+    warnOnBorrowParamWrite(expr);
     return Type::getVoid();
 }
 

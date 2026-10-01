@@ -59,7 +59,7 @@ struct Arena {
         if size == 0 {
             if chunk != null {
                 var start = uint64(0);
-                if alignUp(chunk.used, start) && start <= chunk.capacity {
+                if alignUp(chunk.used, &start) && start <= chunk.capacity {
                     return &chunk.data[start];
                 }
             }
@@ -73,7 +73,7 @@ struct Arena {
 
         if chunk != null {
             var start = uint64(0);
-            if alignUp(chunk.used, start) && start <= chunk.capacity && size <= chunk.capacity - start {
+            if alignUp(chunk.used, &start) && start <= chunk.capacity && size <= chunk.capacity - start {
                 chunk.used = start + size;
                 return &chunk.data[start];
             }
@@ -97,7 +97,7 @@ struct Arena {
         }
 
         var dataOffset = uint64(0);
-        if !alignUp(sizeof(ArenaChunk), dataOffset) || capacity > uint64.max - dataOffset {
+        if !alignUp(sizeof(ArenaChunk), &dataOffset) || capacity > uint64.max - dataOffset {
             return null;
         }
 
@@ -121,7 +121,7 @@ struct Arena {
         return chunk;
     }
 
-    private bool alignUp(uint64 value, uint64& result) {
+    private bool alignUp(uint64 value, uint64* result) {
         var quotient = value / 16;
         var remainder = value % 16;
         if quotient == (uint64(1) << 60) - 1 && remainder != 0 {

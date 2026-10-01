@@ -17,9 +17,9 @@ bool both(bool& a, bool& b) {
     return a && b;
 }
 
-void drain(int& remaining) {
-    while remaining > 0 {
-        println(remaining);
+void drain(int* remaining) {
+    while *remaining > 0 {
+        println(*remaining);
         *remaining = *remaining - 1;
     }
 }
@@ -89,7 +89,7 @@ void main() {
     // CHECK-NEXT:3
     // CHECK-NEXT:2
     // CHECK-NEXT:1
-    drain(fuel);
+    drain(&fuel);
     println(fuel); // CHECK-NEXT:0
     println(describe(2)); // CHECK-NEXT:two
     var color = Color.Green;

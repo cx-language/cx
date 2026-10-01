@@ -77,7 +77,7 @@ void testPlayer() {
         yaw = 0.0, pitch = 0.0, onGround = false);
     var input = Input();
     for _ in 0..240 {
-        updatePlayer(world, player, input, 1.0 / 60.0);
+        updatePlayer(world, &player, input, 1.0 / 60.0);
     }
     if !player.onGround {
         abort("self-test: player did not land");
@@ -85,14 +85,14 @@ void testPlayer() {
     expectNear(player.pos.y, float(top) + 1.0, "landing height");
 
     input.jump = true;
-    updatePlayer(world, player, input, 1.0 / 60.0);
+    updatePlayer(world, &player, input, 1.0 / 60.0);
     input.jump = false;
     if player.onGround {
         abort("self-test: jump did not lift off");
     }
     var maxY = player.pos.y;
     for _ in 0..240 {
-        updatePlayer(world, player, input, 1.0 / 60.0);
+        updatePlayer(world, &player, input, 1.0 / 60.0);
         if player.pos.y > maxY {
             maxY = player.pos.y;
         }
@@ -128,7 +128,7 @@ void testPlayer() {
     player.onGround = false;
     input.forward = true;
     for _ in 0..240 {
-        updatePlayer(world, player, input, 1.0 / 60.0);
+        updatePlayer(world, &player, input, 1.0 / 60.0);
     }
     input.forward = false;
     println("wall stop x: ", player.pos.x);
@@ -176,15 +176,15 @@ void testLook() {
     var input = Input();
     input.lookDX = 100.0;
     input.lookDY = 60.0;
-    updatePlayer(world, player, input, 1.0 / 60.0);
+    updatePlayer(world, &player, input, 1.0 / 60.0);
     expectNear(player.yaw, 0.3, "look yaw");
     expectNear(player.pitch, -0.18, "look pitch");
     input.lookDX = 0.0;
     input.lookDY = -10000.0;
-    updatePlayer(world, player, input, 1.0 / 60.0);
+    updatePlayer(world, &player, input, 1.0 / 60.0);
     expectNear(player.pitch, 1.55, "pitch clamp up");
     input.lookDY = 10000.0;
-    updatePlayer(world, player, input, 1.0 / 60.0);
+    updatePlayer(world, &player, input, 1.0 / 60.0);
     expectNear(player.pitch, -1.55, "pitch clamp down");
     var dir = lookDir(player);
     if dir.y > -0.99 {
@@ -442,14 +442,14 @@ void testRestingContact() {
         yaw = 0.0, pitch = 0.0, onGround = false);
     var input = Input();
     for _ in 0..120 {
-        updatePlayer(world, player, input, 1.0 / 60.0);
+        updatePlayer(world, &player, input, 1.0 / 60.0);
     }
     if !player.onGround {
         abort("self-test: resting player did not land");
     }
     var restY = player.pos.y;
     for _ in 0..240 {
-        updatePlayer(world, player, input, 1.0 / 120.0);
+        updatePlayer(world, &player, input, 1.0 / 120.0);
         if player.pos.y != restY {
             abort("self-test: resting player moved");
         }
@@ -460,7 +460,7 @@ void testRestingContact() {
     input.forward = true;
     var fell = false;
     for _ in 0..240 {
-        updatePlayer(world, player, input, 1.0 / 60.0);
+        updatePlayer(world, &player, input, 1.0 / 60.0);
         if !player.onGround {
             fell = true;
             break;
@@ -471,7 +471,7 @@ void testRestingContact() {
     }
     var airY = player.pos.y;
     for _ in 0..30 {
-        updatePlayer(world, player, input, 1.0 / 60.0);
+        updatePlayer(world, &player, input, 1.0 / 60.0);
     }
     if player.pos.y >= airY {
         abort("self-test: ledge drop did not descend");
