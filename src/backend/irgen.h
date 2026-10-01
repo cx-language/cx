@@ -56,6 +56,12 @@ struct IRGenerator {
     void createDestructorCall(Function* destructor, Value* receiver);
     /// 'decl' is null if this is the 'this' value.
     void setLocalValue(Value* value, const VariableDecl* decl, bool deferDestructor = true);
+    // The binding borrows the enum payload, so it must not run a destructor.
+    void bindBorrowedEnumPayload(Value* enumValue, const VariableDecl* binding) {
+        auto type = binding->type.removeReference().getPointerTo();
+        auto* bindingPtr = createCast(createGEP(enumValue, 1), type, binding->getName());
+        setLocalValue(bindingPtr, binding, false);
+    }
     Value* getValueOrNull(const Decl* decl);
     Value* getValue(const Decl* decl);
     Value* getThis(IRType* targetType = nullptr);

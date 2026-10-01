@@ -293,44 +293,36 @@ Value* IRGenerator::emitConstantIncrement(const UnaryExpr& expr, int increment) 
     return nullptr;
 }
 
-Value* IRGenerator::emitLogicalAnd(const Expr& left, const Expr& right) {
-    auto* rhsBlock = new BasicBlock("and.rhs", insertBlock->parent);
-    auto* endBlock = new BasicBlock("and.end");
+// The right side may not run, and its boolean result cannot borrow its
+// temporaries, so they die here instead of at statement end.
+static Value* emitShortCircuit(IRGenerator& ir, const Expr& left, const Expr& right, bool isAnd) {
+    auto* rhsBlock = new BasicBlock(isAnd ? "and.rhs" : "or.rhs", ir.insertBlock->parent);
+    auto* endBlock = new BasicBlock(isAnd ? "and.end" : "or.end");
 
-    Value* lhs = emitBoolConvertibleOperand(left);
-    createCondBr(lhs, rhsBlock, endBlock, lhs);
+    Value* lhs = ir.emitBoolConvertibleOperand(left);
+    if (isAnd) {
+        ir.createCondBr(lhs, rhsBlock, endBlock, lhs);
+    } else {
+        ir.createCondBr(lhs, endBlock, rhsBlock, lhs);
+    }
 
-    setInsertPoint(rhsBlock);
-    // The right side may not run, and its boolean result cannot borrow its
-    // temporaries, so they die here instead of at statement end.
-    beginTempScope();
-    Value* rhs = emitBoolConvertibleOperand(right);
-    endTempScope();
-    createBr(endBlock, rhs);
+    ir.setInsertPoint(rhsBlock);
+    ir.beginTempScope();
+    Value* rhs = ir.emitBoolConvertibleOperand(right);
+    ir.endTempScope();
+    ir.createBr(endBlock, rhs);
 
-    setInsertPoint(endBlock);
-    endBlock->parameter = new Parameter{ValueKind::Parameter, lhs->getType(), "and"};
+    ir.setInsertPoint(endBlock);
+    endBlock->parameter = new Parameter{ValueKind::Parameter, lhs->getType(), isAnd ? "and" : "or"};
     return endBlock->parameter;
 }
 
+Value* IRGenerator::emitLogicalAnd(const Expr& left, const Expr& right) {
+    return emitShortCircuit(*this, left, right, true);
+}
+
 Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
-    auto* rhsBlock = new BasicBlock("or.rhs", insertBlock->parent);
-    auto* endBlock = new BasicBlock("or.end");
-
-    Value* lhs = emitBoolConvertibleOperand(left);
-    createCondBr(lhs, endBlock, rhsBlock, lhs);
-
-    setInsertPoint(rhsBlock);
-    // The right side may not run, and its boolean result cannot borrow its
-    // temporaries, so they die here instead of at statement end.
-    beginTempScope();
-    Value* rhs = emitBoolConvertibleOperand(right);
-    endTempScope();
-    createBr(endBlock, rhs);
-
-    setInsertPoint(endBlock);
-    endBlock->parameter = new Parameter{ValueKind::Parameter, lhs->getType(), "or"};
-    return endBlock->parameter;
+    return emitShortCircuit(*this, left, right, false);
 }
 
 Value* IRGenerator::emitBoolConvertibleOperand(const Expr& expr) {
@@ -437,16 +429,19 @@ Value* IRGenerator::createSelect(Value* condition, Value* trueValue, Value* fals
     return endBlock->parameter;
 }
 
-Value* IRGenerator::emitWrappingArithmetic(Token::Kind op, Value* left, Value* right, const Expr& expr, Value** overflowedOut) {
+// Chars compare as unsigned, so arithmetic on them runs in 8-bit unsigned integers.
+static IRType* lowerCharOperands(IRGenerator& ir, Value*& left, Value*& right) {
     auto* type = left->getType();
-    bool resultIsChar = type->isChar();
-    if (resultIsChar) {
-        // Chars compare as unsigned, so wrap and check them as 8-bit unsigned integers.
-        auto* uint8Type = getIRType(Type::getUInt8());
-        left = createCast(left, uint8Type);
-        right = createCast(right, uint8Type);
-        type = uint8Type;
-    }
+    if (!type->isChar()) return type;
+    auto* uint8Type = getIRType(Type::getUInt8());
+    left = ir.createCast(left, uint8Type);
+    right = ir.createCast(right, uint8Type);
+    return uint8Type;
+}
+
+Value* IRGenerator::emitWrappingArithmetic(Token::Kind op, Value* left, Value* right, const Expr& expr, Value** overflowedOut) {
+    bool resultIsChar = left->getType()->isChar();
+    auto* type = lowerCharOperands(*this, left, right);
 
     int width = getIntegerBitWidth(type);
     ASSERT(width != 0);
@@ -578,14 +573,8 @@ Value* IRGenerator::emitSaturatingArithmetic(Token::Kind op, Value* left, Value*
 }
 
 Value* IRGenerator::emitSaturatingLeftShift(Value* left, Value* right, const Expr& expr) {
-    auto* type = left->getType();
-    bool resultIsChar = type->isChar();
-    if (resultIsChar) {
-        auto* uint8Type = getIRType(Type::getUInt8());
-        left = createCast(left, uint8Type);
-        right = createCast(right, uint8Type);
-        type = uint8Type;
-    }
+    bool resultIsChar = left->getType()->isChar();
+    auto* type = lowerCharOperands(*this, left, right);
 
     int width = getIntegerBitWidth(type);
     ASSERT(width != 0);
@@ -1008,6 +997,24 @@ void IRGenerator::emitAbortWithMessage(llvm::StringRef message, Location locatio
     createUnreachable();
 }
 
+// `emitPayload` runs after the tag store, matching the previous evaluation order
+// of case arguments relative to that store. A null payload with `zeroPayload`
+// clears an unused associated value.
+template<typename EmitPayload>
+static Value* materializeEnumCase(IRGenerator& ir, Value* tag, Type enumType, bool zeroPayload, bool registerDestructor, EmitPayload&& emitPayload) {
+    auto* enumValue = ir.createEntryBlockAlloca(enumType, "enum");
+    ir.createStore(tag, ir.createGEP(enumValue, 0, nullptr, "tag"));
+    if (Value* payload = emitPayload()) {
+        auto* associatedValuePtr = ir.createCast(ir.createGEP(enumValue, 1, nullptr, "associatedValue"), payload->getType()->getPointerTo());
+        ir.createStore(payload, associatedValuePtr);
+    } else if (zeroPayload) {
+        ir.zeroEnumPayload(enumValue, enumType);
+    }
+    // A case constructed without payload arguments owns nothing, so there is nothing to destroy.
+    if (registerDestructor) ir.registerTempDestructor(enumValue, enumType);
+    return enumValue;
+}
+
 Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements, bool isMovedFrom) {
     auto enumDecl = enumCase.getEnumDecl();
     auto tag = emitExpr(*enumCase.value);
@@ -1028,22 +1035,11 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
     }
 
     // TODO: Could reuse variable alloca instead of always creating a new one here.
-    auto* enumValue = createEntryBlockAlloca(enumDecl->getType(), "enum");
-    createStore(tag, createGEP(enumValue, 0, nullptr, "tag"));
-
-    if (!associatedValueElements.empty()) {
-        Value* associatedValue = emitAggregateElements(enumCase.associatedType, associatedValueElements);
-        auto* associatedValuePtr = createCast(createGEP(enumValue, 1, nullptr, "associatedValue"), associatedValue->getType()->getPointerTo());
-        createStore(associatedValue, associatedValuePtr);
-    } else if (enumCase.associatedType) {
-        zeroEnumPayload(enumValue, enumDecl->getType());
-    }
-
-    // A case constructed without payload arguments owns nothing, so there is nothing to destroy.
-    if (!isMovedFrom && !associatedValueElements.empty()) {
-        registerTempDestructor(enumValue, enumDecl->getType());
-    }
-    return enumValue;
+    return materializeEnumCase(*this, tag, enumDecl->getType(), associatedValueElements.empty() && enumCase.associatedType,
+                               !isMovedFrom && !associatedValueElements.empty(), [&]() -> Value* {
+                                   if (associatedValueElements.empty()) return nullptr;
+                                   return emitAggregateElements(enumCase.associatedType, associatedValueElements);
+                               });
 }
 
 Value* IRGenerator::emitEnumCaseCall(const EnumCase& enumCase, const CallExpr& expr) {
@@ -1052,27 +1048,17 @@ Value* IRGenerator::emitEnumCaseCall(const EnumCase& enumCase, const CallExpr& e
     auto tag = emitExpr(*enumCase.value);
     if (!enumDecl->hasAssociatedValues()) return tag;
 
-    auto* enumValue = createEntryBlockAlloca(enumDecl->getType(), "enum");
-    createStore(tag, createGEP(enumValue, 0, nullptr, "tag"));
-
-    if (!expr.args.empty()) {
-        llvm::SmallVector<Value*, 8> writtenValues;
-        for (auto& arg : expr.args)
-            writtenValues.push_back(emitExpr(*arg.value));
-        Value* associatedValue = createUndefined(enumCase.associatedType);
-        for (size_t i = 0; i < expr.args.size(); ++i)
-            associatedValue = createInsertValue(associatedValue, writtenValues[i], expr.argParamIndices[i]);
-        auto* associatedValuePtr = createCast(createGEP(enumValue, 1, nullptr, "associatedValue"), associatedValue->getType()->getPointerTo());
-        createStore(associatedValue, associatedValuePtr);
-    } else if (enumCase.associatedType) {
-        zeroEnumPayload(enumValue, enumDecl->getType());
-    }
-
-    // A case constructed without payload arguments owns nothing, so there is nothing to destroy.
-    if (!expr.isMovedFrom && !expr.args.empty()) {
-        registerTempDestructor(enumValue, enumDecl->getType());
-    }
-    return enumValue;
+    return materializeEnumCase(*this, tag, enumDecl->getType(), expr.args.empty() && enumCase.associatedType, !expr.isMovedFrom && !expr.args.empty(),
+                               [&]() -> Value* {
+                                   if (expr.args.empty()) return nullptr;
+                                   llvm::SmallVector<Value*, 8> writtenValues;
+                                   for (auto& arg : expr.args)
+                                       writtenValues.push_back(emitExpr(*arg.value));
+                                   Value* payload = createUndefined(enumCase.associatedType);
+                                   for (size_t i = 0; i < expr.args.size(); ++i)
+                                       payload = createInsertValue(payload, writtenValues[i], expr.argParamIndices[i]);
+                                   return payload;
+                               });
 }
 
 // A case constructed without payload arguments (e.g. `Ok` in `r == Ok`) leaves the payload
@@ -1630,10 +1616,7 @@ Value* IRGenerator::emitSwitchExpr(const SwitchExpr& expr) {
         tempGuard = armGuards[armIndex];
 
         if (auto* associatedValue = arm.associatedValue) {
-            auto type = associatedValue->type.removeReference().getPointerTo();
-            auto* associatedValuePtr = createCast(createGEP(enumValue, 1), type, associatedValue->getName());
-            // The binding borrows the enum payload, so it must not run a destructor.
-            setLocalValue(associatedValuePtr, associatedValue, false);
+            bindBorrowedEnumPayload(enumValue, associatedValue);
         }
 
         // Never arms diverge, so they terminate the block instead of branching out with a value.

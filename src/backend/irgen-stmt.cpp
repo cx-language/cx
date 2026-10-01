@@ -49,6 +49,20 @@ void IRGenerator::emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuatio
     }
 }
 
+template<typename EmitThen, typename EmitElse> static void emitIfDiamond(IRGenerator& ir, Value* condition, EmitThen&& emitThen, EmitElse&& emitElse) {
+    auto* function = ir.insertBlock->parent;
+    auto* thenBlock = new BasicBlock("if.then", function);
+    auto* elseBlock = new BasicBlock("if.else", function);
+    auto* endIfBlock = new BasicBlock("if.end", function);
+    ir.createCondBr(condition, thenBlock, elseBlock);
+
+    ir.setInsertPoint(thenBlock);
+    emitThen(endIfBlock);
+    ir.setInsertPoint(elseBlock);
+    emitElse(endIfBlock);
+    ir.setInsertPoint(endIfBlock);
+}
+
 void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
     // `if s is Case name` binds the payload for the then-branch.
     if (ifStmt.isBinding) {
@@ -58,23 +72,13 @@ void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
         Value* caseTag = emitExprOrEnumTag(isExpr.getRHS(), nullptr);
         auto* condition = createBinaryOp(Token::Equal, tag, caseTag, &isExpr);
 
-        auto* function = insertBlock->parent;
-        auto* thenBlock = new BasicBlock("if.then", function);
-        auto* elseBlock = new BasicBlock("if.else", function);
-        auto* endIfBlock = new BasicBlock("if.end", function);
-        createCondBr(condition, thenBlock, elseBlock);
-
-        setInsertPoint(thenBlock);
-        auto type = ifStmt.isBinding->type.removeReference().getPointerTo();
-        auto* bindingPtr = createCast(createGEP(enumValue, 1), type, ifStmt.isBinding->getName());
-        // Like switch bindings, the binding borrows the enum payload, so it must not run a destructor.
-        setLocalValue(bindingPtr, ifStmt.isBinding, false);
-        emitBlock(ifStmt.thenBody, endIfBlock);
-
-        setInsertPoint(elseBlock);
-        emitBlock(ifStmt.elseBody, endIfBlock);
-
-        setInsertPoint(endIfBlock);
+        emitIfDiamond(
+            *this, condition,
+            [&](BasicBlock* endIfBlock) {
+                bindBorrowedEnumPayload(enumValue, ifStmt.isBinding);
+                emitBlock(ifStmt.thenBody, endIfBlock);
+            },
+            [&](BasicBlock* endIfBlock) { emitBlock(ifStmt.elseBody, endIfBlock); });
         return;
     }
 
@@ -87,19 +91,9 @@ void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
         condition = emitOptionalHasValueTest(condition);
     }
 
-    auto* function = insertBlock->parent;
-    auto* thenBlock = new BasicBlock("if.then", function);
-    auto* elseBlock = new BasicBlock("if.else", function);
-    auto* endIfBlock = new BasicBlock("if.end", function);
-    createCondBr(condition, thenBlock, elseBlock);
-
-    setInsertPoint(thenBlock);
-    emitBlock(ifStmt.thenBody, endIfBlock);
-
-    setInsertPoint(elseBlock);
-    emitBlock(ifStmt.elseBody, endIfBlock);
-
-    setInsertPoint(endIfBlock);
+    emitIfDiamond(
+        *this, condition, [&](BasicBlock* endIfBlock) { emitBlock(ifStmt.thenBody, endIfBlock); },
+        [&](BasicBlock* endIfBlock) { emitBlock(ifStmt.elseBody, endIfBlock); });
 }
 
 void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
@@ -135,10 +129,7 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
         setInsertPoint(block);
 
         if (auto* associatedValue = switchCase.associatedValue) {
-            auto type = associatedValue->type.removeReference().getPointerTo();
-            auto* associatedValuePtr = createCast(createGEP(enumValue, 1), type, associatedValue->getName());
-            // The binding borrows the enum payload, so it must not run a destructor.
-            setLocalValue(associatedValuePtr, associatedValue, false);
+            bindBorrowedEnumPayload(enumValue, associatedValue);
         }
 
         emitBlock(switchCase.stmts, end);
