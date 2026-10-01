@@ -718,17 +718,17 @@ ComparisonTemps Typechecker::createComparisonTemps(BinaryExpr& expr) {
     // emitting the lowering. (`__`-prefixed identifiers are reserved for the compiler,
     // so these can't collide with user declarations.)
     static uint64_t comparisonTempCounter = 0;
-    temps.lhsTemp = makeAST<VarDecl>(expr.getLHS().type, "__comparison_lhs_" + std::to_string(comparisonTempCounter++), nullptr, currentFunction,
-                                     AccessLevel::None, *currentModule, expr.location);
-    temps.rhsTemp = makeAST<VarDecl>(expr.getRHS().type, "__comparison_rhs_" + std::to_string(comparisonTempCounter++), nullptr, currentFunction,
-                                     AccessLevel::None, *currentModule, expr.location);
-    temps.lhsTemp->isImplicitlyBound = true;
-    temps.rhsTemp->isImplicitlyBound = true;
-    typecheckVarDecl(*temps.lhsTemp);
-    typecheckVarDecl(*temps.rhsTemp);
-    // The temporaries have no initializer; codegen binds them to the operand values.
-    definitelyAssignedDecls.insert(temps.lhsTemp);
-    definitelyAssignedDecls.insert(temps.rhsTemp);
+    auto bindTemp = [&](Type type, const char* prefix) {
+        auto* temp = makeAST<VarDecl>(type, prefix + std::to_string(comparisonTempCounter++), nullptr, currentFunction, AccessLevel::None, *currentModule,
+                                      expr.location);
+        temp->isImplicitlyBound = true;
+        typecheckVarDecl(*temp);
+        // The temporary has no initializer; codegen binds it to the operand value.
+        definitelyAssignedDecls.insert(temp);
+        return temp;
+    };
+    temps.lhsTemp = bindTemp(expr.getLHS().type, "__comparison_lhs_");
+    temps.rhsTemp = bindTemp(expr.getRHS().type, "__comparison_rhs_");
     temps.lhsBase = makeAST<VarExpr>(temps.lhsTemp->getName(), expr.location);
     temps.rhsBase = makeAST<VarExpr>(temps.rhsTemp->getName(), expr.location);
     return temps;
