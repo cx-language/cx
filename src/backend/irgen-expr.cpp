@@ -1247,8 +1247,12 @@ Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, c
             return createGEP(baseValue, baseTypeDecl->getFieldIndex(field), expr, field->getName());
         }
     } else {
-        auto index = baseTypeDecl->isUnion() ? 0 : baseTypeDecl->getFieldIndex(field);
-        return createExtractValue(baseValue, index, field->getName());
+        if (baseTypeDecl->isUnion()) {
+            // Union members overlap, so a member of a union value cannot be
+            // projected; spill to memory and reload as the member type instead.
+            return createLoad(createCast(createTempAlloca(baseValue), field->type.getPointerTo(), field->getName()));
+        }
+        return createExtractValue(baseValue, baseTypeDecl->getFieldIndex(field), field->getName());
     }
 }
 

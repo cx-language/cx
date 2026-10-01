@@ -1,0 +1,31 @@
+// UNSUPPORTED: windows
+// RUN: %cc -c %S/inputs/union-layout.c -o %t-layout-helper.o
+// RUN: %cx -c %s -o %t.o -Werror && %cc %t.o %t-layout-helper.o -o %t.exe && %t.exe | %FileCheck %s
+// RUN: %cx --backend=c --print-c %s -Werror > %t-gen.c && %cc %t-gen.c %t-layout-helper.o -o %t-c.exe && %t-c.exe | %FileCheck %s
+
+// Unions lower to their true C size and alignment even when the largest
+// member is not the most-aligned one, and members of union values read
+// back the stored bytes rather than converting element zero.
+
+import "inputs/union-layout.h";
+
+void main() {
+    SU s = undefined;
+    s.x = 'A';
+    s.u.i = 16909060;
+    var r = echo_su(s);
+    println(c_int(r.x)); // CHECK: 65
+    println(r.u.i); // CHECK-NEXT: 16909060
+    s.u.c[0] = 'h';
+    println(c_int(echo_su(s).u.c[0])); // CHECK-NEXT: 104
+    SU9 s9 = undefined;
+    s9.x = 'B';
+    s9.u.d = 2.5;
+    var r9 = echo_su9(s9);
+    println(c_int(r9.x)); // CHECK-NEXT: 66
+    println(r9.u.d); // CHECK-NEXT: 2.5
+    println(echo_su9(s9).u.d); // CHECK-NEXT: 2.5
+    UI2 ui = undefined;
+    ui.i = 7;
+    println(echo_ui2(ui).i); // CHECK-NEXT: 7
+}

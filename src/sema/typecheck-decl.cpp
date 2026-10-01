@@ -862,6 +862,7 @@ static std::optional<CValueLayout> cValueLayout(Type type) {
                 layout.size = std::max(layout.size, member->size);
                 layout.align = std::max(layout.align, member->align);
             }
+            layout.size = padTo(layout.size, layout.align);
             return layout;
         }
     }

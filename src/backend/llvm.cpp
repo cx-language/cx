@@ -195,21 +195,41 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret, bool decayArr
         auto structType = unionType->name.empty() ? llvm::StructType::create(ctx) : llvm::StructType::create(ctx, unionType->name);
         structs.try_emplace(unionType, structType);
 
+        // Size and align like C: the largest member's size padded up to the
+        // largest alignment. Single-member unions keep the member type so
+        // payload construction can initialize them directly; others become
+        // an integer blob, since member access casts through pointers anyway.
         llvm::Type* largestFieldType = nullptr;
         uint64_t largestFieldSize = 0;
+        llvm::Align maxAlign(1);
         for (auto& field : unionType->getFields()) {
             auto fieldType = getLLVMType(field.type);
             auto size = getHostDataLayout().getTypeAllocSize(fieldType);
+            maxAlign = std::max(maxAlign, getHostDataLayout().getABITypeAlign(fieldType));
             if (size > largestFieldSize) {
                 largestFieldType = fieldType;
                 largestFieldSize = size;
             }
         }
 
-        if (largestFieldType) {
+        if (!largestFieldType) {
+            // Zero-size members only (or none): keep the empty body, but
+            // preserve a nonzero alignment for outer layouts.
+            if (maxAlign == llvm::Align(1) || unionType->getFields().size() <= 1) {
+                structType->setBody({}, false);
+            } else {
+                structType->setBody(llvm::ArrayType::get(llvm::Type::getIntNTy(ctx, maxAlign.value() * 8), 0), false);
+            }
+        } else if (unionType->getFields().size() == 1) {
             structType->setBody(largestFieldType, false);
         } else {
-            structType->setBody({}, false);
+            // Integer elements align like their width up to 16 bytes, which
+            // covers every naturally-aligned member; over-aligned members
+            // have no lowering here.
+            ASSERT(maxAlign.value() <= 16);
+            uint64_t paddedSize = llvm::alignTo(largestFieldSize, maxAlign);
+            auto* elem = llvm::Type::getIntNTy(ctx, maxAlign.value() * 8);
+            structType->setBody(llvm::ArrayType::get(elem, paddedSize / maxAlign.value()), false);
         }
         return structType;
     }
