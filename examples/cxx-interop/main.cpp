@@ -1,5 +1,5 @@
-#include <cstdio>
 #include "cxlib.hpp"
+#include <cstdio>
 
 int main() {
     printf("%d\n", cx_is_even(42));

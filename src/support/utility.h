@@ -145,68 +145,68 @@ void reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note
 void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes = {}, Location endLocation = {});
 
 #define ABORT(args) \
-    { \
+    do { \
         printStackTrace(); \
         abort(StringBuilder() << args); \
-    }
+    } while (0)
 
 #define ERROR(location, args) \
-    { \
+    do { \
         printStackTrace(); \
         throw CompileError(location, std::move((StringBuilder() << args).string)); \
-    }
+    } while (0)
 
 #define ERROR_WITH_NOTES(location, notes, args) \
-    { \
+    do { \
         printStackTrace(); \
         throw CompileError(location, std::move((StringBuilder() << args).string), notes); \
-    }
+    } while (0)
 
 #define REPORT_ERROR(location, args) \
-    { \
+    do { \
         printStackTrace(); \
         reportError(location, StringBuilder() << args); \
-    }
+    } while (0)
 
 #define REPORT_ERROR_WITH_NOTES(location, notes, args) \
-    { \
+    do { \
         printStackTrace(); \
         reportError(location, StringBuilder() << args, notes); \
-    }
+    } while (0)
 
 #define WARN(location, args) \
-    { \
+    do { \
         reportWarning(location, StringBuilder() << args); \
-    }
+    } while (0)
 
 #define ERROR_RANGE(begin, end, args) \
-    { \
+    do { \
         printStackTrace(); \
         throw CompileError(begin, std::move((StringBuilder() << args).string), {}, end); \
-    }
+    } while (0)
 
 #define ERROR_WITH_NOTES_RANGE(begin, end, notes, args) \
-    { \
+    do { \
         printStackTrace(); \
         throw CompileError(begin, std::move((StringBuilder() << args).string), notes, end); \
-    }
+    } while (0)
 
 #define REPORT_ERROR_RANGE(begin, end, args) \
-    { \
+    do { \
         printStackTrace(); \
         reportError(begin, StringBuilder() << args, {}, end); \
-    }
+    } while (0)
 
 #define REPORT_ERROR_WITH_NOTES_RANGE(begin, end, notes, args) \
-    { \
+    do { \
         printStackTrace(); \
         reportError(begin, StringBuilder() << args, notes, end); \
-    }
+    } while (0)
 
 #define WARN_RANGE(begin, end, args) \
-    { \
+    do { \
         reportWarning(begin, StringBuilder() << args, {}, end); \
-    }
+    } while (0)
 
 std::optional<std::string> findExternalCCompiler();
 std::optional<std::string> findExternalCxxCompiler();
