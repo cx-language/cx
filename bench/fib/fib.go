@@ -3,7 +3,7 @@ package main
 
 import "fmt"
 
-func fib(n int32) int32 {
+func fib(n int) int {
 	if n < 2 {
 		return n
 	}

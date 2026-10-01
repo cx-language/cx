@@ -12,7 +12,7 @@ syllables := [?]string{
 
 main :: proc() {
 	words := make([dynamic]string, 0, 4_000_000)
-	counts := make(map[string]i32)
+	counts := make(map[string]int)
 	state: u64 = 0x12345678
 	for _ in 0 ..< 4_000_000 {
 		state ~= state << 13

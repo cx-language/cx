@@ -16,8 +16,8 @@ void main() {
             total += x;
         }
     }
-    var offset = 1;
-    var adjust = ((int n) => n * factor + offset);
+    const offset = 1;
+    var adjust = (int n) => n * factor + offset;
     for i in 0..8000000 {
         total += adjust(i);
     }

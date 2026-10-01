@@ -21,8 +21,7 @@ pub fn main(init: std.process.Init) !void {
     defer counts.deinit();
 
     var state: u64 = 0x12345678;
-    var n: u32 = 0;
-    while (n < 4_000_000) : (n += 1) {
+    for (0..4_000_000) |_| {
         state ^= state << 13;
         state ^= state >> 7;
         state ^= state << 17;

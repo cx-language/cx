@@ -19,13 +19,13 @@ void main() {
         state ^= state >> 7;
         state ^= state << 17;
         var b = int(state % uint64(syllables.size()));
-        var word = StringBuf();
+        var word = StringBuf(capacity = 6);
         word.append(syllables[a]);
         word.append(syllables[b]);
         words.push(word);
         var key = string(words[-1]);
-        if counts[key] {
-            *counts[key]! += 1;
+        if var count = counts[key] {
+            *count += 1;
         } else {
             counts.insert(key, 1);
         }

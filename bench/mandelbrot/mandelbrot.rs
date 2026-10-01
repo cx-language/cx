@@ -1,17 +1,16 @@
-// Mandelbrot checksum, matching mandelbrot.cx. f32 loop counters and i32
-// sum like the cx version; the printed checksum is only self-consistent
-// (float-to-int conversion of huge values is platform-defined, and `as`
-// saturates where C-family conversions wrap).
+// Mandelbrot checksum, matching mandelbrot.cx. The printed checksum is only
+// self-consistent (float-to-int conversion of huge values is platform-defined,
+// and `as` saturates where C-family conversions wrap).
 use std::ops::{Add, Mul};
 
 #[derive(Clone, Copy)]
 struct Complex {
-    r: f32,
-    i: f32,
+    r: f64,
+    i: f64,
 }
 
 impl Complex {
-    fn abs(self) -> f32 {
+    fn abs(self) -> f64 {
         self.r * self.r + self.i * self.i
     }
 }
@@ -38,9 +37,9 @@ impl Mul for Complex {
 
 fn main() {
     let mut sum: i32 = 0;
-    let mut y = -0.9f32;
+    let mut y = -0.9;
     while y < 0.9 {
-        let mut x = -1.4f32;
+        let mut x = -1.4;
         while x < 0.4 {
             let mut z = Complex { r: 0.0, i: 0.0 };
             for _ in 0..=1000 {

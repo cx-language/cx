@@ -13,14 +13,14 @@ fn main() {
     let mut counts: HashMap<String, i32> = HashMap::new();
     let mut state: u64 = 0x12345678;
     for _ in 0..4_000_000 {
-        state ^= state.wrapping_shl(13);
+        state ^= state << 13;
         state ^= state >> 7;
-        state ^= state.wrapping_shl(17);
-        let a = (state % SYLLABLES.len() as u64) as usize;
-        state ^= state.wrapping_shl(13);
+        state ^= state << 17;
+        let a = state as usize % SYLLABLES.len();
+        state ^= state << 13;
         state ^= state >> 7;
-        state ^= state.wrapping_shl(17);
-        let b = (state % SYLLABLES.len() as u64) as usize;
+        state ^= state << 17;
+        let b = state as usize % SYLLABLES.len();
         let mut word = String::with_capacity(6);
         word.push_str(SYLLABLES[a]);
         word.push_str(SYLLABLES[b]);
@@ -35,8 +35,9 @@ fn main() {
     let mut total: i64 = 0;
     let mut sum_squares: i64 = 0;
     for count in counts.values() {
-        total += *count as i64;
-        sum_squares += (*count as i64) * (*count as i64);
+        let count = i64::from(*count);
+        total += count;
+        sum_squares += count * count;
     }
     println!(
         "{}",

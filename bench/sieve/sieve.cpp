@@ -5,14 +5,14 @@
 #include <vector>
 
 int main() {
-    const int count = 100000000;
-    std::vector<char> isPrime((size_t)count, true);
+    const std::size_t count = 100000000;
+    std::vector<char> isPrime(count, true);
     int primes = 0;
-    for (int i = 2; i < count; i++) {
-        if (!isPrime[(size_t)i]) continue;
+    for (std::size_t i = 2; i < count; i++) {
+        if (!isPrime[i]) continue;
         primes++;
-        for (int j = i + i; j < count; j += i) {
-            isPrime[(size_t)j] = false;
+        for (std::size_t j = i + i; j < count; j += i) {
+            isPrime[j] = false;
         }
     }
     std::printf("%d\n", primes);

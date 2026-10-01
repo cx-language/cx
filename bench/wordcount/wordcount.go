@@ -9,7 +9,7 @@ var syllables = []string{"al", "be", "cor", "di", "el", "for", "gi", "ha", "il",
 
 func main() {
 	words := make([]string, 0, 4000000)
-	counts := make(map[string]int32)
+	counts := make(map[string]int)
 	state := uint64(0x12345678)
 	for range 4000000 {
 		state ^= state << 13
@@ -24,10 +24,10 @@ func main() {
 		words = append(words, word)
 		counts[word]++
 	}
-	var total, sumSquares int64
+	var total, sumSquares int
 	for _, count := range counts {
-		total += int64(count)
-		sumSquares += int64(count) * int64(count)
+		total += count
+		sumSquares += count * count
 	}
-	fmt.Println(int64(len(counts))*1000000000000 + total*1000000 + sumSquares)
+	fmt.Println(len(counts)*1000000000000 + total*1000000 + sumSquares)
 }

@@ -1,15 +1,14 @@
-// Mandelbrot checksum, matching mandelbrot.cx. Float32 loop counters and
-// int32 sum like the cx version; the printed checksum is only self-consistent
-// (float-to-int conversion of huge values is platform-defined).
+// Mandelbrot checksum, matching mandelbrot.cx. The printed checksum is only
+// self-consistent (float-to-int conversion of huge values is platform-defined).
 #include <cstdio>
 
 namespace {
 
 struct Complex {
-    float r;
-    float i;
+    double r;
+    double i;
 
-    float abs() const { return r * r + i * i; }
+    double abs() const { return r * r + i * i; }
 };
 
 Complex operator+(const Complex& a, const Complex& b) {
@@ -24,13 +23,13 @@ Complex operator*(const Complex& a, const Complex& b) {
 
 int main() {
     int sum = 0;
-    for (float y = -0.9f; y < 0.9f; y += 0.005f) {
-        for (float x = -1.4f; x < 0.4f; x += 0.0025f) {
-            Complex z{0.0f, 0.0f};
+    for (double y = -0.9; y < 0.9; y += 0.005) {
+        for (double x = -1.4; x < 0.4; x += 0.0025) {
+            Complex z{0.0, 0.0};
             for (int k = 0; k <= 1000; k++) {
                 z = z * z + Complex{x, y};
             }
-            sum += (int)(z.abs() * 50.0f);
+            sum += static_cast<int>(z.abs() * 50.0);
         }
     }
     std::printf("%d\n", sum);

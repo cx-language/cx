@@ -37,8 +37,7 @@ fn makeDocument(allocator: std.mem.Allocator) ![]u8 {
     var doc: std.ArrayList(u8) = .empty;
     errdefer doc.deinit(allocator);
     try doc.appendSlice(allocator, "{\"users\":[");
-    var i: i32 = 0;
-    while (i < 5000) : (i += 1) {
+    for (0..5000) |i| {
         if (i > 0) try doc.append(allocator, ',');
         const score: f32 = @as(f32, @floatFromInt(i)) * 1.5;
         var buf: [128]u8 = undefined;
@@ -59,8 +58,7 @@ pub fn main(init: std.process.Init) !void {
     defer allocator.free(text);
 
     var total: i64 = 0;
-    var n: u32 = 0;
-    while (n < 100) : (n += 1) {
+    for (0..100) |_| {
         const parsed = try std.json.parseFromSlice(std.json.Value, allocator, text, .{});
         total += checksum(parsed.value);
         parsed.deinit();

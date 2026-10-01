@@ -22,8 +22,8 @@ int main() {
             total += x;
         }
     }
-    int offset = 1;
-    auto adjust = [&](int n) { return n * factor + offset; };
+    const int offset = 1;
+    auto adjust = [](int n) { return n * factor + offset; };
     for (int i = 0; i < 8000000; i++)
         total += adjust(i);
     std::printf("%lld\n", total);
