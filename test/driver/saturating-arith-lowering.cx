@@ -1,0 +1,62 @@
+// RUN: %cx -print-ir %s | %FileCheck %s --check-prefix=IR
+// RUN: %cx -print-llvm %s | %FileCheck %s
+// RUN: %cx -print-c %s | %FileCheck %s --check-prefix=C
+// RUN: %cx -print-c --c-dispatch %s | %FileCheck %s --check-prefix=C-DISPATCH
+
+// Saturating add/sub lower to one IR node each. The LLVM backend emits
+// sadd.sat/ssub.sat intrinsics for them; the C backend expands the clamp
+// inline. Saturating multiply has no intrinsic (LLVM offers none), so it
+// keeps the manual clamp over a checked multiply.
+
+// IR: = saturatingarith + {{.*}}, {{.*}}
+// CHECK: call i64 @llvm.sadd.sat.i64(i64 {{.*}}, i64 {{.*}})
+// C: _saturating_wrapped{{[0-9]+}} = ((int64_t)(((uint64_t){{.*}}) + ((uint64_t){{.*}})));
+// C: _saturating_arith{{[0-9]+}} = ({{.*}}) ? (({{.*}} < 0) ? (-9223372036854775807 - 1) : 9223372036854775807) : _saturating_wrapped{{[0-9]+}};
+// C-DISPATCH: int64_t _saturating_arith{{[0-9]+}};
+// C-DISPATCH: _saturating_arith{{[0-9]+}} = ({{.*}}) ? ({{.*}}) : _saturating_wrapped{{[0-9]+}};
+int64 sadd64(int64 a, int64 b) { return a +| b; }
+
+// IR: = saturatingarith - {{.*}}, {{.*}}
+// CHECK: call i64 @llvm.ssub.sat.i64(i64 {{.*}}, i64 {{.*}})
+// C: _saturating_wrapped{{[0-9]+}} = ((int64_t)(((uint64_t){{.*}}) - ((uint64_t){{.*}})));
+// C: _saturating_arith{{[0-9]+}} = ({{.*}}) ? (({{.*}} < 0) ? (-9223372036854775807 - 1) : 9223372036854775807) : _saturating_wrapped{{[0-9]+}};
+int64 ssub64(int64 a, int64 b) { return a -| b; }
+
+// IR: = saturatingarith + {{.*}}, {{.*}}
+// CHECK: call i64 @llvm.uadd.sat.i64(i64 {{.*}}, i64 {{.*}})
+// C: _saturating_wrapped{{[0-9]+}} = {{.*}} + {{.*}};
+// C: _saturating_arith{{[0-9]+}} = ({{.*}}) ? (18446744073709551615ULL) : _saturating_wrapped{{[0-9]+}};
+uint64 uadd64(uint64 a, uint64 b) { return a +| b; }
+
+// IR: = saturatingarith - {{.*}}, {{.*}}
+// CHECK: call i64 @llvm.usub.sat.i64(i64 {{.*}}, i64 {{.*}})
+// C: _saturating_wrapped{{[0-9]+}} = {{.*}} - {{.*}};
+// C: _saturating_arith{{[0-9]+}} = ({{.*}}) ? (0) : _saturating_wrapped{{[0-9]+}};
+uint64 usub64(uint64 a, uint64 b) { return a -| b; }
+
+// IR: = saturatingarith + {{.*}}, {{.*}}
+// CHECK: call i32 @llvm.sadd.sat.i32(i32 {{.*}}, i32 {{.*}})
+// C: _saturating_wrapped{{[0-9]+}} = ((int32_t)(((uint32_t){{.*}}) + ((uint32_t){{.*}})));
+// C: _saturating_arith{{[0-9]+}} = ({{.*}}) ? (({{.*}} < 0) ? -2147483648 : 2147483647) : _saturating_wrapped{{[0-9]+}};
+int32 sadd32(int32 a, int32 b) { return a +| b; }
+
+// IR: = saturatingarith + {{.*}}, {{.*}}
+// CHECK: call i128 @llvm.sadd.sat.i128(i128 {{.*}}, i128 {{.*}})
+// C: _saturating_wrapped{{[0-9]+}} = ((__int128)(((unsigned __int128){{.*}}) + ((unsigned __int128){{.*}})));
+// C: _saturating_arith{{[0-9]+}} = ({{.*}}) ? (({{.*}} < 0) ? ((__int128)(((unsigned __int128)9223372036854775808ULL) << 64) | ((unsigned __int128)0ULL)) : ((__int128)(((unsigned __int128)9223372036854775807ULL) << 64) | ((unsigned __int128)18446744073709551615ULL))) : _saturating_wrapped{{[0-9]+}};
+int128 sadd128(int128 a, int128 b) { return a +| b; }
+
+// IR: = checkedarith * {{.*}}, {{.*}}
+// IR: = overflow {{.*}}
+// CHECK: call { i64, i1 } @llvm.smul.with.overflow.i64(i64 {{.*}}, i64 {{.*}})
+int64 smul64(int64 a, int64 b) { return a *| b; }
+
+void main() {
+    println(sadd64(1, 2));
+    println(ssub64(1, 2));
+    println(uadd64(1, 2));
+    println(usub64(1, 2));
+    println(sadd32(1, 2));
+    println(sadd128(int128(1), int128(2)) == int128(3) ? 1 : 0);
+    println(smul64(1, 2));
+}

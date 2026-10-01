@@ -226,6 +226,12 @@ struct IRGenerator {
         ASSERT(checked->kind == ValueKind::CheckedArithInst);
         return insertBlock->add(new ArithOverflowInst{ValueKind::ArithOverflowInst, checked, name.str()});
     }
+    Value* createSaturatingArith(BinaryOperator op, Value* left, Value* right, const Expr* expr, const llvm::Twine& name = "") {
+        ASSERT(left->getType()->equals(right->getType()));
+        ASSERT(left->getType()->isInteger());
+        ASSERT(op == Token::Plus || op == Token::Minus);
+        return insertBlock->add(new SaturatingArithInst{ValueKind::SaturatingArithInst, op, left, right, expr, name.str()});
+    }
     Value* createIsNull(Value* value, const Expr* expr, const llvm::Twine& name) {
         Value* nullValue;
         auto type = value->getType();

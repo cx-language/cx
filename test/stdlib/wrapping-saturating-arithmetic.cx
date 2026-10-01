@@ -32,6 +32,22 @@ void testSaturatingAddSubMul() {
 }
 
 @test
+void testSaturating128() {
+    // Limits spelled via shifts: integer literals max out at 64 bits.
+    int128 smax = (int128(1) << int128(126)) +| (int128(1) << int128(126));
+    int128 smin = -smax - int128(1);
+    uint128 umax = uint128(-1);
+    assert(smax +| int128(1) == smax);
+    assert(smin -| int128(1) == smin);
+    assert(smin +| int128(-1) == smin);
+    assert((smax -| smax) +| smax == smax);
+    assert(umax +| uint128(1) == umax);
+    assert(uint128(0) -| uint128(1) == uint128(0));
+    assert((int128(1) << int128(100)) *| (int128(1) << int128(100)) == smax);
+    assert(umax *| umax == umax);
+}
+
+@test
 void testWrappingNegation() {
     int8 min = -128;
     assert(-%min == -128);

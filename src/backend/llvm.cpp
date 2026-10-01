@@ -937,6 +937,26 @@ llvm::Value* LLVMGenerator::codegenArithOverflow(const ArithOverflowInst* inst) 
     return result;
 }
 
+llvm::Value* LLVMGenerator::codegenSaturatingArith(const SaturatingArithInst* inst) {
+    ASSERT(builder.GetInsertBlock() && "saturating arithmetic cannot appear in global initializers");
+    bool isSigned = inst->left->getType()->isSignedInteger();
+    llvm::Intrinsic::ID id;
+    switch (inst->op) {
+    case Token::Plus:
+        id = isSigned ? llvm::Intrinsic::sadd_sat : llvm::Intrinsic::uadd_sat;
+        break;
+    case Token::Minus:
+        id = isSigned ? llvm::Intrinsic::ssub_sat : llvm::Intrinsic::usub_sat;
+        break;
+    default:
+        llvm_unreachable("invalid saturating arithmetic operation");
+    }
+    auto* intrinsic = llvm::Intrinsic::getOrInsertDeclaration(module, id, {getLLVMType(inst->left->getType())});
+    auto* result = builder.CreateCall(intrinsic, {getValue(inst->left), getValue(inst->right)});
+    if (!inst->name.empty()) result->setName(inst->name);
+    return result;
+}
+
 llvm::Value* LLVMGenerator::codegenArrayOpElement(Token::Kind op, llvm::Value* left, llvm::Value* right, IRType* elemType) {
     bool isFloat = elemType->isFloatingPoint();
     bool isSigned = elemType->isSignedInteger();
@@ -1275,6 +1295,8 @@ llvm::Value* LLVMGenerator::codegenInst(const Value* value) {
         return codegenCheckedArith(llvm::cast<CheckedArithInst>(value));
     case ValueKind::ArithOverflowInst:
         return codegenArithOverflow(llvm::cast<ArithOverflowInst>(value));
+    case ValueKind::SaturatingArithInst:
+        return codegenSaturatingArith(llvm::cast<SaturatingArithInst>(value));
     case ValueKind::ArrayOpInst:
         return codegenArrayOp(llvm::cast<ArrayOpInst>(value));
     case ValueKind::UnaryInst:

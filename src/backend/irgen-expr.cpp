@@ -451,6 +451,17 @@ Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value*
 }
 
 Value* IRGenerator::emitSaturatingArithmetic(Token::Kind op, Value* left, Value* right, const Expr& expr) {
+    if (op != Token::Star) {
+        // The backends clamp from this node: sadd.sat/ssub.sat intrinsics in
+        // LLVM, a manual clamp in C (see SaturatingArithInst).
+        bool resultIsChar = left->getType()->isChar();
+        lowerCharOperands(*this, left, right);
+        Value* result = createSaturatingArith(op, left, right, &expr);
+        if (resultIsChar) result = createCast(result, getIRType(Type::getChar()));
+        return result;
+    }
+
+    // LLVM offers no saturating multiply, so clamp the checked product manually.
     Value* overflowed = nullptr;
     auto* wrapped = emitWrappingArithmetic(op, left, right, expr, &overflowed);
 
@@ -471,17 +482,12 @@ Value* IRGenerator::emitSaturatingArithmetic(Token::Kind op, Value* left, Value*
 
     Value* sat;
     if (!isSigned) {
-        sat = op == Token::Minus ? minVal : maxVal;
+        sat = maxVal;
     } else {
         auto* zero = createConstantInt(left->getType(), 0);
-        Value* towardMin;
-        if (op == Token::Star) {
-            auto* leftNeg = createBinaryOp(Token::Less, left, zero, &expr);
-            auto* rightNeg = createBinaryOp(Token::Less, right, zero, &expr);
-            towardMin = createBinaryOp(Token::NotEqual, leftNeg, rightNeg, &expr);
-        } else {
-            towardMin = createBinaryOp(Token::Less, left, zero, &expr);
-        }
+        auto* leftNeg = createBinaryOp(Token::Less, left, zero, &expr);
+        auto* rightNeg = createBinaryOp(Token::Less, right, zero, &expr);
+        auto* towardMin = createBinaryOp(Token::NotEqual, leftNeg, rightNeg, &expr);
         sat = createSelect(towardMin, minVal, maxVal);
     }
     return createSelect(overflowed, sat, wrapped);

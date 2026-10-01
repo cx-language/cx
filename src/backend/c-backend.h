@@ -22,8 +22,15 @@ struct CGenerator {
     void codegenBinary(const BinaryInst* inst);
     // Emits the value converted to the target type, unless it already has it.
     void codegenCastIfNeeded(const Value* value, IRType* targetType);
+    // Emits the wrapping `left op right` computation in the unsigned domain.
+    void codegenWrappingExpr(Token::Kind op, const Value* left, const Value* right);
+    // Emits whether `left op right` overflows. The wrapped result is emitted
+    // by emitWrapped (a checked-arithmetic temporary or a saturating clamp's).
+    void codegenArithOverflowExpr(Token::Kind op, const Value* left, const Value* right, const std::function<void()>& emitWrapped);
+    void codegenAPSInt(IRType* type, const llvm::APSInt& value);
     void codegenCheckedArith(const CheckedArithInst* inst);
     void codegenArithOverflow(const ArithOverflowInst* inst);
+    void codegenSaturatingArith(const SaturatingArithInst* inst);
     void codegenArrayOp(const ArrayOpInst* inst);
     // Prints `left OP right` for already-declared operands. isFloat/isUnsigned
     // describe the operand type; rightValue enables the zero-divisor spelling

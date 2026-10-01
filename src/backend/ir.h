@@ -158,6 +158,7 @@ enum class ValueKind {
     SizeofInst,
     CheckedArithInst,
     ArithOverflowInst,
+    SaturatingArithInst,
     BasicBlock,
     Function,
     Parameter,
@@ -186,7 +187,7 @@ struct Value {
 };
 
 struct Instruction : Value {
-    static bool classof(const Value* v) { return v->kind >= ValueKind::AllocaInst && v->kind <= ValueKind::ArithOverflowInst; }
+    static bool classof(const Value* v) { return v->kind >= ValueKind::AllocaInst && v->kind <= ValueKind::SaturatingArithInst; }
 };
 
 struct AllocaInst : Instruction {
@@ -362,6 +363,23 @@ struct ArithOverflowInst : Instruction {
     std::string name;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::ArithOverflowInst; }
+};
+
+// Saturating integer arithmetic (+, -) clamping to the type's minimum or
+// maximum instead of wrapping (see emitSaturatingArithmetic). Kept whole so
+// the LLVM backend can emit sadd.sat/ssub.sat intrinsics; the C backend
+// expands the clamp manually. Multiply and shifts have no counterpart here:
+// LLVM offers no saturating multiply, and its saturating shifts saturate
+// 0 << big to the maximum while cx yields 0, so those keep the manual
+// expansion.
+struct SaturatingArithInst : Instruction {
+    BinaryOperator op;
+    Value* left;
+    Value* right;
+    const Expr* expr;
+    std::string name;
+
+    static bool classof(const Value* v) { return v->kind == ValueKind::SaturatingArithInst; }
 };
 
 struct BasicBlock : Value {

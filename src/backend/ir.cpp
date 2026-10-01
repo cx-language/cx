@@ -245,6 +245,8 @@ IRType* Value::getType() const {
         return llvm::cast<CheckedArithInst>(this)->left->getType();
     case ValueKind::ArithOverflowInst:
         return getIRType(Type::getBool());
+    case ValueKind::SaturatingArithInst:
+        return llvm::cast<SaturatingArithInst>(this)->left->getType();
     case ValueKind::BasicBlock:
         llvm_unreachable("unhandled BasicBlock");
     case ValueKind::Function: {
@@ -293,6 +295,8 @@ const Expr* Value::getExpr() const {
         return llvm::cast<ArrayOpInst>(this)->expr;
     case ValueKind::CheckedArithInst:
         return llvm::cast<CheckedArithInst>(this)->expr;
+    case ValueKind::SaturatingArithInst:
+        return llvm::cast<SaturatingArithInst>(this)->expr;
     default:
         return nullptr;
     }
@@ -340,6 +344,8 @@ std::string Value::getName() const {
         return llvm::cast<CheckedArithInst>(this)->name;
     case ValueKind::ArithOverflowInst:
         return llvm::cast<ArithOverflowInst>(this)->name;
+    case ValueKind::SaturatingArithInst:
+        return llvm::cast<SaturatingArithInst>(this)->name;
     case ValueKind::BasicBlock:
         return llvm::cast<BasicBlock>(this)->name;
     case ValueKind::Function:
@@ -546,6 +552,11 @@ void Value::print(llvm::raw_ostream& stream) const {
     case ValueKind::ArithOverflowInst: {
         auto overflow = llvm::cast<ArithOverflowInst>(this);
         stream << indent << formatTypeAndName(overflow) << " = overflow " << formatName(overflow->checked);
+        break;
+    }
+    case ValueKind::SaturatingArithInst: {
+        auto sat = llvm::cast<SaturatingArithInst>(this);
+        stream << indent << formatTypeAndName(sat) << " = saturatingarith " << sat->op << " " << formatName(sat->left) << ", " << formatName(sat->right);
         break;
     }
     case ValueKind::BasicBlock:

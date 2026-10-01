@@ -33,6 +33,7 @@ struct LLVMGenerator {
     llvm::Value* codegenBinary(const BinaryInst* inst);
     llvm::Value* codegenCheckedArith(const CheckedArithInst* inst);
     llvm::Value* codegenArithOverflow(const ArithOverflowInst* inst);
+    llvm::Value* codegenSaturatingArith(const SaturatingArithInst* inst);
     llvm::Value* codegenArrayOp(const ArrayOpInst* inst);
     llvm::Value* codegenArrayOpElement(Token::Kind op, llvm::Value* left, llvm::Value* right, IRType* elemType);
     llvm::Value* codegenUnary(const UnaryInst* inst);
