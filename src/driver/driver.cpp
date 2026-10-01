@@ -493,25 +493,23 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         return false;
     };
 
+    auto printLLVMModule = [](llvm::Module& module) {
+        module.setModuleIdentifier("");
+        module.setSourceFileName("");
+        module.print(llvm::outs(), nullptr);
+    };
+
     auto printLLVMSections = [&](LLVMGenerator& llvmGenerator) {
         if (handlePrintOpt(PrintOpt::LLVMAll)) {
             handlePrintOpt(PrintOpt::LLVM);
             printSection("LLVM", [&] {
-                for (auto* module : llvmGenerator.generatedModules) {
-                    module->setModuleIdentifier("");
-                    module->setSourceFileName("");
-                    module->print(llvm::outs(), nullptr);
-                }
+                for (auto* module : llvmGenerator.generatedModules)
+                    printLLVMModule(*module);
             });
             return true;
         }
         if (handlePrintOpt(PrintOpt::LLVM)) {
-            printSection("LLVM", [&] {
-                auto* llvmModule = llvmGenerator.generatedModules.back();
-                llvmModule->setModuleIdentifier("");
-                llvmModule->setSourceFileName("");
-                llvmModule->print(llvm::outs(), nullptr);
-            });
+            printSection("LLVM", [&] { printLLVMModule(*llvmGenerator.generatedModules.back()); });
             return true;
         }
         return false;
@@ -519,11 +517,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     auto printLLVMOptimizedSection = [&](llvm::Module& linkedModule) {
         if (handlePrintOpt(PrintOpt::LLVMOptimized)) {
-            printSection("LLVM-optimized", [&] {
-                linkedModule.setModuleIdentifier("");
-                linkedModule.setSourceFileName("");
-                linkedModule.print(llvm::outs(), nullptr);
-            });
+            printSection("LLVM-optimized", [&] { printLLVMModule(linkedModule); });
             return true;
         }
         return false;
