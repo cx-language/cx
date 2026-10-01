@@ -47,7 +47,7 @@ and run directly in the browser, or you can install the compiler as described in
 ## What cx is about
 
 - **Performance.** Code compiled in release mode should be as fast as hand-written
-  low-level code. cx compiles to native code through LLVM (or a C backend), has no garbage
+  low-level code. cx compiles to native code through LLVM (or the C backend), has no garbage
   collector, and does not perform expensive operations behind your back. Higher-level
   features such as generics, tagged unions, and iterator chains are designed to compile
   down to the code you would have written by hand.
@@ -58,7 +58,7 @@ and run directly in the browser, or you can install the compiler as described in
   More advanced features are there when you need them, but you don't have to learn them
   up front.
 - **Safety by default.** Debug builds check array bounds, integer overflow, and null
-  dereferences, and report memory leaks at exit. The type system tracks which values may
+  dereferences, and report memory leaks and double-frees at exit. The type system tracks which values may
   be null and catches missing null checks at compile time. Checks can be disabled
   individually or globally where performance requires it.
 - **Freedom of style.** cx does not enforce a naming convention, coding style, or
