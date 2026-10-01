@@ -49,6 +49,7 @@ static bool allPathsDiverge(llvm::ArrayRef<Stmt*> block, bool assertsOn, int nes
 
 static void collectAssignedNames(const Expr& expr, llvm::StringSet<>& names);
 static void collectAssignedNames(const Stmt* stmt, llvm::StringSet<>& names);
+static void collectAssignedNames(const Expr* condition, llvm::ArrayRef<Stmt*> body, llvm::StringSet<>& names);
 
 static void collectAssignedNames(const Expr& expr, llvm::StringSet<>& names) {
     switch (expr.kind) {
@@ -182,16 +183,12 @@ static void collectAssignedNames(const Stmt* stmt, llvm::StringSet<>& names) {
     }
     case StmtKind::WhileStmt: {
         auto& whileStmt = llvm::cast<WhileStmt>(*stmt);
-        collectAssignedNames(*whileStmt.condition, names);
-        for (auto& bodyStmt : whileStmt.body)
-            collectAssignedNames(bodyStmt, names);
+        collectAssignedNames(whileStmt.condition, whileStmt.body, names);
         return;
     }
     case StmtKind::DoWhileStmt: {
         auto& doWhileStmt = llvm::cast<DoWhileStmt>(*stmt);
-        collectAssignedNames(*doWhileStmt.condition, names);
-        for (auto& bodyStmt : doWhileStmt.body)
-            collectAssignedNames(bodyStmt, names);
+        collectAssignedNames(doWhileStmt.condition, doWhileStmt.body, names);
         return;
     }
     case StmtKind::ForStmt: {
@@ -221,6 +218,12 @@ static void collectAssignedNames(const Stmt* stmt, llvm::StringSet<>& names) {
         return;
     }
     llvm_unreachable("all cases handled");
+}
+
+static void collectAssignedNames(const Expr* condition, llvm::ArrayRef<Stmt*> body, llvm::StringSet<>& names) {
+    if (condition) collectAssignedNames(*condition, names);
+    for (const Stmt* stmt : body)
+        collectAssignedNames(stmt, names);
 }
 
 // Iterator methods (e.g. `value()`) borrow the iterated target, not the iterator
@@ -1280,9 +1283,7 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
     // Assignments in the condition, body, or increment also execute on later iterations,
     // so narrowings for variables assigned there don't hold on loop entry or after the loop.
     llvm::StringSet<> assignedNames;
-    if (forStmt.condition) collectAssignedNames(*forStmt.condition, assignedNames);
-    for (auto& stmt : forStmt.body)
-        collectAssignedNames(stmt, assignedNames);
+    collectAssignedNames(forStmt.condition, forStmt.body, assignedNames);
     for (auto* increment : forStmt.increments)
         collectAssignedNames(*increment, assignedNames);
     NarrowMap outerNarrowings = narrowedTypes;
@@ -1319,9 +1320,7 @@ void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
     // Unlike while, the body runs before the first check, so the condition's
     // narrowings don't apply to the body.
     llvm::StringSet<> assignedNames;
-    collectAssignedNames(*doWhileStmt.condition, assignedNames);
-    for (auto& stmt : doWhileStmt.body)
-        collectAssignedNames(stmt, assignedNames);
+    collectAssignedNames(doWhileStmt.condition, doWhileStmt.body, assignedNames);
     NarrowMap outerNarrowings = narrowedTypes;
     dropNarrowingsForNames(assignedNames);
 
