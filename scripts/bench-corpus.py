@@ -25,6 +25,19 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CORPUS = ["sieve", "mandelbrot", "fib", "wordcount", "mapfilter", "jsonparse"]
 TIMEOUT = 600
 
+# SLOC groups as directory prefixes. Every tracked text file under them
+# counts; binaries are detected by NUL byte and skipped.
+SLOC_GROUPS = [
+    ("compiler", "src/"),
+    ("stdlib", "std/"),
+    ("vendor", "vendor/"),
+    ("docs", "docs/"),
+    ("examples", "examples/"),
+    ("tests", "test/"),
+    ("tests", "website/test_"),
+    ("tests", "website/test-"),
+]
+
 
 def corpus_source(name):
     return os.path.join(ROOT, "bench", name, name + ".cx")
@@ -61,6 +74,37 @@ def resolve_sha(explicit):
         ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False
     )
     return result.stdout.strip() or "unknown"
+
+
+def sloc_metrics(root):
+    """Non-blank lines of tracked text files per group, or None without git."""
+    try:
+        result = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False)
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    counts = {name: 0 for name, _ in SLOC_GROUPS}
+    for raw in result.stdout.split(b"\0"):
+        if not raw:
+            continue
+        path = os.fsdecode(raw)
+        if path.startswith("examples/inputs/"):
+            continue
+        group = next((name for name, prefix in SLOC_GROUPS if path.startswith(prefix)), None)
+        if group is None:
+            continue
+        try:
+            with open(os.path.join(root, path), "rb") as file:
+                content = file.read()
+        except OSError:
+            continue
+        if b"\x00" in content:
+            continue
+        text = content.decode("utf-8", errors="replace")
+        counts[group] += sum(1 for line in text.splitlines() if line.strip())
+    counts["total"] = sum(counts.values())
+    return counts
 
 
 def main():
@@ -109,6 +153,7 @@ def main():
             "run_s": run_s,
             "cx_bytes": os.path.getsize(args.cx),
             "bench_bytes": bench_bytes,
+            "sloc": sloc_metrics(ROOT),
         },
     }
     with open(args.output, "w") as file:

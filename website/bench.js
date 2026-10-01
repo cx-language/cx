@@ -5,7 +5,7 @@
 
     var COMMIT_URL = "https://github.com/cx-language/cx/commit/";
     var COMPARE_URL = "https://github.com/cx-language/cx/compare/";
-    var COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#a855f7", "#06b6d4"];
+    var COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#a855f7", "#06b6d4", "#ec4899"];
     var PAD = { left: 64, right: 16, top: 12, bottom: 26 };
     var HEIGHT = 260;
 
@@ -23,6 +23,10 @@
         if (v >= 1048576) return (v / 1048576).toFixed(1) + " MB";
         if (v >= 1024) return (v / 1024).toFixed(0) + " KB";
         return v + " B";
+    }
+
+    function fmtInt(v) {
+        return Math.round(v).toLocaleString("en-US");
     }
 
     function fmtDate(iso) {
@@ -253,6 +257,15 @@
                     [{ path: ["cx_bytes"], label: "cx" }], fmtBytes),
                 drawChart("legend-benchsize", tip, records,
                     subSeries(records, "bench_bytes"), fmtBytes),
+                drawChart("legend-sloc", tip, records, [
+                    { path: ["sloc", "total"], label: "total" },
+                    { path: ["sloc", "compiler"], label: "compiler" },
+                    { path: ["sloc", "stdlib"], label: "stdlib" },
+                    { path: ["sloc", "vendor"], label: "vendor" },
+                    { path: ["sloc", "docs"], label: "docs" },
+                    { path: ["sloc", "examples"], label: "examples" },
+                    { path: ["sloc", "tests"], label: "tests" },
+                ], fmtInt),
             ];
             window.addEventListener("resize", function () {
                 redraws.forEach(function (draw) {

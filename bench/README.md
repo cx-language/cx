@@ -29,6 +29,25 @@ This writes `bench.json` with compile medians, run medians, and binary
 sizes. `--build-seconds` / `--check-seconds` attach C++ build and test
 suite times; CI passes those, local runs leave them null.
 
+## Lines of code
+
+Each record also carries SLOC counts: non-blank lines of tracked text
+files in the areas below (other paths are not counted):
+
+| Group | Sources |
+| --- | --- |
+| `compiler` | `src/` |
+| `stdlib` | `std/` |
+| `vendor` | `vendor/` |
+| `docs` | `docs/` |
+| `examples` | `examples/`, except `examples/inputs/` fixtures |
+| `tests` | `test/` and `website/test_*` / `website/test-*` files |
+| `total` | sum of the groups |
+
+Files containing NUL bytes count as binary and are skipped (this also
+excludes UTF-16 text). The website renders the counts as a graph on
+the Benchmarks page.
+
 ## Caveats
 
 GitHub-hosted runners are noisy neighbors: single data points wobble,

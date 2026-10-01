@@ -75,6 +75,15 @@ function records(n, { gapAt = -1, nullBuild = false } = {}) {
                 run_s: { sieve: 0.9, mandelbrot: 0.85 + i * 0.002, fib: 0.3 },
                 cx_bytes: 33000000 + i * 1000,
                 bench_bytes: { sieve: 40264, mandelbrot: 39672, fib: 38696 },
+                sloc: {
+                    total: 200000 + i * 100,
+                    compiler: 100000 + i * 60,
+                    stdlib: 20000 + i * 10,
+                    vendor: 4000,
+                    docs: 12000,
+                    examples: 14000 + i * 10,
+                    tests: 50000 + i * 20,
+                },
             },
         });
     }
@@ -91,13 +100,21 @@ function lateRecords() {
     return out;
 }
 
+// Old bench-data history: early records predate SLOC, one no-git run has null.
+function mixedSlocRecords() {
+    const out = records(12);
+    for (let i = 0; i < 5; i++) delete out[i].metrics.sloc;
+    out[5].metrics.sloc = null;
+    return out;
+}
+
 async function scenario(
     name,
     payload,
-    { ok = true, wantIndex = 5, hoverX = 400, wantAbsent = null, wantCounts = "2,3,3,1,3", wantLate = null } = {}
+    { ok = true, wantIndex = 5, hoverX = 400, wantAbsent = null, wantCounts = "2,3,3,1,3,7", wantLate = null, slocLate = false } = {}
 ) {
     const els = {};
-    for (const id of ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize", "bench-tip", "bench-charts"]) {
+    for (const id of ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize", "legend-sloc", "bench-tip", "bench-charts"]) {
         els[id] = makeEl();
         els[id].parentNode = makeEl();
     }
@@ -124,11 +141,11 @@ async function scenario(
         console.log(`ok ${name}`);
         return;
     }
-    const counts = ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize"].map(
+    const counts = ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize", "legend-sloc"].map(
         (id) => els[id].children.length
     );
     check(name, String(counts) === wantCounts, `legends [${counts}]`);
-    const canvases = ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize"].map(
+    const canvases = ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize", "legend-sloc"].map(
         (id) => els[id].parentNode.children.find((c) => c.handlers.mousemove || "width" in c) || {}
     );
     // Unsized backing stores render stretched; every chart must size its canvas.
@@ -172,11 +189,24 @@ async function scenario(
     canvas.clientWidth = 400;
     globalThis.__resize();
     check(name, canvas.width === 800, `resized ${canvas.width}`);
+    // The SLOC chart tooltips thousands-separated counts.
+    const sloc = canvases[5];
+    if (slocLate) {
+        sloc.handlers.mousemove({ clientX: 457, clientY: 100 });
+        check(name, tip.innerHTML.includes("total: 200,"), "late sloc tooltip");
+        sloc.handlers.mousemove({ clientX: 64, clientY: 100 });
+        check(name, !tip.innerHTML.includes("total:"), "early sloc tooltip lacks total");
+    } else {
+        sloc.handlers.mousemove({ clientX: hoverX, clientY: 100 });
+        check(name, tip.innerHTML.includes("total: 200,"), "sloc tooltip");
+    }
+    sloc.handlers.mouseleave();
     console.log(`ok ${name}`);
 }
 
 await scenario("records", records(12));
-await scenario("late series", lateRecords(), { wantCounts: "2,4,4,1,4", wantLate: "wordcount" });
+await scenario("late series", lateRecords(), { wantCounts: "2,4,4,1,4,7", wantLate: "wordcount" });
+await scenario("late sloc", mixedSlocRecords(), { slocLate: true });
 await scenario("gap", records(12, { gapAt: 6 }), { wantIndex: 6, hoverX: 457, wantAbsent: "test suite" });
 await scenario("null build metrics", records(4, { nullBuild: true }));
 await scenario("single", records(1), { wantIndex: 0 });
