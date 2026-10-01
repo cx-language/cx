@@ -329,6 +329,216 @@ std::string hoverForDecl(const Decl& decl) {
     return out.str();
 }
 
+template<typename Visitor>
+concept HasOnType = requires(Visitor& visitor, Type type) { visitor.onType(type); };
+template<typename Visitor>
+concept HasOnVarExpr = requires(Visitor& visitor, VarExpr* expr) { visitor.onVarExpr(expr); };
+template<typename Visitor>
+concept HasOnMemberExpr = requires(Visitor& visitor, MemberExpr* expr) { visitor.onMemberExpr(expr); };
+template<typename Visitor>
+concept HasOnCallExpr = requires(Visitor& visitor, CallExpr* expr) { visitor.onCallExpr(expr); };
+template<typename Visitor>
+concept HasOnCallGenericArgs = requires(Visitor& visitor, CallExpr* expr) { visitor.onCallGenericArgs(expr); };
+template<typename Visitor>
+concept HasOnUnwrapExpr = requires(Visitor& visitor, CallExpr* expr) { visitor.onUnwrapExpr(expr); };
+template<typename Visitor>
+concept HasOnSizeof = requires(Visitor& visitor, SizeofExpr* expr) { visitor.onSizeof(expr); };
+
+// Shared by the cursor, reference, highlight, and completion walks. Each
+// visitor supplies visitExpr/visitStmt/visitDecl (and visitType, for types)
+// plus the hooks it cares about; everything else is the tree shape.
+template<typename Visitor> void walkType(Visitor& visitor, Type type) {
+    if (!type) return;
+    if constexpr (HasOnType<Visitor>) visitor.onType(type);
+    switch (type.getKind()) {
+    case TypeKind::BasicType:
+        // Covers Array<T, N>: element is a generic arg.
+        for (GenericArg arg : type.getGenericArgs())
+            if (arg.isType()) visitor.visitType(arg.getType());
+        break;
+    case TypeKind::ArrayPointerType:
+        visitor.visitType(type.getElementType());
+        break;
+    case TypeKind::AnonymousStructType:
+        for (auto& element : type.getAnonymousStructElements())
+            visitor.visitType(element.type);
+        break;
+    case TypeKind::FunctionType:
+        visitor.visitType(type.getReturnType());
+        for (Type param : type.getParamTypes())
+            visitor.visitType(param);
+        break;
+    case TypeKind::PointerType:
+        visitor.visitType(type.getPointee());
+        break;
+    case TypeKind::UnresolvedType:
+        break;
+    }
+}
+
+template<typename Visitor> void walkExpr(Visitor& visitor, Expr* expr) {
+    if (!expr) return;
+    switch (expr->kind) {
+    case ExprKind::VarExpr:
+        if constexpr (HasOnVarExpr<Visitor>) visitor.onVarExpr(llvm::cast<VarExpr>(expr));
+        return;
+    case ExprKind::MemberExpr: {
+        auto* member = llvm::cast<MemberExpr>(expr);
+        visitor.visitExpr(member->base);
+        if constexpr (HasOnMemberExpr<Visitor>) visitor.onMemberExpr(member);
+        return;
+    }
+    case ExprKind::CallExpr:
+    case ExprKind::UnaryExpr:
+    case ExprKind::BinaryExpr:
+    case ExprKind::IndexExpr:
+    case ExprKind::IndexAssignmentExpr: {
+        // Unary, binary, and index expressions are CallExpr subclasses.
+        auto* call = llvm::cast<CallExpr>(expr);
+        visitor.visitExpr(call->callee);
+        if constexpr (HasOnCallExpr<Visitor>) visitor.onCallExpr(call);
+        for (auto& arg : call->args)
+            visitor.visitExpr(arg.value);
+        if constexpr (HasOnCallGenericArgs<Visitor>) visitor.onCallGenericArgs(call);
+        return;
+    }
+    case ExprKind::ArrayLiteralExpr:
+        for (auto* element : llvm::cast<ArrayLiteralExpr>(expr)->elements)
+            visitor.visitExpr(element);
+        return;
+    case ExprKind::AnonymousStructExpr:
+        for (auto& element : llvm::cast<AnonymousStructExpr>(expr)->elements)
+            visitor.visitExpr(element.value);
+        return;
+    case ExprKind::UnwrapExpr: {
+        auto* call = llvm::cast<CallExpr>(expr);
+        // The callee is a synthesized 'unwrap' member; only the receiver is source.
+        visitor.visitExpr(call->getReceiver());
+        if constexpr (HasOnUnwrapExpr<Visitor>) visitor.onUnwrapExpr(call);
+        return;
+    }
+    case ExprKind::LambdaExpr:
+        if (auto* function = llvm::cast<LambdaExpr>(expr)->functionDecl) visitor.visitDecl(function);
+        return;
+    case ExprKind::IfExpr: {
+        auto* ifExpr = llvm::cast<IfExpr>(expr);
+        visitor.visitExpr(ifExpr->condition);
+        visitor.visitExpr(ifExpr->thenExpr);
+        visitor.visitExpr(ifExpr->elseExpr);
+        return;
+    }
+    case ExprKind::SwitchExpr: {
+        auto* switchExpr = llvm::cast<SwitchExpr>(expr);
+        visitor.visitExpr(switchExpr->condition);
+        for (auto& arm : switchExpr->arms) {
+            visitor.visitExpr(arm.value);
+            if (arm.associatedValue) visitor.visitDecl(arm.associatedValue);
+            visitor.visitExpr(arm.expr);
+        }
+        if (switchExpr->defaultExpr) visitor.visitExpr(switchExpr->defaultExpr);
+        return;
+    }
+    case ExprKind::ImplicitCastExpr:
+        visitor.visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand);
+        return;
+    case ExprKind::VarDeclExpr:
+        visitor.visitDecl(llvm::cast<VarDeclExpr>(expr)->varDecl);
+        return;
+    case ExprKind::SizeofExpr:
+        if constexpr (HasOnSizeof<Visitor>) visitor.onSizeof(llvm::cast<SizeofExpr>(expr));
+        return;
+    case ExprKind::StringLiteralExpr:
+    case ExprKind::CharacterLiteralExpr:
+    case ExprKind::IntLiteralExpr:
+    case ExprKind::FloatLiteralExpr:
+    case ExprKind::BoolLiteralExpr:
+    case ExprKind::NullLiteralExpr:
+    case ExprKind::UndefinedLiteralExpr:
+        return;
+    }
+}
+
+template<typename Visitor> void walkStmt(Visitor& visitor, Stmt* stmt) {
+    if (!stmt) return;
+    switch (stmt->kind) {
+    case StmtKind::ReturnStmt:
+        visitor.visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
+        return;
+    case StmtKind::VarStmt:
+        for (auto* decl : llvm::cast<VarStmt>(stmt)->decls)
+            visitor.visitDecl(decl);
+        return;
+    case StmtKind::ExprStmt:
+        visitor.visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
+        return;
+    case StmtKind::DeferStmt:
+        visitor.visitExpr(llvm::cast<DeferStmt>(stmt)->expr);
+        return;
+    case StmtKind::IfStmt: {
+        auto* ifStmt = llvm::cast<IfStmt>(stmt);
+        visitor.visitExpr(ifStmt->condition);
+        for (auto* child : ifStmt->thenBody)
+            visitor.visitStmt(child);
+        for (auto* child : ifStmt->elseBody)
+            visitor.visitStmt(child);
+        return;
+    }
+    case StmtKind::SwitchStmt: {
+        auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
+        visitor.visitExpr(switchStmt->condition);
+        for (auto& switchCase : switchStmt->cases) {
+            visitor.visitExpr(switchCase.value);
+            if (switchCase.associatedValue) visitor.visitDecl(switchCase.associatedValue);
+            for (auto* child : switchCase.stmts)
+                visitor.visitStmt(child);
+        }
+        for (auto* child : switchStmt->defaultStmts)
+            visitor.visitStmt(child);
+        return;
+    }
+    case StmtKind::WhileStmt: {
+        auto* whileStmt = llvm::cast<WhileStmt>(stmt);
+        visitor.visitExpr(whileStmt->condition);
+        for (auto* child : whileStmt->body)
+            visitor.visitStmt(child);
+        return;
+    }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
+        visitor.visitExpr(doWhileStmt->condition);
+        for (auto* child : doWhileStmt->body)
+            visitor.visitStmt(child);
+        return;
+    }
+    case StmtKind::ForStmt: {
+        auto* forStmt = llvm::cast<ForStmt>(stmt);
+        if (forStmt->variable) visitor.visitStmt(forStmt->variable);
+        visitor.visitExpr(forStmt->condition);
+        for (auto* increment : forStmt->increments)
+            visitor.visitExpr(increment);
+        for (auto* child : forStmt->body)
+            visitor.visitStmt(child);
+        return;
+    }
+    case StmtKind::ForEachStmt: {
+        auto* forEach = llvm::cast<ForEachStmt>(stmt);
+        if (forEach->variable) visitor.visitDecl(forEach->variable);
+        if (forEach->indexVariable) visitor.visitDecl(forEach->indexVariable);
+        visitor.visitExpr(forEach->range);
+        for (auto* child : forEach->body)
+            visitor.visitStmt(child);
+        return;
+    }
+    case StmtKind::BreakStmt:
+    case StmtKind::ContinueStmt:
+        return;
+    case StmtKind::CompoundStmt:
+        for (auto* child : llvm::cast<CompoundStmt>(stmt)->body)
+            visitor.visitStmt(child);
+        return;
+    }
+}
+
 /// Walks the AST to find the reference or definition under the cursor. The
 /// deepest match wins, so references inside nested expressions and bodies
 /// resolve to the innermost declaration.
@@ -355,222 +565,65 @@ struct Finder {
     // Resolves type references (annotations, return types, sizeof operands)
     // so hover/definition work on type names too.
     void visitType(Type type, int depth) {
-        if (!type) return;
-        if (TypeDecl* typeDecl = type.getDecl()) {
-            // Approximate the source span with the printed spelling; it
-            // matches the source in the common cases (`Point`, `const Point`,
-            // `Point?`, `int[10]`). Generic arguments are visited below at a
-            // deeper level so they win over the outer name.
-            consider(typeDecl, type.location, type.toString().size(), nullptr, false, depth);
-        }
-        switch (type.getKind()) {
-        case TypeKind::BasicType:
-            // Covers Array<T, N>: element is a generic arg.
-            for (GenericArg arg : type.getGenericArgs())
-                if (arg.isType()) visitType(arg.getType(), depth + 1);
-            break;
-        case TypeKind::ArrayPointerType:
-            visitType(type.getElementType(), depth + 1);
-            break;
-        case TypeKind::AnonymousStructType:
-            for (auto& element : type.getAnonymousStructElements())
-                visitType(element.type, depth + 1);
-            break;
-        case TypeKind::FunctionType:
-            visitType(type.getReturnType(), depth + 1);
-            for (Type param : type.getParamTypes())
-                visitType(param, depth + 1);
-            break;
-        case TypeKind::PointerType:
-            visitType(type.getPointee(), depth + 1);
-            break;
-        case TypeKind::UnresolvedType:
-            break;
-        }
+        struct Walker {
+            Finder& finder;
+            int depth;
+            void visitType(Type nested) { finder.visitType(nested, depth + 1); }
+            void onType(Type type) {
+                if (TypeDecl* typeDecl = type.getDecl()) {
+                    // Approximate the source span with the printed spelling; it
+                    // matches the source in the common cases (`Point`, `const Point`,
+                    // `Point?`, `int[10]`). Generic arguments are visited below at a
+                    // deeper level so they win over the outer name.
+                    finder.consider(typeDecl, type.location, type.toString().size(), nullptr, false, depth);
+                }
+            }
+        } walker{*this, depth};
+        walkType(walker, type);
     }
 };
 
 void Finder::visitExpr(Expr* expr, int depth) {
-    if (!expr) return;
-    switch (expr->kind) {
-    case ExprKind::VarExpr: {
-        auto* var = llvm::cast<VarExpr>(expr);
-        if (var->decl) consider(var->decl, var->location, var->identifier.size(), expr, false, depth);
-        return;
-    }
-    case ExprKind::MemberExpr: {
-        auto* member = llvm::cast<MemberExpr>(expr);
-        visitExpr(member->base, depth + 1);
-        if (member->decl) consider(member->decl, member->location, member->member.size(), expr, false, depth);
-        return;
-    }
-    case ExprKind::CallExpr:
-    case ExprKind::UnaryExpr:
-    case ExprKind::BinaryExpr:
-    case ExprKind::IndexExpr:
-    case ExprKind::IndexAssignmentExpr: {
-        auto* call = llvm::cast<CallExpr>(expr);
-        visitExpr(call->callee, depth + 1);
-        // Plain function calls resolve through CallExpr::calleeDecl; the
-        // callee VarExpr itself is never typechecked so its decl stays null.
-        if (call->calleeDecl) {
+    struct Walker {
+        Finder& finder;
+        int depth;
+        void visitExpr(Expr* nested) { finder.visitExpr(nested, depth + 1); }
+        void visitDecl(Decl* decl) { finder.visitDecl(decl, depth + 1); }
+        void visitType(Type type) { finder.visitType(type, depth + 1); }
+        void onVarExpr(VarExpr* var) {
+            if (var->decl) finder.consider(var->decl, var->location, var->identifier.size(), var, false, depth);
+        }
+        void onMemberExpr(MemberExpr* member) {
+            if (member->decl) finder.consider(member->decl, member->location, member->member.size(), member, false, depth);
+        }
+        void onCallExpr(CallExpr* call) {
+            // Plain function calls resolve through CallExpr::calleeDecl; the
+            // callee VarExpr itself is never typechecked so its decl stays null.
+            if (!call->calleeDecl) return;
             if (auto* var = llvm::dyn_cast<VarExpr>(call->callee)) {
-                consider(call->calleeDecl, var->location, var->identifier.size(), call->callee, false, depth + 1);
+                finder.consider(call->calleeDecl, var->location, var->identifier.size(), call->callee, false, depth + 1);
             } else if (auto* member = llvm::dyn_cast<MemberExpr>(call->callee)) {
-                consider(call->calleeDecl, member->location, member->member.size(), call->callee, false, depth + 1);
+                finder.consider(call->calleeDecl, member->location, member->member.size(), call->callee, false, depth + 1);
             }
         }
-        for (auto& arg : call->args)
-            visitExpr(arg.value, depth + 1);
-        return;
-    }
-    case ExprKind::ArrayLiteralExpr: {
-        auto* arr = llvm::cast<ArrayLiteralExpr>(expr);
-        for (auto* el : arr->elements)
-            visitExpr(el, depth + 1);
-        return;
-    }
-    case ExprKind::AnonymousStructExpr: {
-        auto* anonymousStruct = llvm::cast<AnonymousStructExpr>(expr);
-        for (auto& el : anonymousStruct->elements)
-            visitExpr(el.value, depth + 1);
-        return;
-    }
-    case ExprKind::UnwrapExpr: {
-        auto* call = llvm::cast<CallExpr>(expr);
-        visitExpr(call->getReceiver(), depth + 1);
-        // The callee is a synthesized 'unwrap' member at the '!' location; only the '!' itself is real source.
-        if (call->calleeDecl) consider(call->calleeDecl, call->location, 1, expr, false, depth + 1);
-        return;
-    }
-    case ExprKind::LambdaExpr: {
-        auto* lambda = llvm::cast<LambdaExpr>(expr);
-        if (lambda->functionDecl) visitDecl(lambda->functionDecl, depth + 1);
-        return;
-    }
-    case ExprKind::IfExpr: {
-        auto* ifExpr = llvm::cast<IfExpr>(expr);
-        visitExpr(ifExpr->condition, depth + 1);
-        visitExpr(ifExpr->thenExpr, depth + 1);
-        visitExpr(ifExpr->elseExpr, depth + 1);
-        return;
-    }
-    case ExprKind::SwitchExpr: {
-        auto* switchExpr = llvm::cast<SwitchExpr>(expr);
-        visitExpr(switchExpr->condition, depth + 1);
-        for (auto& arm : switchExpr->arms) {
-            visitExpr(arm.value, depth + 1);
-            if (arm.associatedValue) visitDecl(arm.associatedValue, depth + 1);
-            visitExpr(arm.expr, depth + 1);
+        void onUnwrapExpr(CallExpr* call) {
+            // The callee is a synthesized 'unwrap' member at the '!' location; only the '!' itself is real source.
+            if (call->calleeDecl) finder.consider(call->calleeDecl, call->location, 1, call, false, depth + 1);
         }
-        if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr, depth + 1);
-        return;
-    }
-    case ExprKind::ImplicitCastExpr:
-        visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand, depth + 1);
-        return;
-    case ExprKind::VarDeclExpr: {
-        auto* varDeclExpr = llvm::cast<VarDeclExpr>(expr);
-        visitDecl(varDeclExpr->varDecl, depth + 1);
-        return;
-    }
-    case ExprKind::StringLiteralExpr:
-    case ExprKind::CharacterLiteralExpr:
-    case ExprKind::IntLiteralExpr:
-    case ExprKind::FloatLiteralExpr:
-    case ExprKind::BoolLiteralExpr:
-    case ExprKind::NullLiteralExpr:
-    case ExprKind::UndefinedLiteralExpr:
-        return;
-    case ExprKind::SizeofExpr:
-        visitType(llvm::cast<SizeofExpr>(expr)->operandType, depth + 1);
-        return;
-    }
+        void onSizeof(SizeofExpr* sizeofExpr) { visitType(sizeofExpr->operandType); }
+    } walker{*this, depth};
+    walkExpr(walker, expr);
 }
 
 void Finder::visitStmt(Stmt* stmt, int depth) {
-    if (!stmt) return;
-    switch (stmt->kind) {
-    case StmtKind::ReturnStmt:
-        visitExpr(llvm::cast<ReturnStmt>(stmt)->value, depth + 1);
-        return;
-    case StmtKind::VarStmt: {
-        auto* varStmt = llvm::cast<VarStmt>(stmt);
-        for (auto* decl : varStmt->decls) {
-            visitDecl(decl, depth + 1);
-        }
-        return;
-    }
-    case StmtKind::ExprStmt:
-        visitExpr(llvm::cast<ExprStmt>(stmt)->expr, depth + 1);
-        return;
-    case StmtKind::DeferStmt:
-        visitExpr(llvm::cast<DeferStmt>(stmt)->expr, depth + 1);
-        return;
-    case StmtKind::IfStmt: {
-        auto* ifStmt = llvm::cast<IfStmt>(stmt);
-        visitExpr(ifStmt->condition, depth + 1);
-        for (auto* s : ifStmt->thenBody)
-            visitStmt(s, depth + 1);
-        for (auto* s : ifStmt->elseBody)
-            visitStmt(s, depth + 1);
-        return;
-    }
-    case StmtKind::SwitchStmt: {
-        auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
-        visitExpr(switchStmt->condition, depth + 1);
-        for (auto& c : switchStmt->cases) {
-            visitExpr(c.value, depth + 1);
-            if (c.associatedValue) visitDecl(c.associatedValue, depth + 1);
-            for (auto* s : c.stmts)
-                visitStmt(s, depth + 1);
-        }
-        for (auto* s : switchStmt->defaultStmts)
-            visitStmt(s, depth + 1);
-        return;
-    }
-    case StmtKind::WhileStmt: {
-        auto* whileStmt = llvm::cast<WhileStmt>(stmt);
-        visitExpr(whileStmt->condition, depth + 1);
-        for (auto* s : whileStmt->body)
-            visitStmt(s, depth + 1);
-        return;
-    }
-    case StmtKind::DoWhileStmt: {
-        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
-        visitExpr(doWhileStmt->condition, depth + 1);
-        for (auto* s : doWhileStmt->body)
-            visitStmt(s, depth + 1);
-        return;
-    }
-    case StmtKind::ForStmt: {
-        auto* forStmt = llvm::cast<ForStmt>(stmt);
-        if (forStmt->variable) visitStmt(forStmt->variable, depth + 1);
-        visitExpr(forStmt->condition, depth + 1);
-        for (auto* increment : forStmt->increments)
-            visitExpr(increment, depth + 1);
-        for (auto* s : forStmt->body)
-            visitStmt(s, depth + 1);
-        return;
-    }
-    case StmtKind::ForEachStmt: {
-        auto* forEach = llvm::cast<ForEachStmt>(stmt);
-        if (forEach->variable) visitDecl(forEach->variable, depth + 1);
-        if (forEach->indexVariable) visitDecl(forEach->indexVariable, depth + 1);
-        visitExpr(forEach->range, depth + 1);
-        for (auto* s : forEach->body)
-            visitStmt(s, depth + 1);
-        return;
-    }
-    case StmtKind::BreakStmt:
-    case StmtKind::ContinueStmt:
-    case StmtKind::CompoundStmt:
-        if (auto* compound = llvm::dyn_cast<CompoundStmt>(stmt)) {
-            for (auto* s : compound->body)
-                visitStmt(s, depth + 1);
-        }
-        return;
-    }
+    struct Walker {
+        Finder& finder;
+        int depth;
+        void visitExpr(Expr* expr) { finder.visitExpr(expr, depth); }
+        void visitStmt(Stmt* nested) { finder.visitStmt(nested, depth); }
+        void visitDecl(Decl* decl) { finder.visitDecl(decl, depth); }
+    } walker{*this, depth + 1};
+    walkStmt(walker, stmt);
 }
 
 void Finder::visitDecl(Decl* decl, int depth) {
@@ -663,198 +716,39 @@ struct ReferenceCollector {
     void visitExpr(Expr* expr);
     void visitStmt(Stmt* stmt);
     void visitDecl(Decl* decl);
-    void visitType(Type type) {
-        if (!type) return;
+    void onType(Type type) {
         if (type.getDecl() == target) locations.emplace_back(type.location, type.toString().size());
-        switch (type.getKind()) {
-        case TypeKind::BasicType:
-            for (GenericArg arg : type.getGenericArgs())
-                if (arg.isType()) visitType(arg.getType());
-            break;
-        case TypeKind::ArrayPointerType:
-            visitType(type.getElementType());
-            break;
-        case TypeKind::AnonymousStructType:
-            for (auto& element : type.getAnonymousStructElements())
-                visitType(element.type);
-            break;
-        case TypeKind::FunctionType:
-            visitType(type.getReturnType());
-            for (Type param : type.getParamTypes())
-                visitType(param);
-            break;
-        case TypeKind::PointerType:
-            visitType(type.getPointee());
-            break;
-        case TypeKind::UnresolvedType:
-            break;
+    }
+    void visitType(Type type) { walkType(*this, type); }
+    void onVarExpr(VarExpr* var) {
+        if (var->decl == target) locations.emplace_back(var->location, var->identifier.size());
+    }
+    void onMemberExpr(MemberExpr* member) {
+        if (member->decl == target) locations.emplace_back(member->location, member->member.size());
+    }
+    void onCallExpr(CallExpr* call) {
+        // See Finder: plain calls resolve through calleeDecl, leaving the
+        // callee VarExpr's decl null.
+        if (call->calleeDecl != target) return;
+        if (auto* var = llvm::dyn_cast<VarExpr>(call->callee)) {
+            locations.emplace_back(var->location, var->identifier.size());
+        } else if (auto* member = llvm::dyn_cast<MemberExpr>(call->callee)) {
+            locations.emplace_back(member->location, member->member.size());
         }
     }
+    void onUnwrapExpr(CallExpr* call) {
+        // The callee is a synthesized 'unwrap' member at the '!' location; only the '!' itself is real source.
+        if (call->calleeDecl == target) locations.emplace_back(call->location, 1);
+    }
+    void onSizeof(SizeofExpr* expr) { visitType(expr->operandType); }
 };
 
 void ReferenceCollector::visitExpr(Expr* expr) {
-    if (!expr) return;
-    switch (expr->kind) {
-    case ExprKind::VarExpr: {
-        auto* var = llvm::cast<VarExpr>(expr);
-        if (var->decl == target) locations.emplace_back(var->location, var->identifier.size());
-        return;
-    }
-    case ExprKind::MemberExpr: {
-        auto* member = llvm::cast<MemberExpr>(expr);
-        visitExpr(member->base);
-        if (member->decl == target) locations.emplace_back(member->location, member->member.size());
-        return;
-    }
-    case ExprKind::CallExpr:
-    case ExprKind::UnaryExpr:
-    case ExprKind::BinaryExpr:
-    case ExprKind::IndexExpr:
-    case ExprKind::IndexAssignmentExpr: {
-        auto* call = llvm::cast<CallExpr>(expr);
-        visitExpr(call->callee);
-        // See Finder: plain calls resolve through calleeDecl, leaving the
-        // callee VarExpr's decl null.
-        if (call->calleeDecl == target) {
-            if (auto* var = llvm::dyn_cast<VarExpr>(call->callee)) {
-                locations.emplace_back(var->location, var->identifier.size());
-            } else if (auto* member = llvm::dyn_cast<MemberExpr>(call->callee)) {
-                locations.emplace_back(member->location, member->member.size());
-            }
-        }
-        for (auto& arg : call->args)
-            visitExpr(arg.value);
-        return;
-    }
-    case ExprKind::ArrayLiteralExpr:
-        for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
-            visitExpr(el);
-        return;
-    case ExprKind::AnonymousStructExpr:
-        for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
-            visitExpr(el.value);
-        return;
-    case ExprKind::UnwrapExpr: {
-        auto* call = llvm::cast<CallExpr>(expr);
-        visitExpr(call->getReceiver());
-        // The callee is a synthesized 'unwrap' member at the '!' location; only the '!' itself is real source.
-        if (call->calleeDecl == target) locations.emplace_back(call->location, 1);
-        return;
-    }
-    case ExprKind::LambdaExpr:
-        if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);
-        return;
-    case ExprKind::IfExpr: {
-        auto* ifExpr = llvm::cast<IfExpr>(expr);
-        visitExpr(ifExpr->condition);
-        visitExpr(ifExpr->thenExpr);
-        visitExpr(ifExpr->elseExpr);
-        return;
-    }
-    case ExprKind::SwitchExpr: {
-        auto* switchExpr = llvm::cast<SwitchExpr>(expr);
-        visitExpr(switchExpr->condition);
-        for (auto& arm : switchExpr->arms) {
-            visitExpr(arm.value);
-            if (arm.associatedValue) visitDecl(arm.associatedValue);
-            visitExpr(arm.expr);
-        }
-        if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr);
-        return;
-    }
-    case ExprKind::ImplicitCastExpr:
-        visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand);
-        return;
-    case ExprKind::VarDeclExpr:
-        visitDecl(llvm::cast<VarDeclExpr>(expr)->varDecl);
-        return;
-    case ExprKind::SizeofExpr:
-        visitType(llvm::cast<SizeofExpr>(expr)->operandType);
-        return;
-    default:
-        return;
-    }
+    walkExpr(*this, expr);
 }
 
 void ReferenceCollector::visitStmt(Stmt* stmt) {
-    if (!stmt) return;
-    switch (stmt->kind) {
-    case StmtKind::ReturnStmt:
-        visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
-        return;
-    case StmtKind::VarStmt:
-        for (auto* decl : llvm::cast<VarStmt>(stmt)->decls) {
-            visitDecl(decl);
-        }
-        return;
-    case StmtKind::ExprStmt:
-        visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
-        return;
-    case StmtKind::DeferStmt:
-        visitExpr(llvm::cast<DeferStmt>(stmt)->expr);
-        return;
-    case StmtKind::IfStmt: {
-        auto* ifStmt = llvm::cast<IfStmt>(stmt);
-        visitExpr(ifStmt->condition);
-        for (auto* s : ifStmt->thenBody)
-            visitStmt(s);
-        for (auto* s : ifStmt->elseBody)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::SwitchStmt: {
-        auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
-        visitExpr(switchStmt->condition);
-        for (auto& c : switchStmt->cases) {
-            visitExpr(c.value);
-            if (c.associatedValue) visitDecl(c.associatedValue);
-            for (auto* s : c.stmts)
-                visitStmt(s);
-        }
-        for (auto* s : switchStmt->defaultStmts)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::WhileStmt: {
-        auto* whileStmt = llvm::cast<WhileStmt>(stmt);
-        visitExpr(whileStmt->condition);
-        for (auto* s : whileStmt->body)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::DoWhileStmt: {
-        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
-        visitExpr(doWhileStmt->condition);
-        for (auto* s : doWhileStmt->body)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::ForStmt: {
-        auto* forStmt = llvm::cast<ForStmt>(stmt);
-        if (forStmt->variable) visitStmt(forStmt->variable);
-        visitExpr(forStmt->condition);
-        for (auto* increment : forStmt->increments)
-            visitExpr(increment);
-        for (auto* s : forStmt->body)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::ForEachStmt: {
-        auto* forEach = llvm::cast<ForEachStmt>(stmt);
-        if (forEach->variable) visitDecl(forEach->variable);
-        if (forEach->indexVariable) visitDecl(forEach->indexVariable);
-        visitExpr(forEach->range);
-        for (auto* s : forEach->body)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::CompoundStmt:
-        for (auto* s : llvm::cast<CompoundStmt>(stmt)->body)
-            visitStmt(s);
-        return;
-    default:
-        return;
-    }
+    walkStmt(*this, stmt);
 }
 
 void ReferenceCollector::visitDecl(Decl* decl) {
@@ -1267,6 +1161,39 @@ struct SemanticCollector {
     void visitExpr(Expr* expr);
     void visitStmt(Stmt* stmt);
     void visitDecl(Decl* decl);
+    void onVarExpr(VarExpr* var) {
+        if (!var->decl) return;
+        if (const char* type = tokenTypeForDecl(*var->decl)) emit(var->location, var->identifier, type, false, isReadonlyVariable(*var->decl));
+    }
+    void onMemberExpr(MemberExpr* member) {
+        if (!member->decl) return;
+        if (const char* type = tokenTypeForDecl(*member->decl)) emit(member->location, member->member, type, false, isReadonlyVariable(*member->decl));
+    }
+    void onCallExpr(CallExpr* call) {
+        // See Finder: plain calls resolve through calleeDecl, leaving the
+        // callee VarExpr's decl null.
+        if (!call->calleeDecl) return;
+        if (const char* type = tokenTypeForDecl(*call->calleeDecl)) {
+            bool readonly = isReadonlyVariable(*call->calleeDecl);
+            if (auto* var = llvm::dyn_cast<VarExpr>(call->callee)) {
+                emit(var->location, var->identifier, type, false, readonly);
+            } else if (auto* member = llvm::dyn_cast<MemberExpr>(call->callee)) {
+                emit(member->location, member->member, type, false, readonly);
+            }
+        }
+    }
+    void onCallGenericArgs(CallExpr* call) {
+        for (GenericArg arg : call->genericArgs)
+            if (arg.isType()) visitType(arg.getType());
+    }
+    void onUnwrapExpr(CallExpr* call) {
+        // The callee is a synthesized 'unwrap' member at the '!' location; only the '!' itself is real source.
+        if (!call->calleeDecl) return;
+        if (const char* type = tokenTypeForDecl(*call->calleeDecl)) {
+            emit(call->location, "!", type, false, isReadonlyVariable(*call->calleeDecl));
+        }
+    }
+    void onSizeof(SizeofExpr* expr) { visitType(expr->operandType); }
     void visitType(Type type) {
         if (!type) return;
         switch (type.getKind()) {
@@ -1316,181 +1243,11 @@ struct SemanticCollector {
 };
 
 void SemanticCollector::visitExpr(Expr* expr) {
-    if (!expr) return;
-    switch (expr->kind) {
-    case ExprKind::VarExpr: {
-        auto* var = llvm::cast<VarExpr>(expr);
-        if (var->decl) {
-            if (const char* type = tokenTypeForDecl(*var->decl)) emit(var->location, var->identifier, type, false, isReadonlyVariable(*var->decl));
-        }
-        return;
-    }
-    case ExprKind::MemberExpr: {
-        auto* member = llvm::cast<MemberExpr>(expr);
-        visitExpr(member->base);
-        if (member->decl) {
-            if (const char* type = tokenTypeForDecl(*member->decl)) emit(member->location, member->member, type, false, isReadonlyVariable(*member->decl));
-        }
-        return;
-    }
-    case ExprKind::CallExpr:
-    case ExprKind::UnaryExpr:
-    case ExprKind::BinaryExpr:
-    case ExprKind::IndexExpr:
-    case ExprKind::IndexAssignmentExpr: {
-        auto* call = llvm::cast<CallExpr>(expr);
-        visitExpr(call->callee);
-        // See Finder: plain calls resolve through calleeDecl, leaving the
-        // callee VarExpr's decl null.
-        if (call->calleeDecl) {
-            if (const char* type = tokenTypeForDecl(*call->calleeDecl)) {
-                bool readonly = isReadonlyVariable(*call->calleeDecl);
-                if (auto* var = llvm::dyn_cast<VarExpr>(call->callee)) {
-                    emit(var->location, var->identifier, type, false, readonly);
-                } else if (auto* member = llvm::dyn_cast<MemberExpr>(call->callee)) {
-                    emit(member->location, member->member, type, false, readonly);
-                }
-            }
-        }
-        for (auto& arg : call->args)
-            visitExpr(arg.value);
-        for (GenericArg arg : call->genericArgs)
-            if (arg.isType()) visitType(arg.getType());
-        return;
-    }
-    case ExprKind::ArrayLiteralExpr:
-        for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
-            visitExpr(el);
-        return;
-    case ExprKind::AnonymousStructExpr:
-        for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
-            visitExpr(el.value);
-        return;
-    case ExprKind::UnwrapExpr: {
-        auto* call = llvm::cast<CallExpr>(expr);
-        visitExpr(call->getReceiver());
-        // The callee is a synthesized 'unwrap' member at the '!' location; only the '!' itself is real source.
-        if (call->calleeDecl) {
-            if (const char* type = tokenTypeForDecl(*call->calleeDecl)) {
-                emit(call->location, "!", type, false, isReadonlyVariable(*call->calleeDecl));
-            }
-        }
-        return;
-    }
-    case ExprKind::LambdaExpr:
-        if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);
-        return;
-    case ExprKind::IfExpr: {
-        auto* ifExpr = llvm::cast<IfExpr>(expr);
-        visitExpr(ifExpr->condition);
-        visitExpr(ifExpr->thenExpr);
-        visitExpr(ifExpr->elseExpr);
-        return;
-    }
-    case ExprKind::SwitchExpr: {
-        auto* switchExpr = llvm::cast<SwitchExpr>(expr);
-        visitExpr(switchExpr->condition);
-        for (auto& arm : switchExpr->arms) {
-            visitExpr(arm.value);
-            if (arm.associatedValue) visitDecl(arm.associatedValue);
-            visitExpr(arm.expr);
-        }
-        if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr);
-        return;
-    }
-    case ExprKind::ImplicitCastExpr:
-        visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand);
-        return;
-    case ExprKind::VarDeclExpr:
-        visitDecl(llvm::cast<VarDeclExpr>(expr)->varDecl);
-        return;
-    case ExprKind::SizeofExpr:
-        visitType(llvm::cast<SizeofExpr>(expr)->operandType);
-        return;
-    default:
-        return;
-    }
+    walkExpr(*this, expr);
 }
 
 void SemanticCollector::visitStmt(Stmt* stmt) {
-    if (!stmt) return;
-    switch (stmt->kind) {
-    case StmtKind::ReturnStmt:
-        visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
-        return;
-    case StmtKind::VarStmt:
-        for (auto* decl : llvm::cast<VarStmt>(stmt)->decls) {
-            visitDecl(decl);
-        }
-        return;
-    case StmtKind::ExprStmt:
-        visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
-        return;
-    case StmtKind::DeferStmt:
-        visitExpr(llvm::cast<DeferStmt>(stmt)->expr);
-        return;
-    case StmtKind::IfStmt: {
-        auto* ifStmt = llvm::cast<IfStmt>(stmt);
-        visitExpr(ifStmt->condition);
-        for (auto* s : ifStmt->thenBody)
-            visitStmt(s);
-        for (auto* s : ifStmt->elseBody)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::SwitchStmt: {
-        auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
-        visitExpr(switchStmt->condition);
-        for (auto& c : switchStmt->cases) {
-            visitExpr(c.value);
-            if (c.associatedValue) visitDecl(c.associatedValue);
-            for (auto* s : c.stmts)
-                visitStmt(s);
-        }
-        for (auto* s : switchStmt->defaultStmts)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::WhileStmt: {
-        auto* whileStmt = llvm::cast<WhileStmt>(stmt);
-        visitExpr(whileStmt->condition);
-        for (auto* s : whileStmt->body)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::DoWhileStmt: {
-        auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
-        visitExpr(doWhileStmt->condition);
-        for (auto* s : doWhileStmt->body)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::ForStmt: {
-        auto* forStmt = llvm::cast<ForStmt>(stmt);
-        if (forStmt->variable) visitStmt(forStmt->variable);
-        visitExpr(forStmt->condition);
-        for (auto* increment : forStmt->increments)
-            visitExpr(increment);
-        for (auto* s : forStmt->body)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::ForEachStmt: {
-        auto* forEach = llvm::cast<ForEachStmt>(stmt);
-        if (forEach->variable) visitDecl(forEach->variable);
-        if (forEach->indexVariable) visitDecl(forEach->indexVariable);
-        visitExpr(forEach->range);
-        for (auto* s : forEach->body)
-            visitStmt(s);
-        return;
-    }
-    case StmtKind::CompoundStmt:
-        for (auto* s : llvm::cast<CompoundStmt>(stmt)->body)
-            visitStmt(s);
-        return;
-    default:
-        return;
-    }
+    walkStmt(*this, stmt);
 }
 
 void SemanticCollector::visitDecl(Decl* decl) {
@@ -1661,157 +1418,9 @@ std::string insertCompletionPlaceholder(const std::string& content, LspPosition 
 
 struct MemberExprCollector {
     std::vector<MemberExpr*> members;
-    void visitExpr(Expr* expr) {
-        if (!expr) return;
-        switch (expr->kind) {
-        case ExprKind::VarExpr:
-        case ExprKind::StringLiteralExpr:
-        case ExprKind::CharacterLiteralExpr:
-        case ExprKind::IntLiteralExpr:
-        case ExprKind::FloatLiteralExpr:
-        case ExprKind::BoolLiteralExpr:
-        case ExprKind::NullLiteralExpr:
-        case ExprKind::UndefinedLiteralExpr:
-        case ExprKind::SizeofExpr:
-            return;
-        case ExprKind::MemberExpr: {
-            auto* member = llvm::cast<MemberExpr>(expr);
-            members.push_back(member);
-            visitExpr(member->base);
-            return;
-        }
-        case ExprKind::CallExpr:
-        case ExprKind::UnaryExpr:
-        case ExprKind::BinaryExpr:
-        case ExprKind::IndexExpr:
-        case ExprKind::IndexAssignmentExpr: {
-            auto* call = llvm::cast<CallExpr>(expr);
-            visitExpr(call->callee);
-            for (auto& arg : call->args)
-                visitExpr(arg.value);
-            return;
-        }
-        case ExprKind::ArrayLiteralExpr:
-            for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
-                visitExpr(el);
-            return;
-        case ExprKind::AnonymousStructExpr:
-            for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
-                visitExpr(el.value);
-            return;
-        case ExprKind::UnwrapExpr:
-            // Visit the receiver, not the synthesized 'unwrap' callee.
-            visitExpr(llvm::cast<CallExpr>(expr)->getReceiver());
-            return;
-        case ExprKind::LambdaExpr:
-            if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);
-            return;
-        case ExprKind::IfExpr: {
-            auto* ifExpr = llvm::cast<IfExpr>(expr);
-            visitExpr(ifExpr->condition);
-            visitExpr(ifExpr->thenExpr);
-            visitExpr(ifExpr->elseExpr);
-            return;
-        }
-        case ExprKind::SwitchExpr: {
-            auto* switchExpr = llvm::cast<SwitchExpr>(expr);
-            visitExpr(switchExpr->condition);
-            for (auto& arm : switchExpr->arms) {
-                visitExpr(arm.value);
-                if (arm.associatedValue) visitDecl(arm.associatedValue);
-                visitExpr(arm.expr);
-            }
-            if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr);
-            return;
-        }
-        case ExprKind::ImplicitCastExpr:
-            visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand);
-            return;
-        case ExprKind::VarDeclExpr:
-            visitDecl(llvm::cast<VarDeclExpr>(expr)->varDecl);
-            return;
-        }
-    }
-    void visitStmt(Stmt* stmt) {
-        if (!stmt) return;
-        switch (stmt->kind) {
-        case StmtKind::ReturnStmt:
-            visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
-            return;
-        case StmtKind::VarStmt:
-            for (auto* decl : llvm::cast<VarStmt>(stmt)->decls)
-                visitDecl(decl);
-            return;
-        case StmtKind::ExprStmt:
-            visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
-            return;
-        case StmtKind::DeferStmt:
-            visitExpr(llvm::cast<DeferStmt>(stmt)->expr);
-            return;
-        case StmtKind::IfStmt: {
-            auto* ifStmt = llvm::cast<IfStmt>(stmt);
-            visitExpr(ifStmt->condition);
-            for (auto* s : ifStmt->thenBody)
-                visitStmt(s);
-            for (auto* s : ifStmt->elseBody)
-                visitStmt(s);
-            return;
-        }
-        case StmtKind::SwitchStmt: {
-            auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
-            visitExpr(switchStmt->condition);
-            for (auto& c : switchStmt->cases) {
-                visitExpr(c.value);
-                if (c.associatedValue) visitDecl(c.associatedValue);
-                for (auto* s : c.stmts)
-                    visitStmt(s);
-            }
-            for (auto* s : switchStmt->defaultStmts)
-                visitStmt(s);
-            return;
-        }
-        case StmtKind::WhileStmt: {
-            auto* whileStmt = llvm::cast<WhileStmt>(stmt);
-            visitExpr(whileStmt->condition);
-            for (auto* s : whileStmt->body)
-                visitStmt(s);
-            return;
-        }
-        case StmtKind::DoWhileStmt: {
-            auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
-            visitExpr(doWhileStmt->condition);
-            for (auto* s : doWhileStmt->body)
-                visitStmt(s);
-            return;
-        }
-        case StmtKind::ForStmt: {
-            auto* forStmt = llvm::cast<ForStmt>(stmt);
-            if (forStmt->variable) visitStmt(forStmt->variable);
-            visitExpr(forStmt->condition);
-            for (auto* increment : forStmt->increments)
-                visitExpr(increment);
-            for (auto* s : forStmt->body)
-                visitStmt(s);
-            return;
-        }
-        case StmtKind::ForEachStmt: {
-            auto* forEach = llvm::cast<ForEachStmt>(stmt);
-            if (forEach->variable) visitDecl(forEach->variable);
-            if (forEach->indexVariable) visitDecl(forEach->indexVariable);
-            visitExpr(forEach->range);
-            for (auto* s : forEach->body)
-                visitStmt(s);
-            return;
-        }
-        case StmtKind::BreakStmt:
-        case StmtKind::ContinueStmt:
-            return;
-        case StmtKind::CompoundStmt:
-            for (auto* s : llvm::cast<CompoundStmt>(stmt)->body)
-                visitStmt(s);
-            return;
-        }
-    }
+    void onMemberExpr(MemberExpr* member) { members.push_back(member); }
+    void visitExpr(Expr* expr) { walkExpr(*this, expr); }
+    void visitStmt(Stmt* stmt) { walkStmt(*this, stmt); }
     void visitDecl(Decl* decl) {
         if (!decl) return;
         switch (decl->kind) {
@@ -2432,146 +2041,8 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
         const std::string& file;
         int line;
         std::vector<Decl*> locals;
-        void visitExpr(Expr* expr) {
-            if (!expr) return;
-            switch (expr->kind) {
-            case ExprKind::CallExpr:
-            case ExprKind::UnaryExpr:
-            case ExprKind::BinaryExpr:
-            case ExprKind::IndexExpr:
-            case ExprKind::IndexAssignmentExpr: {
-                auto* call = llvm::cast<CallExpr>(expr);
-                visitExpr(call->callee);
-                for (auto& arg : call->args)
-                    visitExpr(arg.value);
-                return;
-            }
-            case ExprKind::ArrayLiteralExpr:
-                for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
-                    visitExpr(el);
-                return;
-            case ExprKind::AnonymousStructExpr:
-                for (auto& el : llvm::cast<AnonymousStructExpr>(expr)->elements)
-                    visitExpr(el.value);
-                return;
-            case ExprKind::UnwrapExpr:
-                // Visit the receiver, not the synthesized 'unwrap' callee.
-                visitExpr(llvm::cast<CallExpr>(expr)->getReceiver());
-                return;
-            case ExprKind::LambdaExpr:
-                if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);
-                return;
-            case ExprKind::IfExpr: {
-                auto* ifExpr = llvm::cast<IfExpr>(expr);
-                visitExpr(ifExpr->condition);
-                visitExpr(ifExpr->thenExpr);
-                visitExpr(ifExpr->elseExpr);
-                return;
-            }
-            case ExprKind::SwitchExpr: {
-                auto* switchExpr = llvm::cast<SwitchExpr>(expr);
-                visitExpr(switchExpr->condition);
-                for (auto& arm : switchExpr->arms) {
-                    visitExpr(arm.value);
-                    if (arm.associatedValue) visitDecl(arm.associatedValue);
-                    visitExpr(arm.expr);
-                }
-                if (switchExpr->defaultExpr) visitExpr(switchExpr->defaultExpr);
-                return;
-            }
-            case ExprKind::ImplicitCastExpr:
-                visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand);
-                return;
-            case ExprKind::VarDeclExpr:
-                visitDecl(llvm::cast<VarDeclExpr>(expr)->varDecl);
-                return;
-            case ExprKind::MemberExpr:
-                visitExpr(llvm::cast<MemberExpr>(expr)->base);
-                return;
-            default:
-                return;
-            }
-        }
-        void visitStmt(Stmt* stmt) {
-            if (!stmt) return;
-            switch (stmt->kind) {
-            case StmtKind::ReturnStmt:
-                visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
-                return;
-            case StmtKind::VarStmt:
-                for (auto* decl : llvm::cast<VarStmt>(stmt)->decls) {
-                    visitDecl(decl);
-                }
-                return;
-            case StmtKind::ExprStmt:
-                visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
-                return;
-            case StmtKind::DeferStmt:
-                visitExpr(llvm::cast<DeferStmt>(stmt)->expr);
-                return;
-            case StmtKind::IfStmt: {
-                auto* ifStmt = llvm::cast<IfStmt>(stmt);
-                visitExpr(ifStmt->condition);
-                for (auto* s : ifStmt->thenBody)
-                    visitStmt(s);
-                for (auto* s : ifStmt->elseBody)
-                    visitStmt(s);
-                return;
-            }
-            case StmtKind::SwitchStmt: {
-                auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
-                visitExpr(switchStmt->condition);
-                for (auto& c : switchStmt->cases) {
-                    visitExpr(c.value);
-                    if (c.associatedValue) visitDecl(c.associatedValue);
-                    for (auto* s : c.stmts)
-                        visitStmt(s);
-                }
-                for (auto* s : switchStmt->defaultStmts)
-                    visitStmt(s);
-                return;
-            }
-            case StmtKind::WhileStmt: {
-                auto* whileStmt = llvm::cast<WhileStmt>(stmt);
-                visitExpr(whileStmt->condition);
-                for (auto* s : whileStmt->body)
-                    visitStmt(s);
-                return;
-            }
-            case StmtKind::DoWhileStmt: {
-                auto* doWhileStmt = llvm::cast<DoWhileStmt>(stmt);
-                visitExpr(doWhileStmt->condition);
-                for (auto* s : doWhileStmt->body)
-                    visitStmt(s);
-                return;
-            }
-            case StmtKind::ForStmt: {
-                auto* forStmt = llvm::cast<ForStmt>(stmt);
-                if (forStmt->variable) visitStmt(forStmt->variable);
-                visitExpr(forStmt->condition);
-                for (auto* increment : forStmt->increments)
-                    visitExpr(increment);
-                for (auto* s : forStmt->body)
-                    visitStmt(s);
-                return;
-            }
-            case StmtKind::ForEachStmt: {
-                auto* forEach = llvm::cast<ForEachStmt>(stmt);
-                if (forEach->variable) visitDecl(forEach->variable);
-                if (forEach->indexVariable) visitDecl(forEach->indexVariable);
-                visitExpr(forEach->range);
-                for (auto* s : forEach->body)
-                    visitStmt(s);
-                return;
-            }
-            case StmtKind::CompoundStmt:
-                for (auto* s : llvm::cast<CompoundStmt>(stmt)->body)
-                    visitStmt(s);
-                return;
-            default:
-                return;
-            }
-        }
+        void visitExpr(Expr* expr) { walkExpr(*this, expr); }
+        void visitStmt(Stmt* stmt) { walkStmt(*this, stmt); }
         void visitDecl(Decl* decl) {
             if (!decl) return;
             if (auto* var = llvm::dyn_cast<VarDecl>(decl)) {
