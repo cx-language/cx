@@ -181,6 +181,10 @@ private:
     ConstructorDecl* parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit = false);
     DestructorDecl* parseDestructorDecl(TypeDecl& receiverTypeDecl);
     FieldDecl parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool isManuallyDestroy);
+    void parsePrivateSpecifier(AccessLevel& accessLevel);
+    // Rejects `@test` and `@manuallyDestroy` on a declaration that cannot carry them.
+    void rejectMisplacedDeclAttributes(bool isTest, bool isManuallyDestroy, Location manuallyDestroyLocation,
+                                       const char* testMessage = "only functions can be marked as tests");
     void rejectGenericStaticConst(const std::vector<GenericParamDecl>* genericParams);
     // Current token is `=`. Parses the initializer and adds a static constant.
     void addParsedStaticConst(TypeDecl& typeDecl, Type type, llvm::StringRef name, Location location, AccessLevel accessLevel);

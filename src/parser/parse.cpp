@@ -1930,6 +1930,17 @@ Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<Generic
     return name;
 }
 
+void Parser::parsePrivateSpecifier(AccessLevel& accessLevel) {
+    if (accessLevel != AccessLevel::Default) WARN_CURRENT_TOKEN("duplicate access specifier");
+    accessLevel = AccessLevel::Private;
+    consumeToken();
+}
+
+void Parser::rejectMisplacedDeclAttributes(bool isTest, bool isManuallyDestroy, Location manuallyDestroyLocation, const char* testMessage) {
+    if (isTest) ERROR_CURRENT_TOKEN(testMessage);
+    if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+}
+
 void Parser::rejectGenericStaticConst(const std::vector<GenericParamDecl>* genericParams) {
     if (genericParams && !genericParams->empty()) {
         ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
@@ -1989,11 +2000,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             if (tag == TypeTag::Interface) {
                 WARN_CURRENT_TOKEN("interface members cannot be private");
             }
-            if (accessLevel != AccessLevel::Default) {
-                WARN_CURRENT_TOKEN("duplicate access specifier");
-            }
-            accessLevel = AccessLevel::Private;
-            consumeToken();
+            parsePrivateSpecifier(accessLevel);
             goto start;
         case Token::At: {
             parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
@@ -2121,9 +2128,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
         Location manuallyDestroyLocation;
         parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
         while (currentToken() == Token::Private) {
-            if (accessLevel != AccessLevel::Default) WARN_CURRENT_TOKEN("duplicate access specifier");
-            accessLevel = AccessLevel::Private;
-            consumeToken();
+            parsePrivateSpecifier(accessLevel);
         }
         parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
         if (isTest) ERROR_RANGE(testLocation, getIdentifierEndLocation(testLocation, "@test"), "only top-level functions can be marked as tests");
@@ -2173,13 +2178,8 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
             // A const-qualified member with an initializer is a static constant.
             if (currentToken() == Token::Assignment && !type.isMutable()) {
-                if (genericParams && !genericParams->empty()) {
-                    ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
-                }
-                consumeToken();
-                auto* initializer = parseExpr();
-                parseStmtTerminator();
-                enumDecl->staticConsts.push_back(makeAST<VarDecl>(type, methodName, initializer, nullptr, accessLevel, *currentModule, location));
+                rejectGenericStaticConst(genericParams);
+                addParsedStaticConst(*enumDecl, type, methodName, location, accessLevel);
                 continue;
             }
 
@@ -2345,9 +2345,7 @@ Decl* Parser::parseTopLevelDecl(bool addToSymbolTable) {
 start:
     switch (currentToken()) {
     case Token::Private:
-        if (accessLevel != AccessLevel::Default) WARN_CURRENT_TOKEN("duplicate access specifier");
-        accessLevel = AccessLevel::Private;
-        consumeToken();
+        parsePrivateSpecifier(accessLevel);
         goto start;
     case Token::At:
         parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
@@ -2355,8 +2353,7 @@ start:
     case Token::Implicit:
         ERROR_CURRENT_TOKEN(implicitMemberOnly);
     case Token::Extern:
-        if (isTest) ERROR_CURRENT_TOKEN("test functions must have a body");
-        if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, "test functions must have a body");
         consumeToken();
         if (currentToken() == Token::StringLiteral) {
             auto linkage = currentToken().getString().drop_back().drop_front();
@@ -2369,8 +2366,7 @@ start:
         return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel);
     case Token::Struct:
     case Token::Interface:
-        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
-        if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
         if (lookAhead(2) == Token::Less) {
             decl = parseTypeTemplate(accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
@@ -2380,8 +2376,7 @@ start:
         }
         break;
     case Token::Enum:
-        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
-        if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
         if (lookAhead(2) == Token::Less) {
             decl = parseEnumTemplate(accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
@@ -2391,15 +2386,13 @@ start:
         }
         break;
     case Token::Using:
-        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
-        if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
         decl = parseTypeAliasDecl(accessLevel);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeAliasDecl>(*decl));
         break;
     case Token::Var:
     case Token::Const:
-        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
-        if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
         // Determine if this is a constant declaration or if the const is part of a type.
         // `const var` goes to parseVarDecl for the dedicated error, never a function type.
         if (currentToken() == Token::Const && lookAhead(1) != Token::Var && lookAhead(2) != Token::Assignment) {
@@ -2409,8 +2402,7 @@ start:
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
         break;
     case Token::Import:
-        if (isTest) ERROR_CURRENT_TOKEN("only functions can be marked as tests");
-        if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
         if (accessLevel != AccessLevel::Default) {
             WARN_RANGE(lookAhead(-1).location, getLastTokenEndLocation(), "imports cannot have access specifiers");
         }
