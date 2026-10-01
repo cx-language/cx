@@ -685,6 +685,26 @@ bool Expr::isThis() const {
     return isVarExpr() && llvm::cast<VarExpr>(this)->identifier == "this";
 }
 
+bool Expr::isInsideUnion() const {
+    const Expr* expr = this;
+    while (true) {
+        if (auto* member = llvm::dyn_cast<MemberExpr>(expr)) {
+            if (auto* field = member->getFieldDecl()) {
+                if (field->getParentDecl()->isUnion()) return true;
+            }
+            expr = member->base;
+        } else if (auto* index = llvm::dyn_cast<IndexExpr>(expr)) {
+            expr = index->getBase();
+        } else if (auto* unwrap = llvm::dyn_cast<UnwrapExpr>(expr); unwrap && !unwrap->calleeDecl) {
+            expr = unwrap->getReceiver();
+        } else if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr); cast && cast->castKind == ImplicitCastExpr::OptionalUnwrap) {
+            expr = cast->operand;
+        } else {
+            return false;
+        }
+    }
+}
+
 llvm::StringRef CallExpr::getFunctionName() const {
     switch (callee->kind) {
     case ExprKind::VarExpr:

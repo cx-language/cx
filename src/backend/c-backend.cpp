@@ -1702,7 +1702,7 @@ void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, boo
     case IRTypeKind::IRUnionType: {
         auto* unionType = llvm::cast<IRUnionType>(type);
         codegenTypeDefinition(preludeStream, type, needsTypeDefinition);
-        stream << "union " << getOrCreateTypeName(type, unionType->name, "_cx_union");
+        stream << "union " << getOrCreateTypeName(type, unionType->mangledName, "_cx_union");
         break;
     }
     }
@@ -1829,7 +1829,7 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
         // Named unions are defined in C headers; enum payload unions and
         // generated anonymous records need definitions here.
         if (unionType->isImportedFromC) break;
-        codegenAggregateDefinition(*this, stream, type, unionType->fields, "union", unionType->name, "_cx_union", define, false);
+        codegenAggregateDefinition(*this, stream, type, unionType->fields, "union", unionType->mangledName, "_cx_union", define, false);
         break;
     }
     }

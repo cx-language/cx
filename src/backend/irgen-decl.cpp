@@ -162,6 +162,9 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
                 if (!field.type.needsDestruction()) continue;
                 // '@manuallyDestroy' fields are destroyed explicitly in the destructor body.
                 if (field.isManuallyDestroy) continue;
+                // Union members overlap, so reaching here means sema let an
+                // owning member through (see Typechecker::typecheckFieldDecl).
+                ASSERT(!decl.getTypeDecl()->isUnion());
                 deferDestructorCall(emitMemberAccess(&function.params[0], &field), &field);
             }
         }

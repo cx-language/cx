@@ -349,7 +349,7 @@ struct TypeDecl : Decl {
     bool isClosure() const { return isStruct() && getName().starts_with("__closure"); }
     // Whether values of this type are copied rather than moved. Independent of
     // receiver passing: method receivers are always T&.
-    bool isStoredByValue() const { return ((isStruct() || tag == TypeTag::Enum) && isCopyable()) || isUnion(); }
+    bool isStoredByValue() const { return (isStruct() || tag == TypeTag::Enum || isUnion()) && isCopyable(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isInterface() const { return tag == TypeTag::Interface; }
     bool isUnion() const { return tag == TypeTag::Union; }

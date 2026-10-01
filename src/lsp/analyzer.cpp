@@ -282,7 +282,7 @@ std::string hoverForDecl(const Decl& decl) {
     }
     case DeclKind::TypeTemplate: {
         auto& tmpl = llvm::cast<TypeTemplate>(decl);
-        out << "struct " << tmpl.getName().str() << "<...>";
+        out << (tmpl.typeDecl->isUnion() ? "union " : "struct ") << tmpl.getName().str() << "<...>";
         break;
     }
     case DeclKind::TypeAliasDecl: {
@@ -914,8 +914,8 @@ void SyntaxScanner::scanContent(bool stopAtBrace) {
         {"else", "keyword"},     {"enum", "keyword"},   {"extern", "keyword"},    {"false", "keyword"},     {"for", "keyword"},     {"if", "keyword"},
         {"implicit", "keyword"}, {"import", "keyword"}, {"in", "keyword"},        {"interface", "keyword"}, {"is", "keyword"},      {"null", "keyword"},
         {"private", "keyword"},  {"public", "keyword"}, {"return", "keyword"},    {"sizeof", "keyword"},    {"struct", "keyword"},  {"switch", "keyword"},
-        {"this", "keyword"},     {"true", "keyword"},   {"undefined", "keyword"}, {"using", "keyword"},     {"var", "keyword"},     {"while", "keyword"},
-        {"#if", "macro"},        {"#else", "macro"},    {"#endif", "macro"},
+        {"this", "keyword"},     {"true", "keyword"},   {"undefined", "keyword"}, {"union", "keyword"},     {"using", "keyword"},   {"var", "keyword"},
+        {"while", "keyword"},    {"#if", "macro"},      {"#else", "macro"},       {"#endif", "macro"},
     };
 
     int braceDepth = 0;
@@ -1983,9 +1983,9 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
     }
 
     std::vector<CompletionItem> items;
-    static const char* keywords[] = {"break",  "case",   "const",    "continue", "default", "defer",     "else",      "enum",  "extern",  "false",
-                                     "for",    "if",     "implicit", "import",   "in",      "interface", "is",        "null",  "private", "public",
-                                     "return", "sizeof", "struct",   "switch",   "this",    "true",      "undefined", "using", "var",     "while"};
+    static const char* keywords[] = {"break",  "case",     "const",  "continue", "default",   "defer", "else",  "enum",    "extern", "false",  "for",
+                                     "if",     "implicit", "import", "in",       "interface", "is",    "null",  "private", "public", "return", "sizeof",
+                                     "struct", "switch",   "this",   "true",     "undefined", "union", "using", "var",     "while"};
     for (auto* kw : keywords)
         items.push_back({kw, "keyword", "keyword"});
 

@@ -3356,7 +3356,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             isConstructorCall = true;
             constructorDecls = typeDecl->getConstructors();
             if (constructorDecls.empty()) {
-                // Interfaces and C-imported unions have no constructors, so calling one is always an error.
+                // Interfaces and unions have no constructors, so calling one is always an error.
                 if (typeDecl->isInterface()) {
                     ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "cannot construct interface '" << typeDecl->getName() << "'");
                 }
@@ -3751,6 +3751,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         // hold destruction to skip. Borrowed bases keep the old ungated leniency.
         auto consumeDeinitBase = [&](Expr* receiver) {
             if (consumeTrackedDeinitTarget(receiver)) return;
+            // Deinit inside a union is a raw destroy (see Expr::isInsideUnion).
+            if (receiver->isInsideUnion()) return;
             Expr* base = receiver;
             while (true) {
                 if (auto* member = llvm::dyn_cast<MemberExpr>(base)) {

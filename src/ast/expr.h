@@ -118,6 +118,12 @@ struct Expr {
     FieldDecl* getFieldDecl() const;
     const Expr* withoutImplicitCast() const;
     bool isThis() const;
+    // True when this expression addresses storage inside a union: a member
+    // access through a union-typed base (possibly under further member or
+    // index steps). Such storage may not hold a live value of the
+    // expression's type, so assignment never destroys it and deinit on it
+    // never consumes the base.
+    bool isInsideUnion() const;
 
     ExprKind kind;
     Type type;

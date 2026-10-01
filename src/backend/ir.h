@@ -122,6 +122,7 @@ struct IRStructType : IRType {
 struct IRUnionType : IRType {
     std::vector<IRField> fields;
     std::string name;
+    std::string mangledName;
     bool isImportedFromC = false;
 
     static bool classof(const IRType* t) { return t->kind == IRTypeKind::IRUnionType; }

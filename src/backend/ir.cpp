@@ -55,7 +55,7 @@ IRType* cx::getIRType(Type astType) {
             auto tagType = getIRType(enumDecl->getTagType());
 
             if (enumDecl->hasAssociatedValues()) {
-                auto unionType = new IRUnionType{IRTypeKind::IRUnionType, {}, ""};
+                auto unionType = new IRUnionType{IRTypeKind::IRUnionType, {}, "", ""};
                 irType = new IRStructType{IRTypeKind::IRStructType,
                                           {IRField{tagType, "tag"}, IRField{unionType, "payload"}},
                                           astType.getQualifiedTypeName(),
@@ -82,7 +82,11 @@ IRType* cx::getIRType(Type astType) {
             // Generated anonymous records are defined by no header either.
             bool isImportedFromC = decl->module.isCHeaderImport && !decl->module.isCxxHeaderImport && !decl->isAnonymousRecord;
             if (decl->isUnion()) {
-                auto unionType = new IRUnionType{IRTypeKind::IRUnionType, {}, astType.getQualifiedTypeName(), isImportedFromC};
+                auto unionType = new IRUnionType{IRTypeKind::IRUnionType,
+                                                 {},
+                                                 astType.getQualifiedTypeName(),
+                                                 isImportedFromC ? astType.getName().str() : ('_' + mangleType(astType)),
+                                                 isImportedFromC};
                 irTypes.emplace(astType.typeBase, unionType);
                 // Fields are set late to handle recursive types.
                 unionType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name.str(), f.isAnonymousMember}; });

@@ -1,0 +1,79 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+interface Shape {
+    float area();
+}
+
+interface Named {
+    float id();
+}
+
+struct Owned {
+    int32 v;
+    ~Owned() {}
+}
+
+// CHECK: [[@LINE+2]]:22: error: unions cannot implement interfaces
+// CHECK: [[@LINE+1]]:29: error: unions cannot implement interfaces
+union HasInterface : Shape, Named {
+    int32 x;
+}
+
+union HasDefault {
+    // CHECK: [[@LINE+1]]:11: error: union member 'x' cannot have a default value
+    int32 x = 5;
+}
+
+union HasOwned {
+    // CHECK: [[@LINE+1]]:11: error: union member 'o' needs destruction; mark it '@manuallyDestroy' and destroy it explicitly
+    Owned o;
+    int32 x;
+}
+
+union NoDtor {
+    // CHECK: [[@LINE+1]]:28: error: union 'NoDtor' has a '@manuallyDestroy' field but declares no destructor
+    @manuallyDestroy Owned o;
+    int32 x;
+}
+
+union NoCtor {
+    int32 x;
+}
+
+void callUnion() {
+    // CHECK: [[@LINE+1]]:13: error: type 'NoCtor' has no constructors
+    var u = NoCtor();
+}
+
+// CHECK: [[@LINE+1]]:7: error: 'Infinite' has infinite size because it contains itself
+union Infinite {
+    Infinite inner;
+}
+
+union Either<T> {
+    // CHECK: [[@LINE+1]]:7: error: union member 'first' needs destruction; mark it '@manuallyDestroy' and destroy it explicitly
+    T first;
+    int32 tag;
+}
+
+// The template itself checks clean; the error above fires when 'Owned' is substituted.
+void useGeneric() {
+    Either<Owned> e = undefined;
+}
+
+union Movable {
+    @manuallyDestroy Owned o;
+    int32 x;
+
+    ~Movable() {
+        o.deinit();
+    }
+}
+
+void moveUnion() {
+    Movable m = undefined;
+    m.x = 1;
+    var m2 = m;
+    // CHECK: [[@LINE+1]]:13: error: use of moved value 'm' (type 'Movable' has a destructor, so its values cannot be copied)
+    println(m.x);
+}

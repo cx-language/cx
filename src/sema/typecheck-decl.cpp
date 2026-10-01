@@ -1514,6 +1514,14 @@ static bool isCopyableConstraint(Type interface) {
 static void checkDeclaredInterfaces(Typechecker& checker, TypeDecl& decl) {
     checker.ensureInterfaces(decl);
 
+    if (decl.isUnion() && !decl.interfaces.empty()) {
+        for (Type interface : decl.interfaces) {
+            REPORT_ERROR_RANGE(interface.location, interface.endLocation, "unions cannot implement interfaces");
+        }
+        decl.interfaces.clear();
+        return;
+    }
+
     // Conformance runs before methods are checked, comparing raw signatures on both sides.
     for (Type interface : decl.interfaces) {
         if (isCopyableConstraint(interface)) {
@@ -1617,7 +1625,7 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
             for (auto& fieldDecl : realDecl->fields) {
                 if (fieldDecl.isManuallyDestroy && fieldDecl.type.needsDestruction()) {
                     ERROR_RANGE(fieldDecl.getLocation(), getIdentifierEndLocation(fieldDecl),
-                                "struct '" << decl.getName() << "' has a '@manuallyDestroy' field but declares no destructor");
+                                (decl.isUnion() ? "union '" : "struct '") << decl.getName() << "' has a '@manuallyDestroy' field but declares no destructor");
                 }
             }
         }
@@ -1955,7 +1963,18 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     decl.type = resolveTypeAliases(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel), /*foldArraySizes=*/true);
     bool allowReference = false;
-    if (auto* parent = llvm::dyn_cast<TypeDecl>(decl.getParentDecl())) allowReference = allowsSubstitutedReference(*parent);
+    auto* parentDecl = llvm::dyn_cast<TypeDecl>(decl.getParentDecl());
+    if (parentDecl) allowReference = allowsSubstitutedReference(*parentDecl);
+    // Members overlap, so at most one is active: no default values, no implicitly-destroyed owning members.
+    if (parentDecl && parentDecl->isUnion()) {
+        if (decl.defaultValue) {
+            ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "union member '" << decl.getName() << "' cannot have a default value");
+        }
+        if (!decl.isManuallyDestroy && decl.type.needsDestruction()) {
+            ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
+                        "union member '" << decl.getName() << "' needs destruction; mark it '@manuallyDestroy' and destroy it explicitly");
+        }
+    }
     // Fields are storage, not signature mentions: their types mark destructors
     // even when the declaration is checked during a signature check.
     llvm::SaveAndRestore unguard(checkingFunctionSignature, false);

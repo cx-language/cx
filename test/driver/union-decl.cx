@@ -1,0 +1,147 @@
+// RUN: %cx run -Wno-unused %s | %FileCheck %s --check-prefix=CHECK
+// RUN: %cx -print-llvm %s | %FileCheck %s --check-prefix=LLVM
+// RUN: %cx -print-c %s | %FileCheck %s --check-prefix=C
+
+// Members of a declared union overlap: writing one member is visible through
+// the others, and the size is the largest member's size.
+
+union IntOrFloat {
+    int32 i;
+    float32 f;
+}
+// LLVM: %IntOrFloat = type { [1 x i32] }
+// C: union {{_M[0-9A-Za-z]+}} {
+// C-NEXT: int32_t i;
+// C-NEXT: float f;
+// C-NEXT: };
+
+union Word {
+    int64 TAX;
+    uint8[8] bytes;
+}
+// LLVM: %Word = type { [1 x i64] }
+
+union Either<T> {
+    T first;
+    int32 tag;
+
+    int32 getTag() {
+        return tag;
+    }
+}
+// Generic unions mangle to a valid C identifier, not 'Either<int32>'.
+// C: union {{_M[0-9A-Za-z]+}} {
+// C-NEXT: int32_t first;
+// C-NEXT: int32_t tag;
+// C-NEXT: };
+
+struct Counter {
+    int32 v;
+
+    Counter(int32 v) {
+        this.v = v;
+    }
+
+    ~Counter() {
+        println("drop ", v);
+    }
+}
+
+union Manual {
+    @manuallyDestroy Counter c;
+    int32 x;
+
+    ~Manual() {
+        c.deinit();
+    }
+}
+
+union Slot<T> {
+    @manuallyDestroy T item;
+    int32 tag;
+
+    ~Slot() {
+        item.deinit();
+    }
+}
+
+union Opt {
+    @manuallyDestroy Counter? c;
+    int32 x;
+
+    ~Opt() {
+        c!.deinit();
+    }
+}
+
+int32 take(IntOrFloat u) {
+    return u.i;
+}
+
+IntOrFloat make(int32 v) {
+    IntOrFloat u = undefined;
+    u.i = v;
+    return u;
+}
+
+void main() {
+    IntOrFloat u = undefined;
+    u.i = 42;
+    println(u.i); // CHECK: 42
+    u.f = 1.5;
+    println(u.f); // CHECK-NEXT: 1.5
+    println(take(u)); // CHECK-NEXT: 1069547520
+    println(make(10).i); // CHECK-NEXT: 10
+
+    Word w = undefined;
+    w.TAX = 0x0102030405060708;
+    println(w.bytes[0], " ", w.bytes[7]); // CHECK-NEXT: 8 1
+    println(sizeof(IntOrFloat), " ", sizeof(Word)); // CHECK-NEXT: 4 8
+
+    Either<int32> e = undefined;
+    e.first = 5;
+    println(e.tag, " ", e.getTag()); // CHECK-NEXT: 5 5
+
+    // Overwriting a member never destroys the old bytes: they may hold a
+    // different member. Only the destructor at scope end destroys.
+    {
+        Manual m = undefined;
+        m.x = 11;
+        m.c = Counter(7);
+        println("stored"); // CHECK-NEXT: stored
+    } // CHECK-NEXT: drop 7
+
+    // Destroy the active member explicitly before switching to another one.
+    {
+        Manual m = undefined;
+        m.c = Counter(8);
+        m.c.deinit(); // CHECK-NEXT: drop 8
+        m.x = 1;
+        m.c = Counter(9);
+    } // CHECK-NEXT: drop 9
+
+    // Unions with a destructor move instead of copying: one destroy runs.
+    {
+        Manual m = undefined;
+        m.c = Counter(10);
+        var moved = m;
+        println("moved ", moved.c.v); // CHECK-NEXT: moved 10
+    } // CHECK-NEXT: drop 10
+
+    {
+        Slot<Counter> s = undefined;
+        s.tag = 0;
+        s.item = Counter(12);
+        println("slotted"); // CHECK-NEXT: slotted
+    } // CHECK-NEXT: drop 12
+
+    // Deinit through an unwrap leaves the union usable, like direct deinit.
+    {
+        Opt o = undefined;
+        o.c = Counter(13);
+        o.c!.deinit(); // CHECK-NEXT: drop 13
+        o.x = 1;
+        o.c = Counter(14);
+        println("unwrapped"); // CHECK-NEXT: unwrapped
+    } // CHECK-NEXT: drop 14
+}

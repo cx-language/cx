@@ -1,0 +1,9 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+union U {
+    int32 x;
+    // CHECK: [[@LINE+1]]:5: error: unions cannot declare constructors; declare a value and assign its members
+    U(int32 v) {
+        x = v;
+    }
+}

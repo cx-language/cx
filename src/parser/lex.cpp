@@ -423,6 +423,7 @@ static const llvm::StringMap<Token::Kind> keywords = {
     {"this", Token::This},
     {"true", Token::True},
     {"undefined", Token::Undefined},
+    {"union", Token::Union},
     {"using", Token::Using},
     {"var", Token::Var},
     {"while", Token::While},

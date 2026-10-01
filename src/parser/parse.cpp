@@ -1966,7 +1966,7 @@ void Parser::parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel
     addParsedStaticConst(typeDecl, Type().withMutability(Mutability::Const), name.getString(), name.location, accessLevel);
 }
 
-/// type-decl ::= ('struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}' ';'?
+/// type-decl ::= ('struct' | 'union' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}' ';'?
 /// interface-list ::= ':' non-empty-type-list
 /// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl | const-decl
 /// const-decl ::= 'const' id '=' expr
@@ -1975,6 +1975,9 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
     switch (consumeToken()) {
     case Token::Struct:
         tag = TypeTag::Struct;
+        break;
+    case Token::Union:
+        tag = TypeTag::Union;
         break;
     case Token::Interface:
         tag = TypeTag::Interface;
@@ -2036,6 +2039,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
         case Token::Identifier:
             if (lookAhead(1) == Token::LeftParen && currentToken().getString() == typeName.getString()) {
                 if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+                if (tag == TypeTag::Union) ERROR_CURRENT_TOKEN("unions cannot declare constructors; declare a value and assign its members");
                 typeDecl->addMethod(parseConstructorDecl(*typeDecl, accessLevel, isImplicit));
                 hasConstructor = true;
                 break;
@@ -2083,7 +2087,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                     addParsedStaticConst(*typeDecl, type, name, location, accessLevel);
                     break;
                 }
-                if (isManuallyDestroy && tag != TypeTag::Struct) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+                if (isManuallyDestroy && tag != TypeTag::Struct && tag != TypeTag::Union) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
                 typeDecl->addField(parseFieldDecl(*typeDecl, accessLevel, type, name, location, isManuallyDestroy));
                 break;
             }
@@ -2302,10 +2306,11 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
     consumeToken();
 }
 
-/// Reports `@manuallyDestroy` on anything but a struct field or local variable.
+/// Reports `@manuallyDestroy` on anything but a struct/union field or local variable.
 /// @throws CompileError
 [[noreturn]] void Parser::errorMisplacedManuallyDestroy(Location location) {
-    ERROR_RANGE(location, getIdentifierEndLocation(location, "@manuallyDestroy"), "only struct fields and local variables can be marked as '@manuallyDestroy'");
+    ERROR_RANGE(location, getIdentifierEndLocation(location, "@manuallyDestroy"),
+                "only struct and union fields and local variables can be marked as '@manuallyDestroy'");
 }
 
 /// Parses leading `@attribute`s. Only `@test` and `@manuallyDestroy` exist;
@@ -2370,6 +2375,7 @@ start:
         }
         return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel);
     case Token::Struct:
+    case Token::Union:
     case Token::Interface:
         rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
         if (lookAhead(2) == Token::Less) {

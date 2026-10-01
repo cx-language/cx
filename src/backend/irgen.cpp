@@ -326,7 +326,8 @@ Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args, con
 }
 
 void IRGenerator::destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skipDestructor) {
-    if (skipDestructor) return;
+    // Assignment into a union never destroys the old value (see Expr::isInsideUnion).
+    if (skipDestructor || lhs.isInsideUnion()) return;
 
     // Don't call destructor for LHS when assigning to fields in constructor.
     if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(currentDecl)) {

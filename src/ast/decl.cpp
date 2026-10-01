@@ -461,6 +461,9 @@ DestructorDecl* TypeDecl::getOrSynthesizeDefaultDestructor() {
     for (auto& field : fields) {
         if (field.isManuallyDestroy) continue;
         if (field.type.needsDestruction()) {
+            // Union members overlap, so destroying each is wrong; sema only
+            // allows trivially-destructible or '@manuallyDestroy' members.
+            ASSERT(!isUnion());
             return synthesize();
         }
     }
