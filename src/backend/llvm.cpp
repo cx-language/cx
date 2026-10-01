@@ -869,16 +869,18 @@ llvm::Value* LLVMGenerator::codegenUnary(const UnaryInst* inst) {
     }
 }
 
+static std::pair<llvm::Value*, llvm::Type*> gepOperands(LLVMGenerator& generator, const Value* pointer) {
+    return {generator.getValue(pointer), generator.getLLVMType(pointer->getType()->getPointee())};
+}
+
 llvm::Value* LLVMGenerator::codegenGEP(const GEPInst* inst) {
-    auto pointer = getValue(inst->pointer);
-    auto pointeeType = getLLVMType(inst->pointer->getType()->getPointee());
+    auto [pointer, pointeeType] = gepOperands(*this, inst->pointer);
     auto indexes = map(inst->indexes, [&](auto* index) { return getValue(index); });
     return builder.CreateInBoundsGEP(pointeeType, pointer, indexes, inst->name);
 }
 
 llvm::Value* LLVMGenerator::codegenConstGEP(const ConstGEPInst* inst) {
-    auto pointer = getValue(inst->pointer);
-    auto pointeeType = getLLVMType(inst->pointer->getType()->getPointee());
+    auto [pointer, pointeeType] = gepOperands(*this, inst->pointer);
     return builder.CreateConstInBoundsGEP2_32(pointeeType, pointer, 0, inst->index, inst->name);
 }
 
