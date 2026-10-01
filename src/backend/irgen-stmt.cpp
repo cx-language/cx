@@ -96,6 +96,39 @@ void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
         [&](BasicBlock* endIfBlock) { emitBlock(ifStmt.elseBody, endIfBlock); });
 }
 
+// Pushes a break target for the lifetime of a switch or loop. Destruction order
+// matches the previous explicit pops: the targets are gone before the function
+// returns, and nothing after the old pop site reads them.
+struct BreakTargetScope {
+    IRGenerator& ir;
+    explicit BreakTargetScope(IRGenerator& ir, BasicBlock* end) : ir(ir) {
+        ir.breakTargets.push_back(end);
+        ir.breakTempScopeDepths.push_back(ir.tempScopes.size());
+    }
+    BreakTargetScope(const BreakTargetScope&) = delete;
+    ~BreakTargetScope() {
+        ir.breakTargets.pop_back();
+        ir.breakTempScopeDepths.pop_back();
+    }
+};
+
+struct LoopTargetScope {
+    IRGenerator& ir;
+    LoopTargetScope(IRGenerator& ir, BasicBlock* end, BasicBlock* continueTarget) : ir(ir) {
+        ir.breakTargets.push_back(end);
+        ir.continueTargets.push_back(continueTarget);
+        ir.breakTempScopeDepths.push_back(ir.tempScopes.size());
+        ir.continueTempScopeDepths.push_back(ir.tempScopes.size());
+    }
+    LoopTargetScope(const LoopTargetScope&) = delete;
+    ~LoopTargetScope() {
+        ir.breakTargets.pop_back();
+        ir.continueTargets.pop_back();
+        ir.breakTempScopeDepths.pop_back();
+        ir.continueTempScopeDepths.pop_back();
+    }
+};
+
 void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
     if (switchStmt.condition->type.isString()) {
         emitStringSwitchStmt(switchStmt);
@@ -118,8 +151,7 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
     setInsertPoint(insertBlockBackup);
     auto* defaultBlock = new BasicBlock("switch.default", function);
     auto* end = new BasicBlock("switch.end", function);
-    breakTargets.push_back(end);
-    breakTempScopeDepths.push_back(tempScopes.size());
+    BreakTargetScope breakScope(*this, end);
     auto* switchInst = createSwitch(condition, defaultBlock);
 
     auto casesIterator = cases.begin();
@@ -150,8 +182,6 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
         emitBlock(switchStmt.defaultStmts, end);
     }
 
-    breakTargets.pop_back();
-    breakTempScopeDepths.pop_back();
     setInsertPoint(end);
 }
 
@@ -212,8 +242,7 @@ void IRGenerator::emitStringSwitchStmt(const SwitchStmt& switchStmt) {
     auto* function = insertBlock->parent;
     auto* defaultBlock = new BasicBlock("switch.default", function);
     auto* end = new BasicBlock("switch.end", function);
-    breakTargets.push_back(end);
-    breakTempScopeDepths.push_back(tempScopes.size());
+    BreakTargetScope breakScope(*this, end);
 
     std::vector<BasicBlock*> caseBlocks;
     for (size_t i = 0; i < switchStmt.cases.size(); ++i) {
@@ -237,8 +266,6 @@ void IRGenerator::emitStringSwitchStmt(const SwitchStmt& switchStmt) {
     setInsertPoint(defaultBlock);
     emitBlock(switchStmt.defaultStmts, end);
 
-    breakTargets.pop_back();
-    breakTempScopeDepths.pop_back();
     setInsertPoint(end);
 }
 
@@ -261,10 +288,7 @@ void IRGenerator::emitDoWhileStmt(const DoWhileStmt& doWhileStmt) {
     auto* condition = new BasicBlock("loop.condition");
     auto* end = new BasicBlock("loop.end", function);
 
-    breakTargets.push_back(end);
-    continueTargets.push_back(condition);
-    breakTempScopeDepths.push_back(tempScopes.size());
-    continueTempScopeDepths.push_back(tempScopes.size());
+    LoopTargetScope loopScope(*this, end, condition);
     createBr(body);
 
     setInsertPoint(body);
@@ -273,10 +297,6 @@ void IRGenerator::emitDoWhileStmt(const DoWhileStmt& doWhileStmt) {
     setInsertPoint(condition);
     createCondBr(emitLoopConditionValue(*doWhileStmt.condition), body, end);
 
-    breakTargets.pop_back();
-    continueTargets.pop_back();
-    breakTempScopeDepths.pop_back();
-    continueTempScopeDepths.pop_back();
     setInsertPoint(end);
 }
 
@@ -296,10 +316,7 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
     auto* afterBody = !increments.empty() ? new BasicBlock("loop.increment", function) : condition;
     auto* end = new BasicBlock("loop.end", function);
 
-    breakTargets.push_back(end);
-    continueTargets.push_back(afterBody);
-    breakTempScopeDepths.push_back(tempScopes.size());
-    continueTempScopeDepths.push_back(tempScopes.size());
+    LoopTargetScope loopScope(*this, end, afterBody);
     createBr(condition);
 
     setInsertPoint(condition);
@@ -322,10 +339,6 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
         createBr(condition);
     }
 
-    breakTargets.pop_back();
-    continueTargets.pop_back();
-    breakTempScopeDepths.pop_back();
-    continueTempScopeDepths.pop_back();
     setInsertPoint(end);
 }
 
