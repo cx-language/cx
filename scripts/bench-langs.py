@@ -2,14 +2,18 @@
 """Run-time benchmark: cx vs C, C++, Rust, Go, Odin and Zig on the bench corpus subset.
 
 Usage:
-    scripts/bench-langs.py --cx build/cx [--runs 3] [--programs fib,sieve]
-        [--languages cx,c] [--modes release,debug] [--output bench/results.json]
+    scripts/bench-langs.py --cx build/cx [--runs 3] [--compile-runs 3]
+        [--programs fib,sieve] [--languages cx,c] [--modes release,debug]
+        [--metrics run,compile] [--output bench/results.json]
         [--html bench/report.html]
 
 Builds each program for each language twice: an optimized release build and
 an unoptimized debug build (the configuration used during development). Runs
-each binary --runs times (median kept), and writes a JSON record plus a
-self-contained HTML report with graphs (open it straight from disk).
+each binary --runs times (median kept). Debug builds are also timed
+--compile-runs times (median kept) after one untimed warmup. --metrics
+selects which of those to record: run, compile, or both. Writes a JSON
+record plus a self-contained HTML report with graphs (open it straight from
+disk).
 
 fib/sieve/wordcount/mapfilter/jsonparse must print EXPECTED exactly in every
 language that implements them; mandelbrot checks self-consistency only
@@ -65,6 +69,7 @@ LANGS = {
     "zig": {"label": "Zig", "color": "#ec915c", "tool": "zig", "ext": ".zig"},
 }
 MODES = ["release", "debug"]
+METRICS = ["run", "compile"]
 MODE_LABEL = {"release": "optimized", "debug": "unoptimized debug"}
 # cx debug keeps safety checks. --no-leak-check only skips the end-of-main
 # leak report, which would exit these programs for memory they leave to the OS.
@@ -79,6 +84,14 @@ DEBUG_NOTE = (
     "Odin uses -debug, which selects -o:none. "
     "Zig uses -ODebug; its release build is -OReleaseFast."
 )
+# Iteration time, not a from-scratch toolchain build. The untimed warmup fills
+# the standard-library cache; each sample is a distinct copy of the program.
+COMPILE_NOTE = (
+    "Debug compile time is a rebuild of that development build. "
+    "One untimed compile warms the standard-library cache first. "
+    "Each sample is a separate copy of the source, so an unchanged-file cache hit is not what gets timed. "
+    "ccache is disabled."
+)
 
 
 def lang_source(program, lang):
@@ -89,9 +102,11 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cx", required=True, help="path to cx compiler executable")
     parser.add_argument("--runs", type=int, default=3, help="runs per binary (median kept)")
+    parser.add_argument("--compile-runs", type=int, default=3, help="debug compiles per program (median kept)")
     parser.add_argument("--programs", default=",".join(PROGRAMS), help="comma-separated subset")
     parser.add_argument("--languages", default=",".join(LANGS), help="comma-separated subset")
     parser.add_argument("--modes", default=",".join(MODES), help="comma-separated: release, debug")
+    parser.add_argument("--metrics", default=",".join(METRICS), help="comma-separated: run, compile")
     parser.add_argument("--output", default="bench/results.json", help="where to write the JSON record")
     parser.add_argument("--html", default="bench/report.html", help="where to write the HTML report")
     return parser.parse_args()
@@ -151,6 +166,29 @@ def build_command(lang, mode, cx, src, binary):
             "-femit-bin=" + binary, "-OReleaseFast" if release else "-ODebug",
         ]
     raise AssertionError("unknown language " + lang)
+
+
+def toolchain_env(workdir):
+    env = os.environ.copy()
+    # ccache would turn a repeated C or C++ compile into a cache hit.
+    env["CCACHE_DISABLE"] = "1"
+    # Private caches, so this bench does not depend on or rewrite the user's.
+    # The untimed warmup fills them; timed samples reuse the standard library.
+    env["GOCACHE"] = os.path.join(workdir, "gocache")
+    env["ZIG_GLOBAL_CACHE_DIR"] = os.path.join(workdir, "zig-global")
+    return env
+
+
+def varied_source(workdir, lang, program, tag, src):
+    dest_dir = os.path.join(workdir, "src")
+    os.makedirs(dest_dir, exist_ok=True)
+    dest = os.path.join(dest_dir, f"{program}-{lang}-{tag}{LANGS[lang]['ext']}")
+    with open(src, "rb") as infile, open(dest, "wb") as outfile:
+        outfile.write(infile.read())
+        # A distinct comment makes content-addressed caches recompile the
+        # program. The program's behavior does not change.
+        outfile.write(f"\n// bench compile {tag}\n".encode())
+    return dest
 
 
 def describe_build(lang, mode):
@@ -261,16 +299,32 @@ def render_html(record):
         )
         omitted = omission_note(program, record.get("omissions", {}).get(program, []))
         omitted_html = f'\n<p class="note">{html.escape(omitted)}</p>' if omitted else ""
-        if not any(by_mode.get(mode) for mode in record["mode_order"]):
-            programs.append(f"<h2>{program}</h2>{omitted_html}\n<p>no successful runs</p>")
-            continue
         charts = []
         for mode in record["mode_order"]:
-            medians = {lang: data["median_s"] for lang, data in by_mode.get(mode, {}).items()}
-            body = chart_svg(medians) if medians else "<p>no successful runs</p>"
-            charts.append(f"<h3>{MODE_LABEL[mode]}</h3>\n{body}")
+            entries = by_mode.get(mode, {})
+            run_medians = {lang: data["median_s"] for lang, data in entries.items() if "median_s" in data}
+            if run_medians:
+                charts.append(f"<h3>{MODE_LABEL[mode]} run</h3>\n{chart_svg(run_medians)}")
+            if mode == "debug":
+                compile_medians = {
+                    lang: data["compile"]["median_s"]
+                    for lang, data in entries.items()
+                    if "compile" in data
+                }
+                if compile_medians:
+                    charts.append(f"<h3>{MODE_LABEL[mode]} compile</h3>\n{chart_svg(compile_medians)}")
+        if not charts:
+            programs.append(f"<h2>{program}</h2>{omitted_html}\n<p>no successful measurements</p>")
+            continue
         programs.append(f"<h2>{program}{note}</h2>{omitted_html}\n{''.join(charts)}")
     tools = " · ".join(f"{lang}: {html.escape(version)}" for lang, version in record["tools"].items())
+    summary_parts = []
+    if "run" in record["metrics"]:
+        summary_parts.append(f"median of {record['runs']} runs")
+    if "compile" in record["metrics"]:
+        summary_parts.append(f"median of {record['compile_runs']} debug compiles")
+    summary = " · ".join(summary_parts)
+    has_compile = "compile" in record["metrics"]
     builds = []
     for mode in record["mode_order"]:
         items = "".join(
@@ -283,7 +337,7 @@ def render_html(record):
 <head>
 <meta charset="utf-8">
 <meta name="color-scheme" content="light dark">
-<title>cx vs C, C++, Rust, Go, Odin, Zig: run-time comparison</title>
+<title>cx vs C, C++, Rust, Go, Odin, Zig</title>
 <style>
 :root {{ color-scheme: light dark; --bg: #ffffff; --fg: #000000; --muted: #444444; --pre-bg: #f4f4f4; --cx-bar: #000000; }}
 @media (prefers-color-scheme: dark) {{
@@ -303,10 +357,11 @@ pre {{ background: var(--pre-bg); padding: 1rem; overflow-x: auto; }}
 </style>
 </head>
 <body>
-<h1>cx vs C, C++, Rust, Go, Odin, Zig: run-time comparison</h1>
-<p class="meta">{html.escape(record["timestamp"])} · {html.escape(record["platform"])} · median of {record["runs"]} runs<br>{tools}<br>cx at {html.escape(record["cx_sha"])}</p>
-<p>Each chart is one build. The ratio on each bar is against the fastest language in that chart.</p>
+<h1>cx vs C, C++, Rust, Go, Odin, Zig</h1>
+<p class="meta">{html.escape(record["timestamp"])} · {html.escape(record["platform"])} · {html.escape(summary)}<br>{tools}<br>cx at {html.escape(record["cx_sha"])}</p>
+<p>Each chart is one measurement. The ratio on each bar is against the fastest language in that chart.</p>
 <p class="note">{html.escape(DEBUG_NOTE)}</p>
+{"" if not has_compile else f'<p class="note">{html.escape(COMPILE_NOTE)}</p>'}
 {"".join(programs)}
 <details><summary>Build configurations</summary>{"".join(builds)}</details>
 <details><summary>Raw data</summary><pre>{html.escape(json.dumps(record, indent=2))}</pre></details>
@@ -318,12 +373,19 @@ pre {{ background: var(--pre-bg); padding: 1rem; overflow-x: auto; }}
 def main():
     args = parse_args()
     args.runs = max(1, args.runs)
+    args.compile_runs = max(1, args.compile_runs)
     programs = [p.strip() for p in args.programs.split(",") if p.strip() in PROGRAMS]
     languages = [lang.strip() for lang in args.languages.split(",") if lang.strip() in LANGS]
     modes = [mode.strip() for mode in args.modes.split(",") if mode.strip() in MODES]
-    if not programs or not languages or not modes:
-        print("no programs, languages, or modes selected")
+    metrics = [metric.strip() for metric in args.metrics.split(",") if metric.strip() in METRICS]
+    if not programs or not languages or not modes or not metrics:
+        print("no programs, languages, modes, or metrics selected")
         sys.exit(1)
+    if "compile" in metrics and "debug" not in modes:
+        print("debug compile times require --modes to include debug")
+        sys.exit(1)
+    measure_run = "run" in metrics
+    measure_compile = "compile" in metrics
     suffix = ".exe" if platform.system() == "Windows" else ""
     missing = [lang for lang in languages if LANGS[lang]["tool"] and not shutil.which(LANGS[lang]["tool"])]
     for lang in missing:
@@ -343,12 +405,50 @@ def main():
                     omissions[program].append(lang)
                     continue
                 for mode in modes:
-                    binary = os.path.join(workdir, f"{program}-{lang}-{mode}{suffix}")
-                    compile_cmd = build_command(lang, mode, args.cx, src, binary)
-                    _, completed = run_timed(compile_cmd, capture_output=True, text=True)
-                    if completed.returncode != 0:
-                        failures.append(f"{lang}/{program}/{mode}: compile failed:\n{completed.stderr}")
+                    if mode == "release" and not measure_run:
                         continue
+                    binary = os.path.join(workdir, f"{program}-{lang}-{mode}{suffix}")
+                    compile_info = None
+                    if mode == "debug" and measure_compile:
+                        env = toolchain_env(workdir)
+                        warmup = varied_source(workdir, lang, program, "warmup", src)
+                        _, completed = run_timed(
+                            build_command(lang, mode, args.cx, warmup, binary),
+                            capture_output=True, text=True, env=env,
+                        )
+                        if completed.returncode != 0:
+                            failures.append(f"{lang}/{program}/{mode}: warmup compile failed:\n{completed.stderr}")
+                            continue
+                        compile_times = []
+                        for i in range(args.compile_runs):
+                            sample = varied_source(workdir, lang, program, str(i), src)
+                            elapsed, completed = run_timed(
+                                build_command(lang, mode, args.cx, sample, binary),
+                                capture_output=True, text=True, env=env,
+                            )
+                            if completed.returncode != 0:
+                                failures.append(f"{lang}/{program}/{mode}: compile failed:\n{completed.stderr}")
+                                break
+                            compile_times.append(elapsed)
+                        else:
+                            compile_info = {
+                                "median_s": statistics.median(compile_times),
+                                "runs_s": compile_times,
+                            }
+                        if compile_info is None:
+                            continue
+                        if not measure_run:
+                            results[program].setdefault(mode, {})[lang] = {"compile": compile_info}
+                            print(f"{program}/{lang}/{mode}: compile {format_seconds(compile_info['median_s'])}")
+                            continue
+                    else:
+                        _, completed = run_timed(
+                            build_command(lang, mode, args.cx, src, binary),
+                            capture_output=True, text=True,
+                        )
+                        if completed.returncode != 0:
+                            failures.append(f"{lang}/{program}/{mode}: compile failed:\n{completed.stderr}")
+                            continue
                     times, outputs = [], set()
                     for _ in range(args.runs):
                         elapsed, completed = run_timed([binary], capture_output=True, text=True)
@@ -368,16 +468,21 @@ def main():
                             failures.append(f"{lang}/{program}/{mode} printed {output}, expected {EXPECTED[program]}")
                             continue
                         median = statistics.median(times)
-                        results[program].setdefault(mode, {})[lang] = {
-                            "median_s": median, "runs_s": times, "output": output,
-                        }
-                        print(f"{program}/{lang}/{mode}: {format_seconds(median)} (output {output})")
+                        entry = {"median_s": median, "runs_s": times, "output": output}
+                        compile_note = ""
+                        if compile_info is not None:
+                            entry["compile"] = compile_info
+                            compile_note = f", compile {format_seconds(compile_info['median_s'])}"
+                        results[program].setdefault(mode, {})[lang] = entry
+                        print(f"{program}/{lang}/{mode}: run {format_seconds(median)}{compile_note} (output {output})")
 
     record = {
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "platform": platform.platform(),
         "cx_sha": cx_sha(args.cx),
         "runs": args.runs,
+        "compile_runs": args.compile_runs,
+        "metrics": metrics,
         "tools": {lang: tool_version(LANGS[lang]["tool"]) for lang in languages if LANGS[lang]["tool"]},
         "mode_order": modes,
         "builds": {mode: {lang: describe_build(lang, mode) for lang in languages} for mode in modes},

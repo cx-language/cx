@@ -46,9 +46,14 @@ and Zig; C, C++, and Rust have no JSON parser in the standard library.
 `mapfilter` is omitted for C, Go, Odin, and Zig, which have no capturing
 lambdas.
 `scripts/bench-langs.py` builds each port twice, runs it, and records
-medians plus a self-contained HTML report with a chart per build. The
-optimized build is the release configuration. The unoptimized debug build
-is the development configuration: cx's default build with `--no-leak-check`
+medians plus a self-contained HTML report with a chart per build. Debug
+builds are also timed as rebuilds: one untimed compile warms the
+standard-library cache, then each of `--compile-runs` samples compiles a
+separate copy of the source. ccache is disabled. `--metrics compile` records
+only those debug rebuilds and does not run the binaries; `--metrics run`
+skips compile timing. The optimized build is the release configuration. The
+unoptimized debug build is the development configuration: cx's default build
+with `--no-leak-check`
 (safety checks stay on, and both the LLVM IR pipeline and codegen
 optimizations are skipped; the leak detector would otherwise exit these
 programs for memory they leave to the OS), C and C++ at `-O0 -g`, Rust at
