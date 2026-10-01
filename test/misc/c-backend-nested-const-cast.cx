@@ -1,0 +1,15 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+
+// A const-adding pointer cast must still emit a C cast: without it the call
+// argument keeps its unqualified type, which discards qualifiers against a
+// nested-const C parameter (-Wincompatible-pointer-types-discards-qualifiers).
+
+// CHECK: (char const**)
+
+extern void takeNestedConst(const char*?* strings);
+
+void main() {
+    var buf = StringBuf("hi");
+    char* p = buf.cString();
+    takeNestedConst(cast<const char*?*>(&p));
+}
