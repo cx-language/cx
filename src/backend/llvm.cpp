@@ -644,6 +644,17 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         }
         args.push_back(value);
     }
+    auto addByValAttrs = [&](llvm::CallInst* call, unsigned indexOffset) {
+        for (size_t i = 0; i < paramTypes.size(); ++i) {
+            auto paramLLVMType = getLLVMType(paramTypes[i]);
+            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee) && !isDecayedArrayParam(paramTypes[i], callee)) {
+                unsigned index = static_cast<unsigned>(i + indexOffset);
+                call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
+                auto paramAlign = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
+                call->addParamAttr(index, llvm::Attribute::getWithAlignment(ctx, llvm::Align(paramAlign)));
+            }
+        }
+    };
     if (isSret) {
         auto sretType = getLLVMType(cxFunctionType->getReturnType());
         auto sretAlloca = createEntryAlloca(sretType, "sret.alloca");
@@ -653,101 +664,26 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         call->addParamAttr(0, llvm::Attribute::get(ctx, llvm::Attribute::StructRet, sretType));
         auto align = getHostDataLayout().getABITypeAlign(sretType).value();
         call->addParamAttr(0, llvm::Attribute::getWithAlignment(ctx, llvm::Align(align)));
-        for (size_t i = 0; i < paramTypes.size(); ++i) {
-            auto paramLLVMType = getLLVMType(paramTypes[i]);
-            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee) && !isDecayedArrayParam(paramTypes[i], callee)) {
-                // +1 for the hidden sret parameter.
-                unsigned index = static_cast<unsigned>(i + 1);
-                call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
-                auto paramAlign = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
-                call->addParamAttr(index, llvm::Attribute::getWithAlignment(ctx, llvm::Align(paramAlign)));
-            }
-        }
+        addByValAttrs(call, 1);
         if (shouldPassIndirectly(sretType)) {
             return sretAlloca;
         }
         return builder.CreateLoad(sretType, sretAlloca, "sret.load");
     } else {
         auto* call = builder.CreateCall(llvmFunctionType, function, args);
-        for (size_t i = 0; i < paramTypes.size(); ++i) {
-            auto paramLLVMType = getLLVMType(paramTypes[i]);
-            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee) && !isDecayedArrayParam(paramTypes[i], callee)) {
-                unsigned index = static_cast<unsigned>(i);
-                call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
-                auto paramAlign = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
-                call->addParamAttr(index, llvm::Attribute::getWithAlignment(ctx, llvm::Align(paramAlign)));
-            }
-        }
+        addByValAttrs(call, 0);
         if (getAbiCoercedType(cxFunctionType->getReturnType())) return coerceChunkToAggregate(call, cxFunctionType->getReturnType());
         return call;
     }
 }
 
 llvm::Value* LLVMGenerator::codegenBinary(const BinaryInst* inst) {
-    auto left = getValue(inst->left);
-    auto right = getValue(inst->right);
-    auto isFloat = inst->left->getType()->isFloatingPoint();
-    auto isSigned = inst->left->getType()->isSignedInteger();
-
-    switch (inst->op) {
-    case Token::Plus:
-        if (isFloat) return builder.CreateFAdd(left, right);
-        return builder.CreateAdd(left, right);
-    case Token::Minus:
-        if (isFloat) return builder.CreateFSub(left, right);
-        return builder.CreateSub(left, right);
-    case Token::Star:
-        if (isFloat) return builder.CreateFMul(left, right);
-        return builder.CreateMul(left, right);
-    case Token::Slash:
-        if (isFloat) return builder.CreateFDiv(left, right);
-        if (isSigned) return builder.CreateSDiv(left, right);
-        return builder.CreateUDiv(left, right);
-    case Token::Equal:
-        if (isFloat) return builder.CreateFCmpOEQ(left, right);
-        return builder.CreateICmpEQ(left, right, inst->name);
-    case Token::NotEqual:
-        if (isFloat) return builder.CreateFCmpUNE(left, right);
-        return builder.CreateICmpNE(left, right);
-    case Token::Less:
-        if (isFloat) return builder.CreateFCmpOLT(left, right);
-        if (isSigned) return builder.CreateICmpSLT(left, right);
-        return builder.CreateICmpULT(left, right);
-    case Token::LessOrEqual:
-        if (isFloat) return builder.CreateFCmpOLE(left, right);
-        if (isSigned) return builder.CreateICmpSLE(left, right);
-        return builder.CreateICmpULE(left, right);
-    case Token::Greater:
-        if (isFloat) return builder.CreateFCmpOGT(left, right);
-        if (isSigned) return builder.CreateICmpSGT(left, right);
-        return builder.CreateICmpUGT(left, right);
-    case Token::GreaterOrEqual:
-        if (isFloat) return builder.CreateFCmpOGE(left, right);
-        if (isSigned) return builder.CreateICmpSGE(left, right);
-        return builder.CreateICmpUGE(left, right);
-    case Token::Modulo:
-        if (isFloat) return builder.CreateFRem(left, right);
-        if (isSigned) return builder.CreateSRem(left, right);
-        return builder.CreateURem(left, right);
-    case Token::RightShift:
-        if (isSigned) return builder.CreateAShr(left, right);
-        return builder.CreateLShr(left, right);
-    case Token::And:
-        return builder.CreateAnd(left, right);
-    case Token::Or:
-        return builder.CreateOr(left, right);
-    case Token::Xor:
-        return builder.CreateXor(left, right);
-    case Token::LeftShift:
-        return builder.CreateShl(left, right);
-    default:
-        llvm_unreachable("invalid binary operation");
-    }
+    auto* result = codegenArrayOpElement(inst->op, getValue(inst->left), getValue(inst->right), inst->left->getType());
+    if (!inst->name.empty()) result->setName(inst->name);
+    return result;
 }
 
 llvm::Value* LLVMGenerator::codegenArrayOpElement(Token::Kind op, llvm::Value* left, llvm::Value* right, IRType* elemType) {
-    // Mirrors codegenBinary, but polymorphic over scalar and vector LLVM
-    // values so one mapping serves vector chunks and the scalar tail.
     bool isFloat = elemType->isFloatingPoint();
     bool isSigned = elemType->isSignedInteger();
     switch (op) {
@@ -774,6 +710,18 @@ llvm::Value* LLVMGenerator::codegenArrayOpElement(Token::Kind op, llvm::Value* l
         return isFloat ? builder.CreateFCmpOEQ(left, right) : builder.CreateICmpEQ(left, right);
     case Token::NotEqual:
         return isFloat ? builder.CreateFCmpUNE(left, right) : builder.CreateICmpNE(left, right);
+    case Token::Less:
+        if (isFloat) return builder.CreateFCmpOLT(left, right);
+        return isSigned ? builder.CreateICmpSLT(left, right) : builder.CreateICmpULT(left, right);
+    case Token::LessOrEqual:
+        if (isFloat) return builder.CreateFCmpOLE(left, right);
+        return isSigned ? builder.CreateICmpSLE(left, right) : builder.CreateICmpULE(left, right);
+    case Token::Greater:
+        if (isFloat) return builder.CreateFCmpOGT(left, right);
+        return isSigned ? builder.CreateICmpSGT(left, right) : builder.CreateICmpUGT(left, right);
+    case Token::GreaterOrEqual:
+        if (isFloat) return builder.CreateFCmpOGE(left, right);
+        return isSigned ? builder.CreateICmpSGE(left, right) : builder.CreateICmpUGE(left, right);
     case Token::And:
         return builder.CreateAnd(left, right);
     case Token::Or:
@@ -785,7 +733,7 @@ llvm::Value* LLVMGenerator::codegenArrayOpElement(Token::Kind op, llvm::Value* l
     case Token::RightShift:
         return isSigned ? builder.CreateAShr(left, right) : builder.CreateLShr(left, right);
     default:
-        llvm_unreachable("invalid array operation");
+        llvm_unreachable("invalid binary operation");
     }
 }
 

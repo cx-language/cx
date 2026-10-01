@@ -19,6 +19,45 @@ bool hasReturnValue(const CallInst* inst) {
     return !returnType->isVoid() && !returnType->isNever();
 }
 
+llvm::StringRef cBinaryOperator(Token::Kind op) {
+    switch (op) {
+    case Token::Plus:
+        return "+";
+    case Token::Minus:
+        return "-";
+    case Token::Star:
+        return "*";
+    case Token::Slash:
+        return "/";
+    case Token::Modulo:
+        return "%";
+    case Token::LeftShift:
+        return "<<";
+    case Token::RightShift:
+        return ">>";
+    case Token::And:
+        return "&";
+    case Token::Or:
+        return "|";
+    case Token::Xor:
+        return "^";
+    case Token::Equal:
+        return "==";
+    case Token::NotEqual:
+        return "!=";
+    case Token::Less:
+        return "<";
+    case Token::LessOrEqual:
+        return "<=";
+    case Token::Greater:
+        return ">";
+    case Token::GreaterOrEqual:
+        return ">=";
+    default:
+        llvm_unreachable("all cases handled");
+    }
+}
+
 // Pure instructions without side effects: safe to drop when their result is unread.
 // Safety checks are separate instructions, so dropping these cannot remove a check.
 bool isPureTemp(ValueKind kind) {
@@ -572,70 +611,18 @@ void CGenerator::codegenBinaryExpr(Token::Kind op, const std::function<void()>& 
     }
     emitLeft();
     stream << ' ';
-    switch (op) {
-    case Token::Plus:
-        stream << '+';
-        break;
-    case Token::Minus:
-        stream << '-';
-        break;
-    case Token::Star:
-        stream << '*';
-        break;
-    case Token::Slash: {
+    if (op == Token::Slash) {
         // MSVC rejects division with a literal zero divisor (C2124) even for
         // floats, where it is well-defined IEEE arithmetic. x * (±INFINITY)
         // computes the same result for every x, so spell it that way. GCC and
         // xcc accept the division form, but the product form works for them too.
         auto* divisor = rightValue ? llvm::dyn_cast<ConstantFP>(rightValue) : nullptr;
         if (divisor && divisor->value.isZero()) {
-            // The dividend was already emitted before the switch.
             stream << (divisor->value.isNegative() ? "* (-INFINITY)" : "* INFINITY");
             return;
         }
-        stream << '/';
-        break;
     }
-    case Token::Modulo:
-        stream << '%';
-        break;
-    case Token::LeftShift:
-        stream << "<<";
-        break;
-    case Token::RightShift:
-        stream << ">>";
-        break;
-    case Token::And:
-        stream << '&';
-        break;
-    case Token::Or:
-        stream << '|';
-        break;
-    case Token::Xor:
-        stream << '^';
-        break;
-    case Token::Equal:
-        stream << "==";
-        break;
-    case Token::NotEqual:
-        stream << "!=";
-        break;
-    case Token::Less:
-        stream << '<';
-        break;
-    case Token::LessOrEqual:
-        stream << "<=";
-        break;
-    case Token::Greater:
-        stream << '>';
-        break;
-    case Token::GreaterOrEqual:
-        stream << ">=";
-        break;
-    default:
-        llvm_unreachable("all cases handled");
-    }
-    stream << ' ';
+    stream << cBinaryOperator(op) << ' ';
     emitRight();
 }
 
@@ -965,60 +952,7 @@ void CGenerator::codegenGlobalInitializer(const Value* value) {
         auto* binary = llvm::cast<BinaryInst>(value);
         stream << "(";
         codegenGlobalInitializer(binary->left);
-        stream << ' ';
-        switch (binary->op.kind) {
-        case Token::Plus:
-            stream << '+';
-            break;
-        case Token::Minus:
-            stream << '-';
-            break;
-        case Token::Star:
-            stream << '*';
-            break;
-        case Token::Slash:
-            stream << '/';
-            break;
-        case Token::Modulo:
-            stream << '%';
-            break;
-        case Token::LeftShift:
-            stream << "<<";
-            break;
-        case Token::RightShift:
-            stream << ">>";
-            break;
-        case Token::And:
-            stream << '&';
-            break;
-        case Token::Or:
-            stream << '|';
-            break;
-        case Token::Xor:
-            stream << '^';
-            break;
-        case Token::Equal:
-            stream << "==";
-            break;
-        case Token::NotEqual:
-            stream << "!=";
-            break;
-        case Token::Less:
-            stream << '<';
-            break;
-        case Token::LessOrEqual:
-            stream << "<=";
-            break;
-        case Token::Greater:
-            stream << '>';
-            break;
-        case Token::GreaterOrEqual:
-            stream << ">=";
-            break;
-        default:
-            llvm_unreachable("unexpected binary operator in global initializer");
-        }
-        stream << ' ';
+        stream << ' ' << cBinaryOperator(binary->op.kind) << ' ';
         codegenGlobalInitializer(binary->right);
         stream << ")";
         return;

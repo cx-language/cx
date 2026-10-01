@@ -2000,22 +2000,22 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl) {
             auto language = isCxxHeader(decl.target) ? "C++" : "C";
             REPORT_ERROR(decl.getLocation(), "couldn't import " << language << " header file '" << decl.target << "'");
         }
-    } else {
-        if (dependencies) {
-            auto resolution = resolveDependency(*dependencies, decl.target);
-            if (resolution.ambiguous) {
-                REPORT_ERROR(decl.getLocation(), resolution.ambiguityDetail);
-                return;
-            }
+        return;
+    }
+    if (dependencies) {
+        auto resolution = resolveDependency(*dependencies, decl.target);
+        if (resolution.ambiguous) {
+            REPORT_ERROR(decl.getLocation(), resolution.ambiguityDetail);
+            return;
         }
-        auto module = importModule(currentSourceFile, decl.target);
-        if (!module) {
-            if (module.getError() == std::make_error_code(std::errc::no_such_file_or_directory)) {
-                REPORT_ERROR(decl.getLocation(), "couldn't find module '" << decl.target << "' in the following locations:\n"
-                                                                          << llvm::join(options.importSearchPaths, "\n"));
-            } else {
-                REPORT_ERROR(decl.getLocation(), "couldn't import module '" << decl.target << "': " << module.getError().message());
-            }
+    }
+    auto module = importModule(currentSourceFile, decl.target);
+    if (!module) {
+        if (module.getError() == std::make_error_code(std::errc::no_such_file_or_directory)) {
+            REPORT_ERROR(decl.getLocation(), "couldn't find module '" << decl.target << "' in the following locations:\n"
+                                                                      << llvm::join(options.importSearchPaths, "\n"));
+        } else {
+            REPORT_ERROR(decl.getLocation(), "couldn't import module '" << decl.target << "': " << module.getError().message());
         }
     }
 }

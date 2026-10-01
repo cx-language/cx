@@ -397,10 +397,7 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
         if (currentToken() == Token::Comma) {
             consumeToken();
         } else {
-            if (currentToken() == Token::RightShift) {
-                tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().location);
-                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().location.nextColumn()));
-            }
+            splitRightShiftIfPresent();
             return types;
         }
     }
@@ -432,10 +429,7 @@ std::vector<GenericArg> Parser::parseGenericArgumentList() {
         if (currentToken() == Token::Comma) {
             consumeToken();
         } else {
-            if (currentToken() == Token::RightShift) {
-                tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().location);
-                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().location.nextColumn()));
-            }
+            splitRightShiftIfPresent();
             parse(Token::Greater);
             return genericArgs;
         }
@@ -902,18 +896,30 @@ bool Parser::shouldParseVarStmt() {
     }
 }
 
+void Parser::splitRightShiftIfPresent() {
+    if (currentToken() != Token::RightShift) return;
+    Location location = currentToken().location;
+    tokenBuffer[currentTokenIndex] = Token(Token::Greater, location);
+    tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, location.nextColumn()));
+}
+
+bool Parser::isTightLessThan(int lessOffset) {
+    Token less = lookAhead(lessOffset);
+    Token before = lookAhead(lessOffset - 1);
+    Token after = lookAhead(lessOffset + 1);
+    return before.location.column + int(before.getString().size()) == less.location.column || less.location.column + 1 == after.location.column;
+}
+
 bool Parser::shouldParseGenericArgumentList() {
     // Temporary hack: use spacing to determine whether to parse a generic argument list
     // of a less-than binary expression. Zero spaces on either side of '<' will cause it
     // to be interpreted as a generic argument list, for now.
-    return lookAhead(0).location.column + int(lookAhead(0).getString().size()) == lookAhead(1).location.column
-        || lookAhead(1).location.column + 1 == lookAhead(2).location.column;
+    return isTightLessThan(1);
 }
 
 bool Parser::shouldParseGenericArgumentListAfterMember() {
     ASSERT(currentToken() == Token::Less);
-    if (!(lookAhead(-1).location.column + int(lookAhead(-1).getString().size()) == lookAhead(0).location.column
-          || lookAhead(0).location.column + 1 == lookAhead(1).location.column)) {
+    if (!isTightLessThan(0)) {
         return false;
     }
     // A generic argument list is always followed by a call, so only treat '<' as one if the

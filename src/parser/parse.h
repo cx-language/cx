@@ -57,9 +57,6 @@ struct ParamDecl;
 struct GenericParamDecl;
 struct FunctionDecl;
 struct FunctionTemplate;
-struct FunctionDecl;
-struct FunctionTemplate;
-struct FunctionDecl;
 struct ConstructorDecl;
 struct DestructorDecl;
 struct TypeTemplate;
@@ -132,6 +129,8 @@ private:
     SwitchExpr* parseSwitchExpr();
     IfExpr* parseIfThenElseExpr();
     bool shouldParseVarStmt();
+    void splitRightShiftIfPresent();
+    bool isTightLessThan(int lessOffset);
     bool shouldParseGenericArgumentList();
     bool shouldParseGenericArgumentListAfterMember();
     bool lambdaAfterParentheses();

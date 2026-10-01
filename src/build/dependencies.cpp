@@ -4,8 +4,10 @@
 #include <system_error>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
+#include <llvm/ADT/Twine.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
@@ -32,17 +34,19 @@ static std::string getGitPath() {
     return *gitPath;
 }
 
+static void runGit(llvm::ArrayRef<llvm::StringRef> args, const llvm::Twine& command) {
+    std::string error;
+    int status = llvm::sys::ExecuteAndWait(args[0], args, std::nullopt, {}, 0, 0, &error);
+    if (status != 0 || !error.empty()) {
+        if (!error.empty()) error.insert(0, ": ");
+        ABORT("'" << command << "' failed with exit status " << status << error);
+    }
+}
+
 static void cloneGitRepository(const std::string& repositoryUrl, const std::string& path) {
     auto gitPath = getGitPath();
     llvm::StringRef args[] = {gitPath, "clone", repositoryUrl, path};
-
-    std::string error;
-    int status = llvm::sys::ExecuteAndWait(gitPath, args, std::nullopt, {}, 0, 0, &error);
-
-    if (status != 0 || !error.empty()) {
-        if (!error.empty()) error.insert(0, ": ");
-        ABORT("'git clone " << repositoryUrl << " " << path << "' failed with exit status " << status << error);
-    }
+    runGit(args, llvm::Twine("git clone ") + repositoryUrl + " " + path);
 }
 
 static void checkoutGitRevision(llvm::StringRef path, llvm::StringRef revision) {
@@ -50,14 +54,7 @@ static void checkoutGitRevision(llvm::StringRef path, llvm::StringRef revision) 
     auto gitDir = ("--git-dir=" + path + "/.git").str();
     auto workTree = ("--work-tree=" + path).str();
     llvm::StringRef args[] = {gitPath, gitDir, workTree, "checkout", revision, "--quiet"};
-
-    std::string error;
-    int status = llvm::sys::ExecuteAndWait(gitPath, args, std::nullopt, {}, 0, 0, &error);
-
-    if (status != 0 || !error.empty()) {
-        if (!error.empty()) error.insert(0, ": ");
-        ABORT("'git checkout " << revision << "' failed with exit status " << status << error);
-    }
+    runGit(args, llvm::Twine("git checkout ") + revision);
 }
 
 std::string cx::absolutizePackagePath(llvm::StringRef rootDirectory, const std::string& path) {

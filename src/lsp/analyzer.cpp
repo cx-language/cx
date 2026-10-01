@@ -11,6 +11,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Process.h>
+#include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
 #include "../ast/expr.h"
@@ -124,11 +125,6 @@ LspRange locationToRange(const Location& loc, const std::string& lineText) {
 }
 
 namespace {
-
-struct DiagnosticCollectorScope {
-    explicit DiagnosticCollectorScope(std::vector<CollectedDiagnostic>* d) { diagnosticCollector = d; }
-    ~DiagnosticCollectorScope() { diagnosticCollector = nullptr; }
-};
 
 /// Finds the build root governing filePath by walking up from parentDir to the
 /// outermost directory whose build.cx target roots contain the file, or nullopt
@@ -2090,7 +2086,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
     diagnosticOptions.warningsAsErrors = false;
     diagnosticOptions.errorLimit = 0; // unlimited; the editor gets everything collected so far
 
-    DiagnosticCollectorScope scope(&result.diagnostics);
+    llvm::SaveAndRestore saveCollector(diagnosticCollector, &result.diagnostics);
 
     try {
         // Intentionally leaked: this process runs one compilation and exits,

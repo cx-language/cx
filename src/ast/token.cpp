@@ -30,7 +30,6 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     switch (tokenKind) {
     case Token::Equal:
     case Token::NotEqual:
-        return PrecedenceGroup::Comparison;
     case Token::Is:
     case Token::Less:
     case Token::LessOrEqual:
@@ -61,7 +60,6 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     case Token::And:
     case Token::Or:
     case Token::Xor:
-        return PrecedenceGroup::Bitwise;
     case Token::LeftShift:
     case Token::RightShift:
     case Token::LeftShiftSat:

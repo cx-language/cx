@@ -143,32 +143,48 @@ void CompileError::reportAsWarning() const {
     reportWarning(location, StringBuilder() << message, notes, endLocation);
 }
 
-std::optional<std::string> cx::findExternalCCompiler() {
-#ifdef _WIN32
-    auto compilers = {"cl.exe", "clang-cl.exe"};
-#else
-    auto compilers = {"cc", "clang", "gcc"};
-#endif
-    for (const char* compiler : compilers) {
-        if (auto path = llvm::sys::findProgramByName(compiler)) {
+static std::optional<std::string> findProgramInList(llvm::ArrayRef<const char*> names) {
+    for (const char* name : names) {
+        if (auto path = llvm::sys::findProgramByName(name)) {
             return std::move(*path);
         }
     }
     return std::nullopt;
 }
 
+std::optional<std::string> cx::findExternalCCompiler() {
+#ifdef _WIN32
+    return findProgramInList({"cl.exe", "clang-cl.exe"});
+#else
+    return findProgramInList({"cc", "clang", "gcc"});
+#endif
+}
+
 std::optional<std::string> cx::findExternalCxxCompiler() {
 #ifdef _WIN32
-    auto compilers = {"clang++", "g++"};
+    return findProgramInList({"clang++", "g++"});
 #else
-    auto compilers = {"c++", "clang++", "g++"};
+    return findProgramInList({"c++", "clang++", "g++"});
 #endif
-    for (const char* compiler : compilers) {
-        if (auto path = llvm::sys::findProgramByName(compiler)) {
-            return std::move(*path);
+}
+
+static void appendSystemIncludePathsFromCompiler(std::vector<std::string>& paths, llvm::StringRef compilerPath, llvm::StringRef extraFlags = {}) {
+    std::string command = "echo | " + compilerPath.str();
+    if (!extraFlags.empty()) {
+        command += " ";
+        command += extraFlags;
+    }
+    command += " -E -v - 2>&1 | grep '^ /'";
+    std::string output;
+    exec(command.c_str(), output);
+    llvm::SmallVector<llvm::StringRef, 8> lines;
+    llvm::SplitString(output, lines, "\n");
+    for (auto line : lines) {
+        auto path = line.trim();
+        if (llvm::sys::fs::is_directory(path)) {
+            paths.push_back(path.str());
         }
     }
-    return std::nullopt;
 }
 
 int cx::exec(const char* command, std::string& output) {
@@ -270,17 +286,7 @@ const std::vector<std::string>& cx::getCCompilerSearchPaths() {
         // come from INCLUDE instead), so skip the probe for them.
         llvm::StringRef compilerName = cCompilerPath ? llvm::sys::path::filename(*cCompilerPath) : "";
         if (!compilerName.empty() && compilerName != "cl.exe" && compilerName != "clang-cl.exe") {
-            std::string command = "echo | " + *cCompilerPath + " -E -v - 2>&1 | grep '^ /'";
-            std::string output;
-            exec(command.c_str(), output);
-            llvm::SmallVector<llvm::StringRef, 8> lines;
-            llvm::SplitString(output, lines, "\n");
-            for (auto line : lines) {
-                auto path = line.trim();
-                if (llvm::sys::fs::is_directory(path)) {
-                    paths.push_back(path.str());
-                }
-            }
+            appendSystemIncludePathsFromCompiler(paths, *cCompilerPath);
         }
 #endif
     }
@@ -324,17 +330,7 @@ const std::vector<std::string>& cx::getCxxCompilerSearchPaths() {
         auto cxxCompilerPath = findExternalCxxCompiler();
         if (cxxCompilerPath) {
             // -x c++ is required: reading from stdin defaults to C.
-            std::string command = "echo | " + *cxxCompilerPath + " -E -x c++ -v - 2>&1 | grep '^ /'";
-            std::string output;
-            exec(command.c_str(), output);
-            llvm::SmallVector<llvm::StringRef, 8> lines;
-            llvm::SplitString(output, lines, "\n");
-            for (auto line : lines) {
-                auto path = line.trim();
-                if (llvm::sys::fs::is_directory(path)) {
-                    paths.push_back(path.str());
-                }
-            }
+            appendSystemIncludePathsFromCompiler(paths, *cxxCompilerPath, "-x c++");
         }
 #endif
     }
@@ -400,6 +396,12 @@ static void collectDiagnostic(Location location, const char* severity, llvm::Str
     diagnosticCollector->push_back(std::move(diagnostic));
 }
 
+static void printNotes(llvm::ArrayRef<Note> notes) {
+    for (auto& note : notes) {
+        printDiagnostic(note.location, "note", llvm::raw_ostream::BLACK, note.message);
+    }
+}
+
 void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes, Location endLocation) {
     errors++;
     if (diagnosticCollector) {
@@ -423,10 +425,7 @@ void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<
     }
 
     printDiagnostic(location, "error", llvm::raw_ostream::RED, message, endLocation);
-
-    for (auto& note : notes) {
-        printDiagnostic(note.location, "note", llvm::raw_ostream::BLACK, note.message);
-    }
+    printNotes(notes);
 }
 
 struct ReportedWarning {
@@ -452,15 +451,12 @@ void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRe
 
     if (diagnosticOptions.warningsAsErrors) {
         reportError(location, message, notes, endLocation);
-    } else {
-        if (diagnosticCollector) {
-            collectDiagnostic(location, "warning", message, notes);
-            return;
-        }
-        printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message, endLocation);
-
-        for (auto& note : notes) {
-            printDiagnostic(note.location, "note", llvm::raw_ostream::BLACK, note.message);
-        }
+        return;
     }
+    if (diagnosticCollector) {
+        collectDiagnostic(location, "warning", message, notes);
+        return;
+    }
+    printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message, endLocation);
+    printNotes(notes);
 }

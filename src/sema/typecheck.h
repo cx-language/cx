@@ -20,8 +20,6 @@
 namespace llvm {
 class StringRef;
 template<typename T> class ArrayRef;
-template<typename T, unsigned N> class SmallVector;
-template<typename T> class Optional;
 } // namespace llvm
 
 namespace cx {
