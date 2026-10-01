@@ -1,0 +1,13 @@
+// RUN: %not %cx run %s 2>&1 | %FileCheck %s
+// RUN: %not %cx run --release-safe %s 2>&1 | %FileCheck %s
+// RUN: %not %cx run --backend=c %s 2>&1 | %FileCheck %s
+// RUN: %not %cx run --release-safe --backend=c %s 2>&1 | %FileCheck %s
+
+
+void main() {
+    var arena = Arena(chunkSize = 32);
+    var numbers = arena.allocate<uint64>(int64(1) << 61);
+    _ = numbers;
+}
+
+// CHECK: allocation size overflow

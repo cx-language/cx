@@ -37,7 +37,7 @@ void*? countingAlloc(void*? state, c_size_t size) {
     return def.alloc(def.state, size);
 }
 
-void countingFree(void*? state, void*? ptr) {
+void countingFree(void*? state, void* ptr) {
     var def = defaultAllocator();
     def.free(def.state, ptr);
 }

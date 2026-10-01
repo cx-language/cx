@@ -213,14 +213,14 @@ This avoids the mistake of forgetting to add necessary cleanup calls when we add
 
 ```cs
 int main() {
-    var p = tryAllocateValue<int>(0); // allocate some resource
-    defer deallocate(p); // defer deallocation of the resource
+    var p = allocateValue<int>(0); // allocate some resource
+    defer deallocate(p); // runs before each return below
 
-    if p == null {
-        return 1; // deallocate(p) will be called immediately before this return
+    if *p != 0 {
+        return 2; // deallocate(p) runs before this return too
     }
 
-    return 0; // deallocate(p) will be called also before this return
+    return 0; // ... and before this return
 }
 ```
 

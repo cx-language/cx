@@ -72,7 +72,7 @@ loop.end:
     List<char>* this.load_1 = load this_0
     char** buffer = getelementptr this.load_1, 0
     char* buffer.load = load buffer
-    void _5 = call _CX1N3std10deallocateIAM3std4charEE4void1_AM3std4char(char* buffer.load)
+    void _5 = call _CX1N3std10deallocateIM3std4charEE4void1_AM3std4char(char* buffer.load)
     br if.end
 }
 

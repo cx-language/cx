@@ -141,35 +141,22 @@ struct List<Element> {
 
     /// Adds all elements from the given array to the end of the list.
     /// Copies each element, so the element type must be Copyable.
+    // TODO: this function should only be available if Element is Copyable.
     void append(Element[] elements) {
-        if elements.empty() return;
-        // Checked explicitly: release builds don't instrument integer overflow.
-        var newSize = uint64(size) + uint64(elements.size());
-        // Aborts rather than asserts: proceeding with a truncated size would corrupt the heap in release builds.
-        if newSize > uint64(int.max) {
-            abort("List size overflow");
-        }
-        reserve(int(newSize));
-        for element in elements {
-            push(element);
-        }
+        assert(uint64(size) + uint64(elements.size()) <= uint64(int.max), "List size overflow");
+        reserve(size + elements.size());
+        memcpy(&buffer[size], elements.data(), c_size_t(sizeof(Element) * elements.size()));
+        size += elements.size();
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
     void reserve(int minimumCapacity) {
         if minimumCapacity > capacity {
             var newBuffer = allocate<Element>(count = minimumCapacity);
-
-            for index in 0..size {
-                var source = &buffer[index];
-                var target = &newBuffer[index];
-                target.init(*source);
-            }
-
+            memcpy(newBuffer, buffer, c_size_t(sizeof(Element) * size));
             if capacity != 0 {
                 deallocate(buffer);
             }
-
             buffer = newBuffer;
             capacity = minimumCapacity;
         }
@@ -340,10 +327,7 @@ struct List<Element> {
         if capacity == 0 {
             reserve(1);
         } else {
-            // Aborts rather than asserts: proceeding with a wrapped capacity would corrupt the heap in release builds.
-            if capacity > int.max / 2 {
-                abort("List capacity overflow");
-            }
+            assert(capacity <= int.max / 2, "List capacity overflow");
             reserve(capacity * 2);
         }
     }

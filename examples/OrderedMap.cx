@@ -231,6 +231,7 @@ struct OrderedMap<Key, Value> {
         if delNode != null {
             // Move the value out; destroy the old key; shuffle the successor
             // entry into delNode (skipped when delNode is n); free n raw.
+            var dead = n!;
             Value removedValue = undefined;
             (&removedValue).init((*delNode).entry.value);
             delNode.entry.key.deinit();
@@ -260,7 +261,7 @@ struct OrderedMap<Key, Value> {
 
                 rebalance(parent);
             }
-            deallocate(n);
+            deallocate(dead);
             size--;
             return removedValue;
         }

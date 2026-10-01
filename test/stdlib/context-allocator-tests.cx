@@ -17,7 +17,7 @@ void*? bumpAlloc(void*? state, c_size_t size) {
     return cast<void*>(&bytes[aligned]);
 }
 
-void bumpFree(void*? state, void*? ptr) {
+void bumpFree(void*? state, void* ptr) {
     bumpFrees++;
 }
 
@@ -39,7 +39,7 @@ void*? statefulAlloc(void*? state, c_size_t size) {
     return def.alloc(def.state, size);
 }
 
-void statefulFree(void*? state, void*? ptr) {
+void statefulFree(void*? state, void* ptr) {
     var counter = cast<AllocStats*>(state);
     counter.frees = counter.frees + 1;
     var def = defaultAllocator();

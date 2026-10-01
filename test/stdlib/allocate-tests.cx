@@ -20,8 +20,7 @@ void testAllocate() {
 void testAllocateZeroCount() {
     var empty = allocate<int>(0);
     deallocate(empty);
-    var alsoEmpty = tryAllocate<int>(0);
-    assert(alsoEmpty != null);
+    var alsoEmpty = tryAllocate<int>(0)!;
     deallocate(alsoEmpty);
 }
 
@@ -34,25 +33,15 @@ void testAllocateValue() {
 
 @test
 void testTryAllocate() {
-    var numbers = tryAllocate<int>(4);
-    assert(numbers != null);
-    numbers![0] = 7;
+    var numbers = tryAllocate<int>(4)!;
+    numbers[0] = 7;
     assert(numbers[0] == 7);
     deallocate(numbers);
-    assert(tryAllocate<uint64>(int64(1) << 61) == null);
-    assert(tryAllocate<int>(-1) == null);
 }
 
 @test
 void testTryAllocateValue() {
-    var p = tryAllocateValue(42);
-    assert(p != null);
-    assert(*p! == 42);
+    var p = tryAllocateValue(42)!;
+    assert(*p == 42);
     deallocate(p);
-}
-
-@test
-void testDeallocateNull() {
-    int*? nothing = null;
-    deallocate(nothing);
 }

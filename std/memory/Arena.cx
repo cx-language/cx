@@ -47,18 +47,11 @@ struct Arena {
         return allocation;
     }
 
-    /// Allocates uninitialized storage for count values, or returns null on negative count, overflow, or allocation failure.
+    /// Allocates uninitialized storage for count values, or returns null on allocation failure.
     T[*]? allocate<T>(int64 count) {
-        var size = uint64(0);
-        if !checkedArraySize<T>(count, size) {
-            return null;
-        }
-
-        var storage = reserve(size);
-        if storage == null {
-            return null;
-        }
-        return cast<T[*]>(storage);
+        assert(count >= 0 && (count == 0 || uint64(sizeof(T)) <= uint64.max / uint64(count)), "allocation size overflow");
+        var storage = reserve(uint64(sizeof(T) * count));
+        return cast<T[*]?>(storage);
     }
 
     private uint8*? reserve(uint64 size) {
@@ -104,7 +97,7 @@ struct Arena {
         }
 
         var dataOffset = uint64(0);
-        if !alignUp(sizeof(ArenaChunk), dataOffset) || capacity > uint64(-1) - dataOffset {
+        if !alignUp(sizeof(ArenaChunk), dataOffset) || capacity > uint64.max - dataOffset {
             return null;
         }
 

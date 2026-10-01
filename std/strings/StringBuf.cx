@@ -9,25 +9,18 @@ struct StringBuf: Comparable, Hashable, Printable {
         characters.push('\0');
     }
 
-    /// Moves the string out, leaving an empty string in its place.
-    StringBuf take() {
-        return takeFrom(&this, StringBuf());
-    }
-
     /// Initializes an empty string with pre-allocated capacity.
     StringBuf(public int capacity) {
-        init();
-        characters.reserve(capacity + 1);
+        characters = List(capacity = capacity + 1);
+        characters.push('\0');
     }
 
     /// Initializes a string with the contents of the given string.
     StringBuf(string s) {
         characters = List(capacity = s.size() + 1);
-
         for ch in s {
             characters.push(ch);
         }
-
         characters.push('\0');
     }
 
@@ -105,12 +98,14 @@ struct StringBuf: Comparable, Hashable, Printable {
         characters.push('\0');
     }
 
-    /// Appends the given string.
+    /// Appends the given string. The given string may not point to the StringBuf itself.
     void append(string s) {
-        // TODO: Optimize
-        for ch in s {
-            push(ch);
-        }
+        // TODO: Add debug-mode check to verify 's' doesn't point inside this StringBuf.
+        assert(uint64(size()) + uint64(s.size()) <= uint64(int.max), "StringBuf size overflow");
+        characters.reserve(size() + s.size() + 1);
+        memcpy(&characters.buffer[size()], s.data(), c_size_t(s.size()));
+        characters.size += s.size();
+        characters.buffer[size()] = '\0';
     }
 
     /// Appends the printed form of the given value.
@@ -278,6 +273,10 @@ struct StringBuf: Comparable, Hashable, Printable {
     /// Returns true if no character satisfies the predicate.
     bool none(bool(char&) predicate) { return none(iterator(), predicate); }
 
+    /// Moves the string out, leaving an empty string in its place.
+    StringBuf take() {
+        return takeFrom(&this, StringBuf());
+    }
 }
 
 /// Concatenates the two strings.

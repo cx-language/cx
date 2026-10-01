@@ -1,6 +1,6 @@
 /// A non-owning string view.
 struct string: Comparable, Hashable, Printable {
-    private Slice<char> characters;
+    private char[] characters;
 
     /// Initializes a string of the given length at the given address.
     string(char* pointer, int length) {
@@ -52,6 +52,11 @@ struct string: Comparable, Hashable, Printable {
     char operator[-](int index) {
         assert(index >= 1 && index <= size(), "string index out of bounds");
         return characters[characters.size() - index];
+    }
+
+    /// Returns the characters as a slice.
+    char[] chars() {
+        return characters;
     }
 
     /// Returns a pointer to the first character.

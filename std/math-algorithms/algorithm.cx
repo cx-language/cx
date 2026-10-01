@@ -28,10 +28,7 @@ T& min<T: Comparable>(T& a, T& b) {
     return (min = b, max = a);
 }
 
-/// Swaps two items in place. Takes pointers because it mutates its arguments.
-// Bytewise through stack scratch: moving out of the dereferences would leave
-// two owners behind for owning element types. The scratch has E's alignment
-// (a byte buffer does not) and is not destroyed, so it never owns the copied bytes.
+/// Swaps two items in place.
 void swap<E>(E* a, E* b) {
     if a == b return;
     @manuallyDestroy E t = undefined;

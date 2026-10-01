@@ -4,7 +4,7 @@
 struct Allocator {
     void*? state;
     void*?(void*?, c_size_t) alloc;
-    void(void*?, void*?) free;
+    void(void*?, void*) free;
 }
 
 /// The ambient context: process-wide settings implicitly used by the standard
@@ -35,7 +35,7 @@ private void*? defaultAlloc(void*? state, c_size_t size) {
     return malloc(size);
 }
 
-private void defaultFree(void*? state, void*? ptr) {
+private void defaultFree(void*? state, void* ptr) {
     free(ptr);
 }
 
@@ -55,9 +55,9 @@ private void*? rawAlloc(c_size_t size) {
     return allocator.alloc(allocator.state, size);
 }
 
-/// Frees through the ambient context's allocator. Must tolerate null like free.
+/// Frees through the ambient context's allocator.
 /// Each allocation must be freed with the same allocator that allocated it.
-private void rawFree(void*? ptr) {
+private void rawFree(void* ptr) {
     var allocator = context().allocator;
     allocator.free(allocator.state, ptr);
 }
@@ -92,7 +92,7 @@ private void*? cxMalloc(c_size_t size) {
         // malloc(0) may return null; keep zero-size allocations non-null.
         userSize = 1;
     }
-    if userSize > uint64(-1) - headerSize {
+    if userSize > uint64.max - headerSize {
         return null;
     }
     var raw = rawAlloc(c_size_t(headerSize + userSize));
@@ -104,13 +104,10 @@ private void*? cxMalloc(c_size_t size) {
     leakCount++;
     leakBytes += userSize;
     var bytes = cast<uint8[*]>(raw);
-    return cast<void*>(&bytes[headerSize]);
+    return &bytes[headerSize];
 }
 
-private void cxFree(void*? ptr) {
-    if ptr == null {
-        return;
-    }
+private void cxFree(void* ptr) {
     var headerSize = leakHeaderSize();
     var header = cast<LeakHeader*>(cast<uint64>(ptr) - headerSize);
     if header.magic != allocatedMagic {
@@ -143,64 +140,40 @@ private void checkLeaks() {
 private void*? cxMalloc(c_size_t size) {
     // malloc(0) may return null; keep zero-size allocations non-null.
     if size == 0 {
-        size = c_size_t(1);
+        size = 1;
     }
     return rawAlloc(size);
 }
 
-private void cxFree(void*? ptr) {
-    if ptr == null {
-        return;
-    }
+private void cxFree(void* ptr) {
     rawFree(ptr);
 }
 #endif
-
-// Computes `sizeof(T) * count` into `size`, returning false for negative counts or on overflow.
-private bool checkedArraySize<T>(int64 count, uint64& size) {
-    if count < 0 {
-        return false;
-    }
-    var elementSize = uint64(sizeof(T));
-    var ucount = uint64(count);
-    if ucount != 0 && elementSize > uint64(-1) / ucount {
-        return false;
-    }
-    *size = elementSize * ucount;
-    return true;
-}
 
 /// Allocates uninitialized storage for `count` values and returns a pointer to it.
 /// The block can be freed by passing the returned pointer to `deallocate`.
 ///
 /// The allocation goes through the ambient context's allocator.
 ///
-/// If the count is negative, the size overflows, or the allocation fails, the program aborts.
+/// If the allocation fails, the program aborts.
 ///
 T[*] allocate<T>(int64 count) {
-    var size = uint64(0);
-    // Aborts rather than asserts: proceeding with an unchecked size would corrupt the heap in release builds.
-    if !checkedArraySize<T>(count, size) {
-        abort("allocation size overflow");
+    assert(count >= 0 && (count == 0 || uint64(sizeof(T)) <= uint64.max / uint64(count)), "allocation size overflow");
+    var allocation = cxMalloc(c_size_t(sizeof(T) * count));
+    if allocation == null {
+        abort("memory allocation failed");
     }
-    return cast<T[*]>(cxMalloc(c_size_t(size))!);
+    return cast<T[*]>(allocation);
 }
 
 /// Allocates uninitialized storage for `count` values and returns a pointer to it.
 /// The block can be freed by passing the returned pointer to `deallocate`.
 ///
-/// If the count is negative, the size overflows, or the allocation fails, null is returned.
+/// If the allocation fails, null is returned.
 ///
 T[*]? tryAllocate<T>(int64 count) {
-    var size = uint64(0);
-    if !checkedArraySize<T>(count, size) {
-        return null;
-    }
-    var allocation = cxMalloc(c_size_t(size));
-    if allocation == null {
-        return null;
-    }
-    return cast<T[*]>(allocation);
+    assert(count >= 0 && (count == 0 || uint64(sizeof(T)) <= uint64.max / uint64(count)), "allocation size overflow");
+    return cast<T[*]?>(cxMalloc(c_size_t(sizeof(T) * count)));
 }
 
 /// Moves the given value into newly allocated dynamic memory and returns a pointer to it.
@@ -228,8 +201,11 @@ T*? tryAllocateValue<T>(T value) {
 }
 
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
-/// `tryAllocate`, `allocateValue`, or `tryAllocateValue`. If the argument is null, no operation
-/// is performed. The ambient context's allocator must be the same one that allocated the block.
-void deallocate<T>(T allocation) {
+/// `tryAllocate`, `allocateValue`, or `tryAllocateValue`.
+/// The ambient context's allocator must be the same one that allocated the block.
+void deallocate<T>(T* allocation) {
+    cxFree(allocation);
+}
+void deallocate<T>(T[*] allocation) {
     cxFree(allocation);
 }

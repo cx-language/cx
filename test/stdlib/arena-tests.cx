@@ -71,19 +71,7 @@ void testZeroCount() {
 
 @test
 void testOverflow() {
-    var arena = Arena(chunkSize = 32);
-
     var huge = int64(1) << 62;
-    var hugeElements = int64(1) << 61;
-    assert(arena.allocate<int>(huge) == null);
-    assert(arena.allocate<uint64>(hugeElements) == null);
-    assert(arena.allocate<int>(-1) == null);
-
-    var recovered = arena.allocate<int>();
-    assert(recovered != null);
-    recovered.init(17);
-    assert(*recovered! == 17);
-
     var oversized = Arena(chunkSize = uint64(huge));
     assert(oversized.allocate<uint8>(huge) == null);
 }

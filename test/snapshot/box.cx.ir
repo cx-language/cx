@@ -31,7 +31,7 @@ void _CX1N3stdM3std3BoxIM3std3BoxIM3std5int32EE6deinitE4void0_(Box<Box<int32>>* 
     Box<Box<int32>>* this.load_0 = load this_0
     Box<int32>** pointer_0 = getelementptr this.load_0, 0
     Box<int32>* pointer.load_0 = load pointer_0
-    void _1 = call _CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E(Box<int32>* pointer.load_0)
+    void _1 = call _CX1N3std10deallocateIM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E(Box<int32>* pointer.load_0)
     return void
 }
 
@@ -67,7 +67,7 @@ void _CX1N3stdM3std3BoxIM3std5int32E6deinitE4void0_(Box<int32>* this) {
     Box<int32>* this.load = load this_0
     int32** pointer = getelementptr this.load, 0
     int32* pointer.load = load pointer
-    void _0 = call _CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32(int32* pointer.load)
+    void _0 = call _CX1N3std10deallocateIM3std5int32EE4void1_PM3std5int32(int32* pointer.load)
     return void
 }
 
@@ -80,12 +80,12 @@ int32* _CX1N3stdM3std3BoxIM3std5int32E3getEPM3std5int320_(Box<int32>* this) {
     return pointer.load
 }
 
-void _CX1N3std10deallocateIPM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E(Box<int32>* allocation) {
+void _CX1N3std10deallocateIM3std3BoxIM3std5int32EEE4void1_PM3std3BoxIM3std5int32E(Box<int32>* allocation) {
     Box<int32>** allocation_0 = alloca Box<int32>*
     store allocation to allocation_0
     Box<int32>* allocation.load = load allocation_0
     void* _0 = cast allocation.load to void*
-    void _1 = call _CX1N3std6cxFreeE4void1_OP4void(void* _0)
+    void _1 = call _CX1N3std6cxFreeE4void1_P4void(void* _0)
     return void
 }
 
@@ -93,19 +93,18 @@ Box<int32>* _CX1N3std13allocateValueIM3std3BoxIM3std5int32EEEPM3std3BoxIM3std5in
     Box<int32>* value_0 = alloca Box<int32>
     Box<int32>** allocation = alloca Box<int32>*
     store value to value_0
-    c_size_t _0 = cast sizeof(Box<int32>) to c_size_t
-    void* _1 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t _0)
-    bool assert.condition = _1 == void* null
+    void* _0 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t sizeof(Box<int32>))
+    bool assert.condition = _0 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:212:60
+    never _1 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:185:50
 ")
     unreachable
 
 assert.success:
-    Box<int32>* _3 = cast _1 to Box<int32>*
-    store _3 to allocation
+    Box<int32>* _2 = cast _0 to Box<int32>*
+    store _2 to allocation
     Box<int32>* allocation.load = load allocation
     Box<int32> value.load = load value_0
     store value.load to allocation.load
@@ -117,19 +116,18 @@ int32* _CX1N3std13allocateValueIM3std5int32EEPM3std5int321_M3std5int32(int32 val
     int32* value_0 = alloca int32
     int32** allocation = alloca int32*
     store value to value_0
-    c_size_t _0 = cast int32 4 to c_size_t
-    void* _1 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t _0)
-    bool assert.condition = _1 == void* null
+    void* _0 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t 4)
+    bool assert.condition = _0 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:212:60
+    never _1 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at allocate.cx:185:50
 ")
     unreachable
 
 assert.success:
-    int32* _3 = cast _1 to int32*
-    store _3 to allocation
+    int32* _2 = cast _0 to int32*
+    store _2 to allocation
     int32* allocation.load = load allocation
     int32 value.load = load value_0
     store value.load to allocation.load
@@ -137,11 +135,11 @@ assert.success:
     return allocation.load_0
 }
 
-void _CX1N3std10deallocateIPM3std5int32EE4void1_PM3std5int32(int32* allocation) {
+void _CX1N3std10deallocateIM3std5int32EE4void1_PM3std5int32(int32* allocation) {
     int32** allocation_0 = alloca int32*
     store allocation to allocation_0
     int32* allocation.load = load allocation_0
     void* _0 = cast allocation.load to void*
-    void _1 = call _CX1N3std6cxFreeE4void1_OP4void(void* _0)
+    void _1 = call _CX1N3std6cxFreeE4void1_P4void(void* _0)
     return void
 }
