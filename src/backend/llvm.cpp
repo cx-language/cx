@@ -296,6 +296,12 @@ void LLVMGenerator::emitMemcpy(llvm::Value* dest, llvm::Value* src, llvm::Type* 
     builder.CreateMemCpy(dest, llvm::MaybeAlign(align), src, llvm::MaybeAlign(align), llvm::ConstantInt::get(llvm::Type::getInt64Ty(ctx), size));
 }
 
+llvm::Value* LLVMGenerator::storeConstantOrMemcpy(llvm::Value* dest, llvm::Value* value, llvm::Type* type) {
+    if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) return builder.CreateStore(constant, dest);
+    emitMemcpy(dest, value, type);
+    return nullptr;
+}
+
 llvm::Value* LLVMGenerator::materializeConstant(llvm::Constant* constant, llvm::Type* type) {
     auto* alloca = createEntryAlloca(type, "const.alloca");
     // Undef needs no store: uninitialized memory already represents it.
@@ -512,11 +518,7 @@ llvm::Value* LLVMGenerator::codegenStore(const StoreInst* inst) {
     if (shouldPassIndirectly(valueLLVMType)) {
         // Constant aggregates store directly: unlike SSA values, they don't
         // expand into scalar operations during codegen.
-        if (llvm::isa<llvm::Constant>(value)) {
-            return builder.CreateStore(value, pointer);
-        }
-        emitMemcpy(pointer, value, valueLLVMType);
-        return nullptr;
+        return storeConstantOrMemcpy(pointer, value, valueLLVMType);
     }
     return builder.CreateStore(value, pointer);
 }
@@ -534,22 +536,14 @@ llvm::Value* LLVMGenerator::codegenInsert(const InsertInst* inst) {
         ASSERT(builder.GetInsertBlock());
         auto tempAlloca = createEntryAlloca(aggregateLLVMType, "insert.alloca");
         if (inst->aggregate->kind != ValueKind::Undefined) {
-            if (auto* constant = llvm::dyn_cast<llvm::Constant>(aggregate)) {
-                builder.CreateStore(constant, tempAlloca);
-            } else {
-                emitMemcpy(tempAlloca, aggregate, aggregateLLVMType);
-            }
+            storeConstantOrMemcpy(tempAlloca, aggregate, aggregateLLVMType);
         }
         auto fieldPtr = builder.CreateConstInBoundsGEP2_32(aggregateLLVMType, tempAlloca, 0, inst->index, "insert.gep");
         auto fieldLLVMType = getLLVMType(inst->value->getType());
         if (inst->value->kind == ValueKind::Undefined) {
             // Leave the field uninitialized.
         } else if (shouldPassIndirectly(fieldLLVMType)) {
-            if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
-                builder.CreateStore(constant, fieldPtr);
-            } else {
-                emitMemcpy(fieldPtr, value, fieldLLVMType);
-            }
+            storeConstantOrMemcpy(fieldPtr, value, fieldLLVMType);
         } else {
             builder.CreateStore(value, fieldPtr);
         }
