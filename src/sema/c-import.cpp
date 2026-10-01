@@ -523,9 +523,9 @@ struct CToCxConverter final : clang::ASTConsumer {
 
     bool recordParamIsUnsupported(clang::QualType type) {
         type = type.getCanonicalType();
-        if (type->isReferenceType() || type->isPointerType() || type->isArrayType() || type->isFunctionType()) return false;
+        if (!isRecordPassedByValue(type)) return false;
         auto* record = type->getAsCXXRecordDecl();
-        return record && (!isVerifiablyTrivialRecord(record) || !recordCrossesByValue(type, record));
+        return !isVerifiablyTrivialRecord(record) || !recordCrossesByValue(type, record);
     }
 
     // True when a function signature crosses a record by value in a way the backends cannot
