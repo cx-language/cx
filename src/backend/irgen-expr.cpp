@@ -806,8 +806,10 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
         if (isSaturatingOperator(expr.op) && (left->getType()->isInteger() || left->getType()->isChar())) {
             return emitSaturatingArithmetic(getWrappingOrSaturatingBaseOp(expr.op), left, right, expr);
         }
-        if ((expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star) && options.mode != BuildMode::ReleaseFast
-            && (left->getType()->isInteger() || left->getType()->isChar())) {
+        // Global initializers can't contain the trap's control flow; like unary
+        // minus above, emit the operation plain there.
+        if (!emittingGlobalInitializer && (expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star)
+            && options.mode != BuildMode::ReleaseFast && (left->getType()->isInteger() || left->getType()->isChar())) {
             return emitCheckedArithmetic(expr.op, left, right, expr);
         }
         return createBinaryOp(expr.op, left, right, &expr);

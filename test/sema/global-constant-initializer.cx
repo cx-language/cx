@@ -18,6 +18,8 @@ int* ptr = &x;
 enum Color { red, green }
 int inverted = ~Color.red;
 int negated = -Color.red;
+int diff = 0 - Color.green;
+int sum = 1 + Color.green;
 
 const one = 1;
 const two = one + 1;
@@ -45,4 +47,6 @@ void main() {
     println(five); // CHECK-NEXT:5
     println(pair[0]); // CHECK-NEXT:1
     println(pair[1]); // CHECK-NEXT:1
+    println(diff); // CHECK-NEXT:-1
+    println(sum); // CHECK-NEXT:2
 }
