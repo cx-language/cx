@@ -525,29 +525,17 @@ EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) {
 bool EnumDecl::isPayloadView(Type declared, Type viewed) {
     if (!declared.isEnumType() || declared.isOptionalType()) return false;
     auto* enumDecl = llvm::cast<EnumDecl>(declared.getDecl());
-    for (auto& enumCase : enumDecl->cases) {
-        if (enumCase.associatedType && enumCase.associatedType == viewed) return true;
-    }
+    if (llvm::any_of(enumDecl->cases, [&](auto& enumCase) { return enumCase.associatedType && enumCase.associatedType == viewed; })) return true;
     return viewed.isAnonymousStructType() && viewed.getAnonymousStructElements().empty()
         && llvm::any_of(enumDecl->cases, [](auto& enumCase) { return !enumCase.associatedType; });
 }
 
 bool EnumDecl::hasAssociatedValues() const {
-    for (auto& enumCase : cases) {
-        if (enumCase.associatedType) {
-            return true;
-        }
-    }
-    return false;
+    return llvm::any_of(cases, [](auto& enumCase) { return bool(enumCase.associatedType); });
 }
 
 bool EnumDecl::hasDestructiblePayload() const {
-    for (auto& enumCase : cases) {
-        if (enumCase.associatedType && enumCase.associatedType.needsDestruction()) {
-            return true;
-        }
-    }
-    return false;
+    return llvm::any_of(cases, [](auto& enumCase) { return enumCase.associatedType && enumCase.associatedType.needsDestruction(); });
 }
 
 FieldDecl::FieldDecl(Type type, llvm::StringRef name, Expr* defaultValue, TypeDecl& parent, AccessLevel accessLevel, Location location, bool isManuallyDestroy)
