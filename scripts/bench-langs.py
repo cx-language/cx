@@ -71,13 +71,10 @@ LANGS = {
 MODES = ["release", "debug"]
 METRICS = ["run", "compile"]
 MODE_LABEL = {"release": "optimized", "debug": "unoptimized debug"}
-# cx debug keeps safety checks. --no-leak-check only skips the end-of-main
-# leak report, which would exit these programs for memory they leave to the OS.
+# cx debug keeps safety checks, including the leak detector.
 DEBUG_NOTE = (
     "Unoptimized debug is the development build. "
     "cx omits --release, so safety checks stay on and both the LLVM IR pipeline and codegen optimizations are skipped. "
-    "--no-leak-check keeps the leak detector from exiting when a program leaves memory to the OS, "
-    "which the release build already allows. "
     "C and C++ use -O0 -g. "
     "Rust uses opt-level 0 with debug assertions, overflow checks, and full debug info. "
     "Go disables optimizations and inlining with -gcflags=all=-N -l, including the standard library. "
@@ -128,21 +125,19 @@ def build_command(lang, mode, cx, src, binary):
         cmd = [cx, src, "-o", binary]
         if release:
             cmd.append("--release")
-        else:
-            cmd.append("--no-leak-check")
         cmd.append("-Werror")
         return cmd
     if lang == "c":
         opt = ["-O3"] if release else ["-O0", "-g"]
-        return ["cc", *opt, "-fwrapv", "-std=c11", "-o", binary, src]
+        return ["cc", *opt, "-std=c17", "-o", binary, src]
     if lang == "cxx":
         opt = ["-O3"] if release else ["-O0", "-g"]
-        return ["c++", *opt, "-fwrapv", "-std=c++20", "-o", binary, src]
+        return ["c++", *opt, "-std=c++23", "-o", binary, src]
     if lang == "rust":
         if release:
-            return ["rustc", "--edition=2021", "-C", "opt-level=3", "-o", binary, src]
+            return ["rustc", "--edition=2024", "-C", "opt-level=3", "-o", binary, src]
         return [
-            "rustc", "--edition=2021", "-C", "opt-level=0", "-C", "debug-assertions=yes",
+            "rustc", "--edition=2024", "-C", "opt-level=0", "-C", "debug-assertions=yes",
             "-C", "overflow-checks=yes", "-C", "debuginfo=2", "-o", binary, src,
         ]
     if lang == "go":

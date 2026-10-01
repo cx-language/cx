@@ -53,10 +53,8 @@ separate copy of the source. ccache is disabled. `--metrics compile` records
 only those debug rebuilds and does not run the binaries; `--metrics run`
 skips compile timing. The optimized build is the release configuration. The
 unoptimized debug build is the development configuration: cx's default build
-with `--no-leak-check`
 (safety checks stay on, and both the LLVM IR pipeline and codegen
-optimizations are skipped; the leak detector would otherwise exit these
-programs for memory they leave to the OS), C and C++ at `-O0 -g`, Rust at
+optimizations are skipped), C and C++ at `-O0 -g`, Rust at
 opt-level 0 with debug assertions and overflow checks, Go with
 `-gcflags=all=-N -l`, Odin with `-debug` (`-o:none`), and Zig with
 `-ODebug` (release is `-OReleaseFast`).
