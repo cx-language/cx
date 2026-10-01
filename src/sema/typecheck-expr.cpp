@@ -488,15 +488,9 @@ static Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&, Type expectedTy
     return expectedType;
 }
 
-static Type unwrapOptionals(Type type) {
-    while (type.isOptionalType())
-        type = type.getWrappedType();
-    return type;
-}
-
 static Type emptyArrayLiteralType(Type expectedType) {
     if (expectedType && !expectedType.containsUnresolvedPlaceholder()) {
-        Type unwrapped = unwrapOptionals(expectedType);
+        Type unwrapped = expectedType.removeOptional();
         if ((unwrapped.isArrayType() || unwrapped.isSlice()) && !unwrapped.hasSizeofArraySize()) {
             return expectedType;
         }
@@ -2527,9 +2521,9 @@ bool cx::satisfiesCopyable(Type type) {
 }
 
 static Type unwrapCopyable(Type type) {
-    Type unwrapped = unwrapOptionals(type.removeReference());
+    Type unwrapped = type.removeReference().removeOptional();
     while (unwrapped.isConcreteArray()) {
-        unwrapped = unwrapOptionals(unwrapped.getElementType().removeReference());
+        unwrapped = unwrapped.getElementType().removeReference().removeOptional();
     }
     return unwrapped;
 }

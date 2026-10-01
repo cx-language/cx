@@ -23,6 +23,7 @@ void f(Token t) {}
 void f(MaybeOwned m) {}
 void f(Wrap<List<int>> w) {}
 void f(Optional<List<int> > o) {}
+void f(Optional<List<int>? > o) {}
 
 void fieldPoisonsCopy() {
     var o = Owned(List([1]));
@@ -56,6 +57,14 @@ void optionalOfOwnedIsNotCopyable() {
     Optional<List<int> > o = List([5]);
     f(o);
     // CHECK: [[@LINE+1]]:7: error: use of moved value 'o' (type 'List<int>?' is not Copyable because it holds 'List<int>', which has a destructor)
+    f(o);
+}
+
+void nestedOptionalOfOwnedIsNotCopyable() {
+    var inner = Optional.Some(value = List([6]));
+    Optional<List<int>? > o = inner;
+    f(o);
+    // CHECK: [[@LINE+1]]:7: error: use of moved value 'o' (type 'List<int>??' is not Copyable because it holds 'List<int>', which has a destructor)
     f(o);
 }
 

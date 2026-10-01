@@ -18,4 +18,9 @@ void main() {
 
     // CHECK: [[@LINE+1]]:23: error: couldn't infer type of empty array literal
     List<string>* l = [];
+
+    // Only one optional layer is peeled when inferring.
+    int[]? ok = [];
+    // CHECK: [[@LINE+1]]:22: error: couldn't infer type of empty array literal
+    int[]?? nested = [];
 }
