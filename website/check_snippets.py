@@ -44,13 +44,11 @@ def check_snippet(path, index, code, reference_only):
         with open(os.path.join(directory, "main.cx"), "w") as file:
             file.write(code)
 
-        if use_c_backend:
-            # The C backend has no JIT run path: compile to a binary and run it.
-            check_snippet_link(directory, name)
-            return
-
         if reference_only:
             # Compile-only: verify it builds warning-free without running it.
+            # Also applies to the C backend (which has no JIT run path):
+            # linking would require system libraries (e.g. glfw) that CI
+            # runners may lack, while -c skips the link and pkg-config query.
             output = "main.obj" if platform.system() == "Windows" else "main.o"
             compile = subprocess.run([args.cx, "main.cx", "-c", "-o", output, "-Werror"] + cx_args,
                                      capture_output=True, text=True, timeout=180, cwd=directory)
@@ -60,6 +58,11 @@ def check_snippet(path, index, code, reference_only):
                 with print_lock:
                     print(f"FAIL: {name} does not compile warning-free:")
                     print(compile.stderr or compile.stdout)
+            return
+
+        if use_c_backend:
+            # The C backend has no JIT run path: compile to a binary and run it.
+            check_snippet_link(directory, name)
             return
 
         # JIT runs the snippet in-process, skipping object emission, the

@@ -226,6 +226,14 @@ std::optional<PkgConfigSplit> cx::queryPkgConfigFlags(llvm::ArrayRef<std::string
         command += " ";
         command += package;
     }
+    // Silence pkg-config's own diagnostics (e.g. a broken Strawberry Perl
+    // shim on Windows prints its internals): the driver reports a clean
+    // "couldn't query pkg-config" error naming the package instead.
+#ifdef _WIN32
+    command += " 2>NUL";
+#else
+    command += " 2>/dev/null";
+#endif
 
     auto output = runCommand(command);
     if (!output) return std::nullopt;
