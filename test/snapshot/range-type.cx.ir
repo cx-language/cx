@@ -19,18 +19,14 @@ loop.body:
     store _2 to i
     int32 sum.load = load sum
     int32 i.load = load i
-    int64 _3 = cast sum.load to int64
-    int64 _4 = cast i.load to int64
-    int64 _5 = _3 + _4
-    int32 _6 = cast _5 to int32
-    int64 _7 = cast _6 to int64
-    bool _8 = _5 != _7
-    bool _9 = !_8
-    bool overflow.condition = _9 == bool false
+    int32 _3 = checkedarith + sum.load, i.load
+    bool _4 = overflow _3
+    bool _5 = !_4
+    bool overflow.condition = _5 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
-    void _10 = call _CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(RangeIterator<int32>* __iterator)
+    void _6 = call _CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(RangeIterator<int32>* __iterator)
     br loop.condition
 
 loop.end:
@@ -38,12 +34,12 @@ loop.end:
     return sum.load_0
 
 overflow.fail:
-    never _11 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at range-type.cx:6:13
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at range-type.cx:6:13
 ")
     unreachable
 
 overflow.success:
-    store _6 to sum
+    store _3 to sum
     br loop.increment
 }
 

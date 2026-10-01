@@ -20,6 +20,10 @@ struct CGenerator {
     void codegenExtract(const ExtractInst* inst);
     void codegenCall(const CallInst* inst);
     void codegenBinary(const BinaryInst* inst);
+    // Emits the value converted to the target type, unless it already has it.
+    void codegenCastIfNeeded(const Value* value, IRType* targetType);
+    void codegenCheckedArith(const CheckedArithInst* inst);
+    void codegenArithOverflow(const ArithOverflowInst* inst);
     void codegenArrayOp(const ArrayOpInst* inst);
     // Prints `left OP right` for already-declared operands. isFloat/isUnsigned
     // describe the operand type; rightValue enables the zero-divisor spelling

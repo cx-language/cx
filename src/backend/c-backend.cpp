@@ -65,6 +65,8 @@ bool isPureTemp(ValueKind kind) {
     case ValueKind::LoadInst:
     case ValueKind::ExtractInst:
     case ValueKind::BinaryInst:
+    case ValueKind::CheckedArithInst:
+    case ValueKind::ArithOverflowInst:
     case ValueKind::ArrayOpInst:
     case ValueKind::UnaryInst:
     case ValueKind::CastInst:
@@ -132,6 +134,15 @@ template<typename Fn> void forEachOperand(const Instruction* inst, Fn&& fn) {
         mark(binary->right);
         break;
     }
+    case ValueKind::CheckedArithInst: {
+        auto* checked = llvm::cast<CheckedArithInst>(inst);
+        mark(checked->left);
+        mark(checked->right);
+        break;
+    }
+    case ValueKind::ArithOverflowInst:
+        mark(llvm::cast<ArithOverflowInst>(inst)->checked);
+        break;
     case ValueKind::ArrayOpInst: {
         auto* arrayOp = llvm::cast<ArrayOpInst>(inst);
         mark(arrayOp->left);
@@ -626,6 +637,148 @@ void CGenerator::codegenBinaryExpr(Token::Kind op, const std::function<void()>& 
     emitRight();
 }
 
+void CGenerator::codegenCastIfNeeded(const Value* value, IRType* targetType) {
+    if (value->getType()->equals(targetType)) {
+        codegenInst(value);
+    } else {
+        stream << "((";
+        codegenTypeExpression(stream, targetType, true);
+        stream << ")";
+        codegenInst(value);
+        stream << ")";
+    }
+}
+
+void CGenerator::codegenCheckedArith(const CheckedArithInst* inst) {
+    if (deadValues.contains(inst)) return;
+    stream.indent(4);
+    const std::string& name = getOrCreateTempName(inst, "_checked_arith");
+    codegenTempDeclaration(inst, name);
+    stream << " = ";
+    auto* type = inst->left->getType();
+    if (type->isUnsignedInteger()) {
+        codegenBinaryExpr(inst->op, [&] { codegenInst(inst->left); }, [&] { codegenInst(inst->right); }, false, true, inst->right);
+    } else {
+        // Compute in the unsigned domain so the wrapping step isn't signed overflow (UB in C).
+        auto* unsignedType = getIRType(getUnsignedIntegerType(getIntegerBitWidth(type)));
+        stream << "((";
+        codegenTypeExpression(stream, type, true);
+        stream << ")(";
+        codegenCastIfNeeded(inst->left, unsignedType);
+        stream << ' ' << cBinaryOperator(inst->op) << ' ';
+        codegenCastIfNeeded(inst->right, unsignedType);
+        stream << "))";
+    }
+    stream << ";\n";
+}
+
+void CGenerator::codegenArithOverflow(const ArithOverflowInst* inst) {
+    if (deadValues.contains(inst)) return;
+    stream.indent(4);
+    const std::string& name = getOrCreateTempName(inst, "_arith_overflow");
+    codegenTempDeclaration(inst, name);
+    stream << " = ";
+    auto* checked = llvm::cast<CheckedArithInst>(inst->checked);
+    auto* type = checked->left->getType();
+    int width = getIntegerBitWidth(type);
+    bool isSigned = type->isSignedInteger();
+    auto* unsignedType = getIRType(getUnsignedIntegerType(width));
+
+    // 1 in the unsigned domain: integer constants print without a type,
+    // so a bare 1 would shift as a C int.
+    auto emitUnsignedOne = [&] {
+        stream << "(";
+        codegenTypeExpression(stream, unsignedType, true);
+        stream << ")1";
+    };
+
+    if (width < 64) {
+        // The operation is exact in 64 bits, so any loss in the round trip is an overflow.
+        auto* wideType = getIRType(isSigned ? Type::getInt64() : Type::getUInt64());
+        stream << "(";
+        codegenCastIfNeeded(checked->left, wideType);
+        stream << ' ' << cBinaryOperator(checked->op) << ' ';
+        codegenCastIfNeeded(checked->right, wideType);
+        stream << ") != ";
+        codegenCastIfNeeded(checked, wideType);
+    } else if (checked->op != Token::Star) {
+        ASSERT(checked->op == Token::Plus || checked->op == Token::Minus);
+        if (!isSigned) {
+            stream << "(";
+            if (checked->op == Token::Plus) {
+                codegenInst(checked);
+                stream << " < ";
+                codegenInst(checked->left);
+            } else {
+                codegenInst(checked->left);
+                stream << " < ";
+                codegenInst(checked->right);
+            }
+            stream << ")";
+        } else {
+            // Add and subtract set the sign bit of (a^r)&(b^r) and (a^b)&(a^r) respectively on overflow.
+            auto emitXor = [&](const Value* x, const Value* y) {
+                stream << "(";
+                codegenCastIfNeeded(x, unsignedType);
+                stream << " ^ ";
+                codegenCastIfNeeded(y, unsignedType);
+                stream << ")";
+            };
+            stream << "(((";
+            if (checked->op == Token::Plus) {
+                emitXor(checked->left, checked);
+                stream << " & ";
+                emitXor(checked->right, checked);
+            } else {
+                emitXor(checked->left, checked->right);
+                stream << " & ";
+                emitXor(checked->left, checked);
+            }
+            stream << ") & (";
+            emitUnsignedOne();
+            stream << " << " << (width - 1) << ")) != 0)";
+        }
+    } else {
+        // 64-bit multiply can't widen (MSVC and xcc lack __int128) and 128-bit
+        // multiply has no wider type. Overflow is result / b != a when b != 0,
+        // with the MIN / -1 division trap guarded; && and || short-circuit
+        // so the division never evaluates unguarded.
+        stream << "(";
+        codegenInst(checked->right);
+        stream << " != 0) && (";
+        if (isSigned) {
+            auto emitMin = [&] {
+                stream << "(";
+                codegenTypeExpression(stream, type, true);
+                stream << ")((";
+                emitUnsignedOne();
+                stream << " << " << (width - 1) << "))";
+            };
+            auto emitMinCase = [&](const Value* minusOne, const Value* min) {
+                stream << "((";
+                codegenInst(minusOne);
+                stream << " == -1) && (";
+                codegenInst(min);
+                stream << " == ";
+                emitMin();
+                stream << "))";
+            };
+            emitMinCase(checked->left, checked->right);
+            stream << " || ";
+            emitMinCase(checked->right, checked->left);
+            stream << " || ";
+        }
+        stream << "((";
+        codegenInst(checked);
+        stream << " / ";
+        codegenInst(checked->right);
+        stream << ") != ";
+        codegenInst(checked->left);
+        stream << "))";
+    }
+    stream << ";\n";
+}
+
 void CGenerator::codegenArrayOp(const ArrayOpInst* inst) {
     if (deadValues.contains(inst)) return;
     auto* arrayType = llvm::cast<IRArrayType>(inst->arrayType);
@@ -1105,6 +1258,10 @@ void CGenerator::codegenInstImpl(const Value* value) {
         return codegenCall(llvm::cast<CallInst>(value));
     case ValueKind::BinaryInst:
         return codegenBinary(llvm::cast<BinaryInst>(value));
+    case ValueKind::CheckedArithInst:
+        return codegenCheckedArith(llvm::cast<CheckedArithInst>(value));
+    case ValueKind::ArithOverflowInst:
+        return codegenArithOverflow(llvm::cast<ArithOverflowInst>(value));
     case ValueKind::ArrayOpInst:
         return codegenArrayOp(llvm::cast<ArrayOpInst>(value));
     case ValueKind::UnaryInst:
@@ -1409,14 +1566,18 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             case ValueKind::LoadInst:
             case ValueKind::ExtractInst:
             case ValueKind::BinaryInst:
+            case ValueKind::CheckedArithInst:
+            case ValueKind::ArithOverflowInst:
             case ValueKind::UnaryInst:
             case ValueKind::CastInst: {
                 if (deadValues.contains(inst)) break;
-                auto name = claimSuffixedName(inst->kind == ValueKind::LoadInst      ? "_load"
-                                              : inst->kind == ValueKind::ExtractInst ? "_extract"
-                                              : inst->kind == ValueKind::BinaryInst  ? "_binary_op"
-                                              : inst->kind == ValueKind::UnaryInst   ? "_unary_op"
-                                                                                     : "_cast");
+                auto name = claimSuffixedName(inst->kind == ValueKind::LoadInst            ? "_load"
+                                              : inst->kind == ValueKind::ExtractInst       ? "_extract"
+                                              : inst->kind == ValueKind::BinaryInst        ? "_binary_op"
+                                              : inst->kind == ValueKind::CheckedArithInst  ? "_checked_arith"
+                                              : inst->kind == ValueKind::ArithOverflowInst ? "_arith_overflow"
+                                              : inst->kind == ValueKind::UnaryInst         ? "_unary_op"
+                                                                                           : "_cast");
                 hoistDispatchTemp(*this, inst, std::move(name), inst->getType(), false, false);
                 break;
             }

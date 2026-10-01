@@ -17,22 +17,18 @@ void _CX1N4main1fE4void2_PM3std5int32M3std5int32(int32* a, int32 b) {
     store b.load to a.load
     int32 _1 = call _CX1N4main1gEM3std5int320_()
     int32 b.load_0 = load b_0
-    int64 _2 = cast _1 to int64
-    int64 _3 = cast b.load_0 to int64
-    int64 _4 = _2 * _3
-    int32 _5 = cast _4 to int32
-    int64 _6 = cast _5 to int64
-    bool _7 = _4 != _6
-    bool _8 = !_7
-    bool overflow.condition = _8 == bool false
+    int32 _2 = checkedarith * _1, b.load_0
+    bool _3 = overflow _2
+    bool _4 = !_3
+    bool overflow.condition = _4 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at dereference-vs-multiplication.cx:11:5
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at dereference-vs-multiplication.cx:11:5
 ")
     unreachable
 
 overflow.success:
-    store _5 to n
+    store _2 to n
     return void
 }

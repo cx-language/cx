@@ -31,6 +31,8 @@ struct LLVMGenerator {
     llvm::Value* codegenExtract(const ExtractInst* inst);
     llvm::Value* codegenCall(const CallInst* inst);
     llvm::Value* codegenBinary(const BinaryInst* inst);
+    llvm::Value* codegenCheckedArith(const CheckedArithInst* inst);
+    llvm::Value* codegenArithOverflow(const ArithOverflowInst* inst);
     llvm::Value* codegenArrayOp(const ArrayOpInst* inst);
     llvm::Value* codegenArrayOpElement(Token::Kind op, llvm::Value* left, llvm::Value* right, IRType* elemType);
     llvm::Value* codegenUnary(const UnaryInst* inst);
@@ -102,6 +104,9 @@ struct LLVMGenerator {
     llvm::Module* module = nullptr;
     std::vector<llvm::Module*> generatedModules;
     std::unordered_map<const Value*, llvm::Value*> generatedValues;
+    // Raw {result, overflow} structs of checked arithmetic intrinsics, stashed
+    // for ArithOverflowInst to extract the flag from (see codegenCheckedArith).
+    std::unordered_map<const Value*, llvm::Value*> checkedArithStructs;
     // A loop-lowered array op splits its cx block; the terminator lands in
     // the continuation block, which successors must reference as the
     // predecessor instead (see codegenArrayOp). Keyed by cx block, which is

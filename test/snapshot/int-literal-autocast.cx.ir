@@ -8,8 +8,8 @@ int32 main() {
     store uint64 42 to b
     store int8 -42 to c
     uint64 b.load = load b
-    uint64 _1 = b.load + uint64 1
-    bool _2 = _1 < b.load
+    uint64 _1 = checkedarith + b.load, uint64 1
+    bool _2 = overflow _1
     bool _3 = !_2
     bool overflow.condition = _3 == bool false
     br overflow.condition, overflow.fail, overflow.success

@@ -237,6 +237,10 @@ IRType* Value::getType() const {
     }
     case ValueKind::SizeofInst:
         return llvm::cast<SizeofInst>(this)->resultType;
+    case ValueKind::CheckedArithInst:
+        return llvm::cast<CheckedArithInst>(this)->left->getType();
+    case ValueKind::ArithOverflowInst:
+        return getIRType(Type::getBool());
     case ValueKind::BasicBlock:
         llvm_unreachable("unhandled BasicBlock");
     case ValueKind::Function: {
@@ -283,6 +287,8 @@ const Expr* Value::getExpr() const {
         return llvm::cast<ConstGEPInst>(this)->expr;
     case ValueKind::ArrayOpInst:
         return llvm::cast<ArrayOpInst>(this)->expr;
+    case ValueKind::CheckedArithInst:
+        return llvm::cast<CheckedArithInst>(this)->expr;
     default:
         return nullptr;
     }
@@ -326,6 +332,10 @@ std::string Value::getName() const {
         return llvm::cast<ArrayOpInst>(this)->name;
     case ValueKind::SizeofInst:
         return ("sizeof(" + llvm::cast<SizeofInst>(this)->type->getName() + ")").str();
+    case ValueKind::CheckedArithInst:
+        return llvm::cast<CheckedArithInst>(this)->name;
+    case ValueKind::ArithOverflowInst:
+        return llvm::cast<ArithOverflowInst>(this)->name;
     case ValueKind::BasicBlock:
         return llvm::cast<BasicBlock>(this)->name;
     case ValueKind::Function:
@@ -523,6 +533,17 @@ void Value::print(llvm::raw_ostream& stream) const {
     }
     case ValueKind::SizeofInst:
         llvm_unreachable("unhandled SizeofInst");
+    case ValueKind::CheckedArithInst: {
+        auto checked = llvm::cast<CheckedArithInst>(this);
+        stream << indent << formatTypeAndName(checked) << " = checkedarith " << checked->op << " " << formatName(checked->left) << ", "
+               << formatName(checked->right);
+        break;
+    }
+    case ValueKind::ArithOverflowInst: {
+        auto overflow = llvm::cast<ArithOverflowInst>(this);
+        stream << indent << formatTypeAndName(overflow) << " = overflow " << formatName(overflow->checked);
+        break;
+    }
     case ValueKind::BasicBlock:
         llvm_unreachable("handled via Function");
     case ValueKind::Function: {
@@ -804,6 +825,38 @@ bool cx::pointeeConstDiffers(IRType* a, IRType* b) {
     if (!pa || !pb) return false;
     if (pa->mutablePointee != pb->mutablePointee) return true;
     return pointeeConstDiffers(pa->pointee, pb->pointee);
+}
+
+int cx::getIntegerBitWidth(IRType* type) {
+    // c_size_t is pointer-sized like C's size_t; the host pointer width is
+    // the target width (native host, or wasm32 under Emscripten).
+    auto name = llvm::cast<IRBasicType>(type)->name;
+    if (name == "c_size_t") return static_cast<int>(sizeof(void*) * 8);
+    if (name == "c_long" || name == "c_ulong") return static_cast<int>(sizeof(long) * 8);
+    return llvm::StringSwitch<int>(name)
+        .Cases({"int8", "uint8", "c_schar", "c_uchar"}, 8)
+        .Cases({"int16", "uint16", "c_short", "c_ushort"}, 16)
+        .Cases({"int32", "uint32", "c_int", "c_uint"}, 32)
+        .Cases({"int64", "uint64", "c_longlong", "c_ulonglong"}, 64)
+        .Cases({"int128", "uint128"}, 128)
+        .Default(0);
+}
+
+Type cx::getUnsignedIntegerType(int width) {
+    switch (width) {
+    case 8:
+        return Type::getUInt8();
+    case 16:
+        return Type::getUInt16();
+    case 32:
+        return Type::getUInt32();
+    case 64:
+        return Type::getUInt64();
+    case 128:
+        return Type::getUInt128();
+    default:
+        llvm_unreachable("invalid integer width");
+    }
 }
 
 // Maps a builtin name to its (category, bits) calling-convention class,

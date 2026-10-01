@@ -382,38 +382,6 @@ Value* IRGenerator::emitNullCoalescingExpr(const BinaryExpr& expr) {
     return endBlock->parameter;
 }
 
-static int getIntegerBitWidth(IRType* type) {
-    // c_size_t is pointer-sized like C's size_t; the host pointer width is
-    // the target width (native host, or wasm32 under Emscripten).
-    auto name = llvm::cast<IRBasicType>(type)->name;
-    if (name == "c_size_t") return static_cast<int>(sizeof(void*) * 8);
-    if (name == "c_long" || name == "c_ulong") return static_cast<int>(sizeof(long) * 8);
-    return llvm::StringSwitch<int>(name)
-        .Cases({"int8", "uint8", "c_schar", "c_uchar"}, 8)
-        .Cases({"int16", "uint16", "c_short", "c_ushort"}, 16)
-        .Cases({"int32", "uint32", "c_int", "c_uint"}, 32)
-        .Cases({"int64", "uint64", "c_longlong", "c_ulonglong"}, 64)
-        .Cases({"int128", "uint128"}, 128)
-        .Default(0);
-}
-
-static Type getUnsignedIntegerType(int width) {
-    switch (width) {
-    case 8:
-        return Type::getUInt8();
-    case 16:
-        return Type::getUInt16();
-    case 32:
-        return Type::getUInt32();
-    case 64:
-        return Type::getUInt64();
-    case 128:
-        return Type::getUInt128();
-    default:
-        llvm_unreachable("invalid integer width");
-    }
-}
-
 Value* IRGenerator::createSelect(Value* condition, Value* trueValue, Value* falseValue) {
     ASSERT(trueValue->getType()->equals(falseValue->getType()));
     auto* function = insertBlock->parent;
@@ -447,81 +415,27 @@ Value* IRGenerator::emitWrappingArithmetic(Token::Kind op, Value* left, Value* r
     int width = getIntegerBitWidth(type);
     ASSERT(width != 0);
     bool isSigned = type->isSignedInteger();
-    bool detectOverflow = overflowedOut != nullptr;
 
     Value* result;
     Value* overflowed = nullptr;
 
-    if (width < 64) {
-        // The operation is exact in 64 bits, so any loss in the round trip is an overflow.
+    if (overflowedOut) {
+        // The backends detect the overflow from this node: with.overflow
+        // intrinsics in LLVM, manual checks in C (see CheckedArithInst).
+        result = createCheckedArith(op, left, right, &expr);
+        overflowed = createArithOverflow(result);
+    } else if (width < 64) {
+        // The operation is exact in 64 bits, so truncating back down wraps.
         // Widen only to 64 bits: MSVC and xcc (the playground's C compiler) don't support
-        // __int128, so 64-bit operands use the in-width checks below instead of widening.
+        // __int128, so 64-bit operands use the in-width wrapping below instead of widening.
         auto* wideType = getIRType(isSigned ? Type::getInt64() : Type::getUInt64());
-        auto* wideLeft = createCast(left, wideType);
-        auto* wideRight = createCast(right, wideType);
-        auto* wideResult = createBinaryOp(op, wideLeft, wideRight, &expr);
-        result = createCast(wideResult, type);
-        if (detectOverflow) overflowed = createBinaryOp(Token::NotEqual, wideResult, createCast(result, wideType), &expr);
-    } else if (op != Token::Star) {
+        result = createCast(createBinaryOp(op, createCast(left, wideType), createCast(right, wideType), &expr), type);
+    } else {
         // Compute in the unsigned domain so the wrapping step isn't signed overflow in the C backend.
         auto* unsignedType = getIRType(getUnsignedIntegerType(width));
         auto* a = createCastIfNeeded(left, unsignedType);
         auto* b = createCastIfNeeded(right, unsignedType);
-        auto* r = createBinaryOp(op, a, b, &expr);
-        result = createCastIfNeeded(r, type);
-        if (detectOverflow) {
-            if (!isSigned) {
-                overflowed = createBinaryOp(Token::Less, op == Token::Plus ? r : a, op == Token::Plus ? a : b, &expr);
-            } else {
-                // Add and subtract set the sign bit of (a^r)&(b^r) and (a^b)&(a^r) respectively on overflow.
-                auto* x = createBinaryOp(Token::Xor, a, op == Token::Plus ? r : b, &expr);
-                auto* y = createBinaryOp(Token::Xor, op == Token::Plus ? b : a, r, &expr);
-                // Cast the 1 up from 32 bits: the C backend prints integer constants without a type,
-                // so a bare 1 would shift as a C int.
-                auto* one = createCast(createConstantInt(Type::getUInt32(), 1), unsignedType);
-                auto* signBit = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
-                auto* signBitSet = createBinaryOp(Token::And, createBinaryOp(Token::And, x, y, &expr), signBit, &expr);
-                overflowed = createBinaryOp(Token::NotEqual, signBitSet, createConstantInt(unsignedType, 0), &expr);
-            }
-        }
-    } else {
-        // 64-bit multiply can't widen (MSVC and xcc lack __int128) and 128-bit multiply
-        // has no wider type. Wrapping multiply is the unsigned product; overflow is
-        // result / b != a when b != 0, with the MIN / -1 division trap guarded.
-        auto* unsignedType = getIRType(getUnsignedIntegerType(width));
-        auto* a = createCastIfNeeded(left, unsignedType);
-        auto* b = createCastIfNeeded(right, unsignedType);
-        result = createCastIfNeeded(createBinaryOp(Token::Star, a, b, &expr), type);
-
-        if (detectOverflow) {
-            auto* function = insertBlock->parent;
-            auto* checkBlock = new BasicBlock("overflow.check", function);
-            auto* endBlock = new BasicBlock("overflow.end");
-            auto* divisorIsZero = createBinaryOp(Token::Equal, right, createConstantInt(type, 0), &expr);
-            createCondBr(divisorIsZero, endBlock, checkBlock, createConstantBool(false));
-
-            setInsertPoint(checkBlock);
-            if (isSigned) {
-                auto* minusOne = createConstantInt(type, -1);
-                auto* one = createCast(createConstantInt(Type::getUInt32(), 1), unsignedType);
-                auto* minValue = createBinaryOp(Token::LeftShift, one, createConstantInt(unsignedType, width - 1), &expr);
-                auto* min = createCast(minValue, type);
-                auto* leftIsMinusOne = createBinaryOp(Token::Equal, left, minusOne, &expr);
-                auto* rightIsMin = createBinaryOp(Token::Equal, right, min, &expr);
-                auto* minCase1 = createBinaryOp(Token::And, leftIsMinusOne, rightIsMin, &expr);
-                auto* leftIsMin = createBinaryOp(Token::Equal, left, min, &expr);
-                auto* rightIsMinusOne = createBinaryOp(Token::Equal, right, minusOne, &expr);
-                auto* minCase2 = createBinaryOp(Token::And, leftIsMin, rightIsMinusOne, &expr);
-                auto* divBlock = new BasicBlock("overflow.div", function);
-                createCondBr(createBinaryOp(Token::Or, minCase1, minCase2, &expr), endBlock, divBlock, createConstantBool(true));
-                setInsertPoint(divBlock);
-            }
-            createBr(endBlock, createBinaryOp(Token::NotEqual, createBinaryOp(Token::Slash, result, right, &expr), left, &expr));
-
-            setInsertPoint(endBlock);
-            endBlock->parameter = new Parameter{ValueKind::Parameter, getIRType(Type::getBool()), "overflowed"};
-            overflowed = endBlock->parameter;
-        }
+        result = createCastIfNeeded(createBinaryOp(op, a, b, &expr), type);
     }
 
     if (resultIsChar) result = createCast(result, getIRType(Type::getChar()));

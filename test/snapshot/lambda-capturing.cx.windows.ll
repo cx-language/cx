@@ -49,42 +49,39 @@ define i32 @_CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5
   store i32 %c, ptr %c3, align 4
   %c.load = load i32, ptr %c3, align 4
   %__capture_p.load = load i32, ptr %__capture_p1, align 4
-  %1 = sext i32 %c.load to i64
-  %2 = sext i32 %__capture_p.load to i64
-  %3 = add i64 %1, %2
-  %4 = trunc i64 %3 to i32
-  %5 = sext i32 %4 to i64
-  %6 = icmp ne i64 %3, %5
-  %7 = xor i1 %6, true
-  %overflow.condition = icmp eq i1 %7, false
+  %1 = call { i32, i1 } @llvm.sadd.with.overflow.i32(i32 %c.load, i32 %__capture_p.load)
+  %2 = extractvalue { i32, i1 } %1, 0
+  %3 = extractvalue { i32, i1 } %1, 1
+  %4 = xor i1 %3, true
+  %overflow.condition = icmp eq i1 %4, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !9
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %0
   %__capture_d.load = load i32, ptr %__capture_d2, align 4
-  %9 = sext i32 %4 to i64
-  %10 = sext i32 %__capture_d.load to i64
-  %11 = add i64 %9, %10
-  %12 = trunc i64 %11 to i32
-  %13 = sext i32 %12 to i64
-  %14 = icmp ne i64 %11, %13
-  %15 = xor i1 %14, true
-  %overflow.condition4 = icmp eq i1 %15, false
+  %6 = call { i32, i1 } @llvm.sadd.with.overflow.i32(i32 %2, i32 %__capture_d.load)
+  %7 = extractvalue { i32, i1 } %6, 0
+  %8 = extractvalue { i32, i1 } %6, 1
+  %9 = xor i1 %8, true
+  %overflow.condition4 = icmp eq i1 %9, false
   br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
 
 overflow.fail5:                                   ; preds = %overflow.success
-  %16 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !9
+  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !9
   unreachable
 
 overflow.success6:                                ; preds = %overflow.success
-  ret i32 %12
+  ret i32 %7
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
+
+; Function Attrs: nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none)
+declare { i32, i1 } @llvm.sadd.with.overflow.i32(i32, i32) #2
 
 declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
 
@@ -161,22 +158,19 @@ define i32 @_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(i32 %
   store i32 %c, ptr %c2, align 4
   %c.load = load i32, ptr %c2, align 4
   %__capture_a.load = load i32, ptr %__capture_a1, align 4
-  %1 = sext i32 %c.load to i64
-  %2 = sext i32 %__capture_a.load to i64
-  %3 = add i64 %1, %2
-  %4 = trunc i64 %3 to i32
-  %5 = sext i32 %4 to i64
-  %6 = icmp ne i64 %3, %5
-  %7 = xor i1 %6, true
-  %overflow.condition = icmp eq i1 %7, false
+  %1 = call { i32, i1 } @llvm.sadd.with.overflow.i32(i32 %c.load, i32 %__capture_a.load)
+  %2 = extractvalue { i32, i1 } %1, 0
+  %3 = extractvalue { i32, i1 } %1, 1
+  %4 = xor i1 %3, true
+  %overflow.condition = icmp eq i1 %4, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !20
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !20
   unreachable
 
 overflow.success:                                 ; preds = %0
-  ret i32 %4
+  ret i32 %2
 }
 
 declare void @_CX1N3std10checkLeaksE4void0_() #0
@@ -190,44 +184,39 @@ define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4mai
   store i32 %x, ptr %x3, align 4
   %x.load = load i32, ptr %x3, align 4
   %__capture_c.load = load i32, ptr %__capture_c1, align 4
-  %1 = sext i32 %x.load to i64
-  %2 = sext i32 %__capture_c.load to i64
-  %3 = add i64 %1, %2
-  %4 = trunc i64 %3 to i32
-  %5 = sext i32 %4 to i64
-  %6 = icmp ne i64 %3, %5
-  %7 = xor i1 %6, true
-  %overflow.condition = icmp eq i1 %7, false
+  %1 = call { i32, i1 } @llvm.sadd.with.overflow.i32(i32 %x.load, i32 %__capture_c.load)
+  %2 = extractvalue { i32, i1 } %1, 0
+  %3 = extractvalue { i32, i1 } %1, 1
+  %4 = xor i1 %3, true
+  %overflow.condition = icmp eq i1 %4, false
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %8 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @3), !dbg !22
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @3), !dbg !22
   unreachable
 
 overflow.success:                                 ; preds = %0
   %__capture_this.load = load ptr, ptr %__capture_this2, align 8
   %d = getelementptr inbounds %S, ptr %__capture_this.load, i32 0, i32 0
   %d.load = load i32, ptr %d, align 4
-  %9 = sext i32 %4 to i64
-  %10 = sext i32 %d.load to i64
-  %11 = add i64 %9, %10
-  %12 = trunc i64 %11 to i32
-  %13 = sext i32 %12 to i64
-  %14 = icmp ne i64 %11, %13
-  %15 = xor i1 %14, true
-  %overflow.condition4 = icmp eq i1 %15, false
+  %6 = call { i32, i1 } @llvm.sadd.with.overflow.i32(i32 %2, i32 %d.load)
+  %7 = extractvalue { i32, i1 } %6, 0
+  %8 = extractvalue { i32, i1 } %6, 1
+  %9 = xor i1 %8, true
+  %overflow.condition4 = icmp eq i1 %9, false
   br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
 
 overflow.fail5:                                   ; preds = %overflow.success
-  %16 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @4), !dbg !22
+  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @4), !dbg !22
   unreachable
 
 overflow.success6:                                ; preds = %overflow.success
-  ret i32 %12
+  ret i32 %7
 }
 
 attributes #0 = { "frame-pointer"="all" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none) }
 
 !llvm.module.flags = !{!0, !1}
 !llvm.dbg.cu = !{!2}

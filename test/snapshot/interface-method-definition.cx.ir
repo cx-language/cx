@@ -20,23 +20,19 @@ int32 _CX1N4mainM4main1B1gEM3std5int320_(B* this) {
     store this to this_0
     B* this.load = load this_0
     int32 _0 = call _CX1N4mainM4main1B1fEM3std5int320_(B* this.load)
-    int64 _1 = cast _0 to int64
-    int64 _2 = cast int32 2 to int64
-    int64 _3 = _1 * _2
-    int32 _4 = cast _3 to int32
-    int64 _5 = cast _4 to int64
-    bool _6 = _3 != _5
-    bool _7 = !_6
-    bool overflow.condition = _7 == bool false
+    int32 _1 = checkedarith * _0, int32 2
+    bool _2 = overflow _1
+    bool _3 = !_2
+    bool overflow.condition = _3 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at interface-method-definition.cx:5:26
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at interface-method-definition.cx:5:26
 ")
     unreachable
 
 overflow.success:
-    return _4
+    return _1
 }
 
 int32 _CX1N4mainM4main1B1fEM3std5int320_(B* this) {

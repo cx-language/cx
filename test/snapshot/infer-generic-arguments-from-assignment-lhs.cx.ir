@@ -166,14 +166,10 @@ if.then:
     List<int32>* this.load_1 = load this_0
     int32* size = getelementptr this.load_1, 1
     int32 size.load = load size
-    int64 _5 = cast int32 4 to int64
-    int64 _6 = cast size.load to int64
-    int64 _7 = _5 * _6
-    int32 _8 = cast _7 to int32
-    int64 _9 = cast _8 to int64
-    bool _10 = _7 != _9
-    bool _11 = !_10
-    bool overflow.condition = _11 == bool false
+    int32 _5 = checkedarith * int32 4, size.load
+    bool _6 = overflow _5
+    bool _7 = !_6
+    bool overflow.condition = _7 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 if.else:
@@ -183,24 +179,24 @@ if.end:
     return void
 
 overflow.fail:
-    never _12 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at List.cx:156:64
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at List.cx:156:64
 ")
     unreachable
 
 overflow.success:
-    c_size_t _13 = cast _8 to c_size_t
-    void* _14 = call memcpy(void* _3, void* _4, c_size_t _13)
+    c_size_t _9 = cast _5 to c_size_t
+    void* _10 = call memcpy(void* _3, void* _4, c_size_t _9)
     List<int32>* this.load_2 = load this_0
     int32* capacity_0 = getelementptr this.load_2, 2
     int32 capacity.load_0 = load capacity_0
-    bool _15 = capacity.load_0 != int32 0
-    br _15, if.then, if.else
+    bool _11 = capacity.load_0 != int32 0
+    br _11, if.then, if.else
 
 if.then_0:
     List<int32>* this.load_3 = load this_0
     int32** buffer_0 = getelementptr this.load_3, 0
     int32* buffer.load_0 = load buffer_0
-    void _16 = call _CX1N3std10deallocateIM3std5int32EE4void1_AM3std5int32(int32* buffer.load_0)
+    void _12 = call _CX1N3std10deallocateIM3std5int32EE4void1_AM3std5int32(int32* buffer.load_0)
     br if.end_0
 
 if.else_0:
@@ -290,53 +286,29 @@ assert.fail:
 
 assert.success:
     int64 count.load_2 = load count_0
-    uint64 _7 = cast int64 4 to uint64
-    uint64 _8 = cast count.load_2 to uint64
-    uint64 _9 = _7 * _8
-    int64 _10 = cast _9 to int64
-    bool _11 = count.load_2 == int64 0
-    br _11, overflow.end(bool false), overflow.check(bool false)
-
-overflow.check:
-    uint64 _12 = cast uint32 1 to uint64
-    uint64 _13 = _12 << uint64 63
-    int64 _14 = cast _13 to int64
-    bool _15 = int64 4 == int64 -1
-    bool _16 = count.load_2 == _14
-    bool _17 = _15 & _16
-    bool _18 = int64 4 == _14
-    bool _19 = count.load_2 == int64 -1
-    bool _20 = _18 & _19
-    bool _21 = _17 | _20
-    br _21, overflow.end(bool true), overflow.div(bool true)
-
-overflow.div:
-    int64 _22 = _10 / count.load_2
-    bool _23 = _22 != int64 4
-    br overflow.end(_23)
-
-overflow.end(bool overflowed):
-    bool _24 = !overflowed
-    bool overflow.condition = _24 == bool false
+    int64 _7 = checkedarith * int64 4, count.load_2
+    bool _8 = overflow _7
+    bool _9 = !_8
+    bool overflow.condition = _9 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _25 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:162:50
+    never _10 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:162:50
 ")
     unreachable
 
 overflow.success:
-    c_size_t _26 = cast _10 to c_size_t
-    void* _27 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t _26)
-    store _27 to allocation
+    c_size_t _11 = cast _7 to c_size_t
+    void* _12 = call _CX1N3std8cxMallocEOP4void1_M3std10c__size__t(c_size_t _11)
+    store _12 to allocation
     void* allocation.load = load allocation
-    bool _28 = allocation.load == void* null
-    br _28, if.then, if.else
+    bool _13 = allocation.load == void* null
+    br _13, if.then, if.else
 
 if.then:
-    void _29 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "memory allocation failed", int32 24)
+    void _14 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "memory allocation failed", int32 24)
     string __str.load = load __str
-    never _30 = call _CX1N3std5abortIM3std6stringEVEM3std5never1_M3std6string(string __str.load)
+    never _15 = call _CX1N3std5abortIM3std6stringEVEM3std5never1_M3std6string(string __str.load)
     br if.end
 
 if.else:
@@ -344,8 +316,8 @@ if.else:
 
 if.end:
     void* allocation.load_0 = load allocation
-    int32* _31 = cast allocation.load_0 to int32*
-    return _31
+    int32* _16 = cast allocation.load_0 to int32*
+    return _16
 }
 
 int32* _CX1N3stdM3std5SliceIM3std5int32E4dataEAM3std5int320_(Slice<int32>* this) {

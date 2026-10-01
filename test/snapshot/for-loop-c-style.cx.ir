@@ -14,32 +14,28 @@ loop.condition:
 loop.body:
     int32 sum.load = load sum
     int32 i.load_0 = load i
-    int64 _1 = cast sum.load to int64
-    int64 _2 = cast i.load_0 to int64
-    int64 _3 = _1 + _2
-    int32 _4 = cast _3 to int32
-    int64 _5 = cast _4 to int64
-    bool _6 = _3 != _5
-    bool _7 = !_6
-    bool overflow.condition = _7 == bool false
+    int32 _1 = checkedarith + sum.load, i.load_0
+    bool _2 = overflow _1
+    bool _3 = !_2
+    bool overflow.condition = _3 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
     int32 i.load_1 = load i
-    int32 _8 = i.load_1 + int32 1
-    store _8 to i
+    int32 _4 = i.load_1 + int32 1
+    store _4 to i
     br loop.condition
 
 loop.end:
-    void _9 = call _CX1N3std10checkLeaksE4void0_()
+    void _5 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 
 overflow.fail:
-    never _10 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at for-loop-c-style.cx:6:13
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at for-loop-c-style.cx:6:13
 ")
     unreachable
 
 overflow.success:
-    store _4 to sum
+    store _1 to sum
     br loop.increment
 }

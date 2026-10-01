@@ -6,43 +6,35 @@ int32[2] _CX1N4main1fE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32(int32 foo, 
     store bar to bar_0
     int32 foo.load = load foo_0
     int32 bar.load = load bar_0
-    int64 _0 = cast foo.load to int64
-    int64 _1 = cast bar.load to int64
-    int64 _2 = _0 + _1
-    int32 _3 = cast _2 to int32
-    int64 _4 = cast _3 to int64
-    bool _5 = _2 != _4
-    bool _6 = !_5
-    bool overflow.condition = _6 == bool false
+    int32 _0 = checkedarith + foo.load, bar.load
+    bool _1 = overflow _0
+    bool _2 = !_1
+    bool overflow.condition = _2 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:17
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:17
 ")
     unreachable
 
 overflow.success:
-    int32[2] _8 = insertvalue int32[2] undefined, 0, _3
+    int32[2] _4 = insertvalue int32[2] undefined, 0, _0
     int32 foo.load_0 = load foo_0
     int32 bar.load_0 = load bar_0
-    int64 _9 = cast foo.load_0 to int64
-    int64 _10 = cast bar.load_0 to int64
-    int64 _11 = _9 - _10
-    int32 _12 = cast _11 to int32
-    int64 _13 = cast _12 to int64
-    bool _14 = _11 != _13
-    bool _15 = !_14
-    bool overflow.condition_0 = _15 == bool false
+    int32 _5 = checkedarith - foo.load_0, bar.load_0
+    bool _6 = overflow _5
+    bool _7 = !_6
+    bool overflow.condition_0 = _7 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _16 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:28
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:4:28
 ")
     unreachable
 
 overflow.success_0:
-    int32[2] _17 = insertvalue _8, 1, _12
-    return _17
+    int32[2] _9 = insertvalue _4, 1, _5
+    return _9
 }
 
 int32[2] _CX1N4main1gE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32(int32 foo, int32 bar) {
@@ -53,43 +45,35 @@ int32[2] _CX1N4main1gE5ArrayIM3std5int32N2_E2_M3std5int32M3std5int32(int32 foo, 
     store bar to bar_0
     int32 foo.load = load foo_0
     int32 bar.load = load bar_0
-    int64 _0 = cast foo.load to int64
-    int64 _1 = cast bar.load to int64
-    int64 _2 = _0 + _1
-    int32 _3 = cast _2 to int32
-    int64 _4 = cast _3 to int64
-    bool _5 = _2 != _4
-    bool _6 = !_5
-    bool overflow.condition = _6 == bool false
+    int32 _0 = checkedarith + foo.load, bar.load
+    bool _1 = overflow _0
+    bool _2 = !_1
+    bool overflow.condition = _2 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:18
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:18
 ")
     unreachable
 
 overflow.success:
-    int32[2] _8 = insertvalue int32[2] undefined, 0, _3
+    int32[2] _4 = insertvalue int32[2] undefined, 0, _0
     int32 foo.load_0 = load foo_0
     int32 bar.load_0 = load bar_0
-    int64 _9 = cast foo.load_0 to int64
-    int64 _10 = cast bar.load_0 to int64
-    int64 _11 = _9 - _10
-    int32 _12 = cast _11 to int32
-    int64 _13 = cast _12 to int64
-    bool _14 = _11 != _13
-    bool _15 = !_14
-    bool overflow.condition_0 = _15 == bool false
+    int32 _5 = checkedarith - foo.load_0, bar.load_0
+    bool _6 = overflow _5
+    bool _7 = !_6
+    bool overflow.condition_0 = _7 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _16 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:29
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at array-literal-non-constant-elements.cx:8:29
 ")
     unreachable
 
 overflow.success_0:
-    int32[2] _17 = insertvalue _8, 1, _12
-    store _17 to c
+    int32[2] _9 = insertvalue _4, 1, _5
+    store _9 to c
     int32[2] c.load = load c
     return c.load
 }

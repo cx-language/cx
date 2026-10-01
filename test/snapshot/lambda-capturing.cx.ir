@@ -28,40 +28,32 @@ int32 _CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5int32(
     store c to c_0
     int32 c.load = load c_0
     int32 __capture_p.load = load __capture_p_0
-    int64 _0 = cast c.load to int64
-    int64 _1 = cast __capture_p.load to int64
-    int64 _2 = _0 + _1
-    int32 _3 = cast _2 to int32
-    int64 _4 = cast _3 to int64
-    bool _5 = _2 != _4
-    bool _6 = !_5
-    bool overflow.condition = _6 == bool false
+    int32 _0 = checkedarith + c.load, __capture_p.load
+    bool _1 = overflow _0
+    bool _2 = !_1
+    bool overflow.condition = _2 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:5:26
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:5:26
 ")
     unreachable
 
 overflow.success:
     int32 __capture_d.load = load __capture_d_0
-    int64 _8 = cast _3 to int64
-    int64 _9 = cast __capture_d.load to int64
-    int64 _10 = _8 + _9
-    int32 _11 = cast _10 to int32
-    int64 _12 = cast _11 to int64
-    bool _13 = _10 != _12
-    bool _14 = !_13
-    bool overflow.condition_0 = _14 == bool false
+    int32 _4 = checkedarith + _0, __capture_d.load
+    bool _5 = overflow _4
+    bool _6 = !_5
+    bool overflow.condition_0 = _6 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _15 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:5:30
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:5:30
 ")
     unreachable
 
 overflow.success_0:
-    return _11
+    return _4
 }
 
 int32 main() {
@@ -123,23 +115,19 @@ int32 _CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(int32 __cap
     store c to c_0
     int32 c.load = load c_0
     int32 __capture_a.load = load __capture_a_0
-    int64 _0 = cast c.load to int64
-    int64 _1 = cast __capture_a.load to int64
-    int64 _2 = _0 + _1
-    int32 _3 = cast _2 to int32
-    int64 _4 = cast _3 to int64
-    bool _5 = _2 != _4
-    bool _6 = !_5
-    bool overflow.condition = _6 == bool false
+    int32 _0 = checkedarith + c.load, __capture_a.load
+    bool _1 = overflow _0
+    bool _2 = !_1
+    bool overflow.condition = _2 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:23:26
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:23:26
 ")
     unreachable
 
 overflow.success:
-    return _3
+    return _0
 }
 
 int32 _CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(int32 __capture_c, S* __capture_this, int32 x) {
@@ -151,18 +139,14 @@ int32 _CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(in
     store x to x_0
     int32 x.load = load x_0
     int32 __capture_c.load = load __capture_c_0
-    int64 _0 = cast x.load to int64
-    int64 _1 = cast __capture_c.load to int64
-    int64 _2 = _0 + _1
-    int32 _3 = cast _2 to int32
-    int64 _4 = cast _3 to int64
-    bool _5 = _2 != _4
-    bool _6 = !_5
-    bool overflow.condition = _6 == bool false
+    int32 _0 = checkedarith + x.load, __capture_c.load
+    bool _1 = overflow _0
+    bool _2 = !_1
+    bool overflow.condition = _2 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:13:30
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:13:30
 ")
     unreachable
 
@@ -170,21 +154,17 @@ overflow.success:
     S* __capture_this.load = load __capture_this_0
     int32* d = getelementptr __capture_this.load, 0
     int32 d.load = load d
-    int64 _8 = cast _3 to int64
-    int64 _9 = cast d.load to int64
-    int64 _10 = _8 + _9
-    int32 _11 = cast _10 to int32
-    int64 _12 = cast _11 to int64
-    bool _13 = _10 != _12
-    bool _14 = !_13
-    bool overflow.condition_0 = _14 == bool false
+    int32 _4 = checkedarith + _0, d.load
+    bool _5 = overflow _4
+    bool _6 = !_5
+    bool overflow.condition_0 = _6 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _15 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:13:34
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at lambda-capturing.cx:13:34
 ")
     unreachable
 
 overflow.success_0:
-    return _11
+    return _4
 }

@@ -19,31 +19,27 @@ loop.body:
     store _4 to i
     int32 p.load = load p
     int32 i.load = load i
-    int64 _5 = cast p.load to int64
-    int64 _6 = cast i.load to int64
-    int64 _7 = _5 - _6
-    int32 _8 = cast _7 to int32
-    int64 _9 = cast _8 to int64
-    bool _10 = _7 != _9
-    bool _11 = !_10
-    bool overflow.condition = _11 == bool false
+    int32 _5 = checkedarith - p.load, i.load
+    bool _6 = overflow _5
+    bool _7 = !_6
+    bool overflow.condition = _7 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
-    void _12 = call _CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(RangeIterator<int32>* __iterator)
+    void _8 = call _CX1N3stdM3std13RangeIteratorIM3std5int32E9incrementE4void0_(RangeIterator<int32>* __iterator)
     br loop.condition
 
 loop.end:
     int32 p.load_0 = load p
-    void _13 = call _CX1N3std10checkLeaksE4void0_()
+    void _9 = call _CX1N3std10checkLeaksE4void0_()
     return p.load_0
 
 overflow.fail:
-    never _14 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at exclusive-range-operator.cx:7:11
+    never _10 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at exclusive-range-operator.cx:7:11
 ")
     unreachable
 
 overflow.success:
-    store _8 to p
+    store _5 to p
     br loop.increment
 }

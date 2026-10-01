@@ -1,0 +1,81 @@
+// RUN: %cx -print-ir %s | %FileCheck %s --check-prefix=IR
+// RUN: %cx -print-llvm %s | %FileCheck %s
+// RUN: %cx -print-c %s | %FileCheck %s --check-prefix=C
+// RUN: %cx -print-c --c-dispatch %s | %FileCheck %s --check-prefix=C-DISPATCH
+
+// Checked integer arithmetic lowers to one IR node pair per operation. The
+// LLVM backend emits with.overflow intrinsics (hardware flags) for them; the
+// C backend expands the manual checks inline.
+
+// IR: = checkedarith + {{.*}}, {{.*}}
+// IR: = overflow {{.*}}
+// CHECK: call { i64, i1 } @llvm.sadd.with.overflow.i64(i64 {{.*}}, i64 {{.*}})
+// C: _checked_arith{{[0-9]+}} = ((int64_t)(((uint64_t){{.*}}) + ((uint64_t){{.*}})));
+// C: _arith_overflow{{[0-9]+}} = (((({{.*}} ^ {{.*}}) & ({{.*}} ^ {{.*}})) & ((uint64_t)1 << 63)) != 0);
+// C-DISPATCH: _CX1N4main6sadd64EM3std5int642_M3std5int64M3std5int64(int64_t a, int64_t b) {
+// C-DISPATCH: int64_t _checked_arith{{[0-9]+}};
+// C-DISPATCH: _Bool _arith_overflow{{[0-9]+}};
+// C-DISPATCH: _checked_arith{{[0-9]+}} = ((int64_t)(((uint64_t){{.*}}) + ((uint64_t){{.*}})));
+// C-DISPATCH: _arith_overflow{{[0-9]+}} = (((({{.*}} ^ {{.*}}) & ({{.*}} ^ {{.*}})) & ((uint64_t)1 << 63)) != 0);
+int64 sadd64(int64 a, int64 b) { return a + b; }
+
+// IR: = checkedarith - {{.*}}, {{.*}}
+// IR: = overflow {{.*}}
+// CHECK: call { i64, i1 } @llvm.ssub.with.overflow.i64(i64 {{.*}}, i64 {{.*}})
+// C: _checked_arith{{[0-9]+}} = ((int64_t)(((uint64_t){{.*}}) - ((uint64_t){{.*}})));
+// C: _arith_overflow{{[0-9]+}} = (((({{.*}} ^ {{.*}}) & ({{.*}} ^ {{.*}})) & ((uint64_t)1 << 63)) != 0);
+int64 ssub64(int64 a, int64 b) { return a - b; }
+
+// IR: = checkedarith * {{.*}}, {{.*}}
+// IR: = overflow {{.*}}
+// CHECK: call { i64, i1 } @llvm.smul.with.overflow.i64(i64 {{.*}}, i64 {{.*}})
+// C: _checked_arith{{[0-9]+}} = ((int64_t)(((uint64_t){{.*}}) * ((uint64_t){{.*}})));
+// C: _arith_overflow{{[0-9]+}} = ({{.*}} != 0) && ({{.*}} == -1) && {{.*}});
+int64 smul64(int64 a, int64 b) { return a * b; }
+
+// IR: = checkedarith + {{.*}}, {{.*}}
+// IR: = overflow {{.*}}
+// CHECK: call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 {{.*}}, i64 {{.*}})
+// C: _checked_arith{{[0-9]+}} = {{.*}} + {{.*}};
+// C: _arith_overflow{{[0-9]+}} = ({{.*}} < {{.*}});
+uint64 uadd64(uint64 a, uint64 b) { return a + b; }
+
+// IR: = checkedarith - {{.*}}, {{.*}}
+// IR: = overflow {{.*}}
+// CHECK: call { i64, i1 } @llvm.usub.with.overflow.i64(i64 {{.*}}, i64 {{.*}})
+// C: _checked_arith{{[0-9]+}} = {{.*}} - {{.*}};
+// C: _arith_overflow{{[0-9]+}} = ({{.*}} < {{.*}});
+uint64 usub64(uint64 a, uint64 b) { return a - b; }
+
+// IR: = checkedarith * {{.*}}, {{.*}}
+// IR: = overflow {{.*}}
+// CHECK: call { i64, i1 } @llvm.umul.with.overflow.i64(i64 {{.*}}, i64 {{.*}})
+// C: _checked_arith{{[0-9]+}} = {{.*}} * {{.*}};
+// C: _arith_overflow{{[0-9]+}} = ({{.*}} != 0) && ((({{.*}} / {{.*}}) != {{.*}}));
+uint64 umul64(uint64 a, uint64 b) { return a * b; }
+
+// Sub-64-bit operations widen to 64 bits for the check.
+// IR: = checkedarith + {{.*}}, {{.*}}
+// IR: = overflow {{.*}}
+// CHECK: call { i32, i1 } @llvm.sadd.with.overflow.i32(i32 {{.*}}, i32 {{.*}})
+// C: _checked_arith{{[0-9]+}} = ((int32_t)(((uint32_t){{.*}}) + ((uint32_t){{.*}})));
+// C: _arith_overflow{{[0-9]+}} = (((int64_t){{.*}}) + ((int64_t){{.*}})) != ((int64_t)_checked_arith{{[0-9]+}});
+int32 sadd32(int32 a, int32 b) { return a + b; }
+
+// IR: = checkedarith + {{.*}}, {{.*}}
+// IR: = overflow {{.*}}
+// CHECK: call { i128, i1 } @llvm.sadd.with.overflow.i128(i128 {{.*}}, i128 {{.*}})
+// C: _checked_arith{{[0-9]+}} = ((__int128)(((unsigned __int128){{.*}}) + ((unsigned __int128){{.*}})));
+// C: _arith_overflow{{[0-9]+}} = (((({{.*}} ^ {{.*}}) & ({{.*}} ^ {{.*}})) & ((unsigned __int128)1 << 127)) != 0);
+int128 sadd128(int128 a, int128 b) { return a + b; }
+
+void main() {
+    println(sadd64(1, 2));
+    println(ssub64(1, 2));
+    println(smul64(1, 2));
+    println(uadd64(1, 2));
+    println(usub64(1, 2));
+    println(umul64(1, 2));
+    println(sadd32(1, 2));
+    println(sadd128(int128(1), int128(2)) == int128(3) ? 1 : 0);
+}

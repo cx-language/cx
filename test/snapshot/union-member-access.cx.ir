@@ -17,22 +17,18 @@ int32 main() {
     c_int* b = cast u to c_int*
     c_int b.load = load b
     int32 _1 = cast b.load to int32
-    int64 _2 = cast _0 to int64
-    int64 _3 = cast _1 to int64
-    int64 _4 = _2 + _3
-    int32 _5 = cast _4 to int32
-    int64 _6 = cast _5 to int64
-    bool _7 = _4 != _6
-    bool _8 = !_7
-    bool overflow.condition = _8 == bool false
+    int32 _2 = checkedarith + _0, _1
+    bool _3 = overflow _2
+    bool _4 = !_3
+    bool overflow.condition = _4 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at union-member-access.cx:13:19
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at union-member-access.cx:13:19
 ")
     unreachable
 
 overflow.success:
-    void _10 = call _CX1N3std10checkLeaksE4void0_()
-    return _5
+    void _6 = call _CX1N3std10checkLeaksE4void0_()
+    return _2
 }

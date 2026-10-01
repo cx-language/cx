@@ -216,6 +216,16 @@ struct IRGenerator {
     Value* createArrayOp(BinaryOperator op, Value* left, Value* right, IRType* arrayType, const Expr* expr, const llvm::Twine& name = "") {
         return insertBlock->add(new ArrayOpInst{ValueKind::ArrayOpInst, op, left, right, arrayType, expr, name.str()});
     }
+    Value* createCheckedArith(BinaryOperator op, Value* left, Value* right, const Expr* expr, const llvm::Twine& name = "") {
+        ASSERT(left->getType()->equals(right->getType()));
+        ASSERT(left->getType()->isInteger());
+        ASSERT(op == Token::Plus || op == Token::Minus || op == Token::Star);
+        return insertBlock->add(new CheckedArithInst{ValueKind::CheckedArithInst, op, left, right, expr, name.str()});
+    }
+    Value* createArithOverflow(Value* checked, const llvm::Twine& name = "") {
+        ASSERT(checked->kind == ValueKind::CheckedArithInst);
+        return insertBlock->add(new ArithOverflowInst{ValueKind::ArithOverflowInst, checked, name.str()});
+    }
     Value* createIsNull(Value* value, const Expr* expr, const llvm::Twine& name) {
         Value* nullValue;
         auto type = value->getType();

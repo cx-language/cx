@@ -3,77 +3,65 @@ int32 main() {
     int32* i = alloca int32
     store int32 0 to i
     int32 i.load = load i
-    int64 _0 = cast i.load to int64
-    int64 _1 = cast int32 1 to int64
-    int64 _2 = _0 + _1
-    int32 _3 = cast _2 to int32
-    int64 _4 = cast _3 to int64
-    bool _5 = _2 != _4
-    bool _6 = !_5
-    bool overflow.condition = _6 == bool false
+    int32 _0 = checkedarith + i.load, int32 1
+    bool _1 = overflow _0
+    bool _2 = !_1
+    bool overflow.condition = _2 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at compound-assignment.cx:5:7
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at compound-assignment.cx:5:7
 ")
     unreachable
 
 overflow.success:
-    store _3 to i
+    store _0 to i
     int32 i.load_0 = load i
-    int64 _8 = cast i.load_0 to int64
-    int64 _9 = cast int32 1 to int64
-    int64 _10 = _8 - _9
-    int32 _11 = cast _10 to int32
-    int64 _12 = cast _11 to int64
-    bool _13 = _10 != _12
-    bool _14 = !_13
-    bool overflow.condition_0 = _14 == bool false
+    int32 _4 = checkedarith - i.load_0, int32 1
+    bool _5 = overflow _4
+    bool _6 = !_5
+    bool overflow.condition_0 = _6 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _15 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at compound-assignment.cx:6:7
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at compound-assignment.cx:6:7
 ")
     unreachable
 
 overflow.success_0:
-    store _11 to i
+    store _4 to i
     int32 i.load_1 = load i
-    int64 _16 = cast i.load_1 to int64
-    int64 _17 = cast int32 1 to int64
-    int64 _18 = _16 * _17
-    int32 _19 = cast _18 to int32
-    int64 _20 = cast _19 to int64
-    bool _21 = _18 != _20
-    bool _22 = !_21
-    bool overflow.condition_1 = _22 == bool false
+    int32 _8 = checkedarith * i.load_1, int32 1
+    bool _9 = overflow _8
+    bool _10 = !_9
+    bool overflow.condition_1 = _10 == bool false
     br overflow.condition_1, overflow.fail, overflow.success
 
 overflow.fail_1:
-    never _23 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at compound-assignment.cx:7:7
+    never _11 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at compound-assignment.cx:7:7
 ")
     unreachable
 
 overflow.success_1:
-    store _19 to i
+    store _8 to i
     int32 i.load_2 = load i
-    int32 _24 = i.load_2 / int32 1
-    store _24 to i
+    int32 _12 = i.load_2 / int32 1
+    store _12 to i
     int32 i.load_3 = load i
-    int32 _25 = i.load_3 & int32 1
-    store _25 to i
+    int32 _13 = i.load_3 & int32 1
+    store _13 to i
     int32 i.load_4 = load i
-    int32 _26 = i.load_4 | int32 1
-    store _26 to i
+    int32 _14 = i.load_4 | int32 1
+    store _14 to i
     int32 i.load_5 = load i
-    int32 _27 = i.load_5 ^ int32 1
-    store _27 to i
+    int32 _15 = i.load_5 ^ int32 1
+    store _15 to i
     int32 i.load_6 = load i
-    int32 _28 = i.load_6 << int32 1
-    store _28 to i
+    int32 _16 = i.load_6 << int32 1
+    store _16 to i
     int32 i.load_7 = load i
-    int32 _29 = i.load_7 >> int32 1
-    store _29 to i
-    void _30 = call _CX1N3std10checkLeaksE4void0_()
+    int32 _17 = i.load_7 >> int32 1
+    store _17 to i
+    void _18 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

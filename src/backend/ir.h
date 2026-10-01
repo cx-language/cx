@@ -130,6 +130,10 @@ struct IRUnionType : IRType {
 IRType* getIRType(Type astType);
 // True when pointer constness differs at any level. Non-pointers do not.
 bool pointeeConstDiffers(IRType* a, IRType* b);
+// Bit width of an integer type, 0 for anything else.
+int getIntegerBitWidth(IRType* type);
+// Unsigned cx integer type of the given width (8, 16, 32, 64, or 128).
+Type getUnsignedIntegerType(int width);
 llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, IRType* type);
 
 enum class ValueKind {
@@ -151,6 +155,8 @@ enum class ValueKind {
     UnreachableInst,
     ArrayOpInst,
     SizeofInst,
+    CheckedArithInst,
+    ArithOverflowInst,
     BasicBlock,
     Function,
     Parameter,
@@ -179,7 +185,7 @@ struct Value {
 };
 
 struct Instruction : Value {
-    static bool classof(const Value* v) { return v->kind >= ValueKind::AllocaInst && v->kind <= ValueKind::SizeofInst; }
+    static bool classof(const Value* v) { return v->kind >= ValueKind::AllocaInst && v->kind <= ValueKind::ArithOverflowInst; }
 };
 
 struct AllocaInst : Instruction {
@@ -332,6 +338,29 @@ struct SizeofInst : Instruction {
     std::string name;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::SizeofInst; }
+};
+
+// Integer arithmetic (+, -, *) whose overflow is detectable (see
+// emitWrappingArithmetic). The result is the wrapped value; a paired
+// ArithOverflowInst reads whether it overflowed. Kept whole so the LLVM
+// backend can emit with.overflow intrinsics (hardware flags) instead of
+// relying on the optimizer to rediscover them from manual checks; the C
+// backend expands the check manually.
+struct CheckedArithInst : Instruction {
+    BinaryOperator op;
+    Value* left;
+    Value* right;
+    const Expr* expr;
+    std::string name;
+
+    static bool classof(const Value* v) { return v->kind == ValueKind::CheckedArithInst; }
+};
+
+struct ArithOverflowInst : Instruction {
+    Value* checked;
+    std::string name;
+
+    static bool classof(const Value* v) { return v->kind == ValueKind::ArithOverflowInst; }
 };
 
 struct BasicBlock : Value {

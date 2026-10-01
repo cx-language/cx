@@ -13,18 +13,14 @@ void _CX1N4mainM4main1S3fooE4void1_M3std5int32(S* this, int32 bar) {
     store this to this_0
     store bar to bar_0
     int32 bar.load = load bar_0
-    int64 _0 = cast bar.load to int64
-    int64 _1 = cast int32 42 to int64
-    int64 _2 = _0 + _1
-    int32 _3 = cast _2 to int32
-    int64 _4 = cast _3 to int64
-    bool _5 = _2 != _4
-    bool _6 = !_5
-    bool overflow.condition = _6 == bool false
+    int32 _0 = checkedarith + bar.load, int32 42
+    bool _1 = overflow _0
+    bool _2 = !_1
+    bool overflow.condition = _2 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at parameter-shadows-member-variable.cx:7:17
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at parameter-shadows-member-variable.cx:7:17
 ")
     unreachable
 

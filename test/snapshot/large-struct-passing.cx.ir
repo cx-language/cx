@@ -119,61 +119,49 @@ if.end(Big if.result):
     Outer _8 = call _CX1N4main9makeOuterEM4main5Outer0_()
     Big item = extractvalue _8, 0
     int32 a_0 = extractvalue item, 0
-    int64 _9 = cast a.load to int64
-    int64 _10 = cast a_0 to int64
-    int64 _11 = _9 + _10
-    int32 _12 = cast _11 to int32
-    int64 _13 = cast _12 to int64
-    bool _14 = _11 != _13
-    bool _15 = !_14
-    bool overflow.condition = _15 == bool false
+    int32 _9 = checkedarith + a.load, a_0
+    bool _10 = overflow _9
+    bool _11 = !_10
+    bool overflow.condition = _11 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _16 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:16
+    never _12 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:16
 ")
     unreachable
 
 overflow.success:
-    Outer _17 = call _CX1N4main9makeOuterEM4main5Outer0_()
-    int32 tag = extractvalue _17, 1
-    int64 _18 = cast _12 to int64
-    int64 _19 = cast tag to int64
-    int64 _20 = _18 + _19
-    int32 _21 = cast _20 to int32
-    int64 _22 = cast _21 to int64
-    bool _23 = _20 != _22
-    bool _24 = !_23
-    bool overflow.condition_0 = _24 == bool false
+    Outer _13 = call _CX1N4main9makeOuterEM4main5Outer0_()
+    int32 tag = extractvalue _13, 1
+    int32 _14 = checkedarith + _9, tag
+    bool _15 = overflow _14
+    bool _16 = !_15
+    bool overflow.condition_0 = _16 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _25 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:37
+    never _17 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:37
 ")
     unreachable
 
 overflow.success_0:
     int128* a_1 = getelementptr v, 0
     int128 a.load_0 = load a_1
-    int32 _26 = cast a.load_0 to int32
-    int64 _27 = cast _21 to int64
-    int64 _28 = cast _26 to int64
-    int64 _29 = _27 + _28
-    int32 _30 = cast _29 to int32
-    int64 _31 = cast _30 to int64
-    bool _32 = _29 != _31
-    bool _33 = !_32
-    bool overflow.condition_1 = _33 == bool false
+    int32 _18 = cast a.load_0 to int32
+    int32 _19 = checkedarith + _14, _18
+    bool _20 = overflow _19
+    bool _21 = !_20
+    bool overflow.condition_1 = _21 == bool false
     br overflow.condition_1, overflow.fail, overflow.success
 
 overflow.fail_1:
-    never _34 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:55
+    never _22 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:55
 ")
     unreachable
 
 overflow.success_1:
-    void _35 = call _CX1N3std10checkLeaksE4void0_()
-    return _30
+    void _23 = call _CX1N3std10checkLeaksE4void0_()
+    return _19
 }
 
 void _CX1N4mainM4main4Wide4initE4void2_M3std6int128M3std6int128(Wide* this, int128 a, int128 b) {

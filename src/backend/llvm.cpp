@@ -4,6 +4,7 @@
 #include <llvm/ADT/StringSwitch.h>
 #include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/CFG.h>
+#include <llvm/IR/Intrinsics.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
@@ -677,6 +678,38 @@ llvm::Value* LLVMGenerator::codegenBinary(const BinaryInst* inst) {
     return result;
 }
 
+llvm::Value* LLVMGenerator::codegenCheckedArith(const CheckedArithInst* inst) {
+    ASSERT(builder.GetInsertBlock() && "checked arithmetic cannot appear in global initializers");
+    bool isSigned = inst->left->getType()->isSignedInteger();
+    llvm::Intrinsic::ID id;
+    switch (inst->op) {
+    case Token::Plus:
+        id = isSigned ? llvm::Intrinsic::sadd_with_overflow : llvm::Intrinsic::uadd_with_overflow;
+        break;
+    case Token::Minus:
+        id = isSigned ? llvm::Intrinsic::ssub_with_overflow : llvm::Intrinsic::usub_with_overflow;
+        break;
+    case Token::Star:
+        id = isSigned ? llvm::Intrinsic::smul_with_overflow : llvm::Intrinsic::umul_with_overflow;
+        break;
+    default:
+        llvm_unreachable("invalid checked arithmetic operation");
+    }
+    auto* intrinsic = llvm::Intrinsic::getOrInsertDeclaration(module, id, {getLLVMType(inst->left->getType())});
+    auto* result = builder.CreateCall(intrinsic, {getValue(inst->left), getValue(inst->right)});
+    checkedArithStructs.emplace(inst, result);
+    auto* value = builder.CreateExtractValue(result, 0);
+    if (!inst->name.empty()) value->setName(inst->name);
+    return value;
+}
+
+llvm::Value* LLVMGenerator::codegenArithOverflow(const ArithOverflowInst* inst) {
+    getValue(inst->checked); // Emit the intrinsic first; the struct is stashed for the extraction below.
+    auto* result = builder.CreateExtractValue(checkedArithStructs.at(inst->checked), 1);
+    if (!inst->name.empty()) result->setName(inst->name);
+    return result;
+}
+
 llvm::Value* LLVMGenerator::codegenArrayOpElement(Token::Kind op, llvm::Value* left, llvm::Value* right, IRType* elemType) {
     bool isFloat = elemType->isFloatingPoint();
     bool isSigned = elemType->isSignedInteger();
@@ -1011,6 +1044,10 @@ llvm::Value* LLVMGenerator::codegenInst(const Value* value) {
         return codegenCall(llvm::cast<CallInst>(value));
     case ValueKind::BinaryInst:
         return codegenBinary(llvm::cast<BinaryInst>(value));
+    case ValueKind::CheckedArithInst:
+        return codegenCheckedArith(llvm::cast<CheckedArithInst>(value));
+    case ValueKind::ArithOverflowInst:
+        return codegenArithOverflow(llvm::cast<ArithOverflowInst>(value));
     case ValueKind::ArrayOpInst:
         return codegenArrayOp(llvm::cast<ArrayOpInst>(value));
     case ValueKind::UnaryInst:

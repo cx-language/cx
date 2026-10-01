@@ -9,18 +9,14 @@ vec2 _CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(vec2 a, vec2 b) {
     int32 x.load = load x
     int32* x_0 = getelementptr b_0, 0
     int32 x.load_0 = load x_0
-    int64 _1 = cast x.load to int64
-    int64 _2 = cast x.load_0 to int64
-    int64 _3 = _1 * _2
-    int32 _4 = cast _3 to int32
-    int64 _5 = cast _4 to int64
-    bool _6 = _3 != _5
-    bool _7 = !_6
-    bool overflow.condition = _7 == bool false
+    int32 _1 = checkedarith * x.load, x.load_0
+    bool _2 = overflow _1
+    bool _3 = !_2
+    bool overflow.condition = _3 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:21
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:21
 ")
     unreachable
 
@@ -29,23 +25,19 @@ overflow.success:
     int32 y.load = load y
     int32* y_0 = getelementptr b_0, 1
     int32 y.load_0 = load y_0
-    int64 _9 = cast y.load to int64
-    int64 _10 = cast y.load_0 to int64
-    int64 _11 = _9 * _10
-    int32 _12 = cast _11 to int32
-    int64 _13 = cast _12 to int64
-    bool _14 = _11 != _13
-    bool _15 = !_14
-    bool overflow.condition_0 = _15 == bool false
+    int32 _5 = checkedarith * y.load, y.load_0
+    bool _6 = overflow _5
+    bool _7 = !_6
+    bool overflow.condition_0 = _7 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _16 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:32
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at operator-overloading.cx:13:32
 ")
     unreachable
 
 overflow.success_0:
-    void _17 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* _0, int32 _4, int32 _12)
+    void _9 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* _0, int32 _1, int32 _5)
     vec2 .load = load _0
     return .load
 }
