@@ -142,18 +142,25 @@ void IRGenerator::unwindTempScopesTo(size_t depth) {
     if (tempScopes.size() > depth) tempScopes.back().clear();
 }
 
-void IRGenerator::registerTempDestructor(Value* base, Type type, std::vector<int> indexes) {
-    if (type.isFixedArray()) {
-        Type elementType = type.getElementType();
-        if (elementType.needsDestruction()) {
-            for (int64_t i = 0; i < type.getArraySize(); ++i) {
-                auto elementIndexes = indexes;
-                elementIndexes.push_back(int(i));
-                registerTempDestructor(base, elementType, std::move(elementIndexes));
-            }
+// Visits each element of a fixed array whose element type needs destruction.
+// Returns false when `type` is not a fixed array, so the caller handles it itself.
+template<typename Visit> static bool forEachDestructibleArrayElement(Type type, const std::vector<int>& indexes, Visit&& visit) {
+    if (!type.isFixedArray()) return false;
+    Type elementType = type.getElementType();
+    if (elementType.needsDestruction()) {
+        for (int64_t i = 0; i < type.getArraySize(); ++i) {
+            auto elementIndexes = indexes;
+            elementIndexes.push_back(int(i));
+            visit(elementType, std::move(elementIndexes));
         }
-        return;
     }
+    return true;
+}
+
+void IRGenerator::registerTempDestructor(Value* base, Type type, std::vector<int> indexes) {
+    if (forEachDestructibleArrayElement(
+            type, indexes, [&](Type elementType, std::vector<int> elementIndexes) { registerTempDestructor(base, elementType, std::move(elementIndexes)); }))
+        return;
     if (emittingReceiver) {
         if (auto* function = getDestructorFunction(type)) {
             scopes.back().destructorsToCall.push_back({function, base, nullptr, std::move(indexes), tempGuard});
@@ -228,17 +235,10 @@ void IRGenerator::deferDestructionForType(Value* base, Type type, const Variable
         }
         return;
     }
-    if (type.isFixedArray()) {
-        Type elementType = type.getElementType();
-        if (elementType.needsDestruction()) {
-            for (int64_t i = 0; i < type.getArraySize(); ++i) {
-                auto elementIndexes = indexes;
-                elementIndexes.push_back(int(i));
-                deferDestructionForType(base, elementType, owner, std::move(elementIndexes));
-            }
-        }
+    if (forEachDestructibleArrayElement(type, indexes, [&](Type elementType, std::vector<int> elementIndexes) {
+            deferDestructionForType(base, elementType, owner, std::move(elementIndexes));
+        }))
         return;
-    }
     if (auto* function = getDestructorFunction(type)) {
         scopes.back().destructorsToCall.push_back({function, base, owner, std::move(indexes)});
     }
