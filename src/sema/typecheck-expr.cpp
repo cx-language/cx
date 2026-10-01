@@ -4193,21 +4193,20 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
     }
 }
 
+// T*, T&, and T[*], or one optional around those. A single '?' on an address is the
+// null pointer. A second '?' is a struct Optional, so the bits no longer match.
+static bool isCastableAddress(Type type) {
+    if (type.isOptionalType()) type = type.getWrappedType();
+    return type.isPointerType() || type.isArrayPointer();
+}
+
 static bool isValidCast(Type sourceType, Type targetType) {
+    // Reinterpret between any pointer, reference, or array pointer, optional or
+    // not. The pointee type may differ, and const may be added or dropped.
+    if (isCastableAddress(sourceType) && isCastableAddress(targetType)) return true;
+
     switch (sourceType.getKind()) {
     case TypeKind::BasicType:
-        if (sourceType.isOptionalType()) {
-            Type sourceWrappedType = sourceType.getWrappedType();
-
-            if (sourceWrappedType.isPointerType() && targetType.isOptionalType()) {
-                Type targetWrappedType = targetType.getWrappedType();
-
-                if (targetWrappedType.isPointerType() && isValidCast(sourceWrappedType, targetWrappedType)) {
-                    return true;
-                }
-            }
-        }
-
         if (sourceType.isInteger() && targetType.removeOptional().isPointerType()) {
             return true;
         }
@@ -4222,41 +4221,16 @@ static bool isValidCast(Type sourceType, Type targetType) {
 
         return false;
 
-    case TypeKind::ArrayPointerType: {
-        if (sourceType.isArrayPointer() && targetType.isInteger()) {
-            return true;
-        }
+    case TypeKind::ArrayPointerType:
+        return targetType.isInteger();
 
-        if (targetType.isPointerType()) {
-            Type targetPointee = targetType.getPointee();
-            if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourceType.getElementType().isMutable())) return true;
-        }
-        return false;
-    }
     case TypeKind::AnonymousStructType:
     case TypeKind::FunctionType:
         return false;
 
-    case TypeKind::PointerType: {
-        Type sourcePointee = sourceType.getPointee();
+    case TypeKind::PointerType:
+        return targetType.isInteger();
 
-        if (targetType.isPointerType()) {
-            Type targetPointee = targetType.getPointee();
-
-            // Reinterpretation between any two pointer types is allowed; only dropping const is rejected.
-            if (!targetPointee.isMutable() || sourcePointee.isMutable()) {
-                return true;
-            }
-        } else if (targetType.isArrayPointer()) {
-            if (!targetType.getElementType().isMutable() || sourcePointee.isMutable()) {
-                return true;
-            }
-        } else if (targetType.isInteger()) {
-            return true;
-        }
-
-        return false;
-    }
     case TypeKind::UnresolvedType:
         llvm_unreachable("invalid unresolved type");
     }
@@ -4271,12 +4245,19 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
         ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "expected type generic argument for 'cast'");
     }
     Type targetType = expr.genericArgs.front().getType();
-    typecheckType(targetType, AccessLevel::None);
+    // The result may be a borrow (`T&` or `T&?`); placement rules apply where the value is stored.
+    typecheckType(targetType, AccessLevel::None, /*recheckGenericArgs=*/true, /*allowReference=*/true);
     ParamDecl param(sourceType, "", false, expr.location);
 
     validateAndConvertArguments(expr, param, false, expr.getFunctionName());
 
-    if (!isValidCast(sourceType, targetType) && !isValidCast(sourceType.removeOptional(), targetType)) {
+    bool valid = isValidCast(sourceType, targetType);
+    // Peel one optional so `int*?` can still convert to an integer. Do not peel
+    // another: `T*??` is a struct, and the fallback would otherwise see `T*?`.
+    if (!valid && sourceType.isOptionalType() && !sourceType.getWrappedType().isOptionalType()) {
+        valid = isValidCast(sourceType.getWrappedType(), targetType);
+    }
+    if (!valid) {
         ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "illegal cast from '" << sourceType << "' to '" << targetType << "'");
     }
 

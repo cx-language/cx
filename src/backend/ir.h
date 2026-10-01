@@ -128,6 +128,8 @@ struct IRUnionType : IRType {
 };
 
 IRType* getIRType(Type astType);
+// True when pointer constness differs at any level. Non-pointers do not.
+bool pointeeConstDiffers(IRType* a, IRType* b);
 llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, IRType* type);
 
 enum class ValueKind {

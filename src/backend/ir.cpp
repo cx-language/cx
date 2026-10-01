@@ -812,6 +812,14 @@ bool IRType::equals(IRType* other) {
     llvm_unreachable("all cases handled");
 }
 
+bool cx::pointeeConstDiffers(IRType* a, IRType* b) {
+    auto* pa = llvm::dyn_cast<IRPointerType>(a);
+    auto* pb = llvm::dyn_cast<IRPointerType>(b);
+    if (!pa || !pb) return false;
+    if (pa->mutablePointee != pb->mutablePointee) return true;
+    return pointeeConstDiffers(pa->pointee, pb->pointee);
+}
+
 // Maps a builtin name to its (category, bits) calling-convention class,
 // mirroring LLVMGenerator::getBuiltinType. Unknown names compare by name.
 static std::pair<char, int> abiClass(llvm::StringRef name) {

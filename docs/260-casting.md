@@ -3,7 +3,7 @@
 cx has no C-style cast syntax. Instead, there are two explicit conversions:
 
 - Converting between scalar types with a call to the target type: `int(x)`, `float(x)`, and so on.
-- Reinterpreting pointers with the `cast` builtin: `cast<T>(x)`.
+- Reinterpreting pointers, array pointers, and references with the `cast` builtin: `cast<T>(x)`.
 
 ```cs
 void main() {
@@ -29,18 +29,25 @@ void main() {
 }
 ```
 
-Any two pointer types convert directly, with no need to go through `void*`:
+`cast` reinterprets between pointers (`T*`), array pointers (`T[*]`), and references (`T&`).
+Any of those may have one optional (`T*?`, `T[*]?`, `T&?`). A second `?` is a struct, not a null pointer, so `T*??` cannot be cast this way.
+The pointee type may change, and `const` may be added or dropped:
 
 ```cs
-import "stdlib.h";
-
 void main() {
-    var p = malloc(4)!;
-    int* ip = cast<int*>(p);
-    *ip = 42;
+    int x = 42;
+    int* ip = &x;
     uint* up = cast<uint*>(ip);
     println(*up); // prints 42
-    free(p);
+
+    int[*] ap = cast<int[*]>(ip);
+    println(ap[0]); // prints 42
+
+    int& r = cast<int&>(ap);
+    println(r); // prints 42
+
+    int* mp = cast<int*>(cast<const int*>(ip));
+    println(*mp); // prints 42
 }
 ```
 
@@ -59,8 +66,6 @@ void main() {
 ```
 
 Casts that don't make sense are rejected at compile time, for example `cast<int**>(false)`.
-Dropping `const` is rejected too: `cast<int*>` accepts `int*` and `void*`,
-but not `const int*`.
 Conversions that are always safe need no syntax at all:
 integer literals convert to the expected numeric type automatically,
 and values bind to `T&` borrow parameters automatically.

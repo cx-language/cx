@@ -3,9 +3,6 @@
 void main() {
     // CHECK: [[@LINE+1]]:13: error: illegal cast from 'bool' to 'int**'
     var i = cast<int**>(false);
-    var cp = cast<const int*>(0);
-    // CHECK: [[@LINE+1]]:13: error: illegal cast from 'const int*' to 'uint*'
-    var p = cast<uint*>(cp);
 
     int x = 1;
     int* q = &x;
@@ -13,5 +10,15 @@ void main() {
     var f = cast<float64>(q);
     // CHECK: [[@LINE+1]]:13: error: illegal cast from 'int*' to 'int?'
     var o = cast<int?>(q);
+
+    int*?? pp = null;
+    // CHECK: [[@LINE+1]]:13: error: illegal cast from 'int*??' to 'int*'
+    var a = cast<int*>(pp);
+    // CHECK: [[@LINE+1]]:13: error: illegal cast from 'int*' to 'int*??'
+    var b = cast<int*??>(q);
+    // CHECK: [[@LINE+1]]:13: error: illegal cast from 'int*' to 'int[*]??'
+    var c = cast<int[*]??>(q);
+    // CHECK: [[@LINE+1]]:13: error: illegal cast from 'int*' to 'int&??'
+    var d = cast<int&??>(q);
 }
 

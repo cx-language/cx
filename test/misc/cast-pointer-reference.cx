@@ -1,0 +1,41 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+void main() {
+    int x = 42;
+    int* p = &x;
+
+    // Pointer, array pointer, and reference are the same address.
+    int& r = cast<int&>(p);
+    println(r); // CHECK:42
+    *r = 43;
+    println(x); // CHECK-NEXT:43
+
+    int[*] a = cast<int[*]>(r);
+    println(a[0]); // CHECK-NEXT:43
+    a[0] = 44;
+    println(*p); // CHECK-NEXT:44
+
+    // const may be added or dropped, and the pointee type may change.
+    int* mp = cast<int*>(cast<const int*>(p));
+    *mp = 45;
+    println(x); // CHECK-NEXT:45
+
+    println(cast<const int[*]>(mp)[0]); // CHECK-NEXT:45
+    uint8& byte = cast<uint8&>(cast<const int[*]>(mp));
+    println(*cast<int*>(&byte)); // CHECK-NEXT:45
+
+    // Optional and non-optional address types convert in both directions.
+    int*? op = cast<int*?>(p);
+    println(*op!); // CHECK-NEXT:45
+
+    int&? nr = cast<int&?>(op);
+    println(*nr); // CHECK-NEXT:45
+
+    int*? none = null;
+    println(cast<const int&?>(cast<int[*]?>(none)) == null); // CHECK-NEXT:true
+
+    float[*]? fp = cast<float[*]?>(nr);
+    println(*cast<int*>(fp)); // CHECK-NEXT:45
+}
