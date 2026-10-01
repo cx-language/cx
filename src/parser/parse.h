@@ -128,6 +128,12 @@ private:
     IfExpr* parseIfExpr(Expr* condition);
     SwitchExpr* parseSwitchExpr();
     IfExpr* parseIfThenElseExpr();
+    // Errors when `condition` is an `is` expression followed by a binding name.
+    // `context` completes "not <context>" (for example "while loops").
+    void rejectIsBinding(Expr* condition, const char* context);
+    // Parses an optional parenthesized loop condition, rejecting `is` bindings
+    // both inside the parentheses and after them.
+    Expr* parseLoopCondition(Decl* parent, bool allowVarDecl);
     bool shouldParseVarStmt();
     void splitRightShiftIfPresent();
     bool isTightLessThan(int lessOffset);
@@ -175,6 +181,11 @@ private:
     ConstructorDecl* parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit = false);
     DestructorDecl* parseDestructorDecl(TypeDecl& receiverTypeDecl);
     FieldDecl parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool isManuallyDestroy);
+    void rejectGenericStaticConst(const std::vector<GenericParamDecl>* genericParams);
+    // Current token is `=`. Parses the initializer and adds a static constant.
+    void addParsedStaticConst(TypeDecl& typeDecl, Type type, llvm::StringRef name, Location location, AccessLevel accessLevel);
+    // Current token is `const`, already known to introduce `const name = expr`.
+    void parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel, const std::vector<GenericParamDecl>* genericParams);
     TypeTemplate* parseTypeTemplate(AccessLevel accessLevel);
     Token parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams);
     TypeDecl* parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);

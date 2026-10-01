@@ -838,9 +838,7 @@ IfExpr* Parser::parseIfThenElseExpr() {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
         condition = parseExpr();
     }
-    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-        ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not if expressions");
-    }
+    rejectIsBinding(condition, "if expressions");
     parse(Token::Then);
     auto thenExpr = parseExpr();
     parse(Token::Else);
@@ -853,6 +851,14 @@ bool Parser::shouldParseVarStmt() {
     if (!currentToken().is({Token::Identifier, Token::LeftParen})) return false;
     if (lookAhead(1).is(Token::Dot) || isCompoundAssignmentOperator(lookAhead(1))) return false;
     int offset = 2;
+    // Walk back over any ', name' pairs of a multi-variable declaration.
+    auto declaratorStart = [&](int from) {
+        int back = from - 2;
+        while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
+            back -= 2;
+        }
+        return back;
+    };
 
     while (true) {
         // A compound assignment before any '=' or ';' is an expression statement (e.g. 'a[i] += b * c'),
@@ -860,11 +866,7 @@ bool Parser::shouldParseVarStmt() {
         if (isCompoundAssignmentOperator(lookAhead(offset))) return false;
         if (lookAhead(offset).is(Token::Assignment)) {
             if (lookAhead(offset - 1).is(Token::Identifier)) {
-                // Walk back over any ', name' pairs of a multi-variable declaration.
-                int back = offset - 2;
-                while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
-                    back -= 2;
-                }
+                int back = declaratorStart(offset);
                 if (lookAhead(back).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater, Token::And})) {
                     return true;
                 }
@@ -879,11 +881,7 @@ bool Parser::shouldParseVarStmt() {
         } else if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).is(Token::None)
                    || lookAhead(offset).location.line != lookAhead(offset - 1).location.line) {
             if (lookAhead(offset - 1).is(Token::Identifier)) {
-                // Walk back over any ', name' pairs of a multi-variable declaration.
-                int back = offset - 2;
-                while (lookAhead(back).is(Token::Comma) && lookAhead(back - 1).is(Token::Identifier)) {
-                    back -= 2;
-                }
+                int back = declaratorStart(offset);
                 if (lookAhead(back).is(
                         {Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::QuestionQuestion, Token::Greater, Token::Star, Token::And})) {
                     return true;
@@ -1362,24 +1360,31 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
     return ifStmt;
 }
 
-/// while-stmt ::= 'while' (expr | var-decl) block-or-stmt
-WhileStmt* Parser::parseWhileStmt(Decl* parent) {
-    ASSERT(currentToken() == Token::While);
-    auto location = consumeToken().location;
+void Parser::rejectIsBinding(Expr* condition, const char* context) {
+    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
+        ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not " << context);
+    }
+}
+
+Expr* Parser::parseLoopCondition(Decl* parent, bool allowVarDecl) {
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
     Expr* condition;
     {
         llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
-        condition = parseExprOrVarDecl(parent);
-        if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-            ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not while loops");
-        }
+        condition = allowVarDecl ? parseExprOrVarDecl(parent) : parseExpr();
+        rejectIsBinding(condition, "while loops");
         if (parens) parse(Token::RightParen);
     }
-    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-        ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not while loops");
-    }
+    rejectIsBinding(condition, "while loops");
+    return condition;
+}
+
+/// while-stmt ::= 'while' (expr | var-decl) block-or-stmt
+WhileStmt* Parser::parseWhileStmt(Decl* parent) {
+    ASSERT(currentToken() == Token::While);
+    auto location = consumeToken().location;
+    Expr* condition = parseLoopCondition(parent, true);
     auto body = parseBlockOrStmt(parent);
     return makeAST<WhileStmt>(condition, std::move(body), location);
 }
@@ -1390,20 +1395,7 @@ DoWhileStmt* Parser::parseDoWhileStmt(Decl* parent) {
     auto location = consumeToken().location;
     auto body = parseBlockOrStmt(parent);
     parse(Token::While);
-    bool parens = currentToken() == Token::LeftParen;
-    if (parens) consumeToken();
-    Expr* condition;
-    {
-        llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
-        condition = parseExpr();
-        if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-            ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not while loops");
-        }
-        if (parens) parse(Token::RightParen);
-    }
-    if (auto* isExpr = llvm::dyn_cast<BinaryExpr>(condition); isExpr && isExpr->op == Token::Is && currentToken() == Token::Identifier) {
-        ERROR_CURRENT_TOKEN("an 'is' binding is only allowed in if statements, not while loops");
-    }
+    Expr* condition = parseLoopCondition(parent, false);
     parseStmtTerminator();
     return makeAST<DoWhileStmt>(condition, std::move(body), location);
 }
@@ -1938,6 +1930,26 @@ Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<Generic
     return name;
 }
 
+void Parser::rejectGenericStaticConst(const std::vector<GenericParamDecl>* genericParams) {
+    if (genericParams && !genericParams->empty()) {
+        ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
+    }
+}
+
+void Parser::addParsedStaticConst(TypeDecl& typeDecl, Type type, llvm::StringRef name, Location location, AccessLevel accessLevel) {
+    parse(Token::Assignment);
+    auto* initializer = parseExpr();
+    parseStmtTerminator();
+    typeDecl.staticConsts.push_back(makeAST<VarDecl>(type, name, initializer, nullptr, accessLevel, *currentModule, location));
+}
+
+void Parser::parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel, const std::vector<GenericParamDecl>* genericParams) {
+    rejectGenericStaticConst(genericParams);
+    consumeToken();
+    auto name = parse(Token::Identifier);
+    addParsedStaticConst(typeDecl, Type().withMutability(Mutability::Const), name.getString(), name.location, accessLevel);
+}
+
 /// type-decl ::= ('struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}' ';'?
 /// interface-list ::= ':' non-empty-type-list
 /// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl | const-decl
@@ -2023,16 +2035,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 if (isImplicit) {
                     ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), implicitMemberOnly);
                 }
-                if (genericParams && !genericParams->empty()) {
-                    ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
-                }
-                consumeToken();
-                auto name = parse(Token::Identifier);
-                parse(Token::Assignment);
-                auto* initializer = parseExpr();
-                parseStmtTerminator();
-                typeDecl->staticConsts.push_back(makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString(), initializer, nullptr, accessLevel,
-                                                                  *currentModule, name.location));
+                parseKeywordStaticConst(*typeDecl, accessLevel, genericParams);
                 break;
             }
             LLVM_FALLTHROUGH;
@@ -2064,13 +2067,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 // A const-qualified member with an initializer is a static constant.
                 if (currentToken() == Token::Assignment && !type.isMutable()) {
                     if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
-                    if (genericParams && !genericParams->empty()) {
-                        ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
-                    }
-                    consumeToken();
-                    auto* initializer = parseExpr();
-                    parseStmtTerminator();
-                    typeDecl->staticConsts.push_back(makeAST<VarDecl>(type, name, initializer, nullptr, accessLevel, *currentModule, location));
+                    rejectGenericStaticConst(genericParams);
+                    addParsedStaticConst(*typeDecl, type, name, location, accessLevel);
                     break;
                 }
                 if (isManuallyDestroy && tag != TypeTag::Struct) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
@@ -2136,16 +2134,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
         // A `const` name followed by `=` declares a constant scoped under the enum name.
         if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
-            if (genericParams && !genericParams->empty()) {
-                ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
-            }
-            consumeToken();
-            auto name = parse(Token::Identifier);
-            parse(Token::Assignment);
-            auto* initializer = parseExpr();
-            parseStmtTerminator();
-            enumDecl->staticConsts.push_back(
-                makeAST<VarDecl>(Type().withMutability(Mutability::Const), name.getString(), initializer, nullptr, accessLevel, *currentModule, name.location));
+            parseKeywordStaticConst(*enumDecl, accessLevel, genericParams);
             continue;
         }
 
