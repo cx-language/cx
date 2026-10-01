@@ -358,22 +358,21 @@ struct CToCxConverter final : clang::ASTConsumer {
         return makeAST<VarDecl>(toCx(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, module, toCx(decl.getLocation()));
     }
 
-    void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType) {
-        auto initializer = makeAST<IntLiteralExpr>(std::move(value), Location());
-        auto type = toCx(qualType).withMutability(Mutability::Const);
+    void addConstantToSymbolTable(llvm::StringRef name, Expr* initializer, Type type) {
         initializer->type = type;
         auto* varDecl = makeAST<VarDecl>(type, name, initializer, nullptr, AccessLevel::Default, module, Location());
         module.addToSymbolTable(varDecl);
         module.sourceFiles.front().topLevelDecls.push_back(varDecl);
     }
 
+    void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType) {
+        auto initializer = makeAST<IntLiteralExpr>(std::move(value), Location());
+        addConstantToSymbolTable(name, initializer, toCx(qualType).withMutability(Mutability::Const));
+    }
+
     void addFloatConstantToSymbolTable(llvm::StringRef name, llvm::APFloat value) {
         auto initializer = makeAST<FloatLiteralExpr>(std::move(value), Location());
-        auto type = Type::getFloat64(Mutability::Const);
-        initializer->type = type;
-        auto* varDecl = makeAST<VarDecl>(type, name, initializer, nullptr, AccessLevel::Default, module, Location());
-        module.addToSymbolTable(varDecl);
-        module.sourceFiles.front().topLevelDecls.push_back(varDecl);
+        addConstantToSymbolTable(name, initializer, Type::getFloat64(Mutability::Const));
     }
 
     // True when converting this type would reach a 16-bit float. Mirrors toCx
@@ -438,18 +437,27 @@ struct CToCxConverter final : clang::ASTConsumer {
     // 16-bit floats have no cx counterpart and no size- and ABI-preserving
     // mapping, so declarations using them are skipped. The header still
     // imports; using a skipped name fails at the use site.
+    bool warnFloat16Skipped(Location location, llvm::StringRef name) {
+        WARN(location, "skipping C declaration '" << name << "': 16-bit floating-point types are not supported");
+        return true;
+    }
+
     bool skipIfUsesFloat16(clang::QualType type, llvm::StringRef name, Location location) {
         std::unordered_set<const clang::RecordDecl*> visited;
         if (!typeUsesFloat16(type, visited)) return false;
-        WARN(location, "skipping C declaration '" << name << "': 16-bit floating-point types are not supported");
-        return true;
+        return warnFloat16Skipped(location, name);
     }
 
     bool skipIfUsesFloat16(const clang::RecordDecl& recordDecl) {
         std::unordered_set<const clang::RecordDecl*> visited;
         if (!recordUsesFloat16(recordDecl, visited)) return false;
-        WARN(toCx(recordDecl.getLocation()), "skipping C declaration '" << getName(recordDecl) << "': 16-bit floating-point types are not supported");
-        return true;
+        return warnFloat16Skipped(toCx(recordDecl.getLocation()), getName(recordDecl));
+    }
+
+    static clang::QualType peelArrayTypes(clang::QualType type) {
+        while (type->isArrayType())
+            type = llvm::cast<clang::ArrayType>(type.getTypePtr())->getElementType();
+        return type;
     }
 
     // True when the record is verifiably trivially copyable using only syntactic queries
@@ -471,9 +479,7 @@ struct CToCxConverter final : clang::ASTConsumer {
             if (!baseRecord || !isVerifiablyTrivialRecord(baseRecord)) return false;
         }
         for (const auto* field : record->fields()) {
-            clang::QualType fieldType = field->getType().getCanonicalType();
-            while (fieldType->isArrayType())
-                fieldType = llvm::cast<clang::ArrayType>(fieldType.getTypePtr())->getElementType();
+            clang::QualType fieldType = peelArrayTypes(field->getType().getCanonicalType());
             if (fieldType->isPointerType() || fieldType->isReferenceType()) continue;
             if (auto* fieldRecord = fieldType->getAsCXXRecordDecl()) {
                 if (!isVerifiablyTrivialRecord(fieldRecord)) return false;
@@ -493,9 +499,7 @@ struct CToCxConverter final : clang::ASTConsumer {
     // Value-position type cycles are ill-formed, so the recursion terminates without a visited set.
     static bool recordContainsFloat(const clang::RecordDecl* def) {
         for (const auto* field : def->fields()) {
-            clang::QualType fieldType = field->getType().getCanonicalType();
-            while (fieldType->isArrayType())
-                fieldType = llvm::cast<clang::ArrayType>(fieldType.getTypePtr())->getElementType();
+            clang::QualType fieldType = peelArrayTypes(field->getType().getCanonicalType());
             if (fieldType->hasFloatingRepresentation()) return true;
             if (auto* fieldRecord = fieldType->getAsRecordDecl()) {
                 if (auto* fieldDef = fieldRecord->getDefinition()) {
