@@ -2825,22 +2825,22 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
     throw CompileError::dependentError();
 }
 
+static bool satisfiesConstraint(Typechecker& checker, Type constraint, Type argType, bool silent) {
+    if (!constraint.isBasicType()) return false;
+    if (constraint.getName() == "Copyable") return satisfiesCopyable(argType);
+    auto* interface = checker.getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
+    auto* basicType = llvm::dyn_cast<BasicType>(argType.typeBase);
+    auto* typeDecl = basicType ? checker.getTypeDecl(*basicType) : nullptr;
+    return typeDecl && interface && checker.tryEnsurePrintable(*typeDecl, *interface, silent);
+}
+
 bool Typechecker::genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg) {
     if (genericParam.isValueParam) return genericArg.isInt();
     if (!genericArg || genericArg.isInt()) return false;
     if (genericArg.getType().isUnresolvedType()) return true;
 
     for (Type constraint : genericParam.constraints) {
-        if (!constraint.isBasicType()) return false;
-        if (constraint.getName() == "Copyable") {
-            if (!satisfiesCopyable(genericArg.getType())) return false;
-            continue;
-        }
-
-        auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
-        auto* basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase);
-        auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
-        if (!typeDecl || !interface || !tryEnsurePrintable(*typeDecl, *interface, /*silent=*/true)) return false;
+        if (!satisfiesConstraint(*this, constraint, genericArg.getType(), /*silent=*/true)) return false;
     }
     return true;
 }
@@ -2851,16 +2851,7 @@ bool Typechecker::validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> ge
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
         if (genericParam.isValueParam || !genericArg || genericArg.isInt() || genericArg.getType().isUnresolvedType()) continue;
         for (Type constraint : genericParam.constraints) {
-            bool satisfies = false;
-            if (constraint.isBasicType() && constraint.getName() == "Copyable") {
-                satisfies = satisfiesCopyable(genericArg.getType());
-            } else if (constraint.isBasicType()) {
-                auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
-                auto* basicType = llvm::dyn_cast<BasicType>(genericArg.getType().typeBase);
-                auto* typeDecl = basicType ? getTypeDecl(*basicType) : nullptr;
-                satisfies = typeDecl && interface && tryEnsurePrintable(*typeDecl, *interface, /*silent=*/false);
-            }
-            if (satisfies) continue;
+            if (satisfiesConstraint(*this, constraint, genericArg.getType(), /*silent=*/false)) continue;
             valid = false;
             if (constraint.isBasicType()) {
                 REPORT_ERROR(location, "type '" << genericArg << "' doesn't implement interface '" << constraint.getName() << "' for generic parameter '"
