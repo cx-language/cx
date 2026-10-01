@@ -325,14 +325,15 @@ Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
     return emitShortCircuit(*this, left, right, false);
 }
 
-Value* IRGenerator::emitBoolConvertibleOperand(const Expr& expr) {
-    auto* value = emitExpr(expr);
-    if (value->getType()->isPointerType()) {
-        return emitImplicitNullComparison(value);
-    } else if (expr.type.isOptionalType() && !expr.type.getWrappedType().isPointerType()) {
-        return emitOptionalHasValueTest(value);
-    }
+// Pointers and non-pointer optionals are not boolean values; conditions test them for null / some.
+Value* IRGenerator::lowerImplicitBool(Value* value, const Expr& expr) {
+    if (value->getType()->isPointerType()) return emitImplicitNullComparison(value);
+    if (expr.type.isOptionalType() && !expr.type.getWrappedType().isPointerType()) return emitOptionalHasValueTest(value);
     return value;
+}
+
+Value* IRGenerator::emitBoolConvertibleOperand(const Expr& expr) {
+    return lowerImplicitBool(emitExpr(expr), expr);
 }
 
 Value* IRGenerator::emitNullCoalescingExpr(const BinaryExpr& expr) {
@@ -1525,12 +1526,7 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
         return createConstantBool(expr.getConstantBoolValue());
     }
 
-    auto* condition = emitExpr(*expr.condition);
-    if (condition->getType()->isPointerType()) {
-        condition = emitImplicitNullComparison(condition);
-    } else if (expr.condition->type.isOptionalType() && !expr.condition->type.getWrappedType().isPointerType()) {
-        condition = emitOptionalHasValueTest(condition);
-    }
+    auto* condition = emitBoolConvertibleOperand(*expr.condition);
     auto* function = currentFunction;
     auto* thenBlock = new BasicBlock("if.then", function);
     auto* elseBlock = new BasicBlock("if.else");

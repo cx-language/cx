@@ -82,14 +82,8 @@ void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
         return;
     }
 
-    auto* condition = emitExpr(*ifStmt.condition);
-
     // FIXME: Lower implicit null checks such as `if (ptr)` and `if (!ptr)` to null comparisons.
-    if (condition->getType()->isPointerType()) {
-        condition = emitImplicitNullComparison(condition);
-    } else if (ifStmt.condition->type.isOptionalType() && !ifStmt.condition->type.getWrappedType().isPointerType()) {
-        condition = emitOptionalHasValueTest(condition);
-    }
+    auto* condition = emitBoolConvertibleOperand(*ifStmt.condition);
 
     emitIfDiamond(
         *this, condition, [&](BasicBlock* endIfBlock) { emitBlock(ifStmt.thenBody, endIfBlock); },
@@ -273,12 +267,7 @@ Value* IRGenerator::emitLoopConditionValue(const Expr& condition) {
     beginTempScope();
     auto* conditionValue = emitExpr(condition);
     endTempScope();
-    if (conditionValue->getType()->isPointerType()) {
-        conditionValue = emitImplicitNullComparison(conditionValue);
-    } else if (condition.type.isOptionalType() && !condition.type.getWrappedType().isPointerType()) {
-        conditionValue = emitOptionalHasValueTest(conditionValue);
-    }
-    return conditionValue;
+    return lowerImplicitBool(conditionValue, condition);
 }
 
 void IRGenerator::emitDoWhileStmt(const DoWhileStmt& doWhileStmt) {
