@@ -736,28 +736,14 @@ llvm::raw_ostream& cx::operator<<(llvm::raw_ostream& stream, IRType* type) {
     }
 
     case IRTypeKind::IRStructType:
-        if (type->getName() != "") {
-            return stream << type->getName();
-        } else {
-            stream << "struct { ";
-            for (auto& field : type->getFields()) {
-                stream << field.type;
-                if (&field != &type->getFields().back()) stream << ", ";
-            }
-            return stream << " }";
-        }
-
     case IRTypeKind::IRUnionType:
-        if (type->getName() != "") {
-            return stream << type->getName();
-        } else {
-            stream << "union { ";
-            for (auto& field : type->getFields()) {
-                stream << field.type;
-                if (&field != &type->getFields().back()) stream << ", ";
-            }
-            return stream << " }";
+        if (type->getName() != "") return stream << type->getName();
+        stream << (type->isUnion() ? "union" : "struct") << " { ";
+        for (auto& field : type->getFields()) {
+            stream << field.type;
+            if (&field != &type->getFields().back()) stream << ", ";
         }
+        return stream << " }";
     }
 
     llvm_unreachable("all cases handled");

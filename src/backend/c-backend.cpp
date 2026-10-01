@@ -830,7 +830,8 @@ void CGenerator::codegenTempDeclaration(const Value* value, const std::string& n
 
 // The split prefix/suffix type printer cannot express a pointer to an array. Keep
 // the array dimensions after a parenthesized pointer declarator instead.
-void CGenerator::codegenTypeExpression(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition) {
+// `name` is null for a type expression and set for a declaration.
+static void codegenDeclarator(CGenerator& generator, llvm::raw_string_ostream& stream, IRType* type, const llvm::StringRef* name, bool needsTypeDefinition) {
     std::vector<IRPointerType*> pointers;
     IRType* arrayType = type;
     while (auto* pointerType = llvm::dyn_cast<IRPointerType>(arrayType)) {
@@ -839,46 +840,30 @@ void CGenerator::codegenTypeExpression(llvm::raw_string_ostream& stream, IRType*
     }
     if (!pointers.empty()) {
         if (auto* array = llvm::dyn_cast<IRArrayType>(arrayType)) {
-            codegenType(stream, array->elementType, needsTypeDefinition);
+            generator.codegenType(stream, array->elementType, needsTypeDefinition);
             stream << " (";
             for (auto* pointerType : llvm::reverse(pointers)) {
                 stream << '*';
                 if (!pointerType->mutablePointee) stream << " const";
             }
+            if (name) stream << *name;
             stream << ")";
-            codegenTypeSuffix(stream, array, needsTypeDefinition);
+            generator.codegenTypeSuffix(stream, array, needsTypeDefinition);
             return;
         }
     }
 
-    codegenType(stream, type, needsTypeDefinition);
-    codegenTypeSuffix(stream, type, needsTypeDefinition);
+    generator.codegenType(stream, type, needsTypeDefinition);
+    if (name) stream << ' ' << *name;
+    generator.codegenTypeSuffix(stream, type, needsTypeDefinition);
+}
+
+void CGenerator::codegenTypeExpression(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition) {
+    codegenDeclarator(*this, stream, type, nullptr, needsTypeDefinition);
 }
 
 void CGenerator::codegenDeclaration(llvm::raw_string_ostream& stream, IRType* type, llvm::StringRef name, bool needsTypeDefinition) {
-    std::vector<IRPointerType*> pointers;
-    IRType* arrayType = type;
-    while (auto* pointerType = llvm::dyn_cast<IRPointerType>(arrayType)) {
-        pointers.push_back(pointerType);
-        arrayType = pointerType->pointee;
-    }
-    if (!pointers.empty()) {
-        if (auto* array = llvm::dyn_cast<IRArrayType>(arrayType)) {
-            codegenType(stream, array->elementType, needsTypeDefinition);
-            stream << " (";
-            for (auto* pointerType : llvm::reverse(pointers)) {
-                stream << '*';
-                if (!pointerType->mutablePointee) stream << " const";
-            }
-            stream << name << ")";
-            codegenTypeSuffix(stream, array, needsTypeDefinition);
-            return;
-        }
-    }
-
-    codegenType(stream, type, needsTypeDefinition);
-    stream << ' ' << name;
-    codegenTypeSuffix(stream, type, needsTypeDefinition);
+    codegenDeclarator(*this, stream, type, &name, needsTypeDefinition);
 }
 
 void CGenerator::codegenTempDeclarationForType(IRType* type, const std::string& name) {
@@ -1627,6 +1612,44 @@ void CGenerator::codegenTypeSuffix(llvm::raw_string_ostream& stream, IRType* typ
     }
 }
 
+static void codegenAggregateDefinition(CGenerator& generator, llvm::raw_string_ostream& stream, IRType* type, llvm::ArrayRef<IRField> fields,
+                                       llvm::StringRef keyword, const std::string& recordName, llvm::StringRef prefix, bool define, bool placeholderIfEmpty) {
+    if (generator.alreadyEmittedTypes.contains(type)) return;
+    if (!generator.forwardDeclaredTypes.contains(type)) {
+        stream << "\n" << keyword << " " << generator.getOrCreateTypeName(type, recordName, prefix) << ";\n";
+        generator.forwardDeclaredTypes.insert(type);
+    }
+    if (!define) return;
+    // Mark as emitted before generating dependencies: re-entry happens only through pointers,
+    // and this guard cuts it. Plain-pointer re-entry is satisfied by the forward declaration
+    // above; pointers to arrays need the definition, which the dependency pass emits before
+    // this body. By-value cycles are rejected during typechecking.
+    generator.alreadyEmittedTypes.insert(type);
+
+    for (auto& field : fields) {
+        generator.codegenTypeDefinition(stream, field.type, true);
+    }
+
+    stream << "\n" << keyword << " " << generator.getOrCreateTypeName(type, recordName, prefix) << " {\n";
+    if (placeholderIfEmpty && fields.empty()) {
+        // Empty structs are a GNU extension, so add a placeholder member to stay
+        // compatible with strictly conforming C compilers. Empty structs carry
+        // no data and are only ever used through pointers, so this is harmless.
+        stream.indent(4);
+        stream << "char _cx_empty;\n";
+    }
+    for (size_t i = 0; i < fields.size(); ++i) {
+        stream.indent(4);
+        // Plain pointer members only need their pointee declared, which also keeps in-progress
+        // ancestor types from being re-entered here; pointers to arrays get their definition
+        // from the dependency pass above. By-value members need full definitions.
+        // Unnamed fields (e.g. enum payloads) use the same _N fallback as use sites.
+        generator.codegenDeclaration(stream, fields[i].type, getFieldName(type, int(i)), !fields[i].type->isPointerType());
+        stream << ";\n";
+    }
+    stream << "};\n";
+}
+
 void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType* type, bool define) {
     switch (type->kind) {
     case IRTypeKind::IRBasicType:
@@ -1661,69 +1684,16 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
     }
     case IRTypeKind::IRStructType: {
         auto* irStruct = llvm::cast<IRStructType>(type);
-        if (irStruct->isImportedFromC || isCFileType(irStruct) || alreadyEmittedTypes.contains(type)) break;
-        if (!forwardDeclaredTypes.contains(type)) {
-            stream << "\nstruct " << getOrCreateTypeName(type, irStruct->mangledName, "_cx_struct") << ";\n";
-            forwardDeclaredTypes.insert(type);
-        }
-        if (!define) break;
-        // Mark as emitted before generating dependencies: re-entry happens only through pointers,
-        // and this guard cuts it. Plain-pointer re-entry is satisfied by the forward declaration
-        // above; pointers to arrays need the definition, which the dependency pass emits before
-        // this body. By-value cycles are rejected during typechecking.
-        alreadyEmittedTypes.insert(type);
-
-        // Generate type dependencies first.
-        for (auto& field : irStruct->fields) {
-            codegenTypeDefinition(stream, field.type, true);
-        }
-
-        stream << "\nstruct " << getOrCreateTypeName(type, irStruct->mangledName, "_cx_struct") << " {\n";
-        if (irStruct->fields.empty()) {
-            // Empty structs are a GNU extension, so add a placeholder member to stay
-            // compatible with strictly conforming C compilers. Empty structs carry
-            // no data and are only ever used through pointers, so this is harmless.
-            stream.indent(4);
-            stream << "char _cx_empty;\n";
-        }
-        for (size_t i = 0; i < irStruct->fields.size(); ++i) {
-            auto& field = irStruct->fields[i];
-            stream.indent(4);
-            // Plain pointer members only need their pointee declared, which also keeps in-progress
-            // ancestor types from being re-entered here; pointers to arrays get their definition
-            // from the dependency pass above. By-value members need full definitions.
-            // Unnamed fields (e.g. enum payloads) use the same _N fallback as use sites.
-            codegenDeclaration(stream, field.type, getFieldName(type, int(i)), !field.type->isPointerType());
-            stream << ";\n";
-        }
-        stream << "};\n";
+        if (irStruct->isImportedFromC || isCFileType(irStruct)) break;
+        codegenAggregateDefinition(*this, stream, type, irStruct->fields, "struct", irStruct->mangledName, "_cx_struct", define, true);
         break;
     }
     case IRTypeKind::IRUnionType: {
         auto* unionType = llvm::cast<IRUnionType>(type);
         // Named unions are defined in C headers; enum payload unions and
         // generated anonymous records need definitions here.
-        if (unionType->isImportedFromC || alreadyEmittedTypes.contains(type)) break;
-        if (!forwardDeclaredTypes.contains(type)) {
-            stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << ";\n";
-            forwardDeclaredTypes.insert(type);
-        }
-        if (!define) break;
-        alreadyEmittedTypes.insert(type);
-
-        // Generate type dependencies first.
-        for (auto& field : unionType->fields) {
-            codegenTypeDefinition(stream, field.type, true);
-        }
-
-        stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << " {\n";
-        for (size_t i = 0; i < unionType->fields.size(); ++i) {
-            auto& field = unionType->fields[i];
-            stream.indent(4);
-            codegenDeclaration(stream, field.type, getFieldName(type, int(i)), !field.type->isPointerType());
-            stream << ";\n";
-        }
-        stream << "};\n";
+        if (unionType->isImportedFromC) break;
+        codegenAggregateDefinition(*this, stream, type, unionType->fields, "union", unionType->name, "_cx_union", define, false);
         break;
     }
     }

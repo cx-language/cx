@@ -91,14 +91,7 @@ void Module::addToSymbolTable(TypeAliasDecl& decl) {
 }
 
 void Module::addToSymbolTable(EnumDecl& decl) {
-    if (addToSymbolTableWithName(decl, decl.getQualifiedName())) return;
-    bindTypeSpelling(decl.getType(), decl);
-
-    for (auto& memberDecl : decl.methods) {
-        if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl)) {
-            addToSymbolTable(*nonTemplateMethod);
-        }
-    }
+    addToSymbolTable(static_cast<TypeDecl&>(decl));
 }
 
 void Module::addToSymbolTable(VarDecl& decl) {
