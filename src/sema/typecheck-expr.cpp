@@ -4813,12 +4813,7 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
         definitelyAssignedDecls = thenAssignedDecls;
     } else if (!thenDiverges && !elseDiverges) {
         auto elseAssignedDecls = definitelyAssignedDecls;
-        definitelyAssignedDecls = thenAssignedDecls;
-        for (auto* decl : llvm::to_vector(definitelyAssignedDecls)) {
-            if (!elseAssignedDecls.count(decl)) {
-                definitelyAssignedDecls.erase(decl);
-            }
-        }
+        intersectDefinitelyAssigned({thenAssignedDecls, elseAssignedDecls});
     } else if (thenDiverges && !elseDiverges) {
         // Only the else arm runs on; definitelyAssignedDecls already holds its set.
     }

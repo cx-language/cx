@@ -551,13 +551,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
         }
         narrowedTypes = thenNarrowings;
         intersectNarrowings(elseNarrowings);
-        DeclSet mergedAssignedDecls;
-        for (auto* decl : thenAssignedDecls) {
-            if (elseAssignedDecls.count(decl)) {
-                mergedAssignedDecls.insert(decl);
-            }
-        }
-        definitelyAssignedDecls = std::move(mergedAssignedDecls);
+        intersectDefinitelyAssigned({thenAssignedDecls, elseAssignedDecls});
     }
 
     currentControlStmts.pop_back();
@@ -855,6 +849,22 @@ std::vector<Decl*> Typechecker::orderMergeDestroys(const DeclSet& symdiff) {
     return ordered;
 }
 
+static void recordBranchEnd(std::vector<DeclSet>& assigned, std::vector<DeclSet>& moved, std::vector<DeclSet>& maybeMoved, const DeclSet& pathAssigned,
+                            const DeclSet& pathMoved, const DeclSet& pathMaybeMoved) {
+    assigned.push_back(pathAssigned);
+    moved.push_back(pathMoved);
+    maybeMoved.push_back(pathMaybeMoved);
+}
+
+void Typechecker::intersectDefinitelyAssigned(llvm::ArrayRef<DeclSet> paths) {
+    definitelyAssignedDecls = paths.front();
+    for (auto& path : paths.drop_front()) {
+        for (auto* decl : llvm::to_vector(definitelyAssignedDecls)) {
+            if (!path.count(decl)) definitelyAssignedDecls.erase(decl);
+        }
+    }
+}
+
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(*stmt.condition);
     // A subject narrowed to a case payload isn't switchable; restore the whole enum.
@@ -979,9 +989,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         // only via break contribute just their captured break paths below
         // (a break reaches past the switch, unlike return/continue).
         if (!allPathsDiverge(switchCase.stmts, assertsOn)) {
-            bodyAssignedDecls.push_back(definitelyAssignedDecls);
-            pathMovedDecls.push_back(movedDecls);
-            pathMaybeMovedDecls.push_back(maybeMovedDecls);
+            recordBranchEnd(bodyAssignedDecls, pathMovedDecls, pathMaybeMovedDecls, definitelyAssignedDecls, movedDecls, maybeMovedDecls);
             pathTargets.push_back({&switchCase.stmts});
         }
     }
@@ -995,9 +1003,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         }
         narrowedTypes = outerNarrowings;
         if (!stmt.defaultStmts.empty() && !allPathsDiverge(stmt.defaultStmts, assertsOn)) {
-            bodyAssignedDecls.push_back(definitelyAssignedDecls);
-            pathMovedDecls.push_back(movedDecls);
-            pathMaybeMovedDecls.push_back(maybeMovedDecls);
+            recordBranchEnd(bodyAssignedDecls, pathMovedDecls, pathMaybeMovedDecls, definitelyAssignedDecls, movedDecls, maybeMovedDecls);
             pathTargets.push_back({&stmt.defaultStmts});
         }
     }
@@ -1010,15 +1016,11 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     // A move holds after the switch only if it holds on every path reaching
     // past it. Values matching no arm take an implicit empty path.
     if (stmt.defaultStmts.empty() && !stmt.coversAllEnumCases) {
-        pathMovedDecls.push_back(entryMovedDecls);
-        pathMaybeMovedDecls.push_back(entryMaybeMovedDecls);
-        bodyAssignedDecls.push_back(entryAssignedDecls);
+        recordBranchEnd(bodyAssignedDecls, pathMovedDecls, pathMaybeMovedDecls, entryAssignedDecls, entryMovedDecls, entryMaybeMovedDecls);
         pathTargets.push_back({&stmt.defaultStmts});
     }
     for (auto& path : switchBreakPaths) {
-        pathMovedDecls.push_back(path.moved);
-        pathMaybeMovedDecls.push_back(path.maybeMoved);
-        bodyAssignedDecls.push_back(path.assigned);
+        recordBranchEnd(bodyAssignedDecls, pathMovedDecls, pathMaybeMovedDecls, path.assigned, path.moved, path.maybeMoved);
         pathTargets.push_back({nullptr, path.breakStmt});
     }
     // The merge below appends drops for the implicit path to defaultStmts;
@@ -1055,14 +1057,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         }
     }
     if ((hadDefault || stmt.coversAllEnumCases) && !bodyAssignedDecls.empty()) {
-        definitelyAssignedDecls = bodyAssignedDecls.front();
-        for (auto& body : llvm::ArrayRef(bodyAssignedDecls).drop_front()) {
-            for (auto* decl : llvm::to_vector(definitelyAssignedDecls)) {
-                if (!body.count(decl)) {
-                    definitelyAssignedDecls.erase(decl);
-                }
-            }
-        }
+        intersectDefinitelyAssigned(bodyAssignedDecls);
     }
     warnAboutUnhandledEnumCases(stmt, conditionType, hadDefault);
 }
@@ -1098,9 +1093,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         typecheckExpr(*arm.expr, false, expectedType);
         narrowedTypes = outerNarrowings;
         if (!arm.expr->type.isNeverType()) {
-            armAssignedDecls.push_back(definitelyAssignedDecls);
-            armMovedDecls.push_back(movedDecls);
-            armMaybeMovedDecls.push_back(maybeMovedDecls);
+            recordBranchEnd(armAssignedDecls, armMovedDecls, armMaybeMovedDecls, definitelyAssignedDecls, movedDecls, maybeMovedDecls);
         }
     }
 
@@ -1110,21 +1103,12 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         typecheckExpr(*expr.defaultExpr, false, expectedType);
         narrowedTypes = outerNarrowings;
         if (!expr.defaultExpr->type.isNeverType()) {
-            armAssignedDecls.push_back(definitelyAssignedDecls);
-            armMovedDecls.push_back(movedDecls);
-            armMaybeMovedDecls.push_back(maybeMovedDecls);
+            recordBranchEnd(armAssignedDecls, armMovedDecls, armMaybeMovedDecls, definitelyAssignedDecls, movedDecls, maybeMovedDecls);
         }
     }
 
     if (!armAssignedDecls.empty()) {
-        definitelyAssignedDecls = armAssignedDecls.front();
-        for (auto& arm : llvm::ArrayRef(armAssignedDecls).drop_front()) {
-            for (auto* decl : llvm::to_vector(definitelyAssignedDecls)) {
-                if (!arm.count(decl)) {
-                    definitelyAssignedDecls.erase(decl);
-                }
-            }
-        }
+        intersectDefinitelyAssigned(armAssignedDecls);
     }
 
     // Every valid switch expression covers all paths (a default or all enum

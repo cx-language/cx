@@ -357,6 +357,8 @@ struct Typechecker {
     // moved on some but not all paths; the caller resolves each (destroy on
     // live paths for statements, maybe-move and warn for expressions).
     DeclSet mergeConditionalMoves(const std::vector<DeclSet>& pathMoved, const std::vector<DeclSet>& pathMaybe);
+    // Keeps declarations assigned on every path. `paths` must be non-empty.
+    void intersectDefinitelyAssigned(llvm::ArrayRef<DeclSet> paths);
     // Merges expression-branch move sets (switch-expression arms, or a
     // short-circuit RHS against entry): moves on every path stay moved,
     // partial moves keep the maybe state and warn.
