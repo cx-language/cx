@@ -386,6 +386,34 @@ void CGenerator::codegenSwitch(const SwitchInst* inst) {
     }
 }
 
+// C arrays are not assignable. In dispatch mode the declaration is already
+// hoisted, so only the copy is emitted here.
+template<typename EmitSource> static void codegenArrayTempCopy(CGenerator& generator, const Value* inst, const std::string& name, EmitSource&& emitSource) {
+    if (!generator.dispatchMode) {
+        generator.codegenTempDeclaration(inst, name);
+        generator.stream << ";\n";
+        generator.stream.indent(4);
+    }
+    generator.stream << "memcpy(" << name << ", ";
+    emitSource();
+    generator.stream << ", sizeof(" << name << "));\n";
+}
+
+static void hoistDispatchTemp(CGenerator& generator, const Value* inst, std::string name, IRType* type, bool namedDeclarator, bool takeAddress) {
+    generator.stream.indent(4);
+    if (namedDeclarator) {
+        generator.codegenDeclaration(generator.stream, type, name, true);
+    } else {
+        generator.codegenTempDeclarationForType(type, name);
+    }
+    generator.stream << ";\n";
+    if (takeAddress) {
+        generator.emittedValues.insert({inst, "(&" + name + ")"});
+    } else {
+        generator.emittedValues.insert({inst, std::move(name)});
+    }
+}
+
 void CGenerator::codegenLoad(const LoadInst* inst) {
     // Pure and side-effect free (safety checks are separate instructions), so skip when unread.
     if (deadValues.contains(inst)) return;
@@ -393,14 +421,7 @@ void CGenerator::codegenLoad(const LoadInst* inst) {
     const std::string& name = getOrCreateTempName(inst, "_load");
     if (inst->getType()->isArrayType()) {
         // C arrays are not assignable; declare the temp and copy into it like codegenStore.
-        if (!dispatchMode) {
-            codegenTempDeclaration(inst, name);
-            stream << ";\n";
-            stream.indent(4);
-        }
-        stream << "memcpy(" << name << ", ";
-        codegenInst(inst->value);
-        stream << ", sizeof(" << name << "));\n";
+        codegenArrayTempCopy(*this, inst, name, [&] { codegenInst(inst->value); });
         return;
     }
     // Emit an explicit type instead of the '__auto_type' GNU extension,
@@ -450,31 +471,15 @@ void CGenerator::codegenInsert(const InsertInst* inst) {
         codegenInst(inst->aggregate);
         stream << ", sizeof(" << name << ")); ";
     }
+    std::string element = type->isArrayType() ? "[" + std::to_string(inst->index) + "]" : "." + getFieldName(type, inst->index);
     if (inst->value->getType()->isArrayType()) {
         // C arrays are not assignable; copy element-wise like codegenStore.
-        stream << "memcpy(&" << name;
-        if (type->isArrayType()) {
-            stream << "[" << inst->index << "]";
-        } else {
-            stream << "." << getFieldName(type, inst->index);
-        }
-        stream << ", &";
+        stream << "memcpy(&" << name << element << ", &";
         codegenInst(inst->value);
-        stream << ", sizeof(" << name;
-        if (type->isArrayType()) {
-            stream << "[" << inst->index << "]";
-        } else {
-            stream << "." << getFieldName(type, inst->index);
-        }
-        stream << "));\n";
+        stream << ", sizeof(" << name << element << "));\n";
         return;
     }
-    stream << name;
-    if (type->isArrayType()) {
-        stream << "[" << inst->index << "] = ";
-    } else {
-        stream << "." << getFieldName(type, inst->index) << " = ";
-    }
+    stream << name << element << " = ";
     codegenInst(inst->value);
     stream << ";\n";
 }
@@ -485,15 +490,10 @@ void CGenerator::codegenExtract(const ExtractInst* inst) {
     const std::string& name = getOrCreateTempName(inst, "_extract");
     if (inst->getType()->isArrayType()) {
         // C arrays are not assignable; declare the temp and copy into it like codegenLoad.
-        if (!dispatchMode) {
-            codegenTempDeclaration(inst, name);
-            stream << ";\n";
-            stream.indent(4);
-        }
-        stream << "memcpy(" << name << ", ";
-        codegenInst(inst->aggregate);
-        stream << "." << getFieldName(inst->aggregate->getType(), inst->index);
-        stream << ", sizeof(" << name << "));\n";
+        codegenArrayTempCopy(*this, inst, name, [&] {
+            codegenInst(inst->aggregate);
+            stream << "." << getFieldName(inst->aggregate->getType(), inst->index);
+        });
         return;
     }
     IRType* aggregateType = inst->aggregate->getType();
@@ -1396,21 +1396,14 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
             case ValueKind::AllocaInst: {
                 auto* alloca = llvm::cast<AllocaInst>(inst);
                 auto name = claimSuffixedName(!alloca->name.empty() ? alloca->name : "_alloca");
-                stream.indent(4);
-                codegenDeclaration(stream, alloca->allocatedType, name, true);
-                stream << ";\n";
-                emittedValues.insert({inst, "(&" + std::move(name) + ")"});
+                hoistDispatchTemp(*this, inst, std::move(name), alloca->allocatedType, true, true);
                 break;
             }
             case ValueKind::CallInst: {
                 auto* call = llvm::cast<CallInst>(inst);
                 if (!hasReturnValue(call)) break;
                 if (!call->getType()->isArrayType() && useCounts[call] == 0) break;
-                auto name = claimSuffixedName("_call");
-                stream.indent(4);
-                codegenTempDeclarationForType(call->getType(), name);
-                stream << ";\n";
-                emittedValues.insert({inst, std::move(name)});
+                hoistDispatchTemp(*this, inst, claimSuffixedName("_call"), call->getType(), false, false);
                 break;
             }
             case ValueKind::LoadInst:
@@ -1424,44 +1417,26 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
                                               : inst->kind == ValueKind::BinaryInst  ? "_binary_op"
                                               : inst->kind == ValueKind::UnaryInst   ? "_unary_op"
                                                                                      : "_cast");
-                stream.indent(4);
-                codegenTempDeclarationForType(inst->getType(), name);
-                stream << ";\n";
-                emittedValues.insert({inst, std::move(name)});
+                hoistDispatchTemp(*this, inst, std::move(name), inst->getType(), false, false);
                 break;
             }
             case ValueKind::InsertInst: {
                 auto* insert = llvm::cast<InsertInst>(inst);
-                auto* type = insert->aggregate->getType();
-                auto name = claimSuffixedName("_insert");
-                stream.indent(4);
-                codegenDeclaration(stream, type, name, true);
-                stream << ";\n";
-                emittedValues.insert({inst, std::move(name)});
+                hoistDispatchTemp(*this, inst, claimSuffixedName("_insert"), insert->aggregate->getType(), true, false);
                 break;
             }
             case ValueKind::ArrayOpInst: {
                 if (deadValues.contains(inst)) break;
-                auto name = claimSuffixedName("_array_op");
-                stream.indent(4);
-                if (inst->getType()->isPointerType()) {
-                    codegenDeclaration(stream, llvm::cast<ArrayOpInst>(inst)->arrayType, name, true);
-                } else {
-                    codegenTempDeclarationForType(inst->getType(), name);
-                }
-                stream << ";\n";
-                emittedValues.insert({inst, std::move(name)});
+                bool pointerResult = inst->getType()->isPointerType();
+                IRType* type = pointerResult ? llvm::cast<ArrayOpInst>(inst)->arrayType : inst->getType();
+                hoistDispatchTemp(*this, inst, claimSuffixedName("_array_op"), type, pointerResult, false);
                 break;
             }
             case ValueKind::GEPInst:
             case ValueKind::ConstGEPInst: {
                 if (deadValues.contains(inst)) break;
                 auto prefix = inst->kind == ValueKind::GEPInst ? "_get_element_ptr" : "_const_get_element_ptr";
-                auto name = claimSuffixedName(prefix);
-                stream.indent(4);
-                codegenTempDeclarationForType(inst->getType(), name);
-                stream << ";\n";
-                emittedValues.insert({inst, std::move(name)});
+                hoistDispatchTemp(*this, inst, claimSuffixedName(prefix), inst->getType(), false, false);
                 break;
             }
             default:
