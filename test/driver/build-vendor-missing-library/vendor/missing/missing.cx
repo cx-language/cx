@@ -1,0 +1,6 @@
+// RUN: true
+
+// Vendored package whose system library cannot exist (see build.cx).
+int missingValue() {
+    return 1;
+}

@@ -8,7 +8,8 @@ import gl;
 
 // Compiling only must not query pkg-config: no link happens. On machines
 // without pkg-config or the libraries installed, this passes while linking
-// the same file fails (see vendor-missing-library.cx).
+// a vendored module with a missing system library fails
+// (see build-vendor-missing-library).
 
 void main() {
     println(GLFW_VERSION_MAJOR);

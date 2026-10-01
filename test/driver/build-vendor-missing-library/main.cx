@@ -1,0 +1,14 @@
+// RUN: cd %S && %not %cx build 2>&1 | %FileCheck %s
+
+import missing;
+
+void main() {
+    println(missingValue());
+}
+
+// Linking a vendored module whose system library cannot exist fails with
+// an error naming the missing package. The package name is bogus on
+// purpose, so the failure reproduces on every machine, including ones
+// with real libraries (like glfw) installed.
+
+// CHECK: error: couldn't query pkg-config for 'definitely-not-a-real-package'
