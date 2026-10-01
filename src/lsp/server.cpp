@@ -450,6 +450,19 @@ std::optional<JsonValue> runQuerySubprocess(ServerState& state, JsonObject query
     }
 }
 
+template<typename Range> static JsonArray toJsonArray(const Range& values) {
+    JsonArray array;
+    for (auto& value : values)
+        array.push_back(value);
+    return array;
+}
+
+static void appendJsonStrings(std::vector<std::string>& dest, const JsonArray& values) {
+    for (auto& value : values) {
+        if (auto str = value.getAsString()) dest.push_back(str->str());
+    }
+}
+
 JsonObject buildBaseQuery(ServerState& state, const std::string& method, const OpenDocument& doc) {
     JsonObject query;
     query["method"] = method;
@@ -460,18 +473,9 @@ JsonObject buildBaseQuery(ServerState& state, const std::string& method, const O
         openDocs[entry.getKey().str()] = entry.getValue().text;
     }
     query["openDocs"] = std::move(openDocs);
-    JsonArray folders;
-    for (auto& folder : state.workspaceFolders)
-        folders.push_back(folder);
-    query["workspaceFolders"] = std::move(folders);
-    JsonArray paths;
-    for (auto& path : state.importSearchPaths)
-        paths.push_back(path);
-    query["importSearchPaths"] = std::move(paths);
-    JsonArray defines;
-    for (auto& define : state.defines)
-        defines.push_back(define);
-    query["defines"] = std::move(defines);
+    query["workspaceFolders"] = toJsonArray(state.workspaceFolders);
+    query["importSearchPaths"] = toJsonArray(state.importSearchPaths);
+    query["defines"] = toJsonArray(state.defines);
     return query;
 }
 
@@ -657,16 +661,8 @@ int runServer(const ServerOptions& options) {
                 }
             }
             if (auto* initOptions = findJson(*params, "initializationOptions")) {
-                if (auto* paths = findJsonArray(*initOptions, "importSearchPaths")) {
-                    for (auto& path : *paths) {
-                        if (auto str = path.getAsString()) state.importSearchPaths.push_back(str->str());
-                    }
-                }
-                if (auto* defines = findJsonArray(*initOptions, "defines")) {
-                    for (auto& define : *defines) {
-                        if (auto str = define.getAsString()) state.defines.push_back(str->str());
-                    }
-                }
+                if (auto* paths = findJsonArray(*initOptions, "importSearchPaths")) appendJsonStrings(state.importSearchPaths, *paths);
+                if (auto* defines = findJsonArray(*initOptions, "defines")) appendJsonStrings(state.defines, *defines);
             }
             JsonObject capabilities;
             JsonObject sync;
@@ -684,14 +680,8 @@ int runServer(const ServerOptions& options) {
             capabilities["documentSymbolProvider"] = true;
             capabilities["referencesProvider"] = true;
             JsonObject legend;
-            JsonArray tokenTypes;
-            for (auto& type : semanticTokenTypes())
-                tokenTypes.push_back(type);
-            legend["tokenTypes"] = std::move(tokenTypes);
-            JsonArray tokenModifiers;
-            for (auto& modifier : semanticTokenModifiers())
-                tokenModifiers.push_back(modifier);
-            legend["tokenModifiers"] = std::move(tokenModifiers);
+            legend["tokenTypes"] = toJsonArray(semanticTokenTypes());
+            legend["tokenModifiers"] = toJsonArray(semanticTokenModifiers());
             JsonObject semanticTokens;
             semanticTokens["legend"] = std::move(legend);
             semanticTokens["full"] = true;
