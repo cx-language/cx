@@ -143,6 +143,7 @@ void testSmallListZeroInlineCapacity() {
     var list = SmallList<int32, 0>();
     assert(list.empty() && list.capacity() == 0);
     list.push(1);
+    assert(list.capacity() == 8);
     list.push(2);
     assert(list.size() == 2 && list[0] == 1 && list[1] == 2);
     assert(list.pop() == 2);

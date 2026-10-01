@@ -24,6 +24,20 @@ void testListInsertionAndRemoval() {
 }
 
 @test
+void testInitialCapacity() {
+    var a = List<int>();
+    assert(a.capacity() == 0);
+    a.push(1);
+    assert(a.size() == 1 && a.capacity() == 8);
+    for i in 2...8 {
+        a.push(i);
+    }
+    assert(a.size() == 8 && a.capacity() == 8);
+    a.push(9);
+    assert(a.size() == 9 && a.capacity() == 16);
+}
+
+@test
 void testListInitFromLiteral() {
     var a = List([1, 2, 3]);
 

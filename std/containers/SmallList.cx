@@ -343,7 +343,8 @@ struct SmallList<Element, int N> {
     }
 
     private void grow() {
-        reserve(capacity() == 0 ? 1 : capacity() * 2);
+        // Same first allocation as List (only N=0 reaches it from empty).
+        reserve(capacity() == 0 ? 8 : capacity() * 2);
     }
 
 }

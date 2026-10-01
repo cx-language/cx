@@ -325,7 +325,9 @@ struct List<Element> {
 
     private void grow() {
         if capacity == 0 {
-            reserve(1);
+            // First push allocates 8 slots: below one malloc chunk this
+            // costs nothing extra but saves three reallocs while growing.
+            reserve(8);
         } else {
             assert(capacity <= int.max / 2, "List capacity overflow");
             reserve(capacity * 2);

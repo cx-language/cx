@@ -62,10 +62,10 @@ void testStdlibUsesContextAllocator() {
     var usedBefore = bumpUsed;
     var freesBefore = bumpFrees;
     withAllocator(bumpAllocator(), pushTwo);
-    // Two list growths allocated, and both were freed before the restore.
-    // Exact counts depend on List doubling from capacity 1.
+    // One list growth allocated, and it was freed before the restore.
+    // Exact counts depend on List starting at capacity 8.
     assert(bumpUsed > usedBefore);
-    assert(bumpFrees == freesBefore + 2);
+    assert(bumpFrees == freesBefore + 1);
 }
 
 @test
@@ -107,10 +107,10 @@ void testNestedWithAllocator() {
     var freesBefore = bumpFrees;
     withAllocator(bumpAllocator(), outerBody);
     // Outer body used the bump allocator; inner body used the stateful one.
-    // Exact counts depend on List doubling from capacity 1.
+    // Exact counts depend on List starting at capacity 8.
     assert(bumpUsed > usedBefore);
-    assert(bumpFrees == freesBefore + 2);
-    assert(stats.allocs == 2 && stats.frees == 2);
+    assert(bumpFrees == freesBefore + 1);
+    assert(stats.allocs == 1 && stats.frees == 1);
     var usedAfterRestore = bumpUsed;
     pushTwo();
     assert(bumpUsed == usedAfterRestore);
