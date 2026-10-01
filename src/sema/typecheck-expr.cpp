@@ -5528,10 +5528,46 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
     }
 
     if (auto* switchExpr = llvm::dyn_cast<SwitchExpr>(expr)) {
-        for (auto& arm : switchExpr->arms) {
-            if (consumes(arm.expr)) setMoved(arm.expr, isMoved, trackVars);
+        if (!isMoved || !trackVars) {
+            for (auto& arm : switchExpr->arms) {
+                if (consumes(arm.expr)) setMoved(arm.expr, isMoved, trackVars);
+            }
+            if (switchExpr->defaultExpr && consumes(switchExpr->defaultExpr)) setMoved(switchExpr->defaultExpr, isMoved, trackVars);
+            return;
         }
-        if (switchExpr->defaultExpr && consumes(switchExpr->defaultExpr)) setMoved(switchExpr->defaultExpr, isMoved, trackVars);
+        // A moved switch-expression value comes from exactly one arm: like a
+        // ternary, moves in only some arms warn while moves on every path
+        // stay silent. Diverging arms contribute no path to the join.
+        DeclSet preDecls = movedDecls;
+        size_t branchEntryLocalCount = localVarDecls.size();
+        std::vector<DeclSet> armMoves;
+        std::vector<char> armReaches;
+        for (auto& arm : switchExpr->arms) {
+            armMoves.push_back(collectBranchMoves(arm.expr, preDecls, isMoved, trackVars));
+            armReaches.push_back(!arm.expr->type.isNeverType());
+        }
+        if (switchExpr->defaultExpr) {
+            armMoves.push_back(collectBranchMoves(switchExpr->defaultExpr, preDecls, isMoved, trackVars));
+            armReaches.push_back(!switchExpr->defaultExpr->type.isNeverType());
+        }
+        for (size_t i = 0; i < armMoves.size(); ++i) {
+            if (!armReaches[i]) continue;
+            for (auto* decl : armMoves[i]) {
+                bool missingElsewhere = false;
+                for (size_t j = 0; j < armMoves.size(); ++j) {
+                    if (i != j && armReaches[j] && !armMoves[j].count(decl)) {
+                        missingElsewhere = true;
+                        break;
+                    }
+                }
+                if (!missingElsewhere) continue;
+                // Locate before inserting: never-warn declarations (bindings,
+                // temps, locals) must not consume the dedup slot.
+                if (!locateConditionalMoveWarning(decl, branchEntryLocalCount, moveLocations)) continue;
+                if (!condWarnedDecls.insert(decl).second) continue;
+                warnAboutConditionalMove(decl, ConditionalMoveSite::SwitchExpr, branchEntryLocalCount, moveLocations);
+            }
+        }
         return;
     }
 

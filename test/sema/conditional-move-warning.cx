@@ -286,3 +286,86 @@ void nestedAndWarnsOnce(bool a, bool b, StringBuf n) {
     var r = a && (b && consumeBool(n));
     println(r);
 }
+
+void switchExprBareArmWarns(int c, StringBuf x) {
+    var s = switch c {
+        // CHECK: [[@LINE+1]]:17: warning: value 'x' is moved in only some arms of this 'switch' expression; it may leak on the other paths (move it on every path if this was intended)
+        case 1: x,
+        default: StringBuf("d"),
+    };
+    println(string(s));
+}
+
+void switchExprAllArmsSilent(int c, StringBuf x) {
+    // No check line: any warning here fails via implicit-check-not.
+    var s = switch c {
+        case 1: x,
+        default: x,
+    };
+    println(string(s));
+}
+
+void switchExprDivergingArmSilent(int c, StringBuf y) {
+    // Only the default arm runs on; its moves are unconditional there.
+    var s = switch c {
+        case 1: abort("x"),
+        default: y,
+    };
+    println(string(s));
+}
+
+void switchExprMixedBareCallWarnsOnce(int c, StringBuf x) {
+    // CHECK-COUNT-1: warning: value 'x' is moved in only some arms of this 'switch' expression
+    var s = switch c {
+        case 1: x,
+        case 2: identBuf(x),
+        default: StringBuf("d"),
+    };
+    println(string(s));
+}
+
+void switchExprThreeArmsWarnsOnce(int c, StringBuf x) {
+    var s = switch c {
+        case 1: x,
+        // CHECK: [[@LINE+1]]:17: warning: value 'x' is moved in only some arms of this 'switch' expression; it may leak on the other paths (move it on every path if this was intended)
+        case 2: x,
+        default: StringBuf("d"),
+    };
+    println(string(s));
+}
+
+void switchExprDefaultOnlyWarns(int c, StringBuf y) {
+    var s = switch c {
+        case 1: StringBuf("a"),
+        // CHECK: [[@LINE+1]]:18: warning: value 'y' is moved in only some arms of this 'switch' expression; it may leak on the other paths (move it on every path if this was intended)
+        default: y,
+    };
+    println(string(s));
+}
+
+void switchExprEnumNoDefaultWarns(E e, StringBuf x) {
+    var s = switch e {
+        // CHECK: [[@LINE+1]]:19: warning: value 'x' is moved in only some arms of this 'switch' expression; it may leak on the other paths (move it on every path if this was intended)
+        case A v: x,
+        case B: StringBuf("d"),
+    };
+    println(string(s));
+}
+
+void switchExprBindingWarnsSubject(E e) {
+    var s = switch e {
+        // CHECK: [[@LINE+1]]:23: warning: value 'e' is moved in only some arms of this 'switch' expression; it may leak on the other paths (move it on every path if this was intended)
+        case A value: value,
+        case B: StringBuf("d"),
+    };
+    println(string(s));
+}
+
+void switchExprNestedTernaryWarnsOnce(int c, bool b, StringBuf x) {
+    // CHECK-COUNT-1: warning: value 'x' is moved in the 'then' arm of this ternary
+    var s = switch c {
+        case 1: b ? x : StringBuf("d"),
+        default: StringBuf("e"),
+    };
+    println(string(s));
+}

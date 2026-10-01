@@ -769,9 +769,13 @@ void Typechecker::mergeExpressionMoves(const std::vector<DeclSet>& pathMoved, co
     DeclSet symdiff = mergeConditionalMoves(pathMoved, pathMaybe);
     for (auto* decl : symdiff) {
         maybeMovedDecls.insert(decl);
-        if (!entryMoved.count(decl)) {
-            warnAboutConditionalMove(decl, site, branchEntryLocalCount, moveLocations);
-        }
+        if (entryMoved.count(decl)) continue;
+        // Locate before inserting: never-warn declarations (bindings, temps,
+        // locals) must not consume the dedup slot. Each move warns once (like
+        // warnTernaryMove) so a later propagation of the same move stays silent.
+        if (!locateConditionalMoveWarning(decl, branchEntryLocalCount, moveLocations)) continue;
+        if (!condWarnedDecls.insert(decl).second) continue;
+        warnAboutConditionalMove(decl, site, branchEntryLocalCount, moveLocations);
     }
 }
 
