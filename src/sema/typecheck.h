@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
@@ -10,6 +11,7 @@
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/Support/ErrorOr.h>
+#include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
 #include "../ast/expr.h"
@@ -452,6 +454,20 @@ struct Typechecker {
     llvm::SmallPtrSet<const TypeDecl*, 16> infiniteSizeReported;
     CompileOptions options; // Active package's options; switched per module.
     const std::vector<BuildConfig::ResolvedDependency>* dependencies; // Closure, or null without a project.
+};
+
+// Saves move and conditional-move state for one branch. Assignment state is included
+// unless the caller snapshots it outside the branch (ternary arms, short-circuit RHS).
+struct BranchStateScope {
+    llvm::SaveAndRestore<DeclSet> movedDecls;
+    llvm::SaveAndRestore<DeclSet> maybeMovedDecls;
+    llvm::SaveAndRestore<DeclSet> condWarnedDecls;
+    std::optional<llvm::SaveAndRestore<DeclSet>> assignedDecls;
+
+    explicit BranchStateScope(Typechecker& checker, bool saveAssigned = true)
+    : movedDecls(checker.movedDecls), maybeMovedDecls(checker.maybeMovedDecls), condWarnedDecls(checker.condWarnedDecls) {
+        if (saveAssigned) assignedDecls.emplace(checker.definitelyAssignedDecls);
+    }
 };
 
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);

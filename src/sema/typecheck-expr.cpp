@@ -3239,6 +3239,27 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     std::vector<ConstructorDecl*> constructorDecls;
     bool isConstructorCall = false;
 
+    // A sole candidate is checked and returned. Several candidates are only recorded;
+    // comparison operators that can be derived retry instead of failing here.
+    // Instantiated templates still need their signature checked, and their body deferred.
+    auto considerCandidate = [&](FunctionDecl* functionDecl, std::vector<Match>& into, bool instantiated) -> FunctionDecl* {
+        if (decls.size() != 1) {
+            if (auto match = matchArguments(expr, functionDecl)) into.push_back(*match);
+            return nullptr;
+        }
+        if (instantiated) {
+            // Substitution leaves non-generic names (e.g. global constants in array
+            // sizes) folded only by a checker; ensure the signature now so matching
+            // and the call type see concrete types. Never throws, so probing still
+            // relies on matchArguments below to reject losers.
+            ensureSignature(*functionDecl);
+        }
+        if (!matchArguments(expr, functionDecl) && hasComparisonFallback(expr)) return nullptr;
+        validateAndConvertArguments(expr, *functionDecl, callee);
+        if (instantiated) deferTypechecking(functionDecl);
+        return functionDecl;
+    };
+
     for (Decl* decl : decls) {
         switch (decl->kind) {
         case DeclKind::FunctionTemplate: {
@@ -3258,21 +3279,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 if (!variadicArgs) continue;
 
                 auto* functionDecl = functionTemplate->instantiateVariadic(variadicArgs->fixedArgs, variadicArgs->packArgs, std::move(variadicArgs->cacheKey));
-
-                if (decls.size() == 1) {
-                    // Substitution leaves non-generic names (e.g. global constants in array
-                    // sizes) folded only by a checker; ensure the signature now so matching
-                    // and the call type see concrete types. Never throws, so probing still
-                    // relies on matchArguments below to reject losers.
-                    ensureSignature(*functionDecl);
-                    if (!matchArguments(expr, functionDecl) && hasComparisonFallback(expr)) continue;
-                    validateAndConvertArguments(expr, *functionDecl, callee);
-                    deferTypechecking(functionDecl);
-                    return functionDecl;
-                }
-                if (auto match = matchArguments(expr, functionDecl)) {
-                    templateMatches.push_back(*match);
-                }
+                if (auto* chosen = considerCandidate(functionDecl, templateMatches, true)) return chosen;
                 break;
             }
 
@@ -3297,21 +3304,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
             auto* functionDecl = functionTemplate->instantiate(genericArgs);
-
-            if (decls.size() == 1) {
-                // Substitution leaves non-generic names (e.g. global constants in array
-                // sizes) folded only by a checker; ensure the signature now so matching
-                // and the call type see concrete types. Never throws, so probing still
-                // relies on matchArguments below to reject losers.
-                ensureSignature(*functionDecl);
-                if (!matchArguments(expr, functionDecl) && hasComparisonFallback(expr)) continue;
-                validateAndConvertArguments(expr, *functionDecl, callee);
-                deferTypechecking(functionDecl);
-                return functionDecl;
-            }
-            if (auto match = matchArguments(expr, functionDecl)) {
-                templateMatches.push_back(*match);
-            }
+            if (auto* chosen = considerCandidate(functionDecl, templateMatches, true)) return chosen;
             break;
         }
         case DeclKind::FunctionDecl:
@@ -3324,15 +3317,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 functionDecl = functionDecl->instantiate({{"This", functionDecl->getTypeDecl()->getType()}}, {});
             }
 
-            if (decls.size() == 1) {
-                validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
-                if (!matchArguments(expr, functionDecl) && hasComparisonFallback(expr)) continue;
-                validateAndConvertArguments(expr, *functionDecl, callee);
-                return functionDecl;
-            }
-            if (auto match = matchArguments(expr, functionDecl)) {
-                matches.push_back(*match);
-            }
+            if (decls.size() == 1) validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
+            if (auto* chosen = considerCandidate(functionDecl, matches, false)) return chosen;
             break;
         }
         case DeclKind::TypeDecl: {
@@ -4770,9 +4756,7 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     DeclSet thenMovedDecls, thenMaybeMovedDecls, thenWarnedDecls;
     Type thenType;
     {
-        llvm::SaveAndRestore saveMovedDecls(movedDecls);
-        llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
-        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
+        BranchStateScope branchState(*this, false);
         thenType = typecheckExpr(*expr.thenExpr);
         thenMovedDecls = movedDecls;
         thenMaybeMovedDecls = maybeMovedDecls;
@@ -4786,9 +4770,7 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     DeclSet elseMovedDecls, elseMaybeMovedDecls, elseWarnedDecls;
     Type elseType;
     {
-        llvm::SaveAndRestore saveMovedDecls(movedDecls);
-        llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls);
-        llvm::SaveAndRestore saveCondWarnedDecls(condWarnedDecls);
+        BranchStateScope branchState(*this, false);
         elseType = typecheckExpr(*expr.elseExpr);
         elseMovedDecls = movedDecls;
         elseMaybeMovedDecls = maybeMovedDecls;
@@ -4997,6 +4979,46 @@ static Type matchEnumTemplateExpectedType(TypeTemplate& typeTemplate, Type expec
     return Type();
 }
 
+static void resolveAliasDecls(Typechecker& checker, std::vector<Decl*>& decls) {
+    for (Decl*& decl : decls) {
+        if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
+            Type aliasedType = checker.resolveTypeAliases(alias->aliasedType);
+            checker.typecheckType(aliasedType, AccessLevel::None);
+            if (TypeDecl* typeDecl = aliasedType.getDecl()) decl = typeDecl;
+        }
+    }
+}
+
+// One declaration is returned as-is. Several: `matches` picks the type, other types and
+// functions are ignored, and a variable hides the type. Two matches are ambiguous.
+static Decl* pickNamedType(llvm::ArrayRef<Decl*> decls, llvm::function_ref<bool(Decl*)> matches, llvm::function_ref<bool(Decl*)> ignored) {
+    if (decls.size() == 1) return decls.front();
+    Decl* found = nullptr;
+    for (Decl* decl : decls) {
+        if (matches(decl)) {
+            if (found) return nullptr;
+            found = decl;
+        } else if (!ignored(decl)) {
+            return nullptr;
+        }
+    }
+    return found;
+}
+
+static const MemberExpr* typeMemberBase(Typechecker& checker, const Expr& expr, std::vector<Decl*>& decls) {
+    auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr);
+    if (!memberExpr) return nullptr;
+    auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
+    if (!varExpr) return nullptr;
+    decls = checker.findDecls(varExpr->identifier);
+    resolveAliasDecls(checker, decls);
+    return memberExpr;
+}
+
+static bool isIgnoredName(Decl* decl) {
+    return decl->kind == DeclKind::TypeTemplate || decl->kind == DeclKind::FunctionDecl || decl->kind == DeclKind::FunctionTemplate;
+}
+
 // If the expected type names an enum with a case called `name`, returns that case.
 EnumCase* Typechecker::getExpectedEnumCase(llvm::StringRef name, Type expectedType) {
     if (!expectedType) return nullptr;
@@ -5012,35 +5034,14 @@ EnumCase* Typechecker::getExpectedEnumCase(llvm::StringRef name, Type expectedTy
 }
 
 EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr* call) {
-    auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr);
+    std::vector<Decl*> decls;
+    auto* memberExpr = typeMemberBase(*this, expr, decls);
     if (!memberExpr) return nullptr;
-    auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
-    if (!varExpr) return nullptr;
-    auto decls = findDecls(varExpr->identifier);
-    for (Decl*& decl : decls) {
-        if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
-            Type aliasedType = resolveTypeAliases(alias->aliasedType);
-            typecheckType(aliasedType, AccessLevel::None);
-            if (TypeDecl* typeDecl = aliasedType.getDecl()) decl = typeDecl;
-        }
-    }
-
-    Decl* enumDeclOrTemplate = nullptr;
-    if (decls.size() == 1) {
-        enumDeclOrTemplate = decls.front();
-    } else {
-        // A same-named type or function doesn't prevent enum case access, but a same-named variable takes precedence.
-        for (Decl* decl : decls) {
-            if (decl->isEnumDecl() || (decl->isTypeTemplate() && llvm::cast<TypeTemplate>(decl)->typeDecl->isEnumDecl())) {
-                if (enumDeclOrTemplate) return nullptr; // Ambiguous.
-                enumDeclOrTemplate = decl;
-            } else if (decl->kind != DeclKind::TypeDecl && decl->kind != DeclKind::TypeTemplate && decl->kind != DeclKind::FunctionDecl
-                       && decl->kind != DeclKind::FunctionTemplate) {
-                return nullptr;
-            }
-        }
-        if (!enumDeclOrTemplate) return nullptr;
-    }
+    // A same-named type or function doesn't prevent enum case access, but a same-named variable takes precedence.
+    Decl* enumDeclOrTemplate = pickNamedType(
+        decls, [](Decl* decl) { return decl->isEnumDecl() || (decl->isTypeTemplate() && llvm::cast<TypeTemplate>(decl)->typeDecl->isEnumDecl()); },
+        [](Decl* decl) { return decl->kind == DeclKind::TypeDecl || isIgnoredName(decl); });
+    if (!enumDeclOrTemplate) return nullptr;
 
     EnumCase* enumCase = nullptr;
     if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(enumDeclOrTemplate)) {
@@ -5063,34 +5064,12 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
 }
 
 VarDecl* Typechecker::getStaticConst(const Expr& expr) {
-    auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr);
+    std::vector<Decl*> decls;
+    auto* memberExpr = typeMemberBase(*this, expr, decls);
     if (!memberExpr) return nullptr;
-    auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
-    if (!varExpr) return nullptr;
-    auto decls = findDecls(varExpr->identifier);
-    for (Decl*& decl : decls) {
-        if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
-            Type aliasedType = resolveTypeAliases(alias->aliasedType);
-            typecheckType(aliasedType, AccessLevel::None);
-            if (TypeDecl* typeDecl = aliasedType.getDecl()) decl = typeDecl;
-        }
-    }
-
-    Decl* typeDeclOrNull = nullptr;
-    if (decls.size() == 1) {
-        typeDeclOrNull = decls.front();
-    } else {
-        // A same-named type doesn't prevent static access, but a same-named variable takes precedence.
-        for (Decl* decl : decls) {
-            if (decl->isTypeDecl()) {
-                if (typeDeclOrNull) return nullptr; // Ambiguous.
-                typeDeclOrNull = decl;
-            } else if (decl->kind != DeclKind::TypeTemplate && decl->kind != DeclKind::FunctionDecl && decl->kind != DeclKind::FunctionTemplate) {
-                return nullptr;
-            }
-        }
-        if (!typeDeclOrNull) return nullptr;
-    }
+    // A same-named function or type template doesn't prevent static access, but a same-named variable takes precedence.
+    Decl* typeDeclOrNull = pickNamedType(decls, [](Decl* decl) { return decl->isTypeDecl(); }, isIgnoredName);
+    if (!typeDeclOrNull) return nullptr;
 
     auto* typeDecl = llvm::dyn_cast<TypeDecl>(typeDeclOrNull);
     if (!typeDecl) return nullptr;
