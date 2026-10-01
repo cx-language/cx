@@ -1,4 +1,4 @@
-import "SDL3/SDL.h";
+import sdl3;
 
 // Boids flocking: 1500 agents with separation/alignment/cohesion over a
 // uniform grid, colored by speed. Hold the left mouse button to attract
@@ -187,8 +187,7 @@ void runInteractive() {
     }
     defer SDL_Quit();
 
-    // 0x2000 is SDL_WINDOW_HIGH_PIXEL_DENSITY (a macro cx can't import).
-    var window = SDL_CreateWindow("boids", width, height, uint64(0x2000));
+    var window = SDL_CreateWindow("boids", width, height, SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if window == null {
         println(SDL_GetError()!);
         return;
@@ -232,8 +231,7 @@ void runInteractive() {
         float mouseX = 0;
         float mouseY = 0;
         var buttons = SDL_GetMouseState(&mouseX, &mouseY);
-        // SDL_BUTTON_LMASK is a function-like macro, so it doesn't import; its value is 1.
-        stepFlock(&flock, &grid, dt, (buttons & 1) != 0, mouseX, mouseY);
+        stepFlock(&flock, &grid, dt, (buttons & SDL_BUTTON_LMASK) != 0, mouseX, mouseY);
 
         SDL_SetRenderDrawColor(renderer, 10, 12, 20, 255);
         SDL_RenderClear(renderer);

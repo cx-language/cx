@@ -1,0 +1,76 @@
+// REQUIRES: sdl3
+// UNSUPPORTED: windows
+// RUN: %cx -typecheck --check-all %s -Wno-unused 2>&1 | %FileCheck %s --allow-empty --check-prefix=STATIC
+// STATIC-NOT: warning:
+// STATIC-NOT: error:
+// RUN: env SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy %cx run -Wno-unused %s | %FileCheck %s
+
+import sdl3;
+
+// Exercises the vendored module against the installed SDL: const values,
+// struct/union layout, and linked calls. The typecheck run above validates
+// every declaration; this run validates the values.
+
+Uint32 onTimer(void*? userdata, SDL_TimerID id, Uint32 interval) {
+    return interval;
+}
+
+// Typechecked but never run: null render pass would crash at runtime.
+void probe() {
+    println(SDL_AddTimer(100, onTimer, null));
+    SDL_SetGPUBlendConstants(null, SDL_FColor(r = 1, g = 0, b = 0, a = 0));
+}
+
+int main() {
+    println(SDL_INIT_VIDEO); // CHECK: 32
+    println(SDL_EVENT_QUIT); // CHECK-NEXT: 256
+    println(SDLK_A); // CHECK-NEXT: 97
+    println(SDL_BUTTON_LMASK); // CHECK-NEXT: 1
+    println(SDL_WINDOW_HIGH_PIXEL_DENSITY); // CHECK-NEXT: 8192
+    println(SDL_JOYSTICK_AXIS_MIN); // CHECK-NEXT: -32768
+    println(SDL_SIZE_MAX); // CHECK-NEXT: 18446744073709551615
+    println(SDL_MOUSE_TOUCHID); // CHECK-NEXT: 18446744073709551615
+    println(SDL_PEN_TOUCHID); // CHECK-NEXT: 18446744073709551614
+    println(SDL_STANDARD_GRAVITY); // CHECK-NEXT: 9.80665
+    var rect = SDL_Rect(x = 0, y = 0, w = 10, h = 10);
+    println(rect.w, " ", sizeof(SDL_Rect)); // CHECK-NEXT: 10 16
+
+    if !SDL_Init(SDL_INIT_VIDEO) {
+        println(SDL_GetError()!);
+        return 1;
+    }
+    defer SDL_Quit();
+    println(SDL_GetVersion()); // CHECK-NEXT: {{[0-9]+}}
+    var window = SDL_CreateWindow("vendor-sdl3", 64, 64, 0);
+    if window == null {
+        println(SDL_GetError()!);
+        return 1;
+    }
+    defer SDL_DestroyWindow(window);
+
+    // Round-trip through the real event queue and the SDL_Event union.
+    SDL_Event out = undefined;
+    out.type = SDL_EVENT_KEY_DOWN;
+    out.key.key = SDLK_A;
+    out.key.scancode = SDL_SCANCODE_A;
+    if !SDL_PushEvent(&out) {
+        println("push failed");
+        return 1;
+    }
+    SDL_Event event = undefined;
+    var found = false;
+    while SDL_PollEvent(&event) {
+        if event.type == SDL_EVENT_KEY_DOWN {
+            found = true;
+            break;
+        }
+    }
+    if !found {
+        println("key event not found");
+        return 1;
+    }
+    println(event.type, " ", event.key.key, " ", event.key.scancode); // CHECK-NEXT: 768 97 4
+    SDL_SetHint("SDL_TEST_HINT_SDL3", "hello");
+    println(SDL_GetHint("SDL_TEST_HINT_SDL3")!); // CHECK-NEXT: hello
+    return 0;
+}

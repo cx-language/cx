@@ -1,4 +1,4 @@
-import "SDL3/SDL.h";
+import sdl3;
 
 const missileSize = 20;
 const missileSpeed = 0.3;

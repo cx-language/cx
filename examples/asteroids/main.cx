@@ -1,4 +1,4 @@
-import "SDL3/SDL.h";
+import sdl3;
 
 const width = 640;
 const height = 480;
@@ -16,9 +16,8 @@ void main() {
     }
     defer SDL_Quit();
 
-    // 0x2000 is SDL_WINDOW_HIGH_PIXEL_DENSITY (a macro cx can't import).
     var window = SDL_CreateWindow("cx Asteroids",
-        int(width), int(height), uint64(0x2000));
+        int(width), int(height), SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
     if window == null {
         println(SDL_GetError()!);

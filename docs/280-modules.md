@@ -54,6 +54,7 @@ so using them needs no C header import (which is slower to compile):
 ```cs {.noRun}
 import glfw;
 import gl;
+import sdl3;
 ```
 
 Vendored modules are imported explicitly like any other module, but need
@@ -62,9 +63,10 @@ own `build.cx`, and the build applies its link requirements automatically
 when the module is imported. The C library itself must be installed on
 the system; if it cannot be found, the build fails with an error naming it.
 
-Currently vendored: `glfw` (GLFW 3.x, without the Vulkan functions) and
-`gl` (OpenGL 3.3 core profile). A `vendor/<package>/` directory in your
-own project shadows the shipped module of the same name, so you can
+Currently vendored: `glfw` (GLFW 3.x, without the Vulkan functions),
+`gl` (OpenGL 3.3 core profile), and `sdl3` (SDL 3.x; see the header of
+`vendor/sdl3/sdl3.cx` for omissions). A `vendor/<package>/` directory in
+your own project shadows the shipped module of the same name, so you can
 override or extend a binding; the shadowing package's link settings
 apply under `cx build` like any other vendored dependency. Vendored
 modules need the native library at link time, so they are unavailable

@@ -1,4 +1,4 @@
-import "SDL3/SDL.h";
+import sdl3;
 
 struct GameState {
     Player player;

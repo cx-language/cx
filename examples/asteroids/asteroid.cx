@@ -1,4 +1,4 @@
-import "SDL3/SDL.h";
+import sdl3;
 import "stdlib.h";
 
 const maxRotationSpeed = 0.007;
