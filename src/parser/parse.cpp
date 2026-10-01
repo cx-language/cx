@@ -801,16 +801,12 @@ LambdaExpr* Parser::parseLambdaExpr() {
 
     auto lambda = makeAST<LambdaExpr>(std::move(params), currentModule, location);
 
+    if (currentToken() != Token::LeftBrace) parse(Token::FatArrow);
     if (currentToken() == Token::LeftBrace) {
         lambda->functionDecl->body = parseBlock(lambda->functionDecl);
     } else {
-        parse(Token::FatArrow);
-        if (currentToken() == Token::LeftBrace) {
-            lambda->functionDecl->body = parseBlock(lambda->functionDecl);
-        } else {
-            auto expr = parseExpr();
-            lambda->functionDecl->body = {makeAST<ReturnStmt>(expr, expr->location)};
-        }
+        auto expr = parseExpr();
+        lambda->functionDecl->body = {makeAST<ReturnStmt>(expr, expr->location)};
     }
 
     lambda->endLocation = getLastTokenEndLocation();

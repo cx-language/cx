@@ -265,49 +265,38 @@ Token Lexer::readNumber() {
         intValue = intValue * base + digit;
     };
 
+    // Binary and octal share the scan: digits, '_' separators, then a non-digit terminator.
+    auto readRadixLiteral = [&](auto isDigit, uint64_t base, const char* kindName, char prefix) {
+        end++;
+        while (true) {
+            ch = readChar();
+            if (isDigit(ch)) {
+                appendDigit(uint64_t(ch - '0'), base);
+                sawNonSeparator = true;
+                end++;
+                continue;
+            }
+            if (ch == '_') {
+                end++;
+                continue;
+            }
+            if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in " << kindName << " literal");
+            if (end == begin + 2 || !sawNonSeparator)
+                ERROR_RANGE(firstLocation, getIdentifierEndLocation(firstLocation, {begin, size_t(end - begin)}),
+                            kindName << " literal must have at least one digit after '0" << prefix << "'");
+            return;
+        }
+    };
+
     switch (ch) {
     case 'b':
         if (begin[0] != '0') goto end;
-        end++;
-        while (true) {
-            ch = readChar();
-            if (ch == '0' || ch == '1') {
-                appendDigit(ch == '1', 2);
-                sawNonSeparator = true;
-                end++;
-                continue;
-            } else if (ch == '_') {
-                end++;
-                continue;
-            }
-            if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in binary literal");
-            if (end == begin + 2 || !sawNonSeparator)
-                ERROR_RANGE(firstLocation, getIdentifierEndLocation(firstLocation, {begin, size_t(end - begin)}),
-                            "binary literal must have at least one digit after '0b'");
-            goto end;
-        }
-        break;
+        readRadixLiteral([](char digit) { return digit == '0' || digit == '1'; }, 2, "binary", 'b');
+        goto end;
     case 'o':
         if (begin[0] != '0') goto end;
-        end++;
-        while (true) {
-            ch = readChar();
-            if (ch >= '0' && ch <= '7') {
-                appendDigit(ch - '0', 8);
-                sawNonSeparator = true;
-                end++;
-                continue;
-            } else if (ch == '_') {
-                end++;
-                continue;
-            }
-            if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in octal literal");
-            if (end == begin + 2 || !sawNonSeparator)
-                ERROR_RANGE(firstLocation, getIdentifierEndLocation(firstLocation, {begin, size_t(end - begin)}),
-                            "octal literal must have at least one digit after '0o'");
-            goto end;
-        }
-        break;
+        readRadixLiteral([](char digit) { return digit >= '0' && digit <= '7'; }, 8, "octal", 'o');
+        goto end;
     default:
         if (std::isdigit(ch) && begin[0] == '0') {
             ERROR_RANGE(firstLocation, lastLocation.nextColumn(), "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
