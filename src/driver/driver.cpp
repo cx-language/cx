@@ -921,29 +921,20 @@ static PkgConfigSplit queryPkgConfigFlagsOrAbort(llvm::ArrayRef<std::string> pac
     ABORT("couldn't query pkg-config for '" << joined << "'");
 }
 
+template<typename Range> static void appendFlags(cl::list<std::string>& dest, const Range& src) {
+    for (auto& value : src)
+        dest.push_back(value);
+}
+
 static void addPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
     auto split = queryPkgConfigFlagsOrAbort(packages);
-    for (auto& define : split.defines) {
-        defines.push_back(define);
-    }
-    for (auto& path : split.headerSearchPaths) {
-        importSearchPaths.push_back(path);
-    }
-    for (auto& path : split.librarySearchPaths) {
-        librarySearchPaths.push_back(path);
-    }
-    for (auto& library : split.libraries) {
-        libraries.push_back(library);
-    }
-    for (auto& path : split.frameworkSearchPaths) {
-        frameworkSearchPaths.push_back(path);
-    }
-    for (auto& framework : split.frameworks) {
-        frameworks.push_back(framework);
-    }
-    for (auto& flag : split.cflags) {
-        cflags.push_back(flag);
-    }
+    appendFlags(defines, split.defines);
+    appendFlags(importSearchPaths, split.headerSearchPaths);
+    appendFlags(librarySearchPaths, split.librarySearchPaths);
+    appendFlags(libraries, split.libraries);
+    appendFlags(frameworkSearchPaths, split.frameworkSearchPaths);
+    appendFlags(frameworks, split.frameworks);
+    appendFlags(cflags, split.cflags);
 }
 
 static void addConfigBuildFlags(const BuildConfig& config) {
