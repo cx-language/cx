@@ -233,6 +233,143 @@
             "commits on the main branch.</p>";
     }
 
+    var LANGS = {
+        cx: { label: "cx", color: null },
+        c: { label: "C", color: "#555555" },
+        cxx: { label: "C++", color: "#f34b7d" },
+        rust: { label: "Rust", color: "#dea584" },
+        go: { label: "Go", color: "#00ADD8" },
+        odin: { label: "Odin", color: "#60AFFE" },
+        zig: { label: "Zig", color: "#ec915c" },
+    };
+    var MODE_LABEL = { release: "optimized", debug: "unoptimized debug" };
+
+    function fmtLangSeconds(seconds) {
+        if (seconds < 1) return Math.round(seconds * 1000) + " ms";
+        return seconds.toFixed(3) + " s";
+    }
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function langLabel(lang) {
+        return (LANGS[lang] && LANGS[lang].label) || lang;
+    }
+
+    function langColor(lang) {
+        if (lang === "cx") return cssVar("--text-color") || "#000";
+        return (LANGS[lang] && LANGS[lang].color) || "#888";
+    }
+
+    function chartSVG(medians) {
+        // Horizontal bars, fastest first. Mirrors chart_svg in scripts/bench-langs.py.
+        var entries = Object.keys(medians).map(function (lang) {
+            return [lang, medians[lang]];
+        });
+        entries.sort(function (a, b) {
+            return a[1] - b[1];
+        });
+        var fastest = entries[0][1];
+        var max = entries.reduce(function (m, e) {
+            return Math.max(m, e[1]);
+        }, 0);
+        var rowH = 30, labelW = 64, valueW = 150, width = 760;
+        var barW = width - labelW - valueW;
+        var rows = entries.map(function (entry, i) {
+            var lang = entry[0], seconds = entry[1];
+            var y = i * rowH;
+            var length = Math.max(2, (seconds / max) * barW);
+            return (
+                '<text x="0" y="' + (y + 20) + '">' + escapeHtml(langLabel(lang)) + "</text>" +
+                '<rect x="' + labelW + '" y="' + (y + 6) + '" width="' + length.toFixed(1) +
+                '" height="18" style="fill:' + langColor(lang) + '"/>' +
+                '<text x="' + (labelW + length + 8).toFixed(1) + '" y="' + (y + 20) + '" class="value">' +
+                fmtLangSeconds(seconds) + " (" + (seconds / fastest).toFixed(2) + "x)</text>"
+            );
+        });
+        var height = entries.length * rowH + 6;
+        return '<svg viewBox="0 0 ' + width + " " + height + '" width="100%" role="img">' + rows.join("") + "</svg>";
+    }
+
+    function renderLangs(record) {
+        var metaEl = document.getElementById("langs-meta");
+        var chartsEl = document.getElementById("langs-charts");
+        var buildsEl = document.getElementById("langs-builds");
+        var parts = [];
+        var metrics = record.metrics || [];
+        if (metrics.indexOf("run") !== -1) parts.push("median of " + record.runs + " runs");
+        if (metrics.indexOf("compile") !== -1) parts.push("median of " + record.compile_runs + " debug compiles");
+        var tools = Object.keys(record.tools || {})
+            .map(function (lang) {
+                return escapeHtml(lang) + ": " + escapeHtml(record.tools[lang]);
+            })
+            .join(" · ");
+        var meta =
+            escapeHtml(String(record.timestamp).slice(0, 10)) +
+            " · " + escapeHtml(record.platform || "") +
+            " · " + escapeHtml(parts.join(" · "));
+        if (tools) meta += "<br>" + tools;
+        if (record.cx_sha) meta += '<br>cx at <a href="' + COMMIT_URL + escapeHtml(record.cx_sha) + '">' + escapeHtml(String(record.cx_sha).slice(0, 7)) + "</a>";
+        metaEl.innerHTML = meta;
+        var html = "";
+        var allPrograms = record.programs || {};
+        var modes = record.mode_order || [];
+        record.program_order.forEach(function (program) {
+            var byMode = allPrograms[program] || {};
+            var note =
+                program === "mandelbrot"
+                    ? ' <span class="langs-note">checksums differ by design here (float-to-int conversion is ' +
+                      "platform-defined); times remain comparable.</span>"
+                    : "";
+            var omitted = (record.omission_notes && record.omission_notes[program]) || "";
+            var omittedHtml = omitted ? '<p class="langs-note">' + escapeHtml(omitted) + "</p>" : "";
+            var charts = "";
+            modes.forEach(function (mode) {
+                var entries = byMode[mode] || {};
+                var runMedians = {};
+                Object.keys(entries).forEach(function (lang) {
+                    if (entries[lang] && typeof entries[lang].median_s === "number") runMedians[lang] = entries[lang].median_s;
+                });
+                if (Object.keys(runMedians).length)
+                    charts += "<h4>" + escapeHtml(MODE_LABEL[mode] || mode) + " run</h4>\n" + chartSVG(runMedians);
+                var compileMedians = {};
+                Object.keys(entries).forEach(function (lang) {
+                    if (entries[lang] && entries[lang].compile && typeof entries[lang].compile.median_s === "number")
+                        compileMedians[lang] = entries[lang].compile.median_s;
+                });
+                if (Object.keys(compileMedians).length)
+                    charts += "<h4>" + escapeHtml(MODE_LABEL[mode] || mode) + " compile</h4>\n" + chartSVG(compileMedians);
+            });
+            if (!charts) {
+                html += "<h3>" + escapeHtml(program) + "</h3>" + omittedHtml + "<p>no successful measurements</p>";
+            } else {
+                html += '<div class="langs-chart"><h3>' + escapeHtml(program) + note + "</h3>" + omittedHtml + charts + "</div>";
+            }
+        });
+        chartsEl.innerHTML = html;
+        var builds = "";
+        modes.forEach(function (mode) {
+            var items = "";
+            Object.keys((record.builds && record.builds[mode]) || {}).forEach(function (lang) {
+                items += "<li>" + escapeHtml(langLabel(lang)) + ": <code>" + escapeHtml(record.builds[mode][lang]) + "</code></li>";
+            });
+            builds += "<h4>" + escapeHtml(MODE_LABEL[mode] || mode) + "</h4><ul>" + items + "</ul>";
+        });
+        // Built here because pandoc strips details elements from the page source.
+        buildsEl.innerHTML = "<details><summary>Build configurations</summary>" + builds + "</details>";
+    }
+
+    function showLangsEmpty() {
+        document.getElementById("langs-charts").innerHTML =
+            "<p>No language comparison data yet. It appears here once CI has benched " +
+            "the main branch.</p>";
+    }
+
     fetch("bench-data.json")
         .then(function (resp) {
             if (!resp.ok) throw new Error("no data");
@@ -274,4 +411,18 @@
             });
         })
         .catch(showEmpty);
+
+    fetch("langs-data.json")
+        .then(function (resp) {
+            if (!resp.ok) throw new Error("no data");
+            return resp.json();
+        })
+        .then(function (record) {
+            if (!record || !record.program_order || !record.program_order.length) {
+                showLangsEmpty();
+                return;
+            }
+            renderLangs(record);
+        })
+        .catch(showLangsEmpty);
 })();

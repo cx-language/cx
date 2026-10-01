@@ -108,13 +108,134 @@ function mixedSlocRecords() {
     return out;
 }
 
+function langsRecord() {
+    // Mirrors scripts/bench-langs.py output: release+debug runs, debug compiles.
+    const entry = (run, compile = null) => {
+        const e = { median_s: run, runs_s: [run, run, run], output: "102334155" };
+        if (compile !== null) e.compile = { median_s: compile, runs_s: [compile, compile, compile] };
+        return e;
+    };
+    return {
+        timestamp: "2026-09-15T12:00:00+00:00",
+        platform: "Linux-6.8-x86_64",
+        cx_sha: sha(42),
+        runs: 3,
+        compile_runs: 3,
+        metrics: ["run", "compile"],
+        tools: { c: "cc 13.2", rust: "rustc 1.98", go: "go1.27", odin: "dev-2026-09", zig: "0.16.0" },
+        mode_order: ["release", "debug"],
+        builds: {
+            release: { cx: "cx --release -Werror", c: "cc -O3 -std=c17", rust: "rustc -C opt-level=3" },
+            debug: { cx: "cx -Werror", c: "cc -O0 -g", rust: "rustc -C opt-level=0" },
+        },
+        program_order: ["fib", "mandelbrot", "mapfilter"],
+        omissions: { mapfilter: ["c", "go", "odin", "zig"] },
+        omission_notes: {
+            mapfilter: "C, Go, Odin, and Zig have no mapfilter source because that benchmark times a capturing-lambda pipeline, which they cannot express.",
+        },
+        programs: {
+            fib: {
+                release: { cx: entry(0.9), c: entry(0.8), rust: entry(1.1) },
+                debug: { cx: entry(1.5, 0.25), c: entry(1.2, 0.1), rust: entry(2.0, 0.4) },
+            },
+            mandelbrot: {
+                release: { cx: entry(0.85), c: entry(0.95) },
+                debug: { cx: entry(1.1, 0.22), c: entry(1.0, 0.09) },
+            },
+            mapfilter: {
+                release: { cx: entry(0.5), rust: entry(0.6) },
+                debug: { cx: entry(0.9, 0.3), rust: entry(1.0, 0.5) },
+            },
+        },
+    };
+}
+
+function langsSparseRecord() {
+    // Minimal shape: no metrics, mode_order, tools, builds, or cx_sha.
+    return {
+        timestamp: "2026-09-15T12:00:00+00:00",
+        platform: "Linux",
+        program_order: ["fib"],
+    };
+}
+
+function langsHostileRecord() {
+    // Escaping plus single-language, compile-only, and empty-program shapes.
+    return {
+        timestamp: "2026-09-15T12:00:00+00:00",
+        platform: "<img src=x>",
+        cx_sha: 'abc"><img src=x onerror=alert(1)>',
+        runs: 1,
+        compile_runs: 1,
+        metrics: ["run", "compile"],
+        tools: { c: 'cc <img src=x onerror="alert(1)">' },
+        mode_order: ["release", "debug"],
+        builds: {
+            release: { cx: 'cx "--quoted"' },
+            debug: { cx: "cx" },
+        },
+        program_order: ["fib", "solo", "empty"],
+        omission_notes: { empty: 'note with "quotes" & <tags>' },
+        programs: {
+            fib: {
+                release: { cx: { median_s: 1.5, runs_s: [1.5], output: "1" } },
+                debug: { cx: { compile: { median_s: 0.2, runs_s: [0.2] } } },
+            },
+            solo: {
+                release: { cx: { median_s: 0.5, runs_s: [0.5], output: "1" } },
+            },
+            empty: {},
+        },
+    };
+}
+
+function verifySparse(name, els) {
+    const charts = els["langs-charts"].innerHTML;
+    check(name, charts.includes("fib") && charts.includes("no successful measurements"), "sparse renders");
+    check(name, els["langs-meta"].innerHTML.includes("2026-09-15"), "sparse meta");
+}
+
+function verifyHostile(name, els) {
+    const all = els["langs-meta"].innerHTML + els["langs-charts"].innerHTML + els["langs-builds"].innerHTML;
+    check(name, !all.includes("<img"), "hostile escaped");
+    check(name, all.includes("&lt;img"), "hostile entities");
+    check(name, all.includes("&quot;") && all.includes("&amp;"), "hostile quotes");
+    const charts = els["langs-charts"].innerHTML;
+    check(name, charts.includes("no successful measurements"), "hostile empty program");
+    // fib release run + fib debug compile-only + solo single-language run.
+    check(name, (charts.match(/<svg/g) || []).length === 3, "hostile svg count");
+}
+
 async function scenario(
     name,
     payload,
-    { ok = true, wantIndex = 5, hoverX = 400, wantAbsent = null, wantCounts = "2,3,3,1,3,7", wantLate = null, slocLate = false } = {}
+    {
+        ok = true,
+        wantIndex = 5,
+        hoverX = 400,
+        wantAbsent = null,
+        wantCounts = "2,3,3,1,3,7",
+        wantLate = null,
+        slocLate = false,
+        langs = langsRecord(),
+        langsOk = true,
+        langsVerify = null,
+    } = {}
 ) {
     const els = {};
-    for (const id of ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize", "legend-sloc", "bench-tip", "bench-charts"]) {
+    for (const id of [
+        "legend-build",
+        "legend-compile",
+        "legend-run",
+        "legend-cxsize",
+        "legend-benchsize",
+        "legend-sloc",
+        "bench-tip",
+        "bench-charts",
+        "langs-meta",
+        "langs-charts",
+        "langs-builds",
+    ]) {
         els[id] = makeEl();
         els[id].parentNode = makeEl();
     }
@@ -132,12 +253,42 @@ async function scenario(
         open: (url) => (opened = url),
     };
     globalThis.getComputedStyle = () => ({ getPropertyValue: () => "#111" });
-    globalThis.fetch = async () => ({ ok, json: async () => payload });
+    globalThis.fetch = async (url) => {
+        if (String(url).includes("langs")) return { ok: langsOk, json: async () => langs };
+        return { ok, json: async () => payload };
+    };
     eval(SRC);
     await new Promise((r) => setTimeout(r, 20));
 
+    const checkLangs = () => {
+        if (langsVerify) {
+            langsVerify(name, els);
+            return;
+        }
+        if (!langsOk || !langs || !langs.program_order || !langs.program_order.length) {
+            check(name, els["langs-charts"].innerHTML.includes("No language comparison"), "langs stub missing");
+            return;
+        }
+        const meta = els["langs-meta"].innerHTML;
+        check(name, meta.includes("2026-09-15") && meta.includes("Linux-6.8"), "langs meta");
+        check(name, meta.includes("median of 3 runs") && meta.includes("median of 3 debug compiles"), "langs summary");
+        check(name, meta.includes(sha(42).slice(0, 7)), "langs sha");
+        const charts = els["langs-charts"].innerHTML;
+        check(name, charts.includes("fib") && charts.includes("mapfilter"), "langs programs");
+        check(name, charts.includes("optimized run") && charts.includes("unoptimized debug run"), "langs run charts");
+        check(name, charts.includes("unoptimized debug compile"), "langs compile chart");
+        check(name, charts.includes("(1.00x)"), "langs fastest ratio");
+        check(name, charts.includes("capturing-lambda"), "langs omission note");
+        check(name, charts.includes("platform-defined"), "langs mandelbrot note");
+        // Fastest bar sorts first: fib release C (0.8s) precedes cx (0.9s).
+        check(name, charts.indexOf(">C<") < charts.indexOf(">cx<"), "langs sort");
+        check(name, els["langs-builds"].innerHTML.includes("Build configurations"), "langs builds shown");
+        check(name, els["langs-builds"].innerHTML.includes("cc -O0 -g"), "langs builds body");
+    };
+
     if (!ok || !payload || !payload.length) {
         check(name, els["bench-charts"].innerHTML.includes("No benchmark data"), "empty stub missing");
+        checkLangs();
         console.log(`ok ${name}`);
         return;
     }
@@ -154,6 +305,7 @@ async function scenario(
     });
     const canvas = canvases[0];
     if (!canvas.handlers || !canvas.handlers.mousemove) {
+        checkLangs();
         console.log(`ok ${name} (no-data chart)`);
         return;
     }
@@ -201,6 +353,7 @@ async function scenario(
         check(name, tip.innerHTML.includes("total: 200,"), "sloc tooltip");
     }
     sloc.handlers.mouseleave();
+    checkLangs();
     console.log(`ok ${name}`);
 }
 
@@ -212,6 +365,10 @@ await scenario("null build metrics", records(4, { nullBuild: true }));
 await scenario("single", records(1), { wantIndex: 0 });
 await scenario("empty", []);
 await scenario("fetch-fail", null, { ok: false });
+await scenario("langs fetch-fail", records(4), { wantIndex: 1, langsOk: false, langs: null });
+await scenario("langs empty", records(4), { wantIndex: 1, langs: { program_order: [] } });
+await scenario("langs sparse", records(4), { wantIndex: 1, langs: langsSparseRecord(), langsVerify: verifySparse });
+await scenario("langs hostile", records(4), { wantIndex: 1, langs: langsHostileRecord(), langsVerify: verifyHostile });
 
 if (failures) {
     console.log(`${failures} FAILURES`);

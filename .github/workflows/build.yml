@@ -294,6 +294,70 @@ jobs:
           name: bench-record
           path: ${{ runner.temp }}/bench.json
 
+      # Language comparison needs Odin and Zig; Go and Rust ship with the runner.
+      # Bump the keys with the versions in the install step below.
+      - name: Cache Odin (Ubuntu release)
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        uses: actions/cache@v5
+        with:
+          path: /tmp/odin
+          key: odin-dev-2026-09
+
+      - name: Cache Zig (Ubuntu release)
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        uses: actions/cache@v5
+        with:
+          path: /tmp/zig
+          key: zig-0.16.0
+
+      - name: Install Odin and Zig (Ubuntu release)
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        shell: bash
+        run: |
+          if [ ! -x "/tmp/odin/odin" ]; then
+            rm -rf /tmp/odin /tmp/odin-dl
+            mkdir -p /tmp/odin-dl
+            curl -L --fail --show-error "https://github.com/odin-lang/Odin/releases/download/dev-2026-09/odin-linux-amd64-dev-2026-09.tar.gz" --output /tmp/odin.tar.gz
+            tar -xzf /tmp/odin.tar.gz -C /tmp/odin-dl
+            mv /tmp/odin-dl/odin-* /tmp/odin
+          fi
+          if [ ! -x "/tmp/zig/zig" ]; then
+            rm -rf /tmp/zig /tmp/zig-dl
+            mkdir -p /tmp/zig-dl
+            curl -L --fail --show-error "https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz" --output /tmp/zig.tar.xz
+            tar -xf /tmp/zig.tar.xz -C /tmp/zig-dl
+            mv /tmp/zig-dl/zig-* /tmp/zig
+          fi
+          echo "/tmp/odin" >> $GITHUB_PATH
+          echo "/tmp/zig" >> $GITHUB_PATH
+          # bench-langs skips missing toolchains with a warning, which would
+          # silently ship incomplete comparison data, so fail fast instead.
+          command -v go || { echo "go missing"; exit 1; }
+          command -v rustc || { echo "rustc missing"; exit 1; }
+          command -v cc || { echo "cc missing"; exit 1; }
+          command -v c++ || { echo "c++ missing"; exit 1; }
+          go version
+          rustc --version
+          /tmp/odin/odin version
+          /tmp/zig/zig version
+
+      # Like the corpus bench above, this runs on PRs too, validating that
+      # all ports still compile and agree; only main deploys publish it.
+      - name: Benchmark languages
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        working-directory: ${{runner.workspace}}/build
+        shell: bash
+        run: |
+          python3 "$GITHUB_WORKSPACE/scripts/bench-langs.py" --cx ./cx \
+            --output "$RUNNER_TEMP/langs.json" --html "$RUNNER_TEMP/langs.html"
+
+      - name: Upload language comparison record
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        uses: actions/upload-artifact@v6
+        with:
+          name: langs-record
+          path: ${{ runner.temp }}/langs.json
+
   bench-record:
     if: github.ref == 'refs/heads/main'
     needs: [ build ]
@@ -434,6 +498,13 @@ jobs:
           name: playground
           path: wasm/dist
 
+      - name: Download language comparison record
+        uses: actions/download-artifact@v7
+        with:
+          name: langs-record
+          path: langs-record
+        continue-on-error: true
+
       - name: Build website
         run: |
           # Pin pandoc: default styles and fenced-code parsing vary
@@ -455,6 +526,14 @@ jobs:
           git fetch origin tag bench-data --depth 1 || true
           git show refs/tags/bench-data:bench.jsonl > /tmp/bench.jsonl 2>/dev/null || : > /tmp/bench.jsonl
           python3 -c "import json; lines = [line for line in open('/tmp/bench.jsonl') if line.strip()]; json.dump([json.loads(line) for line in lines], open('website/build/bench-data.json', 'w'))" || echo '[]' > website/build/bench-data.json
+
+      # Language comparison for the /bench page, from this run's bench.
+      # Best-effort like the history above.
+      - name: Attach language comparison data
+        run: |
+          if [ -f "langs-record/langs.json" ]; then
+            cp "langs-record/langs.json" website/build/langs-data.json
+          fi
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3

@@ -36,21 +36,55 @@
 #bench-tip .tip-sha {
     color: var(--text-color-subtle);
 }
+#langs-meta {
+    color: var(--text-color-subtle);
+    font-size: 0.9em;
+}
+/* Static notes use an element selector because pandoc drops classes on p. */
+#langs > p, .langs-note {
+    font-size: 0.9em;
+    color: var(--text-color-subtle);
+}
+.langs-chart svg {
+    width: 100%;
+}
+.langs-chart svg text {
+    font-size: 14px;
+    fill: var(--text-color);
+}
+.langs-chart svg text.value {
+    font-variant-numeric: tabular-nums;
+}
 </style>
 
 <section class="intro">
     <h1>Benchmarks</h1>
     <p>
-        Performance history of the compiler and compiled programs, one point per
-        <code>main</code> commit. Hover a graph for values, click a point to open
-        the commit. Runners are shared GitHub machines, so single points wobble:
-        trends and step changes are the signal. Corpus and method are documented
-        in <a href="https://github.com/cx-language/cx/tree/main/bench" target="_blank"><code>bench/</code></a>.
-        The last graph tracks non-blank lines of tracked files instead of timing anything.
+        Language comparison of cx against C, C++, Rust, Go, Odin, and Zig on
+        the bench corpus, followed by performance history of the compiler and
+        compiled programs, one point per <code>main</code> commit. Hover a
+        history graph for values, click a point to open the commit. Runners
+        are shared GitHub machines, so single points wobble: trends and step
+        changes are the signal. Corpus and method are documented in
+        <a href="https://github.com/cx-language/cx/tree/main/bench" target="_blank"><code>bench/</code></a>.
+        The last history graph tracks non-blank lines of tracked files instead of timing anything.
     </p>
 </section>
 
+<section id="langs">
+    <h2>Language comparison</h2>
+    <!-- Divs, not p/details: pandoc drops empty p elements, classes on p,
+         and details/summary tags on the way through the website build. -->
+    <div id="langs-meta"></div>
+    <p>Each chart is one measurement. The ratio on each bar is against the fastest language in that chart.</p>
+    <p>Unoptimized debug is the development build. cx omits --release, so safety checks stay on and both the LLVM IR pipeline and codegen optimizations are skipped. C and C++ use -O0 -g. Rust uses opt-level 0 with debug assertions, overflow checks, and full debug info. Go disables optimizations and inlining with -gcflags=all=-N -l, including the standard library. Odin uses -debug, which selects -o:none. Zig uses -ODebug; its release build is -OReleaseFast.</p>
+    <p>Debug compile time is a rebuild of that development build. One untimed compile warms the standard-library cache first. Each sample is a separate copy of the source, so an unchanged-file cache hit is not what gets timed. ccache is disabled.</p>
+    <div id="langs-charts"></div>
+    <div id="langs-builds"></div>
+</section>
+
 <section id="bench-charts">
+    <h2>History</h2>
     <div class="bench-chart">
         <h2>C++ build and test suite (seconds)</h2>
         <div class="bench-legend" id="legend-build"></div>

@@ -331,10 +331,14 @@ cp ../examples/voxel-game/screenshot.jpg build/voxel-screenshot.jpg
 cp ../examples/raytracer/screenshot.png build/raytracer-screenshot.png
 cp ../examples/boids/screenshot.png build/boids-screenshot.png
 
-# Local graph preview: drop a bench-data.json next to this script (e.g. saved
-# from the deployed site) and it is served with the preview build.
+# Local graph preview: drop a bench-data.json or langs-data.json next to
+# this script (e.g. saved from the deployed site) and it is served with
+# the preview build.
 if [ -f "bench-data.json" ]; then
     cp "bench-data.json" build/
+fi
+if [ -f "langs-data.json" ]; then
+    cp "langs-data.json" build/
 fi
 
 # Playground WebAssembly artifacts, if built (see wasm/README.md). Without

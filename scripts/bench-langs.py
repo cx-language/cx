@@ -483,6 +483,9 @@ def main():
         "builds": {mode: {lang: describe_build(lang, mode) for lang in languages} for mode in modes},
         "program_order": programs,
         "omissions": {program: langs for program, langs in omissions.items() if langs},
+        "omission_notes": {
+            program: omission_note(program, langs) for program, langs in omissions.items() if langs
+        },
         "programs": results,
     }
     for path, content in [(args.output, json.dumps(record, indent=2) + "\n"), (args.html, render_html(record))]:

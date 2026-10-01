@@ -87,3 +87,10 @@ Missing toolchains are skipped with a warning. Ports must print the
 same output as cx, except `mandelbrot`, whose checksum depends on
 platform-defined float-to-int conversion and is only checked for
 self-consistency.
+
+CI runs the same script on the Ubuntu release leg (Odin and Zig are
+installed there; Go and Rust ship with the runner) and the website
+deploy publishes its JSON as `langs-data.json`, rendered as the
+comparison charts at the top of `/bench`. The comparison is a snapshot
+of that run, not history. For a local preview, copy a JSON record to
+`website/langs-data.json` and rebuild the site.
