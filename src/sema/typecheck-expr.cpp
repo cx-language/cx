@@ -2184,6 +2184,32 @@ static bool isLambdaAwaitingInference(const Expr& arg, Type expectedType) {
     return false;
 }
 
+// Picks one generic argument from agreeing call arguments. Identical candidates agree without a
+// convertibility check when `equalAgrees`: that check cannot handle parameter types that still
+// mention other uninferred generic parameters, and convertibility is rechecked after inference.
+// Returns false when the candidates conflict.
+static bool considerGenericArg(Typechecker& checker, GenericArg& genericArg, Expr*& genericArgValue, GenericArg candidate, Expr* candidateValue, Type paramType,
+                               llvm::StringRef genericParamName, bool equalAgrees) {
+    if (!genericArg) {
+        genericArg = candidate;
+        genericArgValue = candidateValue;
+        return true;
+    }
+    if (equalAgrees && candidate == genericArg) return true;
+
+    Type paramTypeWithGenericArg = paramType.resolve({{genericParamName, genericArg}});
+    Type paramTypeWithCandidate = paramType.resolve({{genericParamName, candidate}});
+    if (checker.isImplicitlyConvertible(candidateValue, candidateValue->type, paramTypeWithGenericArg, true, nullptr, false)) {
+        return true;
+    }
+    if (checker.isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithCandidate, true, nullptr, false)) {
+        genericArg = candidate;
+        genericArgValue = candidateValue;
+        return true;
+    }
+    return false;
+}
+
 std::vector<GenericArg> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                                   llvm::ArrayRef<ParamDecl> params, bool returnOnError) {
     std::vector<int> argToParam, paramToArg;
@@ -2221,28 +2247,8 @@ std::vector<GenericArg> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef
                 Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
                 GenericArg maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
                 if (!maybeGenericArg) continue;
-
-                if (!genericArg) {
-                    genericArg = maybeGenericArg;
-                    genericArgValue = argValue;
-                } else {
-                    // Agreeing arguments need no convertibility check, which can't handle parameter types
-                    // that still mention other uninferred generic parameters. Convertibility is rechecked
-                    // with concrete types after inference.
-                    if (maybeGenericArg == genericArg) continue;
-
-                    Type paramTypeWithGenericArg = paramType.resolve({{genericParam.getName(), genericArg}});
-                    Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam.getName(), maybeGenericArg}});
-
-                    if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true, nullptr, false)) {
-                        continue;
-                    } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true, nullptr, false)) {
-                        genericArg = maybeGenericArg;
-                        genericArgValue = argValue;
-                    } else {
-                        return {}; // TODO: Return "conflict argument types" as reason for inference failure.
-                    }
-                }
+                // TODO: Return "conflict argument types" as reason for inference failure.
+                if (!considerGenericArg(*this, genericArg, genericArgValue, maybeGenericArg, argValue, paramType, genericParam.getName(), true)) return {};
             }
         }
 
@@ -2376,22 +2382,8 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
             Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
             GenericArg maybeGenericArg = findGenericArg(argType, paramType, genericParam->getName());
             if (!maybeGenericArg) continue;
-
-            if (!genericArg) {
-                genericArg = maybeGenericArg;
-                genericArgValue = argValue;
-            } else {
-                Type paramTypeWithGenericArg = paramType.resolve({{genericParam->getName(), genericArg}});
-                Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam->getName(), maybeGenericArg}});
-
-                if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true, nullptr, false)) {
-                    continue;
-                } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true, nullptr, false)) {
-                    genericArg = maybeGenericArg;
-                    genericArgValue = argValue;
-                } else {
-                    return std::nullopt;
-                }
+            if (!considerGenericArg(*this, genericArg, genericArgValue, maybeGenericArg, argValue, paramType, genericParam->getName(), false)) {
+                return std::nullopt;
             }
         }
 
@@ -3050,28 +3042,33 @@ static std::vector<ParamDecl> getMatchParams(const Match& match) {
     }
 }
 
+// Invokes `fn` for each candidate whose parameters map onto the call arguments.
+// `fn` returns true to stop.
+static void forEachMappedMatch(llvm::ArrayRef<Match> matches, const CallExpr& call,
+                               llvm::function_ref<bool(const Match&, llvm::ArrayRef<ParamDecl>, llvm::ArrayRef<int>)> fn) {
+    for (auto& match : matches) {
+        auto params = getMatchParams(match);
+        if (params.size() != call.args.size()) continue;
+        std::vector<int> argToParam, paramToArg;
+        if (computeArgParamMapping(call.args, params, false, argToParam, paramToArg)) continue;
+        if (fn(match, params, argToParam)) return;
+    }
+}
+
 static const Match* findMatchByPredicate(llvm::ArrayRef<Match> matches, const CallExpr& call, llvm::function_ref<bool(Type param, Type arg)> predicate) {
     const Match* result = nullptr;
 
-    for (auto& match : matches) {
-        auto params = getMatchParams(match);
-
-        if (params.size() == call.args.size()) {
-            std::vector<int> argToParam, paramToArg;
-            if (computeArgParamMapping(call.args, params, false, argToParam, paramToArg)) continue;
-            bool allMatch = true;
-            for (size_t i = 0; i < call.args.size(); ++i) {
-                if (!predicate(params[size_t(argToParam[i])].type, call.args[i].value->type)) {
-                    allMatch = false;
-                    break;
-                }
-            }
-            if (allMatch) {
-                if (result) return nullptr;
-                result = &match;
-            }
+    forEachMappedMatch(matches, call, [&](const Match& match, llvm::ArrayRef<ParamDecl> params, llvm::ArrayRef<int> argToParam) {
+        for (size_t i = 0; i < call.args.size(); ++i) {
+            if (!predicate(params[size_t(argToParam[i])].type, call.args[i].value->type)) return false;
         }
-    }
+        if (result) {
+            result = nullptr;
+            return true;
+        }
+        result = &match;
+        return false;
+    });
 
     return result;
 }
@@ -3083,12 +3080,7 @@ static const Match* findMatchWithMostExactArgs(llvm::ArrayRef<Match> matches, co
     const Match* result = nullptr;
     auto bestCount = -1;
 
-    for (auto& match : matches) {
-        auto params = getMatchParams(match);
-        if (params.size() != call.args.size()) continue;
-        std::vector<int> argToParam, paramToArg;
-        if (computeArgParamMapping(call.args, params, false, argToParam, paramToArg)) continue;
-
+    forEachMappedMatch(matches, call, [&](const Match& match, llvm::ArrayRef<ParamDecl> params, llvm::ArrayRef<int> argToParam) {
         int count = 0;
         for (size_t i = 0; i < call.args.size(); ++i) {
             Type paramType = params[size_t(argToParam[i])].type;
@@ -3102,7 +3094,8 @@ static const Match* findMatchWithMostExactArgs(llvm::ArrayRef<Match> matches, co
         } else if (count == bestCount) {
             result = nullptr;
         }
-    }
+        return false;
+    });
 
     return result;
 }
@@ -3113,19 +3106,15 @@ static const Match* findMatchWithFewestUserConversions(llvm::ArrayRef<Match> mat
     const Match* result = nullptr;
     auto bestCount = std::numeric_limits<int>::max();
 
-    for (auto& match : matches) {
-        auto params = getMatchParams(match);
-        if (params.size() != call.args.size()) continue;
-        std::vector<int> argToParam, paramToArg;
-        if (computeArgParamMapping(call.args, params, false, argToParam, paramToArg)) continue;
-
+    forEachMappedMatch(matches, call, [&](const Match& match, llvm::ArrayRef<ParamDecl>, llvm::ArrayRef<int>) {
         if (match.userConversionCount < bestCount) {
             bestCount = match.userConversionCount;
             result = &match;
         } else if (match.userConversionCount == bestCount) {
             result = nullptr;
         }
-    }
+        return false;
+    });
 
     return result;
 }
@@ -3151,6 +3140,16 @@ static const Match* findUniqueBorrowPackMatch(llvm::ArrayRef<Match> matches) {
     return result;
 }
 
+static const Match* findUniqueMatch(llvm::ArrayRef<Match> matches, llvm::function_ref<bool(const Match&)> predicate) {
+    const Match* found = nullptr;
+    for (auto& match : matches) {
+        if (!predicate(match)) continue;
+        if (found) return nullptr;
+        found = &match;
+    }
+    return found;
+}
+
 static bool isCHeaderDecl(const Match& match) {
     return match.decl->getModule() && match.decl->getModule()->isCHeaderImport;
 }
@@ -3164,14 +3163,14 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
     } else if (llvm::all_of(matches, isCHeaderDecl)) {
         // Redeclarations in multiple C headers are considered the same declaration, so just return one of them.
         return &matches[0];
-    } else if (llvm::count_if(matches, [](auto& match) { return match.didConvertArguments == false; }) == 1) {
-        return llvm::find_if(matches, [](auto& match) { return match.didConvertArguments == false; });
-    } else if (llvm::count_if(matches, [](auto& match) { return match.didUnwrapOptional == false; }) == 1) {
+    } else if (auto* match = findUniqueMatch(matches, [](const Match& match) { return match.didConvertArguments == false; })) {
+        return match;
+    } else if (auto* match = findUniqueMatch(matches, [](const Match& match) { return match.didUnwrapOptional == false; })) {
         // Implicit unwrapping discards nullability; prefer the overload that preserves it.
-        return llvm::find_if(matches, [](auto& match) { return match.didUnwrapOptional == false; });
-    } else if (llvm::count_if(matches, [](auto& match) { return match.didWrapOptional == false; }) == 1) {
+        return match;
+    } else if (auto* match = findUniqueMatch(matches, [](const Match& match) { return match.didWrapOptional == false; })) {
         // Implicit wrapping adds nullability; prefer the overload that binds directly.
-        return llvm::find_if(matches, [](auto& match) { return match.didWrapOptional == false; });
+        return match;
     } else if (auto match = findMatchWithMostExactArgs(matches, call)) {
         return match;
     } else if (auto match = findMatchWithFewestUserConversions(matches, call)) {
