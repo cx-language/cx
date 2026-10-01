@@ -236,6 +236,14 @@ jobs:
           path: /tmp/SDL
           key: sdl-release-3.4.16
 
+      # Same for raylib 6.0 (Ubuntu 24.04 predates it).
+      - name: Cache raylib build (Linux)
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        uses: actions/cache@v5
+        with:
+          path: /tmp/raylib
+          key: raylib-6.0
+
       - name: Test
         if: matrix.build_type != 'Debug'
         working-directory: ${{runner.workspace}}/build
@@ -261,12 +269,26 @@ jobs:
               cmake --build /tmp/SDL/build --parallel
             fi
             sudo cmake --install /tmp/SDL/build
+            if [ ! -f "/tmp/raylib/build/raylib/libraylib.so" ]; then
+              rm -rf /tmp/raylib
+              # Build dependencies for raylib, see
+              # https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
+              # Installed in full here (not reusing the SDL list above) so a
+              # raylib cache miss still builds on an SDL cache hit.
+              sudo apt-get install -y libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+              git clone --depth 1 --branch 6.0 https://github.com/raysan5/raylib.git /tmp/raylib
+              # Shared library: tests link plain `pkg-config --libs raylib`,
+              # which omits the private X11/ALSA deps a static link would need.
+              cmake -S /tmp/raylib -B /tmp/raylib/build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+              cmake --build /tmp/raylib/build --parallel
+            fi
+            sudo cmake --install /tmp/raylib/build
             sudo ldconfig
           fi
           if [ "$RUNNER_OS" == "macOS" ]; then
-            brew install sdl3 glfw3
+            brew install sdl3 glfw3 raylib
           fi
-          # Tests depending on SDL3 or GLFW are disabled on Windows CI.
+          # Tests depending on SDL3, raylib, or GLFW are disabled on Windows CI.
           # Time only the check invocation, not the SDL/apt setup above it.
           python3 -c "import time; print(time.time())" > "$RUNNER_TEMP/cx_check_start"
           CX_PRINT_STACK_TRACE=true cmake --build . --config ${{ matrix.build_type }} --target check
