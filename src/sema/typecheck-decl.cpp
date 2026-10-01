@@ -663,6 +663,13 @@ static bool blockCanBreak(llvm::ArrayRef<Stmt*> block) {
     return false;
 }
 
+// A missing condition, or a constant true one, never terminates, so the loop
+// returns on every path unless its body can break out.
+static bool nonTerminatingLoopReturns(const Expr* condition, llvm::ArrayRef<Stmt*> body) {
+    if (condition && (!condition->isConstant() || !condition->getConstantBoolValue())) return false;
+    return !blockCanBreak(body);
+}
+
 static bool allPathsReturn(llvm::ArrayRef<Stmt*> block, bool assertsOn) {
     if (block.empty()) return false;
 
@@ -694,13 +701,11 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block, bool assertsOn) {
     case StmtKind::ForStmt: {
         // 'while' loops are lowered into 'for' loops before this runs. A missing condition ('for(;;)') never terminates.
         auto& forStmt = llvm::cast<ForStmt>(*block.back());
-        if (forStmt.condition && (!forStmt.condition->isConstant() || !forStmt.condition->getConstantBoolValue())) return false;
-        return !blockCanBreak(forStmt.body);
+        return nonTerminatingLoopReturns(forStmt.condition, forStmt.body);
     }
     case StmtKind::DoWhileStmt: {
         auto& doWhileStmt = llvm::cast<DoWhileStmt>(*block.back());
-        if (!doWhileStmt.condition->isConstant() || !doWhileStmt.condition->getConstantBoolValue()) return false;
-        return !blockCanBreak(doWhileStmt.body);
+        return nonTerminatingLoopReturns(doWhileStmt.condition, doWhileStmt.body);
     }
     default:
         return false;
