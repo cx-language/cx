@@ -45,6 +45,33 @@ if another file also needs the module, it must import it too.
 An import target ending in `.h` imports a C header instead of a cx module.
 See [Using C libraries](low-level-programming#using-c-libraries).
 
+## Vendored C libraries
+
+The compiler ships importable modules for some popular C libraries,
+provided as `extern` declarations with precise nullability,
+so using them needs no C header import (which is slower to compile):
+
+```cs {.noRun}
+import glfw;
+import gl;
+```
+
+Vendored modules are imported explicitly like any other module, but need
+no entry in `dependencies` and no link settings: each module carries its
+own `build.cx`, and the build applies its link requirements automatically
+when the module is imported. The C library itself must be installed on
+the system; if it cannot be found, the build fails with an error naming it.
+
+Currently vendored: `glfw` (GLFW 3.x, without the Vulkan functions) and
+`gl` (OpenGL 3.3 core profile). A `vendor/<package>/` directory in your
+own project shadows the shipped module of the same name, so you can
+override or extend a binding; the shadowing package's link settings
+apply under `cx build` like any other vendored dependency. Vendored
+modules need the native library at link time, so they are unavailable
+in the web playground.
+
+See [Using C libraries](low-level-programming#using-c-libraries).
+
 ## Compiling files directly
 
 For quick one-off scripts and temporary tests, `.cx` files can be passed

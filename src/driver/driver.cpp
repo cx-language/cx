@@ -9,6 +9,7 @@
 #include <system_error>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
@@ -181,6 +182,9 @@ static void appendSystemImportSearchPaths(std::vector<std::string>& paths) {
     // The standard library root is resolved at runtime (see getCxRootDir) so
     // a compiler built on one machine works when distributed to another.
     if (auto rootDir = getCxRootDir(); !rootDir.empty()) {
+        // Vendored C-library modules live in <root>/vendor/<package>/ and are
+        // imported by package name, like project-local vendor/ directories.
+        paths.push_back(rootDir + "/vendor");
         paths.push_back(std::move(rootDir));
     }
     paths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
@@ -192,6 +196,73 @@ static void appendSystemImportSearchPaths(std::vector<std::string>& paths) {
     addHeaderSearchPathsFromEnvVar("INCLUDE", paths);
     // Compiler-reported header paths are queried lazily on first C import
     // (see getCCompilerSearchPaths): most builds never import C headers.
+}
+
+static PkgConfigSplit queryPkgConfigFlagsOrAbort(llvm::ArrayRef<std::string> packages);
+
+// Vendored C-library modules (e.g. `import glfw;`) carry their link
+// requirements in a build.cx beside their sources. Apply them for imported
+// vendor packages only, so builds that don't import them never query
+// pkg-config or link them. Runs after typechecking (when imports are known)
+// but before the JIT decision, which declines JIT once libraries or
+// frameworks are present. Only link settings apply: defines and header
+// search paths would affect compilation, which already happened, and vendor
+// modules are pure cx that needs neither. Skipped when no link happens, so
+// e.g. `--print-ast` and `-c` never query pkg-config for them.
+static void applyImportedVendorLinkSettings(CompileOptions& options, Module& mainModule) {
+    if (compileOnly || emitAssembly) return;
+    std::string rootDir = getCxRootDir();
+    if (rootDir.empty()) return;
+    llvm::SmallString<256> vendorPrefix(rootDir + "/vendor/");
+    llvm::sys::fs::make_absolute(vendorPrefix);
+    llvm::StringSet<> applied;
+    // Walk from the main module rather than the process-wide registry, so
+    // multitarget builds only link what each target imports.
+    std::vector<Module*> worklist = mainModule.getImportedModules();
+    llvm::SmallPtrSet<Module*, 16> visited;
+    visited.insert(&mainModule);
+    while (!worklist.empty()) {
+        Module* module = worklist.back();
+        worklist.pop_back();
+        if (!visited.insert(module).second) continue;
+        for (Module* imported : module->getImportedModules()) {
+            worklist.push_back(imported);
+        }
+        if (module->sourceFiles.empty()) continue;
+        llvm::SmallString<256> sourceDir(llvm::sys::path::parent_path(module->sourceFiles.front().filePath));
+        llvm::sys::fs::make_absolute(sourceDir);
+        llvm::StringRef sourceDirRef(sourceDir);
+        if (!sourceDirRef.starts_with(vendorPrefix)) continue;
+        llvm::StringRef relative = sourceDirRef.drop_front(vendorPrefix.size());
+        llvm::StringRef package = relative.substr(0, relative.find_first_of("/\\"));
+        if (package.empty() || !applied.insert(package).second) continue;
+        BuildConfig packageConfig(vendorPrefix.str().str() + package.str(), {defines.begin(), defines.end()});
+        auto split = queryPkgConfigFlagsOrAbort(packageConfig.pkgConfigDependencies);
+        for (auto& path : split.librarySearchPaths) {
+            librarySearchPaths.push_back(path);
+        }
+        for (auto& library : split.libraries) {
+            libraries.push_back(library);
+        }
+        for (auto& path : split.frameworkSearchPaths) {
+            frameworkSearchPaths.push_back(path);
+        }
+        for (auto& framework : split.frameworks) {
+            frameworks.push_back(framework);
+        }
+        for (auto& flag : split.cflags) {
+            options.cflags.push_back(flag);
+        }
+        for (auto& path : packageConfig.librarySearchPaths) {
+            librarySearchPaths.push_back(absolutizePackagePath(packageConfig.rootDirectory, path));
+        }
+        for (auto& library : packageConfig.libraries) {
+            libraries.push_back(absolutizeLibraryPath(packageConfig.rootDirectory, library));
+        }
+        for (auto& framework : packageConfig.frameworks) {
+            frameworks.push_back(framework);
+        }
+    }
 }
 
 static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFiles) {
@@ -463,6 +534,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (errors) return 1;
     if (typecheck) return 0;
 
+    bool treatAsLibrary = mainModule.symbolTable.findInTopLevelScope("main").empty() && !run;
+    if (treatAsLibrary && !buildParams.createSharedLib) {
+        compileOnly = true;
+    }
+
     if (handlePrintOpt(PrintOpt::IRAll)) {
         handlePrintOpt(PrintOpt::IR);
         printSection("IR", [&] {
@@ -626,6 +702,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
             return 0;
         }
 
+        // The C backend links below the switch instead of JIT-running, so it
+        // applies vendor link settings again there; the two sites are
+        // mutually exclusive.
+        applyImportedVendorLinkSettings(options, mainModule);
+
         // JIT runs the program in-process, skipping object emission, the C compiler link,
         // and (on macOS) first-execution signature validation of a fresh binary.
         // Search paths without libraries are inert (macOS always adds framework search paths), so only -l/-framework/--no-jit decline JIT.
@@ -657,10 +738,10 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         }
     }
 
-    bool treatAsLibrary = mainModule.symbolTable.findInTopLevelScope("main").empty() && !run;
-    if (treatAsLibrary && !buildParams.createSharedLib) {
-        compileOnly = true;
+    if (backend.getValue() == Backend::C) {
+        applyImportedVendorLinkSettings(options, mainModule);
     }
+
     if (compileOnly || emitAssembly) {
         std::string fileName = buildParams.outputFileName;
         if (fileName.empty()) {

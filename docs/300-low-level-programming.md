@@ -91,7 +91,11 @@ void main() {
 
 ## Using C libraries
 
-C headers can be imported directly from cx code.
+For libraries the compiler vendors modules for, import the module instead
+of the C header: it compiles faster and carries precise nullability.
+See [Vendored C libraries](modules#vendored-c-libraries).
+
+Other C headers can be imported directly from cx code.
 The compiler uses the Clang API to parse the header and make its declarations available.
 To import a header, write an import declaration with the header file name:
 

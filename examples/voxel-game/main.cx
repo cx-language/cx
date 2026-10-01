@@ -1,4 +1,5 @@
-import "GLFW/glfw3.h";
+import glfw;
+import gl;
 
 // Maps crosshair space to NDC for a width x height framebuffer. Pixels
 // are square but NDC is not, so x is squeezed by the aspect ratio to

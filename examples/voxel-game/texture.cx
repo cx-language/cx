@@ -1,4 +1,5 @@
-import "GLFW/glfw3.h";
+import glfw;
+import gl;
 
 // Procedural 16x16 block textures packed side by side in a 128x16 RGB
 // atlas (8 tiles, y = 0 is the bottom row to match GL unpack order).

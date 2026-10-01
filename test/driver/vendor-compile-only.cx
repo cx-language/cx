@@ -1,0 +1,16 @@
+// RUN: %cx -c %s -o %t.o -Werror 2>&1 | %FileCheck %s --allow-empty
+// RUN: file-exists %t.o
+// CHECK-NOT: warning:
+// CHECK-NOT: error:
+
+import glfw;
+import gl;
+
+// Compiling only must not query pkg-config: no link happens. On machines
+// without pkg-config or the libraries installed, this passes while linking
+// the same file fails (see vendor-missing-library.cx).
+
+void main() {
+    println(GLFW_VERSION_MAJOR);
+    println(GL_TRIANGLES);
+}

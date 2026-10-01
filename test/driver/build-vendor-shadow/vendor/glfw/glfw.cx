@@ -1,0 +1,6 @@
+// RUN: true
+
+// Shadows the shipped glfw module: this directory wins over <cx root>/vendor.
+int stubbed() {
+    return 7;
+}

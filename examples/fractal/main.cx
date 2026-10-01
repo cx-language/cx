@@ -1,11 +1,12 @@
-import "GLFW/glfw3.h";
+import glfw;
+import gl;
 
 // GPU Mandelbrot explorer: drag to pan, scroll to zoom at the cursor,
 // Up/Down adjust detail, R resets the view, Esc quits.
 
 float64 pendingZoom = 0;
 
-void scrollCallback(GLFWwindow*? window, float64 xoff, float64 yoff) {
+void scrollCallback(GLFWwindow* window, float64 xoff, float64 yoff) {
     pendingZoom += yoff;
 }
 
@@ -19,7 +20,7 @@ uint compileShader(string path, uint kind) {
     var text = source.unwrap();
     var cstr = text.cString();
     // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
-    glShaderSource(shader, 1, cast<const char*?*>(&cstr), null);
+    glShaderSource(shader, 1, cast<const char**>(&cstr), null);
     glCompileShader(shader);
     c_int status = undefined;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);

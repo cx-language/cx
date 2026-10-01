@@ -1,4 +1,5 @@
-import "GLFW/glfw3.h";
+import glfw;
+import gl;
 
 // Renders the spawn view offscreen and saves it as a binary PPM (P6).
 int runScreenshot(string path) {

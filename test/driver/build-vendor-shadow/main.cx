@@ -1,0 +1,8 @@
+// RUN: cd %S && %cx run 2>&1 | %FileCheck -match-full-lines -strict-whitespace %s
+
+import glfw;
+
+void main() {
+    // CHECK:7
+    println(stubbed());
+}

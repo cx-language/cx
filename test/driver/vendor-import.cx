@@ -1,0 +1,64 @@
+// RUN: %cx -typecheck --check-all %s -Wno-unused 2>&1 | %FileCheck %s --allow-empty
+// CHECK-NOT: warning:
+// CHECK-NOT: error:
+
+import glfw;
+import gl;
+
+// Touches representative declarations from each vendored module;
+// --check-all validates the rest.
+
+void onError(c_int code, const char* description) {
+    println(code);
+}
+
+void onKey(GLFWwindow* window, c_int key, c_int scancode, c_int action, c_int mods) {
+    println(key);
+}
+
+void main() {
+    println(GLFW_VERSION_MAJOR);
+    println(GLFW_VERSION_MINOR);
+    println(GLFW_KEY_ESCAPE);
+    println(GLFW_HAT_RIGHT_UP);
+    println(GLFW_TRUE);
+    println(GL_TRIANGLES);
+    println(GL_COLOR_BUFFER_BIT);
+    println(GL_INVALID_INDEX);
+    println(GL_TIMEOUT_IGNORED);
+    var ok = glfwInit();
+    println(ok);
+    println(glfwGetVersionString());
+    var major = c_int(0);
+    glfwGetVersion(&major, &major, &major);
+    var count = c_int(0);
+    var monitors = glfwGetMonitors(&count);
+    println(monitors == null);
+    var ucount = c_uint(0);
+    var extensions = glfwGetRequiredInstanceExtensions(&ucount);
+    println(extensions == null);
+    glfwSetErrorCallback(onError);
+    glfwSetErrorCallback(null);
+    GLFWwindow*? window = glfwCreateWindow(1, 1, "", null, null);
+    if window {
+        glfwSetKeyCallback(window, onKey);
+        glfwDestroyWindow(window);
+    }
+    GLFWerrorfun? callback = null;
+    println(callback == null);
+    var mode = GLFWvidmode(width = 0, height = 0, redBits = 0, greenBits = 0, blueBits = 0, refreshRate = 0);
+    println(mode.width);
+    var image = GLFWimage(width = 0, height = 0, pixels = cast<c_uchar*>(0));
+    println(image.width);
+    var pad = GLFWgamepadstate(buttons = undefined, axes = undefined);
+    println(pad.axes[0]);
+    var ramp = GLFWgammaramp(red = cast<c_ushort*>(0), green = cast<c_ushort*>(0), blue = cast<c_ushort*>(0), size = c_uint(0));
+    println(ramp.size);
+    var vao = GLuint(0);
+    println(vao);
+    var err = glGetError();
+    println(err);
+    GLsync? sync = null;
+    println(sync == null);
+    glfwTerminate();
+}

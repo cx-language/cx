@@ -1728,6 +1728,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         for (auto& path : query.importSearchPaths)
             baseOptions.importSearchPaths.push_back(path);
         if (auto rootDir = getCxRootDir(); !rootDir.empty()) {
+            baseOptions.importSearchPaths.push_back(rootDir + "/vendor");
             baseOptions.importSearchPaths.push_back(std::move(rootDir));
         }
 #ifdef CLANG_BUILTIN_INCLUDE_PATH

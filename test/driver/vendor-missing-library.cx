@@ -1,0 +1,12 @@
+// REQUIRES: windows
+// RUN: %not %cx %s -o %t 2>&1 | %FileCheck %s
+
+import glfw;
+
+// Without pkg-config or the library installed, linking a vendored module
+// fails with an error naming the missing library.
+
+// CHECK: couldn't query pkg-config for 'glfw3'
+void main() {
+    println(glfwGetVersionString());
+}

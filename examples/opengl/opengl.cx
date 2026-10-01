@@ -1,4 +1,5 @@
-import "GLFW/glfw3.h";
+import glfw;
+import gl;
 
 int main() {
     glfwSetErrorCallback(ErrorCallback);
@@ -69,7 +70,7 @@ int main() {
         glUseProgram(program);
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, cast<void*>(0));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, null);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glDisableVertexAttribArray(0);
 
@@ -88,7 +89,7 @@ void LoadShader(GLuint shaderID, string path) {
     char* shaderSourcePointer = shaderSource.cString();
 
     // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
-    glShaderSource(shaderID, 1, cast<const char*?*>(&shaderSourcePointer), null);
+    glShaderSource(shaderID, 1, cast<const char**>(&shaderSourcePointer), null);
     glCompileShader(shaderID);
 
     GLint infoLogLength = 0;
@@ -100,11 +101,11 @@ void LoadShader(GLuint shaderID, string path) {
     }
 }
 
-void ErrorCallback(c_int error, const char*? description) {
+void ErrorCallback(c_int error, const char* description) {
     println(description);
 }
 
-void KeyCallback(GLFWwindow*? window, c_int key, c_int scancode, c_int action, c_int mods) {
+void KeyCallback(GLFWwindow* window, c_int key, c_int scancode, c_int action, c_int mods) {
     if key == GLFW_KEY_ESCAPE && action == GLFW_PRESS
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }

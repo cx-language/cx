@@ -1,0 +1,9 @@
+#if macOS
+var frameworks = ["OpenGL"]
+#else
+#if Windows
+var libraries = ["opengl32"]
+#else
+var libraries = ["GL"]
+#endif
+#endif
