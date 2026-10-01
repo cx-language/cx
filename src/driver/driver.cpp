@@ -750,8 +750,9 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         ccArgs.push_back("-lm");
 #endif
         // Debug info is Debug-only; release stack traces resolve names
-        // through the symbol table instead.
-        if (options.mode == BuildMode::Debug) ccArgs.push_back("-g");
+        // through the symbol table instead. Throwaway harness binaries
+        // (CX_SKIP_DSYMUTIL, see below) skip it: only slows the link.
+        if (options.mode == BuildMode::Debug && std::getenv("CX_SKIP_DSYMUTIL") == nullptr) ccArgs.push_back("-g");
 #if !defined(__APPLE__) && !defined(_WIN32)
         // Export symbols so backtrace() resolves cx function names (macOS
         // resolves them from the static symbol table instead).
@@ -892,9 +893,10 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     // Collect DWARF from the object files into a .dSYM bundle so debuggers
     // show cx functions with file and line info (the linker leaves it behind).
     // Debug-only: release builds emit no DWARF, so there is nothing to collect
-    // (and a failed dsymutil would warn spuriously). Test harnesses set
-    // CX_SKIP_DSYMUTIL for throwaway binaries: each skipped dsymutil saves
-    // spawning a shell, xcrun, and dsymutil for debug info nobody reads.
+    // (and a failed dsymutil would warn spuriously). Throwaway-binary
+    // harnesses set CX_SKIP_DSYMUTIL (also skips cc -g above): each skipped
+    // dsymutil saves spawning a shell, xcrun, and dsymutil for debug info
+    // nobody reads.
     if (!buildParams.createSharedLib && options.mode == BuildMode::Debug && std::getenv("CX_SKIP_DSYMUTIL") == nullptr) {
         PhaseTimer timer("dsymutil");
         std::string dsymutilCommand = "xcrun dsymutil " + shellEscape(outputPath.str()) + " 2>/dev/null";

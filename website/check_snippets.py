@@ -23,9 +23,9 @@ args, cx_args = arg_parser.parse_known_args()
 use_c_backend = "--backend=c" in cx_args or (
     "--backend" in cx_args and "c" in cx_args[cx_args.index("--backend") + 1:cx_args.index("--backend") + 2])
 
-# Binaries built here are compiled, run once, and deleted: skip dsymutil
-# (macOS-only debug-info collection, ~80ms per binary) via the driver's
-# harness opt-out. Subprocesses inherit this environment.
+# Binaries built here are compiled, run once, and deleted: skip debug-info
+# work (macOS dsymutil collection, cc -g) via the driver's harness opt-out.
+# Subprocesses inherit this environment.
 os.environ["CX_SKIP_DSYMUTIL"] = "1"
 
 docs_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "docs"))
