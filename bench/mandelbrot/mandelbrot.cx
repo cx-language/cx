@@ -25,7 +25,9 @@ void main() {
             for _ in 0...1000 {
                 z = z * z + Complex(x, y);
             }
-            sum += int(z.abs() * 50);
+            // Wrapping: a diverged orbit makes abs() NaN, and int() of that is
+            // platform-defined (INT_MIN on x86-64), which would overflow sum.
+            sum +%= int(z.abs() * 50);
         }
     }
     println(sum);
