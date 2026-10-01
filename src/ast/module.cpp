@@ -49,17 +49,21 @@ bool Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) {
     return false;
 }
 
-void Module::addToSymbolTable(FunctionTemplate& decl) {
-    if (auto existing = symbolTable.findWithMatchingPrototype(*decl.functionDecl)) {
+template<typename DeclT> static bool rejectMatchingPrototype(SymbolTable& symbolTable, DeclT& decl, const FunctionDecl& proto) {
+    if (auto existing = symbolTable.findWithMatchingPrototype(proto)) {
         REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getQualifiedName() << "'");
+        return true;
     }
+    return false;
+}
+
+void Module::addToSymbolTable(FunctionTemplate& decl) {
+    rejectMatchingPrototype(symbolTable, decl, *decl.functionDecl);
     symbolTable.addGlobal(decl.getQualifiedName(), &decl);
 }
 
 void Module::addToSymbolTable(FunctionDecl& decl) {
-    if (auto existing = symbolTable.findWithMatchingPrototype(decl)) {
-        REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getQualifiedName() << "'");
-    } else if (decl.isExtern()) {
+    if (!rejectMatchingPrototype(symbolTable, decl, decl) && decl.isExtern()) {
         // C has no overloading: same-name externs share one symbol even with different signatures.
         for (Decl* candidate : symbolTable.findFirst(decl.getQualifiedName())) {
             if (auto* existing = llvm::dyn_cast<FunctionDecl>(candidate); existing && existing->isExtern()) {
