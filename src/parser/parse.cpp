@@ -1824,15 +1824,15 @@ FunctionDecl* Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel 
         decl->isImplicit = true;
     }
 
-    if (requireBody || currentToken() == Token::LeftBrace) {
-        decl->body = parseBlock(decl);
-    }
-
-    if (lookAhead(-1) != Token::RightBrace) {
-        parseStmtTerminator();
-    }
-
+    parseOptionalFunctionBody(*decl, requireBody);
     return decl;
+}
+
+void Parser::parseOptionalFunctionBody(FunctionDecl& decl, bool requireBody) {
+    if (requireBody || currentToken() == Token::LeftBrace) {
+        decl.body = parseBlock(&decl);
+    }
+    if (lookAhead(-1) != Token::RightBrace) parseStmtTerminator();
 }
 
 /// function-template-decl ::= function-template-proto '{' stmt* '}'
@@ -1845,13 +1845,8 @@ FunctionTemplate* Parser::parseFunctionTemplate(TypeDecl* receiverTypeDecl, Acce
 /// extern-function-decl ::= 'private'? 'extern' ('"C"' | '"C++"')? function-proto (block | ('\n' | ';'))
 FunctionDecl* Parser::parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool cppLinkage) {
     auto decl = parseFunctionProto(true, nullptr, accessLevel, nullptr, type, name, location, cppLinkage);
-    if (currentToken() == Token::LeftBrace) {
-        // A body makes this a definition with C or C++ linkage, callable from C or C++.
-        decl->body = parseBlock(decl);
-    }
-    if (lookAhead(-1) != Token::RightBrace) {
-        parseStmtTerminator();
-    }
+    // A body makes this a definition with C or C++ linkage, callable from C or C++.
+    parseOptionalFunctionBody(*decl, false);
     return decl;
 }
 

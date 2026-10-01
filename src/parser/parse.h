@@ -176,6 +176,7 @@ private:
     FunctionTemplate* parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location);
     FunctionDecl* parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody, Type type, llvm::StringRef name, Location location,
                                     bool isImplicit = false);
+    void parseOptionalFunctionBody(FunctionDecl& decl, bool requireBody);
     FunctionTemplate* parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location);
     FunctionDecl* parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool cppLinkage = false);
     ConstructorDecl* parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit = false);
