@@ -491,6 +491,26 @@ const OpenDocument* findOpenDoc(ServerState& state, const JsonValue& params) {
     return &it->second;
 }
 
+// Notifications are ignored. A request for a document that is not open is
+// answered with `empty` so the client does not wait on it.
+const OpenDocument* beginTextDocumentQuery(ServerState& state, bool wantResponse, const JsonValue* id, const JsonValue& params, JsonValue empty) {
+    if (!wantResponse) return nullptr;
+    const OpenDocument* doc = findOpenDoc(state, params);
+    if (!doc) respondWith(*id, std::move(empty));
+    return doc;
+}
+
+template<typename MakeItem> JsonArray mapQueryEntries(const std::optional<JsonValue>& result, llvm::StringRef key, MakeItem&& makeItem) {
+    JsonArray items;
+    if (result) {
+        if (auto* entries = findJsonArray(*result, key)) {
+            for (auto& entry : *entries)
+                items.push_back(makeItem(entry));
+        }
+    }
+    return items;
+}
+
 JsonObject buildPositionalQuery(ServerState& state, const std::string& method, const OpenDocument& doc, const JsonValue* posJson) {
     JsonObject query = buildBaseQuery(state, method, doc);
     JsonObject pos;
@@ -733,12 +753,8 @@ int runServer(const ServerOptions& options) {
             state.openDocs.erase(path);
             state.diagCache.erase(path);
         } else if (method == "textDocument/hover") {
-            if (!wantResponse) continue;
-            const OpenDocument* doc = findOpenDoc(state, *params);
-            if (!doc) {
-                respondWith(*id, JsonValue(nullptr));
-                continue;
-            }
+            const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(nullptr));
+            if (!doc) continue;
             JsonObject query = buildPositionalQuery(state, "hover", *doc, findJson(*params, "position"));
             auto result = runQuerySubprocess(state, std::move(query));
             std::string text = result ? getJsonString(*result, "hover") : "";
@@ -753,12 +769,8 @@ int runServer(const ServerOptions& options) {
                 respondWith(*id, JsonValue(std::move(response)));
             }
         } else if (method == "textDocument/definition") {
-            if (!wantResponse) continue;
-            const OpenDocument* doc = findOpenDoc(state, *params);
-            if (!doc) {
-                respondWith(*id, JsonValue(nullptr));
-                continue;
-            }
+            const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(nullptr));
+            if (!doc) continue;
             JsonObject query = buildPositionalQuery(state, "definition", *doc, findJson(*params, "position"));
             auto result = runQuerySubprocess(state, std::move(query));
             if (!result || !getJsonBool(*result, "found")) {
@@ -770,86 +782,55 @@ int runServer(const ServerOptions& options) {
                 respondWith(*id, JsonValue(std::move(response)));
             }
         } else if (method == "textDocument/completion") {
-            if (!wantResponse) continue;
-            const OpenDocument* doc = findOpenDoc(state, *params);
-            if (!doc) {
-                respondWith(*id, JsonValue(JsonArray{}));
-                continue;
-            }
+            const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(JsonArray{}));
+            if (!doc) continue;
             JsonObject query = buildPositionalQuery(state, "completion", *doc, findJson(*params, "position"));
             auto result = runQuerySubprocess(state, std::move(query));
             bool followedByParen = isFollowedByParen(doc->text, positionFromJson(findJson(*params, "position")));
-            JsonArray items;
-            if (result) {
-                if (auto* entries = findJsonArray(*result, "items")) {
-                    for (auto& entry : *entries) {
-                        JsonObject item;
-                        std::string label = getJsonString(entry, "label");
-                        std::string kind = getJsonString(entry, "kind");
-                        item["label"] = label;
-                        item["kind"] = completionKindToLsp(kind);
-                        item["detail"] = getJsonString(entry, "detail");
-                        if ((kind == "function" || kind == "method") && isCallableLabel(label) && !followedByParen) {
-                            // Plain text only, never snippets: `name(` when the callable takes parameters
-                            // so the caret lands inside, `name()` otherwise.
-                            item["insertText"] = label + (getJsonBool(entry, "hasParams") ? "(" : "()");
-                        }
-                        items.push_back(std::move(item));
-                    }
+            JsonArray items = mapQueryEntries(result, "items", [&](const JsonValue& entry) {
+                JsonObject item;
+                std::string label = getJsonString(entry, "label");
+                std::string kind = getJsonString(entry, "kind");
+                item["label"] = label;
+                item["kind"] = completionKindToLsp(kind);
+                item["detail"] = getJsonString(entry, "detail");
+                if ((kind == "function" || kind == "method") && isCallableLabel(label) && !followedByParen) {
+                    // Plain text only, never snippets: `name(` when the callable takes parameters
+                    // so the caret lands inside, `name()` otherwise.
+                    item["insertText"] = label + (getJsonBool(entry, "hasParams") ? "(" : "()");
                 }
-            }
+                return item;
+            });
             respondWith(*id, JsonValue(std::move(items)));
         } else if (method == "textDocument/documentSymbol") {
-            if (!wantResponse) continue;
-            const OpenDocument* doc = findOpenDoc(state, *params);
-            if (!doc) {
-                respondWith(*id, JsonValue(JsonArray{}));
-                continue;
-            }
+            const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(JsonArray{}));
+            if (!doc) continue;
             JsonObject query = buildBaseQuery(state, "documentSymbol", *doc);
             auto result = runQuerySubprocess(state, std::move(query));
-            JsonArray items;
-            if (result) {
-                if (auto* entries = findJsonArray(*result, "symbols")) {
-                    for (auto& entry : *entries) {
-                        JsonObject item;
-                        item["name"] = getJsonString(entry, "name");
-                        item["kind"] = symbolKindToLsp(getJsonString(entry, "kind"));
-                        if (auto* range = findJson(entry, "range")) item["range"] = *range;
-                        if (auto* selection = findJson(entry, "selectionRange")) item["selectionRange"] = *selection;
-                        items.push_back(std::move(item));
-                    }
-                }
-            }
+            JsonArray items = mapQueryEntries(result, "symbols", [](const JsonValue& entry) {
+                JsonObject item;
+                item["name"] = getJsonString(entry, "name");
+                item["kind"] = symbolKindToLsp(getJsonString(entry, "kind"));
+                if (auto* range = findJson(entry, "range")) item["range"] = *range;
+                if (auto* selection = findJson(entry, "selectionRange")) item["selectionRange"] = *selection;
+                return item;
+            });
             respondWith(*id, JsonValue(std::move(items)));
         } else if (method == "textDocument/references") {
-            if (!wantResponse) continue;
-            const OpenDocument* doc = findOpenDoc(state, *params);
-            if (!doc) {
-                respondWith(*id, JsonValue(JsonArray{}));
-                continue;
-            }
+            const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(JsonArray{}));
+            if (!doc) continue;
             JsonObject query = buildPositionalQuery(state, "references", *doc, findJson(*params, "position"));
             auto result = runQuerySubprocess(state, std::move(query));
-            JsonArray items;
-            if (result) {
-                if (auto* entries = findJsonArray(*result, "references")) {
-                    for (auto& entry : *entries) {
-                        JsonObject item;
-                        item["uri"] = pathToUri(getJsonString(entry, "file"));
-                        if (auto* range = findJson(entry, "range")) item["range"] = *range;
-                        items.push_back(std::move(item));
-                    }
-                }
-            }
+            JsonArray items = mapQueryEntries(result, "references", [](const JsonValue& entry) {
+                JsonObject item;
+                item["uri"] = pathToUri(getJsonString(entry, "file"));
+                if (auto* range = findJson(entry, "range")) item["range"] = *range;
+                return item;
+            });
             respondWith(*id, JsonValue(std::move(items)));
         } else if (method == "textDocument/semanticTokens/full" || method == "textDocument/semanticTokens/range") {
-            if (!wantResponse) continue;
-            const OpenDocument* doc = findOpenDoc(state, *params);
-            if (!doc) {
-                respondWith(*id, JsonValue(nullptr));
-                continue;
-            }
+            const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(nullptr));
+            if (!doc) continue;
             JsonObject query = buildBaseQuery(state, "semanticTokens", *doc);
             auto result = runQuerySubprocess(state, std::move(query));
             if (!result) {
