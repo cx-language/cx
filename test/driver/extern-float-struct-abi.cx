@@ -1,0 +1,222 @@
+// UNSUPPORTED: windows
+// RUN: %cc -c %S/inputs/float-struct-abi.c -o %t-helper.o
+// RUN: %cx -c %s -o %t.o -Werror && %cc %t.o %t-helper.o -o %t.exe && %t.exe | %FileCheck %s
+// RUN: %cx --backend=c --print-c %s -Werror > %t-gen.c && %cc %t-gen.c %t-helper.o -o %t-c.exe && %t-c.exe | %FileCheck %s
+
+// Small float-containing aggregates cross the C ABI in registers, not like
+// cx would lower them naively. Each echo round-trips through real C code,
+// proving both directions agree with the platform ABI, not just with cx.
+
+import "inputs/float-struct-abi-union.h";
+
+struct V2 {
+    float x;
+    float y;
+}
+struct V3 {
+    float x;
+    float y;
+    float z;
+}
+struct V4 {
+    float x;
+    float y;
+    float z;
+    float w;
+}
+struct D2 {
+    double x;
+    double y;
+}
+struct IF {
+    c_int i;
+    float f;
+}
+struct FD {
+    float f;
+    double d;
+}
+struct DF {
+    double d;
+    float f;
+}
+struct CF {
+    char c;
+    float f;
+}
+struct CD {
+    char c;
+    double d;
+}
+struct DC {
+    double d;
+    char c;
+}
+struct IIF {
+    c_int a;
+    c_int b;
+    float f;
+}
+struct BF {
+    bool b;
+    float f;
+}
+struct PF {
+    int* p;
+    float f;
+}
+struct DI {
+    double d;
+    c_int i;
+}
+struct IF2 {
+    IF[2] m;
+}
+struct D4 {
+    double[4] d;
+}
+struct FA3 {
+    float[3] a;
+}
+struct NV2 {
+    V2 a;
+    V2 b;
+}
+struct BigF {
+    float f;
+    char[24] c;
+}
+struct Pair {
+    c_int x;
+    c_int y;
+}
+struct LL2 {
+    c_longlong a;
+    c_longlong b;
+}
+
+extern V2 echo_v2(V2 v);
+extern V3 echo_v3(V3 v);
+extern V4 echo_v4(V4 v);
+extern D2 echo_d2(D2 v);
+extern IF echo_if(IF v);
+extern FD echo_fd(FD v);
+extern DF echo_df(DF v);
+extern CF echo_cf(CF v);
+extern CD echo_cd(CD v);
+extern DC echo_dc(DC v);
+extern IIF echo_iif(IIF v);
+extern BF echo_bf(BF v);
+extern PF echo_pf(PF v);
+extern DI echo_di(DI v);
+extern IF2 echo_if2(IF2 v);
+extern D4 echo_d4(D4 v);
+extern FA3 echo_fa3(FA3 v);
+extern NV2 echo_nv2(NV2 v);
+extern BigF echo_bigf(BigF v);
+extern Pair echo_pair(Pair v);
+extern LL2 echo_ll2(LL2 v);
+extern float sum3_v2(V2 a, V2 b, V2 c);
+extern double mix_args(V2 v, c_int n, double d, V2 w);
+extern float vfirst(c_int tag, ...);
+extern c_int vsumpair(c_int tag, ...);
+extern c_int vfirsti(c_int tag, ...);
+extern V2 trig_v2(V2 v);
+extern V4 trig_v4(V4 v);
+extern D4 trig_d4(D4 v);
+extern IF trig_if(IF v);
+
+extern V2 cx_id_v2(V2 v) {
+    return v;
+}
+extern V4 cx_id_v4(V4 v) {
+    return v;
+}
+extern D4 cx_id_d4(D4 v) {
+    return v;
+}
+extern IF cx_id_if(IF v) {
+    return v;
+}
+
+struct Wrap4 {
+    c_int[4] a;
+}
+
+Wrap4 mk_wrap() {
+    return Wrap4(a = [10, 20, 30, 40]);
+}
+
+void main() {
+    var v2 = echo_v2(V2(x = 1.5, y = -2.25));
+    println(v2.x); // CHECK: 1.5
+    println(v2.y); // CHECK-NEXT: -2.25
+    var v3 = echo_v3(V3(x = 1.5, y = 2.5, z = 3.5));
+    println(v3.z); // CHECK-NEXT: 3.5
+    var v4 = echo_v4(V4(x = 1.5, y = 2.5, z = 3.5, w = 4.5));
+    println(v4.w); // CHECK-NEXT: 4.5
+    var d2 = echo_d2(D2(x = 1.5, y = 2.5));
+    println(d2.y); // CHECK-NEXT: 2.5
+    var iv = echo_if(IF(i = 7, f = 1.5));
+    println(iv.i); // CHECK-NEXT: 7
+    println(iv.f); // CHECK-NEXT: 1.5
+    var fd = echo_fd(FD(f = 1.5, d = 2.5));
+    println(fd.d); // CHECK-NEXT: 2.5
+    var df = echo_df(DF(d = 1.5, f = 2.5));
+    println(df.f); // CHECK-NEXT: 2.5
+    var cf = echo_cf(CF(c = 'A', f = 1.5));
+    println(c_int(cf.c)); // CHECK-NEXT: 65
+    println(cf.f); // CHECK-NEXT: 1.5
+    var cd = echo_cd(CD(c = 'B', d = 2.5));
+    println(c_int(cd.c)); // CHECK-NEXT: 66
+    var dc = echo_dc(DC(d = 2.5, c = 'C'));
+    println(c_int(dc.c)); // CHECK-NEXT: 67
+    var iif = echo_iif(IIF(a = 1, b = 2, f = 1.5));
+    println(iif.b); // CHECK-NEXT: 2
+    var bf = echo_bf(BF(b = true, f = 1.5));
+    println(bf.b); // CHECK-NEXT: true
+    var x = 42;
+    var pf = echo_pf(PF(p = &x, f = 2.5));
+    println(*pf.p); // CHECK-NEXT: 42
+    println(pf.f); // CHECK-NEXT: 2.5
+    var di = echo_di(DI(d = 1.5, i = 9));
+    println(di.i); // CHECK-NEXT: 9
+    var if2 = echo_if2(IF2(m = [IF(i = 1, f = 1.5), IF(i = 2, f = 2.5)]));
+    println(if2.m[1].i); // CHECK-NEXT: 2
+    println(if2.m[0].f); // CHECK-NEXT: 1.5
+    var d4 = echo_d4(D4(d = [1.5, 2.5, 3.5, 4.5]));
+    println(d4.d[3]); // CHECK-NEXT: 4.5
+    var fa3 = echo_fa3(FA3(a = [1.5, 2.5, 3.5]));
+    println(fa3.a[2]); // CHECK-NEXT: 3.5
+    var nv2 = echo_nv2(NV2(a = V2(x = 1.5, y = 2.5), b = V2(x = 3.5, y = 4.5)));
+    println(nv2.b.y); // CHECK-NEXT: 4.5
+    UF u = undefined;
+    u.a = 1.5;
+    println(echo_uf(u).b); // CHECK-NEXT: 1.5
+    UI ui = undefined;
+    ui.i = 7;
+    var rui = echo_ui(ui);
+    println(rui.i); // CHECK-NEXT: 7
+    var big = echo_bigf(BigF(f = 1.5, c = undefined));
+    println(big.f); // CHECK-NEXT: 1.5
+    var pair = echo_pair(Pair(x = 3, y = 4));
+    println(pair.y); // CHECK-NEXT: 4
+    var ll2 = echo_ll2(LL2(a = 5, b = 6));
+    println(ll2.b); // CHECK-NEXT: 6
+    println(sum3_v2(V2(x = 1.0, y = 2.0), V2(x = 4.0, y = 8.0), V2(x = 16.0, y = 32.0))); // CHECK-NEXT: 63
+    println(mix_args(V2(x = 1.0, y = 2.0), 4, 8.0, V2(x = 16.0, y = 32.0))); // CHECK-NEXT: 63
+    println(vfirst(1, V2(x = 4.0, y = 8.0))); // CHECK-NEXT: 13
+    println(vsumpair(1, Pair(x = 2, y = 4))); // CHECK-NEXT: 7
+    println(vfirsti(1, [10, 20, 30, 40])); // CHECK-NEXT: 31
+    c_int[8] bigarr = [1, 2, 3, 4, 5, 6, 7, 8];
+    println(vfirsti(0, bigarr)); // CHECK-NEXT: 3
+    println(vfirsti(1, mk_wrap().a)); // CHECK-NEXT: 31
+    var cb2 = trig_v2(V2(x = 1.5, y = 2.5));
+    println(cb2.y); // CHECK-NEXT: 2.5
+    var cb4 = trig_v4(V4(x = 1.5, y = 2.5, z = 3.5, w = 4.5));
+    println(cb4.w); // CHECK-NEXT: 4.5
+    var cbd4 = trig_d4(D4(d = [1.5, 2.5, 3.5, 4.5]));
+    println(cbd4.d[0]); // CHECK-NEXT: 1.5
+    var cbif = trig_if(IF(i = 7, f = 1.5));
+    println(cbif.i); // CHECK-NEXT: 7
+}

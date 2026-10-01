@@ -1,0 +1,53 @@
+// REQUIRES: windows
+// RUN: %cx -print-llvm %s | %FileCheck %s
+
+struct V2 {
+    float x;
+    float y;
+}
+struct V3 {
+    float x;
+    float y;
+    float z;
+}
+struct V4 {
+    float x;
+    float y;
+    float z;
+    float w;
+}
+struct D1 {
+    double d;
+}
+struct IF {
+    c_int i;
+    float f;
+}
+struct F1 {
+    float f;
+}
+
+extern V2 mk_v2();
+extern V3 mk_v3();
+extern V4 mk_v4();
+extern D1 mk_d1();
+extern IF mk_if();
+extern F1 mk_f1();
+
+// Win64 passes aggregates up to 8 bytes as integers, floats included:
+// CHECK: declare i64 @mk_v2()
+// CHECK: declare i64 @mk_d1()
+// CHECK: declare i64 @mk_if()
+// CHECK: declare i32 @mk_f1()
+// Larger aggregates go indirect, like integer-only ones:
+// CHECK: declare void @mk_v3(ptr sret(%V3) align 4)
+// CHECK: declare void @mk_v4(ptr sret(%V4) align 4)
+
+void main() {
+    println(mk_v2().x);
+    println(mk_v3().z);
+    println(mk_v4().w);
+    println(mk_d1().d);
+    println(mk_if().i);
+    println(mk_f1().f);
+}

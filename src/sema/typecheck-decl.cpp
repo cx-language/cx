@@ -771,33 +771,35 @@ static void checkMainSignature(const FunctionDecl& decl) {
     }
 }
 
-// True when a by-value `extern` type holds a float anywhere. The LLVM backend expands
-// float-containing aggregates element-wise, but the C ABI packs small ones into shared
-// registers.
-static bool containsFloat(Type type) {
-    if (type.isFloatingPoint()) return true;
+// True when a by-value `extern` type holds a float satisfying the leaf test anywhere.
+template<typename LeafTest> static bool containsFloatWhere(Type type, LeafTest leafTest) {
+    if (leafTest(type)) return true;
     // Fixed arrays carry the fieldless Array decl, so check them before getDecl.
-    if (type.isFixedArray()) return containsFloat(type.getElementType());
+    if (type.isFixedArray()) return containsFloatWhere(type.getElementType(), leafTest);
     // Enum payloads are parsed as one-element anonymous structs.
     if (type.isAnonymousStructType()) {
         for (const AnonymousStructElement& element : type.getAnonymousStructElements()) {
-            if (containsFloat(element.type)) return true;
+            if (containsFloatWhere(element.type, leafTest)) return true;
         }
         return false;
     }
     if (TypeDecl* typeDecl = type.getDecl()) {
         if (typeDecl->isStruct() || typeDecl->tag == TypeTag::Union) {
             for (const FieldDecl& field : typeDecl->fields) {
-                if (containsFloat(field.type)) return true;
+                if (containsFloatWhere(field.type, leafTest)) return true;
             }
         } else if (typeDecl->isEnumDecl()) {
             for (const EnumCase& enumCase : llvm::cast<EnumDecl>(typeDecl)->cases) {
-                if (enumCase.associatedType && containsFloat(enumCase.associatedType)) return true;
+                if (enumCase.associatedType && containsFloatWhere(enumCase.associatedType, leafTest)) return true;
             }
         }
         return false;
     }
     return false;
+}
+
+static bool containsFloat(Type type) {
+    return containsFloatWhere(type, [](Type t) { return t.isFloatingPoint(); });
 }
 
 // C layout of a type crossing an `extern` boundary by value: size and alignment in
@@ -1088,17 +1090,31 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
     ERROR_RANGE(type.location, type.endLocation, "type '" << type << "' cannot be used in extern \"C++\" signatures");
 }
 
-// Rejects aggregate types that the LLVM backend miscompiles across an
-// `extern "C"` boundary: float-containing aggregates that fit in 16 bytes
-// expand element-wise instead of packing into shared registers. Larger ones
-// cross indirectly (memory on both sides) and are fine.
+// True when a by-value `extern` type holds an 80-bit float anywhere. Those
+// have no register coercion (the x87 class crosses in memory), unlike
+// 32/64-bit floats, which the LLVM backend classifies per platform.
+static bool containsLongDouble(Type type) {
+    return containsFloatWhere(type, [](Type t) { return t.isFloat80(); });
+}
+
+// Rejects types that cannot cross an `extern "C"` boundary by value:
+// fixed-array returns (C cannot return arrays), aggregates with no C
+// counterpart, ones holding 80-bit floats (which cross in memory), and, on
+// targets without register classification, small float-containing ones.
+// Larger ones cross indirectly and are fine.
 static void validateExternCByValue(Type type, bool isReturn) {
     // Bare floating-point scalars cross in their own register; only aggregates need the check below.
     if (type.isFloatingPoint()) return;
-    bool aggregate = type.isFixedArray();
-    if (!aggregate) {
-        if (TypeDecl* typeDecl = type.getDecl()) aggregate = typeDecl->isStruct() || typeDecl->tag == TypeTag::Union || typeDecl->isEnumDecl();
+    // Fixed-array parameters decay to pointers, but C cannot return arrays.
+    if (type.isFixedArray()) {
+        if (!isReturn) return;
+        ERROR_RANGE(type.location, type.endLocation,
+                    "type '" << type
+                             << "' cannot be returned by value in extern \"C\" signatures because C functions cannot return arrays; "
+                                "use an out-parameter instead");
     }
+    bool aggregate = false;
+    if (TypeDecl* typeDecl = type.getDecl()) aggregate = typeDecl->isStruct() || typeDecl->tag == TypeTag::Union || typeDecl->isEnumDecl();
     if (!aggregate || !containsFloat(type)) return;
     const char* action = isReturn ? "returned" : "passed";
     const char* instead = isReturn ? "use an out-parameter instead" : "pass it behind a pointer or reference instead";
@@ -1110,10 +1126,18 @@ static void validateExternCByValue(Type type, bool isReturn) {
                                 "floating-point members and has a member with no C counterpart; "
                              << instead);
     }
+    if (containsLongDouble(type)) {
+        ERROR_RANGE(type.location, type.endLocation,
+                    "type '" << type << "' cannot be " << action
+                             << " by value in extern \"C\" signatures because it contains 80-bit float members, which cross in memory; " << instead);
+    }
     if (layout->size > 16) return;
-    ERROR_RANGE(type.location, type.endLocation,
-                "type '" << type << "' cannot be " << action << " by value in extern \"C\" signatures because it is " << layout->size
-                         << " bytes and contains floating-point members; " << instead);
+    llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
+    if (!triple.isX86_64() && !triple.isAArch64()) {
+        ERROR_RANGE(type.location, type.endLocation,
+                    "type '" << type << "' cannot be " << action << " by value in extern \"C\" signatures because it is " << layout->size
+                             << " bytes and contains floating-point members; " << instead);
+    }
 }
 
 void cx::validateCVariadicExtra(Type type, const Expr& arg) {

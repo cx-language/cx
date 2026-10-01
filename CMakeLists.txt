@@ -283,6 +283,7 @@ foreach(shard RANGE ${LIT_SHARD_MAX})
     add_test(NAME ${lit_test_name}
         COMMAND lit --verbose --succinct -j1 ${EXTRA_LIT_FLAGS} ${shard_files}
         -Dcx_path=$<TARGET_FILE:cx>
+        -Dcc_path=${CMAKE_C_COMPILER}
         -Dfilecheck_path=$<TARGET_FILE:FileCheck>
         -Dtest_dir=${PROJECT_SOURCE_DIR}/test
         -Dllvm_version=${LLVM_VERSION_MAJOR})

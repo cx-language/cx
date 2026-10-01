@@ -9,15 +9,24 @@ struct Big {
     c_int[8] a;
 }
 
+struct IFMixed {
+    c_int i;
+    float f;
+}
+
 extern Pair c_mkpair(c_int x);
 extern c_int c_sumpair(Pair p);
 extern Big c_big();
 extern void c_vprint(c_int level, ...);
+extern IFMixed c_mkif(c_int x);
+extern c_int c_sumif(IFMixed m);
 
 void main() {
     var p = c_mkpair(0);
     println(c_sumpair(p));
     println(c_big().a[0]);
+    var m = c_mkif(0);
+    println(c_sumif(m));
     float f = 1.5;
     int8 n = -1;
     char ch = 'A';
@@ -32,6 +41,10 @@ void main() {
 // CHECK: declare i32 @c_sumpair(i64)
 // Large aggregates still go indirect:
 // CHECK: declare void @c_big(ptr sret(%Big) align 4)
+// Mixed int-float aggregates in one eightbyte classify INTEGER on every
+// platform, so they chunk like integer-only aggregates:
+// CHECK: declare i64 @c_mkif(i32)
+// CHECK: declare i32 @c_sumif(i64)
 // CHECK: call i64 @c_mkpair(i32 0)
 // CHECK: call i32 @c_sumpair(i64 %coerce.chunk)
 // Variadic extras get C default argument promotions (float to double, small

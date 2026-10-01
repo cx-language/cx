@@ -184,10 +184,11 @@ cc main.c cxlib.o -o c-caller
 
 Signatures crossing the boundary must be C-compatible: plain numbers,
 pointers, and C structs. Generic functions cannot be `extern`.
-Structs cross by value, except small ones (up to 16 bytes) containing
-floating-point members: those follow register-passing rules the compiler
-does not implement yet, so they are rejected; pass them behind a pointer
-or reference instead, and return them through an out-parameter.
+Structs cross by value following the platform C ABI, including small
+float-containing ones, which cross in registers on x86-64 and AArch64 (on
+other targets those are rejected). Aggregates holding 80-bit floats are
+rejected; pass them behind a pointer or reference instead, and return
+them through an out-parameter.
 An `extern` function must be called directly; referring to one as a value
 is rejected because a call through a function pointer cannot use the
 callee's C calling convention.

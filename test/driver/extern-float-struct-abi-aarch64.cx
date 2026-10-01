@@ -1,0 +1,73 @@
+// REQUIRES: aarch64
+// RUN: %cx --print-llvm %s | %FileCheck %s
+
+struct V2 {
+    float x;
+    float y;
+}
+struct V3 {
+    float x;
+    float y;
+    float z;
+}
+struct V4 {
+    float x;
+    float y;
+    float z;
+    float w;
+}
+struct D2 {
+    double x;
+    double y;
+}
+struct FD {
+    float f;
+    double d;
+}
+struct IF {
+    c_int i;
+    float f;
+}
+struct D4 {
+    double[4] d;
+}
+struct F1 {
+    float f;
+}
+
+extern V2 mk_v2();
+extern V3 mk_v3();
+extern V4 mk_v4();
+extern D2 mk_d2();
+extern FD mk_fd();
+extern IF mk_if();
+extern D4 mk_d4();
+extern F1 mk_f1();
+extern float sum_v2(V2 v);
+
+// Homogeneous float aggregates cross in SIMD registers as float arrays:
+// CHECK: declare [2 x float] @mk_v2()
+// CHECK: declare [3 x float] @mk_v3()
+// CHECK: declare [4 x float] @mk_v4()
+// CHECK: declare [2 x double] @mk_d2()
+// Mixed aggregates cross in integer registers like integer-only ones:
+// CHECK: declare [2 x i64] @mk_fd()
+// CHECK: declare i64 @mk_if()
+// Homogeneous aggregates cross in registers at any size up to 4 members,
+// so even a 32-byte one needs no sret:
+// CHECK: declare [4 x double] @mk_d4()
+// CHECK: declare [1 x float] @mk_f1()
+// CHECK: declare float @sum_v2([2 x float])
+// CHECK: call [4 x double] @mk_d4()
+
+void main() {
+    println(mk_v2().x);
+    println(mk_v3().z);
+    println(mk_v4().w);
+    println(mk_d2().y);
+    println(mk_fd().d);
+    println(mk_if().i);
+    println(mk_d4().d[0]);
+    println(mk_f1().f);
+    println(sum_v2(mk_v2()));
+}

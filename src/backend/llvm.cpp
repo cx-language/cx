@@ -1,4 +1,6 @@
 #include "llvm.h"
+#include <algorithm>
+#include <optional>
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/StringSwitch.h>
@@ -36,12 +38,17 @@ static const llvm::DataLayout& getHostDataLayout() {
     return *dataLayout;
 }
 
+static const llvm::Triple& getHostTriple() {
+    static const llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
+    return triple;
+}
+
 static bool isAArch64Target() {
-    static bool result = [] {
-        llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
-        return triple.isAArch64();
-    }();
-    return result;
+    return getHostTriple().isAArch64();
+}
+
+static bool isX86_64Target() {
+    return getHostTriple().isX86_64();
 }
 
 // True when large aggregates cross to the callee as a plain pointer instead
@@ -134,7 +141,11 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret, bool decayArr
     case IRTypeKind::IRFunctionType: {
         auto functionType = llvm::cast<IRFunctionType>(type);
         auto returnType = getLLVMType(functionType->returnType);
-        if (auto* coerced = getAbiCoercedType(functionType->returnType)) returnType = coerced;
+        bool returnCoerced = false;
+        if (auto* coerced = getAbiCoercedType(functionType->returnType)) {
+            returnType = coerced;
+            returnCoerced = true;
+        }
         std::vector<llvm::Type*> paramTypes;
         paramTypes.reserve(functionType->paramTypes.size() + 1);
         for (IRType* param : functionType->paramTypes) {
@@ -143,9 +154,13 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret, bool decayArr
                 continue;
             }
             auto paramLLVMType = getLLVMType(param);
-            if (auto* coerced = getAbiCoercedType(param)) paramLLVMType = coerced;
-            // Larger aggregates are passed indirectly to avoid materializing
-            // large SSA copies that expand during codegen.
+            // Coerced aggregates cross directly in registers; larger ones go
+            // indirect to avoid materializing large SSA copies that expand
+            // during codegen.
+            if (auto* coerced = getAbiCoercedType(param)) {
+                paramTypes.push_back(coerced);
+                continue;
+            }
             if (shouldPassIndirectly(paramLLVMType)) {
                 paramTypes.push_back(llvm::PointerType::get(ctx, 0));
             } else {
@@ -153,7 +168,7 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret, bool decayArr
             }
         }
         // Use hidden sret pointer parameter to return larger structs to be compatible with the C calling convention.
-        if (shouldUseSret(returnType)) {
+        if (!returnCoerced && shouldUseSret(returnType)) {
             if (isSret) *isSret = true;
             paramTypes.insert(paramTypes.begin(), llvm::PointerType::get(ctx, 0));
             returnType = llvm::Type::getVoidTy(ctx);
@@ -231,30 +246,214 @@ static bool isIntegerOnlyAggregate(IRType* type) {
     }
 }
 
+// A scalar leaf of an aggregate with its byte range, for C ABI classification.
+struct AbiLeaf {
+    uint64_t offset;
+    uint64_t size;
+    bool isFloat;
+};
+
+static bool collectAbiLeaves(LLVMGenerator& gen, IRType* irType, llvm::Type* llvmType, uint64_t baseOffset, std::vector<AbiLeaf>& leaves) {
+    if (irType->isStruct()) {
+        auto* structType = llvm::cast<llvm::StructType>(llvmType);
+        const auto* layout = getHostDataLayout().getStructLayout(structType);
+        auto fields = irType->getFields();
+        for (unsigned i = 0; i < fields.size(); ++i) {
+            if (!collectAbiLeaves(gen, fields[i].type, structType->getElementType(i), baseOffset + layout->getElementOffset(i), leaves)) return false;
+        }
+        return true;
+    }
+    if (irType->isUnion()) {
+        for (const auto& field : irType->getFields()) {
+            if (!collectAbiLeaves(gen, field.type, gen.getLLVMType(field.type), baseOffset, leaves)) return false;
+        }
+        return true;
+    }
+    if (irType->isArrayType()) {
+        auto* arrayType = llvm::cast<IRArrayType>(irType);
+        uint64_t count;
+        if (arrayType->hasSymbolicSize()) {
+            count = getHostDataLayout().getTypeAllocSize(gen.getLLVMType(getIRType(arrayType->sizeofOperand)));
+        } else {
+            if (arrayType->size < 0) return false;
+            count = (uint64_t)arrayType->size;
+        }
+        auto* elemLLVMType = llvm::cast<llvm::ArrayType>(llvmType)->getElementType();
+        uint64_t stride = getHostDataLayout().getTypeAllocSize(elemLLVMType);
+        for (uint64_t i = 0; i < count; ++i) {
+            if (!collectAbiLeaves(gen, arrayType->elementType, elemLLVMType, baseOffset + i * stride, leaves)) return false;
+        }
+        return true;
+    }
+    if (llvmType->isFloatTy() || llvmType->isDoubleTy()) {
+        leaves.push_back({baseOffset, getHostDataLayout().getTypeAllocSize(llvmType), true});
+        return true;
+    }
+    if (llvmType->isIntegerTy() || llvmType->isPointerTy()) {
+        leaves.push_back({baseOffset, getHostDataLayout().getTypeAllocSize(llvmType), false});
+        return true;
+    }
+    // 80-bit floats, vectors, and anything else have no register class here.
+    return false;
+}
+
+// Homogeneous floating-point aggregate (AArch64): every scalar is the same
+// float or double type, at most four of them.
+struct HFAInfo {
+    bool isDouble;
+    unsigned count;
+};
+
+static std::optional<HFAInfo> getHFAInfo(IRType* type) {
+    if (type->isBasicType()) {
+        llvm::StringRef name = type->getName();
+        if (name == "float32" || name == "c_float") return HFAInfo{false, 1};
+        if (name == "float64" || name == "c_double") return HFAInfo{true, 1};
+        return std::nullopt;
+    }
+    if (type->isArrayType()) {
+        auto* arrayType = llvm::cast<IRArrayType>(type);
+        // Symbolic sizes stay non-HFA; sema rejects those in extern
+        // signatures anyway, and internal uses are self-consistent.
+        if (arrayType->hasSymbolicSize() || arrayType->size <= 0) return std::nullopt;
+        auto elem = getHFAInfo(arrayType->elementType);
+        if (!elem) return std::nullopt;
+        unsigned count = elem->count * (unsigned)arrayType->size;
+        if (count > 4) return std::nullopt;
+        return HFAInfo{elem->isDouble, count};
+    }
+    if (type->isStruct() || type->isUnion()) {
+        // Structs sum their members; unions count their largest, matching clang.
+        bool isUnion = type->isUnion();
+        HFAInfo info{false, 0};
+        bool first = true;
+        for (const auto& field : type->getFields()) {
+            auto fieldInfo = getHFAInfo(field.type);
+            if (!fieldInfo || (!first && fieldInfo->isDouble != info.isDouble)) return std::nullopt;
+            info = HFAInfo{fieldInfo->isDouble, isUnion ? std::max(info.count, fieldInfo->count) : info.count + fieldInfo->count};
+            first = false;
+        }
+        if (first || info.count > 4) return std::nullopt;
+        return info;
+    }
+    return std::nullopt;
+}
+
+// SysV x86-64 classification of a small aggregate: each eightbyte becomes the
+// scalar its class dictates. INTEGER pieces take the smallest integer
+// covering the used bytes, SSE pieces are float up to 4 bytes, else double
+// (double covers two floats exactly like clang's <2 x float>: same register,
+// same bits). A single eightbyte stays a scalar, two become a struct, which
+// the backend flattens into the same registers as clang's expansion.
+static llvm::Type* getIntChunkType(llvm::LLVMContext& ctx, uint64_t bytes) {
+    if (bytes <= 1) return llvm::Type::getInt8Ty(ctx);
+    if (bytes <= 2) return llvm::Type::getInt16Ty(ctx);
+    if (bytes <= 4) return llvm::Type::getInt32Ty(ctx);
+    if (bytes <= 8) return llvm::Type::getInt64Ty(ctx);
+    return llvm::ArrayType::get(llvm::Type::getInt64Ty(ctx), 2);
+}
+
+static llvm::Type* getSysVCoercedType(llvm::LLVMContext& ctx, const std::vector<AbiLeaf>& leaves, uint64_t size) {
+    std::vector<llvm::Type*> pieces;
+    for (uint64_t eightbyte = 0; eightbyte * 8 < size; ++eightbyte) {
+        uint64_t start = eightbyte * 8, end = start + 8;
+        bool hasInt = false, hasFloat = false;
+        uint64_t usedStart = end, usedEnd = start;
+        for (const auto& leaf : leaves) {
+            uint64_t overlapStart = std::max(leaf.offset, start);
+            uint64_t overlapEnd = std::min(leaf.offset + leaf.size, end);
+            if (overlapStart >= overlapEnd) continue;
+            if (leaf.isFloat)
+                hasFloat = true;
+            else
+                hasInt = true;
+            usedStart = std::min(usedStart, overlapStart);
+            usedEnd = std::max(usedEnd, overlapEnd);
+        }
+        // INTEGER wins over SSE within an eightbyte, matching the SysV merger.
+        // Every eightbyte starts with a leaf byte under natural alignment, so
+        // the used range always starts at the eightbyte start.
+        if (hasInt || hasFloat) ASSERT(usedStart == start);
+        if (hasInt) {
+            pieces.push_back(getIntChunkType(ctx, usedEnd - usedStart));
+        } else if (hasFloat) {
+            pieces.push_back(usedEnd - usedStart <= 4 ? llvm::Type::getFloatTy(ctx) : llvm::Type::getDoubleTy(ctx));
+        } else {
+            // Unreachable: every eightbyte within the size touches a leaf
+            // (tail padding is smaller than the alignment). Default to INTEGER.
+            pieces.push_back(llvm::Type::getInt64Ty(ctx));
+        }
+    }
+    if (pieces.size() == 1) return pieces[0];
+    return llvm::StructType::get(ctx, pieces);
+}
+
 llvm::Type* LLVMGenerator::getAbiCoercedType(IRType* type) {
+    if (!type->isStruct() && !type->isUnion()) return nullptr;
+    uint64_t size = getHostDataLayout().getTypeAllocSize(getLLVMType(type));
+    if (size == 0) return nullptr;
     // Small integer-only aggregates cross the C ABI in integer registers, so
     // declare them as integer chunks like clang does. Without this a direct
     // struct declaration miscompiles against C, which returns one integer per
     // eightbyte. Larger aggregates already go indirect (byval/sret), and
-    // float-containing ones keep direct lowering. Win64 returns 9-16 byte
+    // float-containing ones classify below. Win64 returns 9-16 byte
     // aggregates in memory rather than registers, so only coerce up to 8 there.
-    if (!type->isStruct() && !type->isUnion()) return nullptr;
-    if (!isIntegerOnlyAggregate(type)) return nullptr;
-    uint64_t size = getHostDataLayout().getTypeAllocSize(getLLVMType(type));
+    if (isIntegerOnlyAggregate(type)) {
 #ifdef _WIN32
-    if (size == 0 || size > 8) return nullptr;
+        if (size > 8) return nullptr;
 #else
-    if (size == 0 || size > 16) return nullptr;
+        if (size > 16) return nullptr;
 #endif
-    if (size <= 1) return llvm::Type::getInt8Ty(ctx);
-    if (size <= 2) return llvm::Type::getInt16Ty(ctx);
-    if (size <= 4) return llvm::Type::getInt32Ty(ctx);
-    if (size <= 8) return llvm::Type::getInt64Ty(ctx);
-    return llvm::ArrayType::get(llvm::Type::getInt64Ty(ctx), 2);
+        return getIntChunkType(ctx, size);
+    }
+    // Float-containing aggregates classify per platform (x86-64 and AArch64
+    // only; elsewhere sema keeps rejecting them and they lower directly).
+    // Coerced aggregates cross directly, never indirectly: the callers skip
+    // the indirect handling below whenever this returns non-null.
+    std::vector<AbiLeaf> leaves;
+    if (!collectAbiLeaves(*this, type, getLLVMType(type), 0, leaves)) return nullptr;
+    bool hasFloat = llvm::any_of(leaves, [](const AbiLeaf& leaf) { return leaf.isFloat; });
+    if (!hasFloat) return nullptr;
+    if (isAArch64Target()) {
+        // Homogeneous float aggregates cross in SIMD registers as a float
+        // array, at any size up to 4 members; anything else small enough
+        // crosses in integer registers like integer-only aggregates.
+        if (auto hfa = getHFAInfo(type)) {
+            auto* elem = hfa->isDouble ? llvm::Type::getDoubleTy(ctx) : llvm::Type::getFloatTy(ctx);
+            return llvm::ArrayType::get(elem, hfa->count);
+        }
+        if (size > 16) return nullptr;
+        return getIntChunkType(ctx, size);
+    }
+    if (isX86_64Target()) {
+#ifdef _WIN32
+        // Win64 passes aggregates up to 8 bytes as integers, floats included.
+        if (size > 8) return nullptr;
+        return getIntChunkType(ctx, size);
+#else
+        // SysV classifies each eightbyte to integer or SSE registers.
+        if (size > 16) return nullptr;
+        return getSysVCoercedType(ctx, leaves, size);
+#endif
+    }
+    return nullptr;
+}
+
+llvm::Value* LLVMGenerator::materializeCoercedValue(llvm::Value* value, IRType* type, const llvm::Twine& name) {
+    auto* structType = getLLVMType(type);
+    if (!shouldPassIndirectly(structType)) return value;
+    // Larger coerced aggregates (AArch64 HFAs over 16 bytes) still use the
+    // pointer value representation.
+    auto* home = createEntryAlloca(structType, name);
+    builder.CreateStore(value, home);
+    return home;
 }
 
 llvm::Value* LLVMGenerator::coerceAggregateToChunk(llvm::Value* value, IRType* type, llvm::Type* chunkType) {
     auto* structType = getLLVMType(type);
+    // Larger coerced aggregates (AArch64 HFAs over 16 bytes) use the pointer
+    // value representation; load them before reinterpreting the bytes.
+    if (value->getType()->isPointerTy()) value = builder.CreateLoad(structType, value, "coerce.load");
     // Size the slot for the chunk, which covers the struct for non-power-of-two sizes.
     auto* slot = createEntryAlloca(chunkType, "coerce.slot");
     // The slot serves both layouts; align it for the stricter one.
@@ -336,7 +535,8 @@ llvm::Function* LLVMGenerator::getFunction(const Function* function) {
     for (auto param = function->params.begin(); arg != argsEnd; ++param, ++arg) {
         arg->setName(param->name);
         auto paramLLVMType = getLLVMType(param->type);
-        if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(function) && !isDecayedArrayParam(param->type, function)) {
+        if (!getAbiCoercedType(param->type) && shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(function)
+            && !isDecayedArrayParam(param->type, function)) {
             arg->addAttr(llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
             auto align = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
             arg->addAttr(llvm::Attribute::getWithAlignment(ctx, llvm::Align(align)));
@@ -353,7 +553,7 @@ llvm::Function* LLVMGenerator::getFunction(const Function* function) {
 }
 
 void LLVMGenerator::codegenFunctionBody(const Function* function, llvm::Function* llvmFunction) {
-    isCurrentFunctionSret = shouldUseSret(getLLVMType(function->returnType));
+    isCurrentFunctionSret = !getAbiCoercedType(function->returnType) && shouldUseSret(getLLVMType(function->returnType));
     llvm::IRBuilder<>::InsertPointGuard insertPointGuard(builder);
 
     auto arg = llvmFunction->arg_begin();
@@ -390,10 +590,13 @@ void LLVMGenerator::codegenFunctionBody(const Function* function, llvm::Function
         }
 
         if (block == function->body.front()) {
-            // ABI-coerced parameters arrive as integer chunks; materialize the
+            // ABI-coerced parameters arrive as register chunks; materialize the
             // aggregates here so the entry block top dominates all uses.
             for (auto& param : function->params) {
-                if (getAbiCoercedType(param.type)) generatedValues[&param] = coerceChunkToAggregate(generatedValues[&param], param.type);
+                if (getAbiCoercedType(param.type)) {
+                    generatedValues[&param] =
+                        materializeCoercedValue(coerceChunkToAggregate(generatedValues[&param], param.type), param.type, param.name + ".coerce");
+                }
                 // Decayed small arrays arrive as pointers; load the by-value
                 // copy (large ones already use the pointer representation).
                 if (isDecayedArrayParam(param.type, function)) {
@@ -607,9 +810,10 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
         bool isExtra = i >= paramTypes.size();
         IRType* argIRType = isExtra ? inst->args[i]->getType() : paramTypes[i];
         auto argLLVMType = getLLVMType(argIRType);
-        if (!isExtra && isDecayedArrayParam(argIRType, callee)) {
-            // Array-to-pointer decay: values need a home whose address is the
-            // element address; indirect values already are that address.
+        if (isDecayedArrayParam(argIRType, callee)) {
+            // Array-to-pointer decay, in named and variadic position alike:
+            // values need a home whose address is the element address;
+            // indirect values already are that address.
             if (!value->getType()->isPointerTy()) {
                 if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) {
                     value = materializeConstant(constant, argLLVMType);
@@ -642,7 +846,8 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
     auto addByValAttrs = [&](llvm::CallInst* call, unsigned indexOffset) {
         for (size_t i = 0; i < paramTypes.size(); ++i) {
             auto paramLLVMType = getLLVMType(paramTypes[i]);
-            if (shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee) && !isDecayedArrayParam(paramTypes[i], callee)) {
+            if (!getAbiCoercedType(paramTypes[i]) && shouldPassIndirectly(paramLLVMType) && !useExternIndirectPointer(callee)
+                && !isDecayedArrayParam(paramTypes[i], callee)) {
                 unsigned index = static_cast<unsigned>(i + indexOffset);
                 call->addParamAttr(index, llvm::Attribute::get(ctx, llvm::Attribute::ByVal, paramLLVMType));
                 auto paramAlign = getHostDataLayout().getABITypeAlign(paramLLVMType).value();
@@ -667,7 +872,9 @@ llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
     } else {
         auto* call = builder.CreateCall(llvmFunctionType, function, args);
         addByValAttrs(call, 0);
-        if (getAbiCoercedType(cxFunctionType->getReturnType())) return coerceChunkToAggregate(call, cxFunctionType->getReturnType());
+        if (getAbiCoercedType(cxFunctionType->getReturnType())) {
+            return materializeCoercedValue(coerceChunkToAggregate(call, cxFunctionType->getReturnType()), cxFunctionType->getReturnType(), "coerce.home");
+        }
         return call;
     }
 }
