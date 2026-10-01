@@ -1463,46 +1463,105 @@ void Typechecker::ensureInterfaces(TypeDecl& decl) {
     ensureNestedInstantiations(decl);
 }
 
+// Members of generic instantiations carry template-definition locations;
+// access warnings for them would duplicate the use-site checks, so suppress.
+struct DeclContextScope {
+    llvm::SaveAndRestore<bool> suppressAccessWarnings;
+    llvm::SaveAndRestore<Module*> currentModule;
+    llvm::SaveAndRestore<SourceFile*> currentSourceFile;
+
+    DeclContextScope(Typechecker& checker, TypeDecl& decl)
+    : suppressAccessWarnings(checker.suppressAccessWarnings, checker.suppressAccessWarnings || decl.instantiatedFrom != nullptr),
+      currentModule(checker.currentModule), currentSourceFile(checker.currentSourceFile) {
+        checker.setDeclContext(decl);
+    }
+};
+
+static bool isCopyableConstraint(Type interface) {
+    return interface.isBasicType() && interface.getName() == "Copyable";
+}
+
+static void checkDeclaredInterfaces(Typechecker& checker, TypeDecl& decl) {
+    checker.ensureInterfaces(decl);
+
+    // Conformance runs before methods are checked, comparing raw signatures on both sides.
+    for (Type interface : decl.interfaces) {
+        if (isCopyableConstraint(interface)) {
+            REPORT_ERROR_RANGE(interface.location, interface.endLocation,
+                               "': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold "
+                               "a non-Copyable field");
+            continue;
+        }
+        // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
+        checker.typecheckType(interface, decl.accessLevel, true, true);
+        auto* interfaceDecl = interface.getDecl();
+
+        if (!interfaceDecl->isInterface()) {
+            REPORT_ERROR_RANGE(interface.location, interface.endLocation, "'" << interface << "' is not an interface");
+            continue;
+        }
+
+        std::string errorReason;
+        if (!checker.providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
+            REPORT_ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
+                               "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
+        }
+    }
+
+    // Drop the rejected entry so later queries never see it.
+    decl.interfaces.erase(llvm::remove_if(decl.interfaces, isCopyableConstraint), decl.interfaces.end());
+}
+
+static void checkForInfiniteSizeEarly(Typechecker& checker, TypeDecl& decl, llvm::ArrayRef<Type> memberTypes) {
+    try {
+        checkForInfiniteSize(decl, memberTypes);
+        return;
+    } catch (const CompileError& error) {
+        error.report();
+        checker.infiniteSizeReported.insert(&decl);
+    }
+}
+
+static void checkForInfiniteSizeLate(Typechecker& checker, const TypeDecl& decl, llvm::ArrayRef<Type> memberTypes) {
+    if (!checker.infiniteSizeReported.contains(&decl)) checkForInfiniteSize(decl, memberTypes);
+}
+
+static void diagnoseStaticRedefinition(const VarDecl& constant) {
+    ERROR_RANGE(constant.getLocation(), getIdentifierEndLocation(constant), "redefinition of '" << constant.getName() << "'");
+}
+
+static void checkStaticConstNames(llvm::ArrayRef<VarDecl*> constants, llvm::function_ref<bool(llvm::StringRef)> conflictsWith) {
+    for (size_t i = 0; i < constants.size(); ++i) {
+        auto* constant = constants[i];
+        for (size_t j = 0; j < i; ++j) {
+            if (constants[j]->getName() == constant->getName()) diagnoseStaticRedefinition(*constant);
+        }
+        if (conflictsWith(constant->getName())) diagnoseStaticRedefinition(*constant);
+    }
+}
+
+static void typecheckMethodBodies(Typechecker& checker, TypeDecl& decl) {
+    if (decl.checkState == Decl::CheckState::Checked || decl.checkState == Decl::CheckState::CheckingBody) return;
+    decl.checkState = Decl::CheckState::CheckingBody;
+    DeclContextScope scope(checker, decl);
+    try {
+        TypeDecl* realDecl = decl.isInterface() ? llvm::cast<TypeDecl>(decl.instantiate({{"This", decl.getType()}}, {})) : &decl;
+        for (auto& methodDecl : realDecl->methods) {
+            checker.typecheckMethodDecl(*methodDecl);
+        }
+    } catch (const CompileError&) {
+        decl.checkState = Decl::CheckState::Checked;
+        throw;
+    }
+    decl.checkState = Decl::CheckState::Checked;
+}
+
 void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
     if (decl.checkState != Decl::CheckState::Unchecked) return;
     decl.checkState = Decl::CheckState::CheckingSignature;
-    // Members of generic instantiations carry template-definition locations;
-    // access warnings for them would duplicate the use-site checks, so suppress.
-    llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
-    llvm::SaveAndRestore saveModule(currentModule);
-    llvm::SaveAndRestore saveFile(currentSourceFile);
-    setDeclContext(decl);
+    DeclContextScope scope(*this, decl);
     try {
-        ensureInterfaces(decl);
-
-        // Conformance runs before methods are checked (as before), comparing
-        // raw signatures on both sides.
-        for (Type interface : decl.interfaces) {
-            if (interface.isBasicType() && interface.getName() == "Copyable") {
-                REPORT_ERROR_RANGE(interface.location, interface.endLocation,
-                                   "': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold "
-                                   "a non-Copyable field");
-                continue;
-            }
-            // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
-            typecheckType(interface, decl.accessLevel, true, true);
-            auto* interfaceDecl = interface.getDecl();
-
-            if (!interfaceDecl->isInterface()) {
-                REPORT_ERROR_RANGE(interface.location, interface.endLocation, "'" << interface << "' is not an interface");
-                continue;
-            }
-
-            std::string errorReason;
-            if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-                REPORT_ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
-                                   "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
-            }
-        }
-
-        // Drop the rejected entry so later queries never see it.
-        decl.interfaces.erase(llvm::remove_if(decl.interfaces, [](Type interface) { return interface.isBasicType() && interface.getName() == "Copyable"; }),
-                              decl.interfaces.end());
+        checkDeclaredInterfaces(*this, decl);
 
         TypeDecl* realDecl;
 
@@ -1516,12 +1575,7 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
         // ensure nested declarations whose errors would otherwise precede it. Type links are
         // parse-time (types are canonicalized), so non-generic cycles are visible already;
         // cycles through not-yet-instantiated generics are caught by the late check below.
-        try {
-            checkForInfiniteSize(decl, map(realDecl->fields, [](const FieldDecl& field) { return field.type; }));
-        } catch (const CompileError& error) {
-            error.report();
-            infiniteSizeReported.insert(&decl);
-        }
+        checkForInfiniteSizeEarly(*this, decl, map(realDecl->fields, [](const FieldDecl& field) { return field.type; }));
 
         for (auto& fieldDecl : realDecl->fields) {
             typecheckFieldDecl(fieldDecl);
@@ -1545,23 +1599,11 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
         // Static constants share the value namespace with fields; duplicates would
         // make `Type.name` and `instance.name` resolve differently (type access
         // prefers the constant, instance access prefers the field).
-        for (size_t i = 0; i < realDecl->staticConsts.size(); ++i) {
-            auto* constant = realDecl->staticConsts[i];
-            for (size_t j = 0; j < i; ++j) {
-                if (realDecl->staticConsts[j]->getName() == constant->getName()) {
-                    ERROR_RANGE(constant->getLocation(), getIdentifierEndLocation(*constant), "redefinition of '" << constant->getName() << "'");
-                }
-            }
-            for (auto& field : realDecl->fields) {
-                if (field.getName() == constant->getName()) {
-                    ERROR_RANGE(constant->getLocation(), getIdentifierEndLocation(*constant), "redefinition of '" << constant->getName() << "'");
-                }
-            }
-        }
+        checkStaticConstNames(realDecl->staticConsts, [&](llvm::StringRef name) {
+            return llvm::any_of(realDecl->fields, [&](const FieldDecl& field) { return field.getName() == name; });
+        });
 
-        if (!infiniteSizeReported.contains(&decl)) {
-            checkForInfiniteSize(decl, map(realDecl->fields, [](const FieldDecl& field) { return field.type; }));
-        }
+        checkForInfiniteSizeLate(*this, decl, map(realDecl->fields, [](const FieldDecl& field) { return field.type; }));
     } catch (const CompileError&) {
         decl.checkState = Decl::CheckState::SignatureChecked;
         throw;
@@ -1571,31 +1613,7 @@ void Typechecker::typecheckTypeSignature(TypeDecl& decl) {
 
 void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
     typecheckTypeSignature(decl);
-    if (decl.checkState == Decl::CheckState::Checked || decl.checkState == Decl::CheckState::CheckingBody) return;
-    decl.checkState = Decl::CheckState::CheckingBody;
-    // Members of generic instantiations carry template-definition locations;
-    // access warnings for them would duplicate the use-site checks, so suppress.
-    llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
-    llvm::SaveAndRestore saveModule(currentModule);
-    llvm::SaveAndRestore saveFile(currentSourceFile);
-    setDeclContext(decl);
-    try {
-        TypeDecl* realDecl;
-
-        if (decl.isInterface()) {
-            realDecl = llvm::cast<TypeDecl>(decl.instantiate({{"This", decl.getType()}}, {}));
-        } else {
-            realDecl = &decl;
-        }
-
-        for (auto& methodDecl : realDecl->methods) {
-            typecheckMethodDecl(*methodDecl);
-        }
-    } catch (const CompileError&) {
-        decl.checkState = Decl::CheckState::Checked;
-        throw;
-    }
-    decl.checkState = Decl::CheckState::Checked;
+    typecheckMethodBodies(*this, decl);
 }
 
 void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
@@ -1613,41 +1631,9 @@ void Typechecker::typecheckTypeAliasDecl(TypeAliasDecl& decl) {
 void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
     if (decl.checkState != Decl::CheckState::Unchecked) return;
     decl.checkState = Decl::CheckState::CheckingSignature;
-    // Members of generic instantiations carry template-definition locations;
-    // access warnings for them would duplicate the use-site checks, so suppress.
-    llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
-    llvm::SaveAndRestore saveModule(currentModule);
-    llvm::SaveAndRestore saveFile(currentSourceFile);
-    setDeclContext(decl);
+    DeclContextScope scope(*this, decl);
     try {
-        ensureInterfaces(decl);
-
-        for (Type interface : decl.interfaces) {
-            if (interface.isBasicType() && interface.getName() == "Copyable") {
-                REPORT_ERROR_RANGE(interface.location, interface.endLocation,
-                                   "': Copyable' is not allowed; types are Copyable by default unless they declare a destructor or hold "
-                                   "a non-Copyable field");
-                continue;
-            }
-            // Interfaces constrain but never store, so borrows may appear in them (e.g. Iterator<Element&>).
-            typecheckType(interface, decl.accessLevel, true, true);
-            auto* interfaceDecl = interface.getDecl();
-
-            if (!interfaceDecl->isInterface()) {
-                REPORT_ERROR_RANGE(interface.location, interface.endLocation, "'" << interface << "' is not an interface");
-                continue;
-            }
-
-            std::string errorReason;
-            if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-                REPORT_ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
-                                   "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
-            }
-        }
-
-        // Drop the rejected entry so later queries never see it.
-        decl.interfaces.erase(llvm::remove_if(decl.interfaces, [](Type interface) { return interface.isBasicType() && interface.getName() == "Copyable"; }),
-                              decl.interfaces.end());
+        checkDeclaredInterfaces(*this, decl);
 
         std::vector<const EnumCase*> cases = map(decl.cases, [](const EnumCase& c) { return &c; });
         std::ranges::sort(cases, [](auto* a, auto* b) { return a->getName() < b->getName(); });
@@ -1661,12 +1647,7 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
 
         // Report this type's own size error before descending into members (see the struct
         // case above); cycles through not-yet-instantiated generics fall to the late check.
-        try {
-            checkForInfiniteSize(decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
-        } catch (const CompileError& error) {
-            error.report();
-            infiniteSizeReported.insert(&decl);
-        }
+        checkForInfiniteSizeEarly(*this, decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
 
         for (auto& enumCase : decl.cases) {
             typecheckExpr(*enumCase.value);
@@ -1685,23 +1666,11 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
 
         // Static constants share the value namespace with cases; duplicates would
         // make `Enum.name` ambiguous between a case and a constant.
-        for (size_t i = 0; i < decl.staticConsts.size(); ++i) {
-            auto* constant = decl.staticConsts[i];
-            for (size_t j = 0; j < i; ++j) {
-                if (decl.staticConsts[j]->getName() == constant->getName()) {
-                    ERROR_RANGE(constant->getLocation(), getIdentifierEndLocation(*constant), "redefinition of '" << constant->getName() << "'");
-                }
-            }
-            for (auto& enumCase : decl.cases) {
-                if (enumCase.getName() == constant->getName()) {
-                    ERROR_RANGE(constant->getLocation(), getIdentifierEndLocation(*constant), "redefinition of '" << constant->getName() << "'");
-                }
-            }
-        }
+        checkStaticConstNames(decl.staticConsts, [&](llvm::StringRef name) {
+            return llvm::any_of(decl.cases, [&](const EnumCase& enumCase) { return enumCase.getName() == name; });
+        });
 
-        if (!infiniteSizeReported.contains(&decl)) {
-            checkForInfiniteSize(decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
-        }
+        checkForInfiniteSizeLate(*this, decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
     } catch (const CompileError&) {
         decl.checkState = Decl::CheckState::SignatureChecked;
         throw;
@@ -1711,23 +1680,7 @@ void Typechecker::typecheckEnumSignature(EnumDecl& decl) {
 
 void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     typecheckEnumSignature(decl);
-    if (decl.checkState == Decl::CheckState::Checked || decl.checkState == Decl::CheckState::CheckingBody) return;
-    decl.checkState = Decl::CheckState::CheckingBody;
-    // Members of generic instantiations carry template-definition locations;
-    // access warnings for them would duplicate the use-site checks, so suppress.
-    llvm::SaveAndRestore suppress(suppressAccessWarnings, suppressAccessWarnings || decl.instantiatedFrom != nullptr);
-    llvm::SaveAndRestore saveModule(currentModule);
-    llvm::SaveAndRestore saveFile(currentSourceFile);
-    setDeclContext(decl);
-    try {
-        for (auto& methodDecl : decl.methods) {
-            typecheckMethodDecl(*methodDecl);
-        }
-    } catch (const CompileError&) {
-        decl.checkState = Decl::CheckState::Checked;
-        throw;
-    }
-    decl.checkState = Decl::CheckState::Checked;
+    typecheckMethodBodies(*this, decl);
 }
 
 // Global initializers are emitted as constant expressions; anything needing runtime
