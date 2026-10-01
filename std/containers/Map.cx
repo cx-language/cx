@@ -72,7 +72,7 @@ struct Map<Key: Hashable, Value> {
                 // moves), then destroy the key: the entry itself is never
                 // destroyed after the deinit marks it moved.
                 Value out = undefined;
-                memcpy(&out, &removed.value, c_size_t(sizeof(Value)));
+                memcpy(&out, &removed.value, sizeof(Value));
                 removed.key.deinit();
                 return out;
             }

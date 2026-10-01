@@ -334,7 +334,7 @@ struct SmallList<Element, int N> {
     /// dereference, so this copies bytes instead.)
     private Element moveOut(int index) {
         Element value = undefined;
-        memcpy(&value, slot(index), c_size_t(sizeof(Element)));
+        memcpy(&value, slot(index), sizeof(Element));
         return value;
     }
 

@@ -5,7 +5,7 @@
 /// `slot` must not point into `defaultValue`; the copy reads the slot first and would alias.
 T takeFrom<T>(T* slot, T defaultValue) {
     T out = undefined;
-    memcpy(&out, slot, c_size_t(sizeof(T)));
+    memcpy(&out, slot, sizeof(T));
     slot.init(defaultValue);
     return out;
 }

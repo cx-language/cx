@@ -62,7 +62,7 @@ int main() {
     GLuint vertexBuffer = undefined;
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, int64(vertexBufferData.size()) * int64(sizeof(float)), &vertexBufferData[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, int64(vertexBufferData.size()) * sizeof(float), &vertexBufferData[0], GL_STATIC_DRAW);
 
     while glfwWindowShouldClose(window) == 0 {
         glClear(GL_COLOR_BUFFER_BIT);

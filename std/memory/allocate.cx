@@ -209,7 +209,7 @@ T[*]? tryAllocate<T>(int64 count) {
 /// If the memory allocation fails, the program aborts.
 ///
 T* allocateValue<T>(T value) {
-    var allocation = cast<T*>(cxMalloc(c_size_t(sizeof(T)))!);
+    var allocation = cast<T*>(cxMalloc(sizeof(T))!);
     allocation.init(value);
     return allocation;
 }
@@ -220,7 +220,7 @@ T* allocateValue<T>(T value) {
 /// If the memory allocation fails, null is returned.
 ///
 T*? tryAllocateValue<T>(T value) {
-    var allocation = cast<T*?>(cxMalloc(c_size_t(sizeof(T))));
+    var allocation = cast<T*?>(cxMalloc(sizeof(T)));
     if allocation != null {
         allocation.init(value);
     }
