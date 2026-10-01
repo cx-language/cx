@@ -1704,6 +1704,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
 
         CompileOptions baseOptions;
         baseOptions.noUnusedWarnings = true; // unused warnings are noisy during editing
+        baseOptions.recoverParseErrors = true;
         baseOptions.defines = query.defines;
         if (baseOptions.mode == BuildMode::Debug) {
             baseOptions.defines.push_back("Debug");

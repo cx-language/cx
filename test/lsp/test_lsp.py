@@ -140,6 +140,88 @@ void main() {
     return 1;
 """
 
+# A broken declaration between two good ones: the neighbors still highlight.
+RECOVERY_MIDFILE_SOURCE = """\
+int beforeErr(int a) {
+    return a;
+}
+
+void broken( {
+    oops
+}
+
+int afterErr(int q) {
+    return q * 2;
+}
+"""
+
+# An unbalanced brace inside a function (the transient state while typing a
+# new block): the enclosing function and its neighbors still highlight.
+RECOVERY_UNBALANCED_SOURCE = """\
+int add(int x, int y) {
+    return x + y;
+}
+
+void main() {
+    int result = add(1, 2);
+    if true {
+    println("done");
+}
+"""
+
+# A broken statement: the surrounding statements still highlight.
+RECOVERY_BROKEN_STMT_SOURCE = """\
+void main() {
+    int before = 1;
+    int broken = add(1, ;
+    println(before);
+}
+"""
+
+# A broken statement in a switch case body.
+RECOVERY_SWITCH_SOURCE = """\
+void main() {
+    switch 1 {
+        case 1:
+            var = = ;
+            println(1);
+        default:
+            println(2);
+    }
+}
+"""
+
+# A broken statement in nested blocks.
+RECOVERY_NESTED_SOURCE = """\
+void main() {
+    if true {
+        while false {
+            var = = ;
+        }
+        println(1);
+    }
+    println(2);
+}
+"""
+
+# A mid-file lexer error (unterminated string): later lines still parse.
+RECOVERY_LEXER_SOURCE = """\
+void main() {
+    println("done");
+    var s = "unterminated;
+    println("after");
+}
+"""
+
+# A second error on the same line is skipped along with the broken
+# statement: one diagnostic, no cascade.
+RECOVERY_SAME_LINE_SOURCE = """\
+void main() {
+    var = = var2 = =
+    println("after");
+}
+"""
+
 TOKENS_GENERICS_SOURCE = """\
 struct Box<T> {
     T value;
@@ -337,9 +419,10 @@ def test_query_modes(cx_lsp, path):
     result = run_query(cx_lsp, base_query("semanticTokens", path, UNTERMINATED_SOURCE))
     tokens = {(t["line"], t["start"], t["length"], t["type"]) for t in result.get("tokens", [])}
     check("query-tokens-fallback", (1, 4, 6, "keyword") in tokens and (1, 11, 1, "number") in tokens)
+    # ...and error recovery keeps the semantic tokens for what does parse.
     check(
-        "query-tokens-fallback-syntax-only",
-        {t["type"] for t in result.get("tokens", [])} <= {"keyword", "comment", "string", "number", "macro"},
+        "query-tokens-recovery-unterminated",
+        (0, 5, 4, "function") in tokens and result["diagnostics"] != [],
         json.dumps(result.get("tokens"))[:300],
     )
 
@@ -372,11 +455,13 @@ def test_query_modes(cx_lsp, path):
             (0, 23, 4, "number"),
             (0, 30, 3, "number"),
             (1, 0, 3, "keyword"),
+            (1, 4, 1, "variable"),
             (1, 8, 3, "number"),
             (1, 14, 1, "number"),
             (1, 17, 2, "number"),
             (1, 22, 1, "number"),
             (2, 0, 3, "keyword"),
+            (2, 4, 1, "variable"),
             (2, 8, 6, "string"),
             (3, 0, 3, "keyword"),
             (3, 8, 14, "string"),
@@ -485,6 +570,38 @@ def test_generic_symbols(cx_lsp, path):
 
     result = run_query(cx_lsp, base_query("hover", path, GENERIC_DEF_SOURCE, (13, 11)))
     check("query-hover-generic-function", "int x" in result.get("hover", ""), result.get("hover", "")[:200])
+
+
+def test_recovery(cx_lsp, path):
+    # (name, source, tokens that must survive, exact diagnostic count or None)
+    cases = [
+        ("midfile", RECOVERY_MIDFILE_SOURCE, [(0, 4, 9, "function"), (8, 4, 8, "function")], None),
+        (
+            "unbalanced",
+            RECOVERY_UNBALANCED_SOURCE,
+            [(4, 5, 4, "function"), (5, 17, 3, "function"), (7, 4, 7, "function")],
+            None,
+        ),
+        (
+            "broken-stmt",
+            RECOVERY_BROKEN_STMT_SOURCE,
+            [(1, 8, 6, "variable"), (3, 4, 7, "function"), (3, 12, 6, "variable")],
+            None,
+        ),
+        ("switch-case", RECOVERY_SWITCH_SOURCE, [(4, 12, 7, "function"), (6, 12, 7, "function")], None),
+        ("nested", RECOVERY_NESTED_SOURCE, [(5, 8, 7, "function"), (7, 4, 7, "function")], None),
+        ("lexer-error", RECOVERY_LEXER_SOURCE, [(1, 4, 7, "function"), (3, 4, 7, "function")], None),
+        ("same-line", RECOVERY_SAME_LINE_SOURCE, [(2, 4, 7, "function")], 1),
+    ]
+    for name, source, expected, diag_count in cases:
+        result = run_query(cx_lsp, base_query("semanticTokens", path, source))
+        tokens = {(t["line"], t["start"], t["length"], t["type"]) for t in result.get("tokens", [])}
+        diags = result["diagnostics"]
+        check(
+            f"query-recovery-{name}",
+            all(t in tokens for t in expected) and diags != [] and (diag_count is None or len(diags) == diag_count),
+            json.dumps({"tokens": result.get("tokens"), "diags": diags})[:400],
+        )
 
 
 def test_readonly_tokens(cx_lsp, path):
@@ -1245,6 +1362,68 @@ def test_server(command, path, label):
         json.dumps(notification["params"]["diagnostics"])[:300],
     )
 
+    # Breaking the text mid-edit keeps the rest highlighted; fixing it
+    # restores full highlighting. This is the while-editing scenario.
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "method": "textDocument/didChange",
+            "params": {
+                "textDocument": {"uri": uri, "version": 4},
+                "contentChanges": [{"text": RECOVERY_UNBALANCED_SOURCE}],
+            },
+        }
+    )
+    notification = session.read()
+    check(
+        f"{label}-didchange-broken-diagnostics",
+        notification["params"]["diagnostics"] != [],
+        json.dumps(notification["params"]["diagnostics"])[:300],
+    )
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 30,
+            "method": "textDocument/semanticTokens/full",
+            "params": {"textDocument": {"uri": uri}},
+        }
+    )
+    response = session.read()
+    decoded = decode_semantic_data(response["result"]["data"])
+    check(
+        f"{label}-semantic-broken-file",
+        (4, 5, 4, function_type, definition_bit) in decoded and (7, 4, 7, function_type, 0) in decoded,
+        json.dumps(decoded[:8]),
+    )
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "method": "textDocument/didChange",
+            "params": {
+                "textDocument": {"uri": uri, "version": 5},
+                "contentChanges": [{"text": GOOD_SOURCE}],
+            },
+        }
+    )
+    notification = session.read()
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 31,
+            "method": "textDocument/semanticTokens/full",
+            "params": {"textDocument": {"uri": uri}},
+        }
+    )
+    response = session.read()
+    decoded = decode_semantic_data(response["result"]["data"])
+    check(
+        f"{label}-semantic-fixed-file",
+        notification["params"]["diagnostics"] == []
+        and (0, 4, 3, function_type, definition_bit) in decoded
+        and (5, 17, 3, function_type, 0) in decoded,
+        json.dumps(decoded[:8]),
+    )
+
     session.send({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}})
     session.read()
     session.send({"jsonrpc": "2.0", "method": "exit", "params": {}})
@@ -1317,6 +1496,7 @@ def main():
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
             groups = [
                 ("query-modes", lambda: test_query_modes(args.cx_lsp, path)),
+                ("recovery", lambda: test_recovery(args.cx_lsp, path)),
                 ("generic-symbols", lambda: test_generic_symbols(args.cx_lsp, path)),
                 ("readonly-tokens", lambda: test_readonly_tokens(args.cx_lsp, path)),
                 ("completion-members", lambda: test_completion_members(args.cx_lsp, path)),

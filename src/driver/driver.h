@@ -35,6 +35,9 @@ struct CompileOptions {
     std::vector<std::string> frameworkSearchPaths = {};
     std::vector<std::string> defines = {};
     std::vector<std::string> cflags = {};
+    // LSP only: skip broken decls/stmts and keep parsing after errors (the compiler still stops at the first).
+    // Last so positional initializers keep working.
+    bool recoverParseErrors = false;
 };
 
 struct BuildParams {

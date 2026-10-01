@@ -69,6 +69,7 @@ struct ImportDecl;
 struct Location;
 struct Token;
 struct Type;
+struct CompileError;
 enum class AccessLevel;
 struct CompileOptions;
 
@@ -201,6 +202,15 @@ private:
     void parseIfdefBody(std::vector<Decl*>* activeDecls);
     void parseIfdef(std::vector<Decl*>* activeDecls);
     Decl* parseTopLevelDecl(bool addToSymbolTable);
+    // Reports a parse error and skips to the next recovery point (recovery
+    // mode only). False when parsing cannot continue: end of file, the
+    // recovery cap, or a second error while skipping.
+    bool recoverFromParseError(const CompileError& error, llvm::ArrayRef<Token::Kind> endTokens, bool consumeClosingBrace);
+    // Skips to an end token or a later line at nesting depth zero (resumed
+    // without consuming; end tokens exit the caller's loop), or past one ';'
+    // or '}' closing the broken construct. Every other outcome consumes a
+    // token or reports EOF, so recovery loops terminate.
+    bool skipToRecoveryPoint(llvm::ArrayRef<Token::Kind> endTokens, bool consumeClosingBrace);
     Decl* parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel, bool cppLinkage = false);
     void parseAttributes(bool& isTest, Location& testLocation, bool& isManuallyDestroy, Location& manuallyDestroyLocation);
     [[noreturn]] void errorMisplacedManuallyDestroy(Location location);
@@ -217,6 +227,12 @@ private:
     // parser-time size-expression resolution stays off so an array size can
     // never fold against a shadowed global.
     bool inBinderScope = false;
+    // Errors recovered from in this parse() call; capped so pathological
+    // input cannot stall the language server.
+    int parseRecoveryErrors = 0;
+    // Recovery gave up (EOF, cap, or a stuck lexer): outer loops unwind
+    // quietly instead of re-reporting the same failure per nesting level.
+    bool parseRecoveryBailed = false;
 };
 
 } // namespace cx

@@ -27,6 +27,9 @@ namespace {
 constexpr char implicitMemberOnly[] = "only struct constructors and member functions can be marked 'implicit'";
 // Reported for `const` in types that doesn't qualify a pointee.
 constexpr char constPointeeOnly[] = "'const' in a type is only allowed to make the pointee const ('const T*', 'const T[*]' or 'const T&')";
+// Caps errors recovered from per file: past this the rest stays unparsed,
+// like without recovery. Only pathological input hits it.
+constexpr int kMaxParseRecoveryErrors = 100;
 
 // Rejects a `const` type that isn't pointee-const. An array-pointer inherits
 // its element's constness, so `const T[*]` is exempt. Callers decide when a
@@ -1274,7 +1277,13 @@ std::vector<Stmt*> Parser::parseBlock(Decl* parent) {
     parse(Token::LeftBrace);
     std::vector<Stmt*> stmts;
     while (currentToken() != Token::RightBrace) {
-        stmts.push_back(parseStmt(parent));
+        try {
+            stmts.push_back(parseStmt(parent));
+        } catch (const CompileError& error) {
+            if (!options.recoverParseErrors) throw;
+            // Unrecoverable (EOF, cap): keep the statements parsed so far.
+            if (!recoverFromParseError(error, {Token::RightBrace}, /*consumeClosingBrace=*/false)) return stmts;
+        }
     }
     consumeToken();
     return stmts;
@@ -1645,7 +1654,12 @@ Stmt* Parser::parseStmt(Decl* parent) {
 std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent) {
     std::vector<Stmt*> stmts;
     while (currentToken() != end1 && currentToken() != end2 && currentToken() != end3) {
-        stmts.emplace_back(parseStmt(parent));
+        try {
+            stmts.emplace_back(parseStmt(parent));
+        } catch (const CompileError& error) {
+            if (!options.recoverParseErrors) throw;
+            if (!recoverFromParseError(error, {end1, end2, end3}, /*consumeClosingBrace=*/false)) return stmts;
+        }
     }
     return stmts;
 }
@@ -2470,8 +2484,8 @@ void Parser::parse() {
     std::vector<Decl*> topLevelDecls;
     SourceFile sourceFile(lexer.getFilePath(), currentModule);
 
-    try {
-        while (currentToken() != Token::None) {
+    while (currentToken() != Token::None) {
+        try {
             if (currentToken() == Token::HashIf) {
                 parseIfdef(&topLevelDecls);
             } else {
@@ -2479,11 +2493,68 @@ void Parser::parse() {
                 topLevelDecls.push_back(parseTopLevelDecl(true));
                 if (currentTokenIndex == previousTokenIndex) break;
             }
+        } catch (const CompileError& error) {
+            if (!options.recoverParseErrors) {
+                error.report();
+                break;
+            }
+            if (!recoverFromParseError(error, {}, /*consumeClosingBrace=*/true)) break;
         }
-    } catch (const CompileError& error) {
-        error.report();
     }
 
     sourceFile.topLevelDecls = std::move(topLevelDecls);
     currentModule->addSourceFile(std::move(sourceFile));
+}
+
+bool Parser::recoverFromParseError(const CompileError& error, llvm::ArrayRef<Token::Kind> endTokens, bool consumeClosingBrace) {
+    if (parseRecoveryBailed) return false;
+    error.report();
+    if (parseRecoveryErrors++ >= kMaxParseRecoveryErrors) {
+        parseRecoveryBailed = true;
+        return false;
+    }
+    try {
+        if (!skipToRecoveryPoint(endTokens, consumeClosingBrace)) parseRecoveryBailed = true;
+        return !parseRecoveryBailed;
+    } catch (const CompileError& syncError) {
+        // A stuck lexer re-throws the triggering error; only new failures
+        // report. Either way parsing cannot continue past this point.
+        if (syncError.message != error.message || syncError.location.line != error.location.line || syncError.location.column != error.location.column) {
+            syncError.report();
+        }
+        parseRecoveryBailed = true;
+        return false;
+    }
+}
+
+bool Parser::skipToRecoveryPoint(llvm::ArrayRef<Token::Kind> endTokens, bool consumeClosingBrace) {
+    int startLine = getCurrentLocation().line;
+    int depth = 0;
+    while (true) {
+        Token::Kind kind = currentToken().kind;
+        if (kind == Token::None) return false;
+        if (depth == 0) {
+            if (llvm::is_contained(endTokens, kind)) return true;
+            if (kind == Token::Semicolon || (kind == Token::RightBrace && consumeClosingBrace)) {
+                consumeToken();
+                return true;
+            }
+            if (getCurrentLocation().line > startLine) return true;
+        }
+        switch (kind) {
+        case Token::LeftParen:
+        case Token::LeftBracket:
+        case Token::LeftBrace:
+            ++depth;
+            break;
+        case Token::RightParen:
+        case Token::RightBracket:
+        case Token::RightBrace:
+            if (depth > 0) --depth;
+            break;
+        default:
+            break;
+        }
+        consumeToken();
+    }
 }
