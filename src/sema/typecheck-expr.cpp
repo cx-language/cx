@@ -548,8 +548,14 @@ void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool posit
     }
 }
 
+static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange);
+
 Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
+
+    // Conservative: the backend overflow-checks integer negation (see
+    // emitUnaryExpr). Wrapping negation never aborts on overflow.
+    if (expr.op == Token::Minus) implicitUses.checkedArithmetic = true;
 
     switch (expr.op) {
     case Token::Not: {
@@ -661,11 +667,28 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
                         "cannot apply unary '" << toString(expr.op) << "' to pointer of type '" << operandType << "'; dereference it explicitly (e.g. '"
                                                << toString(expr.op) << "*p')");
         }
+        if (expr.op == Token::Minus) {
+            if (operandType.isOptionalType()) {
+                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
+            }
+            Type negType = operandType.removeOptional().removePointer();
+            if ((negType.isInteger() || negType.isInt128() || negType.isUInt128()) && expr.isConstant()) {
+                llvm::APSInt result = expr.getConstantIntegerValue();
+                // A minus directly on an integer literal spells a negative literal:
+                // -9223372036854775808 is int64 min even though its positive half
+                // only fits uint64. Re-type those that fit a signed type one step
+                // wider; anything more negative falls through to the error below.
+                if (llvm::isa<IntLiteralExpr>(&expr.getOperand()) && !checkRange(expr, result, negType, false)) {
+                    if (result.isSignedIntN(64)) return Type::getInt64();
+                    if (result.isSignedIntN(128)) return Type::getInt128();
+                }
+                // Like the runtime overflow check, diagnose overflowing constant negation at compile time.
+                checkRange(expr, result, negType, /* diagnoseOutOfRange: */ true);
+            }
+        }
         return operandType;
     }
 }
-
-static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange);
 
 // Suggests '*' when a comparison mixes a raw pointer with an integer constant of its
 // pointee type. Only reachable when the builtin deref above didn't apply (e.g. optional

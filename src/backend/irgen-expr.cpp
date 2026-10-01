@@ -222,8 +222,17 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
     switch (expr.op) {
     case Token::Plus:
         return emitExpr(expr.getOperand());
-    case Token::Minus:
-        return createNeg(emitExpr(expr.getOperand()));
+    case Token::Minus: {
+        auto* operand = emitExpr(expr.getOperand());
+        auto* type = operand->getType();
+        // Global initializers can't contain the trap's control flow; they only
+        // ever negate constant expressions (such as enum tags) anyway, so emit it plain.
+        if (!emittingGlobalInitializer && options.mode != BuildMode::ReleaseFast && (type->isInteger() || type->isChar())) {
+            // Checked negation is 0 - x: it traps on MIN, and on any nonzero unsigned operand.
+            return emitCheckedArithmetic(Token::Minus, createConstantInt(type, 0), operand, expr);
+        }
+        return createNeg(operand);
+    }
     case Token::MinusWrap: {
         if (expr.isFoldableIntConstant()) {
             return createConstantInt(expr.type, expr.getConstantIntegerValue());
@@ -443,7 +452,7 @@ Value* IRGenerator::emitWrappingArithmetic(Token::Kind op, Value* left, Value* r
     return result;
 }
 
-Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const BinaryExpr& expr) {
+Value* IRGenerator::emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const Expr& expr) {
     Value* overflowed = nullptr;
     auto* result = emitWrappingArithmetic(op, left, right, expr, &overflowed);
     emitAssert(createNot(overflowed), &expr, expr.location, "integer overflow", "overflow");

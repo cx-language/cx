@@ -1,0 +1,15 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+void f(int? o) {
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int?'
+    _ = -o;
+}
+
+void g() {
+    const int? c = 5;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int const?'
+    _ = -c;
+    const int? n = null;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int const?'
+    _ = -n;
+}

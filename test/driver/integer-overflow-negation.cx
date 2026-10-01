@@ -1,0 +1,10 @@
+// RUN: %not %cx run -Werror %s 2>&1 | %FileCheck -match-full-lines %s
+// RUN: %not %cx run -Werror --backend=c %s 2>&1 | %FileCheck -match-full-lines %s
+// RUN: %not %cx run -Werror --release-safe %s 2>&1 | %FileCheck -match-full-lines %s
+// RUN: %not %cx run -Werror --release-safe --backend=c %s 2>&1 | %FileCheck -match-full-lines %s
+
+void main() {
+    int x = -2147483648;
+    // CHECK: integer overflow at integer-overflow-negation.cx:[[@LINE+1]]:13
+    println(-x);
+}

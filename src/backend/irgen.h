@@ -97,7 +97,7 @@ struct IRGenerator {
     Value* lowerImplicitBool(Value* value, const Expr& expr);
     Value* emitBoolConvertibleOperand(const Expr& expr);
     Value* emitBinaryExpr(const BinaryExpr& expr);
-    Value* emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const BinaryExpr& expr);
+    Value* emitCheckedArithmetic(BinaryOperator op, Value* left, Value* right, const Expr& expr);
     Value* emitWrappingArithmetic(Token::Kind op, Value* left, Value* right, const Expr& expr, Value** overflowed = nullptr);
     Value* emitSaturatingArithmetic(Token::Kind op, Value* left, Value* right, const Expr& expr);
     Value* emitSaturatingLeftShift(Value* left, Value* right, const Expr& expr);

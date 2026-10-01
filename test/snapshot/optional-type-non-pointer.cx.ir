@@ -202,21 +202,32 @@ overflow.success_0:
     union { struct { int32 } }* _20 = getelementptr c, 1
     int32* _21 = cast _20 to int32*
     int32 .load_1 = load _21
-    int32 _22 = -.load_1
-    struct { int32 } _23 = insertvalue struct { int32 } undefined, 0, _22
+    int32 _22 = checkedarith - int32 0, .load_1
+    bool _23 = overflow _22
+    bool _24 = !_23
+    bool overflow.condition_1 = _24 == bool false
+    br overflow.condition_1, overflow.fail, overflow.success
+
+overflow.fail_1:
+    never _25 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:28:13
+")
+    unreachable
+
+overflow.success_1:
+    struct { int32 } _26 = insertvalue struct { int32 } undefined, 0, _22
     union { struct { int32 } }* associatedValue_1 = getelementptr enum_4, 1
-    struct { int32 }* _24 = cast associatedValue_1 to struct { int32 }*
-    store _23 to _24
+    struct { int32 }* _27 = cast associatedValue_1 to struct { int32 }*
+    store _26 to _27
     Optional<int32> enum.load_4 = load enum_4
     store enum.load_4 to c
     br if.end
 
 if.then_0:
-    union { struct { int32 } }* _25 = getelementptr c, 1
-    int32* _26 = cast _25 to int32*
-    int32 .load_2 = load _26
-    int32 _27 = .load_2 + int32 1
-    store _27 to _26
+    union { struct { int32 } }* _28 = getelementptr c, 1
+    int32* _29 = cast _28 to int32*
+    int32 .load_2 = load _29
+    int32 _30 = .load_2 + int32 1
+    store _30 to _29
     br if.end_0
 
 if.else_0:
@@ -224,31 +235,31 @@ if.else_0:
 
 if.end_0:
     Optional<int32> c.load_1 = load c
-    int32 _28 = extractvalue c.load_1, 0
-    bool _29 = _28 == int32 1
-    bool __implicit_unwrap.condition = _29 == bool false
+    int32 _31 = extractvalue c.load_1, 0
+    bool _32 = _31 == int32 1
+    bool __implicit_unwrap.condition = _32 == bool false
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 __implicit_unwrap.fail:
-    never _30 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
+    never _33 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
 ")
     unreachable
 
 __implicit_unwrap.success:
-    union { struct { int32 } }* _31 = getelementptr c, 1
-    int32* _32 = cast _31 to int32*
-    int32 .load_3 = load _32
-    void _33 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_3)
+    union { struct { int32 } }* _34 = getelementptr c, 1
+    int32* _35 = cast _34 to int32*
+    int32 .load_3 = load _35
+    void _36 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_3)
     Optional<int32> c.load_2 = load c
-    int32 _34 = extractvalue c.load_2, 0
-    bool _35 = _34 == int32 1
-    br _35, if.then, if.else
+    int32 _37 = extractvalue c.load_2, 0
+    bool _38 = _37 == int32 1
+    br _38, if.then, if.else
 
 if.then_1:
-    union { struct { int32 } }* _36 = getelementptr c, 1
-    int32* _37 = cast _36 to int32*
-    int32 .load_4 = load _37
-    void _38 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_4)
+    union { struct { int32 } }* _39 = getelementptr c, 1
+    int32* _40 = cast _39 to int32*
+    int32 .load_4 = load _40
+    void _41 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_4)
     br if.end_1
 
 if.else_1:

@@ -44,8 +44,11 @@ int32 _CX1N4main3quxIM3std5int32EEM3std5int321_M3std5int32(int32 t) {
 
 if.then:
     int32 t.load_0 = load t_0
-    int32 _1 = -t.load_0
-    return _1
+    int32 _1 = checkedarith - int32 0, t.load_0
+    bool _2 = overflow _1
+    bool _3 = !_2
+    bool overflow.condition = _3 == bool false
+    br overflow.condition, overflow.fail, overflow.success
 
 if.else:
     br if.end
@@ -53,4 +56,12 @@ if.else:
 if.end:
     int32 t.load_1 = load t_0
     return t.load_1
+
+overflow.fail:
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at generic-function.cx:8:25
+")
+    unreachable
+
+overflow.success:
+    return _1
 }

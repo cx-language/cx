@@ -1,0 +1,18 @@
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c --c-dispatch %s
+
+@test
+void testCheckedNegation() {
+    assert(-5 == -5);
+    assert(-int8(-127) == 127);
+    assert(-int8(127) == -127);
+    assert(-byte(0) == 0);
+    assert(-0 == 0);
+    int x = 2147483647;
+    assert(-x == -2147483647);
+    int128 v = int128(1) << int128(100);
+    assert(-v == int128(0) - v);
+    float f = 1.5;
+    assert(-f == -1.5);
+}
