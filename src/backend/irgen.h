@@ -252,6 +252,7 @@ struct IRGenerator {
     }
     Value* createNeg(Value* value) { return insertBlock->add(new UnaryInst{ValueKind::UnaryInst, Token::Minus, value, nullptr, ""}); }
     Value* createNot(Value* value) { return insertBlock->add(new UnaryInst{ValueKind::UnaryInst, Token::Not, value, nullptr, ""}); }
+    Value* createBitwiseNot(Value* value) { return insertBlock->add(new UnaryInst{ValueKind::UnaryInst, Token::Tilde, value, nullptr, ""}); }
     Value* createGEP(Value* pointer, std::vector<Value*> indexes, const llvm::Twine& name = "") {
         return insertBlock->add(new GEPInst{ValueKind::GEPInst, pointer, std::move(indexes), name.str()});
     }

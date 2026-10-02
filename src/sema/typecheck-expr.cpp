@@ -568,6 +568,11 @@ static bool isSymbolicArray(Type type) {
     return type.isFixedArray() && !type.getArraySizeParam().empty();
 }
 
+// Only tag-only enums lower to plain integers; payload enums (including optionals) are structs.
+static bool isTagOnlyEnum(Type type) {
+    return type.isEnumType() && !type.isOptionalType() && !llvm::cast<EnumDecl>(type.getDecl())->hasAssociatedValues();
+}
+
 Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
@@ -697,7 +702,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             // to structs and have no negation, like everything else.
             auto isNegatable = [](Type type) {
                 if (type.isInteger() || type.isFloatingPoint() || type.isChar()) return true;
-                return type.isEnumType() && !type.isOptionalType() && !llvm::cast<EnumDecl>(type.getDecl())->hasAssociatedValues();
+                return isTagOnlyEnum(type);
             };
             if (operandType.isArrayType() && operandType.isConcreteArray()) {
                 if (!isNegatable(operandType.getElementType())) {
@@ -718,6 +723,13 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
                 }
                 // Like the runtime overflow check, diagnose overflowing constant negation at compile time.
                 checkRange(expr, result, negType, /* diagnoseOutOfRange: */ true);
+            }
+        }
+        if (expr.op == Token::Tilde) {
+            // Bitwise not needs an integer-like operand: integers, chars, and
+            // bools (like the binary bitwise operators), plus tag-only enums.
+            if (!operandType.isInteger() && !operandType.isChar() && !operandType.isBool() && !isTagOnlyEnum(operandType)) {
+                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '~' to type '" << operandType << "'");
             }
         }
         return operandType;

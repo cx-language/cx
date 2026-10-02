@@ -1,0 +1,33 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+void f() {
+    float x = 1.5;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '~' to type 'float'
+    _ = ~x;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '~' to type 'string'
+    _ = ~"hi";
+    int[3] a = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '~' to type 'int[3]'
+    _ = ~a;
+    int? o = 42;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '~' to type 'int?'
+    _ = ~o;
+}
+
+struct Pair {
+    int x;
+    int y;
+}
+
+enum Shape {
+    Circle(float radius),
+}
+
+void g() {
+    Pair pair = Pair(1, 2);
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '~' to type 'Pair'
+    _ = ~pair;
+    Shape shape = Shape.Circle(3.0);
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '~' to type 'Shape'
+    _ = ~shape;
+}

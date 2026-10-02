@@ -1,0 +1,20 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+enum Color { red, green }
+
+void main() {
+    int a = 5;
+    println(~a); // CHECK:-6
+    println(~0); // CHECK-NEXT:-1
+    uint u = 1;
+    println(~u); // CHECK-NEXT:4294967294
+    var c = 'A';
+    println(~c == char(190)); // CHECK-NEXT:true
+    println(~true); // CHECK-NEXT:false
+    println(~false); // CHECK-NEXT:true
+    println(int(~Color.red)); // CHECK-NEXT:-1
+    int tag = ~Color.green;
+    println(tag); // CHECK-NEXT:-2
+}

@@ -1139,6 +1139,7 @@ llvm::Value* LLVMGenerator::codegenUnary(const UnaryInst* inst) {
         if (isFloat) return builder.CreateFNeg(operand);
         return builder.CreateNeg(operand);
     case Token::Not:
+    case Token::Tilde:
         return builder.CreateNot(operand);
     case Token::Star:
         return operand;

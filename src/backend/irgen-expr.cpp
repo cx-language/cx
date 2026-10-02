@@ -314,9 +314,9 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
         if (expr.getOperand().type.isOptionalType() && !expr.getOperand().type.getWrappedType().isPointerType()) {
             return createNot(emitOptionalHasValueTest(emitExpr(expr.getOperand())));
         }
-        LLVM_FALLTHROUGH;
-    case Token::Tilde:
         return emitNot(expr);
+    case Token::Tilde:
+        return createBitwiseNot(emitExpr(expr.getOperand()));
     case Token::Increment:
         return emitConstantIncrement(expr, 1);
     case Token::Decrement:

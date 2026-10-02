@@ -933,7 +933,9 @@ void CGenerator::codegenUnary(const UnaryInst* inst) {
         stream << '!';
         break;
     case Token::Tilde:
-        stream << '~';
+        // C promotes _Bool to int under `~`, flipping the upper bits too;
+        // `!` flips just the bit, matching the LLVM backend.
+        stream << (inst->operand->getType()->isBool() ? '!' : '~');
         break;
     default:
         llvm_unreachable("all cases handled");
@@ -1164,7 +1166,6 @@ void CGenerator::codegenGlobalInitializer(const Value* value) {
     }
     case ValueKind::UnaryInst: {
         auto* unary = llvm::cast<UnaryInst>(value);
-        // `~` lowers to a Not instruction (see emitNot), so Not with an integer operand is a bitwise not.
         switch (unary->op.kind) {
         case Token::Plus:
             stream << "(+";
@@ -1173,10 +1174,11 @@ void CGenerator::codegenGlobalInitializer(const Value* value) {
             stream << "(-";
             break;
         case Token::Tilde:
-            stream << "(~";
+            // Like function codegen, `!` flips just the bit for bools.
+            stream << (unary->operand->getType()->isBool() ? "(!" : "(~");
             break;
         case Token::Not:
-            stream << (unary->operand->getType()->isBool() ? "(!" : "(~");
+            stream << "(!";
             break;
         default:
             llvm_unreachable("unexpected unary operator in global initializer");
