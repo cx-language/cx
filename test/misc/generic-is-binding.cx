@@ -1,0 +1,21 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+enum Shape {
+    Circle(float radius),
+    Rect(float w, float h),
+}
+
+// The `is` binding must survive generic instantiation.
+float getRadius<T>(T s) {
+    if s is Circle c {
+        return c;
+    }
+    return 0.0;
+}
+
+void main() {
+    println(getRadius(Shape.Circle(2.5))); // CHECK:2.5
+    println(getRadius(Shape.Rect(1.0, 2.0))); // CHECK-NEXT:0
+}

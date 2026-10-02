@@ -64,7 +64,9 @@ Stmt* Stmt::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
         auto condition = ifStmt->condition->instantiate(genericArgs);
         auto thenBody = ::instantiate(ifStmt->thenBody, genericArgs);
         auto elseBody = ::instantiate(ifStmt->elseBody, genericArgs);
-        return makeAST<IfStmt>(condition, std::move(thenBody), std::move(elseBody), ifStmt->elseLocation);
+        auto* result = makeAST<IfStmt>(condition, std::move(thenBody), std::move(elseBody), ifStmt->elseLocation);
+        result->isBinding = ifStmt->isBinding ? llvm::cast<VarDecl>(ifStmt->isBinding->instantiate(genericArgs, {})) : nullptr;
+        return result;
     }
     case StmtKind::SwitchStmt: {
         auto* switchStmt = llvm::cast<SwitchStmt>(this);
