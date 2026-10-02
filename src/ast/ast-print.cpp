@@ -199,7 +199,7 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Expr& expr) {
     switch (expr.kind) {
     case ExprKind::VarExpr: {
         auto& varExpr = llvm::cast<VarExpr>(expr);
-        stream << "VarExpr " << varExpr.identifier << " type=" << varExpr.type.removeTopLevelConst();
+        stream << "VarExpr " << varExpr.identifier << " type=" << varExpr.type;
         break;
     }
     case ExprKind::StringLiteralExpr: {

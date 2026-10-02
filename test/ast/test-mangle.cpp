@@ -95,7 +95,8 @@ int main() {
     Type intType = BasicType::get("int32", {});
     assert(mangleType(voidType) == "4void");
     assert(mangleType(intType) == "5int32");
-    assert(mangleType(intType.withMutability(Mutability::Const)) == "K5int32");
+    assert(mangleType(PointerType::get(intType, PointerKind::Pointer, /*isConst=*/true)) == "PK5int32");
+    assert(mangleType(ArrayPointerType::get(intType, /*isConst=*/true)) == "AK5int32");
     Type arrayType = BasicType::get("Array", {intType, GenericArg::fromInt(-1, Location())});
     assert(mangleType(arrayType) == "5ArrayI5int32Nn1_E");
     Type anonType = BasicType::get("", {});

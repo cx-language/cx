@@ -26,18 +26,38 @@ namespace {
 // Reported wherever `implicit` appears outside a struct constructor or member function.
 constexpr char implicitMemberOnly[] = "only struct constructors and member functions can be marked 'implicit'";
 // Reported for `const` in types that doesn't qualify a pointee.
-constexpr char constPointeeOnly[] = "'const' in a type is only allowed to make the pointee const ('const T*', 'const T[*]' or 'const T&')";
+constexpr char constPointeeOnly[] = "'const' in a type is only allowed to make the pointee const ('const T*', 'const T[*]', 'const T&' or 'const T[]')";
 // Caps errors recovered from per file: past this the rest stays unparsed,
 // like without recovery. Only pathological input hits it.
 constexpr int kMaxParseRecoveryErrors = 100;
 
-// Rejects a `const` type that isn't pointee-const. An array-pointer inherits
-// its element's constness, so `const T[*]` is exempt. Callers decide when a
-// bare `const` is acceptable (constant declarators with `=`).
-void rejectBareConstType(const Type& type) {
-    if (!type.isMutable() && !type.isArrayPointer()) {
+// Rejects a bare `const` (one that didn't qualify a pointee or view) outside
+// constant declarators. Callers decide when a bare `const` is acceptable
+// (constant declarators with `=`).
+void rejectBareConstType(const Type& type, bool sawBareConst) {
+    if (sawBareConst) {
         ERROR_RANGE(type.location, getIdentifierEndLocation(type.location, "const"), constPointeeOnly);
     }
+}
+
+// Marks the innermost alias layer const, matching how a leading `const` binds
+// in type position (`const int**` is a mutable pointer to a const-int-pointer).
+// `?` layers are transparent; the walk stops below the last alias layer, so a
+// nested optional (e.g. in `const (int*?)*`) keeps shallow const like C++.
+Type withInnerConstPointee(Type type) {
+    if (type.isOptionalType()) return OptionalType::get(withInnerConstPointee(type.removeOptional()), type.location);
+    if (type.isPointerType()) {
+        auto* base = llvm::cast<PointerType>(type.typeBase);
+        if (base->pointeeType.isPointerType() || base->pointeeType.isArrayPointer()) {
+            return PointerType::get(withInnerConstPointee(base->pointeeType), base->pointerKind, base->isConst, type.location, type.endLocation);
+        }
+        return type.withConstPointee();
+    }
+    auto* base = llvm::cast<ArrayPointerType>(type.typeBase);
+    if (base->elementType.isPointerType() || base->elementType.isArrayPointer()) {
+        return ArrayPointerType::get(withInnerConstPointee(base->elementType), base->isConst, type.location, type.endLocation);
+    }
+    return type.withConstPointee();
 }
 } // namespace
 
@@ -455,7 +475,7 @@ bool Parser::resolveSizeExprDecls(Expr& expr, std::vector<VarDecl*>& resolutionS
             if (found.size() == 1) {
                 if (auto* varDecl = llvm::dyn_cast<VarDecl>(found.front())) {
                     // Mutable variables never fold, so only consts bind.
-                    if (varDecl->type.isMutable()) return true;
+                    if (!varDecl->isConst) return true;
                     if (llvm::is_contained(resolutionStack, varDecl)) {
                         ERROR_RANGE(varExpr->location, varExpr->endLocation, "cyclic constant '" << varDecl->getName() << "'");
                     }
@@ -503,12 +523,12 @@ Type Parser::parseArrayType(Type elementType) {
     switch (currentToken()) {
     case Token::RightBracket:
         consumeToken();
-        return BasicType::get("Slice", GenericArg(elementType), Mutability::Mutable, elementType.location);
+        return BasicType::get("Slice", GenericArg(elementType), elementType.location);
 
     case Token::Star:
         consumeToken();
         parse(Token::RightBracket);
-        return ArrayPointerType::get(elementType, elementType.location);
+        return ArrayPointerType::get(elementType, /*isConst=*/false, elementType.location);
 
     default: {
         if (currentToken() == Token::Identifier && lookAhead(1) == Token::RightBracket) {
@@ -522,7 +542,7 @@ Type Parser::parseArrayType(Type elementType) {
                     if (auto* varDecl = llvm::dyn_cast<VarDecl>(found.front())) {
                         std::vector<VarDecl*> resolutionStack{varDecl};
                         if (varDecl->initializer) resolveSizeExprDecls(*varDecl->initializer, resolutionStack);
-                        if (!varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableIntConstant()) {
+                        if (varDecl->isConst && varDecl->initializer && varDecl->initializer->isFoldableIntConstant()) {
                             llvm::APSInt size = varDecl->initializer->getConstantIntegerValue();
                             auto name = parse(Token::Identifier);
                             parse(Token::RightBracket);
@@ -541,7 +561,7 @@ Type Parser::parseArrayType(Type elementType) {
             args.emplace_back(elementType);
             args.emplace_back(parseType());
             parse(Token::RightBracket);
-            return BasicType::get("Array", args, elementType.mutability, elementType.location);
+            return BasicType::get("Array", args, elementType.location);
         }
 
         Expr* sizeExpr = parseExpr();
@@ -556,7 +576,7 @@ Type Parser::parseArrayType(Type elementType) {
             std::vector<GenericArg> args;
             args.emplace_back(elementType);
             args.emplace_back(Type::getSizeofMarker(sizeofExpr->operandType));
-            return BasicType::get("Array", args, elementType.mutability, elementType.location);
+            return BasicType::get("Array", args, elementType.location);
         }
         if (!sizeExpr->isFoldableIntConstant()) {
             // Inside binder scopes a name may denote a local or shadowed
@@ -567,7 +587,7 @@ Type Parser::parseArrayType(Type elementType) {
                 std::vector<GenericArg> args;
                 args.emplace_back(elementType);
                 args.emplace_back(UnresolvedType::getDeferredSize(sizeExpr, currentModule, sizeExpr->location, sizeExpr->endLocation));
-                return BasicType::get("Array", args, elementType.mutability, elementType.location);
+                return BasicType::get("Array", args, elementType.location);
             }
             ERROR_RANGE(getExprRangeStart(*sizeExpr), sizeExpr->endLocation, "array size must be a constant integer expression");
         }
@@ -584,7 +604,7 @@ Type Parser::parseArrayType(Type elementType) {
 }
 
 /// simple-type ::= id | id generic-argument-list | id '[' (const-int-expr | '*')? ']'
-Type Parser::parseSimpleType(Mutability mutability) {
+Type Parser::parseSimpleType() {
     auto identifier = parse(Token::Identifier);
     std::vector<GenericArg> genericArgs;
 
@@ -593,9 +613,9 @@ Type Parser::parseSimpleType(Mutability mutability) {
         genericArgs = parseGenericArgumentList();
         LLVM_FALLTHROUGH;
     default:
-        return BasicType::get(identifier.getString(), std::move(genericArgs), mutability, identifier.location);
+        return BasicType::get(identifier.getString(), std::move(genericArgs), identifier.location);
     case Token::LeftBracket:
-        return parseArrayType(BasicType::get(identifier.getString(), {}, mutability, identifier.location));
+        return parseArrayType(BasicType::get(identifier.getString(), {}, identifier.location));
     }
 }
 
@@ -616,7 +636,7 @@ Type Parser::parseAnonymousStructType() {
     }
 
     consumeToken();
-    return AnonymousStructType::get(std::move(elements), Mutability::Mutable, location);
+    return AnonymousStructType::get(std::move(elements), location);
 }
 
 /// function-type ::= type '(' param-types ')'
@@ -632,35 +652,43 @@ Type Parser::parseFunctionType(Type returnType) {
     }
 
     consumeToken();
-    return FunctionType::get(returnType, std::move(paramTypes), false, Mutability::Mutable, returnType.location);
+    return FunctionType::get(returnType, std::move(paramTypes), false, returnType.location);
 }
 
 /// type ::= simple-type | 'const' simple-type ('*' | '[*]' | '&') | type '*' | type '&' | type '?' | function-type | anonymous-struct-type
-Type Parser::parseType(bool allowBareConst) {
+Type Parser::parseType(bool allowBareConst, bool* sawBareConst) {
     Type type;
     auto location = getCurrentLocation();
+    bool pendingConst = false;
 
     switch (currentToken()) {
     case Token::Identifier:
-        type = parseSimpleType(Mutability::Mutable);
+        type = parseSimpleType();
         break;
     case Token::Const: {
         auto constToken = parse(Token::Const);
-        type = parseSimpleType(Mutability::Const);
-        // `const` in types only qualifies pointees (for C/C++ API matching).
-        // parseSimpleType consumes a directly following `[*]` itself, so a
-        // resulting array-pointer counts as pointee-const too.
-        bool isPointeeConst =
-            currentToken().is({Token::Star, Token::And}) || (currentToken() == Token::LeftBracket && lookAhead(1) == Token::Star) || type.isArrayPointer();
+        type = parseSimpleType();
+        // `const` in types only qualifies pointees and views (for C/C++ API matching).
+        // A `*`, `&`, `[*]`, or `[]` suffix consumes the pending const in the suffix
+        // loop below; parseSimpleType consumes a directly following `[*]` or `[]`
+        // itself, so a resulting array-pointer is marked const right away (likewise
+        // a slice in type position; in a declarator the slice stays a bare const).
         // (AndAnd is deliberately absent: `const T&&` falls through to the
         // suffix loop's nested-references error, which is more specific.)
-        // parseSimpleType leaves `[` unconsumed after generic arguments; only
-        // `[]` is excluded (a slice forces Mutable, so the `const` would be
-        // meaningless), while `[N]` preserves constness for the declarator.
-        bool isSliceSuffix = currentToken() == Token::LeftBracket && lookAhead(1) == Token::RightBracket;
-        bool isTentativeBareConst =
-            allowBareConst && !type.isMutable() && !currentToken().is({Token::QuestionMark, Token::QuestionQuestion, Token::LeftParen}) && !isSliceSuffix;
-        if (!isPointeeConst && !isTentativeBareConst) {
+        bool bracketEmpty = currentToken() == Token::LeftBracket && lookAhead(1) == Token::RightBracket;
+        // parseSimpleType already consumed a directly following `[]`, so a Slice
+        // here means `const T[]`: a const-element slice in type position. A further
+        // `[]` defers the const to the outermost view (`const T[][]`).
+        bool sliceThenEmpty = type.isSlice() && bracketEmpty && !allowBareConst;
+        if (currentToken().is({Token::Star, Token::And}) || (currentToken() == Token::LeftBracket && lookAhead(1) == Token::Star) || sliceThenEmpty) {
+            pendingConst = true;
+        } else if (type.isArrayPointer()) {
+            type = type.withConstPointee();
+        } else if (type.isSlice() && !allowBareConst && currentToken() != Token::LeftBracket) {
+            type = type.withConstPointee();
+        } else if (allowBareConst && !currentToken().is({Token::QuestionMark, Token::QuestionQuestion, Token::LeftParen})) {
+            if (sawBareConst) *sawBareConst = true;
+        } else {
             ERROR_RANGE(constToken.location, getTokenEndLocation(constToken), constPointeeOnly);
         }
         break;
@@ -675,16 +703,17 @@ Type Parser::parseType(bool allowBareConst) {
     while (true) {
         switch (currentToken()) {
         case Token::Star:
-            type = PointerType::get(type, PointerKind::Pointer, Mutability::Mutable, location);
+            type = PointerType::get(type, PointerKind::Pointer, pendingConst, location);
+            pendingConst = false;
             consumeToken();
             break;
         case Token::QuestionMark:
-            type = OptionalType::get(type, Mutability::Mutable, location);
+            type = OptionalType::get(type, location);
             consumeToken();
             break;
         case Token::QuestionQuestion:
             // A lexed `??` in type position is two nested optionals (e.g. `int??`).
-            type = OptionalType::get(OptionalType::get(type, Mutability::Mutable, location), Mutability::Mutable, location);
+            type = OptionalType::get(OptionalType::get(type, location), location);
             consumeToken();
             break;
         case Token::LeftParen:
@@ -692,6 +721,12 @@ Type Parser::parseType(bool allowBareConst) {
             break;
         case Token::LeftBracket:
             type = parseArrayType(type);
+            // Pending here means the const-case saw `[*]` or `[]`, so the result
+            // is an array-pointer or a slice and takes the const slot.
+            if (pendingConst) {
+                pendingConst = false;
+                type = type.withConstPointee();
+            }
             break;
         case Token::And:
             // The lexer only produces AndAnd for adjacent `&&`, so `T& &` arrives here as two
@@ -699,7 +734,8 @@ Type Parser::parseType(bool allowBareConst) {
             if (type.isReferenceType()) {
                 ERROR_CURRENT_TOKEN("nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
             }
-            type = PointerType::get(type, PointerKind::Reference, Mutability::Mutable, location);
+            type = PointerType::get(type, PointerKind::Reference, pendingConst, location);
+            pendingConst = false;
             consumeToken();
             break;
         case Token::AndAnd:
@@ -1219,27 +1255,40 @@ ReturnStmt* Parser::parseReturnStmt() {
 /// initializer ::= expr | 'undefined'
 VarDecl* Parser::parseVarDecl(Decl* parent, AccessLevel accessLevel, bool requireTerminator) {
     Type type;
-    auto mutability = Mutability::Mutable;
+    bool isConst = false;
 
     if (currentToken() == Token::Const) {
         consumeToken();
-        mutability = Mutability::Const;
+        isConst = true;
     }
 
     if (currentToken() == Token::Var) {
-        if (mutability == Mutability::Const) {
+        if (isConst) {
             ERROR_CURRENT_TOKEN("'const' and 'var' cannot be combined");
         }
         consumeToken();
     } else if (lookAhead(1) != Token::Assignment) {
         type = parseType();
+        if (isConst && type) {
+            // C++ rule: `const` before an alias type qualifies the pointee, not the
+            // binding (`const int* q` is a mutable handle to const ints). Anything
+            // else (values, fixed arrays, slices-as-structs) keeps binding-const.
+            Type core = type;
+            while (core.isOptionalType())
+                core = core.removeOptional();
+            if (core.isPointerType() || core.isArrayPointer()) {
+                isConst = false;
+                type = withInnerConstPointee(type);
+            }
+        }
     }
 
     auto name = parse(Token::Identifier);
-    return parseVarDeclAfterName(parent, accessLevel, type.withMutability(mutability), name.getString(), name.location, requireTerminator);
+    return parseVarDeclAfterName(parent, accessLevel, type, name.getString(), name.location, isConst, requireTerminator);
 }
 
-VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation, bool requireTerminator) {
+VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation, bool isConst,
+                                       bool requireTerminator) {
     Expr* initializer = nullptr;
 
     if (currentToken() == Token::Assignment) {
@@ -1249,8 +1298,7 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
 
     if (requireTerminator) parseStmtTerminator();
     auto* decl = makeAST<VarDecl>(type, name, initializer, parent, accessLevel, *currentModule, nameLocation);
-    // Pre-B rule: top-level const on a declared type marks the binding constant.
-    decl->isConst = !type.isMutable();
+    decl->isConst = isConst;
     return decl;
 }
 
@@ -1261,7 +1309,7 @@ VarStmt* Parser::parseVarStmt(Decl* parent) {
     while (currentToken() == Token::Comma) {
         consumeToken();
         auto name = parse(Token::Identifier);
-        decls.push_back(parseVarDeclAfterName(parent, AccessLevel::None, decls.front()->type, name.getString(), name.location, false));
+        decls.push_back(parseVarDeclAfterName(parent, AccessLevel::None, decls.front()->type, name.getString(), name.location, decls.front()->isConst, false));
     }
     parseStmtTerminator();
     return makeAST<VarStmt>(std::move(decls));
@@ -1734,7 +1782,7 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
             auto valueParamName = parse(Token::Identifier);
             auto& param = genericParams.emplace_back(valueParamName.getString(), valueParamName.location);
             param.isValueParam = true;
-            param.valueType = BasicType::get(genericParamName.getString(), {}, Mutability::Mutable, genericParamName.location);
+            param.valueType = BasicType::get(genericParamName.getString(), {}, genericParamName.location);
         } else {
             genericParams.emplace_back(genericParamName.getString(), genericParamName.location);
 
@@ -1900,7 +1948,7 @@ FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Ty
     }
 
     parseStmtTerminator();
-    return FieldDecl(type, name, defaultValue, typeDecl, accessLevel, location, isManuallyDestroy);
+    return FieldDecl(type, name, defaultValue, typeDecl, accessLevel, location, /*isConst=*/false, isManuallyDestroy);
 }
 
 /// type-alias-decl ::= 'using' id '=' type ('\n' | ';')
@@ -1968,7 +2016,7 @@ void Parser::parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel
     rejectGenericStaticConst(genericParams);
     consumeToken();
     auto name = parse(Token::Identifier);
-    addParsedStaticConst(typeDecl, Type().withMutability(Mutability::Const), name.getString(), name.location, accessLevel);
+    addParsedStaticConst(typeDecl, Type(), name.getString(), name.location, accessLevel);
 }
 
 /// type-decl ::= ('struct' | 'union' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}' ';'?
@@ -2062,11 +2110,12 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             LLVM_FALLTHROUGH;
         default: {
             size_t returnTypeIndex = currentTokenIndex;
-            auto type = parseType(/*allowBareConst=*/true);
+            bool sawBareConst = false;
+            auto type = parseType(/*allowBareConst=*/true, &sawBareConst);
             auto location = getCurrentLocation();
             auto name = parseFunctionName(&*typeDecl);
             auto requireBody = tag != TypeTag::Interface;
-            if (currentToken() != Token::Assignment) rejectBareConstType(type);
+            if (currentToken() != Token::Assignment) rejectBareConstType(type, sawBareConst);
 
             switch (currentToken()) {
             case Token::LeftParen:
@@ -2086,7 +2135,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                     ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), implicitMemberOnly);
                 }
                 // A const-qualified member with an initializer is a static constant.
-                if (currentToken() == Token::Assignment && !type.isMutable()) {
+                if (currentToken() == Token::Assignment && sawBareConst) {
                     if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
                     rejectGenericStaticConst(genericParams);
                     addParsedStaticConst(*typeDecl, type, name, location, accessLevel);
@@ -2185,13 +2234,14 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 ERROR_CURRENT_TOKEN("enums cannot have destructors");
             }
             size_t returnTypeIndex = currentTokenIndex;
-            auto type = parseType(/*allowBareConst=*/true);
+            bool sawBareConst = false;
+            auto type = parseType(/*allowBareConst=*/true, &sawBareConst);
             auto location = getCurrentLocation();
             auto methodName = parseFunctionName(enumDecl);
-            if (currentToken() != Token::Assignment) rejectBareConstType(type);
+            if (currentToken() != Token::Assignment) rejectBareConstType(type, sawBareConst);
 
             // A const-qualified member with an initializer is a static constant.
-            if (currentToken() == Token::Assignment && !type.isMutable()) {
+            if (currentToken() == Token::Assignment && sawBareConst) {
                 rejectGenericStaticConst(genericParams);
                 addParsedStaticConst(*enumDecl, type, methodName, location, accessLevel);
                 continue;
@@ -2461,13 +2511,14 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
         ERROR_CURRENT_TOKEN("statements are not allowed in global scope");
     }
     size_t returnTypeIndex = currentTokenIndex;
-    auto type = parseType(/*allowBareConst=*/true);
+    bool sawBareConst = false;
+    auto type = parseType(/*allowBareConst=*/true, &sawBareConst);
     auto location = getCurrentLocation();
     auto name = parseFunctionName(nullptr);
 
     switch (currentToken()) {
     case Token::LeftParen:
-        rejectBareConstType(type);
+        rejectBareConstType(type, sawBareConst);
         if (isExtern) {
             decl = parseExternFunctionDecl(accessLevel, type, name, location, cppLinkage);
         } else {
@@ -2483,7 +2534,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
         break;
     default:
         if (cppLinkage) ERROR_RANGE(location, getIdentifierEndLocation(location, name), "extern \"C++\" is only supported for functions, not variables");
-        decl = parseVarDeclAfterName(nullptr, accessLevel, type, name, location);
+        decl = parseVarDeclAfterName(nullptr, accessLevel, type, name, location, sawBareConst);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
         break;
     }

@@ -25,8 +25,6 @@ struct AnonymousStructElement;
 struct GenericArg;
 struct Expr;
 
-enum class Mutability { Mutable, Const };
-
 enum class PointerKind {
     Pointer, // T*: an explicit, storable pointer. Formed with '&'.
     Reference, // T&: an implicit, non-storable borrow. Only valid as a function parameter type.
@@ -64,7 +62,7 @@ struct Type {
     // Relocating drops the old span unless the caller passes the new end: a stale
     // end at a new start would underline garbage, while an invalid end degrades
     // to today's single caret.
-    Type withLocation(Location location, Location endLocation = Location()) const { return Type(typeBase, mutability, location, endLocation, aliasSpelling); }
+    Type withLocation(Location location, Location endLocation = Location()) const { return Type(typeBase, location, endLocation, aliasSpelling); }
 
     // TODO: Remove 'Type' suffix from these methods
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
@@ -132,12 +130,13 @@ struct Type {
     int getIntegerBitWidth() const;
     // Size in bytes for types with target-independent layout, null otherwise.
     std::optional<uint64_t> getSizeInBytes() const;
-    bool isMutable() const { return mutability == Mutability::Mutable; }
-    Type withMutability(Mutability m) const;
-    // Drops top-level 'const' for diagnostics where constness is noise. Nested
-    // const (pointee, elements) is preserved.
-    Type removeTopLevelConst() const { return withMutability(Mutability::Mutable); }
     Type getPointerTo() const;
+    // True when writing through this type is forbidden: const-pointee pointers
+    // and borrows, const-element array pointers and slices. False otherwise.
+    bool isPointeeConst() const;
+    // Rebuilds this pointer, array-pointer, or slice type with a const pointee
+    // (const element slot for slices); `?` layers are transparent.
+    Type withConstPointee() const;
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeReference() const { return isReferenceType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
@@ -150,7 +149,6 @@ struct Type {
     // and hashes must use this; all twins agree on the answer.
     Type canonicalTwin() const;
     DestructorDecl* getDestructor() const;
-    bool equalsIgnoreTopLevelMutable(Type) const;
     bool containsUnresolvedPlaceholder() const;
     bool containsReference() const;
     bool storesBorrow() const;
@@ -184,37 +182,37 @@ struct Type {
     PointerKind getPointerKind() const;
     Type getWrappedType() const;
 
-    static Type getVoid(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getBool(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getInt8(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getInt16(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getInt32(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getUInt8(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getUInt16(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getUInt32(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getUInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCSizeT(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCSChar(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCUChar(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCShort(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCUShort(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCInt(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCUInt(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCLong(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCULong(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCLongLong(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCULongLong(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCFloat(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getCDouble(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getVoid(Location location = Location());
+    static Type getBool(Location location = Location());
+    static Type getInt8(Location location = Location());
+    static Type getInt16(Location location = Location());
+    static Type getInt32(Location location = Location());
+    static Type getInt64(Location location = Location());
+    static Type getUInt8(Location location = Location());
+    static Type getUInt16(Location location = Location());
+    static Type getUInt32(Location location = Location());
+    static Type getUInt64(Location location = Location());
+    static Type getCSizeT(Location location = Location());
+    static Type getCSChar(Location location = Location());
+    static Type getCUChar(Location location = Location());
+    static Type getCShort(Location location = Location());
+    static Type getCUShort(Location location = Location());
+    static Type getCInt(Location location = Location());
+    static Type getCUInt(Location location = Location());
+    static Type getCLong(Location location = Location());
+    static Type getCULong(Location location = Location());
+    static Type getCLongLong(Location location = Location());
+    static Type getCULongLong(Location location = Location());
+    static Type getCFloat(Location location = Location());
+    static Type getCDouble(Location location = Location());
     // TODO: Return correct uintptr type by checking target platform pointer size.
-    static Type getUIntPtr(Mutability mutability = Mutability::Mutable, Location location = Location()) { return getUInt64(mutability, location); }
-    static Type getFloat32(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getFloat64(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getFloat80(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getChar(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getNull(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getUndefined(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type getUIntPtr(Location location = Location()) { return getUInt64(location); }
+    static Type getFloat32(Location location = Location());
+    static Type getFloat64(Location location = Location());
+    static Type getFloat80(Location location = Location());
+    static Type getChar(Location location = Location());
+    static Type getNull(Location location = Location());
+    static Type getUndefined(Location location = Location());
 
     static bool isBuiltinScalar(llvm::StringRef typeName);
     // Returns " (did you mean 'X'?)" for the closest builtin scalar type name,
@@ -222,7 +220,6 @@ struct Type {
     static std::string didYouMeanBuiltin(llvm::StringRef typeName);
 
     TypeBase* typeBase = nullptr;
-    Mutability mutability = Mutability::Mutable;
     // TODO: Add a dedicated class hierarchy for storing source locations with types, like TypeLoc in Clang and Swift.
     Location location;
     // End of this type's source spelling; invalid when synthesized or relocated.
@@ -266,6 +263,13 @@ struct GenericArg {
     GenericArg resolve(const llvm::StringMap<GenericArg>& replacements) const;
 
     Kind kind = Kind::Null;
+    // Const carried by this argument: for Slice element args it forbids writes
+    // through the view; in substitutions it applies at alias positions (pointer,
+    // view) and is ignored at value positions. Always false elsewhere. Set from
+    // const sources in considerGenericArg, preserved by GenericArg::resolve,
+    // stripped for non-Slice rebuilds in Type::resolve, applied by
+    // resolveAliasedType: every substitution path must implement this split.
+    bool isConst = false;
     union {
         Type type;
         int64_t intValue;
@@ -281,12 +285,10 @@ std::string getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Generi
 // Display variant of getQualifiedTypeName using source spellings. Diagnostics and
 // IDE hover only; never for lookup, mangling, or symbol keys.
 std::string getDisplayTypeName(llvm::StringRef typeName, llvm::ArrayRef<GenericArg> genericArgs);
-Type getArrayTypeForReceiver(Type type);
 
 struct BasicType : TypeBase {
     std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }
-    static Type get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs, Mutability mutability = Mutability::Mutable, Location location = Location(),
-                    Location endLocation = Location());
+    static Type get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs, Location location = Location(), Location endLocation = Location());
     static Type getArray(Type elementType, int64_t size, Location location = Location(), Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::BasicType; }
 
@@ -302,29 +304,16 @@ public:
 
 struct ArrayPointerType : TypeBase {
     static const int64_t UnknownSize = -1;
-    static Type get(Type elementType, Location location = Location(), Location endLocation = Location());
+    static Type get(Type elementType, bool isConst = false, Location location = Location(), Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayPointerType; }
 
 private:
-    explicit ArrayPointerType(Type elementType) : TypeBase(TypeKind::ArrayPointerType), elementType(elementType) {}
+    explicit ArrayPointerType(Type elementType, bool isConst) : TypeBase(TypeKind::ArrayPointerType), elementType(elementType), isConst(isConst) {}
 
 public:
     Type elementType;
+    bool isConst = false;
 };
-
-inline Type Type::withMutability(Mutability m) const {
-    // Const array pointers live on the const-element base: a bare top-level
-    // flag would not survive the next withMutability(Mutable) (member access).
-    if (m == Mutability::Const && typeBase && getKind() == TypeKind::ArrayPointerType) {
-        Type element = llvm::cast<ArrayPointerType>(typeBase)->elementType;
-        if (element.isMutable()) {
-            Type canonical = ArrayPointerType::get(element.withMutability(Mutability::Const), location, endLocation);
-            canonical.aliasSpelling = aliasSpelling;
-            return canonical;
-        }
-    }
-    return Type(typeBase, m, location, endLocation, aliasSpelling);
-}
 
 struct AnonymousStructElement {
     AnonymousStructElement(llvm::StringRef name, Type type) : name(internString(name)), type(type) {}
@@ -336,8 +325,7 @@ struct AnonymousStructElement {
 bool operator==(const AnonymousStructElement&, const AnonymousStructElement&);
 
 struct AnonymousStructType : TypeBase {
-    static Type get(std::vector<AnonymousStructElement>&& elements, Mutability mutability = Mutability::Mutable, Location location = Location(),
-                    Location endLocation = Location());
+    static Type get(std::vector<AnonymousStructElement>&& elements, Location location = Location(), Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::AnonymousStructType; }
 
 private:
@@ -349,8 +337,7 @@ public:
 
 struct FunctionType : TypeBase {
     std::vector<ParamDecl> getParamDecls(Location location = Location()) const;
-    static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic, Mutability mutability = Mutability::Mutable,
-                    Location location = Location(), Location endLocation = Location());
+    static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic, Location location = Location(), Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::FunctionType; }
 
 private:
@@ -366,24 +353,26 @@ public:
 };
 
 struct PointerType : TypeBase {
-    static Type get(Type pointeeType, PointerKind kind = PointerKind::Pointer, Mutability mutability = Mutability::Mutable, Location location = Location(),
+    static Type get(Type pointeeType, PointerKind kind = PointerKind::Pointer, bool isConst = false, Location location = Location(),
                     Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::PointerType; }
 
 private:
-    PointerType(Type pointeeType, PointerKind kind) : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), pointerKind(kind) {}
+    PointerType(Type pointeeType, PointerKind kind, bool isConst)
+    : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), pointerKind(kind), isConst(isConst) {}
 
 public:
     Type pointeeType;
     PointerKind pointerKind;
+    bool isConst = false;
 };
 
 namespace OptionalType {
-Type get(Type wrappedType, Mutability mutability = Mutability::Mutable, Location location = Location());
+Type get(Type wrappedType, Location location = Location());
 };
 
 struct UnresolvedType : TypeBase {
-    static Type get(Mutability mutability = Mutability::Mutable, Location location = Location());
+    static Type get(Location location = Location());
     static Type getDeferredSize(Expr* sizeExpr, Module* homeModule, Location location, Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::UnresolvedType; }
 

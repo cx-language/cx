@@ -23,7 +23,7 @@ void plainPointer() {
 void constSource() {
     const S? s = S(1);
     if s == null { return; }
-    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S const?*' to 'takePayload', expected 'S*'
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'const S?*' to 'takePayload', expected 'S*'
     takePayload(&s);
 }
 

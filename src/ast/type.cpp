@@ -15,8 +15,8 @@ using namespace cx;
 static std::vector<TypeBase*> typeBases;
 
 #define DEFINE_BUILTIN_TYPE_GET_AND_IS(TYPE, NAME) \
-    Type Type::get##TYPE(Mutability mutability, Location location) { \
-        return BasicType::get(#NAME, {}, mutability, location); \
+    Type Type::get##TYPE(Location location) { \
+        return BasicType::get(#NAME, {}, location); \
     } \
     bool Type::is##TYPE() const { \
         return isBasicType() && getName() == #NAME; \
@@ -142,8 +142,19 @@ bool Type::isEnumType() const {
     return false;
 }
 
+// Resolves an aliased (pointee/element) type, folding a substituted const-slot into isConst.
+static Type resolveAliasedType(Type aliasedType, const llvm::StringMap<GenericArg>& replacements, bool& isConst) {
+    if (aliasedType.isBasicType()) {
+        if (auto it = replacements.find(aliasedType.getName()); it != replacements.end() && it->second.isType()) {
+            isConst = isConst || it->second.isConst;
+            return it->second.type;
+        }
+    }
+    return aliasedType.resolve(replacements);
+}
+
 Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
-    if (!typeBase) return Type(nullptr, mutability, location);
+    if (!typeBase) return Type(nullptr, location);
 
     // Substitution rebuilds the type; keep this use site's spelling when it has one.
     // A bare placeholder has none, so replacement spellings survive that path.
@@ -157,9 +168,9 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         auto it = replacements.find(getName());
         if (it != replacements.end() && it->second.isType()) {
             // TODO: Handle generic arguments for type placeholders.
-            // Placeholder const adds (e.g. `const T*`); bound const survives.
+            // Value position: a bound const-slot is ignored here (it applies
+            // at alias positions, where the pointer and view cases pick it up).
             Type resolved = it->second.getType();
-            if (!isMutable()) resolved = resolved.withMutability(Mutability::Const);
             resolved.location = location;
             resolved.endLocation = endLocation;
             return preserveSpelling(resolved);
@@ -167,46 +178,39 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         // An integer parameter reference isn't a type; leave it for the use site to diagnose.
 
         auto genericArgs = map(getGenericArgs(), [&](GenericArg arg) { return arg.resolve(replacements); });
-        Type rebuilt = BasicType::get(getName(), std::move(genericArgs), mutability, location, endLocation);
-        // Substitution can produce non-canonical const-element arrays ('T[2]'
-        // with 'T := const int'); fold to the canonical outer-const form so a
-        // mutable binding strips it like any other substituted const.
-        if (rebuilt.isFixedArray() && rebuilt.isMutable() && !rebuilt.getElementType().isMutable()) {
-            auto canonicalArgs = std::vector<GenericArg>(rebuilt.getGenericArgs().begin(), rebuilt.getGenericArgs().end());
-            canonicalArgs[0] = GenericArg(rebuilt.getElementType().removeTopLevelConst());
-            rebuilt = BasicType::get(getName(), std::move(canonicalArgs), Mutability::Const, location, endLocation);
+        if (!isSlice()) {
+            // Slots only apply at alias positions; inside any other generic the
+            // arg is a plain value type, so an inferred slot would form a bogus
+            // distinct type (e.g. `Box<const int>`).
+            for (auto& arg : genericArgs) {
+                if (arg.isType()) arg.isConst = false;
+            }
         }
-        return preserveSpelling(rebuilt);
+        return preserveSpelling(BasicType::get(getName(), std::move(genericArgs), location, endLocation));
     }
     case TypeKind::ArrayPointerType: {
-        Type elementType = llvm::cast<ArrayPointerType>(typeBase)->elementType;
-        if (elementType.isBasicType()) {
-            if (auto it = replacements.find(elementType.getName()); it != replacements.end() && it->second.isType()) {
-                elementType = it->second.type;
-                if (!llvm::cast<ArrayPointerType>(typeBase)->elementType.isMutable()) {
-                    elementType = elementType.withMutability(Mutability::Const);
-                }
-            } else {
-                elementType = elementType.resolve(replacements);
-            }
-        } else {
-            elementType = elementType.resolve(replacements);
-        }
-        return preserveSpelling(ArrayPointerType::get(elementType, location, endLocation));
+        auto* base = llvm::cast<ArrayPointerType>(typeBase);
+        bool isConst = base->isConst;
+        Type elementType = resolveAliasedType(base->elementType, replacements, isConst);
+        return preserveSpelling(ArrayPointerType::get(elementType, isConst, location, endLocation));
     }
 
     case TypeKind::AnonymousStructType: {
         auto elements =
             map(getAnonymousStructElements(), [&](auto& element) { return AnonymousStructElement{element.name, element.type.resolve(replacements)}; });
-        return preserveSpelling(AnonymousStructType::get(std::move(elements), mutability, location, endLocation));
+        return preserveSpelling(AnonymousStructType::get(std::move(elements), location, endLocation));
     }
     case TypeKind::FunctionType: {
         auto paramTypes = map(getParamTypes(), [&](Type t) { return t.resolve(replacements); });
         return preserveSpelling(FunctionType::get(getReturnType().resolve(replacements), std::move(paramTypes), llvm::cast<FunctionType>(typeBase)->isVariadic,
-                                                  mutability, location, endLocation));
+                                                  location, endLocation));
     }
-    case TypeKind::PointerType:
-        return preserveSpelling(PointerType::get(getPointee().resolve(replacements), getPointerKind(), mutability, location, endLocation));
+    case TypeKind::PointerType: {
+        auto* base = llvm::cast<PointerType>(typeBase);
+        bool isConst = base->isConst;
+        Type pointeeType = resolveAliasedType(base->pointeeType, replacements, isConst);
+        return preserveSpelling(PointerType::get(pointeeType, base->pointerKind, isConst, location, endLocation));
+    }
     case TypeKind::UnresolvedType: {
         // A deferred size substitutes like any other expression, so generic
         // value parameters keep their usual textual-substitution meaning.
@@ -240,7 +244,6 @@ static bool spellingsEqual(Type a, Type b) {
         return true;
     }
     case TypeKind::ArrayPointerType:
-        // Stored elements: getElementType() interns via withMutability, forbidden mid-scan.
         return spellingsEqual(llvm::cast<ArrayPointerType>(a.typeBase)->elementType, llvm::cast<ArrayPointerType>(b.typeBase)->elementType);
     case TypeKind::AnonymousStructType: {
         auto elementsA = a.getAnonymousStructElements(), elementsB = b.getAnonymousStructElements();
@@ -264,15 +267,15 @@ static bool spellingsEqual(Type a, Type b) {
     llvm_unreachable("all cases handled");
 }
 
-template<typename T> static Type getType(T&& typeBase, Mutability mutability, Location location, Location endLocation = Location()) {
-    Type newType(&typeBase, mutability, location, endLocation);
+template<typename T> static Type getType(T&& typeBase, Location location, Location endLocation = Location()) {
+    Type newType(&typeBase, location, endLocation);
 
     // ponytail: linear interning scan, multiplied by spelling-twin bases; hash-cons the bases if compile time regresses.
     // typeBases is creation-ordered, so the first structural match is the earliest twin.
     TypeBase* firstTwin = nullptr;
     for (auto* existingTypeBase : typeBases) {
-        Type existingType(existingTypeBase, mutability, location, endLocation);
-        if (existingType.equalsIgnoreTopLevelMutable(newType)) {
+        Type existingType(existingTypeBase, location, endLocation);
+        if (existingType == newType) {
             if (spellingsEqual(existingType, newType)) return existingType;
             if (!firstTwin) firstTwin = existingTypeBase;
         }
@@ -288,22 +291,22 @@ template<typename T> static Type getType(T&& typeBase, Mutability mutability, Lo
             freshBasic->decl = llvm::cast<BasicType>(firstTwin)->decl;
         }
     }
-    return Type(typeBases.back(), mutability, location, endLocation);
+    return Type(typeBases.back(), location, endLocation);
 }
 
-Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs, Mutability mutability, Location location, Location endLocation) {
-    return getType(BasicType(name, genericArgs), mutability, location, endLocation);
+Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs, Location location, Location endLocation) {
+    return getType(BasicType(name, genericArgs), location, endLocation);
 }
 
 Type BasicType::getArray(Type elementType, int64_t size, Location location, Location endLocation) {
     std::vector<GenericArg> args;
     args.emplace_back(elementType);
     args.push_back(GenericArg::fromInt(size, location));
-    return BasicType::get("Array", args, elementType.mutability, location, endLocation);
+    return BasicType::get("Array", args, location, endLocation);
 }
 
 Type Type::getSizeofMarker(Type operand) {
-    return BasicType::get("sizeof", {GenericArg(operand)}, Mutability::Mutable, operand.location);
+    return BasicType::get("sizeof", {GenericArg(operand)}, operand.location);
 }
 
 bool Type::isSizeofMarker() const {
@@ -324,35 +327,35 @@ Type Type::getSizeofArrayOperand() const {
     return getGenericArgs()[1].getType().getSizeofOperand();
 }
 
-Type ArrayPointerType::get(Type elementType, Location location, Location endLocation) {
-    return getType(ArrayPointerType(elementType), elementType.mutability, location, endLocation);
+Type ArrayPointerType::get(Type elementType, bool isConst, Location location, Location endLocation) {
+    return getType(ArrayPointerType(elementType, isConst), location, endLocation);
 }
 
-Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Mutability mutability, Location location, Location endLocation) {
-    return getType(AnonymousStructType(std::move(elements)), mutability, location, endLocation);
+Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Location location, Location endLocation) {
+    return getType(AnonymousStructType(std::move(elements)), location, endLocation);
 }
 
-Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic, Mutability mutability, Location location, Location endLocation) {
-    return getType(FunctionType(returnType, std::move(paramTypes), isVariadic), mutability, location, endLocation);
+Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic, Location location, Location endLocation) {
+    return getType(FunctionType(returnType, std::move(paramTypes), isVariadic), location, endLocation);
 }
 
-Type PointerType::get(Type pointeeType, PointerKind kind, Mutability mutability, Location location, Location endLocation) {
-    return getType(PointerType(pointeeType, kind), mutability, location, endLocation);
+Type PointerType::get(Type pointeeType, PointerKind kind, bool isConst, Location location, Location endLocation) {
+    return getType(PointerType(pointeeType, kind, isConst), location, endLocation);
 }
 
-Type OptionalType::get(Type wrappedType, Mutability mutability, Location location) {
-    return BasicType::get("Optional", GenericArg(wrappedType), mutability, location);
+Type OptionalType::get(Type wrappedType, Location location) {
+    return BasicType::get("Optional", GenericArg(wrappedType), location);
 }
 
-Type UnresolvedType::get(Mutability mutability, Location location) {
-    return getType(UnresolvedType(), mutability, location);
+Type UnresolvedType::get(Location location) {
+    return getType(UnresolvedType(), location);
 }
 
 Type UnresolvedType::getDeferredSize(Expr* sizeExpr, Module* homeModule, Location location, Location endLocation) {
     UnresolvedType base;
     base.deferredSize = sizeExpr;
     base.homeModule = homeModule;
-    return getType(std::move(base), Mutability::Mutable, location, endLocation);
+    return getType(std::move(base), location, endLocation);
 }
 
 bool Type::hasDeferredArraySize() const {
@@ -376,6 +379,7 @@ bool cx::operator==(const AnonymousStructElement& a, const AnonymousStructElemen
 
 bool cx::operator==(const GenericArg& a, const GenericArg& b) {
     if (a.kind != b.kind) return false;
+    if (a.isConst != b.isConst) return false;
     switch (a.kind) {
     case GenericArg::Kind::Type:
         return a.getType() == b.getType();
@@ -389,13 +393,13 @@ bool cx::operator==(const GenericArg& a, const GenericArg& b) {
 
 std::string GenericArg::toString() const {
     if (isInt()) return std::to_string(getInt());
-    if (isType()) return getType().toString();
+    if (isType()) return (isConst ? "const " : "") + getType().toString();
     return "NULL";
 }
 
 std::string GenericArg::toCanonicalString() const {
     if (isInt()) return std::to_string(getInt());
-    if (isType()) return getType().toCanonicalString();
+    if (isType()) return (isConst ? "const " : "") + getType().toCanonicalString();
     return "NULL";
 }
 
@@ -404,7 +408,11 @@ GenericArg GenericArg::resolve(const llvm::StringMap<GenericArg>& replacements) 
     Type type = getType();
     if (type.isBasicType()) {
         if (auto it = replacements.find(type.getName()); it != replacements.end()) {
-            return it->second;
+            GenericArg result = it->second;
+            // A declared slot (e.g. `const T[]`) survives substitution; the use
+            // site decides whether it applies (alias positions) or not (values).
+            if (result.isType()) result.isConst |= isConst;
+            return result;
         }
     }
     if (type.isUnresolvedType()) {
@@ -466,14 +474,6 @@ std::string cx::getDisplayTypeName(llvm::StringRef typeName, llvm::ArrayRef<Gene
     return result;
 }
 
-Type cx::getArrayTypeForReceiver(Type type) {
-    if (!type || !type.isFixedArray() || type.isMutable()) return type;
-
-    auto genericArgs = std::vector<GenericArg>(type.getGenericArgs().begin(), type.getGenericArgs().end());
-    genericArgs[0] = GenericArg(type.getElementType());
-    return BasicType::get("Array", genericArgs, type.mutability, type.location);
-}
-
 std::vector<ParamDecl> FunctionType::getParamDecls(Location location) const {
     return map(paramTypes, [&](Type paramType) { return ParamDecl(paramType, "", false, location); });
 }
@@ -532,28 +532,51 @@ llvm::StringRef Type::getName() const {
 }
 
 std::string Type::getQualifiedTypeName() const {
-    Type receiverType = getArrayTypeForReceiver(*this);
-    if (!receiverType.isBasicType()) return receiverType.toCanonicalString();
-    return llvm::cast<BasicType>(receiverType.typeBase)->getQualifiedName();
+    if (!isBasicType()) return toCanonicalString();
+    return llvm::cast<BasicType>(typeBase)->getQualifiedName();
 }
 
 std::string Type::getDisplayName() const {
     if (!aliasSpelling.empty()) return toString();
-    Type receiverType = getArrayTypeForReceiver(*this);
-    if (!receiverType.isBasicType()) return receiverType.toString();
-    auto* basicType = llvm::cast<BasicType>(receiverType.typeBase);
+    if (!isBasicType()) return toString();
+    auto* basicType = llvm::cast<BasicType>(typeBase);
     return getDisplayTypeName(basicType->name, basicType->genericArgs);
 }
 
 Type Type::getElementType() const {
     if (isSlice()) return getGenericArgs()[0].getType();
-    if (isFixedArray()) {
-        Type elementType = getGenericArgs()[0].getType().withLocation(location, endLocation);
-        return isMutable() ? elementType : elementType.withMutability(Mutability::Const);
-    }
+    if (isFixedArray()) return getGenericArgs()[0].getType().withLocation(location, endLocation);
     ASSERT(getKind() == TypeKind::ArrayPointerType);
-    Type elementType = llvm::cast<ArrayPointerType>(typeBase)->elementType.withLocation(location, endLocation);
-    return isMutable() ? elementType : elementType.withMutability(Mutability::Const);
+    return llvm::cast<ArrayPointerType>(typeBase)->elementType.withLocation(location, endLocation);
+}
+
+bool Type::isPointeeConst() const {
+    switch (getKind()) {
+    case TypeKind::PointerType:
+        return llvm::cast<PointerType>(typeBase)->isConst;
+    case TypeKind::ArrayPointerType:
+        return llvm::cast<ArrayPointerType>(typeBase)->isConst;
+    case TypeKind::BasicType:
+        return isSlice() && getGenericArgs()[0].isConst;
+    default:
+        return false;
+    }
+}
+
+Type Type::withConstPointee() const {
+    if (isOptionalType()) return OptionalType::get(removeOptional().withConstPointee(), location);
+    if (isPointerType()) {
+        auto* base = llvm::cast<PointerType>(typeBase);
+        return PointerType::get(base->pointeeType, base->pointerKind, /*isConst=*/true, location, endLocation);
+    }
+    if (isArrayPointer()) {
+        auto* base = llvm::cast<ArrayPointerType>(typeBase);
+        return ArrayPointerType::get(base->elementType, /*isConst=*/true, location, endLocation);
+    }
+    ASSERT(isSlice());
+    GenericArg elem(getElementType());
+    elem.isConst = true;
+    return BasicType::get("Slice", elem, location, endLocation);
 }
 
 int64_t Type::getArraySize() const {
@@ -654,30 +677,23 @@ Type Type::getWrappedType() const {
 }
 
 bool cx::operator==(Type lhs, Type rhs) {
-    if (lhs.isMutable() != rhs.isMutable()) return false;
-    return lhs.equalsIgnoreTopLevelMutable(rhs);
-}
-
-bool Type::equalsIgnoreTopLevelMutable(Type other) const {
-    switch (getKind()) {
+    if (lhs.getKind() != rhs.getKind()) return false;
+    switch (lhs.getKind()) {
     case TypeKind::BasicType:
-        // HACK, FIXME: stop using equalsIgnoreTopLevelMutable to check if types are the same,
+        // HACK, FIXME: stop using operator== to check if types are the same,
         // it doesn't make sense for anonymous types (e.g. ones embedded in structs imported from C).
-        if (getName().empty()) return false;
+        if (lhs.getName().empty()) return false;
         // TODO: Should probably compare the referenced decl instead of just the name.
-        return other.isBasicType() && getName() == other.getName() && getGenericArgs() == other.getGenericArgs();
-    case TypeKind::ArrayPointerType: {
-        if (other.getKind() != TypeKind::ArrayPointerType) return false;
-        // Stored elements: the derived getElementType() form can't tell bases apart.
-        return llvm::cast<ArrayPointerType>(typeBase)->elementType == llvm::cast<ArrayPointerType>(other.typeBase)->elementType;
-    }
+        return lhs.getName() == rhs.getName() && lhs.getGenericArgs() == rhs.getGenericArgs();
+    case TypeKind::ArrayPointerType:
+        return lhs.isPointeeConst() == rhs.isPointeeConst() && lhs.getElementType() == rhs.getElementType();
     case TypeKind::AnonymousStructType:
-        return other.isAnonymousStructType() && getAnonymousStructElements() == other.getAnonymousStructElements();
+        return lhs.getAnonymousStructElements() == rhs.getAnonymousStructElements();
     case TypeKind::FunctionType:
-        return other.isFunctionType() && getReturnType() == other.getReturnType() && getParamTypes() == other.getParamTypes()
-            && llvm::cast<FunctionType>(typeBase)->isVariadic == llvm::cast<FunctionType>(other.typeBase)->isVariadic;
+        return lhs.getReturnType() == rhs.getReturnType() && lhs.getParamTypes() == rhs.getParamTypes()
+            && llvm::cast<FunctionType>(lhs.typeBase)->isVariadic == llvm::cast<FunctionType>(rhs.typeBase)->isVariadic;
     case TypeKind::PointerType:
-        return other.isPointerType() && getPointerKind() == other.getPointerKind() && getPointee() == other.getPointee();
+        return lhs.getPointerKind() == rhs.getPointerKind() && lhs.isPointeeConst() == rhs.isPointeeConst() && lhs.getPointee() == rhs.getPointee();
     case TypeKind::UnresolvedType:
         return false;
     }
@@ -758,10 +774,10 @@ TypeDecl* Type::getDecl() const {
     // Spelling twins share one declaration, but it may be registered on any of them
     // (e.g. an instantiation built from spelled inference args), so resolve lazily
     // and cache. A miss caches nothing, so later registrations are still found.
-    Type self(typeBase, mutability, location);
+    Type self(typeBase, location);
     for (auto* existingTypeBase : typeBases) {
         if (auto* twin = llvm::dyn_cast<BasicType>(existingTypeBase)) {
-            if (twin->decl && self.equalsIgnoreTopLevelMutable(Type(existingTypeBase, mutability, location))) {
+            if (twin->decl && self == Type(existingTypeBase, location)) {
                 basicType->decl = twin->decl;
                 break;
             }
@@ -772,7 +788,7 @@ TypeDecl* Type::getDecl() const {
 
 Type Type::canonicalTwin() const {
     if (!typeBase || !typeBase->firstTwin) return *this;
-    return Type(typeBase->firstTwin, mutability, location);
+    return Type(typeBase->firstTwin, location);
 }
 
 DestructorDecl* Type::getDestructor() const {
@@ -786,7 +802,7 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
         return;
     }
     if (!canonical && !aliasSpelling.empty()) {
-        if (!isMutable()) stream << "const ";
+        if (isPointeeConst()) stream << "const ";
         stream << aliasSpelling;
         return;
     }
@@ -795,14 +811,8 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
     case TypeKind::BasicType: {
         if (isFixedArray()) {
             // Fixed arrays are represented as BasicType("Array", {T, N}), but
-            // diagnostics keep the source-level T[N] spelling. The array's
-            // constness also constrains its elements, so print that qualifier once.
-            Type elementType = getGenericArgs()[0].type.withLocation(location);
-            if (!isMutable()) {
-                stream << "const ";
-                elementType = elementType.withMutability(Mutability::Mutable);
-            }
-            elementType.printTo(stream, canonical);
+            // diagnostics keep the source-level T[N] spelling.
+            getGenericArgs()[0].type.withLocation(location).printTo(stream, canonical);
             stream << "[";
             if (hasSizeofArraySize()) {
                 stream << "sizeof(";
@@ -829,12 +839,10 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
 
         if (isOptionalType()) {
             getWrappedType().printTo(stream, canonical);
-            if (!isMutable()) stream << " const";
             stream << '?';
             break;
         }
 
-        if (!isMutable()) stream << "const ";
         stream << getName();
 
         auto genericArgs = llvm::cast<BasicType>(typeBase)->genericArgs;
@@ -844,6 +852,7 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
                 if (arg.isInt()) {
                     stream << arg.getInt();
                 } else {
+                    if (arg.isConst) stream << "const ";
                     arg.getType().printTo(stream, canonical);
                 }
                 if (&arg != &genericArgs.back()) stream << ", ";
@@ -854,6 +863,7 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
         break;
     }
     case TypeKind::ArrayPointerType:
+        if (isPointeeConst()) stream << "const ";
         getElementType().printTo(stream, canonical);
         stream << "[*]";
         break;
@@ -876,8 +886,8 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
         stream << ")";
         break;
     case TypeKind::PointerType:
+        if (isPointeeConst()) stream << "const ";
         getPointee().printTo(stream, canonical);
-        if (!isMutable()) stream << " const";
         stream << (isReferenceType() ? '&' : '*');
         break;
     case TypeKind::UnresolvedType:

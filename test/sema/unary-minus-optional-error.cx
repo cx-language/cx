@@ -7,9 +7,9 @@ void f(int? o) {
 
 void g() {
     const int? c = 5;
-    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int const?'
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int?'
     _ = -c;
     const int? n = null;
-    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int const?'
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int?'
     _ = -n;
 }

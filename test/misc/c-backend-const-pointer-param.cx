@@ -1,0 +1,17 @@
+// RUN: %cx --backend=c --print-c %s | %FileCheck %s
+// CHECK: (int32_t const* p)
+// CHECK: (int32_t const* r)
+
+// The C backend preserves pointee-const on both pointer and array-pointer params.
+void takePtr(const int* p) {
+}
+
+void takeArrPtr(const int[*] r) {
+}
+
+void main() {
+    int x = 1;
+    int[2] a = [1, 2];
+    takePtr(&x);
+    takeArrPtr(a.data());
+}

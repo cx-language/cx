@@ -1,0 +1,79 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+// In a declaration, `const` before a pointer, borrow, or array-pointer type
+// qualifies the pointee instead of the binding, like C++.
+
+// Member default errors are emitted before function bodies, so this struct
+// comes first.
+struct NestedConstMember {
+    const int[] a = [1, 2]; // fine: bare const over a slice is a const binding
+    // The nested spelling is accepted the same way; only the initializer fails
+    // (fixed arrays don't decay to nested slices).
+    // CHECK: [[@LINE+1]]:23: error: cannot assign 'int[1][2]' to 'Slice<Slice<int>>'
+    const int[][] b = [[1], [2]];
+}
+
+void reseatConstPtr() {
+    int a = 1;
+    int b = 2;
+    const int* p = &a;
+    p = &b; // fine: the handle is mutable
+    int x = *p; // fine: reads work
+    // CHECK: [[@LINE+1]]:5: error: cannot assign through const-pointer of type 'const int*'
+    *p = 3;
+}
+
+void noConstLaunder() {
+    int a = 1;
+    const int* p = &a;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'const int*' to 'int*'
+    int* q = p;
+}
+
+void reseatConstArrayPtr() {
+    int[3] arr = [1, 2, 3];
+    const int[*] r = arr.data();
+    r = arr.data(); // fine: the handle is mutable
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable array of type 'const int[*]'
+    r[0] = 9;
+}
+
+void addressOfConstIsConstPtr() {
+    const int m = 8;
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'const int*' to 'int*'
+    int* r = &m;
+}
+
+void inferredConstPtrIsConstHandle() {
+    int a = 1;
+    int b = 2;
+    int* q = &a;
+    const p = q;
+    *p = 3; // fine: like C++ `T* const`, the pointee is mutable
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable variable 'p' of type 'int*'
+    p = &b;
+}
+
+void constSliceBindingIsConst() {
+    int[] s = [1, 2];
+    const t = s;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable variable 't' of type 'Slice<const int>'
+    t = s;
+}
+
+void constOptionalPtr() {
+    int a = 1;
+    const int*? o = &a;
+    o = null; // fine: the handle is mutable
+    // CHECK: [[@LINE+1]]:15: error: cannot assign 'const int*?' to 'int*?'
+    int*? p = o;
+}
+
+void nestedConstBindsInward() {
+    int a = 1;
+    int b = 2;
+    const int* p = &a;
+    const int** q = &p; // fine: same type
+    *&p = &b; // fine: p itself is mutable
+    // CHECK: [[@LINE+1]]:5: error: cannot assign through const-pointer of type 'const int*'
+    **q = 5;
+}

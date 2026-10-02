@@ -38,7 +38,7 @@ static const ArrayLiteralExpr* getConstantArrayLiteral(const Expr& base) {
         auto* var = llvm::dyn_cast<VarExpr>(current);
         if (!var || !var->decl) return nullptr;
         auto* varDecl = llvm::dyn_cast<VarDecl>(var->decl);
-        if (!varDecl || varDecl->type.isMutable() || !varDecl->initializer || !seen.insert(varDecl).second) return nullptr;
+        if (!varDecl || !varDecl->isConst || !varDecl->initializer || !seen.insert(varDecl).second) return nullptr;
         current = varDecl->initializer;
     }
 }
@@ -58,7 +58,7 @@ static const Expr* getConstantSwizzleElement(const MemberExpr& expr) {
 static const Expr* getConstantMemberTarget(const MemberExpr& expr) {
     if (const Expr* element = getConstantSwizzleElement(expr)) return element;
     auto* varDecl = expr.decl ? llvm::dyn_cast<VarDecl>(expr.decl) : nullptr;
-    if (varDecl && !varDecl->type.isMutable() && varDecl->initializer) return varDecl->initializer;
+    if (varDecl && varDecl->isConst && varDecl->initializer) return varDecl->initializer;
     return nullptr;
 }
 
@@ -88,7 +88,7 @@ bool Expr::isConstant() const {
         auto* decl = llvm::cast<VarExpr>(this)->decl;
 
         if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
-            if (!varDecl->type.isMutable() && varDecl->initializer) {
+            if (varDecl->isConst && varDecl->initializer) {
                 return varDecl->initializer->isConstant();
             }
         }
@@ -100,7 +100,7 @@ bool Expr::isConstant() const {
         auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
 
         if (varDecl) {
-            if (!varDecl->type.isMutable() && varDecl->initializer) {
+            if (varDecl->isConst && varDecl->initializer) {
                 return varDecl->initializer->isConstant();
             }
         }
@@ -188,7 +188,7 @@ bool Expr::isFoldableIntConstant() const {
         // Unresolved references (e.g. array bounds examined during parsing) are never constant.
         auto* decl = llvm::cast<VarExpr>(this)->decl;
         auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
-        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableIntConstant();
+        return varDecl && varDecl->isConst && varDecl->initializer && varDecl->initializer->isFoldableIntConstant();
     }
     case ExprKind::MemberExpr: {
         const Expr* target = getConstantMemberTarget(*llvm::cast<MemberExpr>(this));
@@ -255,12 +255,12 @@ bool Expr::isFoldableBoolConstant() const {
     case ExprKind::VarExpr: {
         auto* decl = llvm::cast<VarExpr>(this)->decl;
         auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
-        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableBoolConstant();
+        return varDecl && varDecl->isConst && varDecl->initializer && varDecl->initializer->isFoldableBoolConstant();
     }
     case ExprKind::MemberExpr: {
         auto* decl = llvm::cast<MemberExpr>(this)->decl;
         auto* varDecl = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
-        return varDecl && !varDecl->type.isMutable() && varDecl->initializer && varDecl->initializer->isFoldableBoolConstant();
+        return varDecl && varDecl->isConst && varDecl->initializer && varDecl->initializer->isFoldableBoolConstant();
     }
     case ExprKind::BoolLiteralExpr:
         return true;
@@ -302,7 +302,7 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
     switch (kind) {
     case ExprKind::VarExpr:
         if (auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl)) {
-            if (!varDecl->type.isMutable() && varDecl->initializer) {
+            if (varDecl->isConst && varDecl->initializer) {
                 return varDecl->initializer->getConstantIntegerValue();
             }
         }
@@ -353,7 +353,7 @@ bool Expr::getConstantBoolValue() const {
     switch (kind) {
     case ExprKind::VarExpr:
         if (auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->decl)) {
-            if (!varDecl->type.isMutable() && varDecl->initializer) {
+            if (varDecl->isConst && varDecl->initializer) {
                 return varDecl->initializer->getConstantBoolValue();
             }
         }
@@ -361,7 +361,7 @@ bool Expr::getConstantBoolValue() const {
     case ExprKind::MemberExpr:
         if (auto* decl = llvm::cast<MemberExpr>(this)->decl) {
             if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
-                if (!varDecl->type.isMutable() && varDecl->initializer) {
+                if (varDecl->isConst && varDecl->initializer) {
                     return varDecl->initializer->getConstantBoolValue();
                 }
             }
@@ -734,10 +734,10 @@ bool CallExpr::isMoveInit() const {
 
     // Exact match initializes the storage itself, e.g. an Optional slot whose
     // type the look-through below would strip to the wrapped type.
-    if (args[0].value->type.equalsIgnoreTopLevelMutable(getReceiver()->type)) return true;
+    if (args[0].value->type == getReceiver()->type) return true;
 
     if (Type receiverType = ::getReceiverType(*this)) {
-        return args[0].value->type.equalsIgnoreTopLevelMutable(receiverType);
+        return args[0].value->type == receiverType;
     }
 
     return false;
@@ -811,7 +811,7 @@ bool cx::isBuiltinOp(Token::Kind op, Type left, Type right) {
     if (op == Token::Assignment) return true;
     if (op == Token::DotDot || op == Token::DotDotDot) return false;
     // Optionals keep resolving to the stdlib operators rather than builtin tag comparisons.
-    if (left.isEnumType() && !left.isOptionalType() && left.equalsIgnoreTopLevelMutable(right)) return true;
+    if (left.isEnumType() && !left.isOptionalType() && left == right) return true;
     if (left.isEnumType() && !left.isOptionalType() && right.isInteger()) return true;
     if (left.isInteger() && right.isEnumType() && !right.isOptionalType()) return true;
     if (left.isImplementedAsPointer() && right.isImplementedAsPointer()) return true;

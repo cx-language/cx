@@ -258,3 +258,26 @@ void testAllAnyNone() {
     assert(a.any((int& n) => n == 6));
     assert(a.none((int& n) => n < 0));
 }
+
+@test
+void testConstSlice() {
+    // A const slice lowers exactly like a mutable one; only writes are forbidden.
+    int[] s = [1, 2];
+    const int[] t = s;
+    assert(t.size() == 2);
+    assert(t[0] == 1);
+    assert(t[1] == 2);
+    const u = s;
+    assert(u.size() == 2);
+}
+
+int constSliceSum(const int[] s) {
+    return s[0] + s[1] + s[2];
+}
+
+@test
+void testConstSliceParam() {
+    int[] d = [1, 2, 3];
+    assert(constSliceSum(d) == 6);
+    assert(d.size() == 3);
+}

@@ -315,7 +315,7 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     // Through projections the referent has the projection's type, not the root's.
     Type referentType = (traced && projectedType) ? projectedType : localVariableType;
     if (localVariableType && currentFunction->getReturnType().removeOptional().isPointerType()
-        && currentFunction->getReturnType().removeOptional().getPointee().equalsIgnoreTopLevelMutable(referentType.removeReference())) {
+        && currentFunction->getReturnType().removeOptional().getPointee() == referentType.removeReference()) {
         WARN_RANGE(getExprRangeStart(*returnValue), returnValue->endLocation,
                    "returning pointer to local variable (local variables will not exist after the function returns)");
     }
@@ -339,7 +339,7 @@ void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
     Module* module = currentFunction ? currentFunction->getModule() : currentModule;
     if (!options.warnUnusedResult || module->name == "std") return;
     if (!type || type.isVoid() || type.isNeverType()) return;
-    WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "unused result of type '" << type.removeTopLevelConst() << "'");
+    WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "unused result of type '" << type << "'");
 }
 
 void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
@@ -359,7 +359,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     if (!stmt.value) {
         if (!currentFunction->getReturnType().isVoid()) {
             ERROR_RANGE(stmt.location, getIdentifierEndLocation(stmt.location, "return"),
-                        "expected return statement to return a value of type '" << currentFunction->getReturnType().removeTopLevelConst() << "'");
+                        "expected return statement to return a value of type '" << currentFunction->getReturnType() << "'");
         }
         return;
     }
@@ -368,10 +368,10 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
         stmt.value = converted;
     } else {
         diagnoseClosureConversion(returnValueType, currentFunction->getReturnType(), *stmt.value);
-        Type displayReturn = stripIrrelevantTargetConst(stmt.value, returnValueType, currentFunction->getReturnType());
+        Type displayReturn = currentFunction->getReturnType();
         ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
-                    "mismatching return type '" << stripIrrelevantConst(stmt.value, returnValueType, currentFunction->getReturnType()) << "', expected '"
-                                                << displayReturn << "'" << narrowingHint(returnValueType, displayReturn)
+                    "mismatching return type '" << returnValueType << "', expected '" << displayReturn << "'" << narrowingHint(returnValueType, displayReturn)
+                                                << immutableBorrowHint(*stmt.value, returnValueType, currentFunction->getReturnType())
                                                 << ambiguousConversionHint(stmt.value, returnValueType, currentFunction->getReturnType()));
     }
 
@@ -608,8 +608,7 @@ EnumCase* Typechecker::typecheckSwitchCaseValue(Expr*& value, Type conditionType
         value = converted;
     } else {
         ERROR_RANGE(getExprRangeStart(*value), value->endLocation,
-                    "case value type '" << stripIrrelevantConst(value, caseType, conditionType) << "' doesn't match switch condition type '"
-                                        << stripIrrelevantTargetConst(value, caseType, conditionType) << "'");
+                    "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
     }
 
     auto* memberExpr = llvm::dyn_cast<MemberExpr>(value);
@@ -701,15 +700,14 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
     if ((conditionType.removeOptional().isPointerType() && !conditionType.removeOptional().isReferenceType())
         || conditionType.removeOptional().isArrayPointer()) {
         ERROR_RANGE(getExprRangeStart(*condition), condition->endLocation,
-                    "switch condition must have integer, char, or enum type, got '" << conditionType.removeTopLevelConst()
-                                                                                    << "'; dereference it explicitly (e.g. 'switch (*p)')");
+                    "switch condition must have integer, char, or enum type, got '" << conditionType << "'; dereference it explicitly (e.g. 'switch (*p)')");
     }
 
     // Pointer-implemented optionals have no tag to switch on.
     bool isSwitchableEnum = conditionType.isEnumType() && !(conditionType.isOptionalType() && conditionType.isImplementedAsPointer());
     if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum) {
         ERROR_RANGE(getExprRangeStart(*condition), condition->endLocation,
-                    "switch condition must have integer, char, or enum type, got '" << conditionType.removeTopLevelConst() << "'");
+                    "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
     }
     if (isSwitchableEnum) implicitUses.enumSwitch = true;
     return conditionType;
@@ -892,7 +890,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     if ((conditionType.removeOptional().isPointerType() && !conditionType.removeOptional().isReferenceType())
         || conditionType.removeOptional().isArrayPointer()) {
         ERROR_RANGE(getExprRangeStart(*stmt.condition), stmt.condition->endLocation,
-                    "switch condition must have integer, char, string, or enum type, got '" << conditionType.removeTopLevelConst()
+                    "switch condition must have integer, char, string, or enum type, got '" << conditionType
                                                                                             << "'; dereference it explicitly (e.g. 'switch (*p)')");
     }
 
@@ -901,7 +899,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     bool isString = conditionType.isString();
     if (!conditionType.isInteger() && !conditionType.isChar() && !isSwitchableEnum && !isString) {
         ERROR_RANGE(getExprRangeStart(*stmt.condition), stmt.condition->endLocation,
-                    "switch condition must have integer, char, string, or enum type, got '" << conditionType.removeTopLevelConst() << "'");
+                    "switch condition must have integer, char, string, or enum type, got '" << conditionType << "'");
     }
     if (isString) implicitUses.stringSwitch = true;
     if (isSwitchableEnum) implicitUses.enumSwitch = true;
@@ -960,7 +958,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
         if (switchCase.value->isNullLiteralExpr()) {
             ERROR_RANGE(getExprRangeStart(*switchCase.value), switchCase.value->endLocation,
-                        "case value type 'null' doesn't match switch condition type '" << conditionType.removeTopLevelConst() << "'");
+                        "case value type 'null' doesn't match switch condition type '" << conditionType << "'");
         } else if (auto converted = convert(switchCase.value, conditionType)) {
             switchCase.value = converted;
             // Conversions can wrap the value, hiding the enum case from the checks below.
@@ -968,22 +966,14 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
         } else {
             ERROR_RANGE(getExprRangeStart(*switchCase.value), switchCase.value->endLocation,
-                        "case value type '" << stripIrrelevantConst(switchCase.value, caseType, conditionType) << "' doesn't match switch condition type '"
-                                            << stripIrrelevantTargetConst(switchCase.value, caseType, conditionType) << "'");
+                        "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
         }
 
-        if (conditionType.isOptionalType() && !conditionType.getWrappedType().isPointerType() && !enumCase
-            && !caseType.equalsIgnoreTopLevelMutable(conditionType)) {
+        if (conditionType.isOptionalType() && !conditionType.getWrappedType().isPointerType() && !enumCase && !(caseType == conditionType)) {
             // Value-optional conditions (e.g. int?) only match enum cases (Some/None); a wrapped
             // value has no case representation, so don't silently wrap to the optional type.
-            Type displayCase = caseType.removeTopLevelConst();
-            Type displayCondition = conditionType.removeTopLevelConst();
-            if (displayCase.toString() == displayCondition.toString()) {
-                displayCase = caseType;
-                displayCondition = conditionType;
-            }
             ERROR_RANGE(getExprRangeStart(*switchCase.value), switchCase.value->endLocation,
-                        "case value type '" << displayCase << "' doesn't match switch condition type '" << displayCondition << "'");
+                        "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
         }
 
         if (!enumCase && !switchCase.value->isConstant()) {
@@ -1139,8 +1129,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
 
     if (!expr.defaultExpr) {
         if (!conditionType.isEnumType()) {
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
-                        "switch expression on '" << conditionType.removeTopLevelConst() << "' must have a default case");
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "switch expression on '" << conditionType << "' must have a default case");
         }
         std::vector<Expr*> caseValues;
         for (auto& arm : expr.arms) {
@@ -1201,9 +1190,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
                     continue;
                 }
             }
-            ERROR_RANGE(getExprRangeStart(**armExpr), (*armExpr)->endLocation,
-                        "incompatible arm types ('" << stripIrrelevantJoinConst(*joinedArms.back(), resultType, *armExpr, armType) << "' and '"
-                                                    << stripIrrelevantJoinConst(*armExpr, armType, *joinedArms.back(), resultType) << "')");
+            ERROR_RANGE(getExprRangeStart(**armExpr), (*armExpr)->endLocation, "incompatible arm types ('" << resultType << "' and '" << armType << "')");
         } else if (auto converted = convert(*armExpr, resultType)) {
             *armExpr = converted;
         } else {
@@ -1211,9 +1198,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
                 if (auto upgraded = convert(*joined, armType)) {
                     *joined = upgraded;
                 } else {
-                    ERROR_RANGE(getExprRangeStart(**joined), (*joined)->endLocation,
-                                "incompatible arm types ('" << stripIrrelevantJoinConst(*joined, resultType, *armExpr, armType) << "' and '"
-                                                            << stripIrrelevantJoinConst(*armExpr, armType, *joined, resultType) << "')");
+                    ERROR_RANGE(getExprRangeStart(**joined), (*joined)->endLocation, "incompatible arm types ('" << resultType << "' and '" << armType << "')");
                 }
             }
             resultType = armType;

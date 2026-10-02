@@ -117,34 +117,29 @@ struct CToCxConverter final : clang::ASTConsumer {
     }
 
     Type toCx(clang::QualType qualType) {
-        auto mutability = qualType.isConstQualified() ? Mutability::Const : Mutability::Mutable;
         auto& type = *qualType.getTypePtr();
 
         switch (type.getTypeClass()) {
         case clang::Type::Pointer: {
             auto pointeeType = llvm::cast<clang::PointerType>(type).getPointeeType();
             if (pointeeType->isFunctionType()) {
-                return OptionalType::get(toCx(pointeeType), mutability);
+                return OptionalType::get(toCx(pointeeType));
             }
-            return OptionalType::get(PointerType::get(toCx(pointeeType), PointerKind::Pointer, Mutability::Mutable), mutability);
+            return OptionalType::get(PointerType::get(toCx(pointeeType), PointerKind::Pointer, pointeeType.isConstQualified()));
         }
         case clang::Type::Builtin:
-            return toCx(llvm::cast<clang::BuiltinType>(type)).withMutability(mutability);
+            return toCx(llvm::cast<clang::BuiltinType>(type));
         case clang::Type::Typedef: {
             auto& typedefType = llvm::cast<clang::TypedefType>(type);
-            auto desugared = typedefType.desugar();
-            if (mutability == Mutability::Const) desugared.addConst();
-            return toCx(desugared);
+            return toCx(typedefType.desugar());
         }
         case clang::Type::PredefinedSugar: {
-            auto desugared = llvm::cast<clang::PredefinedSugarType>(type).desugar();
-            if (mutability == Mutability::Const) desugared.addConst();
-            return toCx(desugared);
+            return toCx(llvm::cast<clang::PredefinedSugarType>(type).desugar());
         }
         case clang::Type::Record: {
             auto& recordType = llvm::cast<clang::RecordType>(type);
             auto* recordDecl = recordType.getDecl();
-            auto cxType = BasicType::get(getName(*recordDecl), {}, mutability);
+            auto cxType = BasicType::get(getName(*recordDecl), {});
             if (auto* typeDecl = toCx(*recordDecl)) bindTypeSpelling(cxType, *typeDecl);
             return cxType;
         }
@@ -153,11 +148,11 @@ struct CToCxConverter final : clang::ASTConsumer {
         case clang::Type::FunctionProto: {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
             auto paramTypes = map(functionProtoType.getParamTypes(), [&](clang::QualType paramType) { return toCx(paramType); });
-            return FunctionType::get(toCx(functionProtoType.getReturnType()), std::move(paramTypes), functionProtoType.isVariadic(), mutability);
+            return FunctionType::get(toCx(functionProtoType.getReturnType()), std::move(paramTypes), functionProtoType.isVariadic());
         }
         case clang::Type::FunctionNoProto: {
             auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
-            return FunctionType::get(toCx(functionNoProtoType.getReturnType()), {}, true, mutability);
+            return FunctionType::get(toCx(functionNoProtoType.getReturnType()), {}, true);
         }
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
@@ -167,10 +162,12 @@ struct CToCxConverter final : clang::ASTConsumer {
             std::vector<GenericArg> args;
             args.emplace_back(toCx(constantArrayType.getElementType()));
             args.push_back(GenericArg::fromInt(constantArrayType.getSize().getLimitedValue(), Location()));
-            return BasicType::get("Array", args, mutability);
+            return BasicType::get("Array", args);
         }
-        case clang::Type::IncompleteArray:
-            return ArrayPointerType::get(toCx(llvm::cast<clang::IncompleteArrayType>(type).getElementType()));
+        case clang::Type::IncompleteArray: {
+            auto& incompleteArrayType = llvm::cast<clang::IncompleteArrayType>(type);
+            return ArrayPointerType::get(toCx(incompleteArrayType.getElementType()), incompleteArrayType.getElementType().isConstQualified());
+        }
         case clang::Type::Attributed:
             return toCx(llvm::cast<clang::AttributedType>(type).getEquivalentType());
         case clang::Type::Decayed:
@@ -182,7 +179,7 @@ struct CToCxConverter final : clang::ASTConsumer {
             if (name.empty()) {
                 return toCx(enumType.getDecl()->getIntegerType());
             } else {
-                return BasicType::get(name, {}, mutability);
+                return BasicType::get(name, {});
             }
         }
         case clang::Type::Vector: {
@@ -190,12 +187,12 @@ struct CToCxConverter final : clang::ASTConsumer {
             std::vector<GenericArg> args;
             args.emplace_back(toCx(vectorType.getElementType()));
             args.push_back(GenericArg::fromInt(vectorType.getNumElements(), Location()));
-            return BasicType::get("Array", args, mutability);
+            return BasicType::get("Array", args);
         }
         case clang::Type::LValueReference:
         case clang::Type::RValueReference: {
             auto pointeeType = llvm::cast<clang::ReferenceType>(type).getPointeeType();
-            return PointerType::get(toCx(pointeeType), PointerKind::Reference, mutability);
+            return PointerType::get(toCx(pointeeType), PointerKind::Reference, pointeeType.isConstQualified());
         }
         case clang::Type::SubstTemplateTypeParm:
             return toCx(llvm::cast<clang::SubstTemplateTypeParmType>(type).desugar());
@@ -213,7 +210,7 @@ struct CToCxConverter final : clang::ASTConsumer {
 
     std::optional<FieldDecl> toCx(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
         if (decl.getName().empty()) return std::nullopt;
-        return FieldDecl(toCx(decl.getType()), decl.getName(), nullptr, typeDecl, AccessLevel::Default, Location());
+        return FieldDecl(toCx(decl.getType()), decl.getName(), nullptr, typeDecl, AccessLevel::Default, toCx(decl.getLocation()), decl.getType().isConstQualified());
     }
 
     // Collects the field names an imported record will have after anonymous
@@ -252,7 +249,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                 do {
                     fieldName = "unnamed_" + std::to_string(anonymousMemberCount++);
                 } while (!usedNames.insert(fieldName).second);
-                auto nestedType = BasicType::get(nested->getName(), {}, Mutability::Mutable);
+                auto nestedType = BasicType::get(nested->getName(), {});
                 bindTypeSpelling(nestedType, *nested);
                 typeDecl.fields.emplace_back(nestedType, fieldName, nullptr, typeDecl, AccessLevel::Default, Location());
                 typeDecl.fields.back().isAnonymousMember = true;
@@ -356,7 +353,7 @@ struct CToCxConverter final : clang::ASTConsumer {
 
     VarDecl* toCx(const clang::VarDecl& decl) {
         auto* varDecl = makeAST<VarDecl>(toCx(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, module, toCx(decl.getLocation()));
-        varDecl->isConst = !varDecl->type.isMutable();
+        varDecl->isConst = decl.getType().isConstQualified();
         return varDecl;
     }
 
@@ -370,12 +367,12 @@ struct CToCxConverter final : clang::ASTConsumer {
 
     void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType) {
         auto initializer = makeAST<IntLiteralExpr>(std::move(value), Location());
-        addConstantToSymbolTable(name, initializer, toCx(qualType).withMutability(Mutability::Const));
+        addConstantToSymbolTable(name, initializer, toCx(qualType));
     }
 
     void addFloatConstantToSymbolTable(llvm::StringRef name, llvm::APFloat value) {
         auto initializer = makeAST<FloatLiteralExpr>(std::move(value), Location());
-        addConstantToSymbolTable(name, initializer, Type::getFloat64(Mutability::Const));
+        addConstantToSymbolTable(name, initializer, Type::getFloat64());
     }
 
     // Scalars with no cx counterpart. Mirrors toCx case for case in
@@ -588,12 +585,12 @@ struct CToCxConverter final : clang::ASTConsumer {
             }
             bool sameParams = true;
             for (size_t i = 0; i < existingFunction->getParams().size(); ++i) {
-                if (!existingFunction->getParams()[i].type.equalsIgnoreTopLevelMutable(functionDecl.getParams()[i].type)) {
+                if (!(existingFunction->getParams()[i].type == functionDecl.getParams()[i].type)) {
                     sameParams = false;
                     break;
                 }
             }
-            if (sameParams && existingFunction->getReturnType().equalsIgnoreTopLevelMutable(functionDecl.getReturnType())) return true;
+            if (sameParams && existingFunction->getReturnType() == functionDecl.getReturnType()) return true;
         }
         return false;
     }

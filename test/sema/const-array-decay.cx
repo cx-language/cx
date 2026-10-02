@@ -1,7 +1,21 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
 void main() {
     const int[2] a = [1, 2];
     // CHECK: [[@LINE+1]]:16: error: cannot assign 'const int[*]' to 'int[*]'
     int[*] p = a.data();
+}
+
+void optionalDecay() {
+    const int[3]? o = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:17: error: cannot assign 'int[3]?' to 'int[*]?'
+    int[*]? p = o;
+    const int[*]? q = o; // fine: const view of const storage
+}
+
+void noLaunderToVoid() {
+    const int[3] a = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:15: error: cannot assign 'const int[*]' to 'void*'
+    void* v = a.data();
+    const void* w = a.data(); // fine
 }

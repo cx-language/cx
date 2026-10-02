@@ -210,22 +210,12 @@ struct Typechecker {
     FunctionDecl* findUserConversion(const Expr* expr, Type source, Type target, int* viableCount = nullptr, bool diagnoseOutOfRange = false) const;
     /// Explains a failed conversion when several user-declared conversions apply, empty otherwise.
     std::string ambiguousConversionHint(const Expr* expr, Type source, Type target) const;
-    /// Displays a failed-conversion source type with top-level 'const' stripped when the
-    /// mismatch persists without it. Keeps 'const' when it is what blocks the conversion.
-    Type stripIrrelevantConst(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false, bool allowOperatorBorrow = false) const;
-    /// Same for the target side: strips top-level 'const' unless the source converts
-    /// to the stripped target (e.g. keeps 'const int' for an 'int?' source that
-    /// unwraps to 'int').
-    Type stripIrrelevantTargetConst(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false, bool allowOperatorBorrow = false) const;
-    /// For symmetric joins (ternary, switch arms): strips a side only if 'const'
-    /// is irrelevant in both conversion directions.
-    Type stripIrrelevantJoinConst(const Expr* expr, Type side, const Expr* otherExpr, Type other) const;
     /// Commits a user-declared conversion found by findUserConversion: checks and references the
     /// conversion function, converts the operand to its parameter (constructors), and wraps both in
     /// a UserConversion cast. Null when the operand no longer converts.
     Expr* convertWithUserConversion(Expr* expr, Type target, bool diagnoseOutOfRange, bool allowOperatorBorrow);
     void typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool positive = true);
-    GenericArg findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType = false, bool inPointeePosition = false);
+    GenericArg findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType = false);
     llvm::StringMap<GenericArg> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                       Type expectedType);
     Decl* findDecl(llvm::StringRef name, Location location, Location endLocation = {});
@@ -492,6 +482,8 @@ bool isArrayBorrow(Type source, Type target);
 void diagnoseClosureConversion(Type source, Type target, const Expr& expr);
 // Suggests an explicit conversion when a value of one numeric type is used where another is expected.
 std::string narrowingHint(Type source, Type target);
+// Explains a failed conversion when only the source's immutability blocks binding to a mutable borrow.
+std::string immutableBorrowHint(const Expr& expr, Type source, Type target);
 // Explains why a type is not Copyable when a use fails because the value was moved.
 std::string copyableHint(Type type);
 // Whether a type satisfies a ': Copyable' generic constraint. Structural, not name-based.

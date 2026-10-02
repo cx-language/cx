@@ -41,10 +41,10 @@ void rebindConstRef(const int& r) {
 
 void illegalCastConst() {
     const arr = [1, 2];
-    // CHECK: [[@LINE+1]]:9: error: illegal cast from 'const int[2]' to 'void*'
+    // CHECK: [[@LINE+1]]:9: error: illegal cast from 'int[2]' to 'void*' (cannot cast away immutability; use 'const void*' instead)
     _ = cast<void*>(arr);
     const c = 5;
-    // CHECK: [[@LINE+1]]:9: error: illegal cast from 'const int' to 'int'
+    // CHECK: [[@LINE+1]]:9: error: redundant cast to same type 'int'
     _ = cast<int>(c);
     // CHECK: [[@LINE+1]]:9: error: illegal cast from 'int' to 'string'
     _ = cast<string>(c);
@@ -191,8 +191,9 @@ int switchExprDefaultConst(int n) {
 }
 
 void writeThroughPointee<T>(T* p) {
-    // The pointee const is the reason, and nothing else states it, so it stays.
-    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable expression of type 'const int'
+    // The pointee const is the reason: the diagnostic names the pointer, which
+    // can show the const, rather than the value type, which cannot.
+    // CHECK: [[@LINE+1]]:5: error: cannot assign through const-pointer of type 'const int*'
     *p = 5;
 }
 

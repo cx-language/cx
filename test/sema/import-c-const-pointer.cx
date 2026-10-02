@@ -1,0 +1,34 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+import "inputs/c-const-pointer.h";
+
+void constMemberKeepsPointeeConst(CS s) {
+    // CHECK: [[@LINE+1]]:19: error: cannot assign 'const c_int*?' to 'c_int*?'
+    c_int*? bad = s.p;
+}
+
+void constMemberFlowsToConstTarget(CS s) {
+    // No error: pointee const is preserved, not dropped.
+    const c_int*? ok = s.p;
+}
+
+void mutableMemberStaysMutable(CS s) {
+    // No error either way: mutable widens to const.
+    c_int*? ok = s.q;
+    const c_int*? alsoOk = s.q;
+}
+
+void writeThroughConstMemberIsRejected(CS s) {
+    // CHECK: [[@LINE+1]]:5: error: cannot assign through const-pointer of type 'const c_int*'
+    *(s.p!) = 1;
+}
+
+void constArrayGlobalKeepsElementConst() {
+    // CHECK: [[@LINE+1]]:20: error: cannot assign 'const c_int[*]' to 'c_int[*]'
+    c_int[*] bad = garr;
+}
+
+void constArrayGlobalFlowsToConstTarget() {
+    // No error.
+    const c_int[*] ok = garr;
+}

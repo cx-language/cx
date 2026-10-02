@@ -113,13 +113,13 @@ private:
     // from before the first parse. Reparsing is side-effect-free (pure token
     // consumption plus arena garbage), so rewinding is safe.
     void reparseGenericReturnType(Type& type, Location& location, llvm::StringRef& name, size_t returnTypeIndex, TypeDecl* receiver);
-    Type parseSimpleType(Mutability mutability);
+    Type parseSimpleType();
     Type parseAnonymousStructType();
     Type parseFunctionType(Type returnType);
     // When allowBareConst is set, a leading `const` without a pointer, slice or
     // borrow suffix is tentatively accepted; the caller must then validate
     // that it is a constant declarator (e.g. `const int foo = 3`).
-    Type parseType(bool allowBareConst = false);
+    Type parseType(bool allowBareConst = false, bool* sawBareConst = nullptr);
     SizeofExpr* parseSizeofExpr();
     MemberExpr* parseMemberExpr(Expr* lhs);
     Expr* parseIndexExprOrIndexAssignmentExpr(Expr* base);
@@ -151,7 +151,7 @@ private:
     std::vector<Expr*> parseExprList();
     ReturnStmt* parseReturnStmt();
     VarDecl* parseVarDecl(Decl* parent, AccessLevel accessLevel, bool requireTerminator = true);
-    VarDecl* parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation,
+    VarDecl* parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation, bool isConst,
                                    bool requireTerminator = true);
     VarStmt* parseVarStmt(Decl* parent);
     ExprStmt* parseExprStmt();

@@ -347,13 +347,12 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<GenericArg>& genericAr
 FieldDecl FieldDecl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, TypeDecl& typeDecl) const {
     auto type = this->type.resolve(genericArgs);
     auto defaultValue = this->defaultValue ? this->defaultValue->instantiate(genericArgs) : nullptr;
-    return FieldDecl(type, getName(), defaultValue, typeDecl, accessLevel, location, isManuallyDestroy);
+    return FieldDecl(type, getName(), defaultValue, typeDecl, accessLevel, location, isConst, isManuallyDestroy);
 }
 
 std::vector<ParamDecl> cx::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<GenericArg>& genericArgs) {
     return map(params, [&](const ParamDecl& param) {
-        // Params are mutable bindings; substituted top-level const would wrongly reject reassignment.
-        ParamDecl result(param.type.resolve(genericArgs).removeTopLevelConst(), param.getName(), param.isPublic, param.getLocation());
+        ParamDecl result(param.type.resolve(genericArgs), param.getName(), param.isPublic, param.getLocation());
         result.isPack = param.isPack;
         result.defaultValue = param.defaultValue ? param.defaultValue->instantiate(genericArgs) : nullptr;
         return result;
@@ -472,8 +471,8 @@ DestructorDecl* TypeDecl::getOrSynthesizeDefaultDestructor() {
     return nullptr;
 }
 
-Type TypeDecl::getType(Mutability mutability) const {
-    return BasicType::get(name, genericArgs, mutability, location);
+Type TypeDecl::getType() const {
+    return BasicType::get(name, genericArgs, location);
 }
 
 unsigned TypeDecl::getFieldIndex(const FieldDecl* field) const {
@@ -542,8 +541,9 @@ bool EnumDecl::hasDestructiblePayload() const {
     return llvm::any_of(cases, [](auto& enumCase) { return enumCase.associatedType && enumCase.associatedType.needsDestruction(); });
 }
 
-FieldDecl::FieldDecl(Type type, llvm::StringRef name, Expr* defaultValue, TypeDecl& parent, AccessLevel accessLevel, Location location, bool isManuallyDestroy)
-: VariableDecl(DeclKind::FieldDecl, accessLevel, &parent, type), name(internString(name)), defaultValue(defaultValue), location(location),
+FieldDecl::FieldDecl(Type type, llvm::StringRef name, Expr* defaultValue, TypeDecl& parent, AccessLevel accessLevel, Location location, bool isConst,
+                 bool isManuallyDestroy)
+: VariableDecl(DeclKind::FieldDecl, accessLevel, &parent, type), name(internString(name)), defaultValue(defaultValue), location(location), isConst(isConst),
   isManuallyDestroy(isManuallyDestroy) {}
 
 Module* FieldDecl::getModule() const {
@@ -618,7 +618,7 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
         for (auto& field : typeDecl->fields) {
             auto defaultValue = field.defaultValue ? field.defaultValue->instantiate(genericArgs) : nullptr;
             instantiation->addField(FieldDecl(field.type.resolve(genericArgs), field.getName(), defaultValue, *instantiation, field.accessLevel,
-                                              field.getLocation(), field.isManuallyDestroy));
+                                              field.getLocation(), field.isConst, field.isManuallyDestroy));
         }
 
         instantiateMethods(*instantiation, typeDecl->methods, genericArgs);

@@ -8,7 +8,7 @@ void main() {
     bar(v);
     var b = cast<int8*>(v);
     v = b;
-    baz(cp);
+    baz(cast<void*>(cp));
     var i = 0;
     baz(&i);
 }

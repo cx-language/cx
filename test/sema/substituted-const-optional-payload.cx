@@ -1,0 +1,13 @@
+// RUN: %cx -typecheck -Werror -Wno-unused %s
+
+// A placeholder bound to const (via a T* pointee) substituted into a value
+// position must not freeze fresh storage: T? on a mutable binding unwraps
+// and assigns freely. Only alias positions reconstitute the const.
+void optPayload<T>(T* p) {
+    T? o = *p;
+    o! = *p;
+}
+
+void callOpt(const int* cp) {
+    optPayload(cp);
+}

@@ -307,13 +307,12 @@ std::string hoverForDecl(const Decl& decl) {
     case DeclKind::VarDecl: {
         auto& var = llvm::cast<VarDecl>(decl);
         // Top-level const is a property of the declaration, not the type.
-        out << (var.type && !var.type.isMutable() ? "const " : "") << (var.type ? var.type.removeTopLevelConst().toString() + " " : "") << var.getName().str();
+        out << (var.isConst ? "const " : "") << (var.type ? var.type.toString() + " " : "") << var.getName().str();
         break;
     }
     case DeclKind::FieldDecl: {
         auto& field = llvm::cast<FieldDecl>(decl);
-        out << (field.type && !field.type.isMutable() ? "const " : "") << (field.type ? field.type.removeTopLevelConst().toString() + " " : "")
-            << displayName(field);
+        out << (field.isConst ? "const " : "") << (field.type ? field.type.toString() + " " : "") << displayName(field);
         break;
     }
     case DeclKind::ParamDecl: {
@@ -870,8 +869,8 @@ const char* tokenTypeForDecl(const Decl& decl) {
 /// editors render without the mutable styling.
 bool isReadonlyVariable(const Decl& decl) {
     if (decl.kind != DeclKind::VarDecl && decl.kind != DeclKind::ParamDecl) return false;
-    Type type = llvm::cast<VariableDecl>(&decl)->type;
-    return type && !type.isMutable();
+    auto* var = llvm::dyn_cast<VarDecl>(&decl);
+    return var && var->isConst;
 }
 
 /// Tolerant scanner for syntax-only tokens (comments, strings, numbers,

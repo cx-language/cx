@@ -98,7 +98,7 @@ static void mangleIdentifier(llvm::raw_string_ostream& stream, llvm::StringRef n
     stream << escaped;
 }
 
-static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<GenericArg> genericArgs) {
+static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<GenericArg> genericArgs, bool skipConstSlot = false) {
     if (!genericArgs.empty()) {
         stream << 'I';
         for (GenericArg genericArg : genericArgs) {
@@ -109,6 +109,7 @@ static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<G
                 if (value < 0) stream << 'n';
                 stream << magnitude << '_';
             } else {
+                if (genericArg.isConst && !skipConstSlot) stream << 'K';
                 mangleType(stream, genericArg.getType());
             }
         }
@@ -120,7 +121,9 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
     // Spelling twins share one identity; mangle the canonical one so the same
     // type never gets two symbols.
     type = type.canonicalTwin();
-    if (!type.isMutable()) stream << 'K';
+    // Element-const slices keep the old top-level-const encoding (prefix `K`,
+    // slot already expressed); pointers encode const after `P`/`R`/`A` below.
+    if (type.isSlice() && type.isPointeeConst()) stream << 'K';
 
     switch (type.getKind()) {
     case TypeKind::BasicType:
@@ -134,14 +137,15 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
             stream << 'M';
             mangleIdentifier(stream, typeDecl->getModule()->name);
             mangleIdentifier(stream, type.getName());
-            mangleGenericArgs(stream, type.getGenericArgs());
+            mangleGenericArgs(stream, type.getGenericArgs(), /*skipConstSlot=*/type.isSlice());
         } else {
             mangleIdentifier(stream, type.getName());
-            mangleGenericArgs(stream, type.getGenericArgs());
+            mangleGenericArgs(stream, type.getGenericArgs(), /*skipConstSlot=*/type.isSlice());
         }
         break;
     case TypeKind::ArrayPointerType:
         stream << 'A';
+        if (type.isPointeeConst()) stream << 'K';
         mangleType(stream, type.getElementType());
         break;
     case TypeKind::AnonymousStructType: {
@@ -166,6 +170,7 @@ void cx::mangleType(llvm::raw_string_ostream& stream, Type type) {
     }
     case TypeKind::PointerType:
         stream << (type.isReferenceType() ? 'R' : 'P');
+        if (type.isPointeeConst()) stream << 'K';
         mangleType(stream, type.getPointee());
         break;
     case TypeKind::UnresolvedType:

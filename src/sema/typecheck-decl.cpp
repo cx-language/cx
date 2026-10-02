@@ -40,7 +40,7 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
     decls.erase(std::remove_if(decls.begin(), decls.end(), [](Decl* d) { return !d->isTypeTemplate() && !d->isTypeDecl(); }), decls.end());
 
     if (decls.empty()) {
-        ERROR_RANGE(type.location, type.endLocation, "'" << type.removeTopLevelConst() << "' is not a type");
+        ERROR_RANGE(type.location, type.endLocation, "'" << type << "' is not a type");
     }
 
     if (!decls[0]->isTypeTemplate()) {
@@ -183,7 +183,7 @@ static void bindArraySizeNames(Typechecker& checker, Expr& expr, Module* homeMod
         auto* varDecl = llvm::dyn_cast<VarDecl>(decl);
         // Mutable variables never fold; an unset type means an unchecked
         // inferred constant, whose value isn't known yet either.
-        if (!varDecl || !varDecl->type || varDecl->type.isMutable()) return;
+        if (!varDecl || !varDecl->type || !varDecl->isConst) return;
         checker.markReferenced(varDecl);
         varExpr->decl = varDecl;
         return;
@@ -260,11 +260,6 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
             Type resolved = resolveTypeAliases(alias->aliasedType, userAccessLevel, resolving, foldArraySizes);
             resolving.erase(alias);
 
-            // An alias preserves the aliased type's mutability, while a const
-            // qualification at the use site can only make it more const.
-            if (!type.isMutable() && resolved.isMutable()) {
-                resolved = resolved.withMutability(Mutability::Const);
-            }
             // Outermost alias wins: inner resolution already attached its own
             // spelling, so this overwrites it with the name used at this site.
             resolved = resolved.withLocation(type.location, type.endLocation);
@@ -279,15 +274,13 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
             arg.type = resolveTypeAliases(arg.type, userAccessLevel, resolving, foldArraySizes);
             return arg;
         });
-        Type rebuilt = BasicType::get(basicType->name, genericArgs, type.mutability, type.location, type.endLocation);
+        Type rebuilt = BasicType::get(basicType->name, genericArgs, type.location, type.endLocation);
         // A non-type element cannot fold; typecheckType diagnoses it below.
         if (rebuilt.isFixedArray() && !rebuilt.getGenericArgs()[0].isType()) return rebuilt;
         // Fold sizeof sizes whose operand now has a known size.
         if (rebuilt.isFixedArray() && rebuilt.hasSizeofArraySize()) {
             if (auto size = rebuilt.getSizeofArrayOperand().getSizeInBytes()) {
-                // Canonical arrays store a bare element with const only on the outer type.
-                return BasicType::getArray(rebuilt.getElementType().removeTopLevelConst(), int64_t(*size), type.location, type.endLocation)
-                    .withMutability(rebuilt.mutability);
+                return BasicType::getArray(rebuilt.getElementType(), int64_t(*size), type.location, type.endLocation);
             }
         }
         // Fold deferred sizes and bare size names at real declaration sites.
@@ -295,17 +288,15 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
         if (foldArraySizes && rebuilt.isFixedArray() && !rebuilt.hasSizeofArraySize()) {
             if (rebuilt.hasDeferredArraySize()) {
                 try {
-                    return resolveArraySize(*rebuilt.getDeferredArraySize(), rebuilt.getElementType().removeTopLevelConst(), type.location, type.endLocation,
-                                            rebuilt.getDeferredArraySizeHome())
-                        .withMutability(rebuilt.mutability);
+                    return resolveArraySize(*rebuilt.getDeferredArraySize(), rebuilt.getElementType(), type.location, type.endLocation,
+                                            rebuilt.getDeferredArraySizeHome());
                 } catch (const CompileError&) {
                 }
             } else if (!rebuilt.getArraySizeParam().empty()) {
                 auto* name = makeAST<VarExpr>(rebuilt.getArraySizeParam(), rebuilt.getGenericArgs()[1].location);
                 name->endLocation = getIdentifierEndLocation(name->location, name->identifier);
                 try {
-                    return resolveArraySize(*name, rebuilt.getElementType().removeTopLevelConst(), type.location, type.endLocation, nullptr)
-                        .withMutability(rebuilt.mutability);
+                    return resolveArraySize(*name, rebuilt.getElementType(), type.location, type.endLocation, nullptr);
                 } catch (const CompileError&) {
                 }
             }
@@ -316,27 +307,25 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
     case TypeKind::ArrayPointerType: {
         auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving, foldArraySizes);
         if (elementType == type.getElementType()) return type;
-        Type resolved = ArrayPointerType::get(elementType, type.location);
-        return resolved.withMutability(type.mutability).withLocation(type.location, type.endLocation);
+        return ArrayPointerType::get(elementType, type.isPointeeConst(), type.location, type.endLocation);
     }
     case TypeKind::AnonymousStructType: {
         auto elements = map(type.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
             return AnonymousStructElement{element.name, resolveTypeAliases(element.type, userAccessLevel, resolving, foldArraySizes)};
         });
         if (llvm::equal(elements, type.getAnonymousStructElements())) return type;
-        return AnonymousStructType::get(std::move(elements), type.mutability, type.location, type.endLocation);
+        return AnonymousStructType::get(std::move(elements), type.location, type.endLocation);
     }
     case TypeKind::FunctionType: {
         auto returnType = resolveTypeAliases(type.getReturnType(), userAccessLevel, resolving, foldArraySizes);
         auto paramTypes = map(type.getParamTypes(), [&](Type paramType) { return resolveTypeAliases(paramType, userAccessLevel, resolving, foldArraySizes); });
         if (returnType == type.getReturnType() && llvm::equal(paramTypes, type.getParamTypes())) return type;
-        return FunctionType::get(returnType, std::move(paramTypes), llvm::cast<FunctionType>(type.typeBase)->isVariadic, type.mutability, type.location,
-                                 type.endLocation);
+        return FunctionType::get(returnType, std::move(paramTypes), llvm::cast<FunctionType>(type.typeBase)->isVariadic, type.location, type.endLocation);
     }
     case TypeKind::PointerType: {
         auto pointeeType = resolveTypeAliases(type.getPointee(), userAccessLevel, resolving, foldArraySizes);
         if (pointeeType == type.getPointee()) return type;
-        return PointerType::get(pointeeType, type.getPointerKind(), type.mutability, type.location, type.endLocation);
+        return PointerType::get(pointeeType, type.getPointerKind(), type.isPointeeConst(), type.location, type.endLocation);
     }
     case TypeKind::UnresolvedType:
         return type;
@@ -459,8 +448,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         // Report the outermost type (e.g. 'int&?' rather than the nested 'int&')
         // so the diagnostic matches what the user wrote.
         ERROR_RANGE(type.location, type.endLocation,
-                    "reference type '" << type.removeTopLevelConst()
-                                       << "' may only appear as a function parameter, return type, local variable, or interface argument");
+                    "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
@@ -543,8 +531,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 auto decls = findDecls(basicType->name);
 
                 if (decls.empty()) {
-                    ERROR_RANGE(type.location, type.endLocation,
-                                "unknown type '" << type.removeTopLevelConst() << "'" << Type::didYouMeanBuiltin(basicType->name));
+                    ERROR_RANGE(type.location, type.endLocation, "unknown type '" << type << "'" << Type::didYouMeanBuiltin(basicType->name));
                 }
                 auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));
                 decl = typeTemplate;
@@ -575,7 +562,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         if (decl->isTypeTemplate()) {
             validateGenericArgs(llvm::cast<TypeTemplate>(decl)->genericParams, basicType->genericArgs, basicType->name, type.location);
         } else if (!decl->isTypeDecl()) {
-            ERROR_RANGE(type.location, type.endLocation, "'" << type.removeTopLevelConst() << "' is not a type");
+            ERROR_RANGE(type.location, type.endLocation, "'" << type << "' is not a type");
         }
 
         // IRGen drops values of destructor types at scope exit without going through
@@ -610,8 +597,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     case TypeKind::PointerType: {
         if (type.isReferenceType() && !allowReference) {
             ERROR_RANGE(type.location, type.endLocation,
-                        "reference type '" << type.removeTopLevelConst()
-                                           << "' may only appear as a function parameter, return type, local variable, or interface argument");
+                        "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
         }
         typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
@@ -876,9 +862,6 @@ static std::optional<CValueLayout> cValueLayout(Type type) {
 }
 
 void cx::validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef callee) {
-    // 'const' doesn't affect C++ ABI crossing, and every check below is kind, layout,
-    // or declaration based, so strip it once for both the checks and the diagnostics.
-    type = type.removeTopLevelConst();
     // Fixed arrays decay to pointers in variadic calls, and scalars, pointers, and references
     // cross opaquely; only by-value aggregates need the signature rules.
     if (type.isFixedArray()) return;
@@ -933,13 +916,11 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
     if (type.isPointerType()) {
         Type pointee = type.getPointee();
         out << (type.getPointerKind() == PointerKind::Reference ? 'R' : 'P');
-        // `const` spelled on the pointee (`const T*`, `const T&`) is part of the
-        // signature; top-level const on the pointer or reference itself is not.
-        if (!type.isMutable() || !pointee.isMutable()) out << 'K';
-        mangleCppType(out, pointee.withMutability(Mutability::Mutable), triple, false, false);
+        // `const` on the pointee (`const T*`, `const T&`) is part of the signature.
+        if (type.isPointeeConst()) out << 'K';
+        mangleCppType(out, pointee, triple, false, false);
         return;
     }
-    type = type.withMutability(Mutability::Mutable);
     if (type.isVoid() || type.isNeverType()) {
         out << 'v';
         return;
@@ -1113,9 +1094,6 @@ static bool containsLongDouble(Type type) {
 // targets without register classification, small float-containing ones.
 // Larger ones cross indirectly and are fine.
 static void validateExternCByValue(Type type, bool isReturn) {
-    // 'const' doesn't affect C ABI crossing, and every check below is kind, layout,
-    // or declaration based, so strip it once for both the checks and the diagnostics.
-    type = type.removeTopLevelConst();
     // Bare floating-point scalars cross in their own register; only aggregates need the check below.
     if (type.isFloatingPoint()) return;
     // Fixed-array parameters decay to pointers, but C cannot return arrays.
@@ -1547,7 +1525,7 @@ static void checkDeclaredInterfaces(Typechecker& checker, TypeDecl& decl) {
         auto* interfaceDecl = interface.getDecl();
 
         if (!interfaceDecl->isInterface()) {
-            REPORT_ERROR_RANGE(interface.location, interface.endLocation, "'" << interface.removeTopLevelConst() << "' is not an interface");
+            REPORT_ERROR_RANGE(interface.location, interface.endLocation, "'" << interface << "' is not an interface");
             continue;
         }
 
@@ -1757,7 +1735,7 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
         if (llvm::isa<FunctionDecl>(decl)) return true;
         auto* varDecl = llvm::dyn_cast<VarDecl>(decl);
         // Immutable globals inline their initializer; mutable ones need a runtime load.
-        if (!varDecl || varDecl->type.isMutable() || !varDecl->initializer || !seen.insert(varDecl).second) return false;
+        if (!varDecl || !varDecl->isConst || !varDecl->initializer || !seen.insert(varDecl).second) return false;
         // Path-scoped: constants shared between converging paths stay supported, only true cycles fail.
         bool result = isSupportedGlobalInitializer(*varDecl->initializer, seen);
         seen.erase(varDecl);
@@ -1785,7 +1763,7 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
             if (!varExpr) return false;
             if (!varExpr->decl) return true;
             if (auto* varDecl = llvm::dyn_cast<VarDecl>(varExpr->decl)) {
-                return varDecl->isGlobal() && varDecl->type.isMutable();
+                return varDecl->isGlobal() && !varDecl->isConst;
             }
             return llvm::isa<FunctionDecl>(varExpr->decl);
         }
@@ -1857,7 +1835,6 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     // reports once and later uses see the partial state instead of rechecking.
     llvm::scope_exit markChecked([&decl] { decl.checkState = Decl::CheckState::Checked; });
     decl.type = resolveTypeAliases(decl.type, decl.isGlobal() ? decl.accessLevel : AccessLevel::None, /*foldArraySizes=*/true);
-    if (!decl.isConst) decl.type = decl.type.removeTopLevelConst();
     if (!decl.isGlobal()) {
         localVarDecls.push_back(&decl);
     }
@@ -1910,16 +1887,16 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         } else {
             std::string hint;
 
-            Type displayDeclared = stripIrrelevantTargetConst(decl.initializer, initializerType, declaredType);
             if (initializerType.isNull() && !declaredType.isOptionalType()) {
                 hint = " (add '?' to the type to make it nullable)";
             } else {
-                hint = narrowingHint(initializerType, displayDeclared);
+                hint = narrowingHint(initializerType, declaredType);
             }
 
             diagnoseClosureConversion(initializerType, declaredType, *decl.initializer);
             ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
-                        "cannot assign '" << stripIrrelevantConst(decl.initializer, initializerType, declaredType) << "' to '" << displayDeclared << "'" << hint
+                        "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint
+                                          << immutableBorrowHint(*decl.initializer, initializerType, declaredType)
                                           << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
         }
     } else {
@@ -1930,14 +1907,20 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
             ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "cannot infer type of '" << decl.getName() << "' from expression of type 'void'");
         }
 
-        // An array pointer is a pointer view, not a value copy. Preserve its
-        // pointee constness when inferring a variable; making a const view mutable
-        // would allow the view to drop that guarantee.
-        if (initializerType.isArrayPointer()) {
-            auto mutability = !initializerType.getElementType().isMutable() || !decl.type.isMutable() ? Mutability::Const : Mutability::Mutable;
-            decl.type = NOTNULL(initializerType.withMutability(mutability));
-        } else {
-            decl.type = NOTNULL(initializerType.withMutability(decl.type.mutability));
+        decl.type = NOTNULL(initializerType);
+    }
+
+    // A const binding over a view type forces view-const (matches a declared
+    // `const T[]`); the elements are reached through the view, so binding
+    // const must protect them. Plain pointers don't force: `const p` is a
+    // const handle to mutable storage, like C++ `T* const`. `?` layers are
+    // transparent: `const int[]?` still freezes the elements.
+    if (decl.isConst) {
+        Type core = decl.type;
+        while (core.isOptionalType())
+            core = core.removeOptional();
+        if ((core.isArrayPointer() || core.isSlice()) && !core.isPointeeConst()) {
+            decl.type = decl.type.withConstPointee();
         }
     }
 
@@ -1953,8 +1936,8 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
     } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType()) && !explicitLocalBorrow && !inferredBorrow) {
-        ERROR(decl.getLocation(), "reference type '" << decl.type.removeTopLevelConst()
-                                                     << "' may only appear as a function parameter, return type, local variable, or interface argument");
+        ERROR(decl.getLocation(),
+              "reference type '" << decl.type << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }
 
     if (!isArrayBorrow(decl.initializer->type, decl.type)) {
@@ -2002,10 +1985,8 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
         if (Expr* converted = convert(decl.defaultValue, decl.type)) {
             decl.defaultValue = converted;
         } else {
-            Type displayType = stripIrrelevantTargetConst(decl.defaultValue, decl.defaultValue->type, decl.type);
             ERROR_RANGE(getExprRangeStart(*decl.defaultValue), decl.defaultValue->endLocation,
-                        "cannot assign '" << stripIrrelevantConst(decl.defaultValue, decl.defaultValue->type, decl.type) << "' to '" << displayType << "'"
-                                          << narrowingHint(decl.defaultValue->type, displayType));
+                        "cannot assign '" << decl.defaultValue->type << "' to '" << decl.type << "'" << narrowingHint(decl.defaultValue->type, decl.type));
         }
     }
 }

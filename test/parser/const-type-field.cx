@@ -1,6 +1,6 @@
 // RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
 
 struct S {
-    // CHECK: [[@LINE+1]]:5: error: 'const' in a type is only allowed to make the pointee const ('const T*', 'const T[*]' or 'const T&')
+    // CHECK: [[@LINE+1]]:5: error: 'const' in a type is only allowed to make the pointee const ('const T*', 'const T[*]', 'const T&' or 'const T[]')
     const int x;
 }

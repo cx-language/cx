@@ -151,8 +151,8 @@ Stmt* ForEachStmt::lower(int nestLevel) {
         iteratorValue->endLocation = range->endLocation;
     }
 
-    auto iteratorVarDecl = makeAST<VarDecl>(Type(nullptr, Mutability::Mutable, location), iteratorVariableName, iteratorValue, variable->parent,
-                                            AccessLevel::None, *variable->getModule(), location);
+    auto iteratorVarDecl =
+        makeAST<VarDecl>(Type(nullptr, location), iteratorVariableName, iteratorValue, variable->parent, AccessLevel::None, *variable->getModule(), location);
     auto iteratorVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{iteratorVarDecl});
 
     std::string indexCounterName;

@@ -41,8 +41,14 @@ void main() {
 
 To match `const` in C/C++ APIs, the pointed-to type can be marked `const`:
 `const T*`, `const T[*]`, and `const T&` all mean the pointee cannot be
-written through. This is the only use of `const` in types; a bare `const T`
-is rejected. Named constants still use the `const` declarator (`const x = ...`).
+written through. The handle itself stays mutable: a `const int*` variable
+can be reseated, only writes through it are forbidden. `const T[]` is a
+slice with const elements: reads and `.data()` (which yields `const T[*]`)
+work, only writes through it are forbidden. `const` binds the outermost
+view of a nested slice (`const T[][]` freezes the outer buffer, inner
+slices stay mutable views). Apart from these, a bare
+`const T` is rejected. Named constants still use the `const` declarator
+(`const x = ...`).
 
 ## Borrowed parameters
 
