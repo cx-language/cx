@@ -34,14 +34,14 @@ extern D1 mk_d1();
 extern IF mk_if();
 extern F1 mk_f1();
 
-// Win64 passes aggregates up to 8 bytes as integers, floats included:
+// Win64 passes aggregates up to 8 bytes as integers, floats included;
+// larger ones go indirect, like integer-only ones:
 // CHECK: declare i64 @mk_v2()
+// CHECK: declare void @mk_v3(ptr sret(%V3) align 4)
+// CHECK: declare void @mk_v4(ptr sret(%V4) align 4)
 // CHECK: declare i64 @mk_d1()
 // CHECK: declare i64 @mk_if()
 // CHECK: declare i32 @mk_f1()
-// Larger aggregates go indirect, like integer-only ones:
-// CHECK: declare void @mk_v3(ptr sret(%V3) align 4)
-// CHECK: declare void @mk_v4(ptr sret(%V4) align 4)
 
 void main() {
     println(mk_v2().x);
