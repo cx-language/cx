@@ -44,3 +44,88 @@ void main() {
     // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'int' to 'takesUint64', expected 'uint64'
     takesUint64(x[0]);
 }
+
+void constTarget() {
+    // CHECK: [[@LINE+1]]:20: error: cannot assign 'int' to 'char' (use 'char(...)' to convert explicitly)
+    const char c = 5;
+}
+
+void constTargetKeep() {
+    int? o = 3;
+    // CHECK: [[@LINE+1]]:19: error: cannot assign 'int?' to 'const int'
+    const int x = o;
+}
+
+void switchConst() {
+    const c = 5;
+    switch (c) {
+        // CHECK: [[@LINE+1]]:14: error: case value type 'bool' doesn't match switch condition type 'int'
+        case false: break;
+    }
+    switch (c) {
+        // CHECK: [[@LINE+1]]:14: error: case value type 'null' doesn't match switch condition type 'int'
+        case null: break;
+        default: break;
+    }
+    const int? o = 5;
+    switch (o) {
+        // CHECK: [[@LINE+1]]:14: error: case value type 'int' doesn't match switch condition type 'int?'
+        case 1: break;
+        default: break;
+    }
+    int? d = 3;
+    switch (d) {
+        // CHECK: [[@LINE+1]]:14: error: case value type 'int const?' doesn't match switch condition type 'int?'
+        case o: break;
+        default: break;
+    }
+}
+
+void ternaryConst() {
+    const c = 1;
+    // CHECK: [[@LINE+1]]:9: error: incompatible operand types ('int' and 'string')
+    _ = true ? c : "s";
+    // CHECK: [[@LINE+1]]:9: error: incompatible operand types ('string' and 'int')
+    _ = true ? "s" : c;
+}
+
+enum E { A, B }
+
+void ternaryKeep() {
+    const c = 5;
+    // CHECK: [[@LINE+1]]:9: error: incompatible operand types ('E' and 'const int')
+    _ = true ? E.A : c;
+}
+
+void nullCoalescingConst() {
+    const int? o = 5;
+    // CHECK: [[@LINE+1]]:9: error: incompatible operand types ('int?' and 'string')
+    _ = o ?? "s";
+}
+
+int armsConst(int n) {
+    const c = 1;
+    return switch n {
+        // CHECK: [[@LINE+1]]:17: error: incompatible arm types ('int' and 'string')
+        case 0: c
+        default: "many"
+    };
+}
+
+int armsKeep(int n) {
+    const c = 5;
+    return switch n {
+        // CHECK: [[@LINE+1]]:17: error: incompatible arm types ('E' and 'const int')
+        case 0: E.A
+        default: c
+    };
+}
+
+int switchExprConst(int n) {
+    const m = n;
+    return switch m {
+        // CHECK: [[@LINE+1]]:14: error: case value type 'bool' doesn't match switch condition type 'int'
+        case false: 1
+        default: 0
+    };
+}

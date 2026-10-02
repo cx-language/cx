@@ -21,5 +21,8 @@ void main() {
     defer compute();
     todo();
     println(x);
+    const arr = [1, 2];
+    // CHECK: [[@LINE+1]]:5: warning: unused result of type 'int'
+    arr[0];
 }
 

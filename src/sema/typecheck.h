@@ -213,6 +213,13 @@ struct Typechecker {
     /// Displays a failed-conversion source type with top-level 'const' stripped when the
     /// mismatch persists without it. Keeps 'const' when it is what blocks the conversion.
     Type stripIrrelevantConst(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false, bool allowOperatorBorrow = false) const;
+    /// Same for the target side: strips top-level 'const' unless the source converts
+    /// to the stripped target (e.g. keeps 'const int' for an 'int?' source that
+    /// unwraps to 'int').
+    Type stripIrrelevantTargetConst(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false, bool allowOperatorBorrow = false) const;
+    /// For symmetric joins (ternary, switch arms): strips a side only if 'const'
+    /// is irrelevant in both conversion directions.
+    Type stripIrrelevantJoinConst(const Expr* expr, Type side, const Expr* otherExpr, Type other) const;
     /// Commits a user-declared conversion found by findUserConversion: checks and references the
     /// conversion function, converts the operand to its parameter (constructors), and wraps both in
     /// a UserConversion cast. Null when the operand no longer converts.

@@ -110,6 +110,9 @@ void variadicExtrasAreChecked() {
     b.vals[7] = 8;
     // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Big' cannot be passed as a variadic argument to extern "C++" function 'm_log' because it is 32 bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer instead
     m_log(1, b);
+    const cb = b;
+    // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Big' cannot be passed as a variadic argument to extern "C++" function 'm_log' because it is 32 bytes; only structs up to 16 bytes can cross by value, pass it behind a pointer instead
+    m_log(1, cb);
 }
 
 void takeMutableString(string& s) {

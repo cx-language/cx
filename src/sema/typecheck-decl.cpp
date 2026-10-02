@@ -40,7 +40,7 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
     decls.erase(std::remove_if(decls.begin(), decls.end(), [](Decl* d) { return !d->isTypeTemplate() && !d->isTypeDecl(); }), decls.end());
 
     if (decls.empty()) {
-        ERROR_RANGE(type.location, type.endLocation, "'" << type << "' is not a type");
+        ERROR_RANGE(type.location, type.endLocation, "'" << type.removeTopLevelConst() << "' is not a type");
     }
 
     if (!decls[0]->isTypeTemplate()) {
@@ -455,7 +455,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         // Report the outermost type (e.g. 'int&?' rather than the nested 'int&')
         // so the diagnostic matches what the user wrote.
         ERROR_RANGE(type.location, type.endLocation,
-                    "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
+                    "reference type '" << type.removeTopLevelConst()
+                                       << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }
     switch (type.getKind()) {
     case TypeKind::BasicType: {
@@ -538,7 +539,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 auto decls = findDecls(basicType->name);
 
                 if (decls.empty()) {
-                    ERROR_RANGE(type.location, type.endLocation, "unknown type '" << type << "'" << Type::didYouMeanBuiltin(basicType->name));
+                    ERROR_RANGE(type.location, type.endLocation,
+                                "unknown type '" << type.removeTopLevelConst() << "'" << Type::didYouMeanBuiltin(basicType->name));
                 }
                 auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));
                 decl = typeTemplate;
@@ -569,7 +571,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
         if (decl->isTypeTemplate()) {
             validateGenericArgs(llvm::cast<TypeTemplate>(decl)->genericParams, basicType->genericArgs, basicType->name, type.location);
         } else if (!decl->isTypeDecl()) {
-            ERROR_RANGE(type.location, type.endLocation, "'" << type << "' is not a type");
+            ERROR_RANGE(type.location, type.endLocation, "'" << type.removeTopLevelConst() << "' is not a type");
         }
 
         // IRGen drops values of destructor types at scope exit without going through
@@ -604,7 +606,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
     case TypeKind::PointerType: {
         if (type.isReferenceType() && !allowReference) {
             ERROR_RANGE(type.location, type.endLocation,
-                        "reference type '" << type << "' may only appear as a function parameter, return type, local variable, or interface argument");
+                        "reference type '" << type.removeTopLevelConst()
+                                           << "' may only appear as a function parameter, return type, local variable, or interface argument");
         }
         typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
@@ -869,6 +872,9 @@ static std::optional<CValueLayout> cValueLayout(Type type) {
 }
 
 void cx::validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef callee) {
+    // 'const' doesn't affect C++ ABI crossing, and every check below is kind, layout,
+    // or declaration based, so strip it once for both the checks and the diagnostics.
+    type = type.removeTopLevelConst();
     // Fixed arrays decay to pointers in variadic calls, and scalars, pointers, and references
     // cross opaquely; only by-value aggregates need the signature rules.
     if (type.isFixedArray()) return;
@@ -1103,6 +1109,9 @@ static bool containsLongDouble(Type type) {
 // targets without register classification, small float-containing ones.
 // Larger ones cross indirectly and are fine.
 static void validateExternCByValue(Type type, bool isReturn) {
+    // 'const' doesn't affect C ABI crossing, and every check below is kind, layout,
+    // or declaration based, so strip it once for both the checks and the diagnostics.
+    type = type.removeTopLevelConst();
     // Bare floating-point scalars cross in their own register; only aggregates need the check below.
     if (type.isFloatingPoint()) return;
     // Fixed-array parameters decay to pointers, but C cannot return arrays.
@@ -1534,7 +1543,7 @@ static void checkDeclaredInterfaces(Typechecker& checker, TypeDecl& decl) {
         auto* interfaceDecl = interface.getDecl();
 
         if (!interfaceDecl->isInterface()) {
-            REPORT_ERROR_RANGE(interface.location, interface.endLocation, "'" << interface << "' is not an interface");
+            REPORT_ERROR_RANGE(interface.location, interface.endLocation, "'" << interface.removeTopLevelConst() << "' is not an interface");
             continue;
         }
 
@@ -1896,15 +1905,16 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         } else {
             std::string hint;
 
+            Type displayDeclared = stripIrrelevantTargetConst(decl.initializer, initializerType, declaredType);
             if (initializerType.isNull() && !declaredType.isOptionalType()) {
                 hint = " (add '?' to the type to make it nullable)";
             } else {
-                hint = narrowingHint(initializerType, declaredType);
+                hint = narrowingHint(initializerType, displayDeclared);
             }
 
             diagnoseClosureConversion(initializerType, declaredType, *decl.initializer);
             ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
-                        "cannot assign '" << stripIrrelevantConst(decl.initializer, initializerType, declaredType) << "' to '" << declaredType << "'" << hint
+                        "cannot assign '" << stripIrrelevantConst(decl.initializer, initializerType, declaredType) << "' to '" << displayDeclared << "'" << hint
                                           << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
         }
     } else {
@@ -1938,8 +1948,8 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         decl.initializer = makeAST<ImplicitCastExpr>(decl.initializer, decl.type.getPointee(), ImplicitCastExpr::AutoDereference);
         decl.type = decl.type.getPointee();
     } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType()) && !explicitLocalBorrow && !inferredBorrow) {
-        ERROR(decl.getLocation(),
-              "reference type '" << decl.type << "' may only appear as a function parameter, return type, local variable, or interface argument");
+        ERROR(decl.getLocation(), "reference type '" << decl.type.removeTopLevelConst()
+                                                     << "' may only appear as a function parameter, return type, local variable, or interface argument");
     }
 
     if (!isArrayBorrow(decl.initializer->type, decl.type)) {
@@ -1987,9 +1997,10 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
         if (Expr* converted = convert(decl.defaultValue, decl.type)) {
             decl.defaultValue = converted;
         } else {
+            Type displayType = stripIrrelevantTargetConst(decl.defaultValue, decl.defaultValue->type, decl.type);
             ERROR_RANGE(getExprRangeStart(*decl.defaultValue), decl.defaultValue->endLocation,
-                        "cannot assign '" << stripIrrelevantConst(decl.defaultValue, decl.defaultValue->type, decl.type) << "' to '" << decl.type << "'"
-                                          << narrowingHint(decl.defaultValue->type, decl.type));
+                        "cannot assign '" << stripIrrelevantConst(decl.defaultValue, decl.defaultValue->type, decl.type) << "' to '" << displayType << "'"
+                                          << narrowingHint(decl.defaultValue->type, displayType));
         }
     }
 }

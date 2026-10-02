@@ -134,6 +134,9 @@ struct Type {
     std::optional<uint64_t> getSizeInBytes() const;
     bool isMutable() const { return mutability == Mutability::Mutable; }
     Type withMutability(Mutability m) const;
+    // Drops top-level 'const' for diagnostics where constness is noise. Nested
+    // const (pointee, elements) is preserved.
+    Type removeTopLevelConst() const { return withMutability(Mutability::Mutable); }
     Type getPointerTo() const;
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeReference() const { return isReferenceType() ? getPointee() : *this; }
