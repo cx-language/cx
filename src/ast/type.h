@@ -73,6 +73,8 @@ struct Type {
     bool isAnonymousStructType() const { return getKind() == TypeKind::AnonymousStructType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
+    // Raw pointers, borrows, and indexable views.
+    bool isPointerOrArrayPointer() const { return isPointerType() || isArrayPointer(); }
     bool isReferenceType() const;
     bool isImplementedAsPointer() const;
     bool isUnresolvedType() const { return getKind() == TypeKind::UnresolvedType; }

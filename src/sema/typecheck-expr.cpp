@@ -318,7 +318,7 @@ void Typechecker::dropNarrowingForAddressArg(const Expr& arg, Type paramType) {
     while (target.isOptionalType()) {
         target = target.getWrappedType();
     }
-    if (!target.isPointerType() && !target.isReferenceType() && !target.isArrayPointer()) return;
+    if (!target.isPointerOrArrayPointer()) return;
     const Expr* exposed = &arg;
     for (;;) {
         auto* cast = llvm::dyn_cast<ImplicitCastExpr>(exposed);
@@ -758,7 +758,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
                         "cannot apply unary '-%' to borrow of type '" << operandType << "'; dereference it explicitly (e.g. '-%*x')");
         }
-        if (operandType.removeOptional().isPointerType() || operandType.removeOptional().isArrayPointer()) {
+        if (operandType.removeOptional().isPointerOrArrayPointer()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
                         "cannot apply unary '-%' to pointer of type '" << operandType << "'; dereference it explicitly (e.g. '-%*p')");
         }
@@ -774,7 +774,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
                         "cannot apply unary '" << toString(expr.op) << "' to borrow of type '" << operandType << "'; dereference it explicitly (e.g. '"
                                                << toString(expr.op) << "*x')");
         }
-        if (operandType.removeOptional().isPointerType() || operandType.removeOptional().isArrayPointer()) {
+        if (operandType.removeOptional().isPointerOrArrayPointer()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
                         "cannot apply unary '" << toString(expr.op) << "' to pointer of type '" << operandType << "'; dereference it explicitly (e.g. '"
                                                << toString(expr.op) << "*p')");
@@ -863,7 +863,7 @@ static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind
     } else {
         auto isPointerOperand = [](Type type) {
             type = type.removeOptional();
-            return type.isPointerType() || type.isArrayPointer();
+            return type.isPointerOrArrayPointer();
         };
         if (isPointerOperand(expr.getLHS().type) || isPointerOperand(expr.getRHS().type)) {
             if (isComparisonOperator(op)) {
@@ -1253,7 +1253,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             // via overloads while enabling element-wise ops for matching numerics.
             auto isPointerElement = [](Type type) {
                 type = type.removeOptional();
-                return type.isPointerType() || type.isArrayPointer();
+                return type.isPointerOrArrayPointer();
             };
             if (leftIsArrayLike && rightIsArrayLike) {
                 Type leftElem = leftType.getElementType();
@@ -4065,7 +4065,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
             functionDecl && exprIsConst(*expr.getReceiver()) && !receiverType.removeOptional().isSlice() && !receiverType.removeOptional().isArrayPointer()) {
             Type declaredReturn = functionDecl->getFunctionType()->returnType;
-            if (Type stripped = declaredReturn.removeOptional(); stripped.isPointerType() || stripped.isArrayPointer() || stripped.isSlice()) {
+            if (Type stripped = declaredReturn.removeOptional(); stripped.isPointerOrArrayPointer() || stripped.isSlice()) {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
                             "cannot call '" << expr.getFunctionName() << "' on a constant: it returns '" << declaredReturn
                                             << "', which would alias frozen storage");
@@ -4422,7 +4422,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
 // null pointer. A second '?' is a struct Optional, so the bits no longer match.
 static bool isCastableAddress(Type type) {
     if (type.isOptionalType()) type = type.getWrappedType();
-    return type.isPointerType() || type.isArrayPointer();
+    return type.isPointerOrArrayPointer();
 }
 
 static bool isValidCast(Type sourceType, Type targetType) {

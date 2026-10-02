@@ -448,7 +448,7 @@ bool Expr::isLvalue() const {
             return function && function->getReturnType().isPointerType();
         }
         auto baseType = index.getBase()->type.removeOptional();
-        if (baseType.isPointerType() || baseType.isArrayPointer()) return true;
+        if (baseType.isPointerOrArrayPointer()) return true;
         return index.getBase()->isLvalue();
     }
     case ExprKind::UnaryExpr:

@@ -609,7 +609,7 @@ bool Type::storesBorrow() const {
 
 bool Type::isImplementedAsPointer() const {
     auto unwrapped = removeOptional();
-    return unwrapped.isPointerType() || unwrapped.isArrayPointer() || unwrapped.isFunctionType();
+    return unwrapped.isPointerOrArrayPointer() || unwrapped.isFunctionType();
 }
 
 Type Type::getWrappedType() const {
