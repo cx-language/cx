@@ -1,0 +1,101 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct S { int x; }
+
+void takePayload(S* s) {
+    println(s.x);
+    s.x = 100;
+}
+
+void takeOptional(S?* s) {
+    println((*s)!.x);
+}
+
+void borrowPayload(S& s) {
+    println(s.x);
+}
+
+void borrowOptional(S?& s) {
+    println((*s)!.x);
+}
+
+void takePointerPayload(int** p) {
+    println(**p);
+}
+
+void takeConstPayload(const S* s) {
+    println(s.x);
+}
+
+void either(S* s) {
+    println("payload");
+}
+
+void either(S?* s) {
+    println("optional");
+}
+
+struct Loud {
+    int x;
+    ~Loud() {
+        println("dtor");
+    }
+}
+using OptLoud = Loud?;
+
+void takeConstBorrow(const OptLoud& o) {
+    println((*o)!.x);
+}
+
+void paramCase(S? p) {
+    if p == null { return; }
+    takePayload(&p);
+    borrowOptional(p);
+}
+
+void main() {
+    S? s = S(42);
+    if s == null { return; }
+    // A narrowed address passes as a pointer to the narrowed type, and the
+    // variable still passes as a pointer to the declared type. Both address
+    // the same storage: the write through S* below is visible afterwards.
+    takePayload(&s); // CHECK:42
+    println(s.x); // CHECK-NEXT:100
+    takeOptional(&s); // CHECK-NEXT:100
+    borrowPayload(s); // CHECK-NEXT:100
+    borrowOptional(s); // CHECK-NEXT:100
+    // An address also binds to a borrow of the narrowed type.
+    borrowPayload(&s); // CHECK-NEXT:100
+    // A narrowed address also converts to a const payload pointer.
+    takeConstPayload(&s); // CHECK-NEXT:100
+
+    // An exact overload still wins over the converting one.
+    S v = S(1);
+    either(&v); // CHECK-NEXT:payload
+    either(&s); // CHECK-NEXT:optional
+
+    // Pointer-implemented optionals share the payload address.
+    int i = 7;
+    int*? o = &i;
+    if o == null { return; }
+    takePointerPayload(&o); // CHECK-NEXT:7
+
+    // A const borrow of the declared type borrows the storage directly: no
+    // temporary is constructed, so no destructor runs before scope exit.
+    Loud? l = Loud(11);
+    if l != null {
+        takeConstBorrow(l); // CHECK-NEXT:11
+    }
+
+    // Narrowed parameters behave like narrowed locals.
+    paramCase(S(42)); // CHECK-NEXT:42
+    // CHECK-NEXT:100
+
+    // Narrowing peels one optional level.
+    S?? n = S(13);
+    if n == null { return; }
+    takeOptional(&n); // CHECK-NEXT:13
+    // CHECK-NEXT:dtor
+}

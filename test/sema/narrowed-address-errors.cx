@@ -1,0 +1,57 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+struct S { int x; }
+void takePayload(S* s) {}
+void borrowOptional(S?& s) {}
+
+void nullBranch() {
+    S? s = S(1);
+    if s == null {
+        // CHECK: [[@LINE+1]]:21: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+        takePayload(&s);
+    }
+}
+
+void plainPointer() {
+    S? s = S(1);
+    if s == null { return; }
+    S?* p = &s;
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+    takePayload(p);
+}
+
+void constSource() {
+    const S? s = S(1);
+    if s == null { return; }
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S const?*' to 'takePayload', expected 'S*'
+    takePayload(&s);
+}
+
+void invalidatedByAssign() {
+    S? s = S(1);
+    if s == null { return; }
+    s = null;
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+    takePayload(&s);
+}
+
+S? g = null;
+
+void globalCase() {
+    if g == null { return; }
+    // Globals never narrow, so the address keeps the declared type.
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+    takePayload(&g);
+}
+
+enum E { A(int x), B }
+void takeInt(int* p) {}
+
+void enumNarrowing() {
+    E e = E.A(1);
+    if e == E.A {
+        // Only optional narrowing converts; enum payloads still need explicit handling.
+        // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'E*' to 'takeInt', expected 'int*'
+        takeInt(&e);
+    }
+}

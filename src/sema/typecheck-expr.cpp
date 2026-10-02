@@ -290,6 +290,13 @@ static void unnarrow(Expr& expr) {
     }
 }
 
+// True when the expression is a narrowed use of an optional lvalue whose declared type
+// matches: the value reads as the wrapped type, but the address denotes the whole optional.
+static bool isNarrowedOptionalUse(const Expr* expr, Type declaredType) {
+    return expr && expr->isLvalue() && expr->hasAssignableType() && expr->assignableType.isOptionalType()
+        && expr->type.equalsIgnoreTopLevelMutable(expr->assignableType.getWrappedType()) && expr->assignableType.equalsIgnoreTopLevelMutable(declaredType);
+}
+
 // Maps call args to params: named args by name (order-free), positional args to
 // the next unassigned param in declaration order. Missing params must have defaults.
 // On success fills argToParam (param index or -1 for variadic extra) and paramToArg
@@ -1522,8 +1529,10 @@ Expr* Typechecker::convertWithUserConversion(Expr* expr, Type target, bool diagn
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange, bool allowOperatorBorrow, bool allowUserConversion) {
     // Borrow a converted temporary (e.g. a StringBuf as const string&): convert to the
     // pointee, then borrow the result. Only for const borrows; borrowing a temporary
-    // mutably would let the mutation vanish with it.
-    if (type.isReferenceType() && !type.getPointee().isMutable() && !expr->type.equalsIgnoreTopLevelMutable(type.getPointee())) {
+    // mutably would let the mutation vanish with it. A narrowed use borrows the declared
+    // storage directly below instead of copying into a temporary.
+    if (type.isReferenceType() && !type.getPointee().isMutable() && !expr->type.equalsIgnoreTopLevelMutable(type.getPointee())
+        && !isNarrowedOptionalUse(expr, type.getPointee())) {
         if (Expr* converted =
                 convert(expr, type.getPointee(), /*allowPointerToTemporary=*/true, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion)) {
             return makeAST<ImplicitCastExpr>(converted, type, ImplicitCastExpr::AutoReference);
@@ -1558,8 +1567,10 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
             if (*implicitCastKind == ImplicitCastExpr::OptionalUnwrap) implicitUses.unwrap = true;
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
             if (*implicitCastKind == ImplicitCastExpr::AutoReference && expr->hasAssignableType() && expr->assignableType.isOptionalType()
-                && !expr->assignableType.getWrappedType().isImplementedAsPointer() && expr->type == expr->assignableType.getWrappedType()) {
+                && !expr->assignableType.getWrappedType().isImplementedAsPointer() && expr->type == expr->assignableType.getWrappedType()
+                && !isNarrowedOptionalUse(expr, type.getPointee())) {
                 // Preserve narrowing through the reference: the backend derives the payload address from the divergence.
+                // Borrowing the declared optional takes no marker, so the backend addresses the whole optional storage.
                 cast->assignableType = expr->assignableType;
             }
             return cast;
@@ -1777,6 +1788,22 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
+    // A narrowed address converts to the payload pointer: `&s` where `s` is narrowed to `T`
+    // passes as `T*` (or `T&`). Narrowing proves the optional is non-null; arbitrary
+    // `T?*` values don't convert since their target may be null. This trusts the
+    // narrowing map, which calls never invalidate (unlike direct assignments).
+    if (expr && source.isPointerType() && target.isPointerType() && source.getPointee().isOptionalType()
+        && (source.getPointee().isMutable() || !target.getPointee().isMutable())
+        && source.getPointee().getWrappedType().equalsIgnoreTopLevelMutable(target.getPointee())) {
+        auto* addressOf = llvm::dyn_cast<UnaryExpr>(expr);
+        auto* var = addressOf && addressOf->op == Token::And ? llvm::dyn_cast<VarExpr>(&addressOf->getOperand()) : nullptr;
+        auto narrowed = var && var->decl ? narrowedTypes.find(var->decl) : narrowedTypes.end();
+        if (narrowed != narrowedTypes.end() && narrowed->second.equalsIgnoreTopLevelMutable(target.getPointee())) {
+            if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalUnwrapPointer;
+            return target;
+        }
+    }
+
     Type unwrappedTarget = target.removeOptional();
     bool decaysToView = source.isReferenceType() && source.getPointee().isConcreteArray() && (unwrappedTarget.isArrayPointer() || unwrappedTarget.isSlice());
     if (source.isReferenceType() && source.getPointee().isImplicitlyCopyable() && !unwrappedTarget.isPointerType() && !decaysToView) {
@@ -1897,7 +1924,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     // outside operator context.
     if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.isReferenceType() &&
         // Allow forming mutable borrows of constants. This is safe because constants will be inlined at the usage site.
-        (source.isMutable() || (expr && expr->isConstant()) || !target.getPointee().isMutable()) && source.equalsIgnoreTopLevelMutable(target.getPointee())) {
+        (source.isMutable() || (expr && expr->isConstant()) || !target.getPointee().isMutable())
+        && (source.equalsIgnoreTopLevelMutable(target.getPointee()) || isNarrowedOptionalUse(expr, target.getPointee()))) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return source;
     }
@@ -4058,7 +4086,8 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         if (Type convertedType = isImplicitlyConvertible(arg.value, arg.value->type, param.type, true, &implicitCastKind, false, isOperatorCall(expr), true,
                                                          &usesUserConversion)) {
             didConvertArguments = didConvertArguments || convertedType != arg.value->type || implicitCastKind.has_value();
-            didUnwrapOptional = didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap;
+            didUnwrapOptional =
+                didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap || implicitCastKind == ImplicitCastExpr::OptionalUnwrapPointer;
             didWrapOptional = didWrapOptional || implicitCastKind == ImplicitCastExpr::OptionalWrap || arg.value->isNullLiteralExpr();
             if (usesUserConversion) ++userConversionCount;
         } else {

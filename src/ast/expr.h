@@ -404,6 +404,7 @@ struct ImplicitCastExpr : Expr {
     enum Kind {
         OptionalWrap,
         OptionalUnwrap,
+        OptionalUnwrapPointer,
         AutoReference,
         AutoDereference,
         Reborrow,

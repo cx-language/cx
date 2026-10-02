@@ -1652,6 +1652,14 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
         }
     case ImplicitCastExpr::OptionalUnwrap:
         return emitOptionalUnwrap(*expr.operand, expr, "__implicit_unwrap");
+    case ImplicitCastExpr::OptionalUnwrapPointer: {
+        // Narrowing proved the target non-null, so project the payload without asserting.
+        // Pointer-implemented payloads share the optional's address; others live at the payload field.
+        Value* pointer = emitExpr(*expr.operand);
+        Type wrapped = expr.operand->type.getPointee().getWrappedType();
+        if (wrapped.isImplementedAsPointer()) return createCastIfNeeded(pointer, getIRType(expr.type));
+        return emitOptionalPayloadPtr(pointer, wrapped);
+    }
     case ImplicitCastExpr::AutoReference:
         return emitPlainExpr(*expr.operand);
     case ImplicitCastExpr::AutoDereference:

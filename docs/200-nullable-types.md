@@ -31,6 +31,30 @@ void main() {
 void takeInt(int n) {}
 ```
 
+## Passing narrowed values to pointer parameters
+
+After a null check, the variable is narrowed to its wrapped type.
+The narrowed address passes to `T*` parameters (or binds to `T&`),
+addressing the payload inside the optional.
+The variable also still passes as the declared type (`T?*` and `T?&`),
+addressing the whole optional.
+
+```cs
+struct S { int x; }
+void takePayload(S* s) {
+    println(s.x);
+}
+void borrowOptional(S?& s) {
+    println((*s)!.x);
+}
+void main() {
+    S? s = S(42);
+    if s == null { return; }
+    takePayload(&s); // prints 42
+    borrowOptional(s); // prints 42
+}
+```
+
 ## Comparing against plain values
 
 Comparing a nullable value against a plain value with `==` or `!=` never requires unwrapping first.
