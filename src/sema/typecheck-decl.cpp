@@ -1975,9 +1975,10 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     // materialize, so slice-typed globals cannot be initialized from array
     // literals. Null, empty, and inferred (fixed-array) forms work.
     if (decl.isGlobal() && decl.type.containsSlice() && containsNonEmptyArrayLiteral(*decl.initializer)) {
+        const char* kind = decl.isConst ? "const" : "global";
         ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
-                    "cannot initialize " << (decl.isConst ? "const" : "global") << " '" << decl.getName() << "' of type '" << decl.type
-                                          << "' with an array literal; omit the type to infer a fixed-size array instead");
+                    "cannot initialize " << kind << " '" << decl.getName() << "' of type '" << decl.type
+                                         << "' with an array literal; omit the type to infer a fixed-size array instead");
     }
 
     // Locals materialize storage (inferred types have no other mention), so
