@@ -321,7 +321,7 @@ jobs:
       # that job needs no toolchain install. The copy is stripped: bench
       # runs don't need debug info, and it would triple the upload.
       - name: Upload cx compiler (Ubuntu release)
-        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/cx-dist"
@@ -335,7 +335,7 @@ jobs:
           ls "$RUNNER_TEMP/cx-dist"
 
       - name: Upload cx compiler artifact (Ubuntu release)
-        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v6
         with:
           name: cx-ubuntu-release
@@ -343,14 +343,15 @@ jobs:
 
   # The language comparison takes ~11 minutes, longer than the rest of the
   # Ubuntu release leg combined, so it runs here in parallel with the other
-  # legs instead of appended to that leg. Runs on PRs too, validating that
-  # all ports still compile and agree; only main deploys publish it.
+  # legs instead of appended to that leg. Main-only like bench-record: the
+  # lit suites already validate the compiler on PRs, and bench edits are
+  # fixed forward if they break the comparison.
   # Runs whenever the Ubuntu leg produced a compiler, independent of the
   # other legs' outcome like the matrix legs themselves; the artifact
   # download fails first if the Ubuntu leg did.
   bench-langs:
     needs: [ build ]
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
