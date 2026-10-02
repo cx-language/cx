@@ -483,6 +483,8 @@ void diagnoseClosureConversion(Type source, Type target, const Expr& expr);
 std::string narrowingHint(Type source, Type target);
 // Whether the types alone would bind and only the source being a constant blocks forming the borrow.
 bool isBorrowOfConstant(const Expr& expr, Type source, Type target);
+// Whether the expression names frozen constant storage (a const binding or something derived from one).
+bool exprIsConst(const Expr& expr);
 // Explains why a type is not Copyable when a use fails because the value was moved.
 std::string copyableHint(Type type);
 // Whether a type satisfies a ': Copyable' generic constraint. Structural, not name-based.

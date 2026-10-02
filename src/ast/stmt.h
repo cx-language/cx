@@ -157,7 +157,7 @@ struct ForStmt : Stmt {
 struct ForEachStmt : Stmt {
     ForEachStmt(VarDecl* variable, VarDecl* indexVariable, Expr* range, std::vector<Stmt*>&& body, Location location)
     : Stmt(StmtKind::ForEachStmt), variable(variable), indexVariable(indexVariable), range(range), body(std::move(body)), location(location) {}
-    Stmt* lower(int nestLevel);
+    Stmt* lower(int nestLevel, bool rangeIsConst);
     static bool classof(const Stmt* s) { return s->kind == StmtKind::ForEachStmt; }
 
     VarDecl* variable;

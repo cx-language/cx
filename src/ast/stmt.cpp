@@ -144,7 +144,7 @@ Stmt* WhileStmt::lower() {
 // aliased, not copied out, so elements are mutated in place. Method resolution cannot
 // be relied on here (generic contexts leave it unresolved), so the variable is always
 // marked and the typechecker exempts plain borrows from the usual read-out.
-Stmt* ForEachStmt::lower(int nestLevel) {
+Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
     auto iteratorVariableName = "__iterator" + (nestLevel > 0 ? std::to_string(nestLevel) : "");
 
     Expr* iteratorValue;
@@ -183,6 +183,11 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     auto loopVariableVarDecl = makeAST<VarDecl>(variable->type, variable->getName(), valueCallExpr, variable->parent, AccessLevel::None, *variable->getModule(),
                                                 variable->getLocation());
     loopVariableVarDecl->isForLoopElement = true;
+    if (rangeIsConst) {
+        // The element borrows frozen storage; mirror its constness like comparison temps do.
+        loopVariableVarDecl->isConst = true;
+        loopVariableVarDecl->isImplicitlyBound = true;
+    }
     auto loopVariableVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{loopVariableVarDecl});
 
     std::vector<Stmt*> forBody;

@@ -1439,7 +1439,7 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
             }
             auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isForStmt(); });
             // The lowered ForStmt installs the loop-entry move snapshot.
-            stmt = forEachStmt->lower(nestLevel);
+            stmt = forEachStmt->lower(nestLevel, exprIsConst(*forEachStmt->range));
             typecheckStmt(stmt);
             break;
         }

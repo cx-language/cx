@@ -1,0 +1,53 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct T {
+    const DATA = [1, 2];
+}
+
+void writeConstElement() {
+    const arr = [1, 2, 3];
+    for x in arr {
+        // CHECK: [[@LINE+1]]:9: error: cannot assign to constant expression of type 'int'
+        *x = 9;
+    }
+}
+
+void writeNestedConstElement() {
+    const m = [[1, 2], [3, 4]];
+    for row in m {
+        for y in row {
+            // CHECK: [[@LINE+1]]:13: error: cannot assign to constant expression of type 'int'
+            *y = 9;
+        }
+    }
+}
+
+void writeStaticConstElement() {
+    for x in T.DATA {
+        // CHECK: [[@LINE+1]]:9: error: cannot assign to constant expression of type 'int'
+        *x = 9;
+    }
+}
+
+void addressConstElement() {
+    const arr = [1, 2, 3];
+    for x in arr {
+        // CHECK: [[@LINE+1]]:18: error: cannot take address of constant 'x'
+        var p = &x;
+    }
+}
+
+void main() {
+    const arr = [1, 2, 3];
+    for x in arr {
+        println(*x);
+    }
+    for x, i in arr {
+        println(*x);
+    }
+    var mut = [1, 2, 3];
+    for x in mut {
+        *x = 9;
+    }
+    println(mut);
+}

@@ -98,7 +98,7 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
 // always mutable (addresses of constants are rejected). Generic inference
 // also calls this mid-typecheck, so untyped subexpressions (e.g.
 // static-member bases) read as non-const.
-static bool exprIsConst(const Expr& expr) {
+bool cx::exprIsConst(const Expr& expr) {
     const Expr* current = &expr;
     while (true) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) {
