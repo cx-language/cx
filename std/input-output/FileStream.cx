@@ -7,9 +7,8 @@ struct OutputFileStream {
     OutputFileStream(public int fileDescriptor) {
         file = fdopen(fileDescriptor, "w");
 
-        if !file { // TODO: Error handling
-            println("Couldn't open file descriptor ", fileDescriptor, " for writing");
-            abort();
+        if !file {
+            fatalFdopenError(fileDescriptor);
         }
         ownsFile = true;
     }
@@ -46,15 +45,25 @@ struct OutputFileStream {
 private FILE*? stdoutFile = null;
 private FILE*? stderrFile = null;
 
+/// Reports a failed fdopen directly to descriptor 2 and aborts. println would
+/// recurse through stdout()/openStandardFile when descriptor 1 is broken too.
+private never fatalFdopenError(int fileDescriptor) {
+    var stream = fdopen(2, "w");
+    if stream {
+        fprintf(stream, "Couldn't open file descriptor %d for writing\n", fileDescriptor);
+        fclose(stream);
+    }
+    abort();
+}
+
 /// Opens the standard file descriptor on first use, caching the result so repeated calls share one file.
 private FILE* openStandardFile(FILE*? cachedFile, int fileDescriptor) {
     var file = cachedFile;
     if file == null {
         file = fdopen(fileDescriptor, "w");
 
-        if file == null { // TODO: Error handling
-            println("Couldn't open file descriptor ", fileDescriptor, " for writing");
-            abort();
+        if file == null {
+            fatalFdopenError(fileDescriptor);
         }
     }
     return file;

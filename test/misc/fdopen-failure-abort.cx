@@ -1,0 +1,6 @@
+// RUN: %not %cx run -Wno-unused %s 2>&1 | %FileCheck %s
+
+void main() {
+    // CHECK: Couldn't open file descriptor 999 for writing
+    var s = OutputFileStream(999);
+}

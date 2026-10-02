@@ -153,6 +153,15 @@ void _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value) {
     return void
 }
 
+void _CX1N3std5printIM3std4charEE4void1_M3std4char(char value) {
+    char* value_0 = alloca char
+    OutputStream* stream = alloca OutputStream
+    store value to value_0
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    void _1 = call _CX1N3stdM3std4char5printE4void1_RM3std12OutputStream(char* value_0, OutputStream* stream)
+    return void
+}
+
 int32* _CX1N3stdM3std5SliceIM3std5int32E4dataEAM3std5int320_(Slice<int32>* this) {
     Slice<int32>** this_0 = alloca Slice<int32>*
     store this to this_0
