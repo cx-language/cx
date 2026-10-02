@@ -316,24 +316,70 @@ jobs:
           name: bench-record
           path: ${{ runner.temp }}/bench.json
 
+      # Ships the compiler to the bench-langs job: the binary plus every
+      # shared library it needs (the Ubuntu build links LLVM shared), so
+      # that job needs no toolchain install. The copy is stripped: bench
+      # runs don't need debug info, and it would triple the upload.
+      - name: Upload cx compiler (Ubuntu release)
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/cx-dist"
+          cp "${{ runner.workspace }}/build/cx" "$RUNNER_TEMP/cx-dist/cx"
+          strip "$RUNNER_TEMP/cx-dist/cx"
+          # Dereference: the loader resolves by the soname ldd prints,
+          # which becomes the copy's file name.
+          ldd "${{ runner.workspace }}/build/cx" | grep -o '/[^ ]*' | while read -r lib; do
+            cp -L "$lib" "$RUNNER_TEMP/cx-dist/"
+          done
+          ls "$RUNNER_TEMP/cx-dist"
+
+      - name: Upload cx compiler artifact (Ubuntu release)
+        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+        uses: actions/upload-artifact@v6
+        with:
+          name: cx-ubuntu-release
+          path: ${{ runner.temp }}/cx-dist
+
+  # The language comparison takes ~11 minutes, longer than the rest of the
+  # Ubuntu release leg combined, so it runs here in parallel with the other
+  # legs instead of appended to that leg. Runs on PRs too, validating that
+  # all ports still compile and agree; only main deploys publish it.
+  # Runs whenever the Ubuntu leg produced a compiler, independent of the
+  # other legs' outcome like the matrix legs themselves; the artifact
+  # download fails first if the Ubuntu leg did.
+  bench-langs:
+    needs: [ build ]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12
+
+      - name: Download cx compiler
+        uses: actions/download-artifact@v7
+        with:
+          name: cx-ubuntu-release
+          path: cx-dist
+
       # Language comparison needs Odin and Zig; Go and Rust ship with the runner.
       # Bump the keys with the versions in the install step below.
-      - name: Cache Odin (Ubuntu release)
-        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+      - name: Cache Odin
         uses: actions/cache@v5
         with:
           path: /tmp/odin
           key: odin-dev-2026-09
 
-      - name: Cache Zig (Ubuntu release)
-        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+      - name: Cache Zig
         uses: actions/cache@v5
         with:
           path: /tmp/zig
           key: zig-0.16.0
 
-      - name: Install Odin and Zig (Ubuntu release)
-        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
+      - name: Install Odin and Zig
         shell: bash
         run: |
           if [ ! -x "/tmp/odin/odin" ]; then
@@ -363,18 +409,18 @@ jobs:
           /tmp/odin/odin version
           /tmp/zig/zig version
 
-      # Like the corpus bench above, this runs on PRs too, validating that
-      # all ports still compile and agree; only main deploys publish it.
       - name: Benchmark languages
-        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
-        working-directory: ${{runner.workspace}}/build
         shell: bash
         run: |
-          python3 "$GITHUB_WORKSPACE/scripts/bench-langs.py" --cx ./cx \
+          chmod +x cx-dist/cx
+          # CX_ROOT points at the checked-out repo: the compiler finds std/
+          # there instead of beside an installed binary.
+          export CX_ROOT="$GITHUB_WORKSPACE"
+          export LD_LIBRARY_PATH="$PWD/cx-dist"
+          python3 scripts/bench-langs.py --cx ./cx-dist/cx \
             --output "$RUNNER_TEMP/langs.json" --html "$RUNNER_TEMP/langs.html"
 
       - name: Upload language comparison record
-        if: matrix.os == 'ubuntu-latest' && matrix.build_type != 'Debug'
         uses: actions/upload-artifact@v6
         with:
           name: langs-record
@@ -500,7 +546,7 @@ jobs:
 
   deploy-website:
     if: github.ref == 'refs/heads/main'
-    needs: [ build, build-playground ]
+    needs: [ build, build-playground, bench-langs ]
     runs-on: ubuntu-latest
     permissions:
       pages: write
