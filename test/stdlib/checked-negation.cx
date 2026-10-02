@@ -2,8 +2,15 @@
 // RUN: check_exit_status 0 %cx test -Werror --backend=c %s
 // RUN: check_exit_status 0 %cx test -Werror --backend=c --c-dispatch %s
 
+// -9223372036854775808 spells int64 min, not wrapped uint64.
+const NegInt64Min = -9223372036854775808;
+
 @test
 void testCheckedNegation() {
+    assert(NegInt64Min == int64.min);
+    assert(NegInt64Min < 0);
+    int64 q = NegInt64Min;
+    assert(q == int64.min);
     assert(-5 == -5);
     assert(-int8(-127) == 127);
     assert(-int8(127) == -127);
