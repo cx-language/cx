@@ -11,4 +11,34 @@ void f() {
     int*[2] p = [&x, &x];
     // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int*[2]'
     _ = -p;
+    bool flag = true;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'bool'
+    _ = -flag;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'string'
+    _ = -"hi";
+}
+
+struct Pair {
+    int x;
+    int y;
+}
+
+void g() {
+    Pair pair = Pair(1, 2);
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'Pair'
+    _ = -pair;
+}
+
+enum Shape {
+    Circle(float radius),
+    Rect(float w, float h),
+}
+
+void h() {
+    Shape shape = Shape.Circle(3.0);
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'Shape'
+    _ = -shape;
+    Shape[2] shapes = [Shape.Circle(1.0), Shape.Rect(2.0, 3.0)];
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'Shape[2]'
+    _ = -shapes;
 }

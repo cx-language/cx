@@ -91,7 +91,17 @@ void testUnaryMinus() {
 
     int[0] e = [];
     assert((-e) == e);
+
+    // Tag-only enums negate like their tag type, scalar and element-wise.
+    int negTag = -NegColor.green;
+    assert(negTag == -1);
+    NegColor[2] colors = [NegColor.red, NegColor.green];
+    NegColor[2] negColors = -colors;
+    assert(int(negColors[0]) == 0);
+    assert(int(negColors[1]) == -1);
 }
+
+enum NegColor { red, green }
 
 @test
 void testComparison() {

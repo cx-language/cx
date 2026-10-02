@@ -692,11 +692,19 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             if (isSymbolicArray(operandType)) {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "array operations require a constant size");
             }
+            // Integers, floats, chars, and tag-only enums (which lower to plain
+            // integers, like in binary operators) negate; payload enums lower
+            // to structs and have no negation, like everything else.
+            auto isNegatable = [](Type type) {
+                if (type.isInteger() || type.isFloatingPoint() || type.isChar()) return true;
+                return type.isEnumType() && !type.isOptionalType() && !llvm::cast<EnumDecl>(type.getDecl())->hasAssociatedValues();
+            };
             if (operandType.isArrayType() && operandType.isConcreteArray()) {
-                Type elementType = operandType.getElementType();
-                if (!elementType.isInteger() && !elementType.isFloatingPoint() && !elementType.isChar()) {
+                if (!isNegatable(operandType.getElementType())) {
                     ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
                 }
+            } else if (!isNegatable(operandType)) {
+                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
             }
             Type negType = operandType.removeOptional().removePointer();
             if (negType.isInteger() && expr.isConstant()) {
