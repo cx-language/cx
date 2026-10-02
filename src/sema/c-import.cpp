@@ -355,12 +355,15 @@ struct CToCxConverter final : clang::ASTConsumer {
     }
 
     VarDecl* toCx(const clang::VarDecl& decl) {
-        return makeAST<VarDecl>(toCx(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, module, toCx(decl.getLocation()));
+        auto* varDecl = makeAST<VarDecl>(toCx(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, module, toCx(decl.getLocation()));
+        varDecl->isConst = !varDecl->type.isMutable();
+        return varDecl;
     }
 
     void addConstantToSymbolTable(llvm::StringRef name, Expr* initializer, Type type) {
         initializer->type = type;
         auto* varDecl = makeAST<VarDecl>(type, name, initializer, nullptr, AccessLevel::Default, module, Location());
+        varDecl->isConst = true;
         module.addToSymbolTable(varDecl);
         module.sourceFiles.front().topLevelDecls.push_back(varDecl);
     }
@@ -585,12 +588,12 @@ struct CToCxConverter final : clang::ASTConsumer {
             }
             bool sameParams = true;
             for (size_t i = 0; i < existingFunction->getParams().size(); ++i) {
-                if (existingFunction->getParams()[i].type != functionDecl.getParams()[i].type) {
+                if (!existingFunction->getParams()[i].type.equalsIgnoreTopLevelMutable(functionDecl.getParams()[i].type)) {
                     sameParams = false;
                     break;
                 }
             }
-            if (sameParams && existingFunction->getReturnType() == functionDecl.getReturnType()) return true;
+            if (sameParams && existingFunction->getReturnType().equalsIgnoreTopLevelMutable(functionDecl.getReturnType())) return true;
         }
         return false;
     }

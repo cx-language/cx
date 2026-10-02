@@ -50,12 +50,6 @@ void constTarget() {
     const char c = 5;
 }
 
-void constTargetKeep() {
-    int? o = 3;
-    // CHECK: [[@LINE+1]]:19: error: cannot assign 'int?' to 'const int'
-    const int x = o;
-}
-
 void switchConst() {
     const c = 5;
     switch (c) {
@@ -73,12 +67,6 @@ void switchConst() {
         case 1: break;
         default: break;
     }
-    int? d = 3;
-    switch (d) {
-        // CHECK: [[@LINE+1]]:14: error: case value type 'int const?' doesn't match switch condition type 'int?'
-        case o: break;
-        default: break;
-    }
 }
 
 void ternaryConst() {
@@ -90,12 +78,6 @@ void ternaryConst() {
 }
 
 enum E { A, B }
-
-void ternaryKeep() {
-    const c = 5;
-    // CHECK: [[@LINE+1]]:9: error: incompatible operand types ('E' and 'const int')
-    _ = true ? E.A : c;
-}
 
 void nullCoalescingConst() {
     const int? o = 5;
@@ -109,15 +91,6 @@ int armsConst(int n) {
         // CHECK: [[@LINE+1]]:17: error: incompatible arm types ('int' and 'string')
         case 0: c
         default: "many"
-    };
-}
-
-int armsKeep(int n) {
-    const c = 5;
-    return switch n {
-        // CHECK: [[@LINE+1]]:17: error: incompatible arm types ('E' and 'const int')
-        case 0: E.A
-        default: c
     };
 }
 

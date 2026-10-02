@@ -157,7 +157,9 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         auto it = replacements.find(getName());
         if (it != replacements.end() && it->second.isType()) {
             // TODO: Handle generic arguments for type placeholders.
-            Type resolved = it->second.getType().withMutability(mutability);
+            // Placeholder const adds (e.g. `const T*`); bound const survives.
+            Type resolved = it->second.getType();
+            if (!isMutable()) resolved = resolved.withMutability(Mutability::Const);
             resolved.location = location;
             resolved.endLocation = endLocation;
             return preserveSpelling(resolved);
@@ -165,7 +167,16 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         // An integer parameter reference isn't a type; leave it for the use site to diagnose.
 
         auto genericArgs = map(getGenericArgs(), [&](GenericArg arg) { return arg.resolve(replacements); });
-        return preserveSpelling(BasicType::get(getName(), std::move(genericArgs), mutability, location, endLocation));
+        Type rebuilt = BasicType::get(getName(), std::move(genericArgs), mutability, location, endLocation);
+        // Substitution can produce non-canonical const-element arrays ('T[2]'
+        // with 'T := const int'); fold to the canonical outer-const form so a
+        // mutable binding strips it like any other substituted const.
+        if (rebuilt.isFixedArray() && rebuilt.isMutable() && !rebuilt.getElementType().isMutable()) {
+            auto canonicalArgs = std::vector<GenericArg>(rebuilt.getGenericArgs().begin(), rebuilt.getGenericArgs().end());
+            canonicalArgs[0] = GenericArg(rebuilt.getElementType().removeTopLevelConst());
+            rebuilt = BasicType::get(getName(), std::move(canonicalArgs), Mutability::Const, location, endLocation);
+        }
+        return preserveSpelling(rebuilt);
     }
     case TypeKind::ArrayPointerType: {
         Type elementType = llvm::cast<ArrayPointerType>(typeBase)->elementType;

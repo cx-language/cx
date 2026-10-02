@@ -471,6 +471,8 @@ struct VarDecl : VariableDecl, Movable {
     // Set by '@manuallyDestroy': scope exit does not run this variable's destructor.
     // Assignment still destroys the previous value.
     bool isManuallyDestroy = false;
+    // True for constant bindings: 'const' declarator, static consts, C consts.
+    bool isConst = false;
 };
 
 struct ImportDecl : Decl {

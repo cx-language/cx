@@ -189,3 +189,35 @@ int switchExprDefaultConst(int n) {
         case 0: 1
     };
 }
+
+void writeThroughPointee<T>(T* p) {
+    // The pointee const is the reason, and nothing else states it, so it stays.
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable expression of type 'const int'
+    *p = 5;
+}
+
+void writeThroughPointeeCall(const int* q) {
+    writeThroughPointee(q);
+}
+
+void optPtrUnwrapKeepsPointee(const int*? o) {
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'const int*?' to 'int*'
+    int* p = o;
+}
+
+void writeSliceFirst<T>(T[] s) {
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable array of type 'const int[*]'
+    s.data()[0] = 1;
+}
+
+void writeSliceFirstCall() {
+    int[3] m = [1, 2, 3];
+    writeSliceFirst(m);
+    const int[3] c = [4, 5, 6];
+    writeSliceFirst(c);
+}
+
+void ptrLiteralNoLaunder(const int* p) {
+    // CHECK: [[@LINE+1]]:17: error: cannot assign 'const int*[2]' to 'int*[2]'
+    int*[2] a = [p, p];
+}

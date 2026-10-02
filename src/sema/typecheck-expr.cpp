@@ -505,13 +505,13 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
 
     for (auto& element : llvm::ArrayRef<Expr*>(array.elements).drop_front()) {
         Type type = typecheckExpr(*element);
-        if (type != firstType) {
+        if (!type.equalsIgnoreTopLevelMutable(firstType)) {
             ERROR_RANGE(getExprRangeStart(*element), element->endLocation,
                         "mixed element types in array literal (expected '" << firstType << "', found '" << type << "')");
         }
     }
 
-    return BasicType::getArray(firstType, int64_t(array.elements.size()));
+    return BasicType::getArray(firstType.removeTopLevelConst(), int64_t(array.elements.size()));
 }
 
 Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
@@ -520,7 +520,8 @@ Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
             ERROR_RANGE(getExprRangeStart(*namedValue.value), namedValue.value->endLocation,
                         "unnamed anonymous struct members are not supported yet; name each field (e.g. `(x = 1, y = 2)`)");
         }
-        return AnonymousStructElement{namedValue.name, typecheckExpr(*namedValue.value)};
+        // Literal members are fresh copies, so their top-level const is not part of the literal's type.
+        return AnonymousStructElement{namedValue.name, typecheckExpr(*namedValue.value).removeTopLevelConst()};
     });
     return AnonymousStructType::get(std::move(elements));
 }
@@ -615,7 +616,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
 
         if (!operandType.isMutable()) {
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment immutable value of type '" << operandType << "'");
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment immutable value of type '" << operandType.removeTopLevelConst() << "'");
         } else if (!operandType.isIncrementable()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment '" << operandType << "'");
         }
@@ -638,7 +639,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
 
         if (!operandType.isMutable()) {
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement immutable value of type '" << operandType << "'");
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement immutable value of type '" << operandType.removeTopLevelConst() << "'");
         } else if (!operandType.isDecrementable()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement '" << operandType << "'");
         }
@@ -836,6 +837,8 @@ ComparisonTemps Typechecker::createComparisonTemps(BinaryExpr& expr) {
         auto* temp = makeAST<VarDecl>(type, prefix + std::to_string(comparisonTempCounter++), nullptr, currentFunction, AccessLevel::None, *currentModule,
                                       expr.location);
         temp->isImplicitlyBound = true;
+        // Temps alias their operand, so they mirror its constness instead of stripping it.
+        temp->isConst = !type.isMutable();
         typecheckVarDecl(*temp);
         // The temporary has no initializer; codegen binds it to the operand value.
         definitelyAssignedDecls.insert(temp);
@@ -1376,13 +1379,16 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
         switch (lhs->kind) {
         case ExprKind::VarExpr: {
             auto identifier = llvm::cast<VarExpr>(lhs)->identifier;
-            ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign to immutable variable '" << identifier << "' of type '" << lhsType << "'");
+            ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation,
+                        "cannot assign to immutable variable '" << identifier << "' of type '" << lhsType.removeTopLevelConst() << "'");
         }
         case ExprKind::MemberExpr: {
             auto memberName = llvm::cast<MemberExpr>(lhs)->member;
-            ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign to immutable variable '" << memberName << "' of type '" << lhsType << "'");
+            ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation,
+                        "cannot assign to immutable variable '" << memberName << "' of type '" << lhsType.removeTopLevelConst() << "'");
         }
         default:
+            // Unlike the named cases above, nothing else here says where the const comes from, so keep it.
             ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign to immutable expression of type '" << lhsType << "'");
         }
     }
@@ -1663,7 +1669,8 @@ static bool isSafeNumericWidening(Type source, Type target) {
 // Sizeof markers share one name, so their operands decide instead.
 static bool arraySizesMatch(Type source, Type target) {
     if (source.hasSizeofArraySize() || target.hasSizeofArraySize()) {
-        return source.hasSizeofArraySize() && target.hasSizeofArraySize() && source.getSizeofArrayOperand() == target.getSizeofArrayOperand();
+        return source.hasSizeofArraySize() && target.hasSizeofArraySize()
+            && source.getSizeofArrayOperand().equalsIgnoreTopLevelMutable(target.getSizeofArrayOperand());
     }
     return source.getArraySize() == target.getArraySize() && source.getArraySizeParam() == target.getArraySizeParam();
 }
@@ -1720,7 +1727,7 @@ FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Typ
     if (source.isOptionalType()) {
         // An optional source unwraps first (asserting non-null like the plain unwrap rule),
         // unless the plain unwrap already applies.
-        if (source.getWrappedType() == target) {
+        if (source.getWrappedType().equalsIgnoreTopLevelMutable(target)) {
             if (viableCount) *viableCount = 0;
             return nullptr;
         }
@@ -1792,8 +1799,13 @@ FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Typ
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
                                           std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange, bool allowOperatorBorrow,
                                           bool allowUserConversion, bool* usesUserConversion) const {
-    if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
-        return source;
+    if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName()) {
+        if (source.getGenericArgs() == target.getGenericArgs()) return source;
+        // Fixed arrays are values: copies ignore element top-level const (fresh storage).
+        if (source.isFixedArray() && target.isFixedArray() && source.getArraySize() == target.getArraySize()
+            && source.getElementType().equalsIgnoreTopLevelMutable(target.getElementType())) {
+            return source;
+        }
     }
 
     if (source.isArrayType() && (target.isArrayType() || target.isSlice()) && (source.getElementType().isMutable() || !target.getElementType().isMutable())
@@ -1808,8 +1820,11 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isFunctionType() && target.isFunctionType() && source.getReturnType() == target.getReturnType()
-        && source.getParamTypes() == target.getParamTypes()) {
+    // Top-level const on by-value parameters and returns is not part of the signature; borrows
+    // still differ because their const lives on the pointee.
+    if (source.isFunctionType() && target.isFunctionType() && source.getReturnType().equalsIgnoreTopLevelMutable(target.getReturnType())
+        && llvm::equal(source.getParamTypes(), target.getParamTypes(),
+                       [](Type sourceParam, Type targetParam) { return sourceParam.equalsIgnoreTopLevelMutable(targetParam); })) {
         return source;
     }
 
@@ -1857,7 +1872,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     if (expr) {
         // Only tag-only enums convert to their tag type; payload enums (including optionals) don't.
         if (expr->type.isEnumType() && !llvm::cast<EnumDecl>(expr->type.getDecl())->hasAssociatedValues()
-            && llvm::cast<EnumDecl>(expr->type.getDecl())->getTagType() == target) {
+            && llvm::cast<EnumDecl>(expr->type.getDecl())->getTagType().equalsIgnoreTopLevelMutable(target)) {
             return source;
         }
 
@@ -2024,7 +2039,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     // Calls returning optionals implicitly unwrap like any other expression; the null
     // analyzer warns unless the unwrapped value is proven non-null at the use site.
-    if (source.isOptionalType() && source.getWrappedType() == target && expr) {
+    if (source.isOptionalType() && source.getWrappedType().equalsIgnoreTopLevelMutable(target) && expr) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalUnwrap;
         return target;
     }
@@ -2145,15 +2160,19 @@ bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
     llvm_unreachable("all cases handled");
 }
 
-GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType) {
+GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType, bool inPointeePosition) {
     if (!inFunctionType && argType.isReferenceType() && !paramType.isReferenceType()) {
-        // A bare borrow binds as its referent, so borrowing never leaks into inferred value types.
-        // Inside function types the borrow is part of the callee's ABI and must be preserved.
+        // A bare borrow binds as its referent, so neither borrowing nor top-level const
+        // leaks into inferred value types. Inside function types the borrow is part of
+        // the callee's ABI and must be preserved.
         argType = argType.getPointee();
     }
 
     if (paramType.isBasicType() && paramType.getName() == genericParam) {
-        return GenericArg(argType);
+        // A bare T in value position binds a whole value, whose top-level const is not
+        // part of its type. Pointee and view positions keep their const (it constrains
+        // aliased storage, not a copy).
+        return GenericArg(inPointeePosition ? argType : argType.removeTopLevelConst());
     }
 
     if (argType.isClosureType()) {
@@ -2161,11 +2180,12 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         // capturing lambdas where plain function pointers are expected.
         auto closureParams = argType.getClosureParamTypes();
         std::vector<Type> paramTypes(closureParams.begin(), closureParams.end());
-        return findGenericArg(FunctionType::get(argType.getClosureReturnType(), std::move(paramTypes), false), paramType, genericParam, inFunctionType);
+        return findGenericArg(FunctionType::get(argType.getClosureReturnType(), std::move(paramTypes), false), paramType, genericParam, inFunctionType,
+                              inPointeePosition);
     }
 
     if (argType.isFixedArray() && paramType.getKind() == TypeKind::ArrayPointerType) {
-        return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
+        return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType, /*inPointeePosition=*/true);
     }
 
     switch (argType.getKind()) {
@@ -2177,10 +2197,12 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
                 // Matches both type params (T) and integer params (N in Array<T, N>):
                 // a placeholder Type("N") in param position returns the arg (int or type).
                 if (paramTypeGenericArg.isType() && paramTypeGenericArg.getType().isBasicType() && paramTypeGenericArg.getType().getName() == genericParam) {
-                    return isFirstGenericArg && argType.isFixedArray() ? GenericArg(argType.getElementType()) : argTypeGenericArg;
+                    // Fixed-array elements are copied values, so T drops their top-level const.
+                    return isFirstGenericArg && argType.isFixedArray() ? GenericArg(argType.getElementType().removeTopLevelConst()) : argTypeGenericArg;
                 }
                 if (argTypeGenericArg.isType() && paramTypeGenericArg.isType()) {
-                    if (GenericArg arg = findGenericArg(argTypeGenericArg.getType(), paramTypeGenericArg.getType(), genericParam, inFunctionType)) {
+                    if (GenericArg arg =
+                            findGenericArg(argTypeGenericArg.getType(), paramTypeGenericArg.getType(), genericParam, inFunctionType, inPointeePosition)) {
                         return arg;
                     }
                 }
@@ -2191,14 +2213,14 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
 
     case TypeKind::ArrayPointerType:
         if (paramType.getKind() == TypeKind::ArrayPointerType) {
-            return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
+            return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType, /*inPointeePosition=*/true);
         }
         break;
 
     case TypeKind::AnonymousStructType:
         if (paramType.isAnonymousStructType()) {
             for (auto&& [argTypeElement, paramTypeElement] : llvm::zip_first(argType.getAnonymousStructElements(), paramType.getAnonymousStructElements())) {
-                if (GenericArg arg = findGenericArg(argTypeElement.type, paramTypeElement.type, genericParam, inFunctionType)) {
+                if (GenericArg arg = findGenericArg(argTypeElement.type, paramTypeElement.type, genericParam, inFunctionType, inPointeePosition)) {
                     return arg;
                 }
             }
@@ -2208,17 +2230,17 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
     case TypeKind::FunctionType:
         if (paramType.isFunctionType()) {
             for (auto&& [argTypeParamType, paramTypeParamTypes] : llvm::zip_first(argType.getParamTypes(), paramType.getParamTypes())) {
-                if (GenericArg arg = findGenericArg(argTypeParamType, paramTypeParamTypes, genericParam, true)) {
+                if (GenericArg arg = findGenericArg(argTypeParamType, paramTypeParamTypes, genericParam, true, inPointeePosition)) {
                     return arg;
                 }
             }
-            return findGenericArg(argType.getReturnType(), paramType.getReturnType(), genericParam, true);
+            return findGenericArg(argType.getReturnType(), paramType.getReturnType(), genericParam, true, inPointeePosition);
         }
         break;
 
     case TypeKind::PointerType:
         if (paramType.isPointerType()) {
-            return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam, inFunctionType);
+            return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam, inFunctionType, /*inPointeePosition=*/true);
         }
         break;
 
@@ -2229,17 +2251,17 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
     // TODO: Should probably try matching generic arg also with implicitly-converted values, instead duplicating the special cases here. This is bug prone.
 
     if (paramType.removeOptional().isPointerType()) {
-        return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam, inFunctionType);
+        return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam, inFunctionType, inPointeePosition);
     }
 
     if (paramType.isSlice()) {
         Type arg = argType.removeOptional().removePointer();
         if (arg.isArrayType()) {
-            return findGenericArg(arg.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
+            return findGenericArg(arg.getElementType(), paramType.getElementType(), genericParam, inFunctionType, /*inPointeePosition=*/true);
         }
         // Lists convert to slices implicitly, so they infer the element type too.
         if (arg.isBasicType() && arg.getName() == "List" && arg.getGenericArgs().size() == 1 && arg.getGenericArgs()[0].isType()) {
-            return findGenericArg(arg.getGenericArgs()[0].getType(), paramType.getElementType(), genericParam, inFunctionType);
+            return findGenericArg(arg.getGenericArgs()[0].getType(), paramType.getElementType(), genericParam, inFunctionType, /*inPointeePosition=*/true);
         }
     }
 
@@ -2327,6 +2349,16 @@ static bool considerGenericArg(Typechecker& checker, GenericArg& genericArg, Exp
         return true;
     }
     if (equalAgrees && candidate == genericArg) return true;
+
+    // Candidates differing only by top-level const agree (value binds strip it, pointee
+    // binds keep it); keep the const one since it satisfies both positions.
+    if (candidate.isType() && genericArg.isType() && candidate.getType().equalsIgnoreTopLevelMutable(genericArg.getType())) {
+        if (!candidate.getType().isMutable()) {
+            genericArg = candidate;
+            genericArgValue = candidateValue;
+        }
+        return true;
+    }
 
     Type paramTypeWithGenericArg = paramType.resolve({{genericParamName, genericArg}});
     Type paramTypeWithCandidate = paramType.resolve({{genericParamName, candidate}});
@@ -3117,7 +3149,7 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr, Type targetType) {
     // A conversion written against a type parameter (e.g. `T(0)`) is only redundant for some
     // instantiations, so it never warns; only warn for conversions spelled with a concrete type.
     auto* calleeVar = llvm::dyn_cast<VarExpr>(expr.callee);
-    if (sourceType == targetType && !(calleeVar && calleeVar->instantiatedFromTypeParam)) {
+    if (sourceType.equalsIgnoreTopLevelMutable(targetType) && !(calleeVar && calleeVar->instantiatedFromTypeParam)) {
         WARN_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "unnecessary conversion to same type");
     }
 
@@ -3202,7 +3234,10 @@ static const Match* findMatchWithMostExactArgs(llvm::ArrayRef<Match> matches, co
             Type paramType = params[size_t(argToParam[i])].type;
             Type argType = call.args[i].value->type;
             // Optional wrapping changes nullability only. Prefer the overload whose wrapped type matches exactly.
-            if (paramType == argType || (paramType.isOptionalType() && !argType.isOptionalType() && paramType.removeOptional() == argType)) ++count;
+            if (paramType.equalsIgnoreTopLevelMutable(argType)
+                || (paramType.isOptionalType() && !argType.isOptionalType() && paramType.removeOptional().equalsIgnoreTopLevelMutable(argType))) {
+                ++count;
+            }
         }
         if (count > bestCount) {
             bestCount = count;
@@ -4558,7 +4593,9 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
                 if (indices.size() == 1) {
                     return elementType.withMutability(baseType.mutability);
                 } else {
-                    return BasicType::getArray(elementType, static_cast<int64_t>(indices.size()), expr.location).withMutability(baseType.mutability);
+                    // getElementType folds the base const in; store the bare element (outer comes from the base).
+                    return BasicType::getArray(elementType.removeTopLevelConst(), static_cast<int64_t>(indices.size()), expr.location)
+                        .withMutability(baseType.mutability);
                 }
             }
             // If member looks like a swizzle but indices out of range (e.g. `float[2].z`),
@@ -4702,7 +4739,7 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
 
     Type baseType = expr.getBase()->type.removeOptional().removePointer();
     if (baseType.isArrayType() && (!baseType.isMutable() || !elementType.isMutable())) {
-        ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot assign to immutable array of type '" << baseType << "'");
+        ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot assign to immutable array of type '" << baseType.removeTopLevelConst() << "'");
     }
     // Storing into a fixed-array value (e.g. a multi-char swizzle or a call
     // result) would write to a temporary and silently drop the value.

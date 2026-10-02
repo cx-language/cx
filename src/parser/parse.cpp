@@ -1248,7 +1248,10 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     }
 
     if (requireTerminator) parseStmtTerminator();
-    return makeAST<VarDecl>(type, name, initializer, parent, accessLevel, *currentModule, nameLocation);
+    auto* decl = makeAST<VarDecl>(type, name, initializer, parent, accessLevel, *currentModule, nameLocation);
+    // Pre-B rule: top-level const on a declared type marks the binding constant.
+    decl->isConst = !type.isMutable();
+    return decl;
 }
 
 /// var-stmt ::= var-decl (',' id ('=' initializer)?)*
@@ -1956,7 +1959,9 @@ void Parser::addParsedStaticConst(TypeDecl& typeDecl, Type type, llvm::StringRef
     parse(Token::Assignment);
     auto* initializer = parseExpr();
     parseStmtTerminator();
-    typeDecl.staticConsts.push_back(makeAST<VarDecl>(type, name, initializer, nullptr, accessLevel, *currentModule, location));
+    auto* staticConst = makeAST<VarDecl>(type, name, initializer, nullptr, accessLevel, *currentModule, location);
+    staticConst->isConst = true;
+    typeDecl.staticConsts.push_back(staticConst);
 }
 
 void Parser::parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel, const std::vector<GenericParamDecl>* genericParams) {

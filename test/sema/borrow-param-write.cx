@@ -36,7 +36,7 @@ void decBorrowParam(int& x) {
 }
 
 void constBorrowReadOnly(const Outer& o) {
-    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable variable 'v' of type 'const int'
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable variable 'v' of type 'int'
     o.inner.v = 1;
 }
 

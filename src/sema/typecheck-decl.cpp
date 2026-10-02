@@ -285,7 +285,9 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
         // Fold sizeof sizes whose operand now has a known size.
         if (rebuilt.isFixedArray() && rebuilt.hasSizeofArraySize()) {
             if (auto size = rebuilt.getSizeofArrayOperand().getSizeInBytes()) {
-                return BasicType::getArray(rebuilt.getElementType(), int64_t(*size), type.location, type.endLocation);
+                // Canonical arrays store a bare element with const only on the outer type.
+                return BasicType::getArray(rebuilt.getElementType().removeTopLevelConst(), int64_t(*size), type.location, type.endLocation)
+                    .withMutability(rebuilt.mutability);
             }
         }
         // Fold deferred sizes and bare size names at real declaration sites.
@@ -293,15 +295,17 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
         if (foldArraySizes && rebuilt.isFixedArray() && !rebuilt.hasSizeofArraySize()) {
             if (rebuilt.hasDeferredArraySize()) {
                 try {
-                    return resolveArraySize(*rebuilt.getDeferredArraySize(), rebuilt.getElementType(), type.location, type.endLocation,
-                                            rebuilt.getDeferredArraySizeHome());
+                    return resolveArraySize(*rebuilt.getDeferredArraySize(), rebuilt.getElementType().removeTopLevelConst(), type.location, type.endLocation,
+                                            rebuilt.getDeferredArraySizeHome())
+                        .withMutability(rebuilt.mutability);
                 } catch (const CompileError&) {
                 }
             } else if (!rebuilt.getArraySizeParam().empty()) {
                 auto* name = makeAST<VarExpr>(rebuilt.getArraySizeParam(), rebuilt.getGenericArgs()[1].location);
                 name->endLocation = getIdentifierEndLocation(name->location, name->identifier);
                 try {
-                    return resolveArraySize(*name, rebuilt.getElementType(), type.location, type.endLocation, nullptr);
+                    return resolveArraySize(*name, rebuilt.getElementType().removeTopLevelConst(), type.location, type.endLocation, nullptr)
+                        .withMutability(rebuilt.mutability);
                 } catch (const CompileError&) {
                 }
             }
@@ -1853,6 +1857,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     // reports once and later uses see the partial state instead of rechecking.
     llvm::scope_exit markChecked([&decl] { decl.checkState = Decl::CheckState::Checked; });
     decl.type = resolveTypeAliases(decl.type, decl.isGlobal() ? decl.accessLevel : AccessLevel::None, /*foldArraySizes=*/true);
+    if (!decl.isConst) decl.type = decl.type.removeTopLevelConst();
     if (!decl.isGlobal()) {
         localVarDecls.push_back(&decl);
     }

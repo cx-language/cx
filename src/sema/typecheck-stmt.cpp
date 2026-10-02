@@ -972,7 +972,8 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
                                             << stripIrrelevantTargetConst(switchCase.value, caseType, conditionType) << "'");
         }
 
-        if (conditionType.isOptionalType() && !conditionType.getWrappedType().isPointerType() && !enumCase && caseType != conditionType) {
+        if (conditionType.isOptionalType() && !conditionType.getWrappedType().isPointerType() && !enumCase
+            && !caseType.equalsIgnoreTopLevelMutable(conditionType)) {
             // Value-optional conditions (e.g. int?) only match enum cases (Some/None); a wrapped
             // value has no case representation, so don't silently wrap to the optional type.
             Type displayCase = caseType.removeTopLevelConst();

@@ -17,7 +17,7 @@ void main() {
     defer SDL_Quit();
 
     var window = SDL_CreateWindow("cx Asteroids",
-        int(width), int(height), SDL_WINDOW_HIGH_PIXEL_DENSITY);
+        width, height, SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
     if window == null {
         println(SDL_GetError()!);

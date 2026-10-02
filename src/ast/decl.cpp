@@ -352,7 +352,8 @@ FieldDecl FieldDecl::instantiate(const llvm::StringMap<GenericArg>& genericArgs,
 
 std::vector<ParamDecl> cx::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<GenericArg>& genericArgs) {
     return map(params, [&](const ParamDecl& param) {
-        ParamDecl result(param.type.resolve(genericArgs), param.getName(), param.isPublic, param.getLocation());
+        // Params are mutable bindings; substituted top-level const would wrongly reject reassignment.
+        ParamDecl result(param.type.resolve(genericArgs).removeTopLevelConst(), param.getName(), param.isPublic, param.getLocation());
         result.isPack = param.isPack;
         result.defaultValue = param.defaultValue ? param.defaultValue->instantiate(genericArgs) : nullptr;
         return result;
@@ -657,6 +658,7 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
         auto* instantiation =
             makeAST<VarDecl>(type, varDecl->getName(), initializer, varDecl->parent, accessLevel, *varDecl->getModule(), varDecl->getLocation());
         instantiation->isManuallyDestroy = varDecl->isManuallyDestroy;
+        instantiation->isConst = varDecl->isConst;
         return instantiation;
     }
     case DeclKind::FieldDecl:

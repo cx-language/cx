@@ -225,7 +225,7 @@ struct Typechecker {
     /// a UserConversion cast. Null when the operand no longer converts.
     Expr* convertWithUserConversion(Expr* expr, Type target, bool diagnoseOutOfRange, bool allowOperatorBorrow);
     void typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool positive = true);
-    GenericArg findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType = false);
+    GenericArg findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam, bool inFunctionType = false, bool inPointeePosition = false);
     llvm::StringMap<GenericArg> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                       Type expectedType);
     Decl* findDecl(llvm::StringRef name, Location location, Location endLocation = {});

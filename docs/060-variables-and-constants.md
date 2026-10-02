@@ -16,6 +16,14 @@ const c = 0.1; // global constant, type inferred as 'float'
 const float d = 0.2; // global constant, explicit type
 ```
 
+`const` is a property of the declaration, not of the value's type: a constant
+cannot be reassigned or mutated in place, but copying its value always works.
+Passing a constant where a value is expected (arguments, return values,
+ternary arms, array elements, ...) never fails for constness reasons, and
+reading a member or element of a constant yields a constant. `const` only
+constrains aliases: pointers, borrows, and views cannot drop the pointee's
+constness, and the elements of a `const` array cannot be written through.
+
 An explicit type on a global or member constant cannot be a slice or
 optional type; omit it and let the type be inferred.
 

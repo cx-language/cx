@@ -1,0 +1,28 @@
+// RUN: %cx run -Werror %s 2>&1 | %FileCheck %s
+
+// Fixed arrays (including generic ones) pass by value: mutating the parameter
+// never affects the argument, so const arrays convert freely.
+void mutateConcrete(int[2] a) {
+    a[0] = 9;
+}
+
+void mutateGeneric<T, int N>(T[N] a) {
+    a[0] = 9;
+}
+
+void main() {
+    int[2] a = [1, 2];
+    mutateConcrete(a);
+    // CHECK: 1
+    println(a[0]);
+    const int[2] c = [3, 4];
+    mutateConcrete(c);
+    // CHECK-NEXT: 3
+    println(c[0]);
+    mutateGeneric(a);
+    // CHECK-NEXT: 1
+    println(a[0]);
+    mutateGeneric(c);
+    // CHECK-NEXT: 3
+    println(c[0]);
+}
