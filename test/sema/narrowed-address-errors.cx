@@ -1,8 +1,11 @@
-// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck -error-limit 0 %s -Wno-unused 2>&1 | %FileCheck %s
 
 struct S { int x; }
 void takePayload(S* s) {}
+void takeOptional(S?* s) {}
+void takeOptPtrOpt(S?*? s) {}
 void borrowOptional(S?& s) {}
+extern "C" void vt(void* p, ...);
 
 void nullBranch() {
     S? s = S(1);
@@ -31,6 +34,45 @@ void invalidatedByAssign() {
     S? s = S(1);
     if s == null { return; }
     s = null;
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+    takePayload(&s);
+}
+
+void invalidatedByCall() {
+    S? s = S(1);
+    if s == null { return; }
+    takeOptional(&s);
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+    takePayload(&s);
+
+    S? t = S(2);
+    if t == null { return; }
+    borrowOptional(t);
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+    takePayload(&t);
+}
+
+void invalidatedByReborrow() {
+    S? s = S(1);
+    if s == null { return; }
+    borrowOptional(&s);
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+    takePayload(&s);
+}
+
+void invalidatedByWrap() {
+    S? s = S(1);
+    if s == null { return; }
+    takeOptPtrOpt(&s);
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+    takePayload(&s);
+}
+
+void invalidatedByVariadic() {
+    S? s = S(1);
+    if s == null { return; }
+    int x = 0;
+    vt(&x, &s);
     // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
     takePayload(&s);
 }

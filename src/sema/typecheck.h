@@ -273,6 +273,7 @@ struct Typechecker {
     void applyNarrowings(const Expr& condition, bool polarity);
     void intersectNarrowings(const NarrowMap& other);
     void dropNarrowingsForNames(const llvm::StringSet<>& names);
+    void dropNarrowingForAddressArg(const Expr& arg, Type paramType);
     static VariableDecl* getEnumNarrowableDecl(const VarExpr& varExpr);
     void narrowEnumCaseComparison(const Expr& lhs, const Expr& rhs, BinaryOperator op, bool polarity);
     void narrowEnumSubjectToCase(const Expr* subject, const EnumCase& enumCase);

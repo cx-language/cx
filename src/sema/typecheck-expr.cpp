@@ -314,6 +314,35 @@ void Typechecker::dropNarrowingsForNames(const llvm::StringSet<>& names) {
     }
 }
 
+// Passing &v (or v by mutable borrow) lets the callee write through it: drop v's narrowing.
+void Typechecker::dropNarrowingForAddressArg(const Expr& arg, Type paramType) {
+    if (narrowedTypes.empty()) return;
+    Type target = paramType;
+    while (target.isOptionalType()) {
+        target = target.getWrappedType();
+    }
+    if (target.isPointeeConst() || (!target.isPointerType() && !target.isReferenceType() && !target.isArrayPointer())) return;
+    const Expr* exposed = &arg;
+    for (;;) {
+        auto* cast = llvm::dyn_cast<ImplicitCastExpr>(exposed);
+        if (!cast) break;
+        // An autoref names the variable itself rather than its address.
+        if (cast->castKind == ImplicitCastExpr::AutoReference) {
+            if (auto* var = llvm::dyn_cast<VarExpr>(cast->operand); var && var->decl) narrowedTypes.erase(var->decl);
+            return;
+        }
+        // Reborrow, wrapping, and narrowed-address unwraps all forward the address.
+        if (cast->castKind != ImplicitCastExpr::Reborrow && cast->castKind != ImplicitCastExpr::OptionalWrap
+            && cast->castKind != ImplicitCastExpr::OptionalUnwrapPointer) {
+            return;
+        }
+        exposed = cast->operand;
+    }
+    if (auto* unary = llvm::dyn_cast<UnaryExpr>(exposed); unary && unary->op == Token::And) {
+        if (auto* var = llvm::dyn_cast<VarExpr>(&unary->getOperand()); var && var->decl) narrowedTypes.erase(var->decl);
+    }
+}
+
 void Typechecker::unnarrowEnumView(Expr& expr) {
     if (expr.hasAssignableType() && EnumDecl::isPayloadView(expr.assignableType, expr.type)) {
         expr.type = expr.assignableType;
@@ -1919,8 +1948,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     // A narrowed address converts to the payload pointer: `&s` where `s` is narrowed to `T`
     // passes as `T*` (or `T&`). Narrowing proves the optional is non-null; arbitrary
-    // `T?*` values don't convert since their target may be null. This trusts the
-    // narrowing map, which calls never invalidate (unlike direct assignments).
+    // `T?*` values don't convert since their target may be null. The call itself
+    // drops the narrowing afterwards (see dropNarrowingForAddressArg).
     if (expr && source.isPointerType() && target.isPointerType() && source.getPointee().isOptionalType() && constWidens(source, target)
         && source.getPointee().getWrappedType() == target.getPointee()) {
         auto* addressOf = llvm::dyn_cast<UnaryExpr>(expr);
@@ -4393,12 +4422,14 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                     validateCppVariadicExtra(extraType, *expr.args[i].value, callee);
                 else if (isExternCallee)
                     validateCVariadicExtra(extraType, *expr.args[i].value);
+                dropNarrowingForAddressArg(*expr.args[i].value, extraType);
                 continue;
             }
             // Committing can still fail when probing succeeded (e.g. a user conversion whose
             // operand no longer converts); report it as a mismatch rather than storing null.
             if (Expr* converted = convert(expr.args[i].value, params[size_t(paramIndex)].type, true, true, allowOperatorBorrow)) {
                 expr.args[i].value = converted;
+                dropNarrowingForAddressArg(*converted, params[size_t(paramIndex)].type);
                 // Passing a tracked pointer by mutable borrow exposes it for
                 // reseating. Only a direct autoreference counts: borrows of
                 // dereferences or temporaries don't expose the variable.

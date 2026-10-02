@@ -38,6 +38,9 @@ The narrowed address passes to `T*` parameters (or binds to `T&`),
 addressing the payload inside the optional.
 The variable also still passes as the declared type (`T?*` and `T?&`),
 addressing the whole optional.
+Passing the address to a call drops the narrowing afterwards, since the
+callee may write through it; check for null again before the next
+narrowed use.
 
 ```cs
 struct S { int x; }
@@ -51,6 +54,7 @@ void main() {
     S? s = S(42);
     if s == null { return; }
     takePayload(&s); // prints 42
+    if s == null { return; }
     borrowOptional(s); // prints 42
 }
 ```
