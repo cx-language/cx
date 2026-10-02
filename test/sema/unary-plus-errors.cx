@@ -1,0 +1,46 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+void f() {
+    bool flag = true;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '+' to type 'bool'
+    _ = +flag;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '+' to type 'string'
+    _ = +"hi";
+    bool[3] b = [true, false, true];
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '+' to type 'bool[3]'
+    _ = +b;
+    int? o = 42;
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '+' to type 'int?'
+    _ = +o;
+    int x = 1;
+    float y = 2.0;
+    int[3] a = [1, 2, 3];
+    _ = +x;
+    _ = +y;
+    _ = +a;
+    _ = +42;
+}
+
+struct Pair {
+    int x;
+    int y;
+}
+
+enum Level {
+    Low,
+    High,
+}
+
+enum Shape {
+    Circle(float radius),
+}
+
+void g() {
+    Pair pair = Pair(1, 2);
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '+' to type 'Pair'
+    _ = +pair;
+    Shape shape = Shape.Circle(3.0);
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '+' to type 'Shape'
+    _ = +shape;
+    _ = +Level.High;
+}

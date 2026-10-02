@@ -779,27 +779,29 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
                         "cannot apply unary '" << toString(expr.op) << "' to pointer of type '" << operandType << "'; dereference it explicitly (e.g. '"
                                                << toString(expr.op) << "*p')");
         }
-        if (expr.op == Token::Minus) {
+        if (expr.op == Token::Minus || expr.op == Token::Plus) {
             if (operandType.isOptionalType()) {
-                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
+                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '" << toString(expr.op) << "' to type '" << operandType << "'");
             }
             if (isSymbolicArray(operandType)) {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "array operations require a constant size");
             }
             // Integers, floats, chars, and tag-only enums (which lower to plain
             // integers, like in binary operators) negate; payload enums lower
-            // to structs and have no negation, like everything else.
+            // to structs and have no negation, like everything else. Unary plus
+            // accepts the same operands as an identity.
             auto isNegatable = [](Type type) {
                 if (type.isInteger() || type.isFloatingPoint() || type.isChar()) return true;
                 return isTagOnlyEnum(type);
             };
             if (operandType.isArrayType() && operandType.isConcreteArray()) {
                 if (!isNegatable(operandType.getElementType())) {
-                    ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
+                    ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '" << toString(expr.op) << "' to type '" << operandType << "'");
                 }
             } else if (!isNegatable(operandType)) {
-                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
+                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '" << toString(expr.op) << "' to type '" << operandType << "'");
             }
+            if (expr.op == Token::Plus) return operandType;
             Type negType = operandType.removeOptional().removePointer();
             if ((negType.isInteger() || negType.isChar()) && expr.isConstant()) {
                 llvm::APSInt result = expr.getConstantIntegerValue();
