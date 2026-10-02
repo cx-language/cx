@@ -1403,8 +1403,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         if (!resultType.isInteger() && !resultType.isChar()) {
             throwInvalidOperandsToBinaryExpr(expr, op);
         }
-    } else if ((op == Token::Plus || op == Token::Minus || op == Token::Star) && (resultType.isInteger() || resultType.isChar())
-               && expr.isConstant()) {
+    } else if ((op == Token::Plus || op == Token::Minus || op == Token::Star) && expr.isConstant() && (resultType.isInteger() || resultType.isChar())) {
         // Like the runtime overflow check, diagnose overflowing constant arithmetic at compile time.
         checkRange(expr, expr.getConstantIntegerValue(), resultType, /* diagnoseOutOfRange: */ true);
     }
