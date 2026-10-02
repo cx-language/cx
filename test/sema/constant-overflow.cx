@@ -22,5 +22,14 @@ void main() {
     // No error: negating unsigned zero.
     const uint z = 0;
     println(-z);
+    // Constant char arithmetic diagnoses like ints.
+    // CHECK: [[@LINE+1]]:13: error: 9506 is out of range for type 'char'
+    println('a' * 'b');
+    // CHECK: [[@LINE+1]]:13: error: -1 is out of range for type 'char'
+    println('a' - 'b');
+    // CHECK: [[@LINE+1]]:13: error: -97 is out of range for type 'char'
+    println(-'a');
+    // No error: fitting char arithmetic.
+    println('a' + 'b');
 }
 

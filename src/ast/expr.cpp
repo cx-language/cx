@@ -313,7 +313,8 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         llvm_unreachable("not a constant integer");
     }
     case ExprKind::CharacterLiteralExpr:
-        return llvm::APSInt::get(llvm::cast<CharacterLiteralExpr>(this)->value);
+        // Chars are unsigned bytes; don't sign-extend high bytes.
+        return llvm::APSInt::get(uint64_t(static_cast<unsigned char>(llvm::cast<CharacterLiteralExpr>(this)->value)));
     case ExprKind::IntLiteralExpr:
         return llvm::cast<IntLiteralExpr>(this)->value;
     case ExprKind::UnaryExpr:

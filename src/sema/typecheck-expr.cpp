@@ -800,7 +800,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
             }
             Type negType = operandType.removeOptional().removePointer();
-            if (negType.isInteger() && expr.isConstant()) {
+            if ((negType.isInteger() || negType.isChar()) && expr.isConstant()) {
                 llvm::APSInt result = expr.getConstantIntegerValue();
                 // A minus directly on an integer literal spells a negative literal:
                 // -9223372036854775808 is int64 min even though its positive half
@@ -1402,7 +1402,8 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         if (!resultType.isInteger() && !resultType.isChar()) {
             throwInvalidOperandsToBinaryExpr(expr, op);
         }
-    } else if ((op == Token::Plus || op == Token::Minus || op == Token::Star) && resultType.isInteger() && expr.isConstant()) {
+    } else if ((op == Token::Plus || op == Token::Minus || op == Token::Star) && (resultType.isInteger() || resultType.isChar())
+               && expr.isConstant()) {
         // Like the runtime overflow check, diagnose overflowing constant arithmetic at compile time.
         checkRange(expr, expr.getConstantIntegerValue(), resultType, /* diagnoseOutOfRange: */ true);
     }
@@ -1563,8 +1564,11 @@ static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, b
     if (type.isInteger()) {
         width = type.getIntegerBitWidth();
         isUnsigned = type.isUnsigned();
+    } else if (type.isChar()) {
+        width = 8;
+        isUnsigned = true;
     } else {
-        llvm_unreachable("checkRange only supports integer types");
+        llvm_unreachable("checkRange only supports integer and char types");
     }
     if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(width, isUnsigned)) < 0
         || llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(width, isUnsigned)) > 0) {
