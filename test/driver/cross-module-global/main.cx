@@ -1,0 +1,12 @@
+// RUN: cd %S && %cx run %s 2>&1 | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: cd %S && %cx run --backend=c %s 2>&1 | %FileCheck -match-full-lines -strict-whitespace %s
+
+import counter;
+
+void main() {
+    println(shared); // CHECK:42
+    shared = 100;
+    println(readShared()); // CHECK-NEXT:100
+    bump();
+    println(shared); // CHECK-NEXT:101
+}

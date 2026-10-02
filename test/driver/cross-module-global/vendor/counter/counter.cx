@@ -1,0 +1,11 @@
+// RUN: true
+
+c_int shared = 42;
+
+void bump() {
+    shared = shared + 1;
+}
+
+c_int readShared() {
+    return shared;
+}

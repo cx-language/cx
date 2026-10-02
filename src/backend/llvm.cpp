@@ -1219,10 +1219,18 @@ llvm::Value* LLVMGenerator::codegenBasicBlock(const BasicBlock* block) {
     return llvm::BasicBlock::Create(ctx, block->name);
 }
 
+llvm::GlobalVariable* LLVMGenerator::getGlobalVariable(const GlobalVariable* variable) {
+    if (auto* existing = module->getGlobalVariable(variable->name, /* AllowInternal */ true)) return existing;
+    // Declare-or-reuse like getFunction; the owning module's globals loop defines it.
+    return new llvm::GlobalVariable(*module, getLLVMType(variable->type), false, llvm::GlobalValue::ExternalLinkage, nullptr, variable->name);
+}
+
 llvm::Value* LLVMGenerator::codegenGlobalVariable(const GlobalVariable* inst) {
-    auto linkage = inst->value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
-    auto initializer = inst->value ? llvm::cast<llvm::Constant>(getValue(inst->value)) : nullptr;
-    return new llvm::GlobalVariable(*module, getLLVMType(inst->type), false, linkage, initializer, inst->name);
+    auto* global = getGlobalVariable(inst);
+    if (inst->value && !global->hasInitializer()) {
+        global->setInitializer(llvm::cast<llvm::Constant>(getValue(inst->value)));
+    }
+    return global;
 }
 
 llvm::Value* LLVMGenerator::codegenConstantString(const ConstantString* inst) {
@@ -1254,11 +1262,13 @@ llvm::Value* LLVMGenerator::codegenUndefined(const Undefined* inst) {
 }
 
 llvm::Value* LLVMGenerator::getValue(const Value* value) {
-    // Functions are shared across IR modules (see IRGenerator::getFunction), so they
-    // must resolve against the current LLVM module every time: the cache below would
-    // otherwise return another module's function. getFunction already deduplicates
-    // within the module, making the bypass equivalent for single-module programs.
+    // Functions and globals are shared across IR modules (see
+    // IRGenerator::getFunction), so they must resolve against the current LLVM
+    // module every time: the cache below would otherwise return another
+    // module's value. getFunction/getGlobalVariable already deduplicate within
+    // the module, making the bypass equivalent for single-module programs.
     if (value->kind == ValueKind::Function) return getFunction(llvm::cast<Function>(value));
+    if (value->kind == ValueKind::GlobalVariable) return getGlobalVariable(llvm::cast<GlobalVariable>(value));
     auto it = generatedValues.find(value);
     if (it != generatedValues.end()) return it->second;
     auto llvmValue = codegenInst(value);
@@ -1317,7 +1327,7 @@ llvm::Value* LLVMGenerator::codegenInst(const Value* value) {
     case ValueKind::Parameter:
         return generatedValues.at(value);
     case ValueKind::GlobalVariable:
-        return codegenGlobalVariable(llvm::cast<GlobalVariable>(value));
+        return getGlobalVariable(llvm::cast<GlobalVariable>(value));
     case ValueKind::ConstantString:
         return codegenConstantString(llvm::cast<ConstantString>(value));
     case ValueKind::ConstantInt:
@@ -1369,7 +1379,7 @@ llvm::Module& LLVMGenerator::codegenModule(const IRModule& sourceModule) {
     }
 
     for (auto* globalVariable : sourceModule.globalVariables) {
-        getValue(globalVariable);
+        codegenGlobalVariable(globalVariable);
     }
 
     for (auto* function : sourceModule.functions) {

@@ -54,6 +54,7 @@ struct LLVMGenerator {
     llvm::Value* codegenInst(const Value* value);
     llvm::BasicBlock* getBasicBlock(const BasicBlock* block);
     llvm::Function* getFunction(const Function* function);
+    llvm::GlobalVariable* getGlobalVariable(const GlobalVariable* variable);
     void codegenFunction(const Function* function);
     void codegenFunctionBody(const Function* function, llvm::Function* llvmFunction);
     llvm::DIFile* getDebugFile(llvm::StringRef path);
