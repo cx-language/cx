@@ -438,6 +438,9 @@ bool Expr::isLvalue() const {
             return member.base->isLvalue();
         }
         if (llvm::isa<EnumCase>(member.decl)) return false;
+        // Static consts are named through a type, not a value; the base never
+        // typechecks, so it cannot be asked for lvalueness either.
+        if (llvm::isa<VarDecl>(member.decl)) return false;
         if (member.base->type.removeOptional().isPointerType()) return true;
         return member.base->isLvalue();
     }

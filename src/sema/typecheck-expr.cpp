@@ -687,9 +687,6 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     case Token::And: // Address-of operation
         // A borrow designates an object with an address, so `&` also accepts expressions
         // of borrow type (e.g. `&list.first()`), not just lvalues.
-        if (!expr.getOperand().isLvalue() && !operandType.isReferenceType()) {
-            ERROR_RANGE(getExprRangeStart(expr.getOperand()), expr.getOperand().endLocation, "cannot take address of rvalue of type '" << operandType << "'");
-        }
         if (exprIsConst(expr.getOperand())) {
             if (auto* varOperand = llvm::dyn_cast<VarExpr>(&expr.getOperand())) {
                 ERROR_RANGE(getExprRangeStart(expr.getOperand()), expr.getOperand().endLocation,
@@ -697,6 +694,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             }
             ERROR_RANGE(getExprRangeStart(expr.getOperand()), expr.getOperand().endLocation,
                         "cannot take address of constant expression of type '" << expr.getOperand().type << "'");
+        }
+        if (!expr.getOperand().isLvalue() && !operandType.isReferenceType()) {
+            ERROR_RANGE(getExprRangeStart(expr.getOperand()), expr.getOperand().endLocation, "cannot take address of rvalue of type '" << operandType << "'");
         }
         unnarrow(expr.getOperand());
         operandType = expr.getOperand().type;
@@ -717,13 +717,15 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
         operandType = operandType.removePointer();
 
+        if (exprIsConst(expr.getOperand())) {
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment constant of type '" << operandType << "'");
+        }
+
         if (!expr.getOperand().isLvalue()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment rvalue of type '" << operandType << "'");
         }
 
-        if (exprIsConst(expr.getOperand())) {
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment constant of type '" << operandType << "'");
-        } else if (!operandType.isIncrementable()) {
+        if (!operandType.isIncrementable()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment '" << operandType << "'");
         }
 
@@ -740,13 +742,15 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
         operandType = operandType.removePointer();
 
+        if (exprIsConst(expr.getOperand())) {
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement constant of type '" << operandType << "'");
+        }
+
         if (!expr.getOperand().isLvalue()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement rvalue of type '" << operandType << "'");
         }
 
-        if (exprIsConst(expr.getOperand())) {
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement constant of type '" << operandType << "'");
-        } else if (!operandType.isDecrementable()) {
+        if (!operandType.isDecrementable()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement '" << operandType << "'");
         }
 
@@ -1434,6 +1438,11 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
         }
         ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation,
                     "cannot rebind borrow of type '" << lhs->assignableType << "' (use '*' to write through it explicitly)");
+    }
+    // Static consts name frozen storage through a type, not a value; reject
+    // before the lvalue check, which assumes a value base.
+    if (auto* member = llvm::dyn_cast<MemberExpr>(lhs); member && llvm::isa_and_nonnull<VarDecl>(member->decl)) {
+        ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign to constant '" << member->member << "' of type '" << lhs->type << "'");
     }
     auto* swizzleMember = llvm::dyn_cast<MemberExpr>(lhs);
     bool isMultiSwizzle = swizzleMember && swizzleMember->swizzleIndices.size() > 1;
@@ -2700,7 +2709,7 @@ std::string cx::narrowingHint(Type source, Type target) {
 
 bool cx::isBorrowOfConstant(const Expr& expr, Type source, Type target) {
     // The types alone would bind; only the source being a constant blocks it.
-    return target.isReferenceType() && source == target.getPointee() && expr.isLvalue() && !expr.isConstant() && exprIsConst(expr);
+    return target.isReferenceType() && source == target.getPointee() && exprIsConst(expr);
 }
 
 bool cx::satisfiesCopyable(Type type) {

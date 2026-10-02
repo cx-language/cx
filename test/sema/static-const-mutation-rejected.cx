@@ -1,0 +1,27 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct S {
+    const MAX = 5;
+    int x;
+}
+
+struct T {
+    const DATA = [1, 2];
+}
+
+void takesBorrow(int& x) {}
+
+void main() {
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to constant 'MAX' of type 'int'
+    S.MAX = 6;
+    // CHECK: [[@LINE+1]]:14: error: cannot take address of constant expression of type 'int'
+    var p = &S.MAX;
+    // CHECK: [[@LINE+1]]:5: error: cannot increment constant of type 'int'
+    S.MAX++;
+    // CHECK: [[@LINE+1]]:5: error: cannot decrement constant of type 'int'
+    S.MAX--;
+    // CHECK: [[@LINE+1]]:14: error: cannot bind 'int&' to constant 'int'
+    int& r = S.MAX;
+    // CHECK: [[@LINE+1]]:17: error: cannot bind 'int&' to constant 'int' in argument #1 to 'takesBorrow'
+    takesBorrow(T.DATA[0]);
+}
