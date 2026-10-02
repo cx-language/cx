@@ -34,7 +34,7 @@ loop.end:
     return sum.load_0
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at range-type.cx:6:13
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at range-type.cx:6:13
 ")
     unreachable
 

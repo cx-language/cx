@@ -8,7 +8,7 @@ import gl;
 // Touches representative declarations from each vendored module;
 // --check-all validates the rest.
 
-void onError(c_int code, const char* description) {
+void onError(c_int code, char* description) {
     println(code);
 }
 

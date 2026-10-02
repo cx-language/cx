@@ -1,7 +1,7 @@
 // RUN: %cx run -Werror %s 2>&1 | %FileCheck %s
 
 // Fixed arrays (including generic ones) pass by value: mutating the parameter
-// never affects the argument, so const arrays convert freely.
+// never affects the argument, even a constant one.
 void mutateConcrete(int[2] a) {
     a[0] = 9;
 }

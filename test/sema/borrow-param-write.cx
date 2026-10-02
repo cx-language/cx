@@ -35,11 +35,6 @@ void decBorrowParam(int& x) {
     x--;
 }
 
-void constBorrowReadOnly(const Outer& o) {
-    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable variable 'v' of type 'int'
-    o.inner.v = 1;
-}
-
 void optionalBorrowDerefWrite(int&? o) {
     // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'o' of type 'int&?' hides the mutation from the call site; take 'int*' instead
     *o = 1;

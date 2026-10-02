@@ -176,7 +176,7 @@ if.end:
     br _12, if.then, if.else
 
 overflow.fail:
-    never _13 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:26:19
+    never _13 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at optional-type-non-pointer.cx:26:19
 ")
     unreachable
 
@@ -192,7 +192,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _19 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:27:15
+    never _19 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at optional-type-non-pointer.cx:27:15
 ")
     unreachable
 
@@ -209,7 +209,7 @@ overflow.success_0:
     br overflow.condition_1, overflow.fail, overflow.success
 
 overflow.fail_1:
-    never _25 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at optional-type-non-pointer.cx:28:13
+    never _25 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at optional-type-non-pointer.cx:28:13
 ")
     unreachable
 
@@ -241,7 +241,7 @@ if.end_0:
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 __implicit_unwrap.fail:
-    never _33 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
+    never _33 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
 ")
     unreachable
 

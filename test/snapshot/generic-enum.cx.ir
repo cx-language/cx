@@ -45,7 +45,7 @@ switch.case.1:
     br switch.end
 
 switch.default:
-    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:12:13
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:12:13
 ")
     unreachable
 
@@ -58,7 +58,7 @@ switch.end:
     }
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at generic-enum.cx:14:39
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at generic-enum.cx:14:39
 ")
     unreachable
 
@@ -83,7 +83,7 @@ switch.case.1_0:
     return int32 0
 
 switch.default_0:
-    never _13 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
+    never _13 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
 ")
     unreachable
 

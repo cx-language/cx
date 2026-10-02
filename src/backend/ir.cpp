@@ -18,31 +18,12 @@ BasicBlock::BasicBlock(std::string name, cx::Function* parent) : Value{ValueKind
 
 static std::unordered_map<TypeBase*, IRType*> irTypes = {{nullptr, nullptr}};
 
-// The declaration for a possibly normalized type: the original first (normalizing
-// can produce a twin sema never instantiated, e.g. nested `const T[][]`), then
-// the normalized twin (covers synthesized slotted types over a named mutable twin).
-static TypeDecl* getDeclAllowingNormalization(Type original, Type normalized) {
-    if (auto* decl = original.getDecl()) return decl;
-    return normalized.getDecl();
-}
-
 IRType* cx::getIRType(Type astType) {
     // Spelling twins are distinct bases sharing one identity; normalize so the
     // type cache below yields a single IR type per structure.
     astType = astType.canonicalTwin();
-    // Element-const is layout-irrelevant; normalize slotted slices to their
-    // unslotted twin so one IR struct serves both (sema keeps them distinct).
-    Type declType = astType;
-    if (astType.isSlice() && astType.isPointeeConst()) {
-        astType = BasicType::get(astType.getName(), GenericArg(astType.getElementType()), astType.location, astType.endLocation);
-    }
-    // Array-pointer wrappers can share a TypeBase while differing in
-    // mutability. Their pointer result must retain that distinction for C.
-    bool cacheable = astType.getKind() != TypeKind::ArrayPointerType;
-    if (cacheable) {
-        auto it = irTypes.find(astType.typeBase);
-        if (it != irTypes.end()) return it->second;
-    }
+    auto it = irTypes.find(astType.typeBase);
+    if (it != irTypes.end()) return it->second;
 
     IRType* irType = nullptr;
 
@@ -91,7 +72,7 @@ IRType* cx::getIRType(Type astType) {
             } else {
                 irType = tagType;
             }
-        } else if (auto decl = getDeclAllowingNormalization(declType, astType)) {
+        } else if (auto decl = astType.getDecl()) {
             // C++ headers aren't included in generated code, so their records are emitted like cx records.
             // Generated anonymous records are defined by no header either.
             bool isImportedFromC = decl->module.isCHeaderImport && !decl->module.isCxxHeaderImport && !decl->isAnonymousRecord;
@@ -124,7 +105,7 @@ IRType* cx::getIRType(Type astType) {
     }
     case TypeKind::ArrayPointerType:
         ASSERT(astType.isArrayPointer());
-        irType = getIRType(PointerType::get(astType.getElementType(), PointerKind::Pointer, astType.isPointeeConst()));
+        irType = getIRType(PointerType::get(astType.getElementType(), PointerKind::Pointer));
         break;
     case TypeKind::AnonymousStructType: {
         auto fields = map(astType.getAnonymousStructElements(), [](const AnonymousStructElement& e) { return IRField{getIRType(e.type), e.name.str()}; });
@@ -140,19 +121,19 @@ IRType* cx::getIRType(Type astType) {
             std::move(paramTypes),
             llvm::cast<FunctionType>(astType.typeBase)->isVariadic,
         };
-        irType = new IRPointerType{IRTypeKind::IRPointerType, functionType, /*isMutable=*/true};
+        irType = new IRPointerType{IRTypeKind::IRPointerType, functionType};
         break;
     }
     case TypeKind::PointerType: {
         auto pointeeType = getIRType(astType.getPointee());
-        irType = new IRPointerType{IRTypeKind::IRPointerType, pointeeType, !astType.isPointeeConst()};
+        irType = new IRPointerType{IRTypeKind::IRPointerType, pointeeType};
         break;
     }
     case TypeKind::UnresolvedType:
         llvm_unreachable("cannot convert unresolved type to IR");
     }
 
-    if (cacheable) irTypes.emplace(astType.typeBase, irType);
+    irTypes.emplace(astType.typeBase, irType);
     return irType;
 }
 
@@ -279,7 +260,7 @@ IRType* Value::getType() const {
     case ValueKind::GlobalVariable:
         return llvm::cast<GlobalVariable>(this)->type->getPointerTo();
     case ValueKind::ConstantString:
-        return getIRType(PointerType::get(Type::getChar(), PointerKind::Pointer, /*isConst=*/true));
+        return getIRType(PointerType::get(Type::getChar(), PointerKind::Pointer));
     case ValueKind::ConstantInt:
         return llvm::cast<ConstantInt>(this)->type;
     case ValueKind::ConstantFP:
@@ -760,7 +741,7 @@ int IRType::getArraySize() {
 }
 
 IRType* IRType::getPointerTo() {
-    return new IRPointerType{IRTypeKind::IRPointerType, this, true};
+    return new IRPointerType{IRTypeKind::IRPointerType, this};
 }
 
 llvm::raw_ostream& cx::operator<<(llvm::raw_ostream& stream, IRType* type) {
@@ -846,14 +827,6 @@ bool IRType::equals(IRType* other) {
     }
 
     llvm_unreachable("all cases handled");
-}
-
-bool cx::pointeeConstDiffers(IRType* a, IRType* b) {
-    auto* pa = llvm::dyn_cast<IRPointerType>(a);
-    auto* pb = llvm::dyn_cast<IRPointerType>(b);
-    if (!pa || !pb) return false;
-    if (pa->mutablePointee != pb->mutablePointee) return true;
-    return pointeeConstDiffers(pa->pointee, pb->pointee);
 }
 
 int cx::getIntegerBitWidth(IRType* type) {

@@ -131,12 +131,6 @@ struct Type {
     // Size in bytes for types with target-independent layout, null otherwise.
     std::optional<uint64_t> getSizeInBytes() const;
     Type getPointerTo() const;
-    // True when writing through this type is forbidden: const-pointee pointers
-    // and borrows, const-element array pointers and slices. False otherwise.
-    bool isPointeeConst() const;
-    // Rebuilds this pointer, array-pointer, or slice type with a const pointee
-    // (const element slot for slices); `?` layers are transparent.
-    Type withConstPointee() const;
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeReference() const { return isReferenceType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
@@ -263,13 +257,6 @@ struct GenericArg {
     GenericArg resolve(const llvm::StringMap<GenericArg>& replacements) const;
 
     Kind kind = Kind::Null;
-    // Const carried by this argument: for Slice element args it forbids writes
-    // through the view; in substitutions it applies at alias positions (pointer,
-    // view) and is ignored at value positions. Always false elsewhere. Set from
-    // const sources in considerGenericArg, preserved by GenericArg::resolve,
-    // stripped for non-Slice rebuilds in Type::resolve, applied by
-    // resolveAliasedType: every substitution path must implement this split.
-    bool isConst = false;
     union {
         Type type;
         int64_t intValue;
@@ -304,15 +291,14 @@ public:
 
 struct ArrayPointerType : TypeBase {
     static const int64_t UnknownSize = -1;
-    static Type get(Type elementType, bool isConst = false, Location location = Location(), Location endLocation = Location());
+    static Type get(Type elementType, Location location = Location(), Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::ArrayPointerType; }
 
 private:
-    explicit ArrayPointerType(Type elementType, bool isConst) : TypeBase(TypeKind::ArrayPointerType), elementType(elementType), isConst(isConst) {}
+    explicit ArrayPointerType(Type elementType) : TypeBase(TypeKind::ArrayPointerType), elementType(elementType) {}
 
 public:
     Type elementType;
-    bool isConst = false;
 };
 
 struct AnonymousStructElement {
@@ -353,18 +339,15 @@ public:
 };
 
 struct PointerType : TypeBase {
-    static Type get(Type pointeeType, PointerKind kind = PointerKind::Pointer, bool isConst = false, Location location = Location(),
-                    Location endLocation = Location());
+    static Type get(Type pointeeType, PointerKind kind = PointerKind::Pointer, Location location = Location(), Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::PointerType; }
 
 private:
-    PointerType(Type pointeeType, PointerKind kind, bool isConst)
-    : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), pointerKind(kind), isConst(isConst) {}
+    PointerType(Type pointeeType, PointerKind kind) : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), pointerKind(kind) {}
 
 public:
     Type pointeeType;
     PointerKind pointerKind;
-    bool isConst = false;
 };
 
 namespace OptionalType {

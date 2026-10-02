@@ -2,7 +2,7 @@
 
 void main() {
     const int[2] a = [1, 2];
-    // CHECK: [[@LINE+1]]:16: error: cannot assign 'const int[*]' to 'int[*]'
+    // CHECK: [[@LINE+1]]:16: error: cannot call 'data' on a constant: it returns 'int[*]', which would alias frozen storage
     int[*] p = a.data();
 }
 
@@ -10,41 +10,21 @@ void optionalDecay() {
     const int[3]? o = [1, 2, 3];
     // CHECK: [[@LINE+1]]:17: error: cannot assign 'int[3]?' to 'int[*]?'
     int[*]? p = o;
-    const int[*]? q = o; // fine: const view of const storage
 }
 
 void noLaunderToVoid() {
     const int[3] a = [1, 2, 3];
-    // CHECK: [[@LINE+1]]:15: error: cannot assign 'const int[*]' to 'void*'
+    // CHECK: [[@LINE+1]]:15: error: cannot call 'data' on a constant: it returns 'int[*]', which would alias frozen storage
     void* v = a.data();
-    const void* w = a.data(); // fine
 }
 
-void takeConstPtr(const int* p) {}
-void takeConstView(const int[*] p) {}
 void takePtr(int* p) {}
 void takeView(int[*] p) {}
 
-void constThroughView(int[3] arr) {
+void mutableThroughView(int[3] arr) {
     int[*] v = arr.data();
     int* p = &arr[0];
-    takeConstPtr(v); // fine: view to const pointer
-    takeConstView(p); // fine: pointer to const view
     int[*]? o = arr.data();
-    takePtr(o); // fine: unwrap and view compose
-    takeConstPtr(o); // fine: unwrap, view, and const compose
-    takeConstView(o); // fine: unwrap and const-widen compose
-}
-
-void noDropConstThroughView(int[3] arr) {
-    const int[*] cv = arr.data();
-    // CHECK: [[@LINE+1]]:13: error: invalid argument #1 type 'const int[*]' to 'takePtr', expected 'int*'
-    takePtr(cv);
-    // CHECK: [[@LINE+1]]:14: error: invalid argument #1 type 'const int[*]' to 'takeView', expected 'int[*]'
-    takeView(cv);
-    const int[*]? co = arr.data();
-    // CHECK: [[@LINE+1]]:13: error: invalid argument #1 type 'const int[*]?' to 'takePtr', expected 'int*'
-    takePtr(co);
-    // CHECK: [[@LINE+1]]:14: error: invalid argument #1 type 'const int[*]?' to 'takeView', expected 'int[*]'
-    takeView(co);
+    takePtr(o);
+    takeView(v);
 }

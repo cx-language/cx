@@ -10,8 +10,8 @@ void main() {
     uint* up = cast<uint*>(ip);
     println(*up); // CHECK:42
     float* fp = cast<float*>(ip);
-    var cp = cast<const uint8*>(p);
-    var s = cast<const char*>(cp);
+    var cp = cast<uint8*>(p);
+    var s = cast<char*>(cp);
     _ = fp;
     _ = s;
     println("ok"); // CHECK:ok

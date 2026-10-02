@@ -117,10 +117,8 @@ private:
     Type parseSimpleType();
     Type parseAnonymousStructType();
     Type parseFunctionType(Type returnType);
-    // When allowBareConst is set, a leading `const` without a pointer, slice or
-    // borrow suffix is tentatively accepted; the caller must then validate
-    // that it is a constant declarator (e.g. `const int foo = 3`).
-    Type parseType(bool allowBareConst = false, bool* sawBareConst = nullptr);
+    // `const` is rejected in types; declarators consume a leading `const` themselves.
+    Type parseType();
     SizeofExpr* parseSizeofExpr();
     MemberExpr* parseMemberExpr(Expr* lhs);
     Expr* parseIndexExprOrIndexAssignmentExpr(Expr* base);

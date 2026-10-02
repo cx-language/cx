@@ -283,7 +283,9 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
         // values can be inlined; anything that emitted instructions (array
         // literals, constant expressions) needs a real global since the C
         // backend emits those as statements, which can't nest in expressions.
-        if (!decl.isConst || (wellFormed && !deadBlock->body.empty())) {
+        // Globals without an initializer (C imports) always need the extern
+        // reference; there is no initializer to inline.
+        if (!decl.initializer || !decl.isConst || (wellFormed && !deadBlock->body.empty())) {
             value = createGlobalVariable(value, decl.type, mangleGlobalVar(decl));
         }
 

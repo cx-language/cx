@@ -19,8 +19,7 @@ uint compileShader(string path, uint kind) {
     // Bind the unwrapped text: calling .cString() on the temporary leaks it.
     var text = source.unwrap();
     var cstr = text.cString();
-    // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
-    glShaderSource(shader, 1, cast<const char**>(&cstr), null);
+    glShaderSource(shader, 1, &cstr, null);
     glCompileShader(shader);
     c_int status = undefined;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);

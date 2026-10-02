@@ -11,7 +11,7 @@ int32 main() {
     br bounds.condition, bounds.fail, bounds.success
 
 bounds.fail:
-    never _5 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at array-literal.cx:5:14
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "index out of bounds at array-literal.cx:5:14
 ")
     unreachable
 

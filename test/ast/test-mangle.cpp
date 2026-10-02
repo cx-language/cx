@@ -60,9 +60,9 @@ int main() {
                   "main.foo((std.char*, ...) -> (std.int32) -> void) -> void");
     checkDemangle("_CX1N4main3fooE4void1_F1_PM3std4charFv1_M3std5int324void",
                   "main.foo((std.char*) -> (std.int32, ...) -> void) -> void");
-    checkDemangle("_CX1N4main3fooE4void1_KAM3std5int32", "main.foo(const std.int32[*]) -> void");
+    checkDemangle("_CX1N4main3fooE4void1_AM3std5int32", "main.foo(std.int32[*]) -> void");
     checkDemangle("_CX1N4main3fooE4void1_T1_1aM3std5int32", "main.foo((std.int32 a)) -> void");
-    checkDemangle("_CX1N4main3fooE4void1_OKM3std5int32", "main.foo(const std.int32?) -> void");
+    checkDemangle("_CX1N4main3fooE4void1_OM3std5int32", "main.foo(std.int32?) -> void");
     checkDemangle("_CX1N4main8fixedSumEM3std5int321_5ArrayIM3std5int32N3_E", "main.fixedSum(std.int32[3]) -> std.int32");
     checkDemangle("_CX1N4mainM4main7WrapperIM3std5int32E3getEM3std5int320_", "main.Wrapper<std.int32>.get() -> std.int32");
     checkDemangle("_CX1N4main11____lambda0EM3std5int321_M3std5int32C1_M3std5int32",
@@ -95,8 +95,8 @@ int main() {
     Type intType = BasicType::get("int32", {});
     assert(mangleType(voidType) == "4void");
     assert(mangleType(intType) == "5int32");
-    assert(mangleType(PointerType::get(intType, PointerKind::Pointer, /*isConst=*/true)) == "PK5int32");
-    assert(mangleType(ArrayPointerType::get(intType, /*isConst=*/true)) == "AK5int32");
+    assert(mangleType(PointerType::get(intType, PointerKind::Pointer)) == "P5int32");
+    assert(mangleType(ArrayPointerType::get(intType)) == "A5int32");
     Type arrayType = BasicType::get("Array", {intType, GenericArg::fromInt(-1, Location())});
     assert(mangleType(arrayType) == "5ArrayI5int32Nn1_E");
     Type anonType = BasicType::get("", {});

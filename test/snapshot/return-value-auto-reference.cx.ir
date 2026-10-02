@@ -27,7 +27,7 @@ bool* _CX1N4mainM4main1A2ffEPM3std4bool0_(A* this) {
     br bounds.condition, bounds.fail, bounds.success
 
 bounds.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at return-value-auto-reference.cx:15:19
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "index out of bounds at return-value-auto-reference.cx:15:19
 ")
     unreachable
 

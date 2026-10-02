@@ -41,11 +41,10 @@ struct ArgumentValidation {
     bool didConvertArguments;
     bool didUnwrapOptional;
     bool didWrapOptional;
-    bool didAddConst = false;
     int userConversionCount = 0;
 
-    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional, bool didWrapOptional, bool didAddConst, int userConversionCount) {
-        return {None, -1, didConvertArguments, didUnwrapOptional, didWrapOptional, didAddConst, userConversionCount};
+    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional, bool didWrapOptional, int userConversionCount) {
+        return {None, -1, didConvertArguments, didUnwrapOptional, didWrapOptional, userConversionCount};
     }
     static ArgumentValidation tooFew() { return {TooFew, -1, false, false, false}; }
     static ArgumentValidation tooMany() { return {TooMany, -1, false, false, false}; }
@@ -59,7 +58,6 @@ struct Match {
     bool didConvertArguments;
     bool didUnwrapOptional;
     bool didWrapOptional;
-    bool didAddConst = false;
     int userConversionCount = 0;
 };
 
@@ -483,8 +481,8 @@ bool isArrayBorrow(Type source, Type target);
 void diagnoseClosureConversion(Type source, Type target, const Expr& expr);
 // Suggests an explicit conversion when a value of one numeric type is used where another is expected.
 std::string narrowingHint(Type source, Type target);
-// Explains a failed conversion when only the source's immutability blocks binding to a mutable borrow.
-std::string immutableBorrowHint(const Expr& expr, Type source, Type target);
+// Whether the types alone would bind and only the source being a constant blocks forming the borrow.
+bool isBorrowOfConstant(const Expr& expr, Type source, Type target);
 // Explains why a type is not Copyable when a use fails because the value was moved.
 std::string copyableHint(Type type);
 // Whether a type satisfies a ': Copyable' generic constraint. Structural, not name-based.

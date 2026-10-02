@@ -11,12 +11,6 @@ void println<T: Copyable>(T value) {
 }
 
 /// Prints the given value followed by a newline.
-void println(const char[*]? value) {
-    print(value);
-    print('\n');
-}
-
-/// Prints the given value followed by a newline.
 void println(char[*]? value) {
     print(value);
     print('\n');
@@ -86,15 +80,6 @@ void print<T: Printable>(Slice<T> array) {
 }
 
 /// Prints the given value without allocating.
-void print(const char[*]? cString) {
-    if cString {
-        printf("%s", cString);
-    } else {
-        printf("null");
-    }
-}
-
-/// Prints the given value without allocating.
 void print(char[*]? cString) {
     if cString {
         printf("%s", cString);
@@ -159,7 +144,7 @@ StringBuf readLine() {
 }
 
 /// Prints the message to stderr and aborts.
-private never assertFail(const char* message) {
+private never assertFail(char* message) {
     var stream = fdopen(2, "w");
     if stream {
         fprintf(stream, "%s", message);

@@ -50,8 +50,8 @@ void main() {
 ```
 
 Array literals must contain exactly as many elements as the declared array
-size. A `const` array keeps its data view immutable, so its `data()` result
-cannot be assigned to a mutable pointer or used to mutate an element.
+size. Calling `data()` on a constant array is rejected: the pointer would
+alias frozen storage. Read constant elements by index instead.
 
 Arrays are values: assigning an array copies its elements.
 To pass an array to a function without copying, take it by a slice view (`T[]`),

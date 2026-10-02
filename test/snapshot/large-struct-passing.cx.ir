@@ -128,7 +128,7 @@ if.end(Big if.result):
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _14 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:42:16
+    never _14 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at large-struct-passing.cx:42:16
 ")
     unreachable
 
@@ -142,7 +142,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _19 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:42:37
+    never _19 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at large-struct-passing.cx:42:37
 ")
     unreachable
 
@@ -157,7 +157,7 @@ overflow.success_0:
     br overflow.condition_1, overflow.fail, overflow.success
 
 overflow.fail_1:
-    never _24 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:42:55
+    never _24 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at large-struct-passing.cx:42:55
 ")
     unreachable
 

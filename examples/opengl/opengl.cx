@@ -53,7 +53,7 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    const vertexBufferData =
+    var vertexBufferData =
     [
         -0.5, -0.5, 0.0,
          0.5, -0.5, 0.0,
@@ -88,8 +88,7 @@ void LoadShader(GLuint shaderID, string path) {
     var shaderSource = readFile(path).unwrap();
     char* shaderSourcePointer = shaderSource.cString();
 
-    // The cast asserts what glShaderSource promises by taking const char**: it only reads the strings.
-    glShaderSource(shaderID, 1, cast<const char**>(&shaderSourcePointer), null);
+    glShaderSource(shaderID, 1, &shaderSourcePointer, null);
     glCompileShader(shaderID);
 
     GLint infoLogLength = 0;
@@ -101,7 +100,7 @@ void LoadShader(GLuint shaderID, string path) {
     }
 }
 
-void ErrorCallback(c_int error, const char* description) {
+void ErrorCallback(c_int error, char* description) {
     println(description);
 }
 

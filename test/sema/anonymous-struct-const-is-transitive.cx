@@ -1,7 +1,0 @@
-// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
-
-void bar() {
-    const t = (a = 1, b = 2);
-    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable variable 'a' of type 'int'
-    t.a = 42;
-}

@@ -2,7 +2,7 @@
 
 void main() {
     int* p = undefined;
-    const int* cp = undefined;
+    int* cp = undefined;
     void* v = p;
     bar(p);
     bar(v);

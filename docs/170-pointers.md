@@ -37,18 +37,14 @@ void main() {
 }
 ```
 
-## Const pointees
+## Const in C APIs
 
-To match `const` in C/C++ APIs, the pointed-to type can be marked `const`:
-`const T*`, `const T[*]`, and `const T&` all mean the pointee cannot be
-written through. The handle itself stays mutable: a `const int*` variable
-can be reseated, only writes through it are forbidden. `const T[]` is a
-slice with const elements: reads and `.data()` (which yields `const T[*]`)
-work, only writes through it are forbidden. `const` binds the outermost
-view of a nested slice (`const T[][]` freezes the outer buffer, inner
-slices stay mutable views). Apart from these, a bare
-`const T` is rejected. Named constants still use the `const` declarator
-(`const x = ...`).
+cx has no const-qualified pointees: `const` never appears in types. C and
+C++ `const` is dropped when declarations are imported, so a C `const char*`
+becomes plain `char*`. Passing a mutable pointer where C expects a const
+one is safe (C only reads through it); writing through a pointer that C
+considers const is undefined behavior, and the compiler cannot check it.
+Named constants still use the `const` declarator (`const x = ...`).
 
 ## Borrowed parameters
 

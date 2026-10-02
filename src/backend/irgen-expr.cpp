@@ -1284,9 +1284,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
 Value* IRGenerator::emitBuiltinCast(const CallExpr& expr) {
     auto* value = emitExpr(*expr.args.front().value);
     auto* targetType = getIRType(expr.genericArgs.front().getType());
-    // createCastIfNeeded treats pointee const as the same type. A const change
-    // still needs a cast so generated C can discard or add the qualifier.
-    if (value->getType()->equals(targetType) && !pointeeConstDiffers(value->getType(), targetType)) return value;
+    if (value->getType()->equals(targetType)) return value;
     return createCast(value, targetType);
 }
 
@@ -1325,7 +1323,17 @@ Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
     }
 
     if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(expr.decl)) {
-        return getValue(varDecl);
+        Value* value = getValue(varDecl);
+        if (emittingGlobalInitializer) {
+            // Like emitVarExpr: a global initializer can't load from another
+            // global; splice in the referenced initializer instead.
+            if (varDecl->isGlobal() && varDecl->isConst) {
+                if (auto* global = llvm::dyn_cast<GlobalVariable>(value)) {
+                    if (global->value) value = global->value;
+                }
+            }
+        }
+        return value;
     }
 
     if (expr.base->type.removePointer().isAnonymousStructType()) {

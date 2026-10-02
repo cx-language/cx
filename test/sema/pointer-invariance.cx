@@ -4,13 +4,10 @@
 void bar(int*?* pp) {
 }
 
-void barConst(const int** pp) {
-}
-
 void barArr(int?* p) {
 }
 
-void barConstChar(const char* p) {
+void barChar(char* p) {
 }
 
 void barVoid(void* p) {
@@ -28,13 +25,6 @@ void nullabilityWidening() {
     int*?* q = &p;
 }
 
-void constUnderPointer() {
-    int x = 42;
-    int* p = &x;
-    // CHECK: [[@LINE+1]]:14: error: invalid argument #1 type 'int**' to 'barConst', expected 'const int**'
-    barConst(&p);
-}
-
 void arrayElementWidening() {
     int[4] a = [1, 2, 3, 4];
     // CHECK: [[@LINE+1]]:12: error: invalid argument #1 type 'int[4]' to 'barArr', expected 'int?*'
@@ -49,14 +39,12 @@ void stillAllowed() {
     barPlain(&p);
     char c = 'a';
     char* pc = &c;
-    barConstChar(pc);
+    barChar(pc);
     barVoid(p);
 }
 
 // CHECK: 4:6: warning: unused declaration 'bar'
-// CHECK: 7:6: warning: unused declaration 'barConst'
-// CHECK: 10:6: warning: unused declaration 'barArr'
-// CHECK: 22:6: warning: unused declaration 'nullabilityWidening'
-// CHECK: 31:6: warning: unused declaration 'constUnderPointer'
-// CHECK: 38:6: warning: unused declaration 'arrayElementWidening'
-// CHECK: 46:6: warning: unused declaration 'stillAllowed'
+// CHECK: 7:6: warning: unused declaration 'barArr'
+// CHECK: 19:6: warning: unused declaration 'nullabilityWidening'
+// CHECK: 28:6: warning: unused declaration 'arrayElementWidening'
+// CHECK: 36:6: warning: unused declaration 'stillAllowed'

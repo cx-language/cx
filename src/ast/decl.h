@@ -24,7 +24,7 @@ template<> struct hash<std::vector<cx::GenericArg>> {
                 const cx::Type& type = arg.getType();
                 // Spelling twins compare equal, so hash the shared twin or equal
                 // keys would land in different buckets and instantiate twice.
-                argHash = reinterpret_cast<size_t>(type.canonicalTwin().typeBase) ^ static_cast<size_t>(arg.isConst);
+                argHash = reinterpret_cast<size_t>(type.canonicalTwin().typeBase);
             } else if (arg.isInt()) {
                 argHash = std::hash<int64_t>{}(arg.getInt());
             } else {
@@ -302,7 +302,7 @@ struct FunctionTemplate : Decl {
 };
 
 struct FieldDecl : VariableDecl {
-    FieldDecl(Type type, llvm::StringRef name, Expr* defaultValue, TypeDecl& parent, AccessLevel accessLevel, Location location, bool isConst = false,
+    FieldDecl(Type type, llvm::StringRef name, Expr* defaultValue, TypeDecl& parent, AccessLevel accessLevel, Location location,
               bool isManuallyDestroy = false);
     llvm::StringRef getName() const override { return name; }
     std::string getQualifiedName() const;
@@ -315,10 +315,6 @@ struct FieldDecl : VariableDecl {
     llvm::StringRef name;
     Expr* defaultValue;
     Location location;
-    // True for const-qualified members of imported C records; writes through
-    // the member are forbidden. cx fields are never const (bare `const` is
-    // rejected in field position).
-    bool isConst = false;
     // Set by '@manuallyDestroy': the destructor skips this field, so the
     // struct's own destructor must destroy it explicitly.
     bool isManuallyDestroy = false;

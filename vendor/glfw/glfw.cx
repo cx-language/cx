@@ -463,7 +463,7 @@ using GLFWreallocatefun = void*?(void*, c_size_t, void*?);
 /// The function pointer type for memory deallocation callbacks.
 using GLFWdeallocatefun = void(void*, void*?);
 /// The function pointer type for error callbacks.
-using GLFWerrorfun = void(c_int, const char*);
+using GLFWerrorfun = void(c_int, char*);
 /// The function pointer type for window position callbacks.
 using GLFWwindowposfun = void(GLFWwindow*, c_int, c_int);
 /// The function pointer type for window size callbacks.
@@ -497,7 +497,7 @@ using GLFWcharfun = void(GLFWwindow*, c_uint);
 /// The function pointer type for Unicode character with modifiers
 using GLFWcharmodsfun = void(GLFWwindow*, c_uint, c_int);
 /// The function pointer type for path drop callbacks.
-using GLFWdropfun = void(GLFWwindow*, c_int, const char*[*]);
+using GLFWdropfun = void(GLFWwindow*, c_int, char*[*]);
 /// The function pointer type for monitor configuration callbacks.
 using GLFWmonitorfun = void(GLFWmonitor*, c_int);
 /// The function pointer type for joystick configuration callbacks.
@@ -562,13 +562,13 @@ extern void glfwTerminate();
 /// Sets the specified init hint to the desired value.
 extern void glfwInitHint(c_int hint, c_int value);
 /// Sets the init allocator to the desired value.
-extern void glfwInitAllocator(const GLFWallocator*? allocator);
+extern void glfwInitAllocator(GLFWallocator*? allocator);
 /// Retrieves the version of the GLFW library.
 extern void glfwGetVersion(c_int*? major, c_int*? minor, c_int*? rev);
 /// Returns a string describing the compile-time configuration.
-extern const char* glfwGetVersionString();
+extern char* glfwGetVersionString();
 /// Returns and clears the last error for the calling thread.
-extern c_int glfwGetError(const char**? description);
+extern c_int glfwGetError(char**? description);
 /// Sets the error callback.
 extern GLFWerrorfun? glfwSetErrorCallback(GLFWerrorfun? callback);
 /// Returns the currently selected platform.
@@ -588,7 +588,7 @@ extern void glfwGetMonitorPhysicalSize(GLFWmonitor* monitor, c_int*? widthMM, c_
 /// Retrieves the content scale for the specified monitor.
 extern void glfwGetMonitorContentScale(GLFWmonitor* monitor, float*? xscale, float*? yscale);
 /// Returns the name of the specified monitor.
-extern const char*? glfwGetMonitorName(GLFWmonitor* monitor);
+extern char*? glfwGetMonitorName(GLFWmonitor* monitor);
 /// Sets the user pointer of the specified monitor.
 extern void glfwSetMonitorUserPointer(GLFWmonitor* monitor, void*? pointer);
 /// Returns the user pointer of the specified monitor.
@@ -596,23 +596,23 @@ extern void*? glfwGetMonitorUserPointer(GLFWmonitor* monitor);
 /// Sets the monitor configuration callback.
 extern GLFWmonitorfun? glfwSetMonitorCallback(GLFWmonitorfun? callback);
 /// Returns the available video modes for the specified monitor.
-extern const GLFWvidmode[*]? glfwGetVideoModes(GLFWmonitor* monitor, c_int* count);
+extern GLFWvidmode[*]? glfwGetVideoModes(GLFWmonitor* monitor, c_int* count);
 /// Returns the current mode of the specified monitor.
-extern const GLFWvidmode*? glfwGetVideoMode(GLFWmonitor* monitor);
+extern GLFWvidmode*? glfwGetVideoMode(GLFWmonitor* monitor);
 /// Generates a gamma ramp and sets it for the specified monitor.
 extern void glfwSetGamma(GLFWmonitor* monitor, float gamma);
 /// Returns the current gamma ramp for the specified monitor.
-extern const GLFWgammaramp*? glfwGetGammaRamp(GLFWmonitor* monitor);
+extern GLFWgammaramp*? glfwGetGammaRamp(GLFWmonitor* monitor);
 /// Sets the current gamma ramp for the specified monitor.
-extern void glfwSetGammaRamp(GLFWmonitor* monitor, const GLFWgammaramp* ramp);
+extern void glfwSetGammaRamp(GLFWmonitor* monitor, GLFWgammaramp* ramp);
 /// Resets all window hints to their default values.
 extern void glfwDefaultWindowHints();
 /// Sets the specified window hint to the desired value.
 extern void glfwWindowHint(c_int hint, c_int value);
 /// Sets the specified window hint to the desired value.
-extern void glfwWindowHintString(c_int hint, const char*? value);
+extern void glfwWindowHintString(c_int hint, char*? value);
 /// Creates a window and its associated context.
-extern GLFWwindow*? glfwCreateWindow(c_int width, c_int height, const char* title, GLFWmonitor*? monitor, GLFWwindow*? share);
+extern GLFWwindow*? glfwCreateWindow(c_int width, c_int height, char* title, GLFWmonitor*? monitor, GLFWwindow*? share);
 /// Destroys the specified window and its context.
 extern void glfwDestroyWindow(GLFWwindow* window);
 /// Checks the close flag of the specified window.
@@ -620,11 +620,11 @@ extern c_int glfwWindowShouldClose(GLFWwindow* window);
 /// Sets the close flag of the specified window.
 extern void glfwSetWindowShouldClose(GLFWwindow* window, c_int value);
 /// Returns the title of the specified window.
-extern const char*? glfwGetWindowTitle(GLFWwindow* window);
+extern char*? glfwGetWindowTitle(GLFWwindow* window);
 /// Sets the title of the specified window.
-extern void glfwSetWindowTitle(GLFWwindow* window, const char* title);
+extern void glfwSetWindowTitle(GLFWwindow* window, char* title);
 /// Sets the icon for the specified window.
-extern void glfwSetWindowIcon(GLFWwindow* window, c_int count, const GLFWimage[*]? images);
+extern void glfwSetWindowIcon(GLFWwindow* window, c_int count, GLFWimage[*]? images);
 /// Retrieves the position of the content area of the specified window.
 extern void glfwGetWindowPos(GLFWwindow* window, c_int*? xpos, c_int*? ypos);
 /// Sets the position of the content area of the specified window.
@@ -706,7 +706,7 @@ extern void glfwSetInputMode(GLFWwindow* window, c_int mode, c_int value);
 /// Returns whether raw mouse motion is supported.
 extern c_int glfwRawMouseMotionSupported();
 /// Returns the layout-specific name of the specified printable key.
-extern const char*? glfwGetKeyName(c_int key, c_int scancode);
+extern char*? glfwGetKeyName(c_int key, c_int scancode);
 /// Returns the platform-specific scancode of the specified key.
 extern c_int glfwGetKeyScancode(c_int key);
 /// Returns the last reported state of a keyboard key for the specified
@@ -718,7 +718,7 @@ extern void glfwGetCursorPos(GLFWwindow* window, double*? xpos, double*? ypos);
 /// Sets the position of the cursor, relative to the content area of the
 extern void glfwSetCursorPos(GLFWwindow* window, double xpos, double ypos);
 /// Creates a custom cursor.
-extern GLFWcursor*? glfwCreateCursor(const GLFWimage* image, c_int xhot, c_int yhot);
+extern GLFWcursor*? glfwCreateCursor(GLFWimage* image, c_int xhot, c_int yhot);
 /// Creates a cursor with a standard shape.
 extern GLFWcursor*? glfwCreateStandardCursor(c_int shape);
 /// Destroys a cursor.
@@ -744,15 +744,15 @@ extern GLFWdropfun? glfwSetDropCallback(GLFWwindow* window, GLFWdropfun? callbac
 /// Returns whether the specified joystick is present.
 extern c_int glfwJoystickPresent(c_int jid);
 /// Returns the values of all axes of the specified joystick.
-extern const float[*]? glfwGetJoystickAxes(c_int jid, c_int* count);
+extern float[*]? glfwGetJoystickAxes(c_int jid, c_int* count);
 /// Returns the state of all buttons of the specified joystick.
-extern const c_uchar[*]? glfwGetJoystickButtons(c_int jid, c_int* count);
+extern c_uchar[*]? glfwGetJoystickButtons(c_int jid, c_int* count);
 /// Returns the state of all hats of the specified joystick.
-extern const c_uchar[*]? glfwGetJoystickHats(c_int jid, c_int* count);
+extern c_uchar[*]? glfwGetJoystickHats(c_int jid, c_int* count);
 /// Returns the name of the specified joystick.
-extern const char*? glfwGetJoystickName(c_int jid);
+extern char*? glfwGetJoystickName(c_int jid);
 /// Returns the SDL compatible GUID of the specified joystick.
-extern const char*? glfwGetJoystickGUID(c_int jid);
+extern char*? glfwGetJoystickGUID(c_int jid);
 /// Sets the user pointer of the specified joystick.
 extern void glfwSetJoystickUserPointer(c_int jid, void*? pointer);
 /// Returns the user pointer of the specified joystick.
@@ -762,15 +762,15 @@ extern c_int glfwJoystickIsGamepad(c_int jid);
 /// Sets the joystick configuration callback.
 extern GLFWjoystickfun? glfwSetJoystickCallback(GLFWjoystickfun? callback);
 /// Adds the specified SDL_GameControllerDB gamepad mappings.
-extern c_int glfwUpdateGamepadMappings(const char* string);
+extern c_int glfwUpdateGamepadMappings(char* string);
 /// Returns the human-readable gamepad name for the specified joystick.
-extern const char*? glfwGetGamepadName(c_int jid);
+extern char*? glfwGetGamepadName(c_int jid);
 /// Retrieves the state of the specified joystick remapped as a gamepad.
 extern c_int glfwGetGamepadState(c_int jid, GLFWgamepadstate* state);
 /// Sets the clipboard to the specified string.
-extern void glfwSetClipboardString(GLFWwindow*? window, const char* string);
+extern void glfwSetClipboardString(GLFWwindow*? window, char* string);
 /// Returns the contents of the clipboard as a string.
-extern const char*? glfwGetClipboardString(GLFWwindow*? window);
+extern char*? glfwGetClipboardString(GLFWwindow*? window);
 /// Returns the GLFW time.
 extern double glfwGetTime();
 /// Sets the GLFW time.
@@ -788,10 +788,10 @@ extern void glfwSwapBuffers(GLFWwindow* window);
 /// Sets the swap interval for the current context.
 extern void glfwSwapInterval(c_int interval);
 /// Returns whether the specified extension is available.
-extern c_int glfwExtensionSupported(const char* extension);
+extern c_int glfwExtensionSupported(char* extension);
 /// Returns the address of the specified function for the current
-extern GLFWglproc? glfwGetProcAddress(const char* procname);
+extern GLFWglproc? glfwGetProcAddress(char* procname);
 /// Returns whether the Vulkan loader and an ICD have been found.
 extern c_int glfwVulkanSupported();
 /// Returns the Vulkan instance extensions required by GLFW.
-extern const char*[*]? glfwGetRequiredInstanceExtensions(c_uint* count);
+extern char*[*]? glfwGetRequiredInstanceExtensions(c_uint* count);

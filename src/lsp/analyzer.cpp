@@ -306,13 +306,12 @@ std::string hoverForDecl(const Decl& decl) {
     }
     case DeclKind::VarDecl: {
         auto& var = llvm::cast<VarDecl>(decl);
-        // Top-level const is a property of the declaration, not the type.
-        out << (var.isConst ? "const " : "") << (var.type ? var.type.toString() + " " : "") << var.getName().str();
+        out << (var.type ? var.type.toString() + " " : "") << var.getName().str();
         break;
     }
     case DeclKind::FieldDecl: {
         auto& field = llvm::cast<FieldDecl>(decl);
-        out << (field.isConst ? "const " : "") << (field.type ? field.type.toString() + " " : "") << displayName(field);
+        out << (field.type ? field.type.toString() + " " : "") << displayName(field);
         break;
     }
     case DeclKind::ParamDecl: {

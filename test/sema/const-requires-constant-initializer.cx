@@ -1,0 +1,21 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+int n = 3;
+
+// CHECK: [[@LINE+1]]:11: error: const 'g' initializer must be a constant expression
+const g = n;
+
+const K = 42;
+
+struct S {
+    // CHECK: [[@LINE+1]]:17: error: const 'MAX' initializer must be a constant expression
+    const MAX = n;
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:15: error: const 'm' initializer must be a constant expression
+    const m = n;
+    // CHECK: [[@LINE+1]]:15: error: const 'x' must have an initializer
+    const int x;
+    println(K);
+}

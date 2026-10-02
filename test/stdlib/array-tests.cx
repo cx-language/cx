@@ -107,13 +107,13 @@ void testValueConstruction() {
     assert(!(empty != 1));
 
     int[2] source = [7, 8];
-    const int[2] destination = source;
+    int[2] destination = source;
     assert(destination[1] == 8);
-    const int[*] constData = source;
-    assert(constData[1] == 8);
+    int[*] data = source;
+    assert(data[1] == 8);
 
     const int[2] c = [1, 2];
-    assert(c.data()[0] == 1);
+    assert(c[0] == 1);
     int[2] m = [3, 4];
     m.data()[0] = 5;
     assert(m[0] == 5);
@@ -259,25 +259,4 @@ void testAllAnyNone() {
     assert(a.none((int& n) => n < 0));
 }
 
-@test
-void testConstSlice() {
-    // A const slice lowers exactly like a mutable one; only writes are forbidden.
-    int[] s = [1, 2];
-    const int[] t = s;
-    assert(t.size() == 2);
-    assert(t[0] == 1);
-    assert(t[1] == 2);
-    const u = s;
-    assert(u.size() == 2);
-}
 
-int constSliceSum(const int[] s) {
-    return s[0] + s[1] + s[2];
-}
-
-@test
-void testConstSliceParam() {
-    int[] d = [1, 2, 3];
-    assert(constSliceSum(d) == 6);
-    assert(d.size() == 3);
-}

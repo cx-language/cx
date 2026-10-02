@@ -84,7 +84,7 @@ and.end(bool and):
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Slice index out of bounds at Slice.cx:64:9
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "Slice index out of bounds at Slice.cx:64:9
 ")
     unreachable
 

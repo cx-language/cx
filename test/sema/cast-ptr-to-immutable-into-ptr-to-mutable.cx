@@ -1,7 +1,0 @@
-// RUN: %cx -typecheck -Werror -Wno-unused %s
-
-// Dropping const through cast is allowed, including across pointer kinds.
-void f(const void* v) {
-    var p = cast<int*>(v);
-    _ = p;
-}

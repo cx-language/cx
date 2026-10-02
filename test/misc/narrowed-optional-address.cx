@@ -25,10 +25,6 @@ void takePointerPayload(int** p) {
     println(**p);
 }
 
-void takeConstPayload(const S* s) {
-    println(s.x);
-}
-
 void nully(S?* s) {
     *s = null;
 }
@@ -49,7 +45,7 @@ struct Loud {
 }
 using OptLoud = Loud?;
 
-void takeConstBorrow(const OptLoud& o) {
+void takeOptBorrow(OptLoud& o) {
     println((*o)!.x);
 }
 
@@ -78,9 +74,6 @@ void main() {
     // An address also binds to a borrow of the narrowed type.
     if s == null { return; }
     borrowPayload(&s); // CHECK-NEXT:100
-    // A narrowed address also converts to a const payload pointer.
-    if s == null { return; }
-    takeConstPayload(&s); // CHECK-NEXT:100
 
     // An exact overload still wins over the converting one.
     S v = S(1);
@@ -93,11 +86,11 @@ void main() {
     if o == null { return; }
     takePointerPayload(&o); // CHECK-NEXT:7
 
-    // A const borrow of the declared type borrows the storage directly: no
+    // A borrow of the declared type borrows the storage directly: no
     // temporary is constructed, so no destructor runs before scope exit.
     Loud? l = Loud(11);
     if l != null {
-        takeConstBorrow(l); // CHECK-NEXT:11
+        takeOptBorrow(l); // CHECK-NEXT:11
     }
 
     // Narrowed parameters behave like narrowed locals.

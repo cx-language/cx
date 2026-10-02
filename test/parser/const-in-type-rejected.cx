@@ -1,0 +1,7 @@
+// RUN: %not %cx -parse --error-limit=0 %S/inputs/const-in-type-rejected/param.cx %S/inputs/const-in-type-rejected/return.cx %S/inputs/const-in-type-rejected/field.cx %S/inputs/const-in-type-rejected/generic-arg.cx %S/inputs/const-in-type-rejected/cast.cx 2>&1 | %FileCheck %s
+
+// CHECK: param.cx:1:8: error: 'const' is only allowed at the start of a constant declaration
+// CHECK: return.cx:1:1: error: 'const' is only allowed at the start of a constant declaration
+// CHECK: field.cx:2:5: error: 'const' members must be static constants with an initializer
+// CHECK: generic-arg.cx:1:6: error: 'const' is only allowed at the start of a constant declaration
+// CHECK: cast.cx:3:18: error: 'const' is only allowed at the start of a constant declaration

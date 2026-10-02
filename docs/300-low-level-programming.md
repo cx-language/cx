@@ -238,8 +238,15 @@ return types with the `c_` prefixed types so the signature matches on
 every target:
 
 ```cs {.noCompile}
-extern "C++" c_int cpp_sum(const c_int* values, c_int count);
+extern "C++" c_int cpp_sum(c_int* values, c_int count);
 ```
+
+C++ `const` on parameters is dropped, so cx cannot distinguish overloads
+that differ only in constness. Such a declaration links against the mutable
+overload when one exists; when only the const overload exists, linking fails.
+When both overloads come from an imported header instead, the import
+succeeds and calls resolve to whichever overload is declared first, mangled
+with its original constness.
 
 ## Calling cx from C++
 

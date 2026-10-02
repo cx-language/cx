@@ -10,7 +10,7 @@ int32 main() {
     br bounds.condition, bounds.fail, bounds.success
 
 bounds.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at variable-of-array-type.cx:7:9
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "index out of bounds at variable-of-array-type.cx:7:9
 ")
     unreachable
 
@@ -23,7 +23,7 @@ bounds.success:
     br bounds.condition_0, bounds.fail, bounds.success
 
 bounds.fail_0:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at variable-of-array-type.cx:8:9
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "index out of bounds at variable-of-array-type.cx:8:9
 ")
     unreachable
 

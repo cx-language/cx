@@ -1,7 +1,0 @@
-// RUN: %cx -typecheck -Werror -Wno-unused %s
-
-// Nested const-element slices lower even when the mutable twin is never named:
-// getIRType must find the Slice declaration through the slotted type.
-void f(const int[][] m) {
-    int x = m[0][0];
-}

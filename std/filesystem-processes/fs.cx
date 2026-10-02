@@ -3,25 +3,24 @@
 // Lexical path manipulation without file system access lives in path.cx.
 
 #if Windows
-private extern c_int _access(const char* path, c_int mode);
-private extern c_int _mkdir(const char* path);
-private extern c_int _rmdir(const char* path);
+private extern c_int _access(char* path, c_int mode);
+private extern c_int _mkdir(char* path);
+private extern c_int _rmdir(char* path);
 private extern char*? _getcwd(char*? buffer, c_size_t size);
-private extern c_int _chdir(const char* path);
+private extern c_int _chdir(char* path);
 #else
-private extern c_int access(const char* path, c_int mode);
-private extern c_int mkdir(const char* path, c_int mode);
-private extern c_int rmdir(const char* path);
+private extern c_int access(char* path, c_int mode);
+private extern c_int mkdir(char* path, c_int mode);
+private extern c_int rmdir(char* path);
 private extern char*? getcwd(char*? buffer, c_size_t size);
-private extern c_int chdir(const char* path);
+private extern c_int chdir(char* path);
 #endif
-private extern c_int rename(const char* oldName, const char* newName);
 
 #if Windows
-private bool pathExists(const char* path) { return _access(path, 0) == 0; }
+private bool pathExists(char* path) { return _access(path, 0) == 0; }
 #else
 // The mode 0 is F_OK: check for existence without checking permissions.
-private bool pathExists(const char* path) { return access(path, 0) == 0; }
+private bool pathExists(char* path) { return access(path, 0) == 0; }
 #endif
 
 /// Returns true if a file or directory exists at the path.

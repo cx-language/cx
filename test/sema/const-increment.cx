@@ -1,9 +1,15 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-
-extern const int* f();
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
 
 void main() {
-    var i = f();
-    // CHECK: [[@LINE+1]]:6: error: cannot increment immutable value of type 'int'
-    (*i)++;
+    const x = 5;
+    // CHECK: [[@LINE+1]]:5: error: cannot increment constant of type 'int'
+    x++;
+}
+
+int g = 1;
+const int* p = &g;
+
+void incrementThroughConstPointer() {
+    // CHECK: [[@LINE+1]]:6: error: cannot increment constant of type 'int'
+    (*p)++;
 }

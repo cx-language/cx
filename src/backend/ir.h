@@ -61,8 +61,8 @@ struct IRType {
     int getArraySize();
     IRType* getPointerTo();
     bool equals(IRType* other);
-    // Same calling-convention shape. Integer signedness, type names, pointee
-    // types, and constness don't affect calls (opaque pointers, width-only
+    // Same calling-convention shape. Integer signedness, type names, and
+    // pointee types don't affect calls (opaque pointers, width-only
     // integers), so same-named externs differing only in those share one
     // symbol instead of conflicting.
     bool abiEquals(IRType* other);
@@ -76,7 +76,6 @@ struct IRBasicType : IRType {
 
 struct IRPointerType : IRType {
     IRType* pointee;
-    bool mutablePointee;
 
     static bool classof(const IRType* t) { return t->kind == IRTypeKind::IRPointerType; }
 };
@@ -129,8 +128,6 @@ struct IRUnionType : IRType {
 };
 
 IRType* getIRType(Type astType);
-// True when pointer constness differs at any level. Non-pointers do not.
-bool pointeeConstDiffers(IRType* a, IRType* b);
 // Bit width of an integer type, 0 for anything else.
 int getIntegerBitWidth(IRType* type);
 // Unsigned cx integer type of the given width (8, 16, 32, or 64).

@@ -16,27 +16,23 @@ const c = 0.1; // global constant, type inferred as 'float'
 const float d = 0.2; // global constant, explicit type
 ```
 
-`const` is a property of the declaration, not of the value's type: a constant
-cannot be reassigned or mutated in place, but copying its value out always
-works. Passing a constant where a value is expected (arguments, return
-values, ternary arms, array elements, ...) never fails for constness
-reasons. `const` only constrains aliases: pointers, borrows, and views
-cannot drop the pointee's constness, and the elements of a `const` array
-cannot be written through.
+`const` declares a compile-time constant: the initializer must be a constant
+expression (literals, arithmetic on constants, and references to other
+constants, but not function calls), and the constant cannot be reassigned
+or mutated afterwards. Reading or copying a constant's value always works,
+but no alias to it can be formed: taking its address and binding it to a
+borrow, pointer, or view are all rejected.
 
-In a declaration, `const` before a pointer, borrow, or array-pointer type
-qualifies the pointee instead of the binding, like C++: `const int* p`
-can be reseated, but `*p` cannot be written through. Any other `const`
-(including `const int[]` and `const int[3]`) makes the binding itself
-immutable.
+`const` only appears at the start of a constant declaration; it never
+appears in types. There is no `const T*`: pointers, borrows, and views
+are always mutable, and `const`-qualified C types import as their mutable
+counterparts.
 
-An explicit type on a global or member constant cannot be a slice or
-optional type; omit it and let the type be inferred.
+An explicit type on a global constant cannot be a slice type;
+omit it and let the type be inferred.
 
 Global variables are initialized before the program starts,
-so their initializers must be constant expressions:
-literals, arithmetic on constants, and references to other constants,
-but not function calls.
+so their initializers must be constant expressions too.
 
 ```cs
 const threshold = 10;

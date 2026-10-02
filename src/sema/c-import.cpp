@@ -125,7 +125,7 @@ struct CToCxConverter final : clang::ASTConsumer {
             if (pointeeType->isFunctionType()) {
                 return OptionalType::get(toCx(pointeeType));
             }
-            return OptionalType::get(PointerType::get(toCx(pointeeType), PointerKind::Pointer, pointeeType.isConstQualified()));
+            return OptionalType::get(PointerType::get(toCx(pointeeType), PointerKind::Pointer));
         }
         case clang::Type::Builtin:
             return toCx(llvm::cast<clang::BuiltinType>(type));
@@ -166,7 +166,7 @@ struct CToCxConverter final : clang::ASTConsumer {
         }
         case clang::Type::IncompleteArray: {
             auto& incompleteArrayType = llvm::cast<clang::IncompleteArrayType>(type);
-            return ArrayPointerType::get(toCx(incompleteArrayType.getElementType()), incompleteArrayType.getElementType().isConstQualified());
+            return ArrayPointerType::get(toCx(incompleteArrayType.getElementType()));
         }
         case clang::Type::Attributed:
             return toCx(llvm::cast<clang::AttributedType>(type).getEquivalentType());
@@ -192,7 +192,7 @@ struct CToCxConverter final : clang::ASTConsumer {
         case clang::Type::LValueReference:
         case clang::Type::RValueReference: {
             auto pointeeType = llvm::cast<clang::ReferenceType>(type).getPointeeType();
-            return PointerType::get(toCx(pointeeType), PointerKind::Reference, pointeeType.isConstQualified());
+            return PointerType::get(toCx(pointeeType), PointerKind::Reference);
         }
         case clang::Type::SubstTemplateTypeParm:
             return toCx(llvm::cast<clang::SubstTemplateTypeParmType>(type).desugar());
@@ -210,7 +210,7 @@ struct CToCxConverter final : clang::ASTConsumer {
 
     std::optional<FieldDecl> toCx(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
         if (decl.getName().empty()) return std::nullopt;
-        return FieldDecl(toCx(decl.getType()), decl.getName(), nullptr, typeDecl, AccessLevel::Default, toCx(decl.getLocation()), decl.getType().isConstQualified());
+        return FieldDecl(toCx(decl.getType()), decl.getName(), nullptr, typeDecl, AccessLevel::Default, toCx(decl.getLocation()));
     }
 
     // Collects the field names an imported record will have after anonymous
@@ -352,9 +352,9 @@ struct CToCxConverter final : clang::ASTConsumer {
     }
 
     VarDecl* toCx(const clang::VarDecl& decl) {
-        auto* varDecl = makeAST<VarDecl>(toCx(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, module, toCx(decl.getLocation()));
-        varDecl->isConst = decl.getType().isConstQualified();
-        return varDecl;
+        // C const is dropped like everywhere else: the value has storage but
+        // isn't a compile-time constant, so the binding stays mutable.
+        return makeAST<VarDecl>(toCx(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, module, toCx(decl.getLocation()));
     }
 
     void addConstantToSymbolTable(llvm::StringRef name, Expr* initializer, Type type) {

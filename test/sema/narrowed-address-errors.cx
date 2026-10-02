@@ -24,9 +24,10 @@ void plainPointer() {
 }
 
 void constSource() {
+    // CHECK: [[@LINE+1]]:18: error: const 's' initializer must be a constant expression
     const S? s = S(1);
     if s == null { return; }
-    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'const S?*' to 'takePayload', expected 'S*'
+    // CHECK: [[@LINE+1]]:18: error: cannot take address of constant 's'
     takePayload(&s);
 }
 

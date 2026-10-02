@@ -20,7 +20,7 @@ int32 _CX1N4main10getCheckedEM3std5int321_OM3std5int32(Optional<int32> o) {
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at unchecked.cx:9:13
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "Unwrap failed at unchecked.cx:9:13
 ")
     unreachable
 
@@ -99,7 +99,7 @@ int32 main() {
     br bounds.condition, bounds.fail, bounds.success
 
 bounds.fail:
-    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at unchecked.cx:33:15
+    never _9 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "index out of bounds at unchecked.cx:33:15
 ")
     unreachable
 
@@ -122,7 +122,7 @@ bounds.success:
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _19 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at unchecked.cx:37:15
+    never _19 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at unchecked.cx:37:15
 ")
     unreachable
 

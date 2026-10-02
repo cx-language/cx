@@ -3,7 +3,7 @@ import sdl3;
 const width = 640;
 const height = 480;
 
-const bool[*]? keyState = null;
+bool[*]? keyState = null;
 
 bool isKeyDown(SDL_Scancode key) {
     return keyState![key];

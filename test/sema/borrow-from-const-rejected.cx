@@ -1,0 +1,21 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+const arr = [1, 2, 3];
+
+void takesBorrow(int& x) {
+}
+
+int& returnBorrow() {
+    // CHECK: [[@LINE+1]]:12: error: cannot bind 'int&' to constant 'int' in return value
+    return arr[0];
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:14: error: cannot bind 'int&' to constant 'int'
+    int& r = arr[0];
+    // CHECK: [[@LINE+1]]:17: error: cannot bind 'int&' to constant 'int' in argument #1 to 'takesBorrow'
+    takesBorrow(arr[0]);
+    // CHECK: [[@LINE+1]]:14: error: cannot take address of constant expression of type 'int'
+    var p = &arr[0];
+    println(arr[0]);
+}

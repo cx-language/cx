@@ -13,6 +13,14 @@ enum Level {
     const count = 2;
 }
 
+struct FlagHolder {
+    const FLAG = 1 < 2;
+    const INVERTED = ~true;
+}
+
+const flagCopy = FlagHolder.FLAG;
+const negatedFlag = ~FlagHolder.FLAG;
+
 @test
 void testStaticConst() {
     assert(Point.origin_x == 0);
@@ -25,4 +33,12 @@ void testStaticConst() {
     var p = Point(x = 3, y = 4);
     assert(p.origin_x == 0);
     println("ok");
+}
+
+@test
+void testBoolMemberConstGlobal() {
+    assert(flagCopy);
+    assert(FlagHolder.FLAG);
+    assert(!negatedFlag);
+    assert(!FlagHolder.INVERTED);
 }

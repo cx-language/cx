@@ -17,13 +17,13 @@ void main() {
     a[0] = 44;
     println(*p); // CHECK-NEXT:44
 
-    // const may be added or dropped, and the pointee type may change.
-    int* mp = cast<int*>(cast<const int*>(p));
+    // The pointee type may change.
+    int* mp = cast<int*>(p);
     *mp = 45;
     println(x); // CHECK-NEXT:45
 
-    println(cast<const int[*]>(mp)[0]); // CHECK-NEXT:45
-    uint8& byte = cast<uint8&>(cast<const int[*]>(mp));
+    println(cast<int[*]>(mp)[0]); // CHECK-NEXT:45
+    uint8& byte = cast<uint8&>(cast<int[*]>(mp));
     println(*cast<int*>(&byte)); // CHECK-NEXT:45
 
     // Optional and non-optional address types convert in both directions.
@@ -34,7 +34,7 @@ void main() {
     println(*nr); // CHECK-NEXT:45
 
     int*? none = null;
-    println(cast<const int&?>(cast<int[*]?>(none)) == null); // CHECK-NEXT:true
+    println(cast<int&?>(cast<int[*]?>(none)) == null); // CHECK-NEXT:true
 
     float[*]? fp = cast<float[*]?>(nr);
     println(*cast<int*>(fp)); // CHECK-NEXT:45

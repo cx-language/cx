@@ -22,5 +22,5 @@ int w = x > 1 ? 2 : 3;
 
 const int* p = &x;
 
-// CHECK: [[@LINE+1]]:16: error: global variable initializer must be a constant expression
+// CHECK: [[@LINE+1]]:17: error: cannot take address of constant expression of type 'int'
 const int* q = &*p;

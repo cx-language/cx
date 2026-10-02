@@ -137,9 +137,6 @@ std::string DemangleParser::parseType() {
         failed = true;
         return "";
     }
-    bool isConst = peekOptional() == 'K';
-    if (isConst) ++pos;
-
     std::string result;
     char kind = peek();
     if (kind == '0') {
@@ -206,7 +203,7 @@ std::string DemangleParser::parseType() {
 
     --depth;
     if (failed) return "";
-    return isConst ? "const " + result : result;
+    return result;
 }
 
 const char* operatorSpelling(llvm::StringRef code) {

@@ -47,7 +47,7 @@ define i32 @_CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @0), !dbg !9
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -60,7 +60,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
 
 overflow.fail5:                                   ; preds = %overflow.success
-  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @1), !dbg !9
+  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @1), !dbg !9
   unreachable
 
 overflow.success6:                                ; preds = %overflow.success
@@ -70,7 +70,7 @@ overflow.success6:                                ; preds = %overflow.success
 ; Function Attrs: nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none)
 declare { i32, i1 } @llvm.sadd.with.overflow.i32(i32, i32) #1
 
-declare %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr) #0
 
 define i32 @main() #0 !dbg !10 {
   %s = alloca %S, align 8
@@ -147,7 +147,7 @@ define i32 @_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(i32 %
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @2), !dbg !20
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @2), !dbg !20
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -173,7 +173,7 @@ define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4mai
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @3), !dbg !22
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @3), !dbg !22
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -188,7 +188,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
 
 overflow.fail5:                                   ; preds = %overflow.success
-  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PKM3std4char(ptr @4), !dbg !22
+  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @4), !dbg !22
   unreachable
 
 overflow.success6:                                ; preds = %overflow.success

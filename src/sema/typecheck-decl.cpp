@@ -307,7 +307,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
     case TypeKind::ArrayPointerType: {
         auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving, foldArraySizes);
         if (elementType == type.getElementType()) return type;
-        return ArrayPointerType::get(elementType, type.isPointeeConst(), type.location, type.endLocation);
+        return ArrayPointerType::get(elementType, type.location, type.endLocation);
     }
     case TypeKind::AnonymousStructType: {
         auto elements = map(type.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
@@ -325,7 +325,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
     case TypeKind::PointerType: {
         auto pointeeType = resolveTypeAliases(type.getPointee(), userAccessLevel, resolving, foldArraySizes);
         if (pointeeType == type.getPointee()) return type;
-        return PointerType::get(pointeeType, type.getPointerKind(), type.isPointeeConst(), type.location, type.endLocation);
+        return PointerType::get(pointeeType, type.getPointerKind(), type.location, type.endLocation);
     }
     case TypeKind::UnresolvedType:
         return type;
@@ -916,8 +916,6 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
     if (type.isPointerType()) {
         Type pointee = type.getPointee();
         out << (type.getPointerKind() == PointerKind::Reference ? 'R' : 'P');
-        // `const` on the pointee (`const T*`, `const T&`) is part of the signature.
-        if (type.isPointeeConst()) out << 'K';
         mangleCppType(out, pointee, triple, false, false);
         return;
     }
@@ -1713,7 +1711,7 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
 
 // Global initializers are emitted as constant expressions; anything needing runtime
 // evaluation would emit instructions outside any function and corrupt codegen.
-static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl<const VarDecl*>& seen) {
+static bool isSupportedConstInitializer(const Expr& expr, llvm::SmallPtrSetImpl<const VarDecl*>& seen) {
     switch (expr.kind) {
     case ExprKind::IntLiteralExpr:
     case ExprKind::FloatLiteralExpr:
@@ -1726,7 +1724,7 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
         return true;
     case ExprKind::ArrayLiteralExpr:
         for (auto& element : llvm::cast<ArrayLiteralExpr>(expr).elements) {
-            if (!isSupportedGlobalInitializer(*element, seen)) return false;
+            if (!isSupportedConstInitializer(*element, seen)) return false;
         }
         return true;
     case ExprKind::VarExpr: {
@@ -1737,26 +1735,32 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
         // Immutable globals inline their initializer; mutable ones need a runtime load.
         if (!varDecl || !varDecl->isConst || !varDecl->initializer || !seen.insert(varDecl).second) return false;
         // Path-scoped: constants shared between converging paths stay supported, only true cycles fail.
-        bool result = isSupportedGlobalInitializer(*varDecl->initializer, seen);
+        bool result = isSupportedConstInitializer(*varDecl->initializer, seen);
         seen.erase(varDecl);
         return result;
     }
     case ExprKind::MemberExpr: {
         // Tag-only cases lower to their tag constant; payload cases need runtime construction.
-        auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(llvm::cast<MemberExpr>(expr).decl);
-        return enumCase && !enumCase->getEnumDecl()->hasAssociatedValues();
+        if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(llvm::cast<MemberExpr>(expr).decl)) {
+            if (!enumCase->getEnumDecl()->hasAssociatedValues()) return true;
+        }
+        // Foldable member reads (e.g. `.x` on a constant array) evaluate before codegen.
+        return (expr.type.isInteger() && expr.isFoldableIntConstant()) || (expr.type.isBool() && expr.isFoldableBoolConstant());
     }
     case ExprKind::UnaryExpr: {
         auto& unary = llvm::cast<UnaryExpr>(expr);
         switch (unary.op) {
         case Token::Plus:
         case Token::Minus:
+        case Token::MinusWrap:
         case Token::Tilde:
             // Enum tags lower to integers; pointers and optionals would miscompile.
-            return (expr.type.isInteger() || expr.type.isFloatingPoint() || expr.type.isChar() || (expr.type.isEnumType() && !expr.type.isOptionalType()))
-                && isSupportedGlobalInitializer(unary.getOperand(), seen);
+            // (Bool is only reachable for '~'; ill-typed '-bool' never gets here.)
+            return (expr.type.isInteger() || expr.type.isBool() || expr.type.isFloatingPoint() || expr.type.isChar()
+                    || (expr.type.isEnumType() && !expr.type.isOptionalType()))
+                && isSupportedConstInitializer(unary.getOperand(), seen);
         case Token::Not:
-            return unary.getOperand().type.isBool() && isSupportedGlobalInitializer(unary.getOperand(), seen);
+            return unary.getOperand().type.isBool() && isSupportedConstInitializer(unary.getOperand(), seen);
         case Token::And: {
             // Addresses of globals and functions are constants, but const globals have no storage.
             auto* varExpr = llvm::dyn_cast<VarExpr>(&unary.getOperand());
@@ -1773,7 +1777,7 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
     }
     case ExprKind::BinaryExpr: {
         auto& binary = llvm::cast<BinaryExpr>(expr);
-        if (!isSupportedGlobalInitializer(binary.getLHS(), seen) || !isSupportedGlobalInitializer(binary.getRHS(), seen)) {
+        if (!isSupportedConstInitializer(binary.getLHS(), seen) || !isSupportedConstInitializer(binary.getRHS(), seen)) {
             return false;
         }
         // && and || have no constant instruction form; only foldable ones are supported.
@@ -1792,6 +1796,13 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
         case Token::Xor:
         case Token::LeftShift:
         case Token::RightShift:
+        case Token::PlusWrap:
+        case Token::MinusWrap:
+        case Token::StarWrap:
+        case Token::PlusSat:
+        case Token::MinusSat:
+        case Token::StarSat:
+        case Token::LeftShiftSat:
             return expr.type.isInteger() || expr.type.isFloatingPoint() || expr.type.isChar();
         case Token::Equal:
         case Token::NotEqual:
@@ -1809,13 +1820,13 @@ static bool isSupportedGlobalInitializer(const Expr& expr, llvm::SmallPtrSetImpl
         auto& cast = llvm::cast<ImplicitCastExpr>(expr);
         // Pointer-implemented optionals need no construction; value-implemented ones are built as
         // constant aggregates. Other casts need loads or branches.
-        return cast.castKind == ImplicitCastExpr::OptionalWrap && expr.type.isOptionalType() && isSupportedGlobalInitializer(*cast.operand, seen);
+        return cast.castKind == ImplicitCastExpr::OptionalWrap && expr.type.isOptionalType() && isSupportedConstInitializer(*cast.operand, seen);
     }
     case ExprKind::IfExpr: {
         // Ternaries emit branches unless folded; only integer and boolean ones fold.
         auto& ifExpr = llvm::cast<IfExpr>(expr);
-        if (!isSupportedGlobalInitializer(*ifExpr.condition, seen) || !isSupportedGlobalInitializer(*ifExpr.thenExpr, seen)
-            || !isSupportedGlobalInitializer(*ifExpr.elseExpr, seen)) {
+        if (!isSupportedConstInitializer(*ifExpr.condition, seen) || !isSupportedConstInitializer(*ifExpr.thenExpr, seen)
+            || !isSupportedConstInitializer(*ifExpr.elseExpr, seen)) {
             return false;
         }
         return (expr.type.isInteger() && expr.isFoldableIntConstant()) || (expr.type.isBool() && expr.isFoldableBoolConstant());
@@ -1860,8 +1871,14 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         }
     }
 
+    // Constants need a constant-expression initializer, except compiler-bound
+    // temporaries, whose values come from elsewhere.
+    bool isConstChecked = decl.isConst && !decl.isImplicitlyBound;
     if (!decl.isGlobal()) currentModule->addToSymbolTable(decl);
     if (!decl.initializer) {
+        if (isConstChecked) {
+            ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "const '" << decl.getName() << "' must have an initializer");
+        }
         if (!declaredType) {
             ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl),
                         "couldn't infer type of '" << decl.getName() << "', add a type annotation or initializer");
@@ -1894,10 +1911,16 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
             }
 
             diagnoseClosureConversion(initializerType, declaredType, *decl.initializer);
-            ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
-                        "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint
-                                          << immutableBorrowHint(*decl.initializer, initializerType, declaredType)
-                                          << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
+            if (isBorrowOfConstant(*decl.initializer, initializerType, declaredType)) {
+                // Initializing a borrow binds it; "assign" misdescribes what failed.
+                ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
+                            "cannot bind '" << declaredType << "' to constant '" << initializerType << "'" << narrowingHint(initializerType, declaredType)
+                                            << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
+            } else {
+                ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
+                            "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint
+                                              << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
+            }
         }
     } else {
         if (initializerType.isNull()) {
@@ -1908,20 +1931,6 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         }
 
         decl.type = NOTNULL(initializerType);
-    }
-
-    // A const binding over a view type forces view-const (matches a declared
-    // `const T[]`); the elements are reached through the view, so binding
-    // const must protect them. Plain pointers don't force: `const p` is a
-    // const handle to mutable storage, like C++ `T* const`. `?` layers are
-    // transparent: `const int[]?` still freezes the elements.
-    if (decl.isConst) {
-        Type core = decl.type;
-        while (core.isOptionalType())
-            core = core.removeOptional();
-        if ((core.isArrayPointer() || core.isSlice()) && !core.isPointeeConst()) {
-            decl.type = decl.type.withConstPointee();
-        }
     }
 
     // An inferred local borrow aliases the referent in place: `var x = list[0]` deduces
@@ -1944,10 +1953,15 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         setMoved(decl.initializer, true, /*trackVars=*/!decl.type.isImplicitlyCopyable());
     }
 
-    if (decl.isGlobal() && decl.initializer) {
+    if (isConstChecked || decl.isGlobal()) {
         llvm::SmallPtrSet<const VarDecl*, 8> seen;
-        if (!isSupportedGlobalInitializer(*decl.initializer, seen)) {
-            ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation, "global variable initializer must be a constant expression");
+        if (!isSupportedConstInitializer(*decl.initializer, seen)) {
+            if (isConstChecked) {
+                ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
+                            "const '" << decl.getName() << "' initializer must be a constant expression");
+            } else {
+                ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation, "global variable initializer must be a constant expression");
+            }
         }
     }
 

@@ -142,17 +142,6 @@ bool Type::isEnumType() const {
     return false;
 }
 
-// Resolves an aliased (pointee/element) type, folding a substituted const-slot into isConst.
-static Type resolveAliasedType(Type aliasedType, const llvm::StringMap<GenericArg>& replacements, bool& isConst) {
-    if (aliasedType.isBasicType()) {
-        if (auto it = replacements.find(aliasedType.getName()); it != replacements.end() && it->second.isType()) {
-            isConst = isConst || it->second.isConst;
-            return it->second.type;
-        }
-    }
-    return aliasedType.resolve(replacements);
-}
-
 Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
     if (!typeBase) return Type(nullptr, location);
 
@@ -168,8 +157,6 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         auto it = replacements.find(getName());
         if (it != replacements.end() && it->second.isType()) {
             // TODO: Handle generic arguments for type placeholders.
-            // Value position: a bound const-slot is ignored here (it applies
-            // at alias positions, where the pointer and view cases pick it up).
             Type resolved = it->second.getType();
             resolved.location = location;
             resolved.endLocation = endLocation;
@@ -178,21 +165,11 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         // An integer parameter reference isn't a type; leave it for the use site to diagnose.
 
         auto genericArgs = map(getGenericArgs(), [&](GenericArg arg) { return arg.resolve(replacements); });
-        if (!isSlice()) {
-            // Slots only apply at alias positions; inside any other generic the
-            // arg is a plain value type, so an inferred slot would form a bogus
-            // distinct type (e.g. `Box<const int>`).
-            for (auto& arg : genericArgs) {
-                if (arg.isType()) arg.isConst = false;
-            }
-        }
         return preserveSpelling(BasicType::get(getName(), std::move(genericArgs), location, endLocation));
     }
     case TypeKind::ArrayPointerType: {
         auto* base = llvm::cast<ArrayPointerType>(typeBase);
-        bool isConst = base->isConst;
-        Type elementType = resolveAliasedType(base->elementType, replacements, isConst);
-        return preserveSpelling(ArrayPointerType::get(elementType, isConst, location, endLocation));
+        return preserveSpelling(ArrayPointerType::get(base->elementType.resolve(replacements), location, endLocation));
     }
 
     case TypeKind::AnonymousStructType: {
@@ -207,9 +184,7 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
     }
     case TypeKind::PointerType: {
         auto* base = llvm::cast<PointerType>(typeBase);
-        bool isConst = base->isConst;
-        Type pointeeType = resolveAliasedType(base->pointeeType, replacements, isConst);
-        return preserveSpelling(PointerType::get(pointeeType, base->pointerKind, isConst, location, endLocation));
+        return preserveSpelling(PointerType::get(base->pointeeType.resolve(replacements), base->pointerKind, location, endLocation));
     }
     case TypeKind::UnresolvedType: {
         // A deferred size substitutes like any other expression, so generic
@@ -327,8 +302,8 @@ Type Type::getSizeofArrayOperand() const {
     return getGenericArgs()[1].getType().getSizeofOperand();
 }
 
-Type ArrayPointerType::get(Type elementType, bool isConst, Location location, Location endLocation) {
-    return getType(ArrayPointerType(elementType, isConst), location, endLocation);
+Type ArrayPointerType::get(Type elementType, Location location, Location endLocation) {
+    return getType(ArrayPointerType(elementType), location, endLocation);
 }
 
 Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Location location, Location endLocation) {
@@ -339,8 +314,8 @@ Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isV
     return getType(FunctionType(returnType, std::move(paramTypes), isVariadic), location, endLocation);
 }
 
-Type PointerType::get(Type pointeeType, PointerKind kind, bool isConst, Location location, Location endLocation) {
-    return getType(PointerType(pointeeType, kind, isConst), location, endLocation);
+Type PointerType::get(Type pointeeType, PointerKind kind, Location location, Location endLocation) {
+    return getType(PointerType(pointeeType, kind), location, endLocation);
 }
 
 Type OptionalType::get(Type wrappedType, Location location) {
@@ -379,7 +354,6 @@ bool cx::operator==(const AnonymousStructElement& a, const AnonymousStructElemen
 
 bool cx::operator==(const GenericArg& a, const GenericArg& b) {
     if (a.kind != b.kind) return false;
-    if (a.isConst != b.isConst) return false;
     switch (a.kind) {
     case GenericArg::Kind::Type:
         return a.getType() == b.getType();
@@ -393,13 +367,13 @@ bool cx::operator==(const GenericArg& a, const GenericArg& b) {
 
 std::string GenericArg::toString() const {
     if (isInt()) return std::to_string(getInt());
-    if (isType()) return (isConst ? "const " : "") + getType().toString();
+    if (isType()) return getType().toString();
     return "NULL";
 }
 
 std::string GenericArg::toCanonicalString() const {
     if (isInt()) return std::to_string(getInt());
-    if (isType()) return (isConst ? "const " : "") + getType().toCanonicalString();
+    if (isType()) return getType().toCanonicalString();
     return "NULL";
 }
 
@@ -408,11 +382,7 @@ GenericArg GenericArg::resolve(const llvm::StringMap<GenericArg>& replacements) 
     Type type = getType();
     if (type.isBasicType()) {
         if (auto it = replacements.find(type.getName()); it != replacements.end()) {
-            GenericArg result = it->second;
-            // A declared slot (e.g. `const T[]`) survives substitution; the use
-            // site decides whether it applies (alias positions) or not (values).
-            if (result.isType()) result.isConst |= isConst;
-            return result;
+            return it->second;
         }
     }
     if (type.isUnresolvedType()) {
@@ -550,35 +520,6 @@ Type Type::getElementType() const {
     return llvm::cast<ArrayPointerType>(typeBase)->elementType.withLocation(location, endLocation);
 }
 
-bool Type::isPointeeConst() const {
-    switch (getKind()) {
-    case TypeKind::PointerType:
-        return llvm::cast<PointerType>(typeBase)->isConst;
-    case TypeKind::ArrayPointerType:
-        return llvm::cast<ArrayPointerType>(typeBase)->isConst;
-    case TypeKind::BasicType:
-        return isSlice() && getGenericArgs()[0].isConst;
-    default:
-        return false;
-    }
-}
-
-Type Type::withConstPointee() const {
-    if (isOptionalType()) return OptionalType::get(removeOptional().withConstPointee(), location);
-    if (isPointerType()) {
-        auto* base = llvm::cast<PointerType>(typeBase);
-        return PointerType::get(base->pointeeType, base->pointerKind, /*isConst=*/true, location, endLocation);
-    }
-    if (isArrayPointer()) {
-        auto* base = llvm::cast<ArrayPointerType>(typeBase);
-        return ArrayPointerType::get(base->elementType, /*isConst=*/true, location, endLocation);
-    }
-    ASSERT(isSlice());
-    GenericArg elem(getElementType());
-    elem.isConst = true;
-    return BasicType::get("Slice", elem, location, endLocation);
-}
-
 int64_t Type::getArraySize() const {
     if (isFixedArray()) {
         auto& sizeArg = getGenericArgs()[1];
@@ -686,14 +627,14 @@ bool cx::operator==(Type lhs, Type rhs) {
         // TODO: Should probably compare the referenced decl instead of just the name.
         return lhs.getName() == rhs.getName() && lhs.getGenericArgs() == rhs.getGenericArgs();
     case TypeKind::ArrayPointerType:
-        return lhs.isPointeeConst() == rhs.isPointeeConst() && lhs.getElementType() == rhs.getElementType();
+        return lhs.getElementType() == rhs.getElementType();
     case TypeKind::AnonymousStructType:
         return lhs.getAnonymousStructElements() == rhs.getAnonymousStructElements();
     case TypeKind::FunctionType:
         return lhs.getReturnType() == rhs.getReturnType() && lhs.getParamTypes() == rhs.getParamTypes()
             && llvm::cast<FunctionType>(lhs.typeBase)->isVariadic == llvm::cast<FunctionType>(rhs.typeBase)->isVariadic;
     case TypeKind::PointerType:
-        return lhs.getPointerKind() == rhs.getPointerKind() && lhs.isPointeeConst() == rhs.isPointeeConst() && lhs.getPointee() == rhs.getPointee();
+        return lhs.getPointerKind() == rhs.getPointerKind() && lhs.getPointee() == rhs.getPointee();
     case TypeKind::UnresolvedType:
         return false;
     }
@@ -802,7 +743,6 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
         return;
     }
     if (!canonical && !aliasSpelling.empty()) {
-        if (isPointeeConst()) stream << "const ";
         stream << aliasSpelling;
         return;
     }
@@ -852,7 +792,6 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
                 if (arg.isInt()) {
                     stream << arg.getInt();
                 } else {
-                    if (arg.isConst) stream << "const ";
                     arg.getType().printTo(stream, canonical);
                 }
                 if (&arg != &genericArgs.back()) stream << ", ";
@@ -863,7 +802,6 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
         break;
     }
     case TypeKind::ArrayPointerType:
-        if (isPointeeConst()) stream << "const ";
         getElementType().printTo(stream, canonical);
         stream << "[*]";
         break;
@@ -886,7 +824,6 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
         stream << ")";
         break;
     case TypeKind::PointerType:
-        if (isPointeeConst()) stream << "const ";
         getPointee().printTo(stream, canonical);
         stream << (isReferenceType() ? '&' : '*');
         break;

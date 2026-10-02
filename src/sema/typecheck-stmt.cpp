@@ -369,10 +369,18 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     } else {
         diagnoseClosureConversion(returnValueType, currentFunction->getReturnType(), *stmt.value);
         Type displayReturn = currentFunction->getReturnType();
-        ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
-                    "mismatching return type '" << returnValueType << "', expected '" << displayReturn << "'" << narrowingHint(returnValueType, displayReturn)
-                                                << immutableBorrowHint(*stmt.value, returnValueType, currentFunction->getReturnType())
-                                                << ambiguousConversionHint(stmt.value, returnValueType, currentFunction->getReturnType()));
+        if (isBorrowOfConstant(*stmt.value, returnValueType, currentFunction->getReturnType())) {
+            // Binding a borrow is not a type mismatch; say what actually failed.
+            ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
+                        "cannot bind '" << displayReturn << "' to constant '" << returnValueType << "' in return value"
+                                        << narrowingHint(returnValueType, displayReturn)
+                                        << ambiguousConversionHint(stmt.value, returnValueType, currentFunction->getReturnType()));
+        } else {
+            ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
+                        "mismatching return type '" << returnValueType << "', expected '" << displayReturn << "'"
+                                                    << narrowingHint(returnValueType, displayReturn)
+                                                    << ambiguousConversionHint(stmt.value, returnValueType, currentFunction->getReturnType()));
+        }
     }
 
     checkReturnPointerToLocal(stmt.value);

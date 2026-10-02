@@ -566,17 +566,7 @@ void CGenerator::codegenCall(const CallInst* inst) {
         stream << "(&" << returnName << ")";
         if (!inst->args.empty()) stream << ", ";
     }
-    auto paramTypes = inst->function->getType()->getPointee()->getParamTypes();
     for (size_t i = 0; i < inst->args.size(); ++i) {
-        // cx has no const methods, so a method call on a const receiver passes a const pointer to a
-        // mutable parameter; cast the const away (the LLVM backend ignores pointee constness too).
-        auto* argType = llvm::dyn_cast<IRPointerType>(inst->args[i]->getType());
-        auto* paramType = i < paramTypes.size() ? llvm::dyn_cast<IRPointerType>(paramTypes[i]) : nullptr;
-        if (argType && !argType->mutablePointee && paramType && paramType->mutablePointee && argType->getPointee()->equals(paramType->getPointee())) {
-            stream << "(";
-            codegenTypeExpression(stream, paramTypes[i], true);
-            stream << ") ";
-        }
         codegenArgument(inst->args[i]);
         if (i + 1 < inst->args.size()) stream << ", ";
     }
@@ -1064,10 +1054,7 @@ static void codegenDeclarator(CGenerator& generator, llvm::raw_string_ostream& s
         if (auto* array = llvm::dyn_cast<IRArrayType>(arrayType)) {
             generator.codegenType(stream, array->elementType, needsTypeDefinition);
             stream << " (";
-            for (auto* pointerType : llvm::reverse(pointers)) {
-                stream << '*';
-                if (!pointerType->mutablePointee) stream << " const";
-            }
+            stream << std::string(pointers.size(), '*');
             if (name) stream << *name;
             stream << ")";
             generator.codegenTypeSuffix(stream, array, needsTypeDefinition);
@@ -1518,10 +1505,7 @@ void CGenerator::codegenFunctionPrototype(const Function* function) {
         if (auto* array = llvm::dyn_cast<IRArrayType>(returnArray)) {
             codegenType(stream, array->elementType, !function->isExtern);
             stream << " (";
-            for (auto* pointerType : llvm::reverse(returnPointers)) {
-                stream << '*';
-                if (!pointerType->mutablePointee) stream << " const";
-            }
+            stream << std::string(returnPointers.size(), '*');
             stream << getCFunctionName(function) << '(';
             emitParameters();
             stream << "))";
@@ -1753,7 +1737,6 @@ void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, boo
     case IRTypeKind::IRPointerType: {
         auto* pointerType = llvm::cast<IRPointerType>(type);
         codegenType(stream, pointerType->pointee, needsTypeDefinition);
-        if (!pointerType->mutablePointee) stream << " const";
         stream << '*';
         break;
     }

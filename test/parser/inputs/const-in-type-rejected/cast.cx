@@ -1,0 +1,4 @@
+void main() {
+    var p = null;
+    var q = cast<const int*>(p);
+}

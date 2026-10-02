@@ -91,11 +91,13 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
     }
 }
 
-// True when the expression designates const storage, so writes to it are
-// forbidden. Const comes from bindings (VarDecl::isConst through member, index,
-// and unwrap chains) or from const views along the way (const-pointee pointers,
-// borrows, and views). Generic inference also calls this mid-typecheck, so
-// untyped subexpressions (e.g. static-member bases) read as non-const.
+// True when the expression designates a compile-time constant's storage, so
+// writes to it are forbidden. Const comes only from bindings: VarDecl::isConst
+// at the root (through member, index, and unwrap chains) or a static constant
+// named by the member itself. Dereferencing yields the pointee, which is
+// always mutable (addresses of constants are rejected). Generic inference
+// also calls this mid-typecheck, so untyped subexpressions (e.g.
+// static-member bases) read as non-const.
 static bool exprIsConst(const Expr& expr) {
     const Expr* current = &expr;
     while (true) {
@@ -104,11 +106,8 @@ static bool exprIsConst(const Expr& expr) {
             return varDecl && varDecl->isConst;
         }
         if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(current)) {
-            // Const-qualified members of imported C records are immutable.
-            if (auto* fieldDecl = llvm::dyn_cast_or_null<FieldDecl>(memberExpr->decl); fieldDecl && fieldDecl->isConst) return true;
-            // Member access auto-dereferences pointers and borrows; a const
-            // pointee makes the member const too (transitive const).
-            if (memberExpr->base->hasType() && memberExpr->base->type.removeOptional().isPointeeConst()) return true;
+            // A static constant names frozen storage regardless of its base.
+            if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(memberExpr->decl); varDecl && varDecl->isConst) return true;
             current = memberExpr->base;
             continue;
         }
@@ -118,7 +117,6 @@ static bool exprIsConst(const Expr& expr) {
         else if (auto* indexAssignExpr = llvm::dyn_cast<IndexAssignmentExpr>(current))
             indexBase = indexAssignExpr->getBase();
         if (indexBase) {
-            if (indexBase->hasType() && indexBase->type.isPointeeConst()) return true;
             current = indexBase;
             continue;
         }
@@ -127,12 +125,11 @@ static bool exprIsConst(const Expr& expr) {
             continue;
         }
         if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(current); unaryExpr && unaryExpr->op == Token::Star) {
-            return unaryExpr->getOperand().hasType() && unaryExpr->getOperand().type.isPointeeConst();
+            // Dereferencing a constant pointer still names frozen storage.
+            current = &unaryExpr->getOperand();
+            continue;
         }
         if (auto* castExpr = llvm::dyn_cast<ImplicitCastExpr>(current)) {
-            if (castExpr->castKind == ImplicitCastExpr::AutoDereference) {
-                return castExpr->operand->hasType() && castExpr->operand->type.isPointeeConst();
-            }
             current = castExpr->operand;
             continue;
         }
@@ -157,7 +154,7 @@ static void warnOnBorrowParamWrite(Expr& lhs) {
             if (!varExpr->decl || varExpr->isThis()) return;
             if (!llvm::isa<ParamDecl>(varExpr->decl)) return;
             Type refType = varExpr->type.removeOptional();
-            if (!refType.isReferenceType() || refType.isPointeeConst()) return;
+            if (!refType.isReferenceType()) return;
             WARN_RANGE(getExprRangeStart(lhs), lhs.endLocation,
                        "writing to reference parameter '" << varExpr->identifier << "' of type '" << varExpr->type
                                                           << "' hides the mutation from the call site; take '" << refType.getPointee() << "*' instead");
@@ -321,7 +318,7 @@ void Typechecker::dropNarrowingForAddressArg(const Expr& arg, Type paramType) {
     while (target.isOptionalType()) {
         target = target.getWrappedType();
     }
-    if (target.isPointeeConst() || (!target.isPointerType() && !target.isReferenceType() && !target.isArrayPointer())) return;
+    if (!target.isPointerType() && !target.isReferenceType() && !target.isArrayPointer()) return;
     const Expr* exposed = &arg;
     for (;;) {
         auto* cast = llvm::dyn_cast<ImplicitCastExpr>(exposed);
@@ -693,6 +690,14 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         if (!expr.getOperand().isLvalue() && !operandType.isReferenceType()) {
             ERROR_RANGE(getExprRangeStart(expr.getOperand()), expr.getOperand().endLocation, "cannot take address of rvalue of type '" << operandType << "'");
         }
+        if (exprIsConst(expr.getOperand())) {
+            if (auto* varOperand = llvm::dyn_cast<VarExpr>(&expr.getOperand())) {
+                ERROR_RANGE(getExprRangeStart(expr.getOperand()), expr.getOperand().endLocation,
+                            "cannot take address of constant '" << varOperand->identifier << "'");
+            }
+            ERROR_RANGE(getExprRangeStart(expr.getOperand()), expr.getOperand().endLocation,
+                        "cannot take address of constant expression of type '" << expr.getOperand().type << "'");
+        }
         unnarrow(expr.getOperand());
         operandType = expr.getOperand().type;
         // Taking a tracked pointer's address exposes it for reassignment.
@@ -700,11 +705,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             taintDeinitPtrTarget(varOperand->decl);
         }
         // Taking the address of a borrow exposes the borrowed address; it never nests.
-        // Only borrows propagate pointee-const outward (it describes their referent);
-        // for pointers and views the inner const stays nested in the pointee type.
-        // Inlined constants get mutable pointers (they materialize a temporary).
-        return PointerType::get(operandType.removeReference(), PointerKind::Pointer,
-                                (exprIsConst(expr.getOperand()) || (operandType.isReferenceType() && operandType.isPointeeConst())) && !expr.isConstant());
+        return PointerType::get(operandType.removeReference(), PointerKind::Pointer);
 
     case Token::Increment:
         if (operandType.removeOptional().isReferenceType()) {
@@ -721,7 +722,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
 
         if (exprIsConst(expr.getOperand())) {
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment immutable value of type '" << operandType << "'");
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment constant of type '" << operandType << "'");
         } else if (!operandType.isIncrementable()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment '" << operandType << "'");
         }
@@ -744,7 +745,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
 
         if (exprIsConst(expr.getOperand())) {
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement immutable value of type '" << operandType << "'");
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement constant of type '" << operandType << "'");
         } else if (!operandType.isDecrementable()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement '" << operandType << "'");
         }
@@ -1427,8 +1428,8 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
             Type borrowType = lhs->assignableType.removeOptional();
             ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation,
                         "cannot rebind reference parameter '" << root->identifier << "' of type '" << lhs->assignableType << "' (take '"
-                                                              << PointerType::get(borrowType.getPointee(), PointerKind::Pointer, borrowType.isPointeeConst())
-                                                              << "' instead and write '*" << root->identifier << "')");
+                                                              << PointerType::get(borrowType.getPointee(), PointerKind::Pointer) << "' instead and write '*"
+                                                              << root->identifier << "')");
         }
         ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation,
                     "cannot rebind borrow of type '" << lhs->assignableType << "' (use '*' to write through it explicitly)");
@@ -1483,24 +1484,20 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
         switch (lhs->kind) {
         case ExprKind::VarExpr: {
             auto identifier = llvm::cast<VarExpr>(lhs)->identifier;
-            ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign to immutable variable '" << identifier << "' of type '" << lhsType << "'");
+            ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign to constant '" << identifier << "' of type '" << lhsType << "'");
         }
         case ExprKind::MemberExpr: {
             auto memberName = llvm::cast<MemberExpr>(lhs)->member;
-            ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign to immutable variable '" << memberName << "' of type '" << lhsType << "'");
+            ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign to constant '" << memberName << "' of type '" << lhsType << "'");
         }
         default: {
-            // A dereference or index into const storage names the const-carrying
-            // type (which can show the const) rather than the value type.
-            const char* action = "to immutable expression of";
+            // An index into const storage names the array type rather than the value type.
+            const char* action = "to constant expression of";
             Type displayType = lhsType;
-            if (auto* unaryLhs = llvm::dyn_cast<UnaryExpr>(lhs); unaryLhs && unaryLhs->op == Token::Star) {
-                action = "through const-pointer of";
-                displayType = unaryLhs->getOperand().type;
-            } else if (auto* indexLhs = llvm::dyn_cast<IndexExpr>(lhs)) {
+            if (auto* indexLhs = llvm::dyn_cast<IndexExpr>(lhs)) {
                 Type baseType = indexLhs->getBase()->type.removeOptional().removePointer();
                 if (baseType.isArrayType()) {
-                    action = "to immutable array of";
+                    action = "to constant array of";
                     displayType = baseType;
                 }
             }
@@ -1671,18 +1668,6 @@ Expr* Typechecker::convertWithUserConversion(Expr* expr, Type target, bool diagn
 }
 
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, bool diagnoseOutOfRange, bool allowOperatorBorrow, bool allowUserConversion) {
-    // Borrow a converted temporary (e.g. a StringBuf as const string&): convert to the
-    // pointee, then borrow the result. Only for const borrows; borrowing a temporary
-    // mutably would let the mutation vanish with it. A narrowed use borrows the declared
-    // storage directly below instead of copying into a temporary.
-    if (type.isReferenceType() && type.isPointeeConst() && !(expr->type == type.getPointee()) && !isNarrowedOptionalUse(expr, type.getPointee())) {
-        if (Expr* converted =
-                convert(expr, type.getPointee(), /*allowPointerToTemporary=*/true, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion)) {
-            auto* reference = makeAST<ImplicitCastExpr>(converted, type, ImplicitCastExpr::AutoReference);
-            reference->disabledChecks = converted->disabledChecks;
-            return reference;
-        }
-    }
     // Array borrows decay to views without copying: dereferencing first
     // would take the address of a temporary, breaking mutation through data()
     // and dangling slices built from the copy. Only constant-array borrows
@@ -1802,21 +1787,15 @@ static bool arraySizesMatch(Type source, Type target) {
 }
 
 // True when viewing source bits as target needs no conversion: the types must match
-// exactly, except that const may be added (nothing can be written through a const
-// target, so narrowing the uses is safe). Anything else, even representation-preserving
-// widening like `int*` to `int*?`, would let writes through the reinterpreted pointer
-// break the source invariant, so pointers to it can't be reinterpreted.
-// True when pointee-const flows from source to target: same constness, or widening to const.
-static bool constWidens(Type source, Type target) {
-    return !source.isPointeeConst() || target.isPointeeConst();
-}
-// True when a const-rooted source may bind to the target. A null probe expression imposes no constraint.
-static bool allowsConstSource(const Expr* expr, Type target) {
-    return !expr || !exprIsConst(*expr) || target.isPointeeConst();
+// exactly. Anything else, even representation-preserving widening like `int*` to
+// `int*?`, would let writes through the reinterpreted pointer break the source
+// invariant, so pointers to it can't be reinterpreted.
+// True unless the source expression is const-rooted (a null probe imposes no constraint).
+static bool allowsConstSource(const Expr* expr) {
+    return !expr || !exprIsConst(*expr);
 }
 static bool isReinterpretible(Type source, Type target) {
     if (source.isArrayType() && target.isArrayType()) {
-        if (!constWidens(source, target)) return false;
         if (source.isFixedArray() != target.isFixedArray()) return false;
         return arraySizesMatch(source, target) && isReinterpretible(source.getElementType(), target.getElementType());
     }
@@ -1912,23 +1891,18 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                                           bool allowUserConversion, bool* usesUserConversion) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName()) {
         if (source.getGenericArgs() == target.getGenericArgs()) return source;
-        // Slices widen mutable to const, never back (that would alias const
-        // storage mutably). Like pointers, the const comes from the target context.
-        if (source.isSlice() && target.isSlice() && !source.isPointeeConst() && target.isPointeeConst() && source.getElementType() == target.getElementType()) {
-            return source;
-        }
-        // Fixed arrays are values: copies ignore element top-level const (fresh storage).
+        // Fixed arrays are values: same size and element type is enough to copy.
         if (source.isFixedArray() && target.isFixedArray() && source.getArraySize() == target.getArraySize()
             && source.getElementType() == target.getElementType()) {
             return source;
         }
     }
 
-    // A const fixed array copies into another fixed array, but only decays to a
-    // const view: a mutable view would alias const storage.
-    if (source.isArrayType() && (target.isArrayType() || target.isSlice()) && constWidens(source, target)
-        && constWidens(source.getElementType(), target.getElementType()) && isReinterpretible(source.getElementType(), target.getElementType())
-        && (target.isFixedArray() || !source.isConcreteArray() || allowsConstSource(expr, target))) {
+    // A fixed array copies into another fixed array, but only decays to a view
+    // of mutable storage: viewing a constant's storage mutably would let writes
+    // through the view break the constant.
+    if (source.isArrayType() && (target.isArrayType() || target.isSlice()) && isReinterpretible(source.getElementType(), target.getElementType())
+        && (target.isFixedArray() || !source.isConcreteArray() || allowsConstSource(expr))) {
         if (target.isArrayType() && arraySizesMatch(source, target)) {
             return target.isConcreteArray() ? target : source;
         }
@@ -1939,13 +1913,12 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    // Borrows differ because their const lives on the pointee.
     if (source.isFunctionType() && target.isFunctionType() && source.getReturnType() == target.getReturnType()
         && llvm::equal(source.getParamTypes(), target.getParamTypes(), [](Type sourceParam, Type targetParam) { return sourceParam == targetParam; })) {
         return source;
     }
 
-    if (source.isPointerType() && target.isPointerType() && source.isReferenceType() == target.isReferenceType() && constWidens(source, target)
+    if (source.isPointerType() && target.isPointerType() && source.isReferenceType() == target.isReferenceType()
         && (isReinterpretible(source.getPointee(), target.getPointee()) || target.getPointee().isVoid())) {
         return source;
     }
@@ -1954,7 +1927,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     // passes as `T*` (or `T&`). Narrowing proves the optional is non-null; arbitrary
     // `T?*` values don't convert since their target may be null. The call itself
     // drops the narrowing afterwards (see dropNarrowingForAddressArg).
-    if (expr && source.isPointerType() && target.isPointerType() && source.getPointee().isOptionalType() && constWidens(source, target)
+    if (expr && source.isPointerType() && target.isPointerType() && source.getPointee().isOptionalType()
         && source.getPointee().getWrappedType() == target.getPointee()) {
         auto* addressOf = llvm::dyn_cast<UnaryExpr>(expr);
         auto* var = addressOf && addressOf->op == Token::And ? llvm::dyn_cast<VarExpr>(&addressOf->getOperand()) : nullptr;
@@ -1973,10 +1946,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                                        allowUserConversion, usesUserConversion);
     }
 
-    // The wrapped check below probes with a null expression, so a fixed array's
-    // binding-const wouldn't be seen: block its decay to a mutable view here.
-    if (source.isOptionalType() && target.isOptionalType() && constWidens(source.getWrappedType(), target.getWrappedType())
-        && (!source.getWrappedType().isConcreteArray() || allowsConstSource(expr, target.getWrappedType()))) {
+    // The wrapped check below probes with a null expression, so the source's
+    // constness wouldn't be seen: block a fixed array's decay to a mutable view here.
+    if (source.isOptionalType() && target.isOptionalType() && (!source.getWrappedType().isConcreteArray() || allowsConstSource(expr))) {
         // Only a no-op when the wrapped conversion needs no cast; nesting changes (e.g. `int?` to `int??`)
         // fall through to the wrap rule below.
         std::optional<ImplicitCastExpr::Kind> wrappedCastKind;
@@ -2048,10 +2020,11 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             return target;
         }
 
-        // Special case: allow passing string literals as C-strings (const char* or const char[*]).
+        // Special case: allow passing string literals as C-strings (char* or char[*]).
+        // The callee must not write through them: literals live in read-only memory.
         if (expr->isStringLiteralExpr() && !unwrappedTarget.isReferenceType()
-            && ((unwrappedTarget.isPointerType() && unwrappedTarget.getPointee().isChar() && unwrappedTarget.isPointeeConst())
-                || (unwrappedTarget.isArrayPointer() && unwrappedTarget.getElementType().isChar() && unwrappedTarget.isPointeeConst()))) {
+            && ((unwrappedTarget.isPointerType() && unwrappedTarget.getPointee().isChar())
+                || (unwrappedTarget.isArrayPointer() && unwrappedTarget.getElementType().isChar()))) {
             return target;
         }
 
@@ -2088,16 +2061,14 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     // outside operator context.
     if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.isReferenceType() &&
         // Allow forming mutable borrows of constants. This is safe because constants will be inlined at the usage site.
-        (allowsConstSource(expr, target) || (expr && expr->isConstant()))
-        && (source == target.getPointee() || isNarrowedOptionalUse(expr, target.getPointee()))) {
+        (allowsConstSource(expr) || (expr && expr->isConstant())) && (source == target.getPointee() || isNarrowedOptionalUse(expr, target.getPointee()))) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return source;
     }
 
     // Reborrow a pointer as a borrow of its pointee. The address passes through unchanged;
     // this only reinterprets the static type, so borrows keep working where pointers flow.
-    if (target.isReferenceType() && source.isPointerType() && !source.isReferenceType() && constWidens(source, target)
-        && source.getPointee() == target.getPointee()) {
+    if (target.isReferenceType() && source.isPointerType() && !source.isReferenceType() && source.getPointee() == target.getPointee()) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::Reborrow;
         return target;
     }
@@ -2105,22 +2076,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     // Reborrow an optional pointer as an optional borrow. Like Reborrow, the address passes
     // through unchanged with null staying null; this only reinterprets the static type.
     if (target.isOptionalType() && target.getWrappedType().isReferenceType() && source.isOptionalType() && source.getWrappedType().isPointerType()
-        && !source.getWrappedType().isReferenceType() && constWidens(source.getWrappedType(), target.getWrappedType())
-        && source.getWrappedType().getPointee() == target.getWrappedType().getPointee()) {
+        && !source.getWrappedType().isReferenceType() && source.getWrappedType().getPointee() == target.getWrappedType().getPointee()) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::Reborrow;
         return target;
-    }
-
-    // Borrowing a converted temporary composes conversion with the borrow rule above
-    // (e.g. a StringBuf as const string&). Only for const borrows; borrowing a temporary
-    // mutably would let the mutation vanish with it.
-    if (target.isReferenceType() && target.isPointeeConst() && !(source == target.getPointee())) {
-        std::optional<ImplicitCastExpr::Kind> pointeeCastKind;
-        if (isImplicitlyConvertible(expr, source, target.getPointee(), /*allowPointerToTemporary=*/true, &pointeeCastKind, diagnoseOutOfRange,
-                                    allowOperatorBorrow, allowUserConversion, usesUserConversion)) {
-            if (implicitCastKind) *implicitCastKind = pointeeCastKind;
-            return target;
-        }
     }
 
     // Borrows read through implicitly; raw pointers require explicit '*'. Copying out of a
@@ -2132,8 +2090,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     // Operator overloads use pointer parameters as non-escaping borrows. Keep ordinary pointer
     // arguments explicit, but let an lvalue operand supply its address in operator context.
-    if (allowOperatorBorrow && target.isPointerType() && !target.isReferenceType() && expr && expr->isLvalue() && allowsConstSource(expr, target)
-        && source == target.getPointee()) {
+    // Const operands materialize a temporary, as for borrows above.
+    if (allowOperatorBorrow && target.isPointerType() && !target.isReferenceType() && expr && expr->isLvalue() && source == target.getPointee()) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return target;
     }
@@ -2162,12 +2120,11 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isArrayType() && unwrappedTarget.isPointerType() && isReinterpretible(source.getElementType(), unwrappedTarget.getPointee())
-        && constWidens(source, unwrappedTarget) && allowsConstSource(expr, unwrappedTarget)) {
+        && allowsConstSource(expr)) {
         return source;
     }
 
-    if (source.isPointerType() && source.getPointee().isConcreteArray() && (target.isSlice() || target.isArrayPointer()) && constWidens(source, target)
-        && constWidens(source.getPointee().getElementType(), target.getElementType())
+    if (source.isPointerType() && source.getPointee().isConcreteArray() && (target.isSlice() || target.isArrayPointer())
         && isReinterpretible(source.getPointee().getElementType(), target.getElementType())) {
         return source;
     }
@@ -2177,22 +2134,19 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    // Allow conversion from T[*]? to T* and void*. Adding const through the
-    // view is sound; void* targets widen like any other pointer.
+    // Allow conversion from T[*]? to T* and void*.
     Type unwrappedSource = source.removeOptional();
-    if (unwrappedSource.isArrayPointer() && target.isPointerType() && constWidens(unwrappedSource, target)
+    if (unwrappedSource.isArrayPointer() && target.isPointerType()
         && (unwrappedSource.getElementType() == target.getPointee() || target.getPointee().isVoid())) {
         return source;
     }
 
     // Same for T[*]? to T[*].
-    if (unwrappedSource.isArrayPointer() && target.isArrayPointer() && unwrappedSource.getElementType() == target.getElementType()
-        && constWidens(unwrappedSource, target)) {
+    if (unwrappedSource.isArrayPointer() && target.isArrayPointer() && unwrappedSource.getElementType() == target.getElementType()) {
         return source;
     }
 
-    if (target.isArrayPointer() && source.isPointerType() && constWidens(source, target)
-        && isReinterpretible(source.getPointee(), target.getElementType())) {
+    if (target.isArrayPointer() && source.isPointerType() && isReinterpretible(source.getPointee(), target.getElementType())) {
         return source;
     }
 
@@ -2324,7 +2278,6 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
                 }
                 if (argTypeGenericArg.isType() && paramTypeGenericArg.isType()) {
                     if (GenericArg arg = findGenericArg(argTypeGenericArg.getType(), paramTypeGenericArg.getType(), genericParam, inFunctionType)) {
-                        arg.isConst |= argTypeGenericArg.isConst;
                         return arg;
                     }
                 }
@@ -2335,9 +2288,7 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
 
     case TypeKind::ArrayPointerType:
         if (paramType.getKind() == TypeKind::ArrayPointerType) {
-            GenericArg arg = findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
-            if (arg.isType()) arg.isConst |= argType.isPointeeConst();
-            return arg;
+            return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam, inFunctionType);
         }
         break;
 
@@ -2364,9 +2315,7 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
 
     case TypeKind::PointerType:
         if (paramType.isPointerType()) {
-            GenericArg arg = findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam, inFunctionType);
-            if (arg.isType()) arg.isConst |= argType.isPointeeConst();
-            return arg;
+            return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam, inFunctionType);
         }
         break;
 
@@ -2469,30 +2418,13 @@ static bool isLambdaAwaitingInference(const Expr& arg, Type expectedType) {
 // Returns false when the candidates conflict.
 static bool considerGenericArg(Typechecker& checker, GenericArg& genericArg, Expr*& genericArgValue, GenericArg candidate, Expr* candidateValue, Type paramType,
                                llvm::StringRef genericParamName, bool equalAgrees) {
-    // A const value argument (fixed array, struct, ...) flowing into an alias
-    // parameter carries its const into the slot: the fresh view or borrow
-    // aliases const storage. Value parameters and pointer-typed arguments
-    // (whose binding const is not pointee const) ignore it.
-    if (candidate.isType() && candidateValue && (paramType.isPointerType() || paramType.isArrayPointer() || paramType.isSlice()) && candidateValue->type
-        && !candidateValue->type.isPointerType() && !candidateValue->type.isArrayPointer() && !candidateValue->type.isSlice() && exprIsConst(*candidateValue)) {
-        candidate.isConst = true;
-    }
-    if (!genericArg) {
+    // First and same-type candidates agree; keep the latest.
+    if (!genericArg || (candidate.isType() && genericArg.isType() && candidate.getType() == genericArg.getType())) {
         genericArg = candidate;
         genericArgValue = candidateValue;
         return true;
     }
     if (equalAgrees && candidate == genericArg) return true;
-
-    // Candidates differing only by const-slot agree; keep the slot since it
-    // satisfies both value positions (ignored) and alias positions (applied).
-    if (candidate.isType() && genericArg.isType() && candidate.getType() == genericArg.getType()) {
-        if (candidate.isConst) {
-            genericArg = candidate;
-            genericArgValue = candidateValue;
-        }
-        return true;
-    }
 
     Type paramTypeWithGenericArg = paramType.resolve({{genericParamName, genericArg}});
     Type paramTypeWithCandidate = paramType.resolve({{genericParamName, candidate}});
@@ -2765,12 +2697,9 @@ std::string cx::narrowingHint(Type source, Type target) {
     return " (use '" + target.toString() + "(...)' to convert explicitly)";
 }
 
-std::string cx::immutableBorrowHint(const Expr& expr, Type source, Type target) {
-    // The types alone would bind; only the source's immutability blocks it.
-    if (target.isReferenceType() && !target.isPointeeConst() && source == target.getPointee() && expr.isLvalue() && !expr.isConstant() && exprIsConst(expr)) {
-        return " (cannot bind immutable value to mutable borrow; use 'const " + target.getPointee().toString() + "&' instead)";
-    }
-    return "";
+bool cx::isBorrowOfConstant(const Expr& expr, Type source, Type target) {
+    // The types alone would bind; only the source being a constant blocks it.
+    return target.isReferenceType() && source == target.getPointee() && expr.isLvalue() && !expr.isConstant() && exprIsConst(expr);
 }
 
 bool cx::satisfiesCopyable(Type type) {
@@ -3445,22 +3374,6 @@ static bool isCHeaderDecl(const Match& match) {
     return match.decl->getModule() && match.decl->getModule()->isCHeaderImport;
 }
 
-// True when converting source to target adds const qualification, e.g. `int*`
-// to `const int[*]`. Used only to rank overloads that are otherwise tied.
-static bool addsConst(Type source, Type target) {
-    if (target.isOptionalType() || source.isOptionalType()) {
-        return addsConst(source.removeOptional(), target.removeOptional());
-    }
-    if (!target.isPointerType() && !target.isReferenceType() && !target.isArrayPointer()) return false;
-    if (!source.isPointerType() && !source.isReferenceType() && !source.isArrayPointer() && !source.isFixedArray() && !source.isSlice()) {
-        return false;
-    }
-    if (!source.isPointeeConst() && target.isPointeeConst()) return true;
-    Type targetElem = (target.isPointerType() || target.isReferenceType()) ? target.getPointee() : target.getElementType();
-    Type sourceElem = (source.isPointerType() || source.isReferenceType()) ? source.getPointee() : source.getElementType();
-    return addsConst(sourceElem, targetElem);
-}
-
 static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, const CallExpr& call) {
     // An explicitly imported C header takes precedence over the implicit prelude:
     // importing a header must actually provide its declarations, including for
@@ -3485,9 +3398,6 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
     } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) {
         return match;
     } else if (auto match = findUniqueBorrowPackMatch(matches)) {
-        return match;
-    } else if (auto* match = findUniqueMatch(matches, [](const Match& match) { return match.didAddConst == false; })) {
-        // Adding const discards mutability; prefer the overload that preserves it.
         return match;
     } else {
         return nullptr;
@@ -4015,7 +3925,6 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     Decl* decl;
-    Type returnTypeOverride;
 
     if (auto* enumCase = getEnumCase(*expr.callee, expectedType, &expr)) {
         decl = enumCase;
@@ -4148,16 +4057,19 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             }
         }
 
-        // A borrow or view into a const receiver must be const. Expression-level
-        // const (fixed arrays, const bindings) never reaches self substitution,
-        // so const-ify alias-typed returns here. Concrete wrapper returns (e.g.
-        // iterators) have no const channel and still launder; so do lambdas
-        // borrowing from a const receiver.
+        // A borrow, pointer, or view into a const receiver would alias frozen
+        // storage mutably, so calls returning one are rejected. Concrete wrapper
+        // returns (e.g. iterators) have no channel to check and still launder;
+        // so do lambdas borrowing from a const receiver. Slice and array-pointer
+        // receivers are exempt: a constant view only ever shares temporary
+        // backing, never a constant's own storage.
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
-            functionDecl && (exprIsConst(*expr.getReceiver()) || receiverType.removeOptional().isPointeeConst())) {
+            functionDecl && exprIsConst(*expr.getReceiver()) && !receiverType.removeOptional().isSlice() && !receiverType.removeOptional().isArrayPointer()) {
             Type declaredReturn = functionDecl->getFunctionType()->returnType;
             if (Type stripped = declaredReturn.removeOptional(); stripped.isPointerType() || stripped.isArrayPointer() || stripped.isSlice()) {
-                returnTypeOverride = declaredReturn.withConstPointee();
+                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                            "cannot call '" << expr.getFunctionName() << "' on a constant: it returns '" << declaredReturn
+                                            << "', which would alias frozen storage");
             }
         }
 
@@ -4267,7 +4179,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
         return llvm::cast<ConstructorDecl>(decl)->getTypeDecl()->getType();
     } else if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
-        return returnTypeOverride ? returnTypeOverride : functionDecl->getFunctionType()->returnType;
+        return functionDecl->getFunctionType()->returnType;
     } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
         if (variableDecl->type.isClosureType()) {
             return variableDecl->type.getClosureReturnType();
@@ -4289,7 +4201,6 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
     bool didConvertArguments = false;
     bool didUnwrapOptional = false;
     bool didWrapOptional = false;
-    bool didAddConst = false;
     int userConversionCount = 0;
 
     for (size_t i = 0; i < expr.args.size(); ++i) {
@@ -4324,7 +4235,6 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
             didUnwrapOptional =
                 didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap || implicitCastKind == ImplicitCastExpr::OptionalUnwrapPointer;
             didWrapOptional = didWrapOptional || implicitCastKind == ImplicitCastExpr::OptionalWrap || arg.value->isNullLiteralExpr();
-            didAddConst = didAddConst || addsConst(arg.value->type, param.type);
             if (usesUserConversion) ++userConversionCount;
         } else {
             invalidType = true;
@@ -4334,7 +4244,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         if (invalidType) return ArgumentValidation::invalidType(i);
     }
 
-    return ArgumentValidation::success(didConvertArguments, didUnwrapOptional, didWrapOptional, didAddConst, userConversionCount);
+    return ArgumentValidation::success(didConvertArguments, didUnwrapOptional, didWrapOptional, userConversionCount);
 }
 
 std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params) {
@@ -4345,7 +4255,7 @@ std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDec
     }
     auto result = getArgumentValidationResult(expr, params, isVariadic);
     if (result.error) return std::nullopt;
-    return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional, result.didWrapOptional, result.didAddConst, result.userConversionCount};
+    return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional, result.didWrapOptional, result.userConversionCount};
 }
 
 void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName) {
@@ -4400,11 +4310,18 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         // reports the range instead of a generic mismatch. This either throws or returns null,
         // since probing already failed, so discarding the result is safe.
         (void)convert(arg.value, param.type, true, true, allowOperatorBorrow);
-        ERROR_WITH_NOTES_RANGE(getExprRangeStart(*arg.value), arg.value->endLocation, std::move(declNote),
-                               "invalid argument #" << (argIndex + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type
-                                                    << "'" << narrowingHint(arg.value->type, param.type)
-                                                    << immutableBorrowHint(*arg.value, arg.value->type, param.type)
-                                                    << ambiguousConversionHint(arg.value, arg.value->type, param.type));
+        if (isBorrowOfConstant(*arg.value, arg.value->type, param.type)) {
+            // Binding a borrow is not a type mismatch; say what actually failed.
+            ERROR_WITH_NOTES_RANGE(getExprRangeStart(*arg.value), arg.value->endLocation, std::move(declNote),
+                                   "cannot bind '" << param.type << "' to constant '" << arg.value->type << "' in argument #" << (argIndex + 1) << " to '"
+                                                   << callee << "'" << narrowingHint(arg.value->type, param.type)
+                                                   << ambiguousConversionHint(arg.value, arg.value->type, param.type));
+        } else {
+            ERROR_WITH_NOTES_RANGE(getExprRangeStart(*arg.value), arg.value->endLocation, std::move(declNote),
+                                   "invalid argument #" << (argIndex + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type
+                                                        << "'" << narrowingHint(arg.value->type, param.type)
+                                                        << ambiguousConversionHint(arg.value, arg.value->type, param.type));
+        }
     };
 
     switch (result.error) {
@@ -4443,7 +4360,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                 // dereferences or temporaries don't expose the variable.
                 const Type& paramType = params[size_t(paramIndex)].type;
                 if (auto* refCast = llvm::dyn_cast<ImplicitCastExpr>(converted);
-                    paramType.isReferenceType() && !paramType.isPointeeConst() && refCast && refCast->castKind == ImplicitCastExpr::AutoReference) {
+                    paramType.isReferenceType() && refCast && refCast->castKind == ImplicitCastExpr::AutoReference) {
                     if (auto* argVar = llvm::dyn_cast<VarExpr>(refCast->operand); argVar && argVar->decl) taintDeinitPtrTarget(argVar->decl);
                 }
             } else {
@@ -4509,9 +4426,9 @@ static bool isCastableAddress(Type type) {
     return type.isPointerType() || type.isArrayPointer();
 }
 
-static bool isValidCast(Type sourceType, Type targetType, bool sourceIsConst) {
+static bool isValidCast(Type sourceType, Type targetType) {
     // Reinterpret between any pointer, reference, or array pointer, optional or
-    // not. The pointee type may differ, and const may be added or dropped.
+    // not. The pointee type may differ.
     if (isCastableAddress(sourceType) && isCastableAddress(targetType)) return true;
 
     switch (sourceType.getKind()) {
@@ -4520,15 +4437,10 @@ static bool isValidCast(Type sourceType, Type targetType, bool sourceIsConst) {
             return true;
         }
 
-        // Arrays decay to void pointers (e.g. passing T[N] to void* C params).
-        // A const array doesn't decay to mutable void* (that would launder the
-        // const); const void* is fine. Element const comes from the binding or
-        // from a const-substituted element type.
-        if (sourceType.isArrayType() && targetType.isPointerType()) {
-            Type targetPointee = targetType.getPointee();
-            if (targetPointee.isVoid() && (targetType.isPointeeConst() || (!sourceIsConst && !sourceType.getGenericArgs()[0].isConst))) {
-                return true;
-            }
+        // Arrays decay to void pointers (e.g. passing T[N] to void* C params),
+        // even constants: `cast` is an explicit escape hatch.
+        if (sourceType.isArrayType() && targetType.isPointerType() && targetType.getPointee().isVoid()) {
+            return true;
         }
 
         return false;
@@ -4563,25 +4475,17 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
 
     validateAndConvertArguments(expr, param, false, expr.getFunctionName());
 
-    bool sourceIsConst = exprIsConst(*expr.args.front().value);
-    bool valid = isValidCast(sourceType, targetType, sourceIsConst);
+    bool valid = isValidCast(sourceType, targetType);
     // Peel one optional so `int*?` can still convert to an integer. Do not peel
     // another: `T*??` is a struct, and the fallback would otherwise see `T*?`.
     if (!valid && sourceType.isOptionalType() && !sourceType.getWrappedType().isOptionalType()) {
-        valid = isValidCast(sourceType.getWrappedType(), targetType, sourceIsConst);
+        valid = isValidCast(sourceType.getWrappedType(), targetType);
     }
     if (!valid) {
         if (sourceType == targetType) {
             ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "redundant cast to same type '" << targetType << "'");
         }
-        std::string hint;
-        // Const is what blocks a fixed-array decay to mutable void* (a mutable
-        // array would convert), so say so: the types alone don't explain it.
-        if (sourceType.isFixedArray() && (sourceIsConst || sourceType.getGenericArgs()[0].isConst) && targetType.isPointerType()
-            && targetType.getPointee().isVoid() && !targetType.isPointeeConst()) {
-            hint = " (cannot cast away immutability; use 'const void*' instead)";
-        }
-        ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "illegal cast from '" << sourceType << "' to '" << targetType << "'" << hint);
+        ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "illegal cast from '" << sourceType << "' to '" << targetType << "'");
     }
 
     return targetType;
@@ -4875,8 +4779,8 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
     auto elementType = typecheckIndexExpr(expr, true);
 
     Type baseType = expr.getBase()->type.removeOptional().removePointer();
-    if (baseType.isArrayType() && (exprIsConst(*expr.getBase()) || baseType.isPointeeConst())) {
-        ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot assign to immutable array of type '" << baseType << "'");
+    if (baseType.isArrayType() && exprIsConst(*expr.getBase())) {
+        ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot assign to constant array of type '" << baseType << "'");
     }
     // Storing into a fixed-array value (e.g. a multi-char swizzle or a call
     // result) would write to a temporary and silently drop the value.

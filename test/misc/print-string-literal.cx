@@ -1,9 +1,9 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
 
-const char* foo() { return "foo"; }
-const char*? foo_opt() { return "foo_opt"; }
-const char[*] foo_array() { return "foo_array"; }
-const char[*]? foo_array_opt() { return "foo_array_opt"; }
+char* foo() { return "foo"; }
+char*? foo_opt() { return "foo_opt"; }
+char[*] foo_array() { return "foo_array"; }
+char[*]? foo_array_opt() { return "foo_array_opt"; }
 string bar() { return "bar"; }
 
 void main() {

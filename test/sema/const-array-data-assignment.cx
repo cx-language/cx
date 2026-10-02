@@ -1,7 +1,0 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
-
-void main() {
-    const int[2] a = [1, 2];
-    // CHECK: [[@LINE+1]]:5: error: cannot assign to immutable array of type 'const int[*]'
-    a.data()[0] = 3;
-}

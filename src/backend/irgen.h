@@ -272,9 +272,7 @@ struct IRGenerator {
         return insertBlock->add(new ConstGEPInst{ValueKind::ConstGEPInst, pointer, index, expr, name.str()});
     }
     Value* createCast(Value* value, IRType* type, const llvm::Twine& name = "") {
-        // Equal types need no cast, except pointers that differ only in pointee
-        // const: IR equality ignores const, but C still needs an explicit cast.
-        ASSERT(!value->getType()->equals(type) || pointeeConstDiffers(value->getType(), type));
+        ASSERT(!value->getType()->equals(type));
         return insertBlock->add(new CastInst{ValueKind::CastInst, value, type, name.str()});
     }
     Value* createCast(Value* value, Type type, const llvm::Twine& name = "") { return createCast(value, getIRType(type), name); }

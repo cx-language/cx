@@ -1,10 +1,10 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
 
-void takeConstView(const float[*] s) {
+void takeView(float[*] s) {
     println(s[0]);
 }
 
-void takeConstPtr(const float* s) {
+void takePtr(float* s) {
     println(*s);
 }
 
@@ -18,6 +18,6 @@ void main() {
     float[*] u = arr.data();
     println(u.data()[0]); // CHECK:4
     float[*]? o = arr.data();
-    takeConstView(o); // CHECK:4
-    takeConstPtr(o); // CHECK:4
+    takeView(o!); // CHECK:4
+    takePtr(o); // CHECK:4
 }

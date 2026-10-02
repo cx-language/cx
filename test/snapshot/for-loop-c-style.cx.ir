@@ -31,7 +31,7 @@ loop.end:
     return int32 0
 
 overflow.fail:
-    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at for-loop-c-style.cx:6:13
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at for-loop-c-style.cx:6:13
 ")
     unreachable
 

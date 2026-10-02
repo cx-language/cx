@@ -179,7 +179,7 @@ if.end:
     return void
 
 overflow.fail:
-    never _8 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at List.cx:156:64
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at List.cx:156:64
 ")
     unreachable
 
@@ -280,7 +280,7 @@ and.end(bool and):
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _6 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "allocation size overflow at allocate.cx:161:5
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "allocation size overflow at allocate.cx:161:5
 ")
     unreachable
 
@@ -293,7 +293,7 @@ assert.success:
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _10 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at allocate.cx:162:50
+    never _10 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at allocate.cx:162:50
 ")
     unreachable
 

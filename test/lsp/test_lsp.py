@@ -276,7 +276,7 @@ T first<T>(T x) {
 """
 
 TOKENS_READONLY_SOURCE = """\
-void show(const int* p) {
+void show(int* p) {
     println(*p);
 }
 void main() {
@@ -607,9 +607,9 @@ def test_recovery(cx_lsp, path):
 def test_readonly_tokens(cx_lsp, path):
     result = run_query(cx_lsp, base_query("semanticTokens", path, TOKENS_READONLY_SOURCE))
     tokens = {(t["line"], t["start"], t["length"], t["type"]): t["modifiers"] for t in result.get("tokens", [])}
-    # A pointee-const parameter is still a reassignable binding, so no readonly.
-    check("query-tokens-const-param-def", tokens.get((0, 21, 1, "parameter")) == ["definition"])
-    check("query-tokens-const-param-ref", tokens.get((1, 13, 1, "parameter")) == [])
+    # Parameters are reassignable bindings, so no readonly.
+    check("query-tokens-param-def", tokens.get((0, 15, 1, "parameter")) == ["definition"])
+    check("query-tokens-param-ref", tokens.get((1, 13, 1, "parameter")) == [])
     check("query-tokens-var-def", tokens.get((6, 8, 7, "variable")) == ["definition"])
     check("query-tokens-const-def", tokens.get((7, 10, 8, "variable")) == ["definition", "readonly"])
     check("query-tokens-var-ref", tokens.get((8, 12, 7, "variable")) == [])

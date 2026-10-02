@@ -58,7 +58,7 @@ if.end:
     return t.load_1
 
 overflow.fail:
-    never _4 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at generic-function.cx:8:25
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at generic-function.cx:8:25
 ")
     unreachable
 

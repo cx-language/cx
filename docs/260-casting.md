@@ -31,7 +31,7 @@ void main() {
 
 `cast` reinterprets between pointers (`T*`), array pointers (`T[*]`), and references (`T&`).
 Any of those may have one optional (`T*?`, `T[*]?`, `T&?`). A second `?` is a struct, not a null pointer, so `T*??` cannot be cast this way.
-The pointee type may change, and `const` may be added or dropped:
+The pointee type may change:
 
 ```cs
 void main() {
@@ -45,9 +45,6 @@ void main() {
 
     int& r = cast<int&>(ap);
     println(r); // prints 42
-
-    int* mp = cast<int*>(cast<const int*>(ip));
-    println(*mp); // prints 42
 }
 ```
 
