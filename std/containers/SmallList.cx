@@ -51,7 +51,7 @@ struct SmallList<Element, int N> {
 
     /// Moves the list out, leaving an empty list in its place.
     SmallList<Element, N> take() {
-        return takeFrom(&this, SmallList());
+        return takeFrom(this, SmallList());
     }
 
     /// Returns the number of elements in the list.

@@ -13,8 +13,8 @@ struct OutputStream {
         file = null;
     }
 
-    OutputStream(public StringBuf* buffer) {
-        this.buffer = buffer;
+    OutputStream(StringBuf& buffer) {
+        this.buffer = &buffer;
         file = null;
     }
 
@@ -54,7 +54,7 @@ interface Printable {
     /// Returns this value rendered as a string.
     StringBuf toString() {
         var result = StringBuf();
-        var stream = OutputStream(&result);
+        var stream = OutputStream(result);
         this.print(stream);
         return result;
     }

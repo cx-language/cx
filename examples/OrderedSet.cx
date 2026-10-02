@@ -9,7 +9,7 @@ struct OrderedSet<Element> {
 
     /// Moves the set out, leaving an empty set in its place.
     OrderedSet<Element> take() {
-        return takeFrom(&this, OrderedSet());
+        return takeFrom(this, OrderedSet());
     }
 
     /// Inserts an element into the Set.

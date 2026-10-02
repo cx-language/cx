@@ -9,7 +9,7 @@ struct Set<Key: Hashable> {
 
     /// Moves the set out, leaving an empty set in its place.
     Set<Key> take() {
-        return takeFrom(&this, Set());
+        return takeFrom(this, Set());
     }
 
     /// Inserts an element into the set. If the element exists already, nothing is done.

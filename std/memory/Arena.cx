@@ -25,7 +25,7 @@ struct Arena {
 
     /// Moves the arena out, leaving an empty arena in its place.
     Arena take() {
-        return takeFrom(&this, Arena());
+        return takeFrom(this, Arena());
     }
 
     /// Allocates uninitialized storage for one value, or returns null on overflow or allocation failure.
@@ -58,8 +58,8 @@ struct Arena {
         var chunk = current;
         if size == 0 {
             if chunk != null {
-                var start = uint64(0);
-                if alignUp(chunk.used, &start) && start <= chunk.capacity {
+                var start = alignUp(chunk.used);
+                if start != null && start <= chunk.capacity {
                     return &chunk.data[start];
                 }
             }
@@ -72,8 +72,8 @@ struct Arena {
         }
 
         if chunk != null {
-            var start = uint64(0);
-            if alignUp(chunk.used, &start) && start <= chunk.capacity && size <= chunk.capacity - start {
+            var start = alignUp(chunk.used);
+            if start != null && start <= chunk.capacity && size <= chunk.capacity - start {
                 chunk.used = start + size;
                 return &chunk.data[start];
             }
@@ -96,8 +96,8 @@ struct Arena {
             capacity = 1;
         }
 
-        var dataOffset = uint64(0);
-        if !alignUp(sizeof(ArenaChunk), &dataOffset) || capacity > uint64.max - dataOffset {
+        var dataOffset = alignUp(sizeof(ArenaChunk));
+        if dataOffset == null || capacity > uint64.max - dataOffset {
             return null;
         }
 
@@ -121,17 +121,16 @@ struct Arena {
         return chunk;
     }
 
-    private bool alignUp(uint64 value, uint64* result) {
+    private uint64? alignUp(uint64 value) {
         var quotient = value / 16;
         var remainder = value % 16;
         if quotient == (uint64(1) << 60) - 1 && remainder != 0 {
-            return false;
+            return null;
         }
         if remainder != 0 {
             quotient++;
         }
-        *result = quotient * 16;
-        return true;
+        return quotient * 16;
     }
 }
 

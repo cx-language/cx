@@ -22,7 +22,7 @@ void buildCrosshairMesh(Mesh& m) {
     pushLine(positions, normals, [0.0, -0.02, 0.0], [0.0, 0.02, 0.0]);
     pushLineColor(colors, white);
     pushLineUV(uvs);
-    initMesh(&m, positions, normals, colors, uvs);
+    initMesh(m, positions, normals, colors, uvs);
 }
 
 void buildHighlightMesh(Mesh& m, int x, int y, int z) {
@@ -45,7 +45,7 @@ void buildHighlightMesh(Mesh& m, int x, int y, int z) {
         pushLineColor(colors, black);
         pushLineUV(uvs);
     }
-    initMesh(&m, positions, normals, colors, uvs);
+    initMesh(m, positions, normals, colors, uvs);
 }
 
 int runGame(bool debug) {
@@ -158,7 +158,7 @@ int runGame(bool debug) {
             stdout().writeln("selected block ", int(selected));
         }
 
-        updatePlayer(world, &player, input, dt);
+        updatePlayer(world, player, input, dt);
 
         var hit = raycastVoxel(world, eyePos(player), lookDir(player), 6.0);
         var showTarget = hit.hit && worldContains(world, hit.x, hit.y, hit.z);

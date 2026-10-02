@@ -57,7 +57,7 @@ void worldSet(World& w, int x, int y, int z, uint8 b) {
     c.blocks[blockIndex(x % chunkW, y, z % chunkD)] = b;
 }
 
-void genChunkTerrain(Chunk* c) {
+void genChunkTerrain(Chunk& c) {
     for x in 0..chunkW {
         for z in 0..chunkD {
             var gx = c.cx * chunkW + x;
@@ -93,7 +93,7 @@ Chunk makeChunk(int cx, int cz) {
     for i in 0..blockCount {
         c.blocks[i] = blockAir;
     }
-    genChunkTerrain(&c);
+    genChunkTerrain(c);
     return c;
 }
 
@@ -249,7 +249,7 @@ void pushBlockFace(List<float>& positions, List<float>& normals, List<float>& co
     pushFaceUV(uvs, tile, faceVariant(tile, x, y, z, face));
 }
 
-void buildChunkMesh(World& w, Chunk* c) {
+void buildChunkMesh(World& w, Chunk& c) {
     if c.hasMesh {
         destroyMesh(c.mesh);
         c.hasMesh = false;
@@ -279,7 +279,7 @@ void buildChunkMesh(World& w, Chunk* c) {
             }
         }
     }
-    initMesh(&c.mesh, positions, normals, colors, uvs);
+    initMesh(c.mesh, positions, normals, colors, uvs);
     c.hasMesh = true;
 }
 
@@ -296,7 +296,7 @@ World makeWorldData(int chunksX, int chunksZ) {
 
 void buildAllMeshes(World& w) {
     for i in 0..w.chunks.size() {
-        buildChunkMesh(w, &w.chunks[i]);
+        buildChunkMesh(w, w.chunks[i]);
     }
 }
 

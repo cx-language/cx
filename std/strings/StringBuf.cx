@@ -110,7 +110,7 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     /// Appends the printed form of the given value.
     void append<T: Printable>(T& value) {
-        value.print(OutputStream(&this));
+        value.print(OutputStream(this));
     }
 
     /// Appends the repetition without allocating a temporary.
@@ -275,7 +275,7 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     /// Moves the string out, leaving an empty string in its place.
     StringBuf take() {
-        return takeFrom(&this, StringBuf());
+        return takeFrom(this, StringBuf());
     }
 }
 

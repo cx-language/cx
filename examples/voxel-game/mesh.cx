@@ -12,7 +12,7 @@ struct Mesh {
     int vertexCount;
 }
 
-void initMesh(Mesh* mesh, float[] positions, float[] normals, float[] colors, float[] uvs) {
+void initMesh(Mesh& mesh, float[] positions, float[] normals, float[] colors, float[] uvs) {
     assert(positions.size() == normals.size());
     assert(positions.size() == colors.size());
     assert(positions.size() % 3 == 0);

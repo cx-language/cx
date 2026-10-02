@@ -16,7 +16,7 @@ enum JsonValue : Printable {
     ///
     /// Printable's `toString()` renders this same form.
     void print(OutputStream& stream) {
-        writeJson(stream, &this, 0, false);
+        writeJson(stream, this, 0, false);
     }
 
     /// Renders the value as JSON, indented with 2 spaces per level when
@@ -26,8 +26,8 @@ enum JsonValue : Printable {
     /// Non-finite `Number` values abort; JSON has no spelling for them.
     StringBuf toString(bool pretty) {
         var out = StringBuf();
-        var stream = OutputStream(&out);
-        writeJson(stream, &this, 0, pretty);
+        var stream = OutputStream(out);
+        writeJson(stream, this, 0, pretty);
         return out;
     }
 }
@@ -446,10 +446,10 @@ private void writeIndent(OutputStream& out, int count) {
     }
 }
 
-private void writeQuoted(OutputStream& out, StringBuf* s) {
+private void writeQuoted(OutputStream& out, StringBuf& s) {
     out.push('"');
     for i in 0..s.size() {
-        int code = byteValue((*s)[i]);
+        int code = byteValue(s[i]);
         if code == 34 {
             out.append("\\\"");
         } else if code == 92 {
@@ -469,7 +469,7 @@ private void writeQuoted(OutputStream& out, StringBuf* s) {
             out.push("0123456789abcdef"[code >> 4]);
             out.push("0123456789abcdef"[code & 15]);
         } else {
-            out.push((*s)[i]);
+            out.push(s[i]);
         }
     }
     out.push('"');
@@ -499,9 +499,9 @@ private void writeNumber(OutputStream& out, float64 value) {
     out.append(string(result));
 }
 
-private void writeJson(OutputStream& out, JsonValue* value, int level, bool indented) {
-    switch (*value) {
-        case String s: writeQuoted(out, &s);
+private void writeJson(OutputStream& out, JsonValue& value, int level, bool indented) {
+    switch (value) {
+        case String s: writeQuoted(out, s);
         case Integer n: n.print(out);
         case Number f: writeNumber(out, f);
         case Boolean b:
@@ -526,7 +526,7 @@ private void writeJson(OutputStream& out, JsonValue* value, int level, bool inde
                         out.push('\n');
                         writeIndent(out, (level + 1) * 2);
                     }
-                    writeJson(out, &element, level + 1, indented);
+                    writeJson(out, element, level + 1, indented);
                 }
                 if indented {
                     out.push('\n');
@@ -549,12 +549,12 @@ private void writeJson(OutputStream& out, JsonValue* value, int level, bool inde
                         out.push('\n');
                         writeIndent(out, (level + 1) * 2);
                     }
-                    writeQuoted(out, &member.key);
+                    writeQuoted(out, member.key);
                     out.push(':');
                     if indented {
                         out.push(' ');
                     }
-                    writeJson(out, &member.value, level + 1, indented);
+                    writeJson(out, member.value, level + 1, indented);
                 }
                 if indented {
                     out.push('\n');

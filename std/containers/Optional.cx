@@ -19,7 +19,7 @@ enum Optional<T> {
     /// payload has no `take()` method.
     Optional<T> take() {
         Optional<T> none = None;
-        return takeFrom(&this, none);
+        return takeFrom(this, none);
     }
 }
 

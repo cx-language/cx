@@ -16,7 +16,7 @@ struct OrderedMap<Key, Value> {
 
     /// Moves the map out, leaving an empty map in its place.
     OrderedMap<Key, Value> take() {
-        return takeFrom(&this, OrderedMap());
+        return takeFrom(this, OrderedMap());
     }
 
     /// Removes all entries from the map.

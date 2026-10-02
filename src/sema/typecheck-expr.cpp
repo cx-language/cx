@@ -5406,7 +5406,7 @@ void Typechecker::warnTernaryMove(Decl* decl, bool isThenArm, size_t branchEntry
     if (!loc || !condWarnedDecls.insert(decl).second) return;
     auto name = decl->getName();
     std::string fix = hasTakeMethod(decl) ? (StringBuilder() << "use '" << name << ".take()'").string
-                                          : (StringBuilder() << "use 'takeFrom(&" << name << ", ...)', or restructure with 'drop()'").string;
+                                          : (StringBuilder() << "use 'takeFrom(" << name << ", ...)', or restructure with 'drop()'").string;
     WARN(*loc, "value '" << name << "' is moved in the '" << (isThenArm ? "then" : "else") << "' arm of this ternary but not the '"
                          << (isThenArm ? "else" : "then") << "' arm; it may leak when the condition is " << (isThenArm ? "false" : "true") << " (" << fix
                          << " if this was intended)");

@@ -54,10 +54,10 @@ void testSwapOwningValues() {
     // nor leak. Heap strings defeat small-string optimization.
     var x = StringBuf("heap-string-one-long-enough");
     var y = StringBuf("heap-string-two-long-enough");
-    swap(&x, &y);
+    swap(x, y);
     assert(x == "heap-string-two-long-enough");
     assert(y == "heap-string-one-long-enough");
-    swap(&x, &x);
+    swap(x, x);
     assert(x == "heap-string-two-long-enough");
 }
 

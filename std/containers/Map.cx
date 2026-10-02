@@ -31,7 +31,7 @@ struct Map<Key: Hashable, Value> {
 
     /// Moves the map out, leaving an empty map in its place.
     Map<Key, Value> take() {
-        return takeFrom(&this, Map());
+        return takeFrom(this, Map());
     }
 
     /// Inserts an element into the map. The key must not already be in the map.

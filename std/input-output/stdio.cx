@@ -68,7 +68,7 @@ StringBuf join<T: Printable>(Slice<T> array, string separator) {
         if index != 0 {
             result.append(separator);
         }
-        elem.print(OutputStream(&result));
+        elem.print(OutputStream(result));
     }
 
     return result;

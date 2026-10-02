@@ -73,7 +73,7 @@ void testSynthesizedStructInContainerPrint() {
     list.push(Point(5, 6));
     list.push(Point(7, 8));
     var buf = StringBuf();
-    var stream = OutputStream(&buf);
+    var stream = OutputStream(buf);
     list.print(stream);
     assert(string(buf) == "[Point(x: 5, y: 6), Point(x: 7, y: 8)]");
 }
@@ -122,7 +122,7 @@ void testSynthesizedEnumInContainerPrint() {
     list.push(Color.Red);
     list.push(Color.Green);
     var buf = StringBuf();
-    var stream = OutputStream(&buf);
+    var stream = OutputStream(buf);
     list.print(stream);
     assert(string(buf) == "[Red, Green]");
 }

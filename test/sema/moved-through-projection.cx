@@ -6,7 +6,7 @@ struct C {
     }
 
     C take() {
-        return takeFrom(&this, C(i = 0));
+        return takeFrom(this, C(i = 0));
     }
 }
 

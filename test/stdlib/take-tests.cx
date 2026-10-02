@@ -97,7 +97,7 @@ void testTakeLocalStaysUsable() {
 
     // takeFrom with a custom default: returns the old value, leaves the default.
     var n = 7;
-    assert(takeFrom(&n, 99) == 7);
+    assert(takeFrom(n, 99) == 7);
     assert(n == 99);
 
     // Empty take, double take, and push-after-take all stay valid.

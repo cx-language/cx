@@ -29,12 +29,12 @@ T& min<T: Comparable>(T& a, T& b) {
 }
 
 /// Swaps two items in place.
-void swap<E>(E* a, E* b) {
-    if a == b return;
+void swap<E>(E& a, E& b) {
+    if &a == &b return;
     @manuallyDestroy E t = undefined;
-    memcpy(&t, a, sizeof(E));
-    memcpy(a, b, sizeof(E));
-    memcpy(b, &t, sizeof(E));
+    memcpy(&t, &a, sizeof(E));
+    memcpy(&a, &b, sizeof(E));
+    memcpy(&b, &t, sizeof(E));
 }
 
 // TODO: Use Slice instead of List.
@@ -57,11 +57,11 @@ private int partition<E: Comparable>(List<E>& arr, int low, int high) {
     for j in low..high {
         if arr[j] < *pivot {
             i++;
-            swap(&arr[i], &arr[j]);
+            swap(arr[i], arr[j]);
         }
     }
     if arr[high] < arr[i+1] {
-        swap(&arr[i + 1], &arr[high]);
+        swap(arr[i + 1], arr[high]);
     }
     return i + 1;
 }
@@ -88,7 +88,7 @@ private void insertionSort<E: Comparable>(List<E>& arr) {
     while i < arr.size() {
         var j = i;
         while j > 0 && arr[j-1] > arr[j] {
-            swap(&arr[j], &arr[j-1]);
+            swap(arr[j], arr[j-1]);
             j--;
         }
         i++;
