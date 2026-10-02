@@ -66,10 +66,8 @@ static bool needsImplicitMemberUnwrap(Type type) {
     return type.isOptionalType() && !type.isReferenceType() && !type.getWrappedType().isImplementedAsPointer();
 }
 
-// Root variable of an assignment target. With seeThroughDeref also descends
-// through '*' and optional-unwrap casts, which is only used by the
-// borrow-write warning; move analysis keeps the strict walk.
-static VarExpr* getAssignmentBaseVarExpr(Expr& lhs, bool seeThroughDeref = false) {
+// Root variable of an assignment target.
+static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
     Expr* current = &lhs;
     while (true) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) return varExpr;
@@ -89,32 +87,41 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs, bool seeThroughDeref = false
             current = unwrapExpr->getReceiver();
             continue;
         }
-        if (seeThroughDeref) {
-            if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(current); unaryExpr && unaryExpr->op == Token::Star) {
-                current = &unaryExpr->getOperand();
-                continue;
-            }
-            // OptionalUnwrap is the only lvalue-preserving implicit cast.
-            if (auto* castExpr = llvm::dyn_cast<ImplicitCastExpr>(current); castExpr && castExpr->castKind == ImplicitCastExpr::OptionalUnwrap) {
-                current = castExpr->operand;
-                continue;
-            }
-        }
         return nullptr;
     }
 }
 
-// Writes through a reference parameter mutate the caller's argument without
-// any '&' at the call site, so warn in favor of raw pointers.
+// Reassigning the whole value through a reference parameter mutates the caller's
+// argument without any '&' at the call site, so warn in favor of raw pointers.
+// Mutating a field or element through it is fine and stays silent.
 static void warnOnBorrowParamWrite(Expr& lhs) {
-    auto* root = getAssignmentBaseVarExpr(lhs, /*seeThroughDeref=*/true);
-    if (!root || !root->decl || root->isThis()) return;
-    if (!llvm::isa<ParamDecl>(root->decl)) return;
-    Type refType = root->type.removeOptional();
-    if (!refType.isReferenceType() || !refType.getPointee().isMutable()) return;
-    WARN_RANGE(getExprRangeStart(lhs), lhs.endLocation,
-               "writing to reference parameter '" << root->identifier << "' of type '" << root->type << "' hides the mutation from the call site; take '"
-                                                  << refType.getPointee() << "*' instead");
+    Expr* current = &lhs;
+    while (true) {
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) {
+            if (!varExpr->decl || varExpr->isThis()) return;
+            if (!llvm::isa<ParamDecl>(varExpr->decl)) return;
+            Type refType = varExpr->type.removeOptional();
+            if (!refType.isReferenceType() || !refType.getPointee().isMutable()) return;
+            WARN_RANGE(getExprRangeStart(lhs), lhs.endLocation,
+                       "writing to reference parameter '" << varExpr->identifier << "' of type '" << varExpr->type
+                                                          << "' hides the mutation from the call site; take '" << refType.getPointee() << "*' instead");
+            return;
+        }
+        if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(current); unaryExpr && unaryExpr->op == Token::Star) {
+            current = &unaryExpr->getOperand();
+            continue;
+        }
+        if (auto* unwrapExpr = llvm::dyn_cast<UnwrapExpr>(current)) {
+            current = unwrapExpr->getReceiver();
+            continue;
+        }
+        // OptionalUnwrap is the only lvalue-preserving implicit cast.
+        if (auto* castExpr = llvm::dyn_cast<ImplicitCastExpr>(current); castExpr && castExpr->castKind == ImplicitCastExpr::OptionalUnwrap) {
+            current = castExpr->operand;
+            continue;
+        }
+        return;
+    }
 }
 
 // Throws the borrow-operand error for '++'/'--', suggesting 'T*' for reference parameters.
@@ -4666,7 +4673,6 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
             }
         }
         typecheckCallExpr(expr);
-        warnOnBorrowParamWrite(expr);
         return Type::getVoid();
     }
 
@@ -4692,7 +4698,6 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
         }
     }
 
-    warnOnBorrowParamWrite(expr);
     return Type::getVoid();
 }
 

@@ -46,14 +46,15 @@ is rejected. Named constants still use the `const` declarator (`const x = ...`).
 
 ## Borrowed parameters
 
-Functions that use a value for the duration of the call without modifying it take it by borrow, written `T&`.
+Functions that use a value for the duration of the call without replacing it take it by borrow, written `T&`.
 (The `T&` type is also called a reference; compiler diagnostics say "reference type".)
 Callers pass values as usual; the compiler borrows them automatically.
 Temporaries and literals can be borrowed too; they live until the end of the call.
 Passing a stored `T*` where a `T&` is expected reborrows it.
 Inside the function, member access and operators use the borrowed value directly; `*` moves a value out explicitly.
-Direct writes through a borrowed parameter (assignments, including `+=` and indexing, and `++`/`--`) warn: take `T*` instead,
-so the `&` at the call site shows that the argument is modified.
+Mutating fields or elements through a borrowed parameter is fine, but reassigning the
+whole value (`*p = v`) warns: take `T*` instead, so the `&` at the call site shows
+that the argument is modified.
 Member functions use a `T&` borrow for `this` (writing its fields is fine); use `&this` to obtain a storable `T*`.
 
 Unlike pointers, borrows cannot be stored in fields or globals: besides function parameters,
@@ -64,7 +65,7 @@ deduces `Element&` and aliases the element, so `*r = v` writes it back. Name an 
 value type (`int r = p;`) to copy the value out instead.
 Unlike pointers, borrows cannot be reseated by assignment either: assigning to a borrow would rebind
 it, so the compiler rejects it. A local borrow is written through with `*`;
-a borrowed parameter cannot be written through at all (take `T*` instead).
+writing through a borrowed parameter this way warns (take `T*` instead).
 
 ```cs
 void main() {

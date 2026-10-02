@@ -8,29 +8,17 @@ struct Outer {
     Inner inner;
 }
 
-void projectionWrite(Outer& o) {
-    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'o' of type 'Outer&' hides the mutation from the call site; take 'Outer*' instead
-    o.inner.v = 1;
-}
-
-void indexWrite(List<int>& items) {
-    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'items' of type 'List<int>&' hides the mutation from the call site; take 'List<int>*' instead
-    items[0] = 1;
-}
-
 void derefWrite(int& x) {
     // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'x' of type 'int&' hides the mutation from the call site; take 'int*' instead
     *x = 1;
 }
 
-void compoundWrite(Outer& o) {
-    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'o' of type 'Outer&' hides the mutation from the call site; take 'Outer*' instead
-    o.inner.v += 1;
+void derefCompound(int& x) {
+    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'x' of type 'int&' hides the mutation from the call site; take 'int*' instead
+    *x += 1;
 }
 
-void incDecWrite(Outer& o, int& x) {
-    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'o' of type 'Outer&' hides the mutation from the call site; take 'Outer*' instead
-    o.inner.v++;
+void incDecWrite(int& x) {
     // CHECK: [[@LINE+1]]:6: warning: writing to reference parameter 'x' of type 'int&' hides the mutation from the call site; take 'int*' instead
     (*x)++;
     // CHECK: [[@LINE+1]]:6: warning: writing to reference parameter 'x' of type 'int&' hides the mutation from the call site; take 'int*' instead
@@ -52,14 +40,13 @@ void constBorrowReadOnly(const Outer& o) {
     o.inner.v = 1;
 }
 
-void arrayIndexWrite(int[4]& a) {
-    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'a' of type 'int[4]&' hides the mutation from the call site; take 'int[4]*' instead
-    a[0] = 1;
-}
-
-void incListItem(List<int>& items, int i) {
-    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'items' of type 'List<int>&' hides the mutation from the call site; take 'List<int>*' instead
-    items[i]++;
+void optionalBorrowDerefWrite(int&? o) {
+    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'o' of type 'int&?' hides the mutation from the call site; take 'int*' instead
+    *o = 1;
+    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'o' of type 'int&?' hides the mutation from the call site; take 'int*' instead
+    *o! = 1;
+    // CHECK: [[@LINE+1]]:6: warning: writing to reference parameter 'o' of type 'int&?' hides the mutation from the call site; take 'int*' instead
+    (*o!)++;
 }
 
 void unwrapRebind(int&? o, int* other) {
@@ -80,11 +67,42 @@ struct OptOuter {
     OptInner? opt;
 }
 
+// The cases below stay silent: field and element writes through a borrow are
+// fine; only whole-value reassignment warns. Any warning here fails via
+// implicit-check-not.
+void projectionWrite(Outer& o) {
+    o.inner.v = 1;
+}
+
+void explicitDerefFieldWrite(Outer& o) {
+    (*o).inner.v = 1;
+}
+
+void indexWrite(List<int>& items) {
+    items[0] = 1;
+}
+
+void compoundWrite(Outer& o) {
+    o.inner.v += 1;
+}
+
+void memberIncDec(Outer& o) {
+    o.inner.v++;
+    o.inner.v--;
+}
+
+void arrayIndexWrite(int[4]& a) {
+    a[0] = 1;
+}
+
+void incListItem(List<int>& items, int i) {
+    items[i]++;
+}
+
 void nestedOptionalWrite(OptOuter& o) {
     // The null check runs in a later pass that this file's errors skip; the
-    // borrow warning firing through the implicit unwrap is pinned here, and
-    // both warnings firing together in borrow-param-write-optional.cx.
-    // CHECK: [[@LINE+1]]:5: warning: writing to reference parameter 'o' of type 'OptOuter&' hides the mutation from the call site; take 'OptOuter*' instead
+    // borrow warning no longer fires through the implicit unwrap either, and
+    // only the null warning fires in borrow-param-write-optional.cx.
     o.opt.v = 1;
 }
 
@@ -95,7 +113,6 @@ struct HasMethod {
     }
 }
 
-// The cases below stay silent: any warning here fails via implicit-check-not.
 void localBorrowSilent() {
     var o = Outer(Inner(0));
     Outer& r = o;
