@@ -18,3 +18,12 @@ void f(int* p) {
     // CHECK: [[@LINE+1]]:10: warning: type 'int*' cannot be null; to declare it nullable, use 'int*?'
     _ = !p ? 1 : 0
 }
+
+int x = 1;
+
+void g() {
+    const cp = &x;
+    // A const binding still suggests the writable spelling.
+    // CHECK: [[@LINE+1]]:9: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'
+    if (cp) {}
+}
