@@ -497,7 +497,7 @@ using GLFWcharfun = void(GLFWwindow*, c_uint);
 /// The function pointer type for Unicode character with modifiers
 using GLFWcharmodsfun = void(GLFWwindow*, c_uint, c_int);
 /// The function pointer type for path drop callbacks.
-using GLFWdropfun = void(GLFWwindow*, c_int, const char**);
+using GLFWdropfun = void(GLFWwindow*, c_int, const char*[*]);
 /// The function pointer type for monitor configuration callbacks.
 using GLFWmonitorfun = void(GLFWmonitor*, c_int);
 /// The function pointer type for joystick configuration callbacks.
@@ -520,11 +520,11 @@ struct GLFWvidmode {
 /// Gamma ramp.
 struct GLFWgammaramp {
     /// An array of value describing the response of the red channel.
-    c_ushort* red;
+    c_ushort[*] red;
     /// An array of value describing the response of the green channel.
-    c_ushort* green;
+    c_ushort[*] green;
     /// An array of value describing the response of the blue channel.
-    c_ushort* blue;
+    c_ushort[*] blue;
     /// The number of elements in each array.
     c_uint size;
 }
@@ -535,7 +535,7 @@ struct GLFWimage {
     /// The height, in pixels, of this image.
     c_int height;
     /// The pixel data of this image, arranged left-to-right, top-to-bottom.
-    c_uchar* pixels;
+    c_uchar[*] pixels;
 }
 /// Gamepad input state
 struct GLFWgamepadstate {
@@ -576,7 +576,7 @@ extern c_int glfwGetPlatform();
 /// Returns whether the library includes support for the specified platform.
 extern c_int glfwPlatformSupported(c_int platform);
 /// Returns the currently connected monitors.
-extern GLFWmonitor**? glfwGetMonitors(c_int* count);
+extern GLFWmonitor*[*]? glfwGetMonitors(c_int* count);
 /// Returns the primary monitor.
 extern GLFWmonitor*? glfwGetPrimaryMonitor();
 /// Returns the position of the monitor's viewport on the virtual screen.
@@ -596,7 +596,7 @@ extern void*? glfwGetMonitorUserPointer(GLFWmonitor* monitor);
 /// Sets the monitor configuration callback.
 extern GLFWmonitorfun? glfwSetMonitorCallback(GLFWmonitorfun? callback);
 /// Returns the available video modes for the specified monitor.
-extern const GLFWvidmode*? glfwGetVideoModes(GLFWmonitor* monitor, c_int* count);
+extern const GLFWvidmode[*]? glfwGetVideoModes(GLFWmonitor* monitor, c_int* count);
 /// Returns the current mode of the specified monitor.
 extern const GLFWvidmode*? glfwGetVideoMode(GLFWmonitor* monitor);
 /// Generates a gamma ramp and sets it for the specified monitor.
@@ -624,7 +624,7 @@ extern const char*? glfwGetWindowTitle(GLFWwindow* window);
 /// Sets the title of the specified window.
 extern void glfwSetWindowTitle(GLFWwindow* window, const char* title);
 /// Sets the icon for the specified window.
-extern void glfwSetWindowIcon(GLFWwindow* window, c_int count, const GLFWimage*? images);
+extern void glfwSetWindowIcon(GLFWwindow* window, c_int count, const GLFWimage[*]? images);
 /// Retrieves the position of the content area of the specified window.
 extern void glfwGetWindowPos(GLFWwindow* window, c_int*? xpos, c_int*? ypos);
 /// Sets the position of the content area of the specified window.
@@ -744,11 +744,11 @@ extern GLFWdropfun? glfwSetDropCallback(GLFWwindow* window, GLFWdropfun? callbac
 /// Returns whether the specified joystick is present.
 extern c_int glfwJoystickPresent(c_int jid);
 /// Returns the values of all axes of the specified joystick.
-extern const float*? glfwGetJoystickAxes(c_int jid, c_int* count);
+extern const float[*]? glfwGetJoystickAxes(c_int jid, c_int* count);
 /// Returns the state of all buttons of the specified joystick.
-extern const c_uchar*? glfwGetJoystickButtons(c_int jid, c_int* count);
+extern const c_uchar[*]? glfwGetJoystickButtons(c_int jid, c_int* count);
 /// Returns the state of all hats of the specified joystick.
-extern const c_uchar*? glfwGetJoystickHats(c_int jid, c_int* count);
+extern const c_uchar[*]? glfwGetJoystickHats(c_int jid, c_int* count);
 /// Returns the name of the specified joystick.
 extern const char*? glfwGetJoystickName(c_int jid);
 /// Returns the SDL compatible GUID of the specified joystick.
@@ -794,4 +794,4 @@ extern GLFWglproc? glfwGetProcAddress(const char* procname);
 /// Returns whether the Vulkan loader and an ICD have been found.
 extern c_int glfwVulkanSupported();
 /// Returns the Vulkan instance extensions required by GLFW.
-extern const char**? glfwGetRequiredInstanceExtensions(c_uint* count);
+extern const char*[*]? glfwGetRequiredInstanceExtensions(c_uint* count);

@@ -13,8 +13,9 @@
 // holds them exactly. The rlgl declarations assume desktop OpenGL
 // (GRAPHICS_API_OPENGL_11/33): other GL flavors change
 // RL_DEFAULT_BATCH_BUFFER_ELEMENTS and rlVertexBuffer.indices.
-// Every C pointer becomes 'T*?', matching header-import semantics, so
-// code written against 'import "raylib.h"' migrates unchanged.
+// C pointers to single items become 'T*?'; pointers to arrays become
+// the indexable 'T[*]?' (nullability still matches header imports, so
+// header-imported code migrates unchanged).
 
 using BlendMode = c_int;
 using CameraMode = c_int;
@@ -589,7 +590,7 @@ struct AutomationEvent {
 struct AutomationEventList {
     c_uint capacity;
     c_uint count;
-    AutomationEvent*? events;
+    AutomationEvent[*]? events;
 }
 struct BoneInfo {
     char[32] name;
@@ -620,15 +621,15 @@ struct Color {
 }
 struct FilePathList {
     c_uint count;
-    char*?*? paths;
+    char*?[*]? paths;
 }
 struct Font {
     c_int baseSize;
     c_int glyphCount;
     c_int glyphPadding;
     Texture2D texture;
-    Rectangle*? recs;
-    GlyphInfo*? glyphs;
+    Rectangle[*]? recs;
+    GlyphInfo[*]? glyphs;
 }
 struct GlyphInfo {
     c_int value;
@@ -646,7 +647,7 @@ struct Image {
 }
 struct Material {
     Shader shader;
-    MaterialMap*? maps;
+    MaterialMap[*]? maps;
     float32[4] params;
 }
 struct MaterialMap {
@@ -675,41 +676,41 @@ struct Matrix {
 struct Mesh {
     c_int vertexCount;
     c_int triangleCount;
-    float32*? vertices;
-    float32*? texcoords;
-    float32*? texcoords2;
-    float32*? normals;
-    float32*? tangents;
-    c_uchar*? colors;
-    c_ushort*? indices;
+    float32[*]? vertices;
+    float32[*]? texcoords;
+    float32[*]? texcoords2;
+    float32[*]? normals;
+    float32[*]? tangents;
+    c_uchar[*]? colors;
+    c_ushort[*]? indices;
     c_int boneCount;
-    c_uchar*? boneIndices;
-    float32*? boneWeights;
-    float32*? animVertices;
-    float32*? animNormals;
+    c_uchar[*]? boneIndices;
+    float32[*]? boneWeights;
+    float32[*]? animVertices;
+    float32[*]? animNormals;
     c_uint vaoId;
-    c_uint*? vboId;
+    c_uint[*]? vboId;
 }
 struct Model {
     Matrix transform;
     c_int meshCount;
     c_int materialCount;
-    Mesh*? meshes;
-    Material*? materials;
-    c_int*? meshMaterial;
+    Mesh[*]? meshes;
+    Material[*]? materials;
+    c_int[*]? meshMaterial;
     ModelSkeleton skeleton;
     ModelAnimPose currentPose;
-    Matrix*? boneMatrices;
+    Matrix[*]? boneMatrices;
 }
 struct ModelAnimation {
     char[32] name;
     c_int boneCount;
     c_int keyframeCount;
-    ModelAnimPose*? keyframePoses;
+    ModelAnimPose[*]? keyframePoses;
 }
 struct ModelSkeleton {
     c_int boneCount;
-    BoneInfo*? bones;
+    BoneInfo[*]? bones;
     ModelAnimPose bindPose;
 }
 struct Music {
@@ -750,7 +751,7 @@ struct RenderTexture {
 }
 struct Shader {
     c_uint id;
-    c_int*? locs;
+    c_int[*]? locs;
 }
 struct Sound {
     AudioStream stream;
@@ -820,27 +821,27 @@ struct rlDrawCall {
 struct rlRenderBatch {
     c_int bufferCount;
     c_int currentBuffer;
-    rlVertexBuffer*? vertexBuffer;
-    rlDrawCall*? draws;
+    rlVertexBuffer[*]? vertexBuffer;
+    rlDrawCall[*]? draws;
     c_int drawCounter;
     float32 currentDepth;
 }
 struct rlVertexBuffer {
     c_int elementCount;
-    float32*? vertices;
-    float32*? texcoords;
-    float32*? normals;
-    c_uchar*? colors;
-    c_uint*? indices;
+    float32[*]? vertices;
+    float32[*]? texcoords;
+    float32[*]? normals;
+    c_uchar[*]? colors;
+    c_uint[*]? indices;
     c_uint vaoId;
     c_uint[5] vboId;
 }
 
 using AudioCallback = void(void*?, c_uint)?;
 using Camera = Camera3D;
-using LoadFileDataCallback = c_uchar*?(const char*?, c_int*?)?;
+using LoadFileDataCallback = c_uchar[*]?(const char*?, c_int*?)?;
 using LoadFileTextCallback = char*?(const char*?)?;
-using ModelAnimPose = Transform*?;
+using ModelAnimPose = Transform[*]?;
 using Quaternion = Vector4;
 using RenderTexture2D = RenderTexture;
 using SaveFileDataCallback = bool(const char*?, void*?, c_int)?;
@@ -867,7 +868,7 @@ extern void MaximizeWindow();
 extern void MinimizeWindow();
 extern void RestoreWindow();
 extern void SetWindowIcon(Image image);
-extern void SetWindowIcons(Image*? images, c_int count);
+extern void SetWindowIcons(Image[*]? images, c_int count);
 extern void SetWindowTitle(const char*? title);
 extern void SetWindowPosition(c_int x, c_int y);
 extern void SetWindowMonitor(c_int monitor);
@@ -949,8 +950,8 @@ extern void PollInputEvents();
 extern void WaitTime(float64 seconds);
 extern void SetRandomSeed(c_uint seed);
 extern c_int GetRandomValue(c_int min, c_int max);
-extern c_int*? LoadRandomSequence(c_uint count, c_int min, c_int max);
-extern void UnloadRandomSequence(c_int*? sequence);
+extern c_int[*]? LoadRandomSequence(c_uint count, c_int min, c_int max);
+extern void UnloadRandomSequence(c_int[*]? sequence);
 extern void TakeScreenshot(const char*? fileName);
 extern void SetConfigFlags(c_uint flags);
 extern void OpenURL(const char*? url);
@@ -959,10 +960,10 @@ extern void TraceLog(c_int logLevel, const char*? text, ...);
 extern void*? MemAlloc(c_uint size);
 extern void*? MemRealloc(void*? ptr, c_uint size);
 extern void MemFree(void*? ptr);
-extern c_uchar*? LoadFileData(const char*? fileName, c_int*? dataSize);
-extern void UnloadFileData(c_uchar*? data);
+extern c_uchar[*]? LoadFileData(const char*? fileName, c_int*? dataSize);
+extern void UnloadFileData(c_uchar[*]? data);
 extern bool SaveFileData(const char*? fileName, void*? data, c_int dataSize);
-extern bool ExportDataAsCode(const c_uchar*? data, c_int dataSize, const char*? fileName);
+extern bool ExportDataAsCode(const c_uchar[*]? data, c_int dataSize, const char*? fileName);
 extern char*? LoadFileText(const char*? fileName);
 extern void UnloadFileText(char*? text);
 extern bool SaveFileText(const char*? fileName, const char*? text);
@@ -1000,14 +1001,14 @@ extern FilePathList LoadDroppedFiles();
 extern void UnloadDroppedFiles(FilePathList files);
 extern c_uint GetDirectoryFileCount(const char*? dirPath);
 extern c_uint GetDirectoryFileCountEx(const char*? basePath, const char*? filter, bool scanSubdirs);
-extern c_uchar*? CompressData(const c_uchar*? data, c_int dataSize, c_int*? compDataSize);
-extern c_uchar*? DecompressData(const c_uchar*? compData, c_int compDataSize, c_int*? dataSize);
-extern char*? EncodeDataBase64(const c_uchar*? data, c_int dataSize, c_int*? outputSize);
-extern c_uchar*? DecodeDataBase64(const char*? text, c_int*? outputSize);
-extern c_uint ComputeCRC32(c_uchar*? data, c_int dataSize);
-extern c_uint*? ComputeMD5(c_uchar*? data, c_int dataSize);
-extern c_uint*? ComputeSHA1(c_uchar*? data, c_int dataSize);
-extern c_uint*? ComputeSHA256(c_uchar*? data, c_int dataSize);
+extern c_uchar[*]? CompressData(const c_uchar[*]? data, c_int dataSize, c_int*? compDataSize);
+extern c_uchar[*]? DecompressData(const c_uchar[*]? compData, c_int compDataSize, c_int*? dataSize);
+extern char*? EncodeDataBase64(const c_uchar[*]? data, c_int dataSize, c_int*? outputSize);
+extern c_uchar[*]? DecodeDataBase64(const char*? text, c_int*? outputSize);
+extern c_uint ComputeCRC32(c_uchar[*]? data, c_int dataSize);
+extern c_uint[*]? ComputeMD5(c_uchar[*]? data, c_int dataSize);
+extern c_uint[*]? ComputeSHA1(c_uchar[*]? data, c_int dataSize);
+extern c_uint[*]? ComputeSHA256(c_uchar[*]? data, c_int dataSize);
 extern AutomationEventList LoadAutomationEventList(const char*? fileName);
 extern void UnloadAutomationEventList(AutomationEventList list);
 extern bool ExportAutomationEventList(AutomationEventList list, const char*? fileName);
@@ -1073,7 +1074,7 @@ extern void DrawPixelV(Vector2 position, Color color);
 extern void DrawLine(c_int startPosX, c_int startPosY, c_int endPosX, c_int endPosY, Color color);
 extern void DrawLineV(Vector2 startPos, Vector2 endPos, Color color);
 extern void DrawLineEx(Vector2 startPos, Vector2 endPos, float32 thick, Color color);
-extern void DrawLineStrip(const Vector2*? points, c_int pointCount, Color color);
+extern void DrawLineStrip(const Vector2[*]? points, c_int pointCount, Color color);
 extern void DrawLineBezier(Vector2 startPos, Vector2 endPos, float32 thick, Color color);
 extern void DrawLineDashed(Vector2 startPos, Vector2 endPos, c_int dashSize, c_int spaceSize, Color color);
 extern void DrawCircle(c_int centerX, c_int centerY, float32 radius, Color color);
@@ -1103,16 +1104,16 @@ extern void DrawRectangleRoundedLines(Rectangle rec, float32 roundness, c_int se
 extern void DrawRectangleRoundedLinesEx(Rectangle rec, float32 roundness, c_int segments, float32 lineThick, Color color);
 extern void DrawTriangle(Vector2 v1, Vector2 v2, Vector2 v3, Color color);
 extern void DrawTriangleLines(Vector2 v1, Vector2 v2, Vector2 v3, Color color);
-extern void DrawTriangleFan(const Vector2*? points, c_int pointCount, Color color);
-extern void DrawTriangleStrip(const Vector2*? points, c_int pointCount, Color color);
+extern void DrawTriangleFan(const Vector2[*]? points, c_int pointCount, Color color);
+extern void DrawTriangleStrip(const Vector2[*]? points, c_int pointCount, Color color);
 extern void DrawPoly(Vector2 center, c_int sides, float32 radius, float32 rotation, Color color);
 extern void DrawPolyLines(Vector2 center, c_int sides, float32 radius, float32 rotation, Color color);
 extern void DrawPolyLinesEx(Vector2 center, c_int sides, float32 radius, float32 rotation, float32 lineThick, Color color);
-extern void DrawSplineLinear(const Vector2*? points, c_int pointCount, float32 thick, Color color);
-extern void DrawSplineBasis(const Vector2*? points, c_int pointCount, float32 thick, Color color);
-extern void DrawSplineCatmullRom(const Vector2*? points, c_int pointCount, float32 thick, Color color);
-extern void DrawSplineBezierQuadratic(const Vector2*? points, c_int pointCount, float32 thick, Color color);
-extern void DrawSplineBezierCubic(const Vector2*? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineLinear(const Vector2[*]? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineBasis(const Vector2[*]? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineCatmullRom(const Vector2[*]? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineBezierQuadratic(const Vector2[*]? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineBezierCubic(const Vector2[*]? points, c_int pointCount, float32 thick, Color color);
 extern void DrawSplineSegmentLinear(Vector2 p1, Vector2 p2, float32 thick, Color color);
 extern void DrawSplineSegmentBasis(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, float32 thick, Color color);
 extern void DrawSplineSegmentCatmullRom(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, float32 thick, Color color);
@@ -1131,20 +1132,20 @@ extern bool CheckCollisionPointRec(Vector2 point, Rectangle rec);
 extern bool CheckCollisionPointCircle(Vector2 point, Vector2 center, float32 radius);
 extern bool CheckCollisionPointTriangle(Vector2 point, Vector2 p1, Vector2 p2, Vector2 p3);
 extern bool CheckCollisionPointLine(Vector2 point, Vector2 p1, Vector2 p2, c_int threshold);
-extern bool CheckCollisionPointPoly(Vector2 point, const Vector2*? points, c_int pointCount);
+extern bool CheckCollisionPointPoly(Vector2 point, const Vector2[*]? points, c_int pointCount);
 extern bool CheckCollisionLines(Vector2 startPos1, Vector2 endPos1, Vector2 startPos2, Vector2 endPos2, Vector2*? collisionPoint);
 extern Rectangle GetCollisionRec(Rectangle rec1, Rectangle rec2);
 extern Image LoadImage(const char*? fileName);
 extern Image LoadImageRaw(const char*? fileName, c_int width, c_int height, c_int format, c_int headerSize);
 extern Image LoadImageAnim(const char*? fileName, c_int*? frames);
-extern Image LoadImageAnimFromMemory(const char*? fileType, const c_uchar*? fileData, c_int dataSize, c_int*? frames);
-extern Image LoadImageFromMemory(const char*? fileType, const c_uchar*? fileData, c_int dataSize);
+extern Image LoadImageAnimFromMemory(const char*? fileType, const c_uchar[*]? fileData, c_int dataSize, c_int*? frames);
+extern Image LoadImageFromMemory(const char*? fileType, const c_uchar[*]? fileData, c_int dataSize);
 extern Image LoadImageFromTexture(Texture2D texture);
 extern Image LoadImageFromScreen();
 extern bool IsImageValid(Image image);
 extern void UnloadImage(Image image);
 extern bool ExportImage(Image image, const char*? fileName);
-extern c_uchar*? ExportImageToMemory(Image image, const char*? fileType, c_int*? fileSize);
+extern c_uchar[*]? ExportImageToMemory(Image image, const char*? fileType, c_int*? fileSize);
 extern bool ExportImageAsCode(Image image, const char*? fileName);
 extern Image GenImageColor(c_int width, c_int height, Color color);
 extern Image GenImageGradientLinear(c_int width, c_int height, c_int direction, Color start, Color end);
@@ -1168,7 +1169,7 @@ extern void ImageAlphaClear(Image*? image, Color color, float32 threshold);
 extern void ImageAlphaMask(Image*? image, Image alphaMask);
 extern void ImageAlphaPremultiply(Image*? image);
 extern void ImageBlurGaussian(Image*? image, c_int blurSize);
-extern void ImageKernelConvolution(Image*? image, const float32*? kernel, c_int kernelSize);
+extern void ImageKernelConvolution(Image*? image, const float32[*]? kernel, c_int kernelSize);
 extern void ImageResize(Image*? image, c_int newWidth, c_int newHeight);
 extern void ImageResizeNN(Image*? image, c_int newWidth, c_int newHeight);
 extern void ImageResizeCanvas(Image*? image, c_int newWidth, c_int newHeight, c_int offsetX, c_int offsetY, Color fill);
@@ -1185,10 +1186,10 @@ extern void ImageColorGrayscale(Image*? image);
 extern void ImageColorContrast(Image*? image, float32 contrast);
 extern void ImageColorBrightness(Image*? image, c_int brightness);
 extern void ImageColorReplace(Image*? image, Color color, Color replace);
-extern Color*? LoadImageColors(Image image);
-extern Color*? LoadImagePalette(Image image, c_int maxPaletteSize, c_int*? colorCount);
-extern void UnloadImageColors(Color*? colors);
-extern void UnloadImagePalette(Color*? colors);
+extern Color[*]? LoadImageColors(Image image);
+extern Color[*]? LoadImagePalette(Image image, c_int maxPaletteSize, c_int*? colorCount);
+extern void UnloadImageColors(Color[*]? colors);
+extern void UnloadImagePalette(Color[*]? colors);
 extern Rectangle GetImageAlphaBorder(Image image, float32 threshold);
 extern Color GetImageColor(Image image, c_int x, c_int y);
 extern void ImageClearBackground(Image*? dst, Color color);
@@ -1208,8 +1209,8 @@ extern void ImageDrawRectangleLines(Image*? dst, Rectangle rec, c_int thick, Col
 extern void ImageDrawTriangle(Image*? dst, Vector2 v1, Vector2 v2, Vector2 v3, Color color);
 extern void ImageDrawTriangleEx(Image*? dst, Vector2 v1, Vector2 v2, Vector2 v3, Color c1, Color c2, Color c3);
 extern void ImageDrawTriangleLines(Image*? dst, Vector2 v1, Vector2 v2, Vector2 v3, Color color);
-extern void ImageDrawTriangleFan(Image*? dst, const Vector2*? points, c_int pointCount, Color color);
-extern void ImageDrawTriangleStrip(Image*? dst, const Vector2*? points, c_int pointCount, Color color);
+extern void ImageDrawTriangleFan(Image*? dst, const Vector2[*]? points, c_int pointCount, Color color);
+extern void ImageDrawTriangleStrip(Image*? dst, const Vector2[*]? points, c_int pointCount, Color color);
 extern void ImageDraw(Image*? dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint);
 extern void ImageDrawText(Image*? dst, const char*? text, c_int posX, c_int posY, c_int fontSize, Color color);
 extern void ImageDrawTextEx(Image*? dst, Font font, const char*? text, Vector2 position, float32 fontSize, float32 spacing, Color tint);
@@ -1251,13 +1252,13 @@ extern void SetPixelColor(void*? dstPtr, Color color, c_int format);
 extern c_int GetPixelDataSize(c_int width, c_int height, c_int format);
 extern Font GetFontDefault();
 extern Font LoadFont(const char*? fileName);
-extern Font LoadFontEx(const char*? fileName, c_int fontSize, const c_int*? codepoints, c_int codepointCount);
+extern Font LoadFontEx(const char*? fileName, c_int fontSize, const c_int[*]? codepoints, c_int codepointCount);
 extern Font LoadFontFromImage(Image image, Color key, c_int firstChar);
-extern Font LoadFontFromMemory(const char*? fileType, const c_uchar*? fileData, c_int dataSize, c_int fontSize, const c_int*? codepoints, c_int codepointCount);
+extern Font LoadFontFromMemory(const char*? fileType, const c_uchar[*]? fileData, c_int dataSize, c_int fontSize, const c_int[*]? codepoints, c_int codepointCount);
 extern bool IsFontValid(Font font);
-extern GlyphInfo*? LoadFontData(const c_uchar*? fileData, c_int dataSize, c_int fontSize, const c_int*? codepoints, c_int codepointCount, c_int type, c_int*? glyphCount);
-extern Image GenImageFontAtlas(const GlyphInfo*? glyphs, Rectangle*?*? glyphRecs, c_int glyphCount, c_int fontSize, c_int padding, c_int packMethod);
-extern void UnloadFontData(GlyphInfo*? glyphs, c_int glyphCount);
+extern GlyphInfo[*]? LoadFontData(const c_uchar[*]? fileData, c_int dataSize, c_int fontSize, const c_int[*]? codepoints, c_int codepointCount, c_int type, c_int*? glyphCount);
+extern Image GenImageFontAtlas(const GlyphInfo[*]? glyphs, Rectangle*?*? glyphRecs, c_int glyphCount, c_int fontSize, c_int padding, c_int packMethod);
+extern void UnloadFontData(GlyphInfo[*]? glyphs, c_int glyphCount);
 extern void UnloadFont(Font font);
 extern bool ExportFontAsCode(Font font, const char*? fileName);
 extern void DrawFPS(c_int posX, c_int posY);
@@ -1265,25 +1266,25 @@ extern void DrawText(const char*? text, c_int posX, c_int posY, c_int fontSize, 
 extern void DrawTextEx(Font font, const char*? text, Vector2 position, float32 fontSize, float32 spacing, Color tint);
 extern void DrawTextPro(Font font, const char*? text, Vector2 position, Vector2 origin, float32 rotation, float32 fontSize, float32 spacing, Color tint);
 extern void DrawTextCodepoint(Font font, c_int codepoint, Vector2 position, float32 fontSize, Color tint);
-extern void DrawTextCodepoints(Font font, const c_int*? codepoints, c_int codepointCount, Vector2 position, float32 fontSize, float32 spacing, Color tint);
+extern void DrawTextCodepoints(Font font, const c_int[*]? codepoints, c_int codepointCount, Vector2 position, float32 fontSize, float32 spacing, Color tint);
 extern void SetTextLineSpacing(c_int spacing);
 extern c_int MeasureText(const char*? text, c_int fontSize);
 extern Vector2 MeasureTextEx(Font font, const char*? text, float32 fontSize, float32 spacing);
-extern Vector2 MeasureTextCodepoints(Font font, const c_int*? codepoints, c_int length, float32 fontSize, float32 spacing);
+extern Vector2 MeasureTextCodepoints(Font font, const c_int[*]? codepoints, c_int length, float32 fontSize, float32 spacing);
 extern c_int GetGlyphIndex(Font font, c_int codepoint);
 extern GlyphInfo GetGlyphInfo(Font font, c_int codepoint);
 extern Rectangle GetGlyphAtlasRec(Font font, c_int codepoint);
-extern char*? LoadUTF8(const c_int*? codepoints, c_int length);
+extern char*? LoadUTF8(const c_int[*]? codepoints, c_int length);
 extern void UnloadUTF8(char*? text);
-extern c_int*? LoadCodepoints(const char*? text, c_int*? count);
-extern void UnloadCodepoints(c_int*? codepoints);
+extern c_int[*]? LoadCodepoints(const char*? text, c_int*? count);
+extern void UnloadCodepoints(c_int[*]? codepoints);
 extern c_int GetCodepointCount(const char*? text);
 extern c_int GetCodepoint(const char*? text, c_int*? codepointSize);
 extern c_int GetCodepointNext(const char*? text, c_int*? codepointSize);
 extern c_int GetCodepointPrevious(const char*? text, c_int*? codepointSize);
 extern const char*? CodepointToUTF8(c_int codepoint, c_int*? utf8Size);
-extern char*?*? LoadTextLines(const char*? text, c_int*? count);
-extern void UnloadTextLines(char*?*? text, c_int lineCount);
+extern char*?[*]? LoadTextLines(const char*? text, c_int*? count);
+extern void UnloadTextLines(char*?[*]? text, c_int lineCount);
 extern c_int TextCopy(char*? dst, const char*? src);
 extern bool TextIsEqual(const char*? text1, const char*? text2);
 extern c_uint TextLength(const char*? text);
@@ -1297,8 +1298,8 @@ extern char*? TextReplaceBetween(const char*? text, const char*? begin, const ch
 extern char*? TextReplaceBetweenAlloc(const char*? text, const char*? begin, const char*? end, const char*? replacement);
 extern char*? TextInsert(const char*? text, const char*? insert, c_int position);
 extern char*? TextInsertAlloc(const char*? text, const char*? insert, c_int position);
-extern char*? TextJoin(char*?*? textList, c_int count, const char*? delimiter);
-extern char*?*? TextSplit(const char*? text, char delimiter, c_int*? count);
+extern char*? TextJoin(char*?[*]? textList, c_int count, const char*? delimiter);
+extern char*?[*]? TextSplit(const char*? text, char delimiter, c_int*? count);
 extern void TextAppend(char*? text, const char*? append, c_int*? position);
 extern c_int TextFindIndex(const char*? text, const char*? search);
 extern char*? TextToUpper(const char*? text);
@@ -1312,7 +1313,7 @@ extern void DrawLine3D(Vector3 startPos, Vector3 endPos, Color color);
 extern void DrawPoint3D(Vector3 position, Color color);
 extern void DrawCircle3D(Vector3 center, float32 radius, Vector3 rotationAxis, float32 rotationAngle, Color color);
 extern void DrawTriangle3D(Vector3 v1, Vector3 v2, Vector3 v3, Color color);
-extern void DrawTriangleStrip3D(const Vector3*? points, c_int pointCount, Color color);
+extern void DrawTriangleStrip3D(const Vector3[*]? points, c_int pointCount, Color color);
 extern void DrawCube(Vector3 position, float32 width, float32 height, float32 length, Color color);
 extern void DrawCubeV(Vector3 position, Vector3 size, Color color);
 extern void DrawCubeWires(Vector3 position, float32 width, float32 height, float32 length, Color color);
@@ -1346,7 +1347,7 @@ extern void UploadMesh(Mesh*? mesh, bool dynamic);
 extern void UpdateMeshBuffer(Mesh mesh, c_int index, const void*? data, c_int dataSize, c_int offset);
 extern void UnloadMesh(Mesh mesh);
 extern void DrawMesh(Mesh mesh, Material material, Matrix transform);
-extern void DrawMeshInstanced(Mesh mesh, Material material, const Matrix*? transforms, c_int instances);
+extern void DrawMeshInstanced(Mesh mesh, Material material, const Matrix[*]? transforms, c_int instances);
 extern BoundingBox GetMeshBoundingBox(Mesh mesh);
 extern void GenMeshTangents(Mesh*? mesh);
 extern bool ExportMesh(Mesh mesh, const char*? fileName);
@@ -1362,16 +1363,16 @@ extern Mesh GenMeshTorus(float32 radius, float32 size, c_int radSeg, c_int sides
 extern Mesh GenMeshKnot(float32 radius, float32 size, c_int radSeg, c_int sides);
 extern Mesh GenMeshHeightmap(Image heightmap, Vector3 size);
 extern Mesh GenMeshCubicmap(Image cubicmap, Vector3 cubeSize);
-extern Material*? LoadMaterials(const char*? fileName, c_int*? materialCount);
+extern Material[*]? LoadMaterials(const char*? fileName, c_int*? materialCount);
 extern Material LoadMaterialDefault();
 extern bool IsMaterialValid(Material material);
 extern void UnloadMaterial(Material material);
 extern void SetMaterialTexture(Material*? material, c_int mapType, Texture2D texture);
 extern void SetModelMeshMaterial(Model*? model, c_int meshId, c_int materialId);
-extern ModelAnimation*? LoadModelAnimations(const char*? fileName, c_int*? animCount);
+extern ModelAnimation[*]? LoadModelAnimations(const char*? fileName, c_int*? animCount);
 extern void UpdateModelAnimation(Model model, ModelAnimation anim, float32 frame);
 extern void UpdateModelAnimationEx(Model model, ModelAnimation animA, float32 frameA, ModelAnimation animB, float32 frameB, float32 blend);
-extern void UnloadModelAnimations(ModelAnimation*? animations, c_int animCount);
+extern void UnloadModelAnimations(ModelAnimation[*]? animations, c_int animCount);
 extern bool IsModelAnimationValid(Model model, ModelAnimation anim);
 extern bool CheckCollisionSpheres(Vector3 center1, float32 radius1, Vector3 center2, float32 radius2);
 extern bool CheckCollisionBoxes(BoundingBox box1, BoundingBox box2);
@@ -1387,7 +1388,7 @@ extern bool IsAudioDeviceReady();
 extern void SetMasterVolume(float32 volume);
 extern float32 GetMasterVolume();
 extern Wave LoadWave(const char*? fileName);
-extern Wave LoadWaveFromMemory(const char*? fileType, const c_uchar*? fileData, c_int dataSize);
+extern Wave LoadWaveFromMemory(const char*? fileType, const c_uchar[*]? fileData, c_int dataSize);
 extern bool IsWaveValid(Wave wave);
 extern Sound LoadSound(const char*? fileName);
 extern Sound LoadSoundFromWave(Wave wave);
@@ -1410,10 +1411,10 @@ extern void SetSoundPan(Sound sound, float32 pan);
 extern Wave WaveCopy(Wave wave);
 extern void WaveCrop(Wave*? wave, c_int initFrame, c_int finalFrame);
 extern void WaveFormat(Wave*? wave, c_int sampleRate, c_int sampleSize, c_int channels);
-extern float32*? LoadWaveSamples(Wave wave);
-extern void UnloadWaveSamples(float32*? samples);
+extern float32[*]? LoadWaveSamples(Wave wave);
+extern void UnloadWaveSamples(float32[*]? samples);
 extern Music LoadMusicStream(const char*? fileName);
-extern Music LoadMusicStreamFromMemory(const char*? fileType, const c_uchar*? data, c_int dataSize);
+extern Music LoadMusicStreamFromMemory(const char*? fileType, const c_uchar[*]? data, c_int dataSize);
 extern bool IsMusicValid(Music music);
 extern void UnloadMusicStream(Music music);
 extern void PlayMusicStream(Music music);
@@ -1454,7 +1455,7 @@ extern void rlLoadIdentity();
 extern void rlTranslatef(float32 x, float32 y, float32 z);
 extern void rlRotatef(float32 angle, float32 x, float32 y, float32 z);
 extern void rlScalef(float32 x, float32 y, float32 z);
-extern void rlMultMatrixf(const float32*? matf);
+extern void rlMultMatrixf(const float32[*]? matf);
 extern void rlFrustum(float64 left, float64 right, float64 bottom, float64 top, float64 znear, float64 zfar);
 extern void rlOrtho(float64 left, float64 right, float64 bottom, float64 top, float64 znear, float64 zfar);
 extern void rlViewport(c_int x, c_int y, c_int width, c_int height);
@@ -1539,7 +1540,7 @@ extern void rlSetFramebufferHeight(c_int height);
 extern c_int rlGetFramebufferHeight();
 extern c_uint rlGetTextureIdDefault();
 extern c_uint rlGetShaderIdDefault();
-extern c_int*? rlGetShaderLocsDefault();
+extern c_int[*]? rlGetShaderLocsDefault();
 extern rlRenderBatch rlLoadRenderBatch(c_int numBuffers, c_int bufferElements);
 extern void rlUnloadRenderBatch(rlRenderBatch batch);
 extern void rlDrawRenderBatch(rlRenderBatch*? batch);
@@ -1570,7 +1571,7 @@ extern const char*? rlGetPixelFormatName(c_uint format);
 extern void rlUnloadTexture(c_uint id);
 extern void rlGenTextureMipmaps(c_uint id, c_int width, c_int height, c_int format, c_int*? mipmaps);
 extern void*? rlReadTexturePixels(c_uint id, c_int width, c_int height, c_int format);
-extern c_uchar*? rlReadScreenPixels(c_int width, c_int height);
+extern c_uchar[*]? rlReadScreenPixels(c_int width, c_int height);
 extern c_uint rlLoadFramebuffer();
 extern void rlFramebufferAttach(c_uint id, c_uint texId, c_int attachType, c_int texType, c_int mipLevel);
 extern bool rlFramebufferComplete(c_uint id);
@@ -1587,9 +1588,9 @@ extern c_int rlGetLocationUniform(c_uint id, const char*? uniformName);
 extern c_int rlGetLocationAttrib(c_uint id, const char*? attribName);
 extern void rlSetUniform(c_int locIndex, const void*? value, c_int uniformType, c_int count);
 extern void rlSetUniformMatrix(c_int locIndex, Matrix mat);
-extern void rlSetUniformMatrices(c_int locIndex, const Matrix*? mat, c_int count);
+extern void rlSetUniformMatrices(c_int locIndex, const Matrix[*]? mat, c_int count);
 extern void rlSetUniformSampler(c_int locIndex, c_uint textureId);
-extern void rlSetShader(c_uint id, c_int*? locs);
+extern void rlSetShader(c_uint id, c_int[*]? locs);
 extern void rlComputeShaderDispatch(c_uint groupX, c_uint groupY, c_uint groupZ);
 extern c_uint rlLoadShaderBuffer(c_uint size, const void*? data, c_int usageHint);
 extern void rlUnloadShaderBuffer(c_uint ssboId);

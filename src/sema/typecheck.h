@@ -41,10 +41,11 @@ struct ArgumentValidation {
     bool didConvertArguments;
     bool didUnwrapOptional;
     bool didWrapOptional;
+    bool didAddConst = false;
     int userConversionCount = 0;
 
-    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional, bool didWrapOptional, int userConversionCount) {
-        return {None, -1, didConvertArguments, didUnwrapOptional, didWrapOptional, userConversionCount};
+    static ArgumentValidation success(bool didConvertArguments, bool didUnwrapOptional, bool didWrapOptional, bool didAddConst, int userConversionCount) {
+        return {None, -1, didConvertArguments, didUnwrapOptional, didWrapOptional, didAddConst, userConversionCount};
     }
     static ArgumentValidation tooFew() { return {TooFew, -1, false, false, false}; }
     static ArgumentValidation tooMany() { return {TooMany, -1, false, false, false}; }
@@ -58,6 +59,7 @@ struct Match {
     bool didConvertArguments;
     bool didUnwrapOptional;
     bool didWrapOptional;
+    bool didAddConst = false;
     int userConversionCount = 0;
 };
 

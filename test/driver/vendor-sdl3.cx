@@ -70,6 +70,11 @@ int main() {
         return 1;
     }
     println(event.type, " ", event.key.key, " ", event.key.scancode); // CHECK-NEXT: 768 97 4
+    // Array-typed bindings index directly; the dummy driver presses no keys.
+    c_int numkeys = 0;
+    var keys = SDL_GetKeyboardState(&numkeys)!;
+    println(numkeys > 0); // CHECK-NEXT: true
+    println(keys[SDL_SCANCODE_A]); // CHECK-NEXT: false
     SDL_SetHint("SDL_TEST_HINT_SDL3", "hello");
     println(SDL_GetHint("SDL_TEST_HINT_SDL3")!); // CHECK-NEXT: hello
     return 0;

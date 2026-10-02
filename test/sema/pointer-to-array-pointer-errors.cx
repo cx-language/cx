@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+void takeMut(int[*] p) {}
+void takeConst(const int[*] p) {}
+void takeUint(uint[*] p) {}
+
+void main() {
+    const int c = 1;
+    // CHECK: [[@LINE+1]]:13: error: invalid argument #1 type 'const int*' to 'takeMut', expected 'int[*]'
+    takeMut(&c);
+    int x = 2;
+    // CHECK: [[@LINE+1]]:14: error: invalid argument #1 type 'int*' to 'takeUint', expected 'uint[*]'
+    takeUint(&x);
+}

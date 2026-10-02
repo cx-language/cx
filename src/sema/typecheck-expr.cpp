@@ -2020,7 +2020,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (target.isArrayPointer() && source.isPointerType() && target.getElementType() == source.getPointee()) {
+    if (target.isArrayPointer() && source.isPointerType() && (source.getPointee().isMutable() || !target.getElementType().isMutable())
+        && isReinterpretible(source.getPointee(), target.getElementType())) {
         return source;
     }
 
@@ -3238,6 +3239,21 @@ static bool isCHeaderDecl(const Match& match) {
     return match.decl->getModule() && match.decl->getModule()->isCHeaderImport;
 }
 
+// True when converting source to target adds const qualification, e.g. `int*`
+// to `const int[*]`. Used only to rank overloads that are otherwise tied.
+static bool addsConst(Type source, Type target) {
+    if (target.isOptionalType() || source.isOptionalType()) {
+        return addsConst(source.removeOptional(), target.removeOptional());
+    }
+    if (!target.isPointerType() && !target.isReferenceType() && !target.isArrayPointer()) return false;
+    if (!source.isPointerType() && !source.isReferenceType() && !source.isArrayPointer() && !source.isFixedArray() && !source.isSlice()) {
+        return false;
+    }
+    Type targetElem = (target.isPointerType() || target.isReferenceType()) ? target.getPointee() : target.getElementType();
+    Type sourceElem = (source.isPointerType() || source.isReferenceType()) ? source.getPointee() : source.getElementType();
+    return (!targetElem.isMutable() && sourceElem.isMutable()) || addsConst(sourceElem, targetElem);
+}
+
 static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, const CallExpr& call) {
     // An explicitly imported C header takes precedence over the implicit prelude:
     // importing a header must actually provide its declarations, including for
@@ -3262,6 +3278,9 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
     } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) {
         return match;
     } else if (auto match = findUniqueBorrowPackMatch(matches)) {
+        return match;
+    } else if (auto* match = findUniqueMatch(matches, [](const Match& match) { return match.didAddConst == false; })) {
+        // Adding const discards mutability; prefer the overload that preserves it.
         return match;
     } else {
         return nullptr;
@@ -4055,6 +4074,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
     bool didConvertArguments = false;
     bool didUnwrapOptional = false;
     bool didWrapOptional = false;
+    bool didAddConst = false;
     int userConversionCount = 0;
 
     for (size_t i = 0; i < expr.args.size(); ++i) {
@@ -4089,6 +4109,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
             didUnwrapOptional =
                 didUnwrapOptional || implicitCastKind == ImplicitCastExpr::OptionalUnwrap || implicitCastKind == ImplicitCastExpr::OptionalUnwrapPointer;
             didWrapOptional = didWrapOptional || implicitCastKind == ImplicitCastExpr::OptionalWrap || arg.value->isNullLiteralExpr();
+            didAddConst = didAddConst || addsConst(arg.value->type, param.type);
             if (usesUserConversion) ++userConversionCount;
         } else {
             invalidType = true;
@@ -4098,7 +4119,7 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
         if (invalidType) return ArgumentValidation::invalidType(i);
     }
 
-    return ArgumentValidation::success(didConvertArguments, didUnwrapOptional, didWrapOptional, userConversionCount);
+    return ArgumentValidation::success(didConvertArguments, didUnwrapOptional, didWrapOptional, didAddConst, userConversionCount);
 }
 
 std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params) {
@@ -4109,7 +4130,7 @@ std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDec
     }
     auto result = getArgumentValidationResult(expr, params, isVariadic);
     if (result.error) return std::nullopt;
-    return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional, result.didWrapOptional, result.userConversionCount};
+    return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional, result.didWrapOptional, result.didAddConst, result.userConversionCount};
 }
 
 void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName) {

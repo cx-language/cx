@@ -1,0 +1,52 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+void takeMut(int[*] p) {
+    println(p[0]);
+}
+
+void takeConst(const int[*] p) {
+    println(p[0]);
+}
+
+void takeConstOpt(const int[*]? p) {
+    println(p![0]);
+}
+
+void either(int[*] p) {
+    println("mutable");
+}
+
+void either(const int[*] p) {
+    println("const");
+}
+
+void ptake(int* p) {
+    println("mutable");
+}
+
+void ptake(const int* p) {
+    println("const");
+}
+
+void main() {
+    int w = 4;
+    takeMut(&w); // CHECK:4
+    int x = 5;
+    takeConst(&x); // CHECK-NEXT:5
+    const int y = 6;
+    takeConst(&y); // CHECK-NEXT:6
+    int z = 7;
+    int*? q = &z;
+    takeConstOpt(q); // CHECK-NEXT:7
+    // The overload that preserves mutability wins.
+    either(&x); // CHECK-NEXT:mutable
+    int[2] a = [1, 2];
+    either(a); // CHECK-NEXT:mutable
+    either(&y); // CHECK-NEXT:const
+    int[*] s = a;
+    ptake(s); // CHECK-NEXT:mutable
+    const int[*] cs = a;
+    ptake(cs); // CHECK-NEXT:const
+}
