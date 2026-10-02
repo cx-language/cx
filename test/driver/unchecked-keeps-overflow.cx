@@ -1,0 +1,12 @@
+// RUN: %not %cx run -Werror %s 2>&1 | %FileCheck -match-full-lines %s
+// RUN: %not %cx run -Werror --backend=c %s 2>&1 | %FileCheck -match-full-lines %s
+
+int getLarge() {
+    return 2147483647;
+}
+
+void main() {
+    @noBoundsCheck
+    // CHECK: integer overflow at unchecked-keeps-overflow.cx:[[@LINE+1]]:24
+    println(getLarge() + 1);
+}

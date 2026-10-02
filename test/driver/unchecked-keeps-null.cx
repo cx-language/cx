@@ -1,0 +1,12 @@
+// RUN: %not %cx run -Werror %s 2>&1 | %FileCheck -match-full-lines %s
+// RUN: %not %cx run -Werror --backend=c %s 2>&1 | %FileCheck -match-full-lines %s
+
+int? getNull() {
+    return null;
+}
+
+void main() {
+    @noOverflowCheck
+    // CHECK: Unwrap failed at unchecked-keeps-null.cx:[[@LINE+1]]:22
+    println(getNull()!);
+}

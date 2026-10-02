@@ -1,0 +1,174 @@
+
+int32 _CX1N4main7wrapAddEM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
+    int32* a_0 = alloca int32
+    int32* b_0 = alloca int32
+    store a to a_0
+    store b to b_0
+    int32 a.load = load a_0
+    int32 b.load = load b_0
+    int32 _0 = a.load + b.load
+    return _0
+}
+
+int32 _CX1N4main10getCheckedEM3std5int321_OM3std5int32(Optional<int32> o) {
+    Optional<int32>* o_0 = alloca Optional<int32>
+    store o to o_0
+    Optional<int32> o.load = load o_0
+    int32 _0 = extractvalue o.load, 0
+    bool _1 = _0 == int32 1
+    bool assert.condition = _1 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "Unwrap failed at unchecked.cx:9:13
+")
+    unreachable
+
+assert.success:
+    union { struct { int32 } }* _3 = getelementptr o_0, 1
+    int32* _4 = cast _3 to int32*
+    int32 .load = load _4
+    return .load
+}
+
+int32 _CX1N4main12getUncheckedEM3std5int321_OM3std5int32(Optional<int32> o) {
+    Optional<int32>* o_0 = alloca Optional<int32>
+    store o to o_0
+    union { struct { int32 } }* _0 = getelementptr o_0, 1
+    int32* _1 = cast _0 to int32*
+    int32 .load = load _1
+    return .load
+}
+
+int32 _CX1N4main10everythingEM3std5int323_5ArrayIM3std5int32N3_EM3std5int32OM3std5int32(int32[3] a, int32 i, Optional<int32> o) {
+    int32[3]* a_0 = alloca int32[3]
+    int32* i_0 = alloca int32
+    Optional<int32>* o_0 = alloca Optional<int32>
+    store a to a_0
+    store i to i_0
+    store o to o_0
+    int32 i.load = load i_0
+    int32* _0 = getelementptr a_0, int32 0, i.load
+    int32 .load = load _0
+    union { struct { int32 } }* _1 = getelementptr o_0, 1
+    int32* _2 = cast _1 to int32*
+    int32 .load_0 = load _2
+    int32 _3 = .load + .load_0
+    return _3
+}
+
+int32 _CX1N4main7takeIntEM3std5int321_M3std5int32(int32 x) {
+    int32* x_0 = alloca int32
+    store x to x_0
+    int32 x.load = load x_0
+    return x.load
+}
+
+Optional<int32> _CX1N4main7nullOptEOM3std5int320_() {
+    Optional<int32>* enum = alloca Optional<int32>
+    int32* tag = getelementptr enum, 0
+    store int32 0 to tag
+    Optional<int32> enum.load = load enum
+    return enum.load
+}
+
+int32 main() {
+    int32[3]* a = alloca int32[3]
+    int32* i = alloca int32
+    Optional<int32>* enum = alloca Optional<int32>
+    Optional<int32>* enum_0 = alloca Optional<int32>
+    Optional<int32>* enum_1 = alloca Optional<int32>
+    Optional<int32>* _0 = alloca Optional<int32>
+    int32[3] _1 = insertvalue int32[3] undefined, 0, int32 10
+    int32[3] _2 = insertvalue _1, 1, int32 20
+    int32[3] _3 = insertvalue _2, 2, int32 30
+    store _3 to a
+    int32* tag = getelementptr enum, 0
+    store int32 1 to tag
+    struct { int32 } _4 = insertvalue struct { int32 } undefined, 0, int32 1
+    union { struct { int32 } }* associatedValue = getelementptr enum, 1
+    struct { int32 }* _5 = cast associatedValue to struct { int32 }*
+    store _4 to _5
+    Optional<int32> enum.load = load enum
+    int32 _6 = call _CX1N4main10getCheckedEM3std5int321_OM3std5int32(Optional<int32> enum.load)
+    store _6 to i
+    int32 i.load = load i
+    uint64 _7 = cast i.load to uint64
+    bool _8 = _7 < uint64 3
+    bool bounds.condition = _8 == bool false
+    br bounds.condition, bounds.fail, bounds.success
+
+bounds.fail:
+    never _9 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "index out of bounds at unchecked.cx:33:15
+")
+    unreachable
+
+bounds.success:
+    int32* _10 = getelementptr a, int32 0, i.load
+    int32 .load = load _10
+    void _11 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 .load)
+    int32 i.load_0 = load i
+    int32* _12 = getelementptr a, int32 0, i.load_0
+    int32 .load_0 = load _12
+    void _13 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 .load_0)
+    int32 i.load_1 = load i
+    int32 _14 = call _CX1N4main7wrapAddEM3std5int322_M3std5int32M3std5int32(int32 i.load_1, int32 1)
+    void _15 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _14)
+    int32 i.load_2 = load i
+    int32 _16 = checkedarith + i.load_2, int32 1
+    bool _17 = overflow _16
+    bool _18 = !_17
+    bool overflow.condition = _18 == bool false
+    br overflow.condition, overflow.fail, overflow.success
+
+overflow.fail:
+    never _19 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at unchecked.cx:37:15
+")
+    unreachable
+
+overflow.success:
+    void _20 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _16)
+    int32 i.load_3 = load i
+    int32 _21 = i.load_3 + int32 1
+    void _22 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _21)
+    int32* tag_0 = getelementptr enum_0, 0
+    store int32 1 to tag_0
+    int32 i.load_4 = load i
+    struct { int32 } _23 = insertvalue struct { int32 } undefined, 0, i.load_4
+    union { struct { int32 } }* associatedValue_0 = getelementptr enum_0, 1
+    struct { int32 }* _24 = cast associatedValue_0 to struct { int32 }*
+    store _23 to _24
+    Optional<int32> enum.load_0 = load enum_0
+    int32 _25 = call _CX1N4main12getUncheckedEM3std5int321_OM3std5int32(Optional<int32> enum.load_0)
+    void _26 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _25)
+    int32[3] a.load = load a
+    int32 i.load_5 = load i
+    int32* tag_1 = getelementptr enum_1, 0
+    store int32 1 to tag_1
+    int32 i.load_6 = load i
+    struct { int32 } _27 = insertvalue struct { int32 } undefined, 0, i.load_6
+    union { struct { int32 } }* associatedValue_1 = getelementptr enum_1, 1
+    struct { int32 }* _28 = cast associatedValue_1 to struct { int32 }*
+    store _27 to _28
+    Optional<int32> enum.load_1 = load enum_1
+    int32 _29 = call _CX1N4main10everythingEM3std5int323_5ArrayIM3std5int32N3_EM3std5int32OM3std5int32(int32[3] a.load, int32 i.load_5, Optional<int32> enum.load_1)
+    void _30 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _29)
+    Optional<int32> _31 = call _CX1N4main7nullOptEOM3std5int320_()
+    store _31 to _0
+    union { struct { int32 } }* _32 = getelementptr _0, 1
+    int32* _33 = cast _32 to int32*
+    int32 .load_1 = load _33
+    int32 _34 = call _CX1N4main7takeIntEM3std5int321_M3std5int32(int32 .load_1)
+    void _35 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _34)
+    void _36 = call _CX1N3std10checkLeaksE4void0_()
+    return int32 0
+}
+
+void _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 value) {
+    int32* value_0 = alloca int32
+    store value to value_0
+    int32 value.load = load value_0
+    void _0 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 value.load)
+    void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
+    return void
+}

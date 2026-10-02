@@ -6,6 +6,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 #pragma warning(pop)
 #include "../ast/arena.h"
+#include "../ast/checks.h"
 #include "../ast/type.h"
 #include "lex.h"
 
@@ -185,8 +186,12 @@ private:
     FieldDecl parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool isManuallyDestroy);
     void parsePrivateSpecifier(AccessLevel& accessLevel);
     // Rejects `@test` and `@manuallyDestroy` on a declaration that cannot carry them.
-    void rejectMisplacedDeclAttributes(bool isTest, bool isManuallyDestroy, Location manuallyDestroyLocation,
-                                       const char* testMessage = "only functions can be marked as tests");
+    void rejectMisplacedDeclAttributes(bool isTest, bool isManuallyDestroy, Location manuallyDestroyLocation, DisabledChecks disabledChecks,
+                                       Location checksLocation, const char* testMessage = "only functions can be marked as tests",
+                                       const char* checksMessage = "only functions, statements and expressions can disable safety checks");
+    // Records function-level check attributes, or rejects them on a non-function declaration.
+    void applyFunctionChecks(Decl* decl, DisabledChecks disabledChecks, Location checksLocation);
+    void rejectMisplacedChecks(DisabledChecks disabledChecks, Location checksLocation);
     void rejectGenericStaticConst(const std::vector<GenericParamDecl>* genericParams);
     // Current token is `=`. Parses the initializer and adds a static constant.
     void addParsedStaticConst(TypeDecl& typeDecl, Type type, llvm::StringRef name, Location location, AccessLevel accessLevel);
@@ -212,7 +217,8 @@ private:
     // token or reports EOF, so recovery loops terminate.
     bool skipToRecoveryPoint(llvm::ArrayRef<Token::Kind> endTokens, bool consumeClosingBrace);
     Decl* parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel, bool cppLinkage = false);
-    void parseAttributes(bool& isTest, Location& testLocation, bool& isManuallyDestroy, Location& manuallyDestroyLocation);
+    void parseAttributes(bool& isTest, Location& testLocation, bool& isManuallyDestroy, Location& manuallyDestroyLocation, DisabledChecks& disabledChecks,
+                         Location& checksLocation);
     [[noreturn]] void errorMisplacedManuallyDestroy(Location location);
 
 private:

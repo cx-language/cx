@@ -1,0 +1,57 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+@noOverflowCheck
+int wrapAdd(int a, int b) {
+    return a + b;
+}
+
+@unchecked
+int wrapTriple(int a, int b, int c) {
+    return a + b + c;
+}
+
+@noOverflowCheck
+int vsum<T>(T... args) {
+    var total = 0;
+    for arg in args {
+        total += arg;
+    }
+    return total;
+}
+
+void main() {
+    // Function-level: overflow wraps instead of aborting.
+    println(wrapAdd(2147483647, 1)); // CHECK:-2147483648
+    println(wrapTriple(2147483647, 1, 1)); // CHECK-NEXT:-2147483647
+
+    var x = 2147483647;
+    // Statement-level.
+    @noOverflowCheck
+    var y = x + 1;
+    println(y); // CHECK-NEXT:-2147483648
+    // Expression-level covers the whole following expression.
+    var z = @noOverflowCheck x + 1 + 1;
+    println(z); // CHECK-NEXT:-2147483647
+    // Blocks scope the mask to their body.
+    @unchecked {
+        var w = x + 1;
+        println(w); // CHECK-NEXT:-2147483648
+    }
+    // Calls never inherit the caller's mask, and vice versa.
+    println(wrapAdd(x, 2)); // CHECK-NEXT:-2147483647
+    // Variadic instantiations keep the mask.
+    println(vsum(2147483647, 1)); // CHECK-NEXT:-2147483648
+    // Expression masks survive the compound-assignment rewrite.
+    var t = 2147483647;
+    (@noOverflowCheck t += 1);
+    println(t); // CHECK-NEXT:-2147483648
+    // A `(` after the attribute starts a parenthesized expression.
+    var q = @noOverflowCheck (x + 1);
+    println(q); // CHECK-NEXT:-2147483648
+    // The mask travels with deferred expressions to scope exit.
+    var d = 2147483647;
+    @noOverflowCheck
+    defer println(d + 1); // CHECK-NEXT:-2147483648
+}

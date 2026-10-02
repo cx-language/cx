@@ -102,6 +102,8 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
 }
 
 void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function) {
+    // Each function starts from its own mask; calls never inherit the caller's.
+    llvm::SaveAndRestore saveChecks(disabledChecks, decl.disabledChecks);
     currentFunction = &function;
     setInsertPoint(new BasicBlock("", &function));
     beginScope();

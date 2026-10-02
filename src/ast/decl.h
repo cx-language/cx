@@ -239,6 +239,8 @@ struct FunctionDecl : Decl {
     bool isPackInstantiation = false;
     // Set by the `test` marker; collected and run by `cx test`.
     bool isTest = false;
+    // Safety checks disabled for this function body by `@unchecked`-family attributes.
+    DisabledChecks disabledChecks = DisabledChecks::None;
     // Set by the `implicit` marker on single-parameter constructors and
     // parameterless member functions; enables implicit conversions.
     bool isImplicit = false;

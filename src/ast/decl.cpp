@@ -239,6 +239,7 @@ FunctionDecl* FunctionTemplate::instantiateVariadic(const llvm::StringMap<Generi
         instantiation->body = unrollPackLoops(clonedBody, packName, expandedNames, instantiation, *instantiation->getModule(), false);
     }
     instantiation->isPackInstantiation = true;
+    instantiation->disabledChecks = functionDecl->disabledChecks;
     return instantiations.emplace(std::move(cacheKey), instantiation).first->second;
 }
 
@@ -287,6 +288,7 @@ FunctionDecl* FunctionDecl::instantiate(const llvm::StringMap<GenericArg>& gener
         auto proto = this->proto.instantiate(genericArgs);
         auto instantiation = makeAST<FunctionDecl>(std::move(proto), genericArgsArray, accessLevel, module, location);
         instantiation->body = ::instantiate(*body, genericArgs);
+        instantiation->disabledChecks = disabledChecks;
         return instantiation;
     }
 }
@@ -320,6 +322,7 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<GenericArg>& genericAr
         auto proto = methodDecl->proto.instantiate(genericArgs);
         auto instantiation = makeAST<MethodDecl>(std::move(proto), typeDecl, genericArgsArray, accessLevel, methodDecl->getLocation());
         instantiation->isImplicit = methodDecl->isImplicit;
+        instantiation->disabledChecks = methodDecl->disabledChecks;
         if (methodDecl->body) {
             instantiation->body = ::instantiate(*methodDecl->body, genericArgs);
         }
@@ -330,6 +333,7 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<GenericArg>& genericAr
         auto params = instantiateParams(constructorDecl->getParams(), genericArgs);
         auto instantiation = makeAST<ConstructorDecl>(typeDecl, std::move(params), accessLevel, constructorDecl->getLocation());
         instantiation->isImplicit = constructorDecl->isImplicit;
+        instantiation->disabledChecks = constructorDecl->disabledChecks;
         instantiation->body = ::instantiate(*constructorDecl->body, genericArgs);
         return instantiation;
     }
@@ -337,6 +341,7 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<GenericArg>& genericAr
         auto* destructorDecl = llvm::cast<DestructorDecl>(this);
         auto instantiation = makeAST<DestructorDecl>(typeDecl, destructorDecl->getLocation());
         instantiation->body = ::instantiate(*destructorDecl->body, genericArgs);
+        instantiation->disabledChecks = destructorDecl->disabledChecks;
         return instantiation;
     }
     default:

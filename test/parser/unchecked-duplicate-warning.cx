@@ -1,0 +1,11 @@
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+
+@noOverflowCheck
+// CHECK: [[@LINE+1]]:1: warning: duplicate '@noOverflowCheck' attribute
+@noOverflowCheck
+void f() {
+}
+
+void main() {
+    f();
+}

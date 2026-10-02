@@ -1,0 +1,42 @@
+// RUN: check-snapshots
+
+@noOverflowCheck
+int wrapAdd(int a, int b) {
+    return a + b;
+}
+
+int getChecked(int? o) {
+    return o!;
+}
+
+@noNullCheck
+int getUnchecked(int? o) {
+    return o!;
+}
+
+@unchecked
+int everything(int[3] a, int i, int? o) {
+    return a[i] + o!;
+}
+
+int takeInt(int x) {
+    return x;
+}
+
+int? nullOpt() {
+    return null;
+}
+
+void main() {
+    int[3] a = [10, 20, 30];
+    var i = getChecked(1);
+    println(a[i]);
+    @noBoundsCheck
+    println(a[i]);
+    println(wrapAdd(i, 1));
+    println(i + 1);
+    println(@noOverflowCheck i + 1);
+    println(getUnchecked(i));
+    println(everything(a, i, i));
+    println(takeInt(@noNullCheck nullOpt()));
+}

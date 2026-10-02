@@ -43,7 +43,14 @@ struct IRGenScope {
         Value* guard = nullptr;
     };
 
-    llvm::SmallVector<const Expr*, 8> deferredExprs;
+    struct DeferredExpr {
+        const Expr* expr;
+        // Check mask at the `defer` statement, re-applied when the
+        // expression is emitted at scope exit.
+        DisabledChecks disabledChecks;
+    };
+
+    llvm::SmallVector<DeferredExpr, 8> deferredExprs;
     llvm::SmallVector<DeferredDestructor, 8> destructorsToCall;
     llvm::DenseMap<const Decl*, Value*> valuesByDecl;
     IRGenerator* irGenerator;
@@ -343,6 +350,9 @@ struct IRGenerator {
     // True while emitting a global variable initializer, which must be a pure constant: string
     // literals and optional values take constant construction paths instead of emitting calls.
     bool emittingGlobalInitializer = false;
+    // Safety checks disabled by `@unchecked`-family attributes on the enclosing function,
+    // statement, or expression. Each level ORs its mask in while emitting its subtree.
+    DisabledChecks disabledChecks = DisabledChecks::None;
     static const int optionalTagFieldIndex = 0;
     static const int optionalPayloadFieldIndex = 1;
     static int64_t getOptionalSomeTag();

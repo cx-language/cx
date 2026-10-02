@@ -1,6 +1,7 @@
 #include "irgen.h"
 #include "../ast/module.h"
 #include "../driver/driver.h"
+#include <llvm/Support/SaveAndRestore.h>
 
 using namespace cx;
 
@@ -350,6 +351,7 @@ void IRGenerator::emitCompoundStmt(const CompoundStmt& compoundStmt) {
 }
 
 void IRGenerator::emitStmt(const Stmt& stmt) {
+    llvm::SaveAndRestore saveChecks(disabledChecks, disabledChecks | stmt.disabledChecks);
     beginTempScope();
     switch (stmt.kind) {
     case StmtKind::ReturnStmt:

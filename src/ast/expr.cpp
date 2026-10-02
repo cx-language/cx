@@ -469,6 +469,12 @@ bool Expr::isLvalue() const {
 }
 
 Expr* Expr::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
+    Expr* result = instantiateImpl(genericArgs);
+    result->disabledChecks = disabledChecks;
+    return result;
+}
+
+Expr* Expr::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) const {
     switch (kind) {
     case ExprKind::VarExpr: {
         auto* varExpr = llvm::cast<VarExpr>(this);

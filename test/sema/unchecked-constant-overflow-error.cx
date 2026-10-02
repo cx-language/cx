@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// Attributes silence runtime checks only; constant overflow still errors.
+void main() {
+    // CHECK: [[@LINE+1]]:30: error: 2147483648 is out of range for type 'int'
+    var x = @noOverflowCheck 2147483647 + 1;
+}

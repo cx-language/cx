@@ -604,7 +604,9 @@ Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
 void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool positive) {
     Type originalType = expr->type;
     if (originalType.isReferenceType()) {
-        expr = makeAST<ImplicitCastExpr>(expr, originalType.getPointee(), ImplicitCastExpr::AutoDereference);
+        auto* dereferenced = makeAST<ImplicitCastExpr>(expr, originalType.getPointee(), ImplicitCastExpr::AutoDereference);
+        dereferenced->disabledChecks = expr->disabledChecks;
+        expr = dereferenced;
     }
 
     Type type = expr->type;
@@ -926,6 +928,7 @@ ComparisonTemps Typechecker::createComparisonTemps(BinaryExpr& expr) {
 Type Typechecker::finishComparisonLowering(BinaryExpr& expr, Expr* result, VarDecl* lhsTemp, VarDecl* rhsTemp) {
     result->endLocation = expr.endLocation;
     if (!currentFunction) {
+        result->disabledChecks = expr.disabledChecks;
         expr = llvm::cast<BinaryExpr>(*result);
         return typecheckBinaryExpr(expr);
     }
@@ -1035,10 +1038,13 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (isCompoundAssignmentOperator(op)) {
         Location endLocation = expr.endLocation;
+        DisabledChecks disabledChecks = expr.disabledChecks;
         auto rhs = makeAST<BinaryExpr>(withoutCompoundEqSuffix(op), &expr.getLHS(), &expr.getRHS(), expr.location);
         rhs->endLocation = endLocation;
+        rhs->disabledChecks = disabledChecks;
         expr = BinaryExpr(Token::Assignment, &expr.getLHS(), rhs, expr.location);
         expr.endLocation = endLocation;
+        expr.disabledChecks = disabledChecks;
         return typecheckBinaryExpr(expr);
     }
 
@@ -1621,10 +1627,13 @@ Expr* Typechecker::convertWithUserConversion(Expr* expr, Type target, bool diagn
             }
         }
         markReferenced(conversion);
-        return makeAST<ImplicitCastExpr>(operand, target, ImplicitCastExpr::UserConversion, conversion);
+        auto* cast = makeAST<ImplicitCastExpr>(operand, target, ImplicitCastExpr::UserConversion, conversion);
+        cast->disabledChecks = operand->disabledChecks;
+        return cast;
     }
     markReferenced(conversion);
     auto* call = makeAST<ImplicitCastExpr>(operand, conversion->getReturnType(), ImplicitCastExpr::UserConversion, conversion);
+    call->disabledChecks = operand->disabledChecks;
     return convert(call, target, /*allowPointerToTemporary=*/false, diagnoseOutOfRange, allowOperatorBorrow, /*allowUserConversion=*/false);
 }
 
@@ -1636,7 +1645,9 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
     if (type.isReferenceType() && type.isPointeeConst() && !(expr->type == type.getPointee()) && !isNarrowedOptionalUse(expr, type.getPointee())) {
         if (Expr* converted =
                 convert(expr, type.getPointee(), /*allowPointerToTemporary=*/true, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion)) {
-            return makeAST<ImplicitCastExpr>(converted, type, ImplicitCastExpr::AutoReference);
+            auto* reference = makeAST<ImplicitCastExpr>(converted, type, ImplicitCastExpr::AutoReference);
+            reference->disabledChecks = converted->disabledChecks;
+            return reference;
         }
     }
     // Array borrows decay to views without copying: dereferencing first
@@ -1648,6 +1659,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
         expr->type.isReferenceType() && expr->type.getPointee().isConcreteArray() && (unwrappedTarget.isArrayPointer() || unwrappedTarget.isSlice());
     if (expr->type.isReferenceType() && expr->type.getPointee().isImplicitlyCopyable() && !unwrappedTarget.isPointerType() && !decaysToView) {
         auto* dereferenced = makeAST<ImplicitCastExpr>(expr, expr->type.getPointee(), ImplicitCastExpr::AutoDereference);
+        dereferenced->disabledChecks = expr->disabledChecks;
         return convert(dereferenced, type, allowPointerToTemporary, diagnoseOutOfRange, allowOperatorBorrow, allowUserConversion);
     }
 
@@ -1667,6 +1679,9 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary, 
             }
             if (*implicitCastKind == ImplicitCastExpr::OptionalUnwrap) implicitUses.unwrap = true;
             auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
+            // The wrapper inherits the operand's mask, so e.g. an implicit
+            // unwrap of an attributed operand skips its check like an explicit `!` would.
+            cast->disabledChecks = expr->disabledChecks;
             if (*implicitCastKind == ImplicitCastExpr::AutoReference && expr->hasAssignableType() && expr->assignableType.isOptionalType()
                 && !expr->assignableType.getWrappedType().isImplementedAsPointer() && expr->type == expr->assignableType.getWrappedType()
                 && !isNarrowedOptionalUse(expr, type.getPointee())) {

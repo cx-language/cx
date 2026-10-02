@@ -31,6 +31,12 @@ bool Stmt::isContinuable() const {
 }
 
 Stmt* Stmt::instantiate(const llvm::StringMap<GenericArg>& genericArgs) const {
+    Stmt* result = instantiateImpl(genericArgs);
+    result->disabledChecks = disabledChecks;
+    return result;
+}
+
+Stmt* Stmt::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) const {
     switch (kind) {
     case StmtKind::ReturnStmt: {
         auto* returnStmt = llvm::cast<ReturnStmt>(this);

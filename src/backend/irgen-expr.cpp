@@ -146,24 +146,25 @@ Value* IRGenerator::emitOptionalPayloadPtr(Value* enumPtr, Type wrappedType) {
 Value* IRGenerator::emitOptionalUnwrap(const Expr& operand, const Expr& expr, const llvm::Twine& name) {
     auto* value = emitLvalueExpr(operand);
     llvm::StringRef message = "Unwrap failed";
+    bool checkNull = !disablesCheck(disabledChecks, DisabledChecks::Null);
 
     // An lvalue operand addresses the optional storage, so the unwrap addresses the payload:
     // address users (assignment, indexing) write through to it, while value users load through
     // the returned pointer exactly as before.
     if (value->getType()->isPointerType() && value->getType()->getPointee()->equals(getIRType(operand.type))) {
         if (operand.type.isImplementedAsPointer()) {
-            emitAssert(createLoad(value), &expr, expr.location, message, name);
+            if (checkNull) emitAssert(createLoad(value), &expr, expr.location, message, name);
             return value;
         }
-        emitAssert(emitOptionalHasValueTest(createLoad(value)), &expr, expr.location, message, name);
+        if (checkNull) emitAssert(emitOptionalHasValueTest(createLoad(value)), &expr, expr.location, message, name);
         return emitOptionalPayloadPtr(value, operand.type.getWrappedType());
     }
 
     if (operand.type.isImplementedAsPointer()) {
-        emitAssert(value, &expr, expr.location, message, name);
+        if (checkNull) emitAssert(value, &expr, expr.location, message, name);
         return value;
     } else {
-        emitAssert(emitOptionalHasValueTest(value), &expr, expr.location, message, name);
+        if (checkNull) emitAssert(emitOptionalHasValueTest(value), &expr, expr.location, message, name);
         if (!value->getType()->isPointerType()) value = createTempAlloca(value);
         return createLoad(emitOptionalPayloadPtr(value, operand.type.getWrappedType()));
     }
@@ -275,7 +276,8 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
         auto* type = operand->getType();
         // Global initializers can't contain the trap's control flow; they only
         // ever negate constant expressions (such as enum tags) anyway, so emit it plain.
-        if (!emittingGlobalInitializer && options.mode != BuildMode::ReleaseFast && (type->isInteger() || type->isChar())) {
+        if (!emittingGlobalInitializer && options.mode != BuildMode::ReleaseFast && !disablesCheck(disabledChecks, DisabledChecks::Overflow)
+            && (type->isInteger() || type->isChar())) {
             // Checked negation is 0 - x: it traps on MIN, and on any nonzero unsigned operand.
             return emitCheckedArithmetic(Token::Minus, createConstantInt(type, 0), operand, expr);
         }
@@ -853,7 +855,8 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
         // Global initializers can't contain the trap's control flow; like unary
         // minus above, emit the operation plain there.
         if (!emittingGlobalInitializer && (expr.op == Token::Plus || expr.op == Token::Minus || expr.op == Token::Star)
-            && options.mode != BuildMode::ReleaseFast && (left->getType()->isInteger() || left->getType()->isChar())) {
+            && options.mode != BuildMode::ReleaseFast && !disablesCheck(disabledChecks, DisabledChecks::Overflow)
+            && (left->getType()->isInteger() || left->getType()->isChar())) {
             return emitCheckedArithmetic(expr.op, left, right, expr);
         }
         return createBinaryOp(expr.op, left, right, &expr);
@@ -1411,7 +1414,7 @@ Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
         Type arrayType = base.type.removeOptional().removePointer();
         if (arrayType.isConcreteArray()) {
             auto* enclosingFunction = llvm::dyn_cast_or_null<FunctionDecl>(currentDecl);
-            if (assertsEnabled(options.mode, enclosingFunction && enclosingFunction->isTest)) {
+            if (assertsEnabled(options.mode, enclosingFunction && enclosingFunction->isTest) && !disablesCheck(disabledChecks, DisabledChecks::Bounds)) {
                 // A single unsigned comparison catches negative indices too: they wrap to huge values.
                 auto* wideIndex = createCastIfNeeded(indexValue, Type::getUInt64());
                 auto* size = createConstantInt(Type::getUInt64(), arrayType.getArraySize());
@@ -1697,6 +1700,7 @@ Value* IRGenerator::emitUserConversion(const ImplicitCastExpr& expr, AllocaInst*
 }
 
 Value* IRGenerator::emitPlainExpr(const Expr& expr) {
+    llvm::SaveAndRestore saveChecks(disabledChecks, disabledChecks | expr.disabledChecks);
     // Cyclic constants can leave expressions untyped; don't fold those.
     if (expr.hasType() && expr.type.isInteger() && expr.isFoldableIntConstant()) {
         return createConstantInt(expr.type, expr.getConstantIntegerValue());
@@ -1754,6 +1758,8 @@ Value* IRGenerator::emitPlainExpr(const Expr& expr) {
 }
 
 Value* IRGenerator::emitExpr(const Expr& expr) {
+    // No mask push: emitLvalueExpr below applies this expression's mask, and
+    // the trailing load emits no checks.
     auto* value = emitLvalueExpr(expr);
 
     if (value && value->getType()->isPointerType() && value->getType()->getPointee()->equals(getIRType(expr.type))) {
@@ -1804,6 +1810,7 @@ Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
 }
 
 Value* IRGenerator::emitLvalueExpr(const Expr& expr) {
+    llvm::SaveAndRestore saveChecks(disabledChecks, disabledChecks | expr.disabledChecks);
     auto value = emitPlainExpr(expr);
 
     // Handle optionals that have been implicitly unwrapped due to data-flow analysis.

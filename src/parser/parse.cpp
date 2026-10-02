@@ -1205,6 +1205,20 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
 
 /// expr ::= prefix-expr | postfix-expr | binary-expr | if-expr
 Expr* Parser::parseExpr() {
+    if (currentToken() == Token::At) {
+        bool isTest = false;
+        Location testLocation;
+        bool isManuallyDestroy = false;
+        Location manuallyDestroyLocation;
+        DisabledChecks disabledChecks = DisabledChecks::None;
+        Location checksLocation;
+        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
+        if (isTest) ERROR_RANGE(testLocation, getIdentifierEndLocation(testLocation, "@test"), "only functions can be marked as tests");
+        if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+        Expr* expr = parseExpr();
+        expr->disabledChecks = disabledChecks;
+        return expr;
+    }
     return parseBinaryExpr(0);
 }
 
@@ -1645,7 +1659,7 @@ ContinueStmt* Parser::parseContinueStmt() {
     return makeAST<ContinueStmt>(location);
 }
 
-/// stmt ::= var-stmt | '@manuallyDestroy' var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
+/// stmt ::= '@attribute' stmt | var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
 ///          while-stmt | do-while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt | block
 Stmt* Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
@@ -1654,13 +1668,21 @@ Stmt* Parser::parseStmt(Decl* parent) {
         Location testLocation;
         bool isManuallyDestroy = false;
         Location manuallyDestroyLocation;
-        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
+        DisabledChecks disabledChecks = DisabledChecks::None;
+        Location checksLocation;
+        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         if (isTest) ERROR_RANGE(testLocation, getIdentifierEndLocation(testLocation, "@test"), "only functions can be marked as tests");
-        // The attribute covers every name in the declaration (`T a = ..., b = ...`).
-        if (!isManuallyDestroy || !shouldParseVarStmt()) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
-        auto* stmt = parseVarStmt(parent);
-        for (auto* decl : stmt->decls)
-            decl->isManuallyDestroy = true;
+        if (isManuallyDestroy) {
+            // The attribute covers every name in the declaration (`T a = ..., b = ...`).
+            if (!shouldParseVarStmt()) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+            auto* stmt = parseVarStmt(parent);
+            for (auto* decl : stmt->decls)
+                decl->isManuallyDestroy = true;
+            stmt->disabledChecks = disabledChecks;
+            return stmt;
+        }
+        auto* stmt = parseStmt(parent);
+        stmt->disabledChecks = disabledChecks;
         return stmt;
     }
     case Token::LeftBrace:
@@ -1992,9 +2014,34 @@ void Parser::parsePrivateSpecifier(AccessLevel& accessLevel) {
     consumeToken();
 }
 
-void Parser::rejectMisplacedDeclAttributes(bool isTest, bool isManuallyDestroy, Location manuallyDestroyLocation, const char* testMessage) {
+void Parser::rejectMisplacedDeclAttributes(bool isTest, bool isManuallyDestroy, Location manuallyDestroyLocation, DisabledChecks disabledChecks,
+                                           Location checksLocation, const char* testMessage, const char* checksMessage) {
     if (isTest) ERROR_CURRENT_TOKEN(testMessage);
     if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+    if (disabledChecks != DisabledChecks::None) ERROR(checksLocation, checksMessage);
+}
+
+void Parser::rejectMisplacedChecks(DisabledChecks disabledChecks, Location checksLocation) {
+    if (disabledChecks != DisabledChecks::None) {
+        ERROR(checksLocation, "only functions, statements and expressions can disable safety checks");
+    }
+}
+
+void Parser::applyFunctionChecks(Decl* decl, DisabledChecks disabledChecks, Location checksLocation) {
+    if (disabledChecks == DisabledChecks::None) return;
+    FunctionDecl* functionDecl = nullptr;
+    if (auto* function = llvm::dyn_cast<FunctionDecl>(decl)) {
+        functionDecl = function;
+    } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
+        functionDecl = functionTemplate->functionDecl;
+    } else {
+        rejectMisplacedChecks(disabledChecks, checksLocation);
+        return;
+    }
+    if (!functionDecl->body) {
+        ERROR(checksLocation, "only functions with bodies can disable safety checks");
+    }
+    functionDecl->disabledChecks = disabledChecks;
 }
 
 void Parser::rejectGenericStaticConst(const std::vector<GenericParamDecl>* genericParams) {
@@ -2054,6 +2101,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
         Location testLocation;
         bool isManuallyDestroy = false;
         Location manuallyDestroyLocation;
+        DisabledChecks disabledChecks = DisabledChecks::None;
+        Location checksLocation;
 
     start:
         switch (currentToken()) {
@@ -2064,7 +2113,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             parsePrivateSpecifier(accessLevel);
             goto start;
         case Token::At: {
-            parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
+            parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
             if (isTest) ERROR_RANGE(testLocation, getIdentifierEndLocation(testLocation, "@test"), "only top-level functions can be marked as tests");
             goto start;
         }
@@ -2079,7 +2128,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             implicitLocation = getCurrentLocation();
             consumeToken();
             goto start;
-        case Token::Tilde:
+        case Token::Tilde: {
             if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
             if (isImplicit) {
                 ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), implicitMemberOnly);
@@ -2087,13 +2136,18 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             if (accessLevel != AccessLevel::Default) {
                 WARN_RANGE(lookAhead(-1).location, getLastTokenEndLocation(), "destructors cannot be " << accessLevel);
             }
-            typeDecl->addMethod(parseDestructorDecl(*typeDecl));
+            auto* destructorDecl = parseDestructorDecl(*typeDecl);
+            applyFunctionChecks(destructorDecl, disabledChecks, checksLocation);
+            typeDecl->addMethod(destructorDecl);
             break;
+        }
         case Token::Identifier:
             if (lookAhead(1) == Token::LeftParen && currentToken().getString() == typeName.getString()) {
                 if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
                 if (tag == TypeTag::Union) ERROR_CURRENT_TOKEN("unions cannot declare constructors; declare a value and assign its members");
-                typeDecl->addMethod(parseConstructorDecl(*typeDecl, accessLevel, isImplicit));
+                auto* constructorDecl = parseConstructorDecl(*typeDecl, accessLevel, isImplicit);
+                applyFunctionChecks(constructorDecl, disabledChecks, checksLocation);
+                typeDecl->addMethod(constructorDecl);
                 hasConstructor = true;
                 break;
             }
@@ -2104,6 +2158,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 if (isImplicit) {
                     ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), implicitMemberOnly);
                 }
+                rejectMisplacedChecks(disabledChecks, checksLocation);
                 parseKeywordStaticConst(*typeDecl, accessLevel, genericParams);
                 break;
             }
@@ -2118,18 +2173,24 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             if (currentToken() != Token::Assignment) rejectBareConstType(type, sawBareConst);
 
             switch (currentToken()) {
-            case Token::LeftParen:
+            case Token::LeftParen: {
                 if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
-                typeDecl->addMethod(parseFunctionDecl(typeDecl, accessLevel, requireBody, type, name, location, isImplicit));
+                auto* methodDecl = parseFunctionDecl(typeDecl, accessLevel, requireBody, type, name, location, isImplicit);
+                applyFunctionChecks(methodDecl, disabledChecks, checksLocation);
+                typeDecl->addMethod(methodDecl);
                 break;
-            case Token::Less:
+            }
+            case Token::Less: {
                 if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
                 if (isImplicit) {
                     ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), "implicit conversions cannot be generic");
                 }
                 reparseGenericReturnType(type, location, name, returnTypeIndex, &*typeDecl);
-                typeDecl->addMethod(parseFunctionTemplate(typeDecl, accessLevel, type, name, location));
+                auto* functionTemplate = parseFunctionTemplate(typeDecl, accessLevel, type, name, location);
+                applyFunctionChecks(functionTemplate, disabledChecks, checksLocation);
+                typeDecl->addMethod(functionTemplate);
                 break;
+            }
             default:
                 if (isImplicit) {
                     ERROR_RANGE(implicitLocation, getIdentifierEndLocation(implicitLocation, "implicit"), implicitMemberOnly);
@@ -2137,11 +2198,13 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 // A const-qualified member with an initializer is a static constant.
                 if (currentToken() == Token::Assignment && sawBareConst) {
                     if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+                    rejectMisplacedChecks(disabledChecks, checksLocation);
                     rejectGenericStaticConst(genericParams);
                     addParsedStaticConst(*typeDecl, type, name, location, accessLevel);
                     break;
                 }
                 if (isManuallyDestroy && tag != TypeTag::Struct && tag != TypeTag::Union) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
+                rejectMisplacedChecks(disabledChecks, checksLocation);
                 typeDecl->addField(parseFieldDecl(*typeDecl, accessLevel, type, name, location, isManuallyDestroy));
                 break;
             }
@@ -2189,11 +2252,13 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
         Location testLocation;
         bool isManuallyDestroy = false;
         Location manuallyDestroyLocation;
-        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
+        DisabledChecks disabledChecks = DisabledChecks::None;
+        Location checksLocation;
+        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         while (currentToken() == Token::Private) {
             parsePrivateSpecifier(accessLevel);
         }
-        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
+        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         if (isTest) ERROR_RANGE(testLocation, getIdentifierEndLocation(testLocation, "@test"), "only top-level functions can be marked as tests");
         if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
         if (currentToken() == Token::Implicit) {
@@ -2202,6 +2267,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
         // A `const` name followed by `=` declares a constant scoped under the enum name.
         if (currentToken() == Token::Const && lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Assignment) {
+            rejectMisplacedChecks(disabledChecks, checksLocation);
             parseKeywordStaticConst(*enumDecl, accessLevel, genericParams);
             continue;
         }
@@ -2213,6 +2279,7 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             if (accessLevel != AccessLevel::Default) {
                 WARN_CURRENT_TOKEN("enum cases cannot be private");
             }
+            rejectMisplacedChecks(disabledChecks, checksLocation);
             auto caseName = parse(Token::Identifier);
             Type associatedType;
 
@@ -2243,18 +2310,25 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
             // A const-qualified member with an initializer is a static constant.
             if (currentToken() == Token::Assignment && sawBareConst) {
                 rejectGenericStaticConst(genericParams);
+                rejectMisplacedChecks(disabledChecks, checksLocation);
                 addParsedStaticConst(*enumDecl, type, methodName, location, accessLevel);
                 continue;
             }
 
             switch (currentToken()) {
-            case Token::LeftParen:
-                enumDecl->addMethod(parseFunctionDecl(enumDecl, accessLevel, /*requireBody=*/true, type, methodName, location));
+            case Token::LeftParen: {
+                auto* methodDecl = parseFunctionDecl(enumDecl, accessLevel, /*requireBody=*/true, type, methodName, location);
+                applyFunctionChecks(methodDecl, disabledChecks, checksLocation);
+                enumDecl->addMethod(methodDecl);
                 break;
-            case Token::Less:
+            }
+            case Token::Less: {
                 reparseGenericReturnType(type, location, methodName, returnTypeIndex, enumDecl);
-                enumDecl->addMethod(parseFunctionTemplate(enumDecl, accessLevel, type, methodName, location));
+                auto* functionTemplate = parseFunctionTemplate(enumDecl, accessLevel, type, methodName, location);
+                applyFunctionChecks(functionTemplate, disabledChecks, checksLocation);
+                enumDecl->addMethod(functionTemplate);
                 break;
+            }
             default:
                 ERROR_RANGE(location, getIdentifierEndLocation(location, methodName), "enums cannot have fields");
                 break;
@@ -2368,19 +2442,31 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
                 "only struct and union fields and local variables can be marked as '@manuallyDestroy'");
 }
 
-/// Parses leading `@attribute`s. Only `@test` and `@manuallyDestroy` exist;
-/// anything else is rejected here. Records the first location of each for
-/// misplacement errors.
+/// Parses leading `@attribute`s. Only `@test`, `@manuallyDestroy` and the
+/// `@unchecked`-family safety-check attributes exist; anything else is
+/// rejected here. Records the first location of each for misplacement errors.
 /// @throws CompileError
-void Parser::parseAttributes(bool& isTest, Location& testLocation, bool& isManuallyDestroy, Location& manuallyDestroyLocation) {
+void Parser::parseAttributes(bool& isTest, Location& testLocation, bool& isManuallyDestroy, Location& manuallyDestroyLocation, DisabledChecks& disabledChecks,
+                             Location& checksLocation) {
     while (currentToken() == Token::At) {
         auto atLocation = getCurrentLocation();
         consumeToken();
         auto name = parse(Token::Identifier, "after '@'");
-        if (name.getString() != "test" && name.getString() != "manuallyDestroy") {
+        DisabledChecks check = DisabledChecks::None;
+        if (name.getString() == "unchecked") {
+            check = allDisabledChecks;
+        } else if (name.getString() == "noOverflowCheck") {
+            check = DisabledChecks::Overflow;
+        } else if (name.getString() == "noBoundsCheck") {
+            check = DisabledChecks::Bounds;
+        } else if (name.getString() == "noNullCheck") {
+            check = DisabledChecks::Null;
+        } else if (name.getString() != "test" && name.getString() != "manuallyDestroy") {
             ERROR_RANGE(name.location, getTokenEndLocation(name), "unknown attribute '" << name.getString() << "'");
         }
-        if (currentToken() == Token::LeftParen) ERROR_CURRENT_TOKEN("attributes do not take arguments");
+        // A `(` after a check attribute starts the following parenthesized
+        // expression or statement; only `@test` and `@manuallyDestroy` reject it.
+        if (currentToken() == Token::LeftParen && check == DisabledChecks::None) ERROR_CURRENT_TOKEN("attributes do not take arguments");
         auto record = [&](bool& seen, Location& seenLocation, llvm::StringRef spelling) {
             if (seen) {
                 WARN_RANGE(atLocation, getIdentifierEndLocation(atLocation, spelling), "duplicate '" << spelling << "' attribute");
@@ -2391,8 +2477,15 @@ void Parser::parseAttributes(bool& isTest, Location& testLocation, bool& isManua
         };
         if (name.getString() == "test") {
             record(isTest, testLocation, "@test");
-        } else {
+        } else if (name.getString() == "manuallyDestroy") {
             record(isManuallyDestroy, manuallyDestroyLocation, "@manuallyDestroy");
+        } else {
+            DisabledChecks before = disabledChecks;
+            if (before == DisabledChecks::None) checksLocation = atLocation;
+            disabledChecks |= check;
+            if (disabledChecks == before) {
+                WARN_RANGE(atLocation, getTokenEndLocation(name), "duplicate '@" << name.getString() << "' attribute");
+            }
         }
     }
 }
@@ -2405,6 +2498,8 @@ Decl* Parser::parseTopLevelDecl(bool addToSymbolTable) {
     Location testLocation;
     bool isManuallyDestroy = false;
     Location manuallyDestroyLocation;
+    DisabledChecks disabledChecks = DisabledChecks::None;
+    Location checksLocation;
     Decl* decl = nullptr;
 
 start:
@@ -2413,12 +2508,13 @@ start:
         parsePrivateSpecifier(accessLevel);
         goto start;
     case Token::At:
-        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation);
+        parseAttributes(isTest, testLocation, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         goto start;
     case Token::Implicit:
         ERROR_CURRENT_TOKEN(implicitMemberOnly);
     case Token::Extern:
-        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, "test functions must have a body");
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation, "test functions must have a body",
+                                      "only functions with bodies can disable safety checks");
         consumeToken();
         if (currentToken() == Token::StringLiteral) {
             auto linkage = currentToken().getString().drop_back().drop_front();
@@ -2432,7 +2528,7 @@ start:
     case Token::Struct:
     case Token::Union:
     case Token::Interface:
-        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         if (lookAhead(2) == Token::Less) {
             decl = parseTypeTemplate(accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
@@ -2442,7 +2538,7 @@ start:
         }
         break;
     case Token::Enum:
-        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         if (lookAhead(2) == Token::Less) {
             decl = parseEnumTemplate(accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
@@ -2452,13 +2548,13 @@ start:
         }
         break;
     case Token::Using:
-        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         decl = parseTypeAliasDecl(accessLevel);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeAliasDecl>(*decl));
         break;
     case Token::Var:
     case Token::Const:
-        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         // Determine if this is a constant declaration or if the const is part of a type.
         // `const var` goes to parseVarDecl for the dedicated error, never a function type.
         if (currentToken() == Token::Const && lookAhead(1) != Token::Var && lookAhead(2) != Token::Assignment) {
@@ -2468,7 +2564,7 @@ start:
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
         break;
     case Token::Import:
-        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation);
+        rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         if (accessLevel != AccessLevel::Default) {
             WARN_RANGE(lookAhead(-1).location, getLastTokenEndLocation(), "imports cannot have access specifiers");
         }
@@ -2485,6 +2581,7 @@ start:
                 ERROR_RANGE(decl->getLocation(), getIdentifierEndLocation(*decl), "only functions can be marked as tests");
             }
         }
+        applyFunctionChecks(decl, disabledChecks, checksLocation);
         return decl;
     }
     }

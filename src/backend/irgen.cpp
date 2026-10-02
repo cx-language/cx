@@ -1,13 +1,15 @@
 #include "irgen.h"
 #include "../ast/arena.h"
 #include "../ast/module.h"
+#include <llvm/Support/SaveAndRestore.h>
 
 using namespace cx;
 
 void IRGenScope::onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls) {
-    for (const Expr* expr : reverse(deferredExprs)) {
+    for (DeferredExpr deferred : reverse(deferredExprs)) {
+        llvm::SaveAndRestore saveChecks(irGenerator->disabledChecks, deferred.disabledChecks);
         irGenerator->beginTempScope();
-        irGenerator->emitExpr(*expr);
+        irGenerator->emitExpr(*deferred.expr);
         irGenerator->endTempScope();
     }
 
@@ -219,7 +221,7 @@ void IRGenerator::createGuardedDestructorCall(Function* destructor, Value* recei
 }
 
 void IRGenerator::deferEvaluationOf(const Expr& expr) {
-    scopes.back().deferredExprs.push_back(&expr);
+    scopes.back().deferredExprs.push_back({&expr, disabledChecks});
 }
 
 void IRGenerator::deferDestructionForType(Value* base, Type type, const VariableDecl* owner, std::vector<int> indexes) {

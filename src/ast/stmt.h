@@ -44,8 +44,11 @@ struct Stmt {
     bool isBreakable() const;
     bool isContinuable() const;
     Stmt* instantiate(const llvm::StringMap<GenericArg>& genericArgs) const;
+    Stmt* instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) const;
 
     const StmtKind kind;
+    // Safety checks disabled for this statement by `@unchecked`-family attributes.
+    DisabledChecks disabledChecks = DisabledChecks::None;
 
 protected:
     Stmt(StmtKind kind) : kind(kind) {}

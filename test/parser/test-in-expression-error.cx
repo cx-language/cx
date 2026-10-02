@@ -1,0 +1,6 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: only functions can be marked as tests
+    var x = @test 1;
+}

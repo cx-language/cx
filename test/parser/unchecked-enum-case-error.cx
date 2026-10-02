@@ -1,0 +1,7 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+enum Color {
+    // CHECK: [[@LINE+1]]:5: error: only functions, statements and expressions can disable safety checks
+    @noNullCheck
+    red,
+}

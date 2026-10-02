@@ -9,6 +9,7 @@
 #include <llvm/Support/Casting.h>
 #pragma warning(pop)
 #include "arena.h"
+#include "checks.h"
 #include "location.h"
 #include "token.h"
 #include "type.h"
@@ -115,6 +116,7 @@ struct Expr {
     bool getConstantBoolValue() const;
     bool isLvalue() const;
     Expr* instantiate(const llvm::StringMap<GenericArg>& genericArgs) const;
+    Expr* instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) const;
     FieldDecl* getFieldDecl() const;
     const Expr* withoutImplicitCast() const;
     bool isThis() const;
@@ -129,6 +131,8 @@ struct Expr {
     Type type;
     Type assignableType;
     Location location;
+    // Safety checks disabled for this expression by `@unchecked`-family attributes.
+    DisabledChecks disabledChecks = DisabledChecks::None;
     // True when this expression was explicitly parenthesized in source.
     bool parenthesized = false;
     // True when the value was moved into its consumer (set by Typechecker::setMoved).

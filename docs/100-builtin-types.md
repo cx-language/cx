@@ -67,6 +67,8 @@ for the binary operators: `+=`, `-=`, `*=`, `/=`, `%=`, `&&=`, `||=`, `&=`,
 An important thing to note about `+`, `-`, and `*` is that they don't silently
 wrap on overflow. Instead they abort with an "integer overflow" error, except in
 release mode (`--release`), where overflow is unchecked and wraps.
+Overflow checks can also be disabled for a single function, statement, or
+expression with `@noOverflowCheck` (or `@unchecked` for all safety checks).
 Unary `-` is checked the same way: negating the minimum value of a signed
 type, or any nonzero unsigned value, aborts.
 Constant arithmetic is checked at compile time: a constant `+`, `-`, `*`,

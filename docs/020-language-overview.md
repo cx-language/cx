@@ -31,7 +31,27 @@ Bugs that C and C++ leave to testing and luck are caught automatically. Array ac
 bounds-checked, integer arithmetic is overflow-checked, and dereferencing null is checked,
 so corrupted output and security holes from reading past a buffer turn into loud failures
 at the exact line that caused them. The checks can be disabled individually or globally
-when measured performance requires it.
+when measured performance requires it, with attributes on a function, statement, or
+expression. `@unchecked` disables all checks in its scope; `@noOverflowCheck`,
+`@noBoundsCheck`, and `@noNullCheck` disable one check each. Calls never inherit the
+caller's attributes. The attributes silence runtime checks only: a constant
+expression that overflows is still a compile error.
+
+```cs
+@noOverflowCheck
+int wrapAdd(int a, int b) {
+    return a + b; // wraps instead of aborting on overflow
+}
+
+void main() {
+    var x = 2147483647;
+    println(wrapAdd(x, 1)); // prints -2147483648
+    @noOverflowCheck
+    var y = x + 1; // statement-level: y is -2147483648
+    var z = @noOverflowCheck x + 1; // expression-level
+    println(y == z); // prints true
+}
+```
 
 Values that may be absent are marked with `?`, which forces callers to handle both cases
 instead of forgetting a null check:

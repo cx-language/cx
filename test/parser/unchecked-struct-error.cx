@@ -1,0 +1,8 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+
+// CHECK: [[@LINE+1]]:1: error: only functions, statements and expressions can disable safety checks
+@unchecked
+struct S {
+    int x;
+}

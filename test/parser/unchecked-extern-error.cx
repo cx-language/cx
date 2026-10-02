@@ -1,0 +1,6 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+
+// CHECK: [[@LINE+1]]:1: error: only functions with bodies can disable safety checks
+@unchecked
+extern void f();
