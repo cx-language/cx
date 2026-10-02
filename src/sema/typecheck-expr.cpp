@@ -2173,13 +2173,17 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    // Allow conversion from T[*]? to T* and void*. Cross-kind reinterpretation
-    // needs exact pointee-const agreement (unlike same-kind widening); void*
-    // targets widen like any other pointer.
+    // Allow conversion from T[*]? to T* and void*. Adding const through the
+    // view is sound; void* targets widen like any other pointer.
     Type unwrappedSource = source.removeOptional();
-    if (unwrappedSource.isArrayPointer() && target.isPointerType()
-        && ((unwrappedSource.getElementType() == target.getPointee() && unwrappedSource.isPointeeConst() == target.isPointeeConst())
-            || (target.getPointee().isVoid() && constWidens(unwrappedSource, target)))) {
+    if (unwrappedSource.isArrayPointer() && target.isPointerType() && constWidens(unwrappedSource, target)
+        && (unwrappedSource.getElementType() == target.getPointee() || target.getPointee().isVoid())) {
+        return source;
+    }
+
+    // Same for T[*]? to T[*].
+    if (unwrappedSource.isArrayPointer() && target.isArrayPointer() && unwrappedSource.getElementType() == target.getElementType()
+        && constWidens(unwrappedSource, target)) {
         return source;
     }
 
