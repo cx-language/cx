@@ -369,3 +369,13 @@ void switchExprNestedTernaryWarnsOnce(int c, bool b, StringBuf x) {
     };
     println(string(s));
 }
+
+void switchExprNestedWarnDoesNotRepeat(int c, bool b, StringBuf x) {
+    // CHECK-COUNT-1: warning: value 'x' is moved in the 'then' arm of this ternary
+    // CHECK-COUNT-1: warning: use of possibly-moved value 'x'
+    var s = switch c {
+        case 1: (b ? use(x) : 0) + use(x),
+        default: 0,
+    };
+    println(s);
+}

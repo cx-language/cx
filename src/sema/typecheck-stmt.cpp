@@ -1085,6 +1085,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
 
     std::vector<DeclSet> armAssignedDecls;
     std::vector<DeclSet> armMovedDecls, armMaybeMovedDecls;
+    DeclSet armWarnedDecls;
     size_t branchEntryLocalCount = localVarDecls.size();
 
     for (auto& arm : expr.arms) {
@@ -1101,6 +1102,7 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         typecheckExpr(*arm.expr, false, expectedType);
         narrowedTypes = outerNarrowings;
         if (!arm.expr->type.isNeverType()) {
+            armWarnedDecls.insert(condWarnedDecls.begin(), condWarnedDecls.end());
             recordBranchEnd(armAssignedDecls, armMovedDecls, armMaybeMovedDecls, definitelyAssignedDecls, movedDecls, maybeMovedDecls);
         }
     }
@@ -1111,9 +1113,14 @@ Type Typechecker::typecheckSwitchExpr(SwitchExpr& expr, Type expectedType) {
         typecheckExpr(*expr.defaultExpr, false, expectedType);
         narrowedTypes = outerNarrowings;
         if (!expr.defaultExpr->type.isNeverType()) {
+            armWarnedDecls.insert(condWarnedDecls.begin(), condWarnedDecls.end());
             recordBranchEnd(armAssignedDecls, armMovedDecls, armMaybeMovedDecls, definitelyAssignedDecls, movedDecls, maybeMovedDecls);
         }
     }
+
+    // Arm-local warnings merge back so nested moves warn once; without this
+    // the merge below would repeat a nested warning at the same site.
+    condWarnedDecls.insert(armWarnedDecls.begin(), armWarnedDecls.end());
 
     if (!armAssignedDecls.empty()) {
         intersectDefinitelyAssigned(armAssignedDecls);
