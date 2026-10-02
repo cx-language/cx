@@ -242,8 +242,19 @@ extern "C++" c_int cpp_sum(c_int* values, c_int count);
 ```
 
 C++ `const` on parameters is dropped, so cx cannot distinguish overloads
-that differ only in constness. Such a declaration links against the mutable
-overload when one exists; when only the const overload exists, linking fails.
+that differ only in constness. A hand-written declaration links against the
+mutable overload when one exists. To reach a const-only overload, qualify
+the pointee instead:
+
+```cs {.noCompile}
+extern "C++" c_int cpp_find(const c_int* values, c_int count);
+```
+
+`const T*` and `const T&` parameters mangle with const while staying
+mutable in cx; callers pass pointers and borrows as usual. The qualifier
+is mangle-only: it is rejected on by-value parameters, on definitions,
+and on multi-level pointees, and declaring both the mutable and the
+const overload collides as a redefinition.
 When both overloads come from an imported header instead, the import
 succeeds and calls resolve to whichever overload is declared first, mangled
 with its original constness.

@@ -168,6 +168,8 @@ struct ParamDecl : VariableDecl, Movable {
     Location location;
     bool isPublic;
     bool isPack = false;
+    // Mangle-only const on extern "C++" pointer/reference parameters; the cx type stays mutable.
+    bool cxxConstPointee = false;
     Expr* defaultValue = nullptr;
 };
 

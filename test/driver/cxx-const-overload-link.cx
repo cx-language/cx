@@ -1,0 +1,12 @@
+// UNSUPPORTED: windows
+// RUN: %cc -c %S/inputs/cxx-const-overload.cpp -o %t-helper.o
+// RUN: %cx -c %s -o %t.o -Werror && %cc %t.o %t-helper.o -o %t.exe && %t.exe | %FileCheck %s
+
+// A hand-written const-qualified declaration reaches a const-only C++
+// overload; the mutable spelling would mangle differently and not link.
+extern "C++" c_int cxx_constonly(const c_int* p);
+
+void main() {
+    c_int v = 41;
+    println(cxx_constonly(&v)); // CHECK: 42
+}

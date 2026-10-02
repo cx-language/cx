@@ -123,3 +123,16 @@ void mutableBorrowRejectsConversion() {
     // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: invalid argument #1 type 'StringBuf' to 'takeMutableString', expected 'string&'
     takeMutableString(sb);
 }
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: 'const' must qualify a single-level pointee in extern "C++" signatures (e.g. 'const T*' or 'const T&')
+extern "C++" void constByValue(const c_int x);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: 'const' must qualify a single-level pointee in extern "C++" signatures (e.g. 'const T*' or 'const T&')
+extern "C++" void constNested(const c_int** p);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: 'const' must qualify a single-level pointee in extern "C++" signatures (e.g. 'const T*' or 'const T&')
+extern "C++" void constFnPointer(const void(c_int)* cb);
+
+// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: 'const' parameters are only allowed on extern "C++" declarations, not definitions
+extern "C++" void constDefinition(const c_int* p) {
+}

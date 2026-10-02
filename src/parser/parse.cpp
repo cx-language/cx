@@ -1668,9 +1668,16 @@ std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind en
 }
 
 /// param-decl ::= 'public'? type? id | 'public'? type '...' id
-ParamDecl Parser::parseParam(bool requireType) {
+ParamDecl Parser::parseParam(bool requireType, bool allowCxxConst) {
     bool isPublic = currentToken() == Token::Public;
     if (isPublic) consumeToken();
+
+    // Mangle-only const for extern "C++" declarations; validated once types resolve.
+    bool cxxConstPointee = false;
+    if (allowCxxConst && currentToken() == Token::Const) {
+        consumeToken();
+        cxxConstPointee = true;
+    }
 
     Type type;
     if (requireType || !lookAhead(1).is({Token::Comma, Token::RightParen})) {
@@ -1686,6 +1693,7 @@ ParamDecl Parser::parseParam(bool requireType) {
     auto name = parse(Token::Identifier);
     ParamDecl param(type, name.getString(), isPublic, name.location);
     param.isPack = isPack;
+    param.cxxConstPointee = cxxConstPointee;
     if (currentToken() == Token::Assignment) {
         if (isPack) {
             ERROR_RANGE(name.location, getTokenEndLocation(name), "variadic parameter cannot have a default value");
@@ -1699,7 +1707,7 @@ ParamDecl Parser::parseParam(bool requireType) {
 /// param-list ::= '(' params ')'
 /// params ::= '' | non-empty-params
 /// non-empty-params ::= param-decl | param-decl ',' non-empty-params
-std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireTypes) {
+std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireTypes, bool allowCxxConst) {
     llvm::SaveAndRestore inScope(inBinderScope, true);
     parse(Token::LeftParen);
     std::vector<ParamDecl> params;
@@ -1709,7 +1717,7 @@ std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireType
             *isVariadic = true;
             break;
         }
-        params.emplace_back(parseParam(requireTypes));
+        params.emplace_back(parseParam(requireTypes, allowCxxConst));
         if (params.back().isPack && currentToken() != Token::RightParen) {
             ERROR_RANGE(params.back().getLocation(), getIdentifierEndLocation(params.back()), "variadic parameter must be the last parameter");
         }
@@ -1800,7 +1808,7 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
     }
 
     bool isVariadic = false;
-    auto params = parseParamList(isExtern ? &isVariadic : nullptr);
+    auto params = parseParamList(isExtern ? &isVariadic : nullptr, true, cppLinkage);
     if (isExtern) {
         for (const ParamDecl& param : params) {
             if (param.isPack)

@@ -912,10 +912,11 @@ void cx::validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef ca
 // has no C++ type to mangle as, so it is a compile error rather than a miscompile.
 // Structs crossing by value must not need destruction: the boundary copies bytes,
 // so each side would destroy its own copy.
-static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::Triple& triple, bool byValue, bool isReturn) {
+static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::Triple& triple, bool byValue, bool isReturn, bool pointeeConst = false) {
     if (type.isPointerType()) {
         Type pointee = type.getPointee();
         out << (type.getPointerKind() == PointerKind::Reference ? 'R' : 'P');
+        if (pointeeConst) out << 'K';
         mangleCppType(out, pointee, triple, false, false);
         return;
     }
@@ -1000,7 +1001,7 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
     if (type.isOptionalType()) {
         Type wrapped = type.getWrappedType();
         if (wrapped.isPointerType() && wrapped.getPointerKind() == PointerKind::Pointer) {
-            mangleCppType(out, wrapped, triple, false, false); // nullable pointers pass as raw pointers
+            mangleCppType(out, wrapped, triple, false, false, pointeeConst); // nullable pointers pass as raw pointers
             return;
         }
         ERROR_RANGE(type.location, type.endLocation, "type '" << type << "' cannot be used in extern \"C++\" signatures");
@@ -1151,8 +1152,21 @@ static void mangleCppFunction(FunctionDecl& decl) {
     std::string mangled;
     llvm::raw_string_ostream out(mangled);
     out << "_Z" << name.size() << name;
-    for (const ParamDecl& param : decl.getParams())
-        mangleCppType(out, param.type, triple, true, false);
+    for (const ParamDecl& param : decl.getParams()) {
+        if (param.cxxConstPointee) {
+            Type target = param.type.removeOptional();
+            if (!target.isPointerType() || target.getPointee().isPointerType() || target.getPointee().isArrayPointer()
+                || target.getPointee().isFunctionType()) {
+                ERROR_RANGE(param.getLocation(), getIdentifierEndLocation(param),
+                            "'const' must qualify a single-level pointee in extern \"C++\" signatures (e.g. 'const T*' or 'const T&')");
+            }
+            if (decl.body) {
+                ERROR_RANGE(param.getLocation(), getIdentifierEndLocation(param),
+                            "'const' parameters are only allowed on extern \"C++\" declarations, not definitions");
+            }
+        }
+        mangleCppType(out, param.type, triple, true, false, param.cxxConstPointee);
+    }
     if (decl.getParams().empty() && !decl.isVariadic()) out << 'v';
     if (decl.isVariadic()) out << 'z';
     out.flush();
