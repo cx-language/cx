@@ -323,6 +323,23 @@ await runWithStderr("main.cx:1:1: error: something broke\n");
 check(widgets.length === 1, "context-less diagnostic produces one widget");
 check(widgets[0].text === "^ something broke", "context-less diagnostic has no undefined prefix, got: " + JSON.stringify(widgets[0].text));
 
+await runWithStderr(
+    "main.cx:1:5: error: unknown identifier 'x'\n" +
+        "var y = x;\n" +
+        "    ~\n" +
+        "main.cx:1:6: note: 'foo' declared here\n" +
+        "void foo() {}\n" +
+        "     ^\n" +
+        "main.cx:2:6: warning: unused declaration 'bar'\n" +
+        "void bar() {}\n" +
+        "     ~~~\n"
+);
+check(widgets.length === 1, "notes and unused-declaration warnings stay out of the editor");
+check(
+    widgets[0].text === " ".repeat(4) + "^ unknown identifier 'x'",
+    "only the error gets a widget, got: " + JSON.stringify(widgets.map((w) => w.text))
+);
+
 // Live diagnostics: editing triggers a background check whose errors show
 // without pressing Run.
 async function flushTimers() {

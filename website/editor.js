@@ -95,6 +95,10 @@ function initializeCodeEditor(block) {
         var match;
         while ((match = regex.exec(diagnostics))) {
             var [, line, column, message, indent] = match;
+            // Notes and unused-declaration hints stay in the output window
+            // only; inline widgets are reserved for errors and warnings
+            // that need a fix at that line.
+            if (message.startsWith("note:") || message.startsWith("warning: unused declaration")) continue;
             var node = document.createElement("div");
             // The strip styling already signals severity; drop the prefix.
             var compact = message.replace(/^(error|warning): /, "");
