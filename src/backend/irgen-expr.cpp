@@ -223,6 +223,54 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
     case Token::Plus:
         return emitExpr(expr.getOperand());
     case Token::Minus: {
+        Type operandType = expr.getOperand().type;
+        // Element-wise negation over fixed-size arrays (e.g. `-float[3]`).
+        // Like the binary array ops, element negation is unchecked even for
+        // integers; symbolic sizes were rejected during typechecking.
+        if (operandType.isArrayType() && operandType.isConcreteArray()) {
+            int64_t arraySize = operandType.getArraySize();
+            auto* arrayIRType = getIRType(operandType);
+            auto* operand = emitExpr(expr.getOperand());
+            Value* arrayPtr = operand->getType()->isPointerType() ? operand : createTempAlloca(operand);
+            auto* zero = createConstantInt(Type::getInt32(), 0);
+
+            // Large arrays lower to a counted loop; small ones stay unrolled.
+            if (arraySize > 4) {
+                auto indexType = Type::getInt32();
+                auto* indexAlloca = createEntryBlockAlloca(indexType);
+                createStore(zero, indexAlloca);
+
+                auto* resultAlloca = createEntryBlockAlloca(arrayIRType);
+
+                auto* function = currentFunction;
+                auto* cond = new BasicBlock("arrayop.cond", function);
+                auto* body = new BasicBlock("arrayop.body", function);
+                auto* end = new BasicBlock("arrayop.end", function);
+                createBr(cond);
+
+                setInsertPoint(cond);
+                auto* index = createLoad(indexAlloca);
+                createCondBr(createBinaryOp(Token::Less, index, createConstantInt(indexType, arraySize), &expr), body, end);
+
+                setInsertPoint(body);
+                auto* i = createLoad(indexAlloca);
+                auto* elem = createLoad(createGEP(arrayPtr, {zero, i}));
+                createStore(createNeg(elem), createGEP(resultAlloca, {zero, i}));
+                createStore(createBinaryOp(Token::Plus, i, createConstantInt(indexType, 1), &expr), indexAlloca);
+                createBr(cond);
+
+                setInsertPoint(end);
+                return resultAlloca;
+            }
+
+            Value* result = createUndefined(arrayIRType);
+            for (int64_t i = 0; i < arraySize; ++i) {
+                auto* idx = createConstantInt(Type::getInt32(), static_cast<int>(i));
+                auto* elem = createLoad(createGEP(arrayPtr, {zero, idx}));
+                result = createInsertValue(result, createNeg(elem), static_cast<int>(i));
+            }
+            return result;
+        }
         auto* operand = emitExpr(expr.getOperand());
         auto* type = operand->getType();
         // Global initializers can't contain the trap's control flow; they only

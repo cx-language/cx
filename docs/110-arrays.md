@@ -97,7 +97,9 @@ void main() {
 
 Supported element-wise ops: `+ - * / %` (and `%%`), bitwise `& | ^ << >>`
 for integer elements, and `== !=` (which return `bool`: `==` is true when
-all elements are equal, `!=` when any differ).
+all elements are equal, `!=` when any differ). Unary `-` negates each
+element. Unlike scalar arithmetic, integer element-wise ops wrap on
+overflow instead of aborting.
 
 ```cs
 void main() {

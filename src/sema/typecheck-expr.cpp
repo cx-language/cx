@@ -550,6 +550,10 @@ void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool posit
 
 static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, bool diagnoseOutOfRange);
 
+static bool isSymbolicArray(Type type) {
+    return type.isFixedArray() && !type.getArraySizeParam().empty();
+}
+
 Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
@@ -670,6 +674,15 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         if (expr.op == Token::Minus) {
             if (operandType.isOptionalType()) {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
+            }
+            if (isSymbolicArray(operandType)) {
+                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "array operations require a constant size");
+            }
+            if (operandType.isArrayType() && operandType.isConcreteArray()) {
+                Type elementType = operandType.getElementType();
+                if (!elementType.isInteger() && !elementType.isFloatingPoint() && !elementType.isChar()) {
+                    ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
+                }
             }
             Type negType = operandType.removeOptional().removePointer();
             if (negType.isInteger() && expr.isConstant()) {
@@ -1046,7 +1059,6 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     // operands with side effects evaluate once. Returns the array type for
     // arithmetic, bool for ==/!= (all-equal semantics).
     {
-        auto isSymbolicArray = [](Type type) { return type.isFixedArray() && !type.getArraySizeParam().empty(); };
         bool leftIsArray = leftType.isArrayType() && leftType.isConcreteArray();
         bool rightIsArray = rightType.isArrayType() && rightType.isConcreteArray();
         bool leftIsArrayLike = leftIsArray || isSymbolicArray(leftType);

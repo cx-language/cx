@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+void f() {
+    bool[3] b = [true, false, true];
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'bool[3]'
+    _ = -b;
+    int[3][2] n = [[1, 2, 3], [4, 5, 6]];
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int[3][2]'
+    _ = -n;
+    int x = 1;
+    int*[2] p = [&x, &x];
+    // CHECK: [[@LINE+1]]:9: error: cannot apply unary '-' to type 'int*[2]'
+    _ = -p;
+}
