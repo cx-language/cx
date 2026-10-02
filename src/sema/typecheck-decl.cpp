@@ -1711,6 +1711,12 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
 
 // Global initializers are emitted as constant expressions; anything needing runtime
 // evaluation would emit instructions outside any function and corrupt codegen.
+static bool containsNonEmptyArrayLiteral(const Expr& expr) {
+    if (auto* array = llvm::dyn_cast<ArrayLiteralExpr>(&expr)) return !array->elements.empty();
+    if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(&expr)) return containsNonEmptyArrayLiteral(*cast->operand);
+    return false;
+}
+
 static bool isSupportedConstInitializer(const Expr& expr, llvm::SmallPtrSetImpl<const VarDecl*>& seen) {
     switch (expr.kind) {
     case ExprKind::IntLiteralExpr:
@@ -1963,6 +1969,15 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
                 ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation, "global variable initializer must be a constant expression");
             }
         }
+    }
+
+    // Array-to-slice conversion needs a data global that codegen does not
+    // materialize, so slice-typed globals cannot be initialized from array
+    // literals. Null, empty, and inferred (fixed-array) forms work.
+    if (decl.isGlobal() && decl.type.containsSlice() && containsNonEmptyArrayLiteral(*decl.initializer)) {
+        ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
+                    "cannot initialize " << (decl.isConst ? "const" : "global") << " '" << decl.getName() << "' of type '" << decl.type
+                                          << "' with an array literal; omit the type to infer a fixed-size array instead");
     }
 
     // Locals materialize storage (inferred types have no other mention), so

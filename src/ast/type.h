@@ -147,6 +147,7 @@ struct Type {
     DestructorDecl* getDestructor() const;
     bool containsUnresolvedPlaceholder() const;
     bool containsReference() const;
+    bool containsSlice() const;
     bool storesBorrow() const;
     void printTo(std::ostream& stream, bool canonical = false) const;
     std::string toString() const;

@@ -1,0 +1,23 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:16: error: cannot initialize global 's' of type 'Slice<int>' with an array literal; omit the type to infer a fixed-size array instead
+Slice<int> s = [1, 2, 3];
+// CHECK: [[@LINE+1]]:22: error: cannot initialize const 'c' of type 'Slice<int>' with an array literal; omit the type to infer a fixed-size array instead
+const Slice<int> c = [1, 2, 3];
+// CHECK: [[@LINE+1]]:23: error: cannot initialize const 'o' of type 'Slice<int>?' with an array literal; omit the type to infer a fixed-size array instead
+const Slice<int>? o = [1, 2, 3];
+// CHECK: [[@LINE+1]]:21: error: cannot initialize global 'arr' of type 'Slice<int>[2]' with an array literal; omit the type to infer a fixed-size array instead
+Slice<int>[2] arr = [[1], [2]];
+
+// Null, empty, and inferred forms keep working.
+Slice<int>? gn = null;
+Slice<int> ge = [];
+var ginferred = [1, 2, 3];
+
+void main() {
+    Slice<int> local = [1, 2, 3];
+    println(gn == null);
+    println(ge.size());
+    println(ginferred[0]);
+    println(local[0]);
+}

@@ -28,8 +28,9 @@ appears in types. There is no `const T*`: pointers, borrows, and views
 are always mutable, and `const`-qualified C types import as their mutable
 counterparts.
 
-An explicit type on a global constant cannot be a slice type;
-omit it and let the type be inferred.
+A global of explicit slice type cannot be initialized with an array
+literal; omit the type to infer a fixed-size array instead. Null and
+empty slice globals work as usual.
 
 Global variables are initialized before the program starts,
 so their initializers must be constant expressions too.

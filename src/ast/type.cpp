@@ -569,6 +569,25 @@ PointerKind Type::getPointerKind() const {
     return llvm::cast<PointerType>(typeBase)->pointerKind;
 }
 
+bool Type::containsSlice() const {
+    if (isSlice()) return true;
+    switch (getKind()) {
+    case TypeKind::BasicType:
+        return llvm::any_of(getGenericArgs(), [](GenericArg arg) { return arg.isType() && arg.getType().containsSlice(); });
+    case TypeKind::ArrayPointerType:
+        return getElementType().containsSlice();
+    case TypeKind::AnonymousStructType:
+        return llvm::any_of(getAnonymousStructElements(), [](auto& element) { return element.type.containsSlice(); });
+    case TypeKind::FunctionType:
+        return llvm::any_of(getParamTypes(), [](Type param) { return param.containsSlice(); }) || getReturnType().containsSlice();
+    case TypeKind::PointerType:
+        return getPointee().containsSlice();
+    case TypeKind::UnresolvedType:
+        return false;
+    }
+    llvm_unreachable("all cases handled");
+}
+
 bool Type::containsReference() const {
     switch (getKind()) {
     case TypeKind::BasicType:
