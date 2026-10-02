@@ -169,6 +169,7 @@ add_test(NAME docs-stdlib-unit COMMAND python3 "${PROJECT_SOURCE_DIR}/website/te
 add_test(NAME docs-search-index COMMAND python3 "${PROJECT_SOURCE_DIR}/website/test_search_index.py")
 add_test(NAME website-serve COMMAND python3 "${PROJECT_SOURCE_DIR}/website/test_serve.py")
 add_test(NAME bench-corpus-sloc COMMAND python3 "${PROJECT_SOURCE_DIR}/scripts/test_bench_corpus.py")
+add_test(NAME lit-config COMMAND python3 "${PROJECT_SOURCE_DIR}/test/test_lit_cfg.py")
 add_test(NAME prose COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_prose.py")
 add_test(NAME jit-pins COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_jit_pins.py")
 # Language server end-to-end tests (query subprocess + stdio server session).
