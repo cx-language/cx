@@ -55,6 +55,14 @@ CompileToCResult cx::compileToC(const char* fileName, const char* source, const 
 
     if (errors) return CompileToCResult{.status = 1};
 
+    // The caller builds an executable (the playground runs it), so a missing
+    // entry point is an error, unlike in the driver which falls back to
+    // compiling a main-less program as a library.
+    if (mainModule.symbolTable.findInTopLevelScope("main").empty()) {
+        REPORT_ERROR(Location(fileName, 1, 1), "no main function; a program must define a 'main' function");
+        return CompileToCResult{.status = 1};
+    }
+
     IRGenerator irGenerator(compileOptions);
     for (auto* importedModule : Module::getAllImportedModules()) {
         irGenerator.emitModule(*importedModule);

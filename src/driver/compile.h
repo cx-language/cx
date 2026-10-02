@@ -36,7 +36,8 @@ struct CompileToCResult {
 ///
 /// Diagnostics are written to llvm::errs() (which the WebAssembly build
 /// captures), and the generated C code is returned. No files are written and
-/// no subprocesses are spawned.
+/// no subprocesses are spawned. The program must define a 'main' function;
+/// callers (such as the playground) build executables from the output.
 ///
 /// C header imports ("import \"foo.h\"") require the Clang-based importer.
 /// Builds compiled with CX_NO_C_IMPORT reject them with an error.

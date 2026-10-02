@@ -97,6 +97,14 @@ void testDispatch() {
     check(dispatch.cCode.find("_Bool _array_op") != std::string::npos, "dispatch mode hoists the array comparison result");
 }
 
+void testNoMain() {
+    // A program without a main function fails: the caller builds an
+    // executable from the generated C code.
+    auto noMain = cx::compileToC("main.cx", "void helper() {\n    println(\"hi\");\n}\n", testOptions());
+    check(noMain.status != 0, "missing main fails compilation");
+    check(noMain.cCode.empty(), "no C code is generated without a main function");
+}
+
 } // namespace
 
 // The WebAssembly API entry point (defined in src/wasm/api.cpp, without the
@@ -123,7 +131,7 @@ void testJson() {
 
 int main(int argc, const char** argv) {
     if (argc != 2) {
-        std::cerr << "usage: test_compile_api <hello|error|struct|warning|dispatch|json>\n";
+        std::cerr << "usage: test_compile_api <hello|error|struct|warning|dispatch|json|nomain>\n";
         return 2;
     }
 
@@ -140,6 +148,8 @@ int main(int argc, const char** argv) {
         testDispatch();
     } else if (testCase == "json") {
         testJson();
+    } else if (testCase == "nomain") {
+        testNoMain();
     } else {
         std::cerr << "unknown test case '" << testCase << "'\n";
         return 2;
