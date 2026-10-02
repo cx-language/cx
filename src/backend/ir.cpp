@@ -667,8 +667,8 @@ void IRModule::print(llvm::raw_ostream& stream) const {
 bool IRType::isInteger() {
     if (!isBasicType()) return false;
     return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name)
-        .Cases({"int8",    "int16",   "int32",   "int64",    "int128", "uint8",  "uint16", "uint32",  "uint64",     "uint128",    "c_size_t",
-                "c_schar", "c_uchar", "c_short", "c_ushort", "c_int",  "c_uint", "c_long", "c_ulong", "c_longlong", "c_ulonglong"},
+        .Cases({"int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "c_size_t", "c_schar", "c_uchar", "c_short", "c_ushort", "c_int",
+                "c_uint", "c_long", "c_ulong", "c_longlong", "c_ulonglong"},
                true)
         .Default(false);
 }
@@ -676,14 +676,14 @@ bool IRType::isInteger() {
 bool IRType::isSignedInteger() {
     if (!isBasicType()) return false;
     return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name)
-        .Cases({"int8", "int16", "int32", "int64", "int128", "c_schar", "c_short", "c_int", "c_long", "c_longlong"}, true)
+        .Cases({"int8", "int16", "int32", "int64", "c_schar", "c_short", "c_int", "c_long", "c_longlong"}, true)
         .Default(false);
 }
 
 bool IRType::isUnsignedInteger() {
     if (!isBasicType()) return false;
     return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name)
-        .Cases({"uint8", "uint16", "uint32", "uint64", "uint128", "c_size_t", "c_uchar", "c_ushort", "c_uint", "c_ulong", "c_ulonglong"}, true)
+        .Cases({"uint8", "uint16", "uint32", "uint64", "c_size_t", "c_uchar", "c_ushort", "c_uint", "c_ulong", "c_ulonglong"}, true)
         .Default(false);
 }
 
@@ -853,7 +853,6 @@ int cx::getIntegerBitWidth(IRType* type) {
         .Cases({"int16", "uint16", "c_short", "c_ushort"}, 16)
         .Cases({"int32", "uint32", "c_int", "c_uint"}, 32)
         .Cases({"int64", "uint64", "c_longlong", "c_ulonglong"}, 64)
-        .Cases({"int128", "uint128"}, 128)
         .Default(0);
 }
 
@@ -867,8 +866,6 @@ Type cx::getUnsignedIntegerType(int width) {
         return Type::getUInt32();
     case 64:
         return Type::getUInt64();
-    case 128:
-        return Type::getUInt128();
     default:
         llvm_unreachable("invalid integer width");
     }
@@ -885,7 +882,6 @@ static std::pair<char, int> abiClass(llvm::StringRef name) {
     if (name == "int64" || name == "uint64" || name == "c_longlong" || name == "c_ulonglong") return {'i', 64};
     if (name == "c_size_t") return {'i', static_cast<int>(sizeof(void*) * 8)};
     if (name == "c_long" || name == "c_ulong") return {'i', static_cast<int>(sizeof(long) * 8)};
-    if (name == "int128" || name == "uint128") return {'i', 128};
     if (name == "float32" || name == "c_float") return {'f', 32};
     if (name == "float64" || name == "c_double") return {'f', 64};
     if (name == "float80") return {'f', 80};

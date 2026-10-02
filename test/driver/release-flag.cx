@@ -16,6 +16,4 @@ void main() {
     println(-byte(5)); // CHECK:251
     char c = char(5);
     println(-c == char(251)); // CHECK:true
-    int128 min128 = int128(1) << int128(127);
-    println(-min128 == min128); // CHECK:true
 }

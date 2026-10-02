@@ -8,14 +8,12 @@ Type      | Meaning
 `int16`   | 16-bit signed integer
 `int32`   | 32-bit signed integer
 `int64`   | 64-bit signed integer
-`int128`  | 128-bit signed integer
 `uint`    | alias of `uint32`
 `uint8`   | 8-bit unsigned integer
 `byte`    | alias of `uint8`
 `uint16`  | 16-bit unsigned integer
 `uint32`  | 32-bit unsigned integer
 `uint64`  | 64-bit unsigned integer
-`uint128` | 128-bit unsigned integer
 `c_size_t` | C `size_t` type (pointer-sized unsigned integer: 32-bit on wasm32, 64-bit on 64-bit targets)
 `c_schar` | C `signed char` type (8-bit signed integer)
 `c_uchar` | C `unsigned char` type (8-bit unsigned integer)
@@ -35,11 +33,6 @@ Type      | Meaning
 `double`  | alias of `float64`
 `bool`    | boolean
 `char`    | C/C++ `char` type
-
-The 128-bit integer types work with the default backend on all platforms,
-but `--backend=c` emits them as the `__int128` compiler extension, which
-MSVC does not support. Code using `int128` or `uint128` therefore does not
-compile with `--backend=c` on Windows with MSVC; GCC and Clang accept it.
 
 ## Numeric literals
 

@@ -1,0 +1,17 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+void main() {
+    // Over-wide constant shifts fold exactly, then wrap to the result width
+    // identically on both backends (sema only diagnoses +,-,* overflow).
+    int x = 1 << 100;
+    println(x); // CHECK:0
+    int y = 1 << 31;
+    println(y); // CHECK-NEXT:-2147483648
+    int t = ~(1 << 100);
+    println(t); // CHECK-NEXT:-1
+    int64 big = int64(1) << 63;
+    println(big); // CHECK-NEXT:-9223372036854775808
+    uint u = uint(1) << 31;
+    println(u); // CHECK-NEXT:2147483648
+}

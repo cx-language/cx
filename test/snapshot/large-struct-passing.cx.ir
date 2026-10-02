@@ -108,76 +108,90 @@ if.else:
 
 if.end(Big if.result):
     store if.result to d
-    int128 _4 = cast int32 1 to int128
-    int128 _5 = cast int32 2 to int128
-    void _6 = call _CX1N4mainM4main4Wide4initE4void2_M3std6int128M3std6int128(Wide* w, int128 _4, int128 _5)
+    int64 _4 = cast int32 1 to int64
+    int64 _5 = cast int32 2 to int64
+    int64 _6 = cast int32 3 to int64
+    int64 _7 = cast int32 4 to int64
+    void _8 = call _CX1N4mainM4main4Wide4initE4void4_M3std5int64M3std5int64M3std5int64M3std5int64(Wide* w, int64 _4, int64 _5, int64 _6, int64 _7)
     Wide w.load = load w
-    Wide _7 = call _CX1N4main9identWideEM4main4Wide1_M4main4Wide(Wide w.load)
-    store _7 to v
+    Wide _9 = call _CX1N4main9identWideEM4main4Wide1_M4main4Wide(Wide w.load)
+    store _9 to v
     int32* a = getelementptr d, 0
     int32 a.load = load a
-    Outer _8 = call _CX1N4main9makeOuterEM4main5Outer0_()
-    Big item = extractvalue _8, 0
+    Outer _10 = call _CX1N4main9makeOuterEM4main5Outer0_()
+    Big item = extractvalue _10, 0
     int32 a_0 = extractvalue item, 0
-    int32 _9 = checkedarith + a.load, a_0
-    bool _10 = overflow _9
-    bool _11 = !_10
-    bool overflow.condition = _11 == bool false
+    int32 _11 = checkedarith + a.load, a_0
+    bool _12 = overflow _11
+    bool _13 = !_12
+    bool overflow.condition = _13 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _12 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:16
+    never _14 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:42:16
 ")
     unreachable
 
 overflow.success:
-    Outer _13 = call _CX1N4main9makeOuterEM4main5Outer0_()
-    int32 tag = extractvalue _13, 1
-    int32 _14 = checkedarith + _9, tag
-    bool _15 = overflow _14
-    bool _16 = !_15
-    bool overflow.condition_0 = _16 == bool false
+    Outer _15 = call _CX1N4main9makeOuterEM4main5Outer0_()
+    int32 tag = extractvalue _15, 1
+    int32 _16 = checkedarith + _11, tag
+    bool _17 = overflow _16
+    bool _18 = !_17
+    bool overflow.condition_0 = _18 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _17 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:37
+    never _19 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:42:37
 ")
     unreachable
 
 overflow.success_0:
-    int128* a_1 = getelementptr v, 0
-    int128 a.load_0 = load a_1
-    int32 _18 = cast a.load_0 to int32
-    int32 _19 = checkedarith + _14, _18
-    bool _20 = overflow _19
-    bool _21 = !_20
-    bool overflow.condition_1 = _21 == bool false
+    int64* a_1 = getelementptr v, 0
+    int64 a.load_0 = load a_1
+    int32 _20 = cast a.load_0 to int32
+    int32 _21 = checkedarith + _16, _20
+    bool _22 = overflow _21
+    bool _23 = !_22
+    bool overflow.condition_1 = _23 == bool false
     br overflow.condition_1, overflow.fail, overflow.success
 
 overflow.fail_1:
-    never _22 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:40:55
+    never _24 = call _CX1N3std10assertFailEM3std5never1_PKM3std4char(char* "integer overflow at large-struct-passing.cx:42:55
 ")
     unreachable
 
 overflow.success_1:
-    void _23 = call _CX1N3std10checkLeaksE4void0_()
-    return _19
+    void _25 = call _CX1N3std10checkLeaksE4void0_()
+    return _21
 }
 
-void _CX1N4mainM4main4Wide4initE4void2_M3std6int128M3std6int128(Wide* this, int128 a, int128 b) {
+void _CX1N4mainM4main4Wide4initE4void4_M3std5int64M3std5int64M3std5int64M3std5int64(Wide* this, int64 a, int64 b, int64 c, int64 d) {
     Wide** this_0 = alloca Wide*
-    int128* a_0 = alloca int128
-    int128* b_0 = alloca int128
+    int64* a_0 = alloca int64
+    int64* b_0 = alloca int64
+    int64* c_0 = alloca int64
+    int64* d_0 = alloca int64
     store this to this_0
     store a to a_0
     store b to b_0
+    store c to c_0
+    store d to d_0
     Wide* this.load = load this_0
-    int128* a_1 = getelementptr this.load, 0
-    int128 a.load = load a_0
+    int64* a_1 = getelementptr this.load, 0
+    int64 a.load = load a_0
     store a.load to a_1
     Wide* this.load_0 = load this_0
-    int128* b_1 = getelementptr this.load_0, 1
-    int128 b.load = load b_0
+    int64* b_1 = getelementptr this.load_0, 1
+    int64 b.load = load b_0
     store b.load to b_1
+    Wide* this.load_1 = load this_0
+    int64* c_1 = getelementptr this.load_1, 2
+    int64 c.load = load c_0
+    store c.load to c_1
+    Wide* this.load_2 = load this_0
+    int64* d_1 = getelementptr this.load_2, 3
+    int64 d.load = load d_0
+    store d.load to d_1
     return void
 }

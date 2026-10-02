@@ -818,7 +818,6 @@ static std::optional<CValueLayout> cValueLayout(Type type) {
         uint64_t size = (uint64_t)type.getIntegerBitWidth() / 8;
         return CValueLayout{size, size};
     }
-    if (type.isInt128() || type.isUInt128()) return CValueLayout{16, 16};
     if (type.isBool() || type.isChar()) return CValueLayout{1, 1};
     if (type.isFloat32() || type.isCFloat()) return CValueLayout{4, 4};
     if (type.isFloat64() || type.isCDouble()) return CValueLayout{8, 8};
@@ -916,7 +915,7 @@ void cx::validateCppVariadicExtra(Type type, const Expr& arg, llvm::StringRef ca
 // Maps an `extern "C++"` parameter, return, or nested type to its Itanium ABI
 // encoding. Only types with a C++ counterpart are accepted: C-compatible
 // scalars, pointers, references, plain structs, and function pointers. Anything
-// else (slices, strings, enums, closures, fixed-width 64/128-bit integers, ...)
+// else (slices, strings, enums, closures, fixed-width 64-bit integers, ...)
 // has no C++ type to mangle as, so it is a compile error rather than a miscompile.
 // Structs crossing by value must not need destruction: the boundary copies bytes,
 // so each side would destroy its own copy.
@@ -996,7 +995,7 @@ static void mangleCppType(llvm::raw_string_ostream& out, Type type, const llvm::
         out << (!triple.isArch64Bit() ? 'j' : triple.isOSWindows() ? 'y' : 'm');
         return;
     }
-    if (type.isInt64() || type.isUInt64() || type.isInt128() || type.isUInt128()) {
+    if (type.isInt64() || type.isUInt64()) {
         ERROR_RANGE(type.location, type.endLocation,
                     "integer type '" << type
                                      << "' has no single C++ counterpart; use c_long, c_ulong, c_longlong, or c_ulonglong in extern \"C++\" signatures");

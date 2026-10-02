@@ -1,0 +1,13 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+import "inputs/import-c-int128-skipped.h";
+
+void main() {
+    // The header still imports: plain() is usable.
+    println(plain(41));
+    // __int128 declarations are silently skipped (system headers use
+    // __int128 pervasively, so warning would be noise): no warning here,
+    // which the implicit warning guard enforces, unknown at the use site.
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'big'
+    println(big);
+}

@@ -545,16 +545,12 @@ Value* IRGenerator::emitSaturatingLeftShift(Value* left, Value* right, const Exp
 }
 
 // Element types the LLVM backend vectorizes directly (see codegenArrayOp).
-// bool packs a byte per element in memory but lowers to i1, and 128-bit
-// ints, float80, and pointers have no SIMD lowering, so those keep the
-// scalar expansion instead.
+// bool packs a byte per element in memory but lowers to i1, and float80
+// and pointers have no SIMD lowering, so those keep the scalar expansion
+// instead.
 static bool isVectorFriendlyElement(IRType* type) {
     if (type->isBool()) return false;
-    if (type->isChar()) return true;
-    if (type->isInteger()) {
-        auto name = type->getName();
-        return name != "int128" && name != "uint128";
-    }
+    if (type->isChar() || type->isInteger()) return true;
     if (type->isFloatingPoint()) {
         return type->getName() != "float80";
     }

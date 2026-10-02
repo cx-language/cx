@@ -1,4 +1,5 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 
 void main() {
     int max = 2147483647;
@@ -26,16 +27,4 @@ void main() {
     int n = 0;
     n += 5;
     println(n); // CHECK-NEXT:5
-
-    int128 a = int128(1) << int128(64);
-    int128 b = int128(1) << int128(62);
-    println(a * int128(2) == b * int128(8)); // CHECK-NEXT:true
-    println(a + a == b * int128(8)); // CHECK-NEXT:true
-    int128 max128 = int128(-1) - (int128(1) << int128(127));
-    println(max128 + int128(0) == max128); // CHECK-NEXT:true
-    println(max128 * int128(0) == int128(0)); // CHECK-NEXT:true
-    uint128 half = uint128(1) << uint128(127);
-    uint128 umax128 = half | (half - uint128(1));
-    println(umax128 - umax128 == uint128(0)); // CHECK-NEXT:true
-    println(umax128 * uint128(0) == uint128(0)); // CHECK-NEXT:true
 }

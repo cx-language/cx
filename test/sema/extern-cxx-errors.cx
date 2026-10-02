@@ -61,10 +61,6 @@ struct FPair {
 
 struct Empty {}
 
-struct OverAligned {
-    int128 x;
-}
-
 struct HasSlice {
     int[] s;
 }
@@ -81,9 +77,6 @@ extern "C++" void floatParam(FPair p);
 
 // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'Empty' cannot be passed by value in extern "C++" signatures because it is empty; pass it behind a pointer or reference instead
 extern "C++" void emptyParam(Empty e);
-
-// CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'OverAligned' cannot be passed by value in extern "C++" signatures because it requires 16-byte alignment; pass it behind a pointer or reference instead
-extern "C++" void alignedParam(OverAligned o);
 
 // CHECK: [[@LINE+1]]:{{[0-9]+}}: error: type 'HasSlice' cannot be passed by value in extern "C++" signatures because it has a member with no C++ counterpart; pass it behind a pointer or reference instead
 extern "C++" void badMemberParam(HasSlice h);

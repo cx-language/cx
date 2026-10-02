@@ -133,7 +133,7 @@ IRType* getIRType(Type astType);
 bool pointeeConstDiffers(IRType* a, IRType* b);
 // Bit width of an integer type, 0 for anything else.
 int getIntegerBitWidth(IRType* type);
-// Unsigned cx integer type of the given width (8, 16, 32, 64, or 128).
+// Unsigned cx integer type of the given width (8, 16, 32, or 64).
 Type getUnsignedIntegerType(int width);
 llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, IRType* type);
 

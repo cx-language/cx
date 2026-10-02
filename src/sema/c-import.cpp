@@ -90,16 +90,16 @@ struct CToCxConverter final : clang::ASTConsumer {
         case clang::BuiltinType::BFloat16:
             ASSERT(false); // Skipped before conversion; float32 as a fallback.
             return Type::getFloat32();
+        case clang::BuiltinType::Int128:
+        case clang::BuiltinType::UInt128:
+            ASSERT(false); // Skipped before conversion; int32 as a fallback.
+            return Type::getInt32();
         case clang::BuiltinType::Float:
             return Type::getFloat32();
         case clang::BuiltinType::Double:
             return Type::getFloat64();
         case clang::BuiltinType::LongDouble:
             return Type::getFloat80();
-        case clang::BuiltinType::Int128:
-            return Type::getInt128();
-        case clang::BuiltinType::UInt128:
-            return Type::getUInt128();
         default:
             auto name = type.getName(clang::PrintingPolicy({}));
             WARN(Location(), "unknown C built-in type '" << name << "', defaulting to 'int32'");
@@ -375,83 +375,95 @@ struct CToCxConverter final : clang::ASTConsumer {
         addConstantToSymbolTable(name, initializer, Type::getFloat64(Mutability::Const));
     }
 
-    // True when converting this type would reach a 16-bit float. Mirrors toCx
-    // case for case, including pointed-to records: conversion fills in record
-    // fields eagerly, so a pointer doesn't hide float16.
-    bool typeUsesFloat16(clang::QualType qualType, std::unordered_set<const clang::RecordDecl*>& visited) {
+    // Scalars with no cx counterpart. Mirrors toCx case for case in
+    // findUnsupportedScalar, including pointed-to records: conversion fills
+    // in record fields eagerly, so a pointer doesn't hide one.
+    enum class UnsupportedScalar { Float16, Int128 };
+
+    std::optional<UnsupportedScalar> findUnsupportedScalar(clang::QualType qualType, std::unordered_set<const clang::RecordDecl*>& visited) {
         auto& type = *qualType.getTypePtr();
         switch (type.getTypeClass()) {
         case clang::Type::Pointer:
-            return typeUsesFloat16(llvm::cast<clang::PointerType>(type).getPointeeType(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::PointerType>(type).getPointeeType(), visited);
+        case clang::Type::LValueReference:
+        case clang::Type::RValueReference:
+            return findUnsupportedScalar(llvm::cast<clang::ReferenceType>(type).getPointeeType(), visited);
+        case clang::Type::SubstTemplateTypeParm:
+            return findUnsupportedScalar(llvm::cast<clang::SubstTemplateTypeParmType>(type).desugar(), visited);
         case clang::Type::Builtin: {
             auto kind = llvm::cast<clang::BuiltinType>(type).getKind();
-            return kind == clang::BuiltinType::Float16 || kind == clang::BuiltinType::BFloat16;
+            if (kind == clang::BuiltinType::Float16 || kind == clang::BuiltinType::BFloat16) return UnsupportedScalar::Float16;
+            if (kind == clang::BuiltinType::Int128 || kind == clang::BuiltinType::UInt128) return UnsupportedScalar::Int128;
+            return std::nullopt;
         }
         case clang::Type::Typedef:
-            return typeUsesFloat16(llvm::cast<clang::TypedefType>(type).desugar(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::TypedefType>(type).desugar(), visited);
         case clang::Type::PredefinedSugar:
-            return typeUsesFloat16(llvm::cast<clang::PredefinedSugarType>(type).desugar(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::PredefinedSugarType>(type).desugar(), visited);
         case clang::Type::Record: {
             auto* def = llvm::cast<clang::RecordType>(type).getDecl()->getDefinition();
-            if (!def) return false;
-            return recordUsesFloat16(*def, visited);
+            if (!def) return std::nullopt;
+            return findUnsupportedScalarInRecord(*def, visited);
         }
         case clang::Type::Paren:
-            return typeUsesFloat16(llvm::cast<clang::ParenType>(type).getInnerType(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::ParenType>(type).getInnerType(), visited);
         case clang::Type::FunctionProto: {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
-            if (typeUsesFloat16(functionProtoType.getReturnType(), visited)) return true;
+            if (auto unsupported = findUnsupportedScalar(functionProtoType.getReturnType(), visited)) return unsupported;
             for (clang::QualType paramType : functionProtoType.getParamTypes()) {
-                if (typeUsesFloat16(paramType, visited)) return true;
+                if (auto unsupported = findUnsupportedScalar(paramType, visited)) return unsupported;
             }
-            return false;
+            return std::nullopt;
         }
         case clang::Type::FunctionNoProto:
-            return typeUsesFloat16(llvm::cast<clang::FunctionNoProtoType>(type).getReturnType(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::FunctionNoProtoType>(type).getReturnType(), visited);
         case clang::Type::ConstantArray:
-            return typeUsesFloat16(llvm::cast<clang::ConstantArrayType>(type).getElementType(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::ConstantArrayType>(type).getElementType(), visited);
         case clang::Type::IncompleteArray:
-            return typeUsesFloat16(llvm::cast<clang::IncompleteArrayType>(type).getElementType(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::IncompleteArrayType>(type).getElementType(), visited);
         case clang::Type::Attributed:
-            return typeUsesFloat16(llvm::cast<clang::AttributedType>(type).getEquivalentType(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::AttributedType>(type).getEquivalentType(), visited);
         case clang::Type::Decayed:
-            return typeUsesFloat16(llvm::cast<clang::DecayedType>(type).getDecayedType(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::DecayedType>(type).getDecayedType(), visited);
         case clang::Type::Vector:
-            return typeUsesFloat16(llvm::cast<clang::VectorType>(type).getElementType(), visited);
+            return findUnsupportedScalar(llvm::cast<clang::VectorType>(type).getElementType(), visited);
         case clang::Type::Enum:
         default:
-            return false;
+            return std::nullopt;
         }
     }
 
-    bool recordUsesFloat16(const clang::RecordDecl& recordDecl, std::unordered_set<const clang::RecordDecl*>& visited) {
+    std::optional<UnsupportedScalar> findUnsupportedScalarInRecord(const clang::RecordDecl& recordDecl, std::unordered_set<const clang::RecordDecl*>& visited) {
         const clang::RecordDecl* def = recordDecl.getDefinition();
-        if (!def) return false;
-        if (!visited.insert(llvm::cast<clang::RecordDecl>(def->getCanonicalDecl())).second) return false;
+        if (!def) return std::nullopt;
+        if (!visited.insert(llvm::cast<clang::RecordDecl>(def->getCanonicalDecl())).second) return std::nullopt;
         for (auto* field : def->fields()) {
-            if (typeUsesFloat16(field->getType(), visited)) return true;
+            if (auto unsupported = findUnsupportedScalar(field->getType(), visited)) return unsupported;
         }
-        return false;
+        return std::nullopt;
     }
 
-    // 16-bit floats have no cx counterpart and no size- and ABI-preserving
-    // mapping, so declarations using them are skipped. The header still
-    // imports; using a skipped name fails at the use site.
-    bool warnFloat16Skipped(Location location, llvm::StringRef name) {
-        WARN(location, "skipping C declaration '" << name << "': 16-bit floating-point types are not supported");
+    // Declarations using a scalar with no cx counterpart and no size- and
+    // ABI-preserving mapping are skipped. The header still imports; using a
+    // skipped name fails at the use site. The int128 skip is silent: system
+    // headers use __int128 in declarations nobody imports for (e.g. Mach
+    // thread states), so warning would be pure noise.
+    bool skipIfUnsupportedScalar(std::optional<UnsupportedScalar> unsupported, Location location, llvm::StringRef name) {
+        if (!unsupported) return false;
+        if (*unsupported == UnsupportedScalar::Float16) {
+            WARN(location, "skipping C declaration '" << name << "': 16-bit floating-point types are not supported");
+        }
         return true;
     }
 
-    bool skipIfUsesFloat16(clang::QualType type, llvm::StringRef name, Location location) {
+    bool skipIfUnsupportedScalar(clang::QualType type, llvm::StringRef name, Location location) {
         std::unordered_set<const clang::RecordDecl*> visited;
-        if (!typeUsesFloat16(type, visited)) return false;
-        return warnFloat16Skipped(location, name);
+        return skipIfUnsupportedScalar(findUnsupportedScalar(type, visited), location, name);
     }
 
-    bool skipIfUsesFloat16(const clang::RecordDecl& recordDecl) {
+    bool skipIfUnsupportedScalar(const clang::RecordDecl& recordDecl) {
         std::unordered_set<const clang::RecordDecl*> visited;
-        if (!recordUsesFloat16(recordDecl, visited)) return false;
-        return warnFloat16Skipped(toCx(recordDecl.getLocation()), getName(recordDecl));
+        return skipIfUnsupportedScalar(findUnsupportedScalarInRecord(recordDecl, visited), toCx(recordDecl.getLocation()), getName(recordDecl));
     }
 
     static clang::QualType peelArrayTypes(clang::QualType type) {
@@ -610,7 +622,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                         countSkippedCxxDecl(clangDecl);
                         break;
                     }
-                    if (skipIfUsesFloat16(clangDecl.getType(), clangDecl.getNameAsString(), toCx(clangDecl.getLocation()))) break;
+                    if (skipIfUnsupportedScalar(clangDecl.getType(), clangDecl.getNameAsString(), toCx(clangDecl.getLocation()))) break;
                     auto functionDecl = toCx(clangDecl);
                     if (conversionFailed) {
                         countSkippedCxxDecl(clangDecl);
@@ -632,7 +644,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                         countSkippedCxxDecl(recordDecl);
                         break;
                     }
-                    if (skipIfUsesFloat16(recordDecl)) break;
+                    if (skipIfUnsupportedScalar(recordDecl)) break;
                     auto* converted = toCx(recordDecl);
                     if (cxxMode && !converted) countSkippedCxxDecl(recordDecl);
                     break;
@@ -644,6 +656,10 @@ struct CToCxConverter final : clang::ASTConsumer {
                     break;
                 case clang::Decl::Enum: {
                     auto& enumDecl = llvm::cast<clang::EnumDecl>(*decl);
+                    // getIntegerType needs the definition; forward declarations have no cases to convert.
+                    if (enumDecl.getDefinition() && skipIfUnsupportedScalar(enumDecl.getIntegerType(), getName(enumDecl), toCx(enumDecl.getLocation()))) {
+                        break;
+                    }
                     bool isAnonymous = getName(enumDecl).empty();
                     std::vector<EnumCase> cases;
 
@@ -671,7 +687,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                         countSkippedCxxDecl(varDecl);
                         break;
                     }
-                    if (skipIfUsesFloat16(varDecl.getType(), varDecl.getNameAsString(), toCx(varDecl.getLocation()))) break;
+                    if (skipIfUnsupportedScalar(varDecl.getType(), varDecl.getNameAsString(), toCx(varDecl.getLocation()))) break;
                     auto* cxVarDecl = toCx(varDecl);
                     module.addToSymbolTable(*cxVarDecl);
                     module.sourceFiles.front().topLevelDecls.push_back(cxVarDecl);
@@ -679,7 +695,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                 }
                 case clang::Decl::Typedef: {
                     auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);
-                    if (skipIfUsesFloat16(typedefDecl.getUnderlyingType(), typedefDecl.getNameAsString(), toCx(typedefDecl.getLocation()))) break;
+                    if (skipIfUnsupportedScalar(typedefDecl.getUnderlyingType(), typedefDecl.getNameAsString(), toCx(typedefDecl.getLocation()))) break;
                     auto underlyingType = toCx(typedefDecl.getUnderlyingType());
                     if (conversionFailed) {
                         countSkippedCxxDecl(typedefDecl);
@@ -844,12 +860,8 @@ private:
                 type = context.UnsignedLongLongTy;
             }
             if (type.isNull()) {
-                if (fitsSigned(128))
-                    type = context.Int128Ty;
-                else if (fitsUnsigned(128))
-                    type = context.UnsignedInt128Ty;
-                else
-                    return;
+                WARN(Location(), "skipping C integer constant '" << name << "': value does not fit 64 bits");
+                return;
             }
             cToCxConverter.addIntegerConstantToSymbolTable(name, llvm::APSInt(rawValue, type->isUnsignedIntegerType()), type);
         } else if (parser.isFloatingLiteral()) {

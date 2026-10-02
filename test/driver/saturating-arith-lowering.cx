@@ -40,12 +40,6 @@ uint64 usub64(uint64 a, uint64 b) { return a -| b; }
 // C: _saturating_arith{{[0-9]+}} = ({{.*}}) ? (({{.*}} < 0) ? -2147483648 : 2147483647) : _saturating_wrapped{{[0-9]+}};
 int32 sadd32(int32 a, int32 b) { return a +| b; }
 
-// IR: = saturatingarith + {{.*}}, {{.*}}
-// CHECK: call i128 @llvm.sadd.sat.i128(i128 {{.*}}, i128 {{.*}})
-// C: _saturating_wrapped{{[0-9]+}} = ((__int128)(((unsigned __int128){{.*}}) + ((unsigned __int128){{.*}})));
-// C: _saturating_arith{{[0-9]+}} = ({{.*}}) ? (({{.*}} < 0) ? ((__int128)(((unsigned __int128)9223372036854775808ULL) << 64) | ((unsigned __int128)0ULL)) : ((__int128)(((unsigned __int128)9223372036854775807ULL) << 64) | ((unsigned __int128)18446744073709551615ULL))) : _saturating_wrapped{{[0-9]+}};
-int128 sadd128(int128 a, int128 b) { return a +| b; }
-
 // IR: = checkedarith * {{.*}}, {{.*}}
 // IR: = overflow {{.*}}
 // CHECK: call { i64, i1 } @llvm.smul.with.overflow.i64(i64 {{.*}}, i64 {{.*}})
@@ -57,6 +51,5 @@ void main() {
     println(uadd64(1, 2));
     println(usub64(1, 2));
     println(sadd32(1, 2));
-    println(sadd128(int128(1), int128(2)) == int128(3) ? 1 : 0);
     println(smul64(1, 2));
 }

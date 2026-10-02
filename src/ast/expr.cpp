@@ -760,16 +760,6 @@ static bool getIntegerLikeWidth(Type type, int& width, bool& isUnsigned) {
         isUnsigned = type.isUnsigned();
         return true;
     }
-    if (type.isInt128()) {
-        width = 128;
-        isUnsigned = false;
-        return true;
-    }
-    if (type.isUInt128()) {
-        width = 128;
-        isUnsigned = true;
-        return true;
-    }
     if (type.isChar()) {
         width = 8;
         isUnsigned = true;

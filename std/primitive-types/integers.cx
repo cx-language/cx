@@ -123,15 +123,6 @@ struct int64: Comparable, Printable, Hashable, Addable {
     }
 }
 
-// Not Printable or Hashable for now.
-/// A 128-bit signed integer.
-struct int128: Comparable {
-    /// Compares this value to another.
-    Ordering compare(int128& other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
-    }
-}
-
 /// An 8-bit unsigned integer.
 struct uint8: Comparable, Printable, Hashable, Addable {
     /// Largest value of this type.
@@ -465,15 +456,6 @@ struct c_ulonglong: Comparable, Printable, Hashable, Addable {
     /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
-    }
-}
-
-// Not Printable or Hashable for now.
-/// A 128-bit unsigned integer.
-struct uint128: Comparable {
-    /// Compares this value to another.
-    Ordering compare(uint128& other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 }
 

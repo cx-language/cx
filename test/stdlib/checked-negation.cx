@@ -11,8 +11,6 @@ void testCheckedNegation() {
     assert(-0 == 0);
     int x = 2147483647;
     assert(-x == -2147483647);
-    int128 v = int128(1) << int128(100);
-    assert(-v == int128(0) - v);
     float f = 1.5;
     assert(-f == -1.5);
 }

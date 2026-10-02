@@ -651,7 +651,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
                         "cannot apply unary '-%' to pointer of type '" << operandType << "'; dereference it explicitly (e.g. '-%*p')");
         }
         operandType = operandType.removePointer();
-        if (!operandType.isInteger() && !operandType.isInt128() && !operandType.isUInt128() && !operandType.isChar()) {
+        if (!operandType.isInteger() && !operandType.isChar()) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-%' to type '" << operandType << "'");
         }
         return operandType;
@@ -672,7 +672,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot apply unary '-' to type '" << operandType << "'");
             }
             Type negType = operandType.removeOptional().removePointer();
-            if ((negType.isInteger() || negType.isInt128() || negType.isUInt128()) && expr.isConstant()) {
+            if (negType.isInteger() && expr.isConstant()) {
                 llvm::APSInt result = expr.getConstantIntegerValue();
                 // A minus directly on an integer literal spells a negative literal:
                 // -9223372036854775808 is int64 min even though its positive half
@@ -680,7 +680,6 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
                 // wider; anything more negative falls through to the error below.
                 if (llvm::isa<IntLiteralExpr>(&expr.getOperand()) && !checkRange(expr, result, negType, false)) {
                     if (result.isSignedIntN(64)) return Type::getInt64();
-                    if (result.isSignedIntN(128)) return Type::getInt128();
                 }
                 // Like the runtime overflow check, diagnose overflowing constant negation at compile time.
                 checkRange(expr, result, negType, /* diagnoseOutOfRange: */ true);
@@ -916,10 +915,6 @@ Type Typechecker::typecheckStructComparison(BinaryExpr& expr) {
     return finishComparisonLowering(expr, result, temps.lhsTemp, temps.rhsTemp);
 }
 
-static bool isIntegerLike(Type type) {
-    return type.isInteger() || type.isInt128() || type.isUInt128();
-}
-
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.op;
 
@@ -1146,8 +1141,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
                 }
             }
 
-            if (isWrappingOrSaturatingOperator(op) && !elementType.isInteger() && !elementType.isInt128() && !elementType.isUInt128()
-                && !elementType.isChar()) {
+            if (isWrappingOrSaturatingOperator(op) && !elementType.isInteger() && !elementType.isChar()) {
                 goto not_array_programming;
             }
 
@@ -1241,7 +1235,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         bool rhsIsSizeof = expr.getRHS().isSizeofExpr();
         if (lhsIsSizeof != rhsIsSizeof) {
             Type peer = lhsIsSizeof ? rightType : leftType;
-            if (isIntegerLike(peer) || peer.isFloatingPoint()) {
+            if (peer.isInteger() || peer.isFloatingPoint()) {
                 Expr* side = lhsIsSizeof ? &expr.getLHS() : &expr.getRHS();
                 if (Expr* converted = convert(side, peer, true, false)) {
                     if (lhsIsSizeof) {
@@ -1266,11 +1260,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     Type resultType = isComparisonOperator(op) ? Type::getBool() : expr.getLHS().type.removeOptional().removePointer();
 
     if (isWrappingOrSaturatingOperator(op)) {
-        if (!resultType.isInteger() && !resultType.isInt128() && !resultType.isUInt128() && !resultType.isChar()) {
+        if (!resultType.isInteger() && !resultType.isChar()) {
             throwInvalidOperandsToBinaryExpr(expr, op);
         }
-    } else if ((op == Token::Plus || op == Token::Minus || op == Token::Star) && (resultType.isInteger() || resultType.isInt128() || resultType.isUInt128())
-               && expr.isConstant()) {
+    } else if ((op == Token::Plus || op == Token::Minus || op == Token::Star) && resultType.isInteger() && expr.isConstant()) {
         // Like the runtime overflow check, diagnose overflowing constant arithmetic at compile time.
         checkRange(expr, expr.getConstantIntegerValue(), resultType, /* diagnoseOutOfRange: */ true);
     }
@@ -1415,9 +1408,6 @@ static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, b
     if (type.isInteger()) {
         width = type.getIntegerBitWidth();
         isUnsigned = type.isUnsigned();
-    } else if (type.isInt128() || type.isUInt128()) {
-        width = 128;
-        isUnsigned = type.isUInt128();
     } else {
         llvm_unreachable("checkRange only supports integer types");
     }
@@ -1822,7 +1812,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // know the number of bytes, so it converts to any numeric type without a range check.
         if (expr->isSizeofExpr() && !expr->isConstant()) {
             auto adjustedTarget = allowPointerToTemporary ? target.removeReference() : target;
-            if (isIntegerLike(adjustedTarget) || adjustedTarget.isFloatingPoint()) return adjustedTarget;
+            if (adjustedTarget.isInteger() || adjustedTarget.isFloatingPoint()) return adjustedTarget;
         }
 
         if ((expr->type.isInteger() || expr->type.isChar() || (expr->type.isEnumType() && !llvm::cast<EnumDecl>(expr->type.getDecl())->hasAssociatedValues()))
@@ -2710,8 +2700,8 @@ bool Typechecker::tryEnsurePrintable(TypeDecl& typeDecl, const TypeDecl& interfa
 }
 
 bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
-    // Builtin scalars without a print method (int128 etc.) stay unprintable; claiming
-    // them would render their values as `Name()`. Same for closures and anonymous types.
+    // Builtin scalars without a print method stay unprintable; claiming them
+    // would render their values as `Name()`. Same for closures and anonymous types.
     if ((!decl.isStruct() && !decl.isEnumDecl()) || decl.getName().empty() || decl.isClosure() || Type::isBuiltinScalar(decl.getName())) return false;
     // A user member named `print` owns the name; never shadow it.
     for (Decl* method : decl.methods) {

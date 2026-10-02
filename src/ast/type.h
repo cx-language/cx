@@ -96,12 +96,10 @@ struct Type {
     bool isInt16() const;
     bool isInt32() const;
     bool isInt64() const;
-    bool isInt128() const;
     bool isUInt8() const;
     bool isUInt16() const;
     bool isUInt32() const;
     bool isUInt64() const;
-    bool isUInt128() const;
     bool isCSizeT() const;
     bool isCSChar() const;
     bool isCUChar() const;
@@ -189,12 +187,10 @@ struct Type {
     static Type getInt16(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getInt32(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getInt128(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt8(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt16(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt32(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getUInt64(Mutability mutability = Mutability::Mutable, Location location = Location());
-    static Type getUInt128(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getCSizeT(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getCSChar(Mutability mutability = Mutability::Mutable, Location location = Location());
     static Type getCUChar(Mutability mutability = Mutability::Mutable, Location location = Location());

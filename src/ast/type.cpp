@@ -28,12 +28,10 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Int8, int8)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Int16, int16)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Int32, int32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Int64, int64)
-DEFINE_BUILTIN_TYPE_GET_AND_IS(Int128, int128)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt8, uint8)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt16, uint16)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt32, uint32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt64, uint64)
-DEFINE_BUILTIN_TYPE_GET_AND_IS(UInt128, uint128)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(CSizeT, c_size_t)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(CSChar, c_schar)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(CUChar, c_uchar)
@@ -113,9 +111,8 @@ bool Type::isArrayPointer() const {
 }
 
 constexpr llvm::StringRef builtinScalarNames[] = {
-    "int8",        "int16",   "int32",    "int64",   "int128",   "uint8",   "uint16", "uint32", "uint64",  "uint128",
-    "c_size_t",    "c_schar", "c_uchar",  "c_short", "c_ushort", "c_int",   "c_uint", "c_long", "c_ulong", "c_longlong",
-    "c_ulonglong", "c_float", "c_double", "float32", "float64",  "float80", "bool",   "char",
+    "int8",  "int16",  "int32",  "int64",   "uint8",      "uint16",      "uint32",  "uint64",   "c_size_t", "c_schar", "c_uchar", "c_short", "c_ushort",
+    "c_int", "c_uint", "c_long", "c_ulong", "c_longlong", "c_ulonglong", "c_float", "c_double", "float32",  "float64", "float80", "bool",    "char",
 };
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
@@ -509,7 +506,6 @@ std::optional<uint64_t> Type::getSizeInBytes() const {
     // Only types whose lowering is fixed across targets. Pointers, aggregates,
     // and float80 depend on the target data layout, which sema cannot see.
     if (isInteger()) return getIntegerBitWidth() / 8;
-    if (isInt128() || isUInt128()) return 16;
     if (isChar() || isBool()) return 1;
     if (isFloat32() || isCFloat()) return 4;
     if (isFloat64() || isCDouble()) return 8;

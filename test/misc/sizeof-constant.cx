@@ -16,10 +16,6 @@ void main() {
     println(sizeof(bool));
     // CHECK-NEXT:8
     println(sizeof(int64));
-    // CHECK-NEXT:16
-    println(sizeof(int128));
-    // CHECK-NEXT:16
-    println(sizeof(uint128));
     // CHECK-NEXT:4
     println(sizeof(float));
     // CHECK-NEXT:4

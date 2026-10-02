@@ -62,13 +62,6 @@ uint64 umul64(uint64 a, uint64 b) { return a * b; }
 // C: _arith_overflow{{[0-9]+}} = (((int64_t){{.*}}) + ((int64_t){{.*}})) != ((int64_t)_checked_arith{{[0-9]+}});
 int32 sadd32(int32 a, int32 b) { return a + b; }
 
-// IR: = checkedarith + {{.*}}, {{.*}}
-// IR: = overflow {{.*}}
-// CHECK: call { i128, i1 } @llvm.sadd.with.overflow.i128(i128 {{.*}}, i128 {{.*}})
-// C: _checked_arith{{[0-9]+}} = ((__int128)(((unsigned __int128){{.*}}) + ((unsigned __int128){{.*}})));
-// C: _arith_overflow{{[0-9]+}} = (((({{.*}} ^ {{.*}}) & ({{.*}} ^ {{.*}})) & ((unsigned __int128)1 << 127)) != 0);
-int128 sadd128(int128 a, int128 b) { return a + b; }
-
 void main() {
     println(sadd64(1, 2));
     println(ssub64(1, 2));
@@ -77,5 +70,4 @@ void main() {
     println(usub64(1, 2));
     println(umul64(1, 2));
     println(sadd32(1, 2));
-    println(sadd128(int128(1), int128(2)) == int128(3) ? 1 : 0);
 }

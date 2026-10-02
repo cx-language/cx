@@ -759,10 +759,10 @@ void CGenerator::codegenArithOverflowExpr(Token::Kind op, const Value* left, con
             stream << " << " << (width - 1) << ")) != 0)";
         }
     } else {
-        // 64-bit multiply can't widen (MSVC and xcc lack __int128) and 128-bit
-        // multiply has no wider type. Overflow is result / b != a when b != 0,
-        // with the MIN / -1 division trap guarded; && and || short-circuit
-        // so the division never evaluates unguarded.
+        // 64-bit multiply can't widen (MSVC and xcc lack __int128).
+        // Overflow is result / b != a when b != 0, with the MIN / -1
+        // division trap guarded; && and || short-circuit so the division
+        // never evaluates unguarded.
         stream << "(";
         codegenInst(right);
         stream << " != 0) && (";
@@ -1197,42 +1197,24 @@ void CGenerator::codegenConstantString(const ConstantString* inst) {
 }
 
 void CGenerator::codegenAPSInt(IRType* type, const llvm::APSInt& value) {
-    // A negative value spells as a positive magnitude under unary minus, so it
-    // fits only when its significant bits do; a non-negative value fits when
-    // its magnitude does (ULL covering the 64th bit).
-    bool fitsLiteral = value.isNegative() ? value.getSignificantBits() <= 64 : value.getActiveBits() <= 64;
-    if (fitsLiteral) {
-        // -9223372036854775808 parses as unary minus applied to 9223372036854775808,
-        // which doesn't fit a signed 64-bit int; spell it to avoid the warning.
-        if (value.isSigned() && value.getSignificantBits() <= 64 && value.getSExtValue() == INT64_MIN) {
-            stream << "(-9223372036854775807 - 1)";
-            return;
-        }
-        stream << value;
-        // Non-negative magnitudes above INT64_MAX don't fit a signed 64-bit literal; spell them unsigned.
-        if (!value.isNegative() && value.getActiveBits() > 63) stream << "ULL";
+    // Constant folding evaluates in a wider representation; reduce over-wide
+    // folds to the type width like the LLVM backend, so they wrap identically
+    // (e.g. 1 << 100, which sema leaves undiagnosed). The reduced value takes
+    // the type's signedness so the spelling keeps its value unconverted.
+    // Non-integers (char) reduce to 64 bits, which always spells; the C
+    // conversion to the narrower temporary does the final reduction.
+    int width = getIntegerBitWidth(type);
+    llvm::APSInt v = width > 0 ? value.extOrTrunc(width) : value.extOrTrunc(64);
+    if (width > 0) v.setIsSigned(!type->isUnsignedInteger());
+    // -9223372036854775808 parses as unary minus applied to 9223372036854775808,
+    // which doesn't fit a signed 64-bit int; spell it to avoid the warning.
+    if (v.isSigned() && v.getSExtValue() == INT64_MIN) {
+        stream << "(-9223372036854775807 - 1)";
         return;
     }
-    // Integer literals max out at 64 bits (Clang rejects even unsuffixed wider
-    // literals), so build wider values, only int128/uint128, from 64-bit halves.
-    auto emitCast = [&](IRType* targetType, const std::function<void()>& emitInner) {
-        stream << "((";
-        codegenTypeExpression(stream, targetType, true);
-        stream << ")";
-        emitInner();
-        stream << ")";
-    };
-    llvm::APSInt unsignedValue(value);
-    unsignedValue.setIsUnsigned(true);
-    uint64_t lo = unsignedValue.trunc(64).getZExtValue();
-    uint64_t hi = unsignedValue.lshr(64).trunc(64).getZExtValue();
-    auto* unsignedType = getIRType(getUnsignedIntegerType(getIntegerBitWidth(type)));
-    emitCast(type, [&] {
-        stream << "(";
-        emitCast(unsignedType, [&] { stream << hi << "ULL"; });
-        stream << " << 64) | ";
-        emitCast(unsignedType, [&] { stream << lo << "ULL"; });
-    });
+    stream << v;
+    // Non-negative magnitudes above INT64_MAX don't fit a signed 64-bit literal; spell them unsigned.
+    if (!v.isNegative() && v.getActiveBits() > 63) stream << "ULL";
 }
 
 void CGenerator::codegenConstantInt(const ConstantInt* inst) {
@@ -1738,12 +1720,10 @@ void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, boo
                                     .Case("int16", "int16_t")
                                     .Case("int32", "int32_t")
                                     .Case("int64", "int64_t")
-                                    .Case("int128", "__int128")
                                     .Case("uint8", "uint8_t")
                                     .Case("uint16", "uint16_t")
                                     .Case("uint32", "uint32_t")
                                     .Case("uint64", "uint64_t")
-                                    .Case("uint128", "unsigned __int128")
                                     .Case("c_size_t", "size_t")
                                     .Case("c_schar", "signed char")
                                     .Case("c_uchar", "unsigned char")
