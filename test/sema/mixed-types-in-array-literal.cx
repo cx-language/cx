@@ -1,6 +1,15 @@
-// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
 
 void main() {
     // CHECK: [[@LINE+1]]:23: error: mixed element types in array literal (expected 'int', found 'null')
     var a = [1, 2, 3, null];
+}
+
+void mixedConst() {
+    const constInt = 5;
+    // No error: top-level const is not part of the element type.
+    var a = [constInt, 7];
+    var b = [7, constInt];
+    println(a[0]);
+    println(b[1]);
 }
