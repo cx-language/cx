@@ -127,7 +127,9 @@ Stmt* Stmt::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
 }
 
 Stmt* WhileStmt::lower() {
-    return makeAST<ForStmt>(nullptr, condition, std::vector<Expr*>(), std::move(body), location);
+    auto* lowered = makeAST<ForStmt>(nullptr, condition, std::vector<Expr*>(), std::move(body), location);
+    lowered->disabledChecks = disabledChecks;
+    return lowered;
 }
 
 // Lowers 'for id in range { ... }' into:
@@ -204,5 +206,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
         auto counterVarExpr = makeAST<VarExpr>(indexCounterName, location);
         increments.push_back(makeAST<UnaryExpr>(Token::Increment, counterVarExpr, location));
     }
-    return makeAST<ForStmt>(iteratorVarStmt, hasValueCallExpr, std::move(increments), std::move(forBody), location);
+    auto* lowered = makeAST<ForStmt>(iteratorVarStmt, hasValueCallExpr, std::move(increments), std::move(forBody), location);
+    lowered->disabledChecks = disabledChecks;
+    return lowered;
 }

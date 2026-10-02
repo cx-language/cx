@@ -50,6 +50,21 @@ void main() {
     // A `(` after the attribute starts a parenthesized expression.
     var q = @noOverflowCheck (x + 1);
     println(q); // CHECK-NEXT:-2147483648
+    // Masks survive loop lowering.
+    var w = 2147483647;
+    var n = 0;
+    @noOverflowCheck
+    while n < 1 {
+        w = w + 1;
+        n = n + 1;
+    }
+    println(w); // CHECK-NEXT:-2147483648
+    var s = 0;
+    @noOverflowCheck
+    for _ in 0..3 {
+        s = s + 2147483647;
+    }
+    println(s); // CHECK-NEXT:2147483645
     // The mask travels with deferred expressions to scope exit.
     var d = 2147483647;
     @noOverflowCheck
