@@ -2,9 +2,7 @@
 
 VS Code language support for the [cx programming language](https://github.com/cx-language/cx).
 
-<p align="center">
-  <img src="./assets/demo.png">
-</p>
+![cx in VS Code](assets/demo.jpg)
 
 ## Features
 
@@ -26,7 +24,8 @@ The `importSearchPaths` and `defines` settings take effect after restarting the 
 
 ## Installation
 
-Use the VS Code "install extensions" command and search for `cx`.
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=cx-language.cx-lang),
+or use the VS Code "install extensions" command and search for `cx Programming Language`.
 
 Alternatively, you can download the `.vsix` file from Releases, and run
 

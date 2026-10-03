@@ -1,18 +1,19 @@
 # Change Log
 
-All notable changes to the "cx-language" extension will be documented in this file.
+All notable changes to the "cx-lang" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## Unreleased
+## 0.2.1
 ### Changed
-- Renamed the language from Delta to cx (language id `delta` → `cx`, file extension `.delta` → `.cx`)
+- Fixed README screenshot and install instructions
 
 ## 0.2.0
 ### Added
 - Language server integration: diagnostics, hover, go to definition, completions, document symbols, references, and semantic highlighting via `cx-lsp`, with `cx.languageServer.*` settings and a restart command
 
 ### Changed
+- Renamed the extension to `cx-lang` (the `cx-language` name is taken on the Marketplace)
 - Updated syntax highlighting to current cx syntax (current keywords, `{...}` string interpolation, builtin types, attributes, `#if`/`#else`/`#endif`, wrapping/saturating operators)
 - Updated snippets to current syntax (no parentheses in `if`/`while`/`for`/`switch`, no semicolons); added `union` and `@test` snippets
 

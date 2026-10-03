@@ -1,4 +1,5 @@
 node_modules/
 client/out/
 tsconfig.tsbuildinfo
+LICENSE.txt
 *.vsix

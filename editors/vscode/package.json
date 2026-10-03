@@ -1,8 +1,8 @@
 {
-	"name": "cx-language",
-	"displayName": "cx Language",
+	"name": "cx-lang",
+	"displayName": "cx Programming Language",
 	"description": "Support for the cx programming language",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"publisher": "cx-language",
 	"license": "MIT",
 	"main": "./client/out/extension.js",
@@ -16,9 +16,10 @@
 		"url": "https://github.com/cx-language/cx"
 	},
 	"scripts": {
-		"compile": "tsc -b",
-		"watch": "tsc -b -w",
-		"vscode:prepublish": "npm run compile"
+		"compile": "tsc --noEmit -p . && node esbuild.mjs",
+		"watch": "node esbuild.mjs --watch",
+		"copy-license": "node -e \"require('fs').copyFileSync('../../LICENSE.txt', 'LICENSE.txt')\"",
+		"vscode:prepublish": "tsc --noEmit -p . && node esbuild.mjs --production && npm run copy-license"
 	},
 	"dependencies": {
 		"vscode-languageclient": "^9.0.1"
@@ -26,6 +27,7 @@
 	"devDependencies": {
 		"@types/node": "^20.0.0",
 		"@types/vscode": "^1.82.0",
+		"esbuild": "^0.25.0",
 		"typescript": "^5.5.0"
 	},
 	"contributes": {

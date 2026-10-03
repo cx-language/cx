@@ -1,4 +1,7 @@
 .vscode/**
 client/src/**
+esbuild.mjs
 tsconfig.json
+tsconfig.tsbuildinfo
+node_modules/**
 .gitignore
