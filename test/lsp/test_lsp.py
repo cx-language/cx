@@ -686,6 +686,7 @@ def test_completion_members(cx_lsp, path):
         details
         == [
             "void StringBuf.append(RepeatIterator<string> repetitions)",
+            "void StringBuf.append(T value)",
             "void StringBuf.append(T& value)",
             "void StringBuf.append(string s)",
         ],
@@ -696,7 +697,7 @@ def test_completion_members(cx_lsp, path):
         flags.setdefault(item["label"], []).append(item.get("hasParams"))
     check(
         "query-completion-member-has-params",
-        flags.get("append") == [True, True, True] and flags.get("empty") == [False],
+        flags.get("append") == [True, True, True, True] and flags.get("empty") == [False],
         json.dumps({k: flags.get(k) for k in ("append", "empty")})[:300],
     )
 
@@ -1187,7 +1188,7 @@ def test_server(command, path, label):
     appends = [item for item in response["result"] if item["label"] == "append"]
     check(
         f"{label}-completion-member-call-parens",
-        sorted(item.get("insertText", "") for item in appends) == ["append(", "append(", "append("]
+        sorted(item.get("insertText", "") for item in appends) == ["append(", "append(", "append(", "append("]
         and all("insertTextFormat" not in item for item in appends),
         json.dumps(appends)[:300],
     )

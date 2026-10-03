@@ -2000,8 +2000,10 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             if (adjustedTarget.isInteger() || adjustedTarget.isFloatingPoint()) return adjustedTarget;
         }
 
+        // A const-rooted integer never binds through a reference (see the borrow rule
+        // below): it names a compile-time value with no address, not a borrowable temporary.
         if ((expr->type.isInteger() || expr->type.isChar() || (expr->type.isEnumType() && !llvm::cast<EnumDecl>(expr->type.getDecl())->hasAssociatedValues()))
-            && expr->isConstant()) {
+            && expr->isConstant() && !(target.isReferenceType() && exprIsConst(*expr))) {
             auto value = expr->getConstantIntegerValue();
             // Convert e.g. int literal to uint when binding to uint&; raw pointer parameters require an explicit '&'
             // outside operator context.
@@ -2068,10 +2070,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     // Bind values to borrow parameters implicitly. Borrowing never copies, moves, or stores, and requires
     // an exact type match: the backend passes the operand's address as is, so no representation change
     // (wrapping, view conversion) may happen underneath the borrow. Raw pointer parameters require '&'
-    // outside operator context.
-    if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.isReferenceType() &&
-        // Allow forming mutable borrows of constants. This is safe because constants will be inlined at the usage site.
-        (allowsConstSource(expr) || (expr && expr->isConstant())) && (source == target.getPointee() || isNarrowedOptionalUse(expr, target.getPointee()))) {
+    // outside operator context. Constants never bind: they are compile-time values with no address.
+    if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.isReferenceType() && allowsConstSource(expr)
+        && (source == target.getPointee() || isNarrowedOptionalUse(expr, target.getPointee()))) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return source;
     }
@@ -2100,7 +2101,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     // Operator overloads use pointer parameters as non-escaping borrows. Keep ordinary pointer
     // arguments explicit, but let an lvalue operand supply its address in operator context.
-    // Const operands materialize a temporary, as for borrows above.
+    // Const lvalues keep materializing a temporary here; only direct borrows reject constants.
     if (allowOperatorBorrow && target.isPointerType() && !target.isReferenceType() && expr && expr->isLvalue() && source == target.getPointee()) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return target;

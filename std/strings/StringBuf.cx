@@ -113,6 +113,12 @@ struct StringBuf: Comparable, Hashable, Printable {
         value.print(OutputStream(this));
     }
 
+    /// Appends the printed form of the given value. Copyable values (including
+    /// constants, which have no address to borrow) bind by value.
+    void append<T: Printable + Copyable>(T value) {
+        value.print(OutputStream(this));
+    }
+
     /// Appends the repetition without allocating a temporary.
     void append(RepeatIterator<string> repetitions) {
         for chunk in repetitions {

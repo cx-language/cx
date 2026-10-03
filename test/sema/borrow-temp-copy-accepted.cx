@@ -1,19 +1,13 @@
 // RUN: %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck -allow-empty %s
-// Literals and foldable constants bind to borrow parameters through a
-// temporary; only storage-backed const access (elements, members) rejects.
+// Literals and foldable expressions bind to borrow parameters through a
+// temporary; only const-rooted sources are rejected (see borrow-const-rejected).
 
 void takesBorrow(int& x) {}
-
-struct S {
-    const MAX = 5;
-}
 
 const c = 5;
 
 void main() {
     takesBorrow(5);
-    takesBorrow(c);
-    takesBorrow(S.MAX);
     takesBorrow(c + 1);
     takesBorrow(-c);
 }
