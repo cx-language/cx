@@ -14,14 +14,19 @@
     "body": ["struct $1 {", "\t$0", "}"],
     "description": "Struct declaration"
   },
+  "Union declaration": {
+    "prefix": "union",
+    "body": ["union $1 {", "\t$0", "}"],
+    "description": "Union declaration"
+  },
   "Variable declaration": {
     "prefix": "var",
-    "body": ["var $1 = $0;"],
+    "body": ["var $1 = $0"],
     "description": "Variable declaration"
   },
   "Constant declaration": {
     "prefix": "const",
-    "body": ["const $1 $2 = $0;"],
+    "body": ["const $1 = $0"],
     "description": "Constant declaration"
   },
   "Function declaration": {
@@ -29,29 +34,34 @@
     "body": ["$1 $2($3) {", "\t$0", "}"],
     "description": "Function declaration"
   },
+  "Test function": {
+    "prefix": "test",
+    "body": ["@test", "void $1() {", "\t$0", "}"],
+    "description": "Unit test function"
+  },
   "while": {
     "prefix": "while",
-    "body": ["while ($1) {", "\t$0", "}"],
-    "description": ""
+    "body": ["while $1 {", "\t$0", "}"],
+    "description": "Code snippet for while statement"
   },
   "For loop": {
     "prefix": "for",
-    "body": ["for (var $1 in $2) {", "\t$0;", "}"],
+    "body": ["for $1 in $2 {", "\t$0", "}"],
     "description": "For loop"
   },
-  "Defers execution of a method": {
+  "Defers execution of a statement": {
     "prefix": "defer",
-    "body": ["defer $1($0);"],
-    "description": "Defers execution of a method"
+    "body": ["defer $0"],
+    "description": "Defers execution of a statement to the exit of the current scope"
   },
   "switch": {
     "prefix": "switch",
-    "body": ["switch ($1) {", "default:", "\t$0", "}"],
+    "body": ["switch $1 {", "\tcase $2: $3", "\tdefault: $0", "}"],
     "description": "Code snippet for switch statement"
   },
   "if": {
     "prefix": "if",
-    "body": ["if ($1) {", "\t$0", "}"],
+    "body": ["if $1 {", "\t$0", "}"],
     "description": "Code snippet for if statement"
   },
   "else": {
@@ -61,12 +71,12 @@
   },
   "else if": {
     "prefix": "else if",
-    "body": ["else if ($1) {", "\t$0", "}"],
+    "body": ["else if $1 {", "\t$0", "}"],
     "description": "Code snippet for else-if statement"
   },
   "ifelse": {
     "prefix": "ifelse",
-    "body": "\nif ($1) {\n\t$2\n} else {\n\t$3\n}\n",
+    "body": "\nif $1 {\n\t$2\n} else {\n\t$3\n}\n",
     "description": "if ... else ...",
     "scope": "source.cx"
   },
@@ -78,6 +88,6 @@
   "#ifelse": {
     "prefix": "#ifelse",
     "body": ["#if $1", "$2", "#else", "$3", "#endif"],
-    "description": "Code snippet for #if"
+    "description": "Code snippet for #if ... #else"
   }
 }

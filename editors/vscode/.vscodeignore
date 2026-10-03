@@ -1,4 +1,4 @@
 .vscode/**
-.vscode-test/**
+client/src/**
+tsconfig.json
 .gitignore
-vsc-extension-quickstart.md

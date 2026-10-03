@@ -2,16 +2,31 @@
 	"name": "cx-language",
 	"displayName": "cx Language",
 	"description": "Support for the cx programming language",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"publisher": "cx-language",
+	"license": "MIT",
+	"main": "./client/out/extension.js",
 	"engines": {
-		"vscode": "^1.17.0"
+		"vscode": "^1.82.0"
 	},
 	"categories": [
 		"Programming Languages"
 	],
 	"repository": {
-		"url": "https://github.com/cx-language/vscode-cx"
+		"url": "https://github.com/cx-language/cx"
+	},
+	"scripts": {
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"vscode:prepublish": "npm run compile"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^9.0.1"
+	},
+	"devDependencies": {
+		"@types/node": "^20.0.0",
+		"@types/vscode": "^1.82.0",
+		"typescript": "^5.5.0"
 	},
 	"contributes": {
 		"languages": [
@@ -38,6 +53,46 @@
 				"language": "cx",
 				"path": "./snippets/snippets.json"
 			}
-		]
+		],
+		"commands": [
+			{
+				"command": "cx.restartLanguageServer",
+				"title": "cx: Restart Language Server"
+			}
+		],
+		"configuration": {
+			"title": "cx",
+			"properties": {
+				"cx.languageServer.path": {
+					"type": "string",
+					"default": "cx-lsp",
+					"description": "Path to the cx-lsp language server executable. Resolved via PATH by default."
+				},
+				"cx.languageServer.args": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"description": "Extra command-line arguments passed to cx-lsp."
+				},
+				"cx.languageServer.importSearchPaths": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"description": "Extra import search paths, searched after the workspace folders but before the bundled std/. Takes effect after restarting the language server."
+				},
+				"cx.languageServer.defines": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"description": "#if flags enabled for language server analysis. Takes effect after restarting the language server."
+				}
+			}
+		}
 	}
 }
