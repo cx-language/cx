@@ -866,6 +866,8 @@ static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind
             hint += expr.getRHS().type.toString();
         }
         hint += "' cannot be null)";
+    } else if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) && isComparisonOperator(op)) {
+        hint += " (ordering comparisons against null are not allowed; use '==' or '!=' to check for null)";
     } else {
         auto isPointerOperand = [](Type type) {
             type = type.removeOptional();
@@ -1340,6 +1342,13 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             }
         }
         return typecheckCallExpr(expr);
+    }
+
+    // Ordering against null would only compare addresses to null, so reject it;
+    // '==' and '!=' check for null. (The null literal would otherwise convert
+    // to the nullable operand's type and slip through below.)
+    if (isComparisonOperator(op) && op != Token::Equal && op != Token::NotEqual && (expr.getLHS().isNullLiteralExpr() || expr.getRHS().isNullLiteralExpr())) {
+        throwInvalidOperandsToBinaryExpr(expr, op);
     }
 
     // Borrow operands retain their implicit dereference for builtin operators. Raw pointers never do:

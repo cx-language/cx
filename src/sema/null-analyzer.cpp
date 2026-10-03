@@ -356,8 +356,9 @@ void NullAnalyzer::analyze(Value* value) {
                 warnForNullability(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation, analyzeNullability(unwrapped, binary),
                                    "value is null here", "value may be null; unwrap it with a postfix '!' to silence this warning");
             }
-        } else if (llvm::isa<ConstantNull>(binary->right)) {
-            ASSERT(binary->op == Token::Equal || binary->op == Token::NotEqual);
+        } else if ((binary->op == Token::Equal || binary->op == Token::NotEqual) && llvm::isa<ConstantNull>(binary->right)) {
+            // Ordering comparisons against null (e.g. `p < null`) carry no
+            // null-check meaning, so only equality ops warn here.
             if (binary->getExpr() && analyzeNullability(binary->left, binary) == Nullability::DefinitelyNotNull) {
                 warnNullabilityOnce(getExprRangeStart(*binary->getExpr()), binary->getExpr()->endLocation,
                                     "value cannot be null here; null check can be removed");
