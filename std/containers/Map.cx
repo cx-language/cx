@@ -97,22 +97,22 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Returns true if all entries satisfy the predicate.
-    bool all(bool(MapEntry<Key, Value>&) predicate) { return all(iterator(), predicate); }
+    bool all<Pred: bool(MapEntry<Key, Value>&)>(Pred predicate) { return all(iterator(), predicate); }
 
     /// Returns true if all entries satisfy the predicate.
-    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
+    bool all<T: Copyable, Pred: bool(T)>(Pred predicate) { return all(iterator(), predicate); }
 
     /// Returns true if any entry satisfies the predicate.
-    bool any(bool(MapEntry<Key, Value>&) predicate) { return any(iterator(), predicate); }
+    bool any<Pred: bool(MapEntry<Key, Value>&)>(Pred predicate) { return any(iterator(), predicate); }
 
     /// Returns true if any entry satisfies the predicate.
-    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
+    bool any<T: Copyable, Pred: bool(T)>(Pred predicate) { return any(iterator(), predicate); }
 
     /// Returns true if no entry satisfies the predicate.
-    bool none(bool(MapEntry<Key, Value>&) predicate) { return none(iterator(), predicate); }
+    bool none<Pred: bool(MapEntry<Key, Value>&)>(Pred predicate) { return none(iterator(), predicate); }
 
     /// Returns true if no entry satisfies the predicate.
-    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
+    bool none<T: Copyable, Pred: bool(T)>(Pred predicate) { return none(iterator(), predicate); }
 
     /// Returns the number of entries.
     int size() {

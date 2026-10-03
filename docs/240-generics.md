@@ -109,6 +109,26 @@ struct MapEntry<Key: Hashable, Value> {
 }
 ```
 
+A type parameter can also be constrained to a function signature, written as a
+[function pointer](function-pointers) type. The argument must then be a function
+or lambda with a matching signature, including capturing lambdas. Untyped lambda
+parameters are inferred from the signature:
+
+```cs
+void runTwice<Pred: bool(int&)>(Pred shouldRun) {
+    for i in 0..2 {
+        if shouldRun(i) {
+            println(i);
+        }
+    }
+}
+
+void main() {
+    int threshold = 1;
+    runTwice(n => n >= threshold); // prints 1
+}
+```
+
 ## Integer parameters
 
 Generic parameters can also take integer values instead of types.

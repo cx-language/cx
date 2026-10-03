@@ -38,23 +38,23 @@ struct ChainIterator<Element, First, Second>: Iterator<Element&>, Printable {
     }
 
     /// Lazily transforms the elements.
-    MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Output(Element&)> map<Output>(Output(Element&) transform) {
-        return MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Output(Element&)>(*this, transform);
+    MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Pred> map<Output, Pred: Output(Element&)>(Pred transform) {
+        return MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Pred>(*this, transform);
     }
 
     /// Lazily transforms the elements.
-    MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Output(T)> map<Output, T: Copyable>(Output(T) transform) {
-        return MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Output(T)>(*this, transform);
+    MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Pred> map<Output, T: Copyable, Pred: Output(T)>(Pred transform) {
+        return MappedIterator<Output, Element, ChainIterator<Element, First, Second>, Pred>(*this, transform);
     }
 
     /// Lazily keeps the elements satisfying the predicate.
-    FilterIterator<Element, ChainIterator<Element, First, Second>, bool(Element&)> filter(bool(Element&) include) {
-        return FilterIterator<Element, ChainIterator<Element, First, Second>, bool(Element&)>(*this, include);
+    FilterIterator<Element, ChainIterator<Element, First, Second>, Pred> filter<Pred: bool(Element&)>(Pred include) {
+        return FilterIterator<Element, ChainIterator<Element, First, Second>, Pred>(*this, include);
     }
 
     /// Lazily keeps the elements satisfying the predicate.
-    FilterIterator<Element, ChainIterator<Element, First, Second>, bool(T)> filter<T: Copyable>(bool(T) include) {
-        return FilterIterator<Element, ChainIterator<Element, First, Second>, bool(T)>(*this, include);
+    FilterIterator<Element, ChainIterator<Element, First, Second>, Pred> filter<T: Copyable, Pred: bool(T)>(Pred include) {
+        return FilterIterator<Element, ChainIterator<Element, First, Second>, Pred>(*this, include);
     }
 
     /// Prints the remaining values in list form, e.g. [1, 2, 3].

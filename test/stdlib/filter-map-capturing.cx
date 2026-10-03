@@ -1,0 +1,112 @@
+// RUN: check_exit_status 0 %cx test -Werror %s
+// Callbacks accept capturing lambdas; closures are stored by value,
+// so no dynamic allocation is needed for the lambda itself.
+
+@test
+void testFilterCapturing() {
+    var numbers = List([0, 1, 2, 3, 4]);
+    int threshold = 2;
+
+    assert(numbers.filter(n => n >= threshold).toList() == List([2, 3, 4]));
+    assert(numbers.filter((int n) => n >= threshold).toList() == List([2, 3, 4]));
+    assert(numbers.filter((int& n) => n >= threshold).toList() == List([2, 3, 4]));
+}
+
+@test
+void testMapCapturing() {
+    var numbers = List([0, 1, 2, 3, 4]);
+    int offset = 10;
+
+    assert(numbers.map(n => n + offset).toList() == List([10, 11, 12, 13, 14]));
+    assert(numbers.map((int n) => n + offset).toList() == List([10, 11, 12, 13, 14]));
+    assert(numbers.map((int& n) => n + offset).toList() == List([10, 11, 12, 13, 14]));
+}
+
+@test
+void testFilterMapChainCapturing() {
+    var numbers = List([0, 1, 2, 3, 4]);
+    int threshold = 1;
+    int factor = 10;
+
+    assert(numbers.filter(n => n >= threshold).map(n => n * factor).toList() == List([10, 20, 30, 40]));
+}
+
+@test
+void testFindAllAnyNoneCapturing() {
+    var numbers = List([0, 1, 2, 3, 4]);
+    int threshold = 2;
+
+    assert(numbers.find(n => n >= threshold)! == 2);
+    assert(numbers.all(n => n >= threshold) == false);
+    assert(numbers.any(n => n >= threshold) == true);
+    assert(numbers.none(n => n >= threshold) == false);
+}
+
+@test
+void testOtherContainersCapturing() {
+    int threshold = 2;
+
+    int[5] array = [0, 1, 2, 3, 4];
+    assert(array.filter(n => n >= threshold).toList() == List([2, 3, 4]));
+    assert(array.map(n => n + threshold).toList() == List([2, 3, 4, 5, 6]));
+
+    var numbers = List([0, 1, 2, 3, 4]);
+    assert(Slice(numbers).filter(n => n >= threshold).toList() == List([2, 3, 4]));
+
+    var small = SmallList<int, 8>();
+    for n in numbers {
+        small.push(n);
+    }
+    assert(small.filter(n => n >= threshold).toList() == List([2, 3, 4]));
+
+    assert((0..5).any(n => n >= threshold) == true);
+    char minimum = 'b';
+    assert("abc".any(c => c >= minimum) == true);
+
+    var map = Map<string, int>();
+    map.insert("a", 1);
+    map.insert("b", 3);
+    assert(map.any(e => e.value >= threshold) == true);
+    assert(map.all(e => e.value >= threshold) == false);
+}
+
+@test
+void testRemoveFirstCapturing() {
+    var numbers = List([0, 1, 2, 3, 4]);
+    int threshold = 2;
+
+    assert(numbers.removeFirst(n => n >= threshold)! == 2);
+    assert(numbers == List([0, 1, 3, 4]));
+}
+
+@test
+void testDistinctCapturesSameSignature() {
+    var numbers = List([0, 1, 2, 3, 4]);
+    int low = 1;
+    int high = 3;
+
+    assert(numbers.filter(n => n >= low).toList() == List([1, 2, 3, 4]));
+    assert(numbers.filter(n => n >= high).toList() == List([3, 4]));
+}
+
+// The env roundtrip keeps the value opaque to the optimizer, so this exercises
+// a genuinely runtime capture rather than a constant-folded one.
+int runtimeThreshold() {
+    setenv("CX_FILTER_MAP_THRESHOLD", "abcd");
+    return getenv("CX_FILTER_MAP_THRESHOLD")!.size();
+}
+
+List<int> filterAbove(List<int>& numbers, int threshold) {
+    return numbers.filter(n => n >= threshold).toList();
+}
+
+@test
+void testRuntimeValueCapturing() {
+    var numbers = List([0, 1, 2, 3, 4]);
+    int threshold = runtimeThreshold();
+    assert(threshold == 4);
+
+    assert(numbers.filter(n => n >= threshold).toList() == List([4]));
+    assert(numbers.map(n => n * threshold).toList() == List([0, 4, 8, 12, 16]));
+    assert(filterAbove(numbers, threshold) == List([4]));
+}

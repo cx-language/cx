@@ -32,13 +32,13 @@ struct FilterIterator<Input, It, Predicate>: Iterator<Input&>, Printable {
     }
 
     /// Lazily transforms the elements.
-    MappedIterator<Output, Input, FilterIterator<Input, It, Predicate>, Output(Input&)> map<Output>(Output(Input&) transform) {
-        return MappedIterator<Output, Input, FilterIterator<Input, It, Predicate>, Output(Input&)>(*this, transform);
+    MappedIterator<Output, Input, FilterIterator<Input, It, Predicate>, Pred> map<Output, Pred: Output(Input&)>(Pred transform) {
+        return MappedIterator<Output, Input, FilterIterator<Input, It, Predicate>, Pred>(*this, transform);
     }
 
     /// Lazily transforms the elements.
-    MappedIterator<Output, Input, FilterIterator<Input, It, Predicate>, Output(T)> map<Output, T: Copyable>(Output(T) transform) {
-        return MappedIterator<Output, Input, FilterIterator<Input, It, Predicate>, Output(T)>(*this, transform);
+    MappedIterator<Output, Input, FilterIterator<Input, It, Predicate>, Pred> map<Output, T: Copyable, Pred: Output(T)>(Pred transform) {
+        return MappedIterator<Output, Input, FilterIterator<Input, It, Predicate>, Pred>(*this, transform);
     }
 
     /// Lazily appends another iterator's elements.

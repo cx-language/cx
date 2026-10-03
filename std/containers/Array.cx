@@ -65,7 +65,7 @@ struct Array<T, int N> {
     }
 
     /// Returns the first element satisfying the predicate, or null.
-    T&? find(bool(T&) predicate) {
+    T&? find<Pred: bool(T&)>(Pred predicate) {
         for i in 0..N {
             if predicate(this[i]) {
                 return this[i];
@@ -76,7 +76,7 @@ struct Array<T, int N> {
     }
 
     /// Returns the first element satisfying the predicate, or null.
-    T&? find<U: Copyable>(bool(U) predicate) {
+    T&? find<U: Copyable, Pred: bool(U)>(Pred predicate) {
         for i in 0..N {
             if predicate(this[i]) {
                 return this[i];
@@ -87,23 +87,23 @@ struct Array<T, int N> {
     }
 
     /// Lazily transforms the elements. Collect the results with toList().
-    MappedIterator<Output, T, ArrayIterator<T>, Output(T&)> map<Output>(Output(T&) transform) {
-        return MappedIterator<Output, T, ArrayIterator<T>, Output(T&)>(iterator(), transform);
+    MappedIterator<Output, T, ArrayIterator<T>, Pred> map<Output, Pred: Output(T&)>(Pred transform) {
+        return MappedIterator<Output, T, ArrayIterator<T>, Pred>(iterator(), transform);
     }
 
     /// Lazily transforms the elements. Collect the results with toList().
-    MappedIterator<Output, T, ArrayIterator<T>, Output(U)> map<Output, U: Copyable>(Output(U) transform) {
-        return MappedIterator<Output, T, ArrayIterator<T>, Output(U)>(iterator(), transform);
+    MappedIterator<Output, T, ArrayIterator<T>, Pred> map<Output, U: Copyable, Pred: Output(U)>(Pred transform) {
+        return MappedIterator<Output, T, ArrayIterator<T>, Pred>(iterator(), transform);
     }
 
     /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
-    FilterIterator<T, ArrayIterator<T>, bool(T&)> filter(bool(T&) include) {
-        return FilterIterator<T, ArrayIterator<T>, bool(T&)>(iterator(), include);
+    FilterIterator<T, ArrayIterator<T>, Pred> filter<Pred: bool(T&)>(Pred include) {
+        return FilterIterator<T, ArrayIterator<T>, Pred>(iterator(), include);
     }
 
     /// Lazily keeps the elements satisfying the predicate. Collect the results with toList().
-    FilterIterator<T, ArrayIterator<T>, bool(U)> filter<U: Copyable>(bool(U) include) {
-        return FilterIterator<T, ArrayIterator<T>, bool(U)>(iterator(), include);
+    FilterIterator<T, ArrayIterator<T>, Pred> filter<U: Copyable, Pred: bool(U)>(Pred include) {
+        return FilterIterator<T, ArrayIterator<T>, Pred>(iterator(), include);
     }
 
     /// Lazily appends another iterator's elements. Collect the results with toList().
@@ -115,22 +115,22 @@ struct Array<T, int N> {
     T sum() { return iterator().sum(); }
 
     /// Returns true if all elements satisfy the predicate.
-    bool all(bool(T&) predicate) { return all(iterator(), predicate); }
+    bool all<Pred: bool(T&)>(Pred predicate) { return all(iterator(), predicate); }
 
     /// Returns true if all elements satisfy the predicate.
-    bool all<U: Copyable>(bool(U) predicate) { return all(iterator(), predicate); }
+    bool all<U: Copyable, Pred: bool(U)>(Pred predicate) { return all(iterator(), predicate); }
 
     /// Returns true if any element satisfies the predicate.
-    bool any(bool(T&) predicate) { return any(iterator(), predicate); }
+    bool any<Pred: bool(T&)>(Pred predicate) { return any(iterator(), predicate); }
 
     /// Returns true if any element satisfies the predicate.
-    bool any<U: Copyable>(bool(U) predicate) { return any(iterator(), predicate); }
+    bool any<U: Copyable, Pred: bool(U)>(Pred predicate) { return any(iterator(), predicate); }
 
     /// Returns true if no element satisfies the predicate.
-    bool none(bool(T&) predicate) { return none(iterator(), predicate); }
+    bool none<Pred: bool(T&)>(Pred predicate) { return none(iterator(), predicate); }
 
     /// Returns true if no element satisfies the predicate.
-    bool none<U: Copyable>(bool(U) predicate) { return none(iterator(), predicate); }
+    bool none<U: Copyable, Pred: bool(U)>(Pred predicate) { return none(iterator(), predicate); }
 
     /// Returns the dot product of this array and `other`.
     T dot(T[N] other) {

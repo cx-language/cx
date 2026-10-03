@@ -59,4 +59,15 @@ void main() {
 ```
 
 Capturing lambdas cannot convert to function pointer types; they can be
-stored in variables and called directly.
+stored in variables and called directly. They can also be passed to generic
+higher-order functions such as `filter` and `map`, which are generic over the
+callback type so each call site is specialized for its lambda with no dynamic
+allocation for the closure:
+
+```cs
+void main() {
+    var numbers = List([0, 1, 2, 3, 4]);
+    int threshold = 2;
+    println(numbers.filter(n => n >= threshold).toList()); // prints [2, 3, 4]
+}
+```

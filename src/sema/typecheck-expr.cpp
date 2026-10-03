@@ -2323,6 +2323,9 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
 
     case TypeKind::FunctionType:
         if (paramType.isFunctionType()) {
+            // Arity-mismatched signatures never match; bail instead of tripping zip_first's
+            // shortest-first requirement. Callers reject the candidate cleanly.
+            if (argType.getParamTypes().size() != paramType.getParamTypes().size()) break;
             for (auto&& [argTypeParamType, paramTypeParamTypes] : llvm::zip_first(argType.getParamTypes(), paramType.getParamTypes())) {
                 if (GenericArg arg = findGenericArg(argTypeParamType, paramTypeParamTypes, genericParam, true)) {
                     return arg;
@@ -2431,6 +2434,17 @@ static bool isLambdaAwaitingInference(const Expr& arg, Type expectedType) {
     return false;
 }
 
+// The function-type constraint of a generic parameter, if it has one.
+static Type getFunctionConstraint(const GenericParamDecl& genericParam) {
+    auto it = llvm::find_if(genericParam.constraints, [](Type constraint) { return constraint.isFunctionType(); });
+    return it == genericParam.constraints.end() ? Type() : *it;
+}
+
+static const GenericParamDecl* findGenericParam(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::StringRef name) {
+    auto it = llvm::find_if(genericParams, [&](auto& genericParam) { return genericParam.getName() == name; });
+    return it == genericParams.end() ? nullptr : &*it;
+}
+
 // Picks one generic argument from agreeing call arguments. Identical candidates agree without a
 // convertibility check when `equalAgrees`: that check cannot handle parameter types that still
 // mention other uninferred generic parameters, and convertibility is rechecked after inference.
@@ -2483,21 +2497,37 @@ std::vector<GenericArg> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef
             auto& arg = call.args[i];
             Type paramType = useMapping ? params[size_t(argToParam[i])].type : params[i].type;
 
-            if (containsGenericParam(paramType, genericParam.getName())) {
-                // FIXME: The args will also be typechecked by validateAndConvertArguments() after this function. Get rid of this duplicated typechecking.
-                auto* argValue = arg.value;
-                // Substitute arguments inferred so far so lambdas get concrete expected parameter types when possible.
-                auto knownArgs = inferredArgsByName;
-                if (genericArg) knownArgs[genericParam.getName()] = genericArg;
-                auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(paramType.resolve(knownArgs), genericParams);
-                if (isLambdaAwaitingInference(*argValue, expectedType)) continue;
-                // TODO: Should probably not typecheck here because it might change the expression's type?
-                Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
-                GenericArg maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
-                if (!maybeGenericArg) continue;
-                // TODO: Return "conflict argument types" as reason for inference failure.
-                if (!considerGenericArg(*this, genericArg, genericArgValue, maybeGenericArg, argValue, paramType, genericParam.getName(), true)) return {};
+            // A bare `Pred` parameter with a function-type constraint both supplies the
+            // expected lambda signature and exposes siblings mentioned in the constraint
+            // (e.g. `Output` in `Pred: Output(int&)`) for inference.
+            Type constraintSource;
+            if (paramType.isBasicType() && paramType.getGenericArgs().empty()) {
+                if (auto* namedParam = findGenericParam(genericParams, paramType.getName())) {
+                    Type functionConstraint = getFunctionConstraint(*namedParam);
+                    if (functionConstraint
+                        && (namedParam->getName() == genericParam.getName() || containsGenericParam(functionConstraint, genericParam.getName()))) {
+                        constraintSource = functionConstraint;
+                    }
+                }
             }
+
+            bool direct = containsGenericParam(paramType, genericParam.getName());
+            if (!direct && !constraintSource) continue;
+            // FIXME: The args will also be typechecked by validateAndConvertArguments() after this function. Get rid of this duplicated typechecking.
+            auto* argValue = arg.value;
+            // Substitute arguments inferred so far so lambdas get concrete expected parameter types when possible.
+            auto knownArgs = inferredArgsByName;
+            if (genericArg) knownArgs[genericParam.getName()] = genericArg;
+            Type matchSource = (!direct && constraintSource) ? constraintSource : paramType;
+            Type expectedSource = constraintSource ? constraintSource : paramType;
+            auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(expectedSource.resolve(knownArgs), genericParams);
+            if (isLambdaAwaitingInference(*argValue, expectedType)) continue;
+            // TODO: Should probably not typecheck here because it might change the expression's type?
+            Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
+            GenericArg maybeGenericArg = findGenericArg(argType, matchSource, genericParam.getName());
+            if (!maybeGenericArg) continue;
+            // TODO: Return "conflict argument types" as reason for inference failure.
+            if (!considerGenericArg(*this, genericArg, genericArgValue, maybeGenericArg, argValue, matchSource, genericParam.getName(), true)) return {};
         }
 
         if (genericArg) {
@@ -2511,14 +2541,16 @@ std::vector<GenericArg> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef
     ASSERT(genericParams.size() == inferredGenericArgs.size());
 
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, inferredGenericArgs)) {
-        if (genericParam.isValueParam || genericArgSatisfiesConstraints(genericParam, genericArg)) continue;
+        if (genericParam.isValueParam || genericArgSatisfiesConstraints(genericParam, genericArg, inferredArgsByName)) continue;
         if (returnOnError) return {};
-        validateGenericConstraints({genericParam}, {genericArg}, call.getFunctionName(), call.location);
+        validateGenericConstraints(genericParams, inferredGenericArgs, call.getFunctionName(), call.location);
         throw CompileError::dependentError();
     }
 
     return inferredGenericArgs;
 }
+
+static bool satisfiesConstraint(Typechecker& checker, Type constraint, Type argType, bool silent);
 
 std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                                          llvm::ArrayRef<ParamDecl> params, bool returnOnError) {
@@ -2654,6 +2686,13 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
     auto checkConstraint = [&](const GenericParamDecl& genericParam, GenericArg genericArg) -> bool {
         if (genericParam.isValueParam) return true;
         for (Type constraint : genericParam.constraints) {
+            // Variadic inference never resolves sibling mentions, so function constraints
+            // naming siblings simply never match here.
+            if (constraint.isFunctionType()) {
+                if (satisfiesConstraint(*this, constraint, genericArg.getType(), returnOnError)) continue;
+                if (returnOnError) return false;
+                ERROR_RANGE(getExprRangeStart(call), call.endLocation, "type '" << genericArg << "' doesn't match function signature '" << constraint << "'");
+            }
             auto* interface = getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
 
             if (interface->getName() == "Copyable") {
@@ -3073,6 +3112,22 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
 }
 
 static bool satisfiesConstraint(Typechecker& checker, Type constraint, Type argType, bool silent) {
+    if (constraint.isFunctionType()) {
+        llvm::ArrayRef<Type> argParams;
+        Type argReturn;
+        if (argType.isFunctionType()) {
+            argParams = argType.getParamTypes();
+            argReturn = argType.getReturnType();
+        } else if (argType.isClosureType()) {
+            argParams = argType.getClosureParamTypes();
+            argReturn = argType.getClosureReturnType();
+        } else {
+            return false;
+        }
+        auto constraintParams = constraint.getParamTypes();
+        if (argParams.size() != constraintParams.size() || argReturn != constraint.getReturnType()) return false;
+        return llvm::equal(argParams, constraintParams);
+    }
     if (!constraint.isBasicType()) return false;
     if (constraint.getName() == "Copyable") return satisfiesCopyable(argType);
     auto* interface = checker.getTypeDecl(*llvm::cast<BasicType>(constraint.typeBase));
@@ -3081,27 +3136,35 @@ static bool satisfiesConstraint(Typechecker& checker, Type constraint, Type argT
     return typeDecl && interface && checker.tryEnsurePrintable(*typeDecl, *interface, silent);
 }
 
-bool Typechecker::genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg) {
+bool Typechecker::genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg, const llvm::StringMap<GenericArg>& resolvedArgs) {
     if (genericParam.isValueParam) return genericArg.isInt();
     if (!genericArg || genericArg.isInt()) return false;
     if (genericArg.getType().isUnresolvedType()) return true;
 
     for (Type constraint : genericParam.constraints) {
-        if (!satisfiesConstraint(*this, constraint, genericArg.getType(), /*silent=*/true)) return false;
+        if (!satisfiesConstraint(*this, constraint.resolve(resolvedArgs), genericArg.getType(), /*silent=*/true)) return false;
     }
     return true;
 }
 
 bool Typechecker::validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
                                              Location location) {
+    llvm::StringMap<GenericArg> resolvedArgs;
+    for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
+        resolvedArgs.try_emplace(genericParam.getName(), genericArg);
+    }
     bool valid = true;
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgs)) {
         if (genericParam.isValueParam || !genericArg || genericArg.isInt() || genericArg.getType().isUnresolvedType()) continue;
         for (Type constraint : genericParam.constraints) {
-            if (satisfiesConstraint(*this, constraint, genericArg.getType(), /*silent=*/false)) continue;
+            Type resolved = constraint.resolve(resolvedArgs);
+            if (satisfiesConstraint(*this, resolved, genericArg.getType(), /*silent=*/false)) continue;
             valid = false;
-            if (constraint.isBasicType()) {
-                REPORT_ERROR(location, "type '" << genericArg << "' doesn't implement interface '" << constraint.getName() << "' for generic parameter '"
+            if (resolved.isFunctionType()) {
+                REPORT_ERROR(location, "type '" << genericArg << "' doesn't match function signature '" << resolved << "' for generic parameter '"
+                                                << genericParam.getName() << "' of '" << name << "'");
+            } else if (resolved.isBasicType()) {
+                REPORT_ERROR(location, "type '" << genericArg << "' doesn't implement interface '" << resolved.getName() << "' for generic parameter '"
                                                 << genericParam.getName() << "' of '" << name << "'");
             }
         }
@@ -3195,9 +3258,13 @@ llvm::StringMap<GenericArg> Typechecker::getGenericArgsForCall(llvm::ArrayRef<Ge
         if (!returnOnError) validateGenericArgs(genericParams, genericArgTypes, decl->getName(), call.location);
         return {};
     }
+    llvm::StringMap<GenericArg> argsByName;
+    for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, genericArgTypes)) {
+        argsByName.try_emplace(genericParam.getName(), genericArg);
+    }
     bool constraintsValid = llvm::all_of(llvm::zip(genericParams, genericArgTypes), [&](auto&& pair) {
         auto&& [genericParam, genericArg] = pair;
-        return genericArgSatisfiesConstraints(genericParam, genericArg);
+        return genericArgSatisfiesConstraints(genericParam, genericArg, argsByName);
     });
     if (!constraintsValid) {
         if (returnOnError) return {};

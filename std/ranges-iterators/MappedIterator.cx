@@ -30,23 +30,23 @@ struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&>, Printabl
     }
 
     /// Lazily transforms the elements.
-    MappedIterator<Output2, Output, MappedIterator<Output, Input, It, Transform>, Output2(Output&)> map<Output2>(Output2(Output&) transform) {
-        return MappedIterator<Output2, Output, MappedIterator<Output, Input, It, Transform>, Output2(Output&)>(*this, transform);
+    MappedIterator<Output2, Output, MappedIterator<Output, Input, It, Transform>, Pred> map<Output2, Pred: Output2(Output&)>(Pred transform) {
+        return MappedIterator<Output2, Output, MappedIterator<Output, Input, It, Transform>, Pred>(*this, transform);
     }
 
     /// Lazily transforms the elements.
-    MappedIterator<Output2, Output, MappedIterator<Output, Input, It, Transform>, Output2(T)> map<Output2, T: Copyable>(Output2(T) transform) {
-        return MappedIterator<Output2, Output, MappedIterator<Output, Input, It, Transform>, Output2(T)>(*this, transform);
+    MappedIterator<Output2, Output, MappedIterator<Output, Input, It, Transform>, Pred> map<Output2, T: Copyable, Pred: Output2(T)>(Pred transform) {
+        return MappedIterator<Output2, Output, MappedIterator<Output, Input, It, Transform>, Pred>(*this, transform);
     }
 
     /// Lazily keeps the elements satisfying the predicate.
-    FilterIterator<Output, MappedIterator<Output, Input, It, Transform>, bool(Output&)> filter(bool(Output&) include) {
-        return FilterIterator<Output, MappedIterator<Output, Input, It, Transform>, bool(Output&)>(*this, include);
+    FilterIterator<Output, MappedIterator<Output, Input, It, Transform>, Pred> filter<Pred: bool(Output&)>(Pred include) {
+        return FilterIterator<Output, MappedIterator<Output, Input, It, Transform>, Pred>(*this, include);
     }
 
     /// Lazily keeps the elements satisfying the predicate.
-    FilterIterator<Output, MappedIterator<Output, Input, It, Transform>, bool(T)> filter<T: Copyable>(bool(T) include) {
-        return FilterIterator<Output, MappedIterator<Output, Input, It, Transform>, bool(T)>(*this, include);
+    FilterIterator<Output, MappedIterator<Output, Input, It, Transform>, Pred> filter<T: Copyable, Pred: bool(T)>(Pred include) {
+        return FilterIterator<Output, MappedIterator<Output, Input, It, Transform>, Pred>(*this, include);
     }
 
     /// Lazily appends another iterator's elements.

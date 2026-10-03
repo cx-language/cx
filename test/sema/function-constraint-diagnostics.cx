@@ -1,0 +1,19 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:21: error: interface constraint cannot mention generic parameter 'T'
+void bareSibling<T: T>() {}
+
+// CHECK: [[@LINE+1]]:27: error: interface constraint cannot mention generic parameter 'T'
+void nestedSibling<T, It: Iterator<T>>(It it) {}
+
+void runIt<Pred: bool(int&)>(Pred p) {}
+
+void main() {
+    var numbers = List([0, 1, 2]);
+    // CHECK: [[@LINE+1]]:9: error: no matching function 'List<int32>.filter(bool(int, int))'
+    _ = numbers.filter((int a, int b) => true);
+    // CHECK: [[@LINE+1]]:9: error: no matching function 'List<int32>.filter(int(int&))'
+    _ = numbers.filter(n => n + 1);
+    // CHECK: [[@LINE+1]]:9: error: type 'bool(string)' doesn't match function signature 'bool(int&)' for generic parameter 'Pred' of 'runIt'
+    _ = runIt((string s) => true);
+}

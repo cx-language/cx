@@ -561,6 +561,9 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
 
         if (decl->isTypeTemplate()) {
             validateGenericArgs(llvm::cast<TypeTemplate>(decl)->genericParams, basicType->genericArgs, basicType->name, type.location);
+        } else if (decl->isGenericParamDecl()) {
+            // A generic parameter in scope (e.g. a sibling mentioned in a function-type constraint).
+            break;
         } else if (!decl->isTypeDecl()) {
             ERROR_RANGE(type.location, type.endLocation, "'" << type << "' is not a type");
         }
@@ -710,7 +713,18 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
         if (auto existing = currentModule->symbolTable.findFirst(genericParam.getName()); !existing.empty()) {
             ERROR_WITH_NOTES(genericParam.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << genericParam.getName() << "'");
         }
+    }
 
+    // Function-type constraints may mention sibling parameters (e.g. `Pred: Output(int&)`),
+    // so make them resolvable while checking constraints.
+    Scope scope(nullptr, &currentModule->symbolTable);
+    for (auto& genericParam : genericParams) {
+        if (!genericParam.isValueParam) {
+            currentModule->symbolTable.add(genericParam.getName(), const_cast<GenericParamDecl*>(&genericParam));
+        }
+    }
+
+    for (auto& genericParam : genericParams) {
         if (genericParam.isValueParam) {
             try {
                 const int errorsBefore = errors;
@@ -727,11 +741,20 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
 
         for (Type constraint : genericParam.constraints) {
             try {
+                if (!constraint.isFunctionType()) {
+                    for (auto& sibling : genericParams) {
+                        if (!sibling.isValueParam && containsGenericParam(constraint, sibling.getName())) {
+                            ERROR_RANGE(constraint.location, constraint.endLocation,
+                                        "interface constraint cannot mention generic parameter '" << sibling.getName() << "'");
+                        }
+                    }
+                }
                 const int errorsBefore = errors;
                 typecheckType(constraint, userAccessLevel);
 
-                if (errors == errorsBefore && !constraint.getDecl()->isInterface()) {
-                    ERROR_RANGE(constraint.location, constraint.endLocation, "only interface types can be used as generic constraints");
+                TypeDecl* constraintDecl = constraint.isFunctionType() ? nullptr : constraint.getDecl();
+                if (errors == errorsBefore && !constraint.isFunctionType() && (!constraintDecl || !constraintDecl->isInterface())) {
+                    ERROR_RANGE(constraint.location, constraint.endLocation, "only interface and function types can be used as generic constraints");
                 }
             } catch (const CompileError& error) {
                 error.report();

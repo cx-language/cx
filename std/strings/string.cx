@@ -305,17 +305,17 @@ struct string: Comparable, Hashable, Printable {
     }
 
     /// Returns true if all characters satisfy the predicate.
-    bool all(bool(char&) predicate) { return all(iterator(), predicate); }
+    bool all<Pred: bool(char&)>(Pred predicate) { return all(iterator(), predicate); }
     /// Returns true if all characters satisfy the predicate.
-    bool all<T: Copyable>(bool(T) predicate) { return all(iterator(), predicate); }
+    bool all<T: Copyable, Pred: bool(T)>(Pred predicate) { return all(iterator(), predicate); }
     /// Returns true if any character satisfies the predicate.
-    bool any(bool(char&) predicate) { return any(iterator(), predicate); }
+    bool any<Pred: bool(char&)>(Pred predicate) { return any(iterator(), predicate); }
     /// Returns true if any character satisfies the predicate.
-    bool any<T: Copyable>(bool(T) predicate) { return any(iterator(), predicate); }
+    bool any<T: Copyable, Pred: bool(T)>(Pred predicate) { return any(iterator(), predicate); }
     /// Returns true if no character satisfies the predicate.
-    bool none(bool(char&) predicate) { return none(iterator(), predicate); }
+    bool none<Pred: bool(char&)>(Pred predicate) { return none(iterator(), predicate); }
     /// Returns true if no character satisfies the predicate.
-    bool none<T: Copyable>(bool(T) predicate) { return none(iterator(), predicate); }
+    bool none<T: Copyable, Pred: bool(T)>(Pred predicate) { return none(iterator(), predicate); }
 
 }
 

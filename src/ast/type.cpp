@@ -786,6 +786,12 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
             break;
         }
         if (isClosureType()) {
+            if (canonical) {
+                // Canonical strings key instantiations; distinct closures need distinct keys
+                // even when their signatures match.
+                stream << getName();
+                break;
+            }
             stream << "(";
             for (const Type& paramType : getClosureParamTypes()) {
                 paramType.printTo(stream, canonical);

@@ -281,7 +281,7 @@ struct Typechecker {
     // Restores the whole enum type of an expression narrowed to a case payload.
     // Used where the full value is consumed: switch conditions, `is`, and `&`.
     static void unnarrowEnumView(Expr& expr);
-    bool genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg);
+    bool genericArgSatisfiesConstraints(const GenericParamDecl& genericParam, GenericArg genericArg, const llvm::StringMap<GenericArg>& resolvedArgs);
     bool validateGenericConstraints(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name,
                                     Location location);
     bool validateGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, llvm::ArrayRef<GenericArg> genericArgs, llvm::StringRef name, Location location);

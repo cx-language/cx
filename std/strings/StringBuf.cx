@@ -273,11 +273,11 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
     /// Returns true if all characters satisfy the predicate.
-    bool all(bool(char&) predicate) { return all(iterator(), predicate); }
+    bool all<Pred: bool(char&)>(Pred predicate) { return all(iterator(), predicate); }
     /// Returns true if any character satisfies the predicate.
-    bool any(bool(char&) predicate) { return any(iterator(), predicate); }
+    bool any<Pred: bool(char&)>(Pred predicate) { return any(iterator(), predicate); }
     /// Returns true if no character satisfies the predicate.
-    bool none(bool(char&) predicate) { return none(iterator(), predicate); }
+    bool none<Pred: bool(char&)>(Pred predicate) { return none(iterator(), predicate); }
 
     /// Moves the string out, leaving an empty string in its place.
     StringBuf take() {

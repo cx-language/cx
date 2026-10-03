@@ -583,9 +583,11 @@ static void instantiateMethods(TypeDecl& instantiation, llvm::ArrayRef<Decl*> me
 
             for (auto& genericParam : functionTemplate->genericParams) {
                 genericParams.emplace_back(genericParam.getName(), genericParam.getLocation());
-                genericParams.back().constraints = genericParam.constraints;
+                for (Type constraint : genericParam.constraints) {
+                    genericParams.back().constraints.push_back(constraint.resolve(genericArgs));
+                }
                 genericParams.back().isValueParam = genericParam.isValueParam;
-                genericParams.back().valueType = genericParam.valueType;
+                genericParams.back().valueType = genericParam.valueType.resolve(genericArgs);
             }
 
             auto accessLevel = methodInstantiation->accessLevel;
