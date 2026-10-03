@@ -1,0 +1,84 @@
+{
+  "fileTypes": ["cx"],
+  "name": "cx",
+  "patterns": [
+    {
+      "begin": "/\\*",
+      "end": "\\*/",
+      "name": "comment.block.cx"
+    },
+    {
+      "begin": "//",
+      "end": "$\\n?",
+      "name": "comment.line.cx"
+    },
+    {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.cx",
+      "patterns": [
+        {
+          "begin": "\\\\\\(",
+          "end": "\\)",
+          "name": "string-interpolation",
+          "captures": {
+            "0": {
+              "name": "keyword.operator.cx"
+            }
+          },
+          "patterns": [
+            {
+              "match": "\\+",
+              "name": "keyword.operator.cx"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "match": ",",
+      "name": "comment.punctuation.comma.cx"
+    },
+    {
+      "match": "\\b[A-Z][A-Za-z]+\\b",
+      "name": "support.type.cx"
+    },
+    {
+      "match": "\\b(addressof|as|break|case|continue|default|defer|else|enum|extern|for|if|import|in|interface|private|return|sizeof|struct|switch|this|while|([#]+if|else|endif))\\b",
+      "name": "keyword.reserved.cx"
+    },
+    {
+      "match": "\\b(true|false)\\b",
+      "name": "constant.numeric.cx"
+    },
+    {
+      "match": "\\b(const|var|null|undefined|void|char|bool|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float|float32|float64\")\\b",
+      "name": "constant.character.cx"
+    },
+    {
+      "match": "(-|\\.)?\\b[0-9]+(\\.[0-9]+)?\\b",
+      "name": "constant.numeric.cx"
+    },
+    {
+      "match": "\\+|-|\\*|/|%|=|!|\\^|~|\\||\\?|<|>|&",
+      "name": "keyword.operator.cx"
+    },
+    {
+      "match": "\\w+(?=\\s*:)",
+      "name": "meta.tag.cx"
+    },
+    {
+      "match": "\\w+(?=\\s*\\()",
+      "name": "support.function.cx"
+    },
+    {
+      "name": "support.type.cx",
+      "match": "(\\w+)(?=\\s\\w+\\s\\=)"
+    },
+    {
+      "name": "support.type.cx",
+      "match": "(?:\\w+[*]*)(?:\\s)(?=[^=\\s])"
+    }
+  ],
+  "scopeName": "source.cx"
+}

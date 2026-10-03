@@ -1,0 +1,43 @@
+{
+	"name": "cx-language",
+	"displayName": "cx Language",
+	"description": "Support for the cx programming language",
+	"version": "0.1.0",
+	"publisher": "cx-language",
+	"engines": {
+		"vscode": "^1.17.0"
+	},
+	"categories": [
+		"Programming Languages"
+	],
+	"repository": {
+		"url": "https://github.com/cx-language/vscode-cx"
+	},
+	"contributes": {
+		"languages": [
+			{
+				"id": "cx",
+				"aliases": [
+					"cx"
+				],
+				"extensions": [
+					".cx"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "cx",
+				"scopeName": "source.cx",
+				"path": "./syntaxes/cx.json"
+			}
+		],
+		"snippets": [
+			{
+				"language": "cx",
+				"path": "./snippets/snippets.json"
+			}
+		]
+	}
+}
