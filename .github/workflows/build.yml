@@ -366,7 +366,7 @@ jobs:
           name: cx-ubuntu-release
           path: cx-dist
 
-      # Language comparison needs Odin and Zig; Go and Rust ship with the runner.
+      # Language comparison needs Odin and Zig; Go, Rust, and Swift ship with the runner.
       # Bump the keys with the versions in the install step below.
       - name: Cache Odin
         uses: actions/cache@v5
@@ -405,8 +405,10 @@ jobs:
           command -v rustc || { echo "rustc missing"; exit 1; }
           command -v cc || { echo "cc missing"; exit 1; }
           command -v c++ || { echo "c++ missing"; exit 1; }
+          command -v swiftc || { echo "swiftc missing"; exit 1; }
           go version
           rustc --version
+          swiftc --version
           /tmp/odin/odin version
           /tmp/zig/zig version
 

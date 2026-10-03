@@ -57,11 +57,11 @@ further if small regressions ever need bisecting.
 
 ## Language comparison
 
-`bench` ports the corpus programs to C, C++, Rust, Go, Odin and Zig, written
-idiomatically per language. Each program lives in its own directory with
+`bench` ports the corpus programs to C, C++, Rust, Go, Odin, Zig and Swift,
+written idiomatically per language. Each program lives in its own directory with
 all its ports, e.g. `bench/fib/fib.cx`, `fib.c`, `fib.cpp`, `fib.rs`,
-`fib.go`, `fib.odin`, `fib.zig`. `jsonparse` is ported only to Go, Odin,
-and Zig; C, C++, and Rust have no JSON parser in the standard library.
+`fib.go`, `fib.odin`, `fib.zig`, `fib.swift`. `jsonparse` is ported only to Go,
+Odin, Zig, and Swift; C, C++, and Rust have no JSON parser in the standard library.
 `mapfilter` is omitted for C, Go, Odin, and Zig, which have no capturing
 lambdas.
 `scripts/bench-langs.py` builds each port twice, runs it, and records
@@ -75,8 +75,8 @@ unoptimized debug build is the development configuration: cx's default build
 (safety checks stay on, and both the LLVM IR pipeline and codegen
 optimizations are skipped), C and C++ at `-O0 -g`, Rust at
 opt-level 0 with debug assertions and overflow checks, Go with
-`-gcflags=all=-N -l`, Odin with `-debug` (`-o:none`), and Zig with
-`-ODebug` (release is `-OReleaseFast`).
+`-gcflags=all=-N -l`, Odin with `-debug` (`-o:none`), Zig with
+`-ODebug` (release is `-OReleaseFast`), and Swift with `-Onone -g`.
 
 ```sh
 python3 scripts/bench-langs.py --cx build/cx
@@ -89,7 +89,7 @@ platform-defined float-to-int conversion and is only checked for
 self-consistency.
 
 CI runs the same script on the Ubuntu release leg (Odin and Zig are
-installed there; Go and Rust ship with the runner) and the website
+installed there; Go, Rust, and Swift ship with the runner) and the website
 deploy publishes its JSON as `langs-data.json`, rendered as the
 comparison charts at the top of `/bench`. The comparison is a snapshot
 of that run, not history. For a local preview, copy a JSON record to

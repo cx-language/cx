@@ -241,6 +241,7 @@
         go: { label: "Go", color: "#00ADD8" },
         odin: { label: "Odin", color: "#60AFFE" },
         zig: { label: "Zig", color: "#ec915c" },
+        swift: { label: "Swift", color: "#F05138" },
     };
     var MODE_LABEL = { release: "optimized", debug: "unoptimized debug" };
 

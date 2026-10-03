@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run-time benchmark: cx vs C, C++, Rust, Go, Odin and Zig on the bench corpus subset.
+"""Run-time benchmark: cx vs C, C++, Rust, Go, Odin, Zig and Swift on the bench corpus subset.
 
 Usage:
     scripts/bench-langs.py --cx build/cx [--runs 3] [--compile-runs 3]
@@ -67,6 +67,7 @@ LANGS = {
     "go": {"label": "Go", "color": "#00ADD8", "tool": "go", "ext": ".go"},
     "odin": {"label": "Odin", "color": "#60AFFE", "tool": "odin", "ext": ".odin"},
     "zig": {"label": "Zig", "color": "#ec915c", "tool": "zig", "ext": ".zig"},
+    "swift": {"label": "Swift", "color": "#F05138", "tool": "swiftc", "ext": ".swift"},
 }
 MODES = ["release", "debug"]
 METRICS = ["run", "compile"]
@@ -79,7 +80,8 @@ DEBUG_NOTE = (
     "Rust uses opt-level 0 with debug assertions, overflow checks, and full debug info. "
     "Go disables optimizations and inlining with -gcflags=all=-N -l, including the standard library. "
     "Odin uses -debug, which selects -o:none. "
-    "Zig uses -ODebug; its release build is -OReleaseFast."
+    "Zig uses -ODebug; its release build is -OReleaseFast. "
+    "Swift uses -Onone -g."
 )
 # Iteration time, not a from-scratch toolchain build. The untimed warmup fills
 # the standard-library cache; each sample is a distinct copy of the program.
@@ -160,6 +162,9 @@ def build_command(lang, mode, cx, src, binary):
             "zig", "build-exe", src, "--cache-dir", binary + ".cache",
             "-femit-bin=" + binary, "-OReleaseFast" if release else "-ODebug",
         ]
+    if lang == "swift":
+        opt = ["-O"] if release else ["-Onone", "-g"]
+        return ["swiftc", *opt, "-o", binary, src]
     raise AssertionError("unknown language " + lang)
 
 
@@ -332,7 +337,7 @@ def render_html(record):
 <head>
 <meta charset="utf-8">
 <meta name="color-scheme" content="light dark">
-<title>cx vs C, C++, Rust, Go, Odin, Zig</title>
+<title>cx vs C, C++, Rust, Go, Odin, Zig, Swift</title>
 <style>
 :root {{ color-scheme: light dark; --bg: #ffffff; --fg: #000000; --muted: #444444; --pre-bg: #f4f4f4; --cx-bar: #000000; }}
 @media (prefers-color-scheme: dark) {{
@@ -352,7 +357,7 @@ pre {{ background: var(--pre-bg); padding: 1rem; overflow-x: auto; }}
 </style>
 </head>
 <body>
-<h1>cx vs C, C++, Rust, Go, Odin, Zig</h1>
+<h1>cx vs C, C++, Rust, Go, Odin, Zig, Swift</h1>
 <p class="meta">{html.escape(record["timestamp"])} · {html.escape(record["platform"])} · {html.escape(summary)}<br>{tools}<br>cx at {html.escape(record["cx_sha"])}</p>
 <p>Each chart is one measurement. The ratio on each bar is against the fastest language in that chart.</p>
 <p class="note">{html.escape(DEBUG_NOTE)}</p>
