@@ -1,8 +1,16 @@
 // RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
 
 const arr = [1, 2, 3];
+const c = 5;
+
+struct S {
+    const MAX = 5;
+}
 
 void takesBorrow(int& x) {
+}
+
+void takesOptBorrow(int&? x) {
 }
 
 int& returnBorrow() {
@@ -17,5 +25,15 @@ void main() {
     takesBorrow(arr[0]);
     // CHECK: [[@LINE+1]]:14: error: cannot take address of constant expression of type 'int'
     var p = &arr[0];
+    // CHECK: [[@LINE+1]]:17: error: cannot bind 'int&' to constant 'int' in argument #1 to 'takesBorrow'
+    takesBorrow(c);
+    // CHECK: [[@LINE+1]]:17: error: cannot bind 'int&' to constant 'int' in argument #1 to 'takesBorrow'
+    takesBorrow(S.MAX);
+    // CHECK: [[@LINE+1]]:20: error: cannot bind 'int&?' to constant 'int' in argument #1 to 'takesOptBorrow'
+    takesOptBorrow(c);
+    // Conservative: a ternary copies its arm into a fresh temporary, but any
+    // const-rooted arm still rejects the borrow.
+    // CHECK: [[@LINE+1]]:17: error: cannot bind 'int&' to constant 'int' in argument #1 to 'takesBorrow'
+    takesBorrow(true ? c : 1);
     println(arr[0]);
 }

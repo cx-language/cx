@@ -237,6 +237,9 @@ void testAppendPrintable() {
     assert(b == "0-354.5!");
     b.append(" done");
     assert(b == "0-354.5! done");
+    const n = 42;
+    b.append(n);
+    assert(b == "0-354.5! done42");
     var s = StringBuf();
     s.append("abc");
     assert(s == "abc");

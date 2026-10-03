@@ -54,7 +54,9 @@ Callers pass values as usual; the compiler borrows them automatically.
 Temporaries and literals can be borrowed too; the borrow refers
 to a temporary that lives until the end of the call. Constants cannot be
 borrowed: they are compile-time values with no address, so bind them to a
-local first if a borrow is needed.
+local first if a borrow is needed. Computed values derived from constants
+(e.g. `c + 1`) are temporaries and borrow normally, as do const operands
+of operator overloads.
 Passing a stored `T*` where a `T&` is expected reborrows it.
 Inside the function, member access and operators use the borrowed value directly; `*` moves a value out explicitly.
 Mutating fields or elements through a borrowed parameter is fine, but reassigning the

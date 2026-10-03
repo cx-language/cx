@@ -93,9 +93,8 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
 
 // True when the expression designates a compile-time constant's storage, so
 // writes to it are forbidden. Const comes only from bindings: VarDecl::isConst
-// at the root (through member, index, and unwrap chains) or a static constant
-// named by the member itself. Dereferencing yields the pointee, which is
-// always mutable (addresses of constants are rejected). Generic inference
+// at the root (through member, index, unwrap, and dereference chains) or a
+// static constant named by the member itself. Generic inference
 // also calls this mid-typecheck, so untyped subexpressions (e.g.
 // static-member bases) read as non-const.
 bool cx::exprIsConst(const Expr& expr) {
@@ -2719,7 +2718,8 @@ std::string cx::narrowingHint(Type source, Type target) {
 
 bool cx::isBorrowOfConstant(const Expr& expr, Type source, Type target) {
     // The types alone would bind; only the source being a constant blocks it.
-    return target.isReferenceType() && source == target.getPointee() && exprIsConst(expr);
+    Type unwrapped = target.removeOptional();
+    return unwrapped.isReferenceType() && source == unwrapped.getPointee() && exprIsConst(expr);
 }
 
 bool cx::satisfiesCopyable(Type type) {

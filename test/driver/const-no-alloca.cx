@@ -1,15 +1,28 @@
 // RUN: %cx -print-ir -Wno-unused %s | %FileCheck %s --check-prefix=IR
 // RUN: %cx -print-llvm -Wno-unused %s | %FileCheck %s
+// RUN: %cx -print-c -Wno-unused %s | %FileCheck %s --check-prefix=C
+// RUN: %cx run -Werror %s 2>&1 | %FileCheck %s --check-prefix=OUT
 
-// Leaf constants (scalars, pointers) bind directly with no storage.
+// Leaf constants (scalars, pointers) bind directly with no storage, while
+// array constants keep their alloca.
 
 // IR-LABEL: leafConsts
 // IR-NOT: = alloca
 // IR: return void
 
+// IR-LABEL: nonLeafConsts
+// IR: = alloca
+
 // CHECK-LABEL: define void {{.*}}leafConsts{{.*}}(
 // CHECK-NOT: = alloca
 // CHECK: ret void
+
+// C-LABEL: leafConsts
+// C: = *(&_{{.*}}xE);
+// C: (uint32_t)41
+
+// OUT: 42
+// OUT: 30
 
 int x = 1;
 
@@ -17,4 +30,14 @@ void leafConsts() {
     const cp = &x;
     const n = 41;
     println(*cp + n);
+}
+
+void nonLeafConsts() {
+    const arr = [10, 20];
+    println(arr[0] + arr[1]);
+}
+
+void main() {
+    leafConsts();
+    nonLeafConsts();
 }

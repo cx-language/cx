@@ -1,0 +1,15 @@
+// RUN: %cx run -Werror %s 2>&1 | %FileCheck %s
+
+// Const lvalues still bind to pointer parameters of operator overloads
+// through a temporary, even though direct borrows reject constants.
+
+string operator+(int* a, string* b) {
+    return "mixed!";
+}
+
+void main() {
+    const c = 41;
+    var s = "hi";
+    // CHECK: mixed!
+    println(c + s);
+}

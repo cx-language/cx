@@ -10,4 +10,7 @@ void main() {
     takesBorrow(5);
     takesBorrow(c + 1);
     takesBorrow(-c);
+    // Constants that need a borrow bind to a local first.
+    var tmp = c;
+    takesBorrow(tmp);
 }
