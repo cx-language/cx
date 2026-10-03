@@ -1,0 +1,20 @@
+// RUN: %cx -print-ir -Wno-unused %s | %FileCheck %s --check-prefix=IR
+// RUN: %cx -print-llvm -Wno-unused %s | %FileCheck %s
+
+// Leaf constants (scalars, pointers) bind directly with no storage.
+
+// IR-LABEL: leafConsts
+// IR-NOT: = alloca
+// IR: return void
+
+// CHECK-LABEL: define void {{.*}}leafConsts{{.*}}(
+// CHECK-NOT: = alloca
+// CHECK: ret void
+
+int x = 1;
+
+void leafConsts() {
+    const cp = &x;
+    const n = 41;
+    println(*cp + n);
+}

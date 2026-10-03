@@ -293,15 +293,19 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
         ASSERT(it.second);
         return value;
     } else {
-        auto* alloca = createEntryBlockAlloca(decl.type, decl.getName());
-        setLocalValue(alloca, &decl);
         auto* initializer = decl.initializer;
-        if (!initializer) return alloca;
+        if (!initializer) {
+            auto* alloca = createEntryBlockAlloca(decl.type, decl.getName());
+            setLocalValue(alloca, &decl);
+            return alloca;
+        }
 
         if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
             if (callExpr->calleeDecl) {
                 if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(callExpr->calleeDecl)) {
                     if (constructorDecl->getTypeDecl()->getType() == decl.type) {
+                        auto* alloca = createEntryBlockAlloca(decl.type, decl.getName());
+                        setLocalValue(alloca, &decl);
                         emitCallExpr(*callExpr, alloca);
                         return alloca;
                     }
@@ -313,6 +317,8 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
             if (castExpr->castKind == ImplicitCastExpr::UserConversion) {
                 if (auto* constructorDecl = llvm::dyn_cast_or_null<ConstructorDecl>(castExpr->conversionDecl)) {
                     if (constructorDecl->getTypeDecl()->getType() == decl.type) {
+                        auto* alloca = createEntryBlockAlloca(decl.type, decl.getName());
+                        setLocalValue(alloca, &decl);
                         emitUserConversion(*castExpr, alloca);
                         return alloca;
                     }
@@ -320,6 +326,26 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
             }
         }
 
+        // A const whose initializer emits no instructions is a pure compile-time
+        // value: bind it directly instead of allocating storage. Anything emitted
+        // (array literals, conversions) keeps the alloca below. Implicitly-bound
+        // consts alias runtime values, so they always keep storage too.
+        if (decl.isConst && !decl.isImplicitlyBound && !initializer->isUndefinedLiteralExpr()) {
+            auto* beforeBlock = insertBlock;
+            size_t beforeSize = beforeBlock->body.size();
+            Value* value = emitExprForPassing(*initializer, getIRType(decl.type));
+            if (value && insertBlock == beforeBlock && insertBlock->body.size() == beforeSize) {
+                setLocalValue(value, &decl);
+                return value;
+            }
+            auto* alloca = createEntryBlockAlloca(decl.type, decl.getName());
+            setLocalValue(alloca, &decl);
+            createStore(value, alloca);
+            return alloca;
+        }
+
+        auto* alloca = createEntryBlockAlloca(decl.type, decl.getName());
+        setLocalValue(alloca, &decl);
         if (!initializer->isUndefinedLiteralExpr()) {
             createStore(emitExprForPassing(*initializer, alloca->allocatedType), alloca);
         }
