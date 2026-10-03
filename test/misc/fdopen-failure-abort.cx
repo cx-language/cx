@@ -1,6 +1,14 @@
 // RUN: %not %cx run -Wno-unused %s 2>&1 | %FileCheck %s
 
+#if Windows
+// Out-of-range descriptors crash MSVC's _fdopen instead of failing cleanly,
+// so use a closed descriptor within the CRT table.
+const badFd = 30;
+#else
+const badFd = 999;
+#endif
+
 void main() {
-    // CHECK: Couldn't open file descriptor 999 for writing
-    var s = OutputFileStream(999);
+    // CHECK: Couldn't open file descriptor {{[0-9]+}} for writing
+    var s = OutputFileStream(badFd);
 }
