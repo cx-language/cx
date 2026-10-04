@@ -732,14 +732,14 @@ struct CToCxConverter final : clang::ASTConsumer {
 
         FunctionProto proto(decl.getName(), std::move(params), toCx(decl.getReturnType()), decl.isVariadic(), true);
         if (auto asmLabelAttr = decl.getAttr<clang::AsmLabelAttr>()) {
-            proto.asmLabel = asmLabelAttr->getLabel().str();
+            proto.asmLabel = internString(asmLabelAttr->getLabel());
         } else if (cxxMode && decl.getLanguageLinkage() == clang::CXXLanguageLinkage && mangleContext->shouldMangleDeclName(&decl)) {
             std::string mangled;
             llvm::raw_string_ostream stream(mangled);
             mangleContext->mangleName(&decl, stream);
             // The \01 marker bypasses LLVM's target symbol prefix, so add the Mach-O/MinGW '_' explicitly.
             if (targetInfo->getTriple().isOSBinFormatMachO() || targetInfo->getTriple().isOSCygMing()) mangled = "_" + mangled;
-            proto.asmLabel = std::move(mangled);
+            proto.asmLabel = internString(mangled);
         }
         return makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), AccessLevel::Default, module, toCx(decl.getLocation()));
     }
@@ -980,7 +980,7 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
 
     auto headerPath = fileEntry->getFileEntry().tryGetRealPathName();
     if (headerPath.empty()) headerPath = headerName;
-    importDecl.importedHeaderPath = headerPath;
+    importDecl.importedHeaderPath = internString(headerPath);
 
     std::string headerModuleName = headerName.str();
     llvm::replace(headerModuleName, '.', '_');

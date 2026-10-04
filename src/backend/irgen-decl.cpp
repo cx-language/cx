@@ -381,7 +381,7 @@ void IRGenerator::emitDecl(const Decl& decl) {
         auto& importDecl = llvm::cast<ImportDecl>(decl);
         // C++ headers can't be included in generated C; declarations are emitted instead.
         if (!importDecl.importedHeaderPath.empty() && !isCxxHeader(importDecl.importedHeaderPath)) {
-            module->includedHeaders.push_back(importDecl.importedHeaderPath);
+            module->includedHeaders.push_back(importDecl.importedHeaderPath.str());
         }
         break;
     }

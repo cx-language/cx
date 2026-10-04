@@ -42,7 +42,7 @@ static std::vector<std::string> getStringList(llvm::StringRef name, Decl* decl) 
         if (!string) {
             ABORT("invalid '" << name << "' value in build file (expected a list of strings)");
         }
-        result.push_back(string->value);
+        result.push_back(string->value.str());
     }
     return result;
 }

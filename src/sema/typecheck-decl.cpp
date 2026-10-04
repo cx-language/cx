@@ -1201,7 +1201,7 @@ static void mangleCppFunction(FunctionDecl& decl) {
     }
     // The \01 marker bypasses LLVM's target symbol prefix, so add the Mach-O/MinGW '_' explicitly.
     if (triple.isOSBinFormatMachO() || triple.isOSCygMing()) mangled = "_" + mangled;
-    decl.proto.asmLabel = std::move(mangled);
+    decl.proto.asmLabel = internString(mangled);
 }
 
 void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {

@@ -204,7 +204,7 @@ struct FunctionProto {
     bool external;
     // Set for `extern "C++"` declarations, which use Itanium name mangling.
     bool cppLinkage;
-    std::string asmLabel;
+    llvm::StringRef asmLabel;
 };
 
 std::string getQualifiedFunctionName(Type receiver, llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs);
@@ -400,14 +400,14 @@ struct TypeTemplate : Decl {
 };
 
 struct TypeAliasDecl : Decl {
-    TypeAliasDecl(std::string&& name, Type aliasedType, AccessLevel accessLevel, Module& module, Location location)
-    : Decl(DeclKind::TypeAliasDecl, accessLevel), name(std::move(name)), aliasedType(aliasedType), location(location), module(module) {}
+    TypeAliasDecl(llvm::StringRef name, Type aliasedType, AccessLevel accessLevel, Module& module, Location location)
+    : Decl(DeclKind::TypeAliasDecl, accessLevel), name(internString(name)), aliasedType(aliasedType), location(location), module(module) {}
     llvm::StringRef getName() const override { return name; }
     Module* getModule() const override { return &module; }
     Location getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->kind == DeclKind::TypeAliasDecl; }
 
-    std::string name;
+    llvm::StringRef name;
     Type aliasedType;
     Location location;
     Module& module;
@@ -490,7 +490,7 @@ struct ImportDecl : Decl {
     llvm::StringRef target;
     Location location;
     Module& module;
-    std::string importedHeaderPath;
+    llvm::StringRef importedHeaderPath;
 };
 
 std::vector<Note> getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls);

@@ -252,7 +252,7 @@ StringLiteralExpr* Parser::parseStringLiteral() {
     auto raw = currentToken().getString();
     if (raw.starts_with("\"")) raw = raw.drop_back().drop_front();
     auto content = replaceEscapeChars(raw, getCurrentLocation());
-    auto expr = makeAST<StringLiteralExpr>(std::move(content), getCurrentLocation());
+    auto expr = makeAST<StringLiteralExpr>(content, getCurrentLocation());
     expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
@@ -1920,7 +1920,7 @@ TypeAliasDecl* Parser::parseTypeAliasDecl(AccessLevel accessLevel) {
     parse(Token::Assignment);
     auto aliasedType = parseType();
     parseStmtTerminator("in type alias declaration");
-    return makeAST<TypeAliasDecl>(name.getString().str(), aliasedType, accessLevel, *currentModule, name.location);
+    return makeAST<TypeAliasDecl>(name.getString(), aliasedType, accessLevel, *currentModule, name.location);
 }
 
 /// type-template-decl ::= ('struct' | 'interface') id generic-param-list? '{' member-decl* '}' ';'?

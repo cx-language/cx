@@ -508,7 +508,7 @@ Expr* Expr::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
     }
     case ExprKind::StringLiteralExpr: {
         auto* stringLiteralExpr = llvm::cast<StringLiteralExpr>(this);
-        auto* newExpr = makeAST<StringLiteralExpr>(std::string(stringLiteralExpr->value), stringLiteralExpr->location);
+        auto* newExpr = makeAST<StringLiteralExpr>(stringLiteralExpr->value, stringLiteralExpr->location);
         newExpr->endLocation = stringLiteralExpr->endLocation;
         return newExpr;
     }

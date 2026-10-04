@@ -417,8 +417,8 @@ static bool synthesizeTestMain(Module& mainModule) {
         body.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(makeAST<VarExpr>(test->getName(), test->getLocation()), std::vector<NamedValue>(),
                                                            std::vector<GenericArg>(), test->getLocation())));
         std::vector<NamedValue> printArgs;
-        printArgs.emplace_back(makeAST<StringLiteralExpr>(std::string("ok "), test->getLocation()));
-        printArgs.emplace_back(makeAST<StringLiteralExpr>(std::string(test->getName()), test->getLocation()));
+        printArgs.emplace_back(makeAST<StringLiteralExpr>("ok ", test->getLocation()));
+        printArgs.emplace_back(makeAST<StringLiteralExpr>(test->getName(), test->getLocation()));
         body.push_back(makeAST<ExprStmt>(
             makeAST<CallExpr>(makeAST<VarExpr>("println", test->getLocation()), std::move(printArgs), std::vector<GenericArg>(), test->getLocation())));
     }

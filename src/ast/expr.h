@@ -159,10 +159,10 @@ struct VarExpr : Expr {
 };
 
 struct StringLiteralExpr : Expr {
-    StringLiteralExpr(std::string&& value, Location location) : Expr(ExprKind::StringLiteralExpr, location), value(std::move(value)) {}
+    StringLiteralExpr(llvm::StringRef value, Location location) : Expr(ExprKind::StringLiteralExpr, location), value(internString(value)) {}
     static bool classof(const Expr* e) { return e->kind == ExprKind::StringLiteralExpr; }
 
-    std::string value;
+    llvm::StringRef value;
 };
 
 struct CharacterLiteralExpr : Expr {
