@@ -56,18 +56,22 @@ import glfw;
 import gl;
 import sdl3;
 import raylib;
+import libc;
 ```
 
 Vendored modules are imported explicitly like any other module, but need
-no entry in `dependencies` and no link settings: each module carries its
-own `build.cx`, and the build applies its link requirements automatically
-when the module is imported. The C library itself must be installed on
-the system; if it cannot be found, the build fails with an error naming it.
+no entry in `dependencies` and no link settings: link requirements (if any)
+live in the module's own `build.cx`, and the build applies them
+automatically when the module is imported. The C library itself must be
+installed on the system (except the C standard library, which is always
+available); if it cannot be found, the build fails with an error naming it.
 
 Currently vendored: `glfw` (GLFW 3.x, without the Vulkan functions),
 `gl` (OpenGL 3.3 core profile), `sdl3` (SDL 3.x; see the header of
-`vendor/sdl3/sdl3.cx` for omissions), and `raylib` (raylib 6.x, without
-raymath.h; see the header of `vendor/raylib/raylib.cx` for omissions).
+`vendor/sdl3/sdl3.cx` for omissions), `raylib` (raylib 6.x, without
+raymath.h; see the header of `vendor/raylib/raylib.cx` for omissions),
+and `libc` (documented bindings for the C standard library declarations
+used by cx's examples; see the header of `vendor/libc/libc.cx`).
 A `vendor/<package>/` directory in your own project shadows the shipped
 module of the same name, so you can
 override or extend a binding; the shadowing package's link settings

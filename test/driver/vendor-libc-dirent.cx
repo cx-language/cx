@@ -1,0 +1,31 @@
+// UNSUPPORTED: windows
+// RUN: %cx -typecheck --check-all %s -Wno-unused 2>&1 | %FileCheck %s --allow-empty --check-prefix=STATIC
+// STATIC-NOT: warning:
+// STATIC-NOT: error:
+// RUN: %cx run -Wno-unused %s | %FileCheck %s
+
+import libc;
+
+// Exercises the POSIX-only dirent.h subset of the vendored libc module:
+// every directory contains ".", which validates the d_name offset, and "."
+// is a directory, which validates the d_type offset (local filesystems
+// always fill d_type; network filesystems may report DT_UNKNOWN instead).
+
+int main() {
+    println(DT_DIR); // CHECK: 4
+    var dir = opendir(".");
+    if !dir {
+        println("failed to open directory");
+        return 1;
+    }
+    var foundDot = false;
+    while var entry = readdir(dir) {
+        if entry.d_name == "." {
+            println(entry.d_type == DT_DIR); // CHECK-NEXT: true
+            foundDot = true;
+        }
+    }
+    println(foundDot); // CHECK-NEXT: true
+    println(closedir(dir) == 0); // CHECK-NEXT: true
+    return 0;
+}

@@ -1,0 +1,16 @@
+// RUN: %cx -typecheck --check-all %s -Wno-unused 2>&1 | %FileCheck %s --allow-empty --check-prefix=STATIC
+// STATIC-NOT: warning:
+// STATIC-NOT: error:
+// RUN: %cx run -Wno-unused %s | %FileCheck %s
+
+import libc;
+
+// Exercises the portable subset of the vendored libc module. The typecheck
+// run above validates every declaration; this run validates the values.
+
+int main() {
+    println(RAND_MAX >= 32767); // CHECK: true
+    var r = rand();
+    println(r >= 0 && r <= RAND_MAX); // CHECK-NEXT: true
+    return 0;
+}

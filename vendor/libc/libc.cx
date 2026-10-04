@@ -1,0 +1,65 @@
+// Documented bindings for the C standard library declarations used by cx's
+// examples, from stdlib.h and dirent.h. Importing this module shows
+// documentation in the LSP without importing a C header (which is slower
+// to compile and carries no doc comments).
+// The C library is linked by default, so this package needs no build.cx.
+// Note: string.h's memcpy is omitted: the standard library already declares
+// it privately (see std/system/libc.cx), and that shadows a redeclaration.
+
+// stdlib.h
+/// Returns a pseudo-random integer between 0 and RAND_MAX inclusive.
+extern c_int rand();
+#if Windows
+/// The maximum value returned by rand().
+const RAND_MAX = 32767;
+#else
+/// The maximum value returned by rand().
+const RAND_MAX = 2147483647;
+#endif
+
+#if !Windows
+// dirent.h: directory iteration (POSIX only).
+/// An opaque handle to an open directory stream.
+struct DIR {}
+
+#if macOS
+/// A directory entry. Field layout follows the 64-bit macOS struct dirent.
+struct dirent {
+    /// File number of the entry.
+    uint64 d_ino;
+    /// Seek offset, used by servers.
+    uint64 d_seekoff;
+    /// Length of this record.
+    uint16 d_reclen;
+    /// Length of the name in d_name.
+    uint16 d_namlen;
+    /// File type; one of the DT_* constants.
+    c_uchar d_type;
+    /// Null-terminated entry name.
+    char[1024] d_name;
+};
+#else
+/// A directory entry. Field layout follows the glibc struct dirent on 64-bit targets.
+struct dirent {
+    /// File number of the entry.
+    uint64 d_ino;
+    /// Offset to the next entry.
+    int64 d_off;
+    /// Length of this record.
+    uint16 d_reclen;
+    /// File type; one of the DT_* constants.
+    c_uchar d_type;
+    /// Null-terminated entry name.
+    char[256] d_name;
+};
+#endif
+
+/// Opens the directory at path for iteration, or null on failure.
+extern DIR*? opendir(char*? path);
+/// Returns the next entry in the stream, or null at the end.
+extern dirent*? readdir(DIR*? dir);
+/// Closes a directory stream opened by opendir.
+extern c_int closedir(DIR*? dir);
+/// File type for directories, as reported in dirent.d_type.
+const DT_DIR = 4;
+#endif
