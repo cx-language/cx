@@ -2104,14 +2104,14 @@ std::string hoverAt(Module* mainModule, const std::string& filePath, LspPosition
     if (signature.empty()) return "";
     std::ostringstream out;
     out << signature << "\n";
+    DocLineCache docCache;
+    if (std::string doc = docCommentForDecl(*found.decl, docCache); !doc.empty()) {
+        out << doc << "\n\n";
+    }
     out << declKindLabel(*found.decl);
     Location defLoc = found.decl->getLocation();
     if (defLoc.isValid() && defLoc.file) {
         out << " - defined at " << defLoc.file << ":" << defLoc.line << ":" << defLoc.column;
-    }
-    DocLineCache docCache;
-    if (std::string doc = docCommentForDecl(*found.decl, docCache); !doc.empty()) {
-        out << "\n\n" << doc;
     }
     return out.str();
 }

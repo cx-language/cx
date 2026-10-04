@@ -2074,6 +2074,9 @@ int undoc = 2;
     hover = result.get("hover", "")
     check("query-hover-doc", "Adds two numbers.\nSecond line of docs." in hover, hover[:300])
     check("query-hover-plaintext", not hover.startswith("```"), hover[:100])
+    doc_pos = hover.find("Adds two numbers.")
+    def_pos = hover.find("defined at")
+    check("query-hover-defined-at-after-doc", doc_pos != -1 and def_pos != -1 and doc_pos < def_pos, hover[:300])
 
     result = run_query(cx_lsp, base_query("hover", path, content, (28, 14)))
     hover = result.get("hover", "")
