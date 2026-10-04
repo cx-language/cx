@@ -726,7 +726,7 @@ Type Typechecker::typecheckSwitchCondition(Expr*& condition) {
 // compounds: anything under a loop or inner switch targets that instead.
 // Statement lowering preserves statement pointers, so captured break
 // pointers stay valid.
-static bool findStmtSlot(std::vector<Stmt*>& stmts, const Stmt* target, std::vector<Stmt*>*& outVec, size_t& outIndex) {
+static bool findStmtSlot(AstVector<Stmt*>& stmts, const Stmt* target, AstVector<Stmt*>*& outVec, size_t& outIndex) {
     for (size_t i = 0; i < stmts.size(); ++i) {
         if (stmts[i] == target) {
             outVec = &stmts;
@@ -807,8 +807,8 @@ Stmt* Typechecker::makeMergeDrop(Decl* decl, const DeclSet& pathMoved, const Dec
     llvm::SaveAndRestore saveMaybeMovedDecls(maybeMovedDecls, DeclSet());
     llvm::SaveAndRestore saveMoveLocations(moveLocations);
     llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls, pathAssigned);
-    auto* call = makeAST<CallExpr>(makeAST<VarExpr>("drop", location), std::vector<NamedValue>{NamedValue(makeAST<VarExpr>(decl->getName(), location))},
-                                   std::vector<GenericArg>(), location);
+    auto* call = makeAST<CallExpr>(makeAST<VarExpr>("drop", location), AstVector<NamedValue>{NamedValue(makeAST<VarExpr>(decl->getName(), location))},
+                                   AstVector<GenericArg>(), location);
     // Pin std's drop: user overloads must not hijack compiler-inserted
     // destruction. A template-valued calleeDecl skips lookup below.
     if (auto* stdModule = Module::getStdlibModule()) {
@@ -940,7 +940,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     // Where each path's merge drops go, parallel to pathMovedDecls: an arm or
     // default body to append to, or a break to insert before.
     struct MergePathTarget {
-        std::vector<Stmt*>* body = nullptr;
+        AstVector<Stmt*>* body = nullptr;
         BreakStmt* breakStmt = nullptr;
     };
     std::vector<MergePathTarget> pathTargets;
@@ -1059,7 +1059,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
                 if (target.body) {
                     target.body->push_back(drop);
                 } else {
-                    std::vector<Stmt*>* slot = nullptr;
+                    AstVector<Stmt*>* slot = nullptr;
                     size_t index = 0;
                     for (auto& switchCase : stmt.cases) {
                         if (findStmtSlot(switchCase.stmts, target.breakStmt, slot, index)) break;
@@ -1275,7 +1275,7 @@ bool Typechecker::tryDesugarEnumIteration(ForEachStmt& forEachStmt) {
                         "cannot iterate cases of enum '" << enumDecl->getName() << "' because case '" << enumCase.getName() << "' has associated values");
         }
     }
-    std::vector<Expr*> elements;
+    AstVector<Expr*> elements;
     for (auto& enumCase : enumDecl->cases) {
         // Base each case on the written name, which may be an alias; the enum's own
         // name could resolve to something else if shadowed by a local.

@@ -91,7 +91,7 @@ private:
     }
     Token parse(llvm::ArrayRef<Token::Kind> expected, const char* contextInfo = nullptr);
     void parseStmtTerminator(const char* contextInfo = nullptr);
-    std::vector<NamedValue> parseArgumentList(bool allowEmpty);
+    AstVector<NamedValue> parseArgumentList(bool allowEmpty);
     VarExpr* parseVarExpr();
     VarExpr* parseThis();
     StringLiteralExpr* parseStringLiteral();
@@ -104,8 +104,8 @@ private:
     UndefinedLiteralExpr* parseUndefinedLiteral();
     ArrayLiteralExpr* parseArrayLiteral();
     Expr* parseAnonymousStructLiteralOrParenExpr();
-    std::vector<Type> parseNonEmptyTypeList();
-    std::vector<GenericArg> parseGenericArgumentList();
+    AstVector<Type> parseNonEmptyTypeList();
+    AstVector<GenericArg> parseGenericArgumentList();
     Type parseArrayType(Type elementType);
     bool resolveSizeExprDecls(Expr& expr, std::vector<VarDecl*>& resolutionStack);
     // Reparses a function return type and name under the binder guard once `<`
@@ -147,7 +147,7 @@ private:
     Expr* parseBinaryExpr(int minPrecedence);
     Expr* parseExpr();
     Expr* parseExprOrVarDecl(Decl* parent);
-    std::vector<Expr*> parseExprList();
+    AstVector<Expr*> parseExprList();
     ReturnStmt* parseReturnStmt();
     VarDecl* parseVarDecl(Decl* parent, AccessLevel accessLevel, bool requireTerminator = true);
     VarDecl* parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation, bool isConst,
@@ -164,14 +164,14 @@ private:
     BreakStmt* parseBreakStmt();
     ContinueStmt* parseContinueStmt();
     Stmt* parseStmt(Decl* parent);
-    std::vector<Stmt*> parseBlock(Decl* parent);
-    std::vector<Stmt*> parseBlockOrStmt(Decl* parent);
-    std::vector<Stmt*> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent);
+    AstVector<Stmt*> parseBlock(Decl* parent);
+    AstVector<Stmt*> parseBlockOrStmt(Decl* parent);
+    AstVector<Stmt*> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent);
     ParamDecl parseParam(bool requireType, bool allowCxxConst);
-    std::vector<ParamDecl> parseParamList(bool* isVariadic, bool requireTypes = true, bool allowCxxConst = false);
-    void parseGenericParamList(std::vector<GenericParamDecl>& genericParams);
+    AstVector<ParamDecl> parseParamList(bool* isVariadic, bool requireTypes = true, bool allowCxxConst = false);
+    void parseGenericParamList(AstVector<GenericParamDecl>& genericParams);
     llvm::StringRef parseFunctionName(TypeDecl* receiverTypeDecl);
-    FunctionDecl* parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, std::vector<GenericParamDecl>* genericParams,
+    FunctionDecl* parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, AstVector<GenericParamDecl>* genericParams,
                                      Type returnType, llvm::StringRef name, Location location, bool cppLinkage = false);
     FunctionTemplate* parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location);
     FunctionDecl* parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody, Type type, llvm::StringRef name, Location location,
@@ -190,17 +190,17 @@ private:
     // Records function-level check attributes, or rejects them on a non-function declaration.
     void applyFunctionChecks(Decl* decl, DisabledChecks disabledChecks, Location checksLocation);
     void rejectMisplacedChecks(DisabledChecks disabledChecks, Location checksLocation);
-    void rejectGenericStaticConst(const std::vector<GenericParamDecl>* genericParams);
+    void rejectGenericStaticConst(const AstVector<GenericParamDecl>* genericParams);
     // Current token is `=`. Parses the initializer and adds a static constant.
     void addParsedStaticConst(TypeDecl& typeDecl, Type type, llvm::StringRef name, Location location, AccessLevel accessLevel);
     // Current token is `const`, already known to introduce `const name = expr`.
-    void parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel, const std::vector<GenericParamDecl>* genericParams);
+    void parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel, const AstVector<GenericParamDecl>* genericParams);
     TypeTemplate* parseTypeTemplate(AccessLevel accessLevel);
-    Token parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams);
-    TypeDecl* parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
+    Token parseTypeHeader(AstVector<Type>& interfaces, AstVector<GenericParamDecl>* genericParams);
+    TypeDecl* parseTypeDecl(AstVector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
     TypeAliasDecl* parseTypeAliasDecl(AccessLevel accessLevel);
     TypeTemplate* parseEnumTemplate(AccessLevel accessLevel);
-    EnumDecl* parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
+    EnumDecl* parseEnumDecl(AstVector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
     ImportDecl* parseImportDecl();
     void parseIfdefBody(std::vector<Decl*>* activeDecls);
     void parseIfdef(std::vector<Decl*>* activeDecls);

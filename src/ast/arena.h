@@ -36,8 +36,11 @@ struct AstDtorEntry {
     void (*destroy)(void*);
 };
 
-/// Every non-trivial arena node, for resetAstArena. Nodes own malloc'd
-/// memory (vectors, strings) that slab freeing alone would leak.
+/// Every non-trivial arena node, for resetAstArena. Node vectors and strings
+/// live in the arena, but a few members still malloc (generic-instantiation
+/// caches, wide int literals, spilled SmallVectors); running the destructors
+/// frees those. Also a safety net: a future malloc'd member is freed without
+/// any other change.
 inline std::vector<AstDtorEntry>& astDtorRegistry() {
     static auto* registry = new std::vector<AstDtorEntry>();
     return *registry;

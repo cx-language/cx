@@ -558,7 +558,7 @@ Expr* Expr::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
     case ExprKind::AnonymousStructExpr: {
         auto* anonymousStructExpr = llvm::cast<AnonymousStructExpr>(this);
         auto elements =
-            map(anonymousStructExpr->elements, [&](const NamedValue& element) { return NamedValue(element.name, element.value->instantiate(genericArgs)); });
+            mapAst(anonymousStructExpr->elements, [&](const NamedValue& element) { return NamedValue(element.name, element.value->instantiate(genericArgs)); });
         auto* newExpr = makeAST<AnonymousStructExpr>(std::move(elements), anonymousStructExpr->location);
         newExpr->endLocation = anonymousStructExpr->endLocation;
         return newExpr;
@@ -582,8 +582,8 @@ Expr* Expr::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
     case ExprKind::CallExpr: {
         auto* callExpr = llvm::cast<CallExpr>(this);
         auto callee = callExpr->callee->instantiate(genericArgs);
-        auto args = map(callExpr->args, [&](auto& arg) { return NamedValue(arg.name, arg.value->instantiate(genericArgs)); });
-        auto callGenericArgs = map(callExpr->genericArgs, [&](GenericArg arg) { return arg.resolve(genericArgs); });
+        auto args = mapAst(callExpr->args, [&](auto& arg) { return NamedValue(arg.name, arg.value->instantiate(genericArgs)); });
+        auto callGenericArgs = mapAst(callExpr->genericArgs, [&](GenericArg arg) { return arg.resolve(genericArgs); });
         auto* newExpr = makeAST<CallExpr>(callee, std::move(args), std::move(callGenericArgs), callExpr->location);
         newExpr->endLocation = callExpr->endLocation;
         return newExpr;
@@ -647,7 +647,7 @@ Expr* Expr::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
     case ExprKind::SwitchExpr: {
         auto* switchExpr = llvm::cast<SwitchExpr>(this);
         auto condition = switchExpr->condition->instantiate(genericArgs);
-        std::vector<SwitchExprArm> arms;
+        AstVector<SwitchExprArm> arms;
         for (auto& arm : switchExpr->arms) {
             auto value = arm.value->instantiate(genericArgs);
             auto associatedValue = arm.associatedValue ? llvm::cast<VarDecl>(arm.associatedValue->instantiate(genericArgs, {})) : nullptr;
@@ -897,9 +897,9 @@ void cx::resetLambdaNameCounter() {
     lambdaNameCounter = 0;
 }
 
-LambdaExpr::LambdaExpr(std::vector<ParamDecl>&& params, Module* module, Location location) : Expr(ExprKind::LambdaExpr, location) {
+LambdaExpr::LambdaExpr(AstVector<ParamDecl>&& params, Module* module, Location location) : Expr(ExprKind::LambdaExpr, location) {
     FunctionProto proto("__lambda" + std::to_string(lambdaNameCounter++), std::move(params), Type(), false, false);
-    this->functionDecl = makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), AccessLevel::Private, *module, location);
+    this->functionDecl = makeAST<FunctionDecl>(std::move(proto), AstVector<GenericArg>(), AccessLevel::Private, *module, location);
 }
 
 VarDeclExpr::VarDeclExpr(VarDecl* varDecl) : Expr(ExprKind::VarDeclExpr, varDecl->getLocation()), varDecl(varDecl) {}

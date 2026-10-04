@@ -204,10 +204,10 @@ struct UndefinedLiteralExpr : Expr {
 };
 
 struct ArrayLiteralExpr : Expr {
-    ArrayLiteralExpr(std::vector<Expr*>&& elements, Location location) : Expr(ExprKind::ArrayLiteralExpr, location), elements(std::move(elements)) {}
+    ArrayLiteralExpr(AstVector<Expr*>&& elements, Location location) : Expr(ExprKind::ArrayLiteralExpr, location), elements(std::move(elements)) {}
     static bool classof(const Expr* e) { return e->kind == ExprKind::ArrayLiteralExpr; }
 
-    std::vector<Expr*> elements;
+    AstVector<Expr*> elements;
 };
 
 struct NamedValue {
@@ -221,15 +221,15 @@ struct NamedValue {
 };
 
 struct AnonymousStructExpr : Expr {
-    AnonymousStructExpr(std::vector<NamedValue>&& elements, Location location) : Expr(ExprKind::AnonymousStructExpr, location), elements(std::move(elements)) {}
+    AnonymousStructExpr(AstVector<NamedValue>&& elements, Location location) : Expr(ExprKind::AnonymousStructExpr, location), elements(std::move(elements)) {}
     const Expr* getElementByName(llvm::StringRef name) const;
     static bool classof(const Expr* e) { return e->kind == ExprKind::AnonymousStructExpr; }
 
-    std::vector<NamedValue> elements;
+    AstVector<NamedValue> elements;
 };
 
 struct CallExpr : Expr {
-    CallExpr(Expr* callee, std::vector<NamedValue>&& args, std::vector<GenericArg>&& genericArgs, Location location)
+    CallExpr(Expr* callee, AstVector<NamedValue>&& args, AstVector<GenericArg>&& genericArgs, Location location)
     : Expr(ExprKind::CallExpr, location), callee(callee), args(std::move(args)), genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
     llvm::StringRef getFunctionName() const;
@@ -255,17 +255,17 @@ struct CallExpr : Expr {
     }
 
     Expr* callee;
-    std::vector<NamedValue> args;
-    std::vector<GenericArg> genericArgs;
+    AstVector<NamedValue> args;
+    AstVector<GenericArg> genericArgs;
     Type receiverType;
     Decl* calleeDecl;
     bool builtinConversion = false;
     // Maps each arg to its parameter index, or -1 for variadic extras. Filled by typechecking.
     // Args stay in written order so they evaluate in argument order; backends reorder via this mapping.
-    std::vector<int> argParamIndices;
+    AstVector<int> argParamIndices;
 
 protected:
-    CallExpr(ExprKind kind, Expr* callee, std::vector<NamedValue>&& args, Location location)
+    CallExpr(ExprKind kind, Expr* callee, AstVector<NamedValue>&& args, Location location)
     : Expr(kind, location), callee(callee), args(std::move(args)), calleeDecl(nullptr) {}
 };
 
@@ -330,7 +330,7 @@ struct MemberExpr : Expr {
     Decl* decl = nullptr;
     // For array swizzles (`vec.xy`, `vec.rgba`, etc.): element indices, empty when not a swizzle.
     // Set by typechecking; IRGen emits element extracts + array build from these.
-    std::vector<int> swizzleIndices;
+    AstVector<int> swizzleIndices;
 };
 
 /// An element access expression using the element's index in brackets: 'base[index]'.
@@ -372,7 +372,7 @@ struct UnwrapExpr : CallExpr {
 };
 
 struct LambdaExpr : Expr {
-    LambdaExpr(std::vector<ParamDecl>&& params, Module* module, Location location);
+    LambdaExpr(AstVector<ParamDecl>&& params, Module* module, Location location);
     static bool classof(const Expr* e) { return e->kind == ExprKind::LambdaExpr; }
 
     FunctionDecl* functionDecl;
@@ -395,12 +395,12 @@ struct SwitchExprArm {
 };
 
 struct SwitchExpr : Expr {
-    SwitchExpr(Expr* condition, std::vector<SwitchExprArm>&& arms, Expr* defaultExpr, Location location)
+    SwitchExpr(Expr* condition, AstVector<SwitchExprArm>&& arms, Expr* defaultExpr, Location location)
     : Expr(ExprKind::SwitchExpr, location), condition(condition), arms(std::move(arms)), defaultExpr(defaultExpr) {}
     static bool classof(const Expr* e) { return e->kind == ExprKind::SwitchExpr; }
 
     Expr* condition;
-    std::vector<SwitchExprArm> arms;
+    AstVector<SwitchExprArm> arms;
     Expr* defaultExpr;
 };
 

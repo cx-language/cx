@@ -283,12 +283,14 @@ struct BasicType : TypeBase {
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::BasicType; }
 
 private:
-    BasicType(llvm::StringRef name, std::vector<GenericArg>&& genericArgs)
-    : TypeBase(TypeKind::BasicType), name(internString(name)), genericArgs(std::move(genericArgs)), decl(nullptr) {}
+    // Takes ArrayRef (not AstVector&& like the other type ctors): get() serves
+    // mixed callers (moved vectors, single args, braced lists) by view.
+    BasicType(llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs)
+    : TypeBase(TypeKind::BasicType), name(internString(name)), genericArgs(genericArgs.begin(), genericArgs.end()), decl(nullptr) {}
 
 public:
     llvm::StringRef name; // Can be empty for anonymous types imported from C.
-    std::vector<GenericArg> genericArgs;
+    AstVector<GenericArg> genericArgs;
     TypeDecl* decl;
 };
 
@@ -314,28 +316,28 @@ struct AnonymousStructElement {
 bool operator==(const AnonymousStructElement&, const AnonymousStructElement&);
 
 struct AnonymousStructType : TypeBase {
-    static Type get(std::vector<AnonymousStructElement>&& elements, Location location = Location(), Location endLocation = Location());
+    static Type get(AstVector<AnonymousStructElement>&& elements, Location location = Location(), Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::AnonymousStructType; }
 
 private:
-    AnonymousStructType(std::vector<AnonymousStructElement>&& elements) : TypeBase(TypeKind::AnonymousStructType), elements(std::move(elements)) {}
+    AnonymousStructType(AstVector<AnonymousStructElement>&& elements) : TypeBase(TypeKind::AnonymousStructType), elements(std::move(elements)) {}
 
 public:
-    std::vector<AnonymousStructElement> elements;
+    AstVector<AnonymousStructElement> elements;
 };
 
 struct FunctionType : TypeBase {
     std::vector<ParamDecl> getParamDecls(Location location = Location()) const;
-    static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic, Location location = Location(), Location endLocation = Location());
+    static Type get(Type returnType, AstVector<Type>&& paramTypes, bool isVariadic, Location location = Location(), Location endLocation = Location());
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::FunctionType; }
 
 private:
-    FunctionType(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic)
+    FunctionType(Type returnType, AstVector<Type>&& paramTypes, bool isVariadic)
     : TypeBase(TypeKind::FunctionType), returnType(returnType), paramTypes(std::move(paramTypes)), isVariadic(isVariadic) {}
 
 public:
     Type returnType;
-    std::vector<Type> paramTypes;
+    AstVector<Type> paramTypes;
 
 public:
     bool isVariadic = false;
