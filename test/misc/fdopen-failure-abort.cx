@@ -1,14 +1,10 @@
 // RUN: %not %cx run -Wno-unused %s 2>&1 | %FileCheck %s
-
-#if Windows
-// Out-of-range descriptors crash MSVC's _fdopen instead of failing cleanly,
-// so use a closed descriptor within the CRT table.
-const badFd = 30;
-#else
-const badFd = 999;
-#endif
+// UNSUPPORTED: windows
+// UCRT routes every bad descriptor through the invalid parameter handler
+// (Watson crash) instead of returning null like POSIX, so the message below
+// never prints there.
 
 void main() {
-    // CHECK: Couldn't open file descriptor {{[0-9]+}} for writing
-    var s = OutputFileStream(badFd);
+    // CHECK: Couldn't open file descriptor 999 for writing
+    var s = OutputFileStream(999);
 }
