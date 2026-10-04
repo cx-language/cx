@@ -1,5 +1,8 @@
 // GLFW 3.x bindings, translated from the system GLFW/glfw3.h
 // (generated from version 3.5.1; unused declarations cost nothing thanks to lazy checking).
+// Doc comments derive in part from that header (zlib license;
+// Copyright (c) 2002-2006 Marcus Geelnard,
+// Copyright (c) 2006-2019 Camilla Löwy <elmindreda@glfw.org>).
 // Link requirements live in the build.cx next to this file.
 // The Vulkan functions (glfwCreateWindowSurface and friends) are omitted:
 // glfw3.h only declares them when vulkan/vulkan.h was included first,
@@ -23,136 +26,265 @@ const GLFW_PRESS = 1;
 const GLFW_REPEAT = 2;
 /// Joystick hat states.
 const GLFW_HAT_CENTERED = 0;
+/// Joystick hat pointing up.
 const GLFW_HAT_UP = 1;
+/// Joystick hat pointing right.
 const GLFW_HAT_RIGHT = 2;
+/// Joystick hat pointing down.
 const GLFW_HAT_DOWN = 4;
+/// Joystick hat pointing left.
 const GLFW_HAT_LEFT = 8;
+/// Joystick hat pointing right and up.
 const GLFW_HAT_RIGHT_UP = (GLFW_HAT_RIGHT | GLFW_HAT_UP);
+/// Joystick hat pointing right and down.
 const GLFW_HAT_RIGHT_DOWN = (GLFW_HAT_RIGHT | GLFW_HAT_DOWN);
+/// Joystick hat pointing left and up.
 const GLFW_HAT_LEFT_UP = (GLFW_HAT_LEFT | GLFW_HAT_UP);
+/// Joystick hat pointing left and down.
 const GLFW_HAT_LEFT_DOWN = (GLFW_HAT_LEFT | GLFW_HAT_DOWN);
+/// Unknown key.
 const GLFW_KEY_UNKNOWN = -1;
 /// Keyboard key tokens.
 const GLFW_KEY_SPACE = 32;
+/// The apostrophe (') key.
 const GLFW_KEY_APOSTROPHE = 39;
+/// The comma (,) key.
 const GLFW_KEY_COMMA = 44;
+/// The minus (-) key.
 const GLFW_KEY_MINUS = 45;
+/// The period (.) key.
 const GLFW_KEY_PERIOD = 46;
+/// The slash (/) key.
 const GLFW_KEY_SLASH = 47;
+/// The 0 key.
 const GLFW_KEY_0 = 48;
+/// The 1 key.
 const GLFW_KEY_1 = 49;
+/// The 2 key.
 const GLFW_KEY_2 = 50;
+/// The 3 key.
 const GLFW_KEY_3 = 51;
+/// The 4 key.
 const GLFW_KEY_4 = 52;
+/// The 5 key.
 const GLFW_KEY_5 = 53;
+/// The 6 key.
 const GLFW_KEY_6 = 54;
+/// The 7 key.
 const GLFW_KEY_7 = 55;
+/// The 8 key.
 const GLFW_KEY_8 = 56;
+/// The 9 key.
 const GLFW_KEY_9 = 57;
+/// The semicolon (;) key.
 const GLFW_KEY_SEMICOLON = 59;
+/// The equal (=) key.
 const GLFW_KEY_EQUAL = 61;
+/// The A key.
 const GLFW_KEY_A = 65;
+/// The B key.
 const GLFW_KEY_B = 66;
+/// The C key.
 const GLFW_KEY_C = 67;
+/// The D key.
 const GLFW_KEY_D = 68;
+/// The E key.
 const GLFW_KEY_E = 69;
+/// The F key.
 const GLFW_KEY_F = 70;
+/// The G key.
 const GLFW_KEY_G = 71;
+/// The H key.
 const GLFW_KEY_H = 72;
+/// The I key.
 const GLFW_KEY_I = 73;
+/// The J key.
 const GLFW_KEY_J = 74;
+/// The K key.
 const GLFW_KEY_K = 75;
+/// The L key.
 const GLFW_KEY_L = 76;
+/// The M key.
 const GLFW_KEY_M = 77;
+/// The N key.
 const GLFW_KEY_N = 78;
+/// The O key.
 const GLFW_KEY_O = 79;
+/// The P key.
 const GLFW_KEY_P = 80;
+/// The Q key.
 const GLFW_KEY_Q = 81;
+/// The R key.
 const GLFW_KEY_R = 82;
+/// The S key.
 const GLFW_KEY_S = 83;
+/// The T key.
 const GLFW_KEY_T = 84;
+/// The U key.
 const GLFW_KEY_U = 85;
+/// The V key.
 const GLFW_KEY_V = 86;
+/// The W key.
 const GLFW_KEY_W = 87;
+/// The X key.
 const GLFW_KEY_X = 88;
+/// The Y key.
 const GLFW_KEY_Y = 89;
+/// The Z key.
 const GLFW_KEY_Z = 90;
+/// The left bracket ([) key.
 const GLFW_KEY_LEFT_BRACKET = 91;
+/// The backslash (\) key.
 const GLFW_KEY_BACKSLASH = 92;
+/// The right bracket (]) key.
 const GLFW_KEY_RIGHT_BRACKET = 93;
+/// The grave accent (`) key.
 const GLFW_KEY_GRAVE_ACCENT = 96;
+/// A non-US keyboard key.
 const GLFW_KEY_WORLD_1 = 161;
+/// A non-US keyboard key.
 const GLFW_KEY_WORLD_2 = 162;
+/// The escape key.
 const GLFW_KEY_ESCAPE = 256;
+/// The enter key.
 const GLFW_KEY_ENTER = 257;
+/// The tab key.
 const GLFW_KEY_TAB = 258;
+/// The backspace key.
 const GLFW_KEY_BACKSPACE = 259;
+/// The insert key.
 const GLFW_KEY_INSERT = 260;
+/// The delete key.
 const GLFW_KEY_DELETE = 261;
+/// The right arrow key.
 const GLFW_KEY_RIGHT = 262;
+/// The left arrow key.
 const GLFW_KEY_LEFT = 263;
+/// The down arrow key.
 const GLFW_KEY_DOWN = 264;
+/// The up arrow key.
 const GLFW_KEY_UP = 265;
+/// The page up key.
 const GLFW_KEY_PAGE_UP = 266;
+/// The page down key.
 const GLFW_KEY_PAGE_DOWN = 267;
+/// The home key.
 const GLFW_KEY_HOME = 268;
+/// The end key.
 const GLFW_KEY_END = 269;
+/// The caps lock key.
 const GLFW_KEY_CAPS_LOCK = 280;
+/// The scroll lock key.
 const GLFW_KEY_SCROLL_LOCK = 281;
+/// The num lock key.
 const GLFW_KEY_NUM_LOCK = 282;
+/// The print screen key.
 const GLFW_KEY_PRINT_SCREEN = 283;
+/// The pause key.
 const GLFW_KEY_PAUSE = 284;
+/// The F1 function key.
 const GLFW_KEY_F1 = 290;
+/// The F2 function key.
 const GLFW_KEY_F2 = 291;
+/// The F3 function key.
 const GLFW_KEY_F3 = 292;
+/// The F4 function key.
 const GLFW_KEY_F4 = 293;
+/// The F5 function key.
 const GLFW_KEY_F5 = 294;
+/// The F6 function key.
 const GLFW_KEY_F6 = 295;
+/// The F7 function key.
 const GLFW_KEY_F7 = 296;
+/// The F8 function key.
 const GLFW_KEY_F8 = 297;
+/// The F9 function key.
 const GLFW_KEY_F9 = 298;
+/// The F10 function key.
 const GLFW_KEY_F10 = 299;
+/// The F11 function key.
 const GLFW_KEY_F11 = 300;
+/// The F12 function key.
 const GLFW_KEY_F12 = 301;
+/// The F13 function key.
 const GLFW_KEY_F13 = 302;
+/// The F14 function key.
 const GLFW_KEY_F14 = 303;
+/// The F15 function key.
 const GLFW_KEY_F15 = 304;
+/// The F16 function key.
 const GLFW_KEY_F16 = 305;
+/// The F17 function key.
 const GLFW_KEY_F17 = 306;
+/// The F18 function key.
 const GLFW_KEY_F18 = 307;
+/// The F19 function key.
 const GLFW_KEY_F19 = 308;
+/// The F20 function key.
 const GLFW_KEY_F20 = 309;
+/// The F21 function key.
 const GLFW_KEY_F21 = 310;
+/// The F22 function key.
 const GLFW_KEY_F22 = 311;
+/// The F23 function key.
 const GLFW_KEY_F23 = 312;
+/// The F24 function key.
 const GLFW_KEY_F24 = 313;
+/// The F25 function key.
 const GLFW_KEY_F25 = 314;
+/// The keypad 0 key.
 const GLFW_KEY_KP_0 = 320;
+/// The keypad 1 key.
 const GLFW_KEY_KP_1 = 321;
+/// The keypad 2 key.
 const GLFW_KEY_KP_2 = 322;
+/// The keypad 3 key.
 const GLFW_KEY_KP_3 = 323;
+/// The keypad 4 key.
 const GLFW_KEY_KP_4 = 324;
+/// The keypad 5 key.
 const GLFW_KEY_KP_5 = 325;
+/// The keypad 6 key.
 const GLFW_KEY_KP_6 = 326;
+/// The keypad 7 key.
 const GLFW_KEY_KP_7 = 327;
+/// The keypad 8 key.
 const GLFW_KEY_KP_8 = 328;
+/// The keypad 9 key.
 const GLFW_KEY_KP_9 = 329;
+/// The keypad decimal point key.
 const GLFW_KEY_KP_DECIMAL = 330;
+/// The keypad division key.
 const GLFW_KEY_KP_DIVIDE = 331;
+/// The keypad multiplication key.
 const GLFW_KEY_KP_MULTIPLY = 332;
+/// The keypad subtraction key.
 const GLFW_KEY_KP_SUBTRACT = 333;
+/// The keypad addition key.
 const GLFW_KEY_KP_ADD = 334;
+/// The keypad enter key.
 const GLFW_KEY_KP_ENTER = 335;
+/// The keypad equal key.
 const GLFW_KEY_KP_EQUAL = 336;
+/// The left shift key.
 const GLFW_KEY_LEFT_SHIFT = 340;
+/// The left control key.
 const GLFW_KEY_LEFT_CONTROL = 341;
+/// The left alt key.
 const GLFW_KEY_LEFT_ALT = 342;
+/// The left super key.
 const GLFW_KEY_LEFT_SUPER = 343;
+/// The right shift key.
 const GLFW_KEY_RIGHT_SHIFT = 344;
+/// The right control key.
 const GLFW_KEY_RIGHT_CONTROL = 345;
+/// The right alt key.
 const GLFW_KEY_RIGHT_ALT = 346;
+/// The right super key.
 const GLFW_KEY_RIGHT_SUPER = 347;
+/// The menu key.
 const GLFW_KEY_MENU = 348;
+/// The highest valid key ID.
 const GLFW_KEY_LAST = GLFW_KEY_MENU;
 /// If this bit is set one or more Shift keys were held down.
 const GLFW_MOD_SHIFT = 0x0001;
@@ -168,63 +300,115 @@ const GLFW_MOD_CAPS_LOCK = 0x0010;
 const GLFW_MOD_NUM_LOCK = 0x0020;
 /// Mouse button IDs.
 const GLFW_MOUSE_BUTTON_1 = 0;
+/// Mouse button 2.
 const GLFW_MOUSE_BUTTON_2 = 1;
+/// Mouse button 3.
 const GLFW_MOUSE_BUTTON_3 = 2;
+/// Mouse button 4.
 const GLFW_MOUSE_BUTTON_4 = 3;
+/// Mouse button 5.
 const GLFW_MOUSE_BUTTON_5 = 4;
+/// Mouse button 6.
 const GLFW_MOUSE_BUTTON_6 = 5;
+/// Mouse button 7.
 const GLFW_MOUSE_BUTTON_7 = 6;
+/// Mouse button 8.
 const GLFW_MOUSE_BUTTON_8 = 7;
+/// The highest valid mouse button ID.
 const GLFW_MOUSE_BUTTON_LAST = GLFW_MOUSE_BUTTON_8;
+/// Alias for GLFW_MOUSE_BUTTON_1.
 const GLFW_MOUSE_BUTTON_LEFT = GLFW_MOUSE_BUTTON_1;
+/// Alias for GLFW_MOUSE_BUTTON_2.
 const GLFW_MOUSE_BUTTON_RIGHT = GLFW_MOUSE_BUTTON_2;
+/// Alias for GLFW_MOUSE_BUTTON_3.
 const GLFW_MOUSE_BUTTON_MIDDLE = GLFW_MOUSE_BUTTON_3;
 /// Joystick IDs.
 const GLFW_JOYSTICK_1 = 0;
+/// Joystick ID 2.
 const GLFW_JOYSTICK_2 = 1;
+/// Joystick ID 3.
 const GLFW_JOYSTICK_3 = 2;
+/// Joystick ID 4.
 const GLFW_JOYSTICK_4 = 3;
+/// Joystick ID 5.
 const GLFW_JOYSTICK_5 = 4;
+/// Joystick ID 6.
 const GLFW_JOYSTICK_6 = 5;
+/// Joystick ID 7.
 const GLFW_JOYSTICK_7 = 6;
+/// Joystick ID 8.
 const GLFW_JOYSTICK_8 = 7;
+/// Joystick ID 9.
 const GLFW_JOYSTICK_9 = 8;
+/// Joystick ID 10.
 const GLFW_JOYSTICK_10 = 9;
+/// Joystick ID 11.
 const GLFW_JOYSTICK_11 = 10;
+/// Joystick ID 12.
 const GLFW_JOYSTICK_12 = 11;
+/// Joystick ID 13.
 const GLFW_JOYSTICK_13 = 12;
+/// Joystick ID 14.
 const GLFW_JOYSTICK_14 = 13;
+/// Joystick ID 15.
 const GLFW_JOYSTICK_15 = 14;
+/// Joystick ID 16.
 const GLFW_JOYSTICK_16 = 15;
+/// The highest valid joystick ID.
 const GLFW_JOYSTICK_LAST = GLFW_JOYSTICK_16;
 /// Gamepad buttons.
 const GLFW_GAMEPAD_BUTTON_A = 0;
+/// Gamepad B button.
 const GLFW_GAMEPAD_BUTTON_B = 1;
+/// Gamepad X button.
 const GLFW_GAMEPAD_BUTTON_X = 2;
+/// Gamepad Y button.
 const GLFW_GAMEPAD_BUTTON_Y = 3;
+/// Gamepad left bumper button.
 const GLFW_GAMEPAD_BUTTON_LEFT_BUMPER = 4;
+/// Gamepad right bumper button.
 const GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER = 5;
+/// Gamepad back button.
 const GLFW_GAMEPAD_BUTTON_BACK = 6;
+/// Gamepad start button.
 const GLFW_GAMEPAD_BUTTON_START = 7;
+/// Gamepad guide button.
 const GLFW_GAMEPAD_BUTTON_GUIDE = 8;
+/// Gamepad left thumbstick button.
 const GLFW_GAMEPAD_BUTTON_LEFT_THUMB = 9;
+/// Gamepad right thumbstick button.
 const GLFW_GAMEPAD_BUTTON_RIGHT_THUMB = 10;
+/// Gamepad d-pad up button.
 const GLFW_GAMEPAD_BUTTON_DPAD_UP = 11;
+/// Gamepad d-pad right button.
 const GLFW_GAMEPAD_BUTTON_DPAD_RIGHT = 12;
+/// Gamepad d-pad down button.
 const GLFW_GAMEPAD_BUTTON_DPAD_DOWN = 13;
+/// Gamepad d-pad left button.
 const GLFW_GAMEPAD_BUTTON_DPAD_LEFT = 14;
+/// The highest valid gamepad button ID.
 const GLFW_GAMEPAD_BUTTON_LAST = GLFW_GAMEPAD_BUTTON_DPAD_LEFT;
+/// Alias for GLFW_GAMEPAD_BUTTON_A.
 const GLFW_GAMEPAD_BUTTON_CROSS = GLFW_GAMEPAD_BUTTON_A;
+/// Alias for GLFW_GAMEPAD_BUTTON_B.
 const GLFW_GAMEPAD_BUTTON_CIRCLE = GLFW_GAMEPAD_BUTTON_B;
+/// Alias for GLFW_GAMEPAD_BUTTON_X.
 const GLFW_GAMEPAD_BUTTON_SQUARE = GLFW_GAMEPAD_BUTTON_X;
+/// Alias for GLFW_GAMEPAD_BUTTON_Y.
 const GLFW_GAMEPAD_BUTTON_TRIANGLE = GLFW_GAMEPAD_BUTTON_Y;
 /// Gamepad axes.
 const GLFW_GAMEPAD_AXIS_LEFT_X = 0;
+/// Gamepad left thumbstick vertical axis.
 const GLFW_GAMEPAD_AXIS_LEFT_Y = 1;
+/// Gamepad right thumbstick horizontal axis.
 const GLFW_GAMEPAD_AXIS_RIGHT_X = 2;
+/// Gamepad right thumbstick vertical axis.
 const GLFW_GAMEPAD_AXIS_RIGHT_Y = 3;
+/// Gamepad left trigger axis.
 const GLFW_GAMEPAD_AXIS_LEFT_TRIGGER = 4;
+/// Gamepad right trigger axis.
 const GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER = 5;
+/// The highest valid gamepad axis ID.
 const GLFW_GAMEPAD_AXIS_LAST = GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER;
 /// No error has occurred.
 const GLFW_NO_ERROR = 0;
@@ -242,7 +426,7 @@ const GLFW_OUT_OF_MEMORY = 0x00010005;
 const GLFW_API_UNAVAILABLE = 0x00010006;
 /// The requested OpenGL or OpenGL ES version is not available.
 const GLFW_VERSION_UNAVAILABLE = 0x00010007;
-/// A platform-specific error occurred that does not match any of the
+/// A platform-specific error occurred that does not match any of the more specific categories.
 const GLFW_PLATFORM_ERROR = 0x00010008;
 /// The requested format is not supported or available.
 const GLFW_FORMAT_UNAVAILABLE = 0x00010009;
@@ -256,31 +440,31 @@ const GLFW_FEATURE_UNAVAILABLE = 0x0001000C;
 const GLFW_FEATURE_UNIMPLEMENTED = 0x0001000D;
 /// Platform unavailable or no matching platform was found.
 const GLFW_PLATFORM_UNAVAILABLE = 0x0001000E;
-/// Input focus window hint and attribute
+/// Input focus window hint and attribute.
 const GLFW_FOCUSED = 0x00020001;
-/// Window iconification window attribute
+/// Window iconification window attribute.
 const GLFW_ICONIFIED = 0x00020002;
-/// Window resize-ability window hint and attribute
+/// Window resize-ability window hint and attribute.
 const GLFW_RESIZABLE = 0x00020003;
-/// Window visibility window hint and attribute
+/// Window visibility window hint and attribute.
 const GLFW_VISIBLE = 0x00020004;
-/// Window decoration window hint and attribute
+/// Window decoration window hint and attribute.
 const GLFW_DECORATED = 0x00020005;
-/// Window auto-iconification window hint and attribute
+/// Window auto-iconification window hint and attribute.
 const GLFW_AUTO_ICONIFY = 0x00020006;
-/// Window decoration window hint and attribute
+/// Window decoration window hint and attribute.
 const GLFW_FLOATING = 0x00020007;
-/// Window maximization window hint and attribute
+/// Window maximization window hint and attribute.
 const GLFW_MAXIMIZED = 0x00020008;
-/// Cursor centering window hint
+/// Cursor centering window hint.
 const GLFW_CENTER_CURSOR = 0x00020009;
-/// Window framebuffer transparency hint and attribute
+/// Window framebuffer transparency hint and attribute.
 const GLFW_TRANSPARENT_FRAMEBUFFER = 0x0002000A;
 /// Mouse cursor hover window attribute.
 const GLFW_HOVERED = 0x0002000B;
-/// Input focus on calling show window hint and attribute
+/// Input focus on calling show window hint and attribute.
 const GLFW_FOCUS_ON_SHOW = 0x0002000C;
-/// Mouse input transparency window hint and attribute
+/// Mouse input transparency window hint and attribute.
 const GLFW_MOUSE_PASSTHROUGH = 0x0002000D;
 /// Initial position x-coordinate window hint.
 const GLFW_POSITION_X = 0x0002000E;
@@ -342,59 +526,95 @@ const GLFW_CONTEXT_RELEASE_BEHAVIOR = 0x00022009;
 const GLFW_CONTEXT_NO_ERROR = 0x0002200A;
 /// Context creation API hint and attribute.
 const GLFW_CONTEXT_CREATION_API = 0x0002200B;
-/// Window content area scaling window
+/// Window content area scaling window hint.
 const GLFW_SCALE_TO_MONITOR = 0x0002200C;
-/// Window framebuffer scaling
+/// Window framebuffer scaling window hint.
 const GLFW_SCALE_FRAMEBUFFER = 0x0002200D;
 /// Legacy name for compatibility.
 const GLFW_COCOA_RETINA_FRAMEBUFFER = 0x00023001;
-/// macOS specific
+/// macOS specific window hint.
 const GLFW_COCOA_FRAME_NAME = 0x00023002;
-/// macOS specific
+/// macOS specific window hint.
 const GLFW_COCOA_GRAPHICS_SWITCHING = 0x00023003;
-/// X11 specific
+/// X11 specific window hint.
 const GLFW_X11_CLASS_NAME = 0x00024001;
-/// X11 specific
+/// X11 specific window hint.
 const GLFW_X11_INSTANCE_NAME = 0x00024002;
+/// Win32 keyboard menu key.
 const GLFW_WIN32_KEYBOARD_MENU = 0x00025001;
-/// Win32 specific [window hint](@ref GLFW_WIN32_SHOWDEFAULT_hint).
+/// Win32 specific window hint.
 const GLFW_WIN32_SHOWDEFAULT = 0x00025002;
-/// Wayland specific
+/// Wayland specific window hint.
 const GLFW_WAYLAND_APP_ID = 0x00026001;
+/// No graphics API.
 const GLFW_NO_API = 0;
+/// The OpenGL API.
 const GLFW_OPENGL_API = 0x00030001;
+/// The OpenGL ES API.
 const GLFW_OPENGL_ES_API = 0x00030002;
+/// No robustness strategy.
 const GLFW_NO_ROBUSTNESS = 0;
+/// No reset notification.
 const GLFW_NO_RESET_NOTIFICATION = 0x00031001;
+/// Lose the context on reset.
 const GLFW_LOSE_CONTEXT_ON_RESET = 0x00031002;
+/// Any OpenGL profile.
 const GLFW_OPENGL_ANY_PROFILE = 0;
+/// The OpenGL core profile.
 const GLFW_OPENGL_CORE_PROFILE = 0x00032001;
+/// The OpenGL compatibility profile.
 const GLFW_OPENGL_COMPAT_PROFILE = 0x00032002;
+/// The cursor input mode.
 const GLFW_CURSOR = 0x00033001;
+/// The sticky keys input mode.
 const GLFW_STICKY_KEYS = 0x00033002;
+/// The sticky mouse buttons input mode.
 const GLFW_STICKY_MOUSE_BUTTONS = 0x00033003;
+/// The lock key modifiers input mode.
 const GLFW_LOCK_KEY_MODS = 0x00033004;
+/// The raw mouse motion input mode.
 const GLFW_RAW_MOUSE_MOTION = 0x00033005;
+/// The unlimited mouse buttons input mode.
 const GLFW_UNLIMITED_MOUSE_BUTTONS = 0x00033006;
+/// Normal cursor behavior.
 const GLFW_CURSOR_NORMAL = 0x00034001;
+/// Hidden cursor.
 const GLFW_CURSOR_HIDDEN = 0x00034002;
+/// Disabled (captured) cursor.
 const GLFW_CURSOR_DISABLED = 0x00034003;
+/// Captured cursor.
 const GLFW_CURSOR_CAPTURED = 0x00034004;
+/// Any release behavior.
 const GLFW_ANY_RELEASE_BEHAVIOR = 0;
+/// Flush release behavior.
 const GLFW_RELEASE_BEHAVIOR_FLUSH = 0x00035001;
+/// No release behavior.
 const GLFW_RELEASE_BEHAVIOR_NONE = 0x00035002;
+/// The native context API.
 const GLFW_NATIVE_CONTEXT_API = 0x00036001;
+/// The EGL context API.
 const GLFW_EGL_CONTEXT_API = 0x00036002;
+/// The OSMesa context API.
 const GLFW_OSMESA_CONTEXT_API = 0x00036003;
+/// No ANGLE platform type.
 const GLFW_ANGLE_PLATFORM_TYPE_NONE = 0x00037001;
+/// The ANGLE OpenGL platform type.
 const GLFW_ANGLE_PLATFORM_TYPE_OPENGL = 0x00037002;
+/// The ANGLE OpenGL ES platform type.
 const GLFW_ANGLE_PLATFORM_TYPE_OPENGLES = 0x00037003;
+/// The ANGLE Direct3D 9 platform type.
 const GLFW_ANGLE_PLATFORM_TYPE_D3D9 = 0x00037004;
+/// The ANGLE Direct3D 11 platform type.
 const GLFW_ANGLE_PLATFORM_TYPE_D3D11 = 0x00037005;
+/// The ANGLE Vulkan platform type.
 const GLFW_ANGLE_PLATFORM_TYPE_VULKAN = 0x00037007;
+/// The ANGLE Metal platform type.
 const GLFW_ANGLE_PLATFORM_TYPE_METAL = 0x00037008;
+/// Prefer libdecor on Wayland.
 const GLFW_WAYLAND_PREFER_LIBDECOR = 0x00038001;
+/// Disable libdecor on Wayland.
 const GLFW_WAYLAND_DISABLE_LIBDECOR = 0x00038002;
+/// Any window position.
 const GLFW_ANY_POSITION = 0x80000000;
 /// The regular arrow cursor shape.
 const GLFW_ARROW_CURSOR = 0x00036001;
@@ -422,7 +642,9 @@ const GLFW_HRESIZE_CURSOR = GLFW_RESIZE_EW_CURSOR;
 const GLFW_VRESIZE_CURSOR = GLFW_RESIZE_NS_CURSOR;
 /// Legacy name for compatibility.
 const GLFW_HAND_CURSOR = GLFW_POINTING_HAND_CURSOR;
+/// Joystick connected state.
 const GLFW_CONNECTED = 0x00040001;
+/// Joystick disconnected state.
 const GLFW_DISCONNECTED = 0x00040002;
 /// Joystick hat buttons init hint.
 const GLFW_JOYSTICK_HAT_BUTTONS = 0x00050001;
@@ -440,11 +662,17 @@ const GLFW_X11_XCB_VULKAN_SURFACE = 0x00052001;
 const GLFW_WAYLAND_LIBDECOR = 0x00053001;
 /// Hint value that enables automatic platform selection.
 const GLFW_ANY_PLATFORM = 0x00060000;
+/// The Win32 platform.
 const GLFW_PLATFORM_WIN32 = 0x00060001;
+/// The Cocoa platform.
 const GLFW_PLATFORM_COCOA = 0x00060002;
+/// The Wayland platform.
 const GLFW_PLATFORM_WAYLAND = 0x00060003;
+/// The X11 platform.
 const GLFW_PLATFORM_X11 = 0x00060004;
+/// The null platform.
 const GLFW_PLATFORM_NULL = 0x00060005;
+/// No preference for a window hint.
 const GLFW_DONT_CARE = -1;
 /// Client API function pointer type.
 using GLFWglproc = void();
@@ -494,7 +722,7 @@ using GLFWscrollfun = void(GLFWwindow*, double, double);
 using GLFWkeyfun = void(GLFWwindow*, c_int, c_int, c_int, c_int);
 /// The function pointer type for Unicode character callbacks.
 using GLFWcharfun = void(GLFWwindow*, c_uint);
-/// The function pointer type for Unicode character with modifiers
+/// The function pointer type for Unicode character with modifiers callbacks.
 using GLFWcharmodsfun = void(GLFWwindow*, c_uint, c_int);
 /// The function pointer type for path drop callbacks.
 using GLFWdropfun = void(GLFWwindow*, c_int, char*[*]);
@@ -537,7 +765,7 @@ struct GLFWimage {
     /// The pixel data of this image, arranged left-to-right, top-to-bottom.
     c_uchar[*] pixels;
 }
-/// Gamepad input state
+/// Gamepad input state.
 struct GLFWgamepadstate {
     /// The states of each [gamepad button](@ref gamepad_buttons), `GLFW_PRESS` or `GLFW_RELEASE`.
     c_uchar[15] buttons;
@@ -709,13 +937,13 @@ extern c_int glfwRawMouseMotionSupported();
 extern char*? glfwGetKeyName(c_int key, c_int scancode);
 /// Returns the platform-specific scancode of the specified key.
 extern c_int glfwGetKeyScancode(c_int key);
-/// Returns the last reported state of a keyboard key for the specified
+/// Returns the last reported state of a keyboard key for the specified window.
 extern c_int glfwGetKey(GLFWwindow* window, c_int key);
-/// Returns the last reported state of a mouse button for the specified
+/// Returns the last reported state of a mouse button for the specified window.
 extern c_int glfwGetMouseButton(GLFWwindow* window, c_int button);
-/// Retrieves the position of the cursor relative to the content area of
+/// Retrieves the position of the cursor relative to the content area of the window.
 extern void glfwGetCursorPos(GLFWwindow* window, double*? xpos, double*? ypos);
-/// Sets the position of the cursor, relative to the content area of the
+/// Sets the position of the cursor, relative to the content area of the window.
 extern void glfwSetCursorPos(GLFWwindow* window, double xpos, double ypos);
 /// Creates a custom cursor.
 extern GLFWcursor*? glfwCreateCursor(GLFWimage* image, c_int xhot, c_int yhot);
@@ -779,7 +1007,7 @@ extern void glfwSetTime(double time);
 extern uint64 glfwGetTimerValue();
 /// Returns the frequency, in Hz, of the raw timer.
 extern uint64 glfwGetTimerFrequency();
-/// Makes the context of the specified window current for the calling
+/// Makes the context of the specified window current for the calling thread.
 extern void glfwMakeContextCurrent(GLFWwindow*? window);
 /// Returns the window whose context is current on the calling thread.
 extern GLFWwindow*? glfwGetCurrentContext();
@@ -789,7 +1017,7 @@ extern void glfwSwapBuffers(GLFWwindow* window);
 extern void glfwSwapInterval(c_int interval);
 /// Returns whether the specified extension is available.
 extern c_int glfwExtensionSupported(char* extension);
-/// Returns the address of the specified function for the current
+/// Returns the address of the specified function for the current context.
 extern GLFWglproc? glfwGetProcAddress(char* procname);
 /// Returns whether the Vulkan loader and an ICD have been found.
 extern c_int glfwVulkanSupported();
