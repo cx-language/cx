@@ -872,19 +872,27 @@ void CGenerator::codegenArrayOp(const ArrayOpInst* inst) {
         codegenInst(side);
         stream << ")[0][" << index << "]";
     };
+    // cx chars are unsigned but C chars are signed: compute char elements
+    // as uint8_t so division, remainder, and shifts agree with the LLVM
+    // backend (arithmetic and equality are unaffected either way).
+    bool unsignedElems = elemType->isChar();
     auto emitLeftElem = [&] {
+        if (unsignedElems) stream << "(uint8_t)(";
         if (leftIsArray) {
             emitSubscript(inst->left);
         } else {
             codegenInst(inst->left);
         }
+        if (unsignedElems) stream << ")";
     };
     auto emitRightElem = [&] {
+        if (unsignedElems) stream << "(uint8_t)(";
         if (rightIsArray) {
             emitSubscript(inst->right);
         } else {
             codegenInst(inst->right);
         }
+        if (unsignedElems) stream << ")";
     };
     const Value* scalarRight = rightIsArray ? nullptr : inst->right;
     stream.indent(12);
@@ -996,7 +1004,15 @@ void CGenerator::codegenCast(const CastInst* inst) {
     stream << "(";
     codegenTypeExpression(stream, inst->type, true);
     stream << ") ";
-    codegenInst(inst->value);
+    // cx chars are unsigned but C chars are signed on common targets, so
+    // widening conversions must not sign-extend (matches LLVM's zero-extension).
+    if (inst->value->getType()->isChar() && (inst->type->isInteger() || inst->type->isFloatingPoint())) {
+        stream << "(unsigned char)(";
+        codegenInst(inst->value);
+        stream << ")";
+    } else {
+        codegenInst(inst->value);
+    }
     stream << ";\n";
 }
 

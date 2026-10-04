@@ -1,0 +1,46 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --jit-backend=llvm %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run -Werror --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// Chars are unsigned bytes: every backend must agree on values above 127,
+// where a signed C char would go negative.
+void main() {
+    char a = char(200);
+    char b = char(100);
+    char c = char(3);
+    println(a > b); // CHECK:true
+    println(a < b); // CHECK-NEXT:false
+    println(a >= b); // CHECK-NEXT:true
+    println(a <= b); // CHECK-NEXT:false
+    println(a == b); // CHECK-NEXT:false
+    println(a != b); // CHECK-NEXT:true
+    println(int(a)); // CHECK-NEXT:200
+    println(uint(a)); // CHECK-NEXT:200
+    println(float64(a)); // CHECK-NEXT:200
+    println(int(a / c)); // CHECK-NEXT:66
+    println(int(a % c)); // CHECK-NEXT:2
+    println(int(a %% c)); // CHECK-NEXT:2
+    println(int(a >> char(2))); // CHECK-NEXT:50
+    println(int(a << char(2))); // CHECK-NEXT:32
+    println(int(a - b)); // CHECK-NEXT:100
+    println(int(a +% b)); // CHECK-NEXT:44
+    println(int(a & b)); // CHECK-NEXT:64
+    println(int(a | b)); // CHECK-NEXT:236
+    println(int(a ^ b)); // CHECK-NEXT:172
+    println(int(~a)); // CHECK-NEXT:55
+    println(a + 1); // CHECK-NEXT:201
+    char[2] x = [char(200), char(10)];
+    char[2] y = [char(2), char(2)];
+    var z = x / y;
+    println(int(z[0])); // CHECK-NEXT:100
+    println(int(z[1])); // CHECK-NEXT:5
+    var m = x %% y;
+    println(int(m[0])); // CHECK-NEXT:0
+    println(int(m[1])); // CHECK-NEXT:0
+    println(int(char(254) %% char(255))); // CHECK-NEXT:254
+    char[1] p = [char(254)];
+    char[1] q = [char(255)];
+    var r = p %% q;
+    println(int(r[0])); // CHECK-NEXT:254
+}

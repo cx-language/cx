@@ -972,7 +972,7 @@ llvm::Value* LLVMGenerator::codegenArrayOpElement(Token::Kind op, llvm::Value* l
         if (isFloat) return builder.CreateFRem(left, right);
         return isSigned ? builder.CreateSRem(left, right) : builder.CreateURem(left, right);
     case Token::PositiveModulo: {
-        if (elemType->isUnsignedInteger()) return codegenArrayOpElement(Token::Modulo, left, right, elemType);
+        if (elemType->isUnsignedInteger() || elemType->isChar()) return codegenArrayOpElement(Token::Modulo, left, right, elemType);
         // Positive remainder ((a % b) + b) % b, like the scalar rewrite in emitBinaryExpr.
         auto* rem = codegenArrayOpElement(Token::Modulo, left, right, elemType);
         auto* shifted = codegenArrayOpElement(Token::Plus, rem, right, elemType);

@@ -826,7 +826,9 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
     case Token::PositiveModulo: {
         auto left = emitExprOrEnumTag(expr.getLHS(), nullptr);
         auto right = emitExprOrEnumTag(expr.getRHS(), nullptr);
-        return emitPositiveModulo(left, right, &expr);
+        lowerCharOperands(*this, left, right);
+        auto* result = emitPositiveModulo(left, right, &expr);
+        return createCastIfNeeded(result, getIRType(expr.type));
     }
 
     default:
@@ -858,6 +860,16 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
             && options.mode != BuildMode::ReleaseFast && !disablesCheck(disabledChecks, DisabledChecks::Overflow)
             && (left->getType()->isInteger() || left->getType()->isChar())) {
             return emitCheckedArithmetic(expr.op, left, right, expr);
+        }
+        // Chars order, divide, and shift as unsigned: lower those to uint8
+        // like arithmetic does, so backends with signed C chars agree.
+        // Equality and bitwise operators are unaffected either way.
+        bool needsUnsigned = expr.op == Token::Less || expr.op == Token::LessOrEqual || expr.op == Token::Greater || expr.op == Token::GreaterOrEqual
+                          || expr.op == Token::Slash || expr.op == Token::Modulo || expr.op == Token::LeftShift || expr.op == Token::RightShift;
+        if (left->getType()->isChar() && needsUnsigned) {
+            lowerCharOperands(*this, left, right);
+            Value* result = createBinaryOp(expr.op, left, right, &expr);
+            return createCastIfNeeded(result, getIRType(expr.type));
         }
         return createBinaryOp(expr.op, left, right, &expr);
     }
