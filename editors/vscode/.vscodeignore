@@ -1,4 +1,5 @@
 .vscode/**
+assets/**
 client/src/**
 esbuild.mjs
 tsconfig.json

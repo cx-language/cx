@@ -4,6 +4,10 @@ All notable changes to the "cx-lang" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## 0.2.2
+### Fixed
+- README screenshot now loads on the Marketplace (absolute image URL)
+
 ## 0.2.1
 ### Changed
 - Fixed README screenshot and install instructions

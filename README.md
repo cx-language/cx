@@ -20,6 +20,10 @@ You can also read the language documentation in Markdown format under [`docs`](d
 
 To ask a question or open a discussion, create an issue or join the [cx Discord server](https://discord.gg/hsDbW9p).
 
+![cx in VS Code](editors/vscode/assets/demo.jpg)
+
+The [cx extension for VS Code](https://marketplace.visualstudio.com/items?itemName=cx-language.cx-lang) provides syntax highlighting and language server features.
+
 ## Building from source
 
 Compiling cx requires a C++20 compiler, [CMake](https://cmake.org) 3.16 or newer,

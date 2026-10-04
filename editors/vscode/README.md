@@ -2,7 +2,7 @@
 
 VS Code language support for the [cx programming language](https://github.com/cx-language/cx).
 
-![cx in VS Code](assets/demo.jpg)
+![cx in VS Code](https://github.com/cx-language/cx/raw/HEAD/editors/vscode/assets/demo.jpg)
 
 ## Features
 
