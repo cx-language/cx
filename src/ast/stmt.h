@@ -1,10 +1,6 @@
 #pragma once
 #include "expr.h"
 #include <vector>
-#pragma warning(push, 0)
-#include <llvm/ADT/SmallPtrSet.h>
-#include <llvm/ADT/SmallVector.h>
-#pragma warning(pop)
 
 namespace cx {
 
@@ -64,14 +60,14 @@ struct ReturnStmt : Stmt {
     Location location;
     /// Decls moved-from on the path reaching this return. Branch merging may forget
     /// these moves for later code, but this path must still skip their destructors.
-    llvm::SmallPtrSet<const Decl*, 8> movedDecls;
+    AstVector<const Decl*> movedDecls;
 };
 
 struct VarStmt : Stmt {
-    VarStmt(llvm::SmallVector<VarDecl*, 1>&& decls) : Stmt(StmtKind::VarStmt), decls(std::move(decls)) {}
+    VarStmt(AstVector<VarDecl*>&& decls) : Stmt(StmtKind::VarStmt), decls(std::move(decls)) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::VarStmt; }
 
-    llvm::SmallVector<VarDecl*, 1> decls;
+    AstVector<VarDecl*> decls;
 };
 
 /// A statement that consists of the evaluation of a single expression.

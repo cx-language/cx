@@ -390,8 +390,9 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     if (stmt.value && stmt.value->type && !isArrayBorrow(stmt.value->type, currentFunction->getReturnType())) {
         setMoved(stmt.value, true, trackVars);
     }
-    stmt.movedDecls.insert(movedDecls.begin(), movedDecls.end());
-    stmt.movedDecls.insert(maybeMovedDecls.begin(), maybeMovedDecls.end());
+    stmt.movedDecls.clear();
+    stmt.movedDecls.insert(stmt.movedDecls.end(), movedDecls.begin(), movedDecls.end());
+    stmt.movedDecls.insert(stmt.movedDecls.end(), maybeMovedDecls.begin(), maybeMovedDecls.end());
 }
 
 void Typechecker::typecheckVarStmt(VarStmt& stmt) {

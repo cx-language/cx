@@ -3,7 +3,7 @@
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseMap.h>
-#include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/Twine.h>
 #pragma warning(pop)
@@ -26,7 +26,7 @@ void checkImplicitCalleeIsChecked(const Decl& decl, const char* name);
 
 struct IRGenScope {
     IRGenScope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
-    void onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls = nullptr);
+    void onScopeEnd(llvm::ArrayRef<const Decl*> returnMovedDecls = {});
     void clear();
 
     struct DeferredDestructor {
@@ -142,7 +142,7 @@ struct IRGenerator {
     Value* emitSwitchExpr(const SwitchExpr& expr);
     Value* emitImplicitCastExpr(const ImplicitCastExpr& expr);
     Value* emitUserConversion(const ImplicitCastExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
-    void emitDeferredExprsAndDestructorCallsForReturn(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls);
+    void emitDeferredExprsAndDestructorCallsForReturn(llvm::ArrayRef<const Decl*> returnMovedDecls);
     void emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuation);
     void emitReturnStmt(const ReturnStmt& stmt);
     void emitIfStmt(const IfStmt& ifStmt);

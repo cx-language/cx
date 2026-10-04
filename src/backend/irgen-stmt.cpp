@@ -27,7 +27,7 @@ void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
     // here, before the terminator; the emitStmt frame then pops an empty scope.
     destroyAllTempScopes();
 
-    emitDeferredExprsAndDestructorCallsForReturn(&stmt.movedDecls);
+    emitDeferredExprsAndDestructorCallsForReturn(stmt.movedDecls);
 
     if (llvm::cast<FunctionDecl>(currentDecl)->isEntryPoint) emitLeakCheckIfNeeded();
 

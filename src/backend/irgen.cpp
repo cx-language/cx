@@ -5,7 +5,7 @@
 
 using namespace cx;
 
-void IRGenScope::onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls) {
+void IRGenScope::onScopeEnd(llvm::ArrayRef<const Decl*> returnMovedDecls) {
     for (DeferredExpr deferred : reverse(deferredExprs)) {
         llvm::SaveAndRestore saveChecks(irGenerator->disabledChecks, deferred.disabledChecks);
         irGenerator->beginTempScope();
@@ -15,7 +15,7 @@ void IRGenScope::onScopeEnd(const llvm::SmallPtrSetImpl<const Decl*>* returnMove
 
     for (auto& p : reverse(destructorsToCall)) {
         if (p.decl && p.decl->hasBeenMoved()) continue;
-        if (p.decl && returnMovedDecls && returnMovedDecls->contains(p.decl)) continue;
+        if (p.decl && llvm::is_contained(returnMovedDecls, p.decl)) continue;
         Value* receiver = p.value;
         for (int index : p.indexes) {
             receiver = irGenerator->createGEP(receiver, index);
@@ -283,7 +283,7 @@ void IRGenerator::destroyElementsForAssignment(Value* base, Type type) {
     }
 }
 
-void IRGenerator::emitDeferredExprsAndDestructorCallsForReturn(const llvm::SmallPtrSetImpl<const Decl*>* returnMovedDecls) {
+void IRGenerator::emitDeferredExprsAndDestructorCallsForReturn(llvm::ArrayRef<const Decl*> returnMovedDecls) {
     for (auto& scope : llvm::reverse(scopes)) {
         scope.onScopeEnd(returnMovedDecls);
     }

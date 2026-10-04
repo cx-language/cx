@@ -45,7 +45,7 @@ Stmt* Stmt::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
     }
     case StmtKind::VarStmt: {
         auto* varStmt = llvm::cast<VarStmt>(this);
-        llvm::SmallVector<VarDecl*, 1> decls;
+        AstVector<VarDecl*> decls;
         for (auto* decl : varStmt->decls) {
             decls.push_back(llvm::cast<VarDecl>(decl->instantiate(genericArgs, {})));
         }
@@ -163,7 +163,7 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
 
     auto iteratorVarDecl =
         makeAST<VarDecl>(Type(nullptr, location), iteratorVariableName, iteratorValue, variable->parent, AccessLevel::None, *variable->getModule(), location);
-    auto iteratorVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{iteratorVarDecl});
+    auto iteratorVarStmt = makeAST<VarStmt>(AstVector<VarDecl*>{iteratorVarDecl});
 
     std::string indexCounterName;
     if (indexVariable) {
@@ -188,7 +188,7 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
         loopVariableVarDecl->isConst = true;
         loopVariableVarDecl->isImplicitlyBound = true;
     }
-    auto loopVariableVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{loopVariableVarDecl});
+    auto loopVariableVarStmt = makeAST<VarStmt>(AstVector<VarDecl*>{loopVariableVarDecl});
 
     AstVector<Stmt*> forBody;
     forBody.push_back(loopVariableVarStmt);
@@ -196,7 +196,7 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
         auto counterVarExpr = makeAST<VarExpr>(indexCounterName, location);
         auto indexVarDecl = makeAST<VarDecl>(indexVariable->type, indexVariable->getName(), counterVarExpr, variable->parent, AccessLevel::None,
                                              *variable->getModule(), indexVariable->getLocation());
-        forBody.push_back(makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{indexVarDecl}));
+        forBody.push_back(makeAST<VarStmt>(AstVector<VarDecl*>{indexVarDecl}));
     }
 
     for (auto& stmt : body) {

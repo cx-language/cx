@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include <vector>
 #pragma warning(push, 0)
-#include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Casting.h>
 #pragma warning(pop)
 #include "../support/utility.h"
@@ -184,7 +183,7 @@ struct GenericParamDecl : Decl {
     static bool classof(const Decl* d) { return d->kind == DeclKind::GenericParamDecl; }
 
     llvm::StringRef name;
-    llvm::SmallVector<Type, 1> constraints;
+    AstVector<Type> constraints;
     // Set for integer parameters (declared as e.g. `int N`); valueType is the integer type.
     bool isValueParam = false;
     Type valueType;
