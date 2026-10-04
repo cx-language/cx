@@ -67,7 +67,7 @@ echo "Compiling the cx frontend to WebAssembly..."
 mkdir -p "$WORK/frontend-obj" "$OUT"
 
 # Translation units of the embeddable frontend: everything needed to parse,
-# type-check, and generate C code, excluding the LLVM backend, the
+# type-check, and generate C code, excluding the LLVM and AsmJit backends, the
 # command-line driver, and the Clang-based C importer (C header imports are
 # rejected with an error in WebAssembly builds). Globbed rather than listed so
 # new frontend files are picked up automatically; keep LLVM-backend files out
@@ -75,7 +75,7 @@ mkdir -p "$WORK/frontend-obj" "$OUT"
 SRCS=""
 for src in src/ast/*.cpp src/backend/*.cpp src/build/*.cpp src/driver/compile.cpp src/parser/*.cpp src/sema/*.cpp src/support/*.cpp src/wasm/api.cpp; do
     case "$src" in
-    src/backend/llvm.cpp) continue ;;
+    src/backend/llvm.cpp | src/backend/asmjit.cpp) continue ;;
     esac
     SRCS="$SRCS $src"
 done
