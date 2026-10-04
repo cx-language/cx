@@ -219,12 +219,16 @@ set_tests_properties(examples examples-c-backend PROPERTIES RESOURCE_LOCK exampl
 # Bound every long suite: a hung compiler must fail loudly instead of
 # blocking CTest forever. Generous enough for slow Debug runners.
 set_tests_properties(examples examples-c-backend docs-snippets docs-snippets-c-backend PROPERTIES TIMEOUT 1200)
+# The C-backend snippet suite shells out to a C compiler per snippet and
+# dominates check wall time. CI runs it separately (see build.yml); local
+# check runs skip it.
+set_tests_properties(docs-snippets-c-backend PROPERTIES LABELS slow)
 # Run one test per processor. The suites are CPU-bound, so extra CTest slots
 # oversubscribe slower Debug runners and trigger test timeouts. The snippet
 # suites cap their inner parallelism above so they don't multiply the slot
 # count; examples and LSP are short enough to leave uncapped.
 add_custom_target(check
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --parallel ${CHECK_PARALLEL_JOBS} -C $<CONFIG>
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --parallel ${CHECK_PARALLEL_JOBS} -LE slow -C $<CONFIG>
     USES_TERMINAL)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
 add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config test_rename test_string_interner test_mangle test_lexer test_ast_vector)

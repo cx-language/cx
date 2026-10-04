@@ -293,6 +293,8 @@ jobs:
           python3 -c "import time; print(time.time())" > "$RUNNER_TEMP/cx_check_start"
           CX_PRINT_STACK_TRACE=true cmake --build . --config ${{ matrix.build_type }} --target check
           python3 -c "import time; print(time.time())" > "$RUNNER_TEMP/cx_check_end"
+          # Slow suites excluded from the default check gate (see CMakeLists.txt).
+          CX_PRINT_STACK_TRACE=true ctest --output-on-failure -L slow -C ${{ matrix.build_type }}
 
       # Benchmarks run in this leg only: the compiler is already built here,
       # so the marginal cost is just the corpus timing (under a minute).
