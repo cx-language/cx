@@ -62,14 +62,15 @@ void main() {
     // variable still passes as a pointer to the declared type. Both address
     // the same storage: the write through S* below is visible afterwards.
     takePayload(&s); // CHECK:42
-    // Exposing the address drops the narrowing, so re-check before the next
-    // narrowed use.
-    if s == null { return; }
+    // A payload-pointer call keeps the narrowing: writing S through S*
+    // cannot null the variable, so no re-check is needed here.
     println(s.x); // CHECK-NEXT:100
     takeOptional(&s); // CHECK-NEXT:100
+    // A nullable-pointer call drops it: the re-check below is required.
     if s == null { return; }
     borrowPayload(s); // CHECK-NEXT:100
-    if s == null { return; }
+    // A payload borrow keeps it too.
+    println(s.x); // CHECK-NEXT:100
     borrowOptional(s); // CHECK-NEXT:100
     // An address also binds to a borrow of the narrowed type.
     if s == null { return; }
@@ -102,7 +103,7 @@ void main() {
     if n == null { return; }
     takeOptional(&n); // CHECK-NEXT:13
 
-    // A call that exposes the address drops the narrowing: without a
+    // A call through a nullable pointer drops the narrowing: without a
     // re-check the use below would read a stale payload.
     S? m = S(14);
     if m == null { return; }

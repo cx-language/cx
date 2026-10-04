@@ -38,24 +38,28 @@ The narrowed address passes to `T*` parameters (or binds to `T&`),
 addressing the payload inside the optional.
 The variable also still passes as the declared type (`T?*` and `T?&`),
 addressing the whole optional.
-Passing the address to a call drops the narrowing afterwards, since the
-callee may write through it; check for null again before the next
-narrowed use.
+A call through a payload pointer (`T*` or `T&`) keeps the narrowing
+for value optionals: writing `T` through it cannot null the variable. A
+call that could write null (`T?*` or `T?&`) drops it; check for null
+again before the next narrowed use after such a call.
+Pointer-implemented optionals such as `int*?` always drop it either way,
+since they share the payload address, as do calls through `void*`.
 
 ```cs
 struct S { int x; }
 void takePayload(S* s) {
     println(s.x);
 }
-void borrowOptional(S?& s) {
+void takeOptional(S?* s) {
     println((*s)!.x);
 }
 void main() {
     S? s = S(42);
     if s == null { return; }
-    takePayload(&s); // prints 42
+    takePayload(&s); // prints 42, narrowing survives
+    takeOptional(&s); // prints 42, narrowing dropped
     if s == null { return; }
-    borrowOptional(s); // prints 42
+    println(s.x); // prints 42
 }
 ```
 

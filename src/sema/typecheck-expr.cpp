@@ -319,7 +319,11 @@ void Typechecker::dropNarrowingsForNames(const llvm::StringSet<>& names) {
     }
 }
 
-// Passing &v (or v by mutable borrow) lets the callee write through it: drop v's narrowing.
+// Passing &v (or v by mutable borrow) lets the callee write through it. The
+// narrowing survives only when that write cannot null the variable: the
+// pointer must target the narrowed type itself and the variable must be a
+// value-optional (pointer-implemented optionals share the payload address,
+// so any write through them can null it).
 void Typechecker::dropNarrowingForAddressArg(const Expr& arg, Type paramType) {
     if (narrowedTypes.empty()) return;
     Type target = paramType;
@@ -327,13 +331,23 @@ void Typechecker::dropNarrowingForAddressArg(const Expr& arg, Type paramType) {
         target = target.getWrappedType();
     }
     if (!target.isPointerOrArrayPointer()) return;
+    auto dropUnlessPayloadWrite = [&](Decl* decl) {
+        auto narrowed = narrowedTypes.find(decl);
+        if (narrowed == narrowedTypes.end()) return;
+        auto* varDecl = llvm::dyn_cast<VariableDecl>(decl);
+        if (varDecl && target.isPointerType() && target.getPointee() == narrowed->second && varDecl->type.isOptionalType()
+            && !varDecl->type.isImplementedAsPointer()) {
+            return;
+        }
+        narrowedTypes.erase(narrowed);
+    };
     const Expr* exposed = &arg;
     for (;;) {
         auto* cast = llvm::dyn_cast<ImplicitCastExpr>(exposed);
         if (!cast) break;
         // An autoref names the variable itself rather than its address.
         if (cast->castKind == ImplicitCastExpr::AutoReference) {
-            if (auto* var = llvm::dyn_cast<VarExpr>(cast->operand); var && var->decl) narrowedTypes.erase(var->decl);
+            if (auto* var = llvm::dyn_cast<VarExpr>(cast->operand); var && var->decl) dropUnlessPayloadWrite(var->decl);
             return;
         }
         // Reborrow, wrapping, and narrowed-address unwraps all forward the address.
@@ -344,7 +358,7 @@ void Typechecker::dropNarrowingForAddressArg(const Expr& arg, Type paramType) {
         exposed = cast->operand;
     }
     if (auto* unary = llvm::dyn_cast<UnaryExpr>(exposed); unary && unary->op == Token::And) {
-        if (auto* var = llvm::dyn_cast<VarExpr>(&unary->getOperand()); var && var->decl) narrowedTypes.erase(var->decl);
+        if (auto* var = llvm::dyn_cast<VarExpr>(&unary->getOperand()); var && var->decl) dropUnlessPayloadWrite(var->decl);
     }
 }
 
@@ -1951,8 +1965,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     // A narrowed address converts to the payload pointer: `&s` where `s` is narrowed to `T`
     // passes as `T*` (or `T&`). Narrowing proves the optional is non-null; arbitrary
-    // `T?*` values don't convert since their target may be null. The call itself
-    // drops the narrowing afterwards (see dropNarrowingForAddressArg).
+    // `T?*` values don't convert since their target may be null. The call keeps the
+    // narrowing afterwards: writing `T` through it cannot null the variable
+    // (see dropNarrowingForAddressArg).
     if (expr && source.isPointerType() && target.isPointerType() && source.getPointee().isOptionalType()
         && source.getPointee().getWrappedType() == target.getPointee()) {
         auto* addressOf = llvm::dyn_cast<UnaryExpr>(expr);

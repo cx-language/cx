@@ -5,6 +5,8 @@ void takePayload(S* s) {}
 void takeOptional(S?* s) {}
 void takeOptPtrOpt(S?*? s) {}
 void borrowOptional(S?& s) {}
+void takeVoidPtr(void* p) {}
+void takeIntPtrPtr(int** p) {}
 extern "C" void vt(void* p, ...);
 
 void nullBranch() {
@@ -78,6 +80,25 @@ void invalidatedByVariadic() {
     takePayload(&s);
 }
 
+void invalidatedByVoidPointer() {
+    S? s = S(1);
+    if s == null { return; }
+    takeVoidPtr(&s);
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
+    takePayload(&s);
+}
+
+void invalidatedByPointerOptionalPayloadCall() {
+    // Pointer-implemented optionals share the payload address, so even a
+    // payload-pointer call can null them.
+    int i = 7;
+    int*? o = &i;
+    if o == null { return; }
+    takeIntPtrPtr(&o);
+    // CHECK: [[@LINE+1]]:19: error: invalid argument #1 type 'int*?*' to 'takeIntPtrPtr', expected 'int**'
+    takeIntPtrPtr(&o);
+}
+
 S? g = null;
 
 void globalCase() {
@@ -89,6 +110,7 @@ void globalCase() {
 
 enum E { A(int x), B }
 void takeInt(int* p) {}
+void takeE(E* e) {}
 
 void enumNarrowing() {
     E e = E.A(1);
@@ -96,5 +118,14 @@ void enumNarrowing() {
         // Only optional narrowing converts; enum payloads still need explicit handling.
         // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'E*' to 'takeInt', expected 'int*'
         takeInt(&e);
+    }
+}
+
+void enumInvalidatedByCall() {
+    E e = E.A(1);
+    if e == E.A {
+        takeE(&e);
+        // CHECK: [[@LINE+1]]:17: error: no member named 'x' in 'E'
+        println(e.x);
     }
 }
