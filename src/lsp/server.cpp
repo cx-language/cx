@@ -661,7 +661,7 @@ int runServer() {
                 respondWith(*id, JsonValue(nullptr));
             } else {
                 JsonObject contents;
-                contents["kind"] = "markdown";
+                contents["kind"] = "plaintext";
                 contents["value"] = text;
                 JsonObject response;
                 response["contents"] = std::move(contents);
@@ -693,6 +693,12 @@ int runServer() {
                 item["label"] = label;
                 item["kind"] = completionKindToLsp(kind);
                 item["detail"] = getJsonString(entry, "detail");
+                if (std::string documentation = getJsonString(entry, "documentation"); !documentation.empty()) {
+                    JsonObject content;
+                    content["kind"] = "plaintext";
+                    content["value"] = documentation;
+                    item["documentation"] = std::move(content);
+                }
                 if ((kind == "function" || kind == "method") && isCallableLabel(label) && !followedByParen) {
                     // Plain text only, never snippets: `name(` when the callable takes parameters
                     // so the caret lands inside, `name()` otherwise.

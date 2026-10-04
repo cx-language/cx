@@ -1574,7 +1574,60 @@ MemberExpr* findMemberAt(Module* mainModule, const std::string& filePath, LspPos
     return best;
 }
 
-std::vector<CompletionItem> membersForEnumCases(EnumDecl* enumDecl) {
+// Splits file buffers into lines once and reuses the split for consecutive
+// same-file doc lookups (completion visits declarations file by file).
+struct DocLineCache {
+    const llvm::MemoryBuffer* buffer = nullptr;
+    llvm::SmallVector<llvm::StringRef, 128> lines;
+};
+
+// Returns the /// doc comment above the given 1-based line, or "". Only
+// consecutive /// lines directly above the declaration count; a //// line
+// is a plain comment (like Rust) and breaks the block, as does a blank line.
+static std::string extractDocComment(llvm::ArrayRef<llvm::StringRef> lines, int declLine) {
+    std::string doc;
+    if (declLine < 1 || declLine - 1 > static_cast<int>(lines.size())) return "";
+    for (int i = declLine - 2; i >= 0; --i) {
+        llvm::StringRef line = lines[i].rtrim("\r");
+        size_t indent = line.find_first_not_of(" \t");
+        if (indent == llvm::StringRef::npos) break;
+        line = line.drop_front(indent);
+        if (!line.starts_with("///")) break;
+        line = line.drop_front(3);
+        if (line.starts_with("/")) break;
+        if (line.starts_with(" ")) line = line.drop_front(1);
+        if (!doc.empty()) doc.insert(0, "\n");
+        doc.insert(0, line.str());
+    }
+    return doc;
+}
+
+// Returns the /// doc comment above the given declaration, or "" when it
+// has none. Reads the compiled file buffer, so open-document overlays are
+// reflected without disk I/O.
+static std::string docCommentForDecl(const Decl& decl, DocLineCache& cache) {
+    Location loc = decl.getLocation();
+    if (!loc.isValid() || !loc.file) return "";
+    Module* module = decl.getModule();
+    if (!module) {
+        // Parameters have no module of their own; their file is their function's.
+        if (auto* var = llvm::dyn_cast<VariableDecl>(&decl); var && var->parent) module = var->parent->getModule();
+    }
+    if (!module) return "";
+    for (auto& buffer : module->fileBuffers) {
+        if (buffer->getBufferIdentifier() == loc.file) {
+            if (cache.buffer != buffer.get()) {
+                cache.buffer = buffer.get();
+                cache.lines.clear();
+                buffer->getBuffer().split(cache.lines, '\n');
+            }
+            return extractDocComment(cache.lines, loc.line);
+        }
+    }
+    return "";
+}
+
+std::vector<CompletionItem> membersForEnumCases(EnumDecl* enumDecl, DocLineCache& cache) {
     std::vector<CompletionItem> out;
     if (!enumDecl) return out;
     for (auto& c : enumDecl->cases) {
@@ -1583,6 +1636,7 @@ std::vector<CompletionItem> membersForEnumCases(EnumDecl* enumDecl) {
         item.label = c.getName().str();
         item.kind = "enumMember";
         item.detail = hoverForDecl(c);
+        item.documentation = docCommentForDecl(c, cache);
         out.push_back(std::move(item));
     }
     return out;
@@ -1597,7 +1651,7 @@ bool declHasParams(Decl* decl) {
     return fn && !fn->getParams().empty();
 }
 
-std::vector<CompletionItem> membersForType(Type type) {
+std::vector<CompletionItem> membersForType(Type type, DocLineCache& cache) {
     std::vector<CompletionItem> out;
     if (!type) return out;
     Type t = type.removeOptional().removePointer();
@@ -1635,6 +1689,7 @@ std::vector<CompletionItem> membersForType(Type type) {
         item.label = field.getName().str();
         item.kind = "field";
         item.detail = hoverForDecl(field);
+        item.documentation = docCommentForDecl(field, cache);
         out.push_back(std::move(item));
     }
     for (auto* method : decl->methods) {
@@ -1650,6 +1705,7 @@ std::vector<CompletionItem> membersForType(Type type) {
             if (tmpl->functionDecl) item.detail = formatFunctionSignature(*tmpl->functionDecl);
         }
         item.hasParams = declHasParams(method);
+        item.documentation = docCommentForDecl(*method, cache);
         // Overloads share the label, so dedupe by signature: identical
         // entries (e.g. an interface default plus an identical override)
         // collapse, distinct overloads are all listed.
@@ -1676,15 +1732,15 @@ Decl* findTopLevelDecl(Module* mainModule, llvm::StringRef name) {
     return nullptr;
 }
 
-std::vector<CompletionItem> completeMembersFor(MemberExpr* memberExpr, Module* mainModule) {
+std::vector<CompletionItem> completeMembersFor(MemberExpr* memberExpr, Module* mainModule, DocLineCache& cache) {
     if (!memberExpr || !memberExpr->base) return {};
     Expr* base = memberExpr->base;
     if (auto* var = llvm::dyn_cast<VarExpr>(base)) {
         Decl* decl = var->decl ? var->decl : findTopLevelDecl(mainModule, var->identifier);
         if (decl) {
-            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl)) return membersForEnumCases(enumDecl);
+            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl)) return membersForEnumCases(enumDecl, cache);
             if (auto* tmpl = llvm::dyn_cast<TypeTemplate>(decl)) {
-                if (auto* enumTemplate = llvm::dyn_cast<EnumDecl>(tmpl->typeDecl)) return membersForEnumCases(enumTemplate);
+                if (auto* enumTemplate = llvm::dyn_cast<EnumDecl>(tmpl->typeDecl)) return membersForEnumCases(enumTemplate, cache);
                 return {};
             }
             auto* alias = llvm::dyn_cast_or_null<TypeAliasDecl>(decl);
@@ -1693,21 +1749,21 @@ std::vector<CompletionItem> completeMembersFor(MemberExpr* memberExpr, Module* m
             }
             if (alias) {
                 if (auto* enumDecl = llvm::dyn_cast_or_null<EnumDecl>(base->type.getDecl())) {
-                    return membersForEnumCases(enumDecl);
+                    return membersForEnumCases(enumDecl, cache);
                 }
-                return base->type ? membersForType(base->type) : membersForType(alias->aliasedType);
+                return base->type ? membersForType(base->type, cache) : membersForType(alias->aliasedType, cache);
             }
             if (llvm::isa<TypeDecl>(decl)) return {};
             if (auto* varDecl = llvm::dyn_cast<VariableDecl>(decl)) {
                 Type t = base->type ? base->type : varDecl->type;
-                return membersForType(t);
+                return membersForType(t, cache);
             }
             return {};
         }
-        if (base->type) return membersForType(base->type);
+        if (base->type) return membersForType(base->type, cache);
         return {};
     }
-    if (base->type) return membersForType(base->type);
+    if (base->type) return membersForType(base->type, cache);
     return {};
 }
 
@@ -2047,11 +2103,15 @@ std::string hoverAt(Module* mainModule, const std::string& filePath, LspPosition
     std::string signature = hoverForDecl(*found.decl);
     if (signature.empty()) return "";
     std::ostringstream out;
-    out << "```cx\n" << signature << "\n```\n";
-    out << "*" << declKindLabel(*found.decl) << "*";
+    out << signature << "\n";
+    out << declKindLabel(*found.decl);
     Location defLoc = found.decl->getLocation();
     if (defLoc.isValid() && defLoc.file) {
         out << " - defined at " << defLoc.file << ":" << defLoc.line << ":" << defLoc.column;
+    }
+    DocLineCache docCache;
+    if (std::string doc = docCommentForDecl(*found.decl, docCache); !doc.empty()) {
+        out << "\n\n" << doc;
     }
     return out.str();
 }
@@ -2067,9 +2127,10 @@ bool gotoDefinitionAt(Module* mainModule, const std::string& filePath, LspPositi
 }
 
 std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& filePath, LspPosition pos, const std::string& content) {
+    DocLineCache docCache;
     if (mainModule) {
         if (MemberExpr* placeholder = findPlaceholderMember(mainModule)) {
-            auto members = completeMembersFor(placeholder, mainModule);
+            auto members = completeMembersFor(placeholder, mainModule, docCache);
             llvm::sort(members, [](const CompletionItem& a, const CompletionItem& b) { return a.label < b.label; });
             return members;
         }
@@ -2077,7 +2138,7 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
     if (isMemberCompletionContext(content, pos)) {
         if (!mainModule) return {};
         if (MemberExpr* atPos = findMemberAt(mainModule, filePath, pos)) {
-            auto members = completeMembersFor(atPos, mainModule);
+            auto members = completeMembersFor(atPos, mainModule, docCache);
             llvm::sort(members, [](const CompletionItem& a, const CompletionItem& b) { return a.label < b.label; });
             return members;
         }
@@ -2127,6 +2188,7 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
             if (existing.label != name) continue;
             if (item.kind != "function" || existing.detail == item.detail) return;
         }
+        item.documentation = docCommentForDecl(*decl, docCache);
         items.push_back(std::move(item));
     };
 
@@ -2205,7 +2267,11 @@ std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& fi
                     break;
                 }
             }
-            if (!exists) items.push_back({name, "variable", hoverForDecl(*local)});
+            if (!exists) {
+                CompletionItem item{name, "variable", hoverForDecl(*local)};
+                item.documentation = docCommentForDecl(*local, docCache);
+                items.push_back(std::move(item));
+            }
         }
     }
 
@@ -2478,6 +2544,7 @@ JsonValue answerFromFrontend(const LspQuery& query, const FrontendResult& fronte
             entry["label"] = item.label;
             entry["kind"] = item.kind;
             entry["detail"] = item.detail;
+            entry["documentation"] = item.documentation;
             entry["hasParams"] = item.hasParams;
             items.push_back(std::move(entry));
         }

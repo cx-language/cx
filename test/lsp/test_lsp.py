@@ -2028,6 +2028,162 @@ def test_server_cache_malformed_dep_build(command):
         stop_session(session, "server-cache-malformed-dep-build")
 
 
+DOC_DECLS = """\
+/// Adds two numbers.
+/// Second line of docs.
+int add(int x, int y) {
+    return x + y;
+}
+
+struct Point {
+    /// The x coordinate.
+    int x;
+    int y;
+    /// Moves by dx.
+    void move(int dx) {
+        x += dx;
+    }
+}
+
+enum Color {
+    /// The red case.
+    Red,
+    Green,
+}
+
+//// Four slashes is a plain comment.
+int plain = 1;
+
+"""
+
+
+def test_documentation(cx_lsp, path):
+    content = DOC_DECLS + """\
+void main() {
+    int result = add(1, 2);
+    Point p = Point(0, 0);
+    println(p.x);
+    println(plain);
+}
+
+/// Separated by a blank line.
+
+int undoc = 2;
+"""
+    result = run_query(cx_lsp, base_query("hover", path, content, (26, 18)))
+    hover = result.get("hover", "")
+    check("query-hover-doc", "Adds two numbers.\nSecond line of docs." in hover, hover[:300])
+    check("query-hover-plaintext", not hover.startswith("```"), hover[:100])
+
+    result = run_query(cx_lsp, base_query("hover", path, content, (28, 14)))
+    hover = result.get("hover", "")
+    check("query-hover-doc-member", "The x coordinate." in hover, hover[:300])
+
+    result = run_query(cx_lsp, base_query("completion", path, content, (29, 4)))
+    items = {item["label"]: item for item in result.get("items", [])}
+    check(
+        "query-completion-doc-function",
+        items.get("add", {}).get("documentation") == "Adds two numbers.\nSecond line of docs.",
+        json.dumps(items.get("add"))[:300],
+    )
+    check(
+        "query-completion-doc-plain-comment",
+        items.get("plain", {}).get("documentation") == "",
+        json.dumps(items.get("plain"))[:300],
+    )
+    check(
+        "query-completion-doc-blank-line",
+        items.get("undoc", {}).get("documentation") == "",
+        json.dumps(items.get("undoc"))[:300],
+    )
+
+    member_content = DOC_DECLS + "void main() {\n    Point p = Point(0, 0);\n    p.\n}\n"
+    result = run_query(cx_lsp, base_query("completion", path, member_content, (27, 6)))
+    items = {item["label"]: item for item in result.get("items", [])}
+    check(
+        "query-completion-doc-member",
+        items.get("x", {}).get("documentation") == "The x coordinate."
+        and items.get("move", {}).get("documentation") == "Moves by dx."
+        and items.get("y", {}).get("documentation") == "",
+        json.dumps({k: items.get(k, {}).get("documentation") for k in ("x", "y", "move")})[:300],
+    )
+
+    enum_content = DOC_DECLS + "void main() {\n    Color.\n}\n"
+    result = run_query(cx_lsp, base_query("completion", path, enum_content, (26, 10)))
+    items = {item["label"]: item for item in result.get("items", [])}
+    check(
+        "query-completion-doc-enum",
+        items.get("Red", {}).get("documentation") == "The red case." and items.get("Green", {}).get("documentation") == "",
+        json.dumps({k: items.get(k, {}).get("documentation") for k in ("Red", "Green")})[:300],
+    )
+
+    result = run_query(cx_lsp, base_query("hover", path, content, (29, 13)))
+    hover = result.get("hover", "")
+    check("query-hover-plain-comment", "Four slashes" not in hover and "int plain" in hover, hover[:300])
+
+    param_content = """\
+void useParam(
+    /// The value.
+    int value,
+) {
+    println(value);
+}
+"""
+    result = run_query(cx_lsp, base_query("hover", path, param_content, (4, 13)))
+    hover = result.get("hover", "")
+    check("query-hover-doc-param", "The value." in hover, hover[:300])
+
+
+def test_server_documentation(command, label):
+    content = DOC_DECLS + "void main() {\n    int result = add(1, 2);\n    Point p = Point(0, 0);\n    p.\n}\n"
+    with tempfile.TemporaryDirectory() as directory:
+        path = os.path.join(directory, "main.cx")
+        with open(path, "w") as file:
+            file.write(content)
+        session = start_session(command)
+        uri = "file://" + path
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": uri, "languageId": "cx", "version": 1, "text": content}},
+            }
+        )
+        session.read()
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "textDocument/hover",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 26, "character": 18}},
+            }
+        )
+        hover = session.read()["result"] or {}
+        contents = hover.get("contents", {})
+        check(
+            f"{label}-hover-doc",
+            contents.get("kind") == "plaintext" and "Adds two numbers.\nSecond line of docs." in contents.get("value", ""),
+            json.dumps(hover)[:300],
+        )
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "textDocument/completion",
+                "params": {"textDocument": {"uri": uri}, "position": {"line": 28, "character": 6}},
+            }
+        )
+        response = session.read()
+        items = {item["label"]: item for item in response["result"]}
+        check(
+            f"{label}-completion-doc",
+            items.get("move", {}).get("documentation") == {"kind": "plaintext", "value": "Moves by dx."}
+            and "documentation" not in items.get("y", {}),
+            json.dumps({k: items.get(k) for k in ("move", "y")})[:400],
+        )
+        stop_session(session, label)
+
+
 def test_server_no_snippets(command, label):
     with tempfile.TemporaryDirectory() as directory:
         path = os.path.join(directory, "main.cx")
@@ -2094,6 +2250,8 @@ def main():
                 ("generic-symbols", lambda: test_generic_symbols(args.cx_lsp, path)),
                 ("readonly-tokens", lambda: test_readonly_tokens(args.cx_lsp, path)),
                 ("completion-members", lambda: test_completion_members(args.cx_lsp, path)),
+                ("documentation", lambda: test_documentation(args.cx_lsp, path)),
+                ("server-documentation", lambda: test_server_documentation([args.cx_lsp], "server-documentation")),
                 ("package-dedup", lambda: test_package_dedup(args.cx_lsp)),
                 ("build-file-modes", lambda: test_build_file_modes(args.cx_lsp)),
                 ("server", lambda: test_server([args.cx_lsp], path, "server")),
