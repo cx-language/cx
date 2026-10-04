@@ -420,17 +420,17 @@ static bool synthesizeTestMain(Module& mainModule) {
     }
 
     FunctionProto proto("main", {}, Type::getVoid());
-    auto* mainDecl = makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), AccessLevel::Default, mainModule,
+    auto* mainDecl = makeAST<FunctionDecl>(std::move(proto), AstVector<GenericArg>(), AccessLevel::Default, mainModule,
                                            tests.empty() ? Location() : tests.front()->getLocation());
-    std::vector<Stmt*> body;
+    AstVector<Stmt*> body;
     for (FunctionDecl* test : tests) {
-        body.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(makeAST<VarExpr>(test->getName(), test->getLocation()), std::vector<NamedValue>(),
-                                                           std::vector<GenericArg>(), test->getLocation())));
-        std::vector<NamedValue> printArgs;
-        printArgs.emplace_back(makeAST<StringLiteralExpr>(std::string("ok "), test->getLocation()));
-        printArgs.emplace_back(makeAST<StringLiteralExpr>(std::string(test->getName()), test->getLocation()));
         body.push_back(makeAST<ExprStmt>(
-            makeAST<CallExpr>(makeAST<VarExpr>("println", test->getLocation()), std::move(printArgs), std::vector<GenericArg>(), test->getLocation())));
+            makeAST<CallExpr>(makeAST<VarExpr>(test->getName(), test->getLocation()), AstVector<NamedValue>(), AstVector<GenericArg>(), test->getLocation())));
+        AstVector<NamedValue> printArgs;
+        printArgs.emplace_back(makeAST<StringLiteralExpr>("ok ", test->getLocation()));
+        printArgs.emplace_back(makeAST<StringLiteralExpr>(test->getName(), test->getLocation()));
+        body.push_back(makeAST<ExprStmt>(
+            makeAST<CallExpr>(makeAST<VarExpr>("println", test->getLocation()), std::move(printArgs), AstVector<GenericArg>(), test->getLocation())));
     }
     mainDecl->body = std::move(body);
     mainModule.sourceFiles.front().topLevelDecls.push_back(mainDecl);

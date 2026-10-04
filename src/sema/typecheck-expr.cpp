@@ -15,6 +15,7 @@
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/arena.h"
+#include "../ast/ast.h"
 #include "../ast/decl.h"
 #include "../ast/expr.h"
 #include "../ast/module.h"
@@ -623,7 +624,7 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
 }
 
 Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
-    auto elements = map(expr.elements, [&](const NamedValue& namedValue) {
+    auto elements = mapAst(expr.elements, [&](const NamedValue& namedValue) {
         if (namedValue.name.empty()) {
             ERROR_RANGE(getExprRangeStart(*namedValue.value), namedValue.value->endLocation,
                         "unnamed anonymous struct members are not supported yet; name each field (e.g. `(x = 1, y = 2)`)");
@@ -2282,7 +2283,7 @@ GenericArg Typechecker::findGenericArg(Type argType, Type paramType, llvm::Strin
         // Infer from the user-visible signature; argument conversion still rejects
         // capturing lambdas where plain function pointers are expected.
         auto closureParams = argType.getClosureParamTypes();
-        std::vector<Type> paramTypes(closureParams.begin(), closureParams.end());
+        AstVector<Type> paramTypes(closureParams.begin(), closureParams.end());
         return findGenericArg(FunctionType::get(argType.getClosureReturnType(), std::move(paramTypes), false), paramType, genericParam, inFunctionType);
     }
 
@@ -2972,25 +2973,25 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
     };
     Location location = decl.getLocation();
     Type streamType = PointerType::get(BasicType::get("OutputStream", {}), PointerKind::Reference);
-    std::vector<ParamDecl> params;
+    AstVector<ParamDecl> params;
     params.emplace_back(streamType, "stream", false, location);
     auto* method =
-        makeAST<MethodDecl>(FunctionProto("print", std::move(params), Type::getVoid()), decl, std::vector<GenericArg>(), AccessLevel::Default, location);
-    std::vector<Stmt*> body;
-    auto appendString = [&](std::vector<Stmt*>& stmts, std::string text) {
+        makeAST<MethodDecl>(FunctionProto("print", std::move(params), Type::getVoid()), decl, AstVector<GenericArg>(), AccessLevel::Default, location);
+    AstVector<Stmt*> body;
+    auto appendString = [&](AstVector<Stmt*>& stmts, std::string text) {
         auto* callee = makeAST<MemberExpr>(makeAST<VarExpr>("stream", location), "append", location);
-        std::vector<NamedValue> args;
+        AstVector<NamedValue> args;
         args.emplace_back(makeAST<StringLiteralExpr>(std::move(text), location));
-        stmts.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(callee, std::move(args), std::vector<GenericArg>(), location)));
+        stmts.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(callee, std::move(args), AstVector<GenericArg>(), location)));
     };
-    auto printValue = [&](std::vector<Stmt*>& stmts, Expr* receiver) {
+    auto printValue = [&](AstVector<Stmt*>& stmts, Expr* receiver) {
         auto* callee = makeAST<MemberExpr>(receiver, "print", location);
-        std::vector<NamedValue> args;
+        AstVector<NamedValue> args;
         args.emplace_back(makeAST<VarExpr>("stream", location));
-        stmts.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(callee, std::move(args), std::vector<GenericArg>(), location)));
+        stmts.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(callee, std::move(args), AstVector<GenericArg>(), location)));
     };
-    std::function<void(std::vector<Stmt*>&, std::function<Expr*()>, Type)> printField = [&](std::vector<Stmt*>& stmts, std::function<Expr*()> makeField,
-                                                                                            Type type) {
+    std::function<void(AstVector<Stmt*>&, std::function<Expr*()>, Type)> printField = [&](AstVector<Stmt*>& stmts, std::function<Expr*()> makeField,
+                                                                                          Type type) {
         if (!type.isOptionalType()) {
             printValue(stmts, makeField());
             return;
@@ -3000,7 +3001,7 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
         // unwrap implicitly through member access instead: an explicit `!` on them would
         // warn as a redundant null check.
         auto* condition = makeAST<BinaryExpr>(Token::Equal, makeField(), makeAST<NullLiteralExpr>(location), location);
-        std::vector<Stmt*> thenBody, elseBody;
+        AstVector<Stmt*> thenBody, elseBody;
         appendString(thenBody, "null");
         Type inner = type.removeOptional();
         if (inner.isPointerType()) {
@@ -3013,9 +3014,9 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
     if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(&decl)) {
         // Payloadless cases print as bare names (`Red`); payloads print positionally
         // (`Ok(42)`, `Click(3, 4)`), matching hand-written enum prints.
-        std::vector<SwitchCase> cases;
+        AstVector<SwitchCase> cases;
         for (EnumCase& enumCase : enumDecl->cases) {
-            std::vector<Stmt*> caseBody;
+            AstVector<Stmt*> caseBody;
             VarDecl* binding = nullptr;
             if (!enumCase.associatedType) {
                 appendString(caseBody, std::string(enumCase.getName()));
@@ -3049,7 +3050,7 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
             // Bare case names desugar to qualified ones during switch checking.
             cases.emplace_back(makeAST<VarExpr>(enumCase.getName(), location), binding, std::move(caseBody));
         }
-        body.push_back(makeAST<SwitchStmt>(makeAST<VarExpr>("this", location), std::move(cases), std::vector<Stmt*>()));
+        body.push_back(makeAST<SwitchStmt>(makeAST<VarExpr>("this", location), std::move(cases), AstVector<Stmt*>()));
     } else {
         appendString(body, std::string(decl.getName()) + "(");
         bool first = true;
@@ -4477,7 +4478,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             argToParam.push_back(int(j));
             expr.args.emplace_back(std::string(param.getName()), defaultArg, expr.location);
         }
-        expr.argParamIndices = std::move(argToParam);
+        expr.argParamIndices.assign(argToParam.begin(), argToParam.end());
         break;
     }
     case ArgumentValidation::TooFew: {
@@ -4937,7 +4938,7 @@ static Type createClosureType(FunctionDecl& lambdaDecl, Location location) {
     std::string name = "__closure" + std::to_string(closureNameCounter++);
     Module& module = *lambdaDecl.getModule();
 
-    std::vector<Type> fnParamTypes;
+    AstVector<Type> fnParamTypes;
     for (auto* captured : lambdaDecl.captures) {
         fnParamTypes.push_back(captured->getCaptureType());
     }
@@ -4949,7 +4950,7 @@ static Type createClosureType(FunctionDecl& lambdaDecl, Location location) {
     // Copyability derives from the capture fields: no explicit ': Copyable' list needed.
     // Default access: closures are anonymous, so they can't leak through API surfaces the way named private types can.
     auto* closureDecl =
-        makeAST<TypeDecl>(TypeTag::Struct, std::move(name), std::vector<GenericArg>(), std::vector<Type>(), AccessLevel::Default, module, nullptr, location);
+        makeAST<TypeDecl>(TypeTag::Struct, std::move(name), AstVector<GenericArg>(), AstVector<Type>(), AccessLevel::Default, module, nullptr, location);
     closureDecl->addField(FieldDecl(fnType, "__fn", nullptr, *closureDecl, AccessLevel::Private, location));
     for (auto* captured : lambdaDecl.captures) {
         closureDecl->addField(

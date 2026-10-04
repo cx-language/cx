@@ -71,7 +71,7 @@ Stmt* Stmt::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
     case StmtKind::SwitchStmt: {
         auto* switchStmt = llvm::cast<SwitchStmt>(this);
         auto condition = switchStmt->condition->instantiate(genericArgs);
-        auto cases = map(switchStmt->cases, [&](const SwitchCase& switchCase) {
+        auto cases = mapAst(switchStmt->cases, [&](const SwitchCase& switchCase) {
             auto value = switchCase.value->instantiate(genericArgs);
             auto associatedValue = switchCase.associatedValue ? llvm::cast<VarDecl>(switchCase.associatedValue->instantiate(genericArgs, {})) : nullptr;
             auto stmts = ::instantiate(switchCase.stmts, genericArgs);
@@ -127,7 +127,7 @@ Stmt* Stmt::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
 }
 
 Stmt* WhileStmt::lower() {
-    auto* lowered = makeAST<ForStmt>(nullptr, condition, std::vector<Expr*>(), std::move(body), location);
+    auto* lowered = makeAST<ForStmt>(nullptr, condition, AstVector<Expr*>(), std::move(body), location);
     lowered->disabledChecks = disabledChecks;
     return lowered;
 }
@@ -157,7 +157,7 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
     } else {
         auto iteratorMemberExpr = makeAST<MemberExpr>(range, "iterator", location);
         iteratorMemberExpr->endLocation = range->endLocation;
-        iteratorValue = makeAST<CallExpr>(iteratorMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
+        iteratorValue = makeAST<CallExpr>(iteratorMemberExpr, AstVector<NamedValue>(), AstVector<GenericArg>(), location);
         iteratorValue->endLocation = range->endLocation;
     }
 
@@ -175,11 +175,11 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
 
     auto iteratorVarExpr = makeAST<VarExpr>(iteratorVariableName, location);
     auto hasValueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr, "hasValue", location);
-    auto hasValueCallExpr = makeAST<CallExpr>(hasValueMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
+    auto hasValueCallExpr = makeAST<CallExpr>(hasValueMemberExpr, AstVector<NamedValue>(), AstVector<GenericArg>(), location);
 
     auto iteratorVarExpr2 = makeAST<VarExpr>(iteratorVariableName, location);
     auto valueMemberExpr = makeAST<MemberExpr>(iteratorVarExpr2, "value", location);
-    auto valueCallExpr = makeAST<CallExpr>(valueMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
+    auto valueCallExpr = makeAST<CallExpr>(valueMemberExpr, AstVector<NamedValue>(), AstVector<GenericArg>(), location);
     auto loopVariableVarDecl = makeAST<VarDecl>(variable->type, variable->getName(), valueCallExpr, variable->parent, AccessLevel::None, *variable->getModule(),
                                                 variable->getLocation());
     loopVariableVarDecl->isForLoopElement = true;
@@ -190,7 +190,7 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
     }
     auto loopVariableVarStmt = makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{loopVariableVarDecl});
 
-    std::vector<Stmt*> forBody;
+    AstVector<Stmt*> forBody;
     forBody.push_back(loopVariableVarStmt);
     if (indexVariable) {
         auto counterVarExpr = makeAST<VarExpr>(indexCounterName, location);
@@ -205,8 +205,8 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
 
     auto iteratorVarExpr3 = makeAST<VarExpr>(iteratorVariableName, location);
     auto incrementMemberExpr = makeAST<MemberExpr>(iteratorVarExpr3, "increment", location);
-    auto incrementCallExpr = makeAST<CallExpr>(incrementMemberExpr, std::vector<NamedValue>(), std::vector<GenericArg>(), location);
-    std::vector<Expr*> increments{incrementCallExpr};
+    auto incrementCallExpr = makeAST<CallExpr>(incrementMemberExpr, AstVector<NamedValue>(), AstVector<GenericArg>(), location);
+    AstVector<Expr*> increments{incrementCallExpr};
     if (indexVariable) {
         auto counterVarExpr = makeAST<VarExpr>(indexCounterName, location);
         increments.push_back(makeAST<UnaryExpr>(Token::Increment, counterVarExpr, location));

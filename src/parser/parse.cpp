@@ -153,10 +153,10 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
 /// argument-list ::= '(' ')' | '(' nonempty-argument-list ','? ')'
 /// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
 /// argument ::= (id '=')? expr
-std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
+AstVector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
     parse(Token::LeftParen);
     llvm::SaveAndRestore allowBlockLambdaInArgs(allowBlockLambda, true);
-    std::vector<NamedValue> args;
+    AstVector<NamedValue> args;
 
     if (currentToken() == Token::RightParen && allowEmpty) {
         consumeToken();
@@ -252,7 +252,7 @@ StringLiteralExpr* Parser::parseStringLiteral() {
     auto raw = currentToken().getString();
     if (raw.starts_with("\"")) raw = raw.drop_back().drop_front();
     auto content = replaceEscapeChars(raw, getCurrentLocation());
-    auto expr = makeAST<StringLiteralExpr>(std::move(content), getCurrentLocation());
+    auto expr = makeAST<StringLiteralExpr>(content, getCurrentLocation());
     expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
@@ -273,7 +273,7 @@ Expr* Parser::parseInterpolationRest(Expr* acc) {
         Expr* value = parseExpr();
         Token endToken = parse(Token::InterpEnd);
         auto* member = makeExpr<MemberExpr>(value, "toString", value->location);
-        auto* stringified = makeExpr<CallExpr>(member, std::vector<NamedValue>(), std::vector<GenericArg>(), value->location);
+        auto* stringified = makeExpr<CallExpr>(member, AstVector<NamedValue>(), AstVector<GenericArg>(), value->location);
         Expr* piece = stringified;
         acc = acc ? makeExpr<BinaryExpr>(Token::Plus, acc, piece, interpLocation) : piece;
 
@@ -385,8 +385,8 @@ Expr* Parser::parseAnonymousStructLiteralOrParenExpr() {
 }
 
 /// non-empty-type-list ::= type | type ',' non-empty-type-list
-std::vector<Type> Parser::parseNonEmptyTypeList() {
-    std::vector<Type> types;
+AstVector<Type> Parser::parseNonEmptyTypeList() {
+    AstVector<Type> types;
 
     while (true) {
         types.push_back(parseType());
@@ -402,10 +402,10 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
 
 /// generic-argument-list ::= '<' generic-arg (',' generic-arg)* '>'
 /// generic-arg ::= type | integer-literal
-std::vector<GenericArg> Parser::parseGenericArgumentList() {
+AstVector<GenericArg> Parser::parseGenericArgumentList() {
     ASSERT(currentToken() == Token::Less);
     consumeToken();
-    std::vector<GenericArg> genericArgs;
+    AstVector<GenericArg> genericArgs;
 
     while (true) {
         if (currentToken() == Token::IntegerLiteral) {
@@ -580,7 +580,7 @@ Type Parser::parseArrayType(Type elementType) {
 /// simple-type ::= id | id generic-argument-list | id '[' (const-int-expr | '*')? ']'
 Type Parser::parseSimpleType() {
     auto identifier = parse(Token::Identifier);
-    std::vector<GenericArg> genericArgs;
+    AstVector<GenericArg> genericArgs;
 
     switch (currentToken()) {
     case Token::Less:
@@ -600,7 +600,7 @@ Type Parser::parseAnonymousStructType() {
     ASSERT(currentToken() == Token::LeftParen);
     auto location = getCurrentLocation();
     consumeToken();
-    std::vector<AnonymousStructElement> elements;
+    AstVector<AnonymousStructElement> elements;
 
     while (currentToken() != Token::RightParen) {
         auto type = parseType();
@@ -618,7 +618,7 @@ Type Parser::parseAnonymousStructType() {
 /// non-empty-param-types ::= type | type ',' non-empty-param-types
 Type Parser::parseFunctionType(Type returnType) {
     parse(Token::LeftParen);
-    std::vector<Type> paramTypes;
+    AstVector<Type> paramTypes;
 
     while (currentToken() != Token::RightParen) {
         paramTypes.emplace_back(parseType());
@@ -753,7 +753,7 @@ UnwrapExpr* Parser::parseUnwrapExpr(Expr* operand) {
 
 /// call-expr ::= expr generic-argument-list? argument-list
 CallExpr* Parser::parseCallExpr(Expr* callee) {
-    std::vector<GenericArg> genericArgs;
+    AstVector<GenericArg> genericArgs;
     if (currentToken() == Token::Less) {
         genericArgs = parseGenericArgumentList();
     }
@@ -766,7 +766,7 @@ LambdaExpr* Parser::parseLambdaExpr() {
     llvm::SaveAndRestore inScope(inBinderScope, true);
     ASSERT(currentToken().is({Token::LeftParen, Token::Identifier}));
     auto location = getCurrentLocation();
-    std::vector<ParamDecl> params;
+    AstVector<ParamDecl> params;
 
     if (currentToken() == Token::Identifier) {
         auto paramName = consumeToken();
@@ -1174,9 +1174,9 @@ Expr* Parser::parseExprOrVarDecl(Decl* parent) {
 
 /// expr-list ::= '' | nonempty-expr-list ','?
 /// nonempty-expr-list ::= expr | expr ',' nonempty-expr-list
-std::vector<Expr*> Parser::parseExprList() {
+AstVector<Expr*> Parser::parseExprList() {
     llvm::SaveAndRestore allowBlockLambdaInList(allowBlockLambda, true);
-    std::vector<Expr*> exprs;
+    AstVector<Expr*> exprs;
 
     switch (currentToken()) {
     case Token::Semicolon:
@@ -1267,10 +1267,10 @@ ExprStmt* Parser::parseExprStmt() {
 }
 
 /// block ::= '{' stmt* '}'
-std::vector<Stmt*> Parser::parseBlock(Decl* parent) {
+AstVector<Stmt*> Parser::parseBlock(Decl* parent) {
     llvm::SaveAndRestore inScope(inBinderScope, true);
     parse(Token::LeftBrace);
-    std::vector<Stmt*> stmts;
+    AstVector<Stmt*> stmts;
     while (currentToken() != Token::RightBrace) {
         try {
             stmts.push_back(parseStmt(parent));
@@ -1285,7 +1285,7 @@ std::vector<Stmt*> Parser::parseBlock(Decl* parent) {
 }
 
 /// block-or-stmt ::= block | stmt
-std::vector<Stmt*> Parser::parseBlockOrStmt(Decl* parent) {
+AstVector<Stmt*> Parser::parseBlockOrStmt(Decl* parent) {
     if (currentToken() == Token::LeftBrace) {
         return parseBlock(parent);
     } else {
@@ -1345,7 +1345,7 @@ Stmt* Parser::parseIfStmt(Decl* parent) {
     }
     bool thenIsBlock = currentToken() == Token::LeftBrace;
     auto thenStmts = parseBlockOrStmt(parent);
-    std::vector<Stmt*> elseStmts;
+    AstVector<Stmt*> elseStmts;
     Location elseLocation;
     if (currentToken() == Token::Else) {
         elseLocation = consumeToken().location;
@@ -1448,7 +1448,7 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
             condition = parseExpr();
             parse(Token::Semicolon);
         }
-        std::vector<Expr*> increments;
+        AstVector<Expr*> increments;
         if (currentToken() != Token::RightParen && currentToken() != Token::LeftBrace) {
             llvm::SaveAndRestore disallowBlockLambda(allowBlockLambda, false);
             increments.push_back(parseExpr());
@@ -1494,8 +1494,8 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
         condition = parseExpr();
     }
     parse(Token::LeftBrace);
-    std::vector<SwitchCase> cases;
-    std::vector<Stmt*> defaultStmts;
+    AstVector<SwitchCase> cases;
+    AstVector<Stmt*> defaultStmts;
     bool defaultSeen = false;
 
     while (true) {
@@ -1532,7 +1532,7 @@ SwitchExpr* Parser::parseSwitchExpr() {
     consumeToken();
     auto condition = parseExpr();
     parse(Token::LeftBrace);
-    std::vector<SwitchExprArm> arms;
+    AstVector<SwitchExprArm> arms;
     Expr* defaultExpr = nullptr;
     bool defaultSeen = false;
 
@@ -1654,8 +1654,8 @@ Stmt* Parser::parseStmt(Decl* parent) {
     }
 }
 
-std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent) {
-    std::vector<Stmt*> stmts;
+AstVector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent) {
+    AstVector<Stmt*> stmts;
     while (currentToken() != end1 && currentToken() != end2 && currentToken() != end3) {
         try {
             stmts.emplace_back(parseStmt(parent));
@@ -1707,10 +1707,10 @@ ParamDecl Parser::parseParam(bool requireType, bool allowCxxConst) {
 /// param-list ::= '(' params ')'
 /// params ::= '' | non-empty-params
 /// non-empty-params ::= param-decl | param-decl ',' non-empty-params
-std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireTypes, bool allowCxxConst) {
+AstVector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireTypes, bool allowCxxConst) {
     llvm::SaveAndRestore inScope(inBinderScope, true);
     parse(Token::LeftParen);
-    std::vector<ParamDecl> params;
+    AstVector<ParamDecl> params;
     while (currentToken() != Token::RightParen) {
         if (isVariadic && currentToken() == Token::DotDotDot) {
             consumeToken();
@@ -1733,7 +1733,7 @@ std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireType
     return params;
 }
 
-void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
+void Parser::parseGenericParamList(AstVector<GenericParamDecl>& genericParams) {
     parse(Token::Less);
     while (true) {
         auto genericParamName = parse(Token::Identifier);
@@ -1800,7 +1800,7 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
 }
 
 /// function-proto ::= type id param-list
-FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, std::vector<GenericParamDecl>* genericParams,
+FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, AstVector<GenericParamDecl>* genericParams,
                                          Type returnType, llvm::StringRef name, Location location, bool cppLinkage) {
     llvm::SaveAndRestore inScope(inBinderScope, true);
     if (currentToken() == Token::Less) {
@@ -1820,9 +1820,9 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
     FunctionProto proto(name, std::move(params), returnType, isVariadic, isExtern, cppLinkage);
 
     if (receiverTypeDecl) {
-        return makeAST<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<GenericArg>(), accessLevel, location);
+        return makeAST<MethodDecl>(std::move(proto), *receiverTypeDecl, AstVector<GenericArg>(), accessLevel, location);
     } else {
-        return makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), accessLevel, *currentModule, location);
+        return makeAST<FunctionDecl>(std::move(proto), AstVector<GenericArg>(), accessLevel, *currentModule, location);
     }
 }
 
@@ -1830,7 +1830,7 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
 /// template-param-list ::= '<' template-param-decls '>'
 /// template-param-decls ::= id | id ',' template-param-decls
 FunctionTemplate* Parser::parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location) {
-    std::vector<GenericParamDecl> genericParams;
+    AstVector<GenericParamDecl> genericParams;
     auto decl = parseFunctionProto(false, receiverTypeDecl, accessLevel, &genericParams, type, name, location);
     return makeAST<FunctionTemplate>(std::move(genericParams), decl, accessLevel);
 }
@@ -1920,18 +1920,18 @@ TypeAliasDecl* Parser::parseTypeAliasDecl(AccessLevel accessLevel) {
     parse(Token::Assignment);
     auto aliasedType = parseType();
     parseStmtTerminator("in type alias declaration");
-    return makeAST<TypeAliasDecl>(name.getString().str(), aliasedType, accessLevel, *currentModule, name.location);
+    return makeAST<TypeAliasDecl>(name.getString(), aliasedType, accessLevel, *currentModule, name.location);
 }
 
 /// type-template-decl ::= ('struct' | 'interface') id generic-param-list? '{' member-decl* '}' ';'?
 TypeTemplate* Parser::parseTypeTemplate(AccessLevel accessLevel) {
     llvm::SaveAndRestore inScope(inBinderScope, true);
-    std::vector<GenericParamDecl> genericParams;
+    AstVector<GenericParamDecl> genericParams;
     auto typeDecl = parseTypeDecl(&genericParams, accessLevel);
     return makeAST<TypeTemplate>(std::move(genericParams), typeDecl, accessLevel);
 }
 
-Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams) {
+Token Parser::parseTypeHeader(AstVector<Type>& interfaces, AstVector<GenericParamDecl>* genericParams) {
     auto name = parse(Token::Identifier);
 
     if (currentToken() == Token::Less) {
@@ -1982,7 +1982,7 @@ void Parser::applyFunctionChecks(Decl* decl, DisabledChecks disabledChecks, Loca
     functionDecl->disabledChecks = disabledChecks;
 }
 
-void Parser::rejectGenericStaticConst(const std::vector<GenericParamDecl>* genericParams) {
+void Parser::rejectGenericStaticConst(const AstVector<GenericParamDecl>* genericParams) {
     if (genericParams && !genericParams->empty()) {
         ERROR_CURRENT_TOKEN("static constants are not supported in generic types");
     }
@@ -1997,7 +1997,7 @@ void Parser::addParsedStaticConst(TypeDecl& typeDecl, Type type, llvm::StringRef
     typeDecl.staticConsts.push_back(staticConst);
 }
 
-void Parser::parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel, const std::vector<GenericParamDecl>* genericParams) {
+void Parser::parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel, const AstVector<GenericParamDecl>* genericParams) {
     rejectGenericStaticConst(genericParams);
     consumeToken();
     auto name = parse(Token::Identifier);
@@ -2008,7 +2008,7 @@ void Parser::parseKeywordStaticConst(TypeDecl& typeDecl, AccessLevel accessLevel
 /// interface-list ::= ':' non-empty-type-list
 /// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl | const-decl
 /// const-decl ::= 'const' id '=' expr | 'const' type id '=' expr
-TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
+TypeDecl* Parser::parseTypeDecl(AstVector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     TypeTag tag;
     switch (consumeToken()) {
     case Token::Struct:
@@ -2024,9 +2024,9 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
         llvm_unreachable("invalid token");
     }
 
-    std::vector<Type> interfaces;
+    AstVector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
-    auto typeDecl = makeAST<TypeDecl>(tag, typeName.getString(), std::vector<GenericArg>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
+    auto typeDecl = makeAST<TypeDecl>(tag, typeName.getString(), AstVector<GenericArg>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
                                       typeName.location);
     bool hasConstructor = false;
     parse(Token::LeftBrace);
@@ -2170,7 +2170,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 /// enum-template-decl ::= 'enum' id generic-param-list? '{' enum-case-decl* '}' ';'?
 TypeTemplate* Parser::parseEnumTemplate(AccessLevel accessLevel) {
     llvm::SaveAndRestore inScope(inBinderScope, true);
-    std::vector<GenericParamDecl> genericParams;
+    AstVector<GenericParamDecl> genericParams;
     auto enumDecl = parseEnumDecl(&genericParams, accessLevel);
     return makeAST<TypeTemplate>(std::move(genericParams), enumDecl, accessLevel);
 }
@@ -2178,14 +2178,13 @@ TypeTemplate* Parser::parseEnumTemplate(AccessLevel accessLevel) {
 /// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' (enum-case-decl | member-decl)* '}' ';'?
 /// enum-case-decl ::= id anonymous-struct-type? (',' | '\n' | ';')
 /// member-decl ::= function-decl | function-template-decl | const-decl
-EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
+EnumDecl* Parser::parseEnumDecl(AstVector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     ASSERT(currentToken() == Token::Enum);
     consumeToken();
 
-    std::vector<Type> interfaces;
+    AstVector<Type> interfaces;
     auto name = parseTypeHeader(interfaces, genericParams);
-    auto* enumDecl =
-        makeAST<EnumDecl>(name.getString(), std::vector<EnumCase>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr, name.location);
+    auto* enumDecl = makeAST<EnumDecl>(name.getString(), AstVector<EnumCase>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr, name.location);
 
     parse(Token::LeftBrace);
     auto valueCounter = llvm::APSInt::get(0);

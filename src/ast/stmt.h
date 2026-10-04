@@ -92,70 +92,70 @@ struct DeferStmt : Stmt {
 };
 
 struct IfStmt : Stmt {
-    IfStmt(Expr* condition, std::vector<Stmt*>&& thenBody, std::vector<Stmt*>&& elseBody, Location elseLocation = Location())
+    IfStmt(Expr* condition, AstVector<Stmt*>&& thenBody, AstVector<Stmt*>&& elseBody, Location elseLocation = Location())
     : Stmt(StmtKind::IfStmt), condition(condition), thenBody(std::move(thenBody)), elseBody(std::move(elseBody)), elseLocation(elseLocation) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::IfStmt; }
 
     Expr* condition;
     // Set when the condition binds an enum payload (`if s is Case name`); visible in the then-branch only.
     VarDecl* isBinding = nullptr;
-    std::vector<Stmt*> thenBody;
-    std::vector<Stmt*> elseBody;
+    AstVector<Stmt*> thenBody;
+    AstVector<Stmt*> elseBody;
     Location elseLocation;
 };
 
 struct SwitchCase {
     Expr* value;
     VarDecl* associatedValue;
-    std::vector<Stmt*> stmts;
+    AstVector<Stmt*> stmts;
 };
 
 struct SwitchStmt : Stmt {
-    SwitchStmt(Expr* condition, std::vector<SwitchCase>&& cases, std::vector<Stmt*>&& defaultStmts)
+    SwitchStmt(Expr* condition, AstVector<SwitchCase>&& cases, AstVector<Stmt*>&& defaultStmts)
     : Stmt(StmtKind::SwitchStmt), condition(condition), cases(std::move(cases)), defaultStmts(std::move(defaultStmts)) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::SwitchStmt; }
 
     Expr* condition;
-    std::vector<SwitchCase> cases;
-    std::vector<Stmt*> defaultStmts;
+    AstVector<SwitchCase> cases;
+    AstVector<Stmt*> defaultStmts;
     bool coversAllEnumCases = false;
 };
 
 struct WhileStmt : Stmt {
-    WhileStmt(Expr* condition, std::vector<Stmt*>&& body, Location location)
+    WhileStmt(Expr* condition, AstVector<Stmt*>&& body, Location location)
     : Stmt(StmtKind::WhileStmt), condition(condition), body(std::move(body)), location(location) {}
     Stmt* lower();
     static bool classof(const Stmt* s) { return s->kind == StmtKind::WhileStmt; }
 
     Expr* condition;
-    std::vector<Stmt*> body;
+    AstVector<Stmt*> body;
     Location location;
 };
 
 struct DoWhileStmt : Stmt {
-    DoWhileStmt(Expr* condition, std::vector<Stmt*>&& body, Location location)
+    DoWhileStmt(Expr* condition, AstVector<Stmt*>&& body, Location location)
     : Stmt(StmtKind::DoWhileStmt), condition(condition), body(std::move(body)), location(location) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::DoWhileStmt; }
 
     Expr* condition;
-    std::vector<Stmt*> body;
+    AstVector<Stmt*> body;
     Location location;
 };
 
 struct ForStmt : Stmt {
-    ForStmt(VarStmt* variable, Expr* condition, std::vector<Expr*>&& increments, std::vector<Stmt*>&& body, Location location)
+    ForStmt(VarStmt* variable, Expr* condition, AstVector<Expr*>&& increments, AstVector<Stmt*>&& body, Location location)
     : Stmt(StmtKind::ForStmt), variable(variable), condition(condition), increments(std::move(increments)), body(std::move(body)), location(location) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::ForStmt; }
 
     VarStmt* variable;
     Expr* condition;
-    std::vector<Expr*> increments;
-    std::vector<Stmt*> body;
+    AstVector<Expr*> increments;
+    AstVector<Stmt*> body;
     Location location;
 };
 
 struct ForEachStmt : Stmt {
-    ForEachStmt(VarDecl* variable, VarDecl* indexVariable, Expr* range, std::vector<Stmt*>&& body, Location location)
+    ForEachStmt(VarDecl* variable, VarDecl* indexVariable, Expr* range, AstVector<Stmt*>&& body, Location location)
     : Stmt(StmtKind::ForEachStmt), variable(variable), indexVariable(indexVariable), range(range), body(std::move(body)), location(location) {}
     Stmt* lower(int nestLevel, bool rangeIsConst);
     static bool classof(const Stmt* s) { return s->kind == StmtKind::ForEachStmt; }
@@ -163,7 +163,7 @@ struct ForEachStmt : Stmt {
     VarDecl* variable;
     VarDecl* indexVariable; // Null unless written as 'for elem, index in ...'.
     Expr* range;
-    std::vector<Stmt*> body;
+    AstVector<Stmt*> body;
     Location location;
 };
 
@@ -182,10 +182,10 @@ struct ContinueStmt : Stmt {
 };
 
 struct CompoundStmt : Stmt {
-    CompoundStmt(std::vector<Stmt*>&& body) : Stmt(StmtKind::CompoundStmt), body(std::move(body)) {}
+    CompoundStmt(AstVector<Stmt*>&& body) : Stmt(StmtKind::CompoundStmt), body(std::move(body)) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::CompoundStmt; }
 
-    std::vector<Stmt*> body;
+    AstVector<Stmt*> body;
 };
 
 } // namespace cx

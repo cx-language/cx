@@ -10,6 +10,7 @@
 #include <llvm/TargetParser/Triple.h>
 #pragma warning(pop)
 #include "../ast/arena.h"
+#include "../ast/ast.h"
 #include "../ast/module.h"
 #include "../build/dependencies.h"
 #include "../driver/driver.h"
@@ -310,7 +311,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
         return ArrayPointerType::get(elementType, type.location, type.endLocation);
     }
     case TypeKind::AnonymousStructType: {
-        auto elements = map(type.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
+        auto elements = mapAst(type.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
             return AnonymousStructElement{element.name, resolveTypeAliases(element.type, userAccessLevel, resolving, foldArraySizes)};
         });
         if (llvm::equal(elements, type.getAnonymousStructElements())) return type;
@@ -318,7 +319,8 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
     }
     case TypeKind::FunctionType: {
         auto returnType = resolveTypeAliases(type.getReturnType(), userAccessLevel, resolving, foldArraySizes);
-        auto paramTypes = map(type.getParamTypes(), [&](Type paramType) { return resolveTypeAliases(paramType, userAccessLevel, resolving, foldArraySizes); });
+        auto paramTypes =
+            mapAst(type.getParamTypes(), [&](Type paramType) { return resolveTypeAliases(paramType, userAccessLevel, resolving, foldArraySizes); });
         if (returnType == type.getReturnType() && llvm::equal(paramTypes, type.getParamTypes())) return type;
         return FunctionType::get(returnType, std::move(paramTypes), llvm::cast<FunctionType>(type.typeBase)->isVariadic, type.location, type.endLocation);
     }
@@ -345,7 +347,7 @@ void Typechecker::canonicalizeTypeAliases() {
     }
 
     auto resolveType = [&](Type& type, AccessLevel accessLevel) { type = resolveTypeAliases(std::move(type), accessLevel); };
-    auto resolveParams = [&](std::vector<ParamDecl>& params, AccessLevel accessLevel) {
+    auto resolveParams = [&](AstVector<ParamDecl>& params, AccessLevel accessLevel) {
         for (auto& param : params) {
             resolveType(param.type, accessLevel);
         }
@@ -1201,7 +1203,7 @@ static void mangleCppFunction(FunctionDecl& decl) {
     }
     // The \01 marker bypasses LLVM's target symbol prefix, so add the Mach-O/MinGW '_' explicitly.
     if (triple.isOSBinFormatMachO() || triple.isOSCygMing()) mangled = "_" + mangled;
-    decl.proto.asmLabel = std::move(mangled);
+    decl.proto.asmLabel = internString(mangled);
 }
 
 void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {

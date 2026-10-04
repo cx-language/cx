@@ -81,9 +81,9 @@ static std::optional<Location> findContinueTargetingPackLoop(llvm::ArrayRef<Stmt
     return std::nullopt;
 }
 
-static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::StringRef packName, llvm::ArrayRef<std::string> expandedNames,
-                                          FunctionDecl* parentFunc, Module& module, bool packShadowed) {
-    std::vector<Stmt*> result;
+static AstVector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::StringRef packName, llvm::ArrayRef<std::string> expandedNames,
+                                        FunctionDecl* parentFunc, Module& module, bool packShadowed) {
+    AstVector<Stmt*> result;
     bool shadowedHere = packShadowed;
 
     for (Stmt* stmt : stmts) {
@@ -118,7 +118,7 @@ static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Str
                 auto clonedBody = ::cx::instantiate(forEach->body, llvm::StringMap<GenericArg>());
                 clonedBody = unrollPackLoops(clonedBody, packName, expandedNames, parentFunc, module, loopVarShadowsPack);
 
-                std::vector<Stmt*> iteration;
+                AstVector<Stmt*> iteration;
                 auto* loopVar = makeAST<VarDecl>(Type(), forEach->variable->getName(), makeAST<VarExpr>(expandedNames[i], forEach->location), parentFunc,
                                                  AccessLevel::None, module, forEach->variable->getLocation());
                 iteration.push_back(makeAST<VarStmt>(llvm::SmallVector<VarDecl*, 1>{loopVar}));
@@ -198,7 +198,7 @@ FunctionDecl* FunctionTemplate::instantiateVariadic(const llvm::StringMap<Generi
     Type packType = templateParams.back().type;
     Location packLoc = templateParams.back().getLocation();
 
-    std::vector<ParamDecl> expandedParams;
+    AstVector<ParamDecl> expandedParams;
     expandedParams.reserve(templateParams.size() - 1 + packArgs.size());
     for (const ParamDecl& param : templateParams.drop_back()) {
         expandedParams.emplace_back(param.type.resolve(fixedArgs), param.getName(), param.isPublic, param.getLocation());
@@ -227,11 +227,11 @@ FunctionDecl* FunctionTemplate::instantiateVariadic(const llvm::StringMap<Generi
 
     FunctionDecl* instantiation;
     if (auto* methodDecl = llvm::dyn_cast<MethodDecl>(functionDecl)) {
-        instantiation =
-            makeAST<MethodDecl>(std::move(proto), *methodDecl->typeDecl, std::vector<GenericArg>(cacheKey), methodDecl->accessLevel, methodDecl->getLocation());
+        instantiation = makeAST<MethodDecl>(std::move(proto), *methodDecl->typeDecl, AstVector<GenericArg>(cacheKey.begin(), cacheKey.end()),
+                                            methodDecl->accessLevel, methodDecl->getLocation());
     } else {
-        instantiation = makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(cacheKey), functionDecl->accessLevel, *functionDecl->getModule(),
-                                              functionDecl->getLocation());
+        instantiation = makeAST<FunctionDecl>(std::move(proto), AstVector<GenericArg>(cacheKey.begin(), cacheKey.end()), functionDecl->accessLevel,
+                                              *functionDecl->getModule(), functionDecl->getLocation());
     }
 
     if (functionDecl->body) {
@@ -262,7 +262,7 @@ std::string FunctionDecl::getQualifiedName() const {
 }
 
 FunctionType* FunctionDecl::getFunctionType() const {
-    auto paramTypes = map(getParams(), [](const ParamDecl& p) -> Type { return p.type; });
+    auto paramTypes = mapAst(getParams(), [](const ParamDecl& p) -> Type { return p.type; });
     return &llvm::cast<FunctionType>(*FunctionType::get(getReturnType(), std::move(paramTypes), isVariadic()));
 }
 
@@ -286,7 +286,8 @@ FunctionDecl* FunctionDecl::instantiate(const llvm::StringMap<GenericArg>& gener
         return methodDecl->instantiate(genericArgs, genericArgsArray, *getTypeDecl());
     } else {
         auto proto = this->proto.instantiate(genericArgs);
-        auto instantiation = makeAST<FunctionDecl>(std::move(proto), genericArgsArray, accessLevel, module, location);
+        auto instantiation =
+            makeAST<FunctionDecl>(std::move(proto), AstVector<GenericArg>(genericArgsArray.begin(), genericArgsArray.end()), accessLevel, module, location);
         instantiation->body = ::instantiate(*body, genericArgs);
         instantiation->disabledChecks = disabledChecks;
         return instantiation;
@@ -307,8 +308,7 @@ bool FunctionTemplate::isReferenced() const {
     return false;
 }
 
-MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<GenericArg>&& genericArgs, AccessLevel accessLevel,
-                       Location location)
+MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, AstVector<GenericArg>&& genericArgs, AccessLevel accessLevel, Location location)
 : FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl) {
     for (auto& param : getParams()) {
         param.parent = this;
@@ -320,7 +320,8 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<GenericArg>& genericAr
     case DeclKind::MethodDecl: {
         auto* methodDecl = llvm::cast<MethodDecl>(this);
         auto proto = methodDecl->proto.instantiate(genericArgs);
-        auto instantiation = makeAST<MethodDecl>(std::move(proto), typeDecl, genericArgsArray, accessLevel, methodDecl->getLocation());
+        auto instantiation = makeAST<MethodDecl>(std::move(proto), typeDecl, AstVector<GenericArg>(genericArgsArray.begin(), genericArgsArray.end()),
+                                                 accessLevel, methodDecl->getLocation());
         instantiation->isImplicit = methodDecl->isImplicit;
         instantiation->disabledChecks = methodDecl->disabledChecks;
         if (methodDecl->body) {
@@ -355,8 +356,8 @@ FieldDecl FieldDecl::instantiate(const llvm::StringMap<GenericArg>& genericArgs,
     return FieldDecl(type, getName(), defaultValue, typeDecl, accessLevel, location, isManuallyDestroy);
 }
 
-std::vector<ParamDecl> cx::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<GenericArg>& genericArgs) {
-    return map(params, [&](const ParamDecl& param) {
+AstVector<ParamDecl> cx::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<GenericArg>& genericArgs) {
+    return mapAst(params, [&](const ParamDecl& param) {
         ParamDecl result(param.type.resolve(genericArgs), param.getName(), param.isPublic, param.getLocation());
         result.isPack = param.isPack;
         result.defaultValue = param.defaultValue ? param.defaultValue->instantiate(genericArgs) : nullptr;
@@ -398,9 +399,9 @@ void TypeDecl::addMethod(Decl* decl) {
 }
 
 ConstructorDecl* TypeDecl::addAutogeneratedConstructor() {
-    std::vector<ParamDecl> params;
-    std::vector<ParamDecl> defaultedParams;
-    std::vector<Stmt*> body;
+    AstVector<ParamDecl> params;
+    AstVector<ParamDecl> defaultedParams;
+    AstVector<Stmt*> body;
 
     for (auto& field : fields) {
         llvm::StringRef paramName = field.getName();
@@ -455,7 +456,7 @@ DestructorDecl* TypeDecl::getOrSynthesizeDefaultDestructor() {
 
     auto synthesize = [&] {
         auto destructor = makeAST<DestructorDecl>(*this, getLocation());
-        destructor->body = std::vector<Stmt*>();
+        destructor->body = AstVector<Stmt*>();
         return destructor;
     };
 
@@ -578,7 +579,7 @@ static void instantiateMethods(TypeDecl& instantiation, llvm::ArrayRef<Decl*> me
             auto* methodDecl = llvm::cast<MethodDecl>(functionTemplate->functionDecl);
             auto methodInstantiation = methodDecl->instantiate(genericArgs, {}, instantiation);
 
-            std::vector<GenericParamDecl> genericParams;
+            AstVector<GenericParamDecl> genericParams;
             genericParams.reserve(functionTemplate->genericParams.size());
 
             for (auto& genericParam : functionTemplate->genericParams) {
@@ -618,9 +619,9 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
 
     case DeclKind::TypeDecl: {
         auto* typeDecl = llvm::cast<TypeDecl>(this);
-        auto interfaces = map(typeDecl->interfaces, [&](Type type) { return type.resolve(genericArgs); });
-        auto instantiation = makeAST<TypeDecl>(typeDecl->tag, typeDecl->getName(), genericArgsArray, std::move(interfaces), accessLevel, *typeDecl->getModule(),
-                                               typeDecl, typeDecl->getLocation());
+        auto interfaces = mapAst(typeDecl->interfaces, [&](Type type) { return type.resolve(genericArgs); });
+        auto instantiation = makeAST<TypeDecl>(typeDecl->tag, typeDecl->getName(), AstVector<GenericArg>(genericArgsArray.begin(), genericArgsArray.end()),
+                                               std::move(interfaces), accessLevel, *typeDecl->getModule(), typeDecl, typeDecl->getLocation());
         for (auto& field : typeDecl->fields) {
             auto defaultValue = field.defaultValue ? field.defaultValue->instantiate(genericArgs) : nullptr;
             instantiation->addField(FieldDecl(field.type.resolve(genericArgs), field.getName(), defaultValue, *instantiation, field.accessLevel,
@@ -639,15 +640,15 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
 
     case DeclKind::EnumDecl: {
         auto* enumDecl = llvm::cast<EnumDecl>(this);
-        std::vector<EnumCase> cases;
+        AstVector<EnumCase> cases;
         for (auto& enumCase : enumDecl->cases) {
             cases.emplace_back(enumCase.getName(), enumCase.value ? enumCase.value->instantiate(genericArgs) : nullptr,
                                enumCase.associatedType.resolve(genericArgs), enumCase.accessLevel, enumCase.getLocation());
         }
-        auto interfaces = map(enumDecl->interfaces, [&](Type type) { return type.resolve(genericArgs); });
+        auto interfaces = mapAst(enumDecl->interfaces, [&](Type type) { return type.resolve(genericArgs); });
         auto instantiation = makeAST<EnumDecl>(enumDecl->getName(), std::move(cases), std::move(interfaces), accessLevel, *enumDecl->getModule(), enumDecl,
                                                enumDecl->getLocation());
-        instantiation->genericArgs = std::vector<GenericArg>(genericArgsArray.begin(), genericArgsArray.end());
+        instantiation->genericArgs = AstVector<GenericArg>(genericArgsArray.begin(), genericArgsArray.end());
         for (auto& enumCase : instantiation->cases) {
             enumCase.type = NOTNULL(instantiation->getType());
         }
@@ -683,7 +684,7 @@ bool Decl::isGlobal() const {
     return true;
 }
 
-ConstructorDecl::ConstructorDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params, AccessLevel accessLevel, Location location)
+ConstructorDecl::ConstructorDecl(TypeDecl& receiverTypeDecl, AstVector<ParamDecl>&& params, AccessLevel accessLevel, Location location)
 : MethodDecl(DeclKind::ConstructorDecl, FunctionProto("init", std::move(params), Type::getVoid(), false, false), receiverTypeDecl, {}, accessLevel, location) {}
 
 DestructorDecl::DestructorDecl(TypeDecl& receiverTypeDecl, Location location)

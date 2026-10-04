@@ -8,6 +8,7 @@
 #pragma warning(pop)
 #include "../support/utility.h"
 #include "arena.h"
+#include "ast.h"
 #include "decl.h"
 
 using namespace cx;
@@ -168,8 +169,8 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
         }
         // An integer parameter reference isn't a type; leave it for the use site to diagnose.
 
-        auto genericArgs = map(getGenericArgs(), [&](GenericArg arg) { return arg.resolve(replacements); });
-        return preserveSpelling(BasicType::get(getName(), std::move(genericArgs), location, endLocation));
+        auto genericArgs = mapAst(getGenericArgs(), [&](GenericArg arg) { return arg.resolve(replacements); });
+        return preserveSpelling(BasicType::get(getName(), genericArgs, location, endLocation));
     }
     case TypeKind::ArrayPointerType: {
         auto* base = llvm::cast<ArrayPointerType>(typeBase);
@@ -178,11 +179,11 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
 
     case TypeKind::AnonymousStructType: {
         auto elements =
-            map(getAnonymousStructElements(), [&](auto& element) { return AnonymousStructElement{element.name, element.type.resolve(replacements)}; });
+            mapAst(getAnonymousStructElements(), [&](auto& element) { return AnonymousStructElement{element.name, element.type.resolve(replacements)}; });
         return preserveSpelling(AnonymousStructType::get(std::move(elements), location, endLocation));
     }
     case TypeKind::FunctionType: {
-        auto paramTypes = map(getParamTypes(), [&](Type t) { return t.resolve(replacements); });
+        auto paramTypes = mapAst(getParamTypes(), [&](Type t) { return t.resolve(replacements); });
         return preserveSpelling(FunctionType::get(getReturnType().resolve(replacements), std::move(paramTypes), llvm::cast<FunctionType>(typeBase)->isVariadic,
                                                   location, endLocation));
     }
@@ -310,11 +311,11 @@ Type ArrayPointerType::get(Type elementType, Location location, Location endLoca
     return getType(ArrayPointerType(elementType), location, endLocation);
 }
 
-Type AnonymousStructType::get(std::vector<AnonymousStructElement>&& elements, Location location, Location endLocation) {
+Type AnonymousStructType::get(AstVector<AnonymousStructElement>&& elements, Location location, Location endLocation) {
     return getType(AnonymousStructType(std::move(elements)), location, endLocation);
 }
 
-Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isVariadic, Location location, Location endLocation) {
+Type FunctionType::get(Type returnType, AstVector<Type>&& paramTypes, bool isVariadic, Location location, Location endLocation) {
     return getType(FunctionType(returnType, std::move(paramTypes), isVariadic), location, endLocation);
 }
 

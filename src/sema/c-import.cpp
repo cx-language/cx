@@ -35,6 +35,7 @@
 #include <llvm/TargetParser/Host.h>
 #pragma warning(pop)
 #include "../ast/arena.h"
+#include "../ast/ast.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../ast/type.h"
@@ -147,7 +148,7 @@ struct CToCxConverter final : clang::ASTConsumer {
             return toCx(llvm::cast<clang::ParenType>(type).getInnerType());
         case clang::Type::FunctionProto: {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
-            auto paramTypes = map(functionProtoType.getParamTypes(), [&](clang::QualType paramType) { return toCx(paramType); });
+            auto paramTypes = mapAst(functionProtoType.getParamTypes(), [&](clang::QualType paramType) { return toCx(paramType); });
             return FunctionType::get(toCx(functionProtoType.getReturnType()), std::move(paramTypes), functionProtoType.isVariadic());
         }
         case clang::Type::FunctionNoProto: {
@@ -292,8 +293,8 @@ struct CToCxConverter final : clang::ASTConsumer {
                 } while (!module.symbolTable.findInTopLevelScope(anonymousName).empty());
                 name = anonymousName;
             }
-            auto* typeDecl = makeAST<TypeDecl>(tag, name, std::vector<GenericArg>(), std::vector<Type>(), AccessLevel::Default, module, nullptr,
-                                               toCx(recordDecl.getLocation()));
+            auto* typeDecl =
+                makeAST<TypeDecl>(tag, name, AstVector<GenericArg>(), AstVector<Type>(), AccessLevel::Default, module, nullptr, toCx(recordDecl.getLocation()));
             typeDecl->isAnonymousRecord = !anonymousName.empty();
             it = importedRecordDecls.emplace(canonical, typeDecl).first;
 
@@ -661,7 +662,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                         break;
                     }
                     bool isAnonymous = getName(enumDecl).empty();
-                    std::vector<EnumCase> cases;
+                    AstVector<EnumCase> cases;
 
                     for (clang::EnumConstantDecl* enumerator : enumDecl.enumerators()) {
                         auto enumeratorName = enumerator->getName();
@@ -673,7 +674,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                         addIntegerConstantToSymbolTable(enumeratorName, value, type);
                     }
 
-                    auto* cxEnumDecl = makeAST<EnumDecl>(getName(enumDecl), std::move(cases), std::vector<Type>(), AccessLevel::Default, module, nullptr,
+                    auto* cxEnumDecl = makeAST<EnumDecl>(getName(enumDecl), std::move(cases), AstVector<Type>(), AccessLevel::Default, module, nullptr,
                                                          toCx(enumDecl.getLocation()));
                     module.addToSymbolTable(cxEnumDecl);
                     module.sourceFiles.front().topLevelDecls.push_back(cxEnumDecl);
@@ -728,20 +729,21 @@ struct CToCxConverter final : clang::ASTConsumer {
     }
 
     FunctionDecl* toCx(const clang::FunctionDecl& decl) {
-        auto params = map(decl.parameters(), [&](clang::ParmVarDecl* param) { return ParamDecl(toCx(param->getType()), param->getName(), false, Location()); });
+        auto params =
+            mapAst(decl.parameters(), [&](clang::ParmVarDecl* param) { return ParamDecl(toCx(param->getType()), param->getName(), false, Location()); });
 
         FunctionProto proto(decl.getName(), std::move(params), toCx(decl.getReturnType()), decl.isVariadic(), true);
         if (auto asmLabelAttr = decl.getAttr<clang::AsmLabelAttr>()) {
-            proto.asmLabel = asmLabelAttr->getLabel().str();
+            proto.asmLabel = internString(asmLabelAttr->getLabel());
         } else if (cxxMode && decl.getLanguageLinkage() == clang::CXXLanguageLinkage && mangleContext->shouldMangleDeclName(&decl)) {
             std::string mangled;
             llvm::raw_string_ostream stream(mangled);
             mangleContext->mangleName(&decl, stream);
             // The \01 marker bypasses LLVM's target symbol prefix, so add the Mach-O/MinGW '_' explicitly.
             if (targetInfo->getTriple().isOSBinFormatMachO() || targetInfo->getTriple().isOSCygMing()) mangled = "_" + mangled;
-            proto.asmLabel = std::move(mangled);
+            proto.asmLabel = internString(mangled);
         }
-        return makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), AccessLevel::Default, module, toCx(decl.getLocation()));
+        return makeAST<FunctionDecl>(std::move(proto), AstVector<GenericArg>(), AccessLevel::Default, module, toCx(decl.getLocation()));
     }
 
     Location toCx(clang::SourceLocation location) {
@@ -980,7 +982,7 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
 
     auto headerPath = fileEntry->getFileEntry().tryGetRealPathName();
     if (headerPath.empty()) headerPath = headerName;
-    importDecl.importedHeaderPath = headerPath;
+    importDecl.importedHeaderPath = internString(headerPath);
 
     std::string headerModuleName = headerName.str();
     llvm::replace(headerModuleName, '.', '_');
