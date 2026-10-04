@@ -31,6 +31,15 @@ def check(name, condition, detail=""):
             FAILURES.append(name)
 
 
+def path_to_uri(path):
+    # Mirror pathToUri for definition results: forward slashes plus a
+    # leading slash for drive paths (file:///C:/...).
+    uri_path = path.replace(os.sep, "/")
+    if len(uri_path) >= 2 and uri_path[0].isalpha() and uri_path[1] == ":":
+        uri_path = "/" + uri_path
+    return "file://" + uri_path
+
+
 def run_query(cx_lsp, query):
     proc = subprocess.run(
         [cx_lsp, "--query"],
@@ -1509,7 +1518,7 @@ def test_server_cache(command):
         first = definition(1, 13, 10)
         check(
             "server-cache-definition",
-            first is not None and first["uri"] == "file://" + helper_path,
+            first is not None and first["uri"] == path_to_uri(helper_path),
             json.dumps(first)[:200],
         )
         # Same query twice: the second answers from the cache.
@@ -1545,7 +1554,7 @@ def test_server_cache(command):
         moved = definition(2, 13, 14)
         check(
             "server-cache-edit-invalidates",
-            moved is not None and moved["uri"] == "file://" + helper_path,
+            moved is not None and moved["uri"] == path_to_uri(helper_path),
             json.dumps(moved)[:200],
         )
 
@@ -1796,7 +1805,7 @@ def test_server_cache_broken_build_file(command):
         result = session.read()["result"]
         check(
             "server-cache-broken-build-def-works",
-            result is not None and result["uri"] == main_uri,
+            result is not None and result["uri"] == path_to_uri(main_path),
             json.dumps(result)[:200],
         )
         stop_session(session, "server-cache-broken-build")
@@ -2013,7 +2022,7 @@ def test_server_cache_malformed_dep_build(command):
         result = definition(11)
         check(
             "server-cache-malformed-dep-build-def-works",
-            result is not None and result["uri"] == "file://" + shapes_path,
+            result is not None and result["uri"] == path_to_uri(shapes_path),
             json.dumps(result)[:200],
         )
         stop_session(session, "server-cache-malformed-dep-build")
