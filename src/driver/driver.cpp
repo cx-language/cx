@@ -1206,8 +1206,7 @@ int cx::driverMain(int argc, const char** argv) {
     } else if (testSubcommand) {
         return buildDirectory(".", argv[0], true);
     } else if (lspSubcommand) {
-        // The server lives in the cx-lsp binary so that every compilation it
-        // triggers runs in a fresh process (see src/lsp/). Forward stdio.
+        // The server lives in the cx-lsp binary (see src/lsp/). Forward stdio.
         std::string lspExecutable;
         {
             // Probe both spellings: the binary is cx-lsp.exe on Windows,

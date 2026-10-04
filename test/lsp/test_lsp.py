@@ -1432,15 +1432,599 @@ def test_server(command, path, label):
     check(f"{label}-exit-code", code == 0, f"exit code {code}")
 
 
+def test_server_cache(command):
+    # The server answers from an in-process compilation cache: repeated
+    # operations on unchanged inputs reuse it, while any content change,
+    # on-disk dependency change, or build-file change must recompile.
+    # Every step below would give a stale answer if invalidation missed it.
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "proj")
+        os.makedirs(root)
+        build_path = os.path.join(root, "build.cx")
+        main_path = os.path.join(root, "main.cx")
+        helper_path = os.path.join(root, "helper.cx")
+        with open(build_path, "w") as file:
+            file.write('var name = "cacheproj"\n')
+        with open(helper_path, "w") as file:
+            file.write("int answer() {\n    return 42;\n}\n")
+        main_content = (
+            "int doubled() {\n"
+            "    return answer() * 2;\n"
+            "}\n"
+            "#if CACHE_FEATURE\n"
+            "int featured = 1;\n"
+            "#else\n"
+            "int featured = 2;\n"
+            "#endif\n"
+        )
+        with open(main_path, "w") as file:
+            file.write(main_content)
+
+        session = start_session(command)
+        main_uri = "file://" + main_path
+
+        def expect_diagnostics(version_text, expect_clean):
+            notification = session.read()
+            diags = notification["params"]["diagnostics"]
+            ok = notification["method"] == "textDocument/publishDiagnostics" and (diags == []) == expect_clean
+            check(f"server-cache-diags-{version_text}", ok, json.dumps(diags)[:300])
+            return diags
+
+        def definition(line, char, msg_id):
+            session.send(
+                {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "method": "textDocument/definition",
+                    "params": {"textDocument": {"uri": main_uri}, "position": {"line": line, "character": char}},
+                }
+            )
+            return session.read()["result"]
+
+        version = [1]
+
+        def touch(name, text, expect_clean):
+            version[0] += 1
+            session.send(
+                {
+                    "jsonrpc": "2.0",
+                    "method": "textDocument/didChange",
+                    "params": {
+                        "textDocument": {"uri": main_uri, "version": version[0]},
+                        "contentChanges": [{"text": text}],
+                    },
+                }
+            )
+            return expect_diagnostics(name, expect_clean)
+
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": main_uri, "languageId": "cx", "version": 1, "text": main_content}},
+            }
+        )
+        expect_diagnostics("open-clean", True)
+
+        first = definition(1, 13, 10)
+        check(
+            "server-cache-definition",
+            first is not None and first["uri"] == "file://" + helper_path,
+            json.dumps(first)[:200],
+        )
+        # Same query twice: the second answers from the cache.
+        second = definition(1, 13, 11)
+        check("server-cache-repeat", second == first, json.dumps(second)[:200])
+
+        # Other methods share the cached compilation too.
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 12,
+                "method": "textDocument/hover",
+                "params": {"textDocument": {"uri": main_uri}, "position": {"line": 1, "character": 13}},
+            }
+        )
+        hover = session.read()["result"] or {}
+        hover_text = hover.get("contents", {}).get("value", "")
+        check("server-cache-hover", "int answer()" in hover_text, json.dumps(hover)[:200])
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 13,
+                "method": "textDocument/references",
+                "params": {"textDocument": {"uri": main_uri}, "position": {"line": 1, "character": 13}},
+            }
+        )
+        refs = session.read()["result"]
+        check("server-cache-references", len(refs) == 2, json.dumps(refs)[:300])
+
+        # Editing the open file shifts positions; cached answers must not leak through.
+        main_content = "// comment\n" + main_content
+        touch("edit-clean", main_content, True)
+        moved = definition(2, 13, 14)
+        check(
+            "server-cache-edit-invalidates",
+            moved is not None and moved["uri"] == "file://" + helper_path,
+            json.dumps(moved)[:200],
+        )
+
+        # A sibling changed on disk (not open in the editor) invalidates too:
+        # renaming the callee breaks the open file without touching it.
+        with open(helper_path, "w") as file:
+            file.write("int answer2() {\n    return 42;\n}\n")
+        diags = touch("sibling-disk-dirty", main_content, False)
+        check(
+            "server-cache-sibling-disk",
+            any("unknown identifier 'answer'" in d["message"] for d in diags),
+            json.dumps(diags)[:300],
+        )
+        with open(helper_path, "w") as file:
+            file.write("int answer() {\n    return 42;\n}\n")
+        touch("sibling-disk-clean", main_content, True)
+
+        # A newly added sibling becomes visible without editing the open file.
+        extra_path = os.path.join(root, "extra.cx")
+        with open(extra_path, "w") as file:
+            file.write("int tripled() {\n    return 3;\n}\n")
+        touch("new-sibling-clean", main_content, True)
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 15,
+                "method": "textDocument/completion",
+                "params": {"textDocument": {"uri": main_uri}, "position": {"line": 1, "character": 0}},
+            }
+        )
+        labels = [item["label"] for item in session.read()["result"]]
+        check("server-cache-new-sibling", "tripled" in labels, json.dumps(labels)[:300])
+        os.remove(extra_path)
+        touch("removed-sibling-clean", main_content, True)
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 16,
+                "method": "textDocument/completion",
+                "params": {"textDocument": {"uri": main_uri}, "position": {"line": 1, "character": 0}},
+            }
+        )
+        labels = [item["label"] for item in session.read()["result"]]
+        check("server-cache-removed-sibling", "tripled" not in labels, json.dumps(labels)[:300])
+
+        # A build-file change (new define) applies without editing the open file.
+        with open(build_path, "w") as file:
+            file.write('var name = "cacheproj"\nvar defines = ["CACHE_FEATURE"]\n')
+        touch("build-file-clean", main_content, True)
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 17,
+                "method": "textDocument/hover",
+                "params": {"textDocument": {"uri": main_uri}, "position": {"line": 5, "character": 5}},
+            }
+        )
+        hover = session.read()["result"] or {}
+        hover_text = hover.get("contents", {}).get("value", "")
+        check("server-cache-build-file", "featured" in hover_text, json.dumps(hover)[:200])
+
+        # Unsaved sibling changes (open in the editor) invalidate through the overlay.
+        helper_uri = "file://" + helper_path
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {
+                    "textDocument": {
+                        "uri": helper_uri,
+                        "languageId": "cx",
+                        "version": 1,
+                        "text": "int answer() {\n    return 42;\n}\n",
+                    },
+                },
+            }
+        )
+        session.read()
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {
+                    "textDocument": {"uri": helper_uri, "version": 2},
+                    "contentChanges": [{"text": "int answer3() {\n    return 42;\n}\n"}],
+                },
+            }
+        )
+        # The helper's own diagnostics plus the error its edit caused in the open main file.
+        helper_notif = session.read()
+        main_notif = session.read()
+        check(
+            "server-cache-overlay-propagates",
+            helper_notif["params"]["diagnostics"] == []
+            and any("unknown identifier 'answer'" in d["message"] for d in main_notif["params"]["diagnostics"]),
+            json.dumps([helper_notif["params"]["diagnostics"], main_notif["params"]["diagnostics"]])[:300],
+        )
+        diags = touch("overlay-dirty", main_content, False)
+        check(
+            "server-cache-overlay",
+            any("unknown identifier 'answer'" in d["message"] for d in diags),
+            json.dumps(diags)[:300],
+        )
+        session.send({"jsonrpc": "2.0", "method": "textDocument/didClose", "params": {"textDocument": {"uri": helper_uri}}})
+
+        # Warnings report on every check, not just the first per process.
+        warn_path = os.path.join(directory, "warn.cx")
+        warn_uri = "file://" + warn_path
+        warn_content = "int g;\nvoid main() {\n}\n"
+        with open(warn_path, "w") as file:
+            file.write(warn_content)
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": warn_uri, "languageId": "cx", "version": 1, "text": warn_content}},
+            }
+        )
+        notification = session.read()
+        first_warn = [d for d in notification["params"]["diagnostics"] if d["message"] == "missing initializer"]
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {
+                    "textDocument": {"uri": warn_uri, "version": 2},
+                    "contentChanges": [{"text": warn_content}],
+                },
+            }
+        )
+        notification = session.read()
+        second_warn = [d for d in notification["params"]["diagnostics"] if d["message"] == "missing initializer"]
+        check(
+            "server-cache-warning-repeats",
+            len(first_warn) == 1 and len(second_warn) == 1,
+            json.dumps(notification["params"]["diagnostics"])[:300],
+        )
+
+        session.send({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}})
+        session.read()
+        session.send({"jsonrpc": "2.0", "method": "exit", "params": {}})
+        code, _ = session.close()
+        check("server-cache-exit-code", code == 0, f"exit code {code}")
+
+
+def test_server_cache_invalidations(command):
+    test_server_cache_broken_build_file(command)
+    test_server_cache_import_open(command)
+    test_server_cache_dep_build_file(command)
+    test_server_cache_malformed_dep_build(command)
+
+
+def start_session(command):
+    session = LspSession(command)
+    session.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"capabilities": {}}})
+    session.read()
+    session.send({"jsonrpc": "2.0", "method": "initialized", "params": {}})
+    return session
+
+
+def stop_session(session, tag):
+    session.send({"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}})
+    session.read()
+    session.send({"jsonrpc": "2.0", "method": "exit", "params": {}})
+    code, _ = session.close()
+    check(f"{tag}-exit-code", code == 0, f"exit code {code}")
+
+
+def test_server_cache_broken_build_file(command):
+    # A malformed build file must not kill the server: the query fails
+    # gracefully and the session recovers once the file is fixed.
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "proj")
+        os.makedirs(root)
+        build_path = os.path.join(root, "build.cx")
+        main_path = os.path.join(root, "main.cx")
+        with open(build_path, "w") as file:
+            file.write('var name = "brokenproj"\n')
+        main_content = "int add(int x, int y) {\n    return x + y;\n}\n\nvoid main() {\n    int result = add(1, 2);\n}\n"
+        with open(main_path, "w") as file:
+            file.write(main_content)
+        main_uri = "file://" + main_path
+
+        session = start_session(command)
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": main_uri, "languageId": "cx", "version": 1, "text": main_content}},
+            }
+        )
+        notification = session.read()
+        check(
+            "server-cache-broken-build-open-clean",
+            notification["params"]["diagnostics"] == [],
+            json.dumps(notification["params"]["diagnostics"])[:300],
+        )
+
+        with open(build_path, "w") as file:
+            file.write('var name = "brokenproj"\nvar defines = "notalist"\n')
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {"textDocument": {"uri": main_uri, "version": 2}, "contentChanges": [{"text": main_content}]},
+            }
+        )
+        notification = session.read()
+        check(
+            "server-cache-broken-build-survives",
+            notification["method"] == "textDocument/publishDiagnostics",
+            json.dumps(notification)[:200],
+        )
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 10,
+                "method": "textDocument/definition",
+                "params": {"textDocument": {"uri": main_uri}, "position": {"line": 5, "character": 18}},
+            }
+        )
+        result = session.read()["result"]
+        check("server-cache-broken-build-null-def", result is None, json.dumps(result)[:200])
+
+        with open(build_path, "w") as file:
+            file.write('var name = "brokenproj"\n')
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {"textDocument": {"uri": main_uri, "version": 3}, "contentChanges": [{"text": main_content}]},
+            }
+        )
+        notification = session.read()
+        check(
+            "server-cache-broken-build-recovered",
+            notification["params"]["diagnostics"] == [],
+            json.dumps(notification["params"]["diagnostics"])[:300],
+        )
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": 11,
+                "method": "textDocument/definition",
+                "params": {"textDocument": {"uri": main_uri}, "position": {"line": 5, "character": 18}},
+            }
+        )
+        result = session.read()["result"]
+        check(
+            "server-cache-broken-build-def-works",
+            result is not None and result["uri"] == main_uri,
+            json.dumps(result)[:200],
+        )
+        stop_session(session, "server-cache-broken-build")
+
+
+def test_server_cache_import_open(command):
+    # Files open in the editor but imported (not siblings) are compiled from
+    # disk, so their on-disk changes must invalidate the cache.
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "proj")
+        vendordir = os.path.join(root, "vendor", "foo")
+        os.makedirs(vendordir)
+        with open(os.path.join(root, "build.cx"), "w") as file:
+            file.write('var name = "importproj"\n')
+        foo_path = os.path.join(vendordir, "foo.cx")
+        foo_v1 = "int fooVal() {\n    return 1;\n}\n"
+        with open(foo_path, "w") as file:
+            file.write(foo_v1)
+        main_path = os.path.join(root, "main.cx")
+        main_content = "import foo;\n\nint doubled() {\n    return fooVal() * 2;\n}\n"
+        with open(main_path, "w") as file:
+            file.write(main_content)
+        main_uri = "file://" + main_path
+        foo_uri = "file://" + foo_path
+
+        session = start_session(command)
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": main_uri, "languageId": "cx", "version": 1, "text": main_content}},
+            }
+        )
+        session.read()
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": foo_uri, "languageId": "cx", "version": 1, "text": foo_v1}},
+            }
+        )
+        # Opening the imported file publishes twice: its own (clean)
+        # diagnostics, plus main's, which hit a known pre-existing quirk
+        # (the open file is analyzed both as the main file and as the
+        # on-disk import, so its symbols look ambiguous). Drain both to
+        # keep the message framing in sync.
+        foo_notification = session.read()
+        main_notification = session.read()
+        check(
+            "server-cache-import-open-drains",
+            foo_notification["params"]["diagnostics"] == []
+            and foo_notification["params"]["uri"] == foo_uri
+            and main_notification["params"]["uri"] == main_uri,
+            json.dumps([foo_notification["params"]["diagnostics"], main_notification["params"]["diagnostics"]])[:300],
+        )
+
+        with open(foo_path, "w") as file:
+            file.write("int fooVal2() {\n    return 1;\n}\n")
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {"textDocument": {"uri": main_uri, "version": 2}, "contentChanges": [{"text": main_content}]},
+            }
+        )
+        notification = session.read()
+        diags = notification["params"]["diagnostics"]
+        check(
+            "server-cache-import-open-disk",
+            any("unknown identifier 'fooVal'" in d["message"] for d in diags),
+            json.dumps(diags)[:300],
+        )
+
+        with open(foo_path, "w") as file:
+            file.write(foo_v1)
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {"textDocument": {"uri": main_uri, "version": 3}, "contentChanges": [{"text": main_content}]},
+            }
+        )
+        notification = session.read()
+        check(
+            "server-cache-import-open-clean",
+            notification["params"]["diagnostics"] == [],
+            json.dumps(notification["params"]["diagnostics"])[:300],
+        )
+        session.send({"jsonrpc": "2.0", "method": "textDocument/didClose", "params": {"textDocument": {"uri": foo_uri}}})
+        stop_session(session, "server-cache-import-open")
+
+
+def test_server_cache_dep_build_file(command):
+    # A dependency's build file feeds its compilation (defines), so editing
+    # it must invalidate dependents.
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "proj")
+        vendordir = os.path.join(root, "vendor", "foo")
+        os.makedirs(vendordir)
+        with open(os.path.join(root, "build.cx"), "w") as file:
+            file.write('var name = "depproj"\n')
+        dep_build_path = os.path.join(vendordir, "build.cx")
+        with open(dep_build_path, "w") as file:
+            file.write('var name = "foo"\n')
+        foo_path = os.path.join(vendordir, "foo.cx")
+        with open(foo_path, "w") as file:
+            file.write("#if FOO_FLAG\nint answer() {\n    return 42;\n}\n#else\nint placeholder = 0;\n#endif\n")
+        main_path = os.path.join(root, "main.cx")
+        main_content = "import foo;\n\nint doubled() {\n    return answer() * 2;\n}\n"
+        with open(main_path, "w") as file:
+            file.write(main_content)
+        main_uri = "file://" + main_path
+
+        session = start_session(command)
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": main_uri, "languageId": "cx", "version": 1, "text": main_content}},
+            }
+        )
+        notification = session.read()
+        diags = notification["params"]["diagnostics"]
+        check(
+            "server-cache-dep-build-flag-off",
+            any("unknown identifier 'answer'" in d["message"] for d in diags),
+            json.dumps(diags)[:300],
+        )
+
+        with open(dep_build_path, "w") as file:
+            file.write('var name = "foo"\nvar defines = ["FOO_FLAG"]\n')
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {"textDocument": {"uri": main_uri, "version": 2}, "contentChanges": [{"text": main_content}]},
+            }
+        )
+        notification = session.read()
+        check(
+            "server-cache-dep-build-flag-on",
+            notification["params"]["diagnostics"] == [],
+            json.dumps(notification["params"]["diagnostics"])[:300],
+        )
+        stop_session(session, "server-cache-dep-build")
+
+
+def test_server_cache_malformed_dep_build(command):
+    # A malformed dependency build file aborts compilation before all inputs
+    # are known, so the failure must stay uncacheable: fixing the file on disk
+    # must recover even though the open file is untouched.
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "proj")
+        pkgdir = os.path.join(root, "vendor", "shapes")
+        os.makedirs(pkgdir)
+        with open(os.path.join(root, "build.cx"), "w") as file:
+            file.write('var name = "failproj"\n')
+        dep_build_path = os.path.join(pkgdir, "build.cx")
+        with open(dep_build_path, "w") as file:
+            file.write('var name = "shapes"\nvar defines = "notalist"\n')
+        shapes_path = os.path.join(pkgdir, "shapes.cx")
+        with open(shapes_path, "w") as file:
+            file.write('void describe() {\n    println("round");\n}\n')
+        main_path = os.path.join(root, "main.cx")
+        main_content = "import shapes;\n\nvoid main() {\n    describe();\n}\n"
+        with open(main_path, "w") as file:
+            file.write(main_content)
+        main_uri = "file://" + main_path
+
+        session = start_session(command)
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": main_uri, "languageId": "cx", "version": 1, "text": main_content}},
+            }
+        )
+        notification = session.read()
+        diags = notification["params"]["diagnostics"]
+        check(
+            "server-cache-malformed-dep-build-error",
+            any("invalid 'defines' value" in d["message"] for d in diags),
+            json.dumps(diags)[:300],
+        )
+
+        def definition(msg_id):
+            session.send(
+                {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "method": "textDocument/definition",
+                    "params": {"textDocument": {"uri": main_uri}, "position": {"line": 3, "character": 6}},
+                }
+            )
+            return session.read()["result"]
+
+        check("server-cache-malformed-dep-build-null-def", definition(10) is None, "definition unexpectedly found")
+
+        with open(dep_build_path, "w") as file:
+            file.write('var name = "shapes"\n')
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {"textDocument": {"uri": main_uri, "version": 2}, "contentChanges": [{"text": main_content}]},
+            }
+        )
+        notification = session.read()
+        check(
+            "server-cache-malformed-dep-build-recovered",
+            notification["params"]["diagnostics"] == [],
+            json.dumps(notification["params"]["diagnostics"])[:300],
+        )
+        result = definition(11)
+        check(
+            "server-cache-malformed-dep-build-def-works",
+            result is not None and result["uri"] == "file://" + shapes_path,
+            json.dumps(result)[:200],
+        )
+        stop_session(session, "server-cache-malformed-dep-build")
+
+
 def test_server_no_snippets(command, label):
     with tempfile.TemporaryDirectory() as directory:
         path = os.path.join(directory, "main.cx")
         with open(path, "w") as file:
             file.write(GOOD_SOURCE)
-        session = LspSession(command)
-        session.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"capabilities": {}}})
-        session.read()
-        session.send({"jsonrpc": "2.0", "method": "initialized", "params": {}})
+        session = start_session(command)
         uri = "file://" + path
         session.send(
             {
@@ -1504,6 +2088,8 @@ def main():
                 ("package-dedup", lambda: test_package_dedup(args.cx_lsp)),
                 ("build-file-modes", lambda: test_build_file_modes(args.cx_lsp)),
                 ("server", lambda: test_server([args.cx_lsp], path, "server")),
+                ("server-cache", lambda: test_server_cache([args.cx_lsp])),
+                ("server-cache-invalidations", lambda: test_server_cache_invalidations([args.cx_lsp])),
                 ("cx-lsp-subcommand", lambda: test_server([args.cx, "lsp"], path, "cx-lsp-subcommand")),
                 ("server-nosnippet", lambda: test_server_no_snippets([args.cx_lsp], "server-nosnippet")),
                 ("cx-lsp-subcommand-nosnippet", lambda: test_server_no_snippets([args.cx, "lsp"], "cx-lsp-subcommand-nosnippet")),

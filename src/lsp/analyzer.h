@@ -1,21 +1,21 @@
 #pragma once
 
-// Single-shot language-server queries.
+// Language-server queries.
 //
-// Design note: this compiler is intentionally not a long-running process - it
-// never frees memory and is built to start fast, compile fast, and exit. The
-// LSP honors that: the long-lived server process (see server.h) never runs
-// the compiler frontend itself. Every user-visible operation (diagnostics,
-// hover, definition, completion, symbols, references, semantic tokens) spawns
-// a fresh one-shot
-// query process (`cx-lsp --query`, see query.h) which calls runFrontendOnce()
-// exactly once in a pristine address space and then exits. Nothing here is
-// ever reused across compilations, so there are intentionally no "reset"
-// helpers for compiler globals.
+// The server (see server.h) runs the compiler frontend in-process and keeps
+// the latest compilation in an LspSession: repeated operations on unchanged
+// inputs (hover, definition, completion, ...) answer from the cached module
+// without recompiling. A cache miss resets all compiler globals and
+// recompiles from scratch, exactly like a fresh `cx-lsp --query` process
+// would, so cached and uncached answers never differ. `cx-lsp --query` (see
+// query.h) keeps the one-shot behavior for tooling and tests.
 //
-// Memory is deliberately leaked (modules, AST nodes, interned types): the OS
-// reclaims it on process exit, just like a normal `cx` invocation.
+// Memory stays bounded: evicting the cached entry deletes its modules (which
+// frees the file buffers) and resets the AST arena, so the session only ever
+// holds one compilation plus the arena's retained first slab.
 
+#include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -157,8 +157,8 @@ std::string uriToPath(const std::string& uri);
 /// Converts a filesystem path to a file:// URI.
 std::string pathToUri(const std::string& path);
 
-/// A single language-server query, deserialized from the JSON the server
-/// pipes to the query process's stdin.
+/// A single language-server query, deserialized from query JSON (stdin for
+/// `--query`, built directly by the server for its in-process cache).
 struct LspQuery {
     std::string method; // "check", "hover", "definition", "completion", "documentSymbol", "references" or "semanticTokens".
     std::string filePath;
@@ -170,18 +170,47 @@ struct LspQuery {
     LspPosition position;
 };
 
-/// The result of one frontend run: the (intentionally leaked, process-lifetime)
-/// main module plus the structured diagnostics collected via diagnosticCollector.
+/// A file the compilation read from disk, for cache validation.
+struct FileStat {
+    std::string path;
+    int64_t mtimeNanos = 0;
+    uint64_t size = 0;
+    bool operator==(const FileStat&) const = default;
+};
+
+/// Which files form the open file's module. The session re-validates it per
+/// query with stat-only probes (no parsing) to detect added or removed
+/// siblings and build files.
+struct ModuleLayout {
+    std::optional<std::string> moduleDir;
+    std::string buildDir;
+    bool registerAsStd = false;
+    std::vector<std::string> siblingPaths; // Sorted .cx siblings, excluding filePath.
+    std::vector<std::string> checkedBuildFiles; // Every build.cx met walking up.
+};
+
+/// The result of one frontend run: the main module plus the structured
+/// diagnostics collected via diagnosticCollector. The session owns mainModule
+/// (deleted on evict); the one-shot query process leaks it and exits.
 struct FrontendResult {
-    Module* mainModule = nullptr; // Leaked on purpose; the query process exits right after.
+    Module* mainModule = nullptr;
     std::vector<CollectedDiagnostic> diagnostics;
     std::string content; // The analyzed text of filePath (for range mapping).
     std::string filePath;
+    ModuleLayout layout; // For the session's cache entry (avoids re-discovery).
+    std::vector<std::string> depBuildFiles; // build.cx files of resolved dependencies.
 };
 
-/// Parses the frontend (parse + typecheck) exactly once. Must be called at
-/// most once per process.
+/// Runs the frontend (parse + typecheck) from clean compiler globals. The
+/// session calls this only right after resetCompilerGlobals; the one-shot
+/// query process relies on its fresh address space instead.
 FrontendResult runFrontendOnce(const LspQuery& query);
+
+/// Resets every compiler global a frontend run mutates (AST arena, type and
+/// string interning, imported modules, diagnostics, synthesized names), so
+/// the next runFrontendOnce behaves exactly like a fresh process. The caller
+/// must have dropped all compiler-owned pointers first.
+void resetCompilerGlobals();
 
 /// Runs the frontend once and answers the query, returning the JSON "result"
 /// object for the query subprocess to print (or "diagnostics" array for
@@ -190,6 +219,30 @@ JsonValue handleQuery(const JsonValue& queryJson);
 
 /// Parses stdin-style query JSON into an LspQuery. Throws JsonParseError.
 LspQuery parseLspQuery(const JsonValue& queryJson);
+
+/// One cached compilation plus everything that must still match to reuse it.
+/// Position and method are excluded: they only select the answer from an
+/// already-compiled module.
+struct LspCachedFrontend {
+    std::string filePath;
+    std::vector<std::pair<std::string, std::string>> openDocs; // Relevant subset (siblings), sorted.
+    std::vector<std::string> workspaceFolders;
+    std::vector<std::string> importSearchPaths;
+    std::vector<std::string> defines;
+    ModuleLayout layout;
+    std::vector<FileStat> depStats; // Every on-disk input (build files, main-module and import sources).
+    FrontendResult frontend; // frontend.content is the post-placeholder text actually compiled.
+};
+
+/// The server's compilation cache: at most one live frontend, recompiled
+/// only when request inputs or on-disk dependencies changed.
+struct LspSession {
+    std::optional<LspCachedFrontend> cached;
+    /// Answers one query from the cache, recompiling on mismatch. Never
+    /// throws: any failure comes back as nullopt and the server falls back
+    /// (empty result or "analysis failed" diagnostic).
+    std::optional<JsonValue> handle(LspQuery query);
+};
 
 /// AST query helpers operating on a single frontend run's module.
 SymbolInfo findAt(Module* mainModule, const std::string& filePath, LspPosition pos);

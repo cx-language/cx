@@ -35,6 +35,10 @@ Module* Module::getStdlibModule() {
     return findImportedModule("std");
 }
 
+void Module::resetImportedModules() {
+    allImportedModules.clear();
+}
+
 bool Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) {
     if (auto existing = symbolTable.findInCurrentScope(name); !existing.empty()) {
         REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << name << "'");

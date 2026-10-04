@@ -170,6 +170,8 @@ struct Module {
     static Module* findImportedModule(llvm::StringRef name);
     static void registerImportedModule(llvm::StringRef name, Module* module);
     static Module* getStdlibModule();
+    /// Forgets all imported modules (their AST is freed by resetAstArena).
+    static void resetImportedModules();
 
 private:
     // Returns true when the name was already defined and a redefinition was reported.

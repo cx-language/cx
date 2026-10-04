@@ -1,4 +1,5 @@
 #include "typecheck.h"
+#include <memory>
 #include <system_error>
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseSet.h>
@@ -123,7 +124,8 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, llv
     }
 
     PhaseTimer timer("import-" + moduleName.str());
-    auto module = new Module(moduleName.str());
+    auto ownedModule = std::make_unique<Module>(moduleName.str());
+    Module* module = ownedModule.get();
     std::error_code error = std::make_error_code(std::errc::no_such_file_or_directory);
 
     // Each package parses and typechecks with its own options; a cached module
@@ -160,6 +162,7 @@ done:
     if (importer) importer->addImportedModule(module);
     Module::registerImportedModule(module->name, module);
     typecheckModule(*module, *packageOptions, false);
+    ownedModule.release();
     return *module;
 }
 

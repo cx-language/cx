@@ -1,22 +1,15 @@
 #pragma once
 
-// Thin long-lived LSP server: stores open documents and speaks LSP JSON-RPC
-// over stdio, but never runs the compiler frontend itself. Every operation
-// spawns a fresh `cx-lsp --query` subprocess (see query.h) which compiles
-// once and exits, so the OS always reclaims compiler memory.
-
-#include <string>
-#include <vector>
+// Long-lived LSP server: stores open documents, speaks LSP JSON-RPC over
+// stdio, and answers every operation from an in-process compilation cache
+// (see analyzer.h's LspSession). Repeated operations on unchanged inputs
+// reuse the cached frontend without recompiling; a cache miss resets all
+// compiler globals and recompiles from scratch, exactly like a fresh
+// `cx-lsp --query` run would.
 
 namespace cx::lsp {
 
-struct ServerOptions {
-    /// Path of the executable to respawn for `--query` subprocesses
-    /// (normally the cx-lsp binary itself).
-    std::string queryExecutable;
-};
-
 /// Runs the LSP event loop on stdin/stdout. Returns the process exit code.
-int runServer(const ServerOptions& options);
+int runServer();
 
 } // namespace cx::lsp

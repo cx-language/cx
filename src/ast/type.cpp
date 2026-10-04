@@ -14,6 +14,10 @@ using namespace cx;
 
 static std::vector<TypeBase*> typeBases;
 
+void cx::resetTypeInterning() {
+    typeBases.clear();
+}
+
 #define DEFINE_BUILTIN_TYPE_GET_AND_IS(TYPE, NAME) \
     Type Type::get##TYPE(Location location) { \
         return BasicType::get(#NAME, {}, location); \

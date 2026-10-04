@@ -1,9 +1,9 @@
 #pragma once
 
-// One-shot LSP query subprocess: one query as JSON on stdin, one result as
-// JSON on stdout, then exit. The server spawns a fresh process per operation
-// so the frontend always runs exactly once in a pristine address space
-// (see analyzer.h for the rationale).
+// One-shot LSP query: one query as JSON on stdin, one result as JSON on
+// stdout, then exit. The frontend runs exactly once in a pristine address
+// space. Kept for tooling authors and tests; the server answers from its own
+// in-process cache instead (see analyzer.h).
 
 #include <string>
 
@@ -14,7 +14,7 @@ std::string readAllStdin();
 /// Handles one `--query` invocation: read query JSON from stdin, write
 /// `{"ok":true,"result":{...}}` (or `{"ok":false,"error":"..."}`) to stdout.
 /// Returns the process exit code (always 0: even compiler crashes surface as
-/// JSON diagnostics, so the server can stay alive).
+/// JSON diagnostics, so the caller can stay alive).
 int runQueryProcess();
 
 } // namespace cx::lsp

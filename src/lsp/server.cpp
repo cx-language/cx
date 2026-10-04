@@ -8,11 +8,8 @@
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
-#include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
-#include <llvm/Support/FileSystem.h>
-#include <llvm/Support/Program.h>
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 
@@ -43,7 +40,7 @@ struct ServerDiagnostic {
 };
 
 struct ServerState {
-    ServerOptions options;
+    LspSession session; // In-process compilation cache (see analyzer.h).
     llvm::StringMap<OpenDocument> openDocs; // Keyed by path.
     // Last published diagnostics per file, so checking one file never wipes
     // the errors shown for another.
@@ -369,87 +366,6 @@ bool isRequestMessage(const JsonValue* id) {
     return id && id->kind() != JsonValue::Null;
 }
 
-/// Runs one frontend compilation in a fresh `queryExecutable --query`
-/// process. Returns the parsed "result" object on success, nullopt on any
-/// failure (already logged).
-std::optional<JsonValue> runQuerySubprocess(ServerState& state, JsonObject queryJson) {
-    std::string queryText = serializeJson(JsonValue(std::move(queryJson)));
-
-    llvm::SmallString<128> queryPath;
-    llvm::SmallString<128> resultPath;
-    int queryFd = 0, resultFd = 0;
-    if (auto error = llvm::sys::fs::createTemporaryFile("cx-lsp-query", "json", queryFd, queryPath)) {
-        logMessage("couldn't create query temp file: " + error.message());
-        return std::nullopt;
-    }
-    // queryFd must be closed on every path below; ownership moves to the
-    // raw_fd_ostream once writing starts.
-    auto queryFdGuard = llvm::scope_exit([queryFd] {
-        // A short-lived stream just to close the fd (same idiom as below).
-        llvm::raw_fd_ostream(queryFd, /*shouldClose=*/true);
-    });
-    if (auto error = llvm::sys::fs::createTemporaryFile("cx-lsp-result", "json", resultFd, resultPath)) {
-        logMessage("couldn't create result temp file: " + error.message());
-        llvm::sys::fs::remove(queryPath);
-        return std::nullopt;
-    }
-    queryFdGuard.release();
-    {
-        llvm::raw_fd_ostream queryFile(queryFd, /*shouldClose=*/true);
-        queryFile << queryText;
-    }
-    // Close the reserved result fd; the child reopens the path for writing
-    // via stdout redirection below.
-    {
-        llvm::raw_fd_ostream resultFile(resultFd, /*shouldClose=*/true);
-    }
-
-    std::string program = state.options.queryExecutable;
-    std::vector<std::string> argsStorage = {program, "--query"};
-    std::vector<llvm::StringRef> args;
-    for (auto& arg : argsStorage)
-        args.push_back(arg);
-
-    std::vector<std::optional<llvm::StringRef>> redirects;
-    redirects.push_back(llvm::StringRef(queryPath.str()));
-    redirects.push_back(llvm::StringRef(resultPath.str()));
-    redirects.push_back(std::nullopt);
-
-    std::string errorMessage;
-    bool executionFailed = false;
-    // Hang guard, not a performance assertion: unoptimized Debug binaries on
-    // heavily loaded runners (parallel test suites oversubscribing few cores)
-    // can take a minute per query, so allow generous headroom.
-    int status = llvm::sys::ExecuteAndWait(program, args, std::nullopt, redirects, 120, 0, &errorMessage, &executionFailed);
-    if (executionFailed || status != 0) {
-        logMessage("query process failed (status " + std::to_string(status) + "): " + errorMessage);
-        llvm::sys::fs::remove(queryPath);
-        llvm::sys::fs::remove(resultPath);
-        return std::nullopt;
-    }
-
-    auto buffer = llvm::MemoryBuffer::getFile(resultPath);
-    llvm::sys::fs::remove(queryPath);
-    llvm::sys::fs::remove(resultPath);
-    if (!buffer) {
-        logMessage("couldn't read query result");
-        return std::nullopt;
-    }
-    try {
-        JsonValue envelope = parseJson((*buffer)->getBuffer().str());
-        if (!getJsonBool(envelope, "ok")) {
-            logMessage("query failed: " + getJsonString(envelope, "error", "unknown error"));
-            return std::nullopt;
-        }
-        if (auto* result = findJson(envelope, "result")) return *result;
-        logMessage("query response is missing \"result\"");
-        return std::nullopt;
-    } catch (const JsonParseError& error) {
-        logMessage(std::string("couldn't parse query result: ") + error.what());
-        return std::nullopt;
-    }
-}
-
 template<typename Range> static JsonArray toJsonArray(const Range& values) {
     JsonArray array;
     for (auto& value : values)
@@ -463,19 +379,17 @@ static void appendJsonStrings(std::vector<std::string>& dest, const JsonArray& v
     }
 }
 
-JsonObject buildBaseQuery(ServerState& state, const std::string& method, const OpenDocument& doc) {
-    JsonObject query;
-    query["method"] = method;
-    query["file"] = doc.path;
-    query["content"] = doc.text;
-    JsonObject openDocs;
+LspQuery buildLspQuery(ServerState& state, const std::string& method, const OpenDocument& doc) {
+    LspQuery query;
+    query.method = method;
+    query.filePath = doc.path;
+    query.content = doc.text;
     for (auto& entry : state.openDocs) {
-        openDocs[entry.getKey().str()] = entry.getValue().text;
+        query.openDocs[entry.getKey()] = entry.getValue().text;
     }
-    query["openDocs"] = std::move(openDocs);
-    query["workspaceFolders"] = toJsonArray(state.workspaceFolders);
-    query["importSearchPaths"] = toJsonArray(state.importSearchPaths);
-    query["defines"] = toJsonArray(state.defines);
+    query.workspaceFolders = state.workspaceFolders;
+    query.importSearchPaths = state.importSearchPaths;
+    query.defines = state.defines;
     return query;
 }
 
@@ -515,19 +429,15 @@ template<typename MakeItem> JsonArray mapQueryEntries(const std::optional<JsonVa
     return items;
 }
 
-JsonObject buildPositionalQuery(ServerState& state, const std::string& method, const OpenDocument& doc, const JsonValue* posJson) {
-    JsonObject query = buildBaseQuery(state, method, doc);
-    JsonObject pos;
-    LspPosition posValue = positionFromJson(posJson);
-    pos["line"] = posValue.line;
-    pos["character"] = posValue.character;
-    query["position"] = std::move(pos);
+LspQuery buildPositionalQuery(ServerState& state, const std::string& method, const OpenDocument& doc, const JsonValue* posJson) {
+    LspQuery query = buildLspQuery(state, method, doc);
+    query.position = positionFromJson(posJson);
     return query;
 }
 
 std::vector<ServerDiagnostic> checkDocument(ServerState& state, const OpenDocument& doc) {
-    JsonObject query = buildBaseQuery(state, "check", doc);
-    auto result = runQuerySubprocess(state, std::move(query));
+    LspQuery query = buildLspQuery(state, "check", doc);
+    auto result = state.session.handle(std::move(query));
     std::vector<ServerDiagnostic> diagnostics;
     if (!result) {
         // Keep the editor honest instead of silently going dark.
@@ -610,9 +520,8 @@ void publishDiagnosticsFor(ServerState& state, const std::string& path) {
 
 } // namespace
 
-int runServer(const ServerOptions& options) {
+int runServer() {
     ServerState state;
-    state.options = options;
 
     std::string messageText;
     while (true) {
@@ -745,8 +654,8 @@ int runServer(const ServerOptions& options) {
         } else if (method == "textDocument/hover") {
             const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(nullptr));
             if (!doc) continue;
-            JsonObject query = buildPositionalQuery(state, "hover", *doc, findJson(*params, "position"));
-            auto result = runQuerySubprocess(state, std::move(query));
+            LspQuery query = buildPositionalQuery(state, "hover", *doc, findJson(*params, "position"));
+            auto result = state.session.handle(std::move(query));
             std::string text = result ? getJsonString(*result, "hover") : "";
             if (text.empty()) {
                 respondWith(*id, JsonValue(nullptr));
@@ -761,8 +670,8 @@ int runServer(const ServerOptions& options) {
         } else if (method == "textDocument/definition") {
             const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(nullptr));
             if (!doc) continue;
-            JsonObject query = buildPositionalQuery(state, "definition", *doc, findJson(*params, "position"));
-            auto result = runQuerySubprocess(state, std::move(query));
+            LspQuery query = buildPositionalQuery(state, "definition", *doc, findJson(*params, "position"));
+            auto result = state.session.handle(std::move(query));
             if (!result || !getJsonBool(*result, "found")) {
                 respondWith(*id, JsonValue(nullptr));
             } else {
@@ -774,8 +683,8 @@ int runServer(const ServerOptions& options) {
         } else if (method == "textDocument/completion") {
             const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(JsonArray{}));
             if (!doc) continue;
-            JsonObject query = buildPositionalQuery(state, "completion", *doc, findJson(*params, "position"));
-            auto result = runQuerySubprocess(state, std::move(query));
+            LspQuery query = buildPositionalQuery(state, "completion", *doc, findJson(*params, "position"));
+            auto result = state.session.handle(std::move(query));
             bool followedByParen = isFollowedByParen(doc->text, positionFromJson(findJson(*params, "position")));
             JsonArray items = mapQueryEntries(result, "items", [&](const JsonValue& entry) {
                 JsonObject item;
@@ -795,8 +704,8 @@ int runServer(const ServerOptions& options) {
         } else if (method == "textDocument/documentSymbol") {
             const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(JsonArray{}));
             if (!doc) continue;
-            JsonObject query = buildBaseQuery(state, "documentSymbol", *doc);
-            auto result = runQuerySubprocess(state, std::move(query));
+            LspQuery query = buildLspQuery(state, "documentSymbol", *doc);
+            auto result = state.session.handle(std::move(query));
             JsonArray items = mapQueryEntries(result, "symbols", [](const JsonValue& entry) {
                 JsonObject item;
                 item["name"] = getJsonString(entry, "name");
@@ -809,8 +718,8 @@ int runServer(const ServerOptions& options) {
         } else if (method == "textDocument/references") {
             const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(JsonArray{}));
             if (!doc) continue;
-            JsonObject query = buildPositionalQuery(state, "references", *doc, findJson(*params, "position"));
-            auto result = runQuerySubprocess(state, std::move(query));
+            LspQuery query = buildPositionalQuery(state, "references", *doc, findJson(*params, "position"));
+            auto result = state.session.handle(std::move(query));
             JsonArray items = mapQueryEntries(result, "references", [](const JsonValue& entry) {
                 JsonObject item;
                 item["uri"] = pathToUri(getJsonString(entry, "file"));
@@ -821,8 +730,8 @@ int runServer(const ServerOptions& options) {
         } else if (method == "textDocument/semanticTokens/full" || method == "textDocument/semanticTokens/range") {
             const OpenDocument* doc = beginTextDocumentQuery(state, wantResponse, id, *params, JsonValue(nullptr));
             if (!doc) continue;
-            JsonObject query = buildBaseQuery(state, "semanticTokens", *doc);
-            auto result = runQuerySubprocess(state, std::move(query));
+            LspQuery query = buildLspQuery(state, "semanticTokens", *doc);
+            auto result = state.session.handle(std::move(query));
             if (!result) {
                 // Null keeps the client's current tokens; empty data would wipe them.
                 respondWith(*id, JsonValue(nullptr));

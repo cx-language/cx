@@ -891,9 +891,14 @@ llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
     }
 }
 
+static uint64_t lambdaNameCounter = 0;
+
+void cx::resetLambdaNameCounter() {
+    lambdaNameCounter = 0;
+}
+
 LambdaExpr::LambdaExpr(std::vector<ParamDecl>&& params, Module* module, Location location) : Expr(ExprKind::LambdaExpr, location) {
-    static uint64_t nameCounter = 0;
-    FunctionProto proto("__lambda" + std::to_string(nameCounter++), std::move(params), Type(), false, false);
+    FunctionProto proto("__lambda" + std::to_string(lambdaNameCounter++), std::move(params), Type(), false, false);
     this->functionDecl = makeAST<FunctionDecl>(std::move(proto), std::vector<GenericArg>(), AccessLevel::Private, *module, location);
 }
 

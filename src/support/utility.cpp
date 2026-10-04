@@ -299,6 +299,10 @@ bool cx::isCxxHeader(llvm::StringRef headerName) {
 }
 
 PlatformCompileOptions cx::getPlatformCompileOptions() {
+    // Process-constant (like the compiler search paths above): the SDK does
+    // not move mid-process, and the xcrun spawn costs ~20 ms per call.
+    static std::optional<PlatformCompileOptions> cached;
+    if (cached) return *cached;
     PlatformCompileOptions result;
 #ifdef _WIN32
     result.defines.push_back("Windows");
@@ -315,6 +319,7 @@ PlatformCompileOptions cx::getPlatformCompileOptions() {
         result.frameworkSearchPaths.push_back(sdkPath + "/System/Library/Frameworks");
     }
 #endif
+    cached = result;
     return result;
 }
 
@@ -439,6 +444,11 @@ struct ReportedWarning {
 };
 
 static llvm::SmallSet<ReportedWarning, 8> reportedWarnings;
+
+void cx::resetDiagnosticsState() {
+    errors = 0;
+    reportedWarnings.clear();
+}
 
 void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes, Location endLocation) {
     if (diagnosticOptions.disableWarnings) return;

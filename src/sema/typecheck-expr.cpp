@@ -22,6 +22,14 @@
 
 using namespace cx;
 
+static uint64_t comparisonTempCounter = 0;
+static uint64_t closureNameCounter = 0;
+
+void cx::resetTypecheckerCounters() {
+    comparisonTempCounter = 0;
+    closureNameCounter = 0;
+}
+
 void Typechecker::checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel) {
     // Access warnings for members of generic instantiations are suppressed:
     // the use-site type expression is already checked with the use location
@@ -943,7 +951,6 @@ ComparisonTemps Typechecker::createComparisonTemps(BinaryExpr& expr) {
     // evaluate once; codegen binds the temporaries to the operand values before
     // emitting the lowering. (`__`-prefixed identifiers are reserved for the compiler,
     // so these can't collide with user declarations.)
-    static uint64_t comparisonTempCounter = 0;
     auto bindTemp = [&](Expr& operand, const char* prefix) {
         auto* temp = makeAST<VarDecl>(operand.type, prefix + std::to_string(comparisonTempCounter++), nullptr, currentFunction, AccessLevel::None,
                                       *currentModule, expr.location);
@@ -4927,8 +4934,7 @@ Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
 // plus the captured values. The function takes the captures as hidden leading parameters,
 // so its stored type includes them ahead of the user parameters.
 static Type createClosureType(FunctionDecl& lambdaDecl, Location location) {
-    static uint64_t nameCounter = 0;
-    std::string name = "__closure" + std::to_string(nameCounter++);
+    std::string name = "__closure" + std::to_string(closureNameCounter++);
     Module& module = *lambdaDecl.getModule();
 
     std::vector<Type> fnParamTypes;

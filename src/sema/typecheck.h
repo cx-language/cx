@@ -496,4 +496,8 @@ void validateCVariadicExtra(Type type, const Expr& arg);
 // Single match (or C-header duplicates) across modules; throws on ambiguity. No scope lookup.
 Decl* findDeclInModules(llvm::StringRef name, Location location, llvm::ArrayRef<Module*> modules);
 
+/// Resets synthesized temporary names so a repeated compilation in the same
+/// process names them identically.
+void resetTypecheckerCounters();
+
 } // namespace cx

@@ -20,14 +20,40 @@ std::string BuildConfig::Dependency::getFileSystemPath() const {
     return *home + "/.cx/dependencies/" + package + "@" + version;
 }
 
-template<typename DeclT, typename DefaultValueT> static auto getConfigValue(Decl* decl, DefaultValueT defaultValue) {
-    return decl ? llvm::cast<DeclT>(llvm::cast<VarDecl>(decl)->initializer)->value : defaultValue;
+template<typename DeclT, typename DefaultValueT> static auto getConfigValue(llvm::StringRef name, Decl* decl, DefaultValueT defaultValue) {
+    auto* var = decl ? llvm::dyn_cast<VarDecl>(decl) : nullptr;
+    auto* value = var ? llvm::dyn_cast<DeclT>(var->initializer) : nullptr;
+    if (decl && !value) {
+        ABORT("invalid '" << name << "' value in build file (wrong type)");
+    }
+    return value ? value->value : defaultValue;
 }
 
-static std::vector<std::string> getStringList(Decl* decl) {
+static std::vector<std::string> getStringList(llvm::StringRef name, Decl* decl) {
     if (!decl) return {};
-    auto* array = llvm::cast<ArrayLiteralExpr>(llvm::cast<VarDecl>(decl)->initializer);
-    return map(array->elements, [](Expr* element) { return llvm::cast<StringLiteralExpr>(element)->value; });
+    auto* var = llvm::dyn_cast<VarDecl>(decl);
+    auto* array = var ? llvm::dyn_cast<ArrayLiteralExpr>(var->initializer) : nullptr;
+    if (!array) {
+        ABORT("invalid '" << name << "' value in build file (expected a list of strings)");
+    }
+    std::vector<std::string> result;
+    for (Expr* element : array->elements) {
+        auto* string = llvm::dyn_cast<StringLiteralExpr>(element);
+        if (!string) {
+            ABORT("invalid '" << name << "' value in build file (expected a list of strings)");
+        }
+        result.push_back(string->value);
+    }
+    return result;
+}
+
+static Decl* findConfigKey(SymbolTable& symbols, llvm::StringRef name) {
+    auto results = symbols.findFirst(name);
+    if (results.empty()) return nullptr;
+    if (results.size() > 1) {
+        ABORT("duplicate '" << name << "' key in build file");
+    }
+    return results.front();
 }
 
 static const StringLiteralExpr* getRequiredString(const AnonymousStructExpr* anonymousStruct, llvm::StringRef name) {
@@ -35,7 +61,11 @@ static const StringLiteralExpr* getRequiredString(const AnonymousStructExpr* ano
     if (!element) {
         ABORT("dependency is missing required '" << name << "' field (expected '(package = ..., url = ..., version = ...)')");
     }
-    return llvm::cast<StringLiteralExpr>(element);
+    auto* string = llvm::dyn_cast<StringLiteralExpr>(element);
+    if (!string) {
+        ABORT("invalid '" << name << "' value in dependency entry (expected a string)");
+    }
+    return string;
 }
 
 BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> defines) : rootDirectory(std::move(rootDirectory)) {
@@ -51,20 +81,27 @@ BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> d
     // TODO: Type-check build file.
 
     auto& symbols = module.symbolTable;
-    name = getConfigValue<StringLiteralExpr>(symbols.findOne("name"), "");
-    multitarget = getConfigValue<BoolLiteralExpr>(symbols.findOne("multitarget"), false);
-    outputDirectory = getConfigValue<StringLiteralExpr>(symbols.findOne("outputDirectory"), ".");
-    this->defines = getStringList(symbols.findOne("defines"));
-    headerSearchPaths = getStringList(symbols.findOne("headerSearchPaths"));
-    librarySearchPaths = getStringList(symbols.findOne("librarySearchPaths"));
-    libraries = getStringList(symbols.findOne("libraries"));
-    frameworks = getStringList(symbols.findOne("frameworks"));
-    pkgConfigDependencies = getStringList(symbols.findOne("pkgConfigDependencies"));
+    name = getConfigValue<StringLiteralExpr>("name", findConfigKey(symbols, "name"), "");
+    multitarget = getConfigValue<BoolLiteralExpr>("multitarget", findConfigKey(symbols, "multitarget"), false);
+    outputDirectory = getConfigValue<StringLiteralExpr>("outputDirectory", findConfigKey(symbols, "outputDirectory"), ".");
+    this->defines = getStringList("defines", findConfigKey(symbols, "defines"));
+    headerSearchPaths = getStringList("headerSearchPaths", findConfigKey(symbols, "headerSearchPaths"));
+    librarySearchPaths = getStringList("librarySearchPaths", findConfigKey(symbols, "librarySearchPaths"));
+    libraries = getStringList("libraries", findConfigKey(symbols, "libraries"));
+    frameworks = getStringList("frameworks", findConfigKey(symbols, "frameworks"));
+    pkgConfigDependencies = getStringList("pkgConfigDependencies", findConfigKey(symbols, "pkgConfigDependencies"));
 
-    if (auto* dependencies = symbols.findOne("dependencies")) {
-        auto* array = llvm::cast<ArrayLiteralExpr>(llvm::cast<VarDecl>(dependencies)->initializer);
+    if (auto* dependencies = findConfigKey(symbols, "dependencies")) {
+        auto* var = llvm::dyn_cast<VarDecl>(dependencies);
+        auto* array = var ? llvm::dyn_cast<ArrayLiteralExpr>(var->initializer) : nullptr;
+        if (!array) {
+            ABORT("invalid 'dependencies' value in build file (expected a list of '(package = ..., url = ..., version = ...)' structs)");
+        }
         for (auto& element : array->elements) {
-            auto* anonymousStruct = llvm::cast<AnonymousStructExpr>(&*element);
+            auto* anonymousStruct = llvm::dyn_cast<AnonymousStructExpr>(&*element);
+            if (!anonymousStruct) {
+                ABORT("invalid 'dependencies' entry in build file (expected '(package = ..., url = ..., version = ...)')");
+            }
             auto* package = getRequiredString(anonymousStruct, "package");
             auto* url = getRequiredString(anonymousStruct, "url");
             auto* version = getRequiredString(anonymousStruct, "version");

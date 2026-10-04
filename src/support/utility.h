@@ -41,6 +41,10 @@ extern DiagnosticOptions diagnosticOptions;
 /// Number of errors reported so far during the current compilation.
 extern int errors;
 
+/// Resets per-compilation diagnostic state (error count, reported warnings)
+/// so a repeated compilation in the same process reports everything again.
+void resetDiagnosticsState();
+
 std::ostream& operator<<(std::ostream& stream, llvm::StringRef string);
 
 template<typename SourceContainer, typename Mapper> auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(mapper(*source.begin()))> {
@@ -78,10 +82,11 @@ struct Note {
 /// `reportWarning()` append to it instead of printing to stdout. Instead of
 /// exiting the process when the error limit is exceeded, they unwind with a
 /// silent `CompileError` so the caller still gets back every diagnostic
-/// collected so far. This is used by single-shot compiler invocations that
-/// report structured diagnostics (currently the language server's one-shot
-/// query processes), each of which runs the frontend exactly once in a fresh
-/// process and then exits.
+/// collected so far. This is used by compiler invocations that report
+/// structured diagnostics: the language server's one-shot query processes
+/// (each runs the frontend exactly once in a fresh process and then exits)
+/// and its in-process session (which reuses the process across compilations,
+/// resetting globals and swapping the collector per run).
 struct CollectedDiagnostic {
     Location location;
     std::string severity; // "error" or "warning".
@@ -90,8 +95,8 @@ struct CollectedDiagnostic {
 };
 
 /// When non-null, diagnostics are collected here instead of being printed.
-/// Owned by the caller. Only used in fresh single-shot processes that run one
-/// compilation and exit; never reused across compilations. Not thread-safe.
+/// Owned by the caller, set per compilation (the server session swaps it per
+/// query). Not thread-safe.
 extern std::vector<CollectedDiagnostic>* diagnosticCollector;
 
 struct CompileError : std::exception {

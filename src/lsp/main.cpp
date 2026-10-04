@@ -1,16 +1,17 @@
 // cx-lsp: the cx language server.
 //
-// Two modes in one binary so queries always run in a pristine address space:
+// Two modes in one binary:
 //
-//   cx-lsp            Run the LSP server (JSON-RPC over stdio). This process
-//                     never runs the compiler frontend; it only stores open
-//                     documents and answers each operation by spawning a fresh
-//                     `cx-lsp --query` subprocess (see below).
+//   cx-lsp            Run the LSP server (JSON-RPC over stdio). Answers each
+//                     operation from an in-process compilation cache,
+//                     recompiling from reset compiler globals only when
+//                     inputs or on-disk dependencies changed.
 //
 //   cx-lsp --query    Read one query as JSON from stdin, run the compiler
 //                     frontend exactly once, print the result JSON to stdout,
 //                     and exit. All compiler memory is reclaimed by the OS on
-//                     exit, just like a normal `cx` invocation.
+//                     exit, just like a normal `cx` invocation. Kept for
+//                     tooling authors and tests.
 //
 // `cx lsp` forwards to this binary.
 #include "query.h"
@@ -22,7 +23,6 @@
 #include <io.h>
 #endif
 #pragma warning(push, 0)
-#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 
@@ -46,6 +46,6 @@ int main(int argc, const char** argv) {
         }
     }
 
-    std::string queryExecutable = llvm::sys::fs::getMainExecutable(argv[0], reinterpret_cast<void*>(&cx::lsp::runServer));
-    return cx::lsp::runServer(cx::lsp::ServerOptions{queryExecutable});
+    (void)argv;
+    return cx::lsp::runServer();
 }

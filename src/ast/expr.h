@@ -449,4 +449,8 @@ Location getExprRangeStart(const Expr& expr);
 // folded array size. Shared by the parser and sema's deferred-size folding.
 void checkArraySizeDivisors(const Expr& expr);
 
+/// Resets synthesized lambda names so a repeated compilation in the same
+/// process names them identically.
+void resetLambdaNameCounter();
+
 } // namespace cx

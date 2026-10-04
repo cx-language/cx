@@ -88,6 +88,17 @@ void testMissingUrl() {
     check(false, "dependency without url field is rejected");
 }
 
+void testDuplicateKey() {
+    // A duplicated key is rejected with an actionable error instead of
+    // tripping an assert (which would kill a debug LSP server). Plain `var`
+    // redefinition never gets here (the parser rejects it first), so the
+    // duplicate hides behind a second declaration kind. The abort below is
+    // the expected outcome; CTest matches its message.
+    auto project = writeTestProject("var name = \"a\"\nvoid name() {\n}\n");
+    cx::BuildConfig config{std::string(project)};
+    check(false, "duplicate key is rejected");
+}
+
 void testSearchPaths() {
     auto project = writeTestProject("var headerSearchPaths = [\"vendor/mylib/include\"]\n"
                                     "var librarySearchPaths = [\"vendor/mylib/lib\"]\n"
@@ -248,7 +259,7 @@ void testResolveDependency() {
 
 int main(int argc, const char** argv) {
     if (argc != 2) {
-        std::cerr << "usage: test_build_config <git-urls|missing-url|missing-build-file|search-paths|\n"
+        std::cerr << "usage: test_build_config <git-urls|missing-url|duplicate-key|missing-build-file|search-paths|\n"
                      "closure-transitive|closure-cycle|closure-vendored|closure-missing-skipped|resolve-dependency>\n";
         return 2;
     }
@@ -262,6 +273,8 @@ int main(int argc, const char** argv) {
         testMissingBuildFile();
     } else if (testCase == "missing-url") {
         testMissingUrl();
+    } else if (testCase == "duplicate-key") {
+        testDuplicateKey();
     } else if (testCase == "closure-transitive") {
         testClosureTransitive();
     } else if (testCase == "closure-cycle") {

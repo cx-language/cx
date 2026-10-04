@@ -775,6 +775,7 @@ private:
 
 public:
     unsigned getSkippedCxxDecls() const { return skippedCxxDecls; }
+    static void resetAnonymousRecordCount() { anonymousRecordCount = 0; }
 };
 
 struct MacroImporter final : clang::PPCallbacks {
@@ -983,7 +984,8 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
 
     std::string headerModuleName = headerName.str();
     llvm::replace(headerModuleName, '.', '_');
-    auto module = new Module(std::move(headerModuleName));
+    auto ownedModule = std::make_unique<Module>(std::move(headerModuleName));
+    Module* module = ownedModule.get();
     module->isCHeaderImport = true;
     module->isCxxHeaderImport = cxxMode;
     module->addSourceFile(SourceFile(headerPath.str(), module));
@@ -1014,7 +1016,12 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
 
     importer.addImportedModule(module);
     Module::registerImportedModule(headerName, module);
+    ownedModule.release();
     return true;
+}
+
+void cx::resetCImportState() {
+    CToCxConverter::resetAnonymousRecordCount();
 }
 
 #else // CX_NO_C_IMPORT
@@ -1024,5 +1031,7 @@ bool cx::importCHeader(SourceFile&, ImportDecl&, Typechecker&) {
     // importer. Returning false makes the caller report an error.
     return false;
 }
+
+void cx::resetCImportState() {}
 
 #endif // CX_NO_C_IMPORT

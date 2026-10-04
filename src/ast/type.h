@@ -378,6 +378,10 @@ bool operator==(Type, Type);
 bool operator!=(Type, Type);
 std::ostream& operator<<(std::ostream&, Type);
 llvm::raw_ostream& operator<<(llvm::raw_ostream&, Type);
+
+/// Drops all interned types. Only valid together with resetAstArena (which
+/// frees the TypeBase objects); the next compilation interns from scratch.
+void resetTypeInterning();
 inline std::ostream& operator<<(std::ostream& stream, GenericArg arg) {
     return stream << arg.toString();
 }

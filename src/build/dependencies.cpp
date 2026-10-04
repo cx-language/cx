@@ -1,5 +1,6 @@
 #include "dependencies.h"
 #include <cstdio>
+#include <map>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -218,6 +219,13 @@ std::optional<PkgConfigSplit> cx::queryPkgConfigFlags(llvm::ArrayRef<std::string
     PkgConfigSplit split;
     if (packages.empty()) return split;
 
+    // Process-constant: installed packages don't change mid-process, and each
+    // query spawns pkg-config (the environment is fixed for the process
+    // lifetime). Only successes are cached; failures retry on the next miss.
+    static std::map<std::vector<std::string>, std::optional<PkgConfigSplit>> cache;
+    std::vector<std::string> key(packages.begin(), packages.end());
+    if (auto cached = cache.find(key); cached != cache.end()) return cached->second;
+
     auto pkgConfig = llvm::sys::findProgramByName("pkg-config");
     if (!pkgConfig) return std::nullopt;
 
@@ -259,6 +267,7 @@ std::optional<PkgConfigSplit> cx::queryPkgConfigFlags(llvm::ArrayRef<std::string
             split.cflags.push_back(token.str());
         }
     }
+    cache.emplace(std::move(key), split);
     return split;
 }
 

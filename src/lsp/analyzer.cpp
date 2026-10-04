@@ -2,10 +2,12 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <memory>
 #include <optional>
 #include <sstream>
 #pragma warning(push, 0)
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -13,6 +15,7 @@
 #include <llvm/Support/Process.h>
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
+#include "../ast/arena.h"
 #include "../ast/decl.h"
 #include "../ast/expr.h"
 #include "../ast/module.h"
@@ -22,6 +25,7 @@
 #include "../build/dependencies.h"
 #include "../driver/driver.h"
 #include "../parser/parse.h"
+#include "../sema/c-import.h"
 #include "../sema/typecheck.h"
 
 using namespace cx;
@@ -126,35 +130,80 @@ LspRange locationToRange(const Location& loc, const std::string& lineText) {
 
 namespace {
 
+/// Every build.cx met walking up from parentDir, innermost first. Stat-only:
+/// safe to call without a diagnostic collector (unlike BuildConfig, which
+/// parses and aborts the process on malformed files without one).
+std::vector<std::string> collectUpwardBuildFiles(const std::string& parentDir) {
+    std::vector<std::string> paths;
+    if (parentDir.empty()) return paths;
+    std::string dir = parentDir;
+    while (true) {
+        std::string buildFilePath = dir + "/" + BuildConfig::buildFileName;
+        bool isFile = false;
+        if (!llvm::sys::fs::is_regular_file(buildFilePath, isFile) && isFile) {
+            paths.push_back(buildFilePath);
+        }
+        llvm::StringRef parent = llvm::sys::path::parent_path(dir);
+        if (parent == dir) return paths; // Filesystem root reached.
+        dir = parent.str();
+    }
+}
+
 /// Finds the build root governing filePath by walking up from parentDir to the
 /// outermost directory whose build.cx target roots contain the file, or nullopt
 /// if the file stands alone. Outermost wins to mirror `cx build`, which runs at
 /// the project root and compiles nested build.cx files as ordinary sources;
 /// dependencies are still resolved via import search paths, never fetched.
 /// When found, buildDir receives the directory holding that build.cx file.
+/// checkedBuildFiles (when given) receives every build.cx met on the way up,
+/// innermost first, for cache validation.
 std::optional<std::string> findBuildRoot(const std::string& filePath, const std::string& parentDir, std::string* buildDir = nullptr,
-                                         const std::vector<std::string>& defines = {}) {
-    std::string dir = parentDir;
+                                         const std::vector<std::string>& defines = {}, std::vector<std::string>* checkedBuildFiles = nullptr) {
     std::optional<std::string> outermost;
-    while (true) {
-        std::string buildFilePath = dir + "/" + BuildConfig::buildFileName;
-        bool isFile = false;
-        if (!llvm::sys::fs::is_regular_file(buildFilePath, isFile) && isFile) {
-            BuildConfig config{std::string(dir), defines};
-            for (auto& root : config.getTargetRootDirectories()) {
-                // Either separator: file paths may use backslashes on Windows
-                // while roots built from URIs use forward slashes.
-                if (filePath == root || llvm::StringRef(filePath).starts_with(root + "/") || llvm::StringRef(filePath).starts_with(root + "\\")) {
-                    outermost = root;
-                    if (buildDir) *buildDir = dir;
-                    break;
-                }
+    for (auto& buildFilePath : collectUpwardBuildFiles(parentDir)) {
+        if (checkedBuildFiles) checkedBuildFiles->push_back(buildFilePath);
+        std::string dir = llvm::sys::path::parent_path(buildFilePath).str();
+        BuildConfig config{std::string(dir), defines};
+        for (auto& root : config.getTargetRootDirectories()) {
+            // Either separator: file paths may use backslashes on Windows
+            // while roots built from URIs use forward slashes.
+            if (filePath == root || llvm::StringRef(filePath).starts_with(root + "/") || llvm::StringRef(filePath).starts_with(root + "\\")) {
+                outermost = root;
+                if (buildDir) *buildDir = dir;
+                break;
             }
         }
-        llvm::StringRef parent = llvm::sys::path::parent_path(dir);
-        if (parent == dir) return outermost; // Filesystem root reached.
-        dir = parent.str();
     }
+    return outermost;
+}
+
+/// True when parentDir is an importable `<searchPath>/std` directory (editing
+/// inside the standard library itself). Stat-only, like collectUpwardBuildFiles.
+bool isStdDirectory(const std::string& parentDir, const std::vector<std::string>& importSearchPaths) {
+    for (llvm::StringRef searchPath : importSearchPaths) {
+        auto candidate = (searchPath + "/std").str();
+        if (llvm::sys::fs::is_directory(candidate) && llvm::sys::fs::equivalent(candidate, parentDir)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/// Sorted .cx siblings under moduleDir, excluding filePath itself, vendored
+/// packages (which join via `import`), and the project root's build.cx (which
+/// is config, not source; a build.cx anywhere else is an ordinary source).
+/// Stat-only directory walk, no parsing.
+std::vector<std::string> enumerateSiblingPaths(const std::string& moduleDir, const std::string& exclusionRoot, const std::string& filePath) {
+    std::vector<std::string> siblingPaths;
+    std::error_code ec;
+    for (llvm::sys::fs::recursive_directory_iterator it(moduleDir, ec), end; it != end && !ec; it.increment(ec)) {
+        if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath && !isVendoredPath(it->path())
+            && !isRootBuildFile(it->path(), exclusionRoot)) {
+            siblingPaths.push_back(it->path());
+        }
+    }
+    llvm::sort(siblingPaths);
+    return siblingPaths;
 }
 
 /// The main module plus every imported module, visiting the main module only
@@ -1684,6 +1733,100 @@ void addPkgConfigFlags(CompileOptions& options, llvm::ArrayRef<std::string> pack
 
 } // namespace
 
+namespace {
+
+// Query-specific option building and module discovery. Only runFrontendOnce
+// and the session validation below use these.
+
+std::vector<std::string> buildSharedImportSearchPaths(const LspQuery& query) {
+    // Shared search paths: workspace folders, then explicit extras, then the
+    // distribution root (for std/) and system paths. The file's directory
+    // joins the main module's options below, not dependencies'.
+    std::vector<std::string> paths;
+    for (auto& folder : query.workspaceFolders)
+        paths.push_back(folder);
+    for (auto& path : query.importSearchPaths)
+        paths.push_back(path);
+    if (auto rootDir = getCxRootDir(); !rootDir.empty()) {
+        paths.push_back(rootDir + "/vendor");
+        paths.push_back(std::move(rootDir));
+    }
+#ifdef CLANG_BUILTIN_INCLUDE_PATH
+    paths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
+#endif
+    paths.push_back("/usr/include");
+    paths.push_back("/usr/local/include");
+    // Same bonus search paths as `cx build` (see driver.cpp). Unlike the
+    // driver, queries don't probe the external C compiler for its header
+    // paths - C-header imports relying on those need explicit
+    // initializationOptions.importSearchPaths.
+    for (const char* name : {"CPATH", "C_INCLUDE_PATH", "INCLUDE"}) {
+        if (auto pathsEnv = llvm::sys::Process::GetEnv(name)) {
+            llvm::SmallVector<llvm::StringRef, 16> split;
+            llvm::StringRef(*pathsEnv).split(split, llvm::sys::EnvPathSeparator, -1, false);
+            for (llvm::StringRef path : split)
+                paths.push_back(path.str());
+        }
+    }
+    return paths;
+}
+
+std::vector<std::string> buildMainImportSearchPaths(const LspQuery& query, const std::string& parentDir) {
+    // Import search paths: file's directory first, then the shared paths.
+    // Vendored packages are imported by name (see driver.cpp).
+    std::vector<std::string> paths = buildSharedImportSearchPaths(query);
+    if (!parentDir.empty()) {
+        paths.insert(paths.begin(), {parentDir, (llvm::StringRef(parentDir) + "/vendor").str()});
+    }
+    return paths;
+}
+
+std::vector<std::string> buildBaseDefines(const LspQuery& query) {
+    // The language server always analyzes as Debug (matching baseOptions'
+    // default below), with platform defines like the driver.
+    std::vector<std::string> defines = query.defines;
+    defines.push_back("Debug");
+    defines.push_back("LeakCheck");
+    auto platformOptions = getPlatformCompileOptions();
+    for (auto& define : platformOptions.defines)
+        defines.push_back(define);
+    return defines;
+}
+
+ModuleLayout discoverModuleLayout(const std::string& filePath, const std::vector<std::string>& importSearchPaths, const std::vector<std::string>& defines) {
+    // Determine which files form the open file's module: an importable
+    // package (registered below so the import resolves to it), a
+    // build.cx target root, or just the file itself when standalone.
+    ModuleLayout layout;
+    std::string parentDir = llvm::sys::path::parent_path(filePath).str();
+    if (!parentDir.empty()) {
+        if (isStdDirectory(parentDir, importSearchPaths)) {
+            layout.moduleDir = parentDir;
+            layout.registerAsStd = true;
+        } else {
+            layout.moduleDir = findBuildRoot(filePath, parentDir, &layout.buildDir, defines, &layout.checkedBuildFiles);
+        }
+    }
+    if (layout.moduleDir) {
+        std::string exclusionRoot = layout.buildDir.empty() ? *layout.moduleDir : layout.buildDir;
+        layout.siblingPaths = enumerateSiblingPaths(*layout.moduleDir, exclusionRoot, filePath);
+    }
+    return layout;
+}
+
+} // namespace
+
+void resetCompilerGlobals() {
+    // Drop references first, then free the memory they point into.
+    Module::resetImportedModules();
+    resetTypeInterning();
+    resetAstArena();
+    resetDiagnosticsState();
+    resetLambdaNameCounter();
+    resetTypecheckerCounters();
+    resetCImportState();
+}
+
 FrontendResult runFrontendOnce(const LspQuery& query) {
     FrontendResult result;
     result.filePath = query.filePath;
@@ -1697,84 +1840,33 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
 
     llvm::SaveAndRestore saveCollector(diagnosticCollector, &result.diagnostics);
 
-    try {
-        // Intentionally leaked: this process runs one compilation and exits,
-        // so the OS reclaims everything - just like a normal `cx` invocation.
-        Module* module = new Module("main");
+    // The session owns the module (deleted on evict); the one-shot query
+    // process leaks it and exits instead. Owned locally until the end so
+    // a failed compilation frees it instead of leaking per red edit.
+    auto ownedModule = std::make_unique<Module>("main");
+    Module* module = ownedModule.get();
+    bool moduleRegisteredAsStd = false;
 
+    try {
         CompileOptions baseOptions;
         baseOptions.noUnusedWarnings = true; // unused warnings are noisy during editing
         baseOptions.recoverParseErrors = true;
-        baseOptions.defines = query.defines;
-        if (baseOptions.mode == BuildMode::Debug) {
-            baseOptions.defines.push_back("Debug");
-            baseOptions.defines.push_back("LeakCheck");
-        }
+        baseOptions.defines = buildBaseDefines(query);
         // Platform settings (defines, SDK sysroot/frameworks), matching the
         // driver so C-header imports and #if platform branches resolve identically.
         auto platformOptions = getPlatformCompileOptions();
-        for (auto& define : platformOptions.defines)
-            baseOptions.defines.push_back(define);
         for (auto& cflag : platformOptions.cflags)
             baseOptions.cflags.push_back(cflag);
         for (auto& path : platformOptions.frameworkSearchPaths)
             baseOptions.frameworkSearchPaths.push_back(path);
-        // Shared search paths: workspace folders, then explicit extras, then the
-        // distribution root (for std/) and system paths. The file's directory
-        // joins the main module's options below, not dependencies'.
+        baseOptions.importSearchPaths = buildSharedImportSearchPaths(query);
         std::string parentDir = llvm::sys::path::parent_path(filePath).str();
-        for (auto& folder : query.workspaceFolders)
-            baseOptions.importSearchPaths.push_back(folder);
-        for (auto& path : query.importSearchPaths)
-            baseOptions.importSearchPaths.push_back(path);
-        if (auto rootDir = getCxRootDir(); !rootDir.empty()) {
-            baseOptions.importSearchPaths.push_back(rootDir + "/vendor");
-            baseOptions.importSearchPaths.push_back(std::move(rootDir));
-        }
-#ifdef CLANG_BUILTIN_INCLUDE_PATH
-        baseOptions.importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
-#endif
-        baseOptions.importSearchPaths.push_back("/usr/include");
-        baseOptions.importSearchPaths.push_back("/usr/local/include");
-        // Same bonus search paths as `cx build` (see driver.cpp). Unlike the
-        // driver, queries don't probe the external C compiler for its header
-        // paths - C-header imports relying on those need explicit
-        // initializationOptions.importSearchPaths.
-        for (const char* name : {"CPATH", "C_INCLUDE_PATH", "INCLUDE"}) {
-            if (auto paths = llvm::sys::Process::GetEnv(name)) {
-                llvm::SmallVector<llvm::StringRef, 16> split;
-                llvm::StringRef(*paths).split(split, llvm::sys::EnvPathSeparator, -1, false);
-                for (llvm::StringRef path : split)
-                    baseOptions.importSearchPaths.push_back(path.str());
-            }
-        }
 
-        // Import search paths: file's directory first, then the shared paths.
-        // Vendored packages are imported by name (see driver.cpp).
         CompileOptions options = baseOptions;
-        if (!parentDir.empty()) {
-            options.importSearchPaths.insert(options.importSearchPaths.begin(), {parentDir, (llvm::StringRef(parentDir) + "/vendor").str()});
-        }
+        options.importSearchPaths = buildMainImportSearchPaths(query, parentDir);
 
-        // Determine which files form the open file's module: an importable
-        // package (registered below so the import resolves to it), a
-        // build.cx target root, or just the file itself when standalone.
-        std::optional<std::string> moduleDir;
-        std::string buildDir;
-        bool registerAsStd = false;
-        if (!parentDir.empty()) {
-            for (llvm::StringRef searchPath : options.importSearchPaths) {
-                auto candidate = (searchPath + "/std").str();
-                if (llvm::sys::fs::is_directory(candidate) && llvm::sys::fs::equivalent(candidate, parentDir)) {
-                    moduleDir = parentDir;
-                    registerAsStd = true;
-                    break;
-                }
-            }
-            if (!registerAsStd) {
-                moduleDir = findBuildRoot(filePath, parentDir, &buildDir, baseOptions.defines);
-            }
-        }
+        ModuleLayout layout = discoverModuleLayout(filePath, options.importSearchPaths, baseOptions.defines);
+        const std::string& buildDir = layout.buildDir;
 
         // The project build file contributes its settings to the main module;
         // dependencies bring theirs through the closure. pkg-config is queried
@@ -1798,63 +1890,65 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             }
         }
 
-        // Main file from memory, siblings from disk or the openDocs overlay.
-        // Only the project root's build.cx is config, not source; a build.cx
-        // anywhere else is an ordinary source file. Vendored packages are
-        // likewise excluded: they join the module via `import`.
-        std::vector<std::string> siblingPaths;
-        if (moduleDir) {
-            std::string moduleVendor = *moduleDir + "/vendor";
+        if (layout.moduleDir) {
+            std::string moduleVendor = *layout.moduleDir + "/vendor";
             if (buildDir.empty() || moduleVendor != buildDir + "/vendor") {
                 options.importSearchPaths.push_back(std::move(moduleVendor));
             }
-            std::string exclusionRoot = buildDir.empty() ? *moduleDir : buildDir;
-            std::error_code ec;
-            for (llvm::sys::fs::recursive_directory_iterator it(*moduleDir, ec), end; it != end && !ec; it.increment(ec)) {
-                if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath && !isVendoredPath(it->path())
-                    && !isRootBuildFile(it->path(), exclusionRoot)) {
-                    siblingPaths.push_back(it->path());
+        }
+
+        {
+            PhaseTimer timer("lsp-parse-main");
+            auto mainBuffer = llvm::MemoryBuffer::getMemBufferCopy(content, filePath);
+            module->fileBuffers.push_back(std::move(mainBuffer));
+            for (auto& sibling : layout.siblingPaths) {
+                auto overlay = query.openDocs.find(sibling);
+                if (overlay != query.openDocs.end()) {
+                    auto buffer = llvm::MemoryBuffer::getMemBufferCopy(overlay->second, sibling);
+                    module->fileBuffers.push_back(std::move(buffer));
+                } else if (auto buffer = llvm::MemoryBuffer::getFile(sibling)) {
+                    module->fileBuffers.push_back(std::move(*buffer));
                 }
             }
-            llvm::sort(siblingPaths);
-        }
 
-        auto mainBuffer = llvm::MemoryBuffer::getMemBufferCopy(content, filePath);
-        module->fileBuffers.push_back(std::move(mainBuffer));
-        for (auto& sibling : siblingPaths) {
-            auto overlay = query.openDocs.find(sibling);
-            if (overlay != query.openDocs.end()) {
-                auto buffer = llvm::MemoryBuffer::getMemBufferCopy(overlay->second, sibling);
-                module->fileBuffers.push_back(std::move(buffer));
-            } else if (auto buffer = llvm::MemoryBuffer::getFile(sibling)) {
-                module->fileBuffers.push_back(std::move(*buffer));
+            for (auto& fileBuffer : module->fileBuffers) {
+                Parser parser(fileBuffer->getMemBufferRef(), *module, options);
+                parser.parse();
             }
         }
 
-        for (auto& fileBuffer : module->fileBuffers) {
-            Parser parser(fileBuffer->getMemBufferRef(), *module, options);
-            parser.parse();
-        }
+        {
+            PhaseTimer timer("lsp-typecheck-main");
+            // When the open file lives inside the standard library itself, the
+            // typechecker's unconditional "std" import would otherwise load the
+            // same sources a second time as a separate module, drowning the file
+            // in ambiguous-reference errors. Analyze them as that package instead
+            // by resolving the import to the main module. This mirrors
+            // importModule's lookup order, so it only triggers when the import
+            // would actually find this directory.
+            if (layout.registerAsStd) {
+                Module::registerImportedModule("std", module);
+                moduleRegisteredAsStd = true;
+            }
 
-        // When the open file lives inside the standard library itself, the
-        // typechecker's unconditional "std" import would otherwise load the
-        // same sources a second time as a separate module, drowning the file
-        // in ambiguous-reference errors. Analyze them as that package instead
-        // by resolving the import to the main module. This mirrors
-        // importModule's lookup order, so it only triggers when the import
-        // would actually find this directory.
-        if (registerAsStd) {
-            Module::registerImportedModule("std", module);
+            Typechecker typechecker(options, buildDir.empty() ? nullptr : &projectConfig.resolvedDependencies);
+            for (auto* imported : module->getImportedModules()) {
+                typechecker.typecheckModule(*imported, options, false);
+            }
+            typechecker.typecheckModule(*module, options, true);
+            typechecker.checkUnusedDecls(*module);
         }
-
-        Typechecker typechecker(options, buildDir.empty() ? nullptr : &projectConfig.resolvedDependencies);
-        for (auto* imported : module->getImportedModules()) {
-            typechecker.typecheckModule(*imported, options, false);
-        }
-        typechecker.typecheckModule(*module, options, true);
-        typechecker.checkUnusedDecls(*module);
 
         result.mainModule = module;
+        result.layout = std::move(layout);
+        for (auto& record : projectConfig.resolvedDependencies) {
+            std::string depBuildFile = record.rootDirectory + "/" + BuildConfig::buildFileName;
+            bool isFile = false;
+            if (!llvm::sys::fs::is_regular_file(depBuildFile, isFile) && isFile) {
+                result.depBuildFiles.push_back(depBuildFile);
+            }
+        }
+        ownedModule.release();
     } catch (const CompileError& error) {
         if (!error.message.empty()) {
             CollectedDiagnostic diagnostic;
@@ -1876,6 +1970,13 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         diagnostic.severity = "error";
         diagnostic.message = "internal compiler error";
         result.diagnostics.push_back(std::move(diagnostic));
+    }
+
+    if (moduleRegisteredAsStd && ownedModule) {
+        // Compilation failed after registering the main module as "std": the
+        // registry owns it now (deleteModules frees it); releasing keeps the
+        // unique_ptr from freeing it out from under the registry.
+        ownedModule.release();
     }
 
     return result;
@@ -1928,9 +2029,10 @@ SymbolInfo findAt(Module* mainModule, const std::string& filePath, LspPosition p
     SymbolInfo empty;
     if (!mainModule) return empty;
     Finder finder{filePath, pos.line, pos.character, {}, -1};
-    // Also search imported modules.
+    // consider() only matches nodes in the cursor's file; skip the rest.
     for (auto* module : allModules(mainModule)) {
         for (auto& sourceFile : module->sourceFiles) {
+            if (sourceFile.filePath != filePath) continue;
             for (auto* decl : sourceFile.topLevelDecls) {
                 finder.visitDecl(decl, 0);
             }
@@ -2343,14 +2445,10 @@ JsonValue diagnosticsToJson(const std::vector<LspDiagnostic>& diagnostics) {
     return JsonValue(std::move(items));
 }
 
-} // namespace
-
-JsonValue handleQuery(const JsonValue& queryJson) {
-    LspQuery query = parseLspQuery(queryJson);
-    if (query.method == "completion" && needsCompletionPlaceholder(query.content, query.position)) {
-        query.content = insertCompletionPlaceholder(query.content, query.position);
-    }
-    FrontendResult frontend = runFrontendOnce(query);
+/// Answers one method from an already-compiled frontend: the session calls
+/// it on cache hits, handleQuery on every one-shot run. Diagnostics in other
+/// files re-read their lines from disk, so this does disk I/O per call.
+JsonValue answerFromFrontend(const LspQuery& query, const FrontendResult& frontend) {
     std::vector<LspDiagnostic> diagnostics = toLspDiagnostics(frontend.diagnostics, frontend.filePath, frontend.content);
 
     JsonObject result;
@@ -2425,6 +2523,200 @@ JsonValue handleQuery(const JsonValue& queryJson) {
         return JsonValue(std::move(result));
     }
     throw JsonParseError("unknown query method: " + query.method);
+}
+
+// Stats one on-disk dependency. Nullopt when the file is gone (a change like any other).
+std::optional<FileStat> statDependency(const std::string& path) {
+    llvm::sys::fs::file_status status;
+    if (llvm::sys::fs::status(path, status)) return std::nullopt;
+    FileStat stat;
+    stat.path = path;
+    stat.mtimeNanos = std::chrono::duration_cast<std::chrono::nanoseconds>(status.getLastModificationTime().time_since_epoch()).count();
+    stat.size = status.getSize();
+    return stat;
+}
+
+bool depStatsMatch(const std::vector<FileStat>& stats) {
+    for (auto& stat : stats) {
+        auto current = statDependency(stat.path);
+        if (!current || *current != stat) return false;
+    }
+    return true;
+}
+
+// Every on-disk input the compilation read: build files plus main-module and
+// import sources (whose file list comes from the compiled modules, so
+// modified or removed inputs invalidate; only newly added import files and
+// transitive C-header includes are missed - editing the open file refreshes
+// those). Nullopt when an input vanished mid-compile; the entry is
+// uncacheable then.
+std::optional<std::vector<FileStat>> collectDepStats(const LspQuery& query, const ModuleLayout& layout, const std::vector<std::string>& depBuildFiles,
+                                                     Module* mainModule) {
+    std::vector<FileStat> stats;
+    auto statOne = [&](const std::string& path) {
+        if (auto stat = statDependency(path)) {
+            stats.push_back(std::move(*stat));
+            return true;
+        }
+        return false;
+    };
+    for (auto& path : layout.checkedBuildFiles) {
+        if (!statOne(path)) return std::nullopt;
+    }
+    for (auto& path : depBuildFiles) {
+        if (!statOne(path)) return std::nullopt;
+    }
+    // Siblings come from the layout, not the compiled modules: an unreadable
+    // sibling is absent from sourceFiles but still affects compilation once
+    // readable. Overlaid siblings come from the editor instead (compared via
+    // relevantOpenDocs).
+    for (auto& sibling : layout.siblingPaths) {
+        if (!query.openDocs.count(sibling)) {
+            if (!statOne(sibling)) return std::nullopt;
+        }
+    }
+    for (Module* module : allModules(mainModule)) {
+        for (auto& sourceFile : module->sourceFiles) {
+            const std::string& path = sourceFile.filePath;
+            if (path.empty() || path == query.filePath) continue;
+            // Siblings are statted from the layout above; only they honor the
+            // openDocs overlay (the open file itself comes from content),
+            // anything else open in the editor is still compiled from disk.
+            if (std::binary_search(layout.siblingPaths.begin(), layout.siblingPaths.end(), path)) continue;
+            if (!statOne(path)) return std::nullopt;
+        }
+    }
+    return stats;
+}
+
+// The openDocs entries that affect compilation: siblings read from the
+// overlay (the open file itself comes from content, anything else is
+// ignored). Already sorted via siblingPaths.
+std::vector<std::pair<std::string, std::string>> relevantOpenDocs(const LspQuery& query, const ModuleLayout& layout) {
+    std::vector<std::pair<std::string, std::string>> docs;
+    for (auto& sibling : layout.siblingPaths) {
+        if (auto overlay = query.openDocs.find(sibling); overlay != query.openDocs.end()) {
+            docs.emplace_back(sibling, overlay->second);
+        }
+    }
+    return docs;
+}
+
+// Deletes every module of one compilation (main plus imports), freeing the
+// file buffers. Module destructors only release owned storage, never arena
+// memory, so this is safe before or after resetAstArena. Null-safe: a failed
+// compilation has no main module, but its imports still need freeing.
+void deleteModules(Module* mainModule) {
+    llvm::SmallPtrSet<Module*, 16> seen;
+    auto drop = [&](Module* module) {
+        if (module && seen.insert(module).second) delete module;
+    };
+    drop(mainModule);
+    for (auto* imported : Module::getAllImportedModules())
+        drop(imported);
+}
+
+// True when the cached compilation still describes the query. Stat-only
+// probes (no parsing): BuildConfig would abort the process on malformed
+// files without a diagnostic collector, and parsing here would also grow
+// the arena on every cache hit.
+bool cacheMatches(const LspCachedFrontend& entry, const LspQuery& query) {
+    auto miss = [](const char* reason) {
+        if (profilingEnabled()) llvm::errs() << "[profile] lsp-miss: " << reason << "\n";
+        return false;
+    };
+    if (query.filePath != entry.filePath) return miss("filePath");
+    if (query.content != entry.frontend.content) return miss("content");
+    if (query.workspaceFolders != entry.workspaceFolders || query.importSearchPaths != entry.importSearchPaths || query.defines != entry.defines)
+        return miss("config");
+    std::string parentDir = llvm::sys::path::parent_path(query.filePath).str();
+    // A new or deleted build.cx above the file can move the module root; a
+    // changed one can move it too (caught by depStats below). Nothing is
+    // consulted when editing inside std/ itself, so nothing is compared.
+    if (!entry.layout.registerAsStd && collectUpwardBuildFiles(parentDir) != entry.layout.checkedBuildFiles) return miss("buildfiles");
+    if (isStdDirectory(parentDir, buildMainImportSearchPaths(query, parentDir)) != entry.layout.registerAsStd) return miss("isstd");
+    if (entry.layout.moduleDir) {
+        std::string exclusionRoot = entry.layout.buildDir.empty() ? *entry.layout.moduleDir : entry.layout.buildDir;
+        if (enumerateSiblingPaths(*entry.layout.moduleDir, exclusionRoot, query.filePath) != entry.layout.siblingPaths) return miss("siblings");
+    }
+    if (relevantOpenDocs(query, entry.layout) != entry.openDocs) return miss("openDocs");
+    if (!depStatsMatch(entry.depStats)) return miss("depStats");
+    if (profilingEnabled()) llvm::errs() << "[profile] lsp-hit\n";
+    return true;
+}
+
+// Builds the cache entry for a fresh compilation, moving frontend ownership
+// into it. Nullopt when an input vanished mid-compile (uncacheable), and when
+// compilation threw partway (no main module): its inputs may be incompletely
+// known (a malformed dependency build file aborts the closure before dep
+// inputs are enumerated), so the failure must never cache.
+std::optional<LspCachedFrontend> buildEntry(const LspQuery& query, FrontendResult& frontend) {
+    if (!frontend.mainModule) return std::nullopt;
+    LspCachedFrontend entry;
+    entry.filePath = query.filePath;
+    entry.workspaceFolders = query.workspaceFolders;
+    entry.importSearchPaths = query.importSearchPaths;
+    entry.defines = query.defines;
+    entry.layout = std::move(frontend.layout);
+    entry.openDocs = relevantOpenDocs(query, entry.layout);
+    if (auto stats = collectDepStats(query, entry.layout, frontend.depBuildFiles, frontend.mainModule)) {
+        // A file changed mid-compile records fresh stats for stale content;
+        // re-verify so that entry stays uncacheable instead of sticking.
+        if (!depStatsMatch(*stats)) return std::nullopt;
+        entry.depStats = std::move(*stats);
+    } else {
+        return std::nullopt;
+    }
+    entry.frontend = std::move(frontend);
+    return entry;
+}
+
+} // namespace
+
+JsonValue handleQuery(const JsonValue& queryJson) {
+    LspQuery query = parseLspQuery(queryJson);
+    if (query.method == "completion" && needsCompletionPlaceholder(query.content, query.position)) {
+        query.content = insertCompletionPlaceholder(query.content, query.position);
+    }
+    FrontendResult frontend = runFrontendOnce(query);
+    return answerFromFrontend(query, frontend);
+}
+
+std::optional<JsonValue> LspSession::handle(LspQuery query) {
+    try {
+        if (query.method == "completion" && needsCompletionPlaceholder(query.content, query.position)) {
+            query.content = insertCompletionPlaceholder(query.content, query.position);
+        }
+        if (cached && cacheMatches(*cached, query)) {
+            return answerFromFrontend(query, cached->frontend);
+        }
+        if (cached) {
+            // Reset first: cached diagnostics hold locations into the file
+            // buffers, so they must be gone before the modules are freed.
+            Module* mainModule = cached->frontend.mainModule;
+            cached.reset();
+            deleteModules(mainModule);
+        }
+        resetCompilerGlobals();
+        FrontendResult frontend = runFrontendOnce(query);
+        if (auto entry = buildEntry(query, frontend)) {
+            if (profilingEnabled()) llvm::errs() << "[profile] lsp-stored\n";
+            cached = std::move(*entry);
+            return answerFromFrontend(query, cached->frontend);
+        }
+        if (profilingEnabled()) llvm::errs() << "[profile] lsp-uncacheable\n";
+        // Uncacheable (inputs vanished mid-compile, or compilation threw
+        // partway): answer ad hoc without keeping anything, so the next
+        // query recompiles instead of reusing it.
+        llvm::scope_exit drop([&] { deleteModules(frontend.mainModule); });
+        return answerFromFrontend(query, frontend);
+    } catch (const std::exception& error) {
+        llvm::errs() << "[cx-lsp] query failed: " << error.what() << '\n';
+        return std::nullopt;
+    } catch (...) {
+        llvm::errs() << "[cx-lsp] query failed: unknown error\n";
+        return std::nullopt;
+    }
 }
 
 } // namespace cx::lsp
