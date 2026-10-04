@@ -96,6 +96,9 @@ list(FILTER LIBCX_SOURCES EXCLUDE REGEX "src/wasm/")
 # binary, not in libcx.
 list(FILTER LIBCX_SOURCES EXCLUDE REGEX "src/lsp/main.cpp")
 add_library(libcx ${LIBCX_SOURCES})
+# The AsmJit backend's using-directives would leak into other TUs in a unity
+# build (anonymous-namespace using-directives are transitively visible).
+set_source_files_properties(src/backend/asmjit.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_target_properties(libcx PROPERTIES PREFIX "")
 if(LLVM_TOOLS_BINARY_DIR)
     # Lets the embedded Clang find its subprograms (lld-link) on Windows
@@ -130,6 +133,36 @@ if(LLVM_LINK_LLVM_DYLIB)
 else()
     llvm_map_components_to_libnames(LLVM_LIBS core native linker orcjit passes support)
 endif()
+# Fast JIT for `cx run` (AsmJit). Pinned commit, rolling-master project
+# with no tags; re-pin by updating the hash below (last verified 2026-09-22).
+include(FetchContent)
+FetchContent_Declare(asmjit
+    GIT_REPOSITORY https://github.com/asmjit/asmjit.git
+    GIT_TAG 0d7f01052f2d3f6d6b9bb6714ef32bd7b80177eb
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    # Upstream ignores va_index on AArch64, but Apple passes variadic args
+    # on the stack in 8-byte slots. Re-verify against upstream on re-pin.
+    PATCH_COMMAND ${GIT_EXECUTABLE} apply --whitespace=nowarn "${PROJECT_SOURCE_DIR}/cmake/asmjit-apple-varargs.patch"
+    UPDATE_DISCONNECTED TRUE)
+set(ASMJIT_STATIC ON CACHE BOOL "Link AsmJit statically into cx" FORCE)
+# AsmJit doesn't build under our strict warning flags; configure it with
+# default flags instead (subdirectory inherits the value at this point).
+set(CX_SAVED_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "")
+FetchContent_MakeAvailable(asmjit)
+set(CMAKE_CXX_FLAGS "${CX_SAVED_CXX_FLAGS}")
+set_target_properties(asmjit PROPERTIES UNITY_BUILD OFF)
+# AsmJit headers don't build under our -pedantic-errors; treat them as
+# system headers so their warnings are suppressed in consuming TUs.
+get_target_property(ASMJIT_INTERFACE_DIRS asmjit INTERFACE_INCLUDE_DIRECTORIES)
+set_target_properties(asmjit PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "")
+target_include_directories(asmjit SYSTEM INTERFACE ${ASMJIT_INTERFACE_DIRS})
+# Our build strips NDEBUG everywhere for extra checking; restore it for
+# AsmJit in optimized configs so JIT asserts don't slow codegen.
+target_compile_definitions(asmjit PRIVATE $<$<CONFIG:Release,RelWithDebInfo,MinSizeRel>:NDEBUG>)
+target_link_libraries(libcx asmjit)
+
 if(LLVM_LINK_LLVM_DYLIB AND TARGET clang-cpp)
     # Shared LLVM build: use only the shared libclang-cpp for the Clang C++
     # API. It contains everything the static archives below have, so linking

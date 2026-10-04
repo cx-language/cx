@@ -1,0 +1,98 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines %s
+
+// Union HFAs pass their largest member's leaves, chunk homes cover full
+// 8-byte units, and big-frame side memory is reserved once per call so loops
+// cannot exhaust it.
+
+union FloatPair {
+    float32 a;
+    float32 b;
+}
+
+float32 pickFirst(FloatPair u) {
+    return u.a;
+}
+
+FloatPair makePair(float32 x) {
+    FloatPair u = undefined;
+    u.a = x;
+    return u;
+}
+
+struct TwoFloats {
+    float32 x;
+    float32 y;
+}
+
+union Mixed {
+    TwoFloats p;
+    float32 s;
+}
+
+float32 sumMixed(Mixed u) {
+    return u.p.x + u.p.y;
+}
+
+struct Twelve {
+    int a;
+    int b;
+    int c;
+}
+
+Twelve echoTwelve(Twelve v) {
+    return v;
+}
+
+struct Six {
+    int32 a;
+    int16 b;
+}
+
+Six echoSix(Six v) {
+    return v;
+}
+
+struct Big {
+    int32 a;
+    int32 b;
+    int32 c;
+    int32 d;
+    int32 e;
+}
+
+Big make(int32 v) {
+    Big s = undefined;
+    s.a = v;
+    s.b = v;
+    s.c = v;
+    s.d = v;
+    s.e = v;
+    return s;
+}
+
+void main() {
+    FloatPair u = undefined;
+    u.a = 1.5;
+    println(pickFirst(u)); // CHECK: 1.5
+    println(makePair(2.5).b); // CHECK-NEXT: 2.5
+    Mixed m = undefined;
+    m.p.x = 1;
+    m.p.y = 2;
+    println(sumMixed(m)); // CHECK-NEXT: 3
+    Twelve t = echoTwelve(Twelve(1, 2, 3));
+    println(t.a); // CHECK-NEXT: 1
+    println(t.b); // CHECK-NEXT: 2
+    println(t.c); // CHECK-NEXT: 3
+    Six s = echoSix(Six(7, 8));
+    println(s.a); // CHECK-NEXT: 7
+    println(s.b); // CHECK-NEXT: 8
+    int32[3000] bigarr = undefined;
+    bigarr[0] = 1;
+    int64 total = 0;
+    for (int32 i = 0; i < 1000000; i = i + 1) {
+        Big b = make(i);
+        total = total + int64(b.a);
+    }
+    println(total + int64(bigarr[0])); // CHECK-NEXT: 499999500001
+}

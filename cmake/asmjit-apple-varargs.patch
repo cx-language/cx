@@ -1,0 +1,53 @@
+diff --git a/asmjit/arm/a64_func.cpp b/asmjit/arm/a64_func.cpp
+index b01d56f..03ce7ae 100644
+--- a/asmjit/arm/a64_func.cpp
++++ b/asmjit/arm/a64_func.cpp
+@@ -151,14 +151,20 @@ ASMJIT_FAVOR_SIZE Error init_func_detail(FuncDetail& func, const FuncSignature&
+       uint32_t gpz_pos = 0;
+       uint32_t vec_pos = 0;
+ 
++      // Apple passes variadic arguments on the stack in 8-byte slots; the
++      // standard AArch64 convention keeps them in registers like fixed args.
++      bool apple_abi = cc.strategy() == CallConvStrategy::kAArch64Apple;
++      uint32_t va_index = func.has_var_args() ? func.va_index() : arg_count;
++
+       for (uint32_t i = 0; i < arg_count; i++) {
+         FuncValue& arg = func._args[i][0];
+         TypeId type_id = arg.type_id();
++        bool va_stack = apple_abi && i >= va_index;
+ 
+         if (TypeUtils::is_int(type_id)) {
+           uint32_t reg_id = Reg::kIdBad;
+ 
+-          if (gpz_pos < CallConv::kMaxRegArgsPerGroup) {
++          if (!va_stack && gpz_pos < CallConv::kMaxRegArgsPerGroup) {
+             reg_id = cc._passed_order[RegGroup::kGp].id[gpz_pos];
+           }
+ 
+@@ -169,7 +175,7 @@ ASMJIT_FAVOR_SIZE Error init_func_detail(FuncDetail& func, const FuncSignature&
+             gpz_pos++;
+           }
+           else {
+-            uint32_t size = axl::max<uint32_t>(TypeUtils::size_of(type_id), min_stack_arg_size);
++            uint32_t size = va_stack ? 8u : axl::max<uint32_t>(TypeUtils::size_of(type_id), min_stack_arg_size);
+             if (size >= 8) {
+               stack_offset = axl::align_up(stack_offset, 8);
+             }
+@@ -182,7 +188,7 @@ ASMJIT_FAVOR_SIZE Error init_func_detail(FuncDetail& func, const FuncSignature&
+         if (TypeUtils::is_float(type_id) || TypeUtils::is_vec(type_id)) {
+           uint32_t reg_id = Reg::kIdBad;
+ 
+-          if (vec_pos < CallConv::kMaxRegArgsPerGroup) {
++          if (!va_stack && vec_pos < CallConv::kMaxRegArgsPerGroup) {
+             reg_id = cc._passed_order[RegGroup::kVec].id[vec_pos];
+           }
+ 
+@@ -198,7 +204,7 @@ ASMJIT_FAVOR_SIZE Error init_func_detail(FuncDetail& func, const FuncSignature&
+             vec_pos++;
+           }
+           else {
+-            uint32_t size = axl::max<uint32_t>(TypeUtils::size_of(type_id), min_stack_arg_size);
++            uint32_t size = va_stack ? 8u : axl::max<uint32_t>(TypeUtils::size_of(type_id), min_stack_arg_size);
+             if (size >= 8) {
+               stack_offset = axl::align_up(stack_offset, 8);
+             }
