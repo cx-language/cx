@@ -13,18 +13,18 @@ int32 main() {
 void _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 value) {
     int32* value_0 = alloca int32
     store value to value_0
-    int32 value.load = load value_0
-    void _0 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 value.load)
+    void _0 = call _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value_0)
     void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
     return void
 }
 
-void _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 value) {
-    int32* value_0 = alloca int32
+void _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value) {
+    int32** value_0 = alloca int32*
     OutputStream* stream = alloca OutputStream
     store value to value_0
     void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
-    void _1 = call _CX1N3stdM3std5int325printE4void1_RM3std12OutputStream(int32* value_0, OutputStream* stream)
+    int32* value.load = load value_0
+    void _1 = call _CX1N3stdM3std5int325printE4void1_RM3std12OutputStream(int32* value.load, OutputStream* stream)
     return void
 }
 

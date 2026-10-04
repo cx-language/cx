@@ -3470,6 +3470,47 @@ static const Match* findUniqueBorrowPackMatch(llvm::ArrayRef<Match> matches) {
     return result;
 }
 
+// Looks through borrow-introducing casts to the underlying expression.
+// Resolution runs again after the winner's conversions were applied (e.g.
+// assert's probe-then-commit validation), when by-ref-bound arguments wear
+// AutoReference wrappings that would otherwise read as rvalues and flip the
+// winner. Only borrow casts qualify: other casts produce new values.
+static const Expr* withoutBorrowCasts(const Expr* expr) {
+    while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
+        if (cast->castKind != ImplicitCastExpr::AutoReference && cast->castKind != ImplicitCastExpr::Reborrow) break;
+        expr = cast->operand;
+    }
+    return expr;
+}
+
+// Returns the only candidate binding the most lvalue arguments directly to
+// reference parameters, or null when tied. A borrow binds without copying, so
+// it beats a by-value parameter for lvalues (e.g. min/max keep borrowing for
+// mutable arguments once by-value overloads exist). Rvalues bind to references
+// only through temporaries, so they don't count: the rules below give those
+// (and consts, which never bind to references) to the by-value overload.
+static const Match* findMatchWithMostRefBinds(llvm::ArrayRef<Match> matches, const CallExpr& call) {
+    const Match* result = nullptr;
+    auto bestCount = -1;
+    forEachMappedMatch(matches, call, [&](const Match& match, llvm::ArrayRef<ParamDecl> params, llvm::ArrayRef<int> argToParam) {
+        int count = 0;
+        for (size_t i = 0; i < call.args.size(); ++i) {
+            if (params[size_t(argToParam[i])].type.isReferenceType() && withoutBorrowCasts(call.args[i].value)->isLvalue()) ++count;
+        }
+        if (count > bestCount) {
+            bestCount = count;
+            result = &match;
+        } else if (count == bestCount) {
+            result = nullptr;
+        }
+        return false;
+    });
+    // Only overrule the rules below on positive evidence: a zero best count
+    // (e.g. a lone mappable candidate while arity-mismatched ones are skipped)
+    // falls through to the previous behavior.
+    return bestCount > 0 ? result : nullptr;
+}
+
 static const Match* findUniqueMatch(llvm::ArrayRef<Match> matches, llvm::function_ref<bool(const Match&)> predicate) {
     const Match* found = nullptr;
     for (auto& match : matches) {
@@ -3493,6 +3534,8 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
     } else if (llvm::all_of(matches, isCHeaderDecl)) {
         // Redeclarations in multiple C headers are considered the same declaration, so just return one of them.
         return &matches[0];
+    } else if (auto match = findMatchWithMostRefBinds(matches, call)) {
+        return match;
     } else if (auto* match = findUniqueMatch(matches, [](const Match& match) { return match.didConvertArguments == false; })) {
         return match;
     } else if (auto* match = findUniqueMatch(matches, [](const Match& match) { return match.didUnwrapOptional == false; })) {

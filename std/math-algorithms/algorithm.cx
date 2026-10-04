@@ -1,8 +1,9 @@
 /// Public members
 
 /// Gives a reference to the maximum of the two elements.
-/// Like C++ std::max, the result borrows one of the arguments, so don't store
-/// it past temporaries (e.g. `var m = max(f(), g())` dangles).
+/// Like C++ std::max, the result borrows one of the arguments, so it must not
+/// outlive them. Calls with a `const` argument, or with only temporaries, use
+/// the by-value overload below instead, which copies.
 T& max<T: Comparable>(T& a, T& b) {
     if a >= b {
         return a;
@@ -10,9 +11,20 @@ T& max<T: Comparable>(T& a, T& b) {
     return b;
 }
 
+/// Gives the maximum of the two elements, copying `Copyable` arguments.
+/// Unlike the by-reference overload, this accepts `const`s, and temporaries
+/// are safe to pass since the result is a copy.
+T max<T: Copyable + Comparable>(T a, T b) {
+    if a >= b {
+        return a;
+    }
+    return b;
+}
+
 /// Gives a reference to the minimum of the two elements.
-/// Like C++ std::min, the result borrows one of the arguments, so don't store
-/// it past temporaries (e.g. `var m = min(f(), g())` dangles).
+/// Like C++ std::min, the result borrows one of the arguments, so it must not
+/// outlive them. Calls with a `const` argument, or with only temporaries, use
+/// the by-value overload below instead, which copies.
 T& min<T: Comparable>(T& a, T& b) {
     if a < b {
         return a;
@@ -20,8 +32,29 @@ T& min<T: Comparable>(T& a, T& b) {
     return b;
 }
 
+/// Gives the minimum of the two elements, copying `Copyable` arguments.
+/// Unlike the by-reference overload, this accepts `const`s, and temporaries
+/// are safe to pass since the result is a copy.
+T min<T: Copyable + Comparable>(T a, T b) {
+    if a < b {
+        return a;
+    }
+    return b;
+}
+
 /// Gives the minimum and maximum of the two elements.
+/// Calls with a `const` argument, or with only temporaries, use the by-value
+/// overload below instead, which copies.
 (T min, T max) minmax<T: Copyable + Comparable>(T& a, T& b) {
+    if a < b {
+        return (min = a, max = b);
+    }
+    return (min = b, max = a);
+}
+
+/// Gives the minimum and maximum of the two elements, copying `Copyable`
+/// arguments. Unlike the by-reference overload, this accepts `const`s.
+(T min, T max) minmax<T: Copyable + Comparable>(T a, T b) {
     if a < b {
         return (min = a, max = b);
     }

@@ -105,12 +105,10 @@ bounds.fail:
 
 bounds.success:
     int32* _10 = getelementptr a, int32 0, i.load
-    int32 .load = load _10
-    void _11 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 .load)
+    void _11 = call _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(int32* _10)
     int32 i.load_0 = load i
     int32* _12 = getelementptr a, int32 0, i.load_0
-    int32 .load_0 = load _12
-    void _13 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 .load_0)
+    void _13 = call _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(int32* _12)
     int32 i.load_1 = load i
     int32 _14 = call _CX1N4main7wrapAddEM3std5int322_M3std5int32M3std5int32(int32 i.load_1, int32 1)
     void _15 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _14)
@@ -157,28 +155,37 @@ overflow.success:
     store _31 to _0
     union { struct { int32 } }* _32 = getelementptr _0, 1
     int32* _33 = cast _32 to int32*
-    int32 .load_1 = load _33
-    int32 _34 = call _CX1N4main7takeIntEM3std5int321_M3std5int32(int32 .load_1)
+    int32 .load = load _33
+    int32 _34 = call _CX1N4main7takeIntEM3std5int321_M3std5int32(int32 .load)
     void _35 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 _34)
     void _36 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 
-void _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 value) {
-    int32* value_0 = alloca int32
+void _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(int32* value) {
+    int32** value_0 = alloca int32*
     store value to value_0
-    int32 value.load = load value_0
-    void _0 = call _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 value.load)
+    int32* value.load = load value_0
+    void _0 = call _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value.load)
     void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
     return void
 }
 
-void _CX1N3std5printIM3std5int32EE4void1_M3std5int32(int32 value) {
+void _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 value) {
     int32* value_0 = alloca int32
+    store value to value_0
+    void _0 = call _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value_0)
+    void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
+    return void
+}
+
+void _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value) {
+    int32** value_0 = alloca int32*
     OutputStream* stream = alloca OutputStream
     store value to value_0
     void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
-    void _1 = call _CX1N3stdM3std5int325printE4void1_RM3std12OutputStream(int32* value_0, OutputStream* stream)
+    int32* value.load = load value_0
+    void _1 = call _CX1N3stdM3std5int325printE4void1_RM3std12OutputStream(int32* value.load, OutputStream* stream)
     return void
 }
 

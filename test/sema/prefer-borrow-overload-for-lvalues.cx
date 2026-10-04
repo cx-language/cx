@@ -1,0 +1,26 @@
+// RUN: check_exit_status 0 %cx run %s
+
+// Sentinel overloads: the by-reference overload returns the first argument,
+// the by-value overload returns the second, so the result reveals the winner.
+T& pick<T>(T& a, T& b) {
+    return a;
+}
+
+T pick<T: Copyable>(T a, T b) {
+    return b;
+}
+
+int main() {
+    var a = 7;
+    var b = 9;
+    const c = 1;
+    const d = 2;
+    // Lvalues borrow (even mixed with a temporary); consts and temporaries copy.
+    if pick(a, b) != 7 return 1;
+    if pick(a, 4) != 7 return 1;
+    if pick(c, d) != 2 return 1;
+    if pick(3, 4) != 4 return 1;
+    // The assert re-resolves its condition; the winner must not flip.
+    assert(pick(a, b) == 7);
+    return 0;
+}
