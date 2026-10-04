@@ -5,13 +5,13 @@
 import Foundation
 
 func checksum(_ value: Any) -> Int64 {
-    if CFGetTypeID(value as CFTypeRef) == CFBooleanGetTypeID() {
-        return (value as! Bool) ? 1 : 0
-    }
     switch value {
     case let s as String:
         return Int64(s.utf8.count)
     case let n as NSNumber:
+        // Booleans take this path too: boolean NSNumber on Apple platforms,
+        // Bool bridging to NSNumber on swift-corelibs. Both read back as
+        // 1/0, matching the cx port's Boolean case.
         let d = n.doubleValue
         if d == d.rounded(.towardZero) {
             return Int64(d)
