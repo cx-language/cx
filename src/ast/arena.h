@@ -1,6 +1,8 @@
 #pragma once
 
+#include <limits>
 #include <new>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -59,6 +61,40 @@ inline void resetAstArena() {
     astAllocator().Reset();
     new (saver) llvm::UniqueStringSaver(astAllocator());
 }
+
+/// std allocator over the AST arena: allocate() bumps, deallocate() is a
+/// no-op (resetAstArena frees in bulk). Stateless: all instances compare
+/// equal, so moves transfer buffers and copies deep-copy into the arena.
+template<typename T> struct AstAllocator {
+    using value_type = T;
+    using is_always_equal = std::true_type;
+    using propagate_on_container_move_assignment = std::true_type;
+
+    template<typename U> struct rebind {
+        using other = AstAllocator<U>;
+    };
+
+    AstAllocator() = default;
+    template<typename U> AstAllocator(const AstAllocator<U>&) {}
+
+    T* allocate(size_t count) {
+        if (count > max_size()) throw std::length_error("AstAllocator: too many elements");
+        if (count == 0) return nullptr;
+        return static_cast<T*>(astAllocator().Allocate(count * sizeof(T), alignof(T)));
+    }
+    void deallocate(T*, size_t) {}
+    size_t max_size() const { return std::numeric_limits<size_t>::max() / sizeof(T); }
+
+    bool operator==(const AstAllocator&) const { return true; }
+};
+
+/// std::vector over the AST arena. For AST node members: node and elements
+/// stay adjacent in the slab, and resetAstArena frees every buffer in bulk.
+/// Buffers are never freed individually: growth abandons the old buffer
+/// (bounded by the geometric series). Element pointers are invalidated by
+/// growth like std::vector, and dangle at the next resetAstArena; never store
+/// them past it. Not thread-safe, like the rest of the compiler.
+template<typename T> using AstVector = std::vector<T, AstAllocator<T>>;
 
 /// Allocates an AST node of type T from the global AST arena.
 template<typename T, typename... Args> T* makeAST(Args&&... args) {
