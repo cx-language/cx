@@ -15,10 +15,9 @@ Uint32 onTimer(void*? userdata, SDL_TimerID id, Uint32 interval) {
     return interval;
 }
 
-// Typechecked but never run: null render pass would crash at runtime.
+// Typechecked but never run.
 void probe() {
     println(SDL_AddTimer(100, onTimer, null));
-    SDL_SetGPUBlendConstants(null, SDL_FColor(r = 1, g = 0, b = 0, a = 0));
 }
 
 int main() {
@@ -36,14 +35,14 @@ int main() {
     println(rect.w, " ", sizeof(SDL_Rect)); // CHECK-NEXT: 10 16
 
     if !SDL_Init(SDL_INIT_VIDEO) {
-        println(SDL_GetError()!);
+        println(SDL_GetError());
         return 1;
     }
     defer SDL_Quit();
     println(SDL_GetVersion()); // CHECK-NEXT: {{[0-9]+}}
     var window = SDL_CreateWindow("vendor-sdl3", 64, 64, 0);
     if window == null {
-        println(SDL_GetError()!);
+        println(SDL_GetError());
         return 1;
     }
     defer SDL_DestroyWindow(window);

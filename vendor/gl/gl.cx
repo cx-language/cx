@@ -862,7 +862,7 @@ extern void glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfa
 /// Draws several primitive ranges from array data.
 extern void glMultiDrawArrays(GLenum mode, GLint[*] first, GLsizei[*] count, GLsizei drawcount);
 /// Draws several indexed primitive ranges.
-extern void glMultiDrawElements(GLenum mode, GLsizei[*] count, GLenum type, void*[*] indices, GLsizei drawcount);
+extern void glMultiDrawElements(GLenum mode, GLsizei[*] count, GLenum type, void*?[*] indices, GLsizei drawcount);
 /// Sets a float point parameter.
 extern void glPointParameterf(GLenum pname, GLfloat param);
 /// Sets a point parameter from a float array.
@@ -960,7 +960,7 @@ extern GLboolean glIsBuffer(GLuint buffer);
 /// Allocates and uploads buffer storage.
 extern void glBufferData(GLenum target, GLsizeiptr size, void*? data, GLenum usage);
 /// Replaces part of a buffer.
-extern void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void*? data);
+extern void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void* data);
 /// Downloads part of a buffer.
 extern void glGetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void* data);
 /// Maps a buffer into client memory.
@@ -1168,7 +1168,7 @@ extern void glGetActiveAttrib(GLuint program, GLuint index, GLsizei bufSize, GLs
 /// Queries an active uniform of a program.
 extern void glGetActiveUniform(GLuint program, GLuint index, GLsizei bufSize, GLsizei*? length, GLint* size, GLenum* type, GLchar* name);
 /// Lists the shaders attached to a program.
-extern void glGetAttachedShaders(GLuint program, GLsizei maxCount, GLsizei* count, GLuint[*] shaders);
+extern void glGetAttachedShaders(GLuint program, GLsizei maxCount, GLsizei*? count, GLuint[*] shaders);
 /// Queries the index of an attribute.
 extern GLint glGetAttribLocation(GLuint program, GLchar* name);
 /// Queries integer program parameters.
@@ -2282,15 +2282,15 @@ extern void glDrawRangeElementsBaseVertex(GLenum mode, GLuint start, GLuint end,
 /// Draws instanced indexed primitives with a base vertex.
 extern void glDrawElementsInstancedBaseVertex(GLenum mode, GLsizei count, GLenum type, void*? indices, GLsizei instancecount, GLint basevertex);
 /// Draws several indexed ranges with base vertices.
-extern void glMultiDrawElementsBaseVertex(GLenum mode, GLsizei[*] count, GLenum type, void*[*] indices, GLsizei drawcount, GLint[*] basevertex);
+extern void glMultiDrawElementsBaseVertex(GLenum mode, GLsizei[*] count, GLenum type, void*?[*] indices, GLsizei drawcount, GLint[*] basevertex);
 /// Selects the provoking vertex convention.
 extern void glProvokingVertex(GLenum mode);
 /// Creates a fence sync object.
 extern GLsync? glFenceSync(GLenum condition, GLbitfield flags);
 /// Reports whether a handle is a sync object.
-extern GLboolean glIsSync(GLsync sync);
+extern GLboolean glIsSync(GLsync? sync);
 /// Deletes a sync object.
-extern void glDeleteSync(GLsync sync);
+extern void glDeleteSync(GLsync? sync);
 /// Blocks the client until a sync object signals.
 extern GLenum glClientWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeout);
 /// Blocks the server until a sync object signals.
@@ -2298,7 +2298,7 @@ extern void glWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeout);
 /// Queries 64-bit integer state values.
 extern void glGetInteger64v(GLenum pname, GLint64[*] data);
 /// Queries integer sync object parameters.
-extern void glGetSynciv(GLsync sync, GLenum pname, GLsizei count, GLsizei* length, GLint[*] values);
+extern void glGetSynciv(GLsync sync, GLenum pname, GLsizei count, GLsizei*? length, GLint[*] values);
 /// Queries indexed 64-bit integer state values.
 extern void glGetInteger64i_v(GLenum target, GLuint index, GLint64[*] data);
 /// Queries 64-bit integer buffer parameters.

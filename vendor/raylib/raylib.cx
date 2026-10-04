@@ -15,9 +15,8 @@
 // holds them exactly. The rlgl declarations assume desktop OpenGL
 // (GRAPHICS_API_OPENGL_11/33): other GL flavors change
 // RL_DEFAULT_BATCH_BUFFER_ELEMENTS and rlVertexBuffer.indices.
-// C pointers to single items become 'T*?'; pointers to arrays become
-// the indexable 'T[*]?' (nullability still matches header imports, so
-// header-imported code migrates unchanged).
+// C pointers to single items become 'T*'; pointers to arrays become
+// the indexable 'T[*]'. Either form gains '?' iff the API permits null.
 
 /// Color blending modes (pre-defined).
 using BlendMode = c_int;
@@ -1453,7 +1452,7 @@ using Texture2D = Texture;
 using TextureCubemap = Texture;
 
 /// Initialize window and OpenGL context.
-extern void InitWindow(c_int width, c_int height, char*? title);
+extern void InitWindow(c_int width, c_int height, char* title);
 /// Close window and unload OpenGL context.
 extern void CloseWindow();
 /// Check if application should close (KEY_ESCAPE pressed or windows close icon clicked).
@@ -1493,7 +1492,7 @@ extern void SetWindowIcon(Image image);
 /// Set icon for window (multiple images, RGBA 32bit).
 extern void SetWindowIcons(Image[*]? images, c_int count);
 /// Set title for window.
-extern void SetWindowTitle(char*? title);
+extern void SetWindowTitle(char* title);
 /// Set window position on screen.
 extern void SetWindowPosition(c_int x, c_int y);
 /// Set monitor for the current window.
@@ -1541,7 +1540,7 @@ extern Vector2 GetWindowScaleDPI();
 /// Get the human-readable, UTF-8 encoded name of the specified monitor.
 extern char*? GetMonitorName(c_int monitor);
 /// Set clipboard text content.
-extern void SetClipboardText(char*? text);
+extern void SetClipboardText(char* text);
 /// Get clipboard text content.
 extern char*? GetClipboardText();
 /// Get clipboard image content.
@@ -1607,9 +1606,9 @@ extern Shader LoadShaderFromMemory(char*? vsCode, char*? fsCode);
 /// Check if a shader is valid (loaded on GPU).
 extern bool IsShaderValid(Shader shader);
 /// Get shader uniform location.
-extern c_int GetShaderLocation(Shader shader, char*? uniformName);
+extern c_int GetShaderLocation(Shader shader, char* uniformName);
 /// Get shader attribute location.
-extern c_int GetShaderLocationAttrib(Shader shader, char*? attribName);
+extern c_int GetShaderLocationAttrib(Shader shader, char* attribName);
 /// Set shader uniform value.
 extern void SetShaderValue(Shader shader, c_int locIndex, void*? value, c_int uniformType);
 /// Set shader uniform value vector.
@@ -1659,15 +1658,15 @@ extern c_int[*]? LoadRandomSequence(c_uint count, c_int min, c_int max);
 /// Unload random values sequence.
 extern void UnloadRandomSequence(c_int[*]? sequence);
 /// Takes a screenshot of current screen (filename extension defines format).
-extern void TakeScreenshot(char*? fileName);
+extern void TakeScreenshot(char* fileName);
 /// Setup init configuration flags (view FLAGS).
 extern void SetConfigFlags(c_uint flags);
 /// Open URL with default system browser (if available).
-extern void OpenURL(char*? url);
+extern void OpenURL(char* url);
 /// Set the current threshold (minimum) log level.
 extern void SetTraceLogLevel(c_int logLevel);
 /// Show trace log messages (LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR...).
-extern void TraceLog(c_int logLevel, char*? text, ...);
+extern void TraceLog(c_int logLevel, char* text, ...);
 /// Internal memory allocator.
 extern void*? MemAlloc(c_uint size);
 /// Internal memory reallocator.
@@ -1675,19 +1674,19 @@ extern void*? MemRealloc(void*? ptr, c_uint size);
 /// Internal memory free.
 extern void MemFree(void*? ptr);
 /// Load file data as byte array (read).
-extern c_uchar[*]? LoadFileData(char*? fileName, c_int*? dataSize);
+extern c_uchar[*]? LoadFileData(char* fileName, c_int*? dataSize);
 /// Unload file data allocated by LoadFileData().
 extern void UnloadFileData(c_uchar[*]? data);
 /// Save data to file from byte array (write), returns true on success.
-extern bool SaveFileData(char*? fileName, void*? data, c_int dataSize);
+extern bool SaveFileData(char* fileName, void*? data, c_int dataSize);
 /// Export data to code (.h), returns true on success.
-extern bool ExportDataAsCode(c_uchar[*]? data, c_int dataSize, char*? fileName);
+extern bool ExportDataAsCode(c_uchar[*] data, c_int dataSize, char* fileName);
 /// Load text data from file (read), returns a '\0' terminated string.
-extern char*? LoadFileText(char*? fileName);
+extern char*? LoadFileText(char* fileName);
 /// Unload file text data allocated by LoadFileText().
 extern void UnloadFileText(char*? text);
 /// Save text data to file (write), string must be '\0' terminated, returns true on success.
-extern bool SaveFileText(char*? fileName, char*? text);
+extern bool SaveFileText(char* fileName, char* text);
 /// Set custom file binary data loader.
 extern void SetLoadFileDataCallback(LoadFileDataCallback callback);
 /// Set custom file binary data saver.
@@ -1697,53 +1696,53 @@ extern void SetLoadFileTextCallback(LoadFileTextCallback callback);
 /// Set custom file text data saver.
 extern void SetSaveFileTextCallback(SaveFileTextCallback callback);
 /// Rename file (if exists).
-extern c_int FileRename(char*? fileName, char*? fileRename);
+extern c_int FileRename(char* fileName, char* fileRename);
 /// Remove file (if exists).
-extern c_int FileRemove(char*? fileName);
+extern c_int FileRemove(char* fileName);
 /// Copy file from one path to another, dstPath created if it doesn't exist.
-extern c_int FileCopy(char*? srcPath, char*? dstPath);
+extern c_int FileCopy(char* srcPath, char* dstPath);
 /// Move file from one directory to another, dstPath created if it doesn't exist.
-extern c_int FileMove(char*? srcPath, char*? dstPath);
+extern c_int FileMove(char* srcPath, char* dstPath);
 /// Replace text in an existing file.
-extern c_int FileTextReplace(char*? fileName, char*? search, char*? replacement);
+extern c_int FileTextReplace(char* fileName, char* search, char* replacement);
 /// Find text in existing file.
-extern c_int FileTextFindIndex(char*? fileName, char*? search);
+extern c_int FileTextFindIndex(char* fileName, char* search);
 /// Check if file exists.
-extern bool FileExists(char*? fileName);
+extern bool FileExists(char* fileName);
 /// Check if a directory path exists.
-extern bool DirectoryExists(char*? dirPath);
+extern bool DirectoryExists(char* dirPath);
 /// Check file extension (recommended include point: .png, .wav).
-extern bool IsFileExtension(char*? fileName, char*? ext);
+extern bool IsFileExtension(char* fileName, char* ext);
 /// Get file length in bytes (NOTE: GetFileSize() conflicts with windows.h).
-extern c_int GetFileLength(char*? fileName);
+extern c_int GetFileLength(char* fileName);
 /// Get file modification time (last write time).
-extern c_long GetFileModTime(char*? fileName);
+extern c_long GetFileModTime(char* fileName);
 /// Get pointer to extension for a filename string (includes dot: '.png').
-extern char*? GetFileExtension(char*? fileName);
+extern char*? GetFileExtension(char* fileName);
 /// Get pointer to filename for a path string.
-extern char*? GetFileName(char*? filePath);
+extern char*? GetFileName(char* filePath);
 /// Get filename string without extension (uses static string).
-extern char*? GetFileNameWithoutExt(char*? filePath);
+extern char* GetFileNameWithoutExt(char* filePath);
 /// Get full path for a given fileName with path (uses static string).
-extern char*? GetDirectoryPath(char*? filePath);
+extern char*? GetDirectoryPath(char* filePath);
 /// Get previous directory path for a given path (uses static string).
-extern char*? GetPrevDirectoryPath(char*? dirPath);
+extern char* GetPrevDirectoryPath(char* dirPath);
 /// Get current working directory (uses static string).
-extern char*? GetWorkingDirectory();
+extern char* GetWorkingDirectory();
 /// Get the directory of the running application (uses static string).
-extern char*? GetApplicationDirectory();
+extern char* GetApplicationDirectory();
 /// Create directories (including full path requested), returns 0 on success.
-extern c_int MakeDirectory(char*? dirPath);
+extern c_int MakeDirectory(char* dirPath);
 /// Change working directory, return true on success.
-extern bool ChangeDirectory(char*? dirPath);
+extern bool ChangeDirectory(char* dirPath);
 /// Check if a given path is a file or a directory.
-extern bool IsPathFile(char*? path);
+extern bool IsPathFile(char* path);
 /// Check if fileName is valid for the platform/OS.
-extern bool IsFileNameValid(char*? fileName);
+extern bool IsFileNameValid(char* fileName);
 /// Load directory filepaths, files and directories, no subdirs scan.
-extern FilePathList LoadDirectoryFiles(char*? dirPath);
+extern FilePathList LoadDirectoryFiles(char* dirPath);
 /// Load directory filepaths with extension filtering and subdir scan; some filters available: "*.*", "FILES*", "DIRS*".
-extern FilePathList LoadDirectoryFilesEx(char*? basePath, char*? filter, bool scanSubdirs);
+extern FilePathList LoadDirectoryFilesEx(char* basePath, char*? filter, bool scanSubdirs);
 /// Unload filepaths.
 extern void UnloadDirectoryFiles(FilePathList files);
 /// Check if a file has been dropped into window.
@@ -1753,31 +1752,31 @@ extern FilePathList LoadDroppedFiles();
 /// Unload dropped filepaths.
 extern void UnloadDroppedFiles(FilePathList files);
 /// Get the file count in a directory.
-extern c_uint GetDirectoryFileCount(char*? dirPath);
+extern c_uint GetDirectoryFileCount(char* dirPath);
 /// Get the file count in a directory with extension filtering and recursive directory scan. Use 'DIR' in the filter string to include directories in the result.
-extern c_uint GetDirectoryFileCountEx(char*? basePath, char*? filter, bool scanSubdirs);
+extern c_uint GetDirectoryFileCountEx(char* basePath, char*? filter, bool scanSubdirs);
 /// Compress data (DEFLATE algorithm), memory must be MemFree().
-extern c_uchar[*]? CompressData(c_uchar[*]? data, c_int dataSize, c_int*? compDataSize);
+extern c_uchar[*]? CompressData(c_uchar[*] data, c_int dataSize, c_int*? compDataSize);
 /// Decompress data (DEFLATE algorithm), memory must be MemFree().
-extern c_uchar[*]? DecompressData(c_uchar[*]? compData, c_int compDataSize, c_int*? dataSize);
+extern c_uchar[*]? DecompressData(c_uchar[*] compData, c_int compDataSize, c_int*? dataSize);
 /// Encode data to Base64 string (includes NULL terminator), memory must be MemFree().
-extern char*? EncodeDataBase64(c_uchar[*]? data, c_int dataSize, c_int*? outputSize);
+extern char*? EncodeDataBase64(c_uchar[*] data, c_int dataSize, c_int*? outputSize);
 /// Decode Base64 string (expected NULL terminated), memory must be MemFree().
-extern c_uchar[*]? DecodeDataBase64(char*? text, c_int*? outputSize);
+extern c_uchar[*]? DecodeDataBase64(char* text, c_int*? outputSize);
 /// Compute CRC32 hash code.
-extern c_uint ComputeCRC32(c_uchar[*]? data, c_int dataSize);
+extern c_uint ComputeCRC32(c_uchar[*] data, c_int dataSize);
 /// Compute MD5 hash code, returns static int[4] (16 bytes).
-extern c_uint[*]? ComputeMD5(c_uchar[*]? data, c_int dataSize);
+extern c_uint[*] ComputeMD5(c_uchar[*] data, c_int dataSize);
 /// Compute SHA1 hash code, returns static int[5] (20 bytes).
-extern c_uint[*]? ComputeSHA1(c_uchar[*]? data, c_int dataSize);
+extern c_uint[*] ComputeSHA1(c_uchar[*] data, c_int dataSize);
 /// Compute SHA256 hash code, returns static int[8] (32 bytes).
-extern c_uint[*]? ComputeSHA256(c_uchar[*]? data, c_int dataSize);
+extern c_uint[*] ComputeSHA256(c_uchar[*] data, c_int dataSize);
 /// Load automation events list from file, NULL for empty list, capacity = MAX_AUTOMATION_EVENTS.
 extern AutomationEventList LoadAutomationEventList(char*? fileName);
 /// Unload automation events list from file.
 extern void UnloadAutomationEventList(AutomationEventList list);
 /// Export automation events list as text file.
-extern bool ExportAutomationEventList(AutomationEventList list, char*? fileName);
+extern bool ExportAutomationEventList(AutomationEventList list, char* fileName);
 /// Set automation event list to record to.
 extern void SetAutomationEventList(AutomationEventList*? list);
 /// Set automation event internal base frame to start recording.
@@ -1825,7 +1824,7 @@ extern c_int GetGamepadAxisCount(c_int gamepad);
 /// Get movement value for a gamepad axis.
 extern float32 GetGamepadAxisMovement(c_int gamepad, c_int axis);
 /// Set internal gamepad mappings (SDL_GameControllerDB).
-extern c_int SetGamepadMappings(char*? mappings);
+extern c_int SetGamepadMappings(char* mappings);
 /// Set gamepad vibration for both motors (duration in seconds).
 extern void SetGamepadVibration(c_int gamepad, float32 leftMotor, float32 rightMotor, float32 duration);
 /// Check if a mouse button has been pressed once.
@@ -1883,9 +1882,9 @@ extern Vector2 GetGesturePinchVector();
 /// Get gesture pinch angle.
 extern float32 GetGesturePinchAngle();
 /// Update camera position for selected mode.
-extern void UpdateCamera(Camera*? camera, c_int mode);
+extern void UpdateCamera(Camera* camera, c_int mode);
 /// Update camera movement/rotation.
-extern void UpdateCameraPro(Camera*? camera, Vector3 movement, Vector3 rotation, float32 zoom);
+extern void UpdateCameraPro(Camera* camera, Vector3 movement, Vector3 rotation, float32 zoom);
 /// Set texture and rectangle to be used on shapes drawing.
 extern void SetShapesTexture(Texture2D texture, Rectangle source);
 /// Get texture that is used for shapes drawing.
@@ -1903,7 +1902,7 @@ extern void DrawLineV(Vector2 startPos, Vector2 endPos, Color color);
 /// Draw a line (using triangles/quads).
 extern void DrawLineEx(Vector2 startPos, Vector2 endPos, float32 thick, Color color);
 /// Draw lines sequence (using gl lines).
-extern void DrawLineStrip(Vector2[*]? points, c_int pointCount, Color color);
+extern void DrawLineStrip(Vector2[*] points, c_int pointCount, Color color);
 /// Draw line segment cubic-bezier in-out interpolation.
 extern void DrawLineBezier(Vector2 startPos, Vector2 endPos, float32 thick, Color color);
 /// Draw a dashed line.
@@ -1963,9 +1962,9 @@ extern void DrawTriangle(Vector2 v1, Vector2 v2, Vector2 v3, Color color);
 /// Draw triangle outline (vertex in counter-clockwise order!).
 extern void DrawTriangleLines(Vector2 v1, Vector2 v2, Vector2 v3, Color color);
 /// Draw a triangle fan defined by points (first vertex is the center).
-extern void DrawTriangleFan(Vector2[*]? points, c_int pointCount, Color color);
+extern void DrawTriangleFan(Vector2[*] points, c_int pointCount, Color color);
 /// Draw a triangle strip defined by points.
-extern void DrawTriangleStrip(Vector2[*]? points, c_int pointCount, Color color);
+extern void DrawTriangleStrip(Vector2[*] points, c_int pointCount, Color color);
 /// Draw a regular polygon (Vector version).
 extern void DrawPoly(Vector2 center, c_int sides, float32 radius, float32 rotation, Color color);
 /// Draw a polygon outline of n sides.
@@ -1973,15 +1972,15 @@ extern void DrawPolyLines(Vector2 center, c_int sides, float32 radius, float32 r
 /// Draw a polygon outline of n sides with extended parameters.
 extern void DrawPolyLinesEx(Vector2 center, c_int sides, float32 radius, float32 rotation, float32 lineThick, Color color);
 /// Draw spline: Linear, minimum 2 points.
-extern void DrawSplineLinear(Vector2[*]? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineLinear(Vector2[*] points, c_int pointCount, float32 thick, Color color);
 /// Draw spline: B-Spline, minimum 4 points.
-extern void DrawSplineBasis(Vector2[*]? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineBasis(Vector2[*] points, c_int pointCount, float32 thick, Color color);
 /// Draw spline: Catmull-Rom, minimum 4 points.
-extern void DrawSplineCatmullRom(Vector2[*]? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineCatmullRom(Vector2[*] points, c_int pointCount, float32 thick, Color color);
 /// Draw spline: Quadratic Bezier, minimum 3 points (1 control point): [p1, c2, p3, c4...].
-extern void DrawSplineBezierQuadratic(Vector2[*]? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineBezierQuadratic(Vector2[*] points, c_int pointCount, float32 thick, Color color);
 /// Draw spline: Cubic Bezier, minimum 4 points (2 control points): [p1, c2, c3, p4, c5, c6...].
-extern void DrawSplineBezierCubic(Vector2[*]? points, c_int pointCount, float32 thick, Color color);
+extern void DrawSplineBezierCubic(Vector2[*] points, c_int pointCount, float32 thick, Color color);
 /// Draw spline segment: Linear, 2 points.
 extern void DrawSplineSegmentLinear(Vector2 p1, Vector2 p2, float32 thick, Color color);
 /// Draw spline segment: B-Spline, 4 points.
@@ -2019,21 +2018,21 @@ extern bool CheckCollisionPointTriangle(Vector2 point, Vector2 p1, Vector2 p2, V
 /// Check if point belongs to line created between two points [p1] and [p2] with defined margin in pixels [threshold].
 extern bool CheckCollisionPointLine(Vector2 point, Vector2 p1, Vector2 p2, c_int threshold);
 /// Check if point is within a polygon described by array of vertices.
-extern bool CheckCollisionPointPoly(Vector2 point, Vector2[*]? points, c_int pointCount);
+extern bool CheckCollisionPointPoly(Vector2 point, Vector2[*] points, c_int pointCount);
 /// Check the collision between two lines defined by two points each, returns collision point by reference.
 extern bool CheckCollisionLines(Vector2 startPos1, Vector2 endPos1, Vector2 startPos2, Vector2 endPos2, Vector2*? collisionPoint);
 /// Get collision rectangle for two rectangles collision.
 extern Rectangle GetCollisionRec(Rectangle rec1, Rectangle rec2);
 /// Load image from file into CPU memory (RAM).
-extern Image LoadImage(char*? fileName);
+extern Image LoadImage(char* fileName);
 /// Load image from RAW file data.
-extern Image LoadImageRaw(char*? fileName, c_int width, c_int height, c_int format, c_int headerSize);
+extern Image LoadImageRaw(char* fileName, c_int width, c_int height, c_int format, c_int headerSize);
 /// Load image sequence from file (frames appended to image.data).
-extern Image LoadImageAnim(char*? fileName, c_int*? frames);
+extern Image LoadImageAnim(char* fileName, c_int*? frames);
 /// Load image sequence from memory buffer.
-extern Image LoadImageAnimFromMemory(char*? fileType, c_uchar[*]? fileData, c_int dataSize, c_int*? frames);
+extern Image LoadImageAnimFromMemory(char* fileType, c_uchar[*] fileData, c_int dataSize, c_int*? frames);
 /// Load image from memory buffer, fileType refers to extension: i.e. '.png'.
-extern Image LoadImageFromMemory(char*? fileType, c_uchar[*]? fileData, c_int dataSize);
+extern Image LoadImageFromMemory(char* fileType, c_uchar[*] fileData, c_int dataSize);
 /// Load image from GPU texture data.
 extern Image LoadImageFromTexture(Texture2D texture);
 /// Load image from screen buffer and (screenshot).
@@ -2043,11 +2042,11 @@ extern bool IsImageValid(Image image);
 /// Unload image from CPU memory (RAM).
 extern void UnloadImage(Image image);
 /// Export image data to file, returns true on success.
-extern bool ExportImage(Image image, char*? fileName);
+extern bool ExportImage(Image image, char* fileName);
 /// Export image to memory buffer, memory must be MemFree().
-extern c_uchar[*]? ExportImageToMemory(Image image, char*? fileType, c_int*? fileSize);
+extern c_uchar[*]? ExportImageToMemory(Image image, char* fileType, c_int*? fileSize);
 /// Export image as code file defining an array of bytes, returns true on success.
-extern bool ExportImageAsCode(Image image, char*? fileName);
+extern bool ExportImageAsCode(Image image, char* fileName);
 /// Generate image: plain color.
 extern Image GenImageColor(c_int width, c_int height, Color color);
 /// Generate image: linear gradient, direction in degrees [0..360], 0=Vertical gradient.
@@ -2065,7 +2064,7 @@ extern Image GenImagePerlinNoise(c_int width, c_int height, c_int offsetX, c_int
 /// Generate image: cellular algorithm, bigger tileSize means bigger cells.
 extern Image GenImageCellular(c_int width, c_int height, c_int tileSize);
 /// Generate image: grayscale image from text data.
-extern Image GenImageText(c_int width, c_int height, char*? text);
+extern Image GenImageText(c_int width, c_int height, char* text);
 /// Create an image duplicate (useful for transformations).
 extern Image ImageCopy(Image image);
 /// Create an image from another image piece.
@@ -2073,59 +2072,59 @@ extern Image ImageFromImage(Image image, Rectangle rec);
 /// Create an image from a selected channel of another image (GRAYSCALE).
 extern Image ImageFromChannel(Image image, c_int selectedChannel);
 /// Create an image from text (default font).
-extern Image ImageText(char*? text, c_int fontSize, Color color);
+extern Image ImageText(char* text, c_int fontSize, Color color);
 /// Create an image from text (custom sprite font).
-extern Image ImageTextEx(Font font, char*? text, float32 fontSize, float32 spacing, Color tint);
+extern Image ImageTextEx(Font font, char* text, float32 fontSize, float32 spacing, Color tint);
 /// Convert image data to desired format.
-extern void ImageFormat(Image*? image, c_int newFormat);
+extern void ImageFormat(Image* image, c_int newFormat);
 /// Convert image to POT (power-of-two).
-extern void ImageToPOT(Image*? image, Color fill);
+extern void ImageToPOT(Image* image, Color fill);
 /// Crop an image to a defined rectangle.
-extern void ImageCrop(Image*? image, Rectangle crop);
+extern void ImageCrop(Image* image, Rectangle crop);
 /// Crop image depending on alpha value.
-extern void ImageAlphaCrop(Image*? image, float32 threshold);
+extern void ImageAlphaCrop(Image* image, float32 threshold);
 /// Clear alpha channel to desired color.
-extern void ImageAlphaClear(Image*? image, Color color, float32 threshold);
+extern void ImageAlphaClear(Image* image, Color color, float32 threshold);
 /// Apply alpha mask to image.
-extern void ImageAlphaMask(Image*? image, Image alphaMask);
+extern void ImageAlphaMask(Image* image, Image alphaMask);
 /// Premultiply alpha channel.
-extern void ImageAlphaPremultiply(Image*? image);
+extern void ImageAlphaPremultiply(Image* image);
 /// Apply Gaussian blur using a box blur approximation.
-extern void ImageBlurGaussian(Image*? image, c_int blurSize);
+extern void ImageBlurGaussian(Image* image, c_int blurSize);
 /// Apply custom square convolution kernel to image.
-extern void ImageKernelConvolution(Image*? image, float32[*]? kernel, c_int kernelSize);
+extern void ImageKernelConvolution(Image* image, float32[*] kernel, c_int kernelSize);
 /// Resize image (Bicubic scaling algorithm).
-extern void ImageResize(Image*? image, c_int newWidth, c_int newHeight);
+extern void ImageResize(Image* image, c_int newWidth, c_int newHeight);
 /// Resize image (Nearest-Neighbor scaling algorithm).
-extern void ImageResizeNN(Image*? image, c_int newWidth, c_int newHeight);
+extern void ImageResizeNN(Image* image, c_int newWidth, c_int newHeight);
 /// Resize canvas and fill with color.
-extern void ImageResizeCanvas(Image*? image, c_int newWidth, c_int newHeight, c_int offsetX, c_int offsetY, Color fill);
+extern void ImageResizeCanvas(Image* image, c_int newWidth, c_int newHeight, c_int offsetX, c_int offsetY, Color fill);
 /// Compute all mipmap levels for a provided image.
-extern void ImageMipmaps(Image*? image);
+extern void ImageMipmaps(Image* image);
 /// Dither image data to 16bpp or lower (Floyd-Steinberg dithering).
-extern void ImageDither(Image*? image, c_int rBpp, c_int gBpp, c_int bBpp, c_int aBpp);
+extern void ImageDither(Image* image, c_int rBpp, c_int gBpp, c_int bBpp, c_int aBpp);
 /// Flip image vertically.
-extern void ImageFlipVertical(Image*? image);
+extern void ImageFlipVertical(Image* image);
 /// Flip image horizontally.
-extern void ImageFlipHorizontal(Image*? image);
+extern void ImageFlipHorizontal(Image* image);
 /// Rotate image by input angle in degrees (-359 to 359).
-extern void ImageRotate(Image*? image, c_int degrees);
+extern void ImageRotate(Image* image, c_int degrees);
 /// Rotate image clockwise 90deg.
-extern void ImageRotateCW(Image*? image);
+extern void ImageRotateCW(Image* image);
 /// Rotate image counter-clockwise 90deg.
-extern void ImageRotateCCW(Image*? image);
+extern void ImageRotateCCW(Image* image);
 /// Modify image color: tint.
-extern void ImageColorTint(Image*? image, Color color);
+extern void ImageColorTint(Image* image, Color color);
 /// Modify image color: invert.
-extern void ImageColorInvert(Image*? image);
+extern void ImageColorInvert(Image* image);
 /// Modify image color: grayscale.
-extern void ImageColorGrayscale(Image*? image);
+extern void ImageColorGrayscale(Image* image);
 /// Modify image color: contrast (-100 to 100).
-extern void ImageColorContrast(Image*? image, float32 contrast);
+extern void ImageColorContrast(Image* image, float32 contrast);
 /// Modify image color: brightness (-255 to 255).
-extern void ImageColorBrightness(Image*? image, c_int brightness);
+extern void ImageColorBrightness(Image* image, c_int brightness);
 /// Modify image color: replace color.
-extern void ImageColorReplace(Image*? image, Color color, Color replace);
+extern void ImageColorReplace(Image* image, Color color, Color replace);
 /// Load color data from image as a Color array (RGBA - 32bit).
 extern Color[*]? LoadImageColors(Image image);
 /// Load colors palette from image as a Color array (RGBA - 32bit).
@@ -2139,51 +2138,51 @@ extern Rectangle GetImageAlphaBorder(Image image, float32 threshold);
 /// Get image pixel color at (x, y) position.
 extern Color GetImageColor(Image image, c_int x, c_int y);
 /// Clear image background with given color.
-extern void ImageClearBackground(Image*? dst, Color color);
+extern void ImageClearBackground(Image* dst, Color color);
 /// Draw pixel within an image.
-extern void ImageDrawPixel(Image*? dst, c_int posX, c_int posY, Color color);
+extern void ImageDrawPixel(Image* dst, c_int posX, c_int posY, Color color);
 /// Draw pixel within an image (Vector version).
-extern void ImageDrawPixelV(Image*? dst, Vector2 position, Color color);
+extern void ImageDrawPixelV(Image* dst, Vector2 position, Color color);
 /// Draw line within an image.
-extern void ImageDrawLine(Image*? dst, c_int startPosX, c_int startPosY, c_int endPosX, c_int endPosY, Color color);
+extern void ImageDrawLine(Image* dst, c_int startPosX, c_int startPosY, c_int endPosX, c_int endPosY, Color color);
 /// Draw line within an image (Vector version).
-extern void ImageDrawLineV(Image*? dst, Vector2 start, Vector2 end, Color color);
+extern void ImageDrawLineV(Image* dst, Vector2 start, Vector2 end, Color color);
 /// Draw a line defining thickness within an image.
-extern void ImageDrawLineEx(Image*? dst, Vector2 start, Vector2 end, c_int thick, Color color);
+extern void ImageDrawLineEx(Image* dst, Vector2 start, Vector2 end, c_int thick, Color color);
 /// Draw a filled circle within an image.
-extern void ImageDrawCircle(Image*? dst, c_int centerX, c_int centerY, c_int radius, Color color);
+extern void ImageDrawCircle(Image* dst, c_int centerX, c_int centerY, c_int radius, Color color);
 /// Draw a filled circle within an image (Vector version).
-extern void ImageDrawCircleV(Image*? dst, Vector2 center, c_int radius, Color color);
+extern void ImageDrawCircleV(Image* dst, Vector2 center, c_int radius, Color color);
 /// Draw circle outline within an image.
-extern void ImageDrawCircleLines(Image*? dst, c_int centerX, c_int centerY, c_int radius, Color color);
+extern void ImageDrawCircleLines(Image* dst, c_int centerX, c_int centerY, c_int radius, Color color);
 /// Draw circle outline within an image (Vector version).
-extern void ImageDrawCircleLinesV(Image*? dst, Vector2 center, c_int radius, Color color);
+extern void ImageDrawCircleLinesV(Image* dst, Vector2 center, c_int radius, Color color);
 /// Draw rectangle within an image.
-extern void ImageDrawRectangle(Image*? dst, c_int posX, c_int posY, c_int width, c_int height, Color color);
+extern void ImageDrawRectangle(Image* dst, c_int posX, c_int posY, c_int width, c_int height, Color color);
 /// Draw rectangle within an image (Vector version).
-extern void ImageDrawRectangleV(Image*? dst, Vector2 position, Vector2 size, Color color);
+extern void ImageDrawRectangleV(Image* dst, Vector2 position, Vector2 size, Color color);
 /// Draw rectangle within an image.
-extern void ImageDrawRectangleRec(Image*? dst, Rectangle rec, Color color);
+extern void ImageDrawRectangleRec(Image* dst, Rectangle rec, Color color);
 /// Draw rectangle lines within an image.
-extern void ImageDrawRectangleLines(Image*? dst, Rectangle rec, c_int thick, Color color);
+extern void ImageDrawRectangleLines(Image* dst, Rectangle rec, c_int thick, Color color);
 /// Draw triangle within an image.
-extern void ImageDrawTriangle(Image*? dst, Vector2 v1, Vector2 v2, Vector2 v3, Color color);
+extern void ImageDrawTriangle(Image* dst, Vector2 v1, Vector2 v2, Vector2 v3, Color color);
 /// Draw triangle with interpolated colors within an image.
-extern void ImageDrawTriangleEx(Image*? dst, Vector2 v1, Vector2 v2, Vector2 v3, Color c1, Color c2, Color c3);
+extern void ImageDrawTriangleEx(Image* dst, Vector2 v1, Vector2 v2, Vector2 v3, Color c1, Color c2, Color c3);
 /// Draw triangle outline within an image.
-extern void ImageDrawTriangleLines(Image*? dst, Vector2 v1, Vector2 v2, Vector2 v3, Color color);
+extern void ImageDrawTriangleLines(Image* dst, Vector2 v1, Vector2 v2, Vector2 v3, Color color);
 /// Draw a triangle fan defined by points within an image (first vertex is the center).
-extern void ImageDrawTriangleFan(Image*? dst, Vector2[*]? points, c_int pointCount, Color color);
+extern void ImageDrawTriangleFan(Image* dst, Vector2[*] points, c_int pointCount, Color color);
 /// Draw a triangle strip defined by points within an image.
-extern void ImageDrawTriangleStrip(Image*? dst, Vector2[*]? points, c_int pointCount, Color color);
+extern void ImageDrawTriangleStrip(Image* dst, Vector2[*] points, c_int pointCount, Color color);
 /// Draw a source image within a destination image (tint applied to source).
-extern void ImageDraw(Image*? dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint);
+extern void ImageDraw(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint);
 /// Draw text (using default font) within an image (destination).
-extern void ImageDrawText(Image*? dst, char*? text, c_int posX, c_int posY, c_int fontSize, Color color);
+extern void ImageDrawText(Image* dst, char* text, c_int posX, c_int posY, c_int fontSize, Color color);
 /// Draw text (custom sprite font) within an image (destination).
-extern void ImageDrawTextEx(Image*? dst, Font font, char*? text, Vector2 position, float32 fontSize, float32 spacing, Color tint);
+extern void ImageDrawTextEx(Image* dst, Font font, char* text, Vector2 position, float32 fontSize, float32 spacing, Color tint);
 /// Load texture from file into GPU memory (VRAM).
-extern Texture2D LoadTexture(char*? fileName);
+extern Texture2D LoadTexture(char* fileName);
 /// Load texture from image data.
 extern Texture2D LoadTextureFromImage(Image image);
 /// Load cubemap from image, multiple image cubemap layouts supported.
@@ -2203,7 +2202,7 @@ extern void UpdateTexture(Texture2D texture, void*? pixels);
 /// Update GPU texture rectangle with new data (pixels and rec should fit in texture).
 extern void UpdateTextureRec(Texture2D texture, Rectangle rec, void*? pixels);
 /// Generate GPU mipmaps for a texture.
-extern void GenTextureMipmaps(Texture2D*? texture);
+extern void GenTextureMipmaps(Texture2D* texture);
 /// Set texture scaling filter mode.
 extern void SetTextureFilter(Texture2D texture, c_int filter);
 /// Set texture wrapping mode.
@@ -2257,45 +2256,45 @@ extern c_int GetPixelDataSize(c_int width, c_int height, c_int format);
 /// Get the default Font.
 extern Font GetFontDefault();
 /// Load font from file into GPU memory (VRAM).
-extern Font LoadFont(char*? fileName);
+extern Font LoadFont(char* fileName);
 /// Load font from file with extended parameters, use NULL for codepoints and 0 for codepointCount to load the default character set, font size is provided in pixels height.
-extern Font LoadFontEx(char*? fileName, c_int fontSize, c_int[*]? codepoints, c_int codepointCount);
+extern Font LoadFontEx(char* fileName, c_int fontSize, c_int[*]? codepoints, c_int codepointCount);
 /// Load font from Image (XNA style).
 extern Font LoadFontFromImage(Image image, Color key, c_int firstChar);
 /// Load font from memory buffer, fileType refers to extension: i.e. '.ttf'.
-extern Font LoadFontFromMemory(char*? fileType, c_uchar[*]? fileData, c_int dataSize, c_int fontSize, c_int[*]? codepoints, c_int codepointCount);
+extern Font LoadFontFromMemory(char* fileType, c_uchar[*] fileData, c_int dataSize, c_int fontSize, c_int[*]? codepoints, c_int codepointCount);
 /// Check if a font is valid (font data loaded, WARNING: GPU texture not checked).
 extern bool IsFontValid(Font font);
 /// Load font data for further use.
-extern GlyphInfo[*]? LoadFontData(c_uchar[*]? fileData, c_int dataSize, c_int fontSize, c_int[*]? codepoints, c_int codepointCount, c_int type, c_int*? glyphCount);
+extern GlyphInfo[*]? LoadFontData(c_uchar[*] fileData, c_int dataSize, c_int fontSize, c_int[*]? codepoints, c_int codepointCount, c_int type, c_int*? glyphCount);
 /// Generate image font atlas using chars info.
-extern Image GenImageFontAtlas(GlyphInfo[*]? glyphs, Rectangle*?*? glyphRecs, c_int glyphCount, c_int fontSize, c_int padding, c_int packMethod);
+extern Image GenImageFontAtlas(GlyphInfo[*] glyphs, Rectangle*?*? glyphRecs, c_int glyphCount, c_int fontSize, c_int padding, c_int packMethod);
 /// Unload font chars info data (RAM).
 extern void UnloadFontData(GlyphInfo[*]? glyphs, c_int glyphCount);
 /// Unload font from GPU memory (VRAM).
 extern void UnloadFont(Font font);
 /// Export font as code file, returns true on success.
-extern bool ExportFontAsCode(Font font, char*? fileName);
+extern bool ExportFontAsCode(Font font, char* fileName);
 /// Draw current FPS.
 extern void DrawFPS(c_int posX, c_int posY);
 /// Draw text (using default font).
-extern void DrawText(char*? text, c_int posX, c_int posY, c_int fontSize, Color color);
+extern void DrawText(char* text, c_int posX, c_int posY, c_int fontSize, Color color);
 /// Draw text using font and additional parameters.
-extern void DrawTextEx(Font font, char*? text, Vector2 position, float32 fontSize, float32 spacing, Color tint);
+extern void DrawTextEx(Font font, char* text, Vector2 position, float32 fontSize, float32 spacing, Color tint);
 /// Draw text using Font and pro parameters (rotation).
-extern void DrawTextPro(Font font, char*? text, Vector2 position, Vector2 origin, float32 rotation, float32 fontSize, float32 spacing, Color tint);
+extern void DrawTextPro(Font font, char* text, Vector2 position, Vector2 origin, float32 rotation, float32 fontSize, float32 spacing, Color tint);
 /// Draw one character (codepoint).
 extern void DrawTextCodepoint(Font font, c_int codepoint, Vector2 position, float32 fontSize, Color tint);
 /// Draw multiple character (codepoint).
-extern void DrawTextCodepoints(Font font, c_int[*]? codepoints, c_int codepointCount, Vector2 position, float32 fontSize, float32 spacing, Color tint);
+extern void DrawTextCodepoints(Font font, c_int[*] codepoints, c_int codepointCount, Vector2 position, float32 fontSize, float32 spacing, Color tint);
 /// Set vertical line spacing when drawing with line-breaks.
 extern void SetTextLineSpacing(c_int spacing);
 /// Measure string width for default font.
-extern c_int MeasureText(char*? text, c_int fontSize);
+extern c_int MeasureText(char* text, c_int fontSize);
 /// Measure string size for Font.
-extern Vector2 MeasureTextEx(Font font, char*? text, float32 fontSize, float32 spacing);
+extern Vector2 MeasureTextEx(Font font, char* text, float32 fontSize, float32 spacing);
 /// Measure string size for an existing array of codepoints for Font.
-extern Vector2 MeasureTextCodepoints(Font font, c_int[*]? codepoints, c_int length, float32 fontSize, float32 spacing);
+extern Vector2 MeasureTextCodepoints(Font font, c_int[*] codepoints, c_int length, float32 fontSize, float32 spacing);
 /// Get glyph index position in font for a codepoint (unicode character), fallback to '?' if not found.
 extern c_int GetGlyphIndex(Font font, c_int codepoint);
 /// Get glyph font info data for a codepoint (unicode character), fallback to '?' if not found.
@@ -2303,75 +2302,75 @@ extern GlyphInfo GetGlyphInfo(Font font, c_int codepoint);
 /// Get glyph rectangle in font atlas for a codepoint (unicode character), fallback to '?' if not found.
 extern Rectangle GetGlyphAtlasRec(Font font, c_int codepoint);
 /// Load UTF-8 text encoded from codepoints array.
-extern char*? LoadUTF8(c_int[*]? codepoints, c_int length);
+extern char*? LoadUTF8(c_int[*] codepoints, c_int length);
 /// Unload UTF-8 text encoded from codepoints array.
 extern void UnloadUTF8(char*? text);
 /// Load all codepoints from a UTF-8 text string, codepoints count returned by parameter.
-extern c_int[*]? LoadCodepoints(char*? text, c_int*? count);
+extern c_int[*]? LoadCodepoints(char* text, c_int*? count);
 /// Unload codepoints data from memory.
 extern void UnloadCodepoints(c_int[*]? codepoints);
 /// Get total number of codepoints in a UTF-8 encoded string.
-extern c_int GetCodepointCount(char*? text);
+extern c_int GetCodepointCount(char* text);
 /// Get next codepoint in a UTF-8 encoded string, 0x3f('?') is returned on failure.
-extern c_int GetCodepoint(char*? text, c_int*? codepointSize);
+extern c_int GetCodepoint(char* text, c_int*? codepointSize);
 /// Get next codepoint in a UTF-8 encoded string, 0x3f('?') is returned on failure.
-extern c_int GetCodepointNext(char*? text, c_int*? codepointSize);
+extern c_int GetCodepointNext(char* text, c_int*? codepointSize);
 /// Get previous codepoint in a UTF-8 encoded string, 0x3f('?') is returned on failure.
-extern c_int GetCodepointPrevious(char*? text, c_int*? codepointSize);
+extern c_int GetCodepointPrevious(char* text, c_int*? codepointSize);
 /// Encode one codepoint into UTF-8 byte array (array length returned as parameter).
 extern char*? CodepointToUTF8(c_int codepoint, c_int*? utf8Size);
 /// Load text as separate lines ('\n').
-extern char*?[*]? LoadTextLines(char*? text, c_int*? count);
+extern char*?[*]? LoadTextLines(char* text, c_int*? count);
 /// Unload text lines.
 extern void UnloadTextLines(char*?[*]? text, c_int lineCount);
 /// Copy one string to another, returns bytes copied.
-extern c_int TextCopy(char*? dst, char*? src);
+extern c_int TextCopy(char* dst, char* src);
 /// Check if two text string are equal.
-extern bool TextIsEqual(char*? text1, char*? text2);
+extern bool TextIsEqual(char* text1, char* text2);
 /// Get text length, checks for '\0' ending.
-extern c_uint TextLength(char*? text);
+extern c_uint TextLength(char* text);
 /// Text formatting with variables (sprintf() style).
-extern char*? TextFormat(char*? text, ...);
+extern char*? TextFormat(char* text, ...);
 /// Get a piece of a text string.
-extern char*? TextSubtext(char*? text, c_int position, c_int length);
+extern char*? TextSubtext(char* text, c_int position, c_int length);
 /// Remove text spaces, concat words.
-extern char*? TextRemoveSpaces(char*? text);
+extern char*? TextRemoveSpaces(char* text);
 /// Get text between two strings.
-extern char*? GetTextBetween(char*? text, char*? begin, char*? end);
+extern char*? GetTextBetween(char* text, char* begin, char* end);
 /// Replace text string with new string.
-extern char*? TextReplace(char*? text, char*? search, char*? replacement);
+extern char*? TextReplace(char* text, char* search, char* replacement);
 /// Replace text string with new string, memory must be MemFree().
-extern char*? TextReplaceAlloc(char*? text, char*? search, char*? replacement);
+extern char*? TextReplaceAlloc(char* text, char* search, char* replacement);
 /// Replace text between two specific strings.
-extern char*? TextReplaceBetween(char*? text, char*? begin, char*? end, char*? replacement);
+extern char*? TextReplaceBetween(char* text, char* begin, char* end, char* replacement);
 /// Replace text between two specific strings, memory must be MemFree().
-extern char*? TextReplaceBetweenAlloc(char*? text, char*? begin, char*? end, char*? replacement);
+extern char*? TextReplaceBetweenAlloc(char* text, char* begin, char* end, char* replacement);
 /// Insert text in a defined byte position.
-extern char*? TextInsert(char*? text, char*? insert, c_int position);
+extern char*? TextInsert(char* text, char* insert, c_int position);
 /// Insert text in a defined byte position, memory must be MemFree().
-extern char*? TextInsertAlloc(char*? text, char*? insert, c_int position);
+extern char*? TextInsertAlloc(char* text, char* insert, c_int position);
 /// Join text strings with delimiter.
-extern char*? TextJoin(char*?[*]? textList, c_int count, char*? delimiter);
+extern char*? TextJoin(char*?[*] textList, c_int count, char* delimiter);
 /// Split text into multiple strings, using MAX_TEXTSPLIT_COUNT static strings.
-extern char*?[*]? TextSplit(char*? text, char delimiter, c_int*? count);
+extern char*?[*]? TextSplit(char* text, char delimiter, c_int*? count);
 /// Append text at specific position and move cursor.
-extern void TextAppend(char*? text, char*? append, c_int*? position);
+extern void TextAppend(char* text, char* append, c_int*? position);
 /// Find first text occurrence within a string, -1 if not found.
-extern c_int TextFindIndex(char*? text, char*? search);
+extern c_int TextFindIndex(char* text, char* search);
 /// Get upper case version of provided string.
-extern char*? TextToUpper(char*? text);
+extern char*? TextToUpper(char* text);
 /// Get lower case version of provided string.
-extern char*? TextToLower(char*? text);
+extern char*? TextToLower(char* text);
 /// Get Pascal case notation version of provided string.
-extern char*? TextToPascal(char*? text);
+extern char*? TextToPascal(char* text);
 /// Get Snake case notation version of provided string.
-extern char*? TextToSnake(char*? text);
+extern char*? TextToSnake(char* text);
 /// Get Camel case notation version of provided string.
-extern char*? TextToCamel(char*? text);
+extern char*? TextToCamel(char* text);
 /// Get integer value from text.
-extern c_int TextToInteger(char*? text);
+extern c_int TextToInteger(char* text);
 /// Get float value from text.
-extern float32 TextToFloat(char*? text);
+extern float32 TextToFloat(char* text);
 /// Draw a line in 3D world space.
 extern void DrawLine3D(Vector3 startPos, Vector3 endPos, Color color);
 /// Draw a point in 3D space, actually a small line.
@@ -2381,7 +2380,7 @@ extern void DrawCircle3D(Vector3 center, float32 radius, Vector3 rotationAxis, f
 /// Draw a color-filled triangle (vertex in counter-clockwise order!).
 extern void DrawTriangle3D(Vector3 v1, Vector3 v2, Vector3 v3, Color color);
 /// Draw a triangle strip defined by points.
-extern void DrawTriangleStrip3D(Vector3[*]? points, c_int pointCount, Color color);
+extern void DrawTriangleStrip3D(Vector3[*] points, c_int pointCount, Color color);
 /// Draw cube.
 extern void DrawCube(Vector3 position, float32 width, float32 height, float32 length, Color color);
 /// Draw cube (Vector version).
@@ -2415,7 +2414,7 @@ extern void DrawRay(Ray ray, Color color);
 /// Draw a grid (centered at (0, 0, 0)).
 extern void DrawGrid(c_int slices, float32 spacing);
 /// Load model from files (meshes and materials).
-extern Model LoadModel(char*? fileName);
+extern Model LoadModel(char* fileName);
 /// Load model from generated mesh (default material).
 extern Model LoadModelFromMesh(Mesh mesh);
 /// Check if a model is valid (loaded in GPU, VAO/VBOs).
@@ -2441,7 +2440,7 @@ extern void DrawBillboardRec(Camera camera, Texture2D texture, Rectangle source,
 /// Draw a billboard texture defined by source and rotation.
 extern void DrawBillboardPro(Camera camera, Texture2D texture, Rectangle source, Vector3 position, Vector3 up, Vector2 size, Vector2 origin, float32 rotation, Color tint);
 /// Upload mesh vertex data in GPU and provide VAO/VBO ids.
-extern void UploadMesh(Mesh*? mesh, bool dynamic);
+extern void UploadMesh(Mesh* mesh, bool dynamic);
 /// Update mesh vertex data in GPU for a specific buffer index.
 extern void UpdateMeshBuffer(Mesh mesh, c_int index, void*? data, c_int dataSize, c_int offset);
 /// Unload mesh data from CPU and GPU.
@@ -2449,15 +2448,15 @@ extern void UnloadMesh(Mesh mesh);
 /// Draw a 3d mesh with material and transform.
 extern void DrawMesh(Mesh mesh, Material material, Matrix transform);
 /// Draw multiple mesh instances with material and different transforms.
-extern void DrawMeshInstanced(Mesh mesh, Material material, Matrix[*]? transforms, c_int instances);
+extern void DrawMeshInstanced(Mesh mesh, Material material, Matrix[*] transforms, c_int instances);
 /// Compute mesh bounding box limits.
 extern BoundingBox GetMeshBoundingBox(Mesh mesh);
 /// Compute mesh tangents.
-extern void GenMeshTangents(Mesh*? mesh);
+extern void GenMeshTangents(Mesh* mesh);
 /// Export mesh data to file, returns true on success.
-extern bool ExportMesh(Mesh mesh, char*? fileName);
+extern bool ExportMesh(Mesh mesh, char* fileName);
 /// Export mesh as code file (.h) defining multiple arrays of vertex attributes.
-extern bool ExportMeshAsCode(Mesh mesh, char*? fileName);
+extern bool ExportMeshAsCode(Mesh mesh, char* fileName);
 /// Generate polygonal mesh.
 extern Mesh GenMeshPoly(c_int sides, float32 radius);
 /// Generate plane mesh (with subdivisions).
@@ -2481,7 +2480,7 @@ extern Mesh GenMeshHeightmap(Image heightmap, Vector3 size);
 /// Generate cubes-based map mesh from image data.
 extern Mesh GenMeshCubicmap(Image cubicmap, Vector3 cubeSize);
 /// Load materials from model file.
-extern Material[*]? LoadMaterials(char*? fileName, c_int*? materialCount);
+extern Material[*]? LoadMaterials(char* fileName, c_int*? materialCount);
 /// Load default material (Supports: DIFFUSE, SPECULAR, NORMAL maps).
 extern Material LoadMaterialDefault();
 /// Check if a material is valid (shader assigned, map textures loaded in GPU).
@@ -2489,11 +2488,11 @@ extern bool IsMaterialValid(Material material);
 /// Unload material from GPU memory (VRAM).
 extern void UnloadMaterial(Material material);
 /// Set texture for a material map type (MATERIAL_MAP_DIFFUSE, MATERIAL_MAP_SPECULAR...).
-extern void SetMaterialTexture(Material*? material, c_int mapType, Texture2D texture);
+extern void SetMaterialTexture(Material* material, c_int mapType, Texture2D texture);
 /// Set material for a mesh.
-extern void SetModelMeshMaterial(Model*? model, c_int meshId, c_int materialId);
+extern void SetModelMeshMaterial(Model* model, c_int meshId, c_int materialId);
 /// Load model animations from file.
-extern ModelAnimation[*]? LoadModelAnimations(char*? fileName, c_int*? animCount);
+extern ModelAnimation[*]? LoadModelAnimations(char* fileName, c_int*? animCount);
 /// Update model animation pose (vertex buffers and bone matrices).
 extern void UpdateModelAnimation(Model model, ModelAnimation anim, float32 frame);
 /// Update model animation pose, blending two animations.
@@ -2529,13 +2528,13 @@ extern void SetMasterVolume(float32 volume);
 /// Get master volume (listener).
 extern float32 GetMasterVolume();
 /// Load wave data from file.
-extern Wave LoadWave(char*? fileName);
+extern Wave LoadWave(char* fileName);
 /// Load wave from memory buffer, fileType refers to extension: i.e. '.wav'.
-extern Wave LoadWaveFromMemory(char*? fileType, c_uchar[*]? fileData, c_int dataSize);
+extern Wave LoadWaveFromMemory(char* fileType, c_uchar[*] fileData, c_int dataSize);
 /// Checks if wave data is valid (data loaded and parameters).
 extern bool IsWaveValid(Wave wave);
 /// Load sound from file.
-extern Sound LoadSound(char*? fileName);
+extern Sound LoadSound(char* fileName);
 /// Load sound from wave data.
 extern Sound LoadSoundFromWave(Wave wave);
 /// Create a new sound that shares the same sample data as the source sound, does not own the sound data.
@@ -2551,9 +2550,9 @@ extern void UnloadSound(Sound sound);
 /// Unload a sound alias (does not deallocate sample data).
 extern void UnloadSoundAlias(Sound alias);
 /// Export wave data to file, returns true on success.
-extern bool ExportWave(Wave wave, char*? fileName);
+extern bool ExportWave(Wave wave, char* fileName);
 /// Export wave sample data to code (.h), returns true on success.
-extern bool ExportWaveAsCode(Wave wave, char*? fileName);
+extern bool ExportWaveAsCode(Wave wave, char* fileName);
 /// Play a sound.
 extern void PlaySound(Sound sound);
 /// Stop playing a sound.
@@ -2573,17 +2572,17 @@ extern void SetSoundPan(Sound sound, float32 pan);
 /// Copy a wave to a new wave.
 extern Wave WaveCopy(Wave wave);
 /// Crop a wave to defined frames range.
-extern void WaveCrop(Wave*? wave, c_int initFrame, c_int finalFrame);
+extern void WaveCrop(Wave* wave, c_int initFrame, c_int finalFrame);
 /// Convert wave data to desired format.
-extern void WaveFormat(Wave*? wave, c_int sampleRate, c_int sampleSize, c_int channels);
+extern void WaveFormat(Wave* wave, c_int sampleRate, c_int sampleSize, c_int channels);
 /// Load samples data from wave as a 32bit float data array.
 extern float32[*]? LoadWaveSamples(Wave wave);
 /// Unload samples data loaded with LoadWaveSamples().
 extern void UnloadWaveSamples(float32[*]? samples);
 /// Load music stream from file.
-extern Music LoadMusicStream(char*? fileName);
+extern Music LoadMusicStream(char* fileName);
 /// Load music stream from data.
-extern Music LoadMusicStreamFromMemory(char*? fileType, c_uchar[*]? data, c_int dataSize);
+extern Music LoadMusicStreamFromMemory(char* fileType, c_uchar[*] data, c_int dataSize);
 /// Checks if a music stream is valid (context and buffers initialized).
 extern bool IsMusicValid(Music music);
 /// Unload music stream.
@@ -2665,7 +2664,7 @@ extern void rlRotatef(float32 angle, float32 x, float32 y, float32 z);
 /// Multiply the current matrix by a scaling matrix.
 extern void rlScalef(float32 x, float32 y, float32 z);
 /// Multiply the current matrix by another matrix.
-extern void rlMultMatrixf(float32[*]? matf);
+extern void rlMultMatrixf(float32[*] matf);
 /// Sets a perspective frustum projection.
 extern void rlFrustum(float64 left, float64 right, float64 bottom, float64 top, float64 znear, float64 zfar);
 /// Sets an orthographic projection.
@@ -2819,7 +2818,7 @@ extern void rlglClose();
 /// Load OpenGL extensions (loader function required).
 extern void rlLoadExtensions(void*? loader);
 /// Get OpenGL procedure address.
-extern void*? rlGetProcAddress(char*? procName);
+extern void*? rlGetProcAddress(char* procName);
 /// Get current OpenGL version.
 extern c_int rlGetVersion();
 /// Set current framebuffer width.
@@ -2841,7 +2840,7 @@ extern rlRenderBatch rlLoadRenderBatch(c_int numBuffers, c_int bufferElements);
 /// Unload render batch system.
 extern void rlUnloadRenderBatch(rlRenderBatch batch);
 /// Draw render batch data (Update->Draw->Reset).
-extern void rlDrawRenderBatch(rlRenderBatch*? batch);
+extern void rlDrawRenderBatch(rlRenderBatch* batch);
 /// Set the active render batch for rlgl (NULL for default internal).
 extern void rlSetRenderBatchActive(rlRenderBatch*? batch);
 /// Update and draw internal render batch.
@@ -2911,7 +2910,7 @@ extern void rlCopyFramebuffer(c_int x, c_int y, c_int width, c_int height, c_int
 /// Resize internal framebuffer.
 extern void rlResizeFramebuffer(c_int width, c_int height);
 /// Load (compile) shader and return shader id (type: RL_VERTEX_SHADER, RL_FRAGMENT_SHADER, RL_COMPUTE_SHADER).
-extern c_uint rlLoadShader(char*? code, c_int type);
+extern c_uint rlLoadShader(char* code, c_int type);
 /// Load shader from code strings.
 extern c_uint rlLoadShaderProgram(char*? vsCode, char*? fsCode);
 /// Load shader program, using already loaded shader ids.
@@ -2923,15 +2922,15 @@ extern void rlUnloadShader(c_uint id);
 /// Unload shader program.
 extern void rlUnloadShaderProgram(c_uint id);
 /// Get shader location uniform, requires shader program id.
-extern c_int rlGetLocationUniform(c_uint id, char*? uniformName);
+extern c_int rlGetLocationUniform(c_uint id, char* uniformName);
 /// Get shader location attribute, requires shader program id.
-extern c_int rlGetLocationAttrib(c_uint id, char*? attribName);
+extern c_int rlGetLocationAttrib(c_uint id, char* attribName);
 /// Set shader value uniform.
 extern void rlSetUniform(c_int locIndex, void*? value, c_int uniformType, c_int count);
 /// Set shader value matrix.
 extern void rlSetUniformMatrix(c_int locIndex, Matrix mat);
 /// Set shader value matrices.
-extern void rlSetUniformMatrices(c_int locIndex, Matrix[*]? mat, c_int count);
+extern void rlSetUniformMatrices(c_int locIndex, Matrix[*] mat, c_int count);
 /// Set shader value sampler.
 extern void rlSetUniformSampler(c_int locIndex, c_uint textureId);
 /// Set shader currently active (id and locations).
@@ -2977,26 +2976,26 @@ extern void rlLoadDrawCube();
 /// Load and draw a quad.
 extern void rlLoadDrawQuad();
 /// Returns the camera's forward direction.
-extern Vector3 GetCameraForward(Camera*? camera);
+extern Vector3 GetCameraForward(Camera* camera);
 /// Returns the camera's up direction.
-extern Vector3 GetCameraUp(Camera*? camera);
+extern Vector3 GetCameraUp(Camera* camera);
 /// Returns the camera's right direction.
-extern Vector3 GetCameraRight(Camera*? camera);
+extern Vector3 GetCameraRight(Camera* camera);
 /// Moves the camera forward by distance.
-extern void CameraMoveForward(Camera*? camera, float32 distance, bool moveInWorldPlane);
+extern void CameraMoveForward(Camera* camera, float32 distance, bool moveInWorldPlane);
 /// Moves the camera up by distance.
-extern void CameraMoveUp(Camera*? camera, float32 distance);
+extern void CameraMoveUp(Camera* camera, float32 distance);
 /// Moves the camera right by distance.
-extern void CameraMoveRight(Camera*? camera, float32 distance, bool moveInWorldPlane);
+extern void CameraMoveRight(Camera* camera, float32 distance, bool moveInWorldPlane);
 /// Moves the camera toward its target.
-extern void CameraMoveToTarget(Camera*? camera, float32 delta);
+extern void CameraMoveToTarget(Camera* camera, float32 delta);
 /// Yaws the camera by angle.
-extern void CameraYaw(Camera*? camera, float32 angle, bool rotateAroundTarget);
+extern void CameraYaw(Camera* camera, float32 angle, bool rotateAroundTarget);
 /// Pitches the camera by angle.
-extern void CameraPitch(Camera*? camera, float32 angle, bool lockView, bool rotateAroundTarget, bool rotateUp);
+extern void CameraPitch(Camera* camera, float32 angle, bool lockView, bool rotateAroundTarget, bool rotateUp);
 /// Rolls the camera by angle.
-extern void CameraRoll(Camera*? camera, float32 angle);
+extern void CameraRoll(Camera* camera, float32 angle);
 /// Returns the camera's view matrix.
-extern Matrix GetCameraViewMatrix(Camera*? camera);
+extern Matrix GetCameraViewMatrix(Camera* camera);
 /// Returns the camera's projection matrix.
-extern Matrix GetCameraProjectionMatrix(Camera*? camera, float32 aspect);
+extern Matrix GetCameraProjectionMatrix(Camera* camera, float32 aspect);

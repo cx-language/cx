@@ -182,21 +182,21 @@ float speedT(float vx, float vy) {
 
 void runInteractive() {
     if !SDL_Init(SDL_INIT_VIDEO) {
-        println(SDL_GetError()!);
+        println(SDL_GetError());
         return;
     }
     defer SDL_Quit();
 
     var window = SDL_CreateWindow("boids", width, height, SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if window == null {
-        println(SDL_GetError()!);
+        println(SDL_GetError());
         return;
     }
     defer SDL_DestroyWindow(window);
 
     var renderer = SDL_CreateRenderer(window, null);
     if renderer == null {
-        println(SDL_GetError()!);
+        println(SDL_GetError());
         return;
     }
     defer SDL_DestroyRenderer(renderer);

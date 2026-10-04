@@ -11,7 +11,7 @@ bool isKeyDown(SDL_Scancode key) {
 
 void main() {
     if !SDL_Init(SDL_INIT_VIDEO) {
-        println(SDL_GetError()!);
+        println(SDL_GetError());
         return;
     }
     defer SDL_Quit();
@@ -20,7 +20,7 @@ void main() {
         width, height, SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
     if window == null {
-        println(SDL_GetError()!);
+        println(SDL_GetError());
         return;
     }
 
@@ -29,7 +29,7 @@ void main() {
     var renderer = SDL_CreateRenderer(window, null);
 
     if renderer == null {
-        println(SDL_GetError()!);
+        println(SDL_GetError());
         return;
     }
 
