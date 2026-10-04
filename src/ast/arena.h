@@ -31,32 +31,15 @@ inline llvm::StringRef internString(llvm::StringRef value) {
     return stringSaver().save(value);
 }
 
-struct AstDtorEntry {
-    void* ptr;
-    void (*destroy)(void*);
-};
-
-/// Every non-trivial arena node, for resetAstArena. Node vectors and strings
-/// live in the arena, but a few members still malloc (generic-instantiation
-/// caches, wide int literals, spilled SmallVectors); running the destructors
-/// frees those. Also a safety net: a future malloc'd member is freed without
-/// any other change.
-inline std::vector<AstDtorEntry>& astDtorRegistry() {
-    static auto* registry = new std::vector<AstDtorEntry>();
-    return *registry;
-}
-
-/// Frees all AST nodes and interned strings. Every pointer returned from this
-/// header dangles afterwards; the caller must have dropped them all (the LSP
-/// session drops its cached modules first). The allocator is reusable right
-/// after: the next compilation interns from scratch, exactly like a fresh
-/// process would.
+/// Frees all AST nodes and interned strings. Node destructors never run, so
+/// nodes must not own malloc'd memory: dynamic members use AstVector and
+/// interned StringRefs. A malloc'd member would leak silently at reset, so
+/// re-check with LeakSanitizer over repeated LSP analyses when adding node
+/// members. Every pointer returned from this header dangles afterwards; the
+/// caller must have dropped them all (the LSP session drops its cached
+/// modules first). The allocator is reusable right after: the next
+/// compilation interns from scratch, exactly like a fresh process would.
 inline void resetAstArena() {
-    auto& registry = astDtorRegistry();
-    for (auto it = registry.rbegin(); it != registry.rend(); ++it) {
-        it->destroy(it->ptr);
-    }
-    registry.clear();
     // Destroying the saver only frees its own DenseSet buckets (malloced);
     // the interned bytes live in the allocator slabs freed below.
     auto* saver = &stringSaver();
@@ -99,14 +82,11 @@ template<typename T> struct AstAllocator {
 /// them past it. Not thread-safe, like the rest of the compiler.
 template<typename T> using AstVector = std::vector<T, AstAllocator<T>>;
 
-/// Allocates an AST node of type T from the global AST arena.
+/// Allocates an AST node of type T from the global AST arena. The destructor
+/// never runs (see resetAstArena), so T must not own malloc'd memory.
 template<typename T, typename... Args> T* makeAST(Args&&... args) {
     void* mem = astAllocator().Allocate(sizeof(T), alignof(T));
-    T* node = new (mem) T(std::forward<Args>(args)...);
-    if constexpr (!std::is_trivially_destructible_v<T>) {
-        astDtorRegistry().push_back({node, [](void* ptr) { static_cast<T*>(ptr)->~T(); }});
-    }
-    return node;
+    return new (mem) T(std::forward<Args>(args)...);
 }
 
 } // namespace cx
