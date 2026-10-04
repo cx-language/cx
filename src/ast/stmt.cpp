@@ -168,7 +168,7 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
     std::string indexCounterName;
     if (indexVariable) {
         indexCounterName = "__index" + (nestLevel > 0 ? std::to_string(nestLevel) : "");
-        auto zero = makeAST<IntLiteralExpr>(llvm::APSInt(64, false), location);
+        auto zero = makeAST<IntLiteralExpr>(0, true, location);
         auto counterVarDecl = makeAST<VarDecl>(Type(), indexCounterName, zero, variable->parent, AccessLevel::None, *variable->getModule(), location);
         iteratorVarStmt->decls.push_back(counterVarDecl);
     }

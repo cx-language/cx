@@ -82,10 +82,10 @@ Value* IRGenerator::emitIntLiteralExpr(const IntLiteralExpr& expr) {
     // that requires a floating-point value. It might make sense to combine
     // IntLiteralExpr and FloatLiteralExpr into a single class.
     if (expr.type.isFloatingPoint()) {
-        return createConstantFP(expr.type, expr.value.roundToDouble());
+        return createConstantFP(expr.type, expr.getValue().roundToDouble());
     }
 
-    return createConstantInt(expr.type, expr.value);
+    return createConstantInt(expr.type, expr.getValue());
 }
 
 Value* IRGenerator::emitFloatLiteralExpr(const FloatLiteralExpr& expr) {

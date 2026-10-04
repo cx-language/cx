@@ -569,14 +569,15 @@ static Type typecheckCharacterLiteralExpr(CharacterLiteralExpr&) {
 }
 
 static Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
-    if (expr.value.isSignedIntN(32)) {
+    llvm::APSInt value = expr.getValue();
+    if (value.isSignedIntN(32)) {
         // 'int' is the default spelling for 32-bit integer literals.
         Type type = Type::getInt32();
         type.aliasSpelling = internString("int");
         return type;
-    } else if (expr.value.isSignedIntN(64)) {
+    } else if (value.isSignedIntN(64)) {
         return Type::getInt64();
-    } else if (expr.value.isIntN(64)) {
+    } else if (value.isIntN(64)) {
         return Type::getUInt64();
     }
     ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "integer literal is too large");
@@ -4885,9 +4886,7 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr, bool baseIsWriteOnly) {
         if (!arrayType.isConcreteArray()) {
             ERROR_RANGE(getExprRangeStart(*indexExpr), indexExpr->endLocation, "from-end index '[-]' is not supported for arrays of unknown size");
         }
-        llvm::APSInt sizeValue(64, false);
-        sizeValue = arrayType.getArraySize();
-        auto* sizeLiteral = makeAST<IntLiteralExpr>(std::move(sizeValue), indexExpr->location);
+        auto* sizeLiteral = makeAST<IntLiteralExpr>(uint64_t(arrayType.getArraySize()), true, indexExpr->location);
         sizeLiteral->endLocation = indexExpr->location;
         auto* difference = makeAST<BinaryExpr>(BinaryOperator(Token::Minus), sizeLiteral, indexExpr, indexExpr->location);
         difference->endLocation = indexExpr->endLocation;

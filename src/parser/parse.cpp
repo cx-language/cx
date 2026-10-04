@@ -301,7 +301,8 @@ CharacterLiteralExpr* Parser::parseCharacterLiteral() {
 
 IntLiteralExpr* Parser::parseIntLiteral() {
     ASSERT(currentToken() == Token::IntegerLiteral);
-    auto expr = makeAST<IntLiteralExpr>(currentToken().getIntegerValue(), getCurrentLocation());
+    uint64_t bits = currentToken().getIntegerBits();
+    auto expr = makeAST<IntLiteralExpr>(bits, true, getCurrentLocation(), (bits & (1ULL << 63)) != 0);
     expr->endLocation = getTokenEndLocation(currentToken());
     consumeToken();
     return expr;
@@ -410,15 +411,12 @@ AstVector<GenericArg> Parser::parseGenericArgumentList() {
     while (true) {
         if (currentToken() == Token::IntegerLiteral) {
             auto location = getCurrentLocation();
-            llvm::APSInt value = currentToken().getIntegerValue();
+            uint64_t value = currentToken().getIntegerBits();
             consumeToken();
-            if (value.isNegative()) {
-                ERROR_RANGE(location, getLastTokenEndLocation(), "integer generic argument must be non-negative");
-            }
-            if (value.getActiveBits() > 63) {
+            if (value > uint64_t(INT64_MAX)) {
                 ERROR_RANGE(location, getLastTokenEndLocation(), "integer generic argument is too large");
             }
-            genericArgs.push_back(GenericArg::fromInt(value.getSExtValue(), location, getLastTokenEndLocation()));
+            genericArgs.push_back(GenericArg::fromInt(int64_t(value), location, getLastTokenEndLocation()));
         } else {
             genericArgs.push_back(parseType());
         }
@@ -2187,7 +2185,7 @@ EnumDecl* Parser::parseEnumDecl(AstVector<GenericParamDecl>* genericParams, Acce
     auto* enumDecl = makeAST<EnumDecl>(name.getString(), AstVector<EnumCase>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr, name.location);
 
     parse(Token::LeftBrace);
-    auto valueCounter = llvm::APSInt::get(0);
+    uint64_t valueCounter = 0;
 
     while (currentToken() != Token::RightBrace) {
         AccessLevel accessLevel = AccessLevel::Default;
@@ -2230,7 +2228,7 @@ EnumDecl* Parser::parseEnumDecl(AstVector<GenericParamDecl>* genericParams, Acce
                 associatedType = parseAnonymousStructType();
             }
 
-            auto value = makeAST<IntLiteralExpr>(valueCounter, caseName.location);
+            auto value = makeAST<IntLiteralExpr>(valueCounter, true, caseName.location);
             enumDecl->addCase(EnumCase(caseName.getString(), value, associatedType, typeAccessLevel, caseName.location));
             ++valueCounter;
 

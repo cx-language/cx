@@ -137,7 +137,7 @@ struct Token {
     llvm::StringRef getString() const { return src.string; }
     bool is(Token::Kind kind) const { return this->kind == kind; }
     bool is(llvm::ArrayRef<Token::Kind> kinds) const;
-    llvm::APSInt getIntegerValue() const;
+    uint64_t getIntegerBits() const { return src.integer.value; }
     int getIntegerLength() const { return src.integer.length; }
     llvm::APFloat getFloatingPointValue() const;
 

@@ -173,14 +173,30 @@ struct CharacterLiteralExpr : Expr {
 };
 
 struct IntLiteralExpr : Expr {
-    IntLiteralExpr(llvm::APSInt value, Location location) : Expr(ExprKind::IntLiteralExpr, location), value(std::move(value)) {}
+    IntLiteralExpr(uint64_t value, bool isSigned, Location location, bool isWide = false)
+    : Expr(ExprKind::IntLiteralExpr, location), value(value), isSigned(isSigned), isWide(isWide) {
+        ASSERT(!isWide || isSigned); // The 65-bit shape only ever pairs with signed.
+    }
     static bool classof(const Expr* e) { return e->kind == ExprKind::IntLiteralExpr; }
+    // Rebuilds the exact shape Token::getIntegerValue used to build (65-bit signed when a non-negative value sets the high bit, so
+    // -9223372036854775808 still negates to int64 min). Wide values transiently heap-allocate inside the returned APSInt; all other shapes stay inline.
+    llvm::APSInt getValue() const {
+        llvm::APSInt result(isWide ? 65 : 64, !isSigned);
+        result = value;
+        return result;
+    }
 
-    llvm::APSInt value;
+    uint64_t value;
+    bool isSigned;
+    bool isWide;
 };
 
 struct FloatLiteralExpr : Expr {
-    FloatLiteralExpr(llvm::APFloat value, Location location) : Expr(ExprKind::FloatLiteralExpr, location), value(std::move(value)) {}
+    FloatLiteralExpr(llvm::APFloat value, Location location) : Expr(ExprKind::FloatLiteralExpr, location), value(std::move(value)) {
+        // APFloat heap-allocates only past 64 significand bits. Doubles and x87 long doubles stay inline, so this member owns no malloc
+        // memory on x86-64 and macOS ARM64; quad-precision long doubles (some Linux ARM64/PPC/s390x ABIs) would trip this assert.
+        ASSERT(llvm::APFloat::semanticsPrecision(this->value.getSemantics()) <= 64);
+    }
     static bool classof(const Expr* e) { return e->kind == ExprKind::FloatLiteralExpr; }
 
     llvm::APFloat value;

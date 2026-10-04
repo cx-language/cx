@@ -195,14 +195,14 @@ bool IRGenerator::emitEnumSwitchCheck(const Expr& condition, llvm::ArrayRef<Expr
         if (!enumCase || enumCase->getEnumDecl() != enumDecl) return false;
         auto* tag = llvm::dyn_cast<IntLiteralExpr>(enumCase->value);
         if (!tag) return false;
-        handledTags.push_back(tag->value);
+        handledTags.push_back(tag->getValue());
     }
 
     // Unhandled but valid values fall through to the end block; only values that are
     // not a tag of the enum reach the default block.
     for (auto& enumCase : enumDecl->cases) {
         auto* tag = llvm::cast<IntLiteralExpr>(enumCase.value);
-        if (llvm::none_of(handledTags, [&](auto& handled) { return handled == tag->value; })) {
+        if (llvm::none_of(handledTags, [&](auto& handled) { return handled == tag->getValue(); })) {
             switchInst.cases.emplace_back(emitExpr(*enumCase.value), end);
         }
     }

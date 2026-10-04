@@ -367,7 +367,9 @@ struct CToCxConverter final : clang::ASTConsumer {
     }
 
     void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType) {
-        auto initializer = makeAST<IntLiteralExpr>(std::move(value), Location());
+        ASSERT(value.isSigned() ? value.isSignedIntN(64) : value.isIntN(64));
+        uint64_t bits = value.isSigned() ? uint64_t(value.getSExtValue()) : value.getZExtValue();
+        auto initializer = makeAST<IntLiteralExpr>(bits, value.isSigned(), Location());
         addConstantToSymbolTable(name, initializer, toCx(qualType));
     }
 
@@ -667,7 +669,12 @@ struct CToCxConverter final : clang::ASTConsumer {
                     for (clang::EnumConstantDecl* enumerator : enumDecl.enumerators()) {
                         auto enumeratorName = enumerator->getName();
                         auto value = enumerator->getInitVal();
-                        auto valueExpr = makeAST<IntLiteralExpr>(value, Location());
+                        if (!(value.isSigned() ? value.isSignedIntN(64) : value.isIntN(64))) {
+                            WARN(Location(), "skipping C enumerator '" << enumeratorName << "': value does not fit 64 bits");
+                            continue;
+                        }
+                        uint64_t bits = value.isSigned() ? uint64_t(value.getSExtValue()) : value.getZExtValue();
+                        auto valueExpr = makeAST<IntLiteralExpr>(bits, value.isSigned(), Location());
                         cases.push_back(EnumCase(enumeratorName, valueExpr, Type(), AccessLevel::Default, Location()));
                         auto type = isAnonymous ? enumDecl.getIntegerType()
                                                 : astContext->getTagType(clang::ElaboratedTypeKeyword::None, clang::NestedNameSpecifier(), &enumDecl, false);

@@ -316,7 +316,7 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         // Chars are unsigned bytes; don't sign-extend high bytes.
         return llvm::APSInt::get(uint64_t(static_cast<unsigned char>(llvm::cast<CharacterLiteralExpr>(this)->value)));
     case ExprKind::IntLiteralExpr:
-        return llvm::cast<IntLiteralExpr>(this)->value;
+        return llvm::cast<IntLiteralExpr>(this)->getValue();
     case ExprKind::UnaryExpr:
         return llvm::cast<UnaryExpr>(this)->getConstantIntegerValue();
     case ExprKind::BinaryExpr:
@@ -329,7 +329,7 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
         return value;
     }
     case ExprKind::SizeofExpr: {
-        // Same shape as lexer-produced integer literals (unsigned 64-bit) so
+        // Same shape as lexer-produced integer literals (signed 64-bit) so
         // mixed constant folding never sees mismatched APSInt widths.
         llvm::APSInt value(64, false);
         value = *llvm::cast<SizeofExpr>(this)->operandType.getSizeInBytes();
@@ -486,7 +486,7 @@ Expr* Expr::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
         if (it != genericArgs.end() && it->second.isInt()) {
             // Integer generic parameters used as values (e.g. N in Array.size())
             // instantiate to literals.
-            auto* newExpr = makeAST<IntLiteralExpr>(llvm::APSInt::get(it->second.getInt()), varExpr->location);
+            auto* newExpr = makeAST<IntLiteralExpr>(uint64_t(it->second.getInt()), true, varExpr->location);
             newExpr->endLocation = varExpr->endLocation;
             return newExpr;
         }
@@ -520,7 +520,7 @@ Expr* Expr::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
     }
     case ExprKind::IntLiteralExpr: {
         auto* intLiteralExpr = llvm::cast<IntLiteralExpr>(this);
-        auto* newExpr = makeAST<IntLiteralExpr>(intLiteralExpr->value, intLiteralExpr->location);
+        auto* newExpr = makeAST<IntLiteralExpr>(intLiteralExpr->value, intLiteralExpr->isSigned, intLiteralExpr->location, intLiteralExpr->isWide);
         newExpr->endLocation = intLiteralExpr->endLocation;
         return newExpr;
     }

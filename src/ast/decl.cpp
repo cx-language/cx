@@ -123,9 +123,8 @@ static AstVector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Strin
                                                  AccessLevel::None, module, forEach->variable->getLocation());
                 iteration.push_back(makeAST<VarStmt>(AstVector<VarDecl*>{loopVar}));
                 if (forEach->indexVariable) {
-                    auto* indexVar =
-                        makeAST<VarDecl>(Type(), forEach->indexVariable->getName(), makeAST<IntLiteralExpr>(llvm::APSInt::get(i), forEach->location),
-                                         parentFunc, AccessLevel::None, module, forEach->indexVariable->getLocation());
+                    auto* indexVar = makeAST<VarDecl>(Type(), forEach->indexVariable->getName(), makeAST<IntLiteralExpr>(i, true, forEach->location),
+                                                      parentFunc, AccessLevel::None, module, forEach->indexVariable->getLocation());
                     iteration.push_back(makeAST<VarStmt>(AstVector<VarDecl*>{indexVar}));
                 }
                 for (Stmt* cloned : clonedBody)

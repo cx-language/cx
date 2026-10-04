@@ -197,14 +197,6 @@ bool Token::is(llvm::ArrayRef<Token::Kind> kinds) const {
     return llvm::is_contained(kinds, kind);
 }
 
-llvm::APSInt Token::getIntegerValue() const {
-    // Avoid overflow with very large values by adding an extra
-    // storage bit if the high bit in the source value is set
-    llvm::APSInt value(64 + !!(src.integer.value & (1ULL << 63)), false);
-    value = src.integer.value;
-    return value;
-}
-
 Location cx::getTokenEndLocation(const Token& token) {
     Location end = token.location;
     // None has no source text; toString would give the 11-char "end-of-file" description.
