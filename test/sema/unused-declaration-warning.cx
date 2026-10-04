@@ -1,0 +1,19 @@
+// RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:6: warning: unused declaration 'unusedFunc'; prefix with '_' to suppress
+void unusedFunc() {
+}
+
+void _suppressed() {
+}
+
+void usedFunc() {
+}
+
+void main() {
+    usedFunc();
+}
+
+// CHECK-NOT: unused declaration '_suppressed'
+// CHECK-NOT: unused declaration 'usedFunc'
+// CHECK-NOT: unused declaration 'main'

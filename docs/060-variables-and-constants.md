@@ -48,6 +48,8 @@ void main() {
 
 Names starting with `_` suppress the unused-variable warning,
 for placeholders that are declared but deliberately never read.
+Top-level functions use the same prefix to suppress the
+unused-declaration warning.
 
 ## Reserved words
 

@@ -1402,7 +1402,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         if (errors == errorsBefore && decl.getModule()->name != "std" && !options.noUnusedWarnings) {
             for (auto* varDecl : localVarDecls) {
                 if (!varDecl->isReferenced() && !varDecl->getName().starts_with("_")) {
-                    WARN_RANGE(varDecl->getLocation(), getIdentifierEndLocation(*varDecl), "unused variable '" << varDecl->getName() << "'");
+                    WARN_RANGE(varDecl->getLocation(), getIdentifierEndLocation(*varDecl),
+                               "unused variable '" << varDecl->getName() << "'; prefix with '_' to suppress");
                 }
             }
         }

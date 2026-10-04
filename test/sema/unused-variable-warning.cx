@@ -1,19 +1,19 @@
 // RUN: %cx -typecheck %s 2>&1 | %FileCheck %s
 
 void main() {
-    // CHECK: [[@LINE+1]]:9: warning: unused variable 'x'
+    // CHECK: [[@LINE+1]]:9: warning: unused variable 'x'; prefix with '_' to suppress
     var x = 1;
-    // CHECK: [[@LINE+1]]:9: warning: unused variable 'y'
+    // CHECK: [[@LINE+1]]:9: warning: unused variable 'y'; prefix with '_' to suppress
     int y;
     var _ignored = 2;
     var z = 3;
     println(z);
     for _ in 0..3 {
     }
-    // CHECK: [[@LINE+1]]:9: warning: unused variable 'i'
+    // CHECK: [[@LINE+1]]:9: warning: unused variable 'i'; prefix with '_' to suppress
     for i in 0..3 {
     }
-    // CHECK: [[@LINE+1]]:9: warning: unused variable 'w'
+    // CHECK: [[@LINE+1]]:9: warning: unused variable 'w'; prefix with '_' to suppress
     var w = 1 + 1;
 }
 

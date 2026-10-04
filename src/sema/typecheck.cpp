@@ -258,6 +258,7 @@ static void checkUnusedDeclsInModule(const Module& module) {
     for (auto& sourceFile : module.sourceFiles) {
         for (auto& decl : sourceFile.topLevelDecls) {
             if (decl->isReferenced()) continue;
+            if (decl->getName().starts_with("_")) continue;
 
             if (decl->isFunctionDecl() || decl->isFunctionTemplate()) {
                 if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
@@ -276,7 +277,7 @@ static void checkUnusedDeclsInModule(const Module& module) {
                 if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl); functionTemplate && functionTemplate->functionDecl->isTest) {
                     continue;
                 }
-                WARN_RANGE(decl->getLocation(), getIdentifierEndLocation(*decl), "unused declaration '" << decl->getName() << "'");
+                WARN_RANGE(decl->getLocation(), getIdentifierEndLocation(*decl), "unused declaration '" << decl->getName() << "'; prefix with '_' to suppress");
             }
         }
     }
