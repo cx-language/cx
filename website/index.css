@@ -60,6 +60,7 @@ body {
     font-size: 15px;
     line-height: 1.65;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-column-gap: 48px;
 }
 
@@ -441,6 +442,17 @@ th {
     .search {
         flex-basis: 100%;
         order: 3;
+    }
+
+    .links {
+        white-space: normal;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 16px;
+    }
+
+    .links a + a {
+        margin-left: 0;
     }
 }
 
@@ -948,6 +960,13 @@ button.run:hover:not(:active)::before {
     display: grid;
     grid-template-columns: repeat(5, auto);
     gap: 6px 24px;
+}
+
+@media (max-width: 560px) {
+    .footer-links {
+        grid-template-columns: repeat(2, auto);
+        justify-content: start;
+    }
 }
 
 .footer-links a {
