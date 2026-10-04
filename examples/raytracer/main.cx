@@ -226,8 +226,8 @@ int runSelfTest() {
 
 int main(string[] args) {
     string path = "render.ppm";
-    var width = 800;
-    var height = 600;
+    var width = 1920;
+    var height = 1080;
     for i in 0..args.size() {
         if args[i] == "--self-test" {
             return runSelfTest();

@@ -330,6 +330,7 @@ cp ../examples/fractal/screenshot.jpg build/fractal-screenshot.jpg
 cp ../examples/voxel-game/screenshot.jpg build/voxel-screenshot.jpg
 cp ../examples/raytracer/screenshot.png build/raytracer-screenshot.png
 cp ../examples/boids/screenshot.png build/boids-screenshot.png
+cp ../editors/vscode/assets/demo.jpg build/vscode-screenshot.jpg
 
 # Local graph preview: drop a bench-data.json or langs-data.json next to
 # this script (e.g. saved from the deployed site) and it is served with

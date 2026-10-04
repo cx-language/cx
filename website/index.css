@@ -736,6 +736,30 @@ body.frontpage .part {
     background-color: var(--background-color-2);
 }
 
+/* A full-row card: screenshot beside the text, uncropped. */
+.card.wide {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-gap: 24px;
+    align-items: center;
+}
+
+.cards .card.wide img {
+    aspect-ratio: auto;
+    margin-bottom: 0;
+}
+
+.wide-text {
+    margin: 0;
+}
+
+@media screen and (max-width: 800px) {
+    .card.wide {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Snippets sit inset against the card background. */
 .card pre.snippet,
 .card div.CodeMirror.snippet {
