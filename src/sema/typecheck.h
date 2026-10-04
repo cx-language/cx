@@ -64,7 +64,7 @@ struct Match {
 struct VariadicGenericArgs {
     llvm::StringMap<GenericArg> fixedArgs;
     std::vector<llvm::StringMap<GenericArg>> packArgs;
-    std::vector<GenericArg> cacheKey;
+    AstVector<GenericArg> cacheKey;
 };
 
 // Variables proven non-null by an enclosing null check, mapped to their unwrapped type.

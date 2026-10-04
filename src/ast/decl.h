@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
+#include <utility>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/Support/Casting.h>
@@ -11,31 +11,6 @@
 #include "location.h"
 #include "stmt.h"
 #include "type.h"
-
-namespace std {
-template<> struct hash<std::vector<cx::GenericArg>> {
-    size_t operator()(llvm::ArrayRef<cx::GenericArg> args) const {
-        if (args.empty()) return 0; // Variadic instantiation with an empty pack.
-        size_t hashValue = 0;
-        for (auto& arg : args) {
-            size_t argHash;
-            if (arg.isType()) {
-                const cx::Type& type = arg.getType();
-                // Spelling twins compare equal, so hash the shared twin or equal
-                // keys would land in different buckets and instantiate twice.
-                argHash = reinterpret_cast<size_t>(type.canonicalTwin().typeBase);
-            } else if (arg.isInt()) {
-                argHash = std::hash<int64_t>{}(arg.getInt());
-            } else {
-                argHash = 0x9e3779b9;
-            }
-            hashValue ^= argHash + 0x9e3779b9 + (hashValue << 6) + (hashValue >> 2);
-        }
-
-        return hashValue;
-    }
-};
-} // namespace std
 
 namespace llvm {
 class StringRef;
@@ -293,13 +268,14 @@ struct FunctionTemplate : Decl {
     static bool classof(const Decl* d) { return d->isFunctionTemplate(); }
     FunctionDecl* instantiate(const llvm::StringMap<GenericArg>& genericArgs);
     FunctionDecl* instantiateVariadic(const llvm::StringMap<GenericArg>& fixedArgs, const std::vector<llvm::StringMap<GenericArg>>& packArgs,
-                                      std::vector<GenericArg>&& cacheKey);
+                                      AstVector<GenericArg>&& cacheKey);
     Module* getModule() const override { return functionDecl->getModule(); }
     Location getLocation() const override { return functionDecl->getLocation(); }
 
     AstVector<GenericParamDecl> genericParams;
     FunctionDecl* functionDecl;
-    std::unordered_map<std::vector<GenericArg>, FunctionDecl*> instantiations;
+    // Linear instantiation cache; templates have few instantiations, hash it if lookup regresses.
+    AstVector<std::pair<AstVector<GenericArg>, FunctionDecl*>> instantiations;
 };
 
 struct FieldDecl : VariableDecl {
@@ -395,7 +371,8 @@ struct TypeTemplate : Decl {
 
     AstVector<GenericParamDecl> genericParams;
     TypeDecl* typeDecl;
-    std::unordered_map<std::vector<GenericArg>, TypeDecl*> instantiations;
+    // Linear instantiation cache; templates have few instantiations, hash it if lookup regresses.
+    AstVector<std::pair<AstVector<GenericArg>, TypeDecl*>> instantiations;
 };
 
 struct TypeAliasDecl : Decl {

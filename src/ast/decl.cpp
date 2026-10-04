@@ -23,12 +23,12 @@ FunctionProto FunctionProto::instantiate(const llvm::StringMap<GenericArg>& gene
 FunctionDecl* FunctionTemplate::instantiate(const llvm::StringMap<GenericArg>& genericArgs) {
     ASSERT(!genericParams.empty() && !genericArgs.empty());
 
-    auto orderedGenericArgs = map(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
+    auto orderedGenericArgs = mapAst(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
 
-    auto it = instantiations.find(orderedGenericArgs);
+    auto it = llvm::find_if(instantiations, [&](const auto& entry) { return entry.first == orderedGenericArgs; });
     if (it != instantiations.end()) return it->second;
     auto instantiation = functionDecl->instantiate(genericArgs, orderedGenericArgs);
-    return instantiations.emplace(std::move(orderedGenericArgs), instantiation).first->second;
+    return instantiations.emplace_back(std::move(orderedGenericArgs), instantiation).second;
 }
 
 static std::optional<Location> findBreakTargetingPackLoop(llvm::ArrayRef<Stmt*> stmts) {
@@ -187,8 +187,8 @@ static AstVector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::Strin
 }
 
 FunctionDecl* FunctionTemplate::instantiateVariadic(const llvm::StringMap<GenericArg>& fixedArgs, const std::vector<llvm::StringMap<GenericArg>>& packArgs,
-                                                    std::vector<GenericArg>&& cacheKey) {
-    auto it = instantiations.find(cacheKey);
+                                                    AstVector<GenericArg>&& cacheKey) {
+    auto it = llvm::find_if(instantiations, [&](const auto& entry) { return entry.first == cacheKey; });
     if (it != instantiations.end()) return it->second;
 
     ASSERT(functionDecl->hasPack());
@@ -240,7 +240,7 @@ FunctionDecl* FunctionTemplate::instantiateVariadic(const llvm::StringMap<Generi
     }
     instantiation->isPackInstantiation = true;
     instantiation->disabledChecks = functionDecl->disabledChecks;
-    return instantiations.emplace(std::move(cacheKey), instantiation).first->second;
+    return instantiations.emplace_back(std::move(cacheKey), instantiation).second;
 }
 
 std::string cx::getQualifiedFunctionName(Type receiver, llvm::StringRef name, llvm::ArrayRef<GenericArg> genericArgs) {
@@ -492,13 +492,13 @@ unsigned TypeDecl::getFieldIndex(const FieldDecl* field) const {
 
 TypeDecl* TypeTemplate::instantiate(const llvm::StringMap<GenericArg>& genericArgs) {
     ASSERT(!genericParams.empty() && !genericArgs.empty());
-    auto orderedGenericArgs = map(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
+    auto orderedGenericArgs = mapAst(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
 
-    auto it = instantiations.find(orderedGenericArgs);
+    auto it = llvm::find_if(instantiations, [&](const auto& entry) { return entry.first == orderedGenericArgs; });
     if (it != instantiations.end()) return it->second;
 
     auto instantiation = llvm::cast<TypeDecl>(typeDecl->instantiate(genericArgs, orderedGenericArgs));
-    return instantiations.emplace(std::move(orderedGenericArgs), instantiation).first->second;
+    return instantiations.emplace_back(std::move(orderedGenericArgs), instantiation).second;
 }
 
 TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<GenericArg> genericArgs) {
