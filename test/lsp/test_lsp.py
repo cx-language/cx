@@ -2072,7 +2072,7 @@ int undoc = 2;
 """
     result = run_query(cx_lsp, base_query("hover", path, content, (26, 18)))
     hover = result.get("hover", "")
-    check("query-hover-doc", "Adds two numbers.\nSecond line of docs." in hover, hover[:300])
+    check("query-hover-doc", "Adds two numbers. Second line of docs." in hover, hover[:300])
     check("query-hover-plaintext", not hover.startswith("```"), hover[:100])
     doc_pos = hover.find("Adds two numbers.")
     def_pos = hover.find("defined at")
@@ -2086,7 +2086,7 @@ int undoc = 2;
     items = {item["label"]: item for item in result.get("items", [])}
     check(
         "query-completion-doc-function",
-        items.get("add", {}).get("documentation") == "Adds two numbers.\nSecond line of docs.",
+        items.get("add", {}).get("documentation") == "Adds two numbers. Second line of docs.",
         json.dumps(items.get("add"))[:300],
     )
     check(
@@ -2136,6 +2136,28 @@ void useParam(
     hover = result.get("hover", "")
     check("query-hover-doc-param", "The value." in hover, hover[:300])
 
+    # Trailing spaces sit inside the quotes (never line-trailing) so editors
+    # won't strip the whitespace the fold must swallow.
+    para_content = (
+        "/// First paragraph.   \n"
+        "/// still first.\n"
+        "///\n"
+        "/// Second paragraph.\n"
+        "///   \n"
+        "/// Third paragraph.\n"
+        "int para = 3;\n"
+        "void main() {\n"
+        "    println(para);\n"
+        "}\n"
+    )
+    result = run_query(cx_lsp, base_query("hover", path, para_content, (8, 13)))
+    hover = result.get("hover", "")
+    check(
+        "query-hover-doc-paragraph",
+        "First paragraph. still first.\n\nSecond paragraph.\n\nThird paragraph." in hover,
+        hover[:300],
+    )
+
 
 def test_server_documentation(command, label):
     content = DOC_DECLS + "void main() {\n    int result = add(1, 2);\n    Point p = Point(0, 0);\n    p.\n}\n"
@@ -2165,7 +2187,7 @@ def test_server_documentation(command, label):
         contents = hover.get("contents", {})
         check(
             f"{label}-hover-doc",
-            contents.get("kind") == "plaintext" and "Adds two numbers.\nSecond line of docs." in contents.get("value", ""),
+            contents.get("kind") == "plaintext" and "Adds two numbers. Second line of docs." in contents.get("value", ""),
             json.dumps(hover)[:300],
         )
         session.send(

@@ -1584,9 +1584,11 @@ struct DocLineCache {
 // Returns the /// doc comment above the given 1-based line, or "". Only
 // consecutive /// lines directly above the declaration count; a //// line
 // is a plain comment (like Rust) and breaks the block, as does a blank line.
+// Single newlines fold into spaces (soft wraps); blank /// lines separate
+// paragraphs.
 static std::string extractDocComment(llvm::ArrayRef<llvm::StringRef> lines, int declLine) {
-    std::string doc;
     if (declLine < 1 || declLine - 1 > static_cast<int>(lines.size())) return "";
+    std::vector<llvm::StringRef> docLines;
     for (int i = declLine - 2; i >= 0; --i) {
         llvm::StringRef line = lines[i].rtrim("\r");
         size_t indent = line.find_first_not_of(" \t");
@@ -1596,9 +1598,25 @@ static std::string extractDocComment(llvm::ArrayRef<llvm::StringRef> lines, int 
         line = line.drop_front(3);
         if (line.starts_with("/")) break;
         if (line.starts_with(" ")) line = line.drop_front(1);
-        if (!doc.empty()) doc.insert(0, "\n");
-        doc.insert(0, line.str());
+        line = line.rtrim(" \t");
+        docLines.push_back(line);
     }
+    std::string doc, paragraph;
+    auto flushParagraph = [&] {
+        if (paragraph.empty()) return;
+        if (!doc.empty()) doc += "\n\n";
+        doc += paragraph;
+        paragraph.clear();
+    };
+    for (auto it = docLines.rbegin(); it != docLines.rend(); ++it) {
+        if (it->empty()) {
+            flushParagraph();
+        } else {
+            if (!paragraph.empty()) paragraph += ' ';
+            paragraph += *it;
+        }
+    }
+    flushParagraph();
     return doc;
 }
 
