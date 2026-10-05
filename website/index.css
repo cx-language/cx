@@ -5,9 +5,6 @@
     --text-color: #23272f;
     --text-color-subtle: hsl(225, 8%, 46%);
     --blue: hsl(216, 74%, 46%);
-    --accent-strong: hsl(216, 74%, 42%);
-    --accent-strong-hover: hsl(216, 74%, 36%);
-    --on-accent-strong: #fff;
     /* Code colors follow Rider's default schemes (Light, Dark):
        declarations colored, calls and types plain, as in the IDE. */
     --keyword-color: #0033b3;
@@ -36,9 +33,6 @@
         --text-color: #e4e7ec;
         --text-color-subtle: hsla(230, 15%, 80%, 0.6);
         --blue: hsl(213, 70%, 66%);
-        --accent-strong: hsl(213, 75%, 66%);
-        --accent-strong-hover: hsl(213, 75%, 72%);
-        --on-accent-strong: hsl(220, 45%, 12%);
         --keyword-color: #cf8e6d;
         --string-color: #6aab73;
         --number-color: #2aacb8;
@@ -565,40 +559,44 @@ section {
 }
 
 .hero h1 {
-    font-size: clamp(1.8rem, 1.2rem + 2vw, 2.4rem);
-    font-weight: 450;
+    font-size: 1.75rem;
+    font-weight: 650;
     line-height: 1.25;
     letter-spacing: -0.02em;
-    margin: 0 0 16px;
-    text-wrap: balance;
+    margin: 0 0 14px;
 }
 
 .hero p {
-    font-size: 1.03rem;
+    font-size: 1.02rem;
     line-height: 1.7;
-    max-width: 58ch;
-    margin: 0 0 24px;
+    max-width: 60ch;
+    margin: 0 0 20px;
+}
+
+.hero-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin: 0 0 20px;
+    font-weight: 550;
+}
+
+.hero-status {
+    font-size: 0.88rem;
+    color: var(--text-color-subtle);
+    border-left: 2px solid var(--background-color-3);
+    padding-left: 12px;
 }
 
 .hero .CodeMirror-scroll {
     max-height: 400px;
 }
 
-.cta {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.cta.end {
-    justify-content: center;
-}
-
 .window {
     position: relative;
     background: var(--background-color-2);
     border: 1px solid var(--background-color-3);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     min-width: 0;
 }
 
@@ -657,29 +655,6 @@ section {
     box-shadow: none;
 }
 
-/* Pandoc drops classes on ul/li, so the chips list (the only ul on the
-   front page) is styled positionally. */
-body.frontpage main > ul {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin: 48px 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-body.frontpage main > ul > li {
-    font-size: 13px;
-    border: 1px solid var(--background-color-3);
-    border-radius: 999px;
-    padding: 4px 14px;
-    background: var(--background-color-2);
-}
-
-body.frontpage main > ul > li + li {
-    margin-top: 0;
-}
-
 .snippet .prompt {
     color: var(--text-color-subtle);
     user-select: none;
@@ -714,132 +689,115 @@ a.button:hover:not(:active), button:hover:not(:active) {
     background: var(--background-color-3);
 }
 
-.button.primary {
-    background: var(--accent-strong);
-    border-color: transparent;
-    color: var(--on-accent-strong);
-}
-
-.button.primary:hover:not(:active) {
-    background: var(--accent-strong-hover);
-    border-color: transparent;
-    color: var(--on-accent-strong);
-}
-
 .editor {
     overflow: auto;
     tab-size: 4;
 }
 
-/* Pandoc drops classes on p, so section intros (always the p right after
-   the h2) are styled positionally. */
-.part > h2 + p {
-    color: var(--text-color-subtle);
-    margin: 0 0 20px;
-}
-
 body.frontpage .part {
-    margin-top: 56px;
+    margin-top: 64px;
     scroll-margin-top: 84px;
 }
 
-.cards {
+body.frontpage .part > h2 {
+    font-size: 1.2rem;
+    margin: 0 0 4px;
+}
+
+/* Feature rows: description on the left, its snippet or screenshot on the
+   right, separated by rules like a reference listing. Pandoc turns the
+   classed heading-led text divs into sections, so reset their margin. */
+.feature {
     display: grid;
-    grid-gap: 20px;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-gap: 32px;
+    align-items: start;
+    padding: 22px 0;
+    border-top: 1px solid var(--background-color-3);
 }
 
-.cards {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-@media screen and (max-width: 800px) {
-    .cards {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Cards with a leading heading come out of pandoc as sections
-   (it sectionizes classed heading-led divs; image-led gallery cards stay
-   divs), so neutralize the base section margin. */
-.card,
-.cards > div {
+.feature-text {
+    margin: 0;
     min-width: 0;
-    margin: 0;
 }
 
-.card {
-    border: 1px solid var(--background-color-3);
-    border-radius: var(--radius-md);
-    padding: 18px 20px;
-    background-color: var(--background-color-2);
-}
-
-/* A full-row card: screenshot beside the text, uncropped. */
-.card.wide {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    grid-gap: 24px;
-    align-items: center;
-}
-
-.cards .card.wide img {
-    aspect-ratio: auto;
-    margin-bottom: 0;
-}
-
-.wide-text {
-    margin: 0;
-}
-
-@media screen and (max-width: 800px) {
-    .card.wide {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Snippets sit inset against the card background. */
-.card pre.snippet,
-.card div.CodeMirror.snippet {
-    background-color: var(--background-color) !important;
-}
-
-.cards h3 {
+.feature h3 {
     font-size: 1rem;
     margin: 0 0 6px;
 }
 
-.cards p {
+.feature p {
     font-size: 0.92rem;
-    margin: 0 0 10px;
+    margin: 0 0 8px;
 }
 
-.cards p:last-child {
+.feature p:last-child {
     margin-bottom: 0;
 }
 
-.cards img,
-.cards .shot {
+.feature img {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--background-color-3);
+    border-radius: var(--radius-sm);
+}
+
+@media screen and (max-width: 800px) {
+    .feature {
+        grid-template-columns: minmax(0, 1fr);
+        grid-gap: 14px;
+    }
+}
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-gap: 24px;
+    padding-top: 22px;
+    border-top: 1px solid var(--background-color-3);
+}
+
+@media screen and (max-width: 900px) {
+    .gallery {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media screen and (max-width: 500px) {
+    .gallery {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.gallery > div {
+    min-width: 0;
+}
+
+.gallery img {
+    display: block;
     width: 100%;
     aspect-ratio: 16 / 10;
-    border-radius: var(--radius-sm);
-    margin-bottom: 12px;
-}
-
-.cards img {
-    display: block;
     object-fit: cover;
     border: 1px solid var(--background-color-3);
+    border-radius: var(--radius-sm);
     background: var(--background-color-2);
+    margin-bottom: 10px;
 }
 
-.cards .shot {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px dashed var(--background-color-3);
-    color: var(--text-color-subtle);
+.gallery h3 {
+    font-size: 0.95rem;
+    margin: 0 0 4px;
+}
+
+.gallery p {
     font-size: 0.85rem;
+    color: var(--text-color-subtle);
+    margin: 0;
+}
+
+.more-examples {
+    margin-top: 20px;
+    font-size: 0.92rem;
 }
 
 /* Static frontpage snippets (display-only fragments): plain pre+code
@@ -877,7 +835,7 @@ pre.snippet {
     padding: 0 18px !important;
 }
 
-/* Read-only highlighted card snippets reuse the snippet box. */
+/* Read-only highlighted frontpage snippets reuse the snippet box. */
 div.CodeMirror.snippet {
     background: var(--background-color-2) !important;
 }
