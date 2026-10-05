@@ -73,6 +73,7 @@ function records(n, { gapAt = -1, nullBuild = false } = {}) {
                 check_s: nullBuild || i === gapAt ? null : 1500 - i * 5,
                 compile_s: { sieve: 0.2 + i * 0.001, mandelbrot: 0.18, fib: 0.17 },
                 run_s: { sieve: 0.9, mandelbrot: 0.85 + i * 0.002, fib: 0.3 },
+                iterate_s: { sieve: 1.4, mandelbrot: 1.2, fib: 0.5 + i * 0.001 },
                 cx_bytes: 33000000 + i * 1000,
                 bench_bytes: { sieve: 40264, mandelbrot: 39672, fib: 38696 },
                 sloc: {
@@ -95,6 +96,7 @@ function lateRecords() {
     for (let i = 6; i < 12; i++) {
         out[i].metrics.compile_s.wordcount = 0.25;
         out[i].metrics.run_s.wordcount = 0.5;
+        out[i].metrics.iterate_s.wordcount = 0.8;
         out[i].metrics.bench_bytes.wordcount = 41000;
     }
     return out;
@@ -109,10 +111,11 @@ function mixedSlocRecords() {
 }
 
 function langsRecord() {
-    // Mirrors scripts/bench-langs.py output: release+debug runs, debug compiles.
-    const entry = (run, compile = null) => {
+    // Mirrors scripts/bench-langs.py output: release+debug runs, debug compiles and iterations.
+    const entry = (run, compile = null, iterate = null) => {
         const e = { median_s: run, runs_s: [run, run, run], output: "102334155" };
         if (compile !== null) e.compile = { median_s: compile, runs_s: [compile, compile, compile] };
+        if (iterate !== null) e.iterate = { median_s: iterate, runs_s: [iterate, iterate, iterate] };
         return e;
     };
     return {
@@ -121,13 +124,14 @@ function langsRecord() {
         cx_sha: sha(42),
         runs: 3,
         compile_runs: 3,
-        metrics: ["run", "compile"],
+        metrics: ["run", "compile", "iterate"],
         tools: { c: "cc 13.2", rust: "rustc 1.98", go: "go1.27", odin: "dev-2026-09", zig: "0.16.0" },
         mode_order: ["release", "debug"],
         builds: {
             release: { cx: "cx --release -Werror", c: "cc -O3 -std=c17", rust: "rustc -C opt-level=3" },
             debug: { cx: "cx -Werror", c: "cc -O0 -g", rust: "rustc -C opt-level=0" },
         },
+        iterate_builds: { cx: "cx run -Werror", c: "cc -O0 -g + run", rust: "rustc -C opt-level=0 + run" },
         program_order: ["fib", "mandelbrot", "mapfilter"],
         omissions: { mapfilter: ["c", "go", "odin", "zig"] },
         omission_notes: {
@@ -136,15 +140,15 @@ function langsRecord() {
         programs: {
             fib: {
                 release: { cx: entry(0.9), c: entry(0.8), rust: entry(1.1) },
-                debug: { cx: entry(1.5, 0.25), c: entry(1.2, 0.1), rust: entry(2.0, 0.4) },
+                debug: { cx: entry(1.5, 0.25, 1.7), c: entry(1.2, 0.1, 1.3), rust: entry(2.0, 0.4, 2.4) },
             },
             mandelbrot: {
                 release: { cx: entry(0.85), c: entry(0.95) },
-                debug: { cx: entry(1.1, 0.22), c: entry(1.0, 0.09) },
+                debug: { cx: entry(1.1, 0.22, 1.3), c: entry(1.0, 0.09, 1.1) },
             },
             mapfilter: {
                 release: { cx: entry(0.5), rust: entry(0.6) },
-                debug: { cx: entry(0.9, 0.3), rust: entry(1.0, 0.5) },
+                debug: { cx: entry(0.9, 0.3, 1.2), rust: entry(1.0, 0.5, 1.5) },
             },
         },
     };
@@ -214,7 +218,7 @@ async function scenario(
         wantIndex = 5,
         hoverX = 400,
         wantAbsent = null,
-        wantCounts = "2,3,3,1,3,7",
+        wantCounts = "2,3,3,3,1,3,7",
         wantLate = null,
         slocLate = false,
         langs = langsRecord(),
@@ -227,6 +231,7 @@ async function scenario(
         "legend-build",
         "legend-compile",
         "legend-run",
+        "legend-iterate",
         "legend-cxsize",
         "legend-benchsize",
         "legend-sloc",
@@ -272,11 +277,13 @@ async function scenario(
         const meta = els["langs-meta"].innerHTML;
         check(name, meta.includes("2026-09-15") && meta.includes("Linux-6.8"), "langs meta");
         check(name, meta.includes("median of 3 runs") && meta.includes("median of 3 debug compiles"), "langs summary");
+        check(name, meta.includes("median of 3 dev iterations"), "langs iterate summary");
         check(name, meta.includes(sha(42).slice(0, 7)), "langs sha");
         const charts = els["langs-charts"].innerHTML;
         check(name, charts.includes("fib") && charts.includes("mapfilter"), "langs programs");
         check(name, charts.includes("optimized run") && charts.includes("unoptimized debug run"), "langs run charts");
         check(name, charts.includes("unoptimized debug compile"), "langs compile chart");
+        check(name, charts.includes("dev iteration"), "langs iterate chart");
         check(name, charts.includes("(1.00x)"), "langs fastest ratio");
         check(name, charts.includes("capturing-lambda"), "langs omission note");
         check(name, charts.includes("platform-defined"), "langs mandelbrot note");
@@ -284,6 +291,7 @@ async function scenario(
         check(name, charts.indexOf(">C<") < charts.indexOf(">cx<"), "langs sort");
         check(name, els["langs-builds"].innerHTML.includes("Build configurations"), "langs builds shown");
         check(name, els["langs-builds"].innerHTML.includes("cc -O0 -g"), "langs builds body");
+        check(name, els["langs-builds"].innerHTML.includes("cx run -Werror"), "langs iterate builds");
     };
 
     if (!ok || !payload || !payload.length) {
@@ -292,11 +300,10 @@ async function scenario(
         console.log(`ok ${name}`);
         return;
     }
-    const counts = ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize", "legend-sloc"].map(
-        (id) => els[id].children.length
-    );
+    const legends = ["legend-build", "legend-compile", "legend-run", "legend-iterate", "legend-cxsize", "legend-benchsize", "legend-sloc"];
+    const counts = legends.map((id) => els[id].children.length);
     check(name, String(counts) === wantCounts, `legends [${counts}]`);
-    const canvases = ["legend-build", "legend-compile", "legend-run", "legend-cxsize", "legend-benchsize", "legend-sloc"].map(
+    const canvases = legends.map(
         (id) => els[id].parentNode.children.find((c) => c.handlers.mousemove || "width" in c) || {}
     );
     // Unsized backing stores render stretched; every chart must size its canvas.
@@ -342,7 +349,7 @@ async function scenario(
     globalThis.__resize();
     check(name, canvas.width === 800, `resized ${canvas.width}`);
     // The SLOC chart tooltips thousands-separated counts.
-    const sloc = canvases[5];
+    const sloc = canvases[6];
     if (slocLate) {
         sloc.handlers.mousemove({ clientX: 457, clientY: 100 });
         check(name, tip.innerHTML.includes("total: 200,"), "late sloc tooltip");
@@ -358,7 +365,7 @@ async function scenario(
 }
 
 await scenario("records", records(12));
-await scenario("late series", lateRecords(), { wantCounts: "2,4,4,1,4,7", wantLate: "wordcount" });
+await scenario("late series", lateRecords(), { wantCounts: "2,4,4,4,1,4,7", wantLate: "wordcount" });
 await scenario("late sloc", mixedSlocRecords(), { slocLate: true });
 await scenario("gap", records(12, { gapAt: 6 }), { wantIndex: 6, hoverX: 457, wantAbsent: "test suite" });
 await scenario("null build metrics", records(4, { nullBuild: true }));

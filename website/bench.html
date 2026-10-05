@@ -79,6 +79,7 @@
     <p>Each chart is one measurement. The ratio on each bar is against the fastest language in that chart.</p>
     <p>Unoptimized debug is the development build. cx omits --release, so safety checks stay on and both the LLVM IR pipeline and codegen optimizations are skipped. C and C++ use -O0 -g. Rust uses opt-level 0 with debug assertions, overflow checks, and full debug info. Go disables optimizations and inlining with -gcflags=all=-N -l, including the standard library. Odin uses -debug, which selects -o:none. Zig uses -ODebug; its release build is -OReleaseFast.</p>
     <p>Debug compile time is a rebuild of that development build. One untimed compile warms the standard-library cache first. Each sample is a separate copy of the source, so an unchanged-file cache hit is not what gets timed. ccache is disabled.</p>
+    <p>Dev iteration times one edit-run cycle from uncompiled sources to program completion in that development configuration. cx uses cx run, Go uses go run, Odin uses odin run, Zig uses zig run, Swift uses swift -Onone. C, C++, and Rust have no single such command, so a debug compile plus a run of the binary is timed instead. One untimed sample warms caches first, and each sample is a separate copy of the source.</p>
     <div id="langs-charts"></div>
     <div id="langs-builds"></div>
 </section>
@@ -96,6 +97,10 @@
     <div class="bench-chart">
         <h2>Corpus run time (seconds)</h2>
         <div class="bench-legend" id="legend-run"></div>
+    </div>
+    <div class="bench-chart">
+        <h2>Dev iteration time (seconds)</h2>
+        <div class="bench-legend" id="legend-iterate"></div>
     </div>
     <div class="bench-chart">
         <h2>Compiler binary size</h2>

@@ -6,8 +6,10 @@ Usage:
         [--build-seconds F] [--check-seconds F] [--sha SHA] [--output bench.json]
 
 Each corpus program is compiled --compile-runs times (median kept) and run
---runs times (median kept). All runs of a program must print identical
-output, otherwise the benchmark is meaningless and this exits nonzero.
+--runs times (median kept). `cx run` is also timed --compile-runs times
+(median kept) as the dev-iteration time from sources to program completion.
+All runs of a program must print identical output, otherwise the benchmark
+is meaningless and this exits nonzero.
 """
 
 import argparse
@@ -112,7 +114,7 @@ def main():
     args.runs = max(1, args.runs)
     args.compile_runs = max(1, args.compile_runs)
     suffix = ".exe" if platform.system() == "Windows" else ""
-    compile_s, run_s, bench_bytes = {}, {}, {}
+    compile_s, run_s, iterate_s, bench_bytes = {}, {}, {}, {}
 
     with tempfile.TemporaryDirectory(prefix="cx-bench-") as workdir:
         for name in CORPUS:
@@ -141,7 +143,22 @@ def main():
                 print(f"{name} printed {len(outputs)} distinct outputs across runs, benchmark invalid")
                 sys.exit(1)
             run_s[name] = statistics.median(times)
-            print(f"{name}: compile {compile_s[name]:.3f}s run {run_s[name]:.3f}s")
+
+            # Separate set: debug `cx run` output is only checked for
+            # self-consistency, not against the release binary above.
+            times, iterate_outputs = [], set()
+            for _ in range(args.compile_runs):
+                elapsed, result = run_timed([args.cx, "run", src, "-Werror"], capture_output=True)
+                if result.returncode != 0:
+                    print(f"{name} cx run exited with status {result.returncode}")
+                    sys.exit(1)
+                times.append(elapsed)
+                iterate_outputs.add(result.stdout)
+            if len(iterate_outputs) != 1:
+                print(f"{name} printed {len(iterate_outputs)} distinct outputs across cx run samples, benchmark invalid")
+                sys.exit(1)
+            iterate_s[name] = statistics.median(times)
+            print(f"{name}: compile {compile_s[name]:.3f}s run {run_s[name]:.3f}s iterate {iterate_s[name]:.3f}s")
 
     record = {
         "sha": resolve_sha(args.sha),
@@ -151,6 +168,7 @@ def main():
             "check_s": args.check_seconds,
             "compile_s": compile_s,
             "run_s": run_s,
+            "iterate_s": iterate_s,
             "cx_bytes": os.path.getsize(args.cx),
             "bench_bytes": bench_bytes,
             "sloc": sloc_metrics(ROOT),

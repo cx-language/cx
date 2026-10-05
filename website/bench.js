@@ -297,6 +297,23 @@
         return '<svg viewBox="0 0 ' + width + " " + height + '" width="100%" role="img">' + rows.join("") + "</svg>";
     }
 
+    function subMedians(entries, key) {
+        var medians = {};
+        Object.keys(entries).forEach(function (lang) {
+            var data = key ? entries[lang] && entries[lang][key] : entries[lang];
+            if (data && typeof data.median_s === "number") medians[lang] = data.median_s;
+        });
+        return medians;
+    }
+
+    function buildItems(commands) {
+        var items = "";
+        Object.keys(commands || {}).forEach(function (lang) {
+            items += "<li>" + escapeHtml(langLabel(lang)) + ": <code>" + escapeHtml(commands[lang]) + "</code></li>";
+        });
+        return items;
+    }
+
     function renderLangs(record) {
         var metaEl = document.getElementById("langs-meta");
         var chartsEl = document.getElementById("langs-charts");
@@ -305,6 +322,7 @@
         var metrics = record.metrics || [];
         if (metrics.indexOf("run") !== -1) parts.push("median of " + record.runs + " runs");
         if (metrics.indexOf("compile") !== -1) parts.push("median of " + record.compile_runs + " debug compiles");
+        if (metrics.indexOf("iterate") !== -1) parts.push("median of " + record.compile_runs + " dev iterations");
         var tools = Object.keys(record.tools || {})
             .map(function (lang) {
                 return escapeHtml(lang) + ": " + escapeHtml(record.tools[lang]);
@@ -332,19 +350,15 @@
             var charts = "";
             modes.forEach(function (mode) {
                 var entries = byMode[mode] || {};
-                var runMedians = {};
-                Object.keys(entries).forEach(function (lang) {
-                    if (entries[lang] && typeof entries[lang].median_s === "number") runMedians[lang] = entries[lang].median_s;
-                });
+                var runMedians = subMedians(entries);
                 if (Object.keys(runMedians).length)
                     charts += "<h4>" + escapeHtml(MODE_LABEL[mode] || mode) + " run</h4>\n" + chartSVG(runMedians);
-                var compileMedians = {};
-                Object.keys(entries).forEach(function (lang) {
-                    if (entries[lang] && entries[lang].compile && typeof entries[lang].compile.median_s === "number")
-                        compileMedians[lang] = entries[lang].compile.median_s;
-                });
+                var compileMedians = subMedians(entries, "compile");
                 if (Object.keys(compileMedians).length)
                     charts += "<h4>" + escapeHtml(MODE_LABEL[mode] || mode) + " compile</h4>\n" + chartSVG(compileMedians);
+                var iterateMedians = subMedians(entries, "iterate");
+                if (Object.keys(iterateMedians).length)
+                    charts += "<h4>dev iteration</h4>\n" + chartSVG(iterateMedians);
             });
             if (!charts) {
                 html += "<h3>" + escapeHtml(program) + "</h3>" + omittedHtml + "<p>no successful measurements</p>";
@@ -355,12 +369,11 @@
         chartsEl.innerHTML = html;
         var builds = "";
         modes.forEach(function (mode) {
-            var items = "";
-            Object.keys((record.builds && record.builds[mode]) || {}).forEach(function (lang) {
-                items += "<li>" + escapeHtml(langLabel(lang)) + ": <code>" + escapeHtml(record.builds[mode][lang]) + "</code></li>";
-            });
-            builds += "<h4>" + escapeHtml(MODE_LABEL[mode] || mode) + "</h4><ul>" + items + "</ul>";
+            builds += "<h4>" + escapeHtml(MODE_LABEL[mode] || mode) + "</h4><ul>" + buildItems(record.builds && record.builds[mode]) + "</ul>";
         });
+        if (metrics.indexOf("iterate") !== -1) {
+            builds += "<h4>dev iteration</h4><ul>" + buildItems(record.iterate_builds) + "</ul>";
+        }
         // Built here because pandoc strips details elements from the page source.
         buildsEl.innerHTML = "<details><summary>Build configurations</summary>" + builds + "</details>";
     }
@@ -391,6 +404,8 @@
                     subSeries(records, "compile_s"), fmtSeconds),
                 drawChart("legend-run", tip, records,
                     subSeries(records, "run_s"), fmtSeconds),
+                drawChart("legend-iterate", tip, records,
+                    subSeries(records, "iterate_s"), fmtSeconds),
                 drawChart("legend-cxsize", tip, records,
                     [{ path: ["cx_bytes"], label: "cx" }], fmtBytes),
                 drawChart("legend-benchsize", tip, records,

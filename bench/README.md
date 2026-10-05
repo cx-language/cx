@@ -25,8 +25,9 @@ if runs disagree, since unstable output means a meaningless benchmark.
 python3 scripts/bench-corpus.py --cx build/cx --runs 2 --compile-runs 1
 ```
 
-This writes `bench.json` with compile medians, run medians, and binary
-sizes. `--build-seconds` / `--check-seconds` attach C++ build and test
+This writes `bench.json` with compile medians, run medians, dev-iteration
+medians (`cx run` wall time per program, from sources to completion), and
+binary sizes. `--build-seconds` / `--check-seconds` attach C++ build and test
 suite times; CI passes those, local runs leave them null.
 
 ## Lines of code
@@ -68,9 +69,14 @@ lambdas.
 medians plus a self-contained HTML report with a chart per build. Debug
 builds are also timed as rebuilds: one untimed compile warms the
 standard-library cache, then each of `--compile-runs` samples compiles a
-separate copy of the source. ccache is disabled. `--metrics compile` records
-only those debug rebuilds and does not run the binaries; `--metrics run`
-skips compile timing. The optimized build is the release configuration. The
+separate copy of the source. ccache is disabled. `--metrics` selects what
+to record: `run`, `compile`, `iterate`, or a mix. `iterate` times one
+edit-run cycle from uncompiled sources to program completion in the debug
+configuration below: `cx run`, `go run`, `odin run`, `zig run`, or
+`swift -Onone`. C, C++, and Rust have no single such command, so a debug
+compile plus a run of the binary is timed instead. Like debug compiles, one
+untimed sample warms caches and each sample is a separate copy of the
+source. The optimized build is the release configuration. The
 unoptimized debug build is the development configuration: cx's default build
 (safety checks stay on, and both the LLVM IR pipeline and codegen
 optimizations are skipped), C and C++ at `-O0 -g`, Rust at
