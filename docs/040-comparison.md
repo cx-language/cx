@@ -21,14 +21,14 @@ expressiveness of a higher-level one (compile-time null safety, method call synt
 closures, generics with interface bounds, operator overloading, tagged unions, and a
 capable standard library), while keeping the language small and approachable.
 
-|           | cx                                    | C++                                                  | Rust                           |
-|-----------|---------------------------------------|------------------------------------------------------|--------------------------------|
-| Null      | `T?` types with auto-narrowing        | Pointers always nullable, `std::optional`, no safety | `Option`, explicit `Some(...)` |
-| Sum types | Tagged unions via `enum`              | `std::variant` + visitor helper                      | Tagged unions via `enum`       |
-| Errors    | `Result`                              | Exceptions, `std::expected`                          | `Result`                       |
-| C interop | `import "foo.h"`, no bindings         | Native                                               | Manual `extern` declarations   |
-| Build     | `cx build`, implicit module tree      | Headers + external build system                      | Cargo, explicit module tree    |
-| Safety    | Debug checks + leak detector built in | Opt-in sanitizers                                    | Proven by the borrow checker   |
+|           | cx                                                        | C++                                                  | Rust                           |
+|-----------|-----------------------------------------------------------|------------------------------------------------------|--------------------------------|
+| Null      | `T?` types with auto-narrowing                            | Pointers always nullable, `std::optional`, no safety | `Option`, explicit `Some(...)` |
+| Sum types | Tagged unions via `enum`                                  | `std::variant` + visitor helper                      | Tagged unions via `enum`       |
+| Errors    | `Result`                                                  | Exceptions, `std::expected`                          | `Result`                       |
+| C interop | `import "foo.h"`, no bindings                             | Native                                               | Manual `extern` declarations   |
+| Build     | `cx build`, implicit module tree                          | Headers + external build system                      | Cargo, explicit module tree    |
+| Safety    | Debug checks + leak detector built in, sanitizers planned | Opt-in sanitizers                                    | Proven by the borrow checker   |
 
 ## cx vs C
 
@@ -74,15 +74,22 @@ that cost productivity:
   files.
 - One initialization syntax instead of several, one member access operator
   (`.`, never `->`), and pointers only instead of the pointer/reference split.
-- `switch` cases never fall through, so there is no `break` to forget.
+- `switch` cases don't fall through, so there is no `break` to forget; an explicit
+  `fallthrough` keyword is planned for the rare cases that need it.
 - Types are non-nullable by default; nullable types are spelled `T?` and
   checked at compile time.
 - No exceptions. Fallible functions return `Result`, and callers handle each
   case with `switch`.
 - No implicit narrowing conversions: converting e.g. `int64` to `int` requires
-  an explicit `int(...)`.
+  an explicit `int(...)`. Safe implicit conversions are allowed, and options to turn
+  them into warnings or errors per project are planned.
 - Moves are destructive, so moved-from objects need no resetting and their
   destructors don't run, unlike C++ move semantics.
+- More optimization opportunities are planned: integer overflow that is undefined
+  behavior in release builds (C++ only does this for signed integers), pointers declared
+  non-aliasing individually or with a compiler flag, struct fields the compiler may
+  reorder for a better layout unless prevented with an attribute or flag, and a type-safe
+  reallocation function that `List` can grow with, which C++'s allocators lack.
 - Interfaces serve as generic bounds (similar to C++ concepts) with readable
   errors on mismatch, and can additionally provide default implementations
   and fields.
@@ -137,6 +144,7 @@ correctness to demand up front:
   it is counterproductive for code where you don't care about such things.
   cx instead reports many issues as warnings rather than errors, and lets each project
   tune which warnings it wants, e.g. with `--Wunused-result` or `--Wno-unused`.
+  Options for warning about safe implicit conversions are planned too.
 
 - Rust checks thread safety at compile time through `Send`/`Sync`.
   cx has no equivalent checking.
@@ -238,10 +246,11 @@ in. The differences:
   overloading, which Odin replaces with explicit procedure groups.
 - Odin interoperates with C through `foreign` blocks that redeclare each
   signature. cx imports C headers directly, parsed with the Clang API.
-- Both have an implicit context, but Odin passes its `context` (allocator, temporary
-  allocator, logger) to every procedure call, while cx's ambient context is process-wide
-  and holds only the allocator, swapped with `withAllocator` (see [The ambient
-  context](./low-level-programming#the-ambient-context)).
+- Both have an implicit context. Odin's `context` carries an allocator, temporary
+  allocator, and logger; cx's ambient context currently holds only the allocator, swapped
+  with `withAllocator` (see [The ambient
+  context](./low-level-programming#the-ambient-context)), and a fuller context like
+  Odin's is planned.
 - Both languages organize code by directory, but cx goes further: the whole
   project is one module, so files from the same project are never imported.
   Only external directories need `import`.
@@ -274,12 +283,14 @@ production. cx is younger and still evolving.
   directory belong to the project by convention.
 
 - Jai threads an implicit context parameter (allocators and such) through
-  calls. cx's ambient context is process-wide and holds only the allocator (see [The
-  ambient context](./low-level-programming#the-ambient-context)).
+  calls. cx's ambient context currently holds only the allocator (see [The
+  ambient context](./low-level-programming#the-ambient-context)); a fuller context like
+  Jai's is planned.
 
 - Jai can run arbitrary code at compile time. cx has a narrower compile-time
-  story: generics (including integer parameters), constant expressions, and planned
-  reflection for cases like iterating enum values.
+  story: generics (including integer parameters) and constant expressions, with
+  compile-time-evaluable functions and reflection for cases like iterating enum values
+  planned.
 
 - cx has a syntax that is more familiar to C/C++ programmers, allowing them to adapt to the language more effortlessly.
 

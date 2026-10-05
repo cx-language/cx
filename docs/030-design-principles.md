@@ -14,6 +14,11 @@ Higher-level features such as generics, tagged unions, and iterator chains are d
 compile down to the code you would have written by hand, and you only pay for the features
 you use.
 
+Planned features open up more optimization opportunities than C++ has: integer overflow
+that is undefined behavior in release builds (see [Builtin types](./builtin-types#planned-features)),
+pointers declared non-aliasing (see [Pointers](./pointers#planned-features)), and struct
+fields the compiler may reorder for a better layout (see [Structs](./structs#planned-features)).
+
 ## Fast iteration
 
 Debug builds should compile and start as fast as possible to keep the edit-compile-run
@@ -51,6 +56,8 @@ memory leaks and double-frees at exit, so bugs that C and C++ leave to testing a
 fail loudly at the line that caused them. The type system tracks which values may be null
 and catches missing null checks at compile time (see [Nullable types](./nullable-types)).
 Checks can be disabled individually or globally where measured performance requires it.
+Built-in sanitizers such as AddressSanitizer are planned for catching the memory bugs these
+checks don't (see [Build system](./build-system#planned-features)).
 
 cx does not guarantee memory or thread safety at compile time the way Rust does; see
 [Non-goals](#non-goals).
@@ -60,7 +67,9 @@ cx does not guarantee memory or thread safety at compile time the way Rust does;
 cx does not enforce a naming convention, coding style, or programming paradigm:
 imperative, generic, data-oriented, functional, and object-oriented code are all
 supported. Warnings can be tuned to each project's needs, for example enabling
-`--Wunused-result` or disabling unused-entity warnings with `--Wno-unused`.
+`--Wunused-result` or disabling unused-entity warnings with `--Wno-unused`. Options for
+turning safe implicit conversions into warnings or errors are planned (see
+[Casting](./casting#planned-features)).
 
 ## Familiarity
 
@@ -113,20 +122,3 @@ cx explicitly does not aim for:
 - **A stable, mature ecosystem today.** cx is still evolving toward its 1.0 release, so
   projects that need long-term stability guarantees are better served elsewhere for now
   (see [Project status](./introduction#project-status)).
-
-## Language design resources
-
-Discussions that have informed the design of cx:
-
-- ["What are the weakest points of C++ in your opinion?" on Reddit](https://www.reddit.com/r/cpp/comments/7lvteh/what_are_the_weakest_points_of_c_in_your_opinion/?st=JBM8MFRN&sh=30098ea8)
-- ["What would you change in C++ if backwards compatibility was not an issue?" on Reddit][1]
-- ["Let's stop copying C" by Eevee][2]
-- ["Hypothetically, which standard library warts would you like to see fixed in a "std2"?" on Reddit][3]
-- ["If you had the power to completely overhaul C++, what would you change?" on Reddit][4]
-- ["Considerations for programming language design: a rebuttal"][5]
-
-[1]: https://www.reddit.com/r/cpp/comments/7639sf/what_would_you_change_in_c_if_backwards/?ref=share&ref_source=link
-[2]: https://eev.ee/blog/2016/12/01/lets-stop-copying-c/
-[3]: https://www.reddit.com/r/cpp/comments/4py6sl/hypothetically_which_standard_library_warts_would/?ref=share&ref_source=link
-[4]: https://www.reddit.com/r/cpp/comments/2e52t4/if_you_had_the_power_to_completely_overhaul_c/?ref=share&ref_source=link
-[5]: https://hackernoon.com/considerations-for-programming-language-design-a-rebuttal-5fb7ef2fd4ba

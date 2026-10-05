@@ -290,3 +290,10 @@ can be `extern "C++"`; generic functions cannot be `extern`. C++
 interop uses the Itanium ABI and is not supported on MSVC targets.
 See the [`cxx-interop` example](https://github.com/cx-language/cx/tree/main/examples/cxx-interop)
 for a complete project calling in both directions.
+
+## Planned features
+
+- A fuller ambient context like Odin's and Jai's, carrying more than the allocator (for
+  example a temporary allocator and a logger).
+- A type-safe reallocation function for memory from `allocate`, alongside allocation and
+  deallocation, which growable containers such as `List` use when growing.

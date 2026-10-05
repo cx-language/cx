@@ -74,7 +74,9 @@ default values. Argument expressions always evaluate in the order written.
 
 To customize construction, declare a constructor: a member function
 with the same name as the struct. It must initialize every field,
-using `this.` to refer to fields shadowed by parameters:
+using `this.` to refer to fields shadowed by parameters.
+Constructors are never implicit: a single-parameter constructor does not convert
+its argument type, so pass `Wrapper(5)` explicitly instead of a bare `5`:
 
 ```cs
 struct Counter {
@@ -393,3 +395,8 @@ when null. A struct with its own `print` method or a member named
 `print` keeps it; the compiler never overrides user-declared members.
 Note that a hand-written `print` alone does not make `print(value)` work:
 like before, the struct must still declare `: Printable` for that.
+
+## Planned features
+
+- The compiler may reorder struct fields for a better memory layout, unless prevented
+  with an attribute or a compiler flag.

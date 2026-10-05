@@ -145,3 +145,8 @@ void main() {
     println(*p); // *p is equivalent to p[0], prints 3
 }
 ```
+
+## Planned features
+
+- Declaring pointers non-aliasing, either individually or globally with a compiler flag,
+  to give the optimizer more freedom.

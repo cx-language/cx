@@ -229,3 +229,8 @@ var headerSearchPaths = ["vendor/mylib/include"]
 var librarySearchPaths = ["vendor/mylib/lib"]
 var libraries = ["mylib"]
 ```
+
+## Planned features
+
+- Built-in sanitizers such as AddressSanitizer, enabled with a compiler flag, for example
+  for debug builds.
