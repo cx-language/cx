@@ -8,8 +8,15 @@
     --accent-strong: hsl(216, 74%, 42%);
     --accent-strong-hover: hsl(216, 74%, 36%);
     --on-accent-strong: #fff;
-    --string-color: #008000;
-    --number-color: #a31515;
+    /* Code colors follow Rider's own schemes (Rider Light,
+       Rider Islands Dark). */
+    --keyword-color: #0f54d6;
+    --string-color: #8c6c41;
+    --number-color: #ab2f6b;
+    --comment-color: #248700;
+    --function-color: #00855f;
+    --type-color: #6b2fba;
+    --attribute-color: #6b2fba;
     --error-text: #c81e1e;
     --error-background-color: #fdd;
     --warning-background-color: #ffd;
@@ -32,8 +39,13 @@
         --accent-strong: hsl(213, 75%, 66%);
         --accent-strong-hover: hsl(213, 75%, 72%);
         --on-accent-strong: hsl(220, 45%, 12%);
-        --string-color: hsl(0, 58%, 72%);
-        --number-color: #b5cea8;
+        --keyword-color: #6c95eb;
+        --string-color: #c9a26d;
+        --number-color: #ed94c0;
+        --comment-color: #85c46c;
+        --function-color: #39cc9b;
+        --type-color: #c191ff;
+        --attribute-color: #c191ff;
         --error-text: #ff7b72;
         --error-background-color: #ff000038;
         --warning-background-color: #ffff0021;
@@ -207,28 +219,42 @@ div.sourceCode, pre.cx, pre.jsonc {
    highlighting instead of the CodeMirror editor. Map its token classes
    to the cx palette so both render identically. */
 pre.sourceCode.cs code span.kw,
-pre.sourceCode.cs code span.dt {
-    color: var(--blue);
+pre.sourceCode.cs code span.cf,
+pre.sourceCode.cs code span.cn {
+    color: var(--keyword-color);
     font-weight: normal;
 }
 
-pre.sourceCode.cs code span.fu,
+pre.sourceCode.cs code span.dt {
+    color: var(--keyword-color);
+    font-weight: normal;
+}
+
+pre.sourceCode.cs code span.fu {
+    color: var(--function-color);
+    font-weight: normal;
+}
+
 pre.sourceCode.cs code span.op {
     color: var(--text-color);
 }
 
 pre.sourceCode.cs code span.co {
-    color: var(--text-color-subtle);
+    color: var(--comment-color);
     font-style: normal;
 }
 
 pre.sourceCode.cs code span.dv,
+pre.sourceCode.cs code span.bn,
 pre.sourceCode.cs code span.fl {
     color: var(--number-color);
 }
 
 pre.sourceCode.cs code span.st,
-pre.sourceCode.cs code span.ch {
+pre.sourceCode.cs code span.ch,
+pre.sourceCode.cs code span.ss,
+pre.sourceCode.cs code span.vs,
+pre.sourceCode.cs code span.sc {
     color: var(--string-color);
 }
 

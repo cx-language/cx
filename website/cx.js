@@ -17,39 +17,60 @@
     CodeMirror.defineMode("cx", function (config) {
         var indentUnit = config.indentUnit;
 
+        // Mirrors the keyword table in src/parser/lex.cpp.
         var keywords = {
-            "break": true, "case": true, "cast": true, "catch": true, "class": true, "const": true, "continue": true, "default": true,
-            "defer": true, "deinit": true, "do": true, "else": true, "enum": true, "extern": true, "fallthrough": true, "for": true,
-            "if": true, "import": true, "in": true, "init": true, "interface": true, "is": true, "operator": true, "private": true, "public": true, "return": true,
-            "sizeof": true, "static": true, "struct": true, "switch": true, "this": true, "throw": true, "throws": true, "try": true, "using": true,
-            "undefined": true, "var": true, "while": true, "bool": true, "float": true, "float32": true, "float64": true,
-            "float80": true, "double": true, "int8": true, "int16": true, "int32": true, "int64": true,
-            "uint8": true, "uint16": true, "uint32": true, "uint64": true, "int": true, "uint": true,
-            "uintptr": true, "char": true, "void": true, "never": true, "byte": true, "sbyte": true, "c_size_t": true,
-            "c_schar": true, "c_uchar": true, "c_short": true, "c_ushort": true, "c_int": true, "c_uint": true,
-            "c_long": true, "c_ulong": true, "c_longlong": true, "c_ulonglong": true, "c_float": true, "c_double": true
+            "break": true, "case": true, "const": true, "continue": true, "default": true,
+            "defer": true, "do": true, "else": true, "enum": true, "extern": true,
+            "for": true, "if": true, "implicit": true, "import": true, "in": true,
+            "interface": true, "is": true, "private": true, "public": true, "return": true,
+            "sizeof": true, "struct": true, "switch": true, "then": true, "this": true,
+            "union": true, "using": true, "var": true, "while": true,
+            "#if": true, "#else": true, "#endif": true
         };
 
         var atoms = {
-            "true": true, "false": true, "null": true
+            "true": true, "false": true, "null": true, "undefined": true
         };
 
-        var isOperatorChar = /[+\-*&^%:=<>!|\/]/;
+        // Reserved type names. string and never are contextual, but shadowing
+        // them is pathological, so they highlight as types unconditionally.
+        var builtinTypes = {
+            "void": true, "bool": true, "char": true, "string": true, "never": true,
+            "int": true, "int8": true, "int16": true, "int32": true, "int64": true,
+            "uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
+            "sbyte": true, "byte": true, "float": true, "float32": true, "float64": true,
+            "float80": true, "double": true,
+            "c_size_t": true, "c_schar": true, "c_uchar": true, "c_short": true, "c_ushort": true,
+            "c_int": true, "c_uint": true, "c_long": true, "c_ulong": true,
+            "c_longlong": true, "c_ulonglong": true, "c_float": true, "c_double": true
+        };
+
+        var isOperatorChar = /[+\-*&^%:=<>!|\/?~]/;
+        var isWordChar = /[\w\$_\xa1-\uffff]/;
 
         var curPunc;
 
         function tokenBase(stream, state) {
             var ch = stream.next();
-            if (ch == '"' || ch == "'" || ch == "`") {
+            if (ch == '"' || ch == "'") {
                 state.tokenize = tokenString(ch);
                 return state.tokenize(stream, state);
             }
+            if (ch == "@") {
+                stream.eatWhile(isWordChar);
+                return "attribute";
+            }
             if (/[\d]/.test(ch)) {
-                if (ch == "0") {
-                    stream.match(/^[0-9]*\.?[0-9]+([eE][\-+]?[0-9]+)?/) || stream.match(/^[xX][0-9a-fA-F]+/) || stream.match(/^0[0-7]+/);
-                } else {
-                    stream.match(/^[0-9]*\.?[0-9]+([eE][\-+]?[0-9]+)?/);
+                if (ch == "0" && (stream.match(/^x[0-9a-fA-F_]+/) || stream.match(/^o[0-7_]+/) || stream.match(/^b[01_]+/))) {
+                    return "number";
                 }
+                stream.match(/^[\d_]*/);
+                // The fraction requires a digit after the dot, so member
+                // access (0.foo) and ranges (0..10) lex separately. A bare
+                // dot survives only before an exponent (1.e5).
+                if (!stream.match(/^\.\d+/)) stream.match(/^\.(?=[eE])/);
+                // Separators are integers-only; floats reject them.
+                stream.match(/^[eE][+-]?\d+/);
                 return "number";
             }
             if (/[\[\]{}\(\),;\:\.]/.test(ch)) {
@@ -58,6 +79,7 @@
             }
             if (ch == "/") {
                 if (stream.eat("*")) {
+                    state.commentDepth = 1;
                     state.tokenize = tokenComment;
                     return tokenComment(stream, state);
                 }
@@ -70,13 +92,22 @@
                 stream.eatWhile(isOperatorChar);
                 return "operator";
             }
-            stream.eatWhile(/[\w\$_\xa1-\uffff]/);
+            stream.eatWhile(isWordChar);
             var cur = stream.current();
             if (keywords.propertyIsEnumerable(cur)) {
                 if (cur == "case" || cur == "default") curPunc = "case";
                 return "keyword";
             }
             if (atoms.propertyIsEnumerable(cur)) return "atom";
+            // Builtin types share the keyword color, as in VS Code where
+            // storage.type and keyword take the same color.
+            if (builtinTypes.propertyIsEnumerable(cur)) return "keyword";
+            // operator is contextual: a keyword only in overload declarations.
+            if (cur == "operator" && stream.match(/^\s*(\[|==|!=|<=|>=|<|>|[+\-*/%])/, false)) return "keyword";
+            // Calls and definitions alike: a word followed by `(`.
+            if (stream.match(/^\s*\(/, false)) return "def";
+            // User type names start with an uppercase letter by convention.
+            if (/^[A-Z]/.test(cur)) return "type";
             return "variable";
         }
 
@@ -88,22 +119,25 @@
                         end = true;
                         break;
                     }
-                    escaped = !escaped && quote != "`" && next == "\\";
+                    escaped = !escaped && next == "\\";
                 }
-                if (end || !(escaped || quote == "`"))
+                if (end || !escaped)
                     state.tokenize = tokenBase;
                 return "string";
             };
         }
 
         function tokenComment(stream, state) {
-            var maybeEnd = false, ch;
-            while (ch = stream.next()) {
-                if (ch == "/" && maybeEnd) {
-                    state.tokenize = tokenBase;
-                    break;
+            var ch;
+            while ((ch = stream.next()) != null) {
+                if (ch == "*" && stream.eat("/")) {
+                    if (--state.commentDepth <= 0) {
+                        state.tokenize = tokenBase;
+                        break;
+                    }
+                } else if (ch == "/" && stream.eat("*")) {
+                    state.commentDepth++;
                 }
-                maybeEnd = (ch == "*");
             }
             return "comment";
         }
@@ -136,7 +170,8 @@
                     tokenize: null,
                     context: new Context((basecolumn || 0) - indentUnit, 0, "top", false),
                     indented: 0,
-                    startOfLine: true
+                    startOfLine: true,
+                    commentDepth: 0
                 };
             },
 
@@ -177,7 +212,7 @@
             },
 
             electricChars: "{}):",
-            closeBrackets: "()[]{}''\"\"``",
+            closeBrackets: "()[]{}''\"\"",
             fold: "brace",
             blockCommentStart: "/*",
             blockCommentEnd: "*/",
