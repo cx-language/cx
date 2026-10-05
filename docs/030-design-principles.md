@@ -13,10 +13,9 @@
 - Safe by default, but allow disabling safety checks (both individually and
   collectively) easily where necessary. E.g. array access bounds checking,
   integer overflow detection.
-- The language should be relatively simple, but most of the perceived
-  simplicity should come from the aforementioned progressive disclosure
-  principle. For simple things: "There should be one - and preferably only one
-  - obvious way to do it."
+- The language should be relatively simple, but most of the perceived simplicity should
+  come from the aforementioned progressive disclosure principle. For simple things: "There
+  should be one, and preferably only one, obvious way to do it."
 - Should scale well, e.g. fast build times, easy greppability of function/type/variable definitions.
 - Should be familiar and attractive to C++ and C developers. I.e. try not to
   change too much. Only change things that are an objective improvement from C++
