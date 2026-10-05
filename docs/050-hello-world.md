@@ -117,8 +117,8 @@ cx has two kinds of comments:
 
 ## Where to go next
 
-- [Language overview](./language-overview) for what the language offers and why.
+- [Language overview](./language-overview) for a quick tour of the language.
 - [Variables and constants](./variables-and-constants), [Control flow](./control-flow)
   and [Strings](./strings) to learn the basics.
-- The [examples](https://github.com/emillaine/cx/tree/main/examples) directory
+- The [examples](https://github.com/cx-language/cx/tree/main/examples) directory
   for complete runnable programs.

@@ -1,253 +1,79 @@
 # Language overview
 
-## Simple and expressive language
+A quick tour of cx for programmers who already know a C-family language. Each section
+shows the basics of one area and links to the page that covers it in detail. For the
+reasoning behind the design, see [Design principles](./design-principles); for how cx
+differs from C++, Rust, and others, see [Comparison with related languages](./comparison).
 
-cx keeps the language small so there is less to learn and less that can surprise you.
-There is only one composite value type (`struct`) instead of separate struct and class concepts,
-member functions receive `this` as a non-null `T&` borrow, and member access always uses `.`,
-never `->`. Fewer overlapping concepts means a C++ programmer is productive immediately,
-without relearning which of several similar tools fits each situation.
+## Variables and functions
 
-Control flow follows the same principle. Switch cases break automatically, so a missing `break`
-can never silently fall through the way it does in C and C++:
+Local variables are declared with an explicit type or with `var` to infer it, and `const`
+declares compile-time constants. Semicolons are optional, as are the parentheses around
+the conditions of `if`, `for`, `while`, and `switch`. Arguments can be labeled with their
+parameter names, in any order, which keeps calls like `foo(true, false)` readable:
+
+```cs
+void greet(string name, int times) {
+    for _ in 0..times {
+        println("hi ", name);
+    }
+}
+
+void main() {
+    const greeting = "hello";
+    var count = 2; // inferred as int
+    println(greeting);
+    greet(times = count, name = "Bo"); // prints "hi Bo" twice
+}
+```
+
+Functions can be overloaded on parameter types and names. See [Variables and
+constants](./variables-and-constants) and [Functions](./functions).
+
+## Control flow
+
+`for` loops iterate over collections and ranges, and `switch` cases break automatically,
+so a missing `break` can never silently fall through:
 
 ```cs
 void main() {
-    var x = 2;
-    switch x {
-        case 1: println("one");
-        case 2: println("two");
-        default: println("other");
+    for i in 1...3 {
+        switch i {
+            case 1: println("one");
+            case 2: println("two");
+            default: println("other");
+        }
     }
 }
 ```
 
-The language is also simpler to implement tooling for: parsing is straightforward, which makes
-syntax highlighting, auto-formatting, and linting easier to write and keep correct.
+See [Control flow](./control-flow).
 
-## Safer by default
+## Structs
 
-Bugs that C and C++ leave to testing and luck are caught automatically. Array accesses are
-bounds-checked, integer arithmetic is overflow-checked, and dereferencing null is checked,
-so corrupted output and security holes from reading past a buffer turn into loud failures
-at the exact line that caused them. The checks can be disabled individually or globally
-when measured performance requires it, with attributes on a function, statement, or
-expression. `@unchecked` disables all checks in its scope; `@noOverflowCheck`,
-`@noBoundsCheck`, and `@noNullCheck` disable one check each. Calls never inherit the
-caller's attributes. The attributes silence runtime checks only: a constant
-expression that overflows is still a compile error.
-
-```cs
-@noOverflowCheck
-int wrapAdd(int a, int b) {
-    return a + b; // wraps instead of aborting on overflow
-}
-
-void main() {
-    var x = 2147483647;
-    println(wrapAdd(x, 1)); // prints -2147483648
-    @noOverflowCheck
-    var y = x + 1; // statement-level: y is -2147483648
-    var z = @noOverflowCheck x + 1; // expression-level
-    println(y == z); // prints true
-}
-```
-
-Values that may be absent are marked with `?`, which forces callers to handle both cases
-instead of forgetting a null check:
-
-```cs
-int? readPort() {
-    return 8080;
-}
-
-void main() {
-    if readPort() != null {
-        println(readPort()! + 1);
-    }
-}
-```
-
-The compiler also warns when a variable might be read before initialization, for example when
-passing it as an out parameter to a C function. Assigning the keyword `undefined` to the
-variable suppresses the warning when the programmer knows it is safe. With `--Wunused-result`,
-ignored return values produce a warning as well; assigning to `_` marks a result as deliberately
-unused instead of casting to void.
-
-## Improved type system
-
-Stronger typing catches bugs at compile time and makes refactoring safer. There are no
-bug-prone implicit conversions between built-in types; safe ones are still allowed but can be
-forbidden with a compiler flag. All types are non-nullable by default, with `?` marking the
-ones that admit null, so an unexpected null becomes a compile error rather than a crash.
-
-Fallible operations return `Result` instead of out parameters or sentinel values, and callers
-handle each case explicitly with `switch`:
-
-```cs
-Result<int, string> fetch(bool ok) {
-    if ok {
-        return Result.Ok(value = 42);
-    }
-    return Result.Err(error = "boom");
-}
-
-void main() {
-    switch fetch(true) {
-        case Ok value: println(value);
-        case Err error: println(error);
-    }
-}
-```
-
-Generic code constrains its parameters with `interface`s (cx's equivalent of C++ concepts),
-so instantiating a template with an unsuitable type reports which requirement failed instead
-of pages of substitution errors. Unconstrained parameters stay available for flexibility.
-Arrays are first-class values with a known size that can be returned and passed by value,
-and anonymous structs provide lightweight syntax for grouping values. Tagged unions allow
-runtime polymorphism without dynamic allocation and virtual function calls.
-
-## Standard library covers common use cases better
-
-String handling works on views and owned buffers with practical helpers. Splitting user input
-and rejoining it needs no manual loop:
-
-```cs
-void main() {
-    var csv = StringBuf("a,b,c");
-    var fields = csv.split(',');
-    var text = join(fields, ";");
-    println(text);
-}
-```
-
-Collections offer the transformations used in everyday data processing. Computing a total or
-reshaping a list reads as a pipeline instead of nested loops and temporary buffers:
-
-```cs
-void main() {
-    var nums = List([1, 2, 3, 4]);
-    println(nums.sum());
-    var doubled = nums.map(n => n * 2).toList();
-    println(doubled);
-}
-```
-
-Math support includes constants such as Pi:
-
-```cs
-void main() {
-    println(pi);
-}
-```
-
-Beyond that, the standard library covers file system access and process control, and its
-algorithms take range objects instead of iterator pairs for ease of use.
-
-## Improved syntax
-
-cx's syntax stays close to the C family while removing verbose or cryptic spellings. There is
-no C-style cast syntax, only explicit conversions such as `int(x)`. Array sizes sit next to
-the element type, semicolons are optional, and lambdas infer their argument types, which keeps
-callbacks readable:
-
-```cs
-void main() {
-    var nums = List([1, 2, 3, 4]);
-    var doubled = nums.map(n => n * 2).toList();
-    println(doubled);
-}
-```
-
-## Better compilation model
-
-No header files and no forward declarations: a program is compiled as a whole instead of one
-translation unit at a time, which leaves more room for optimization and avoids link-time
-surprises. Libraries are imported as a whole, so users never hunt for which file declares a
-feature, and library authors can reorganize files without breaking compatibility. Every
-library lives in its own namespace automatically, with no per-file declarations to maintain.
-Files from the same project share one module and need no imports between them
-(except vendored libraries under `vendor/`, which compile as separate modules),
-and the standard library is visible without any import; only external code needs
-`import` (see [Modules and imports](./modules)).
-Together this means faster builds and less time wrestling the build when a project grows past
-a handful of files.
-
-## Standard build system and package manager
-
-Building a cx project is done with a single command, `cx build`, which works out of the box without any build
-configuration, and dependencies are fetched from Git repositories. See the [Build system](./build-system) page for details.
-
-Long-term goal: include a built-in linting tool that runs during compilation to enforce a specific coding style, or to
-disallow uses of certain language features.
-
-## Faster than C++
-
-More optimization opportunities:
-
-- Moves are destructive, removing the need to reset moved-from objects and call their destructors, as is required in
-  C++.
-- Pointers can be declared non-aliasing either individually or globally with a compiler flag.
-- The language provides a type-safe reallocation function for arrays, instead of just allocation and deallocation
-  functions like C++. For example, the cx equivalent of C++'s `std::vector` makes use of this function.
-- Unsigned integer overflow is undefined. There are still functions to do wrapping arithmetic on both signed and
-  unsigned integers, when needed.
-- Compiler is allowed to reorder struct fields. This can be prevented using an attribute or compiler flag.
-
-cx uses the open-source LLVM library as a code generation back-end, benefiting from all current and future optimizations
-implemented in LLVM.
-
-No hidden expensive operations, such as implicit calls to copy constructors and copy assignment operators like in C++.
-
-## Transparent interoperation with existing C APIs
-
-Existing C libraries stay usable: headers import directly, so calling into battle-tested code
-such as parsers, codecs, or operating system APIs needs no bindings layer. A command-line tool
-that needs one C helper does not have to drop down to C for the whole program:
-
-```cs
-import "stdlib.h";
-
-void main() {
-    println(atoi("42") + 1);
-}
-```
-
-Support for some level of interoperability with C++ APIs is a longer-term goal.
-
-## Additional language features
-
-__Destructuring__ binds enum payloads and multiple values to separate variables at the point of
-use, so dispatching on a result reads linearly instead of nesting accessors:
-
-```cs
-void main() {
-    Result<int, string> r = Result.Ok(value = 42);
-    switch r {
-        case Ok value: println(value);
-        case Err error: println(error);
-    }
-}
-```
-
-__Named arguments__ label call sites that would otherwise be cryptic sequences like
-`foo(true, false)`. Labels are checked against parameter names and may come in any order,
-which keeps calls readable when a function takes several same-typed parameters:
+`struct` is the only composite value type; there is no separate `class`. Member functions
+receive `this` as a non-null borrow, and member access always uses `.`, even through
+pointers. Constructors take positional or named arguments:
 
 ```cs
 struct Point {
     int x;
     int y;
+
+    int lengthSquared() {
+        return x * x + y * y;
+    }
 }
 
 void main() {
-    var p = Point(y = 2, x = 1);
-    println(p.x + p.y);
+    var p = Point(y = 4, x = 3);
+    var ptr = &p;
+    println(ptr.lengthSquared()); // prints 25
 }
 ```
 
-__Defer statement__ runs cleanup when leaving the current scope, including early returns.
-Resource handling no longer needs an RAII wrapper class per resource just to guarantee release:
+Structs can have destructors, and `defer` runs cleanup when leaving the current scope,
+including early returns:
 
 ```cs
 void process(bool fail) {
@@ -265,18 +91,193 @@ void main() {
 }
 ```
 
-__Simple type inference__ for local and global variables removes redundant annotations, which
-keeps code shorter and makes type changes during refactoring touch fewer lines. The strong
-type system ensures inference never silently picks an unexpected type.
+See [Structs](./structs), [Anonymous structs](./anonymous-structs), and
+[Pointers](./pointers).
 
-__Compile-time reflection__ (for example iterating over enum cases or rendering an enum case
-as text) is a longer-term goal. It should follow the "pay only for what you use" principle.
+## Arrays, lists, and strings
 
-## ...and all the good parts from C and C++
+Fixed-size arrays are values that can be passed and returned like any other, `List` is the
+resizable array, and strings come as `string` views and owned `StringBuf` buffers:
 
-- Performance and control.
-- Pay only for what you use.
-- No garbage collection.
-- Don't force the programmer to use a specific style.
-- Have some implicit conversions and other features for convenience. Allow the programmer to customize these to their preference via compiler warnings and/or linter options.
-- Backwards compatibility eventually once the language design has stabilized.
+```cs
+void main() {
+    int[3] sizes = [64, 128, 32];
+    var list = List([1, 2, 3]);
+    list.push(sizes[1]);
+    println(list); // prints [1, 2, 3, 128]
+
+    var csv = StringBuf("a,b,c");
+    println(join(csv.split(','), ";")); // prints a;b;c
+}
+```
+
+See [Arrays](./arrays), [List](./list), and [Strings](./strings).
+
+## Nullable types
+
+All types are non-nullable unless marked with `?`. The compiler narrows a nullable value to
+its non-null type inside a null check, and warns when a possibly-null value is used
+without one:
+
+```cs
+int? parsePort(string scheme) {
+    if scheme == "http" {
+        return 80;
+    }
+    return null;
+}
+
+void main() {
+    var port = parsePort("http");
+    if port {
+        println(port + 1); // ok, port is an int here
+    }
+}
+```
+
+See [Nullable types](./nullable-types).
+
+## Enums and tagged unions
+
+Enum cases can carry payloads, making `enum` a type-safe tagged union. `switch` matches on
+the case and narrows the value, so each branch can access that case's fields:
+
+```cs
+enum Shape {
+    Circle(float radius),
+    Rect(float width, float height),
+}
+
+float area(Shape shape) {
+    switch shape {
+        case Circle: return 3.0 * shape.radius * shape.radius;
+        case Rect: return shape.width * shape.height;
+    }
+}
+
+void main() {
+    println(area(Shape.Circle(1.0))); // prints 3
+    println(area(Shape.Rect(width = 2.0, height = 3.0))); // prints 6
+}
+```
+
+See [Enum types](./enum-types).
+
+## Closures and iterators
+
+Lambdas infer their parameter types and can capture local variables. Functions like
+`filter` and `map` return lazy views that chain without allocating:
+
+```cs
+void main() {
+    var numbers = List([1, 2, 3, 4, 5, 6]);
+    int limit = 4;
+    var total = numbers.filter(n => n % 2 == 0 && n <= limit).map(n => n * n).sum();
+    println(total); // prints 20
+}
+```
+
+See [Closures](./closures) and [Iterators](./iterators).
+
+## Interfaces and generics
+
+Interfaces declare required methods (and optionally fields and default implementations),
+and serve as bounds on generic type parameters, so a mismatch reports which requirement
+failed:
+
+```cs
+interface HasArea {
+    float area();
+}
+
+struct Square: HasArea {
+    float side;
+
+    float area() {
+        return side * side;
+    }
+}
+
+void printArea<T: HasArea>(T& shape) {
+    println(shape.area());
+}
+
+void main() {
+    var square = Square(side = 2.0);
+    printArea(square); // prints 4
+}
+```
+
+See [Interfaces](./interfaces) and [Generics](./generics).
+
+## Error handling
+
+Fallible functions return `Result` by convention, and callers handle both cases with
+`switch`, so every error path is visible in the code:
+
+```cs
+Result<int, string> parseDigit(char c) {
+    if c >= '0' && c <= '9' {
+        return Ok(int(c) - int('0'));
+    }
+    return Err("not a digit");
+}
+
+void main() {
+    switch parseDigit('x') {
+        case Ok value: println(value);
+        case Err error: println(error); // prints "not a digit"
+    }
+}
+```
+
+See [Error handling](./error-handling).
+
+## Safety checks
+
+Debug builds check array bounds, integer overflow, and null dereferences, and report
+memory leaks at exit. Where measured performance requires it, checks can be disabled with
+attributes on a function, statement, or expression: `@unchecked` disables all checks in
+its scope, while `@noOverflowCheck`, `@noBoundsCheck`, and `@noNullCheck` disable one
+check each:
+
+```cs
+@noOverflowCheck
+int wrapAdd(int a, int b) {
+    return a + b; // wraps instead of aborting on overflow
+}
+
+void main() {
+    var x = 2147483647;
+    println(wrapAdd(x, 1)); // prints -2147483648
+    var y = @noOverflowCheck x + 1; // expression-level
+    println(y); // prints -2147483648
+}
+```
+
+See [Builtin types](./builtin-types) and [Build modes](./build-system#build-modes).
+
+## Modules, builds, and C interop
+
+All `.cx` files in a project compile as one module, with no header files, forward
+declarations, or imports between them, and the standard library needs no import either.
+`cx run` and `cx build` work without any configuration. C headers import directly, with no
+bindings to write:
+
+```cs
+import "stdlib.h";
+
+void main() {
+    println(atoi("42") + 1); // prints 43
+}
+```
+
+See [Modules and imports](./modules), [Build system](./build-system), and [Low-level
+programming](./low-level-programming).
+
+## More topics
+
+The remaining guide pages cover [Builtin types](./builtin-types), [Type
+aliases](./type-aliases), [Unions](./unions), [Access specifiers](./access-specifiers), [Function
+pointers](./function-pointers), [Operator overloading](./operator-overloading),
+[Casting](./casting), and the [Language server](./lsp).

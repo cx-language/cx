@@ -1,6 +1,36 @@
 # Comparison with related languages
 
-## cx vs. C
+Many languages compete in the space of fast, natively compiled software, and each makes
+different trade-offs:
+
+- **C** is minimal, universal, and time-tested, but leaves much of the work, and many of
+  the mistakes, to the programmer.
+- **C++** is powerful and mature, but large and complex after decades of backwards
+  compatibility and design-by-committee baggage.
+- **Rust** guarantees memory and thread safety at compile time, at the cost of a more
+  complex language and the work of satisfying the borrow checker, making it a poor fit for
+  use cases where compilation speed and prototyping flexibility are more important.
+- **Zig** favors explicit low-level code above all and is well-suited for that, but
+  suffers from slow compile times, and is not ideal for more concise, high-level code.
+- **Odin** and **Jai** are newer languages that rethink low-level programming around
+  simplicity and direct control. They choose to forgo features such as compile-time null
+  safety, method call syntax, and closures.
+
+cx aims to balance the control and performance of a low-level language together with the
+expressiveness of a higher-level one (compile-time null safety, method call syntax,
+closures, generics with interface bounds, operator overloading, tagged unions, and a
+capable standard library), while keeping the language small and approachable.
+
+|           | cx                                    | C++                                                  | Rust                           |
+|-----------|---------------------------------------|------------------------------------------------------|--------------------------------|
+| Null      | `T?` types with auto-narrowing        | Pointers always nullable, `std::optional`, no safety | `Option`, explicit `Some(...)` |
+| Sum types | Tagged unions via `enum`              | `std::variant` + visitor helper                      | Tagged unions via `enum`       |
+| Errors    | `Result`                              | Exceptions, `std::expected`                          | `Result`                       |
+| C interop | `import "foo.h"`, no bindings         | Native                                               | Manual `extern` declarations   |
+| Build     | `cx build`, implicit module tree      | Headers + external build system                      | Cargo, explicit module tree    |
+| Safety    | Debug checks + leak detector built in | Opt-in sanitizers                                    | Proven by the borrow checker   |
+
+## cx vs C
 
 cx is heavily based on C and is in many ways compatible with it:
 C headers can be imported directly and cx functions can be declared `extern "C"` to be callable from C,
@@ -13,8 +43,8 @@ What cx adds over C:
   disabled by default in release builds.
 - Improved type safety: nullable types checked at compile time, type-safe tagged unions.
 - Higher-level features: generics with interface bounds, function overloading,
-  named arguments, closures, method call syntax, operator overloading, sum types,
-  tuples, multiple return values, and `defer`.
+  named arguments, closures, method call syntax, operator overloading,
+  anonymous structs for returning multiple values, and `defer`.
 - A richer standard library: real string types, array and string slices,
   resizable arrays, maps, sets, range-based algorithms, file system access,
   and Unicode support.
@@ -23,11 +53,12 @@ What cx adds over C:
   works with no configuration and fetches Git dependencies automatically.
 - No preprocessor, but conditional compilation using `#if` is supported.
 
-The tradeoff is language/ecosystem maturity vs modern expressiveness/developer ergonomics:
-C is standardized, time-tested, and available everywhere, while cx is a still-evolving language
-with a richer feature set designed for day-to-day productivity and joy of programming.
+**When to pick C:** the tradeoff is language/ecosystem maturity vs modern
+expressiveness/developer ergonomics. C is standardized, time-tested, and available
+everywhere, while cx is a still-evolving language with a richer feature set designed for
+day-to-day productivity and joy of programming.
 
-## Difference between cx and C++
+## cx vs C++
 
 > "Within C++, there is a much smaller and cleaner language struggling to get out."
 > - _Bjarne Stroustrup_
@@ -43,17 +74,15 @@ that cost productivity:
   files.
 - One initialization syntax instead of several, one member access operator
   (`.`, never `->`), and pointers only instead of the pointer/reference split.
-- `switch` cases break by default with opt-in fallthrough.
+- `switch` cases never fall through, so there is no `break` to forget.
 - Types are non-nullable by default; nullable types are spelled `T?` and
   checked at compile time.
-- No exceptions. Fallible code currently uses nullable returns and status
-  codes; a `Result` type is planned.
-- No bug-prone implicit narrowing conversions. Safe implicit conversions are
-  allowed but can be turned into warnings or errors per project.
+- No exceptions. Fallible functions return `Result`, and callers handle each
+  case with `switch`.
+- No implicit narrowing conversions: converting e.g. `int64` to `int` requires
+  an explicit `int(...)`.
 - Moves are destructive, so moved-from objects need no resetting and their
   destructors don't run, unlike C++ move semantics.
-- The compiler may reorder struct fields for better layout, unless prevented
-  with an attribute or flag.
 - Interfaces serve as generic bounds (similar to C++ concepts) with readable
   errors on mismatch, and can additionally provide default implementations
   and fields.
@@ -74,23 +103,16 @@ that cost productivity:
   Unicode-aware strings, helpers such as `split` and `join`, and algorithms
   that take ranges instead of iterator pairs.
 
-One caveat: cx imports C headers directly, but C++ API interop is a
+**When to pick C++:** cx imports C headers directly, but C++ API interop is a
 longer-term goal, so C++ code currently needs C wrappers to be callable from
 cx. And where C++ has decades of standard library, tooling, and compiler
 maturity, cx is still young.
 
-|           | cx                                 | C++                                                  | Rust                           |
-|-----------|------------------------------------|------------------------------------------------------|--------------------------------|
-| Null      | `T?` types with auto-narrowing     | Pointers always nullable, `std::optional`, no safety | `Option`, explicit `Some(...)` |
-| Sum types | Tagged unions via `enum`           | `std::variant` + visitor helper                      | Tagged unions via `enum`       |
-| Errors    | `Result`                           | Exceptions, `std::expected`                          | `Result`                       |
-| C interop | `import "foo.h"`, no bindings      | Native                                               | Manual `extern` declarations   |
-| Build     | `cx build`, implicit module tree   | Headers + external build system                      | Cargo, explicit module tree    |
-| Safety    | Debug checks + sanitizers built in | Opt-in sanitizers                                    | Proven by the borrow checker   |
-
 ## cx vs Rust
 
-- If you need guaranteed memory safety, pick Rust.
+Rust and cx share many features (tagged unions via `enum`, `Result`-based error handling,
+generics with bounds, a standard build tool), but make opposite choices about how much
+correctness to demand up front:
 
 - Compile-time memory safety is useful for certain types of projects,
   but it comes at a cost in language complexity (e.g. lifetime annotations)
@@ -113,9 +135,11 @@ maturity, cx is still young.
 - Rust code is by design very explicit.
   While this is useful for code where you care about every little detail, every instance of possible runtime overhead, and every error condition,
   it is counterproductive for code where you don't care about such things.
-  To solve this divide, cx allows the programmer to configure individual compiler warnings.
-  For example, warnings for safe implicit conversions can be enabled or disabled based on the project's requirements.
-  This is a common theme in cx: the compiler is adaptable to the user's needs.
+  cx instead reports many issues as warnings rather than errors, and lets each project
+  tune which warnings it wants, e.g. with `--Wunused-result` or `--Wno-unused`.
+
+- Rust checks thread safety at compile time through `Send`/`Sync`.
+  cx has no equivalent checking.
 
 - To call C functions from Rust, the functions have to be declared in the Rust code.
   cx allows importing C headers directly.
@@ -124,7 +148,7 @@ maturity, cx is still young.
 - Rust's module system has been described as confusing[^rust-modules].
   cx's module system is designed to be simple, easy to understand, and straightforward to use:
   the compiler infers the module structure from the project's directory structure.
-  Source files from the same module don't need to explicitly imported.
+  Source files from the same module don't need to be explicitly imported.
 
 - cx syntax is closer to the C/C++ syntax than Rust is.
   For C/C++ developers, this makes the learning curve of cx less steep and helps them get comfortable and productive more quickly.
@@ -137,7 +161,9 @@ maturity, cx is still young.
 
 - cx has potential for faster compile times than Rust, due to not having to do things like borrow checking.
 
-- Rust doesn't allow function overloading. cx does.
+- Rust doesn't allow function overloading. cx does, on both parameter types
+  and parameter names, and additionally supports named arguments.
+
 - Rust variables are immutable by default and need `mut` to be mutable.
   cx uses `var` for mutable variables and `const` for constants, with type
   inference in both cases.
@@ -151,19 +177,18 @@ maturity, cx is still young.
   share state as well as behavior. Rust traits cannot carry state.
 
 - Rust has a powerful macro system (`macro_rules!` and procedural macros).
-  cx has no macros, only `#ifdef` conditions set from the command line.
-
-- Rust checks thread safety at compile time through `Send`/`Sync`.
-  cx has no equivalent checking.
+  cx has no macros, only `#if` conditions set from the command line.
 
 - Both languages ship a standard build tool, but with different dependency
   models: Cargo builds on the central crates.io registry, while `cx build`
   fetches dependencies from plain Git URLs with no registry or publishing step.
 
-- Rust doesn't allow function overloading. cx does, on both parameter types
-  and parameter names, and additionally supports named arguments.
+**When to pick Rust:** if you need guaranteed memory or thread safety, pick Rust.
 
 ## cx vs Zig
+
+Zig is a more low-level-focused language, competing primarily with C.
+cx is more of a hybrid low-level/high-level language, competing primarily with C++.
 
 - Zig doesn't have operator overloading due to its "no hidden control flow" principle.
   cx allows operator overloading.
@@ -178,18 +203,12 @@ maturity, cx is still young.
   In other words, syntactically they are treated the same as runtime values.
   cx keeps types and runtime values separate, opting for a more familiar C++-like syntax.
 
-- Zig is a more low-level-focused language, competing primarily with C.
-  cx is more of a hybrid low-level/high-level language, competing primarily with C++.
-
-- Zig has no automatic type narrowing for accessing a nullable value inside a matching null check,
-  instead opting for an additional syntax: `if (optional_foo) |foo| { ... }`
-- In Zig, types are values that are passed as `comptime` arguments, returned from `comptime` functions, etc.
-  In other words, syntactically they are treated the same as runtime values.
-  cx keeps types and runtime values separate, opting for a more familiar C++-like syntax.
-
 - Zig's generics are duck-typed `comptime` parameters with no way to declare
   constraints. cx generics use angle brackets and can be constrained with
   interfaces, giving checked bounds and readable errors on mismatch.
+
+- Zig has no automatic type narrowing for accessing a nullable value inside a matching null check,
+  instead opting for an additional syntax: `if (optional_foo) |foo| { ... }`.
 
 - Both languages import C declarations directly: Zig through `@cImport` and
   `translate-c`, cx through `import` of the header, parsed with the Clang API.
@@ -198,76 +217,71 @@ maturity, cx is still young.
   file at all; optional settings live in `build.cx`, and dependencies are Git
   URLs.
 
-## cx vs Jai
-
-- cx has compile-time null-safety and nullable types.
-
-- cx has method call syntax.
-
-- cx has interfaces, which can be used e.g. as type parameter bounds in generic code for better error messages.
-
-- cx has automatic importing of C headers, implemented using the Clang API.
-
-- cx doesn't require importing standard library modules explicitly.
-
-- cx doesn't require importing files from the same project.
-  All cx files in the project source directory are by default assumed to belong to the project as a "convention over configuration".
-
-- cx has a syntax that is more familiar to C/C++ programmers, allowing them to adapt to the language more effortlessly.
-- Jai is developed behind closed doors and distributed only through its
-  beta program. cx is open source.
-
-- Jai's polymorphic procedures take `$T` type parameters with no way to
-  constrain them. cx generics can be bounded by interfaces, which documents
-  requirements and produces readable errors on mismatch.
-
-- Jai threads an implicit context parameter (allocators and such) through
-  calls. cx has no implicit context; containers allocate on their own.
-
-- Jai can run arbitrary code at compile time. cx has a narrower compile-time
-  story: generics, compile-time-evaluable functions, and planned reflection
-  for cases like iterating enum values.
+**When to pick Zig:** if you want every allocation, error, and control-flow path spelled
+out explicitly, or need Zig's cross-compilation toolchain, Zig is the better fit.
 
 ## cx vs Odin
-
-- cx has compile-time null-safety and nullable types with automatic narrowing.
-  Odin uses `Maybe(T)` with explicit handling.
-
-- cx has method call syntax.
-  Odin has no methods; procedures take the receiver as an explicit first argument.
-
-- cx has automatic importing of C headers, implemented using the Clang API.
-
-- cx has a syntax that is more familiar to C/C++ programmers, allowing them to adapt to the language more effortlessly.
-
-## Difference between cx and Odin
 
 Odin is the closest in spirit of the newer systems languages: pragmatic,
 C-like, manually managed memory with no garbage collector or exceptions,
 `defer`, multiple return values, and slices, maps, and dynamic arrays built
 in. The differences:
 
-- Odin threads an implicit `context` (allocator, temporary allocator, logger)
-  through every procedure call. cx has no implicit context; standard
-  containers allocate on their own.
 - Odin spells nullable types `Maybe(T)` and handles them with `or_return` /
-  `or_else` helpers and `switch` matching. cx spells them `T?`, narrows them
-  with ordinary null checks, and offers the `!` operator for asserting non-null.
-- Odin interoperates with C through `foreign` blocks that redeclare each
-  signature. cx imports C headers directly, parsed with the Clang API.
+  `or_else` helpers and `switch` matching. cx spells them `T?`, checks them at compile
+  time, narrows them with ordinary null checks, and offers the `!` operator for asserting
+  non-null.
+- Odin has neither methods nor operator overloading; procedures take the receiver as an
+  explicit first argument. cx has both, plus named arguments.
 - Odin generics are `$T` parameters with optional `where` clauses. cx
   generics use angle brackets with interface bounds, plus function
   overloading, which Odin replaces with explicit procedure groups.
-- Odin has neither methods nor operator overloading. cx has both, plus named
-  arguments.
+- Odin interoperates with C through `foreign` blocks that redeclare each
+  signature. cx imports C headers directly, parsed with the Clang API.
+- Both have an implicit context, but Odin passes its `context` (allocator, temporary
+  allocator, logger) to every procedure call, while cx's ambient context is process-wide
+  and holds only the allocator, swapped with `withAllocator` (see [The ambient
+  context](./low-level-programming#the-ambient-context)).
 - Both languages organize code by directory, but cx goes further: the whole
   project is one module, so files from the same project are never imported.
   Only external directories need `import`.
 - Odin has no dependency fetching; libraries are vendored or added as
   submodules. `cx build` fetches Git dependencies automatically, with no
   central registry.
-- Odin is further along: it is stable, documented, and used in production.
-  cx is younger and still evolving.
+- cx has a syntax that is more familiar to C/C++ programmers, allowing them to adapt to
+  the language more effortlessly.
+
+**When to pick Odin:** Odin is further along: it is stable, documented, and used in
+production. cx is younger and still evolving.
+
+## cx vs Jai
+
+- Jai is developed behind closed doors and distributed only through its
+  beta program. cx is open source.
+
+- cx has compile-time null-safety and nullable types.
+
+- cx has method call syntax.
+
+- Jai's polymorphic procedures take `$T` type parameters with no way to
+  constrain them. cx generics can be bounded by interfaces, which documents
+  requirements and produces readable errors on mismatch.
+
+- cx has automatic importing of C headers, implemented using the Clang API.
+
+- cx doesn't require importing standard library modules explicitly, or
+  importing files from the same project: all cx files in the project source
+  directory belong to the project by convention.
+
+- Jai threads an implicit context parameter (allocators and such) through
+  calls. cx's ambient context is process-wide and holds only the allocator (see [The
+  ambient context](./low-level-programming#the-ambient-context)).
+
+- Jai can run arbitrary code at compile time. cx has a narrower compile-time
+  story: generics (including integer parameters), constant expressions, and planned
+  reflection for cases like iterating enum values.
+
+- cx has a syntax that is more familiar to C/C++ programmers, allowing them to adapt to the language more effortlessly.
 
 [std-visit]: https://bitbashing.io/std-visit.html
 

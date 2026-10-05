@@ -192,7 +192,7 @@ them through an out-parameter.
 An `extern` function must be called directly; referring to one as a value
 is rejected because a call through a function pointer cannot use the
 callee's C calling convention.
-See the [`c-interop` example](https://github.com/emillaine/cx/tree/main/examples/c-interop)
+See the [`c-interop` example](https://github.com/cx-language/cx/tree/main/examples/c-interop)
 for a complete project calling in both directions.
 
 ## Using C++ libraries
@@ -288,5 +288,5 @@ c++ main.cpp cxlib.o -o cxx-caller
 The same signature rules apply in both directions. Only free functions
 can be `extern "C++"`; generic functions cannot be `extern`. C++
 interop uses the Itanium ABI and is not supported on MSVC targets.
-See the [`cxx-interop` example](https://github.com/emillaine/cx/tree/main/examples/cxx-interop)
+See the [`cxx-interop` example](https://github.com/cx-language/cx/tree/main/examples/cxx-interop)
 for a complete project calling in both directions.
