@@ -42,39 +42,6 @@ errors returned as values and handled with `switch`, named arguments, type infer
 and run directly in the browser, or you can install the compiler as described in
 [Getting started](./hello-world).
 
-## What cx is about
-
-- **Performance.** Code compiled in release mode should be as fast as hand-written
-  low-level code. cx compiles to native code through LLVM (or the C backend), has no garbage
-  collector, and does not perform expensive operations behind your back. Higher-level
-  features such as generics, tagged unions, and iterator chains are designed to compile
-  down to the code you would have written by hand.
-- **Productivity.** Writing most code should be easy, and optimizing the hot spots should
-  be possible without switching languages. A rich standard library, concise syntax,
-  and a fast edit-compile-run cycle keep the focus on the problem being solved.
-- **Simplicity.** The language stays small, with one obvious way to do simple things.
-  More advanced features are there when you need them, but you don't have to learn them
-  up front.
-- **Safety by default.** Debug builds check array bounds, integer overflow, and null
-  dereferences, and report memory leaks and double-frees at exit. The type system tracks which values may
-  be null and catches missing null checks at compile time. Checks can be disabled
-  individually or globally where performance requires it.
-- **Freedom of style.** cx does not enforce a naming convention, coding style, or
-  programming paradigm. Warnings for things like implicit conversions can be tuned to each
-  project's needs.
-- **Batteries-included tooling.** `cx build` and `cx run` work without any configuration,
-  dependencies are fetched straight from Git repositories, `cx test` runs unit tests,
-  and the `cx-lsp` language server provides editor support.
-- **Working with existing code.** C headers can be imported directly, with no bindings to
-  write, so existing C libraries and operating system APIs are usable from day one and
-  cx can be adopted gradually next to existing code.
-- **Proven ideas over new dogma.** cx doesn't try to introduce big new ideas. Instead it
-  takes features that have proven themselves across many languages and aims to implement
-  them as well as possible.
-
-The [Language overview](./language-overview) walks through these features in more detail,
-and [Design principles](./design-principles) describes the reasoning behind them.
-
 ## Who cx is for
 
 cx is a general-purpose language designed especially for areas where you want both
@@ -82,51 +49,13 @@ low-level control and high-level expressiveness in one language: gamedev, graphi
 software, simulations, tools, and other performance-sensitive applications where debug
 performance and quick prototyping matter.
 
-Debug builds compile fast for a short edit-compile-run cycle (see [Build
-modes](./build-system#build-modes)), and the language is specifically designed to allow
-you to write quick, hacky code to reach a design decision faster, then making the
-surviving code correct afterwards. One example of this is how cx prefers to emit warnings
-where other programming languages would stop the compilation with hard errors.
-
-## Where cx fits
-
-Many languages compete in the space of fast, natively compiled software, and each makes
-different trade-offs:
-
-- **C** is minimal, universal, and time-tested, but leaves much of the work, and many of
-  the mistakes, to the programmer.
-- **C++** is powerful and mature, but large and complex after decades of backwards
-  compatibility and design-by-committee baggage.
-- **Rust** guarantees memory and thread safety at compile time, at the cost of a more
-  complex language and the work of satisfying the borrow checker, making it a poor fit for
-  use cases where compilation speed and prototyping flexibility are more important.
-- **Zig** favors explicit low-level code above all and is well-suited for that, but
-  suffers from slow compile times, and is not ideal for more concise, high-level code.
-- **Odin** and **Jai** are newer languages that rethink low-level programming around
-  simplicity and direct control. They choose to forgo features such as compile-time null
-  safety, method call syntax, and closures.
-
-cx aims to balance the control and performance of a low-level language together with the
-expressiveness of a higher-level one (compile-time null safety, method call syntax,
+It aims to combine the control and performance of C, C++, Zig, or Odin with the
+expressiveness of a higher-level language: compile-time null safety, method call syntax,
 closures, generics with interface bounds, operator overloading, tagged unions, and a
-capable standard library), while keeping the language small and approachable. For detailed
-comparisons with each of these languages, see [Comparison with related
-languages](./comparison).
-
-## Non-goals
-
-cx explicitly does not aim for:
-
-- **Guaranteed compile-time memory safety at the cost of iteration speed and programmer
-  productivity.** cx prefers a simpler language and faster iteration, catching memory bugs
-  with debug-mode checks and tooling such as AddressSanitizer instead (see [cx vs
-  Rust](./comparison#cx-vs-rust)).
-- **A managed runtime or mandatory garbage collector.** There is no hidden runtime (aside
-  from the optional safety checks in debug builds) and you only pay for what you use: the
-  program you write is the program that runs.
-- **Source compatibility with C or C++.** cx interoperates with existing C code
-  (C++ interop is a longer-term goal) so projects can adopt it gradually,
-  but it does not keep their syntax or semantics where they are flawed.
+capable standard library, while keeping the language small and approachable.
+[Design principles](./design-principles) explains the goals behind this and what cx
+deliberately does not try to be, and [Comparison with related
+languages](./comparison) covers how it differs from each of those languages.
 
 ## Project status
 
@@ -151,12 +80,9 @@ project. See [Modules and imports](./modules).
 
 ### Is cx memory-safe?
 
-cx is safe by default in the common cases: array accesses are bounds-checked, integer
-arithmetic is overflow-checked, null dereferences are checked, and the type system tracks
-nullability at compile time. But cx does not guarantee memory or thread safety at compile
-time the way Rust does; for that, use debug-mode checks and tooling such as
-AddressSanitizer. See [Safer by default](./language-overview#safer-by-default)
-and [cx vs Rust](./comparison#cx-vs-rust).
+Safe by default in the common cases, but without compile-time guarantees like Rust's.
+See [Safety by default](./design-principles#safety-by-default) and [cx vs
+Rust](./comparison#cx-vs-rust).
 
 ### How do I build a project and add dependencies?
 
@@ -185,19 +111,6 @@ Use `#if` with `-D` defines. Predefined platform-conditions use `#if Windows` fo
 both in source files and in `build.cx`. See [Conditional
 compilation](./build-system#conditional-compilation).
 
-### What does "simple and unopinionated" mean in practice?
-
-The language stays small (one struct concept, one member-access operator, in most code you
-get by just fine with just references), there is one obvious way to do simple things, and
-the compiler never forces a naming convention or coding style on you. Multiple paradigms
-are supported equally. See [Design principles](./design-principles).
-
-### What is cx not for?
-
-Safety-critical code where compile-time guarantees matter more than iteration speed, and
-projects that need a stable, mature ecosystem today: cx is still evolving toward its 1.0
-release. See [Non-goals](#non-goals).
-
 ## Not to be confused with
 
 cx shares its name with several unrelated languages:
@@ -210,6 +123,6 @@ cx shares its name with several unrelated languages:
 ## Where to go next
 
 - [Getting started](./hello-world): install the compiler and write your first program.
-- [Language overview](./language-overview): a tour of the main features.
-- [Design principles](./design-principles): the reasoning behind the language design.
+- [Language overview](./language-overview): a quick tour of the language, with links to the details.
+- [Design principles](./design-principles): the goals behind the language design, and its non-goals.
 - [Comparison with related languages](./comparison): how cx relates to C, C++, Rust, Zig, Odin, and Jai.
