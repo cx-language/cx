@@ -977,6 +977,25 @@ button.run:hover:not(:active)::before {
     color: var(--text-color);
 }
 
+.footer-section {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+}
+
+.footer-heading {
+    font-weight: 650;
+    color: var(--text-color);
+}
+
+.footer-section a {
+    color: var(--text-color-subtle);
+}
+
+.footer-section a:hover {
+    color: var(--text-color);
+}
+
 .next-page {
     margin: 0 0 48px;
     text-align: right;
