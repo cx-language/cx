@@ -996,15 +996,14 @@ button.run:hover:not(:active)::before {
 }
 
 .footer-links {
-    display: grid;
-    grid-template-columns: repeat(5, auto);
+    display: flex;
     gap: 6px 24px;
+    flex-wrap: wrap;
 }
 
 @media (max-width: 560px) {
-    .footer-links {
-        grid-template-columns: repeat(2, auto);
-        justify-content: start;
+    .site-footer {
+        flex-direction: column;
     }
 }
 
@@ -1013,25 +1012,6 @@ button.run:hover:not(:active)::before {
 }
 
 .footer-links a:hover {
-    color: var(--text-color);
-}
-
-.footer-section {
-    display: grid;
-    gap: 6px;
-    align-content: start;
-}
-
-.footer-heading {
-    font-weight: 650;
-    color: var(--text-color);
-}
-
-.footer-section a {
-    color: var(--text-color-subtle);
-}
-
-.footer-section a:hover {
     color: var(--text-color);
 }
 
