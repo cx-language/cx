@@ -258,6 +258,19 @@ pre.sourceCode.cs code span.sc {
     color: var(--string-color);
 }
 
+/* Shell blocks (commands, directory trees) render as plain text like the
+   front-page shell snippets; only comments keep a color. Without this they
+   fall back to pandoc's theme-unaware default palette. */
+pre.sourceCode.sh code span {
+    color: var(--text-color);
+    font-weight: normal;
+    font-style: normal;
+}
+
+pre.sourceCode.sh code span.co {
+    color: var(--comment-color);
+}
+
 pre {
     padding: 14px 18px;
 }
