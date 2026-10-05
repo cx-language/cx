@@ -8,8 +8,10 @@
     --accent-strong: hsl(216, 74%, 42%);
     --accent-strong-hover: hsl(216, 74%, 36%);
     --on-accent-strong: #fff;
-    --string-color: #008000;
-    --number-color: #a31515;
+    --keyword-color: #0000ff;
+    --string-color: #a31515;
+    --number-color: #098658;
+    --comment-color: #008000;
     --function-color: #795e26;
     --type-color: #267f99;
     --attribute-color: #8250df;
@@ -35,8 +37,10 @@
         --accent-strong: hsl(213, 75%, 66%);
         --accent-strong-hover: hsl(213, 75%, 72%);
         --on-accent-strong: hsl(220, 45%, 12%);
-        --string-color: hsl(0, 58%, 72%);
+        --keyword-color: #569cd6;
+        --string-color: #ce9178;
         --number-color: #b5cea8;
+        --comment-color: #6a9955;
         --function-color: #dcdcaa;
         --type-color: #4ec9b0;
         --attribute-color: #d2a8ff;
@@ -215,7 +219,7 @@ div.sourceCode, pre.cx, pre.jsonc {
 pre.sourceCode.cs code span.kw,
 pre.sourceCode.cs code span.cf,
 pre.sourceCode.cs code span.cn {
-    color: var(--blue);
+    color: var(--keyword-color);
     font-weight: normal;
 }
 
@@ -234,7 +238,7 @@ pre.sourceCode.cs code span.op {
 }
 
 pre.sourceCode.cs code span.co {
-    color: var(--text-color-subtle);
+    color: var(--comment-color);
     font-style: normal;
 }
 

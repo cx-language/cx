@@ -1,7 +1,7 @@
 .cm-s-cx span.cm-meta { color: #808000; }
 .cm-s-cx span.cm-number { color: var(--number-color); }
-.cm-s-cx span.cm-keyword { color: var(--blue); }
-.cm-s-cx span.cm-atom { color: var(--blue); }
+.cm-s-cx span.cm-keyword { color: var(--keyword-color); }
+.cm-s-cx span.cm-atom { color: var(--keyword-color); }
 .cm-s-cx span.cm-type { color: var(--type-color); }
 .cm-s-cx span.cm-def { color: var(--function-color); }
 .cm-s-cx span.cm-attribute { color: var(--attribute-color); }
@@ -10,7 +10,7 @@
 .cm-s-cx span.cm-variable-3 { color: var(--text-color); }
 .cm-s-cx span.cm-property { color: var(--text-color); }
 .cm-s-cx span.cm-operator { color: var(--text-color); }
-.cm-s-cx span.cm-comment { color: var(--text-color-subtle); }
+.cm-s-cx span.cm-comment { color: var(--comment-color); }
 .cm-s-cx span.cm-string { color: var(--string-color); }
 .cm-s-cx span.cm-string-2 { color: var(--string-color); }
 .cm-s-cx span.cm-qualifier { color: #555; }
