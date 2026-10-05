@@ -137,3 +137,7 @@ void main() {
 ## Planned features
 
 - Exponentiation operator
+- Integer overflow of the checked operators becomes undefined behavior in release mode
+  (`--release`), so the optimizer can assume it doesn't happen; for now it wraps. Debug
+  and `--release-safe` builds keep checking it, and the wrapping operators wrap in every
+  build mode.

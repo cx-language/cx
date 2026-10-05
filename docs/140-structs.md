@@ -395,3 +395,8 @@ when null. A struct with its own `print` method or a member named
 `print` keeps it; the compiler never overrides user-declared members.
 Note that a hand-written `print` alone does not make `print(value)` work:
 like before, the struct must still declare `: Printable` for that.
+
+## Planned features
+
+- The compiler may reorder struct fields for a better memory layout, unless prevented
+  with an attribute or a compiler flag.

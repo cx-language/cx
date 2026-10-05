@@ -60,3 +60,7 @@ The following words are reserved and cannot be used as identifiers
 `enum`, `extern`, `false`, `for`, `if`, `import`, `in`, `interface`,
 `null`, `private`, `public`, `return`, `sizeof`, `struct`, `switch`,
 `then`, `this`, `true`, `undefined`, `var`, `while`
+
+## Planned features
+
+- Compile-time-evaluable functions, so constant initializers can call functions.
