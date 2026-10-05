@@ -103,15 +103,33 @@ checkTokens("keyword wins over call lookahead", "while (x) {", [
 checkTokens("type wins over call lookahead", "int(x)", [
     ["int", "type"], ["(", null], ["x", "variable"], [")", null],
 ]);
-checkTokens("call wins over capitalized type", "var v = Vec2(1, 2);", [
-    ["var", "keyword"], ["v", "variable"], ["=", "operator"], ["Vec2", "def"],
+checkTokens("constructor calls are plain", "var v = Vec2(1, 2);", [
+    ["var", "keyword"], ["v", "variable"], ["=", "operator"], ["Vec2", "variable"],
     ["(", null], ["1", "number"], [",", null], ["2", "number"], [")", null], [";", null],
 ]);
-checkTokens("method call with space", "greeting.size ()", [
-    ["greeting", "variable"], [".", null], ["size", "def"], ["(", null], [")", null],
+checkTokens("method calls are plain", "greeting.size ()", [
+    ["greeting", "variable"], [".", null], ["size", "variable"], ["(", null], [")", null],
 ]);
 checkTokens("member call on literal", "10.toString()", [
-    ["10", "number"], [".", null], ["toString", "def"], ["(", null], [")", null],
+    ["10", "number"], [".", null], ["toString", "variable"], ["(", null], [")", null],
+]);
+checkTokens("bare call is plain", "main();", [
+    ["main", "variable"], ["(", null], [")", null], [";", null],
+]);
+checkTokens("nested calls are plain", "foo(bar());", [
+    ["foo", "variable"], ["(", null], ["bar", "variable"], ["(", null], [")", null], [")", null], [";", null],
+]);
+checkTokens("call after keyword", "if (x) { y(); }", [
+    ["if", "keyword"], ["(", null], ["x", "variable"], [")", null], ["{", null],
+    ["y", "variable"], ["(", null], [")", null], [";", null], ["}", null],
+]);
+checkTokens("definition with params", "int add(int a, int b) {", [
+    ["int", "type"], ["add", "def"], ["(", null], ["int", "type"], ["a", "variable"],
+    [",", null], ["int", "type"], ["b", "variable"], [")", null], ["{", null],
+]);
+checkTokens("generic return misreads as call", "List<int> get() {", [
+    ["List", "type"], ["<", "operator"], ["int", "type"], [">", "operator"],
+    ["get", "variable"], ["(", null], [")", null], ["{", null],
 ]);
 checkTokens("atoms", "return true; // also false null undefined", [
     ["return", "keyword"], ["true", "atom"], [";", null], ["// also false null undefined", "comment"],

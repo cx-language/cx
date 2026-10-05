@@ -102,8 +102,10 @@
             if (builtinTypes.propertyIsEnumerable(cur)) return "type";
             // operator is contextual: a keyword only in overload declarations.
             if (cur == "operator" && stream.match(/^\s*(\[|==|!=|<=|>=|<|>|[+\-*/%])/, false)) return "keyword";
-            // Calls and definitions alike: a word followed by `(`.
-            if (stream.match(/^\s*\(/, false)) return "def";
+            // A word followed by `(` is a definition when a type precedes
+            // it, else a call. Generic, nullable, and pointer returns
+            // (`List<int> foo()`) misread as calls; acceptable.
+            if (stream.match(/^\s*\(/, false)) return state.prevStyle == "type" ? "def" : "variable";
             // User type names start with an uppercase letter by convention.
             if (/^[A-Z]/.test(cur)) return "type";
             return "variable";
@@ -169,7 +171,8 @@
                     context: new Context((basecolumn || 0) - indentUnit, 0, "top", false),
                     indented: 0,
                     startOfLine: true,
-                    commentDepth: 0
+                    commentDepth: 0,
+                    prevStyle: null
                 };
             },
 
@@ -193,6 +196,9 @@
                 else if (curPunc == "case") ctx.type = "case";
                 else if (curPunc == "}" && ctx.type == "}") ctx = popContext(state);
                 else if (curPunc == ctx.type) popContext(state);
+                // Whitespace and comments return early, so every token
+                // reaching here is significant for the call/definition split.
+                state.prevStyle = style;
                 state.startOfLine = false;
                 return style;
             },

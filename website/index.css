@@ -8,8 +8,8 @@
     --accent-strong: hsl(216, 74%, 42%);
     --accent-strong-hover: hsl(216, 74%, 36%);
     --on-accent-strong: #fff;
-    /* Code colors follow the JetBrains default schemes (IntelliJ Light,
-       Darcula); types stay uncolored, as in the IDEs. */
+    /* Code colors follow Rider's default schemes (Light, Dark):
+       declarations colored, calls and types plain, as in the IDE. */
     --keyword-color: #0033b3;
     --string-color: #067d17;
     --number-color: #1750eb;
@@ -39,13 +39,13 @@
         --accent-strong: hsl(213, 75%, 66%);
         --accent-strong-hover: hsl(213, 75%, 72%);
         --on-accent-strong: hsl(220, 45%, 12%);
-        --keyword-color: #cc7832;
-        --string-color: #6a8759;
-        --number-color: #6897bb;
-        --comment-color: #808080;
-        --function-color: #ffc66d;
+        --keyword-color: #cf8e6d;
+        --string-color: #6aab73;
+        --number-color: #2aacb8;
+        --comment-color: #7a7e85;
+        --function-color: #56a8f5;
         --type-color: var(--text-color);
-        --attribute-color: #bbb529;
+        --attribute-color: #b3ae60;
         --error-text: #ff7b72;
         --error-background-color: #ff000038;
         --warning-background-color: #ffff0021;
