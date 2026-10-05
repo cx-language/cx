@@ -8,13 +8,15 @@
     --accent-strong: hsl(216, 74%, 42%);
     --accent-strong-hover: hsl(216, 74%, 36%);
     --on-accent-strong: #fff;
-    --keyword-color: #0000ff;
-    --string-color: #a31515;
-    --number-color: #098658;
-    --comment-color: #008000;
-    --function-color: #795e26;
-    --type-color: #267f99;
-    --attribute-color: #8250df;
+    /* Code colors follow the JetBrains default schemes (IntelliJ Light,
+       Darcula); types stay uncolored, as in the IDEs. */
+    --keyword-color: #0033b3;
+    --string-color: #067d17;
+    --number-color: #1750eb;
+    --comment-color: #8c8c8c;
+    --function-color: #00627a;
+    --type-color: var(--text-color);
+    --attribute-color: #9e880d;
     --error-text: #c81e1e;
     --error-background-color: #fdd;
     --warning-background-color: #ffd;
@@ -37,13 +39,13 @@
         --accent-strong: hsl(213, 75%, 66%);
         --accent-strong-hover: hsl(213, 75%, 72%);
         --on-accent-strong: hsl(220, 45%, 12%);
-        --keyword-color: #569cd6;
-        --string-color: #ce9178;
-        --number-color: #b5cea8;
-        --comment-color: #6a9955;
-        --function-color: #dcdcaa;
-        --type-color: #4ec9b0;
-        --attribute-color: #d2a8ff;
+        --keyword-color: #cc7832;
+        --string-color: #6a8759;
+        --number-color: #6897bb;
+        --comment-color: #808080;
+        --function-color: #ffc66d;
+        --type-color: var(--text-color);
+        --attribute-color: #bbb529;
         --error-text: #ff7b72;
         --error-background-color: #ff000038;
         --warning-background-color: #ffff0021;
