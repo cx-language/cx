@@ -147,7 +147,7 @@
     "builtin-types": {
       "patterns": [
         {
-          "match": "\\b(void|bool|char|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|sbyte|byte|float|float32|float64|float80|double|c_size_t|c_schar|c_uchar|c_short|c_ushort|c_int|c_uint|c_long|c_ulong|c_longlong|c_ulonglong|c_float|c_double)\\b",
+          "match": "\\b(void|bool|char|string|never|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|sbyte|byte|float|float32|float64|float80|double|c_size_t|c_schar|c_uchar|c_short|c_ushort|c_int|c_uint|c_long|c_ulong|c_longlong|c_ulonglong|c_float|c_double)\\b",
           "name": "storage.type.primitive.cx"
         }
       ]
