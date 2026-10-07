@@ -1,0 +1,55 @@
+// RUN: check_exit_status 0 %cx run %s
+
+import "inputs/c-macros.h";
+
+void main() {
+    assert(INT_ONE == 1);
+    assert(INT_NEG == -1);
+    assert(HEX == 16);
+    assert(OCTAL == 8);
+    assert(UNSIGNED == 42);
+    assert(LONG_VAL == 100000);
+    assert(LONGLONG_VAL == 10000000000);
+    assert(FLOAT_VAL == 1.5);
+    assert(FLOAT_F == 2.5);
+    assert(ALIAS == 1);
+    assert(STR == "hello");
+    assert(CH == 'A');
+    assert(PAREN == 42);
+    assert(PAREN_FLOAT == 1.5);
+    assert(ADD == 3);
+    assert(SHIFT == 16);
+    assert(BITOR == 3);
+    assert(BITAND == 2);
+    assert(BITXOR == 5);
+    assert(NEG == -1);
+    assert(BITNOT == -1);
+    assert(LOGNOT == 1);
+    assert(MUL == 20);
+    assert(DIV == 3);
+    assert(MOD == 1);
+    assert(EQ == 1);
+    assert(LT == 1);
+    assert(LAND == 0);
+    assert(LOR == 1);
+    assert(FROM_MACRO == 5);
+    assert(UEXPR == 2147483648);
+    assert(LEXPR == 1099511627776);
+    assert(PRECEDENCE == 7);
+    assert(SHIFT_ADD == 8);
+    assert(BITAND_EQ == 0);
+    assert(OR_AND == 1);
+    assert(SUB_ASSOC == 3);
+    assert(DIV_ASSOC == 5);
+    assert(LLONG_ULONG_MIX == 2);
+    assert(LONG_UINT_MIX == 2);
+    assert(MIXED_CMP == 0);
+    assert(ULL_WRAP == 0);
+    assert(FDIV == 3.5);
+    assert(CHAR_EXPR == 66);
+    assert(MY_INF > 1e308);
+    assert(MY_NAN != MY_NAN);
+    assert(sizeof(UEXPR) == 4);
+    assert(sizeof(LEXPR) == 8);
+    assert(STR_CONCAT == "ab");
+}

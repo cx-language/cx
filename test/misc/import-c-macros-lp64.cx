@@ -1,0 +1,17 @@
+// RUN: check_exit_status 0 %cx run %s
+// UNSUPPORTED: windows
+
+// On LP64, (1LL + 1UL) has C type unsigned long long (equal widths take the
+// unsigned counterpart of the signed type), not unsigned long.
+import "inputs/c-macros.h";
+
+int pick(c_ulong x) { return 1; }
+int pick(c_ulonglong x) { return 2; }
+
+void main() {
+    c_ulong a = 1;
+    c_ulonglong b = 2;
+    assert(pick(a) == 1);
+    assert(pick(b) == 2);
+    assert(pick(LLONG_ULONG_MIX) == 2);
+}

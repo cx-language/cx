@@ -1,0 +1,44 @@
+// RUN: %not %cx -typecheck %s --error-limit=0 2>&1 | %FileCheck %s
+
+// Function-like macros, casts, compound literals, and empty macros are not
+// imported; using them is an error, but importing the header succeeds.
+import "inputs/c-macros.h";
+
+void main() {
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'FUNC_LIKE'
+    print(FUNC_LIKE(1, 2));
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'CAST'
+    print(CAST);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'COMPOUND'
+    print(COMPOUND);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'EMPTY'
+    print(EMPTY);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'DIV_ZERO'
+    print(DIV_ZERO);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'MOD_ZERO'
+    print(MOD_ZERO);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'MIN_DIV_NEG'
+    print(MIN_DIV_NEG);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'SHIFT_OVER'
+    print(SHIFT_OVER);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'SHIFT_NEG'
+    print(SHIFT_NEG);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'UNKNOWN_REF'
+    print(UNKNOWN_REF);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'TERNARY'
+    print(TERNARY);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'WITH_SIZEOF'
+    print(WITH_SIZEOF);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'FLOAT_MOD'
+    print(FLOAT_MOD);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'FLOAT_SHIFT'
+    print(FLOAT_SHIFT);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'FLOAT_BITAND'
+    print(FLOAT_BITAND);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'STR_EXPR'
+    print(STR_EXPR);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'PAREN_STR'
+    print(PAREN_STR);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'BARE_BUILTIN'
+    print(BARE_BUILTIN);
+}

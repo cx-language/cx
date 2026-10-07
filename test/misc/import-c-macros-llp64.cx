@@ -1,0 +1,17 @@
+// RUN: check_exit_status 0 %cx run %s
+// REQUIRES: windows
+
+// On LLP64, (1L + 1U) has C type unsigned long (equal widths take the
+// unsigned counterpart of the signed type), not unsigned int.
+import "inputs/c-macros.h";
+
+int pick(c_ulong x) { return 1; }
+int pick(c_uint x) { return 2; }
+
+void main() {
+    c_ulong a = 1;
+    c_uint b = 2;
+    assert(pick(a) == 1);
+    assert(pick(b) == 2);
+    assert(pick(LONG_UINT_MIX) == 1);
+}

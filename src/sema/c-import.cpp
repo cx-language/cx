@@ -381,6 +381,16 @@ struct CToCxConverter final : clang::ASTConsumer {
         addConstantToSymbolTable(name, initializer, Type::getFloat64());
     }
 
+    void addStringConstantToSymbolTable(llvm::StringRef name, llvm::StringRef value) {
+        auto initializer = makeAST<StringLiteralExpr>(value, Location());
+        addConstantToSymbolTable(name, initializer, BasicType::get("string", {}));
+    }
+
+    void addCharConstantToSymbolTable(llvm::StringRef name, char value) {
+        auto initializer = makeAST<CharacterLiteralExpr>(value, Location());
+        addConstantToSymbolTable(name, initializer, Type::getChar());
+    }
+
     // Scalars with no cx counterpart. Mirrors toCx case for case in
     // findUnsupportedScalar, including pointed-to records: conversion fills
     // in record fields eagerly, so a pointer doesn't hide one.
@@ -790,113 +800,583 @@ public:
     static void resetAnonymousRecordCount() { anonymousRecordCount = 0; }
 };
 
+// Value of a macro body that evaluated to a number: either an integer at its C
+// type's width or a double. Integer results carry their C type so the imported
+// constant gets the same type the macro has in C.
+struct EvaluatedConstant {
+    static EvaluatedConstant fromInt(llvm::APSInt value, clang::QualType type) {
+        EvaluatedConstant result;
+        result.intValue = std::move(value);
+        result.intType = type;
+        return result;
+    }
+    static EvaluatedConstant fromFloat(llvm::APFloat value) {
+        EvaluatedConstant result;
+        result.isFloat = true;
+        result.floatValue = value;
+        return result;
+    }
+
+    bool isFloat = false;
+    llvm::APSInt intValue{32, true};
+    clang::QualType intType;
+    llvm::APFloat floatValue{0.0};
+};
+
+// Picks the C type of an integer literal from its suffixes and value, or null
+// when it fits no standard integer type.
+static clang::QualType cTypeForIntegerValue(const llvm::APInt& rawValue, bool isUnsigned, bool isLong, bool isLongLong, unsigned radix,
+                                            clang::ASTContext& context) {
+    auto fitsSigned = [&](unsigned width) { return rawValue.isSignedIntN(width); };
+    auto fitsUnsigned = [&](unsigned width) { return rawValue.isIntN(width); };
+    unsigned intWidth = context.getTypeSize(context.IntTy), longWidth = context.getTypeSize(context.LongTy),
+             longLongWidth = context.getTypeSize(context.LongLongTy);
+    bool hexOrOctal = radix != 10;
+    clang::QualType type;
+    if (!isUnsigned && !isLong && !isLongLong) {
+        if (fitsSigned(intWidth))
+            type = context.IntTy;
+        else if (hexOrOctal && fitsUnsigned(intWidth))
+            type = context.UnsignedIntTy;
+        else if (fitsSigned(longWidth))
+            type = context.LongTy;
+        else if (hexOrOctal && fitsUnsigned(longWidth))
+            type = context.UnsignedLongTy;
+        else if (fitsSigned(longLongWidth))
+            type = context.LongLongTy;
+        else if (fitsUnsigned(longLongWidth))
+            type = context.UnsignedLongLongTy;
+    } else if (isUnsigned && !isLong && !isLongLong) {
+        if (fitsUnsigned(intWidth))
+            type = context.UnsignedIntTy;
+        else if (fitsUnsigned(longWidth))
+            type = context.UnsignedLongTy;
+        else if (fitsUnsigned(longLongWidth))
+            type = context.UnsignedLongLongTy;
+    } else if (!isUnsigned && isLong) {
+        if (fitsSigned(longWidth))
+            type = context.LongTy;
+        else if (hexOrOctal && fitsUnsigned(longWidth))
+            type = context.UnsignedLongTy;
+        else if (fitsSigned(longLongWidth))
+            type = context.LongLongTy;
+        else if (hexOrOctal && fitsUnsigned(longLongWidth))
+            type = context.UnsignedLongLongTy;
+    } else if (isUnsigned && isLong) {
+        if (fitsUnsigned(longWidth))
+            type = context.UnsignedLongTy;
+        else if (fitsUnsigned(longLongWidth))
+            type = context.UnsignedLongLongTy;
+    } else if (!isUnsigned && isLongLong) {
+        if (fitsSigned(longLongWidth))
+            type = context.LongLongTy;
+        else if (hexOrOctal && fitsUnsigned(longLongWidth))
+            type = context.UnsignedLongLongTy;
+    } else if (fitsUnsigned(longLongWidth)) {
+        type = context.UnsignedLongLongTy;
+    }
+    return type;
+}
+
+// Integer ranks for usual arithmetic conversions: int, unsigned, long,
+// unsigned long, long long, unsigned long long.
+static int intRank(clang::QualType type) {
+    switch (llvm::cast<clang::BuiltinType>(type.getCanonicalType())->getKind()) {
+    case clang::BuiltinType::Int:
+        return 0;
+    case clang::BuiltinType::UInt:
+        return 1;
+    case clang::BuiltinType::Long:
+        return 2;
+    case clang::BuiltinType::ULong:
+        return 3;
+    case clang::BuiltinType::LongLong:
+        return 4;
+    case clang::BuiltinType::ULongLong:
+        return 5;
+    default:
+        llvm_unreachable("integer ranks cover only the standard integer types");
+    }
+}
+
+static clang::QualType intTypeForRank(int rank, clang::ASTContext& context) {
+    switch (rank) {
+    case 0:
+        return context.IntTy;
+    case 1:
+        return context.UnsignedIntTy;
+    case 2:
+        return context.LongTy;
+    case 3:
+        return context.UnsignedLongTy;
+    case 4:
+        return context.LongLongTy;
+    default:
+        return context.UnsignedLongLongTy;
+    }
+}
+
+// Usual arithmetic conversions (C11 6.3.1.8) for two integer ranks.
+static int commonIntRank(int a, int b, clang::ASTContext& context) {
+    if (a == b) return a;
+    unsigned widthA = context.getTypeSize(intTypeForRank(a, context)), widthB = context.getTypeSize(intTypeForRank(b, context));
+    bool signedA = (a % 2 == 0), signedB = (b % 2 == 0);
+    if (signedA == signedB) {
+        if (widthA != widthB) return widthA > widthB ? a : b;
+        return a > b ? a : b;
+    }
+    int unsignedRank = signedA ? b : a, signedRank = signedA ? a : b;
+    unsigned unsignedWidth = signedA ? widthB : widthA, signedWidth = signedA ? widthA : widthB;
+    if (unsignedWidth > signedWidth) return unsignedRank;
+    if (signedWidth > unsignedWidth) return signedRank;
+    return signedRank + 1; // Same width: the unsigned counterpart of the signed type.
+}
+
+// Converts an integer value to the given width and signedness, preserving the
+// bit pattern like C conversions do (out-of-range values wrap).
+static llvm::APSInt convertInt(llvm::APSInt value, unsigned width, bool isUnsigned) {
+    value = value.extOrTrunc(width);
+    value.setIsUnsigned(isUnsigned);
+    return value;
+}
+
 struct MacroImporter final : clang::PPCallbacks {
     MacroImporter(Module& module, CToCxConverter& cToCxConverter, clang::CompilerInstance& compilerInstance)
     : module(module), cToCxConverter(cToCxConverter), compilerInstance(compilerInstance) {}
 
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) override {
-        if (macro->getMacroInfo()->getNumTokens() != 1) return;
-        auto& token = macro->getMacroInfo()->getReplacementToken(0);
-
-        switch (token.getKind()) {
-        case clang::tok::identifier:
-            module.addIdentifierReplacement(name.getIdentifierInfo()->getName(), token.getIdentifierInfo()->getName());
-            break;
-        case clang::tok::numeric_constant:
-            importMacroConstant(name.getIdentifierInfo()->getName(), token);
-            break;
-        default:
-            break;
+        auto* info = macro->getMacroInfo();
+        if (info->isFunctionLike()) return;
+        llvm::StringRef macroName = name.getIdentifierInfo()->getName();
+        llvm::ArrayRef<clang::Token> tokens = info->tokens();
+        if (tokens.size() == 1) {
+            auto& token = tokens[0];
+            switch (token.getKind()) {
+            case clang::tok::identifier: {
+                llvm::StringRef target = token.getIdentifierInfo()->getName();
+                module.addIdentifierReplacement(macroName, target);
+                // Aliases of known constants are constants themselves, so later
+                // expressions can use them (`#define B A` then `#define C (B+1)`).
+                if (auto it = importedConstants.find(target); it != importedConstants.end()) importedConstants[macroName] = it->second;
+                break;
+            }
+            case clang::tok::numeric_constant:
+                importMacroConstant(macroName, token);
+                break;
+            case clang::tok::char_constant:
+                importCharConstant(macroName, token);
+                break;
+            case clang::tok::string_literal:
+                importStringConstant(macroName, tokens);
+                break;
+            default:
+                break;
+            }
+            return;
         }
+        if (!tokens.empty() && llvm::all_of(tokens, [](auto& token) { return token.getKind() == clang::tok::string_literal; })) {
+            importStringConstant(macroName, tokens); // Implicitly concatenated strings import as one.
+            return;
+        }
+        // Anything else imports only if it evaluates to a number. Failures skip
+        // silently: most multi-token macros aren't constants (`#define BEGIN {`).
+        if (auto value = evaluateMacroExpression(tokens)) importEvaluatedConstant(macroName, *value);
     }
 
 private:
-    void importMacroConstant(llvm::StringRef name, const clang::Token& token) {
+    // Integer literal and its C type; the type is null when the value fits no C integer type.
+    struct ParsedIntegerLiteral {
+        llvm::APInt rawValue{128, 0};
+        clang::QualType type;
+    };
+
+    // Parses an integer literal token; nullopt unless it is a well-formed integer literal.
+    std::optional<ParsedIntegerLiteral> parseIntegerLiteral(const clang::Token& token) {
         // Parsed with NumericLiteralParser instead of Sema::ActOnNumericConstant: the latter
         // crashes in Sema::Diag when the literal needs a diagnostic (e.g. out of range).
         auto spelling = clang::Lexer::getSpelling(token, compilerInstance.getSourceManager(), compilerInstance.getLangOpts());
         clang::NumericLiteralParser parser(spelling, token.getLocation(), compilerInstance.getSourceManager(), compilerInstance.getLangOpts(),
                                            compilerInstance.getTarget(), compilerInstance.getDiagnostics());
-        if (parser.hadError || parser.hasUDSuffix()) return;
+        if (parser.hadError || parser.hasUDSuffix() || !parser.isIntegerLiteral()) return std::nullopt;
+        if (parser.isBitInt || parser.isSizeT) return std::nullopt;
+        llvm::APInt rawValue(128, 0);
+        if (parser.GetIntegerValue(rawValue)) return std::nullopt;
+        clang::QualType type =
+            cTypeForIntegerValue(rawValue, parser.isUnsigned, parser.isLong, parser.isLongLong, parser.getRadix(), compilerInstance.getASTContext());
+        return ParsedIntegerLiteral{std::move(rawValue), type};
+    }
 
-        if (parser.isIntegerLiteral()) {
-            if (parser.isBitInt || parser.isSizeT) return;
-            llvm::APInt rawValue(128, 0);
-            if (parser.GetIntegerValue(rawValue)) return;
-            auto& context = compilerInstance.getASTContext();
-            auto fitsSigned = [&](unsigned width) { return rawValue.isSignedIntN(width); };
-            auto fitsUnsigned = [&](unsigned width) { return rawValue.isIntN(width); };
-            unsigned intWidth = context.getTypeSize(context.IntTy), longWidth = context.getTypeSize(context.LongTy),
-                     longLongWidth = context.getTypeSize(context.LongLongTy);
-            bool hexOrOctal = parser.getRadix() != 10;
-            clang::QualType type;
-            if (!parser.isUnsigned && !parser.isLong && !parser.isLongLong) {
-                if (fitsSigned(intWidth))
-                    type = context.IntTy;
-                else if (hexOrOctal && fitsUnsigned(intWidth))
-                    type = context.UnsignedIntTy;
-                else if (fitsSigned(longWidth))
-                    type = context.LongTy;
-                else if (hexOrOctal && fitsUnsigned(longWidth))
-                    type = context.UnsignedLongTy;
-                else if (fitsSigned(longLongWidth))
-                    type = context.LongLongTy;
-                else if (fitsUnsigned(longLongWidth))
-                    type = context.UnsignedLongLongTy;
-            } else if (parser.isUnsigned && !parser.isLong && !parser.isLongLong) {
-                if (fitsUnsigned(intWidth))
-                    type = context.UnsignedIntTy;
-                else if (fitsUnsigned(longWidth))
-                    type = context.UnsignedLongTy;
-                else if (fitsUnsigned(longLongWidth))
-                    type = context.UnsignedLongLongTy;
-            } else if (!parser.isUnsigned && parser.isLong) {
-                if (fitsSigned(longWidth))
-                    type = context.LongTy;
-                else if (hexOrOctal && fitsUnsigned(longWidth))
-                    type = context.UnsignedLongTy;
-                else if (fitsSigned(longLongWidth))
-                    type = context.LongLongTy;
-                else if (hexOrOctal && fitsUnsigned(longLongWidth))
-                    type = context.UnsignedLongLongTy;
-            } else if (parser.isUnsigned && parser.isLong) {
-                if (fitsUnsigned(longWidth))
-                    type = context.UnsignedLongTy;
-                else if (fitsUnsigned(longLongWidth))
-                    type = context.UnsignedLongLongTy;
-            } else if (!parser.isUnsigned && parser.isLongLong) {
-                if (fitsSigned(longLongWidth))
-                    type = context.LongLongTy;
-                else if (hexOrOctal && fitsUnsigned(longLongWidth))
-                    type = context.UnsignedLongLongTy;
-            } else if (fitsUnsigned(longLongWidth)) {
-                type = context.UnsignedLongLongTy;
-            }
-            if (type.isNull()) {
+    // Parses a float literal token to double, honoring f/l suffixes; nullopt unless well-formed and representable.
+    std::optional<llvm::APFloat> parseFloatLiteral(const clang::Token& token) {
+        auto spelling = clang::Lexer::getSpelling(token, compilerInstance.getSourceManager(), compilerInstance.getLangOpts());
+        clang::NumericLiteralParser parser(spelling, token.getLocation(), compilerInstance.getSourceManager(), compilerInstance.getLangOpts(),
+                                           compilerInstance.getTarget(), compilerInstance.getDiagnostics());
+        if (parser.hadError || parser.hasUDSuffix() || !parser.isFloatingLiteral()) return std::nullopt;
+        auto& context = compilerInstance.getASTContext();
+        const llvm::fltSemantics* semantics = &context.getFloatTypeSemantics(context.DoubleTy);
+        // Only a suffix ends a float spelling in a letter (exponents always end in digits).
+        char last = spelling.back();
+        if (last == 'f' || last == 'F')
+            semantics = &context.getFloatTypeSemantics(context.FloatTy);
+        else if (last == 'l' || last == 'L')
+            semantics = &context.getFloatTypeSemantics(context.LongDoubleTy);
+        llvm::APFloat value(*semantics);
+        auto status = parser.GetFloatValue(value, llvm::RoundingMode::NearestTiesToEven);
+        if (status != llvm::APFloat::opOK && status != llvm::APFloat::opInexact) return std::nullopt;
+        // The constant's type is float64, so narrow suffix-precision values to double.
+        bool losesInfo = false;
+        value.convert(llvm::APFloat::IEEEdouble(), llvm::RoundingMode::NearestTiesToEven, &losesInfo);
+        if (!value.isFinite()) return std::nullopt;
+        return value;
+    }
+
+    void importMacroConstant(llvm::StringRef name, const clang::Token& token) {
+        if (auto parsed = parseIntegerLiteral(token)) {
+            if (parsed->type.isNull()) {
                 WARN(Location(), "skipping C integer constant '" << name << "': value does not fit 64 bits");
                 return;
             }
-            cToCxConverter.addIntegerConstantToSymbolTable(name, llvm::APSInt(rawValue, type->isUnsignedIntegerType()), type);
-        } else if (parser.isFloatingLiteral()) {
+            llvm::APSInt value(parsed->rawValue, parsed->type->isUnsignedIntegerType());
+            cToCxConverter.addIntegerConstantToSymbolTable(name, value, parsed->type);
             auto& context = compilerInstance.getASTContext();
-            const llvm::fltSemantics* semantics = &context.getFloatTypeSemantics(context.DoubleTy);
-            // Suffix-less floats always end in a digit, so a trailing letter is a suffix.
-            char last = spelling.back();
-            if (last == 'f' || last == 'F')
-                semantics = &context.getFloatTypeSemantics(context.FloatTy);
-            else if (last == 'l' || last == 'L')
-                semantics = &context.getFloatTypeSemantics(context.LongDoubleTy);
-            llvm::APFloat value(*semantics);
-            auto status = parser.GetFloatValue(value, llvm::RoundingMode::NearestTiesToEven);
-            if (status != llvm::APFloat::opOK && status != llvm::APFloat::opInexact) return;
-            cToCxConverter.addFloatConstantToSymbolTable(name, value);
+            importedConstants[name] =
+                EvaluatedConstant::fromInt(convertInt(value, context.getTypeSize(parsed->type), parsed->type->isUnsignedIntegerType()), parsed->type);
+            return;
         }
+        if (auto value = parseFloatLiteral(token)) {
+            cToCxConverter.addFloatConstantToSymbolTable(name, *value);
+            importedConstants[name] = EvaluatedConstant::fromFloat(*value);
+        }
+    }
+
+    void importCharConstant(llvm::StringRef name, const clang::Token& token) {
+        auto parsed = parseCharLiteral(token);
+        if (!parsed || !parsed->intValue.isIntN(8)) return;
+        cToCxConverter.addCharConstantToSymbolTable(name, char(parsed->intValue.getZExtValue()));
+        importedConstants[name] = *parsed;
+    }
+
+    void importStringConstant(llvm::StringRef name, llvm::ArrayRef<clang::Token> tokens) {
+        // Null diagnostics: malformed strings in skipped macros stay silent.
+        clang::StringLiteralParser parser(tokens, compilerInstance.getSourceManager(), compilerInstance.getLangOpts(), compilerInstance.getTarget(), nullptr);
+        if (parser.hadError || !parser.isOrdinary() || !parser.getUDSuffix().empty()) return;
+        cToCxConverter.addStringConstantToSymbolTable(name, parser.GetString());
+    }
+
+    void importEvaluatedConstant(llvm::StringRef name, const EvaluatedConstant& value) {
+        if (value.isFloat) {
+            cToCxConverter.addFloatConstantToSymbolTable(name, value.floatValue);
+        } else {
+            cToCxConverter.addIntegerConstantToSymbolTable(name, value.intValue, value.intType);
+        }
+        importedConstants[name] = value;
+    }
+
+    std::optional<EvaluatedConstant> evaluateMacroExpression(llvm::ArrayRef<clang::Token> tokens) {
+        size_t pos = 0;
+        auto result = parseBinaryExpr(tokens, pos, 1);
+        if (!result || pos != tokens.size()) return std::nullopt;
+        return result;
+    }
+
+    // Precedence-climbing parser for constant expressions; levels follow C, all left-associative.
+    std::optional<EvaluatedConstant> parseBinaryExpr(llvm::ArrayRef<clang::Token> tokens, size_t& pos, unsigned minPrec) {
+        auto lhs = parseUnaryExpr(tokens, pos);
+        if (!lhs) return std::nullopt;
+        while (pos < tokens.size()) {
+            unsigned prec = binaryPrecedence(tokens[pos].getKind());
+            if (prec < minPrec) break;
+            auto op = tokens[pos++].getKind();
+            auto rhs = parseBinaryExpr(tokens, pos, prec + 1);
+            if (!rhs) return std::nullopt;
+            lhs = applyBinaryOp(op, *lhs, *rhs);
+            if (!lhs) return std::nullopt;
+        }
+        return lhs;
+    }
+
+    static unsigned binaryPrecedence(clang::tok::TokenKind kind) {
+        switch (kind) {
+        case clang::tok::pipepipe:
+            return 1;
+        case clang::tok::ampamp:
+            return 2;
+        case clang::tok::pipe:
+            return 3;
+        case clang::tok::caret:
+            return 4;
+        case clang::tok::amp:
+            return 5;
+        case clang::tok::equalequal:
+        case clang::tok::exclaimequal:
+            return 6;
+        case clang::tok::less:
+        case clang::tok::lessequal:
+        case clang::tok::greater:
+        case clang::tok::greaterequal:
+            return 7;
+        case clang::tok::lessless:
+        case clang::tok::greatergreater:
+            return 8;
+        case clang::tok::plus:
+        case clang::tok::minus:
+            return 9;
+        case clang::tok::star:
+        case clang::tok::slash:
+        case clang::tok::percent:
+            return 10;
+        default:
+            return 0;
+        }
+    }
+
+    std::optional<EvaluatedConstant> parseUnaryExpr(llvm::ArrayRef<clang::Token> tokens, size_t& pos) {
+        if (pos < tokens.size()) {
+            auto kind = tokens[pos].getKind();
+            if (kind == clang::tok::plus || kind == clang::tok::minus || kind == clang::tok::tilde || kind == clang::tok::exclaim) {
+                ++pos;
+                auto operand = parseUnaryExpr(tokens, pos);
+                if (!operand) return std::nullopt;
+                return applyUnaryOp(kind, *operand);
+            }
+        }
+        return parsePrimaryExpr(tokens, pos);
+    }
+
+    std::optional<EvaluatedConstant> parsePrimaryExpr(llvm::ArrayRef<clang::Token> tokens, size_t& pos) {
+        if (pos >= tokens.size()) return std::nullopt;
+        auto& token = tokens[pos];
+        switch (token.getKind()) {
+        case clang::tok::numeric_constant:
+            ++pos;
+            return parseNumericLiteral(token);
+        case clang::tok::char_constant:
+            ++pos;
+            return parseCharLiteral(token);
+        case clang::tok::identifier: {
+            llvm::StringRef ident = token.getIdentifierInfo()->getName();
+            ++pos;
+            // Infinity and NaN builtins, which HUGE_VAL, INFINITY, and NAN expand to.
+            if (ident == "__builtin_huge_val" || ident == "__builtin_huge_valf" || ident == "__builtin_huge_vall" || ident == "__builtin_inf"
+                || ident == "__builtin_inff" || ident == "__builtin_infl") {
+                if (!skipBalancedParens(tokens, pos)) return std::nullopt;
+                return EvaluatedConstant::fromFloat(llvm::APFloat::getInf(llvm::APFloat::IEEEdouble()));
+            }
+            if (ident == "__builtin_nan" || ident == "__builtin_nanf" || ident == "__builtin_nanl") {
+                if (!skipBalancedParens(tokens, pos)) return std::nullopt;
+                return EvaluatedConstant::fromFloat(llvm::APFloat::getNaN(llvm::APFloat::IEEEdouble()));
+            }
+            auto it = importedConstants.find(ident);
+            if (it == importedConstants.end()) return std::nullopt;
+            return it->second;
+        }
+        case clang::tok::l_paren: {
+            ++pos;
+            auto inner = parseBinaryExpr(tokens, pos, 1);
+            if (!inner || pos >= tokens.size() || tokens[pos].getKind() != clang::tok::r_paren) return std::nullopt;
+            ++pos;
+            return inner;
+        }
+        default:
+            return std::nullopt;
+        }
+    }
+
+    // Skips one balanced paren group (builtin call arguments); false when unbalanced.
+    static bool skipBalancedParens(llvm::ArrayRef<clang::Token> tokens, size_t& pos) {
+        if (pos >= tokens.size() || tokens[pos].getKind() != clang::tok::l_paren) return false;
+        unsigned depth = 0;
+        while (pos < tokens.size()) {
+            auto kind = tokens[pos++].getKind();
+            if (kind == clang::tok::l_paren)
+                ++depth;
+            else if (kind == clang::tok::r_paren && --depth == 0)
+                return true;
+        }
+        return false;
+    }
+
+    std::optional<EvaluatedConstant> parseNumericLiteral(const clang::Token& token) {
+        if (auto parsed = parseIntegerLiteral(token)) {
+            if (parsed->type.isNull()) return std::nullopt;
+            auto& context = compilerInstance.getASTContext();
+            return EvaluatedConstant::fromInt(convertInt(llvm::APSInt(parsed->rawValue, parsed->type->isUnsignedIntegerType()),
+                                                         context.getTypeSize(parsed->type), parsed->type->isUnsignedIntegerType()),
+                                              parsed->type);
+        }
+        if (auto value = parseFloatLiteral(token)) return EvaluatedConstant::fromFloat(*value);
+        return std::nullopt;
+    }
+
+    std::optional<EvaluatedConstant> parseCharLiteral(const clang::Token& token) {
+        auto spelling = clang::Lexer::getSpelling(token, compilerInstance.getSourceManager(), compilerInstance.getLangOpts());
+        clang::CharLiteralParser parser(spelling.data(), spelling.data() + spelling.size(), token.getLocation(), compilerInstance.getPreprocessor(),
+                                        token.getKind());
+        if (parser.hadError() || !parser.isOrdinary() || parser.isMultiChar() || !parser.getUDSuffix().empty()) return std::nullopt;
+        // C character constants have type int.
+        auto& context = compilerInstance.getASTContext();
+        return EvaluatedConstant::fromInt(convertInt(llvm::APSInt(llvm::APInt(128, parser.getValue()), false), context.getTypeSize(context.IntTy), false),
+                                          context.IntTy);
+    }
+
+    EvaluatedConstant makeBoolConstant(bool value) {
+        auto& context = compilerInstance.getASTContext();
+        return EvaluatedConstant::fromInt(llvm::APSInt(llvm::APInt(context.getTypeSize(context.IntTy), value ? 1 : 0), false), context.IntTy);
+    }
+
+    static llvm::APFloat toDouble(const EvaluatedConstant& value) {
+        if (value.isFloat) return value.floatValue;
+        llvm::APFloat result(0.0);
+        result.convertFromAPInt(value.intValue, value.intValue.isSigned(), llvm::RoundingMode::NearestTiesToEven);
+        return result;
+    }
+
+    std::optional<EvaluatedConstant> applyUnaryOp(clang::tok::TokenKind op, const EvaluatedConstant& operand) {
+        if (operand.isFloat) {
+            switch (op) {
+            case clang::tok::plus:
+                return operand;
+            case clang::tok::minus: {
+                llvm::APFloat value = operand.floatValue;
+                value.changeSign();
+                return EvaluatedConstant::fromFloat(value);
+            }
+            case clang::tok::exclaim:
+                return makeBoolConstant(operand.floatValue.isZero());
+            default:
+                return std::nullopt; // No bitwise ops on floats.
+            }
+        }
+        switch (op) {
+        case clang::tok::plus:
+            return operand;
+        case clang::tok::minus:
+            return EvaluatedConstant::fromInt(-operand.intValue, operand.intType);
+        case clang::tok::tilde:
+            return EvaluatedConstant::fromInt(~operand.intValue, operand.intType);
+        case clang::tok::exclaim:
+            return makeBoolConstant(operand.intValue.isZero());
+        default:
+            return std::nullopt;
+        }
+    }
+
+    std::optional<EvaluatedConstant> applyBinaryOp(clang::tok::TokenKind op, const EvaluatedConstant& lhs, const EvaluatedConstant& rhs) {
+        if (lhs.isFloat || rhs.isFloat) return applyFloatBinaryOp(op, toDouble(lhs), toDouble(rhs));
+        auto& context = compilerInstance.getASTContext();
+        // Shift counts keep their own type; every other operator converts both
+        // sides to the common type first (C11 6.3.1.8, 6.5.7).
+        int rank = (op == clang::tok::lessless || op == clang::tok::greatergreater) ? intRank(lhs.intType)
+                                                                                    : commonIntRank(intRank(lhs.intType), intRank(rhs.intType), context);
+        clang::QualType type = intTypeForRank(rank, context);
+        unsigned width = context.getTypeSize(type);
+        bool isSigned = !type->isUnsignedIntegerType();
+        llvm::APSInt a = convertInt(lhs.intValue, width, !isSigned);
+        llvm::APSInt b = convertInt(rhs.intValue, width, !isSigned);
+        auto intResult = [&](llvm::APSInt value) { return EvaluatedConstant::fromInt(std::move(value), type); };
+        switch (op) {
+        case clang::tok::plus:
+            return intResult(a + b);
+        case clang::tok::minus:
+            return intResult(a - b);
+        case clang::tok::star:
+            return intResult(a * b);
+        case clang::tok::slash:
+        case clang::tok::percent:
+            if (b.isZero()) return std::nullopt;
+            if (isSigned && b.isAllOnes() && a.isMinSignedValue()) return std::nullopt; // INT_MIN / -1 traps.
+            return intResult(op == clang::tok::slash ? a / b : a % b);
+        case clang::tok::lessless:
+        case clang::tok::greatergreater: {
+            if (rhs.intValue.isSigned() && rhs.intValue.isNegative()) return std::nullopt;
+            uint64_t count = rhs.intValue.getZExtValue();
+            if (count >= width) return std::nullopt;
+            if (op == clang::tok::lessless) return intResult(a << (unsigned)count);
+            return intResult(a >> (unsigned)count);
+        }
+        case clang::tok::amp:
+            return intResult(a & b);
+        case clang::tok::pipe:
+            return intResult(a | b);
+        case clang::tok::caret:
+            return intResult(a ^ b);
+        case clang::tok::less:
+            return makeBoolConstant(a < b);
+        case clang::tok::lessequal:
+            return makeBoolConstant(a <= b);
+        case clang::tok::greater:
+            return makeBoolConstant(a > b);
+        case clang::tok::greaterequal:
+            return makeBoolConstant(a >= b);
+        case clang::tok::equalequal:
+            return makeBoolConstant(a == b);
+        case clang::tok::exclaimequal:
+            return makeBoolConstant(a != b);
+        case clang::tok::ampamp:
+            return makeBoolConstant(!a.isZero() && !b.isZero());
+        case clang::tok::pipepipe:
+            return makeBoolConstant(!a.isZero() || !b.isZero());
+        default:
+            return std::nullopt;
+        }
+    }
+
+    std::optional<EvaluatedConstant> applyFloatBinaryOp(clang::tok::TokenKind op, llvm::APFloat lhs, llvm::APFloat rhs) {
+        llvm::APFloat::opStatus status = llvm::APFloat::opOK;
+        switch (op) {
+        case clang::tok::plus:
+            status = lhs.add(rhs, llvm::RoundingMode::NearestTiesToEven);
+            break;
+        case clang::tok::minus:
+            status = lhs.subtract(rhs, llvm::RoundingMode::NearestTiesToEven);
+            break;
+        case clang::tok::star:
+            status = lhs.multiply(rhs, llvm::RoundingMode::NearestTiesToEven);
+            break;
+        case clang::tok::slash:
+            status = lhs.divide(rhs, llvm::RoundingMode::NearestTiesToEven);
+            break;
+        case clang::tok::less:
+        case clang::tok::lessequal:
+        case clang::tok::greater:
+        case clang::tok::greaterequal:
+        case clang::tok::equalequal:
+        case clang::tok::exclaimequal: {
+            auto cmp = lhs.compare(rhs);
+            switch (op) {
+            case clang::tok::less:
+                return makeBoolConstant(cmp == llvm::APFloat::cmpLessThan);
+            case clang::tok::lessequal:
+                return makeBoolConstant(cmp == llvm::APFloat::cmpLessThan || cmp == llvm::APFloat::cmpEqual);
+            case clang::tok::greater:
+                return makeBoolConstant(cmp == llvm::APFloat::cmpGreaterThan);
+            case clang::tok::greaterequal:
+                return makeBoolConstant(cmp == llvm::APFloat::cmpGreaterThan || cmp == llvm::APFloat::cmpEqual);
+            case clang::tok::equalequal:
+                return makeBoolConstant(cmp == llvm::APFloat::cmpEqual);
+            default:
+                return makeBoolConstant(cmp != llvm::APFloat::cmpEqual);
+            }
+        }
+        case clang::tok::ampamp:
+            return makeBoolConstant(!lhs.isZero() && !rhs.isZero());
+        case clang::tok::pipepipe:
+            return makeBoolConstant(!lhs.isZero() || !rhs.isZero());
+        default:
+            return std::nullopt; // No % or bitwise ops on floats.
+        }
+        if (status & (llvm::APFloat::opInvalidOp | llvm::APFloat::opDivByZero | llvm::APFloat::opOverflow)) return std::nullopt;
+        return EvaluatedConstant::fromFloat(lhs);
     }
 
 private:
     Module& module;
     CToCxConverter& cToCxConverter;
     clang::CompilerInstance& compilerInstance;
+    // Integer and float constants imported so far, for identifiers in later macro
+    // bodies. Only macros defined above the use are visible, and #undef does not
+    // remove them; both are rare enough in practice to leave unhandled.
+    llvm::StringMap<EvaluatedConstant> importedConstants;
 };
 
 // Silently drops errors in system headers.

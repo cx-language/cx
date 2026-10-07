@@ -123,6 +123,20 @@ void main() {
 }
 ```
 
+Numbers, characters, and strings are imported as constants,
+as are simple expressions over numbers and characters
+(float operands compute in double precision):
+
+```cs
+import "stdio.h";
+
+void main() {
+    println(EOF); // prints -1
+}
+```
+
+Function-like macros, casts, and compound literals are not imported.
+
 Individual functions can also be declared with `extern`, without importing a header.
 The standard library uses `extern` declarations in `std/system/libc.cx`
 to give common C functions more precise cx types.
