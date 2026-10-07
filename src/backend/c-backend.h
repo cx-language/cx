@@ -130,6 +130,7 @@ struct CGenerator {
     std::unordered_set<IRType*> forwardDeclaredTypes;
     std::unordered_map<IRType*, std::string> generatedTypeNames;
     std::unordered_set<std::string> alreadyDefinedFunctions;
+    std::unordered_set<std::string> alreadyIncludedHeaders;
     std::unordered_map<const Value*, std::string> emittedValues;
     // C identifiers claimed in the value namespace of the function currently
     // being emitted: parameters (emitted verbatim) plus every minted local,
