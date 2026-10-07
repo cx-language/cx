@@ -11,8 +11,7 @@ void main() {
     println(c < null);
     // CHECK: [[@LINE+1]]:13: error: invalid operands 'int*?' and 'int*?' to '>' (ordering comparisons against null are not allowed; use '==' or '!=' to check for null)
     println(c > null);
-    // The mirrored order never reached the builtin path; it still reports no overload.
-    // CHECK: [[@LINE+1]]:18: error: no matching operator '<' with arguments 'null' and 'int*?'
+    // CHECK: [[@LINE+1]]:13: error: invalid operands 'null' and 'int*?' to '<' (ordering comparisons against null are not allowed; use '==' or '!=' to check for null)
     println(null < p);
     println(p == null);
     println(c != null);

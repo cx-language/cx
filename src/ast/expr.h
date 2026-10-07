@@ -316,6 +316,8 @@ struct BinaryExpr : CallExpr {
     bool lhsIsMoved = false;
     // True when the operator is derived from its counterpart (e.g. != from ==) and the result must be negated.
     bool negateResult = false;
+    // True when typechecking already warned that a narrowed optional compared against null cannot be null.
+    bool redundantNullCheckWarned = false;
     // For lowered `==`/`!=` (anonymous struct elementwise comparison, optional-vs-wrapped
     // comparison): replacement AST over compiler-generated temporaries. Codegen binds
     // the temporaries to the operand values, so operands with side effects evaluate

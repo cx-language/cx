@@ -882,15 +882,21 @@ static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind
     std::string hint;
 
     if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) && (op == Token::Equal || op == Token::NotEqual)) {
-        hint += " (non-optional type '";
-        if (expr.getRHS().isNullLiteralExpr()) {
-            hint += expr.getLHS().type.toString();
+        if (expr.getRHS().isNullLiteralExpr() && expr.getLHS().isNullLiteralExpr()) {
+            hint += " (cannot compare 'null' with 'null')";
         } else {
-            hint += expr.getRHS().type.toString();
+            hint += " (non-optional type '";
+            if (expr.getRHS().isNullLiteralExpr()) {
+                hint += expr.getLHS().type.toString();
+            } else {
+                hint += expr.getRHS().type.toString();
+            }
+            hint += "' cannot be null)";
         }
-        hint += "' cannot be null)";
     } else if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) && isComparisonOperator(op)) {
         hint += " (ordering comparisons against null are not allowed; use '==' or '!=' to check for null)";
+    } else if (expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) {
+        hint += " (null can only be compared with '==' or '!=')";
     } else {
         auto isPointerOperand = [](Type type) {
             type = type.removeOptional();
@@ -1174,6 +1180,36 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             expr.setRHS(NOTNULL(convert(&expr.getRHS(), leftType)));
             return Type::getBool();
         }
+        // A narrowed optional compared against null is provably non-null: warn instead of erroring.
+        // Unnarrow so codegen emits a real null check; the analyzer skips its own warning via the flag.
+        bool lhsIsNull = expr.getLHS().isNullLiteralExpr();
+        bool rhsIsNull = expr.getRHS().isNullLiteralExpr();
+        if (lhsIsNull != rhsIsNull) {
+            Expr& other = lhsIsNull ? expr.getRHS() : expr.getLHS();
+            if (isNarrowedOptionalUse(&other, other.assignableType)) {
+                WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "value cannot be null here; null check can be removed");
+                unnarrow(other);
+                Type optionalType = other.type;
+                if (lhsIsNull) {
+                    expr.setLHS(NOTNULL(convert(&expr.getLHS(), optionalType)));
+                } else {
+                    expr.setRHS(NOTNULL(convert(&expr.getRHS(), optionalType)));
+                }
+                expr.redundantNullCheckWarned = true;
+                return Type::getBool();
+            }
+            // Non-optional against null errors uniformly here so structs report the same
+            // diagnostic as builtins instead of falling through to overload resolution.
+            throwInvalidOperandsToBinaryExpr(expr, op);
+        }
+        if (lhsIsNull && rhsIsNull) {
+            throwInvalidOperandsToBinaryExpr(expr, op);
+        }
+    }
+
+    // Any other binary operator applied to null is invalid; report uniformly before overloads.
+    if (expr.getLHS().isNullLiteralExpr() || expr.getRHS().isNullLiteralExpr()) {
+        throwInvalidOperandsToBinaryExpr(expr, op);
     }
 
     if ((op == Token::Equal || op == Token::NotEqual) && leftType.isAnonymousStructType() && rightType.isAnonymousStructType()) {
@@ -1366,22 +1402,16 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         return typecheckCallExpr(expr);
     }
 
-    // Ordering against null would only compare addresses to null, so reject it;
-    // '==' and '!=' check for null. (The null literal would otherwise convert
-    // to the nullable operand's type and slip through below.)
-    if (isComparisonOperator(op) && op != Token::Equal && op != Token::NotEqual && (expr.getLHS().isNullLiteralExpr() || expr.getRHS().isNullLiteralExpr())) {
-        throwInvalidOperandsToBinaryExpr(expr, op);
-    }
-
     // Borrow operands retain their implicit dereference for builtin operators. Raw pointers never do:
     // their operands must use '*' explicitly, while member access and indexing remain direct.
+    // (Null literals errored above, so no null guards are needed here.)
     bool eitherSpecial = leftType.isOptionalType() || rightType.isOptionalType() || leftType.isArrayPointer() || rightType.isArrayPointer();
     if ((leftType.isReferenceType() || rightType.isReferenceType()) && !eitherSpecial) {
-        if (leftType.isReferenceType() && !expr.getRHS().isNullLiteralExpr()) {
+        if (leftType.isReferenceType()) {
             expr.setLHS(makeAST<ImplicitCastExpr>(&expr.getLHS(), leftType.getPointee(), ImplicitCastExpr::AutoDereference));
             leftType = leftType.getPointee();
         }
-        if (rightType.isReferenceType() && !expr.getLHS().isNullLiteralExpr()) {
+        if (rightType.isReferenceType()) {
             expr.setRHS(makeAST<ImplicitCastExpr>(&expr.getRHS(), rightType.getPointee(), ImplicitCastExpr::AutoDereference));
             rightType = rightType.getPointee();
         }

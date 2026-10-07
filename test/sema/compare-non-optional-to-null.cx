@@ -1,0 +1,57 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct S {
+    int x;
+}
+
+void intVsNull(int x) {
+    // CHECK: [[@LINE+1]]:8: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
+    if x == null {
+    }
+}
+
+void structVsNull(S s) {
+    // CHECK: [[@LINE+1]]:8: error: invalid operands 'S' and 'null' to '==' (non-optional type 'S' cannot be null)
+    if s == null {
+    }
+}
+
+void intVsNullNotEqual(int x) {
+    // CHECK: [[@LINE+1]]:8: error: invalid operands 'int' and 'null' to '!=' (non-optional type 'int' cannot be null)
+    if x != null {
+    }
+}
+
+void structVsNullNotEqual(S s) {
+    // CHECK: [[@LINE+1]]:8: error: invalid operands 'S' and 'null' to '!=' (non-optional type 'S' cannot be null)
+    if s != null {
+    }
+}
+
+void intOrderingVsNull(int x) {
+    // CHECK: [[@LINE+1]]:8: error: invalid operands 'int' and 'null' to '<' (ordering comparisons against null are not allowed; use '==' or '!=' to check for null)
+    if x < null {
+    }
+}
+
+void structOrderingVsNull(S s) {
+    // CHECK: [[@LINE+1]]:8: error: invalid operands 'S' and 'null' to '<' (ordering comparisons against null are not allowed; use '==' or '!=' to check for null)
+    if s < null {
+    }
+}
+
+void intArithmeticVsNull(int x) {
+    // CHECK: [[@LINE+1]]:13: error: invalid operands 'int' and 'null' to '+' (null can only be compared with '==' or '!=')
+    var y = x + null;
+}
+
+void structArithmeticVsNull(S s) {
+    // CHECK: [[@LINE+1]]:13: error: invalid operands 'S' and 'null' to '+' (null can only be compared with '==' or '!=')
+    var y = s + null;
+}
+
+void nullVsNull() {
+    // CHECK: [[@LINE+1]]:8: error: invalid operands 'null' and 'null' to '==' (cannot compare 'null' with 'null')
+    if null == null {
+    }
+}
