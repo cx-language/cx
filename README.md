@@ -90,6 +90,19 @@ For the fastest clean build of just the compiler, configure with
 `-G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_UNITY_BUILD=ON` and run
 `cmake --build . --target cx`.
 
+### Offline builds
+
+Configuring downloads AsmJit from GitHub. To build without network access,
+check out the pinned commit (see `GIT_TAG` in CMakeLists.txt) and point
+CMake at it:
+
+```sh
+cmake .. -DFETCHCONTENT_SOURCE_DIR_ASMJIT=/path/to/asmjit
+```
+
+On macOS, apply `cmake/asmjit-apple-varargs.patch` to that checkout first;
+CMake applies it automatically only to checkouts it fetches itself.
+
 ### Editor support
 
 For diagnostics, hover, go to definition, completions, find references, and semantic highlighting
