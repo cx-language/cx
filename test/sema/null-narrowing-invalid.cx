@@ -8,7 +8,7 @@ struct S {
 
 void redundantUnwrap(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:17: error: 'v' is already non-null; remove the '!'
+        // CHECK: [[@LINE+1]]:17: warning: 'v' is already non-null; remove the '!'
         var x = v!;
     }
 }
@@ -23,8 +23,16 @@ void redundantNullCheck(int? v) {
 
 void redundantNegation(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:13: error: type 'int' is not convertible to boolean
+        // CHECK: [[@LINE+1]]:13: warning: value cannot be null here; null check can be removed
         if !v {
+        }
+    }
+}
+
+void redundantTruthiness(int? v) {
+    if (v != null) {
+        // CHECK: [[@LINE+1]]:12: warning: value cannot be null here; null check can be removed
+        if v {
         }
     }
 }
@@ -151,7 +159,8 @@ void redundantNullOnLeft(int? v) {
 
 void explicitUnwrapVsNullStillErrors(int? v) {
     if (v != null) {
-        // CHECK: [[@LINE+1]]:12: error: 'v' is already non-null; remove the '!'
+        // CHECK: [[@LINE+2]]:12: warning: 'v' is already non-null; remove the '!'
+        // CHECK: [[@LINE+1]]:12: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
         if v! == null {
         }
     }

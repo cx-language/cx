@@ -651,6 +651,12 @@ Type Typechecker::typecheckAnonymousStructExpr(AnonymousStructExpr& expr) {
 }
 
 void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Expr*& expr, bool positive) {
+    // A narrowed optional tested for truthiness is provably non-null: warn and check the optional.
+    if (isNarrowedOptionalUse(expr, expr->assignableType)) {
+        WARN_RANGE(getExprRangeStart(*expr), expr->endLocation, "value cannot be null here; null check can be removed");
+        unnarrow(*expr);
+        return;
+    }
     Type originalType = expr->type;
     if (originalType.isReferenceType()) {
         auto* dereferenced = makeAST<ImplicitCastExpr>(expr, originalType.getPointee(), ImplicitCastExpr::AutoDereference);
@@ -4202,7 +4208,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             // Narrowing only tracks locals, so only they can reach this already unwrapped.
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getReceiver())) {
                 if (varExpr->decl && narrowedTypes.contains(varExpr->decl)) {
-                    ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "'" << varExpr->identifier << "' is already non-null; remove the '!'");
+                    WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "'" << varExpr->identifier << "' is already non-null; remove the '!'");
+                    return receiverType;
                 }
             }
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "type '" << receiverType << "' is not optional and has no 'unwrap' method");
@@ -4659,7 +4666,8 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
     }
     if (!valid) {
         if (sourceType == targetType) {
-            ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "redundant cast to same type '" << targetType << "'");
+            WARN_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "redundant cast to same type '" << targetType << "'");
+            return targetType;
         }
         ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "illegal cast from '" << sourceType << "' to '" << targetType << "'");
     }

@@ -1502,6 +1502,10 @@ Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
     if (expr.calleeDecl) {
         return emitCallExpr(expr);
     }
+    // Redundant unwraps of narrowed values warn in sema; elide them here.
+    if (!expr.getReceiver()->type.isOptionalType()) {
+        return emitExpr(*expr.getReceiver());
+    }
     // The result borrows the operand, so operand temporaries die at scope exit like receivers.
     llvm::SaveAndRestore saveEmittingReceiver(emittingReceiver, true);
     return emitOptionalUnwrap(*expr.getReceiver(), expr, "assert");
