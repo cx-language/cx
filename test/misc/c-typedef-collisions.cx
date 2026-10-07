@@ -1,0 +1,20 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+import "inputs/c-duplicate-typedef-a.h";
+import "inputs/c-duplicate-typedef-b.h";
+
+int pick(uint32 x) { return 1; }
+int pick(c_uint x) { return 2; }
+
+void main() {
+    // The prelude name wins over the same-named C typedef (which would be c_uint, not uint32).
+    uint x = 42;
+    println(pick(x)); // CHECK:1
+    println(x); // CHECK:42
+    c_uint cu = 2;
+    println(pick(cu)); // CHECK:2
+    // Same-named C typedefs from different headers resolve to one.
+    DuplicateWidget w = 1;
+    println(w + 41); // CHECK:42
+    // A C typedef colliding with a prelude function doesn't shadow it.
+    print(42); // CHECK:42
+}

@@ -125,7 +125,19 @@ TypeAliasDecl* Typechecker::findTypeAlias(Type type) {
         if (!firstType) {
             firstType = decl;
         } else if (firstType->getModule() != currentModule) {
-            return nullptr;
+            // Duplicate declarations of the same thing from C headers resolve to the
+            // last one, mirroring value lookup: each imported header gets its own module,
+            // so a typedef pulled in transitively by several headers (e.g. size_t via
+            // stdlib.h and string.h) must not be ambiguous. Only identical redeclarations
+            // collapse; conflicting ones stay ambiguous.
+            auto* firstAlias = llvm::dyn_cast<TypeAliasDecl>(firstType);
+            auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl);
+            if (firstAlias && alias && firstAlias->aliasedType == alias->aliasedType && firstType->getModule() && firstType->getModule()->isCHeaderImport
+                && decl->getModule() && decl->getModule()->isCHeaderImport) {
+                firstType = decl;
+            } else {
+                return nullptr;
+            }
         } else if (decl->getModule() != currentModule) {
             break;
         }

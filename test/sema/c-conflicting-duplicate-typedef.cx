@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+import "inputs/c-conflict-typedef-a.h";
+import "inputs/c-conflict-typedef-b.h";
+
+void main() {
+    // CHECK: [[@LINE+1]]:5: error: ambiguous reference to 'ConflictWidget'
+    ConflictWidget w = 1;
+}

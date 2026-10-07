@@ -733,6 +733,14 @@ struct CToCxConverter final : clang::ASTConsumer {
                     // declaration already provides the name (and an alias would
                     // collide with it).
                     if (underlyingType.isBasicType() && underlyingType.getGenericArgs().empty() && underlyingType.getName() == typedefDecl.getName()) break;
+                    // A typedef under a prelude name could never resolve in type position
+                    // (ambiguity is an error there and prelude type names can't be shadowed),
+                    // it would only poison the prelude name. Transitive system typedefs hit
+                    // this constantly (e.g. glibc's `uint` via stdlib.h). Signatures lower to
+                    // canonical types without the alias, so skip it.
+                    if (auto* stdModule = Module::getStdlibModule(); stdModule && !stdModule->symbolTable.findInTopLevelScope(typedefDecl.getName()).empty()) {
+                        break;
+                    }
                     auto* alias = makeAST<TypeAliasDecl>(typedefDecl.getName(), underlyingType, AccessLevel::Default, module, toCx(typedefDecl.getLocation()));
                     module.addToSymbolTable(*alias);
                     module.sourceFiles.front().topLevelDecls.push_back(alias);
