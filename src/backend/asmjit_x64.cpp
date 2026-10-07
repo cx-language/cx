@@ -1,8 +1,7 @@
-#include "asmjit.h"
 #include "asmjit_x64.h"
 #pragma warning(push, 0)
-#include <asmjit/a64.h>
 #include <asmjit/core.h>
+#include <asmjit/x86.h>
 #include <llvm/ADT/StringSwitch.h>
 #include <llvm/Support/DynamicLibrary.h>
 #pragma warning(pop)
@@ -20,24 +19,31 @@
 #include "../ast/mangle.h"
 #include "../support/utility.h"
 #include "ir.h"
+#include "jit-pins.h"
 
 using namespace cx;
 
 namespace {
 using namespace asmjit;
-using namespace asmjit::a64;
+using namespace asmjit::x86;
 
-// LP64 type layouts (macOS arm64 / Linux arm64 agree). Kept in sync with
-// LLVM's DataLayout by construction; the ABI lit tests pin behavior.
+// LLP64 type layouts (Windows x64): c_long/c_ulong are 32-bit, unlike the
+// LP64 layouts in asmjit.cpp. Kept in sync with LLVM's DataLayout by
+// construction; the ABI lit tests pin behavior.
 uint64_t typeSize(IRType* type);
 uint32_t typeAlign(IRType* type);
 
 uint64_t basicSize(llvm::StringRef name) {
+    // c_long matches C's long and c_size_t matches size_t; the host widths
+    // are the target widths (no cross-compilation).
+    if (name == "c_long" || name == "c_ulong") return sizeof(long);
+    if (name == "c_size_t") return sizeof(void*);
     return llvm::StringSwitch<uint64_t>(name)
         .Cases({"bool", "char", "int8", "uint8", "c_schar", "c_uchar"}, 1)
         .Cases({"int16", "uint16", "c_short", "c_ushort"}, 2)
         .Cases({"int32", "uint32", "c_int", "c_uint", "float32", "c_float"}, 4)
-        .Cases({"int64", "uint64", "c_long", "c_ulong", "c_longlong", "c_ulonglong", "c_size_t", "float64", "c_double"}, 8)
+        .Cases({"int64", "uint64", "c_longlong", "c_ulonglong", "float64", "c_double"}, 8)
+        .Case("float80", 16)
         .Case("void", 0)
         .Default(0);
 }
@@ -45,9 +51,7 @@ uint64_t basicSize(llvm::StringRef name) {
 uint64_t typeSize(IRType* type) {
     switch (type->kind) {
     case IRTypeKind::IRBasicType: {
-        llvm::StringRef name = type->getName();
-        if (name == "float80") ABORT("float80 is x86-only and cannot lower on AArch64");
-        uint64_t size = basicSize(name);
+        uint64_t size = basicSize(type->getName());
         ASSERT(size > 0 && "unknown basic type");
         return size;
     }
@@ -92,7 +96,6 @@ uint32_t typeAlign(IRType* type) {
     switch (type->kind) {
     case IRTypeKind::IRBasicType: {
         llvm::StringRef name = type->getName();
-        if (name == "float80") ABORT("float80 is x86-only and cannot lower on AArch64");
         if (name == "void") return 1;
         return (uint32_t)basicSize(name);
     }
@@ -131,61 +134,20 @@ uint64_t fieldOffset(IRType* structType, int index) {
     return offset;
 }
 
-// Homogeneous floating-point aggregate (AArch64): every scalar is the same
-// float or double type, at most four of them (mirrors the LLVM backend).
-struct HFAInfo {
-    bool isDouble;
-    unsigned count;
-};
-
-std::optional<HFAInfo> getHFAInfo(IRType* type) {
-    if (type->isBasicType()) {
-        llvm::StringRef name = type->getName();
-        if (name == "float32" || name == "c_float") return HFAInfo{false, 1};
-        if (name == "float64" || name == "c_double") return HFAInfo{true, 1};
-        return std::nullopt;
-    }
-    if (type->isArrayType()) {
-        auto* arrayType = llvm::cast<IRArrayType>(type);
-        if (arrayType->hasSymbolicSize() || arrayType->size <= 0) return std::nullopt;
-        auto elem = getHFAInfo(arrayType->elementType);
-        if (!elem) return std::nullopt;
-        unsigned count = elem->count * (unsigned)arrayType->size;
-        if (count > 4) return std::nullopt;
-        return HFAInfo{elem->isDouble, count};
-    }
-    if (type->isStruct() || type->isUnion()) {
-        bool isUnion = type->isUnion();
-        HFAInfo info{false, 0};
-        bool first = true;
-        for (const auto& field : type->getFields()) {
-            auto fieldInfo = getHFAInfo(field.type);
-            if (!fieldInfo || (!first && fieldInfo->isDouble != info.isDouble)) return std::nullopt;
-            info = HFAInfo{fieldInfo->isDouble, isUnion ? std::max(info.count, fieldInfo->count) : info.count + fieldInfo->count};
-            first = false;
-        }
-        if (first || info.count > 4) return std::nullopt;
-        return info;
-    }
-    return std::nullopt;
-}
-
-// How an aggregate crosses the AArch64 C ABI. Direct scalars lower to one
-// register; aggregates coerce like clang (mirrors LLVMGenerator::getAbiCoercedType).
+// How a value crosses the Win64 C ABI. Small aggregates lower to one
+// integer register like clang (mirrors LLVMGenerator::getAbiCoercedType);
+// larger ones cross by pointer. Win64 never uses a second register or
+// vector registers for aggregates.
 struct AbiClass {
     enum class Kind {
         Direct, // One register; typeId is the AsmJit type.
-        IntChunks, // 1-2 integer registers covering the bytes (u32, u64, or 2x u64).
-        HFA, // N float/double registers (hfaCount members, hfaIsDouble element type).
+        Chunk, // One integer register covering the bytes (u32 or u64).
         Indirect, // Pointer to caller memory.
         Empty, // Zero-size: occupies no ABI slot.
     };
     Kind kind;
     TypeId typeId = TypeId::kVoid; // Direct only.
-    unsigned hfaCount = 0; // HFA only.
-    bool hfaIsDouble = false; // HFA only.
-    unsigned chunkCount = 0; // IntChunks only (1-2).
-    bool chunkIs64 = true; // IntChunks only (u64 chunks, else a single u32).
+    bool chunkIs64 = true; // Chunk only (u64 chunk, else u32).
 };
 
 AbiClass classifyType(IRType* type) {
@@ -204,73 +166,45 @@ AbiClass classifyType(IRType* type) {
         llvm::StringRef name = type->getName();
         if (name == "float32" || name == "c_float") return {AbiClass::Kind::Direct, TypeId::kFloat32};
         if (name == "float64" || name == "c_double") return {AbiClass::Kind::Direct, TypeId::kFloat64};
-        ABORT("float80 is x86-only and cannot lower on AArch64");
+        ASSERT(name == "float80");
+        // float80 travels as a pointer to a 16-byte home (cx-internal
+        // convention; float80 never crosses an extern boundary here).
+        return {AbiClass::Kind::Indirect};
     }
     if (type->isPointerType() || type->isFunctionType()) return {AbiClass::Kind::Direct, TypeId::kUInt64};
     // Aggregates.
     uint64_t size = typeSize(type);
     if (size == 0) return {AbiClass::Kind::Empty};
-    if (auto hfa = getHFAInfo(type)) {
-        AbiClass cls{AbiClass::Kind::HFA};
-        cls.hfaCount = hfa->count;
-        cls.hfaIsDouble = hfa->isDouble;
-        return cls;
-    }
-    // Non-HFA aggregates of 16 bytes or less cross in integer registers,
-    // float-containing ones included (mirrors the LLVM backend).
-    if (size <= 16) {
-        AbiClass cls{AbiClass::Kind::IntChunks};
-        if (size <= 4) {
-            cls.chunkCount = 1;
-            cls.chunkIs64 = false;
-        } else if (size <= 8) {
-            cls.chunkCount = 1;
-            cls.chunkIs64 = true;
-        } else {
-            cls.chunkCount = 2;
-            cls.chunkIs64 = true;
-        }
+    // Win64 passes aggregates up to 8 bytes as integers, floats included
+    // (mirrors the LLVM backend); larger ones cross by pointer.
+    if (size <= 8) {
+        AbiClass cls{AbiClass::Kind::Chunk};
+        cls.chunkIs64 = size > 4;
         return cls;
     }
     return {AbiClass::Kind::Indirect};
 }
 
-// A scalar leaf of an HFA with its byte offset, for register materialization.
-struct HFALeaf {
-    uint64_t offset;
-};
-
-void collectHFALeaves(IRType* type, uint64_t base, std::vector<HFALeaf>& leaves) {
-    if (type->isStruct()) {
-        for (int i = 0; i < (int)type->getFields().size(); ++i) {
-            collectHFALeaves(type->getFields()[i].type, base + fieldOffset(type, i), leaves);
-        }
-        return;
+// True when a float80 crosses by value rather than behind a pointer.
+// Extern boundaries reject these: C's long double is 64-bit on Win64, so
+// neither passing convention agrees with the 16-byte homes used internally.
+bool hasByValueFloat80(IRType* type) {
+    if (!type) return false;
+    switch (type->kind) {
+    case IRTypeKind::IRBasicType:
+        return type->getName() == "float80";
+    case IRTypeKind::IRPointerType:
+    case IRTypeKind::IRFunctionType:
+        return false;
+    case IRTypeKind::IRArrayType:
+        return hasByValueFloat80(llvm::cast<IRArrayType>(type)->elementType);
+    case IRTypeKind::IRStructType:
+    case IRTypeKind::IRUnionType:
+        for (const auto& field : type->getFields())
+            if (hasByValueFloat80(field.type)) return true;
+        return false;
     }
-    if (type->isUnion()) {
-        // Unions pass their largest member's leaves (HFA count is the max).
-        IRType* best = nullptr;
-        unsigned bestCount = 0;
-        for (const auto& field : type->getFields()) {
-            auto info = getHFAInfo(field.type);
-            if (info && info->count > bestCount) {
-                bestCount = info->count;
-                best = field.type;
-            }
-        }
-        ASSERT(best && "collectHFALeaves called on non-HFA union");
-        collectHFALeaves(best, base, leaves);
-        return;
-    }
-    if (type->isArrayType()) {
-        auto* arrayType = llvm::cast<IRArrayType>(type);
-        ASSERT(!arrayType->hasSymbolicSize() && arrayType->size > 0);
-        uint64_t stride = typeSize(arrayType->elementType);
-        for (int i = 0; i < arrayType->size; ++i)
-            collectHFALeaves(arrayType->elementType, base + i * stride, leaves);
-        return;
-    }
-    leaves.push_back({base});
+    llvm_unreachable("all cases handled");
 }
 
 struct JitMemory {
@@ -290,39 +224,7 @@ struct JitMemory {
     }
 };
 
-// Side-stack for functions whose aggregate temporaries would overflow AsmJit's
-// frame addressing (AArch64 spill slots can't reach past ~32KB). LIFO save and
-// restore at function boundaries keeps recursion and threads safe; 8MB per
-// thread matches the main-thread stack.
-constexpr size_t kJitSideStackSize = 8 * 1024 * 1024;
-
-struct JitSideStack {
-    char* base = nullptr;
-    size_t bump = 0;
-};
-
-thread_local JitSideStack jitSideStack;
-
-extern "C" void* cxJitSideAlloc(uint64_t size) {
-    if (!jitSideStack.base) {
-        jitSideStack.base = (char*)malloc(kJitSideStackSize);
-        if (!jitSideStack.base) ABORT("out of memory in JIT side-stack");
-    }
-    size_t aligned = (jitSideStack.bump + 15) & ~(size_t)15;
-    if (aligned + size > kJitSideStackSize) ABORT("JIT side-stack overflow");
-    jitSideStack.bump = aligned + (size_t)size;
-    return jitSideStack.base + aligned;
-}
-
-extern "C" uint64_t cxJitSideSave() {
-    return jitSideStack.bump;
-}
-
-extern "C" void cxJitSideRestore(uint64_t saved) {
-    jitSideStack.bump = (size_t)saved;
-}
-
-struct AsmJitGenerator {
+struct X64AsmJitGenerator {
     JitRuntime runtime;
     JitMemory memory;
     // Function address table: every function (defined, extern, or referenced
@@ -337,7 +239,7 @@ struct AsmJitGenerator {
     std::unordered_map<std::string, void*> externCache;
 
     // Per-function emission state.
-    a64::Compiler* cc = nullptr;
+    x86::Compiler* cc = nullptr;
     std::unordered_map<const Value*, Gp> gpValues;
     std::unordered_map<const Value*, Vec> vecValues;
     std::unordered_map<const BasicBlock*, Label> blockLabels;
@@ -346,16 +248,16 @@ struct AsmJitGenerator {
 
     void codegenModules(const std::vector<IRModule*>& modules);
     void* codegenFunction(const Function* function);
-    void codegenBody(const Function* function);
     void codegenInst(const Value* value);
     Gp getGp(const Value* value);
     Vec getVec(const Value* value);
     Gp newIntReg(IRType* type);
     void canonicalize(Gp reg, IRType* type);
     Gp emitIntBinary(Token::Kind op, Gp left, Gp right, IRType* type, IRType* rightType);
+    void emitDivMod(Gp out, Gp left, Gp right, bool is64, bool isSigned, bool isMod);
     Vec emitFloatBinary(Token::Kind op, Vec left, Vec right, bool isDouble);
     Gp emitIntCompare(Token::Kind op, Gp left, Gp right, IRType* type);
-    Gp emitFloatCompare(Token::Kind op, Vec left, Vec right);
+    Gp emitFloatCompare(Token::Kind op, Vec left, Vec right, bool isDouble);
     void emitCast(const CastInst* inst);
     Vec callFmod(Vec left, Vec right, Token::Kind op, bool isDouble);
     void emitCall(const CallInst* inst);
@@ -367,32 +269,42 @@ struct AsmJitGenerator {
     AbiClass currentRetClass{AbiClass::Kind::Direct, TypeId::kVoid};
     IRType* currentRetType = nullptr;
     Gp currentSret;
-    // Big-frame mode routes aggregate homes to the side-stack.
-    bool bigFrame = false;
-    Gp sideSaved;
-    Gp sideBase;
-    uint64_t sideOffset = 0;
-    uint64_t sideReserved = 0;
-    uint64_t frameUsed = 0;
     void* getGlobalAddr(const GlobalVariable* global);
     void* getStringAddr(const std::string& value);
     void* resolveExtern(llvm::StringRef name);
     void emitMemcpy(Gp dest, Gp src, uint64_t size);
-    // Memory operand for [base + offset]; folds large offsets into address
-    // math since AArch64 unsigned immediates only span 12 scaled bits.
-    a64::Mem memAt(Gp base, uint64_t offset, uint32_t size);
+    // Memory operand for [base + offset]; x86 displacements span the full
+    // 32-bit range, so folding only triggers defensively.
+    x86::Mem memAt(Gp base, uint64_t offset, uint32_t size);
     Gp homeAddr(uint64_t size, uint32_t align);
-    Gp callHelper0(void* target);
-    Gp callHelper1(void* target, Gp arg);
-    void callHelper1v(void* target, Gp arg);
-    static uint64_t estimateFrame(const Function* function);
     uint64_t evalConstInt(const Value* value);
     llvm::APFloat evalConstFloat(const Value* value);
     void initGlobal(const GlobalVariable* global);
     void storeConstToAddr(const Value* value, char* addr);
+
+    // float80 lowers to calls into raw-x87 helpers (the x86 Compiler has no
+    // x87 register allocation); values are pointers to 16-byte homes.
+    enum class F80Op {
+        Add, Sub, Mul, Div, Neg, Mod, CmpFlags,
+        FromF32, FromF64, ToF32, ToF64,
+        FromI32, FromI64, FromU32, FromU64,
+        ToI32, ToI64, ToU32, ToU64, ToBool,
+        Count,
+    };
+    void* f80helpers[(size_t)F80Op::Count] = {};
+    void* getF80Helper(F80Op op);
+    void emitF80Helper(x86::Assembler& as, F80Op op);
+    Gp emitF80Binary(Token::Kind op, Gp left, Gp right);
+    Gp emitF80Compare(Token::Kind op, Gp left, Gp right);
+    void emitF80Cast(const CastInst* inst, IRType* sourceType, IRType* type);
+    void callF80Arith(F80Op op, Gp out, Gp a, Gp b);
+    void callF80Unary(F80Op op, Gp out, Gp a);
+    Gp callF80Cmp(Gp a, Gp b);
+    Gp callF80ToWord(F80Op op, Gp a, bool is64);
+    void callF80FromWord(F80Op op, Gp out, Gp value, bool is64);
 };
 
-void* AsmJitGenerator::resolveExtern(llvm::StringRef name) {
+void* X64AsmJitGenerator::resolveExtern(llvm::StringRef name) {
     static bool librariesLoaded = [] {
         llvm::sys::DynamicLibrary::getPermanentLibrary(nullptr);
         // Mirror the LLVM JIT: Linux keeps libm separate from libc.
@@ -405,12 +317,18 @@ void* AsmJitGenerator::resolveExtern(llvm::StringRef name) {
     std::string key = name.str();
     auto it = externCache.find(key);
     if (it != externCache.end()) return it->second;
-    void* addr = llvm::sys::DynamicLibrary::SearchForAddressOfSymbol(stripAsmLabelMarker(name).str());
+    void* addr = nullptr;
+#ifdef _WIN32
+    // Pinned libc names resolve to the host's address so JITed code binds
+    // the UCRT instead of legacy msvcrt.dll (same as the LLVM JIT).
+    addr = lookupPinnedLibcSymbol(name);
+#endif
+    if (!addr) addr = llvm::sys::DynamicLibrary::SearchForAddressOfSymbol(stripAsmLabelMarker(name).str());
     externCache.emplace(std::move(key), addr);
     return addr;
 }
 
-void* AsmJitGenerator::getGlobalAddr(const GlobalVariable* global) {
+void* X64AsmJitGenerator::getGlobalAddr(const GlobalVariable* global) {
     auto it = globalAddr.find(global);
     if (it != globalAddr.end()) return it->second;
     // Same-name globals across modules alias one home, like linked symbols.
@@ -431,7 +349,7 @@ void* AsmJitGenerator::getGlobalAddr(const GlobalVariable* global) {
     return addr;
 }
 
-void* AsmJitGenerator::getStringAddr(const std::string& value) {
+void* X64AsmJitGenerator::getStringAddr(const std::string& value) {
     auto it = stringAddr.find(value);
     if (it != stringAddr.end()) return it->second;
     char* addr = (char*)memory.alloc(value.size() + 1, 1);
@@ -440,216 +358,88 @@ void* AsmJitGenerator::getStringAddr(const std::string& value) {
     return addr;
 }
 
-// Chunk stores write whole 8-byte units (a 12-byte struct takes two), so
+// Chunk stores write whole 4/8-byte units (a 3-byte struct takes four), so
 // exact-sized slots would overrun into densely packed neighbors.
 uint64_t padHome(uint64_t size) {
     return std::max<uint64_t>(8, (size + 7) & ~7ULL);
 }
 
-Gp AsmJitGenerator::homeAddr(uint64_t size, uint32_t align) {
-    if (bigFrame) {
-        // Static offsets into the prologue reservation: side memory is
-        // claimed once per invocation however often the site runs, so loops
-        // cannot exhaust the side-stack.
-        uint64_t chunk = std::max<uint64_t>(16, (size + 15) & ~15ULL);
-        ASSERT(sideOffset + chunk <= sideReserved && "frame estimate under-counted; widen estimateFrame");
-        Gp addr = cc->new_gp64();
-        if (sideOffset <= 4095) {
-            cc->add(addr, sideBase, (int64_t)sideOffset);
-        } else {
-            Gp tmp = cc->new_gp64();
-            cc->mov(tmp, sideOffset);
-            cc->add(addr, sideBase, tmp);
-        }
-        sideOffset += chunk;
-        return addr;
-    }
+Gp X64AsmJitGenerator::homeAddr(uint64_t size, uint32_t align) {
     uint64_t padded = padHome(size);
-    frameUsed += padded;
-    ASSERT(frameUsed < 32768 && "frame estimate missed a large home; widen estimateFrame");
-    a64::Mem slot = cc->new_stack((uint32_t)padded, align == 0 ? 1 : align);
+    x86::Mem slot = cc->new_stack((uint32_t)padded, align == 0 ? 1 : align);
     Gp addr = cc->new_gp64();
-    cc->load_address_of(addr, slot);
+    cc->lea(addr, slot);
     return addr;
 }
 
-Gp AsmJitGenerator::callHelper0(void* target) {
-    Gp targetReg = cc->new_gp64();
-    cc->mov(targetReg, (uint64_t)target);
-    FuncSignature sig;
-    sig.set_ret(TypeId::kUInt64);
-    InvokeNode* invoke;
-    [[maybe_unused]] Error err = cc->invoke(Out(invoke), targetReg, sig);
-    ASSERT(err == Error::kOk);
-    Gp out = cc->new_gp64();
-    invoke->set_ret(0, out);
-    return out;
-}
-
-Gp AsmJitGenerator::callHelper1(void* target, Gp arg) {
-    Gp targetReg = cc->new_gp64();
-    cc->mov(targetReg, (uint64_t)target);
-    FuncSignature sig;
-    sig.set_ret(TypeId::kUInt64);
-    sig.add_arg(TypeId::kUInt64);
-    InvokeNode* invoke;
-    [[maybe_unused]] Error err = cc->invoke(Out(invoke), targetReg, sig);
-    ASSERT(err == Error::kOk);
-    invoke->set_arg(0, arg);
-    Gp out = cc->new_gp64();
-    invoke->set_ret(0, out);
-    return out;
-}
-
-void AsmJitGenerator::callHelper1v(void* target, Gp arg) {
-    Gp targetReg = cc->new_gp64();
-    cc->mov(targetReg, (uint64_t)target);
-    FuncSignature sig;
-    sig.add_arg(TypeId::kUInt64);
-    InvokeNode* invoke;
-    [[maybe_unused]] Error err = cc->invoke(Out(invoke), targetReg, sig);
-    ASSERT(err == Error::kOk);
-    invoke->set_arg(0, arg);
-}
-
-// Over-approximate every aggregate home the function can reserve, so the
-// big-frame prologue reservation covers the real frame with margin to spare.
-// Sizes use side-stack (16-byte) granularity; the small-frame path pads less,
-// so this bounds both. Under-counting trips the homeAddr assert instead of
-// corrupting memory.
-uint64_t AsmJitGenerator::estimateFrame(const Function* function) {
-    uint64_t total = 0;
-    auto addBytes = [&](uint64_t size) { total += std::max<uint64_t>(16, (size + 15) & ~15ULL); };
-    auto addType = [&](IRType* type) { addBytes(typeSize(type)); };
-    // Undefined aggregates materialize a dummy home per use (never cached).
-    auto addUndefUse = [&](const Value* value) {
-        if (value && value->kind == ValueKind::Undefined) {
-            IRType* type = value->getType();
-            if (type->isStruct() || type->isUnion() || type->isArrayType()) addType(type);
-        }
-    };
-    for (auto& param : function->params) {
-        AbiClass cls = classifyType(param.type);
-        if (cls.kind == AbiClass::Kind::Empty)
-            addBytes(1);
-        else if (cls.kind == AbiClass::Kind::IntChunks || cls.kind == AbiClass::Kind::HFA)
-            addType(param.type);
+x86::Mem X64AsmJitGenerator::memAt(Gp base, uint64_t offset, uint32_t size) {
+    Gp addr = base;
+    if (offset > (uint64_t)INT32_MAX) {
+        // Defensive; JIT frames never reach 2GB.
+        Gp tmp = cc->new_gp64();
+        cc->mov(tmp, offset);
+        cc->add(tmp, base);
+        addr = tmp;
+        offset = 0;
     }
-    for (auto* block : function->body) {
-        for (auto* inst : block->body) {
-            switch (inst->kind) {
-            case ValueKind::AllocaInst:
-                addType(llvm::cast<AllocaInst>(inst)->allocatedType);
-                break;
-            case ValueKind::InsertInst: {
-                IRType* type = inst->getType();
-                if (type->isStruct() || type->isUnion() || type->isArrayType()) addType(type);
-                addUndefUse(llvm::cast<InsertInst>(inst)->value);
-                break;
-            }
-            case ValueKind::ExtractInst: {
-                IRType* type = inst->getType();
-                if (type->isStruct() || type->isUnion() || type->isArrayType()) addType(type);
-                addUndefUse(llvm::cast<ExtractInst>(inst)->aggregate);
-                break;
-            }
-            case ValueKind::LoadInst: {
-                IRType* type = inst->getType();
-                if (type->isStruct() || type->isUnion() || type->isArrayType()) addType(type);
-                break;
-            }
-            case ValueKind::BranchInst:
-                addUndefUse(llvm::cast<BranchInst>(inst)->argument);
-                break;
-            case ValueKind::CondBranchInst:
-                addUndefUse(llvm::cast<CondBranchInst>(inst)->argument);
-                break;
-            case ValueKind::ReturnInst:
-                addUndefUse(llvm::cast<ReturnInst>(inst)->value);
-                break;
-            case ValueKind::ArrayOpInst: {
-                auto* arrayOp = llvm::cast<ArrayOpInst>(inst);
-                addType(arrayOp->arrayType);
-                addUndefUse(arrayOp->left);
-                addUndefUse(arrayOp->right);
-                break;
-            }
-            case ValueKind::CallInst: {
-                auto* call = llvm::cast<CallInst>(inst);
-                IRType* cxFunctionType = call->function->getType();
-                if (cxFunctionType->isPointerType()) cxFunctionType = cxFunctionType->getPointee();
-                auto* functionType = llvm::cast<IRFunctionType>(cxFunctionType);
-                AbiClass ret = functionType->returnType->isVoid() ? AbiClass{AbiClass::Kind::Direct, TypeId::kVoid} : classifyType(functionType->returnType);
-                if (ret.kind == AbiClass::Kind::Indirect || ret.kind == AbiClass::Kind::IntChunks || ret.kind == AbiClass::Kind::HFA)
-                    addType(functionType->returnType);
-                else if (ret.kind == AbiClass::Kind::Empty)
-                    addBytes(1);
-                for (auto* arg : call->args) {
-                    IRType* argType = arg->getType();
-                    if (argType->isStruct() || argType->isUnion() || argType->isArrayType()) addType(argType);
-                }
-                break;
-            }
-            default:
-                break;
-            }
-        }
+    int32_t disp = (int32_t)offset;
+    switch (size) {
+    case 1:
+        return x86::byte_ptr(addr, disp);
+    case 2:
+        return x86::word_ptr(addr, disp);
+    case 4:
+        return x86::dword_ptr(addr, disp);
+    case 8:
+        return x86::qword_ptr(addr, disp);
+    case 16:
+        return x86::xmmword_ptr(addr, disp);
     }
-    return total;
+    llvm_unreachable("bad mem size");
 }
 
-a64::Mem AsmJitGenerator::memAt(Gp base, uint64_t offset, uint32_t size) {
-    // Pair accesses (size 16) only span a 7-bit scaled displacement.
-    uint64_t limit = size == 16 ? 504 : 4095 * size;
-    if (offset <= limit) {
-        a64::Mem mem = a64::ptr(base, (int32_t)offset);
-        return mem;
-    }
-    Gp tmp = cc->new_gp64();
-    cc->mov(tmp, offset);
-    cc->add(tmp, base, tmp);
-    a64::Mem mem = a64::ptr(tmp);
-    return mem;
-}
-
-void AsmJitGenerator::emitMemcpy(Gp dest, Gp src, uint64_t size) {
+void X64AsmJitGenerator::emitMemcpy(Gp dest, Gp src, uint64_t size) {
     uint64_t offset = 0;
-    // 16-byte pairs first; unaligned ldp/stp are legal on AArch64.
-    for (; offset + 16 <= size; offset += 16) {
-        cc->ldp(scratch0, scratch1, memAt(src, offset, 16));
-        cc->stp(scratch0, scratch1, memAt(dest, offset, 16));
-    }
-    if (offset + 8 <= size) {
-        cc->ldr(scratch0, memAt(src, offset, 8));
-        cc->str(scratch0, memAt(dest, offset, 8));
-        offset += 8;
+    for (; offset + 8 <= size; offset += 8) {
+        cc->mov(scratch0, memAt(src, offset, 8));
+        cc->mov(memAt(dest, offset, 8), scratch0);
     }
     if (offset + 4 <= size) {
         Gp tmp = cc->new_gp32();
-        cc->ldr(tmp, memAt(src, offset, 4));
-        cc->str(tmp, memAt(dest, offset, 4));
+        cc->mov(tmp, memAt(src, offset, 4));
+        cc->mov(memAt(dest, offset, 4), tmp);
         offset += 4;
     }
     if (offset + 2 <= size) {
         Gp tmp = cc->new_gp32();
-        cc->ldrh(tmp, memAt(src, offset, 2));
-        cc->strh(tmp, memAt(dest, offset, 2));
+        cc->mov(tmp.r16(), memAt(src, offset, 2));
+        cc->mov(memAt(dest, offset, 2), tmp.r16());
         offset += 2;
     }
     if (offset < size) {
         Gp tmp = cc->new_gp32();
-        cc->ldrb(tmp, memAt(src, offset, 1));
-        cc->strb(tmp, memAt(dest, offset, 1));
+        cc->mov(tmp.r8(), memAt(src, offset, 1));
+        cc->mov(memAt(dest, offset, 1), tmp.r8());
     }
 }
 
 // Canonical in-register forms: bool/char/int8/int16/uint8/uint16 live
 // extended in 32-bit registers (sign- or zero- per type), int32/uint32 in
-// 32-bit, int64/uint64/pointers in 64-bit, floats in S/D vector registers.
-// Aggregates always live in memory; their value is a 64-bit pointer.
+// 32-bit, int64/uint64/pointers in 64-bit, floats in XMM registers.
+// Aggregates and float80 always live in memory; their value is a pointer.
 bool isDoubleType(IRType* type) {
     llvm::StringRef name = type->getName();
     return name == "float64" || name == "c_double";
+}
+
+bool isFloat80Type(IRType* type) {
+    return type->isBasicType() && type->getName() == "float80";
+}
+
+// Values living in memory rather than registers: aggregates plus float80,
+// whose values are pointers to 16-byte homes.
+bool livesInMemory(IRType* type) {
+    return type->isStruct() || type->isUnion() || type->isArrayType() || isFloat80Type(type);
 }
 
 // Values with no home block (constants, undef, globals, function addresses)
@@ -672,7 +462,7 @@ bool isRematerializable(ValueKind kind) {
     }
 }
 
-Gp AsmJitGenerator::getGp(const Value* value) {
+Gp X64AsmJitGenerator::getGp(const Value* value) {
     auto it = gpValues.find(value);
     if (it != gpValues.end()) return it->second;
     codegenInst(value);
@@ -683,7 +473,7 @@ Gp AsmJitGenerator::getGp(const Value* value) {
     return reg;
 }
 
-Vec AsmJitGenerator::getVec(const Value* value) {
+Vec X64AsmJitGenerator::getVec(const Value* value) {
     auto it = vecValues.find(value);
     if (it != vecValues.end()) return it->second;
     codegenInst(value);
@@ -694,7 +484,7 @@ Vec AsmJitGenerator::getVec(const Value* value) {
     return reg;
 }
 
-void AsmJitGenerator::codegenInst(const Value* value) {
+void X64AsmJitGenerator::codegenInst(const Value* value) {
     switch (value->kind) {
     case ValueKind::AllocaInst: {
         if (gpValues.find(value) != gpValues.end()) return; // hoisted in prologue
@@ -720,7 +510,7 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             int64_t extended = (int64_t)bits;
             if (typeSigned && width < 32 && (bits & (1ULL << (width - 1)))) extended |= (int64_t)(~0ULL << width);
             Gp reg = cc->new_gp32();
-            cc->mov(reg, extended);
+            cc->mov(reg, (int32_t)extended);
             gpValues.emplace(value, reg);
         }
         return;
@@ -728,17 +518,27 @@ void AsmJitGenerator::codegenInst(const Value* value) {
     case ValueKind::ConstantFP: {
         auto* inst = llvm::cast<ConstantFP>(value);
         llvm::StringRef fpName = inst->type->getName();
-        ASSERT(fpName == "float32" || fpName == "c_float" || fpName == "float64" || fpName == "c_double");
+        ASSERT(fpName == "float32" || fpName == "c_float" || fpName == "float64" || fpName == "c_double" || fpName == "float80");
+        if (isFloat80Type(inst->type)) {
+            Gp reg = cc->new_gp64();
+            void* home = memory.alloc(16, 16);
+            llvm::APInt apBits = inst->value.bitcastToAPInt();
+            ASSERT(apBits.getBitWidth() == 80);
+            memcpy(home, apBits.getRawData(), 10);
+            cc->mov(reg, (uint64_t)home);
+            gpValues.emplace(value, reg);
+            return;
+        }
         if (isDoubleType(inst->type)) {
-            Vec reg = cc->new_vec_d();
-            a64::Mem mem = cc->new_dword_const(ConstPoolScope::kLocal, inst->value.bitcastToAPInt().getZExtValue());
-            cc->ldr(reg, mem);
+            Vec reg = cc->new_xmm_sd();
+            x86::Mem mem = cc->new_int64_const(ConstPoolScope::kLocal, (int64_t)inst->value.bitcastToAPInt().getZExtValue());
+            cc->movsd(reg, mem);
             vecValues.emplace(value, reg);
         } else {
-            Vec reg = cc->new_vec_s();
+            Vec reg = cc->new_xmm_ss();
             uint32_t bits = (uint32_t)inst->value.bitcastToAPInt().getZExtValue();
-            a64::Mem mem = cc->new_word_const(ConstPoolScope::kLocal, bits);
-            cc->ldr(reg, mem);
+            x86::Mem mem = cc->new_int32_const(ConstPoolScope::kLocal, (int32_t)bits);
+            cc->movss(reg, mem);
             vecValues.emplace(value, reg);
         }
         return;
@@ -766,15 +566,13 @@ void AsmJitGenerator::codegenInst(const Value* value) {
         // Any value goes; zero keeps tools quiet. Aggregates need a pointer:
         // point at fresh stack space (never legally read).
         IRType* type = value->getType();
-        if (type->isFloatingPoint()) {
-            Vec reg = isDoubleType(type) ? cc->new_vec_d() : cc->new_vec_s();
-            Gp zero = cc->new_gp64();
-            cc->mov(zero, 0);
-            cc->fmov(reg, zero);
+        if (type->isFloatingPoint() && !isFloat80Type(type)) {
+            Vec reg = isDoubleType(type) ? cc->new_xmm_sd() : cc->new_xmm_ss();
+            cc->xorps(reg, reg);
             vecValues.emplace(value, reg);
             return;
         }
-        if (type->isStruct() || type->isUnion() || type->isArrayType()) {
+        if (livesInMemory(type)) {
             gpValues.emplace(value, homeAddr(typeSize(type), typeAlign(type)));
             return;
         }
@@ -796,8 +594,7 @@ void AsmJitGenerator::codegenInst(const Value* value) {
         Gp slot = cc->new_gp64();
         cc->mov(slot, (uint64_t)&funcTable[funcIndex.at(function)]);
         Gp reg = cc->new_gp64();
-        a64::Mem mem = a64::ptr(slot);
-        cc->ldr(reg, mem);
+        cc->mov(reg, x86::qword_ptr(slot));
         gpValues.emplace(value, reg);
         return;
     }
@@ -806,6 +603,22 @@ void AsmJitGenerator::codegenInst(const Value* value) {
     case ValueKind::BinaryInst: {
         auto* inst = llvm::cast<BinaryInst>(value);
         IRType* type = inst->left->getType();
+        if (isFloat80Type(type)) {
+            Gp left = getGp(inst->left), right = getGp(inst->right);
+            switch (inst->op) {
+            case Token::Equal:
+            case Token::NotEqual:
+            case Token::Less:
+            case Token::LessOrEqual:
+            case Token::Greater:
+            case Token::GreaterOrEqual:
+                gpValues.emplace(value, emitF80Compare(inst->op, left, right));
+                return;
+            default:
+                gpValues.emplace(value, emitF80Binary(inst->op, left, right));
+                return;
+            }
+        }
         if (type->isFloatingPoint()) {
             bool isDouble = isDoubleType(type);
             Vec left = getVec(inst->left), right = getVec(inst->right);
@@ -816,7 +629,7 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             case Token::LessOrEqual:
             case Token::Greater:
             case Token::GreaterOrEqual:
-                gpValues.emplace(value, emitFloatCompare(inst->op, left, right));
+                gpValues.emplace(value, emitFloatCompare(inst->op, left, right, isDouble));
                 return;
             default:
                 vecValues.emplace(value, emitFloatBinary(inst->op, left, right, isDouble));
@@ -846,35 +659,57 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             return;
         }
         if (inst->op == Token::Plus) {
-            if (type->isFloatingPoint())
+            if (type->isFloatingPoint() && !isFloat80Type(type))
                 vecValues.emplace(value, getVec(inst->operand));
             else
                 gpValues.emplace(value, getGp(inst->operand));
             return;
         }
+        if (isFloat80Type(type)) {
+            ASSERT(inst->op == Token::Minus);
+            Gp home = homeAddr(16, 16);
+            callF80Unary(F80Op::Neg, home, getGp(inst->operand));
+            gpValues.emplace(value, home);
+            return;
+        }
         if (type->isFloatingPoint()) {
             ASSERT(inst->op == Token::Minus);
+            bool isDouble = isDoubleType(type);
             Vec in = getVec(inst->operand);
-            Vec out = isDoubleType(type) ? cc->new_vec_d() : cc->new_vec_s();
-            cc->fneg(out, in);
+            Vec out = isDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
+            Vec mask = isDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
+            if (isDouble) {
+                cc->movsd(mask, cc->new_int64_const(ConstPoolScope::kLocal, INT64_MIN));
+                cc->movsd(out, in);
+                cc->xorpd(out, mask);
+            } else {
+                cc->movss(mask, cc->new_int32_const(ConstPoolScope::kLocal, INT32_MIN));
+                cc->movss(out, in);
+                cc->xorps(out, mask);
+            }
             vecValues.emplace(value, out);
             return;
         }
         Gp in = getGp(inst->operand);
         Gp out = newIntReg(type);
         if (inst->op == Token::Minus) {
-            cc->neg(out, in);
+            cc->mov(out, in);
+            cc->neg(out);
         } else if (inst->op == Token::Not) {
+            cc->xor_(out, out);
             cc->cmp(in, 0);
-            cc->cset(out, CondCode::kEQ);
+            cc->setz(out.r8());
             gpValues.emplace(value, out);
             return;
         } else {
             ASSERT(inst->op == Token::Tilde);
-            if (type->isBool())
-                cc->eor(out, in, 1);
-            else
-                cc->mvn(out, in);
+            if (type->isBool()) {
+                cc->mov(out, in);
+                cc->xor_(out, 1);
+            } else {
+                cc->mov(out, in);
+                cc->not_(out);
+            }
         }
         canonicalize(out, type);
         gpValues.emplace(value, out);
@@ -887,7 +722,7 @@ void AsmJitGenerator::codegenInst(const Value* value) {
         auto* inst = llvm::cast<LoadInst>(value);
         IRType* type = inst->getType();
         Gp ptr = getGp(inst->value);
-        if (type->isStruct() || type->isUnion() || type->isArrayType()) {
+        if (livesInMemory(type)) {
             // Copy to a fresh home: the source may be stored through later.
             uint64_t size = typeSize(type);
             Gp home = homeAddr(size, typeAlign(type));
@@ -896,29 +731,30 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             return;
         }
         if (type->isFloatingPoint()) {
-            Vec out = isDoubleType(type) ? cc->new_vec_d() : cc->new_vec_s();
-            a64::Mem mem = a64::ptr(ptr);
-            cc->ldr(out, mem);
+            Vec out = isDoubleType(type) ? cc->new_xmm_sd() : cc->new_xmm_ss();
+            if (isDoubleType(type))
+                cc->movsd(out, x86::qword_ptr(ptr));
+            else
+                cc->movss(out, x86::dword_ptr(ptr));
             vecValues.emplace(value, out);
             return;
         }
         Gp out = newIntReg(type);
         int width = type->isInteger() ? getIntegerBitWidth(type) : type->isBool() || type->isChar() ? 8 : 64;
-        a64::Mem mem = a64::ptr(ptr);
         if (width == 64 || type->isPointerType()) {
-            cc->ldr(out, mem);
+            cc->mov(out, x86::qword_ptr(ptr));
         } else if (width == 32) {
-            cc->ldr(out, mem);
+            cc->mov(out, x86::dword_ptr(ptr));
         } else if (width == 16) {
             if (type->isSignedInteger())
-                cc->ldrsh(out, mem);
+                cc->movsx(out, x86::word_ptr(ptr));
             else
-                cc->ldrh(out, mem);
+                cc->movzx(out, x86::word_ptr(ptr));
         } else {
             if (type->isSignedInteger())
-                cc->ldrsb(out, mem);
+                cc->movsx(out, x86::byte_ptr(ptr));
             else
-                cc->ldrb(out, mem);
+                cc->movzx(out, x86::byte_ptr(ptr));
         }
         gpValues.emplace(value, out);
         return;
@@ -928,26 +764,27 @@ void AsmJitGenerator::codegenInst(const Value* value) {
         if (inst->value->kind == ValueKind::Undefined) return;
         IRType* type = inst->value->getType();
         Gp ptr = getGp(inst->pointer);
-        if (type->isStruct() || type->isUnion() || type->isArrayType()) {
+        if (livesInMemory(type)) {
             emitMemcpy(ptr, getGp(inst->value), typeSize(type));
             return;
         }
         if (type->isFloatingPoint()) {
-            a64::Mem mem = a64::ptr(ptr);
-            cc->str(getVec(inst->value), mem);
+            if (isDoubleType(type))
+                cc->movsd(x86::qword_ptr(ptr), getVec(inst->value));
+            else
+                cc->movss(x86::dword_ptr(ptr), getVec(inst->value));
             return;
         }
         int width = type->isInteger() ? getIntegerBitWidth(type) : type->isBool() || type->isChar() ? 8 : 64;
-        a64::Mem mem = a64::ptr(ptr);
         Gp val = getGp(inst->value);
         if (width == 64 || type->isPointerType()) {
-            cc->str(val, mem);
+            cc->mov(x86::qword_ptr(ptr), val);
         } else if (width == 32) {
-            cc->str(val, mem);
+            cc->mov(x86::dword_ptr(ptr), val);
         } else if (width == 16) {
-            cc->strh(val, mem);
+            cc->mov(x86::word_ptr(ptr), val.r16());
         } else {
-            cc->strb(val, mem);
+            cc->mov(x86::byte_ptr(ptr), val.r8());
         }
         return;
     }
@@ -974,13 +811,13 @@ void AsmJitGenerator::codegenInst(const Value* value) {
                 if (i == 0) continue;
                 int64_t bytes = i * (int64_t)stride;
                 if (bytes >= 0 && bytes <= 4095) {
-                    cc->add(out, out, bytes);
+                    cc->add(out, bytes);
                 } else if (bytes < 0 && bytes >= -4095) {
-                    cc->sub(out, out, -bytes);
+                    cc->sub(out, -bytes);
                 } else {
                     Gp tmp = cc->new_gp64();
                     cc->mov(tmp, bytes);
-                    cc->add(out, out, tmp);
+                    cc->add(out, tmp);
                 }
             } else {
                 if (stride == 0) continue; // Indexing over a zero-size type adds nothing.
@@ -988,21 +825,20 @@ void AsmJitGenerator::codegenInst(const Value* value) {
                 Gp wide = cc->new_gp64();
                 if (idx.size() == 4) {
                     // 32-bit indexes sign-extend for negative indexing.
-                    cc->sxtw(wide, idx);
+                    cc->movsxd(wide, idx);
                 } else {
                     cc->mov(wide, idx);
                 }
                 if (stride == 1) {
-                    cc->add(out, out, wide);
+                    cc->add(out, wide);
                 } else if ((stride & (stride - 1)) == 0) {
-                    int shift = std::countr_zero(stride);
-                    cc->lsl(wide, wide, shift);
-                    cc->add(out, out, wide);
+                    cc->shl(wide, std::countr_zero(stride));
+                    cc->add(out, wide);
                 } else {
                     Gp tmp = cc->new_gp64();
                     cc->mov(tmp, stride);
-                    cc->mul(wide, wide, tmp);
-                    cc->add(out, out, wide);
+                    cc->imul(wide, tmp);
+                    cc->add(out, wide);
                 }
             }
         }
@@ -1028,11 +864,13 @@ void AsmJitGenerator::codegenInst(const Value* value) {
         }
         Gp out = cc->new_gp64();
         if (offset <= 4095) {
-            cc->add(out, ptr, (int64_t)offset);
+            cc->mov(out, ptr);
+            cc->add(out, (int64_t)offset);
         } else {
             Gp tmp = cc->new_gp64();
             cc->mov(tmp, offset);
-            cc->add(out, ptr, tmp);
+            cc->mov(out, ptr);
+            cc->add(out, tmp);
         }
         gpValues.emplace(value, out);
         return;
@@ -1053,29 +891,35 @@ void AsmJitGenerator::codegenInst(const Value* value) {
         else
             offset = (uint64_t)inst->index * typeSize(type->getElementType());
         if (inst->value->kind != ValueKind::Undefined) {
-            if (fieldType->isStruct() || fieldType->isUnion() || fieldType->isArrayType()) {
+            if (livesInMemory(fieldType)) {
                 Gp fieldPtr = cc->new_gp64();
-                if (offset <= 4095) {
-                    cc->add(fieldPtr, home, (int64_t)offset);
-                } else {
-                    Gp tmp = cc->new_gp64();
-                    cc->mov(tmp, offset);
-                    cc->add(fieldPtr, home, tmp);
+                cc->mov(fieldPtr, home);
+                if (offset > 0) {
+                    if (offset <= 4095) {
+                        cc->add(fieldPtr, (int64_t)offset);
+                    } else {
+                        Gp tmp = cc->new_gp64();
+                        cc->mov(tmp, offset);
+                        cc->add(fieldPtr, tmp);
+                    }
                 }
                 emitMemcpy(fieldPtr, getGp(inst->value), typeSize(fieldType));
             } else if (fieldType->isFloatingPoint()) {
-                cc->str(getVec(inst->value), memAt(home, offset, isDoubleType(fieldType) ? 8 : 4));
+                if (isDoubleType(fieldType))
+                    cc->movsd(memAt(home, offset, 8), getVec(inst->value));
+                else
+                    cc->movss(memAt(home, offset, 4), getVec(inst->value));
             } else {
                 int width = fieldType->isInteger() ? getIntegerBitWidth(fieldType) : fieldType->isBool() || fieldType->isChar() ? 8 : 64;
                 Gp val = getGp(inst->value);
                 if (width == 64 || fieldType->isPointerType())
-                    cc->str(val, memAt(home, offset, 8));
+                    cc->mov(memAt(home, offset, 8), val);
                 else if (width == 32)
-                    cc->str(val, memAt(home, offset, 4));
+                    cc->mov(memAt(home, offset, 4), val);
                 else if (width == 16)
-                    cc->strh(val, memAt(home, offset, 2));
+                    cc->mov(memAt(home, offset, 2), val.r16());
                 else
-                    cc->strb(val, memAt(home, offset, 1));
+                    cc->mov(memAt(home, offset, 1), val.r8());
             }
         }
         gpValues.emplace(value, home);
@@ -1093,43 +937,49 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             offset = 0;
         else
             offset = (uint64_t)inst->index * typeSize(aggType->getElementType());
-        if (type->isStruct() || type->isUnion() || type->isArrayType()) {
+        if (livesInMemory(type)) {
             uint64_t size = typeSize(type);
             Gp home = homeAddr(size, typeAlign(type));
             Gp fieldPtr = cc->new_gp64();
-            if (offset <= 4095) {
-                cc->add(fieldPtr, base, (int64_t)offset);
-            } else {
-                Gp tmp = cc->new_gp64();
-                cc->mov(tmp, offset);
-                cc->add(fieldPtr, base, tmp);
+            cc->mov(fieldPtr, base);
+            if (offset > 0) {
+                if (offset <= 4095) {
+                    cc->add(fieldPtr, (int64_t)offset);
+                } else {
+                    Gp tmp = cc->new_gp64();
+                    cc->mov(tmp, offset);
+                    cc->add(fieldPtr, tmp);
+                }
             }
             emitMemcpy(home, fieldPtr, size);
             gpValues.emplace(value, home);
             return;
         }
         if (type->isFloatingPoint()) {
-            Vec out = isDoubleType(type) ? cc->new_vec_d() : cc->new_vec_s();
-            cc->ldr(out, memAt(base, offset, isDoubleType(type) ? 8 : 4));
+            Vec out = isDoubleType(type) ? cc->new_xmm_sd() : cc->new_xmm_ss();
+            if (isDoubleType(type))
+                cc->movsd(out, memAt(base, offset, 8));
+            else
+                cc->movss(out, memAt(base, offset, 4));
             vecValues.emplace(value, out);
             return;
         }
         Gp out = newIntReg(type);
         int width = type->isInteger() ? getIntegerBitWidth(type) : type->isBool() || type->isChar() ? 8 : 64;
         if (width == 64 || type->isPointerType())
-            cc->ldr(out, memAt(base, offset, 8));
+            cc->mov(out, memAt(base, offset, 8));
         else if (width == 32)
-            cc->ldr(out, memAt(base, offset, 4));
+            cc->mov(out, memAt(base, offset, 4));
         else if (width == 16) {
             if (type->isSignedInteger())
-                cc->ldrsh(out, memAt(base, offset, 2));
+                cc->movsx(out, memAt(base, offset, 2));
             else
-                cc->ldrh(out, memAt(base, offset, 2));
+                cc->movzx(out, memAt(base, offset, 2));
         } else {
             if (type->isSignedInteger())
-                cc->ldrsb(out, memAt(base, offset, 1));
+                cc->movsx(out, memAt(base, offset, 1));
             else
-                cc->ldrb(out, memAt(base, offset, 1));
+                cc->movzx(out, memAt(base, offset, 1));
         }
         gpValues.emplace(value, out);
         return;
@@ -1146,10 +996,12 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             auto it = gpValues.find(inst->destination->parameter);
             if (it != gpValues.end())
                 cc->mov(it->second, getGp(inst->argument));
+            else if (isDoubleType(inst->destination->parameter->type))
+                cc->movsd(vecValues.at(inst->destination->parameter), getVec(inst->argument));
             else
-                cc->fmov(vecValues.at(inst->destination->parameter), getVec(inst->argument));
+                cc->movss(vecValues.at(inst->destination->parameter), getVec(inst->argument));
         }
-        cc->b(blockLabels.at(inst->destination));
+        cc->jmp(blockLabels.at(inst->destination));
         return;
     }
     case ValueKind::CondBranchInst: {
@@ -1160,24 +1012,27 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             auto it = gpValues.find(succ->parameter);
             if (it != gpValues.end())
                 cc->mov(it->second, getGp(inst->argument));
+            else if (isDoubleType(succ->parameter->type))
+                cc->movsd(vecValues.at(succ->parameter), getVec(inst->argument));
             else
-                cc->fmov(vecValues.at(succ->parameter), getVec(inst->argument));
+                cc->movss(vecValues.at(succ->parameter), getVec(inst->argument));
         };
+        cc->test(cond, cond);
         if (inst->trueBlock->parameter) {
             // The true-edge copy needs its own home; block labels bind once
             // at emission, so route through a trampoline.
             Label tramp = cc->new_label();
-            cc->cbnz(cond, tramp);
+            cc->jnz(tramp);
             moveArg(inst->falseBlock);
-            cc->b(blockLabels.at(inst->falseBlock));
+            cc->jmp(blockLabels.at(inst->falseBlock));
             cc->bind(tramp);
             moveArg(inst->trueBlock);
-            cc->b(blockLabels.at(inst->trueBlock));
+            cc->jmp(blockLabels.at(inst->trueBlock));
             return;
         }
-        cc->cbnz(cond, blockLabels.at(inst->trueBlock));
+        cc->jnz(blockLabels.at(inst->trueBlock));
         moveArg(inst->falseBlock);
-        cc->b(blockLabels.at(inst->falseBlock));
+        cc->jmp(blockLabels.at(inst->falseBlock));
         return;
     }
     case ValueKind::SwitchInst: {
@@ -1194,16 +1049,22 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             uint64_t bits = constant->value.extOrTrunc((unsigned)(width > 0 ? width : 32)).getZExtValue();
             int64_t key = (int64_t)bits;
             if (condType->isSignedInteger() && width < 64 && (bits & (1ULL << (width - 1)))) key |= (int64_t)(~0ULL << width);
-            Gp tmp = is64 ? cc->new_gp64() : cc->new_gp32();
-            cc->mov(tmp, key);
-            cc->cmp(cond, tmp);
-            cc->b_eq(blockLabels.at(target));
+            if (is64) {
+                Gp tmp = cc->new_gp64();
+                cc->mov(tmp, key);
+                cc->cmp(cond, tmp);
+            } else {
+                Gp tmp = cc->new_gp32();
+                cc->mov(tmp, (int32_t)key);
+                cc->cmp(cond, tmp);
+            }
+            cc->je(blockLabels.at(target));
         }
-        cc->b(blockLabels.at(inst->defaultBlock));
+        cc->jmp(blockLabels.at(inst->defaultBlock));
         return;
     }
     case ValueKind::UnreachableInst:
-        cc->brk(1);
+        cc->int3();
         return;
     case ValueKind::CheckedArithInst:
         emitCheckedArith(llvm::cast<CheckedArithInst>(value));
@@ -1227,57 +1088,65 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             // Narrow operands can't overflow 32 bits, so clamp the full
             // 32-bit result against the operand width instead of flags.
             Gp full = cc->new_gp32();
+            cc->mov(full, left);
             if (inst->op == Token::Plus)
-                cc->add(full, left, right);
+                cc->add(full, right);
             else
-                cc->sub(full, left, right);
+                cc->sub(full, right);
             if (!isSigned) {
                 int64_t max = (1LL << width) - 1;
                 if (inst->op == Token::Plus) {
                     Gp maxReg = cc->new_gp32();
-                    cc->mov(maxReg, max);
+                    cc->mov(maxReg, (int32_t)max);
+                    cc->mov(out, full);
                     cc->cmp(full, maxReg);
-                    cc->csel(out, maxReg, full, CondCode::kHI);
+                    cc->cmova(out, maxReg);
                 } else {
                     // Borrow exactly when left < right.
+                    cc->mov(out, full);
                     Gp zero = cc->new_gp32();
                     cc->mov(zero, 0);
                     cc->cmp(left, right);
-                    cc->csel(out, full, zero, CondCode::kCS);
+                    cc->cmovb(out, zero);
                 }
             } else {
                 int64_t lo = -(1LL << (width - 1));
                 int64_t hi = (1LL << (width - 1)) - 1;
                 Gp loReg = cc->new_gp32();
                 Gp hiReg = cc->new_gp32();
-                cc->mov(loReg, lo);
-                cc->mov(hiReg, hi);
+                cc->mov(loReg, (int32_t)lo);
+                cc->mov(hiReg, (int32_t)hi);
                 Gp tmp = cc->new_gp32();
+                cc->mov(tmp, full);
                 cc->cmp(full, hiReg);
-                cc->csel(tmp, hiReg, full, CondCode::kGT);
+                cc->cmovg(tmp, hiReg);
+                cc->mov(out, tmp);
                 cc->cmp(full, loReg);
-                cc->csel(out, loReg, tmp, CondCode::kLT);
+                cc->cmovl(out, loReg);
             }
             canonicalize(out, type);
             gpValues.emplace(value, out);
             return;
         }
         Gp wrapped = is64 ? cc->new_gp64() : cc->new_gp32();
+        cc->mov(wrapped, left);
         if (inst->op == Token::Plus)
-            cc->adds(wrapped, left, right);
+            cc->add(wrapped, right);
         else
-            cc->subs(wrapped, left, right);
+            cc->sub(wrapped, right);
         if (!isSigned) {
             Gp clamp = is64 ? cc->new_gp64() : cc->new_gp32();
             cc->mov(clamp, inst->op == Token::Minus ? 0 : -1);
-            // Unsigned add overflows on carry, sub on borrow (carry clear).
-            cc->csel(out, clamp, wrapped, inst->op == Token::Plus ? CondCode::kCS : CondCode::kCC);
+            // Unsigned add overflows on carry, sub on borrow (x86 CF is the
+            // borrow flag, unlike AArch64's inverted carry).
+            cc->mov(out, wrapped);
+            cc->cmovc(out, clamp);
         } else {
             Label sat = cc->new_label();
             Label done = cc->new_label();
-            cc->b_vs(sat);
+            cc->jo(sat);
             cc->mov(out, wrapped);
-            cc->b(done);
+            cc->jmp(done);
             cc->bind(sat);
             Gp lo = is64 ? cc->new_gp64() : cc->new_gp32();
             Gp hi = is64 ? cc->new_gp64() : cc->new_gp32();
@@ -1288,8 +1157,9 @@ void AsmJitGenerator::codegenInst(const Value* value) {
                 cc->mov(lo, INT32_MIN);
                 cc->mov(hi, INT32_MAX);
             }
+            cc->mov(out, hi);
             cc->cmp(left, 0);
-            cc->csel(out, lo, hi, CondCode::kLT);
+            cc->cmovl(out, lo);
             cc->bind(done);
         }
         canonicalize(out, type);
@@ -1303,11 +1173,22 @@ void AsmJitGenerator::codegenInst(const Value* value) {
         auto* inst = llvm::cast<SizeofInst>(value);
         uint64_t size = typeSize(inst->type);
         IRType* resultType = inst->getType();
-        if (resultType->isFloatingPoint()) {
-            Vec out = isDoubleType(resultType) ? cc->new_vec_d() : cc->new_vec_s();
+        if (isFloat80Type(resultType)) {
+            Gp home = homeAddr(16, 16);
             Gp tmp = cc->new_gp64();
             cc->mov(tmp, size);
-            cc->ucvtf(out, tmp);
+            callF80FromWord(F80Op::FromU64, home, tmp, /*is64=*/true);
+            gpValues.emplace(value, home);
+            return;
+        }
+        if (resultType->isFloatingPoint()) {
+            Vec out = isDoubleType(resultType) ? cc->new_xmm_sd() : cc->new_xmm_ss();
+            Gp tmp = cc->new_gp64();
+            cc->mov(tmp, size);
+            if (isDoubleType(resultType))
+                cc->cvtsi2sd(out, tmp);
+            else
+                cc->cvtsi2ss(out, tmp);
             vecValues.emplace(value, out);
             return;
         }
@@ -1318,7 +1199,7 @@ void AsmJitGenerator::codegenInst(const Value* value) {
             gpValues.emplace(value, out);
         } else {
             Gp out = cc->new_gp32();
-            cc->mov(out, (int64_t)(uint32_t)size);
+            cc->mov(out, (int32_t)(uint32_t)size);
             gpValues.emplace(value, out);
         }
         return;
@@ -1331,84 +1212,42 @@ void AsmJitGenerator::codegenInst(const Value* value) {
     ABORT("unhandled value kind in AsmJit backend");
 }
 
-void AsmJitGenerator::emitReturn(const ReturnInst* inst) {
-    // Return registers materialize first; the side-stack restores just before
-    // the ret node. Indirect returns memcpy into the caller's home first.
-    auto restore = [&] {
-        if (bigFrame) callHelper1v((void*)&cxJitSideRestore, sideSaved);
-    };
+void X64AsmJitGenerator::emitReturn(const ReturnInst* inst) {
     if (currentRetClass.kind == AbiClass::Kind::Indirect) {
         if (inst->value) emitMemcpy(currentSret, getGp(inst->value), typeSize(currentRetType));
-        restore();
+        // Win64 callees return the sret pointer in RAX.
+        cc->mov(x86::rax, currentSret);
         cc->ret();
         return;
     }
     if (!inst->value || currentRetClass.kind == AbiClass::Kind::Empty) {
-        restore();
         cc->ret();
         return;
     }
     if (currentRetClass.kind == AbiClass::Kind::Direct) {
         if (currentRetType->isFloatingPoint()) {
             Vec v = getVec(inst->value);
-            restore();
             cc->ret(v);
         } else {
             Gp r = getGp(inst->value);
-            restore();
             cc->ret(r);
         }
         return;
     }
+    ASSERT(currentRetClass.kind == AbiClass::Kind::Chunk);
     Gp home = getGp(inst->value);
-    if (currentRetClass.kind == AbiClass::Kind::IntChunks) {
-        if (!currentRetClass.chunkIs64) {
-            Gp chunk = cc->new_gp32();
-            cc->ldr(chunk, memAt(home, 0, 4));
-            restore();
-            cc->ret(chunk);
-        } else if (currentRetClass.chunkCount == 1) {
-            Gp chunk = cc->new_gp64();
-            cc->ldr(chunk, memAt(home, 0, 8));
-            restore();
-            cc->ret(chunk);
-        } else {
-            Gp c0 = cc->new_gp64();
-            Gp c1 = cc->new_gp64();
-            cc->ldr(c0, memAt(home, 0, 8));
-            cc->ldr(c1, memAt(home, 8, 8));
-            restore();
-            cc->add_ret(c0, c1);
-        }
-        return;
+    if (!currentRetClass.chunkIs64) {
+        Gp chunk = cc->new_gp32();
+        cc->mov(chunk, memAt(home, 0, 4));
+        cc->ret(chunk);
+    } else {
+        Gp chunk = cc->new_gp64();
+        cc->mov(chunk, memAt(home, 0, 8));
+        cc->ret(chunk);
     }
-    ASSERT(currentRetClass.kind == AbiClass::Kind::HFA);
-    std::vector<HFALeaf> leaves;
-    collectHFALeaves(currentRetType, 0, leaves);
-    if (currentRetClass.hfaCount == 1) {
-        Vec v = currentRetClass.hfaIsDouble ? cc->new_vec_d() : cc->new_vec_s();
-        cc->ldr(v, memAt(home, leaves[0].offset, currentRetClass.hfaIsDouble ? 8 : 4));
-        restore();
-        cc->ret(v);
-        return;
-    }
-    // Multi-member HFAs return via the register pack; the FuncNode detail
-    // carries the extra assignments (see codegenFunction).
-    Vec regs[4];
-    for (unsigned c = 0; c < currentRetClass.hfaCount; ++c) {
-        regs[c] = currentRetClass.hfaIsDouble ? cc->new_vec_d() : cc->new_vec_s();
-        cc->ldr(regs[c], memAt(home, leaves[c].offset, currentRetClass.hfaIsDouble ? 8 : 4));
-    }
-    restore();
-    FuncRetNode* retNode;
-    [[maybe_unused]] Error err = cc->add_func_ret_node(Out(retNode), regs[0], regs[1]);
-    ASSERT(err == Error::kOk);
-    retNode->set_op_count(currentRetClass.hfaCount);
-    for (unsigned c = 2; c < currentRetClass.hfaCount; ++c)
-        retNode->set_op(c, regs[c]);
 }
 
-void AsmJitGenerator::emitCheckedArith(const CheckedArithInst* inst) {
+void X64AsmJitGenerator::emitCheckedArith(const CheckedArithInst* inst) {
     IRType* type = inst->left->getType();
     ASSERT(type->isInteger());
     int width = getIntegerBitWidth(type);
@@ -1416,103 +1255,98 @@ void AsmJitGenerator::emitCheckedArith(const CheckedArithInst* inst) {
     Gp left = getGp(inst->left), right = getGp(inst->right);
     Gp out = width > 32 ? cc->new_gp64() : cc->new_gp32();
     Gp overflow = cc->new_gp32();
+    cc->xor_(overflow, overflow);
     if (width < 32 && inst->op != Token::Star) {
         // Narrow operands can't overflow 32 bits; check the full result
         // against the operand width instead of 32-bit flags.
         Gp full = cc->new_gp32();
+        cc->mov(full, left);
         if (inst->op == Token::Plus)
-            cc->add(full, left, right);
+            cc->add(full, right);
         else
-            cc->sub(full, left, right);
+            cc->sub(full, right);
         if (!isSigned) {
             if (inst->op == Token::Plus) {
                 Gp maxReg = cc->new_gp32();
-                cc->mov(maxReg, (1LL << width) - 1);
+                cc->mov(maxReg, (int32_t)((1LL << width) - 1));
                 cc->cmp(full, maxReg);
-                cc->cset(overflow, CondCode::kHI);
+                cc->seta(overflow.r8());
             } else {
                 cc->cmp(left, right);
-                cc->cset(overflow, CondCode::kCC);
+                cc->setb(overflow.r8());
             }
         } else {
             Gp loReg = cc->new_gp32();
             Gp hiReg = cc->new_gp32();
-            cc->mov(loReg, -(1LL << (width - 1)));
-            cc->mov(hiReg, (1LL << (width - 1)) - 1);
+            cc->mov(loReg, (int32_t)(-(1LL << (width - 1))));
+            cc->mov(hiReg, (int32_t)((1LL << (width - 1)) - 1));
             cc->cmp(full, hiReg);
-            cc->cset(overflow, CondCode::kGT);
+            cc->setg(overflow.r8());
             Label done = cc->new_label();
-            cc->b_gt(done);
+            cc->jg(done);
             cc->cmp(full, loReg);
-            cc->cset(overflow, CondCode::kLT);
+            cc->setl(overflow.r8());
             cc->bind(done);
         }
         cc->mov(out, full);
     } else if (inst->op == Token::Plus) {
-        cc->adds(out, left, right);
-        cc->cset(overflow, isSigned ? CondCode::kVS : CondCode::kCS);
+        cc->mov(out, left);
+        cc->add(out, right);
+        if (isSigned)
+            cc->seto(overflow.r8());
+        else
+            cc->setc(overflow.r8());
     } else if (inst->op == Token::Minus) {
-        cc->subs(out, left, right);
-        cc->cset(overflow, isSigned ? CondCode::kVS : CondCode::kCC);
+        cc->mov(out, left);
+        cc->sub(out, right);
+        if (isSigned)
+            cc->seto(overflow.r8());
+        else
+            cc->setc(overflow.r8());
     } else {
         ASSERT(inst->op == Token::Star);
         if (width == 64) {
-            Gp lo = cc->new_gp64();
-            Gp hi = cc->new_gp64();
-            cc->mul(lo, left, right);
-            if (isSigned)
-                cc->smulh(hi, left, right);
-            else
-                cc->umulh(hi, left, right);
             if (isSigned) {
-                Gp sign = cc->new_gp64();
-                cc->asr(sign, lo, 63);
-                cc->cmp(hi, sign);
+                cc->mov(out, left);
+                cc->imul(out, right);
+                cc->seto(overflow.r8());
             } else {
-                cc->cmp(hi, 0);
+                // mul produces the full 128-bit product; a nonzero high
+                // half means the result doesn't fit.
+                Gp lo = cc->new_gp64();
+                Gp hi = cc->new_gp64();
+                cc->mov(lo, left);
+                cc->mul(hi, lo, right);
+                cc->test(hi, hi);
+                cc->setnz(overflow.r8());
+                cc->mov(out, lo);
             }
-            cc->cset(overflow, CondCode::kNE);
-            out = lo;
+        } else if (width == 32) {
+            if (isSigned) {
+                cc->mov(out, left);
+                cc->imul(out, right);
+                cc->seto(overflow.r8());
+            } else {
+                Gp lo = cc->new_gp32();
+                Gp hi = cc->new_gp32();
+                cc->mov(lo, left);
+                cc->mul(hi, lo, right);
+                cc->test(hi, hi);
+                cc->setnz(overflow.r8());
+                cc->mov(out, lo);
+            }
         } else {
-            // Widening multiply, then check the truncation.
-            Gp wideLeft = cc->new_gp64();
-            Gp wideRight = cc->new_gp64();
-            if (isSigned) {
-                if (width == 32) {
-                    cc->sxtw(wideLeft, left);
-                    cc->sxtw(wideRight, right);
-                } else if (width == 16) {
-                    cc->sxth(wideLeft, left);
-                    cc->sxth(wideRight, right);
-                } else {
-                    cc->sxtb(wideLeft, left);
-                    cc->sxtb(wideRight, right);
-                }
-            } else {
-                cc->mov(wideLeft.r32(), left);
-                cc->mov(wideRight.r32(), right);
-            }
-            Gp full = cc->new_gp64();
-            cc->mul(full, wideLeft, wideRight);
-            // Truncate to the operand width, widen back, and compare: any
-            // difference means the full product doesn't fit.
+            // Narrow operands can't overflow 32 bits; check the truncation
+            // to the operand width instead.
+            Gp full = cc->new_gp32();
+            cc->mov(full, left);
+            cc->imul(full, right);
             Gp trunc = cc->new_gp32();
-            cc->mov(trunc, full.r32());
+            cc->mov(trunc, full);
             canonicalize(trunc, type);
-            Gp back = cc->new_gp64();
-            if (isSigned) {
-                if (width == 8)
-                    cc->sxtb(back, trunc);
-                else if (width == 16)
-                    cc->sxth(back, trunc);
-                else
-                    cc->sxtw(back, trunc);
-            } else {
-                cc->mov(back.r32(), trunc);
-            }
-            cc->cmp(full, back);
-            cc->cset(overflow, CondCode::kNE);
-            out = trunc;
+            cc->cmp(full, trunc);
+            cc->setne(overflow.r8());
+            cc->mov(out, trunc);
         }
     }
     canonicalize(out, type);
@@ -1520,13 +1354,14 @@ void AsmJitGenerator::emitCheckedArith(const CheckedArithInst* inst) {
     checkedOverflow.emplace(inst, overflow);
 }
 
-void AsmJitGenerator::emitArrayOp(const ArrayOpInst* inst) {
+void X64AsmJitGenerator::emitArrayOp(const ArrayOpInst* inst) {
     auto* arrayType = llvm::cast<IRArrayType>(inst->arrayType);
     int size = arrayType->size;
     IRType* elemType = arrayType->elementType;
     bool isComparison = inst->op == Token::Equal || inst->op == Token::NotEqual;
     bool foldAnd = inst->op == Token::Equal;
-    bool isFloat = elemType->isFloatingPoint();
+    bool isF80 = isFloat80Type(elemType);
+    bool isFloat = elemType->isFloatingPoint() && !isF80;
     bool isDouble = isFloat && isDoubleType(elemType);
     auto isArraySide = [](const Value* side) { return side->getType()->isPointerType() && side->getType()->getPointee()->isArrayType(); };
     bool leftIsArray = isArraySide(inst->left);
@@ -1570,100 +1405,115 @@ void AsmJitGenerator::emitArrayOp(const ArrayOpInst* inst) {
     cc->mov(bound, count * elemSize);
     Gp off = cc->new_gp64();
     cc->mov(off, 0);
+    auto elemAddr = [&](Gp base) {
+        Gp addr = cc->new_gp64();
+        cc->mov(addr, base);
+        cc->add(addr, off);
+        return addr;
+    };
     Label cond = cc->new_label();
     Label body = cc->new_label();
-    Label end = cc->new_label();
-    cc->b(cond);
+    cc->jmp(cond);
     cc->bind(body);
-    auto loadElem = [&](Gp ptr) -> std::pair<Gp, Vec> {
-        Gp addr = cc->new_gp64();
-        cc->add(addr, ptr, off);
-        if (isFloat) {
-            Vec v = isDouble ? cc->new_vec_d() : cc->new_vec_s();
-            a64::Mem mem = a64::ptr(addr);
-            cc->ldr(v, mem);
-            return {Gp(), v};
-        }
-        Gp g = elemSize > 4 ? cc->new_gp64() : cc->new_gp32();
-        if (elemSize == 8) {
-            a64::Mem mem = a64::ptr(addr);
-            cc->ldr(g, mem);
-        } else if (elemSize == 4) {
-            a64::Mem mem = a64::ptr(addr);
-            cc->ldr(g, mem);
-        } else if (elemSize == 2) {
-            a64::Mem mem = a64::ptr(addr);
-            if (elemType->isSignedInteger())
-                cc->ldrsh(g, mem);
+    if (isF80) {
+        Gp lPtr = leftIsArray ? elemAddr(lhs) : getGp(inst->left);
+        Gp rPtr = rightIsArray ? elemAddr(rhs) : getGp(inst->right);
+        if (isComparison) {
+            Gp bit = emitF80Compare(inst->op, lPtr, rPtr);
+            if (foldAnd)
+                cc->and_(acc, bit);
             else
-                cc->ldrh(g, mem);
+                cc->or_(acc, bit);
         } else {
-            a64::Mem mem = a64::ptr(addr);
-            if (elemType->isSignedInteger())
-                cc->ldrsb(g, mem);
+            Gp elem = emitF80Binary(inst->op, lPtr, rPtr);
+            emitMemcpy(elemAddr(dst), elem, 16);
+        }
+    } else {
+        auto loadElem = [&](Gp ptr) -> std::pair<Gp, Vec> {
+            Gp addr = elemAddr(ptr);
+            if (isFloat) {
+                Vec v = isDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
+                if (isDouble)
+                    cc->movsd(v, x86::qword_ptr(addr));
+                else
+                    cc->movss(v, x86::dword_ptr(addr));
+                return {Gp(), v};
+            }
+            Gp g = elemSize > 4 ? cc->new_gp64() : cc->new_gp32();
+            if (elemSize == 8) {
+                cc->mov(g, x86::qword_ptr(addr));
+            } else if (elemSize == 4) {
+                cc->mov(g, x86::dword_ptr(addr));
+            } else if (elemSize == 2) {
+                if (elemType->isSignedInteger())
+                    cc->movsx(g, x86::word_ptr(addr));
+                else
+                    cc->movzx(g, x86::word_ptr(addr));
+            } else {
+                if (elemType->isSignedInteger())
+                    cc->movsx(g, x86::byte_ptr(addr));
+                else
+                    cc->movzx(g, x86::byte_ptr(addr));
+            }
+            return {g, Vec()};
+        };
+        Gp lGp, rGp;
+        Vec lVec, rVec;
+        if (leftIsArray) {
+            auto [g, v] = loadElem(lhs);
+            lGp = g;
+            lVec = v;
+        } else if (isFloat) {
+            lVec = getVec(inst->left);
+        } else {
+            lGp = getGp(inst->left);
+        }
+        if (rightIsArray) {
+            auto [g, v] = loadElem(rhs);
+            rGp = g;
+            rVec = v;
+        } else if (isFloat) {
+            rVec = getVec(inst->right);
+        } else {
+            rGp = getGp(inst->right);
+        }
+        if (isComparison) {
+            Gp bit = isFloat ? emitFloatCompare(inst->op, lVec, rVec, isDouble) : emitIntCompare(inst->op, lGp, rGp, elemType);
+            if (foldAnd)
+                cc->and_(acc, bit);
             else
-                cc->ldrb(g, mem);
-        }
-        return {g, Vec()};
-    };
-    Gp lGp, rGp;
-    Vec lVec, rVec;
-    if (leftIsArray) {
-        auto [g, v] = loadElem(lhs);
-        lGp = g;
-        lVec = v;
-    } else if (isFloat) {
-        lVec = getVec(inst->left);
-    } else {
-        lGp = getGp(inst->left);
-    }
-    if (rightIsArray) {
-        auto [g, v] = loadElem(rhs);
-        rGp = g;
-        rVec = v;
-    } else if (isFloat) {
-        rVec = getVec(inst->right);
-    } else {
-        rGp = getGp(inst->right);
-    }
-    if (isComparison) {
-        Gp bit = isFloat ? emitFloatCompare(inst->op, lVec, rVec) : emitIntCompare(inst->op, lGp, rGp, elemType);
-        if (foldAnd)
-            cc->and_(acc, acc, bit);
-        else
-            cc->orr(acc, acc, bit);
-    } else if (isFloat) {
-        Vec elem = emitFloatBinary(inst->op, lVec, rVec, isDouble);
-        Gp addr = cc->new_gp64();
-        cc->add(addr, dst, off);
-        a64::Mem mem = a64::ptr(addr);
-        cc->str(elem, mem);
-    } else {
-        Gp elem = emitIntBinary(inst->op, lGp, rGp, elemType, elemType);
-        Gp addr = cc->new_gp64();
-        cc->add(addr, dst, off);
-        a64::Mem mem = a64::ptr(addr);
-        if (elemSize == 8) {
-            cc->str(elem, mem);
-        } else if (elemSize == 4) {
-            cc->str(elem, mem);
-        } else if (elemSize == 2) {
-            cc->strh(elem, mem);
+                cc->or_(acc, bit);
+        } else if (isFloat) {
+            Vec elem = emitFloatBinary(inst->op, lVec, rVec, isDouble);
+            Gp addr = elemAddr(dst);
+            if (isDouble)
+                cc->movsd(x86::qword_ptr(addr), elem);
+            else
+                cc->movss(x86::dword_ptr(addr), elem);
         } else {
-            cc->strb(elem, mem);
+            Gp elem = emitIntBinary(inst->op, lGp, rGp, elemType, elemType);
+            Gp addr = elemAddr(dst);
+            if (elemSize == 8) {
+                cc->mov(x86::qword_ptr(addr), elem);
+            } else if (elemSize == 4) {
+                cc->mov(x86::dword_ptr(addr), elem);
+            } else if (elemSize == 2) {
+                cc->mov(x86::word_ptr(addr), elem.r16());
+            } else {
+                cc->mov(x86::byte_ptr(addr), elem.r8());
+            }
         }
     }
-    if (elemSize <= 4095) {
-        cc->add(off, off, (int64_t)elemSize);
+    if (elemSize <= (uint64_t)INT32_MAX) {
+        cc->add(off, (int64_t)elemSize);
     } else {
         Gp step = cc->new_gp64();
         cc->mov(step, elemSize);
-        cc->add(off, off, step);
+        cc->add(off, step);
     }
     cc->bind(cond);
     cc->cmp(off, bound);
-    cc->b_lo(body);
-    cc->bind(end);
+    cc->jb(body);
     if (isComparison)
         gpValues.emplace(inst, acc);
     else
@@ -1718,7 +1568,7 @@ std::unordered_set<const BasicBlock*> reachableBlocks(const Function* function) 
     return reachable;
 }
 
-void* AsmJitGenerator::codegenFunction(const Function* function) {
+void* X64AsmJitGenerator::codegenFunction(const Function* function) {
     if (std::getenv("CX_ASMJIT_TRACE")) llvm::errs() << "; codegen " << function->mangledName << "\n";
     CodeHolder code;
     StringLogger logger;
@@ -1733,7 +1583,7 @@ void* AsmJitGenerator::codegenFunction(const Function* function) {
     }
     [[maybe_unused]] Error err = code.init(runtime.environment(), runtime.cpu_features());
     ASSERT(err == Error::kOk);
-    a64::Compiler compiler(&code);
+    x86::Compiler compiler(&code);
     cc = &compiler;
     gpValues.clear();
     vecValues.clear();
@@ -1748,10 +1598,8 @@ void* AsmJitGenerator::codegenFunction(const Function* function) {
     currentRetClass = function->returnType->isVoid() ? AbiClass{AbiClass::Kind::Direct, TypeId::kVoid} : classifyType(function->returnType);
     if (currentRetClass.kind == AbiClass::Kind::Indirect) {
         sig.add_arg(TypeId::kUInt64);
-    } else if (currentRetClass.kind == AbiClass::Kind::IntChunks) {
+    } else if (currentRetClass.kind == AbiClass::Kind::Chunk) {
         sig.set_ret(currentRetClass.chunkIs64 ? TypeId::kUInt64 : TypeId::kUInt32);
-    } else if (currentRetClass.kind == AbiClass::Kind::HFA) {
-        sig.set_ret(currentRetClass.hfaIsDouble ? TypeId::kFloat64 : TypeId::kFloat32);
     } else if (currentRetClass.kind != AbiClass::Kind::Empty) {
         sig.set_ret(currentRetClass.typeId);
     }
@@ -1772,39 +1620,13 @@ void* AsmJitGenerator::codegenFunction(const Function* function) {
         if (cls.kind == AbiClass::Kind::Empty) continue;
         if (cls.kind == AbiClass::Kind::Direct || cls.kind == AbiClass::Kind::Indirect) {
             sig.add_arg(cls.kind == AbiClass::Kind::Indirect ? TypeId::kUInt64 : cls.typeId);
-        } else if (cls.kind == AbiClass::Kind::IntChunks) {
-            if (!cls.chunkIs64)
-                sig.add_arg(TypeId::kUInt32);
-            else
-                for (unsigned c = 0; c < cls.chunkCount; ++c)
-                    sig.add_arg(TypeId::kUInt64);
-        } else if (cls.kind == AbiClass::Kind::HFA) {
-            for (unsigned c = 0; c < cls.hfaCount; ++c)
-                sig.add_arg(cls.hfaIsDouble ? TypeId::kFloat64 : TypeId::kFloat32);
+        } else if (cls.kind == AbiClass::Kind::Chunk) {
+            sig.add_arg(cls.chunkIs64 ? TypeId::kUInt64 : TypeId::kUInt32);
         }
     }
     if (function->isVariadic) sig.set_va_index(sig.arg_count());
 
     FuncNode* funcNode = cc->add_func(sig);
-    sideReserved = estimateFrame(function);
-    bigFrame = sideReserved > 8192;
-    frameUsed = 0;
-    sideOffset = 0;
-    if (bigFrame) {
-        sideSaved = callHelper0((void*)&cxJitSideSave);
-        Gp bytes = cc->new_gp64();
-        cc->mov(bytes, sideReserved);
-        sideBase = callHelper1((void*)&cxJitSideAlloc, bytes);
-    }
-    // Multi-register returns ride the pack (caller side does the same).
-    if (currentRetClass.kind == AbiClass::Kind::IntChunks && currentRetClass.chunkCount == 2)
-        funcNode->detail().ret(1).init_reg(RegType::kGp64, 1, TypeId::kUInt64);
-    if (currentRetClass.kind == AbiClass::Kind::HFA) {
-        for (unsigned c = 1; c < currentRetClass.hfaCount; ++c) {
-            funcNode->detail().ret(c).init_reg(currentRetClass.hfaIsDouble ? RegType::kVec64 : RegType::kVec32, c,
-                                               currentRetClass.hfaIsDouble ? TypeId::kFloat64 : TypeId::kFloat32);
-        }
-    }
 
     unsigned argNo = 0;
     if (currentRetClass.kind == AbiClass::Kind::Indirect) {
@@ -1824,7 +1646,7 @@ void* AsmJitGenerator::codegenFunction(const Function* function) {
         }
         if (cls.kind == AbiClass::Kind::Direct) {
             if (param->type->isFloatingPoint()) {
-                Vec v = isDoubleType(param->type) ? cc->new_vec_d() : cc->new_vec_s();
+                Vec v = isDoubleType(param->type) ? cc->new_xmm_sd() : cc->new_xmm_ss();
                 funcNode->set_arg(argNo++, v);
                 vecValues.emplace(param, v);
             } else {
@@ -1834,30 +1656,18 @@ void* AsmJitGenerator::codegenFunction(const Function* function) {
             }
             continue;
         }
-        // Chunks and HFAs materialize into a home; aggregates live in memory.
+        // Chunks materialize into a home; aggregates live in memory.
+        ASSERT(cls.kind == AbiClass::Kind::Chunk);
         uint64_t size = typeSize(param->type);
         Gp home = homeAddr(size, typeAlign(param->type));
-        if (cls.kind == AbiClass::Kind::IntChunks) {
-            if (!cls.chunkIs64) {
-                Gp chunk = cc->new_gp32();
-                funcNode->set_arg(argNo++, chunk);
-                cc->str(chunk, memAt(home, 0, 4));
-            } else {
-                for (unsigned c = 0; c < cls.chunkCount; ++c) {
-                    Gp chunk = cc->new_gp64();
-                    funcNode->set_arg(argNo++, chunk);
-                    cc->str(chunk, memAt(home, c * 8, 8));
-                }
-            }
+        if (!cls.chunkIs64) {
+            Gp chunk = cc->new_gp32();
+            funcNode->set_arg(argNo++, chunk);
+            cc->mov(memAt(home, 0, 4), chunk);
         } else {
-            ASSERT(cls.kind == AbiClass::Kind::HFA);
-            std::vector<HFALeaf> leaves;
-            collectHFALeaves(param->type, 0, leaves);
-            for (unsigned c = 0; c < cls.hfaCount; ++c) {
-                Vec v = cls.hfaIsDouble ? cc->new_vec_d() : cc->new_vec_s();
-                funcNode->set_arg(argNo++, v);
-                cc->str(v, memAt(home, leaves[c].offset, cls.hfaIsDouble ? 8 : 4));
-            }
+            Gp chunk = cc->new_gp64();
+            funcNode->set_arg(argNo++, chunk);
+            cc->mov(memAt(home, 0, 8), chunk);
         }
         gpValues.emplace(param, home);
     }
@@ -1870,9 +1680,9 @@ void* AsmJitGenerator::codegenFunction(const Function* function) {
         blockLabels.emplace(block, cc->new_label());
         if (block->parameter) {
             IRType* type = block->parameter->type;
-            if (type->isFloatingPoint())
-                vecValues.emplace(block->parameter, isDoubleType(type) ? cc->new_vec_d() : cc->new_vec_s());
-            else if (type->isStruct() || type->isUnion() || type->isArrayType())
+            if (type->isFloatingPoint() && !isFloat80Type(type))
+                vecValues.emplace(block->parameter, isDoubleType(type) ? cc->new_xmm_sd() : cc->new_xmm_ss());
+            else if (livesInMemory(type))
                 gpValues.emplace(block->parameter, cc->new_gp64());
             else
                 gpValues.emplace(block->parameter, newIntReg(type));
@@ -1907,7 +1717,13 @@ void* AsmJitGenerator::codegenFunction(const Function* function) {
     return address;
 }
 
-llvm::APFloat AsmJitGenerator::evalConstFloat(const Value* value) {
+const llvm::fltSemantics& fpSemantics(IRType* type) {
+    if (isFloat80Type(type)) return llvm::APFloat::x87DoubleExtended();
+    if (isDoubleType(type)) return llvm::APFloat::IEEEdouble();
+    return llvm::APFloat::IEEEsingle();
+}
+
+llvm::APFloat X64AsmJitGenerator::evalConstFloat(const Value* value) {
     switch (value->kind) {
     case ValueKind::ConstantFP:
         return llvm::cast<ConstantFP>(value)->value;
@@ -1917,7 +1733,7 @@ llvm::APFloat AsmJitGenerator::evalConstFloat(const Value* value) {
         llvm::APFloat right = evalConstFloat(inst->right);
         bool ignored = false;
         // Operands share the result semantics; convert defensively.
-        left.convert(isDoubleType(inst->getType()) ? llvm::APFloat::IEEEdouble() : llvm::APFloat::IEEEsingle(), llvm::APFloat::rmNearestTiesToEven, &ignored);
+        left.convert(fpSemantics(inst->getType()), llvm::APFloat::rmNearestTiesToEven, &ignored);
         right.convert(left.getSemantics(), llvm::APFloat::rmNearestTiesToEven, &ignored);
         switch (inst->op) {
         case Token::Plus:
@@ -1948,10 +1764,10 @@ llvm::APFloat AsmJitGenerator::evalConstFloat(const Value* value) {
         bool ignored = false;
         if (inst->value->getType()->isFloatingPoint()) {
             llvm::APFloat operand = evalConstFloat(inst->value);
-            operand.convert(isDoubleType(inst->type) ? llvm::APFloat::IEEEdouble() : llvm::APFloat::IEEEsingle(), llvm::APFloat::rmNearestTiesToEven, &ignored);
+            operand.convert(fpSemantics(inst->type), llvm::APFloat::rmNearestTiesToEven, &ignored);
             return operand;
         }
-        llvm::APFloat result = isDoubleType(inst->type) ? llvm::APFloat(0.0) : llvm::APFloat(0.0f);
+        llvm::APFloat result = llvm::APFloat::getZero(fpSemantics(inst->type));
         bool isSigned = inst->value->getType()->isSignedInteger();
         llvm::APInt bits(64, evalConstInt(inst->value));
         result.convertFromAPInt(bits, isSigned, llvm::APFloat::rmNearestTiesToEven);
@@ -1962,7 +1778,7 @@ llvm::APFloat AsmJitGenerator::evalConstFloat(const Value* value) {
     }
 }
 
-uint64_t AsmJitGenerator::evalConstInt(const Value* value) {
+uint64_t X64AsmJitGenerator::evalConstInt(const Value* value) {
     switch (value->kind) {
     case ValueKind::ConstantInt: {
         auto* inst = llvm::cast<ConstantInt>(value);
@@ -2105,7 +1921,7 @@ uint64_t AsmJitGenerator::evalConstInt(const Value* value) {
     }
 }
 
-void AsmJitGenerator::storeConstToAddr(const Value* value, char* addr) {
+void X64AsmJitGenerator::storeConstToAddr(const Value* value, char* addr) {
     switch (value->kind) {
     case ValueKind::ConstantInt:
     case ValueKind::ConstantBool:
@@ -2116,7 +1932,11 @@ void AsmJitGenerator::storeConstToAddr(const Value* value, char* addr) {
     case ValueKind::CastInst: {
         if (value->getType()->isFloatingPoint()) {
             llvm::APFloat f = evalConstFloat(value);
-            if (isDoubleType(value->getType())) {
+            if (isFloat80Type(value->getType())) {
+                llvm::APInt apBits = f.bitcastToAPInt();
+                ASSERT(apBits.getBitWidth() == 80);
+                memcpy(addr, apBits.getRawData(), 10);
+            } else if (isDoubleType(value->getType())) {
                 double d = f.convertToDouble();
                 memcpy(addr, &d, 8);
             } else {
@@ -2132,7 +1952,11 @@ void AsmJitGenerator::storeConstToAddr(const Value* value, char* addr) {
     }
     case ValueKind::ConstantFP: {
         auto* inst = llvm::cast<ConstantFP>(value);
-        if (isDoubleType(inst->type)) {
+        if (isFloat80Type(inst->type)) {
+            llvm::APInt apBits = inst->value.bitcastToAPInt();
+            ASSERT(apBits.getBitWidth() == 80);
+            memcpy(addr, apBits.getRawData(), 10);
+        } else if (isDoubleType(inst->type)) {
             uint64_t bits = inst->value.bitcastToAPInt().getZExtValue();
             memcpy(addr, &bits, 8);
         } else {
@@ -2185,14 +2009,14 @@ void AsmJitGenerator::storeConstToAddr(const Value* value, char* addr) {
     }
 }
 
-void AsmJitGenerator::initGlobal(const GlobalVariable* global) {
+void X64AsmJitGenerator::initGlobal(const GlobalVariable* global) {
     if (!global->value) return; // extern
     // Initialize every defined global, not just address-taken ones: a global
     // can be observed indirectly through another global's initializer.
     storeConstToAddr(global->value, (char*)getGlobalAddr(global));
 }
 
-void AsmJitGenerator::codegenModules(const std::vector<IRModule*>& modules) {
+void X64AsmJitGenerator::codegenModules(const std::vector<IRModule*>& modules) {
     // Slot functions by mangled name: body-less references to functions
     // defined in another module alias the definition's slot.
     std::unordered_map<std::string, size_t> indexByName;
@@ -2237,80 +2061,17 @@ void AsmJitGenerator::codegenModules(const std::vector<IRModule*>& modules) {
     }
 }
 
-} // namespace
-
-static const Function* findMain(const std::vector<IRModule*>& modules) {
-    for (auto* module : modules) {
-        for (auto* function : module->functions) {
-            if (function->mangledName == "main" && !function->isExtern && !function->body.empty()) return function;
-        }
-    }
-    return nullptr;
-}
-
-bool AsmJitSession::eligible(const std::vector<IRModule*>& modules) {
-#if defined(_WIN32) && (defined(_M_X64) || defined(__x86_64__))
-    return X64AsmJitSession::eligible(modules);
-#elif !defined(__aarch64__) && !defined(_M_ARM64)
-    return false;
-#else
-    const Function* main = findMain(modules);
-    if (!main || (main->params.size() != 0 && main->params.size() != 2)) return false;
-    llvm::sys::DynamicLibrary::getPermanentLibrary(nullptr);
-    auto resolvable = [](llvm::StringRef name) {
-        return !name.empty() && llvm::sys::DynamicLibrary::SearchForAddressOfSymbol(stripAsmLabelMarker(name).str()) != nullptr;
-    };
-    for (auto* module : modules) {
-        for (auto* function : module->functions) {
-            if ((function->isExtern || function->body.empty()) && !resolvable(function->mangledName)) return false;
-        }
-        for (auto* global : module->globalVariables) {
-            if (!global->value && !resolvable(global->name)) return false;
-        }
-    }
-    return true;
-#endif
-}
-
-int AsmJitSession::run(const std::vector<IRModule*>& modules, const std::string& argv0, const std::vector<std::string>& programArgs) {
-#if defined(_WIN32) && (defined(_M_X64) || defined(__x86_64__))
-    return X64AsmJitSession::run(modules, argv0, programArgs);
-#else
-    // Process lifetime: JIT code and globals must outlive main's return so
-    // atexit handlers and static destructors can still call into them. The
-    // destructor runs after user handlers by atexit LIFO order.
-    static AsmJitGenerator generator;
-    generator.codegenModules(modules);
-    const Function* main = findMain(modules);
-    ASSERT(main);
-    void* mainAddr = generator.funcTable[generator.funcIndex.at(main)];
-    std::vector<char*> argv;
-    argv.reserve(programArgs.size() + 2);
-    argv.push_back(const_cast<char*>(argv0.c_str()));
-    for (const auto& arg : programArgs)
-        argv.push_back(const_cast<char*>(arg.c_str()));
-    int argc = static_cast<int>(argv.size());
-    argv.push_back(nullptr);
-    if (main->params.size() == 2) {
-        auto* mainFn = reinterpret_cast<int (*)(int, char**)>(mainAddr);
-        return mainFn(argc, argv.data());
-    }
-    auto* mainFn = reinterpret_cast<int (*)()>(mainAddr);
-    return mainFn();
-#endif
-}
-
-Gp AsmJitGenerator::newIntReg(IRType* type) {
+Gp X64AsmJitGenerator::newIntReg(IRType* type) {
     if (type->isPointerType() || (type->isInteger() && getIntegerBitWidth(type) > 32)) return cc->new_gp64();
     return cc->new_gp32();
 }
 
 // Narrow integers live extended in 32-bit registers; re-extend after every
 // 32-bit operation so the canonical form holds for all later uses.
-void AsmJitGenerator::canonicalize(Gp reg, IRType* type) {
+void X64AsmJitGenerator::canonicalize(Gp reg, IRType* type) {
     if (type->isBool()) return; // produced 0/1 already
     if (type->isChar()) {
-        cc->uxtb(reg, reg);
+        cc->movzx(reg, reg.r8());
         return;
     }
     if (!type->isInteger()) return;
@@ -2319,152 +2080,215 @@ void AsmJitGenerator::canonicalize(Gp reg, IRType* type) {
     bool isSigned = type->isSignedInteger();
     if (width == 8) {
         if (isSigned)
-            cc->sxtb(reg, reg);
+            cc->movsx(reg, reg.r8());
         else
-            cc->uxtb(reg, reg);
+            cc->movzx(reg, reg.r8());
     } else {
         ASSERT(width == 16);
         if (isSigned)
-            cc->sxth(reg, reg);
+            cc->movsx(reg, reg.r16());
         else
-            cc->uxth(reg, reg);
+            cc->movzx(reg, reg.r16());
     }
 }
 
-Gp AsmJitGenerator::emitIntCompare(Token::Kind op, Gp left, Gp right, IRType* type) {
+Gp X64AsmJitGenerator::emitIntCompare(Token::Kind op, Gp left, Gp right, IRType* type) {
     Gp out = cc->new_gp32();
+    cc->xor_(out, out);
     cc->cmp(left, right);
     bool isSigned = type->isSignedInteger();
     // char compares unsigned (it zero-extends); bool is 0/1 either way.
-    CondCode cond;
     switch (op) {
     case Token::Equal:
-        cond = CondCode::kEQ;
+        cc->sete(out.r8());
         break;
     case Token::NotEqual:
-        cond = CondCode::kNE;
+        cc->setne(out.r8());
         break;
     case Token::Less:
-        cond = isSigned ? CondCode::kLT : CondCode::kLO;
+        if (isSigned)
+            cc->setl(out.r8());
+        else
+            cc->setb(out.r8());
         break;
     case Token::LessOrEqual:
-        cond = isSigned ? CondCode::kLE : CondCode::kLS;
+        if (isSigned)
+            cc->setle(out.r8());
+        else
+            cc->setbe(out.r8());
         break;
     case Token::Greater:
-        cond = isSigned ? CondCode::kGT : CondCode::kHI;
+        if (isSigned)
+            cc->setg(out.r8());
+        else
+            cc->seta(out.r8());
         break;
     case Token::GreaterOrEqual:
-        cond = isSigned ? CondCode::kGE : CondCode::kHS;
+        if (isSigned)
+            cc->setge(out.r8());
+        else
+            cc->setae(out.r8());
         break;
     default:
         llvm_unreachable("not a comparison");
     }
-    cc->cset(out, cond);
     return out;
 }
 
-Gp AsmJitGenerator::emitFloatCompare(Token::Kind op, Vec left, Vec right) {
+Gp X64AsmJitGenerator::emitFloatCompare(Token::Kind op, Vec left, Vec right, bool isDouble) {
     Gp out = cc->new_gp32();
-    cc->fcmp(left, right);
+    cc->xor_(out, out);
+    // The scratch register is zeroed BEFORE the compare: xor clears the
+    // flags that setcc reads, so nothing may set flags between ucomi and
+    // the last setcc.
+    bool needsScratch = op != Token::Greater && op != Token::GreaterOrEqual;
+    Gp scratch;
+    if (needsScratch) {
+        scratch = cc->new_gp32();
+        cc->xor_(scratch, scratch);
+    }
+    if (isDouble)
+        cc->ucomisd(left, right);
+    else
+        cc->ucomiss(left, right);
     // Ordered predicates (NaN compares false except !=), matching clang.
-    CondCode cond;
+    // ucomi sets ZF/PF/CF on unordered, so every predicate but greater and
+    // greater-or-equal must also check the parity flag.
     switch (op) {
     case Token::Equal:
-        cond = CondCode::kEQ;
+        cc->setnp(scratch.r8());
+        cc->setz(out.r8());
+        cc->and_(out, scratch);
         break;
     case Token::NotEqual:
-        cond = CondCode::kNE;
+        cc->setp(out.r8());
+        cc->setnz(scratch.r8());
+        cc->or_(out, scratch);
         break;
     case Token::Less:
-        cond = CondCode::kMI;
+        cc->setb(out.r8());
+        cc->setnp(scratch.r8());
+        cc->and_(out, scratch);
         break;
     case Token::LessOrEqual:
-        cond = CondCode::kLS;
+        cc->setbe(out.r8());
+        cc->setnp(scratch.r8());
+        cc->and_(out, scratch);
         break;
     case Token::Greater:
-        cond = CondCode::kGT;
+        cc->seta(out.r8());
         break;
     case Token::GreaterOrEqual:
-        cond = CondCode::kGE;
+        cc->setae(out.r8());
         break;
     default:
         llvm_unreachable("not a comparison");
     }
-    cc->cset(out, cond);
     return out;
 }
 
-Gp AsmJitGenerator::emitIntBinary(Token::Kind op, Gp left, Gp right, IRType* type, IRType* rightType) {
+// Integer division and remainder at the operand width. x86 traps on division
+// by zero and signed overflow (INT_MIN / -1), matching LLVM codegen.
+void X64AsmJitGenerator::emitDivMod(Gp out, Gp left, Gp right, bool is64, bool isSigned, bool isMod) {
+    if (is64) {
+        Gp lo = cc->new_gp64();
+        Gp hi = cc->new_gp64();
+        cc->mov(lo, left);
+        if (isSigned)
+            cc->cqo(hi, lo);
+        else
+            cc->xor_(hi, hi);
+        if (isSigned)
+            cc->idiv(hi, lo, right);
+        else
+            cc->div(hi, lo, right);
+        cc->mov(out, isMod ? hi : lo);
+    } else {
+        Gp lo = cc->new_gp32();
+        Gp hi = cc->new_gp32();
+        cc->mov(lo, left);
+        if (isSigned)
+            cc->cdq(hi, lo);
+        else
+            cc->xor_(hi, hi);
+        if (isSigned)
+            cc->idiv(hi, lo, right);
+        else
+            cc->div(hi, lo, right);
+        cc->mov(out, isMod ? hi : lo);
+    }
+}
+
+Gp X64AsmJitGenerator::emitIntBinary(Token::Kind op, Gp left, Gp right, IRType* type, IRType* rightType) {
     // Pointer arithmetic (char* + int) lowers on the raw addresses.
     Gp out = type->isPointerType() ? cc->new_gp64() : newIntReg(type);
     bool isSigned = type->isSignedInteger();
     if (type->isPointerType() && (rightType->isChar() || (rightType->isInteger() && getIntegerBitWidth(rightType) <= 32))) {
-        // Extend a 32-bit index to 64; 32-bit writes already zero the top,
-        // so only signed indices need an instruction.
-        if (rightType->isSignedInteger()) {
-            Gp wide = cc->new_gp64();
-            cc->sxtw(wide, right);
-            right = wide;
-        } else {
-            right = right.r64();
-        }
+        // Extend a 32-bit index to 64 explicitly; unlike AArch64, x86 has no
+        // ISA guarantee that the upper half of a 32-bit value is zero.
+        Gp wide = cc->new_gp64();
+        if (rightType->isSignedInteger())
+            cc->movsxd(wide, right);
+        else
+            cc->mov(wide.r32(), right);
+        right = wide;
     }
     switch (op) {
     case Token::Plus:
-        cc->add(out, left, right);
+        cc->mov(out, left);
+        cc->add(out, right);
         break;
     case Token::Minus:
-        cc->sub(out, left, right);
+        cc->mov(out, left);
+        cc->sub(out, right);
         break;
     case Token::Star:
-        cc->mul(out, left, right);
+        cc->mov(out, left);
+        cc->imul(out, right);
         break;
     case Token::Slash:
-        if (isSigned)
-            cc->sdiv(out, left, right);
-        else
-            cc->udiv(out, left, right);
+        emitDivMod(out, left, right, out.size() == 8, isSigned, /*isMod=*/false);
         break;
     case Token::Modulo:
     case Token::PositiveModulo: {
-        Gp quot = type->isPointerType() || getIntegerBitWidth(type) > 32 ? cc->new_gp64() : cc->new_gp32();
-        if (isSigned)
-            cc->sdiv(quot, left, right);
-        else
-            cc->udiv(quot, left, right);
-        cc->msub(out, quot, right, left);
+        emitDivMod(out, left, right, out.size() == 8, isSigned, /*isMod=*/true);
         if (op == Token::PositiveModulo && isSigned) {
             // ((a % b) + b) % b.
-            Gp shifted = cc->new_gp32();
-            if (getIntegerBitWidth(type) > 32) shifted = cc->new_gp64();
-            cc->add(shifted, out, right);
-            Gp quot2 = cc->new_gp32();
-            if (getIntegerBitWidth(type) > 32) quot2 = cc->new_gp64();
-            cc->sdiv(quot2, shifted, right);
-            cc->msub(out, quot2, right, shifted);
+            bool is64 = out.size() == 8;
+            Gp shifted = is64 ? cc->new_gp64() : cc->new_gp32();
+            cc->mov(shifted, out);
+            cc->add(shifted, right);
+            emitDivMod(out, shifted, right, is64, isSigned, /*isMod=*/true);
         }
         break;
     }
     case Token::And:
     case Token::AndAnd:
-        cc->and_(out, left, right);
+        cc->mov(out, left);
+        cc->and_(out, right);
         break;
     case Token::Or:
     case Token::OrOr:
-        cc->orr(out, left, right);
+        cc->mov(out, left);
+        cc->or_(out, right);
         break;
     case Token::Xor:
-        cc->eor(out, left, right);
+        cc->mov(out, left);
+        cc->xor_(out, right);
         break;
     case Token::LeftShift:
-        cc->lslv(out, left, right);
-        break;
-    case Token::RightShift:
-        if (isSigned)
-            cc->asrv(out, left, right);
+    case Token::RightShift: {
+        cc->mov(out, left);
+        Gp count = right.size() == 8 ? right.r32() : right;
+        cc->mov(x86::ecx, count);
+        if (op == Token::LeftShift)
+            cc->shl(out, x86::cl);
+        else if (isSigned)
+            cc->sar(out, x86::cl);
         else
-            cc->lsrv(out, left, right);
+            cc->shr(out, x86::cl);
         break;
+    }
     default:
         llvm_unreachable("invalid integer binary operation");
     }
@@ -2472,21 +2296,37 @@ Gp AsmJitGenerator::emitIntBinary(Token::Kind op, Gp left, Gp right, IRType* typ
     return out;
 }
 
-Vec AsmJitGenerator::emitFloatBinary(Token::Kind op, Vec left, Vec right, bool isDouble) {
+Vec X64AsmJitGenerator::emitFloatBinary(Token::Kind op, Vec left, Vec right, bool isDouble) {
     if (op == Token::Modulo || op == Token::PositiveModulo) return callFmod(left, right, op, isDouble);
-    Vec out = isDouble ? cc->new_vec_d() : cc->new_vec_s();
+    Vec out = isDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
+    if (isDouble)
+        cc->movsd(out, left);
+    else
+        cc->movss(out, left);
     switch (op) {
     case Token::Plus:
-        cc->fadd(out, left, right);
+        if (isDouble)
+            cc->addsd(out, right);
+        else
+            cc->addss(out, right);
         break;
     case Token::Minus:
-        cc->fsub(out, left, right);
+        if (isDouble)
+            cc->subsd(out, right);
+        else
+            cc->subss(out, right);
         break;
     case Token::Star:
-        cc->fmul(out, left, right);
+        if (isDouble)
+            cc->mulsd(out, right);
+        else
+            cc->mulss(out, right);
         break;
     case Token::Slash:
-        cc->fdiv(out, left, right);
+        if (isDouble)
+            cc->divsd(out, right);
+        else
+            cc->divss(out, right);
         break;
     default:
         llvm_unreachable("invalid float binary operation");
@@ -2495,7 +2335,7 @@ Vec AsmJitGenerator::emitFloatBinary(Token::Kind op, Vec left, Vec right, bool i
 }
 
 // Float remainder lowers to a fmod/fmodf libcall like LLVM's frem.
-Vec AsmJitGenerator::callFmod(Vec left, Vec right, Token::Kind op, bool isDouble) {
+Vec X64AsmJitGenerator::callFmod(Vec left, Vec right, Token::Kind op, bool isDouble) {
     auto callOnce = [&](Vec a, Vec b) {
         void* target = resolveExtern(isDouble ? "fmod" : "fmodf");
         ASSERT(target && "fmod not resolvable in JIT process");
@@ -2510,56 +2350,151 @@ Vec AsmJitGenerator::callFmod(Vec left, Vec right, Token::Kind op, bool isDouble
         ASSERT(err == Error::kOk);
         invoke->set_arg(0, a);
         invoke->set_arg(1, b);
-        Vec out = isDouble ? cc->new_vec_d() : cc->new_vec_s();
+        Vec out = isDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
         invoke->set_ret(0, out);
         return out;
     };
     Vec rem = callOnce(left, right);
     if (op == Token::PositiveModulo) {
-        Vec shifted = isDouble ? cc->new_vec_d() : cc->new_vec_s();
-        cc->fadd(shifted, rem, right);
+        Vec shifted = isDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
+        if (isDouble) {
+            cc->movsd(shifted, rem);
+            cc->addsd(shifted, right);
+        } else {
+            cc->movss(shifted, rem);
+            cc->addss(shifted, right);
+        }
         rem = callOnce(shifted, right);
     }
     return rem;
 }
 
-void AsmJitGenerator::emitCast(const CastInst* inst) {
+void X64AsmJitGenerator::emitCast(const CastInst* inst) {
     IRType* sourceType = inst->value->getType();
     IRType* type = inst->type;
+    if (isFloat80Type(type) || isFloat80Type(sourceType)) {
+        emitF80Cast(inst, sourceType, type);
+        return;
+    }
     if (type->isFloatingPoint()) {
-        ASSERT(type->getName() != "float80");
-        ASSERT(!sourceType->isFloatingPoint() || sourceType->getName() != "float80");
-        Vec out = isDoubleType(type) ? cc->new_vec_d() : cc->new_vec_s();
+        bool destDouble = isDoubleType(type);
+        Vec out = destDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
+        // x86 has no unsigned int64->float conversion; halve (exact),
+        // convert the half, and double (exact), keeping the lost bit.
+        // This is LLVM's lowering, sticky-bit rounding included.
+        auto u64ToFloat = [&](Vec dst, Gp in, bool dbl) {
+            Gp half = cc->new_gp64();
+            Gp bit = cc->new_gp64();
+            cc->mov(half, in);
+            cc->shr(half, 1);
+            cc->mov(bit, in);
+            cc->and_(bit, 1);
+            cc->or_(half, bit);
+            if (dbl) {
+                cc->cvtsi2sd(dst, half);
+                cc->addsd(dst, dst);
+            } else {
+                cc->cvtsi2ss(dst, half);
+                cc->addss(dst, dst);
+            }
+        };
         if (sourceType->isFloatingPoint()) {
-            if (isDoubleType(sourceType) == isDoubleType(type)) {
+            if (isDoubleType(sourceType) == destDouble) {
                 vecValues.emplace(inst, getVec(inst->value));
                 return;
             }
-            cc->fcvt(out, getVec(inst->value));
+            if (destDouble)
+                cc->cvtss2sd(out, getVec(inst->value));
+            else
+                cc->cvtsd2ss(out, getVec(inst->value));
+        } else if (sourceType->isPointerType()) {
+            // Pointers convert as unsigned 64-bit (mirrors the AArch64 backend's ucutf).
+            u64ToFloat(out, getGp(inst->value), destDouble);
         } else if (sourceType->isSignedInteger()) {
-            cc->scvtf(out, getGp(inst->value));
+            Gp in = getGp(inst->value);
+            if (destDouble)
+                cc->cvtsi2sd(out, in);
+            else
+                cc->cvtsi2ss(out, in);
         } else {
             // Unsigned integers and chars zero-extend; canonical form holds that.
-            cc->ucvtf(out, getGp(inst->value));
+            Gp in = getGp(inst->value);
+            int width = sourceType->isInteger() ? getIntegerBitWidth(sourceType) : 8;
+            if (width == 64) {
+                u64ToFloat(out, in, destDouble);
+            } else {
+                // Zero-extend to 64 so the signed conversion sees a positive value.
+                Gp wide = cc->new_gp64();
+                cc->mov(wide.r32(), in);
+                if (destDouble)
+                    cc->cvtsi2sd(out, wide);
+                else
+                    cc->cvtsi2ss(out, wide);
+            }
         }
         vecValues.emplace(inst, out);
         return;
     }
     if (sourceType->isFloatingPoint()) {
+        bool srcDouble = isDoubleType(sourceType);
+        Vec in = getVec(inst->value);
         if (type->isBool()) {
             Gp tmp = cc->new_gp32();
-            cc->fcvtzs(tmp, getVec(inst->value));
+            if (srcDouble)
+                cc->cvttsd2si(tmp, in);
+            else
+                cc->cvttss2si(tmp, in);
             Gp out = cc->new_gp32();
+            cc->xor_(out, out);
             cc->cmp(tmp, 0);
-            cc->cset(out, CondCode::kNE);
+            cc->setnz(out.r8());
             gpValues.emplace(inst, out);
             return;
         }
         Gp out = newIntReg(type);
-        if (type->isSignedInteger())
-            cc->fcvtzs(out, getVec(inst->value));
-        else
-            cc->fcvtzu(out, getVec(inst->value));
+        int width = type->isInteger() ? getIntegerBitWidth(type) : type->isPointerType() ? 64 : 8;
+        if (width == 64 && !type->isSignedInteger()) {
+            // Values at or above 2^63 don't fit the signed conversion;
+            // convert the excess and flip the high bit back (mirrors LLVM).
+            x86::Mem bound = srcDouble ? cc->new_double_const(ConstPoolScope::kLocal, 9223372036854775808.0)
+                                       : cc->new_float_const(ConstPoolScope::kLocal, 9223372036854775808.0f);
+            Vec limit = srcDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
+            Label fits = cc->new_label();
+            Label done = cc->new_label();
+            if (srcDouble) {
+                cc->movsd(limit, bound);
+                cc->ucomisd(in, limit);
+            } else {
+                cc->movss(limit, bound);
+                cc->ucomiss(in, limit);
+            }
+            cc->jb(fits);
+            Vec excess = srcDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
+            if (srcDouble) {
+                cc->movsd(excess, in);
+                cc->subsd(excess, limit);
+                cc->cvttsd2si(out, excess);
+            } else {
+                cc->movss(excess, in);
+                cc->subss(excess, limit);
+                cc->cvttss2si(out, excess);
+            }
+            Gp highBit = cc->new_gp64();
+            cc->mov(highBit, INT64_MIN);
+            cc->xor_(out, highBit);
+            cc->jmp(done);
+            cc->bind(fits);
+            if (srcDouble)
+                cc->cvttsd2si(out, in);
+            else
+                cc->cvttss2si(out, in);
+            cc->bind(done);
+        } else {
+            if (srcDouble)
+                cc->cvttsd2si(out, in);
+            else
+                cc->cvttss2si(out, in);
+        }
         canonicalize(out, type);
         gpValues.emplace(inst, out);
         return;
@@ -2568,13 +2503,14 @@ void AsmJitGenerator::emitCast(const CastInst* inst) {
     Gp in = getGp(inst->value);
     if (type->isBool()) {
         Gp out = cc->new_gp32();
+        cc->xor_(out, out);
         cc->cmp(in, 0);
-        cc->cset(out, CondCode::kNE);
+        cc->setnz(out.r8());
         gpValues.emplace(inst, out);
         return;
     }
     if (type->isPointerType() || sourceType->isPointerType()) {
-        // Pointer-int casts are no-ops on LP64; narrow ints extend canonically.
+        // Pointer-int casts are no-ops on LLP64; narrow ints extend canonically.
         Gp out = cc->new_gp64();
         if (sourceType->isPointerType() && type->isPointerType()) {
             gpValues.emplace(inst, in);
@@ -2585,10 +2521,12 @@ void AsmJitGenerator::emitCast(const CastInst* inst) {
             if (width > 32) {
                 gpValues.emplace(inst, in);
             } else if (sourceType->isSignedInteger()) {
-                cc->sxtw(out, in);
+                cc->movsxd(out, in);
                 gpValues.emplace(inst, out);
             } else {
-                gpValues.emplace(inst, in.r64());
+                // Zero-extend explicitly (no upper-half guarantee on x86).
+                cc->mov(out.r32(), in);
+                gpValues.emplace(inst, out);
             }
             return;
         }
@@ -2596,9 +2534,10 @@ void AsmJitGenerator::emitCast(const CastInst* inst) {
         if (type->isInteger() && getIntegerBitWidth(type) > 32) {
             gpValues.emplace(inst, in);
         } else {
-            cc->mov(out.r32(), in.r32());
-            canonicalize(out.r32(), type);
-            gpValues.emplace(inst, out.r32());
+            Gp narrow = cc->new_gp32();
+            cc->mov(narrow, in.r32());
+            canonicalize(narrow, type);
+            gpValues.emplace(inst, narrow);
         }
         return;
     }
@@ -2615,7 +2554,7 @@ void AsmJitGenerator::emitCast(const CastInst* inst) {
     if (destWidth > 32 && sourceWidth <= 32) {
         Gp out = cc->new_gp64();
         if (sourceSigned)
-            cc->sxtw(out, in);
+            cc->movsxd(out, in);
         else
             cc->mov(out.r32(), in);
         gpValues.emplace(inst, out);
@@ -2633,7 +2572,487 @@ void AsmJitGenerator::emitCast(const CastInst* inst) {
     gpValues.emplace(inst, out);
 }
 
-void AsmJitGenerator::emitCall(const CallInst* inst) {
+void X64AsmJitGenerator::emitF80Cast(const CastInst* inst, IRType* sourceType, IRType* type) {
+    bool destF80 = isFloat80Type(type);
+    bool srcF80 = isFloat80Type(sourceType);
+    if (destF80 && srcF80) {
+        gpValues.emplace(inst, getGp(inst->value));
+        return;
+    }
+    if (destF80) {
+        Gp home = homeAddr(16, 16);
+        if (sourceType->isFloatingPoint()) {
+            bool srcDouble = isDoubleType(sourceType);
+            Gp bits = srcDouble ? cc->new_gp64() : cc->new_gp32();
+            if (srcDouble)
+                cc->movq(bits, getVec(inst->value));
+            else
+                cc->movd(bits, getVec(inst->value));
+            callF80FromWord(srcDouble ? F80Op::FromF64 : F80Op::FromF32, home, bits, srcDouble);
+        } else {
+            Gp in = getGp(inst->value);
+            bool pass64 = sourceType->isPointerType() || (sourceType->isInteger() && getIntegerBitWidth(sourceType) > 32);
+            bool isSigned = sourceType->isSignedInteger();
+            F80Op op;
+            if (!sourceType->isInteger() && !sourceType->isPointerType())
+                op = F80Op::FromU32; // bool and char zero-extend; canonical form holds that.
+            else if (pass64)
+                op = isSigned ? F80Op::FromI64 : F80Op::FromU64;
+            else
+                op = isSigned ? F80Op::FromI32 : F80Op::FromU32;
+            callF80FromWord(op, home, in, pass64);
+        }
+        gpValues.emplace(inst, home);
+        return;
+    }
+    // float80 source.
+    Gp home = getGp(inst->value);
+    if (type->isFloatingPoint()) {
+        bool destDouble = isDoubleType(type);
+        Gp bits = callF80ToWord(destDouble ? F80Op::ToF64 : F80Op::ToF32, home, destDouble);
+        Vec out = destDouble ? cc->new_xmm_sd() : cc->new_xmm_ss();
+        if (destDouble)
+            cc->movq(out, bits);
+        else
+            cc->movd(out, bits);
+        vecValues.emplace(inst, out);
+        return;
+    }
+    if (type->isBool()) {
+        gpValues.emplace(inst, callF80ToWord(F80Op::ToBool, home, /*is64=*/false));
+        return;
+    }
+    bool want64 = type->isPointerType() || (type->isInteger() && getIntegerBitWidth(type) > 32);
+    bool isSigned = type->isSignedInteger();
+    F80Op op;
+    if (!type->isInteger() && !type->isPointerType())
+        op = F80Op::ToU32; // char truncates below.
+    else if (want64)
+        op = isSigned ? F80Op::ToI64 : F80Op::ToU64;
+    else
+        op = isSigned ? F80Op::ToI32 : F80Op::ToU32;
+    Gp out = callF80ToWord(op, home, want64);
+    canonicalize(out, type);
+    gpValues.emplace(inst, out);
+}
+
+Gp X64AsmJitGenerator::emitF80Binary(Token::Kind op, Gp left, Gp right) {
+    Gp home = homeAddr(16, 16);
+    switch (op) {
+    case Token::Plus:
+        callF80Arith(F80Op::Add, home, left, right);
+        break;
+    case Token::Minus:
+        callF80Arith(F80Op::Sub, home, left, right);
+        break;
+    case Token::Star:
+        callF80Arith(F80Op::Mul, home, left, right);
+        break;
+    case Token::Slash:
+        callF80Arith(F80Op::Div, home, left, right);
+        break;
+    case Token::Modulo:
+        callF80Arith(F80Op::Mod, home, left, right);
+        break;
+    case Token::PositiveModulo: {
+        // ((a % b) + b) % b.
+        Gp rem = homeAddr(16, 16);
+        callF80Arith(F80Op::Mod, rem, left, right);
+        Gp shifted = homeAddr(16, 16);
+        callF80Arith(F80Op::Add, shifted, rem, right);
+        callF80Arith(F80Op::Mod, home, shifted, right);
+        break;
+    }
+    default:
+        llvm_unreachable("invalid float80 binary operation");
+    }
+    return home;
+}
+
+Gp X64AsmJitGenerator::emitF80Compare(Token::Kind op, Gp left, Gp right) {
+    // Ordered predicates (NaN compares false except !=), matching clang.
+    // The helper packs CF/ZF/PF into bits 0/1/2 of the result.
+    Gp flags = callF80Cmp(left, right);
+    Gp out = cc->new_gp32();
+    cc->xor_(out, out);
+    switch (op) {
+    case Token::Equal: { // ZF && !PF
+        Gp masked = cc->new_gp32();
+        cc->mov(masked, flags);
+        cc->and_(masked, 0b110);
+        cc->cmp(masked, 0b010);
+        cc->sete(out.r8());
+        break;
+    }
+    case Token::NotEqual: {
+        Gp masked = cc->new_gp32();
+        cc->mov(masked, flags);
+        cc->and_(masked, 0b110);
+        cc->cmp(masked, 0b010);
+        cc->setne(out.r8());
+        break;
+    }
+    case Token::Less: { // CF && !PF
+        Gp masked = cc->new_gp32();
+        cc->mov(masked, flags);
+        cc->and_(masked, 0b101);
+        cc->cmp(masked, 0b001);
+        cc->sete(out.r8());
+        break;
+    }
+    case Token::LessOrEqual: { // (CF || ZF) && !PF
+        Gp some = cc->new_gp32();
+        cc->xor_(some, some);
+        cc->test(flags, 0b011);
+        cc->setnz(some.r8());
+        Gp ordered = cc->new_gp32();
+        cc->xor_(ordered, ordered);
+        cc->test(flags, 0b100);
+        cc->setz(ordered.r8());
+        cc->mov(out, some);
+        cc->and_(out, ordered);
+        break;
+    }
+    case Token::Greater: // !CF && !ZF
+        cc->test(flags, 0b011);
+        cc->setz(out.r8());
+        break;
+    case Token::GreaterOrEqual: // !CF
+        cc->test(flags, 0b001);
+        cc->setz(out.r8());
+        break;
+    default:
+        llvm_unreachable("not a comparison");
+    }
+    return out;
+}
+
+void X64AsmJitGenerator::callF80Arith(F80Op op, Gp out, Gp a, Gp b) {
+    Gp targetReg = cc->new_gp64();
+    cc->mov(targetReg, (uint64_t)getF80Helper(op));
+    FuncSignature sig;
+    sig.add_arg(TypeId::kUInt64);
+    sig.add_arg(TypeId::kUInt64);
+    sig.add_arg(TypeId::kUInt64);
+    InvokeNode* invoke;
+    [[maybe_unused]] Error err = cc->invoke(Out(invoke), targetReg, sig);
+    ASSERT(err == Error::kOk);
+    invoke->set_arg(0, out);
+    invoke->set_arg(1, a);
+    invoke->set_arg(2, b);
+}
+
+void X64AsmJitGenerator::callF80Unary(F80Op op, Gp out, Gp a) {
+    Gp targetReg = cc->new_gp64();
+    cc->mov(targetReg, (uint64_t)getF80Helper(op));
+    FuncSignature sig;
+    sig.add_arg(TypeId::kUInt64);
+    sig.add_arg(TypeId::kUInt64);
+    InvokeNode* invoke;
+    [[maybe_unused]] Error err = cc->invoke(Out(invoke), targetReg, sig);
+    ASSERT(err == Error::kOk);
+    invoke->set_arg(0, out);
+    invoke->set_arg(1, a);
+}
+
+Gp X64AsmJitGenerator::callF80Cmp(Gp a, Gp b) {
+    Gp targetReg = cc->new_gp64();
+    cc->mov(targetReg, (uint64_t)getF80Helper(F80Op::CmpFlags));
+    FuncSignature sig;
+    sig.set_ret(TypeId::kUInt32);
+    sig.add_arg(TypeId::kUInt64);
+    sig.add_arg(TypeId::kUInt64);
+    InvokeNode* invoke;
+    [[maybe_unused]] Error err = cc->invoke(Out(invoke), targetReg, sig);
+    ASSERT(err == Error::kOk);
+    invoke->set_arg(0, a);
+    invoke->set_arg(1, b);
+    Gp out = cc->new_gp32();
+    invoke->set_ret(0, out);
+    return out;
+}
+
+Gp X64AsmJitGenerator::callF80ToWord(F80Op op, Gp a, bool is64) {
+    Gp targetReg = cc->new_gp64();
+    cc->mov(targetReg, (uint64_t)getF80Helper(op));
+    FuncSignature sig;
+    sig.set_ret(is64 ? TypeId::kUInt64 : TypeId::kUInt32);
+    sig.add_arg(TypeId::kUInt64);
+    InvokeNode* invoke;
+    [[maybe_unused]] Error err = cc->invoke(Out(invoke), targetReg, sig);
+    ASSERT(err == Error::kOk);
+    invoke->set_arg(0, a);
+    Gp out = is64 ? cc->new_gp64() : cc->new_gp32();
+    invoke->set_ret(0, out);
+    return out;
+}
+
+void X64AsmJitGenerator::callF80FromWord(F80Op op, Gp out, Gp value, bool is64) {
+    Gp targetReg = cc->new_gp64();
+    cc->mov(targetReg, (uint64_t)getF80Helper(op));
+    FuncSignature sig;
+    sig.add_arg(TypeId::kUInt64);
+    sig.add_arg(is64 ? TypeId::kUInt64 : TypeId::kUInt32);
+    InvokeNode* invoke;
+    [[maybe_unused]] Error err = cc->invoke(Out(invoke), targetReg, sig);
+    ASSERT(err == Error::kOk);
+    invoke->set_arg(0, out);
+    invoke->set_arg(1, value);
+}
+
+void* X64AsmJitGenerator::getF80Helper(F80Op op) {
+    void*& slot = f80helpers[(size_t)op];
+    if (slot) return slot;
+    CodeHolder code;
+    StringLogger logger;
+    if (std::getenv("CX_ASMJIT_LOG")) code.set_logger(&logger);
+    [[maybe_unused]] Error err = code.init(runtime.environment(), runtime.cpu_features());
+    ASSERT(err == Error::kOk);
+    x86::Assembler as(&code);
+    emitF80Helper(as, op);
+    if (std::getenv("CX_ASMJIT_LOG")) llvm::errs() << "; f80 helper " << (unsigned)op << ":\n" << logger.data() << "\n";
+    err = runtime.add(&slot, &code);
+    ASSERT(err == Error::kOk && slot);
+    return slot;
+}
+
+void X64AsmJitGenerator::emitF80Helper(x86::Assembler& as, F80Op op) {
+    // Win64 ABI throughout: pointer/word args in rcx/rdx/r8, word results in
+    // rax/eax. RSP is 16-aligned at entry; the scratch slots below it
+    // misalign by 8, which is fine with no further calls inside. Every path
+    // leaves the x87 stack exactly as it found it.
+    switch (op) {
+    case F80Op::Add:
+    case F80Op::Sub:
+    case F80Op::Mul:
+    case F80Op::Div: {
+        // (f80* out, const f80* a, const f80* b). x87 arithmetic has no
+        // tbyte memory form (only fld/fstp do), so load both operands
+        // and use the register-pop form: st1 = st1 OP st0.
+        as.fld(x86::tbyte_ptr(x86::rdx));
+        as.fld(x86::tbyte_ptr(x86::r8));
+        if (op == F80Op::Add)
+            as.faddp();
+        else if (op == F80Op::Sub)
+            as.fsubp();
+        else if (op == F80Op::Mul)
+            as.fmulp();
+        else
+            as.fdivp();
+        as.fstp(x86::tbyte_ptr(x86::rcx));
+        as.ret();
+        return;
+    }
+    case F80Op::Neg: {
+        as.fld(x86::tbyte_ptr(x86::rdx));
+        as.fchs();
+        as.fstp(x86::tbyte_ptr(x86::rcx));
+        as.ret();
+        return;
+    }
+    case F80Op::Mod: {
+        // fprem loop (the partial-remainder C2 bit requests another pass).
+        as.fld(x86::tbyte_ptr(x86::r8));
+        as.fld(x86::tbyte_ptr(x86::rdx));
+        Label again = as.new_label();
+        as.bind(again);
+        as.fprem();
+        as.fstsw(x86::ax);
+        as.sahf(x86::ah);
+        as.jp(again);
+        as.fstp(x86::st1);
+        as.fstp(x86::tbyte_ptr(x86::rcx));
+        as.ret();
+        return;
+    }
+    case F80Op::CmpFlags: {
+        // (const f80* a, const f80* b) -> bit0=CF(a<b), bit1=ZF(a==b), bit2=PF(unordered).
+        as.fld(x86::tbyte_ptr(x86::rdx));
+        as.fld(x86::tbyte_ptr(x86::rcx));
+        as.fucompp();
+        // fucompp reports to the x87 status word, not EFLAGS.
+        as.fstsw(x86::ax);
+        as.sahf(x86::ah);
+        as.setc(x86::al);
+        as.setz(x86::cl);
+        as.setp(x86::dl);
+        as.movzx(x86::eax, x86::al);
+        as.movzx(x86::ecx, x86::cl);
+        as.movzx(x86::edx, x86::dl);
+        as.shl(x86::ecx, 1);
+        as.shl(x86::edx, 2);
+        as.or_(x86::eax, x86::ecx);
+        as.or_(x86::eax, x86::edx);
+        as.ret();
+        return;
+    }
+    case F80Op::FromF32: {
+        // (f80* out, uint32_t bits).
+        as.sub(x86::rsp, 8);
+        as.mov(x86::dword_ptr(x86::rsp), x86::edx);
+        as.fld(x86::dword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.fstp(x86::tbyte_ptr(x86::rcx));
+        as.ret();
+        return;
+    }
+    case F80Op::FromF64: {
+        as.sub(x86::rsp, 8);
+        as.mov(x86::qword_ptr(x86::rsp), x86::rdx);
+        as.fld(x86::qword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.fstp(x86::tbyte_ptr(x86::rcx));
+        as.ret();
+        return;
+    }
+    case F80Op::ToF32: {
+        // (const f80* in) -> uint32_t bits.
+        as.fld(x86::tbyte_ptr(x86::rcx));
+        as.sub(x86::rsp, 8);
+        as.fstp(x86::dword_ptr(x86::rsp));
+        as.mov(x86::eax, x86::dword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.ret();
+        return;
+    }
+    case F80Op::ToF64: {
+        as.fld(x86::tbyte_ptr(x86::rcx));
+        as.sub(x86::rsp, 8);
+        as.fstp(x86::qword_ptr(x86::rsp));
+        as.mov(x86::rax, x86::qword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.ret();
+        return;
+    }
+    case F80Op::FromI32: {
+        as.sub(x86::rsp, 8);
+        as.mov(x86::dword_ptr(x86::rsp), x86::edx);
+        as.fild(x86::dword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.fstp(x86::tbyte_ptr(x86::rcx));
+        as.ret();
+        return;
+    }
+    case F80Op::FromI64: {
+        as.sub(x86::rsp, 8);
+        as.mov(x86::qword_ptr(x86::rsp), x86::rdx);
+        as.fild(x86::qword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.fstp(x86::tbyte_ptr(x86::rcx));
+        as.ret();
+        return;
+    }
+    case F80Op::FromU32: {
+        as.sub(x86::rsp, 8);
+        as.mov(x86::dword_ptr(x86::rsp), x86::edx);
+        as.mov(x86::dword_ptr(x86::rsp, 4), 0);
+        as.fild(x86::qword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.fstp(x86::tbyte_ptr(x86::rcx));
+        as.ret();
+        return;
+    }
+    case F80Op::FromU64: {
+        // Halve (exact), convert the non-negative half, double (exact),
+        // and add the lost bit back; all exact in 80-bit precision.
+        as.mov(x86::rax, x86::rdx);
+        as.and_(x86::rax, 1);
+        as.shr(x86::rdx, 1);
+        as.sub(x86::rsp, 8);
+        as.mov(x86::qword_ptr(x86::rsp), x86::rdx);
+        as.fild(x86::qword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.fld(x86::st0);
+        as.faddp();
+        as.test(x86::rax, x86::rax);
+        Label done = as.new_label();
+        as.jz(done);
+        as.fld1();
+        as.faddp();
+        as.bind(done);
+        as.fstp(x86::tbyte_ptr(x86::rcx));
+        as.ret();
+        return;
+    }
+    case F80Op::ToI32:
+    case F80Op::ToU32: {
+        // fisttp truncates toward zero like cvtt; invalid yields INT64_MIN,
+        // whose low half matches cvttss2si's INT32_MIN.
+        as.fld(x86::tbyte_ptr(x86::rcx));
+        as.sub(x86::rsp, 8);
+        as.fisttp(x86::qword_ptr(x86::rsp));
+        as.mov(x86::eax, x86::dword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.ret();
+        return;
+    }
+    case F80Op::ToI64: {
+        as.fld(x86::tbyte_ptr(x86::rcx));
+        as.sub(x86::rsp, 8);
+        as.fisttp(x86::qword_ptr(x86::rsp));
+        as.mov(x86::rax, x86::qword_ptr(x86::rsp));
+        as.add(x86::rsp, 8);
+        as.ret();
+        return;
+    }
+    case F80Op::ToU64: {
+        // result = 2*trunc(q) + trunc(v - 2*trunc(q)) with q = v/2. A real
+        // division is inexact for odd v near 2^64 (2^64-1 halves to 2^63),
+        // so halve by decrementing the stored exponent instead, which is
+        // exact for every finite v. |v| < 1 truncates to 0 (also -0.0).
+        as.fld(x86::tbyte_ptr(x86::rcx));
+        as.sub(x86::rsp, 32);
+        as.fstp(x86::tbyte_ptr(x86::rsp));
+        as.movzx(x86::eax, x86::word_ptr(x86::rsp, 8));
+        as.and_(x86::eax, 0x7FFF);
+        as.cmp(x86::eax, 0x3FFF);
+        Label tiny = as.new_label();
+        as.jb(tiny);
+        as.dec(x86::word_ptr(x86::rsp, 8));
+        as.fld(x86::tbyte_ptr(x86::rsp));
+        as.fld(x86::st0);
+        as.fisttp(x86::qword_ptr(x86::rsp, 16));
+        as.fild(x86::qword_ptr(x86::rsp, 16));
+        as.fld(x86::st0);
+        as.faddp();
+        as.fld(x86::tbyte_ptr(x86::rcx));
+        as.fsubrp(x86::st1);
+        as.fisttp(x86::qword_ptr(x86::rsp, 24));
+        as.fstp(x86::st0);
+        as.mov(x86::rax, x86::qword_ptr(x86::rsp, 16));
+        as.add(x86::rax, x86::rax);
+        as.add(x86::rax, x86::qword_ptr(x86::rsp, 24));
+        as.add(x86::rsp, 32);
+        as.ret();
+        as.bind(tiny);
+        as.xor_(x86::eax, x86::eax);
+        as.add(x86::rsp, 32);
+        as.ret();
+        return;
+    }
+    case F80Op::ToBool: {
+        // v != 0, with NaN comparing true like IEEE not-equal.
+        as.fld(x86::tbyte_ptr(x86::rcx));
+        as.fldz();
+        as.fucompp();
+        // fucompp reports to the x87 status word, not EFLAGS.
+        as.fstsw(x86::ax);
+        as.sahf(x86::ah);
+        as.setp(x86::al);
+        as.setnz(x86::cl);
+        as.movzx(x86::eax, x86::al);
+        as.movzx(x86::ecx, x86::cl);
+        as.or_(x86::eax, x86::ecx);
+        as.ret();
+        return;
+    }
+    case F80Op::Count:
+        break;
+    }
+    llvm_unreachable("all cases handled");
+}
+
+void X64AsmJitGenerator::emitCall(const CallInst* inst) {
     IRType* cxFunctionType = inst->function->getType();
     if (cxFunctionType->isPointerType()) cxFunctionType = cxFunctionType->getPointee();
     ASSERT(cxFunctionType->isFunctionType());
@@ -2658,12 +3077,8 @@ void AsmJitGenerator::emitCall(const CallInst* inst) {
     Gp sretHome;
     if (retClass.kind == AbiClass::Kind::Indirect) {
         sig.add_arg(TypeId::kUInt64);
-    } else if (retClass.kind == AbiClass::Kind::IntChunks) {
+    } else if (retClass.kind == AbiClass::Kind::Chunk) {
         sig.set_ret(retClass.chunkIs64 ? TypeId::kUInt64 : TypeId::kUInt32);
-        // Extra chunks ride in x1 via FuncDetail surgery below.
-    } else if (retClass.kind == AbiClass::Kind::HFA) {
-        sig.set_ret(retClass.hfaIsDouble ? TypeId::kFloat64 : TypeId::kFloat32);
-        // Extra members ride in v1+ via FuncDetail surgery below.
     } else if (retClass.kind != AbiClass::Kind::Empty) {
         sig.set_ret(retClass.typeId);
     }
@@ -2674,15 +3089,8 @@ void AsmJitGenerator::emitCall(const CallInst* inst) {
         if (cls.kind == AbiClass::Kind::Empty) continue;
         if (cls.kind == AbiClass::Kind::Direct || cls.kind == AbiClass::Kind::Indirect) {
             sig.add_arg(cls.kind == AbiClass::Kind::Indirect ? TypeId::kUInt64 : cls.typeId);
-        } else if (cls.kind == AbiClass::Kind::IntChunks) {
-            if (!cls.chunkIs64)
-                sig.add_arg(TypeId::kUInt32);
-            else
-                for (unsigned c = 0; c < cls.chunkCount; ++c)
-                    sig.add_arg(TypeId::kUInt64);
-        } else if (cls.kind == AbiClass::Kind::HFA) {
-            for (unsigned c = 0; c < cls.hfaCount; ++c)
-                sig.add_arg(cls.hfaIsDouble ? TypeId::kFloat64 : TypeId::kFloat32);
+        } else if (cls.kind == AbiClass::Kind::Chunk) {
+            sig.add_arg(cls.chunkIs64 ? TypeId::kUInt64 : TypeId::kUInt32);
         }
     }
     // Variadic extras.
@@ -2695,26 +3103,13 @@ void AsmJitGenerator::emitCall(const CallInst* inst) {
                 continue;
             }
             AbiClass cls = classifyType(argType);
-            // Large HFA varargs cross as a pointer to a caller copy, like
-            // other large aggregates; HFA-ness only affects register passing.
-            if (cls.kind == AbiClass::Kind::HFA && typeSize(argType) > 16) cls.kind = AbiClass::Kind::Indirect;
             if (cls.kind == AbiClass::Kind::Empty) continue;
             if (cls.kind == AbiClass::Kind::Direct) {
                 sig.add_arg(cls.typeId);
-            } else if (cls.kind == AbiClass::Kind::IntChunks) {
-                if (!cls.chunkIs64)
-                    sig.add_arg(TypeId::kUInt32);
-                else
-                    for (unsigned c = 0; c < cls.chunkCount; ++c)
-                        sig.add_arg(TypeId::kUInt64);
-            } else if (cls.kind == AbiClass::Kind::HFA) {
-                // Varargs never use vector registers on Apple; pass the bytes
-                // in 8-byte slots like small structs.
-                uint64_t slots = (typeSize(argType) + 7) / 8;
-                for (uint64_t c = 0; c < slots; ++c)
-                    sig.add_arg(TypeId::kUInt64);
+            } else if (cls.kind == AbiClass::Kind::Chunk) {
+                sig.add_arg(cls.chunkIs64 ? TypeId::kUInt64 : TypeId::kUInt32);
             } else {
-                // Large struct varargs cross as a pointer to a caller copy.
+                // Large aggregate varargs cross as a pointer to a caller copy.
                 sig.add_arg(TypeId::kUInt64);
             }
         }
@@ -2723,12 +3118,15 @@ void AsmJitGenerator::emitCall(const CallInst* inst) {
 
     // Materialize every operand BEFORE creating the invoke node: nodes
     // append at the cursor, so anything emitted after would land after the call.
-    Gp target = cc->new_gp64();
+    // Variadic calls address through r10: AsmJit synthesizes float vararg
+    // moves into rcx/rdx/r8/r9 after register allocation, which would
+    // clobber a target allocated there. r10 is volatile and never an
+    // argument register on either 64-bit calling convention.
+    Gp target = functionType->isVariadic ? x86::r10 : cc->new_gp64();
     if (callee) {
         Gp slot = cc->new_gp64();
         cc->mov(slot, (uint64_t)&funcTable[funcIndex.at(callee)]);
-        a64::Mem mem = a64::ptr(slot);
-        cc->ldr(target, mem);
+        cc->mov(target, x86::qword_ptr(slot));
     } else {
         cc->mov(target, getGp(inst->function));
     }
@@ -2742,46 +3140,10 @@ void AsmJitGenerator::emitCall(const CallInst* inst) {
     };
     std::vector<CallArg> callArgs;
     if (retClass.kind == AbiClass::Kind::Indirect) callArgs.push_back({sretHome});
-    auto passChunks = [&](Gp home, const AbiClass& cls) {
-        if (!cls.chunkIs64) {
-            Gp chunk = cc->new_gp32();
-            cc->ldr(chunk, memAt(home, 0, 4));
-            callArgs.push_back({chunk});
-            return;
-        }
-        for (unsigned c = 0; c < cls.chunkCount; ++c) {
-            Gp chunk = cc->new_gp64();
-            cc->ldr(chunk, memAt(home, c * 8, 8));
-            callArgs.push_back({chunk});
-        }
-    };
-    auto passHFA = [&](Gp home, const AbiClass& cls, IRType* argType, bool asVararg) {
-        if (asVararg) {
-            uint64_t slots = (typeSize(argType) + 7) / 8;
-            for (uint64_t c = 0; c < slots; ++c) {
-                Gp chunk = cc->new_gp64();
-                cc->ldr(chunk, memAt(home, c * 8, 8));
-                callArgs.push_back({chunk});
-            }
-            return;
-        }
-        std::vector<HFALeaf> leaves;
-        collectHFALeaves(argType, 0, leaves);
-        ASSERT(leaves.size() == cls.hfaCount);
-        for (unsigned c = 0; c < cls.hfaCount; ++c) {
-            Vec v = cls.hfaIsDouble ? cc->new_vec_d() : cc->new_vec_s();
-            if (cls.hfaIsDouble)
-                cc->ldr(v, memAt(home, leaves[c].offset, 8));
-            else
-                cc->ldr(v, memAt(home, leaves[c].offset, 4));
-            callArgs.push_back({v, true});
-        }
-    };
     for (size_t i = 0; i < inst->args.size(); ++i) {
         bool isExtra = i >= functionType->paramTypes.size();
         IRType* argType = isExtra ? inst->args[i]->getType() : functionType->paramTypes[i];
         AbiClass cls = isExtra ? classifyType(argType) : fixedClasses[i];
-        if (isExtra && cls.kind == AbiClass::Kind::HFA && typeSize(argType) > 16) cls.kind = AbiClass::Kind::Indirect;
         if (isExternC && argType->isArrayType()) {
             callArgs.push_back({getGp(inst->args[i])});
             continue;
@@ -2795,10 +3157,16 @@ void AsmJitGenerator::emitCall(const CallInst* inst) {
             continue;
         }
         Gp home = getGp(inst->args[i]);
-        if (cls.kind == AbiClass::Kind::IntChunks) {
-            passChunks(home, cls);
-        } else if (cls.kind == AbiClass::Kind::HFA) {
-            passHFA(home, cls, argType, isExtra);
+        if (cls.kind == AbiClass::Kind::Chunk) {
+            if (!cls.chunkIs64) {
+                Gp chunk = cc->new_gp32();
+                cc->mov(chunk, memAt(home, 0, 4));
+                callArgs.push_back({chunk});
+            } else {
+                Gp chunk = cc->new_gp64();
+                cc->mov(chunk, memAt(home, 0, 8));
+                callArgs.push_back({chunk});
+            }
         } else {
             ASSERT(cls.kind == AbiClass::Kind::Indirect);
             if (isExternC || isExtra) {
@@ -2835,7 +3203,7 @@ void AsmJitGenerator::emitCall(const CallInst* inst) {
     }
     if (retClass.kind == AbiClass::Kind::Direct) {
         if (returnType->isFloatingPoint()) {
-            Vec out = isDoubleType(returnType) ? cc->new_vec_d() : cc->new_vec_s();
+            Vec out = isDoubleType(returnType) ? cc->new_xmm_sd() : cc->new_xmm_ss();
             invoke->set_ret(0, out);
             vecValues.emplace(inst, out);
         } else {
@@ -2845,36 +3213,111 @@ void AsmJitGenerator::emitCall(const CallInst* inst) {
         }
         return;
     }
+    ASSERT(retClass.kind == AbiClass::Kind::Chunk);
     uint64_t size = typeSize(returnType);
     Gp home = homeAddr(size, typeAlign(returnType));
-    if (retClass.kind == AbiClass::Kind::IntChunks) {
-        if (!retClass.chunkIs64) {
-            Gp chunk = cc->new_gp32();
-            invoke->set_ret(0, chunk);
-            cc->str(chunk, memAt(home, 0, 4));
-        } else {
-            for (unsigned c = 0; c < retClass.chunkCount; ++c) {
-                if (c > 0) invoke->detail().ret(c).init_reg(RegType::kGp64, c, TypeId::kUInt64);
-                Gp chunk = cc->new_gp64();
-                invoke->set_ret(c, chunk);
-                cc->str(chunk, memAt(home, c * 8, 8));
-            }
-        }
-        gpValues.emplace(inst, home);
-        return;
-    }
-    ASSERT(retClass.kind == AbiClass::Kind::HFA);
-    std::vector<HFALeaf> leaves;
-    collectHFALeaves(returnType, 0, leaves);
-    ASSERT(leaves.size() == retClass.hfaCount);
-    for (unsigned c = 0; c < retClass.hfaCount; ++c) {
-        if (c > 0) {
-            invoke->detail().ret(c).init_reg(retClass.hfaIsDouble ? RegType::kVec64 : RegType::kVec32, c,
-                                             retClass.hfaIsDouble ? TypeId::kFloat64 : TypeId::kFloat32);
-        }
-        Vec v = retClass.hfaIsDouble ? cc->new_vec_d() : cc->new_vec_s();
-        invoke->set_ret(c, v);
-        cc->str(v, memAt(home, leaves[c].offset, retClass.hfaIsDouble ? 8 : 4));
+    if (!retClass.chunkIs64) {
+        Gp chunk = cc->new_gp32();
+        invoke->set_ret(0, chunk);
+        cc->mov(memAt(home, 0, 4), chunk);
+    } else {
+        Gp chunk = cc->new_gp64();
+        invoke->set_ret(0, chunk);
+        cc->mov(memAt(home, 0, 8), chunk);
     }
     gpValues.emplace(inst, home);
+}
+
+} // namespace
+
+static const Function* findMain(const std::vector<IRModule*>& modules) {
+    for (auto* module : modules) {
+        for (auto* function : module->functions) {
+            if (function->mangledName == "main" && !function->isExtern && !function->body.empty()) return function;
+        }
+    }
+    return nullptr;
+}
+
+static bool x64ExternResolvable(llvm::StringRef name) {
+    if (name.empty()) return false;
+#ifdef _WIN32
+    // Pinned libc names resolve to the host's address (same as the LLVM
+    // JIT); unpinned names that legacy msvcrt.dll also exports keep the
+    // link-and-exec path instead of risking a split CRT.
+    if (lookupPinnedLibcSymbol(name)) return true;
+    if (isMsvcrtAmbiguous(name)) return false;
+#endif
+    return llvm::sys::DynamicLibrary::SearchForAddressOfSymbol(stripAsmLabelMarker(name).str()) != nullptr;
+}
+
+bool X64AsmJitSession::eligible(const std::vector<IRModule*>& modules) {
+#if defined(_WIN32) && (defined(_M_X64) || defined(__x86_64__))
+    const Function* main = findMain(modules);
+    if (!main || (main->params.size() != 0 && main->params.size() != 2)) return false;
+    llvm::sys::DynamicLibrary::getPermanentLibrary(nullptr);
+    for (auto* module : modules) {
+        for (auto* function : module->functions) {
+            if ((function->isExtern || function->body.empty()) && !x64ExternResolvable(function->mangledName)) return false;
+            // float80 never crosses an extern boundary (see hasByValueFloat80).
+            if (function->isExtern || function->declaredExternC) {
+                if (hasByValueFloat80(function->returnType)) return false;
+                for (auto& param : function->params) {
+                    if (hasByValueFloat80(param.type)) return false;
+                }
+            }
+            // Variadic extras to extern calls aren't in the signature; scan
+            // the call sites. Indirect calls are always internal (sema
+            // rejects extern functions as values).
+            if (!function->body.empty()) {
+                for (auto* block : function->body) {
+                    for (auto* value : block->body) {
+                        auto* call = llvm::dyn_cast<CallInst>(value);
+                        if (!call) continue;
+                        auto* direct = llvm::dyn_cast<Function>(call->function);
+                        if (!direct || !direct->isExtern) continue;
+                        for (size_t i = direct->params.size(); i < call->args.size(); ++i) {
+                            if (hasByValueFloat80(call->args[i]->getType())) return false;
+                        }
+                    }
+                }
+            }
+        }
+        for (auto* global : module->globalVariables) {
+            if (!global->value) {
+                if (!x64ExternResolvable(global->name)) return false;
+                if (hasByValueFloat80(global->type)) return false;
+            }
+        }
+    }
+    return true;
+#else
+    (void)modules;
+    return false;
+#endif
+}
+
+int X64AsmJitSession::run(const std::vector<IRModule*>& modules, const std::string& argv0, const std::vector<std::string>& programArgs) {
+    // Process lifetime: JIT code and globals must outlive main's return so
+    // atexit handlers and static destructors can still call into them. The
+    // destructor runs after user handlers by atexit LIFO order.
+    static X64AsmJitGenerator generator;
+    generator.codegenModules(modules);
+    const Function* main = findMain(modules);
+    ASSERT(main);
+    void* mainAddr = generator.funcTable[generator.funcIndex.at(main)];
+    ASSERT(mainAddr);
+    std::vector<char*> argv;
+    argv.reserve(programArgs.size() + 2);
+    argv.push_back(const_cast<char*>(argv0.c_str()));
+    for (const auto& arg : programArgs)
+        argv.push_back(const_cast<char*>(arg.c_str()));
+    int argc = static_cast<int>(argv.size());
+    argv.push_back(nullptr);
+    if (main->params.size() == 2) {
+        auto* mainFn = reinterpret_cast<int (*)(int, char**)>(mainAddr);
+        return mainFn(argc, argv.data());
+    }
+    auto* mainFn = reinterpret_cast<int (*)()>(mainAddr);
+    return mainFn();
 }

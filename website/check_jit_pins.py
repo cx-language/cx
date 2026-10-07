@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Verify the Windows JIT libc pin table covers every reachable extern.
 
-jit.cpp pins libc symbols to host addresses so JITed code binds the UCRT
-instead of legacy msvcrt.dll. A missing pin silently reintroduces the
+src/backend/jit-pins.h pins libc symbols to host addresses so JITed code
+binds the UCRT instead of legacy msvcrt.dll. A missing pin silently reintroduces the
 heap/buffer mismatch, so this check fails when an `extern` visible under
 `#if Windows` in std/ lacks a PIN entry (or vice versa, modulo extras like
 memmove/memcmp and heap functions user code may reference). User and C-import
@@ -63,7 +63,7 @@ def windows_externs():
 
 
 def pinned_names():
-    src = (ROOT / "src/driver/jit.cpp").read_text()
+    src = (ROOT / "src/backend/jit-pins.h").read_text()
     return set(re.findall(r"^\s*PIN\(([A-Za-z_][A-Za-z0-9_]*),", src, re.MULTILINE))
 
 
@@ -74,7 +74,7 @@ def main():
     extra = sorted(pinned - externs - EXTRA_PINS)
     ok = True
     for name in missing:
-        print(f"error: std extern '{name}' has no PIN entry in src/driver/jit.cpp")
+        print(f"error: std extern '{name}' has no PIN entry in src/backend/jit-pins.h")
         ok = False
     for name in extra:
         print(f"error: PIN entry '{name}' matches no std extern (nor EXTRA_PINS {sorted(EXTRA_PINS)})")

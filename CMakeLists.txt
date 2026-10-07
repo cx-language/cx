@@ -208,7 +208,7 @@ list(FILTER LIBCX_SOURCES EXCLUDE REGEX "src/lsp/main.cpp")
 add_library(libcx ${LIBCX_SOURCES})
 # The AsmJit backend's using-directives would leak into other TUs in a unity
 # build (anonymous-namespace using-directives are transitively visible).
-set_source_files_properties(src/backend/asmjit.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/backend/asmjit.cpp src/backend/asmjit_x64.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 set_target_properties(libcx PROPERTIES PREFIX "")
 if(LLVM_TOOLS_BINARY_DIR)
     # Lets the embedded Clang find its subprograms (lld-link) on Windows

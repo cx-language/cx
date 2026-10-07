@@ -104,12 +104,12 @@ cl::opt<bool> noJit("no-jit", cl::desc("Don't run in-process via JIT; link and e
                     cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 enum class JitBackend { AsmJit, LLVM };
 cl::opt<JitBackend> jitBackend("jit-backend", cl::desc("Select JIT engine for 'run':"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__aarch64__) || defined(_M_ARM64) || (defined(_WIN32) && (defined(_M_X64) || defined(__x86_64__)))
                                cl::init(JitBackend::AsmJit),
 #else
                                cl::init(JitBackend::LLVM),
 #endif
-                               cl::values(clEnumValN(JitBackend::AsmJit, "asmjit", "AsmJit backend, fastest compile times (AArch64 only)"),
+                               cl::values(clEnumValN(JitBackend::AsmJit, "asmjit", "AsmJit backend, fastest compile times (AArch64 and Windows x64)"),
                                           clEnumValN(JitBackend::LLVM, "llvm", "LLVM JIT backend")));
 cl::opt<bool> noLeakCheck("no-leak-check", cl::desc("Disable the leak detector in debug builds"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> dwarfDebugInfo("dwarf-debug-info", cl::desc("Emit DWARF debug info on Windows instead of CodeView"), cl::sub(cl::SubCommand::getAll()),

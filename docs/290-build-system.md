@@ -143,7 +143,8 @@ info is CodeView in a `.pdb` file next to the binary; pass
 their abort traces show addresses (plus compiler frames) rather than function
 names. Pass `--no-jit` to link and execute a binary with named traces instead;
 `cx build` output always names functions. Debug JIT runs default to the fast
-AsmJit backend on AArch64; pass `--jit-backend=llvm` to use the LLVM JIT.
+AsmJit backend on AArch64 and Windows x64; pass `--jit-backend=llvm` to use
+the LLVM JIT.
 
 Traces and debugger output show mangled symbol names (such as
 `_CX1N4main5innerE4void0_`). `cx demangle` decodes them back to
