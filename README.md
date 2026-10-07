@@ -103,6 +103,10 @@ cmake .. -DFETCHCONTENT_SOURCE_DIR_ASMJIT=/path/to/asmjit
 On macOS, apply `cmake/asmjit-apple-varargs.patch` to that checkout first;
 CMake applies it automatically only to checkouts it fetches itself.
 
+If your LLVM distribution does not ship FileCheck, configuring downloads
+its source; pass `-DFILECHECK_SOURCE=/path/to/FileCheck.cpp` to build from
+a local copy of the same LLVM version instead.
+
 ### Editor support
 
 For diagnostics, hover, go to definition, completions, find references, and semantic highlighting
