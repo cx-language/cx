@@ -32,7 +32,7 @@ Supported settings:
 - `defines`: preprocessor definitions, as if passed with `-D`.
 - `headerSearchPaths`: directories to search for C headers, as if passed with `-I`.
 - `librarySearchPaths`: directories to search for libraries, as if passed with `-L`.
-- `libraries`: system libraries to link, as if passed with `-l`. A value naming an existing file (such as a vendored static archive) is linked directly instead of being searched for.
+- `libraries`: system libraries to link, as if passed with `-l`. A value naming an existing file (such as a vendored static archive) is linked directly instead of being searched for. On Windows with MSVC, `-L` and `-l` are translated to `/LIBPATH` and `.lib` form automatically.
 - `frameworks`: macOS frameworks to link, as if passed with `-framework`.
 - `pkgConfigDependencies`: system libraries resolved via `pkg-config --cflags --libs`.
 - `dependencies`: cx libraries to fetch from Git, as `(package = "...", url = "...", version = "...")` entries (see below).

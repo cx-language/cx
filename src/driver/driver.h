@@ -53,5 +53,9 @@ struct BuildParams {
 int driverMain(int argc, const char** argv);
 int buildModule(Module& mainModule, BuildParams buildParams);
 llvm::MemoryBufferRef addFileBufferToModule(llvm::StringRef filePath, Module& targetModule);
+// Translates -L/-l link settings to MSVC link.exe form: each search path
+// becomes /LIBPATH:<path>, each bare library name becomes <name>.lib, and
+// values naming a path or file pass through. Appended after -link.
+std::vector<std::string> msvcLinkArgs(llvm::ArrayRef<std::string> librarySearchPaths, llvm::ArrayRef<std::string> libraries);
 
 } // namespace cx
