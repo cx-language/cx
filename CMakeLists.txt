@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
+# FetchContent dependencies declaring cmake_minimum_required < 3.5 (zlib)
+# are a hard error under CMake 4+. This floor maps those declarations to
+# 3.5; it does not affect this project (3.16) and is inert on older CMake.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+    set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+endif()
 project(cx)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -6,6 +12,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_UNITY_BUILD ON CACHE BOOL "Enable unity build")
 
 if(MSVC)
+    # Use the static MSVC runtime (/MT even in Debug) to match the prebuilt
+    # LLVM distribution. Set the modern variable so FetchContent dependencies
+    # (zlib, zstd) get it too, and keep the flag rewrite below for the flags
+    # themselves. C flags are included: zlib/zstd are C.
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+
     # Enable standards-conforming preprocessor. https://learn.microsoft.com/en-us/cpp/build/reference/zc-preprocessor
     string(APPEND CMAKE_CXX_FLAGS " /Zc:preprocessor")
 
@@ -13,8 +25,8 @@ if(MSVC)
 
     # Use static release version of Runtime Library to match prebuilt LLVM.
     # https://gitlab.kitware.com/cmake/community/wikis/FAQ#how-can-i-build-my-msvc-application-with-a-static-runtime
-    foreach(flag_var CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-        string(REGEX REPLACE "/MDd" "/MT" ${flag_var} "${${flag_var}}")
+    foreach(flag_var CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+        string(REGEX REPLACE "/MDd?" "/MT" ${flag_var} "${${flag_var}}")
         string(REGEX REPLACE "/DNDEBUG" "" ${flag_var} "${${flag_var}}")
     endforeach(flag_var)
 
@@ -24,6 +36,7 @@ if(MSVC)
     # cost once per compiler invocation (thousands of invocations per run).
     # Assertions stay enabled in all configurations (NDEBUG is stripped
     # above), so Debug still catches logic errors.
+    string(REGEX REPLACE "/RTC[^ ]*" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
     string(REGEX REPLACE "/RTC[^ ]*" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
     string(REGEX REPLACE "/GR" "/GR-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GS- /MP /D_ITERATOR_DEBUG_LEVEL=0 /D_SCL_SECURE=0")
@@ -46,6 +59,103 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "--system-header-prefix=llvm --system-header-prefix=clang ${CMAKE_CXX_FLAGS}")
+endif()
+
+include(FetchContent)
+
+# LLVM's CMake config includes LLVMExports.cmake, which hard-errors if any of
+# its link-interface targets are missing: ZLIB::ZLIB and zstd::libzstd_static
+# (via LLVMSupport), LibXml2::LibXml2 (via LLVMWindowsManifest), and
+# DIASDK::Diaguids (via LLVMDebugInfoPDB). LLVMConfig.cmake itself calls
+# find_package() for each, but on a bare Windows machine none are findable.
+# Provide them automatically so contributors need no manual vcpkg installs.
+# System/vcpkg libraries are preferred when findable (see CMAKE_PREFIX_PATH);
+# the FetchContent fallbacks below only run when they are absent.
+#
+# ZLIB and zstd are linked into every binary via LLVMSupport, so they must be
+# real libraries and are built from source when missing. LibXml2 and the DIA
+# SDK back LLVM components cx never links (our llvm_map_components set is
+# core/native/linker/orcjit/passes/support plus the Clang libraries, which
+# contains neither LLVMWindowsManifest nor LLVMDebugInfoPDB), so dummy
+# INTERFACE targets suffice for those when they are absent. If you add an
+# LLVM component that needs either, install the real library instead.
+set(CX_LIBXML2_DUMMY FALSE)
+set(CX_DIASDK_DUMMY FALSE)
+
+# --- ZLIB (real, required via LLVMSupport) ---
+find_package(ZLIB QUIET)
+if(NOT TARGET ZLIB::ZLIB)
+    message(STATUS "ZLIB not found, fetching zlib from source")
+    FetchContent_Declare(zlib
+        GIT_REPOSITORY https://github.com/madler/zlib.git
+        GIT_TAG v1.3.1
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+        UPDATE_DISCONNECTED TRUE)
+    set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "Build zlib examples" FORCE)
+    set(SKIP_INSTALL_ALL ON CACHE BOOL "Skip zlib install targets" FORCE)
+    FetchContent_MakeAvailable(zlib)
+    if(NOT TARGET ZLIB::ZLIB)
+        add_library(ZLIB::ZLIB ALIAS zlibstatic)
+    endif()
+    # zlib's sources don't compile in unity (jumbo) mode; our top-level
+    # CMAKE_UNITY_BUILD=ON would otherwise leak into this subbuild.
+    set_target_properties(zlib zlibstatic PROPERTIES UNITY_BUILD OFF)
+    # Our alias satisfies LLVMExports; skip LLVMConfig's own (noisy) search.
+    set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB TRUE)
+endif()
+
+# --- zstd (real, required via LLVMSupport) ---
+find_package(zstd QUIET)
+if(NOT TARGET zstd::libzstd_static)
+    message(STATUS "zstd not found, fetching zstd from source")
+    FetchContent_Declare(zstd
+        GIT_REPOSITORY https://github.com/facebook/zstd.git
+        GIT_TAG v1.5.7
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+        SOURCE_SUBDIR build/cmake
+        UPDATE_DISCONNECTED TRUE)
+    set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_STATIC ON CACHE BOOL "" FORCE)
+    if(MSVC)
+        set(ZSTD_USE_STATIC_RUNTIME ON CACHE BOOL "" FORCE)
+    endif()
+    # zstd's CMake force-sets CMAKE_BUILD_TYPE=Release in the cache when it
+    # is unset; preserve ours across the sub-configure.
+    set(CX_SAVED_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+    FetchContent_MakeAvailable(zstd)
+    set(CMAKE_BUILD_TYPE "${CX_SAVED_BUILD_TYPE}" CACHE STRING "Choose the type of build." FORCE)
+    if(NOT TARGET zstd::libzstd_static)
+        add_library(zstd::libzstd_static ALIAS libzstd_static)
+    endif()
+    # As above: keep our unity-build default out of the zstd subbuild.
+    set_target_properties(libzstd_static PROPERTIES UNITY_BUILD OFF)
+    set(CMAKE_DISABLE_FIND_PACKAGE_zstd TRUE)
+endif()
+
+# --- LibXml2 (dummy suffices; LLVMWindowsManifest is not linked) ---
+find_package(LibXml2 QUIET)
+if(NOT TARGET LibXml2::LibXml2)
+    message(STATUS "LibXml2 not found, defining dummy target (LLVMWindowsManifest is not linked by cx)")
+    add_library(LibXml2::LibXml2 INTERFACE IMPORTED)
+    set(CX_LIBXML2_DUMMY TRUE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_LibXml2 TRUE)
+endif()
+
+# --- DIA SDK (dummy suffices; LLVMDebugInfoPDB is not linked) ---
+# FindDIASDK.cmake ships inside the LLVM distribution, so it is not on
+# CMAKE_MODULE_PATH until find_package(LLVM) runs; there is nothing to
+# find beforehand. The dummy satisfies LLVMExports.
+if(WIN32 AND NOT TARGET DIASDK::Diaguids)
+    message(STATUS "Defining dummy DIASDK::Diaguids target (LLVMDebugInfoPDB is not linked by cx)")
+    add_library(DIASDK::Diaguids INTERFACE IMPORTED)
+    set(CX_DIASDK_DUMMY TRUE)
+    # Skip LLVMConfig's/ClangConfig's own noisy searches; the dummy suffices.
+    set(CMAKE_DISABLE_FIND_PACKAGE_DIASDK TRUE)
 endif()
 
 find_package(LLVM REQUIRED)
@@ -132,6 +242,14 @@ if(LLVM_LINK_LLVM_DYLIB)
     set(LLVM_LIBS LLVM)
 else()
     llvm_map_components_to_libnames(LLVM_LIBS core native linker orcjit passes support)
+endif()
+# The LibXml2/DIASDK dummy targets above only satisfy LLVMExports.cmake; they
+# carry no library. Fail fast if a linked component ever needs the real one.
+if(CX_LIBXML2_DUMMY AND "LLVMWindowsManifest" IN_LIST LLVM_LIBS)
+    message(FATAL_ERROR "LLVMWindowsManifest requires real LibXml2, but the dummy target was used. Install libxml2 and add it to CMAKE_PREFIX_PATH.")
+endif()
+if(CX_DIASDK_DUMMY AND "LLVMDebugInfoPDB" IN_LIST LLVM_LIBS)
+    message(FATAL_ERROR "LLVMDebugInfoPDB requires the real DIA SDK, but the dummy target was used. Install the DIA SDK (Visual Studio) or point MSVC_DIA_SDK_DIR at it.")
 endif()
 # Fast JIT for `cx run` (AsmJit). Pinned commit, rolling-master project
 # with no tags; re-pin by updating the hash below (last verified 2026-09-22).

@@ -85,6 +85,11 @@ cmake .. -DCMAKE_PREFIX_PATH="C:\path\to\llvm" -DCMAKE_GENERATOR_PLATFORM=x64 -T
 cmake --build .
 ```
 
+LLVM's Windows binaries require zlib and zstd at configure time. CMake uses
+system/vcpkg copies when findable (add their install prefix to
+`CMAKE_PREFIX_PATH`), and otherwise builds them from source automatically,
+so no manual dependency install is needed.
+
 The `cx` and `cx-lsp` binaries end up in the `build` directory.
 For the fastest clean build of just the compiler, configure with
 `-G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_UNITY_BUILD=ON` and run
@@ -92,12 +97,13 @@ For the fastest clean build of just the compiler, configure with
 
 ### Offline builds
 
-Configuring downloads AsmJit from GitHub. To build without network access,
-check out the pinned commit (see `GIT_TAG` in CMakeLists.txt) and point
-CMake at it:
+Configuring downloads AsmJit from GitHub (plus zlib and zstd on machines
+without system copies, e.g. Windows). To build without network access,
+check out the pinned commits (see `GIT_TAG` in CMakeLists.txt) and point
+CMake at them:
 
 ```sh
-cmake .. -DFETCHCONTENT_SOURCE_DIR_ASMJIT=/path/to/asmjit
+cmake .. -DFETCHCONTENT_SOURCE_DIR_ASMJIT=/path/to/asmjit -DFETCHCONTENT_SOURCE_DIR_ZLIB=/path/to/zlib -DFETCHCONTENT_SOURCE_DIR_ZSTD=/path/to/zstd
 ```
 
 On macOS, apply `cmake/asmjit-apple-varargs.patch` to that checkout first;
