@@ -1,0 +1,53 @@
+// REQUIRES: aarch64
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+float32[4] get4() {
+    float32[4] a = [1.0, 2.0, 3.0, 4.0];
+    return a;
+}
+
+float64[4] getd4() {
+    float64[4] a = [1.5, 2.5, 3.5, 4.5];
+    return a;
+}
+
+struct V4 {
+    float32 x;
+    float32 y;
+    float32 z;
+    float32 w;
+}
+
+V4 getv4() {
+    return V4(1.0, 2.0, 3.0, 4.0);
+}
+
+float32[4] get4big() {
+    uint8[9000] pad = undefined;
+    pad[8999] = 1;
+    float32[4] a = [1.0, 2.0, 3.0, 4.0];
+    return a;
+}
+
+float32[4] apply4(float32[4]() f) {
+    return f();
+}
+
+int main() {
+    var a = get4();
+    println(a[0]); // CHECK:1
+    println(a[3]); // CHECK-NEXT:4
+    var d = getd4();
+    println(d[0]); // CHECK-NEXT:1.5
+    println(d[3]); // CHECK-NEXT:4.5
+    var v = getv4();
+    println(v.x); // CHECK-NEXT:1
+    println(v.w); // CHECK-NEXT:4
+    var b = get4big();
+    println(b[0]); // CHECK-NEXT:1
+    println(b[3]); // CHECK-NEXT:4
+    var via = apply4(get4);
+    println(via[0]); // CHECK-NEXT:1
+    println(via[3]); // CHECK-NEXT:4
+    return 0;
+}

@@ -1392,18 +1392,26 @@ void AsmJitGenerator::emitReturn(const ReturnInst* inst) {
         return;
     }
     // Multi-member HFAs return via the register pack; the FuncNode detail
-    // carries the extra assignments (see codegenFunction).
-    Vec regs[4];
-    for (unsigned c = 0; c < currentRetClass.hfaCount; ++c) {
+    // carries the extra assignments (see codegenFunction). FuncRetNode only
+    // holds 3 operands, so a 4-member HFA loads its last member straight
+    // into v3 after the side-stack restore (calls would clobber it; the
+    // restore only resets the bump pointer, so reading home after is safe).
+    Vec regs[3];
+    unsigned nodeOps = std::min(currentRetClass.hfaCount, 3u);
+    for (unsigned c = 0; c < nodeOps; ++c) {
         regs[c] = currentRetClass.hfaIsDouble ? cc->new_vec_d() : cc->new_vec_s();
         cc->ldr(regs[c], memAt(home, leaves[c].offset, currentRetClass.hfaIsDouble ? 8 : 4));
     }
     restore();
+    if (currentRetClass.hfaCount == 4) {
+        Vec v3 = currentRetClass.hfaIsDouble ? d3 : s3;
+        cc->ldr(v3, memAt(home, leaves[3].offset, currentRetClass.hfaIsDouble ? 8 : 4));
+    }
     FuncRetNode* retNode;
     [[maybe_unused]] Error err = cc->add_func_ret_node(Out(retNode), regs[0], regs[1]);
     ASSERT(err == Error::kOk);
-    retNode->set_op_count(currentRetClass.hfaCount);
-    for (unsigned c = 2; c < currentRetClass.hfaCount; ++c)
+    retNode->set_op_count(nodeOps);
+    for (unsigned c = 2; c < nodeOps; ++c)
         retNode->set_op(c, regs[c]);
 }
 
