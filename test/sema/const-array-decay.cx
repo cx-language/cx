@@ -18,6 +18,14 @@ void noLaunderToVoid() {
     void* v = a.data();
 }
 
+void borrowReturnRejected() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'first' on a constant: it returns 'int&', which would alias frozen storage
+    var f = arr.first();
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'find' on a constant: it returns 'int&?', which would alias frozen storage
+    var x = arr.find(n => *n > 1);
+}
+
 void takePtr(int* p) {}
 void takeView(int[*] p) {}
 

@@ -4277,7 +4277,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
             functionDecl && exprIsConst(*expr.getReceiver()) && !receiverType.removeOptional().isSlice() && !receiverType.removeOptional().isArrayPointer()) {
             Type declaredReturn = functionDecl->getFunctionType()->returnType;
-            if (Type stripped = declaredReturn.removeOptional(); stripped.isPointerOrArrayPointer() || stripped.isSlice()) {
+            if (Type stripped = declaredReturn.removeOptional(); stripped.isPointerOrArrayPointer() || stripped.isSlice() || stripped.isReferenceType()) {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
                             "cannot call '" << expr.getFunctionName() << "' on a constant: it returns '" << declaredReturn
                                             << "', which would alias frozen storage");
