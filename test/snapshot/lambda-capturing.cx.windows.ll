@@ -86,12 +86,13 @@ declare { i32, i1 } @llvm.sadd.with.overflow.i32(i32, i32) #2
 declare %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr) #0
 
 define i32 @main() #0 !dbg !10 {
+  %1 = call ptr @_set_thread_local_invalid_parameter_handler(ptr @__cx_noop_invalid_parameter_handler), !dbg !11
   %s = alloca %S, align 8
   %a = alloca i32, align 4
   %b = alloca %__closure2, align 8
-  call void @_CX1N4main13capturesParamE4void1_M3std5int32(i32 100), !dbg !11
-  call void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %s, i32 5), !dbg !12
-  %1 = call i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %s, i32 1), !dbg !13
+  call void @_CX1N4main13capturesParamE4void1_M3std5int32(i32 100), !dbg !12
+  call void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %s, i32 5), !dbg !13
+  %2 = call i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %s, i32 1), !dbg !14
   store i32 1, ptr %a, align 4
   %a.load = load i32, ptr %a, align 4
   %insert.alloca = alloca %__closure2, align 8
@@ -101,14 +102,20 @@ define i32 @main() #0 !dbg !10 {
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %b, ptr align 8 %insert.alloca, i64 16, i1 false)
   %b.load = alloca %__closure2, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %b.load, ptr align 8 %b, i64 16, i1 false)
-  %2 = getelementptr inbounds %__closure2, ptr %b.load, i32 0, i32 0
-  %3 = load ptr, ptr %2, align 8
-  %4 = getelementptr inbounds %__closure2, ptr %b.load, i32 0, i32 1
-  %5 = load i32, ptr %4, align 4
-  %6 = call i32 %3(i32 %5, i32 2), !dbg !14
-  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !15
+  %3 = getelementptr inbounds %__closure2, ptr %b.load, i32 0, i32 0
+  %4 = load ptr, ptr %3, align 8
+  %5 = getelementptr inbounds %__closure2, ptr %b.load, i32 0, i32 1
+  %6 = load i32, ptr %5, align 4
+  %7 = call i32 %4(i32 %6, i32 2), !dbg !15
+  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !11
   ret i32 0
 }
+
+define private void @__cx_noop_invalid_parameter_handler(ptr %0, ptr %1, ptr %2, i32 %3, i64 %4) {
+  ret void
+}
+
+declare ptr @_set_thread_local_invalid_parameter_handler(ptr)
 
 define void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %this, i32 %d) #0 !dbg !16 {
   %this1 = alloca ptr, align 8
@@ -232,11 +239,11 @@ attributes #2 = { nocallback nocreateundeforpoison nofree nosync nounwind specul
 !8 = distinct !DISubprogram(name: "__lambda0", linkageName: "_CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5int32", scope: !3, file: !3, line: 5, type: !5, scopeLine: 5, spFlags: DISPFlagDefinition, unit: !2)
 !9 = !DILocation(line: 5, column: 13, scope: !8)
 !10 = distinct !DISubprogram(name: "main", linkageName: "main", scope: !3, file: !3, line: 18, type: !5, scopeLine: 18, spFlags: DISPFlagDefinition, unit: !2)
-!11 = !DILocation(line: 19, column: 5, scope: !10)
-!12 = !DILocation(line: 20, column: 13, scope: !10)
-!13 = !DILocation(line: 21, column: 11, scope: !10)
-!14 = !DILocation(line: 24, column: 9, scope: !10)
-!15 = !DILocation(line: 18, column: 6, scope: !10)
+!11 = !DILocation(line: 18, column: 6, scope: !10)
+!12 = !DILocation(line: 19, column: 5, scope: !10)
+!13 = !DILocation(line: 20, column: 13, scope: !10)
+!14 = !DILocation(line: 21, column: 11, scope: !10)
+!15 = !DILocation(line: 24, column: 9, scope: !10)
 !16 = distinct !DISubprogram(name: "init", linkageName: "_CX1N4mainM4main1S4initE4void1_M3std5int32", scope: !3, file: !3, line: 9, type: !5, scopeLine: 9, spFlags: DISPFlagDefinition, unit: !2)
 !17 = distinct !DISubprogram(name: "get", linkageName: "_CX1N4mainM4main1S3getEM3std5int321_M3std5int32", scope: !3, file: !3, line: 12, type: !5, scopeLine: 12, spFlags: DISPFlagDefinition, unit: !2)
 !18 = !DILocation(line: 14, column: 16, scope: !17)

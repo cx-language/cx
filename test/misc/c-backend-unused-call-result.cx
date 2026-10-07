@@ -7,6 +7,9 @@
 // an assigned `_callN = ...` shape.
 
 // CHECK-LABEL: int32_t main(void) {
+// CHECK-NEXT: #ifdef _WIN32
+// CHECK-NEXT:     _set_thread_local_invalid_parameter_handler(__cx_noop_invalid_parameter_handler);
+// CHECK-NEXT: #endif
 // CHECK-NEXT: {{^    [_A-Za-z][_A-Za-z0-9]*\(41\);$}}
 // CHECK: {{^    [_A-Za-z][_A-Za-z0-9]*\(\);$}}
 

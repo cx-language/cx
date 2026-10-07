@@ -1541,7 +1541,36 @@ void CGenerator::codegenFunctionPrototype(const Function* function) {
     codegenTypeSuffix(stream, function->returnType, !function->isExtern);
 }
 
+void CGenerator::emitWindowsNoopHandler() {
+    // Paired with emitWindowsStartupCall: a no-op UCRT invalid parameter
+    // handler so bad CRT parameters return errors like POSIX instead of
+    // Watson-crashing (see LLVMGenerator::emitWindowsCRTStartupHook).
+    // wchar_t comes from <stdlib.h>; uintptr_t from <stdint.h>.
+    stream << "#ifdef _WIN32\n";
+    stream << "static void __cx_noop_invalid_parameter_handler(const wchar_t *expression, const wchar_t *function, const wchar_t *file,\n";
+    stream << "                                                 unsigned int line, uintptr_t reserved) {\n";
+    stream << "    (void)expression;\n";
+    stream << "    (void)function;\n";
+    stream << "    (void)file;\n";
+    stream << "    (void)line;\n";
+    stream << "    (void)reserved;\n";
+    stream << "}\n";
+    stream << "#endif\n";
+}
+
+void CGenerator::emitWindowsStartupCall() {
+    stream << "#ifdef _WIN32\n";
+    stream.indent(4) << "_set_thread_local_invalid_parameter_handler(__cx_noop_invalid_parameter_handler);\n";
+    stream << "#endif\n";
+}
+
+// True for the program entry point: only it lowers to the raw "main" symbol.
+static bool isEntryMain(const Function* function) {
+    return function->mangledName == "main" && !function->isExtern && !function->body.empty();
+}
+
 void CGenerator::codegenFunction(const Function* function) {
+    if (isEntryMain(function)) emitWindowsNoopHandler();
     stream << '\n';
     codegenFunctionPrototype(function);
     if (function->isExtern) {
@@ -1552,6 +1581,7 @@ void CGenerator::codegenFunction(const Function* function) {
         return;
     } else {
         stream << " {\n";
+        if (isEntryMain(function)) emitWindowsStartupCall();
         resetValueNaming(function);
         collectBlockParams(function);
         copyArrayParams(function);
@@ -1621,6 +1651,7 @@ void CGenerator::copyArrayParams(const Function* function) {
 
 void CGenerator::codegenFunctionDispatch(const Function* function) {
     stream << " {\n";
+    if (isEntryMain(function)) emitWindowsStartupCall();
     resetValueNaming(function);
     copyArrayParams(function);
     silenceUnusedParams(function);

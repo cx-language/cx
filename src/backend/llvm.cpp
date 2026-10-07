@@ -570,6 +570,29 @@ llvm::Function* LLVMGenerator::getFunction(const Function* function) {
     return llvmFunction;
 }
 
+#ifdef _WIN32
+void LLVMGenerator::emitWindowsCRTStartupHook(const Function* function) {
+    // UCRT routes invalid CRT parameters (e.g. _fdopen on a bad fd) through
+    // the invalid parameter handler, whose default _invoke_watson crashes the
+    // process instead of returning an error like POSIX. Install a no-op
+    // handler so cx programs see null returns. Thread-local: cx is
+    // single-threaded, and under `cx run` the JIT shares the driver process,
+    // so a process-wide install would change the compiler's own behavior.
+    auto* ptrType = llvm::PointerType::get(ctx, 0);
+    // Handler signature: void (wchar_t*, wchar_t*, wchar_t*, uint, uintptr_t).
+    auto* handlerType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx),
+                                               {ptrType, ptrType, ptrType, llvm::Type::getInt32Ty(ctx), llvm::Type::getInt64Ty(ctx)}, false);
+    auto* handler = llvm::Function::Create(handlerType, llvm::Function::PrivateLinkage, "__cx_noop_invalid_parameter_handler", module);
+    llvm::ReturnInst::Create(ctx, llvm::BasicBlock::Create(ctx, "", handler));
+    auto* setterType = llvm::FunctionType::get(ptrType, {ptrType}, false);
+    llvm::FunctionCallee setter = module->getOrInsertFunction("_set_thread_local_invalid_parameter_handler", setterType);
+    llvm::DebugLoc previous = builder.getCurrentDebugLocation();
+    builder.SetCurrentDebugLocation(getDebugLocation(function->location));
+    builder.CreateCall(setter, {handler});
+    builder.SetCurrentDebugLocation(previous);
+}
+#endif
+
 void LLVMGenerator::codegenFunctionBody(const Function* function, llvm::Function* llvmFunction) {
     isCurrentFunctionSret = !getAbiCoercedType(function->returnType) && shouldUseSret(getLLVMType(function->returnType));
     llvm::IRBuilder<>::InsertPointGuard insertPointGuard(builder);
@@ -608,6 +631,10 @@ void LLVMGenerator::codegenFunctionBody(const Function* function, llvm::Function
         }
 
         if (block == function->body.front()) {
+#ifdef _WIN32
+            // Only the entry-point main lowers to the raw "main" symbol.
+            if (function->mangledName == "main") emitWindowsCRTStartupHook(function);
+#endif
             // ABI-coerced parameters arrive as register chunks; materialize the
             // aggregates here so the entry block top dominates all uses.
             for (auto& param : function->params) {

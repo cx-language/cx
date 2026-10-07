@@ -53,6 +53,8 @@ private never fatalFdopenError(int fileDescriptor) {
         fprintf(stream, "Couldn't open file descriptor %d for writing\n", fileDescriptor);
         fclose(stream);
     }
+    // Suppress the crash dialog on Windows (like abortWrapper); no-op elsewhere.
+    setAbortBehavior();
     abort();
 }
 

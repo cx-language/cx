@@ -48,6 +48,7 @@ using namespace cx;
     PIN(_putenv, int (*)(const char*)) \
     PIN(_rmdir, int (*)(const char*)) \
     PIN(_set_abort_behavior, unsigned int (*)(unsigned int, unsigned int)) \
+    PIN(_set_thread_local_invalid_parameter_handler, _invalid_parameter_handler (*)(_invalid_parameter_handler)) \
     PIN(_strdup, char* (*)(const char*)) \
     PIN(_wcsdup, wchar_t* (*)(const wchar_t*)) \
     PIN(abort, void (*)()) \

@@ -57,6 +57,9 @@ struct LLVMGenerator {
     llvm::GlobalVariable* getGlobalVariable(const GlobalVariable* variable);
     void codegenFunction(const Function* function);
     void codegenFunctionBody(const Function* function, llvm::Function* llvmFunction);
+#ifdef _WIN32
+    void emitWindowsCRTStartupHook(const Function* function);
+#endif
     llvm::DIFile* getDebugFile(llvm::StringRef path);
     llvm::DILocation* getDebugLocation(Location location);
     llvm::DISubprogram* createDebugSubprogram(const Function* function, llvm::Function* llvmFunction);

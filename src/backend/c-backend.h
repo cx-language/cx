@@ -68,6 +68,8 @@ struct CGenerator {
     void codegenFunctionPrototype(const Function* function);
     void codegenFunction(const Function* function);
     void codegenFunctionDispatch(const Function* function);
+    void emitWindowsNoopHandler();
+    void emitWindowsStartupCall();
     void codegenType(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition);
     void codegenTypeExpression(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition);
     void codegenDeclaration(llvm::raw_string_ostream& stream, IRType* type, llvm::StringRef name, bool needsTypeDefinition);

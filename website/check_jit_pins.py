@@ -16,10 +16,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Pinned but declared nowhere in std/: LLVM-emitted (memmove, memcmp) and
-# heap-family functions user code or C imports may reference.
-EXTRA_PINS = {"memmove", "memcmp", "calloc", "realloc", "_msize", "_strdup", "_wcsdup", "_aligned_malloc",
-              "_aligned_free", "_aligned_realloc"}
+# Pinned but declared nowhere in std/: LLVM-emitted (memmove, memcmp),
+# backend-synthesized (the Windows startup hook), and heap-family functions
+# user code or C imports may reference.
+EXTRA_PINS = {"memmove", "memcmp", "_set_thread_local_invalid_parameter_handler", "calloc", "realloc", "_msize",
+              "_strdup", "_wcsdup", "_aligned_malloc", "_aligned_free", "_aligned_realloc"}
 
 
 def windows_externs():

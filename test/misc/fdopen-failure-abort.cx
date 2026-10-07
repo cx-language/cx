@@ -1,8 +1,5 @@
 // RUN: %not %cx run -Wno-unused %s 2>&1 | %FileCheck %s
-// UNSUPPORTED: windows
-// UCRT routes every bad descriptor through the invalid parameter handler
-// (Watson crash) instead of returning null like POSIX, so the message below
-// never prints there.
+// RUN: %not %cx run --backend=c -Wno-unused %s 2>&1 | %FileCheck %s
 
 void main() {
     // CHECK: Couldn't open file descriptor 999 for writing
