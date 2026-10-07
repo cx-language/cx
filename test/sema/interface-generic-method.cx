@@ -1,0 +1,12 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+interface I {
+    // CHECK: [[@LINE+1]]:7: error: non-function interface member requirements are not supported yet
+    T id<T>(T x) { return x; }
+}
+
+struct S : I {
+    T id<T>(T x) { return x; }
+}
+
+void main() {}

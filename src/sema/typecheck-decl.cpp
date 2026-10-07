@@ -1467,7 +1467,9 @@ void Typechecker::ensureInterfaces(TypeDecl& decl) {
         if (!interface.getDecl()->isInterface()) continue;
 
         for (auto member : interface.getDecl()->methods) {
-            auto methodDecl = llvm::cast<MethodDecl>(member);
+            auto methodDecl = llvm::dyn_cast<MethodDecl>(member);
+            // Generic methods can't be inherited; conformance reports them.
+            if (!methodDecl) continue;
             if (methodDecl->body) {
                 auto copy = methodDecl->instantiate(genericArgs, {}, decl);
                 currentModule->addToSymbolTable(*copy);
