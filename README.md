@@ -74,6 +74,8 @@ cmake --build .
 ### Windows
 
 Download and extract LLVM/Clang 23 pre-built binaries from https://github.com/llvm/llvm-project/releases.
+Use the CMake bundled with Visual Studio (or a cmake.org install); the MSYS2
+CMake generates Unix-style paths that break the build.
 Then run the following commands:
 
 ```sh
