@@ -6331,13 +6331,13 @@ extern Uint32 SDL_crc32(Uint32 crc, void* data, c_size_t len);
 /// Calculate a 32-bit MurmurHash3 value for a block of data.
 extern Uint32 SDL_murmur3_32(void* data, c_size_t len, Uint32 seed);
 /// Copy non-overlapping memory.
-extern void*? SDL_memcpy(void* dst, void* src, c_size_t len);
+extern void* SDL_memcpy(void* dst, void* src, c_size_t len);
 /// Copy memory ranges that might overlap.
-extern void*? SDL_memmove(void* dst, void* src, c_size_t len);
+extern void* SDL_memmove(void* dst, void* src, c_size_t len);
 /// Initialize all bytes of buffer of memory to a specific value.
-extern void*? SDL_memset(void* dst, c_int c, c_size_t len);
+extern void* SDL_memset(void* dst, c_int c, c_size_t len);
 /// Initialize all 32-bit words of buffer of memory to a specific value.
-extern void*? SDL_memset4(void* dst, Uint32 val, c_size_t dwords);
+extern void* SDL_memset4(void* dst, Uint32 val, c_size_t dwords);
 /// Compare two buffers of memory.
 extern c_int SDL_memcmp(void* s1, void* s2, c_size_t len);
 /// This works exactly like wcslen() but doesn't require access to a C runtime.
@@ -6379,11 +6379,11 @@ extern char*? SDL_strdup(char* str);
 /// Allocate a copy of a string, up to n characters.
 extern char*? SDL_strndup(char* str, c_size_t maxlen);
 /// Reverse a string's contents.
-extern char*? SDL_strrev(char* str);
+extern char* SDL_strrev(char* str);
 /// Convert a string to uppercase.
-extern char*? SDL_strupr(char* str);
+extern char* SDL_strupr(char* str);
 /// Convert a string to lowercase.
-extern char*? SDL_strlwr(char* str);
+extern char* SDL_strlwr(char* str);
 /// Search a string for the first instance of a specific byte.
 extern char*? SDL_strchr(char* str, c_int c);
 /// Search a string for the last instance of a specific byte.
@@ -6401,17 +6401,17 @@ extern c_size_t SDL_utf8strlen(char* str);
 /// Count the number of codepoints in a UTF-8 string, up to n bytes.
 extern c_size_t SDL_utf8strnlen(char* str, c_size_t bytes);
 /// Convert an integer into a string.
-extern char*? SDL_itoa(c_int value, char* str, c_int radix);
+extern char* SDL_itoa(c_int value, char* str, c_int radix);
 /// Convert an unsigned integer into a string.
-extern char*? SDL_uitoa(c_uint value, char* str, c_int radix);
+extern char* SDL_uitoa(c_uint value, char* str, c_int radix);
 /// Convert a long integer into a string.
-extern char*? SDL_ltoa(c_long value, char* str, c_int radix);
+extern char* SDL_ltoa(c_long value, char* str, c_int radix);
 /// Convert an unsigned long integer into a string.
-extern char*? SDL_ultoa(c_ulong value, char* str, c_int radix);
+extern char* SDL_ultoa(c_ulong value, char* str, c_int radix);
 /// Convert a long long integer into a string.
-extern char*? SDL_lltoa(c_longlong value, char* str, c_int radix);
+extern char* SDL_lltoa(c_longlong value, char* str, c_int radix);
 /// Convert an unsigned long long integer into a string.
-extern char*? SDL_ulltoa(c_ulonglong value, char* str, c_int radix);
+extern char* SDL_ulltoa(c_ulonglong value, char* str, c_int radix);
 /// Parse an `int` from a string.
 extern c_int SDL_atoi(char* str);
 /// Parse a `double` from a string.
@@ -6441,7 +6441,7 @@ extern Uint32 SDL_StepUTF8(char*?* pstr, c_size_t*? pslen);
 /// Decode a UTF-8 string in reverse, one Unicode codepoint at a time.
 extern Uint32 SDL_StepBackUTF8(char* start, char*?* pstr);
 /// Convert a single Unicode codepoint to UTF-8.
-extern char*? SDL_UCS4ToUTF8(Uint32 codepoint, char* dst);
+extern char* SDL_UCS4ToUTF8(Uint32 codepoint, char* dst);
 /// This works exactly like sscanf() but doesn't require access to a C runtime.
 extern c_int SDL_sscanf(char* text, char* fmt, ...);
 /// This works exactly like snprintf() but doesn't require access to a C runtime.
@@ -6971,13 +6971,13 @@ extern bool SDL_MixAudio(Uint8[*]? dst, Uint8[*]? src, SDL_AudioFormat format, U
 /// Convert some audio data of one format to another format.
 extern bool SDL_ConvertAudioSamples(SDL_AudioSpec* src_spec, Uint8[*]? src_data, c_int src_len, SDL_AudioSpec* dst_spec, Uint8*?*? dst_data, c_int* dst_len);
 /// Get the human readable name of an audio format.
-extern char*? SDL_GetAudioFormatName(SDL_AudioFormat format);
+extern char* SDL_GetAudioFormatName(SDL_AudioFormat format);
 /// Get the appropriate memset value for silencing an audio format.
 extern c_int SDL_GetSilenceValueForFormat(SDL_AudioFormat format);
 /// Compose a custom blend mode for renderers.
 extern SDL_BlendMode SDL_ComposeCustomBlendMode(SDL_BlendFactor srcColorFactor, SDL_BlendFactor dstColorFactor, SDL_BlendOperation colorOperation, SDL_BlendFactor srcAlphaFactor, SDL_BlendFactor dstAlphaFactor, SDL_BlendOperation alphaOperation);
 /// Get the human readable name of a pixel format.
-extern char*? SDL_GetPixelFormatName(SDL_PixelFormat format);
+extern char* SDL_GetPixelFormatName(SDL_PixelFormat format);
 /// Convert one of the enumerated pixel formats to a bpp value and RGBA masks.
 extern bool SDL_GetMasksForPixelFormat(SDL_PixelFormat format, c_int* bpp, Uint32* Rmask, Uint32* Gmask, Uint32* Bmask, Uint32* Amask);
 /// Convert a bpp value and RGBA masks to an enumerated pixel format.
@@ -7181,13 +7181,13 @@ extern void SDL_CloseCamera(SDL_Camera*? camera);
 /// Put UTF-8 text into the clipboard.
 extern bool SDL_SetClipboardText(char*? text);
 /// Get UTF-8 text from the clipboard.
-extern char*? SDL_GetClipboardText();
+extern char* SDL_GetClipboardText();
 /// Query whether the clipboard exists and contains a non-empty text string.
 extern bool SDL_HasClipboardText();
 /// Put UTF-8 text into the primary selection.
 extern bool SDL_SetPrimarySelectionText(char*? text);
 /// Get UTF-8 text from the primary selection.
-extern char*? SDL_GetPrimarySelectionText();
+extern char* SDL_GetPrimarySelectionText();
 /// Query whether the primary selection exists and contains a non-empty text string.
 extern bool SDL_HasPrimarySelectionText();
 /// Offer clipboard data to the OS.
@@ -7311,7 +7311,7 @@ extern SDL_WindowFlags SDL_GetWindowFlags(SDL_Window* window);
 /// Sets the window's title.
 extern bool SDL_SetWindowTitle(SDL_Window* window, char*? title);
 /// Get the title of a window.
-extern char*? SDL_GetWindowTitle(SDL_Window* window);
+extern char* SDL_GetWindowTitle(SDL_Window* window);
 /// Set the icon for a window.
 extern bool SDL_SetWindowIcon(SDL_Window* window, SDL_Surface* icon);
 /// Request that the window's position be set.
@@ -7779,7 +7779,7 @@ extern char*? SDL_GetKeyboardNameForID(SDL_KeyboardID instance_id);
 /// Query the window which currently has keyboard focus.
 extern SDL_Window*? SDL_GetKeyboardFocus();
 /// Returns an array of the current key states, indexed by scancode.
-extern bool[*]? SDL_GetKeyboardState(c_int*? numkeys);
+extern bool[*] SDL_GetKeyboardState(c_int*? numkeys);
 /// Clear the state of the keyboard.
 extern void SDL_ResetKeyboard();
 /// Get the current key modifier state for the keyboard.
@@ -7793,11 +7793,11 @@ extern SDL_Scancode SDL_GetScancodeFromKey(SDL_Keycode key, SDL_Keymod*? modstat
 /// Set a human-readable name for a scancode.
 extern bool SDL_SetScancodeName(SDL_Scancode scancode, char* name);
 /// Get a human-readable name for a scancode.
-extern char*? SDL_GetScancodeName(SDL_Scancode scancode);
+extern char* SDL_GetScancodeName(SDL_Scancode scancode);
 /// Get a scancode from a human-readable name.
 extern SDL_Scancode SDL_GetScancodeFromName(char* name);
 /// Get a human-readable name for a key.
-extern char*? SDL_GetKeyName(SDL_Keycode key);
+extern char* SDL_GetKeyName(SDL_Keycode key);
 /// Get a key code from a human-readable name.
 extern SDL_Keycode SDL_GetKeyFromName(char* name);
 /// Start accepting Unicode text input events in a window.
@@ -8005,7 +8005,7 @@ extern void SDL_PushGPUFragmentUniformData(SDL_GPUCommandBuffer* command_buffer,
 /// Pushes data to a uniform slot on the command buffer.
 extern void SDL_PushGPUComputeUniformData(SDL_GPUCommandBuffer* command_buffer, Uint32 slot_index, void*? data, Uint32 length);
 /// Begins a render pass on a command buffer.
-extern SDL_GPURenderPass*? SDL_BeginGPURenderPass(SDL_GPUCommandBuffer* command_buffer, SDL_GPUColorTargetInfo[*]? color_target_infos, Uint32 num_color_targets, SDL_GPUDepthStencilTargetInfo*? depth_stencil_target_info);
+extern SDL_GPURenderPass* SDL_BeginGPURenderPass(SDL_GPUCommandBuffer* command_buffer, SDL_GPUColorTargetInfo[*]? color_target_infos, Uint32 num_color_targets, SDL_GPUDepthStencilTargetInfo*? depth_stencil_target_info);
 /// Binds a graphics pipeline on a render pass to be used in rendering.
 extern void SDL_BindGPUGraphicsPipeline(SDL_GPURenderPass* render_pass, SDL_GPUGraphicsPipeline* graphics_pipeline);
 /// Sets the current viewport state on a command buffer.
@@ -8043,7 +8043,7 @@ extern void SDL_DrawGPUIndexedPrimitivesIndirect(SDL_GPURenderPass* render_pass,
 /// Ends the given render pass.
 extern void SDL_EndGPURenderPass(SDL_GPURenderPass* render_pass);
 /// Begins a compute pass on a command buffer.
-extern SDL_GPUComputePass*? SDL_BeginGPUComputePass(SDL_GPUCommandBuffer* command_buffer, SDL_GPUStorageTextureReadWriteBinding[*]? storage_texture_bindings, Uint32 num_storage_texture_bindings, SDL_GPUStorageBufferReadWriteBinding[*]? storage_buffer_bindings, Uint32 num_storage_buffer_bindings);
+extern SDL_GPUComputePass* SDL_BeginGPUComputePass(SDL_GPUCommandBuffer* command_buffer, SDL_GPUStorageTextureReadWriteBinding[*]? storage_texture_bindings, Uint32 num_storage_texture_bindings, SDL_GPUStorageBufferReadWriteBinding[*]? storage_buffer_bindings, Uint32 num_storage_buffer_bindings);
 /// Binds a compute pipeline on a command buffer for use in compute dispatch.
 extern void SDL_BindGPUComputePipeline(SDL_GPUComputePass* compute_pass, SDL_GPUComputePipeline* compute_pipeline);
 /// Binds texture-sampler pairs for use on the compute shader.
@@ -8063,7 +8063,7 @@ extern void*? SDL_MapGPUTransferBuffer(SDL_GPUDevice* device, SDL_GPUTransferBuf
 /// Unmaps a previously mapped transfer buffer.
 extern void SDL_UnmapGPUTransferBuffer(SDL_GPUDevice* device, SDL_GPUTransferBuffer* transfer_buffer);
 /// Begins a copy pass on a command buffer.
-extern SDL_GPUCopyPass*? SDL_BeginGPUCopyPass(SDL_GPUCommandBuffer* command_buffer);
+extern SDL_GPUCopyPass* SDL_BeginGPUCopyPass(SDL_GPUCommandBuffer* command_buffer);
 /// Uploads data from a transfer buffer to a texture.
 extern void SDL_UploadToGPUTexture(SDL_GPUCopyPass* copy_pass, SDL_GPUTextureTransferInfo* source, SDL_GPUTextureRegion* destination, bool cycle);
 /// Uploads data from a transfer buffer to a buffer.
@@ -8327,7 +8327,7 @@ extern void*? SDL_Metal_GetLayer(SDL_MetalView view);
 /// Open a URL/URI in the browser or other appropriate external application.
 extern bool SDL_OpenURL(char* url);
 /// Get the name of the platform.
-extern char*? SDL_GetPlatform();
+extern char* SDL_GetPlatform();
 /// Create a new process.
 extern SDL_Process*? SDL_CreateProcess(char*?[*]? args, bool pipe_stdio);
 /// Create a new process with the specified properties.
@@ -8759,7 +8759,7 @@ extern void SDL_UpdateTrays();
 /// Get the version of SDL that is linked against your program.
 extern c_int SDL_GetVersion();
 /// Get the code revision of the SDL library that is linked against your program.
-extern char*? SDL_GetRevision();
+extern char* SDL_GetRevision();
 /// Circumvent failure of SDL_Init() when not using SDL_main() as an entry point.
 extern void SDL_SetMainReady();
 /// Initializes and launches an SDL application, by doing platform-specific initialization before calling your mainFunction and cleanups after it returns, if that is needed for a specific platform, otherwise it just calls mainFunction.

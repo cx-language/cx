@@ -1881,11 +1881,11 @@ extern c_long GetFileModTime(char* fileName);
 /// Get pointer to extension for a filename string (includes dot: '.png').
 extern char*? GetFileExtension(char* fileName);
 /// Get pointer to filename for a path string.
-extern char*? GetFileName(char* filePath);
+extern char* GetFileName(char* filePath);
 /// Get filename string without extension (uses static string).
 extern char* GetFileNameWithoutExt(char* filePath);
 /// Get full path for a given fileName with path (uses static string).
-extern char*? GetDirectoryPath(char* filePath);
+extern char* GetDirectoryPath(char* filePath);
 /// Get previous directory path for a given path (uses static string).
 extern char* GetPrevDirectoryPath(char* dirPath);
 /// Get current working directory (uses static string).
@@ -2479,7 +2479,7 @@ extern c_int GetCodepointNext(char* text, c_int*? codepointSize);
 /// Get previous codepoint in a UTF-8 encoded string, 0x3f('?') is returned on failure.
 extern c_int GetCodepointPrevious(char* text, c_int*? codepointSize);
 /// Encode one codepoint into UTF-8 byte array (array length returned as parameter).
-extern char*? CodepointToUTF8(c_int codepoint, c_int*? utf8Size);
+extern char* CodepointToUTF8(c_int codepoint, c_int*? utf8Size);
 /// Load text as separate lines ('\n').
 extern char*?[*]? LoadTextLines(char* text, c_int*? count);
 /// Unload text lines.
@@ -2491,27 +2491,27 @@ extern bool TextIsEqual(char* text1, char* text2);
 /// Get text length, checks for '\0' ending.
 extern c_uint TextLength(char* text);
 /// Text formatting with variables (sprintf() style).
-extern char*? TextFormat(char* text, ...);
+extern char* TextFormat(char* text, ...);
 /// Get a piece of a text string.
-extern char*? TextSubtext(char* text, c_int position, c_int length);
+extern char* TextSubtext(char* text, c_int position, c_int length);
 /// Remove text spaces, concat words.
-extern char*? TextRemoveSpaces(char* text);
+extern char* TextRemoveSpaces(char* text);
 /// Get text between two strings.
-extern char*? GetTextBetween(char* text, char* begin, char* end);
+extern char* GetTextBetween(char* text, char* begin, char* end);
 /// Replace text string with new string.
-extern char*? TextReplace(char* text, char* search, char* replacement);
+extern char* TextReplace(char* text, char* search, char* replacement);
 /// Replace text string with new string, memory must be MemFree().
 extern char*? TextReplaceAlloc(char* text, char* search, char* replacement);
 /// Replace text between two specific strings.
-extern char*? TextReplaceBetween(char* text, char* begin, char* end, char* replacement);
+extern char* TextReplaceBetween(char* text, char* begin, char* end, char* replacement);
 /// Replace text between two specific strings, memory must be MemFree().
 extern char*? TextReplaceBetweenAlloc(char* text, char* begin, char* end, char* replacement);
 /// Insert text in a defined byte position.
-extern char*? TextInsert(char* text, char* insert, c_int position);
+extern char* TextInsert(char* text, char* insert, c_int position);
 /// Insert text in a defined byte position, memory must be MemFree().
 extern char*? TextInsertAlloc(char* text, char* insert, c_int position);
 /// Join text strings with delimiter.
-extern char*? TextJoin(char*?[*] textList, c_int count, char* delimiter);
+extern char* TextJoin(char*?[*] textList, c_int count, char* delimiter);
 /// Split text into multiple strings, using MAX_TEXTSPLIT_COUNT static strings.
 extern char*?[*]? TextSplit(char* text, char delimiter, c_int*? count);
 /// Append text at specific position and move cursor.
@@ -2519,15 +2519,15 @@ extern void TextAppend(char* text, char* append, c_int*? position);
 /// Find first text occurrence within a string, -1 if not found.
 extern c_int TextFindIndex(char* text, char* search);
 /// Get upper case version of provided string.
-extern char*? TextToUpper(char* text);
+extern char* TextToUpper(char* text);
 /// Get lower case version of provided string.
-extern char*? TextToLower(char* text);
+extern char* TextToLower(char* text);
 /// Get Pascal case notation version of provided string.
-extern char*? TextToPascal(char* text);
+extern char* TextToPascal(char* text);
 /// Get Snake case notation version of provided string.
-extern char*? TextToSnake(char* text);
+extern char* TextToSnake(char* text);
 /// Get Camel case notation version of provided string.
-extern char*? TextToCamel(char* text);
+extern char* TextToCamel(char* text);
 /// Get integer value from text.
 extern c_int TextToInteger(char* text);
 /// Get float value from text.
@@ -3049,7 +3049,7 @@ extern void rlUpdateTexture(c_uint id, c_int offsetX, c_int offsetY, c_int width
 /// Get OpenGL internal formats.
 extern void rlGetGlTextureFormats(c_int format, c_uint*? glInternalFormat, c_uint*? glFormat, c_uint*? glType);
 /// Get name string for pixel format.
-extern char*? rlGetPixelFormatName(c_uint format);
+extern char* rlGetPixelFormatName(c_uint format);
 /// Unload texture from GPU memory.
 extern void rlUnloadTexture(c_uint id);
 /// Generate mipmap data for selected texture.

@@ -33,7 +33,7 @@ int main() {
     println(RAYLIB_VERSION_MAJOR >= 6); // CHECK-NEXT: true
     println(PI); // CHECK-NEXT: 3.1415927
     println(sizeof(Vector2), " ", sizeof(Color), " ", sizeof(Matrix)); // CHECK-NEXT: 8 4 64
-    println(TextFormat("%d + %d = %d", 1, 2, 3)!); // CHECK-NEXT: 1 + 2 = 3
+    println(TextFormat("%d + %d = %d", 1, 2, 3)); // CHECK-NEXT: 1 + 2 = 3
 
     var red = Color(r = 255, g = 0, b = 0, a = 255);
     var packed = ColorToInt(red);
@@ -41,9 +41,9 @@ int main() {
     var back = GetColor(c_uint(packed));
     println(back.r, " ", back.g, " ", back.b, " ", back.a); // CHECK-NEXT: 255 0 0 255
 
-    println(GetDirectoryPath("/a/b/c.txt")!); // CHECK-NEXT: /a/b
+    println(GetDirectoryPath("/a/b/c.txt")); // CHECK-NEXT: /a/b
     println(GetFileExtension("x.png")!); // CHECK-NEXT: .png
-    println(GetFileName("/a/b/c.txt")!); // CHECK-NEXT: c.txt
+    println(GetFileName("/a/b/c.txt")); // CHECK-NEXT: c.txt
 
     // rcamera.h: pure struct math, no GL needed.
     var cam = Camera3D(position = Vector3(x = 0, y = 0, z = 5), target = Vector3(x = 0, y = 0, z = 0), up = Vector3(x = 0, y = 1, z = 0), fovy = 60, projection = CAMERA_PERSPECTIVE);
