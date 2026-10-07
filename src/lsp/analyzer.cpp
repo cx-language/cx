@@ -21,11 +21,13 @@
 #include "../ast/module.h"
 #include "../ast/stmt.h"
 #include "../ast/type.h"
+#include "../backend/irgen.h"
 #include "../build/config.h"
 #include "../build/dependencies.h"
 #include "../driver/driver.h"
 #include "../parser/parse.h"
 #include "../sema/c-import.h"
+#include "../sema/null-analyzer.h"
 #include "../sema/typecheck.h"
 
 using namespace cx;
@@ -1891,7 +1893,10 @@ ModuleLayout discoverModuleLayout(const std::string& filePath, const std::vector
 } // namespace
 
 void resetCompilerGlobals() {
-    // Drop references first, then free the memory they point into.
+    // Drop references first, then free the memory they point into. IR nodes
+    // reference AST memory (type-cache keys, expression pointers), so they go
+    // before the AST itself.
+    resetIRState();
     Module::resetImportedModules();
     resetTypeInterning();
     resetAstArena();
@@ -1923,7 +1928,6 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
 
     try {
         CompileOptions baseOptions;
-        baseOptions.noUnusedWarnings = true; // unused warnings are noisy during editing
         baseOptions.recoverParseErrors = true;
         baseOptions.defines = buildBaseDefines(query);
         // Platform settings (defines, SDK sysroot/frameworks), matching the
@@ -2011,6 +2015,23 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             }
             typechecker.typecheckModule(*module, options, true);
             typechecker.checkUnusedDecls(*module);
+        }
+
+        if (errors == 0) {
+            // Null-safety warnings come from the IR, like in the driver (which
+            // likewise skips IRGen once errors exist). The main module is
+            // skipped below when it also serves as an imported package.
+            PhaseTimer timer("lsp-irgen-nullcheck");
+            IRGenerator irGenerator(options);
+            for (auto* imported : Module::getAllImportedModules()) {
+                if (imported != module) irGenerator.emitModule(*imported);
+            }
+            irGenerator.emitModule(*module);
+            NullAnalyzer nullAnalyzer;
+            for (auto* irModule : irGenerator.generatedModules) {
+                nullAnalyzer.analyze(irModule);
+            }
+            resetIRState();
         }
 
         result.mainModule = module;

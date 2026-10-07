@@ -61,7 +61,7 @@ int add(int x, int y) {
 }
 
 void main() {
-    int result = add(1, 2);
+    int result = add(1, 2); println(result);
     println("done");
 }
 
@@ -76,7 +76,7 @@ enum Color {
     Green,
 }
 
-void useTypes() {
+void _useTypes() {
     Point origin = Point(0, 0);
     println(origin.x);
 }
@@ -101,6 +101,45 @@ void main() {
 """
 
 BAD_SOURCE = """\
+void main() {
+    nosuchidentifier;
+}
+"""
+
+UNUSED_SOURCE = """\
+int helper(int x) {
+    return x + 1;
+}
+void main() {
+    int unusedLocal = 42;
+    println("hi");
+}
+"""
+
+NULL_SOURCE = """\
+struct S {
+    int*? i;
+}
+void _foo(S* p) {
+    if (p.i != null) {
+        p.i = null;
+        *p.i = 1;
+    }
+}
+void main() {
+}
+"""
+
+NULL_WITH_ERROR_SOURCE = """\
+struct S {
+    int*? i;
+}
+void _foo(S* p) {
+    if (p.i != null) {
+        p.i = null;
+        *p.i = 1;
+    }
+}
 void main() {
     nosuchidentifier;
 }
@@ -327,6 +366,39 @@ def test_query_modes(cx_lsp, path):
             diag["range"]["start"] == {"line": 1, "character": 4},
             json.dumps(diag["range"]),
         )
+
+    # Unused warnings report like the command-line compiler, with warning severity.
+    result = run_query(cx_lsp, base_query("check", path, UNUSED_SOURCE))
+    warnings = {(d["message"], d["severity"]) for d in result["diagnostics"]}
+    check(
+        "query-check-unused-warnings",
+        warnings
+        == {
+            ("unused variable 'unusedLocal'; prefix with '_' to suppress", 2),
+            ("unused declaration 'helper'; prefix with '_' to suppress", 2),
+        },
+        json.dumps(result["diagnostics"])[:500],
+    )
+
+    # Null-safety warnings (which the compiler emits from IR, after typecheck)
+    # report too.
+    result = run_query(cx_lsp, base_query("check", path, NULL_SOURCE))
+    warnings = {(d["message"], d["severity"]) for d in result["diagnostics"]}
+    check(
+        "query-check-null-warnings",
+        warnings == {("dereferenced pointer may be null; unwrap it with a postfix '!' to silence this warning", 2)},
+        json.dumps(result["diagnostics"])[:500],
+    )
+
+    # Like the compiler, the LSP skips IRGen once errors exist, so a file with
+    # errors reports no null warnings.
+    result = run_query(cx_lsp, base_query("check", path, NULL_WITH_ERROR_SOURCE))
+    messages = [d["message"] for d in result["diagnostics"]]
+    check(
+        "query-check-null-suppressed-by-errors",
+        any("nosuchidentifier" in m for m in messages) and not any("may be null" in m for m in messages),
+        json.dumps(messages)[:500],
+    )
 
     # `add` in `add(1, 2)` sits at 0-based line 5, characters 17-19.
     result = run_query(cx_lsp, base_query("hover", path, GOOD_SOURCE, (5, 18)))
@@ -756,7 +828,7 @@ def test_package_dedup(cx_lsp):
             query["importSearchPaths"] = [directory]
             return query
 
-        content = "void doubled() {\n    answer();\n}\n"
+        content = "void _doubled() {\n    answer();\n}\n"
         with open(use_path, "w") as file:
             file.write(content)
 
@@ -806,7 +878,7 @@ def test_build_file_modes(cx_lsp):
         with open(os.path.join(root, "a.cx"), "w") as file:
             file.write("int answer() {\n    return 42;\n}\n")
         nested_path = os.path.join(subdir, "b.cx")
-        nested_content = "int doubled() {\n    return answer() * 2;\n}\n"
+        nested_content = "int _doubled() {\n    return answer() * 2;\n}\n"
         with open(nested_path, "w") as file:
             file.write(nested_content)
 
@@ -1457,7 +1529,7 @@ def test_server_cache(command):
         with open(helper_path, "w") as file:
             file.write("int answer() {\n    return 42;\n}\n")
         main_content = (
-            "int doubled() {\n"
+            "int _doubled() {\n"
             "    return answer() * 2;\n"
             "}\n"
             "#if CACHE_FEATURE\n"
@@ -1639,7 +1711,7 @@ def test_server_cache(command):
                 "method": "textDocument/didChange",
                 "params": {
                     "textDocument": {"uri": helper_uri, "version": 2},
-                    "contentChanges": [{"text": "int answer3() {\n    return 42;\n}\n"}],
+                    "contentChanges": [{"text": "int _answer3() {\n    return 42;\n}\n"}],
                 },
             }
         )
@@ -1733,7 +1805,7 @@ def test_server_cache_broken_build_file(command):
         main_path = os.path.join(root, "main.cx")
         with open(build_path, "w") as file:
             file.write('var name = "brokenproj"\n')
-        main_content = "int add(int x, int y) {\n    return x + y;\n}\n\nvoid main() {\n    int result = add(1, 2);\n}\n"
+        main_content = "int add(int x, int y) {\n    return x + y;\n}\n\nvoid main() {\n    int result = add(1, 2); println(result);\n}\n"
         with open(main_path, "w") as file:
             file.write(main_content)
         main_uri = "file://" + main_path
@@ -1821,11 +1893,11 @@ def test_server_cache_import_open(command):
         with open(os.path.join(root, "build.cx"), "w") as file:
             file.write('var name = "importproj"\n')
         foo_path = os.path.join(vendordir, "foo.cx")
-        foo_v1 = "int fooVal() {\n    return 1;\n}\n"
+        foo_v1 = "int _fooVal() {\n    return 1;\n}\n"
         with open(foo_path, "w") as file:
             file.write(foo_v1)
         main_path = os.path.join(root, "main.cx")
-        main_content = "import foo;\n\nint doubled() {\n    return fooVal() * 2;\n}\n"
+        main_content = "import foo;\n\nint _doubled() {\n    return _fooVal() * 2;\n}\n"
         with open(main_path, "w") as file:
             file.write(main_content)
         main_uri = "file://" + main_path
@@ -1863,7 +1935,7 @@ def test_server_cache_import_open(command):
         )
 
         with open(foo_path, "w") as file:
-            file.write("int fooVal2() {\n    return 1;\n}\n")
+            file.write("int _fooVal2() {\n    return 1;\n}\n")
         session.send(
             {
                 "jsonrpc": "2.0",
@@ -1875,7 +1947,7 @@ def test_server_cache_import_open(command):
         diags = notification["params"]["diagnostics"]
         check(
             "server-cache-import-open-disk",
-            any("unknown identifier 'fooVal'" in d["message"] for d in diags),
+            any("unknown identifier '_fooVal'" in d["message"] for d in diags),
             json.dumps(diags)[:300],
         )
 
@@ -1914,7 +1986,7 @@ def test_server_cache_dep_build_file(command):
         with open(foo_path, "w") as file:
             file.write("#if FOO_FLAG\nint answer() {\n    return 42;\n}\n#else\nint placeholder = 0;\n#endif\n")
         main_path = os.path.join(root, "main.cx")
-        main_content = "import foo;\n\nint doubled() {\n    return answer() * 2;\n}\n"
+        main_content = "import foo;\n\nint _doubled() {\n    return answer() * 2;\n}\n"
         with open(main_path, "w") as file:
             file.write(main_content)
         main_uri = "file://" + main_path

@@ -58,6 +58,13 @@ struct IRGenScope {
 
 struct IRGenerator {
     explicit IRGenerator(const CompileOptions& options);
+    // Frees the emitted module shells (not their values and types, which
+    // resetIRState() owns).
+    ~IRGenerator();
+    IRGenerator(const IRGenerator&) = delete;
+    IRGenerator& operator=(const IRGenerator&) = delete;
+    IRGenerator(IRGenerator&&) = delete;
+    IRGenerator& operator=(IRGenerator&&) = delete;
     IRModule& emitModule(const Module& sourceModule);
     void emitFunctionBody(const FunctionDecl& decl, Function& function);
     void createDestructorCall(Function* destructor, Value* receiver);
