@@ -993,9 +993,9 @@ const char* tokenTypeForDecl(const Decl& decl) {
 /// True for immutable local bindings (`const` variables and parameters), which
 /// editors render without the mutable styling.
 bool isReadonlyVariable(const Decl& decl) {
-    if (decl.kind != DeclKind::VarDecl && decl.kind != DeclKind::ParamDecl) return false;
-    auto* var = llvm::dyn_cast<VarDecl>(&decl);
-    return var && var->isConst;
+    if (auto* var = llvm::dyn_cast<VarDecl>(&decl)) return var->isConst;
+    if (auto* param = llvm::dyn_cast<ParamDecl>(&decl)) return param->isConst;
+    return false;
 }
 
 /// Tolerant scanner for syntax-only tokens (comments, strings, numbers,

@@ -1,0 +1,13 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+void main() {
+    // Writing through borrow parameters on mutable receivers mutates in place.
+    var mut = [1, 2, 3];
+    mut.map(n => { *n = *n * 10; return *n; }).toList();
+    println(mut); // CHECK:[10, 20, 30]
+    // Reading through borrow parameters on constants works and copies out.
+    const arr = [1, 2, 3];
+    println(arr.map(n => *n + 1).toList()); // CHECK:[2, 3, 4]
+    println(arr.filter(n => *n > 1).toList()); // CHECK:[2, 3]
+}

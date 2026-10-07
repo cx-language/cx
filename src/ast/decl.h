@@ -141,6 +141,10 @@ struct ParamDecl : VariableDecl, Movable {
     llvm::StringRef name;
     Location location;
     bool isPublic;
+    // True for lambda borrow parameters bound from constant storage (see
+    // callOnConstReceiver): writes through them are rejected like any
+    // other write to a constant.
+    bool isConst = false;
     bool isPack = false;
     // Mangle-only const on extern "C++" pointer/reference parameters; the cx type stays mutable.
     bool cxxConstPointee = false;

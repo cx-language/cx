@@ -71,3 +71,19 @@ void main() {
     println(numbers.filter(n => n >= threshold).toList()); // prints [2, 3, 4]
 }
 ```
+
+## Constants
+
+A lambda passed to a method on a [constant](variables-and-constants) receives
+constant elements, so its borrow parameters bind const: reading through them
+works, but writing is rejected. This also applies through call chains, which
+conservatively includes chains through copying calls such as `toList()`; bind
+such a result to a variable first to work with it mutably:
+
+```cs
+void main() {
+    const arr = [1, 2, 3];
+    println(arr.map(n => *n + 1).toList()); // prints [2, 3, 4]
+    // arr.map(n => { *n = 99; return *n; }); // error: cannot assign to constant
+}
+```

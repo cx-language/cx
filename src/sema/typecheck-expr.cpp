@@ -102,16 +102,29 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
 
 // True when the expression designates a compile-time constant's storage, so
 // writes to it are forbidden. Const comes only from bindings: VarDecl::isConst
-// at the root (through member, index, unwrap, and dereference chains) or a
-// static constant named by the member itself. Generic inference
+// (or a const lambda parameter) at the root (through member, index, unwrap,
+// and dereference chains) or a static constant named by the member itself.
+// followCalls additionally sees through method calls, whose results may alias
+// receiver storage; only callers that accept that over-approximation
+// (fresh-returning calls like toList() taint too) pass true. Generic inference
 // also calls this mid-typecheck, so untyped subexpressions (e.g.
 // static-member bases) read as non-const.
-bool cx::exprIsConst(const Expr& expr) {
+bool cx::exprIsConst(const Expr& expr, bool followCalls) {
     const Expr* current = &expr;
     while (true) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) {
-            auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(varExpr->decl);
-            return varDecl && varDecl->isConst;
+            if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(varExpr->decl)) return varDecl->isConst;
+            if (auto* paramDecl = llvm::dyn_cast_or_null<ParamDecl>(varExpr->decl)) return paramDecl->isConst;
+            return false;
+        }
+        // Explicit kind check: CallExpr::classof also matches Unary, Binary,
+        // Index, and Unwrap expressions, which are handled on their own.
+        if (current->kind == ExprKind::CallExpr) {
+            if (!followCalls) return false;
+            auto* call = llvm::cast<CallExpr>(current);
+            if (!call->isMethodCall()) return false;
+            current = call->getReceiver();
+            continue;
         }
         if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(current)) {
             // A static constant names frozen storage regardless of its base.
@@ -142,11 +155,11 @@ bool cx::exprIsConst(const Expr& expr) {
             continue;
         }
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(current)) {
-            return exprIsConst(*ifExpr->thenExpr) || exprIsConst(*ifExpr->elseExpr);
+            return exprIsConst(*ifExpr->thenExpr, followCalls) || exprIsConst(*ifExpr->elseExpr, followCalls);
         }
         if (auto* switchExpr = llvm::dyn_cast<SwitchExpr>(current)) {
-            return llvm::any_of(switchExpr->arms, [](auto& arm) { return exprIsConst(*arm.expr); })
-                || (switchExpr->defaultExpr && exprIsConst(*switchExpr->defaultExpr));
+            return llvm::any_of(switchExpr->arms, [&](auto& arm) { return exprIsConst(*arm.expr, followCalls); })
+                || (switchExpr->defaultExpr && exprIsConst(*switchExpr->defaultExpr, followCalls));
         }
         return false;
     }
@@ -4126,6 +4139,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     } else if (expr.callee->isMemberExpr()) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
         expr.receiverType = receiverType;
+        // Lambdas in the arguments receive constant-derived borrows when the
+        // receiver is constant (directly or through a call chain), so their
+        // borrow parameters bind const. Nested calls set this per receiver.
+        llvm::SaveAndRestore saveCallOnConstReceiver(callOnConstReceiver, exprIsConst(*expr.getReceiver(), /*followCalls=*/true));
 
         // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
         // Unlike other moves this applies even to trivial receivers: the base may still
@@ -4254,10 +4271,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
         // A borrow, pointer, or view into a const receiver would alias frozen
         // storage mutably, so calls returning one are rejected. Concrete wrapper
-        // returns (e.g. iterators) have no channel to check and still launder;
-        // so do lambdas borrowing from a const receiver. Slice and array-pointer
-        // receivers are exempt: a constant view only ever shares temporary
-        // backing, never a constant's own storage.
+        // returns (e.g. iterators) have no channel to check and still launder.
+        // Slice and array-pointer receivers are exempt: a constant view only
+        // ever shares temporary backing, never a constant's own storage.
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
             functionDecl && exprIsConst(*expr.getReceiver()) && !receiverType.removeOptional().isSlice() && !receiverType.removeOptional().isArrayPointer()) {
             Type declaredReturn = functionDecl->getFunctionType()->returnType;
@@ -5077,6 +5093,19 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
             param.type = NOTNULL(inferredType);
         }
     }
+
+    if (callOnConstReceiver) {
+        for (auto& param : expr.functionDecl->getParams()) {
+            if (param.type.removeOptional().isReferenceType()) param.isConst = true;
+        }
+    }
+    // Consume the flag: nested lambdas in this body re-derive it from their
+    // own call, so only lambdas passed to the const-receiver call bind const.
+    // (Re-checks of this lambda share the flag; per-instantiation clones keep
+    // markings independent, and removeTypes never clears parameter types, so
+    // marking is idempotent.) Sibling arguments still see the flag: this
+    // restores on exit.
+    llvm::SaveAndRestore clearCallOnConstReceiver(callOnConstReceiver, false);
 
     expr.functionDecl->parentFunction = currentFunction;
     size_t closureMovesBefore = closureMovedDecls.size();

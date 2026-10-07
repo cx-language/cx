@@ -1,0 +1,79 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct T {
+    const DATA = [1, 2, 3];
+}
+
+void writeThroughMapLambda() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:20: error: cannot assign to constant expression of type 'int'
+    arr.map(n => { *n = 99; return *n; }).toList();
+}
+
+void writeThroughFilterLambda() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:23: error: cannot assign to constant expression of type 'int'
+    arr.filter(n => { *n = 99; return true; }).toList();
+}
+
+void writeThroughFindLambda() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:21: error: cannot assign to constant expression of type 'int'
+    arr.find(n => { *n = 99; return true; });
+}
+
+void writeThroughChainedLambda() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:40: error: cannot assign to constant expression of type 'int'
+    arr.map(n => *n + 1).filter(n => { *n = 99; return true; }).toList();
+}
+
+void writeThroughStaticLambda() {
+    // CHECK: [[@LINE+1]]:23: error: cannot assign to constant expression of type 'int'
+    T.DATA.map(n => { *n = 99; return *n; }).toList();
+}
+
+void writeThroughExplicitBorrowParam() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:27: error: cannot assign to constant expression of type 'int'
+    arr.map((int& n) => { *n = 99; return *n; }).toList();
+}
+
+void writeWithExplicitGenericArgs() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:34: error: cannot assign to constant expression of type 'int'
+    arr.find<bool>((int& n) => { *n = 99; return true; });
+}
+
+void writeAfterToList() {
+    const arr = [1, 2, 3];
+    // Conservative overreach, locked in: toList() copies into fresh storage,
+    // so this write would be safe, but calls cannot tell aliasing results
+    // from fresh ones, so the chain still counts as constant-derived.
+    // Bind toList() to a variable first to write through it.
+    // CHECK: [[@LINE+1]]:42: error: cannot assign to constant expression of type 'int'
+    arr.map(n => *n).toList().map(m => { *m = 99; return *m; }).toList();
+}
+
+void main() {
+    // Reading through borrow parameters on constants keeps working.
+    const arr = [1, 2, 3];
+    println(arr.map(n => *n + 1).toList());
+    println(arr.filter(n => *n > 1).toList());
+    println(arr.map(n => *n + 1).filter(n => *n > 2).toList());
+    println(T.DATA.map(n => *n + 1).toList());
+    // Writing through borrow parameters on mutable receivers keeps working
+    // (warned, not rejected).
+    var mut = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:20: warning: writing to reference parameter 'n' of type 'int&' hides the mutation from the call site; take 'int*' instead
+    mut.map(n => { *n = *n * 10; return *n; }).toList();
+    println(mut);
+    // A lambda nested inside the const call's lambda re-derives constness
+    // from its own call: this one writes through a mutable borrow.
+    var mut2 = [10, 20, 30];
+    arr.map(a => {
+        // CHECK: [[@LINE+1]]:31: warning: writing to reference parameter 'm' of type 'int&' hides the mutation from the call site; take 'int*' instead
+        var f = (int& m) => { *m = 99; return *m; };
+        return f(mut2[0]);
+    }).toList();
+}

@@ -429,6 +429,10 @@ struct Typechecker {
     // place with nothing copied out, so dereference and implicit place moves
     // are allowed.
     bool inExplicitDeinit = false;
+    // True while checking the arguments of a call on a constant receiver
+    // (directly or through a call chain): lambdas there receive
+    // constant-derived borrows, so their borrow parameters bind const.
+    bool callOnConstReceiver = false;
     std::vector<VarDecl*> localVarDecls;
     NarrowMap narrowedTypes;
     DeclSet definitelyAssignedDecls;
@@ -487,7 +491,8 @@ std::string narrowingHint(Type source, Type target);
 // Whether the types alone would bind and only the source being a constant blocks forming the borrow.
 bool isBorrowOfConstant(const Expr& expr, Type source, Type target);
 // Whether the expression names frozen constant storage (a const binding or something derived from one).
-bool exprIsConst(const Expr& expr);
+// followCalls also sees through method calls, whose results may alias receiver storage.
+bool exprIsConst(const Expr& expr, bool followCalls = false);
 // Explains why a type is not Copyable when a use fails because the value was moved.
 std::string copyableHint(Type type);
 // Whether a type satisfies a ': Copyable' generic constraint. Structural, not name-based.
