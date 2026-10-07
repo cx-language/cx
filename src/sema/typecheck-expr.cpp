@@ -3513,13 +3513,22 @@ static const Expr* withoutBorrowCasts(const Expr* expr) {
 // mutable arguments once by-value overloads exist). Rvalues bind to references
 // only through temporaries, so they don't count: the rules below give those
 // (and consts, which never bind to references) to the by-value overload.
+// Reborrowed pointers don't count either: reinterpreting char* as char& is a
+// conversion, so it must not beat an exact by-value match.
 static const Match* findMatchWithMostRefBinds(llvm::ArrayRef<Match> matches, const CallExpr& call) {
     const Match* result = nullptr;
     auto bestCount = -1;
     forEachMappedMatch(matches, call, [&](const Match& match, llvm::ArrayRef<ParamDecl> params, llvm::ArrayRef<int> argToParam) {
         int count = 0;
         for (size_t i = 0; i < call.args.size(); ++i) {
-            if (params[size_t(argToParam[i])].type.isReferenceType() && withoutBorrowCasts(call.args[i].value)->isLvalue()) ++count;
+            Type paramType = params[size_t(argToParam[i])].type;
+            const Expr* arg = withoutBorrowCasts(call.args[i].value);
+            // Mirror the Reborrow conversion rule: only a pointer reinterpreted
+            // as a borrow of its pointee is excluded, not a direct borrow of a
+            // pointer variable (int* to int*& still counts).
+            bool isReborrow =
+                paramType.isReferenceType() && arg->type.isPointerType() && !arg->type.isReferenceType() && arg->type.getPointee() == paramType.getPointee();
+            if (paramType.isReferenceType() && arg->isLvalue() && !isReborrow) ++count;
         }
         if (count > bestCount) {
             bestCount = count;

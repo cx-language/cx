@@ -1,0 +1,35 @@
+// RUN: check_exit_status 0 %cx run %s
+
+int pick(int& x) {
+    return 1;
+}
+
+int pick(int* x) {
+    return 0;
+}
+
+int deref(int& x) {
+    return x;
+}
+
+int pickPtr(int*& x) {
+    return 1;
+}
+
+int pickPtr(int* x) {
+    return 0;
+}
+
+int main() {
+    var v = 1;
+    int* p = &v;
+    // An exact pointer match beats reborrowing the pointer as int&...
+    if pick(p) != 0 return 1;
+    // ...while plain lvalues still borrow.
+    if pick(v) != 1 return 1;
+    // Reborrowing still applies when it is the only viable match.
+    if deref(p) != 1 return 1;
+    // A direct borrow of a pointer variable still beats by-value.
+    if pickPtr(p) != 1 return 1;
+    return 0;
+}

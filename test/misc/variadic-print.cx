@@ -3,6 +3,8 @@
 
 enum MouseButton { Left, Middle, Right }
 
+const char* version = "6.0";
+
 void main() {
     print("a", "b", "c"); // CHECK:abc
     print('\n');
@@ -35,4 +37,8 @@ void main() {
         println(">", button); // CHECK-NEXT:>Left
     } // CHECK-NEXT:>Middle
     // CHECK-NEXT:>Right
+    // char* values print whole, not just their first character.
+    println(version, "x"); // CHECK-NEXT:6.0x
+    println(version, version); // CHECK-NEXT:6.06.0
+    println("hello", "x"); // CHECK-NEXT:hellox
 }
