@@ -101,17 +101,13 @@ For the fastest clean build of just the compiler, configure with
 
 ### Offline builds
 
-Configuring downloads AsmJit from GitHub (plus zlib and zstd on machines
-without system copies, e.g. Windows). To build without network access,
-check out the pinned commits (see `GIT_TAG` in CMakeLists.txt) and point
-CMake at them:
+Configuring downloads zlib and zstd on machines without system copies
+(e.g. Windows). To build without network access, check out the pinned
+commits (see `GIT_TAG` in CMakeLists.txt) and point CMake at them:
 
 ```sh
-cmake .. -DFETCHCONTENT_SOURCE_DIR_ASMJIT=/path/to/asmjit -DFETCHCONTENT_SOURCE_DIR_ZLIB=/path/to/zlib -DFETCHCONTENT_SOURCE_DIR_ZSTD=/path/to/zstd
+cmake .. -DFETCHCONTENT_SOURCE_DIR_ZLIB=/path/to/zlib -DFETCHCONTENT_SOURCE_DIR_ZSTD=/path/to/zstd
 ```
-
-On macOS, apply `cmake/asmjit-apple-varargs.patch` to that checkout first;
-CMake applies it automatically only to checkouts it fetches itself.
 
 If your LLVM distribution does not ship FileCheck, configuring downloads
 its source; pass `-DFILECHECK_SOURCE=/path/to/FileCheck.cpp` to build from

@@ -33,7 +33,6 @@
 #pragma warning(pop)
 #include "../ast/demangle.h"
 #include "../ast/module.h"
-#include "../backend/asmjit.h"
 #include "../backend/c-backend.h"
 #include "../backend/irgen.h"
 #include "../backend/llvm.h"
@@ -102,15 +101,6 @@ cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"), cl
 cl::opt<bool> noPIE("no-pie", cl::desc("Don't produce a position-independent executable"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> noJit("no-jit", cl::desc("Don't run in-process via JIT; link and execute a binary instead (named stack traces)"),
                     cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
-enum class JitBackend { AsmJit, LLVM };
-cl::opt<JitBackend> jitBackend("jit-backend", cl::desc("Select JIT engine for 'run':"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
-#if defined(__aarch64__) || defined(_M_ARM64)
-                               cl::init(JitBackend::AsmJit),
-#else
-                               cl::init(JitBackend::LLVM),
-#endif
-                               cl::values(clEnumValN(JitBackend::AsmJit, "asmjit", "AsmJit backend, fastest compile times (AArch64 only)"),
-                                          clEnumValN(JitBackend::LLVM, "llvm", "LLVM JIT backend")));
 cl::opt<bool> noLeakCheck("no-leak-check", cl::desc("Disable the leak detector in debug builds"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> dwarfDebugInfo("dwarf-debug-info", cl::desc("Emit DWARF debug info on Windows instead of CodeView"), cl::sub(cl::SubCommand::getAll()),
                              cl::cat(outputCategory));
@@ -582,16 +572,6 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     } else if (handlePrintOpt(PrintOpt::IR)) {
         printSection("IR", [&] { irGenerator.generatedModules.back()->print(llvm::outs()); });
         if (!remainingPrintOpts) return 0;
-    }
-
-    // AsmJit runs straight from cx IR, skipping LLVM IR building, optimization,
-    // and object emission. Anything it can't do falls through to the LLVM path.
-    if ((run || testSubcommand) && !compileOnly && !emitAssembly && !emitBitcode && !noJit && backend.getValue() == Backend::LLVM
-        && buildMode == BuildMode::Debug && libraries.empty() && frameworks.empty() && jitBackend.getValue() == JitBackend::AsmJit && !remainingPrintOpts
-        && AsmJitSession::eligible(irGenerator.generatedModules)) {
-        PhaseTimer timer("asmjit-run");
-        std::string argv0 = buildParams.filePaths.empty() ? "main" : std::string(buildParams.filePaths.front());
-        return AsmJitSession::run(irGenerator.generatedModules, argv0, programArgs);
     }
 
     llvm::SmallString<128> tempIntermediateFilePath;

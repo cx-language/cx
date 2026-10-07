@@ -1,5 +1,4 @@
 // RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
-// RUN: %cx run -Werror --jit-backend=llvm %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run -Werror --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
 // RUN: %cx run -Werror --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
 
