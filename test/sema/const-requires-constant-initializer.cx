@@ -7,6 +7,35 @@ const g = n;
 
 const K = 42;
 
+struct Point {
+    int x
+    int y
+}
+
+struct Widget {
+    int x
+    Widget(int x) { this.x = x * 2; }
+}
+
+// CHECK: [[@LINE+1]]:11: error: const 'w' initializer must be a constant expression
+const w = Widget(21);
+// CHECK: [[@LINE+1]]:12: error: const 'pt' initializer must be a constant expression
+const pt = Point(n, 2);
+
+// CHECK: [[@LINE+1]]:7: error: cyclic reference to 'self' in its initializer
+const self = Point(self.x, 2);
+// CHECK: [[@LINE+1]]:7: error: cyclic reference to 'cycleA' in its initializer
+const cycleA = Point(cycleB.x, 1);
+const cycleB = Point(cycleA.x, 1);
+
+// CHECK: [[@LINE+1]]:11: error: cyclic reference to 'scalarA' in its initializer
+const int scalarA = scalarB;
+const int scalarB = scalarA;
+// CHECK: [[@LINE+1]]:19: error: const 'usesCycle' initializer must be a constant expression
+const usesCycle = Point(scalarA, 0);
+// CHECK: [[@LINE+1]]:20: error: const 'readsCycle' initializer must be a constant expression
+const readsCycle = usesCycle.x;
+
 struct S {
     // CHECK: [[@LINE+1]]:17: error: const 'MAX' initializer must be a constant expression
     const MAX = n;

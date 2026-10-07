@@ -124,6 +124,7 @@ struct IRGenerator {
     void emitEnumPayloadDestruction(EnumDecl& enumDecl, Value* self);
 
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
+    Value* emitConstStructCall(const CallExpr& expr, const ConstructorDecl& constructor);
     Value* emitClosureCallExpr(const CallExpr& expr);
     Value* emitBuiltinCast(const CallExpr& expr);
     Value* emitSizeofExpr(const SizeofExpr& expr);

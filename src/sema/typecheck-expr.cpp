@@ -3668,7 +3668,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             llvm::StringMap<GenericArg> genericArgs;
             try {
                 genericArgs = getGenericArgsForCall(genericParams, expr, functionTemplate->functionDecl, decls.size() != 1, expectedType);
-            } catch (const CompileError&) {
+            } catch (const CompileError& error) {
+                if (error.isCyclic) throw;
                 // Derivable comparison operators (e.g. > from <) fall back below; don't fail hard on inference errors.
                 Token::Kind op = Token::None;
                 if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) op = binaryExpr->op;
@@ -3846,7 +3847,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 try {
                     llvm::SaveAndRestore probe(overloadProbe, true);
                     retryDecl = resolveOverload(decls, expr, callee, expectedType, false);
-                } catch (const CompileError&) {
+                } catch (const CompileError& error) {
+                    if (error.isCyclic) throw;
                     // Swapped order didn't match; restore and fall through below.
                 }
                 if (retryDecl) return retryDecl;
@@ -3903,7 +3905,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                             binaryExpr->negateResult = negateResult;
                             return decl;
                         }
-                    } catch (const CompileError&) {
+                    } catch (const CompileError& error) {
+                        if (error.isCyclic) throw;
                         // Restore the written form and fall through to the error below.
                         binaryExpr->op = savedOp;
                         calleeVar->identifier = savedCallee;
@@ -3938,7 +3941,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     typecheckExpr(*arg.value);
                 }
             }
-        } catch (const CompileError&) {
+        } catch (const CompileError& error) {
+            if (error.isCyclic) throw;
             // Args like `[]` need expected types to infer. Multiple applicable overloads
             // means the call is ambiguous; report that instead of the inference error.
             if (overloadProbe) return nullptr;
@@ -4373,7 +4377,8 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
             }
             try {
                 typecheckExpr(*arg.value, false, param.type);
-            } catch (const CompileError&) {
+            } catch (const CompileError& error) {
+                if (error.isCyclic) throw;
                 arg.value->removeTypes();
                 return ArgumentValidation::invalidType(i);
             }
@@ -4681,7 +4686,8 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
                             expr.operandType = varType;
                         }
                     }
-                } catch (const CompileError&) {
+                } catch (const CompileError& error) {
+                    if (error.isCyclic) throw;
                     // Fall through to report the type error below.
                 }
             }

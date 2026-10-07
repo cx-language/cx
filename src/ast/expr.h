@@ -256,6 +256,9 @@ struct CallExpr : Expr {
     bool isMoveInit() const;
     const Expr* getReceiver() const;
     Expr* getReceiver();
+    // The parameter index of an argument, or the argument's position when the
+    // mapping is absent (unvalidated calls); -1 marks variadic extras.
+    int paramIndexForArg(size_t i) const { return argParamIndices.size() == args.size() ? argParamIndices[i] : int(i); }
     static bool classof(const Expr* e) {
         switch (e->kind) {
         case ExprKind::CallExpr:

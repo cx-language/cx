@@ -1,0 +1,56 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Color {
+    int r
+    int g
+    int b
+    int a
+}
+
+struct Inner {
+    uint8 x
+    uint8 y
+}
+
+struct Outer {
+    Inner inner
+    int z = 42
+    int[3] arr
+}
+
+struct Mixed {
+    float f
+    bool flag
+    char ch
+    int? opt
+}
+
+const ONE = 1
+const RAYWHITE = Color(245, 245, 245, 255)
+const O = Outer(Inner(ONE, 2), arr = [1, 2, 3])
+const M = Mixed(2.5, true, 'z', 7)
+var GLOBAL = Color(1, 2, 3, 4)
+
+// Members of constant structs fold in const position.
+const N = RAYWHITE.g
+const F = O.inner.x == 1
+const SUM = O.inner.x + N * 2
+
+void main() {
+    println(RAYWHITE.g) // CHECK:245
+    println(GLOBAL.b) // CHECK:3
+    println(O.inner.y) // CHECK:2
+    println(O.z) // CHECK:42
+    println(O.arr[2]) // CHECK:3
+    println(M.f) // CHECK:2.5
+    println(M.flag) // CHECK:true
+    println(M.ch) // CHECK:z
+    println(M.opt!) // CHECK:7
+    println(N) // CHECK:245
+    println(F) // CHECK:true
+    println(SUM) // CHECK:491
+    const LOCAL = Color(9, 8, 7, 6)
+    println(LOCAL.r) // CHECK:9
+}
