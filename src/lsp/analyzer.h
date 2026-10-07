@@ -185,7 +185,10 @@ struct FileStat {
 struct ModuleLayout {
     std::optional<std::string> moduleDir;
     std::string buildDir;
-    bool registerAsStd = false;
+    // Package name to resolve the main module as, so a sibling's `import` of
+    // the open file's own package finds the open files instead of loading a
+    // second copy from disk ("std" when editing the standard library itself).
+    std::optional<std::string> registerAsPackage;
     std::vector<std::string> siblingPaths; // Sorted .cx siblings, excluding filePath.
     std::vector<std::string> checkedBuildFiles; // Every build.cx met walking up.
 };

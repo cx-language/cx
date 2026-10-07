@@ -191,6 +191,52 @@ bool isStdDirectory(const std::string& parentDir, const std::vector<std::string>
     return false;
 }
 
+/// Search paths package detection runs against: the base paths plus the
+/// vendor/ directories runFrontendOnce adds below (a package typically
+/// resolves through the build root's vendor/). Header-search and
+/// dependency paths need parsed build configs, so they stay out: detection
+/// is stat-only for cache validation. Must mirror runFrontendOnce's
+/// vendor appends.
+std::vector<std::string> withVendorPaths(const std::vector<std::string>& basePaths, const std::optional<std::string>& moduleDir, const std::string& buildDir) {
+    std::vector<std::string> paths = basePaths;
+    if (!buildDir.empty()) paths.push_back(buildDir + "/vendor");
+    if (moduleDir) {
+        std::string moduleVendor = *moduleDir + "/vendor";
+        if (buildDir.empty() || moduleVendor != buildDir + "/vendor") paths.push_back(std::move(moduleVendor));
+    }
+    return paths;
+}
+
+/// A directory importable as `<searchPath>/<name>`.
+struct ImportablePackage {
+    std::string dir;
+    std::string name;
+};
+
+/// Nearest importable ancestor of parentDir (starting with itself),
+/// mirroring importModule's first-hit-wins lookup: a match loses when an
+/// earlier search path holds a different directory under the same name.
+/// Generalizes isStdDirectory: "std" is just the package found this way
+/// inside the standard library. Stat-only for cache validation.
+std::optional<ImportablePackage> findImportablePackage(const std::string& parentDir, const std::vector<std::string>& importSearchPaths) {
+    for (std::string dir = parentDir; !dir.empty(); dir = llvm::sys::path::parent_path(dir).str()) {
+        std::string parent = llvm::sys::path::parent_path(dir).str();
+        if (parent.empty() || parent == dir) break;
+        for (size_t i = 0; i < importSearchPaths.size(); ++i) {
+            if (!llvm::sys::fs::equivalent(parent, importSearchPaths[i])) continue;
+            std::string name = llvm::sys::path::filename(dir).str();
+            for (size_t j = 0; j < i; ++j) {
+                std::string shadowed = importSearchPaths[j] + "/" + name;
+                if (llvm::sys::fs::is_directory(shadowed) && !llvm::sys::fs::equivalent(shadowed, dir)) {
+                    return std::nullopt;
+                }
+            }
+            return ImportablePackage{dir, name};
+        }
+    }
+    return std::nullopt;
+}
+
 /// Sorted .cx siblings under moduleDir, excluding filePath itself, vendored
 /// packages (which join via `import`), and the project root's build.cx (which
 /// is config, not source; a build.cx anywhere else is an ordinary source).
@@ -206,6 +252,35 @@ std::vector<std::string> enumerateSiblingPaths(const std::string& moduleDir, con
     }
     llvm::sort(siblingPaths);
     return siblingPaths;
+}
+
+/// Appends the .cx files an `import` of packageDir would load (mirroring
+/// importModuleSourcesInDirectoryRecursively's file set), minus the open
+/// file, which joins from its buffer instead.
+void appendPackagePaths(std::vector<std::string>& out, const std::string& packageDir, const std::string& filePath) {
+    std::error_code ec;
+    for (llvm::sys::fs::recursive_directory_iterator it(packageDir, ec), end; it != end && !ec; it.increment(ec)) {
+        if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath && !isRootBuildFile(it->path(), packageDir)) {
+            out.push_back(it->path());
+        }
+    }
+}
+
+/// Sorted .cx siblings for the main module: the moduleDir files plus, when
+/// the open file sits in an importable package, that package's own files
+/// (which join here instead of via `import`, so the import resolves to
+/// this module). Deduplicated: the two sets can overlap.
+std::vector<std::string> buildSiblingPaths(const std::optional<std::string>& moduleDir, const std::string& buildDir, const std::string& filePath,
+                                           const std::optional<std::string>& packageDir) {
+    std::vector<std::string> siblings;
+    if (moduleDir) {
+        std::string exclusionRoot = buildDir.empty() ? *moduleDir : buildDir;
+        siblings = enumerateSiblingPaths(*moduleDir, exclusionRoot, filePath);
+    }
+    if (packageDir) appendPackagePaths(siblings, *packageDir, filePath);
+    llvm::sort(siblings);
+    siblings.erase(llvm::unique(siblings), siblings.end());
+    return siblings;
 }
 
 /// The main module plus every imported module, visiting the main module only
@@ -1875,17 +1950,20 @@ ModuleLayout discoverModuleLayout(const std::string& filePath, const std::vector
     // build.cx target root, or just the file itself when standalone.
     ModuleLayout layout;
     std::string parentDir = llvm::sys::path::parent_path(filePath).str();
+    std::optional<std::string> packageDir;
     if (!parentDir.empty()) {
         if (isStdDirectory(parentDir, importSearchPaths)) {
             layout.moduleDir = parentDir;
-            layout.registerAsStd = true;
+            layout.checkedBuildFiles = collectUpwardBuildFiles(parentDir);
+            layout.registerAsPackage = "std";
         } else {
             layout.moduleDir = findBuildRoot(filePath, parentDir, &layout.buildDir, defines, &layout.checkedBuildFiles);
+            if (auto package = findImportablePackage(parentDir, withVendorPaths(importSearchPaths, layout.moduleDir, layout.buildDir))) {
+                packageDir = package->dir;
+                layout.registerAsPackage = package->name;
+            }
         }
-    }
-    if (layout.moduleDir) {
-        std::string exclusionRoot = layout.buildDir.empty() ? *layout.moduleDir : layout.buildDir;
-        layout.siblingPaths = enumerateSiblingPaths(*layout.moduleDir, exclusionRoot, filePath);
+        layout.siblingPaths = buildSiblingPaths(layout.moduleDir, layout.buildDir, filePath, packageDir);
     }
     return layout;
 }
@@ -1924,7 +2002,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
     // a failed compilation frees it instead of leaking per red edit.
     auto ownedModule = std::make_unique<Module>("main");
     Module* module = ownedModule.get();
-    bool moduleRegisteredAsStd = false;
+    bool moduleRegisteredAsPackage = false;
 
     try {
         CompileOptions baseOptions;
@@ -1957,6 +2035,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             // The project root's vendor/ holds importable packages. The file's
             // own directory contributes its vendor/ above; a multitarget file
             // under src/foo needs both (see driver.cpp addConfigBuildFlags).
+            // Keep in sync with withVendorPaths (package detection).
             options.importSearchPaths.push_back(buildDir + "/vendor");
             for (auto& path : projectConfig.headerSearchPaths) {
                 options.importSearchPaths.push_back(absolutizePackagePath(buildDir, path));
@@ -1997,22 +2076,24 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
 
         {
             PhaseTimer timer("lsp-typecheck-main");
-            // When the open file lives inside the standard library itself, the
-            // typechecker's unconditional "std" import would otherwise load the
-            // same sources a second time as a separate module, drowning the file
-            // in ambiguous-reference errors. Analyze them as that package instead
-            // by resolving the import to the main module. This mirrors
-            // importModule's lookup order, so it only triggers when the import
-            // would actually find this directory.
-            if (layout.registerAsStd) {
-                Module::registerImportedModule("std", module);
-                moduleRegisteredAsStd = true;
+            // When the open file lives inside an importable package (the
+            // standard library itself, or a vendored package), a sibling's
+            // `import` of that package would otherwise load the same sources
+            // a second time as a separate module, drowning the file in
+            // ambiguous-reference errors. Analyze them as that package
+            // instead by resolving the import to the main module. This
+            // mirrors importModule's lookup order, so it only triggers when
+            // the import would actually find this directory.
+            if (layout.registerAsPackage) {
+                Module::registerImportedModule(*layout.registerAsPackage, module);
+                moduleRegisteredAsPackage = true;
             }
 
             Typechecker typechecker(options, buildDir.empty() ? nullptr : &projectConfig.resolvedDependencies);
-            for (auto* imported : module->getImportedModules()) {
-                typechecker.typecheckModule(*imported, options, false);
-            }
+            // No pre-pass over imported modules: sourceFile.importedModules
+            // is only populated during typechecking, so the list is empty
+            // here; imports resolve (and typecheck) from inside
+            // typecheckModule instead.
             typechecker.typecheckModule(*module, options, true);
             typechecker.checkUnusedDecls(*module);
         }
@@ -2067,10 +2148,10 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         result.diagnostics.push_back(std::move(diagnostic));
     }
 
-    if (moduleRegisteredAsStd && ownedModule) {
-        // Compilation failed after registering the main module as "std": the
-        // registry owns it now (deleteModules frees it); releasing keeps the
-        // unique_ptr from freeing it out from under the registry.
+    if (moduleRegisteredAsPackage && ownedModule) {
+        // Compilation failed after registering the main module as a package:
+        // the registry owns it now (deleteModules frees it); releasing keeps
+        // the unique_ptr from freeing it out from under the registry.
         ownedModule.release();
     }
 
@@ -2737,14 +2818,19 @@ bool cacheMatches(const LspCachedFrontend& entry, const LspQuery& query) {
         return miss("config");
     std::string parentDir = llvm::sys::path::parent_path(query.filePath).str();
     // A new or deleted build.cx above the file can move the module root; a
-    // changed one can move it too (caught by depStats below). Nothing is
-    // consulted when editing inside std/ itself, so nothing is compared.
-    if (!entry.layout.registerAsStd && collectUpwardBuildFiles(parentDir) != entry.layout.checkedBuildFiles) return miss("buildfiles");
-    if (isStdDirectory(parentDir, buildMainImportSearchPaths(query, parentDir)) != entry.layout.registerAsStd) return miss("isstd");
-    if (entry.layout.moduleDir) {
-        std::string exclusionRoot = entry.layout.buildDir.empty() ? *entry.layout.moduleDir : entry.layout.buildDir;
-        if (enumerateSiblingPaths(*entry.layout.moduleDir, exclusionRoot, query.filePath) != entry.layout.siblingPaths) return miss("siblings");
+    // changed one can move it too (caught by depStats below).
+    if (collectUpwardBuildFiles(parentDir) != entry.layout.checkedBuildFiles) return miss("buildfiles");
+    std::vector<std::string> basePaths = buildMainImportSearchPaths(query, parentDir);
+    std::optional<std::string> expectedPackage;
+    std::optional<std::string> packageDir;
+    if (isStdDirectory(parentDir, basePaths)) {
+        expectedPackage = "std";
+    } else if (auto package = findImportablePackage(parentDir, withVendorPaths(basePaths, entry.layout.moduleDir, entry.layout.buildDir))) {
+        expectedPackage = package->name;
+        packageDir = package->dir;
     }
+    if (expectedPackage != entry.layout.registerAsPackage) return miss("package");
+    if (buildSiblingPaths(entry.layout.moduleDir, entry.layout.buildDir, query.filePath, packageDir) != entry.layout.siblingPaths) return miss("siblings");
     if (relevantOpenDocs(query, entry.layout) != entry.openDocs) return miss("openDocs");
     if (!depStatsMatch(entry.depStats)) return miss("depStats");
     if (profilingEnabled()) llvm::errs() << "[profile] lsp-hit\n";

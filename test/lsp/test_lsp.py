@@ -1912,15 +1912,26 @@ def test_server_cache_import_open(command):
         with open(os.path.join(root, "build.cx"), "w") as file:
             file.write('var name = "importproj"\n')
         foo_path = os.path.join(vendordir, "foo.cx")
-        foo_v1 = "int _fooVal() {\n    return 1;\n}\n"
+        foo_v1 = "int _fooVal() {\n    return _fooHelper() + 1;\n}\n"
         with open(foo_path, "w") as file:
             file.write(foo_v1)
+        # A second package file plus a nested one: both join the open file's
+        # analysis (cross-file package references keep resolving), and the
+        # nested file registers the same package.
+        with open(os.path.join(vendordir, "other.cx"), "w") as file:
+            file.write("int _fooHelper() {\n    return 1;\n}\n")
+        nested_path = os.path.join(vendordir, "sub", "nested.cx")
+        os.makedirs(os.path.join(vendordir, "sub"))
+        nested_content = "int _nestedVal() {\n    return 3;\n}\n"
+        with open(nested_path, "w") as file:
+            file.write(nested_content)
         main_path = os.path.join(root, "main.cx")
-        main_content = "import foo;\n\nint _doubled() {\n    return _fooVal() * 2;\n}\n"
+        main_content = "import foo;\n\nint _doubled() {\n    return _fooVal() * 2 + _nestedVal();\n}\n"
         with open(main_path, "w") as file:
             file.write(main_content)
         main_uri = "file://" + main_path
         foo_uri = "file://" + foo_path
+        nested_uri = "file://" + nested_path
 
         session = start_session(command)
         session.send(
@@ -1938,23 +1949,54 @@ def test_server_cache_import_open(command):
                 "params": {"textDocument": {"uri": foo_uri, "languageId": "cx", "version": 1, "text": foo_v1}},
             }
         )
-        # Opening the imported file publishes twice: its own (clean)
-        # diagnostics, plus main's, which hit a known pre-existing quirk
-        # (the open file is analyzed both as the main file and as the
-        # on-disk import, so its symbols look ambiguous). Drain both to
-        # keep the message framing in sync.
+        # Opening the imported file publishes once, for the file itself: the
+        # open file's package resolves to the open files, so the sibling
+        # rechecked in the same analysis reports no spurious ambiguity (and
+        # an unmentioned file publishes nothing). A second notification here
+        # would desync the reads below and fail loudly.
+        foo_notification = session.read()
+        check(
+            "server-cache-import-open-no-ambiguity",
+            foo_notification["params"]["diagnostics"] == [] and foo_notification["params"]["uri"] == foo_uri,
+            json.dumps(foo_notification["params"]["diagnostics"])[:300],
+        )
+
+        # An unsaved edit to the open package file is what main resolves
+        # against (not the stale on-disk copy).
+        foo_v2 = "int _fooVal2() {\n    return 1;\n}\n"
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {"textDocument": {"uri": foo_uri, "version": 2}, "contentChanges": [{"text": foo_v2}]},
+            }
+        )
         foo_notification = session.read()
         main_notification = session.read()
         check(
-            "server-cache-import-open-drains",
+            "server-cache-import-open-unsaved",
             foo_notification["params"]["diagnostics"] == []
-            and foo_notification["params"]["uri"] == foo_uri
-            and main_notification["params"]["uri"] == main_uri,
+            and any("unknown identifier '_fooVal'" in d["message"] for d in main_notification["params"]["diagnostics"]),
             json.dumps([foo_notification["params"]["diagnostics"], main_notification["params"]["diagnostics"]])[:300],
+        )
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didChange",
+                "params": {"textDocument": {"uri": foo_uri, "version": 3}, "contentChanges": [{"text": foo_v1}]},
+            }
+        )
+        # Reverting restores a clean analysis, which publishes once (for
+        # foo itself; no other file is mentioned).
+        foo_notification = session.read()
+        check(
+            "server-cache-import-open-reverted",
+            foo_notification["params"]["diagnostics"] == [] and foo_notification["params"]["uri"] == foo_uri,
+            json.dumps(foo_notification["params"]["diagnostics"])[:300],
         )
 
         with open(foo_path, "w") as file:
-            file.write("int _fooVal2() {\n    return 1;\n}\n")
+            file.write(foo_v2)
         session.send(
             {
                 "jsonrpc": "2.0",
@@ -1985,6 +2027,22 @@ def test_server_cache_import_open(command):
             notification["params"]["diagnostics"] == [],
             json.dumps(notification["params"]["diagnostics"])[:300],
         )
+        # A nested package file registers the same package: opening it
+        # publishes once, with no spurious ambiguity for the sibling.
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {"textDocument": {"uri": nested_uri, "languageId": "cx", "version": 1, "text": nested_content}},
+            }
+        )
+        nested_notification = session.read()
+        check(
+            "server-cache-import-open-nested",
+            nested_notification["params"]["diagnostics"] == [] and nested_notification["params"]["uri"] == nested_uri,
+            json.dumps(nested_notification["params"]["diagnostics"])[:300],
+        )
+        session.send({"jsonrpc": "2.0", "method": "textDocument/didClose", "params": {"textDocument": {"uri": nested_uri}}})
         session.send({"jsonrpc": "2.0", "method": "textDocument/didClose", "params": {"textDocument": {"uri": foo_uri}}})
         stop_session(session, "server-cache-import-open")
 
