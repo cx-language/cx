@@ -20,6 +20,8 @@ using GLsizei = c_int;
 using GLubyte = c_uchar;
 /// Unsigned 16-bit integer type used by OpenGL.
 using GLushort = c_ushort;
+/// 16-bit floating point type used by OpenGL.
+using GLhalf = c_ushort;
 /// Unsigned 32-bit integer type used by OpenGL.
 using GLuint = c_uint;
 /// 32-bit floating point type used by OpenGL.

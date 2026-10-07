@@ -69,10 +69,12 @@ own `build.cx`, and the build applies its link requirements automatically
 when the module is imported. The C library itself must be installed on
 the system; if it cannot be found, the build fails with an error naming it.
 
-Currently vendored: `glfw` (GLFW 3.x, without the Vulkan functions),
-`gl` (OpenGL 3.3 core profile), `sdl3` (SDL 3.x; see the header of
-`vendor/sdl3/sdl3.cx` for omissions), and `raylib` (raylib 6.x, without
-raymath.h; see the header of `vendor/raylib/raylib.cx` for omissions).
+Currently vendored: `glfw` (GLFW 3.x, including glfw3native.h),
+`gl` (OpenGL 3.3 core profile), `sdl3` (SDL 3.x), and `raylib`
+(raylib 6.x, including raymath.h). Each module covers the full public
+API of its C headers; whatever cx cannot express (such as
+`va_list` callbacks) is listed in an omissions note at the top of
+the `vendor/<package>/<package>.cx` file, if anything is omitted.
 A `vendor/<package>/` directory in your own project shadows the shipped
 module of the same name, so you can
 override or extend a binding; the shadowing package's link settings

@@ -2,17 +2,15 @@
 // (generated from version 6.0.0; unused declarations cost nothing thanks to lazy checking).
 // Doc comments derive in part from those headers (zlib license;
 // Copyright (c) 2013-2026 Ramon Santamaria (@raysan5)).
-// Covers raylib.h, rlgl.h, and rcamera.h. Link requirements live in
-// the build.cx next to this file.
-// Omitted on purpose: raymath.h (static inline only, no out-of-line
-// symbols), the TraceLogCallback typedef and SetTraceLogCallback (cx
-// cannot name a va_list), the GetMouseRay alias (use
-// GetScreenToWorldRay), the color macros (RED, BLUE, ... are C
-// compound literals, which no cx holds; write Color(r = ..., ...)
-// instead), function-like macros (RL_MALLOC, TRACELOG, ...), string
-// macros (pass literals), and the double macros (RL_CULL_DISTANCE_*,
-// CAMERA_CULL_DISTANCE_*): float literals infer float32, so no const
-// holds them exactly. The rlgl declarations assume desktop OpenGL
+// Covers raylib.h, rlgl.h, rcamera.h, and raymath.h. Link requirements
+// live in the build.cx next to this file. The raymath functions are
+// declared extern: the raylib library exports them, like the rest.
+// Omitted on purpose: the TraceLogCallback typedef and
+// SetTraceLogCallback (cx cannot name a va_list), and function-like
+// macros (RL_MALLOC, TRACELOG, MIN/MAX, ...). The MatrixToFloat,
+// Vector3ToFloat, and rlMatrixToFloat macros are covered by
+// MatrixToFloatV, Vector3ToFloatV, and rlMatrixToFloatV: read the .v
+// member instead. The rlgl declarations assume desktop OpenGL
 // (GRAPHICS_API_OPENGL_11/33): other GL flavors change
 // RL_DEFAULT_BATCH_BUFFER_ELEMENTS and rlVertexBuffer.indices.
 // C pointers to single items become 'T*'; pointers to arrays become
@@ -1123,6 +1121,157 @@ const SHADER_LOC_MAP_DIFFUSE = SHADER_LOC_MAP_ALBEDO;
 /// Deprecated alias for SHADER_LOC_MAP_METALNESS.
 const SHADER_LOC_MAP_SPECULAR = SHADER_LOC_MAP_METALNESS;
 
+// Custom raylib color palette for amazing visuals on WHITE background.
+/// Light Gray.
+const LIGHTGRAY = Color(200, 200, 200, 255);
+/// Gray.
+const GRAY = Color(130, 130, 130, 255);
+/// Dark Gray.
+const DARKGRAY = Color(80, 80, 80, 255);
+/// Yellow.
+const YELLOW = Color(253, 249, 0, 255);
+/// Gold.
+const GOLD = Color(255, 203, 0, 255);
+/// Orange.
+const ORANGE = Color(255, 161, 0, 255);
+/// Pink.
+const PINK = Color(255, 109, 194, 255);
+/// Red.
+const RED = Color(230, 41, 55, 255);
+/// Maroon.
+const MAROON = Color(190, 33, 55, 255);
+/// Green.
+const GREEN = Color(0, 228, 48, 255);
+/// Lime.
+const LIME = Color(0, 158, 47, 255);
+/// Dark Green.
+const DARKGREEN = Color(0, 117, 44, 255);
+/// Sky Blue.
+const SKYBLUE = Color(102, 191, 255, 255);
+/// Blue.
+const BLUE = Color(0, 121, 241, 255);
+/// Dark Blue.
+const DARKBLUE = Color(0, 82, 172, 255);
+/// Purple.
+const PURPLE = Color(200, 122, 255, 255);
+/// Violet.
+const VIOLET = Color(135, 60, 190, 255);
+/// Dark Purple.
+const DARKPURPLE = Color(112, 31, 126, 255);
+/// Beige.
+const BEIGE = Color(211, 176, 131, 255);
+/// Brown.
+const BROWN = Color(127, 106, 79, 255);
+/// Dark Brown.
+const DARKBROWN = Color(76, 63, 47, 255);
+/// White.
+const WHITE = Color(255, 255, 255, 255);
+/// Black.
+const BLACK = Color(0, 0, 0, 255);
+/// Blank (Transparent).
+const BLANK = Color(0, 0, 0, 0);
+/// Magenta.
+const MAGENTA = Color(255, 0, 255, 255);
+/// My own White (raylib logo).
+const RAYWHITE = Color(245, 245, 245, 255);
+
+/// The raylib version string.
+const char* RAYLIB_VERSION = "6.0";
+/// The rlgl version string.
+const char* RLGL_VERSION = "6.0";
+
+/// Default shader attribute name: "vertexPosition".
+const char* RL_DEFAULT_SHADER_ATTRIB_NAME_POSITION = "vertexPosition";
+/// Default shader attribute name: "vertexTexCoord".
+const char* RL_DEFAULT_SHADER_ATTRIB_NAME_TEXCOORD = "vertexTexCoord";
+/// Default shader attribute name: "vertexNormal".
+const char* RL_DEFAULT_SHADER_ATTRIB_NAME_NORMAL = "vertexNormal";
+/// Default shader attribute name: "vertexColor".
+const char* RL_DEFAULT_SHADER_ATTRIB_NAME_COLOR = "vertexColor";
+/// Default shader attribute name: "vertexTangent".
+const char* RL_DEFAULT_SHADER_ATTRIB_NAME_TANGENT = "vertexTangent";
+/// Default shader attribute name: "vertexTexCoord2".
+const char* RL_DEFAULT_SHADER_ATTRIB_NAME_TEXCOORD2 = "vertexTexCoord2";
+/// Default shader attribute name: "vertexBoneIndices".
+const char* RL_DEFAULT_SHADER_ATTRIB_NAME_BONEINDICES = "vertexBoneIndices";
+/// Default shader attribute name: "vertexBoneWeights".
+const char* RL_DEFAULT_SHADER_ATTRIB_NAME_BONEWEIGHTS = "vertexBoneWeights";
+/// Default shader attribute name: "instanceTransform".
+const char* RL_DEFAULT_SHADER_ATTRIB_NAME_INSTANCETRANSFORM = "instanceTransform";
+/// Default shader uniform name: "mvp".
+const char* RL_DEFAULT_SHADER_UNIFORM_NAME_MVP = "mvp";
+/// Default shader uniform name: "matView".
+const char* RL_DEFAULT_SHADER_UNIFORM_NAME_VIEW = "matView";
+/// Default shader uniform name: "matProjection".
+const char* RL_DEFAULT_SHADER_UNIFORM_NAME_PROJECTION = "matProjection";
+/// Default shader uniform name: "matModel".
+const char* RL_DEFAULT_SHADER_UNIFORM_NAME_MODEL = "matModel";
+/// Default shader uniform name: "matNormal".
+const char* RL_DEFAULT_SHADER_UNIFORM_NAME_NORMAL = "matNormal";
+/// Default shader uniform name: "colDiffuse".
+const char* RL_DEFAULT_SHADER_UNIFORM_NAME_COLOR = "colDiffuse";
+/// Default shader sampler name: "texture0".
+const char* RL_DEFAULT_SHADER_SAMPLER2D_NAME_TEXTURE0 = "texture0";
+/// Default shader sampler name: "texture1".
+const char* RL_DEFAULT_SHADER_SAMPLER2D_NAME_TEXTURE1 = "texture1";
+/// Default shader sampler name: "texture2".
+const char* RL_DEFAULT_SHADER_SAMPLER2D_NAME_TEXTURE2 = "texture2";
+/// Default shader uniform name: "boneMatrices".
+const char* RL_DEFAULT_SHADER_UNIFORM_NAME_BONEMATRICES = "boneMatrices";
+
+/// Default near cull distance.
+const double RL_CULL_DISTANCE_NEAR = 0.05;
+/// Default far cull distance.
+const double RL_CULL_DISTANCE_FAR = 4000.0;
+/// Near cull distance used by the camera module.
+const double CAMERA_CULL_DISTANCE_NEAR = RL_CULL_DISTANCE_NEAR;
+/// Far cull distance used by the camera module.
+const double CAMERA_CULL_DISTANCE_FAR = RL_CULL_DISTANCE_FAR;
+
+/// Camera move speed in units per second.
+const CAMERA_MOVE_SPEED = 5.4;
+/// Camera rotation speed.
+const CAMERA_ROTATION_SPEED = 0.03;
+/// Camera pan speed.
+const CAMERA_PAN_SPEED = 2.0;
+/// Camera mouse move sensitivity.
+const CAMERA_MOUSE_MOVE_SENSITIVITY = 0.003;
+/// Camera orbital speed in radians per second.
+const CAMERA_ORBITAL_SPEED = 0.5;
+
+/// S3TC DXT1 compressed RGB token (rlgl fallback define).
+const GL_COMPRESSED_RGB_S3TC_DXT1_EXT = 0x83F0;
+/// S3TC DXT1 compressed RGBA token (rlgl fallback define).
+const GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = 0x83F1;
+/// S3TC DXT3 compressed RGBA token (rlgl fallback define).
+const GL_COMPRESSED_RGBA_S3TC_DXT3_EXT = 0x83F2;
+/// S3TC DXT5 compressed RGBA token (rlgl fallback define).
+const GL_COMPRESSED_RGBA_S3TC_DXT5_EXT = 0x83F3;
+/// ETC1 compressed RGB8 token (rlgl fallback define).
+const GL_ETC1_RGB8_OES = 0x8D64;
+/// ETC2 compressed RGB8 token (rlgl fallback define).
+const GL_COMPRESSED_RGB8_ETC2 = 0x9274;
+/// ETC2/EAC compressed RGBA8 token (rlgl fallback define).
+const GL_COMPRESSED_RGBA8_ETC2_EAC = 0x9278;
+/// PVRTC 4bpp compressed RGB token (rlgl fallback define).
+const GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG = 0x8C00;
+/// PVRTC 4bpp compressed RGBA token (rlgl fallback define).
+const GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG = 0x8C02;
+/// ASTC 4x4 compressed RGBA token (rlgl fallback define).
+const GL_COMPRESSED_RGBA_ASTC_4x4_KHR = 0x93b0;
+/// ASTC 8x8 compressed RGBA token (rlgl fallback define).
+const GL_COMPRESSED_RGBA_ASTC_8x8_KHR = 0x93b7;
+/// Maximum anisotropy level query token (rlgl fallback define).
+const GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF;
+/// Texture max anisotropy parameter token (rlgl fallback define).
+const GL_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FE;
+/// Legacy luminance pixel format token (rlgl fallback define).
+const GL_LUMINANCE = 0x1909;
+/// Legacy luminance-alpha pixel format token (rlgl fallback define).
+const GL_LUMINANCE_ALPHA = 0x190A;
+/// Epsilon for float comparisons.
+const EPSILON = 0.000001;
+
 /// NOTE: Actual structs are defined internally in raudio module.
 struct rAudioBuffer {}
 /// An opaque handle to an audio stream processor.
@@ -1193,6 +1342,14 @@ struct Font {
     Texture2D texture;
     Rectangle[*]? recs;
     GlyphInfo[*]? glyphs;
+}
+/// Three floats in a struct, for Vector3 array conversion.
+struct float3 {
+    float32[3] v;
+}
+/// Sixteen floats in a struct, for Matrix array conversion.
+struct float16 {
+    float32[16] v;
 }
 /// GlyphInfo, font characters glyphs info.
 struct GlyphInfo {
@@ -1621,6 +1778,10 @@ extern void SetShaderValueTexture(Shader shader, c_int locIndex, Texture2D textu
 extern void UnloadShader(Shader shader);
 /// Get a ray trace from screen position (i.e mouse).
 extern Ray GetScreenToWorldRay(Vector2 position, Camera camera);
+/// Deprecated alias for GetScreenToWorldRay.
+Ray GetMouseRay(Vector2 mousePosition, Camera camera) {
+    return GetScreenToWorldRay(mousePosition, camera);
+}
 /// Get a ray trace from screen position (i.e mouse) in a viewport.
 extern Ray GetScreenToWorldRayEx(Vector2 position, Camera camera, c_int width, c_int height);
 /// Get the screen space position for a 3d world space position.
@@ -2999,3 +3160,328 @@ extern void CameraRoll(Camera* camera, float32 angle);
 extern Matrix GetCameraViewMatrix(Camera* camera);
 /// Returns the camera's projection matrix.
 extern Matrix GetCameraProjectionMatrix(Camera* camera, float32 aspect);
+/// Clamp float value
+extern float32 Clamp(float32 value, float32 min, float32 max);
+/// Calculate linear interpolation between two floats
+extern float32 Lerp(float32 start, float32 end, float32 amount);
+/// Normalize input value within input range
+extern float32 Normalize(float32 value, float32 start, float32 end);
+/// Remap input value within input range to output range
+extern float32 Remap(float32 value, float32 inputStart, float32 inputEnd, float32 outputStart, float32 outputEnd);
+/// Wrap input value from min to max
+extern float32 Wrap(float32 value, float32 min, float32 max);
+/// Check whether two given floats are almost equal
+extern c_int FloatEquals(float32 x, float32 y);
+/// Vector with components value 0.0f
+extern Vector2 Vector2Zero();
+/// Vector with components value 1.0f
+extern Vector2 Vector2One();
+/// Add two vectors (v1 + v2)
+extern Vector2 Vector2Add(Vector2 v1, Vector2 v2);
+/// Add vector and float value
+extern Vector2 Vector2AddValue(Vector2 v, float32 add);
+/// Subtract two vectors (v1 - v2)
+extern Vector2 Vector2Subtract(Vector2 v1, Vector2 v2);
+/// Subtract vector by float value
+extern Vector2 Vector2SubtractValue(Vector2 v, float32 sub);
+/// Calculate vector length
+extern float32 Vector2Length(Vector2 v);
+/// Calculate vector square length
+extern float32 Vector2LengthSqr(Vector2 v);
+/// Calculate two vectors dot product
+extern float32 Vector2DotProduct(Vector2 v1, Vector2 v2);
+/// Calculate two vectors cross product
+extern float32 Vector2CrossProduct(Vector2 v1, Vector2 v2);
+/// Calculate distance between two vectors
+extern float32 Vector2Distance(Vector2 v1, Vector2 v2);
+/// Calculate square distance between two vectors
+extern float32 Vector2DistanceSqr(Vector2 v1, Vector2 v2);
+/// Calculate the signed angle from v1 to v2, relative to the origin (0, 0)
+/// NOTE: Coordinate system convention: positive X right, positive Y down
+/// positive angles appear clockwise, and negative angles appear counterclockwise
+extern float32 Vector2Angle(Vector2 v1, Vector2 v2);
+/// Calculate angle defined by a two vectors line
+/// NOTE: Parameters need to be normalized
+/// Current implementation should be aligned with glm::angle
+extern float32 Vector2LineAngle(Vector2 start, Vector2 end);
+/// Scale vector (multiply by value)
+extern Vector2 Vector2Scale(Vector2 v, float32 scale);
+/// Multiply vector by vector
+extern Vector2 Vector2Multiply(Vector2 v1, Vector2 v2);
+/// Negate vector
+extern Vector2 Vector2Negate(Vector2 v);
+/// Divide vector by vector
+extern Vector2 Vector2Divide(Vector2 v1, Vector2 v2);
+/// Normalize provided vector
+extern Vector2 Vector2Normalize(Vector2 v);
+/// Transforms a Vector2 by a given Matrix
+extern Vector2 Vector2Transform(Vector2 v, Matrix mat);
+/// Calculate linear interpolation between two vectors
+extern Vector2 Vector2Lerp(Vector2 v1, Vector2 v2, float32 amount);
+/// Calculate reflected vector to normal
+extern Vector2 Vector2Reflect(Vector2 v, Vector2 normal);
+/// Get min value for each pair of components
+extern Vector2 Vector2Min(Vector2 v1, Vector2 v2);
+/// Get max value for each pair of components
+extern Vector2 Vector2Max(Vector2 v1, Vector2 v2);
+/// Rotate vector by angle
+extern Vector2 Vector2Rotate(Vector2 v, float32 angle);
+/// Move Vector towards target
+extern Vector2 Vector2MoveTowards(Vector2 v, Vector2 target, float32 maxDistance);
+/// Invert the given vector
+extern Vector2 Vector2Invert(Vector2 v);
+/// Clamp the components of the vector between
+/// min and max values specified by the given vectors
+extern Vector2 Vector2Clamp(Vector2 v, Vector2 min, Vector2 max);
+/// Clamp the magnitude of the vector between two min and max values
+extern Vector2 Vector2ClampValue(Vector2 v, float32 min, float32 max);
+/// Check whether two given vectors are almost equal
+extern c_int Vector2Equals(Vector2 p, Vector2 q);
+/// Compute the direction of a refracted ray
+/// v: normalized direction of the incoming ray
+/// n: normalized normal vector of the interface of two optical media
+/// r: ratio of the refractive index of the medium from where the ray comes
+/// to the refractive index of the medium on the other side of the surface
+extern Vector2 Vector2Refract(Vector2 v, Vector2 n, float32 r);
+/// Vector with components value 0.0f
+extern Vector3 Vector3Zero();
+/// Vector with components value 1.0f
+extern Vector3 Vector3One();
+/// Add two vectors
+extern Vector3 Vector3Add(Vector3 v1, Vector3 v2);
+/// Add vector and float value
+extern Vector3 Vector3AddValue(Vector3 v, float32 add);
+/// Subtract two vectors
+extern Vector3 Vector3Subtract(Vector3 v1, Vector3 v2);
+/// Subtract vector by float value
+extern Vector3 Vector3SubtractValue(Vector3 v, float32 sub);
+/// Multiply vector by scalar
+extern Vector3 Vector3Scale(Vector3 v, float32 scalar);
+/// Multiply vector by vector
+extern Vector3 Vector3Multiply(Vector3 v1, Vector3 v2);
+/// Calculate two vectors cross product
+extern Vector3 Vector3CrossProduct(Vector3 v1, Vector3 v2);
+/// Calculate one vector perpendicular vector
+extern Vector3 Vector3Perpendicular(Vector3 v);
+/// Calculate vector length
+extern float32 Vector3Length(Vector3 v);
+/// Calculate vector square length
+extern float32 Vector3LengthSqr(Vector3 v);
+/// Calculate two vectors dot product
+extern float32 Vector3DotProduct(Vector3 v1, Vector3 v2);
+/// Calculate distance between two vectors
+extern float32 Vector3Distance(Vector3 v1, Vector3 v2);
+/// Calculate square distance between two vectors
+extern float32 Vector3DistanceSqr(Vector3 v1, Vector3 v2);
+/// Calculate angle between two vectors
+extern float32 Vector3Angle(Vector3 v1, Vector3 v2);
+/// Negate provided vector (invert direction)
+extern Vector3 Vector3Negate(Vector3 v);
+/// Divide vector by vector
+extern Vector3 Vector3Divide(Vector3 v1, Vector3 v2);
+/// Normalize provided vector
+extern Vector3 Vector3Normalize(Vector3 v);
+/// Calculate the projection of the vector v1 on to v2
+extern Vector3 Vector3Project(Vector3 v1, Vector3 v2);
+/// Calculate the rejection of the vector v1 on to v2
+extern Vector3 Vector3Reject(Vector3 v1, Vector3 v2);
+/// Orthonormalize provided vectors
+/// Makes vectors normalized and orthogonal to each other
+/// Gram-Schmidt function implementation
+extern void Vector3OrthoNormalize(Vector3* v1, Vector3* v2);
+/// Transforms a Vector3 by a given Matrix
+extern Vector3 Vector3Transform(Vector3 v, Matrix mat);
+/// Transform a vector by quaternion rotation
+extern Vector3 Vector3RotateByQuaternion(Vector3 v, Quaternion q);
+/// Rotates a vector around an axis
+extern Vector3 Vector3RotateByAxisAngle(Vector3 v, Vector3 axis, float32 angle);
+/// Move Vector towards target
+extern Vector3 Vector3MoveTowards(Vector3 v, Vector3 target, float32 maxDistance);
+/// Calculate linear interpolation between two vectors
+extern Vector3 Vector3Lerp(Vector3 v1, Vector3 v2, float32 amount);
+/// Calculate cubic hermite interpolation between two vectors and their tangents
+/// as described in the GLTF 2.0 specification: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#interpolation-cubic
+extern Vector3 Vector3CubicHermite(Vector3 v1, Vector3 tangent1, Vector3 v2, Vector3 tangent2, float32 amount);
+/// Calculate reflected vector to normal
+extern Vector3 Vector3Reflect(Vector3 v, Vector3 normal);
+/// Get min value for each pair of components
+extern Vector3 Vector3Min(Vector3 v1, Vector3 v2);
+/// Get max value for each pair of components
+extern Vector3 Vector3Max(Vector3 v1, Vector3 v2);
+/// Compute barycenter coordinates (u, v, w) for point p with respect to triangle (a, b, c)
+/// NOTE: Assumes P is on the plane of the triangle
+extern Vector3 Vector3Barycenter(Vector3 p, Vector3 a, Vector3 b, Vector3 c);
+/// Projects a Vector3 from screen space into object space
+/// NOTE: Self-contained function, no other raymath functions are called
+extern Vector3 Vector3Unproject(Vector3 source, Matrix projection, Matrix view);
+/// Get Vector3 as float array
+extern float3 Vector3ToFloatV(Vector3 v);
+/// Invert the given vector
+extern Vector3 Vector3Invert(Vector3 v);
+/// Clamp the components of the vector between
+/// min and max values specified by the given vectors
+extern Vector3 Vector3Clamp(Vector3 v, Vector3 min, Vector3 max);
+/// Clamp the magnitude of the vector between two values
+extern Vector3 Vector3ClampValue(Vector3 v, float32 min, float32 max);
+/// Check whether two given vectors are almost equal
+extern c_int Vector3Equals(Vector3 p, Vector3 q);
+/// Compute the direction of a refracted ray
+/// v: normalized direction of the incoming ray
+/// n: normalized normal vector of the interface of two optical media
+/// r: ratio of the refractive index of the medium from where the ray comes
+/// to the refractive index of the medium on the other side of the surface
+extern Vector3 Vector3Refract(Vector3 v, Vector3 n, float32 r);
+/// Get  vector zero
+extern Vector4 Vector4Zero();
+/// Get vector one
+extern Vector4 Vector4One();
+/// Add two vectors
+extern Vector4 Vector4Add(Vector4 v1, Vector4 v2);
+/// Add value to vector components
+extern Vector4 Vector4AddValue(Vector4 v, float32 add);
+/// Substract vectors
+extern Vector4 Vector4Subtract(Vector4 v1, Vector4 v2);
+/// Substract value from vector components
+extern Vector4 Vector4SubtractValue(Vector4 v, float32 add);
+/// Vector length
+extern float32 Vector4Length(Vector4 v);
+/// Vector square length
+extern float32 Vector4LengthSqr(Vector4 v);
+/// Vectors dot product
+extern float32 Vector4DotProduct(Vector4 v1, Vector4 v2);
+/// Calculate distance between two vectors
+extern float32 Vector4Distance(Vector4 v1, Vector4 v2);
+/// Calculate square distance between two vectors
+extern float32 Vector4DistanceSqr(Vector4 v1, Vector4 v2);
+/// Scale vector components by value (multiply)
+extern Vector4 Vector4Scale(Vector4 v, float32 scale);
+/// Multiply vector by vector
+extern Vector4 Vector4Multiply(Vector4 v1, Vector4 v2);
+/// Negate vector
+extern Vector4 Vector4Negate(Vector4 v);
+/// Divide vector by vector
+extern Vector4 Vector4Divide(Vector4 v1, Vector4 v2);
+/// Normalize provided vector
+extern Vector4 Vector4Normalize(Vector4 v);
+/// Get min value for each pair of components
+extern Vector4 Vector4Min(Vector4 v1, Vector4 v2);
+/// Get max value for each pair of components
+extern Vector4 Vector4Max(Vector4 v1, Vector4 v2);
+/// Calculate linear interpolation between two vectors
+extern Vector4 Vector4Lerp(Vector4 v1, Vector4 v2, float32 amount);
+/// Move Vector towards target
+extern Vector4 Vector4MoveTowards(Vector4 v, Vector4 target, float32 maxDistance);
+/// Invert the given vector
+extern Vector4 Vector4Invert(Vector4 v);
+/// Check whether two given vectors are almost equal
+extern c_int Vector4Equals(Vector4 p, Vector4 q);
+/// Compute matrix determinant
+extern float32 MatrixDeterminant(Matrix mat);
+/// Get the trace of the matrix (sum of the values along the diagonal)
+extern float32 MatrixTrace(Matrix mat);
+/// Transposes provided matrix
+extern Matrix MatrixTranspose(Matrix mat);
+/// Invert provided matrix
+extern Matrix MatrixInvert(Matrix mat);
+/// Get identity matrix
+extern Matrix MatrixIdentity();
+/// Add two matrices
+extern Matrix MatrixAdd(Matrix left, Matrix right);
+/// Subtract two matrices (left - right)
+extern Matrix MatrixSubtract(Matrix left, Matrix right);
+/// Get two matrix multiplication
+/// NOTE: When multiplying matrices... the order matters!
+extern Matrix MatrixMultiply(Matrix left, Matrix right);
+/// Multiply matrix components by value
+extern Matrix MatrixMultiplyValue(Matrix left, float32 value);
+/// Get translation matrix
+extern Matrix MatrixTranslate(float32 x, float32 y, float32 z);
+/// Create rotation matrix from axis and angle
+/// NOTE: Angle should be provided in radians
+extern Matrix MatrixRotate(Vector3 axis, float32 angle);
+/// Get x-rotation matrix
+/// NOTE: Angle must be provided in radians
+extern Matrix MatrixRotateX(float32 angle);
+/// Get y-rotation matrix
+/// NOTE: Angle must be provided in radians
+extern Matrix MatrixRotateY(float32 angle);
+/// Get z-rotation matrix
+/// NOTE: Angle must be provided in radians
+extern Matrix MatrixRotateZ(float32 angle);
+/// Get xyz-rotation matrix
+/// NOTE: Angle must be provided in radians
+extern Matrix MatrixRotateXYZ(Vector3 angle);
+/// Get zyx-rotation matrix
+/// NOTE: Angle must be provided in radians
+extern Matrix MatrixRotateZYX(Vector3 angle);
+/// Get scaling matrix
+extern Matrix MatrixScale(float32 x, float32 y, float32 z);
+/// Get perspective projection matrix
+extern Matrix MatrixFrustum(double left, double right, double bottom, double top, double nearPlane, double farPlane);
+/// Get perspective projection matrix
+/// NOTE: Fovy angle must be provided in radians
+extern Matrix MatrixPerspective(double fovY, double aspect, double nearPlane, double farPlane);
+/// Get orthographic projection matrix
+extern Matrix MatrixOrtho(double left, double right, double bottom, double top, double nearPlane, double farPlane);
+/// Get camera look-at matrix (view matrix)
+extern Matrix MatrixLookAt(Vector3 eye, Vector3 target, Vector3 up);
+/// Get float array of matrix data
+extern float16 MatrixToFloatV(Matrix mat);
+/// Add two quaternions
+extern Quaternion QuaternionAdd(Quaternion q1, Quaternion q2);
+/// Add quaternion and float value
+extern Quaternion QuaternionAddValue(Quaternion q, float32 add);
+/// Subtract two quaternions
+extern Quaternion QuaternionSubtract(Quaternion q1, Quaternion q2);
+/// Subtract quaternion and float value
+extern Quaternion QuaternionSubtractValue(Quaternion q, float32 sub);
+/// Get identity quaternion
+extern Quaternion QuaternionIdentity();
+/// Computes the length of a quaternion
+extern float32 QuaternionLength(Quaternion q);
+/// Normalize provided quaternion
+extern Quaternion QuaternionNormalize(Quaternion q);
+/// Invert provided quaternion
+extern Quaternion QuaternionInvert(Quaternion q);
+/// Calculate two quaternion multiplication
+extern Quaternion QuaternionMultiply(Quaternion q1, Quaternion q2);
+/// Scale quaternion by float value
+extern Quaternion QuaternionScale(Quaternion q, float32 mul);
+/// Divide two quaternions
+extern Quaternion QuaternionDivide(Quaternion q1, Quaternion q2);
+/// Calculate linear interpolation between two quaternions
+extern Quaternion QuaternionLerp(Quaternion q1, Quaternion q2, float32 amount);
+/// Calculate slerp-optimized interpolation between two quaternions
+extern Quaternion QuaternionNlerp(Quaternion q1, Quaternion q2, float32 amount);
+/// Calculates spherical linear interpolation between two quaternions
+extern Quaternion QuaternionSlerp(Quaternion q1, Quaternion q2, float32 amount);
+/// Calculate quaternion cubic spline interpolation using Cubic Hermite Spline algorithm
+/// as described in the GLTF 2.0 specification: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#interpolation-cubic
+extern Quaternion QuaternionCubicHermiteSpline(Quaternion q1, Quaternion outTangent1, Quaternion q2, Quaternion inTangent2, float32 t);
+/// Calculate quaternion based on the rotation from one vector to another
+extern Quaternion QuaternionFromVector3ToVector3(Vector3 from, Vector3 to);
+/// Get a quaternion for a given rotation matrix
+extern Quaternion QuaternionFromMatrix(Matrix mat);
+/// Get a matrix for a given quaternion
+extern Matrix QuaternionToMatrix(Quaternion q);
+/// Get rotation quaternion for an angle and axis
+/// NOTE: Angle must be provided in radians
+extern Quaternion QuaternionFromAxisAngle(Vector3 axis, float32 angle);
+/// Get the rotation angle and axis for a given quaternion
+extern void QuaternionToAxisAngle(Quaternion q, Vector3* outAxis, float32* outAngle);
+/// Get the quaternion equivalent to Euler angles
+/// NOTE: Rotation order is ZYX
+extern Quaternion QuaternionFromEuler(float32 pitch, float32 yaw, float32 roll);
+/// Get the Euler angles equivalent to quaternion (roll, pitch, yaw)
+/// NOTE: Angles are returned in a Vector3 struct in radians
+extern Vector3 QuaternionToEuler(Quaternion q);
+/// Transform a quaternion given a transformation matrix
+extern Quaternion QuaternionTransform(Quaternion q, Matrix mat);
+/// Check whether two given quaternions are almost equal
+extern c_int QuaternionEquals(Quaternion p, Quaternion q);
+/// Compose a transformation matrix from rotational, translational and scaling components
+/// TODO: This function is not following raymath conventions defined in header: NOT self-contained
+extern Matrix MatrixCompose(Vector3 translation, Quaternion rotation, Vector3 scale);
+/// Decompose a transformation matrix into its rotational, translational and scaling components and remove shear
+/// TODO: This function is not following raymath conventions defined in header: NOT self-contained
+extern void MatrixDecompose(Matrix mat, Vector3* translation, Quaternion* rotation, Vector3* scale);

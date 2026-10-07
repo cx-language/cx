@@ -42,8 +42,30 @@ void main() {
     GLFWwindow*? window = glfwCreateWindow(1, 1, "", null, null);
     if window {
         glfwSetKeyCallback(window, onKey);
+        var cog = glfwGetCocoaWindow(window);
+        println(cog == null);
+        var w32 = glfwGetWin32Window(window);
+        println(w32 == null);
+        var x11 = glfwGetX11Window(window);
+        println(x11);
+        var eglsurf = glfwGetEGLSurface(window);
+        println(eglsurf == null);
+        var mesa = glfwGetOSMesaContext(window);
+        println(mesa == null);
+        void* vkinst = cast<void*>(0);
+        uint64 vksurf = 0;
+        var vkres = glfwCreateWindowSurface(vkinst, window, null, &vksurf);
+        println(vkres);
         glfwDestroyWindow(window);
     }
+    var x11d = glfwGetX11Display();
+    println(x11d == null);
+    var egld = glfwGetEGLDisplay();
+    println(egld == null);
+    var wayd = glfwGetWaylandDisplay();
+    println(wayd == null);
+    var vkproc = glfwGetInstanceProcAddress(cast<void*>(0), "vkCreateInstance");
+    println(vkproc == null);
     GLFWerrorfun? callback = null;
     println(callback == null);
     var mode = GLFWvidmode(width = 0, height = 0, redBits = 0, greenBits = 0, blueBits = 0, refreshRate = 0);
@@ -56,6 +78,8 @@ void main() {
     println(ramp.size);
     var vao = GLuint(0);
     println(vao);
+    var half = GLhalf(0);
+    println(half);
     var err = glGetError();
     println(err);
     GLsync? sync = null;

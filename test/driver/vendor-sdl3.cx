@@ -76,5 +76,98 @@ int main() {
     println(keys[SDL_SCANCODE_A]); // CHECK-NEXT: false
     SDL_SetHint("SDL_TEST_HINT_SDL3", "hello");
     println(SDL_GetHint("SDL_TEST_HINT_SDL3")!); // CHECK-NEXT: hello
+
+    // String macros are char* consts, usable as char* args directly.
+    println(SDL_HINT_ALLOW_ALT_TAB_WHILE_GRABBED); // CHECK-NEXT: SDL_ALLOW_ALT_TAB_WHILE_GRABBED
+    println(SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER); // CHECK-NEXT: SDL.window.create.width
+    println(SDL_strcmp(SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN, SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN) == 0); // CHECK-NEXT: true
+    println(SDL_REVISION); // CHECK: SDL-release-
+    println(SDL_SOFTWARE_RENDERER); // CHECK-NEXT: software
+    println(SDL_PRIu64); // CHECK-NEXT: {{ll?u}}
+    println(SDL_PRILL_PREFIX); // CHECK-NEXT: ll
+    println(SDL_PI_D); // CHECK-NEXT: 3.141592653589793
+    println(SDL_ANDROID_EXTERNAL_STORAGE_READ, " ", SDL_ANDROID_EXTERNAL_STORAGE_WRITE); // CHECK-NEXT: 1 2
+    SDL_SetHint(SDL_HINT_ALLOW_ALT_TAB_WHILE_GRABBED, "1");
+    println(SDL_GetHint(SDL_HINT_ALLOW_ALT_TAB_WHILE_GRABBED)!); // CHECK-NEXT: 1
+
+    // Pixel, colorspace, audio, and endian helpers.
+    println(SDL_DEFINE_PIXELFORMAT(SDL_PIXELTYPE_PACKED32, SDL_PACKEDORDER_ABGR, SDL_PACKEDLAYOUT_8888, 32, 4) == SDL_PIXELFORMAT_RGBA32); // CHECK-NEXT: true
+    println(SDL_FOURCC('Y', 'U', 'Y', '2') == SDL_PIXELFORMAT_YUY2); // CHECK-NEXT: true
+    println(SDL_BITSPERPIXEL(SDL_PIXELFORMAT_RGBA32), " ", SDL_BYTESPERPIXEL(SDL_PIXELFORMAT_YUY2)); // CHECK-NEXT: 32 2
+    println(SDL_ISPIXELFORMAT_ALPHA(SDL_PIXELFORMAT_RGBA32), " ", SDL_ISPIXELFORMAT_FOURCC(SDL_PIXELFORMAT_YUY2)); // CHECK-NEXT: true true
+    println(SDL_DEFINE_COLORSPACE(SDL_COLOR_TYPE_RGB, SDL_COLOR_RANGE_FULL, SDL_COLOR_PRIMARIES_BT709, SDL_TRANSFER_CHARACTERISTICS_SRGB, SDL_MATRIX_COEFFICIENTS_IDENTITY, SDL_CHROMA_LOCATION_NONE) == SDL_COLORSPACE_SRGB); // CHECK-NEXT: true
+    println(SDL_ISCOLORSPACE_MATRIX_BT601(SDL_COLORSPACE_BT601_FULL), " ", SDL_ISCOLORSPACE_FULL_RANGE(SDL_COLORSPACE_SRGB)); // CHECK-NEXT: true true
+    println(SDL_DEFINE_AUDIO_FORMAT(1, 0, 0, 16) == SDL_AUDIO_S16); // CHECK-NEXT: true
+    var aspec = SDL_AudioSpec(format = SDL_AUDIO_S16, channels = 2, freq = 48000);
+    println(SDL_AUDIO_BYTESIZE(SDL_AUDIO_S16), " ", SDL_AUDIO_FRAMESIZE(aspec)); // CHECK-NEXT: 2 4
+    println(SDL_AUDIO_ISFLOAT(SDL_AUDIO_F32) != 0, " ", SDL_AUDIO_ISLITTLEENDIAN(SDL_AUDIO_S16LE) != 0); // CHECK-NEXT: true true
+    println(SDL_Swap16(Uint16(0x1234))); // CHECK-NEXT: 13330
+    println(SDL_Swap32(Uint32(0x12345678))); // CHECK-NEXT: 2018915346
+    println(SDL_Swap16LE(Uint16(0x1234)), " ", SDL_Swap16BE(Uint16(0x1234))); // CHECK-NEXT: 4660 13330
+    println(SDL_SwapFloat(1.0)); // CHECK-NEXT: 4.6006{{.*}}e-41
+    println(SDL_HasExactlyOneBitSet32(Uint32(8)), " ", SDL_MostSignificantBitIndex32(Uint32(8))); // CHECK-NEXT: true 3
+
+    // Rect helpers.
+    var trect = SDL_Rect(x = 1, y = 2, w = 10, h = 10);
+    var tpt = SDL_Point(x = 5, y = 5);
+    println(SDL_PointInRect(&tpt, &trect), " ", SDL_RectEmpty(&trect)); // CHECK-NEXT: true false
+    println(SDL_PointInRect(null, &trect), " ", SDL_RectEmpty(null)); // CHECK-NEXT: false true
+    var tfrect = SDL_FRect(x = 1.0, y = 2.0, w = 10.0, h = 10.0);
+    var tfpt = SDL_FPoint(x = 5.0, y = 5.0);
+    println(SDL_PointInRectFloat(&tfpt, &tfrect), " ", SDL_RectsEqualEpsilon(&tfrect, &tfrect, 0.001)); // CHECK-NEXT: true true
+    SDL_FRect cout = undefined;
+    SDL_RectToFRect(&trect, &cout);
+    println(cout.x, " ", cout.w); // CHECK-NEXT: 1 10
+
+    // Overflow, min/max, arraysize, atomics, threads, errors, iconv.
+    c_size_t oret = 0;
+    println(SDL_size_mul_check_overflow(c_size_t(100), c_size_t(200), &oret), " ", oret); // CHECK-NEXT: true 20000
+    println(SDL_size_add_check_overflow(SDL_SIZE_MAX, c_size_t(1), &oret)); // CHECK-NEXT: false
+    println(SDL_size_mul_check_overflow_builtin(c_size_t(100), c_size_t(200), &oret), " ", oret); // CHECK-NEXT: true 20000
+    println(SDL_min(3, 7), " ", SDL_max(3, 7), " ", SDL_clamp(10, 0, 5)); // CHECK-NEXT: 3 7 5
+    c_int[9] nine = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    println(SDL_arraysize(nine)); // CHECK-NEXT: 9
+    println(SDL_BUTTON_MASK(3)); // CHECK-NEXT: 4
+    println(SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_A)); // CHECK-NEXT: 1073741828
+    println(SDL_WINDOWPOS_CENTERED_DISPLAY(1), " ", SDL_WINDOWPOS_ISCENTERED(SDL_WINDOWPOS_CENTERED)); // CHECK-NEXT: 805240833 true
+    println(SDL_WINDOWPOS_UNDEFINED_DISPLAY(2), " ", SDL_WINDOWPOS_ISUNDEFINED(SDL_WINDOWPOS_UNDEFINED)); // CHECK-NEXT: 536805378 true
+    println(SDL_VERSIONNUM(3, 4, 16) == SDL_VERSION); // CHECK-NEXT: true
+    println(SDL_VERSION_ATLEAST(3, 2, 0), " ", SDL_VERSION_ATLEAST(9, 9, 9)); // CHECK-NEXT: true false
+    println(SDL_MS_TO_NS(Uint64(2)), " ", SDL_NS_TO_MS(Uint64(2000000))); // CHECK-NEXT: 2000000 2
+    println(SDL_Unsupported()); // CHECK-NEXT: false
+    println(SDL_GetError()); // CHECK-NEXT: That operation is not supported
+    println(SDL_InvalidParamError("str")); // CHECK-NEXT: false
+    println(SDL_GetError()); // CHECK-NEXT: Parameter 'str' is invalid
+    SDL_AtomicInt aref = undefined;
+    SDL_SetAtomicInt(&aref, 1);
+    println(SDL_AtomicIncRef(&aref), " ", SDL_AtomicDecRef(&aref)); // CHECK-NEXT: 1 false
+    var thr = SDL_CreateThread(threadEntry, "sdl3test", null)!;
+    c_int tval = 0;
+    SDL_WaitThread(thr, &tval);
+    println(tval); // CHECK-NEXT: 42
+    var loc = SDL_iconv_utf8_locale("hello")!;
+    println(loc); // CHECK-NEXT: hello
+    SDL_free(loc);
+    var surf = SDL_CreateSurface(4, 4, SDL_PIXELFORMAT_RGBA32)!;
+    println(SDL_MUSTLOCK(surf)); // CHECK-NEXT: false
+    SDL_DestroySurface(surf);
+
+    // Platform and Vulkan functions link (stubs off-platform).
+    println(SDL_GetAndroidSDKVersion() >= 0); // CHECK-NEXT: true
+    println(SDL_GetAndroidActivity() == null); // CHECK-NEXT: true
+    println(SDL_IsChromebook()); // CHECK-NEXT: false
+    SDL_SetLinuxThreadPriority(0, 0);
+    println("platform-ok"); // CHECK-NEXT: platform-ok
+    var vllib = SDL_Vulkan_LoadLibrary(null);
+    SDL_Vulkan_UnloadLibrary();
+    var vlstr = "vulkan-absent";
+    if vllib {
+        vlstr = "vulkan-present";
+    }
+    println(vlstr); // CHECK-NEXT: vulkan-{{present|absent}}
     return 0;
+}
+
+c_int threadEntry(void*? data) {
+    return 42;
 }

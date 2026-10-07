@@ -1,12 +1,16 @@
-// GLFW 3.x bindings, translated from the system GLFW/glfw3.h
+// GLFW 3.x bindings, translated from the system GLFW headers
 // (generated from version 3.5.1; unused declarations cost nothing thanks to lazy checking).
-// Doc comments derive in part from that header (zlib license;
+// Doc comments derive in part from those headers (zlib license;
 // Copyright (c) 2002-2006 Marcus Geelnard,
 // Copyright (c) 2006-2019 Camilla Löwy <elmindreda@glfw.org>).
-// Link requirements live in the build.cx next to this file.
-// The Vulkan functions (glfwCreateWindowSurface and friends) are omitted:
-// glfw3.h only declares them when vulkan/vulkan.h was included first,
-// so declare them yourself if you mix this module with a Vulkan header import.
+// Covers glfw3.h and glfw3native.h. Link requirements live in the
+// build.cx next to this file.
+// Native and Vulkan handles are spelled with primitives (void*,
+// c_ulong, uint32, uint64), matching their ABI while staying mixable
+// with vulkan.h and platform header imports. VkSurfaceKHR is uint64,
+// like in vulkan.h. The glfw3native functions are platform-specific:
+// only the current platform's link, so calling another platform's
+// fails at link time.
 
 /// The major version number of the GLFW header.
 const GLFW_VERSION_MAJOR = 3;
@@ -1023,3 +1027,65 @@ extern GLFWglproc? glfwGetProcAddress(char* procname);
 extern c_int glfwVulkanSupported();
 /// Returns the Vulkan instance extensions required by GLFW.
 extern char*[*]? glfwGetRequiredInstanceExtensions(c_uint* count);
+/// Sets the address of the vkGetInstanceProcAddr function to use, or null for the default loader. Takes a generic function pointer, so this module stays mixable with a vulkan.h import.
+extern void glfwInitVulkanLoader(GLFWvkproc? loader);
+/// Returns the address of the specified Vulkan instance function. Takes a VkInstance spelled void* so this module stays mixable with a vulkan.h import.
+extern GLFWvkproc? glfwGetInstanceProcAddress(void*? instance, char* procname);
+/// Returns whether the specified queue family can present images. Takes VkInstance and VkPhysicalDevice spelled void* so this module stays mixable with a vulkan.h import.
+extern c_int glfwGetPhysicalDevicePresentationSupport(void* instance, void* device, c_uint queuefamily);
+/// Creates a Vulkan surface for the specified window. Takes VkInstance and VkAllocationCallbacks spelled void* and VkSurfaceKHR as uint64, matching their ABI while staying mixable with a vulkan.h import.
+extern c_int glfwCreateWindowSurface(void* instance, GLFWwindow* window, void*? allocator, uint64* surface);
+/// Returns the adapter device name of the specified monitor.
+extern char*? glfwGetWin32Adapter(GLFWmonitor* monitor);
+/// Returns the display device name of the specified monitor.
+extern char*? glfwGetWin32Monitor(GLFWmonitor* monitor);
+/// Returns the HWND of the specified window, spelled void*.
+extern void*? glfwGetWin32Window(GLFWwindow* window);
+/// Returns the HGLRC of the specified window, spelled void*.
+extern void*? glfwGetWGLContext(GLFWwindow* window);
+/// Returns the CGDirectDisplayID of the specified monitor.
+extern uint32 glfwGetCocoaMonitor(GLFWmonitor* monitor);
+/// Returns the NSWindow of the specified window, spelled void*.
+extern void*? glfwGetCocoaWindow(GLFWwindow* window);
+/// Returns the NSView of the specified window, spelled void*.
+extern void*? glfwGetCocoaView(GLFWwindow* window);
+/// Returns the NSOpenGLContext of the specified window, spelled void*.
+extern void*? glfwGetNSGLContext(GLFWwindow* window);
+/// Returns the Display used by GLFW, spelled void*.
+extern void*? glfwGetX11Display();
+/// Returns the RRCrtc of the specified monitor, spelled c_ulong like the XID it is.
+extern c_ulong glfwGetX11Adapter(GLFWmonitor* monitor);
+/// Returns the RROutput of the specified monitor, spelled c_ulong like the XID it is.
+extern c_ulong glfwGetX11Monitor(GLFWmonitor* monitor);
+/// Returns the Window of the specified window, spelled c_ulong like the XID it is.
+extern c_ulong glfwGetX11Window(GLFWwindow* window);
+/// Sets the current primary selection to the specified string.
+extern void glfwSetX11SelectionString(char* str);
+/// Returns the contents of the current primary selection as a string.
+extern char*? glfwGetX11SelectionString();
+/// Returns the GLXContext of the specified window, spelled void*.
+extern void*? glfwGetGLXContext(GLFWwindow* window);
+/// Returns the GLXWindow of the specified window, spelled c_ulong like the XID it is.
+extern c_ulong glfwGetGLXWindow(GLFWwindow* window);
+/// Retrieves the GLXFBConfig of the specified window's GLXWindow, spelled void*.
+extern c_int glfwGetGLXFBConfig(GLFWwindow* window, void*?* config);
+/// Returns the struct wl_display* used by GLFW, spelled void*.
+extern void*? glfwGetWaylandDisplay();
+/// Returns the struct wl_output* of the specified monitor, spelled void*.
+extern void*? glfwGetWaylandMonitor(GLFWmonitor* monitor);
+/// Returns the main struct wl_surface* of the specified window, spelled void*.
+extern void*? glfwGetWaylandWindow(GLFWwindow* window);
+/// Returns the EGLDisplay used by GLFW, spelled void*.
+extern void*? glfwGetEGLDisplay();
+/// Returns the EGLContext of the specified window, spelled void*.
+extern void*? glfwGetEGLContext(GLFWwindow* window);
+/// Returns the EGLSurface of the specified window, spelled void*.
+extern void*? glfwGetEGLSurface(GLFWwindow* window);
+/// Retrieves the EGLConfig of the specified window's EGLSurface, spelled void*.
+extern c_int glfwGetEGLConfig(GLFWwindow* window, void*?* config);
+/// Retrieves the color buffer associated with the specified window.
+extern c_int glfwGetOSMesaColorBuffer(GLFWwindow* window, c_int*? width, c_int*? height, c_int*? format, void*?*? buffer);
+/// Retrieves the depth buffer associated with the specified window.
+extern c_int glfwGetOSMesaDepthBuffer(GLFWwindow* window, c_int*? width, c_int*? height, c_int*? bytesPerValue, void*?*? buffer);
+/// Returns the OSMesaContext of the specified window, spelled void*.
+extern void*? glfwGetOSMesaContext(GLFWwindow* window);

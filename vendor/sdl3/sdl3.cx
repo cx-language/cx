@@ -3,15 +3,29 @@
 // Doc comments derive in part from those headers (zlib license;
 // Copyright (C) 1997-2026 Sam Lantinga <slouken@libsdl.org>).
 // Link requirements live in the build.cx next to this file.
-// Omitted on purpose: static inline helpers (no out-of-line symbol),
-// va_list forwarders (cx cannot name a va_list), function-like macros
-// (use SDL_CreateThreadRuntime instead of SDL_CreateThread), string
-// macros (pass literals), deprecated SDL2 names, and attribute,
-// annotation, location, and libc-alias macros (SDL_DECLSPEC, SDL_FILE,
-// SDL_memcpy, ...). SDL_PI_D is skipped too: float literals infer
-// float32, so no holds it exactly.
+// Function-like macros and static inline helpers are implemented as cx
+// functions; string macros are const char* so they pass to char* params.
+// The platform-specific and Vulkan functions are declared
+// unconditionally: SDL exports them on every platform, and unused
+// declarations cost nothing. VkInstance, VkPhysicalDevice, MSG, and the
+// GDK handles are spelled void* (VkSurfaceKHR is Uint64), matching their
+// ABI while staying mixable with vulkan.h, windows.h, and GDK imports.
+// Omitted on purpose: va_list forwarders (cx cannot name a va_list),
+// deprecated SDL2 names (SDL_oldnames.h is opt-in), the SDL_test
+// headers (a separate test library), the bundled Khronos headers
+// (SDL_egl.h, SDL_opengl*.h; see the gl module), the assert macros
+// (cx has its own assert), barrier and pause instructions
+// (SDL_CompilerBarrier, SDL_MemoryBarrierAcquire/Release,
+// SDL_CPUPauseInstruction), annotation and location macros
+// (SDL_DECLSPEC, SDL_FILE, SDL_STRINGIFY_ARG, ...), libc aliases
+// (SDL_memcpy, ...),
+// literal-suffix helpers (SDL_SINT64_C, SDL_UINT64_C; cx literals need
+// no suffix), and helpers needing implicit address-of, alloca, or
+// struct-version boilerplate (SDL_zero, SDL_zerop, SDL_zeroa,
+// SDL_copyp, SDL_stack_alloc, SDL_INIT_INTERFACE).
 // The size_t-derived consts (SDL_SIZE_MAX, SDL_ICONV_*) assume 64-bit
-// size_t; all cx targets that can link SDL are 64-bit.
+// size_t; all cx targets that can link SDL are 64-bit. The _LE/_BE byte
+// order helpers assume little-endian, like SDL_BYTEORDER does.
 // Nullability is semantic: 'T*?'/'T[*]?' iff the SDL API permits null
 // there (out-params, userdata, callbacks, optional args), else 'T*'/'T[*]'.
 // Pointers to arrays use the indexable form (buffer+count params,
@@ -3552,6 +3566,1183 @@ const SDL_MIN_TIME = SDL_MIN_SINT64;
 /// The largest value that a `size_t` can hold for the target platform.
 const SDL_SIZE_MAX = 18446744073709551615;
 
+/// Property key "SDL.audiostream.auto_cleanup" (boolean).
+const char* SDL_PROP_AUDIOSTREAM_AUTO_CLEANUP_BOOLEAN = "SDL.audiostream.auto_cleanup";
+/// Property key "SDL.filedialog.filters" (pointer).
+const char* SDL_PROP_FILE_DIALOG_FILTERS_POINTER = "SDL.filedialog.filters";
+/// Property key "SDL.filedialog.nfilters" (number).
+const char* SDL_PROP_FILE_DIALOG_NFILTERS_NUMBER = "SDL.filedialog.nfilters";
+/// Property key "SDL.filedialog.window" (pointer).
+const char* SDL_PROP_FILE_DIALOG_WINDOW_POINTER = "SDL.filedialog.window";
+/// Property key "SDL.filedialog.location" (string).
+const char* SDL_PROP_FILE_DIALOG_LOCATION_STRING = "SDL.filedialog.location";
+/// Property key "SDL.filedialog.many" (boolean).
+const char* SDL_PROP_FILE_DIALOG_MANY_BOOLEAN = "SDL.filedialog.many";
+/// Property key "SDL.filedialog.title" (string).
+const char* SDL_PROP_FILE_DIALOG_TITLE_STRING = "SDL.filedialog.title";
+/// Property key "SDL.filedialog.accept" (string).
+const char* SDL_PROP_FILE_DIALOG_ACCEPT_STRING = "SDL.filedialog.accept";
+/// Property key "SDL.filedialog.cancel" (string).
+const char* SDL_PROP_FILE_DIALOG_CANCEL_STRING = "SDL.filedialog.cancel";
+/// Property key "SDL.gpu.device.create.debugmode" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN = "SDL.gpu.device.create.debugmode";
+/// Property key "SDL.gpu.device.create.preferlowpower" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_PREFERLOWPOWER_BOOLEAN = "SDL.gpu.device.create.preferlowpower";
+/// Property key "SDL.gpu.device.create.verbose" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_VERBOSE_BOOLEAN = "SDL.gpu.device.create.verbose";
+/// Property key "SDL.gpu.device.create.name" (string).
+const char* SDL_PROP_GPU_DEVICE_CREATE_NAME_STRING = "SDL.gpu.device.create.name";
+/// Property key "SDL.gpu.device.create.feature.clip_distance" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_FEATURE_CLIP_DISTANCE_BOOLEAN = "SDL.gpu.device.create.feature.clip_distance";
+/// Property key "SDL.gpu.device.create.feature.depth_clamping" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_FEATURE_DEPTH_CLAMPING_BOOLEAN = "SDL.gpu.device.create.feature.depth_clamping";
+/// Property key "SDL.gpu.device.create.feature.indirect_draw_first_instance" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_FEATURE_INDIRECT_DRAW_FIRST_INSTANCE_BOOLEAN = "SDL.gpu.device.create.feature.indirect_draw_first_instance";
+/// Property key "SDL.gpu.device.create.feature.anisotropy" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_FEATURE_ANISOTROPY_BOOLEAN = "SDL.gpu.device.create.feature.anisotropy";
+/// Property key "SDL.gpu.device.create.shaders.private" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_SHADERS_PRIVATE_BOOLEAN = "SDL.gpu.device.create.shaders.private";
+/// Property key "SDL.gpu.device.create.shaders.spirv" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN = "SDL.gpu.device.create.shaders.spirv";
+/// Property key "SDL.gpu.device.create.shaders.dxbc" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_SHADERS_DXBC_BOOLEAN = "SDL.gpu.device.create.shaders.dxbc";
+/// Property key "SDL.gpu.device.create.shaders.dxil" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_SHADERS_DXIL_BOOLEAN = "SDL.gpu.device.create.shaders.dxil";
+/// Property key "SDL.gpu.device.create.shaders.msl" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_SHADERS_MSL_BOOLEAN = "SDL.gpu.device.create.shaders.msl";
+/// Property key "SDL.gpu.device.create.shaders.metallib" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_SHADERS_METALLIB_BOOLEAN = "SDL.gpu.device.create.shaders.metallib";
+/// Property key "SDL.gpu.device.create.d3d12.allowtier1resourcebinding" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_D3D12_ALLOW_FEWER_RESOURCE_SLOTS_BOOLEAN = "SDL.gpu.device.create.d3d12.allowtier1resourcebinding";
+/// Property key "SDL.gpu.device.create.d3d12.semantic" (string).
+const char* SDL_PROP_GPU_DEVICE_CREATE_D3D12_SEMANTIC_NAME_STRING = "SDL.gpu.device.create.d3d12.semantic";
+/// Property key "SDL.gpu.device.create.d3d12.agility_sdk_version" (number).
+const char* SDL_PROP_GPU_DEVICE_CREATE_D3D12_AGILITY_SDK_VERSION_NUMBER = "SDL.gpu.device.create.d3d12.agility_sdk_version";
+/// Property key "SDL.gpu.device.create.d3d12.agility_sdk_path" (string).
+const char* SDL_PROP_GPU_DEVICE_CREATE_D3D12_AGILITY_SDK_PATH_STRING = "SDL.gpu.device.create.d3d12.agility_sdk_path";
+/// Property key "SDL.gpu.device.create.vulkan.requirehardwareacceleration" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_VULKAN_REQUIRE_HARDWARE_ACCELERATION_BOOLEAN = "SDL.gpu.device.create.vulkan.requirehardwareacceleration";
+/// Property key "SDL.gpu.device.create.vulkan.options" (pointer).
+const char* SDL_PROP_GPU_DEVICE_CREATE_VULKAN_OPTIONS_POINTER = "SDL.gpu.device.create.vulkan.options";
+/// Property key "SDL.gpu.device.create.metal.allowmacfamily1" (boolean).
+const char* SDL_PROP_GPU_DEVICE_CREATE_METAL_ALLOW_MACFAMILY1_BOOLEAN = "SDL.gpu.device.create.metal.allowmacfamily1";
+/// Property key "SDL.gpu.device.name" (string).
+const char* SDL_PROP_GPU_DEVICE_NAME_STRING = "SDL.gpu.device.name";
+/// Property key "SDL.gpu.device.driver_name" (string).
+const char* SDL_PROP_GPU_DEVICE_DRIVER_NAME_STRING = "SDL.gpu.device.driver_name";
+/// Property key "SDL.gpu.device.driver_version" (string).
+const char* SDL_PROP_GPU_DEVICE_DRIVER_VERSION_STRING = "SDL.gpu.device.driver_version";
+/// Property key "SDL.gpu.device.driver_info" (string).
+const char* SDL_PROP_GPU_DEVICE_DRIVER_INFO_STRING = "SDL.gpu.device.driver_info";
+/// Property key "SDL.gpu.computepipeline.create.name" (string).
+const char* SDL_PROP_GPU_COMPUTEPIPELINE_CREATE_NAME_STRING = "SDL.gpu.computepipeline.create.name";
+/// Property key "SDL.gpu.graphicspipeline.create.name" (string).
+const char* SDL_PROP_GPU_GRAPHICSPIPELINE_CREATE_NAME_STRING = "SDL.gpu.graphicspipeline.create.name";
+/// Property key "SDL.gpu.sampler.create.name" (string).
+const char* SDL_PROP_GPU_SAMPLER_CREATE_NAME_STRING = "SDL.gpu.sampler.create.name";
+/// Property key "SDL.gpu.shader.create.name" (string).
+const char* SDL_PROP_GPU_SHADER_CREATE_NAME_STRING = "SDL.gpu.shader.create.name";
+/// Property key "SDL.gpu.texture.create.d3d12.clear.r" (float).
+const char* SDL_PROP_GPU_TEXTURE_CREATE_D3D12_CLEAR_R_FLOAT = "SDL.gpu.texture.create.d3d12.clear.r";
+/// Property key "SDL.gpu.texture.create.d3d12.clear.g" (float).
+const char* SDL_PROP_GPU_TEXTURE_CREATE_D3D12_CLEAR_G_FLOAT = "SDL.gpu.texture.create.d3d12.clear.g";
+/// Property key "SDL.gpu.texture.create.d3d12.clear.b" (float).
+const char* SDL_PROP_GPU_TEXTURE_CREATE_D3D12_CLEAR_B_FLOAT = "SDL.gpu.texture.create.d3d12.clear.b";
+/// Property key "SDL.gpu.texture.create.d3d12.clear.a" (float).
+const char* SDL_PROP_GPU_TEXTURE_CREATE_D3D12_CLEAR_A_FLOAT = "SDL.gpu.texture.create.d3d12.clear.a";
+/// Property key "SDL.gpu.texture.create.d3d12.clear.depth" (float).
+const char* SDL_PROP_GPU_TEXTURE_CREATE_D3D12_CLEAR_DEPTH_FLOAT = "SDL.gpu.texture.create.d3d12.clear.depth";
+/// Property key "SDL.gpu.texture.create.d3d12.clear.stencil" (number).
+const char* SDL_PROP_GPU_TEXTURE_CREATE_D3D12_CLEAR_STENCIL_NUMBER = "SDL.gpu.texture.create.d3d12.clear.stencil";
+/// Property key "SDL.gpu.texture.create.name" (string).
+const char* SDL_PROP_GPU_TEXTURE_CREATE_NAME_STRING = "SDL.gpu.texture.create.name";
+/// Property key "SDL.gpu.buffer.create.name" (string).
+const char* SDL_PROP_GPU_BUFFER_CREATE_NAME_STRING = "SDL.gpu.buffer.create.name";
+/// Property key "SDL.gpu.transferbuffer.create.name" (string).
+const char* SDL_PROP_GPU_TRANSFERBUFFER_CREATE_NAME_STRING = "SDL.gpu.transferbuffer.create.name";
+/// Property key "SDL.hidapi.libusb.device.handle" (pointer).
+const char* SDL_PROP_HIDAPI_LIBUSB_DEVICE_HANDLE_POINTER = "SDL.hidapi.libusb.device.handle";
+/// Specify the behavior of Alt+Tab while the keyboard is grabbed.
+const char* SDL_HINT_ALLOW_ALT_TAB_WHILE_GRABBED = "SDL_ALLOW_ALT_TAB_WHILE_GRABBED";
+/// A variable to control whether the SDL activity is allowed to be re-created.
+const char* SDL_HINT_ANDROID_ALLOW_RECREATE_ACTIVITY = "SDL_ANDROID_ALLOW_RECREATE_ACTIVITY";
+/// A variable to control whether the event loop will block itself when the app is paused.
+const char* SDL_HINT_ANDROID_BLOCK_ON_PAUSE = "SDL_ANDROID_BLOCK_ON_PAUSE";
+/// A variable to control whether low latency audio should be enabled.
+const char* SDL_HINT_ANDROID_LOW_LATENCY_AUDIO = "SDL_ANDROID_LOW_LATENCY_AUDIO";
+/// A variable to control Android's AAudio input preset.
+const char* SDL_HINT_ANDROID_AAUDIO_INPUT_PRESET = "SDL_ANDROID_AAUDIO_INPUT_PRESET";
+/// A variable to control whether we trap the Android back button to handle it manually.
+const char* SDL_HINT_ANDROID_TRAP_BACK_BUTTON = "SDL_ANDROID_TRAP_BACK_BUTTON";
+/// A variable setting the app ID string.
+const char* SDL_HINT_APP_ID = "SDL_APP_ID";
+/// A variable setting the application name.
+const char* SDL_HINT_APP_NAME = "SDL_APP_NAME";
+/// A variable controlling whether controllers used with the Apple TV generate UI events.
+const char* SDL_HINT_APPLE_TV_CONTROLLER_UI_EVENTS = "SDL_APPLE_TV_CONTROLLER_UI_EVENTS";
+/// A variable controlling whether the Apple TV remote's joystick axes will automatically match the rotation of the remote.
+const char* SDL_HINT_APPLE_TV_REMOTE_ALLOW_ROTATION = "SDL_APPLE_TV_REMOTE_ALLOW_ROTATION";
+/// Specify the default ALSA audio device name.
+const char* SDL_HINT_AUDIO_ALSA_DEFAULT_DEVICE = "SDL_AUDIO_ALSA_DEFAULT_DEVICE";
+/// Specify the default ALSA audio playback device name.
+const char* SDL_HINT_AUDIO_ALSA_DEFAULT_PLAYBACK_DEVICE = "SDL_AUDIO_ALSA_DEFAULT_PLAYBACK_DEVICE";
+/// Specify the default ALSA audio recording device name.
+const char* SDL_HINT_AUDIO_ALSA_DEFAULT_RECORDING_DEVICE = "SDL_AUDIO_ALSA_DEFAULT_RECORDING_DEVICE";
+/// A variable controlling the audio category on iOS and macOS.
+const char* SDL_HINT_AUDIO_CATEGORY = "SDL_AUDIO_CATEGORY";
+/// A variable controlling the default audio channel count.
+const char* SDL_HINT_AUDIO_CHANNELS = "SDL_AUDIO_CHANNELS";
+/// Specify an application icon name for an audio device.
+const char* SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME = "SDL_AUDIO_DEVICE_APP_ICON_NAME";
+/// A variable controlling device buffer size.
+const char* SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES = "SDL_AUDIO_DEVICE_SAMPLE_FRAMES";
+/// Specify an audio stream name for an audio device.
+const char* SDL_HINT_AUDIO_DEVICE_STREAM_NAME = "SDL_AUDIO_DEVICE_STREAM_NAME";
+/// Specify an application role for an audio device.
+const char* SDL_HINT_AUDIO_DEVICE_STREAM_ROLE = "SDL_AUDIO_DEVICE_STREAM_ROLE";
+/// Specify whether this audio device should do audio processing.
+const char* SDL_HINT_AUDIO_DEVICE_RAW_STREAM = "SDL_AUDIO_DEVICE_RAW_STREAM";
+/// Specify the input file when recording audio using the disk audio driver.
+const char* SDL_HINT_AUDIO_DISK_INPUT_FILE = "SDL_AUDIO_DISK_INPUT_FILE";
+/// Specify the output file when playing audio using the disk audio driver.
+const char* SDL_HINT_AUDIO_DISK_OUTPUT_FILE = "SDL_AUDIO_DISK_OUTPUT_FILE";
+/// A variable controlling the audio rate when using the disk audio driver.
+const char* SDL_HINT_AUDIO_DISK_TIMESCALE = "SDL_AUDIO_DISK_TIMESCALE";
+/// A variable that specifies an audio backend to use.
+const char* SDL_HINT_AUDIO_DRIVER = "SDL_AUDIO_DRIVER";
+/// A variable controlling the audio rate when using the dummy audio driver.
+const char* SDL_HINT_AUDIO_DUMMY_TIMESCALE = "SDL_AUDIO_DUMMY_TIMESCALE";
+/// A variable controlling the default audio format.
+const char* SDL_HINT_AUDIO_FORMAT = "SDL_AUDIO_FORMAT";
+/// A variable controlling the default audio frequency.
+const char* SDL_HINT_AUDIO_FREQUENCY = "SDL_AUDIO_FREQUENCY";
+/// A variable that causes SDL to not ignore audio "monitors".
+const char* SDL_HINT_AUDIO_INCLUDE_MONITORS = "SDL_AUDIO_INCLUDE_MONITORS";
+/// A variable controlling whether SDL updates joystick state when getting input events.
+const char* SDL_HINT_AUTO_UPDATE_JOYSTICKS = "SDL_AUTO_UPDATE_JOYSTICKS";
+/// A variable controlling whether SDL updates sensor state when getting input events.
+const char* SDL_HINT_AUTO_UPDATE_SENSORS = "SDL_AUTO_UPDATE_SENSORS";
+/// Prevent SDL from using version 4 of the bitmap header when saving BMPs.
+const char* SDL_HINT_BMP_SAVE_LEGACY_FORMAT = "SDL_BMP_SAVE_LEGACY_FORMAT";
+/// A variable that decides what camera backend to use.
+const char* SDL_HINT_CAMERA_DRIVER = "SDL_CAMERA_DRIVER";
+/// A variable that limits what CPU features are available.
+const char* SDL_HINT_CPU_FEATURE_MASK = "SDL_CPU_FEATURE_MASK";
+/// A variable controlling whether DirectInput should be used for controllers.
+const char* SDL_HINT_JOYSTICK_DIRECTINPUT = "SDL_JOYSTICK_DIRECTINPUT";
+/// A variable that specifies a dialog backend to use.
+const char* SDL_HINT_FILE_DIALOG_DRIVER = "SDL_FILE_DIALOG_DRIVER";
+/// Override for SDL_GetDisplayUsableBounds().
+const char* SDL_HINT_DISPLAY_USABLE_BOUNDS = "SDL_DISPLAY_USABLE_BOUNDS";
+/// Set the level of checking for invalid parameters passed to SDL functions.
+const char* SDL_HINT_INVALID_PARAM_CHECKS = "SDL_INVALID_PARAM_CHECKS";
+/// Disable giving back control to the browser automatically when running with asyncify.
+const char* SDL_HINT_EMSCRIPTEN_ASYNCIFY = "SDL_EMSCRIPTEN_ASYNCIFY";
+/// Specify the CSS selector used for the "default" window/canvas.
+const char* SDL_HINT_EMSCRIPTEN_CANVAS_SELECTOR = "SDL_EMSCRIPTEN_CANVAS_SELECTOR";
+/// Override the binding element for keyboard inputs for Emscripten builds.
+const char* SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT = "SDL_EMSCRIPTEN_KEYBOARD_ELEMENT";
+/// A variable that controls whether the on-screen keyboard should be shown when text input is active.
+const char* SDL_HINT_ENABLE_SCREEN_KEYBOARD = "SDL_ENABLE_SCREEN_KEYBOARD";
+/// A variable that controls whether the Steam on-screen keyboard should be shown when text input is active.
+const char* SDL_HINT_ENABLE_STEAM_SCREEN_KEYBOARD = "SDL_ENABLE_STEAM_SCREEN_KEYBOARD";
+/// A variable containing a list of evdev devices to use if udev is not available.
+const char* SDL_HINT_EVDEV_DEVICES = "SDL_EVDEV_DEVICES";
+/// A variable controlling verbosity of the logging of SDL events pushed onto the internal queue.
+const char* SDL_HINT_EVENT_LOGGING = "SDL_EVENT_LOGGING";
+/// A variable controlling whether raising the window should be done more forcefully.
+const char* SDL_HINT_FORCE_RAISEWINDOW = "SDL_FORCE_RAISEWINDOW";
+/// A variable controlling how 3D acceleration is used to accelerate the SDL screen surface.
+const char* SDL_HINT_FRAMEBUFFER_ACCELERATION = "SDL_FRAMEBUFFER_ACCELERATION";
+/// A variable that lets you manually hint extra gamecontroller db entries.
+const char* SDL_HINT_GAMECONTROLLERCONFIG = "SDL_GAMECONTROLLERCONFIG";
+/// A variable that lets you provide a file with extra gamecontroller db entries.
+const char* SDL_HINT_GAMECONTROLLERCONFIG_FILE = "SDL_GAMECONTROLLERCONFIG_FILE";
+/// A variable that overrides the automatic controller type detection.
+const char* SDL_HINT_GAMECONTROLLERTYPE = "SDL_GAMECONTROLLERTYPE";
+/// A variable containing a list of devices to skip when scanning for game controllers.
+const char* SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES = "SDL_GAMECONTROLLER_IGNORE_DEVICES";
+/// If set, all devices will be skipped when scanning for game controllers except for the ones listed in this variable.
+const char* SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT = "SDL_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT";
+/// A variable that controls whether the device's built-in accelerometer and gyro should be used as sensors for gamepads.
+const char* SDL_HINT_GAMECONTROLLER_SENSOR_FUSION = "SDL_GAMECONTROLLER_SENSOR_FUSION";
+/// This variable sets the default text of the TextInput window on GDK platforms.
+const char* SDL_HINT_GDK_TEXTINPUT_DEFAULT_TEXT = "SDL_GDK_TEXTINPUT_DEFAULT_TEXT";
+/// This variable sets the description of the TextInput window on GDK platforms.
+const char* SDL_HINT_GDK_TEXTINPUT_DESCRIPTION = "SDL_GDK_TEXTINPUT_DESCRIPTION";
+/// This variable sets the maximum input length of the TextInput window on GDK platforms.
+const char* SDL_HINT_GDK_TEXTINPUT_MAX_LENGTH = "SDL_GDK_TEXTINPUT_MAX_LENGTH";
+/// This variable sets the input scope of the TextInput window on GDK platforms.
+const char* SDL_HINT_GDK_TEXTINPUT_SCOPE = "SDL_GDK_TEXTINPUT_SCOPE";
+/// This variable sets the title of the TextInput window on GDK platforms.
+const char* SDL_HINT_GDK_TEXTINPUT_TITLE = "SDL_GDK_TEXTINPUT_TITLE";
+/// A variable to control whether HIDAPI uses libusb for device access.
+const char* SDL_HINT_HIDAPI_LIBUSB = "SDL_HIDAPI_LIBUSB";
+/// A variable to control whether HIDAPI uses libusb for GameCube adapters.
+const char* SDL_HINT_HIDAPI_LIBUSB_GAMECUBE = "SDL_HIDAPI_LIBUSB_GAMECUBE";
+/// A variable to control whether HIDAPI uses libusb only for whitelisted devices.
+const char* SDL_HINT_HIDAPI_LIBUSB_WHITELIST = "SDL_HIDAPI_LIBUSB_WHITELIST";
+/// A variable to control whether HIDAPI uses udev for device detection.
+const char* SDL_HINT_HIDAPI_UDEV = "SDL_HIDAPI_UDEV";
+/// A variable that specifies a GPU backend to use.
+const char* SDL_HINT_GPU_DRIVER = "SDL_GPU_DRIVER";
+/// A variable to control whether SDL_hid_enumerate() enumerates all HID devices or only controllers.
+const char* SDL_HINT_HIDAPI_ENUMERATE_ONLY_CONTROLLERS = "SDL_HIDAPI_ENUMERATE_ONLY_CONTROLLERS";
+/// A variable containing a list of devices to ignore in SDL_hid_enumerate().
+const char* SDL_HINT_HIDAPI_IGNORE_DEVICES = "SDL_HIDAPI_IGNORE_DEVICES";
+/// A variable describing what IME UI elements the application can display.
+const char* SDL_HINT_IME_IMPLEMENTED_UI = "SDL_IME_IMPLEMENTED_UI";
+/// A variable controlling whether the home indicator bar on iPhone X and later should be hidden.
+const char* SDL_HINT_IOS_HIDE_HOME_INDICATOR = "SDL_IOS_HIDE_HOME_INDICATOR";
+/// A variable that lets you enable joystick (and gamecontroller) events even when your app is in the background.
+const char* SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS = "SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS";
+/// A variable containing a list of arcade stick style controllers.
+const char* SDL_HINT_JOYSTICK_ARCADESTICK_DEVICES = "SDL_JOYSTICK_ARCADESTICK_DEVICES";
+/// A variable containing a list of devices that are not arcade stick style controllers.
+const char* SDL_HINT_JOYSTICK_ARCADESTICK_DEVICES_EXCLUDED = "SDL_JOYSTICK_ARCADESTICK_DEVICES_EXCLUDED";
+/// A variable containing a list of devices that should not be considered joysticks.
+const char* SDL_HINT_JOYSTICK_BLACKLIST_DEVICES = "SDL_JOYSTICK_BLACKLIST_DEVICES";
+/// A variable containing a list of devices that should be considered joysticks.
+const char* SDL_HINT_JOYSTICK_BLACKLIST_DEVICES_EXCLUDED = "SDL_JOYSTICK_BLACKLIST_DEVICES_EXCLUDED";
+/// A variable containing a comma separated list of devices to open as joysticks.
+const char* SDL_HINT_JOYSTICK_DEVICE = "SDL_JOYSTICK_DEVICE";
+/// A variable controlling whether enhanced reports should be used for controllers when using the HIDAPI driver.
+const char* SDL_HINT_JOYSTICK_ENHANCED_REPORTS = "SDL_JOYSTICK_ENHANCED_REPORTS";
+/// A variable containing a list of flightstick style controllers.
+const char* SDL_HINT_JOYSTICK_FLIGHTSTICK_DEVICES = "SDL_JOYSTICK_FLIGHTSTICK_DEVICES";
+/// A variable containing a list of devices that are not flightstick style controllers.
+const char* SDL_HINT_JOYSTICK_FLIGHTSTICK_DEVICES_EXCLUDED = "SDL_JOYSTICK_FLIGHTSTICK_DEVICES_EXCLUDED";
+/// A variable controlling whether GameInput should be used for controller handling on Windows.
+const char* SDL_HINT_JOYSTICK_GAMEINPUT = "SDL_JOYSTICK_GAMEINPUT";
+/// A variable controlling whether GameInput should be used for handling GIP devices that require raw report processing, but aren't supported by HIDRAW, such as Xbox One Guitars.
+const char* SDL_HINT_JOYSTICK_GAMEINPUT_RAW = "SDL_JOYSTICK_GAMEINPUT_RAW";
+/// A variable containing a list of devices known to have a GameCube form factor.
+const char* SDL_HINT_JOYSTICK_GAMECUBE_DEVICES = "SDL_JOYSTICK_GAMECUBE_DEVICES";
+/// A variable containing a list of devices known not to have a GameCube form factor.
+const char* SDL_HINT_JOYSTICK_GAMECUBE_DEVICES_EXCLUDED = "SDL_JOYSTICK_GAMECUBE_DEVICES_EXCLUDED";
+/// A variable controlling whether the HIDAPI joystick drivers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI = "SDL_JOYSTICK_HIDAPI";
+/// A variable controlling whether Nintendo Switch Joy-Con controllers will be combined into a single Pro-like controller when using the HIDAPI driver.
+const char* SDL_HINT_JOYSTICK_HIDAPI_COMBINE_JOY_CONS = "SDL_JOYSTICK_HIDAPI_COMBINE_JOY_CONS";
+/// A variable controlling whether the HIDAPI driver for Nintendo GameCube controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_GAMECUBE = "SDL_JOYSTICK_HIDAPI_GAMECUBE";
+/// A variable controlling whether rumble is used to implement the GameCube controller's 3 rumble modes, Stop(0), Rumble(1), and StopHard(2).
+const char* SDL_HINT_JOYSTICK_HIDAPI_GAMECUBE_RUMBLE_BRAKE = "SDL_JOYSTICK_HIDAPI_GAMECUBE_RUMBLE_BRAKE";
+/// A variable controlling whether the HIDAPI driver for Nintendo Switch Joy-Cons should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_JOY_CONS = "SDL_JOYSTICK_HIDAPI_JOY_CONS";
+/// A variable controlling whether the Home button LED should be turned on when a Nintendo Switch Joy-Con controller is opened.
+const char* SDL_HINT_JOYSTICK_HIDAPI_JOYCON_HOME_LED = "SDL_JOYSTICK_HIDAPI_JOYCON_HOME_LED";
+/// A variable controlling whether the HIDAPI driver for Amazon Luna controllers connected via Bluetooth should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_LUNA = "SDL_JOYSTICK_HIDAPI_LUNA";
+/// A variable controlling whether the HIDAPI driver for Nintendo Online classic controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_NINTENDO_CLASSIC = "SDL_JOYSTICK_HIDAPI_NINTENDO_CLASSIC";
+/// A variable controlling whether the HIDAPI driver for PS3 controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_PS3 = "SDL_JOYSTICK_HIDAPI_PS3";
+/// A variable controlling whether the Sony driver (sixaxis.sys) for PS3 controllers (Sixaxis/DualShock 3) should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_PS3_SIXAXIS_DRIVER = "SDL_JOYSTICK_HIDAPI_PS3_SIXAXIS_DRIVER";
+/// A variable controlling whether the HIDAPI driver for PS4 controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_PS4 = "SDL_JOYSTICK_HIDAPI_PS4";
+/// A variable controlling the update rate of the PS4 controller over Bluetooth when using the HIDAPI driver.
+const char* SDL_HINT_JOYSTICK_HIDAPI_PS4_REPORT_INTERVAL = "SDL_JOYSTICK_HIDAPI_PS4_REPORT_INTERVAL";
+/// A variable controlling whether the HIDAPI driver for PS5 controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_PS5 = "SDL_JOYSTICK_HIDAPI_PS5";
+/// A variable controlling whether the player LEDs should be lit to indicate which player is associated with a PS5 controller.
+const char* SDL_HINT_JOYSTICK_HIDAPI_PS5_PLAYER_LED = "SDL_JOYSTICK_HIDAPI_PS5_PLAYER_LED";
+/// A variable controlling whether the HIDAPI driver for NVIDIA SHIELD controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_SHIELD = "SDL_JOYSTICK_HIDAPI_SHIELD";
+/// A variable controlling whether the HIDAPI driver for Google Stadia controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_STADIA = "SDL_JOYSTICK_HIDAPI_STADIA";
+/// A variable controlling whether the HIDAPI driver for Bluetooth Steam Controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_STEAM = "SDL_JOYSTICK_HIDAPI_STEAM";
+/// A variable controlling whether the Steam button LED should be turned on when a Steam controller is opened.
+const char* SDL_HINT_JOYSTICK_HIDAPI_STEAM_HOME_LED = "SDL_JOYSTICK_HIDAPI_STEAM_HOME_LED";
+/// A variable controlling whether the HIDAPI driver for the Steam Deck builtin controller should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_STEAMDECK = "SDL_JOYSTICK_HIDAPI_STEAMDECK";
+/// A variable controlling whether the HIDAPI driver for HORI licensed Steam controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_STEAM_HORI = "SDL_JOYSTICK_HIDAPI_STEAM_HORI";
+/// A variable controlling whether the HIDAPI driver for some Logitech wheels should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_LG4FF = "SDL_JOYSTICK_HIDAPI_LG4FF";
+/// A variable controlling whether the HIDAPI driver for 8BitDo controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_8BITDO = "SDL_JOYSTICK_HIDAPI_8BITDO";
+/// A variable controlling whether the HIDAPI driver for SInput controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_SINPUT = "SDL_JOYSTICK_HIDAPI_SINPUT";
+/// A variable controlling whether the HIDAPI driver for ZUIKI controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_ZUIKI = "SDL_JOYSTICK_HIDAPI_ZUIKI";
+/// A variable controlling whether the HIDAPI driver for Flydigi controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_FLYDIGI = "SDL_JOYSTICK_HIDAPI_FLYDIGI";
+/// A variable controlling whether the HIDAPI driver for Nintendo Switch controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_SWITCH = "SDL_JOYSTICK_HIDAPI_SWITCH";
+/// A variable controlling whether the Home button LED should be turned on when a Nintendo Switch Pro controller is opened.
+const char* SDL_HINT_JOYSTICK_HIDAPI_SWITCH_HOME_LED = "SDL_JOYSTICK_HIDAPI_SWITCH_HOME_LED";
+/// A variable controlling whether the player LEDs should be lit to indicate which player is associated with a Nintendo Switch controller.
+const char* SDL_HINT_JOYSTICK_HIDAPI_SWITCH_PLAYER_LED = "SDL_JOYSTICK_HIDAPI_SWITCH_PLAYER_LED";
+/// A variable controlling whether the HIDAPI driver for Nintendo Switch 2 controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_SWITCH2 = "SDL_JOYSTICK_HIDAPI_SWITCH2";
+/// A variable controlling whether Nintendo Switch Joy-Con controllers will be in vertical mode when using the HIDAPI driver.
+const char* SDL_HINT_JOYSTICK_HIDAPI_VERTICAL_JOY_CONS = "SDL_JOYSTICK_HIDAPI_VERTICAL_JOY_CONS";
+/// A variable controlling whether the HIDAPI driver for Nintendo Wii and Wii U controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_WII = "SDL_JOYSTICK_HIDAPI_WII";
+/// A variable controlling whether the player LEDs should be lit to indicate which player is associated with a Wii controller.
+const char* SDL_HINT_JOYSTICK_HIDAPI_WII_PLAYER_LED = "SDL_JOYSTICK_HIDAPI_WII_PLAYER_LED";
+/// A variable controlling whether the HIDAPI driver for XBox controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_XBOX = "SDL_JOYSTICK_HIDAPI_XBOX";
+/// A variable controlling whether the HIDAPI driver for XBox 360 controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_XBOX_360 = "SDL_JOYSTICK_HIDAPI_XBOX_360";
+/// A variable controlling whether the player LEDs should be lit to indicate which player is associated with an Xbox 360 controller.
+const char* SDL_HINT_JOYSTICK_HIDAPI_XBOX_360_PLAYER_LED = "SDL_JOYSTICK_HIDAPI_XBOX_360_PLAYER_LED";
+/// A variable controlling whether the HIDAPI driver for XBox 360 wireless controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_XBOX_360_WIRELESS = "SDL_JOYSTICK_HIDAPI_XBOX_360_WIRELESS";
+/// A variable controlling whether the HIDAPI driver for XBox One controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_XBOX_ONE = "SDL_JOYSTICK_HIDAPI_XBOX_ONE";
+/// A variable controlling whether the Home button LED should be turned on when an Xbox One controller is opened.
+const char* SDL_HINT_JOYSTICK_HIDAPI_XBOX_ONE_HOME_LED = "SDL_JOYSTICK_HIDAPI_XBOX_ONE_HOME_LED";
+/// A variable controlling whether the new HIDAPI driver for wired Xbox One (GIP) controllers should be used.
+const char* SDL_HINT_JOYSTICK_HIDAPI_GIP = "SDL_JOYSTICK_HIDAPI_GIP";
+/// A variable controlling whether the new HIDAPI driver for wired Xbox One (GIP) controllers should reset the controller if it can't get the metadata from the controller.
+const char* SDL_HINT_JOYSTICK_HIDAPI_GIP_RESET_FOR_METADATA = "SDL_JOYSTICK_HIDAPI_GIP_RESET_FOR_METADATA";
+/// A variable controlling whether IOKit should be used for controller handling.
+const char* SDL_HINT_JOYSTICK_IOKIT = "SDL_JOYSTICK_IOKIT";
+/// A variable controlling whether to use the classic /dev/input/js* joystick interface or the newer /dev/input/event* joystick interface on Linux.
+const char* SDL_HINT_JOYSTICK_LINUX_CLASSIC = "SDL_JOYSTICK_LINUX_CLASSIC";
+/// A variable controlling whether joysticks on Linux adhere to their HID-defined deadzones or return unfiltered values.
+const char* SDL_HINT_JOYSTICK_LINUX_DEADZONES = "SDL_JOYSTICK_LINUX_DEADZONES";
+/// A variable controlling whether joysticks on Linux will always treat 'hat' axis inputs (ABS_HAT0X - ABS_HAT3Y) as 8-way digital hats without checking whether they may be analog.
+const char* SDL_HINT_JOYSTICK_LINUX_DIGITAL_HATS = "SDL_JOYSTICK_LINUX_DIGITAL_HATS";
+/// A variable controlling whether digital hats on Linux will apply deadzones to their underlying input axes or use unfiltered values.
+const char* SDL_HINT_JOYSTICK_LINUX_HAT_DEADZONES = "SDL_JOYSTICK_LINUX_HAT_DEADZONES";
+/// A variable controlling whether GCController should be used for controller handling.
+const char* SDL_HINT_JOYSTICK_MFI = "SDL_JOYSTICK_MFI";
+/// A variable controlling whether the RAWINPUT joystick drivers should be used for better handling XInput-capable devices.
+const char* SDL_HINT_JOYSTICK_RAWINPUT = "SDL_JOYSTICK_RAWINPUT";
+/// A variable controlling whether the RAWINPUT driver should pull correlated data from XInput.
+const char* SDL_HINT_JOYSTICK_RAWINPUT_CORRELATE_XINPUT = "SDL_JOYSTICK_RAWINPUT_CORRELATE_XINPUT";
+/// A variable controlling whether the ROG Chakram mice should show up as joysticks.
+const char* SDL_HINT_JOYSTICK_ROG_CHAKRAM = "SDL_JOYSTICK_ROG_CHAKRAM";
+/// A variable controlling whether a separate thread should be used for handling joystick detection and raw input messages on Windows.
+const char* SDL_HINT_JOYSTICK_THREAD = "SDL_JOYSTICK_THREAD";
+/// A variable containing a list of throttle style controllers.
+const char* SDL_HINT_JOYSTICK_THROTTLE_DEVICES = "SDL_JOYSTICK_THROTTLE_DEVICES";
+/// A variable containing a list of devices that are not throttle style controllers.
+const char* SDL_HINT_JOYSTICK_THROTTLE_DEVICES_EXCLUDED = "SDL_JOYSTICK_THROTTLE_DEVICES_EXCLUDED";
+/// A variable controlling whether Windows.Gaming.Input should be used for controller handling.
+const char* SDL_HINT_JOYSTICK_WGI = "SDL_JOYSTICK_WGI";
+/// A variable containing a list of wheel style controllers.
+const char* SDL_HINT_JOYSTICK_WHEEL_DEVICES = "SDL_JOYSTICK_WHEEL_DEVICES";
+/// A variable containing a list of devices that are not wheel style controllers.
+const char* SDL_HINT_JOYSTICK_WHEEL_DEVICES_EXCLUDED = "SDL_JOYSTICK_WHEEL_DEVICES_EXCLUDED";
+/// A variable containing a list of devices known to have all axes centered at zero.
+const char* SDL_HINT_JOYSTICK_ZERO_CENTERED_DEVICES = "SDL_JOYSTICK_ZERO_CENTERED_DEVICES";
+/// A variable containing a list of devices and their desired number of haptic (force feedback) enabled axis.
+const char* SDL_HINT_JOYSTICK_HAPTIC_AXES = "SDL_JOYSTICK_HAPTIC_AXES";
+/// A variable that controls keycode representation in keyboard events.
+const char* SDL_HINT_KEYCODE_OPTIONS = "SDL_KEYCODE_OPTIONS";
+/// A variable that controls what KMSDRM device to use.
+const char* SDL_HINT_KMSDRM_DEVICE_INDEX = "SDL_KMSDRM_DEVICE_INDEX";
+/// A variable that controls whether SDL requires DRM master access in order to initialize the KMSDRM video backend.
+const char* SDL_HINT_KMSDRM_REQUIRE_DRM_MASTER = "SDL_KMSDRM_REQUIRE_DRM_MASTER";
+/// A variable that controls whether KMSDRM will use "atomic" functionality.
+const char* SDL_HINT_KMSDRM_ATOMIC = "SDL_KMSDRM_ATOMIC";
+/// A variable controlling the default SDL log levels.
+const char* SDL_HINT_LOGGING = "SDL_LOGGING";
+/// A variable controlling whether to force the application to become the foreground process when launched on macOS.
+const char* SDL_HINT_MAC_BACKGROUND_APP = "SDL_MAC_BACKGROUND_APP";
+/// A variable that determines whether Ctrl+Click should generate a right-click event on macOS.
+const char* SDL_HINT_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK = "SDL_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK";
+/// A variable controlling whether dispatching OpenGL context updates should block the dispatching thread until the main thread finishes processing on macOS.
+const char* SDL_HINT_MAC_OPENGL_ASYNC_DISPATCH = "SDL_MAC_OPENGL_ASYNC_DISPATCH";
+/// A variable controlling whether the Option key on macOS should be remapped to act as the Alt key.
+const char* SDL_HINT_MAC_OPTION_AS_ALT = "SDL_MAC_OPTION_AS_ALT";
+/// A variable controlling whether SDL_EVENT_MOUSE_WHEEL event values will have momentum on macOS.
+const char* SDL_HINT_MAC_SCROLL_MOMENTUM = "SDL_MAC_SCROLL_MOMENTUM";
+/// A variable controlling whether holding down a key will repeat the pressed key or open the accents menu on macOS.
+const char* SDL_HINT_MAC_PRESS_AND_HOLD = "SDL_MAC_PRESS_AND_HOLD";
+/// Request SDL_AppIterate() be called at a specific rate.
+const char* SDL_HINT_MAIN_CALLBACK_RATE = "SDL_MAIN_CALLBACK_RATE";
+/// A variable controlling whether the mouse is captured while mouse buttons are pressed.
+const char* SDL_HINT_MOUSE_AUTO_CAPTURE = "SDL_MOUSE_AUTO_CAPTURE";
+/// A variable setting the double click radius, in pixels.
+const char* SDL_HINT_MOUSE_DOUBLE_CLICK_RADIUS = "SDL_MOUSE_DOUBLE_CLICK_RADIUS";
+/// A variable setting the double click time, in milliseconds.
+const char* SDL_HINT_MOUSE_DOUBLE_CLICK_TIME = "SDL_MOUSE_DOUBLE_CLICK_TIME";
+/// A variable setting which system cursor to use as the default cursor.
+const char* SDL_HINT_MOUSE_DEFAULT_SYSTEM_CURSOR = "SDL_MOUSE_DEFAULT_SYSTEM_CURSOR";
+/// A variable setting whether we should scale cursors by the current display scale.
+const char* SDL_HINT_MOUSE_DPI_SCALE_CURSORS = "SDL_MOUSE_DPI_SCALE_CURSORS";
+/// A variable controlling whether warping a hidden mouse cursor will activate relative mouse mode.
+const char* SDL_HINT_MOUSE_EMULATE_WARP_WITH_RELATIVE = "SDL_MOUSE_EMULATE_WARP_WITH_RELATIVE";
+/// Allow mouse click events when clicking to focus an SDL window.
+const char* SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH = "SDL_MOUSE_FOCUS_CLICKTHROUGH";
+/// A variable setting the speed scale for mouse motion, in floating point, when the mouse is not in relative mode.
+const char* SDL_HINT_MOUSE_NORMAL_SPEED_SCALE = "SDL_MOUSE_NORMAL_SPEED_SCALE";
+/// A variable controlling whether relative mouse mode constrains the mouse to the center of the window.
+const char* SDL_HINT_MOUSE_RELATIVE_MODE_CENTER = "SDL_MOUSE_RELATIVE_MODE_CENTER";
+/// A variable setting the scale for mouse motion, in floating point, when the mouse is in relative mode.
+const char* SDL_HINT_MOUSE_RELATIVE_SPEED_SCALE = "SDL_MOUSE_RELATIVE_SPEED_SCALE";
+/// A variable controlling whether the system mouse acceleration curve is used for relative mouse motion.
+const char* SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE = "SDL_MOUSE_RELATIVE_SYSTEM_SCALE";
+/// A variable controlling whether a motion event should be generated for mouse warping in relative mode.
+const char* SDL_HINT_MOUSE_RELATIVE_WARP_MOTION = "SDL_MOUSE_RELATIVE_WARP_MOTION";
+/// A variable controlling whether the hardware cursor stays visible when relative mode is active.
+const char* SDL_HINT_MOUSE_RELATIVE_CURSOR_VISIBLE = "SDL_MOUSE_RELATIVE_CURSOR_VISIBLE";
+/// A variable controlling whether mouse events should generate synthetic touch events.
+const char* SDL_HINT_MOUSE_TOUCH_EVENTS = "SDL_MOUSE_TOUCH_EVENTS";
+/// A variable controlling whether the keyboard should be muted on the console.
+const char* SDL_HINT_MUTE_CONSOLE_KEYBOARD = "SDL_MUTE_CONSOLE_KEYBOARD";
+/// Tell SDL not to catch the SIGINT or SIGTERM signals on POSIX platforms.
+const char* SDL_HINT_NO_SIGNAL_HANDLERS = "SDL_NO_SIGNAL_HANDLERS";
+/// Specify the OpenGL library to load.
+const char* SDL_HINT_OPENGL_LIBRARY = "SDL_OPENGL_LIBRARY";
+/// Specify the EGL library to load.
+const char* SDL_HINT_EGL_LIBRARY = "SDL_EGL_LIBRARY";
+/// A variable controlling what driver to use for OpenGL ES contexts.
+const char* SDL_HINT_OPENGL_ES_DRIVER = "SDL_OPENGL_ES_DRIVER";
+/// A variable controlling whether to force an sRGB-capable OpenGL context.
+const char* SDL_HINT_OPENGL_FORCE_SRGB_FRAMEBUFFER = "SDL_OPENGL_FORCE_SRGB_FRAMEBUFFER";
+/// Mechanism to specify openvr_api library location By default, when using the OpenVR driver, it will search for the API library in the current folder.
+const char* SDL_HINT_OPENVR_LIBRARY = "SDL_OPENVR_LIBRARY";
+/// A variable controlling which orientations are allowed on iOS/Android.
+const char* SDL_HINT_ORIENTATIONS = "SDL_ORIENTATIONS";
+/// A variable controlling the use of a sentinel event when polling the event queue.
+const char* SDL_HINT_POLL_SENTINEL = "SDL_POLL_SENTINEL";
+/// Override for SDL_GetPreferredLocales().
+const char* SDL_HINT_PREFERRED_LOCALES = "SDL_PREFERRED_LOCALES";
+/// A variable that decides whether to send SDL_EVENT_QUIT when closing the last window.
+const char* SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE = "SDL_QUIT_ON_LAST_WINDOW_CLOSE";
+/// A variable controlling whether the Direct3D device is initialized for thread-safe operations.
+const char* SDL_HINT_RENDER_DIRECT3D_THREADSAFE = "SDL_RENDER_DIRECT3D_THREADSAFE";
+/// A variable controlling whether to enable Direct3D 11+'s Debug Layer.
+const char* SDL_HINT_RENDER_DIRECT3D11_DEBUG = "SDL_RENDER_DIRECT3D11_DEBUG";
+/// A variable controlling whether to use the Direct3D 11 WARP software rasterizer.
+const char* SDL_HINT_RENDER_DIRECT3D11_WARP = "SDL_RENDER_DIRECT3D11_WARP";
+/// A variable controlling whether to enable Vulkan Validation Layers.
+const char* SDL_HINT_RENDER_VULKAN_DEBUG = "SDL_RENDER_VULKAN_DEBUG";
+/// A variable controlling whether to create the GPU device in debug mode.
+const char* SDL_HINT_RENDER_GPU_DEBUG = "SDL_RENDER_GPU_DEBUG";
+/// A variable controlling whether to prefer a low-power GPU on multi-GPU systems.
+const char* SDL_HINT_RENDER_GPU_LOW_POWER = "SDL_RENDER_GPU_LOW_POWER";
+/// A variable specifying which render driver to use.
+const char* SDL_HINT_RENDER_DRIVER = "SDL_RENDER_DRIVER";
+/// A variable controlling how the 2D render API renders lines.
+const char* SDL_HINT_RENDER_LINE_METHOD = "SDL_RENDER_LINE_METHOD";
+/// A variable controlling whether the Metal render driver select low power device over default one.
+const char* SDL_HINT_RENDER_METAL_PREFER_LOW_POWER_DEVICE = "SDL_RENDER_METAL_PREFER_LOW_POWER_DEVICE";
+/// A variable controlling whether updates to the SDL screen surface should be synchronized with the vertical refresh, to avoid tearing.
+const char* SDL_HINT_RENDER_VSYNC = "SDL_RENDER_VSYNC";
+/// A variable to control whether the return key on the soft keyboard should hide the soft keyboard on Android and iOS.
+const char* SDL_HINT_RETURN_KEY_HIDES_IME = "SDL_RETURN_KEY_HIDES_IME";
+/// A variable containing a list of ROG gamepad capable mice.
+const char* SDL_HINT_ROG_GAMEPAD_MICE = "SDL_ROG_GAMEPAD_MICE";
+/// A variable containing a list of devices that are not ROG gamepad capable mice.
+const char* SDL_HINT_ROG_GAMEPAD_MICE_EXCLUDED = "SDL_ROG_GAMEPAD_MICE_EXCLUDED";
+/// A variable controlling the width of the PS2's framebuffer in pixels.
+const char* SDL_HINT_PS2_GS_WIDTH = "SDL_PS2_GS_WIDTH";
+/// A variable controlling the height of the PS2's framebuffer in pixels.
+const char* SDL_HINT_PS2_GS_HEIGHT = "SDL_PS2_GS_HEIGHT";
+/// A variable controlling whether the signal is interlaced or progressive.
+const char* SDL_HINT_PS2_GS_PROGRESSIVE = "SDL_PS2_GS_PROGRESSIVE";
+/// A variable controlling the video mode of the console.
+const char* SDL_HINT_PS2_GS_MODE = "SDL_PS2_GS_MODE";
+/// A variable controlling which Dispmanx layer to use on a Raspberry PI.
+const char* SDL_HINT_RPI_VIDEO_LAYER = "SDL_RPI_VIDEO_LAYER";
+/// Specify an "activity name" for screensaver inhibition.
+const char* SDL_HINT_SCREENSAVER_INHIBIT_ACTIVITY_NAME = "SDL_SCREENSAVER_INHIBIT_ACTIVITY_NAME";
+/// A variable controlling whether SDL calls dbus_shutdown() on quit.
+const char* SDL_HINT_SHUTDOWN_DBUS_ON_QUIT = "SDL_SHUTDOWN_DBUS_ON_QUIT";
+/// A variable that specifies a backend to use for title storage.
+const char* SDL_HINT_STORAGE_TITLE_DRIVER = "SDL_STORAGE_TITLE_DRIVER";
+/// A variable that specifies a backend to use for user storage.
+const char* SDL_HINT_STORAGE_USER_DRIVER = "SDL_STORAGE_USER_DRIVER";
+/// Specifies whether SDL_THREAD_PRIORITY_TIME_CRITICAL should be treated as realtime.
+const char* SDL_HINT_THREAD_FORCE_REALTIME_TIME_CRITICAL = "SDL_THREAD_FORCE_REALTIME_TIME_CRITICAL";
+/// A string specifying additional information to use with SDL_SetCurrentThreadPriority.
+const char* SDL_HINT_THREAD_PRIORITY_POLICY = "SDL_THREAD_PRIORITY_POLICY";
+/// A variable that controls the timer resolution, in milliseconds.
+const char* SDL_HINT_TIMER_RESOLUTION = "SDL_TIMER_RESOLUTION";
+/// A variable controlling whether touch events should generate synthetic mouse events.
+const char* SDL_HINT_TOUCH_MOUSE_EVENTS = "SDL_TOUCH_MOUSE_EVENTS";
+/// A variable controlling whether trackpads should be treated as touch devices.
+const char* SDL_HINT_TRACKPAD_IS_TOUCH_ONLY = "SDL_TRACKPAD_IS_TOUCH_ONLY";
+/// A variable controlling whether the Android / tvOS remotes should be listed as joystick devices, instead of sending keyboard events.
+const char* SDL_HINT_TV_REMOTE_AS_JOYSTICK = "SDL_TV_REMOTE_AS_JOYSTICK";
+/// A variable controlling whether the screensaver is enabled.
+const char* SDL_HINT_VIDEO_ALLOW_SCREENSAVER = "SDL_VIDEO_ALLOW_SCREENSAVER";
+/// A comma separated list containing the names of the displays that SDL should sort to the front of the display list.
+const char* SDL_HINT_VIDEO_DISPLAY_PRIORITY = "SDL_VIDEO_DISPLAY_PRIORITY";
+/// Tell the video driver that we only want a double buffer.
+const char* SDL_HINT_VIDEO_DOUBLE_BUFFER = "SDL_VIDEO_DOUBLE_BUFFER";
+/// A variable that specifies a video backend to use.
+const char* SDL_HINT_VIDEO_DRIVER = "SDL_VIDEO_DRIVER";
+/// A variable controlling whether the dummy video driver saves output frames.
+const char* SDL_HINT_VIDEO_DUMMY_SAVE_FRAMES = "SDL_VIDEO_DUMMY_SAVE_FRAMES";
+/// If eglGetPlatformDisplay fails, fall back to calling eglGetDisplay.
+const char* SDL_HINT_VIDEO_EGL_ALLOW_GETDISPLAY_FALLBACK = "SDL_VIDEO_EGL_ALLOW_GETDISPLAY_FALLBACK";
+/// A variable controlling whether the OpenGL context should be created with EGL.
+const char* SDL_HINT_VIDEO_FORCE_EGL = "SDL_VIDEO_FORCE_EGL";
+/// A variable that specifies the policy for fullscreen Spaces on macOS.
+const char* SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES = "SDL_VIDEO_MAC_FULLSCREEN_SPACES";
+/// A variable that specifies the menu visibility when a window is fullscreen in Spaces on macOS.
+const char* SDL_HINT_VIDEO_MAC_FULLSCREEN_MENU_VISIBILITY = "SDL_VIDEO_MAC_FULLSCREEN_MENU_VISIBILITY";
+/// A variable indicating whether the metal layer drawable size should be updated for the SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED event on macOS.
+const char* SDL_HINT_VIDEO_METAL_AUTO_RESIZE_DRAWABLE = "SDL_VIDEO_METAL_AUTO_RESIZE_DRAWABLE";
+/// A variable controlling whether SDL will attempt to automatically set the destination display to a mode most closely matching that of the previous display if an exclusive fullscreen window is moved onto it.
+const char* SDL_HINT_VIDEO_MATCH_EXCLUSIVE_MODE_ON_MOVE = "SDL_VIDEO_MATCH_EXCLUSIVE_MODE_ON_MOVE";
+/// A variable controlling whether fullscreen windows are minimized when they lose focus.
+const char* SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS = "SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS";
+/// A variable controlling whether the offscreen video driver saves output frames.
+const char* SDL_HINT_VIDEO_OFFSCREEN_SAVE_FRAMES = "SDL_VIDEO_OFFSCREEN_SAVE_FRAMES";
+/// A variable controlling whether all window operations will block until complete.
+const char* SDL_HINT_VIDEO_SYNC_WINDOW_OPERATIONS = "SDL_VIDEO_SYNC_WINDOW_OPERATIONS";
+/// A variable controlling whether the libdecor Wayland backend is allowed to be used.
+const char* SDL_HINT_VIDEO_WAYLAND_ALLOW_LIBDECOR = "SDL_VIDEO_WAYLAND_ALLOW_LIBDECOR";
+/// A variable controlling whether video mode emulation is enabled under Wayland.
+const char* SDL_HINT_VIDEO_WAYLAND_MODE_EMULATION = "SDL_VIDEO_WAYLAND_MODE_EMULATION";
+/// A variable controlling how modes with a non-native aspect ratio are displayed under Wayland.
+const char* SDL_HINT_VIDEO_WAYLAND_MODE_SCALING = "SDL_VIDEO_WAYLAND_MODE_SCALING";
+/// A variable controlling whether the libdecor Wayland backend is preferred over native decorations.
+const char* SDL_HINT_VIDEO_WAYLAND_PREFER_LIBDECOR = "SDL_VIDEO_WAYLAND_PREFER_LIBDECOR";
+/// A variable forcing non-DPI-aware Wayland windows to output at 1:1 scaling.
+const char* SDL_HINT_VIDEO_WAYLAND_SCALE_TO_DISPLAY = "SDL_VIDEO_WAYLAND_SCALE_TO_DISPLAY";
+/// A variable specifying which shader compiler to preload when using the Chrome ANGLE binaries.
+const char* SDL_HINT_VIDEO_WIN_D3DCOMPILER = "SDL_VIDEO_WIN_D3DCOMPILER";
+/// A variable controlling whether the X Synchronization Extension is enabled.
+const char* SDL_HINT_VIDEO_X11_ENABLE_XSYNC_EXT = "SDL_VIDEO_X11_ENABLE_XSYNC_EXT";
+/// A variable controlling whether SDL should call XSelectInput() to enable input events on X11 windows wrapped by SDL windows.
+const char* SDL_HINT_VIDEO_X11_EXTERNAL_WINDOW_INPUT = "SDL_VIDEO_X11_EXTERNAL_WINDOW_INPUT";
+/// A variable controlling whether the X11 _NET_WM_BYPASS_COMPOSITOR hint should be used.
+const char* SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR = "SDL_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR";
+/// A variable controlling whether the X11 _NET_WM_PING protocol should be supported.
+const char* SDL_HINT_VIDEO_X11_NET_WM_PING = "SDL_VIDEO_X11_NET_WM_PING";
+/// A variable controlling whether SDL uses DirectColor visuals.
+const char* SDL_HINT_VIDEO_X11_NODIRECTCOLOR = "SDL_VIDEO_X11_NODIRECTCOLOR";
+/// A variable forcing the content scaling factor for X11 displays.
+const char* SDL_HINT_VIDEO_X11_SCALING_FACTOR = "SDL_VIDEO_X11_SCALING_FACTOR";
+/// A variable forcing the visual ID used for X11 display modes.
+const char* SDL_HINT_VIDEO_X11_VISUALID = "SDL_VIDEO_X11_VISUALID";
+/// A variable forcing the visual ID chosen for new X11 windows.
+const char* SDL_HINT_VIDEO_X11_WINDOW_VISUALID = "SDL_VIDEO_X11_WINDOW_VISUALID";
+/// A variable controlling whether the X11 XRandR extension should be used.
+const char* SDL_HINT_VIDEO_X11_XRANDR = "SDL_VIDEO_X11_XRANDR";
+/// A variable controlling whether touch should be enabled on the back panel of the PlayStation Vita.
+const char* SDL_HINT_VITA_ENABLE_BACK_TOUCH = "SDL_VITA_ENABLE_BACK_TOUCH";
+/// A variable controlling whether touch should be enabled on the front panel of the PlayStation Vita.
+const char* SDL_HINT_VITA_ENABLE_FRONT_TOUCH = "SDL_VITA_ENABLE_FRONT_TOUCH";
+/// A variable controlling the module path on the PlayStation Vita.
+const char* SDL_HINT_VITA_MODULE_PATH = "SDL_VITA_MODULE_PATH";
+/// A variable controlling whether to perform PVR initialization on the PlayStation Vita.
+const char* SDL_HINT_VITA_PVR_INIT = "SDL_VITA_PVR_INIT";
+/// A variable overriding the resolution reported on the PlayStation Vita.
+const char* SDL_HINT_VITA_RESOLUTION = "SDL_VITA_RESOLUTION";
+/// A variable controlling whether OpenGL should be used instead of OpenGL ES on the PlayStation Vita.
+const char* SDL_HINT_VITA_PVR_OPENGL = "SDL_VITA_PVR_OPENGL";
+/// A variable controlling which touchpad should generate synthetic mouse events.
+const char* SDL_HINT_VITA_TOUCH_MOUSE_DEVICE = "SDL_VITA_TOUCH_MOUSE_DEVICE";
+/// A variable overriding the display index used in SDL_Vulkan_CreateSurface() The display index starts at 0, which is the default.
+const char* SDL_HINT_VULKAN_DISPLAY = "SDL_VULKAN_DISPLAY";
+/// Specify the Vulkan library to load.
+const char* SDL_HINT_VULKAN_LIBRARY = "SDL_VULKAN_LIBRARY";
+/// A variable controlling how the fact chunk affects the loading of a WAVE file.
+const char* SDL_HINT_WAVE_FACT_CHUNK = "SDL_WAVE_FACT_CHUNK";
+/// A variable controlling the maximum number of chunks in a WAVE file.
+const char* SDL_HINT_WAVE_CHUNK_LIMIT = "SDL_WAVE_CHUNK_LIMIT";
+/// A variable controlling how the size of the RIFF chunk affects the loading of a WAVE file.
+const char* SDL_HINT_WAVE_RIFF_CHUNK_SIZE = "SDL_WAVE_RIFF_CHUNK_SIZE";
+/// A variable controlling how a truncated WAVE file is handled.
+const char* SDL_HINT_WAVE_TRUNCATION = "SDL_WAVE_TRUNCATION";
+/// A variable controlling whether the window is activated when the SDL_RaiseWindow function is called.
+const char* SDL_HINT_WINDOW_ACTIVATE_WHEN_RAISED = "SDL_WINDOW_ACTIVATE_WHEN_RAISED";
+/// A variable controlling whether the window is activated when the SDL_ShowWindow function is called.
+const char* SDL_HINT_WINDOW_ACTIVATE_WHEN_SHOWN = "SDL_WINDOW_ACTIVATE_WHEN_SHOWN";
+/// If set to "0" then never set the top-most flag on an SDL Window even if the application requests it.
+const char* SDL_HINT_WINDOW_ALLOW_TOPMOST = "SDL_WINDOW_ALLOW_TOPMOST";
+/// A variable controlling whether the window frame and title bar are interactive when the cursor is hidden.
+const char* SDL_HINT_WINDOW_FRAME_USABLE_WHILE_CURSOR_HIDDEN = "SDL_WINDOW_FRAME_USABLE_WHILE_CURSOR_HIDDEN";
+/// A variable controlling whether SDL generates window-close events for Alt+F4 on Windows.
+const char* SDL_HINT_WINDOWS_CLOSE_ON_ALT_F4 = "SDL_WINDOWS_CLOSE_ON_ALT_F4";
+/// A variable controlling whether menus can be opened with their keyboard shortcut (Alt+mnemonic).
+const char* SDL_HINT_WINDOWS_ENABLE_MENU_MNEMONICS = "SDL_WINDOWS_ENABLE_MENU_MNEMONICS";
+/// A variable controlling whether the windows message loop is processed by SDL.
+const char* SDL_HINT_WINDOWS_ENABLE_MESSAGELOOP = "SDL_WINDOWS_ENABLE_MESSAGELOOP";
+/// A variable controlling whether GameInput is used for raw keyboard and mouse on Windows.
+const char* SDL_HINT_WINDOWS_GAMEINPUT = "SDL_WINDOWS_GAMEINPUT";
+/// A variable controlling whether raw keyboard events are used on Windows.
+const char* SDL_HINT_WINDOWS_RAW_KEYBOARD = "SDL_WINDOWS_RAW_KEYBOARD";
+/// A variable controlling whether or not the RIDEV_NOHOTKEYS flag is set when enabling Windows raw keyboard events.
+const char* SDL_HINT_WINDOWS_RAW_KEYBOARD_EXCLUDE_HOTKEYS = "SDL_WINDOWS_RAW_KEYBOARD_EXCLUDE_HOTKEYS";
+/// A variable controlling whether the RIDEV_INPUTSINK flag is set when enabling Windows raw keyboard events.
+const char* SDL_HINT_WINDOWS_RAW_KEYBOARD_INPUTSINK = "SDL_WINDOWS_RAW_KEYBOARD_INPUTSINK";
+/// A variable controlling whether SDL uses Kernel Semaphores on Windows.
+const char* SDL_HINT_WINDOWS_FORCE_SEMAPHORE_KERNEL = "SDL_WINDOWS_FORCE_SEMAPHORE_KERNEL";
+/// A variable to specify custom icon resource id from RC file on Windows platform.
+const char* SDL_HINT_WINDOWS_INTRESOURCE_ICON = "SDL_WINDOWS_INTRESOURCE_ICON";
+/// A variable to specify custom icon resource id from RC file on Windows platform.
+const char* SDL_HINT_WINDOWS_INTRESOURCE_ICON_SMALL = "SDL_WINDOWS_INTRESOURCE_ICON_SMALL";
+/// A variable controlling whether SDL uses the D3D9Ex API introduced in Windows Vista, instead of normal D3D9.
+const char* SDL_HINT_WINDOWS_USE_D3D9EX = "SDL_WINDOWS_USE_D3D9EX";
+/// A variable controlling whether SDL will clear the window contents when the WM_ERASEBKGND message is received.
+const char* SDL_HINT_WINDOWS_ERASE_BACKGROUND_MODE = "SDL_WINDOWS_ERASE_BACKGROUND_MODE";
+/// A variable controlling whether X11 windows are marked as override-redirect.
+const char* SDL_HINT_X11_FORCE_OVERRIDE_REDIRECT = "SDL_X11_FORCE_OVERRIDE_REDIRECT";
+/// A variable specifying the type of an X11 window.
+const char* SDL_HINT_X11_WINDOW_TYPE = "SDL_X11_WINDOW_TYPE";
+/// Specify the XCB library to load for the X11 driver.
+const char* SDL_HINT_X11_XCB_LIBRARY = "SDL_X11_XCB_LIBRARY";
+/// A variable controlling whether XInput should be used for controller handling.
+const char* SDL_HINT_XINPUT_ENABLED = "SDL_XINPUT_ENABLED";
+/// A variable controlling response to SDL_assert failures.
+const char* SDL_HINT_ASSERT = "SDL_ASSERT";
+/// A variable controlling whether pen events should generate synthetic mouse events.
+const char* SDL_HINT_PEN_MOUSE_EVENTS = "SDL_PEN_MOUSE_EVENTS";
+/// A variable controlling whether pen events should generate synthetic touch events.
+const char* SDL_HINT_PEN_TOUCH_EVENTS = "SDL_PEN_TOUCH_EVENTS";
+/// Property key "SDL.app.metadata.name" (string).
+const char* SDL_PROP_APP_METADATA_NAME_STRING = "SDL.app.metadata.name";
+/// Property key "SDL.app.metadata.version" (string).
+const char* SDL_PROP_APP_METADATA_VERSION_STRING = "SDL.app.metadata.version";
+/// Property key "SDL.app.metadata.identifier" (string).
+const char* SDL_PROP_APP_METADATA_IDENTIFIER_STRING = "SDL.app.metadata.identifier";
+/// Property key "SDL.app.metadata.creator" (string).
+const char* SDL_PROP_APP_METADATA_CREATOR_STRING = "SDL.app.metadata.creator";
+/// Property key "SDL.app.metadata.copyright" (string).
+const char* SDL_PROP_APP_METADATA_COPYRIGHT_STRING = "SDL.app.metadata.copyright";
+/// Property key "SDL.app.metadata.url" (string).
+const char* SDL_PROP_APP_METADATA_URL_STRING = "SDL.app.metadata.url";
+/// Property key "SDL.app.metadata.type" (string).
+const char* SDL_PROP_APP_METADATA_TYPE_STRING = "SDL.app.metadata.type";
+/// Property key "SDL.iostream.windows.handle" (pointer).
+const char* SDL_PROP_IOSTREAM_WINDOWS_HANDLE_POINTER = "SDL.iostream.windows.handle";
+/// Property key "SDL.iostream.stdio.file" (pointer).
+const char* SDL_PROP_IOSTREAM_STDIO_FILE_POINTER = "SDL.iostream.stdio.file";
+/// Property key "SDL.iostream.file_descriptor" (number).
+const char* SDL_PROP_IOSTREAM_FILE_DESCRIPTOR_NUMBER = "SDL.iostream.file_descriptor";
+/// Property key "SDL.iostream.android.aasset" (pointer).
+const char* SDL_PROP_IOSTREAM_ANDROID_AASSET_POINTER = "SDL.iostream.android.aasset";
+/// Property key "SDL.iostream.memory.base" (pointer).
+const char* SDL_PROP_IOSTREAM_MEMORY_POINTER = "SDL.iostream.memory.base";
+/// Property key "SDL.iostream.memory.size" (number).
+const char* SDL_PROP_IOSTREAM_MEMORY_SIZE_NUMBER = "SDL.iostream.memory.size";
+/// Property key "SDL.iostream.memory.free" (pointer).
+const char* SDL_PROP_IOSTREAM_MEMORY_FREE_FUNC_POINTER = "SDL.iostream.memory.free";
+/// Property key "SDL.iostream.dynamic.memory" (pointer).
+const char* SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER = "SDL.iostream.dynamic.memory";
+/// Property key "SDL.iostream.dynamic.chunksize" (number).
+const char* SDL_PROP_IOSTREAM_DYNAMIC_CHUNKSIZE_NUMBER = "SDL.iostream.dynamic.chunksize";
+/// Property key "SDL.joystick.cap.mono_led" (boolean).
+const char* SDL_PROP_JOYSTICK_CAP_MONO_LED_BOOLEAN = "SDL.joystick.cap.mono_led";
+/// Property key "SDL.joystick.cap.rgb_led" (boolean).
+const char* SDL_PROP_JOYSTICK_CAP_RGB_LED_BOOLEAN = "SDL.joystick.cap.rgb_led";
+/// Property key "SDL.joystick.cap.player_led" (boolean).
+const char* SDL_PROP_JOYSTICK_CAP_PLAYER_LED_BOOLEAN = "SDL.joystick.cap.player_led";
+/// Property key "SDL.joystick.cap.rumble" (boolean).
+const char* SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN = "SDL.joystick.cap.rumble";
+/// Property key "SDL.joystick.cap.trigger_rumble" (boolean).
+const char* SDL_PROP_JOYSTICK_CAP_TRIGGER_RUMBLE_BOOLEAN = "SDL.joystick.cap.trigger_rumble";
+/// Property key "SDL.textinput.type" (number).
+const char* SDL_PROP_TEXTINPUT_TYPE_NUMBER = "SDL.textinput.type";
+/// Property key "SDL.textinput.capitalization" (number).
+const char* SDL_PROP_TEXTINPUT_CAPITALIZATION_NUMBER = "SDL.textinput.capitalization";
+/// Property key "SDL.textinput.autocorrect" (boolean).
+const char* SDL_PROP_TEXTINPUT_AUTOCORRECT_BOOLEAN = "SDL.textinput.autocorrect";
+/// Property key "SDL.textinput.multiline" (boolean).
+const char* SDL_PROP_TEXTINPUT_MULTILINE_BOOLEAN = "SDL.textinput.multiline";
+/// Property key "SDL.textinput.android.inputtype" (number).
+const char* SDL_PROP_TEXTINPUT_ANDROID_INPUTTYPE_NUMBER = "SDL.textinput.android.inputtype";
+/// Property key "SDL.process.create.args" (pointer).
+const char* SDL_PROP_PROCESS_CREATE_ARGS_POINTER = "SDL.process.create.args";
+/// Property key "SDL.process.create.environment" (pointer).
+const char* SDL_PROP_PROCESS_CREATE_ENVIRONMENT_POINTER = "SDL.process.create.environment";
+/// Property key "SDL.process.create.working_directory" (string).
+const char* SDL_PROP_PROCESS_CREATE_WORKING_DIRECTORY_STRING = "SDL.process.create.working_directory";
+/// Property key "SDL.process.create.stdin_option" (number).
+const char* SDL_PROP_PROCESS_CREATE_STDIN_NUMBER = "SDL.process.create.stdin_option";
+/// Property key "SDL.process.create.stdin_source" (pointer).
+const char* SDL_PROP_PROCESS_CREATE_STDIN_POINTER = "SDL.process.create.stdin_source";
+/// Property key "SDL.process.create.stdout_option" (number).
+const char* SDL_PROP_PROCESS_CREATE_STDOUT_NUMBER = "SDL.process.create.stdout_option";
+/// Property key "SDL.process.create.stdout_source" (pointer).
+const char* SDL_PROP_PROCESS_CREATE_STDOUT_POINTER = "SDL.process.create.stdout_source";
+/// Property key "SDL.process.create.stderr_option" (number).
+const char* SDL_PROP_PROCESS_CREATE_STDERR_NUMBER = "SDL.process.create.stderr_option";
+/// Property key "SDL.process.create.stderr_source" (pointer).
+const char* SDL_PROP_PROCESS_CREATE_STDERR_POINTER = "SDL.process.create.stderr_source";
+/// Property key "SDL.process.create.stderr_to_stdout" (boolean).
+const char* SDL_PROP_PROCESS_CREATE_STDERR_TO_STDOUT_BOOLEAN = "SDL.process.create.stderr_to_stdout";
+/// Property key "SDL.process.create.background" (boolean).
+const char* SDL_PROP_PROCESS_CREATE_BACKGROUND_BOOLEAN = "SDL.process.create.background";
+/// Property key "SDL.process.create.cmdline" (string).
+const char* SDL_PROP_PROCESS_CREATE_CMDLINE_STRING = "SDL.process.create.cmdline";
+/// Property key "SDL.process.pid" (number).
+const char* SDL_PROP_PROCESS_PID_NUMBER = "SDL.process.pid";
+/// Property key "SDL.process.stdin" (pointer).
+const char* SDL_PROP_PROCESS_STDIN_POINTER = "SDL.process.stdin";
+/// Property key "SDL.process.stdout" (pointer).
+const char* SDL_PROP_PROCESS_STDOUT_POINTER = "SDL.process.stdout";
+/// Property key "SDL.process.stderr" (pointer).
+const char* SDL_PROP_PROCESS_STDERR_POINTER = "SDL.process.stderr";
+/// Property key "SDL.process.background" (boolean).
+const char* SDL_PROP_PROCESS_BACKGROUND_BOOLEAN = "SDL.process.background";
+/// A generic property for naming things.
+const char* SDL_PROP_NAME_STRING = "SDL.name";
+/// Property key "SDL.renderer.create.name" (string).
+const char* SDL_PROP_RENDERER_CREATE_NAME_STRING = "SDL.renderer.create.name";
+/// Property key "SDL.renderer.create.window" (pointer).
+const char* SDL_PROP_RENDERER_CREATE_WINDOW_POINTER = "SDL.renderer.create.window";
+/// Property key "SDL.renderer.create.surface" (pointer).
+const char* SDL_PROP_RENDERER_CREATE_SURFACE_POINTER = "SDL.renderer.create.surface";
+/// Property key "SDL.renderer.create.output_colorspace" (number).
+const char* SDL_PROP_RENDERER_CREATE_OUTPUT_COLORSPACE_NUMBER = "SDL.renderer.create.output_colorspace";
+/// Property key "SDL.renderer.create.present_vsync" (number).
+const char* SDL_PROP_RENDERER_CREATE_PRESENT_VSYNC_NUMBER = "SDL.renderer.create.present_vsync";
+/// Property key "SDL.renderer.create.gpu.device" (pointer).
+const char* SDL_PROP_RENDERER_CREATE_GPU_DEVICE_POINTER = "SDL.renderer.create.gpu.device";
+/// Property key "SDL.renderer.create.gpu.shaders_spirv" (boolean).
+const char* SDL_PROP_RENDERER_CREATE_GPU_SHADERS_SPIRV_BOOLEAN = "SDL.renderer.create.gpu.shaders_spirv";
+/// Property key "SDL.renderer.create.gpu.shaders_dxil" (boolean).
+const char* SDL_PROP_RENDERER_CREATE_GPU_SHADERS_DXIL_BOOLEAN = "SDL.renderer.create.gpu.shaders_dxil";
+/// Property key "SDL.renderer.create.gpu.shaders_msl" (boolean).
+const char* SDL_PROP_RENDERER_CREATE_GPU_SHADERS_MSL_BOOLEAN = "SDL.renderer.create.gpu.shaders_msl";
+/// Property key "SDL.renderer.create.vulkan.instance" (pointer).
+const char* SDL_PROP_RENDERER_CREATE_VULKAN_INSTANCE_POINTER = "SDL.renderer.create.vulkan.instance";
+/// Property key "SDL.renderer.create.vulkan.surface" (number).
+const char* SDL_PROP_RENDERER_CREATE_VULKAN_SURFACE_NUMBER = "SDL.renderer.create.vulkan.surface";
+/// Property key "SDL.renderer.create.vulkan.physical_device" (pointer).
+const char* SDL_PROP_RENDERER_CREATE_VULKAN_PHYSICAL_DEVICE_POINTER = "SDL.renderer.create.vulkan.physical_device";
+/// Property key "SDL.renderer.create.vulkan.device" (pointer).
+const char* SDL_PROP_RENDERER_CREATE_VULKAN_DEVICE_POINTER = "SDL.renderer.create.vulkan.device";
+/// Property key "SDL.renderer.create.vulkan.graphics_queue_family_index" (number).
+const char* SDL_PROP_RENDERER_CREATE_VULKAN_GRAPHICS_QUEUE_FAMILY_INDEX_NUMBER = "SDL.renderer.create.vulkan.graphics_queue_family_index";
+/// Property key "SDL.renderer.create.vulkan.present_queue_family_index" (number).
+const char* SDL_PROP_RENDERER_CREATE_VULKAN_PRESENT_QUEUE_FAMILY_INDEX_NUMBER = "SDL.renderer.create.vulkan.present_queue_family_index";
+/// Property key "SDL.renderer.name" (string).
+const char* SDL_PROP_RENDERER_NAME_STRING = "SDL.renderer.name";
+/// Property key "SDL.renderer.window" (pointer).
+const char* SDL_PROP_RENDERER_WINDOW_POINTER = "SDL.renderer.window";
+/// Property key "SDL.renderer.surface" (pointer).
+const char* SDL_PROP_RENDERER_SURFACE_POINTER = "SDL.renderer.surface";
+/// Property key "SDL.renderer.vsync" (number).
+const char* SDL_PROP_RENDERER_VSYNC_NUMBER = "SDL.renderer.vsync";
+/// Property key "SDL.renderer.max_texture_size" (number).
+const char* SDL_PROP_RENDERER_MAX_TEXTURE_SIZE_NUMBER = "SDL.renderer.max_texture_size";
+/// Property key "SDL.renderer.texture_formats" (pointer).
+const char* SDL_PROP_RENDERER_TEXTURE_FORMATS_POINTER = "SDL.renderer.texture_formats";
+/// Property key "SDL.renderer.texture_wrapping" (boolean).
+const char* SDL_PROP_RENDERER_TEXTURE_WRAPPING_BOOLEAN = "SDL.renderer.texture_wrapping";
+/// Property key "SDL.renderer.output_colorspace" (number).
+const char* SDL_PROP_RENDERER_OUTPUT_COLORSPACE_NUMBER = "SDL.renderer.output_colorspace";
+/// Property key "SDL.renderer.HDR_enabled" (boolean).
+const char* SDL_PROP_RENDERER_HDR_ENABLED_BOOLEAN = "SDL.renderer.HDR_enabled";
+/// Property key "SDL.renderer.SDR_white_point" (float).
+const char* SDL_PROP_RENDERER_SDR_WHITE_POINT_FLOAT = "SDL.renderer.SDR_white_point";
+/// Property key "SDL.renderer.HDR_headroom" (float).
+const char* SDL_PROP_RENDERER_HDR_HEADROOM_FLOAT = "SDL.renderer.HDR_headroom";
+/// Property key "SDL.renderer.d3d9.device" (pointer).
+const char* SDL_PROP_RENDERER_D3D9_DEVICE_POINTER = "SDL.renderer.d3d9.device";
+/// Property key "SDL.renderer.d3d11.device" (pointer).
+const char* SDL_PROP_RENDERER_D3D11_DEVICE_POINTER = "SDL.renderer.d3d11.device";
+/// Property key "SDL.renderer.d3d11.swap_chain" (pointer).
+const char* SDL_PROP_RENDERER_D3D11_SWAPCHAIN_POINTER = "SDL.renderer.d3d11.swap_chain";
+/// Property key "SDL.renderer.d3d12.device" (pointer).
+const char* SDL_PROP_RENDERER_D3D12_DEVICE_POINTER = "SDL.renderer.d3d12.device";
+/// Property key "SDL.renderer.d3d12.swap_chain" (pointer).
+const char* SDL_PROP_RENDERER_D3D12_SWAPCHAIN_POINTER = "SDL.renderer.d3d12.swap_chain";
+/// Property key "SDL.renderer.d3d12.command_queue" (pointer).
+const char* SDL_PROP_RENDERER_D3D12_COMMAND_QUEUE_POINTER = "SDL.renderer.d3d12.command_queue";
+/// Property key "SDL.renderer.vulkan.instance" (pointer).
+const char* SDL_PROP_RENDERER_VULKAN_INSTANCE_POINTER = "SDL.renderer.vulkan.instance";
+/// Property key "SDL.renderer.vulkan.surface" (number).
+const char* SDL_PROP_RENDERER_VULKAN_SURFACE_NUMBER = "SDL.renderer.vulkan.surface";
+/// Property key "SDL.renderer.vulkan.physical_device" (pointer).
+const char* SDL_PROP_RENDERER_VULKAN_PHYSICAL_DEVICE_POINTER = "SDL.renderer.vulkan.physical_device";
+/// Property key "SDL.renderer.vulkan.device" (pointer).
+const char* SDL_PROP_RENDERER_VULKAN_DEVICE_POINTER = "SDL.renderer.vulkan.device";
+/// Property key "SDL.renderer.vulkan.graphics_queue_family_index" (number).
+const char* SDL_PROP_RENDERER_VULKAN_GRAPHICS_QUEUE_FAMILY_INDEX_NUMBER = "SDL.renderer.vulkan.graphics_queue_family_index";
+/// Property key "SDL.renderer.vulkan.present_queue_family_index" (number).
+const char* SDL_PROP_RENDERER_VULKAN_PRESENT_QUEUE_FAMILY_INDEX_NUMBER = "SDL.renderer.vulkan.present_queue_family_index";
+/// Property key "SDL.renderer.vulkan.swapchain_image_count" (number).
+const char* SDL_PROP_RENDERER_VULKAN_SWAPCHAIN_IMAGE_COUNT_NUMBER = "SDL.renderer.vulkan.swapchain_image_count";
+/// Property key "SDL.renderer.gpu.device" (pointer).
+const char* SDL_PROP_RENDERER_GPU_DEVICE_POINTER = "SDL.renderer.gpu.device";
+/// Property key "SDL.texture.create.colorspace" (number).
+const char* SDL_PROP_TEXTURE_CREATE_COLORSPACE_NUMBER = "SDL.texture.create.colorspace";
+/// Property key "SDL.texture.create.format" (number).
+const char* SDL_PROP_TEXTURE_CREATE_FORMAT_NUMBER = "SDL.texture.create.format";
+/// Property key "SDL.texture.create.access" (number).
+const char* SDL_PROP_TEXTURE_CREATE_ACCESS_NUMBER = "SDL.texture.create.access";
+/// Property key "SDL.texture.create.width" (number).
+const char* SDL_PROP_TEXTURE_CREATE_WIDTH_NUMBER = "SDL.texture.create.width";
+/// Property key "SDL.texture.create.height" (number).
+const char* SDL_PROP_TEXTURE_CREATE_HEIGHT_NUMBER = "SDL.texture.create.height";
+/// Property key "SDL.texture.create.palette" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_PALETTE_POINTER = "SDL.texture.create.palette";
+/// Property key "SDL.texture.create.SDR_white_point" (float).
+const char* SDL_PROP_TEXTURE_CREATE_SDR_WHITE_POINT_FLOAT = "SDL.texture.create.SDR_white_point";
+/// Property key "SDL.texture.create.HDR_headroom" (float).
+const char* SDL_PROP_TEXTURE_CREATE_HDR_HEADROOM_FLOAT = "SDL.texture.create.HDR_headroom";
+/// Property key "SDL.texture.create.d3d11.texture" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_D3D11_TEXTURE_POINTER = "SDL.texture.create.d3d11.texture";
+/// Property key "SDL.texture.create.d3d11.texture_u" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_D3D11_TEXTURE_U_POINTER = "SDL.texture.create.d3d11.texture_u";
+/// Property key "SDL.texture.create.d3d11.texture_v" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_D3D11_TEXTURE_V_POINTER = "SDL.texture.create.d3d11.texture_v";
+/// Property key "SDL.texture.create.d3d12.texture" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_D3D12_TEXTURE_POINTER = "SDL.texture.create.d3d12.texture";
+/// Property key "SDL.texture.create.d3d12.texture_u" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_D3D12_TEXTURE_U_POINTER = "SDL.texture.create.d3d12.texture_u";
+/// Property key "SDL.texture.create.d3d12.texture_v" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_D3D12_TEXTURE_V_POINTER = "SDL.texture.create.d3d12.texture_v";
+/// Property key "SDL.texture.create.metal.pixelbuffer" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_METAL_PIXELBUFFER_POINTER = "SDL.texture.create.metal.pixelbuffer";
+/// Property key "SDL.texture.create.opengl.texture" (number).
+const char* SDL_PROP_TEXTURE_CREATE_OPENGL_TEXTURE_NUMBER = "SDL.texture.create.opengl.texture";
+/// Property key "SDL.texture.create.opengl.texture_uv" (number).
+const char* SDL_PROP_TEXTURE_CREATE_OPENGL_TEXTURE_UV_NUMBER = "SDL.texture.create.opengl.texture_uv";
+/// Property key "SDL.texture.create.opengl.texture_u" (number).
+const char* SDL_PROP_TEXTURE_CREATE_OPENGL_TEXTURE_U_NUMBER = "SDL.texture.create.opengl.texture_u";
+/// Property key "SDL.texture.create.opengl.texture_v" (number).
+const char* SDL_PROP_TEXTURE_CREATE_OPENGL_TEXTURE_V_NUMBER = "SDL.texture.create.opengl.texture_v";
+/// Property key "SDL.texture.create.opengles2.texture" (number).
+const char* SDL_PROP_TEXTURE_CREATE_OPENGLES2_TEXTURE_NUMBER = "SDL.texture.create.opengles2.texture";
+/// Property key "SDL.texture.create.opengles2.texture_uv" (number).
+const char* SDL_PROP_TEXTURE_CREATE_OPENGLES2_TEXTURE_UV_NUMBER = "SDL.texture.create.opengles2.texture_uv";
+/// Property key "SDL.texture.create.opengles2.texture_u" (number).
+const char* SDL_PROP_TEXTURE_CREATE_OPENGLES2_TEXTURE_U_NUMBER = "SDL.texture.create.opengles2.texture_u";
+/// Property key "SDL.texture.create.opengles2.texture_v" (number).
+const char* SDL_PROP_TEXTURE_CREATE_OPENGLES2_TEXTURE_V_NUMBER = "SDL.texture.create.opengles2.texture_v";
+/// Property key "SDL.texture.create.vulkan.texture" (number).
+const char* SDL_PROP_TEXTURE_CREATE_VULKAN_TEXTURE_NUMBER = "SDL.texture.create.vulkan.texture";
+/// Property key "SDL.texture.create.vulkan.layout" (number).
+const char* SDL_PROP_TEXTURE_CREATE_VULKAN_LAYOUT_NUMBER = "SDL.texture.create.vulkan.layout";
+/// Property key "SDL.texture.create.gpu.texture" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_GPU_TEXTURE_POINTER = "SDL.texture.create.gpu.texture";
+/// Property key "SDL.texture.create.gpu.texture_uv" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_GPU_TEXTURE_UV_POINTER = "SDL.texture.create.gpu.texture_uv";
+/// Property key "SDL.texture.create.gpu.texture_u" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_GPU_TEXTURE_U_POINTER = "SDL.texture.create.gpu.texture_u";
+/// Property key "SDL.texture.create.gpu.texture_v" (pointer).
+const char* SDL_PROP_TEXTURE_CREATE_GPU_TEXTURE_V_POINTER = "SDL.texture.create.gpu.texture_v";
+/// Property key "SDL.texture.colorspace" (number).
+const char* SDL_PROP_TEXTURE_COLORSPACE_NUMBER = "SDL.texture.colorspace";
+/// Property key "SDL.texture.format" (number).
+const char* SDL_PROP_TEXTURE_FORMAT_NUMBER = "SDL.texture.format";
+/// Property key "SDL.texture.access" (number).
+const char* SDL_PROP_TEXTURE_ACCESS_NUMBER = "SDL.texture.access";
+/// Property key "SDL.texture.width" (number).
+const char* SDL_PROP_TEXTURE_WIDTH_NUMBER = "SDL.texture.width";
+/// Property key "SDL.texture.height" (number).
+const char* SDL_PROP_TEXTURE_HEIGHT_NUMBER = "SDL.texture.height";
+/// Property key "SDL.texture.SDR_white_point" (float).
+const char* SDL_PROP_TEXTURE_SDR_WHITE_POINT_FLOAT = "SDL.texture.SDR_white_point";
+/// Property key "SDL.texture.HDR_headroom" (float).
+const char* SDL_PROP_TEXTURE_HDR_HEADROOM_FLOAT = "SDL.texture.HDR_headroom";
+/// Property key "SDL.texture.d3d11.texture" (pointer).
+const char* SDL_PROP_TEXTURE_D3D11_TEXTURE_POINTER = "SDL.texture.d3d11.texture";
+/// Property key "SDL.texture.d3d11.texture_u" (pointer).
+const char* SDL_PROP_TEXTURE_D3D11_TEXTURE_U_POINTER = "SDL.texture.d3d11.texture_u";
+/// Property key "SDL.texture.d3d11.texture_v" (pointer).
+const char* SDL_PROP_TEXTURE_D3D11_TEXTURE_V_POINTER = "SDL.texture.d3d11.texture_v";
+/// Property key "SDL.texture.d3d12.texture" (pointer).
+const char* SDL_PROP_TEXTURE_D3D12_TEXTURE_POINTER = "SDL.texture.d3d12.texture";
+/// Property key "SDL.texture.d3d12.texture_u" (pointer).
+const char* SDL_PROP_TEXTURE_D3D12_TEXTURE_U_POINTER = "SDL.texture.d3d12.texture_u";
+/// Property key "SDL.texture.d3d12.texture_v" (pointer).
+const char* SDL_PROP_TEXTURE_D3D12_TEXTURE_V_POINTER = "SDL.texture.d3d12.texture_v";
+/// Property key "SDL.texture.opengl.texture" (number).
+const char* SDL_PROP_TEXTURE_OPENGL_TEXTURE_NUMBER = "SDL.texture.opengl.texture";
+/// Property key "SDL.texture.opengl.texture_uv" (number).
+const char* SDL_PROP_TEXTURE_OPENGL_TEXTURE_UV_NUMBER = "SDL.texture.opengl.texture_uv";
+/// Property key "SDL.texture.opengl.texture_u" (number).
+const char* SDL_PROP_TEXTURE_OPENGL_TEXTURE_U_NUMBER = "SDL.texture.opengl.texture_u";
+/// Property key "SDL.texture.opengl.texture_v" (number).
+const char* SDL_PROP_TEXTURE_OPENGL_TEXTURE_V_NUMBER = "SDL.texture.opengl.texture_v";
+/// Property key "SDL.texture.opengl.target" (number).
+const char* SDL_PROP_TEXTURE_OPENGL_TEXTURE_TARGET_NUMBER = "SDL.texture.opengl.target";
+/// Property key "SDL.texture.opengl.tex_w" (float).
+const char* SDL_PROP_TEXTURE_OPENGL_TEX_W_FLOAT = "SDL.texture.opengl.tex_w";
+/// Property key "SDL.texture.opengl.tex_h" (float).
+const char* SDL_PROP_TEXTURE_OPENGL_TEX_H_FLOAT = "SDL.texture.opengl.tex_h";
+/// Property key "SDL.texture.opengles2.texture" (number).
+const char* SDL_PROP_TEXTURE_OPENGLES2_TEXTURE_NUMBER = "SDL.texture.opengles2.texture";
+/// Property key "SDL.texture.opengles2.texture_uv" (number).
+const char* SDL_PROP_TEXTURE_OPENGLES2_TEXTURE_UV_NUMBER = "SDL.texture.opengles2.texture_uv";
+/// Property key "SDL.texture.opengles2.texture_u" (number).
+const char* SDL_PROP_TEXTURE_OPENGLES2_TEXTURE_U_NUMBER = "SDL.texture.opengles2.texture_u";
+/// Property key "SDL.texture.opengles2.texture_v" (number).
+const char* SDL_PROP_TEXTURE_OPENGLES2_TEXTURE_V_NUMBER = "SDL.texture.opengles2.texture_v";
+/// Property key "SDL.texture.opengles2.target" (number).
+const char* SDL_PROP_TEXTURE_OPENGLES2_TEXTURE_TARGET_NUMBER = "SDL.texture.opengles2.target";
+/// Property key "SDL.texture.vulkan.texture" (number).
+const char* SDL_PROP_TEXTURE_VULKAN_TEXTURE_NUMBER = "SDL.texture.vulkan.texture";
+/// Property key "SDL.texture.gpu.texture" (pointer).
+const char* SDL_PROP_TEXTURE_GPU_TEXTURE_POINTER = "SDL.texture.gpu.texture";
+/// Property key "SDL.texture.gpu.texture_uv" (pointer).
+const char* SDL_PROP_TEXTURE_GPU_TEXTURE_UV_POINTER = "SDL.texture.gpu.texture_uv";
+/// Property key "SDL.texture.gpu.texture_u" (pointer).
+const char* SDL_PROP_TEXTURE_GPU_TEXTURE_U_POINTER = "SDL.texture.gpu.texture_u";
+/// Property key "SDL.texture.gpu.texture_v" (pointer).
+const char* SDL_PROP_TEXTURE_GPU_TEXTURE_V_POINTER = "SDL.texture.gpu.texture_v";
+/// Property key "SDL.surface.SDR_white_point" (float).
+const char* SDL_PROP_SURFACE_SDR_WHITE_POINT_FLOAT = "SDL.surface.SDR_white_point";
+/// Property key "SDL.surface.HDR_headroom" (float).
+const char* SDL_PROP_SURFACE_HDR_HEADROOM_FLOAT = "SDL.surface.HDR_headroom";
+/// Property key "SDL.surface.tonemap" (string).
+const char* SDL_PROP_SURFACE_TONEMAP_OPERATOR_STRING = "SDL.surface.tonemap";
+/// Property key "SDL.surface.hotspot.x" (number).
+const char* SDL_PROP_SURFACE_HOTSPOT_X_NUMBER = "SDL.surface.hotspot.x";
+/// Property key "SDL.surface.hotspot.y" (number).
+const char* SDL_PROP_SURFACE_HOTSPOT_Y_NUMBER = "SDL.surface.hotspot.y";
+/// Property key "SDL.surface.rotation" (float).
+const char* SDL_PROP_SURFACE_ROTATION_FLOAT = "SDL.surface.rotation";
+/// Property key "SDL.thread.create.entry_function" (pointer).
+const char* SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER = "SDL.thread.create.entry_function";
+/// Property key "SDL.thread.create.name" (string).
+const char* SDL_PROP_THREAD_CREATE_NAME_STRING = "SDL.thread.create.name";
+/// Property key "SDL.thread.create.userdata" (pointer).
+const char* SDL_PROP_THREAD_CREATE_USERDATA_POINTER = "SDL.thread.create.userdata";
+/// Property key "SDL.thread.create.stacksize" (number).
+const char* SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER = "SDL.thread.create.stacksize";
+/// The pointer to the global `wl_display` object used by the Wayland video backend.
+const char* SDL_PROP_GLOBAL_VIDEO_WAYLAND_WL_DISPLAY_POINTER = "SDL.video.wayland.wl_display";
+/// Property key "SDL.display.HDR_enabled" (boolean).
+const char* SDL_PROP_DISPLAY_HDR_ENABLED_BOOLEAN = "SDL.display.HDR_enabled";
+/// Property key "SDL.display.KMSDRM.panel_orientation" (number).
+const char* SDL_PROP_DISPLAY_KMSDRM_PANEL_ORIENTATION_NUMBER = "SDL.display.KMSDRM.panel_orientation";
+/// Property key "SDL.display.wayland.wl_output" (pointer).
+const char* SDL_PROP_DISPLAY_WAYLAND_WL_OUTPUT_POINTER = "SDL.display.wayland.wl_output";
+/// Property key "SDL.display.windows.hmonitor" (pointer).
+const char* SDL_PROP_DISPLAY_WINDOWS_HMONITOR_POINTER = "SDL.display.windows.hmonitor";
+/// Property key "SDL.window.create.always_on_top" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_ALWAYS_ON_TOP_BOOLEAN = "SDL.window.create.always_on_top";
+/// Property key "SDL.window.create.borderless" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_BORDERLESS_BOOLEAN = "SDL.window.create.borderless";
+/// Property key "SDL.window.create.constrain_popup" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_CONSTRAIN_POPUP_BOOLEAN = "SDL.window.create.constrain_popup";
+/// Property key "SDL.window.create.focusable" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_FOCUSABLE_BOOLEAN = "SDL.window.create.focusable";
+/// Property key "SDL.window.create.external_graphics_context" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN = "SDL.window.create.external_graphics_context";
+/// Property key "SDL.window.create.flags" (number).
+const char* SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER = "SDL.window.create.flags";
+/// Property key "SDL.window.create.fullscreen" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN = "SDL.window.create.fullscreen";
+/// Property key "SDL.window.create.height" (number).
+const char* SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER = "SDL.window.create.height";
+/// Property key "SDL.window.create.hidden" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN = "SDL.window.create.hidden";
+/// Property key "SDL.window.create.high_pixel_density" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN = "SDL.window.create.high_pixel_density";
+/// Property key "SDL.window.create.maximized" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_MAXIMIZED_BOOLEAN = "SDL.window.create.maximized";
+/// Property key "SDL.window.create.menu" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_MENU_BOOLEAN = "SDL.window.create.menu";
+/// Property key "SDL.window.create.metal" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_METAL_BOOLEAN = "SDL.window.create.metal";
+/// Property key "SDL.window.create.minimized" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_MINIMIZED_BOOLEAN = "SDL.window.create.minimized";
+/// Property key "SDL.window.create.modal" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_MODAL_BOOLEAN = "SDL.window.create.modal";
+/// Property key "SDL.window.create.mouse_grabbed" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_MOUSE_GRABBED_BOOLEAN = "SDL.window.create.mouse_grabbed";
+/// Property key "SDL.window.create.opengl" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN = "SDL.window.create.opengl";
+/// Property key "SDL.window.create.parent" (pointer).
+const char* SDL_PROP_WINDOW_CREATE_PARENT_POINTER = "SDL.window.create.parent";
+/// Property key "SDL.window.create.resizable" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_RESIZABLE_BOOLEAN = "SDL.window.create.resizable";
+/// Property key "SDL.window.create.title" (string).
+const char* SDL_PROP_WINDOW_CREATE_TITLE_STRING = "SDL.window.create.title";
+/// Property key "SDL.window.create.transparent" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_TRANSPARENT_BOOLEAN = "SDL.window.create.transparent";
+/// Property key "SDL.window.create.tooltip" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_TOOLTIP_BOOLEAN = "SDL.window.create.tooltip";
+/// Property key "SDL.window.create.utility" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_UTILITY_BOOLEAN = "SDL.window.create.utility";
+/// Property key "SDL.window.create.vulkan" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_VULKAN_BOOLEAN = "SDL.window.create.vulkan";
+/// Property key "SDL.window.create.width" (number).
+const char* SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER = "SDL.window.create.width";
+/// Property key "SDL.window.create.x" (number).
+const char* SDL_PROP_WINDOW_CREATE_X_NUMBER = "SDL.window.create.x";
+/// Property key "SDL.window.create.y" (number).
+const char* SDL_PROP_WINDOW_CREATE_Y_NUMBER = "SDL.window.create.y";
+/// Property key "SDL.window.create.cocoa.window" (pointer).
+const char* SDL_PROP_WINDOW_CREATE_COCOA_WINDOW_POINTER = "SDL.window.create.cocoa.window";
+/// Property key "SDL.window.create.cocoa.view" (pointer).
+const char* SDL_PROP_WINDOW_CREATE_COCOA_VIEW_POINTER = "SDL.window.create.cocoa.view";
+/// Property key "SDL.window.create.uikit.windowscene" (pointer).
+const char* SDL_PROP_WINDOW_CREATE_WINDOWSCENE_POINTER = "SDL.window.create.uikit.windowscene";
+/// Property key "SDL.window.create.wayland.surface_role_custom" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_WAYLAND_SURFACE_ROLE_CUSTOM_BOOLEAN = "SDL.window.create.wayland.surface_role_custom";
+/// Property key "SDL.window.create.wayland.create_egl_window" (boolean).
+const char* SDL_PROP_WINDOW_CREATE_WAYLAND_CREATE_EGL_WINDOW_BOOLEAN = "SDL.window.create.wayland.create_egl_window";
+/// Property key "SDL.window.create.wayland.wl_surface" (pointer).
+const char* SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER = "SDL.window.create.wayland.wl_surface";
+/// Property key "SDL.window.create.win32.hwnd" (pointer).
+const char* SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER = "SDL.window.create.win32.hwnd";
+/// Property key "SDL.window.create.win32.pixel_format_hwnd" (pointer).
+const char* SDL_PROP_WINDOW_CREATE_WIN32_PIXEL_FORMAT_HWND_POINTER = "SDL.window.create.win32.pixel_format_hwnd";
+/// Property key "SDL.window.create.x11.window" (number).
+const char* SDL_PROP_WINDOW_CREATE_X11_WINDOW_NUMBER = "SDL.window.create.x11.window";
+/// Property key "SDL.window.create.emscripten.canvas_id" (string).
+const char* SDL_PROP_WINDOW_CREATE_EMSCRIPTEN_CANVAS_ID_STRING = "SDL.window.create.emscripten.canvas_id";
+/// Property key "SDL.window.create.emscripten.keyboard_element" (string).
+const char* SDL_PROP_WINDOW_CREATE_EMSCRIPTEN_KEYBOARD_ELEMENT_STRING = "SDL.window.create.emscripten.keyboard_element";
+/// Property key "SDL.window.shape" (pointer).
+const char* SDL_PROP_WINDOW_SHAPE_POINTER = "SDL.window.shape";
+/// Property key "SDL.window.HDR_enabled" (boolean).
+const char* SDL_PROP_WINDOW_HDR_ENABLED_BOOLEAN = "SDL.window.HDR_enabled";
+/// Property key "SDL.window.SDR_white_level" (float).
+const char* SDL_PROP_WINDOW_SDR_WHITE_LEVEL_FLOAT = "SDL.window.SDR_white_level";
+/// Property key "SDL.window.HDR_headroom" (float).
+const char* SDL_PROP_WINDOW_HDR_HEADROOM_FLOAT = "SDL.window.HDR_headroom";
+/// Property key "SDL.window.android.window" (pointer).
+const char* SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER = "SDL.window.android.window";
+/// Property key "SDL.window.android.surface" (pointer).
+const char* SDL_PROP_WINDOW_ANDROID_SURFACE_POINTER = "SDL.window.android.surface";
+/// Property key "SDL.window.uikit.window" (pointer).
+const char* SDL_PROP_WINDOW_UIKIT_WINDOW_POINTER = "SDL.window.uikit.window";
+/// Property key "SDL.window.uikit.metal_view_tag" (number).
+const char* SDL_PROP_WINDOW_UIKIT_METAL_VIEW_TAG_NUMBER = "SDL.window.uikit.metal_view_tag";
+/// Property key "SDL.window.uikit.opengl.framebuffer" (number).
+const char* SDL_PROP_WINDOW_UIKIT_OPENGL_FRAMEBUFFER_NUMBER = "SDL.window.uikit.opengl.framebuffer";
+/// Property key "SDL.window.uikit.opengl.renderbuffer" (number).
+const char* SDL_PROP_WINDOW_UIKIT_OPENGL_RENDERBUFFER_NUMBER = "SDL.window.uikit.opengl.renderbuffer";
+/// Property key "SDL.window.uikit.opengl.resolve_framebuffer" (number).
+const char* SDL_PROP_WINDOW_UIKIT_OPENGL_RESOLVE_FRAMEBUFFER_NUMBER = "SDL.window.uikit.opengl.resolve_framebuffer";
+/// Property key "SDL.window.kmsdrm.dev_index" (number).
+const char* SDL_PROP_WINDOW_KMSDRM_DEVICE_INDEX_NUMBER = "SDL.window.kmsdrm.dev_index";
+/// Property key "SDL.window.kmsdrm.drm_fd" (number).
+const char* SDL_PROP_WINDOW_KMSDRM_DRM_FD_NUMBER = "SDL.window.kmsdrm.drm_fd";
+/// Property key "SDL.window.kmsdrm.gbm_dev" (pointer).
+const char* SDL_PROP_WINDOW_KMSDRM_GBM_DEVICE_POINTER = "SDL.window.kmsdrm.gbm_dev";
+/// Property key "SDL.window.cocoa.window" (pointer).
+const char* SDL_PROP_WINDOW_COCOA_WINDOW_POINTER = "SDL.window.cocoa.window";
+/// Property key "SDL.window.cocoa.metal_view_tag" (number).
+const char* SDL_PROP_WINDOW_COCOA_METAL_VIEW_TAG_NUMBER = "SDL.window.cocoa.metal_view_tag";
+/// Property key "SDL.window.openvr.overlay_id" (number).
+const char* SDL_PROP_WINDOW_OPENVR_OVERLAY_ID_NUMBER = "SDL.window.openvr.overlay_id";
+/// Property key "SDL.window.vivante.display" (pointer).
+const char* SDL_PROP_WINDOW_VIVANTE_DISPLAY_POINTER = "SDL.window.vivante.display";
+/// Property key "SDL.window.vivante.window" (pointer).
+const char* SDL_PROP_WINDOW_VIVANTE_WINDOW_POINTER = "SDL.window.vivante.window";
+/// Property key "SDL.window.vivante.surface" (pointer).
+const char* SDL_PROP_WINDOW_VIVANTE_SURFACE_POINTER = "SDL.window.vivante.surface";
+/// Property key "SDL.window.win32.hwnd" (pointer).
+const char* SDL_PROP_WINDOW_WIN32_HWND_POINTER = "SDL.window.win32.hwnd";
+/// Property key "SDL.window.win32.hdc" (pointer).
+const char* SDL_PROP_WINDOW_WIN32_HDC_POINTER = "SDL.window.win32.hdc";
+/// Property key "SDL.window.win32.instance" (pointer).
+const char* SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER = "SDL.window.win32.instance";
+/// Property key "SDL.window.wayland.display" (pointer).
+const char* SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER = "SDL.window.wayland.display";
+/// Property key "SDL.window.wayland.surface" (pointer).
+const char* SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER = "SDL.window.wayland.surface";
+/// Property key "SDL.window.wayland.viewport" (pointer).
+const char* SDL_PROP_WINDOW_WAYLAND_VIEWPORT_POINTER = "SDL.window.wayland.viewport";
+/// Property key "SDL.window.wayland.egl_window" (pointer).
+const char* SDL_PROP_WINDOW_WAYLAND_EGL_WINDOW_POINTER = "SDL.window.wayland.egl_window";
+/// Property key "SDL.window.wayland.xdg_surface" (pointer).
+const char* SDL_PROP_WINDOW_WAYLAND_XDG_SURFACE_POINTER = "SDL.window.wayland.xdg_surface";
+/// Property key "SDL.window.wayland.xdg_toplevel" (pointer).
+const char* SDL_PROP_WINDOW_WAYLAND_XDG_TOPLEVEL_POINTER = "SDL.window.wayland.xdg_toplevel";
+/// Property key "SDL.window.wayland.xdg_toplevel_export_handle" (string).
+const char* SDL_PROP_WINDOW_WAYLAND_XDG_TOPLEVEL_EXPORT_HANDLE_STRING = "SDL.window.wayland.xdg_toplevel_export_handle";
+/// Property key "SDL.window.wayland.xdg_popup" (pointer).
+const char* SDL_PROP_WINDOW_WAYLAND_XDG_POPUP_POINTER = "SDL.window.wayland.xdg_popup";
+/// Property key "SDL.window.wayland.xdg_positioner" (pointer).
+const char* SDL_PROP_WINDOW_WAYLAND_XDG_POSITIONER_POINTER = "SDL.window.wayland.xdg_positioner";
+/// Property key "SDL.window.x11.display" (pointer).
+const char* SDL_PROP_WINDOW_X11_DISPLAY_POINTER = "SDL.window.x11.display";
+/// Property key "SDL.window.x11.screen" (number).
+const char* SDL_PROP_WINDOW_X11_SCREEN_NUMBER = "SDL.window.x11.screen";
+/// Property key "SDL.window.x11.window" (number).
+const char* SDL_PROP_WINDOW_X11_WINDOW_NUMBER = "SDL.window.x11.window";
+/// Property key "SDL.window.emscripten.canvas_id" (string).
+const char* SDL_PROP_WINDOW_EMSCRIPTEN_CANVAS_ID_STRING = "SDL.window.emscripten.canvas_id";
+/// Property key "SDL.window.emscripten.keyboard_element" (string).
+const char* SDL_PROP_WINDOW_EMSCRIPTEN_KEYBOARD_ELEMENT_STRING = "SDL.window.emscripten.keyboard_element";
+
+/// Deprecated alias for SDL_PROP_JOYSTICK_CAP_MONO_LED_BOOLEAN.
+const SDL_PROP_GAMEPAD_CAP_MONO_LED_BOOLEAN = SDL_PROP_JOYSTICK_CAP_MONO_LED_BOOLEAN;
+/// Deprecated alias for SDL_PROP_JOYSTICK_CAP_PLAYER_LED_BOOLEAN.
+const SDL_PROP_GAMEPAD_CAP_PLAYER_LED_BOOLEAN = SDL_PROP_JOYSTICK_CAP_PLAYER_LED_BOOLEAN;
+/// Deprecated alias for SDL_PROP_JOYSTICK_CAP_RGB_LED_BOOLEAN.
+const SDL_PROP_GAMEPAD_CAP_RGB_LED_BOOLEAN = SDL_PROP_JOYSTICK_CAP_RGB_LED_BOOLEAN;
+/// Deprecated alias for SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN.
+const SDL_PROP_GAMEPAD_CAP_RUMBLE_BOOLEAN = SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN;
+/// Deprecated alias for SDL_PROP_JOYSTICK_CAP_TRIGGER_RUMBLE_BOOLEAN.
+const SDL_PROP_GAMEPAD_CAP_TRIGGER_RUMBLE_BOOLEAN = SDL_PROP_JOYSTICK_CAP_TRIGGER_RUMBLE_BOOLEAN;
+
+/// Printf format for a signed 32-bit integer.
+const char* SDL_PRIs32 = "d";
+/// Printf format for an unsigned 32-bit integer.
+const char* SDL_PRIu32 = "u";
+/// Printf format for a 32-bit integer in lowercase hexadecimal.
+const char* SDL_PRIx32 = "x";
+/// Printf format for a 32-bit integer in uppercase hexadecimal.
+const char* SDL_PRIX32 = "X";
+#if Windows
+/// Printf format for a signed 64-bit integer.
+const char* SDL_PRIs64 = "I64d";
+/// Printf format for an unsigned 64-bit integer.
+const char* SDL_PRIu64 = "I64u";
+/// Printf format for a 64-bit integer in lowercase hexadecimal.
+const char* SDL_PRIx64 = "I64x";
+/// Printf format for a 64-bit integer in uppercase hexadecimal.
+const char* SDL_PRIX64 = "I64X";
+/// Printf length modifier for a 64-bit `long long`.
+const char* SDL_PRILL_PREFIX = "I64";
+/// Printf format for a 64-bit `long long`.
+const char* SDL_PRILLd = "I64d";
+/// Printf format for an unsigned 64-bit `long long`.
+const char* SDL_PRILLu = "I64u";
+/// Printf format for a 64-bit `long long` in lowercase hexadecimal.
+const char* SDL_PRILLx = "I64x";
+/// Printf format for a 64-bit `long long` in uppercase hexadecimal.
+const char* SDL_PRILLX = "I64X";
+#else
+#if macOS
+/// Printf format for a signed 64-bit integer.
+const char* SDL_PRIs64 = "lld";
+/// Printf format for an unsigned 64-bit integer.
+const char* SDL_PRIu64 = "llu";
+/// Printf format for a 64-bit integer in lowercase hexadecimal.
+const char* SDL_PRIx64 = "llx";
+/// Printf format for a 64-bit integer in uppercase hexadecimal.
+const char* SDL_PRIX64 = "llX";
+#else
+/// Printf format for a signed 64-bit integer.
+const char* SDL_PRIs64 = "ld";
+/// Printf format for an unsigned 64-bit integer.
+const char* SDL_PRIu64 = "lu";
+/// Printf format for a 64-bit integer in lowercase hexadecimal.
+const char* SDL_PRIx64 = "lx";
+/// Printf format for a 64-bit integer in uppercase hexadecimal.
+const char* SDL_PRIX64 = "lX";
+#endif
+/// Printf length modifier for a 64-bit `long long`.
+const char* SDL_PRILL_PREFIX = "ll";
+/// Printf format for a 64-bit `long long`.
+const char* SDL_PRILLd = "lld";
+/// Printf format for an unsigned 64-bit `long long`.
+const char* SDL_PRILLu = "llu";
+/// Printf format for a 64-bit `long long` in lowercase hexadecimal.
+const char* SDL_PRILLx = "llx";
+/// Printf format for a 64-bit `long long` in uppercase hexadecimal.
+const char* SDL_PRILLX = "llX";
+#endif
+
+/// The code revision of the SDL library.
+const char* SDL_REVISION = "SDL-release-3.4.16-0-gfa2c02bb6";
+/// The name of the software renderer.
+const char* SDL_SOFTWARE_RENDERER = "software";
+/// The name of the GPU renderer.
+const char* SDL_GPU_RENDERER = "gpu";
+/// Pi as a double-precision constant.
+const double SDL_PI_D = 3.141592653589793;
+/// Android external storage is readable.
+const SDL_ANDROID_EXTERNAL_STORAGE_READ = 0x01;
+/// Android external storage is writable.
+const SDL_ANDROID_EXTERNAL_STORAGE_WRITE = 0x02;
 /// The asynchronous I/O operation structure.
 struct SDL_AsyncIO {}
 /// A queue of completed asynchronous I/O tasks.
@@ -5000,6 +6191,8 @@ using SDL_PenID = Uint32;
 using SDL_PenInputFlags = Uint32;
 /// An ID that represents a properties set.
 using SDL_PropertiesID = Uint32;
+/// A callback to be used with SDL_RequestAndroidPermission.
+using SDL_RequestAndroidPermissionCallback = void(void*?, char*?, bool)?;
 /// This is a unique ID for a sensor for the time it is connected to the system, and is never reused for the lifetime of the application.
 using SDL_SensorID = Uint32;
 /// An atomic spinlock.
@@ -5030,12 +6223,16 @@ using SDL_TrayEntryFlags = Uint32;
 using SDL_WindowFlags = Uint64;
 /// This is a unique ID for a window.
 using SDL_WindowID = Uint32;
+/// A callback to be used with SDL_SetWindowsMessageHook. Takes a Win32 MSG pointer, spelled void* so this module stays mixable with a windows.h import.
+using SDL_WindowsMessageHook = bool(void*?, void*?)?;
 /// A callback to be used with SDL_SetX11EventHook.
 using SDL_X11EventHook = bool(void*?, XEvent*?)?;
 /// A callback used to implement SDL_calloc().
 using SDL_calloc_func = void*?(c_size_t, c_size_t)?;
 /// A callback used to implement SDL_free().
 using SDL_free_func = void(void*?)?;
+/// A callback to be used with SDL_SetiOSAnimationCallback.
+using SDL_iOSAnimationCallback = void(void*?)?;
 /// An opaque handle representing string encoding conversion state.
 using SDL_iconv_t = SDL_iconv_data_t*?;
 /// The prototype for the application's main() function.
@@ -7389,6 +8586,74 @@ extern Uint64 SDL_GetStorageSpaceRemaining(SDL_Storage* storage);
 extern char*?[*]? SDL_GlobStorageDirectory(SDL_Storage* storage, char*? path, char*? pattern, SDL_GlobFlags flags, c_int*? count);
 /// Set a callback for every X11 event.
 extern void SDL_SetX11EventHook(SDL_X11EventHook callback, void*? userdata);
+/// Set a callback for every Windows message, run before TranslateMessage().
+extern void SDL_SetWindowsMessageHook(SDL_WindowsMessageHook callback, void*? userdata);
+/// Get the D3D9 adapter index that matches the specified display.
+extern c_int SDL_GetDirect3D9AdapterIndex(SDL_DisplayID displayID);
+/// Get the DXGI Adapter and Output indices for the specified display.
+extern bool SDL_GetDXGIOutputInfo(SDL_DisplayID displayID, c_int* adapterIndex, c_int* outputIndex);
+/// Register a win32 window class for SDL's use.
+extern bool SDL_RegisterApp(char*? name, Uint32 style, void*? hInst);
+/// Deregister the win32 window class from an SDL_RegisterApp call.
+extern void SDL_UnregisterApp();
+/// Sets the UNIX nice value for a thread.
+extern bool SDL_SetLinuxThreadPriority(Sint64 threadID, c_int priority);
+/// Sets the priority (not nice level) and scheduling policy for a thread.
+extern bool SDL_SetLinuxThreadPriorityAndPolicy(Sint64 threadID, c_int sdlPriority, c_int schedPolicy);
+/// Use this function to set the animation callback on Apple iOS.
+extern bool SDL_SetiOSAnimationCallback(SDL_Window* window, c_int interval, SDL_iOSAnimationCallback callback, void*? callbackParam);
+/// Use this function to enable or disable the SDL event pump on Apple iOS.
+extern void SDL_SetiOSEventPump(bool enabled);
+/// Let iOS apps with external event handling report onApplicationDidChangeStatusBarOrientation.
+extern void SDL_OnApplicationDidChangeStatusBarOrientation();
+/// Get the Android Java Native Interface Environment of the current thread.
+extern void*? SDL_GetAndroidJNIEnv();
+/// Retrieve the Java instance of the Android activity class.
+extern void*? SDL_GetAndroidActivity();
+/// Query Android API level of the current device.
+extern c_int SDL_GetAndroidSDKVersion();
+/// Query if the application is running on a Chromebook.
+extern bool SDL_IsChromebook();
+/// Query if the application is running on a Samsung DeX docking station.
+extern bool SDL_IsDeXMode();
+/// Trigger the Android system back button behavior.
+extern void SDL_SendAndroidBackButton();
+/// Get the path used for internal storage for this Android application.
+extern char*? SDL_GetAndroidInternalStoragePath();
+/// Get the current state of external storage for this Android application.
+extern Uint32 SDL_GetAndroidExternalStorageState();
+/// Get the path used for external storage for this Android application.
+extern char*? SDL_GetAndroidExternalStoragePath();
+/// Get the path used for caching data for this Android application.
+extern char*? SDL_GetAndroidCachePath();
+/// Request permissions at runtime, asynchronously.
+extern bool SDL_RequestAndroidPermission(char* permission, SDL_RequestAndroidPermissionCallback cb, void*? userdata);
+/// Shows an Android toast notification.
+extern bool SDL_ShowAndroidToast(char* message, c_int duration, c_int gravity, c_int xoffset, c_int yoffset);
+/// Send a user command to SDLActivity.
+extern bool SDL_SendAndroidMessage(Uint32 command, c_int param);
+/// Gets a reference to the global async task queue handle for GDK, initializing if needed. The handle is spelled void* since GDK types come from another header.
+extern bool SDL_GetGDKTaskQueue(void*?* outTaskQueue);
+/// Gets a reference to the default user handle for GDK. The handle is spelled void* since GDK types come from another header.
+extern bool SDL_GetGDKDefaultUser(void*?* outUserHandle);
+/// Call this to suspend GPU operation on Xbox when you receive the SDL_EVENT_DID_ENTER_BACKGROUND event.
+extern void SDL_GDKSuspendGPU(SDL_GPUDevice* device);
+/// Call this to resume GPU operation on Xbox when you receive the SDL_EVENT_WILL_ENTER_FOREGROUND event.
+extern void SDL_GDKResumeGPU(SDL_GPUDevice* device);
+/// Dynamically load the Vulkan loader library.
+extern bool SDL_Vulkan_LoadLibrary(char*? path);
+/// Get the address of the `vkGetInstanceProcAddr` function.
+extern SDL_FunctionPointer SDL_Vulkan_GetVkGetInstanceProcAddr();
+/// Unload the Vulkan library previously loaded by SDL_Vulkan_LoadLibrary().
+extern void SDL_Vulkan_UnloadLibrary();
+/// Get the Vulkan instance extensions needed for vkCreateInstance.
+extern char*?[*]? SDL_Vulkan_GetInstanceExtensions(Uint32* count);
+/// Create a Vulkan rendering surface for a window. VkInstance and VkAllocationCallbacks are spelled void*, VkSurfaceKHR is Uint64, so this module stays mixable with a vulkan.h import.
+extern bool SDL_Vulkan_CreateSurface(SDL_Window* window, void* instance, void*? allocator, Uint64* surface);
+/// Destroy the Vulkan rendering surface of a window. VkInstance and VkAllocationCallbacks are spelled void*, VkSurfaceKHR is Uint64, so this module stays mixable with a vulkan.h import.
+extern void SDL_Vulkan_DestroySurface(void* instance, Uint64 surface, void*? allocator);
+/// Query support for presentation via a given physical device and queue family. VkInstance and VkPhysicalDevice are spelled void* so this module stays mixable with a vulkan.h import.
+extern bool SDL_Vulkan_GetPresentationSupport(void* instance, void* physicalDevice, Uint32 queueFamilyIndex);
 /// Query if the current device is a tablet.
 extern bool SDL_IsTablet();
 /// Query if the current device is a TV.
@@ -7503,3 +8768,461 @@ extern c_int SDL_RunApp(c_int argc, char*?[*]? argv, SDL_main_func mainFunction,
 extern c_int SDL_EnterAppMainCallbacks(c_int argc, char*?[*]? argv, SDL_AppInit_func appinit, SDL_AppIterate_func appiter, SDL_AppEvent_func appevent, SDL_AppQuit_func appquit);
 /// Callback from the application to let the suspend continue.
 extern void SDL_GDKSuspendComplete();
+/// Compose an audio format value from its components.
+SDL_AudioFormat SDL_DEFINE_AUDIO_FORMAT(c_int isSigned, c_int bigendian, c_int flt, c_int size) {
+    return (isSigned << 15) | (bigendian << 12) | (flt << 8) | (size & SDL_AUDIO_MASK_BITSIZE);
+}
+/// Retrieve the size, in bits, from an audio format.
+c_int SDL_AUDIO_BITSIZE(SDL_AudioFormat x) {
+    return x & SDL_AUDIO_MASK_BITSIZE;
+}
+/// Retrieve the size, in bytes, from an audio format.
+c_int SDL_AUDIO_BYTESIZE(SDL_AudioFormat x) {
+    return SDL_AUDIO_BITSIZE(x) / 8;
+}
+/// Determine if an audio format represents floating point data.
+c_int SDL_AUDIO_ISFLOAT(SDL_AudioFormat x) {
+    return x & SDL_AUDIO_MASK_FLOAT;
+}
+/// Determine if an audio format represents bigendian data.
+c_int SDL_AUDIO_ISBIGENDIAN(SDL_AudioFormat x) {
+    return x & SDL_AUDIO_MASK_BIG_ENDIAN;
+}
+/// Determine if an audio format represents littleendian data.
+c_int SDL_AUDIO_ISLITTLEENDIAN(SDL_AudioFormat x) {
+    if SDL_AUDIO_ISBIGENDIAN(x) != 0 return 0;
+    return 1;
+}
+/// Determine if an audio format represents signed data.
+c_int SDL_AUDIO_ISSIGNED(SDL_AudioFormat x) {
+    return x & SDL_AUDIO_MASK_SIGNED;
+}
+/// Determine if an audio format represents integer data.
+c_int SDL_AUDIO_ISINT(SDL_AudioFormat x) {
+    if SDL_AUDIO_ISFLOAT(x) != 0 return 0;
+    return 1;
+}
+/// Determine if an audio format represents unsigned data.
+c_int SDL_AUDIO_ISUNSIGNED(SDL_AudioFormat x) {
+    if SDL_AUDIO_ISSIGNED(x) != 0 return 0;
+    return 1;
+}
+/// Retrieve the size, in bytes, of an audio frame for an audio spec.
+c_int SDL_AUDIO_FRAMESIZE(SDL_AudioSpec x) {
+    return SDL_AUDIO_BYTESIZE(x.format) * x.channels;
+}
+/// Compose a FourCC value from four characters.
+Uint32 SDL_FOURCC(c_int a, c_int b, c_int c, c_int d) {
+    return (Uint32(Uint8(a)) << 0) | (Uint32(Uint8(b)) << 8) | (Uint32(Uint8(c)) << 16) | (Uint32(Uint8(d)) << 24);
+}
+/// Compose a FourCC pixel format value from four characters.
+Uint32 SDL_DEFINE_PIXELFOURCC(c_int a, c_int b, c_int c, c_int d) {
+    return SDL_FOURCC(a, b, c, d);
+}
+/// Compose a pixel format value from its components.
+SDL_PixelFormat SDL_DEFINE_PIXELFORMAT(c_int type, c_int order, c_int layout, c_int bits, c_int bytes) {
+    return SDL_PixelFormat((1 << 28) | (type << 24) | (order << 20) | (layout << 16) | (bits << 8) | bytes);
+}
+/// Get the flag field of a pixel format.
+c_int SDL_PIXELFLAG(SDL_PixelFormat format) {
+    return (format >> 28) & 0x0F;
+}
+/// Get the type field of a pixel format.
+c_int SDL_PIXELTYPE(SDL_PixelFormat format) {
+    return (format >> 24) & 0x0F;
+}
+/// Get the order field of a pixel format.
+c_int SDL_PIXELORDER(SDL_PixelFormat format) {
+    return (format >> 20) & 0x0F;
+}
+/// Get the layout field of a pixel format.
+c_int SDL_PIXELLAYOUT(SDL_PixelFormat format) {
+    return (format >> 16) & 0x0F;
+}
+/// Get the bits per pixel of a pixel format, or 0 for FourCC formats.
+c_int SDL_BITSPERPIXEL(SDL_PixelFormat format) {
+    if SDL_ISPIXELFORMAT_FOURCC(format) return 0;
+    return (format >> 8) & 0xFF;
+}
+/// Get the bytes per pixel of a pixel format.
+c_int SDL_BYTESPERPIXEL(SDL_PixelFormat format) {
+    if SDL_ISPIXELFORMAT_FOURCC(format) {
+        if format == SDL_PIXELFORMAT_YUY2 || format == SDL_PIXELFORMAT_UYVY || format == SDL_PIXELFORMAT_YVYU || format == SDL_PIXELFORMAT_P010 return 2;
+        return 1;
+    }
+    return format & 0xFF;
+}
+/// Determine if a pixel format is indexed.
+bool SDL_ISPIXELFORMAT_INDEXED(SDL_PixelFormat format) {
+    if SDL_ISPIXELFORMAT_FOURCC(format) return false;
+    var t = SDL_PIXELTYPE(format);
+    return t == SDL_PIXELTYPE_INDEX1 || t == SDL_PIXELTYPE_INDEX2 || t == SDL_PIXELTYPE_INDEX4 || t == SDL_PIXELTYPE_INDEX8;
+}
+/// Determine if a pixel format is packed.
+bool SDL_ISPIXELFORMAT_PACKED(SDL_PixelFormat format) {
+    if SDL_ISPIXELFORMAT_FOURCC(format) return false;
+    var t = SDL_PIXELTYPE(format);
+    return t == SDL_PIXELTYPE_PACKED8 || t == SDL_PIXELTYPE_PACKED16 || t == SDL_PIXELTYPE_PACKED32;
+}
+/// Determine if a pixel format is an array of channels.
+bool SDL_ISPIXELFORMAT_ARRAY(SDL_PixelFormat format) {
+    if SDL_ISPIXELFORMAT_FOURCC(format) return false;
+    var t = SDL_PIXELTYPE(format);
+    return t == SDL_PIXELTYPE_ARRAYU8 || t == SDL_PIXELTYPE_ARRAYU16 || t == SDL_PIXELTYPE_ARRAYU32 || t == SDL_PIXELTYPE_ARRAYF16 || t == SDL_PIXELTYPE_ARRAYF32;
+}
+/// Determine if a pixel format is a 10-bit packed format.
+bool SDL_ISPIXELFORMAT_10BIT(SDL_PixelFormat format) {
+    if SDL_ISPIXELFORMAT_FOURCC(format) return false;
+    return SDL_PIXELTYPE(format) == SDL_PIXELTYPE_PACKED32 && SDL_PIXELLAYOUT(format) == SDL_PACKEDLAYOUT_2101010;
+}
+/// Determine if a pixel format is a floating point format.
+bool SDL_ISPIXELFORMAT_FLOAT(SDL_PixelFormat format) {
+    if SDL_ISPIXELFORMAT_FOURCC(format) return false;
+    var t = SDL_PIXELTYPE(format);
+    return t == SDL_PIXELTYPE_ARRAYF16 || t == SDL_PIXELTYPE_ARRAYF32;
+}
+/// Determine if a pixel format has an alpha channel.
+bool SDL_ISPIXELFORMAT_ALPHA(SDL_PixelFormat format) {
+    if SDL_ISPIXELFORMAT_PACKED(format) {
+        var o = SDL_PIXELORDER(format);
+        return o == SDL_PACKEDORDER_ARGB || o == SDL_PACKEDORDER_RGBA || o == SDL_PACKEDORDER_ABGR || o == SDL_PACKEDORDER_BGRA;
+    }
+    if SDL_ISPIXELFORMAT_ARRAY(format) {
+        var o = SDL_PIXELORDER(format);
+        return o == SDL_ARRAYORDER_ARGB || o == SDL_ARRAYORDER_RGBA || o == SDL_ARRAYORDER_ABGR || o == SDL_ARRAYORDER_BGRA;
+    }
+    return false;
+}
+/// Determine if a pixel format is a FourCC format.
+bool SDL_ISPIXELFORMAT_FOURCC(SDL_PixelFormat format) {
+    return format != 0 && SDL_PIXELFLAG(format) != 1;
+}
+/// Compose a colorspace value from its components.
+SDL_Colorspace SDL_DEFINE_COLORSPACE(c_int type, c_int range, c_int primaries, c_int transfer, c_int matrix, c_int chroma) {
+    return (type << 28) | (range << 24) | (chroma << 20) | (primaries << 10) | (transfer << 5) | matrix;
+}
+/// Get the color type of a colorspace.
+SDL_ColorType SDL_COLORSPACETYPE(SDL_Colorspace cspace) {
+    return (cspace >> 28) & 0x0F;
+}
+/// Get the color range of a colorspace.
+SDL_ColorRange SDL_COLORSPACERANGE(SDL_Colorspace cspace) {
+    return (cspace >> 24) & 0x0F;
+}
+/// Get the chroma location of a colorspace.
+SDL_ChromaLocation SDL_COLORSPACECHROMA(SDL_Colorspace cspace) {
+    return (cspace >> 20) & 0x0F;
+}
+/// Get the color primaries of a colorspace.
+SDL_ColorPrimaries SDL_COLORSPACEPRIMARIES(SDL_Colorspace cspace) {
+    return (cspace >> 10) & 0x1F;
+}
+/// Get the transfer characteristics of a colorspace.
+SDL_TransferCharacteristics SDL_COLORSPACETRANSFER(SDL_Colorspace cspace) {
+    return (cspace >> 5) & 0x1F;
+}
+/// Get the matrix coefficients of a colorspace.
+SDL_MatrixCoefficients SDL_COLORSPACEMATRIX(SDL_Colorspace cspace) {
+    return cspace & 0x1F;
+}
+/// Determine if a colorspace uses BT.601 matrix coefficients.
+bool SDL_ISCOLORSPACE_MATRIX_BT601(SDL_Colorspace cspace) {
+    var m = SDL_COLORSPACEMATRIX(cspace);
+    return m == SDL_MATRIX_COEFFICIENTS_BT601 || m == SDL_MATRIX_COEFFICIENTS_BT470BG;
+}
+/// Determine if a colorspace uses BT.709 matrix coefficients.
+bool SDL_ISCOLORSPACE_MATRIX_BT709(SDL_Colorspace cspace) {
+    return SDL_COLORSPACEMATRIX(cspace) == SDL_MATRIX_COEFFICIENTS_BT709;
+}
+/// Determine if a colorspace uses BT.2020 non-constant luminance matrix coefficients.
+bool SDL_ISCOLORSPACE_MATRIX_BT2020_NCL(SDL_Colorspace cspace) {
+    return SDL_COLORSPACEMATRIX(cspace) == SDL_MATRIX_COEFFICIENTS_BT2020_NCL;
+}
+/// Determine if a colorspace has limited range.
+bool SDL_ISCOLORSPACE_LIMITED_RANGE(SDL_Colorspace cspace) {
+    return SDL_COLORSPACERANGE(cspace) != SDL_COLOR_RANGE_FULL;
+}
+/// Determine if a colorspace has full range.
+bool SDL_ISCOLORSPACE_FULL_RANGE(SDL_Colorspace cspace) {
+    return SDL_COLORSPACERANGE(cspace) == SDL_COLOR_RANGE_FULL;
+}
+/// Byte-swap an unsigned 16-bit number.
+Uint16 SDL_Swap16(Uint16 x) {
+    return (x << 8) | (x >> 8);
+}
+/// Byte-swap an unsigned 32-bit number.
+Uint32 SDL_Swap32(Uint32 x) {
+    return ((x & 0xFF) << 24) | (((x >> 8) & 0xFF) << 16) | (((x >> 16) & 0xFF) << 8) | (x >> 24);
+}
+/// Byte-swap an unsigned 64-bit number.
+Uint64 SDL_Swap64(Uint64 x) {
+    return ((x & 0xFF) << 56) | (((x >> 8) & 0xFF) << 48) | (((x >> 16) & 0xFF) << 40) | (((x >> 24) & 0xFF) << 32) | (((x >> 32) & 0xFF) << 24) | (((x >> 40) & 0xFF) << 16) | (((x >> 48) & 0xFF) << 8) | (x >> 56);
+}
+private union FloatUintPun {
+    float32 f;
+    Uint32 u;
+}
+/// Byte-swap a floating point number.
+float32 SDL_SwapFloat(float32 x) {
+    FloatUintPun p = undefined;
+    p.f = x;
+    p.u = SDL_Swap32(p.u);
+    return p.f;
+}
+/// Swap a 16-bit value from littleendian to native byte order.
+Uint16 SDL_Swap16LE(Uint16 x) {
+    return x;
+}
+/// Swap a 32-bit value from littleendian to native byte order.
+Uint32 SDL_Swap32LE(Uint32 x) {
+    return x;
+}
+/// Swap a 64-bit value from littleendian to native byte order.
+Uint64 SDL_Swap64LE(Uint64 x) {
+    return x;
+}
+/// Swap a float from littleendian to native byte order.
+float32 SDL_SwapFloatLE(float32 x) {
+    return x;
+}
+/// Swap a 16-bit value from bigendian to native byte order.
+Uint16 SDL_Swap16BE(Uint16 x) {
+    return SDL_Swap16(x);
+}
+/// Swap a 32-bit value from bigendian to native byte order.
+Uint32 SDL_Swap32BE(Uint32 x) {
+    return SDL_Swap32(x);
+}
+/// Swap a 64-bit value from bigendian to native byte order.
+Uint64 SDL_Swap64BE(Uint64 x) {
+    return SDL_Swap64(x);
+}
+/// Swap a float from bigendian to native byte order.
+float32 SDL_SwapFloatBE(float32 x) {
+    return SDL_SwapFloat(x);
+}
+/// Convert an SDL_Rect to an SDL_FRect.
+void SDL_RectToFRect(SDL_Rect* rect, SDL_FRect* frect) {
+    frect.x = float32(rect.x);
+    frect.y = float32(rect.y);
+    frect.w = float32(rect.w);
+    frect.h = float32(rect.h);
+}
+/// Determine if a point is inside a rectangle.
+bool SDL_PointInRect(SDL_Point*? p, SDL_Rect*? r) {
+    if p == null || r == null return false;
+    return p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
+}
+/// Determine if a rectangle is empty.
+bool SDL_RectEmpty(SDL_Rect*? r) {
+    if r == null return true;
+    return r.w <= 0 || r.h <= 0;
+}
+/// Determine if two rectangles are equal.
+bool SDL_RectsEqual(SDL_Rect*? a, SDL_Rect*? b) {
+    if a == null || b == null return false;
+    return a.x == b.x && a.y == b.y && a.w == b.w && a.h == b.h;
+}
+/// Determine if a floating point point is inside a floating point rectangle.
+bool SDL_PointInRectFloat(SDL_FPoint*? p, SDL_FRect*? r) {
+    if p == null || r == null return false;
+    return p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+}
+/// Determine if a floating point rectangle is empty.
+bool SDL_RectEmptyFloat(SDL_FRect*? r) {
+    if r == null return true;
+    return r.w < 0.0 || r.h < 0.0;
+}
+/// Determine if two floating point rectangles are equal within some epsilon.
+bool SDL_RectsEqualEpsilon(SDL_FRect*? a, SDL_FRect*? b, float32 epsilon) {
+    if a == null || b == null return false;
+    if a == b return true;
+    return SDL_fabsf(a.x - b.x) <= epsilon && SDL_fabsf(a.y - b.y) <= epsilon && SDL_fabsf(a.w - b.w) <= epsilon && SDL_fabsf(a.h - b.h) <= epsilon;
+}
+/// Determine if two floating point rectangles are exactly equal.
+bool SDL_RectsEqualFloat(SDL_FRect*? a, SDL_FRect*? b) {
+    return SDL_RectsEqualEpsilon(a, b, SDL_FLT_EPSILON);
+}
+/// Determine if a 32-bit value has exactly one bit set.
+bool SDL_HasExactlyOneBitSet32(Uint32 x) {
+    return x != 0 && (x & (x - 1)) == 0;
+}
+/// Get the index of the most significant set bit in a 32-bit value, or -1 if none.
+c_int SDL_MostSignificantBitIndex32(Uint32 x) {
+    if x == 0 return -1;
+    c_int msbIndex = 0;
+    if x & 0xFFFF0000 != 0 {
+        x = x >> 16;
+        msbIndex = msbIndex | 16;
+    }
+    if x & 0xFF00 != 0 {
+        x = x >> 8;
+        msbIndex = msbIndex | 8;
+    }
+    if x & 0xF0 != 0 {
+        x = x >> 4;
+        msbIndex = msbIndex | 4;
+    }
+    if x & 0xC != 0 {
+        x = x >> 2;
+        msbIndex = msbIndex | 2;
+    }
+    if x & 0x2 != 0 {
+        msbIndex = msbIndex | 1;
+    }
+    return msbIndex;
+}
+/// Multiply two integers, checking for overflow.
+bool SDL_size_mul_check_overflow(c_size_t a, c_size_t b, c_size_t* ret) {
+    if a != 0 && b > SDL_SIZE_MAX / a {
+        return false;
+    }
+    *ret = a * b;
+    return true;
+}
+/// Multiply two integers, checking for overflow.
+bool SDL_size_mul_check_overflow_builtin(c_size_t a, c_size_t b, c_size_t* ret) {
+    return SDL_size_mul_check_overflow(a, b, ret);
+}
+/// Add two integers, checking for overflow.
+bool SDL_size_add_check_overflow(c_size_t a, c_size_t b, c_size_t* ret) {
+    if b > SDL_SIZE_MAX - a {
+        return false;
+    }
+    *ret = a + b;
+    return true;
+}
+/// Add two integers, checking for overflow.
+bool SDL_size_add_check_overflow_builtin(c_size_t a, c_size_t b, c_size_t* ret) {
+    return SDL_size_add_check_overflow(a, b, ret);
+}
+/// Return the smaller of two values.
+T SDL_min<T: Copyable + Comparable>(T a, T b) {
+    return min(a, b);
+}
+/// Return the greater of two values.
+T SDL_max<T: Copyable + Comparable>(T a, T b) {
+    return max(a, b);
+}
+/// Return a value clamped to a range.
+T SDL_clamp<T>(T x, T a, T b) {
+    return clamp(x, a, b);
+}
+/// Get the number of elements in a fixed-size array.
+c_size_t SDL_arraysize<T, c_size_t N>(T[N]& array) {
+    return N;
+}
+/// Convert a UTF-8 string to the current locale encoding.
+char*? SDL_iconv_utf8_locale(char* s) {
+    return SDL_iconv_string("", "UTF-8", s, SDL_strlen(s) + 1);
+}
+/// Convert a UTF-8 string to UCS-2.
+Uint16*? SDL_iconv_utf8_ucs2(char* s) {
+    return cast<Uint16*?>(SDL_iconv_string("UCS-2", "UTF-8", s, SDL_strlen(s) + 1));
+}
+/// Convert a UTF-8 string to UCS-4.
+Uint32*? SDL_iconv_utf8_ucs4(char* s) {
+    return cast<Uint32*?>(SDL_iconv_string("UCS-4", "UTF-8", s, SDL_strlen(s) + 1));
+}
+/// Convert a wide string to UTF-8.
+char*? SDL_iconv_wchar_utf8(wchar_t* s) {
+    return SDL_iconv_string("UTF-8", "WCHAR_T", cast<char*>(s), (SDL_wcslen(s) + 1) * c_size_t(sizeof(wchar_t)));
+}
+/// Set the SDL error to "That operation is not supported".
+bool SDL_Unsupported() {
+    return SDL_SetError("That operation is not supported");
+}
+/// Set the SDL error to "Parameter 'x' is invalid".
+bool SDL_InvalidParamError(char* param) {
+    return SDL_SetError("Parameter '%s' is invalid", param);
+}
+/// Increment an atomic reference count.
+c_int SDL_AtomicIncRef(SDL_AtomicInt* a) {
+    return SDL_AddAtomicInt(a, 1);
+}
+/// Decrement an atomic reference count, returning whether it reached zero.
+bool SDL_AtomicDecRef(SDL_AtomicInt* a) {
+    return SDL_AddAtomicInt(a, -1) == 1;
+}
+/// Create a new thread with the default stack size.
+SDL_Thread*? SDL_CreateThread(SDL_ThreadFunction fn, char*? name, void*? data) {
+    // The C macro passes _beginthreadex/_endthreadex on Windows; null is
+    // allowed by SDL docs and matches the macro on other platforms.
+    return SDL_CreateThreadRuntime(fn, name, data, null, null);
+}
+/// Create a new thread with the specified properties.
+SDL_Thread*? SDL_CreateThreadWithProperties(SDL_PropertiesID props) {
+    return SDL_CreateThreadWithPropertiesRuntime(props, null, null);
+}
+/// Get the bit mask for a mouse button index.
+Uint32 SDL_BUTTON_MASK(c_int x) {
+    return Uint32(1) << (Uint32(x) - Uint32(1));
+}
+/// Convert a scancode to the corresponding keycode.
+Uint32 SDL_SCANCODE_TO_KEYCODE(SDL_Scancode x) {
+    return Uint32(x) | Uint32(SDLK_SCANCODE_MASK);
+}
+/// Center a window on a display.
+c_int SDL_WINDOWPOS_CENTERED_DISPLAY(c_int x) {
+    return SDL_WINDOWPOS_CENTERED_MASK | x;
+}
+/// Determine if a window position is centered.
+bool SDL_WINDOWPOS_ISCENTERED(c_int x) {
+    return (x & 0xFFFF0000) == SDL_WINDOWPOS_CENTERED_MASK;
+}
+/// Let the window manager place a window on a display.
+c_int SDL_WINDOWPOS_UNDEFINED_DISPLAY(c_int x) {
+    return SDL_WINDOWPOS_UNDEFINED_MASK | x;
+}
+/// Determine if a window position is undefined.
+bool SDL_WINDOWPOS_ISUNDEFINED(c_int x) {
+    return (x & 0xFFFF0000) == SDL_WINDOWPOS_UNDEFINED_MASK;
+}
+/// Compose a version number from its components.
+c_int SDL_VERSIONNUM(c_int major, c_int minor, c_int patch) {
+    return major * 1000000 + minor * 1000 + patch;
+}
+/// Extract the major version from a version number.
+c_int SDL_VERSIONNUM_MAJOR(c_int version) {
+    return version / 1000000;
+}
+/// Extract the minor version from a version number.
+c_int SDL_VERSIONNUM_MINOR(c_int version) {
+    return (version / 1000) % 1000;
+}
+/// Extract the micro version from a version number.
+c_int SDL_VERSIONNUM_MICRO(c_int version) {
+    return version % 1000;
+}
+/// Determine if the SDL version is at least X.Y.Z.
+bool SDL_VERSION_ATLEAST(c_int x, c_int y, c_int z) {
+    return SDL_VERSION >= SDL_VERSIONNUM(x, y, z);
+}
+/// Convert seconds to nanoseconds.
+Uint64 SDL_SECONDS_TO_NS(Uint64 s) {
+    return s * SDL_NS_PER_SECOND;
+}
+/// Convert nanoseconds to seconds.
+Uint64 SDL_NS_TO_SECONDS(Uint64 ns) {
+    return ns / SDL_NS_PER_SECOND;
+}
+/// Convert milliseconds to nanoseconds.
+Uint64 SDL_MS_TO_NS(Uint64 ms) {
+    return ms * SDL_NS_PER_MS;
+}
+/// Convert nanoseconds to milliseconds.
+Uint64 SDL_NS_TO_MS(Uint64 ns) {
+    return ns / SDL_NS_PER_MS;
+}
+/// Convert microseconds to nanoseconds.
+Uint64 SDL_US_TO_NS(Uint64 us) {
+    return us * SDL_NS_PER_US;
+}
+/// Convert nanoseconds to microseconds.
+Uint64 SDL_NS_TO_US(Uint64 ns) {
+    return ns / SDL_NS_PER_US;
+}
+/// Determine if a surface must be locked to access its pixels.
+bool SDL_MUSTLOCK(SDL_Surface* s) {
+    return (s.flags & SDL_SURFACE_LOCK_NEEDED) == SDL_SURFACE_LOCK_NEEDED;
+}

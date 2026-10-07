@@ -55,5 +55,24 @@ int main() {
     // rlgl.h: the one query valid without a GL context (the build's GL
     // flavor, so only a lower bound is asserted).
     println(rlGetVersion() >= RL_OPENGL_11); // CHECK-NEXT: true
+
+    // Color palette, version strings, shader names, and double/float consts.
+    println(RAYWHITE.r, " ", RAYWHITE.g, " ", RAYWHITE.b, " ", RAYWHITE.a); // CHECK-NEXT: 245 245 245 255
+    println(BLANK.a); // CHECK-NEXT: 0
+    println(RAYLIB_VERSION); // CHECK-NEXT: 6.0
+    println(RLGL_VERSION); // CHECK-NEXT: 6.0
+    println(RL_DEFAULT_SHADER_UNIFORM_NAME_MVP); // CHECK-NEXT: mvp
+    println(RL_DEFAULT_SHADER_SAMPLER2D_NAME_TEXTURE2); // CHECK-NEXT: texture2
+    println(RL_CULL_DISTANCE_NEAR, " ", RL_CULL_DISTANCE_FAR); // CHECK-NEXT: 0.05 4000
+    println(CAMERA_CULL_DISTANCE_NEAR == RL_CULL_DISTANCE_NEAR); // CHECK-NEXT: true
+    println(CAMERA_MOVE_SPEED); // CHECK-NEXT: 5.4
+    println(GL_COMPRESSED_RGB_S3TC_DXT1_EXT); // CHECK-NEXT: 33776
+    println(EPSILON); // CHECK-NEXT: 1e-06
+
+    // raymath.h: pure math, no window needed.
+    println(Clamp(5.0, 0.0, 1.0)); // CHECK-NEXT: 1
+    var vsum = Vector3Add(Vector3(x = 1, y = 2, z = 3), Vector3(x = 4, y = 5, z = 6));
+    println(vsum.x, " ", vsum.y, " ", vsum.z); // CHECK-NEXT: 5 7 9
+    println(Vector2Length(Vector2(x = 3, y = 4))); // CHECK-NEXT: 5
     return 0;
 }
