@@ -140,8 +140,11 @@ struct CToCxConverter final : clang::ASTConsumer {
         case clang::Type::Record: {
             auto& recordType = llvm::cast<clang::RecordType>(type);
             auto* recordDecl = recordType.getDecl();
-            auto cxType = BasicType::get(getName(*recordDecl), {});
-            if (auto* typeDecl = toCx(*recordDecl)) bindTypeSpelling(cxType, *typeDecl);
+            auto* typeDecl = toCx(*recordDecl);
+            // Spell anonymous records with their generated name: an empty spelling never compares equal, not even to itself.
+            llvm::StringRef name = typeDecl ? typeDecl->getName() : getName(*recordDecl);
+            auto cxType = BasicType::get(name, {});
+            if (typeDecl) bindTypeSpelling(cxType, *typeDecl);
             return cxType;
         }
         case clang::Type::Paren:
