@@ -729,12 +729,13 @@ struct CToCxConverter final : clang::ASTConsumer {
                         countSkippedCxxDecl(typedefDecl);
                         break;
                     }
-                    if (underlyingType.isBasicType()) {
-                        // HACK: This defines a type alias in a hacky way
-                        llvm::cast<BasicType>(BasicType::get(typedefDecl.getName(), {}).typeBase)->name = underlyingType.getName();
-                    } else {
-                        // TODO: Import non-BasicType typedefs from C headers.
-                    }
+                    // `typedef struct Foo {...} Foo;` needs no alias: the struct
+                    // declaration already provides the name (and an alias would
+                    // collide with it).
+                    if (underlyingType.isBasicType() && underlyingType.getGenericArgs().empty() && underlyingType.getName() == typedefDecl.getName()) break;
+                    auto* alias = makeAST<TypeAliasDecl>(typedefDecl.getName(), underlyingType, AccessLevel::Default, module, toCx(typedefDecl.getLocation()));
+                    module.addToSymbolTable(*alias);
+                    module.sourceFiles.front().topLevelDecls.push_back(alias);
                     break;
                 }
                 default:

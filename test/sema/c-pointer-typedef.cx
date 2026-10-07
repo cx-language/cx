@@ -1,0 +1,18 @@
+// RUN: %cx -typecheck %s
+
+import "inputs/c-pointer-typedef.h";
+
+int main() {
+    VkInstance x = null;
+    vkFoo(x);
+    VkInstance? y = null;
+    vkFoo(y!);
+    MyInt m = 42;
+    Byte b = 255;
+    var p = Point(1, 2);
+    Callback? cb = null;
+    if cb == null {
+        return m + b + p.x;
+    }
+    return 0;
+}
