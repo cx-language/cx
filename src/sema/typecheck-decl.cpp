@@ -1383,8 +1383,20 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             for (auto& field : decl.getTypeDecl()->fields) {
                 if (!field.defaultValue && initializedFields.count(&field) == 0) {
                     // Constructors are spelled with the type name, not the synthetic "init".
-                    WARN_RANGE(decl.getLocation(), getIdentifierEndLocation(decl.getLocation(), decl.getTypeDecl()->getName()),
-                               "constructor doesn't initialize member variable '" << field.getName() << "'");
+                    auto* methodDecl = llvm::cast<MethodDecl>(&decl);
+                    if (methodDecl->copiedFromInterface) {
+                        // Copies warn at the implementer: the interface author cannot
+                        // initialize implementer fields, but construction through the
+                        // inherited copy still leaves them uninitialized.
+                        auto* implementer = decl.getTypeDecl();
+                        auto paramTypes = map(methodDecl->getParams(), [](const ParamDecl& param) { return param.type.toString(); });
+                        WARN_RANGE(implementer->getLocation(), getIdentifierEndLocation(implementer->getLocation(), implementer->getName()),
+                                   "inherited constructor '" << methodDecl->copiedFromInterface->getName() << "(" << llvm::join(paramTypes, ", ")
+                                                             << ")' doesn't initialize member variable '" << field.getName() << "'");
+                    } else {
+                        WARN_RANGE(decl.getLocation(), getIdentifierEndLocation(decl.getLocation(), decl.getTypeDecl()->getName()),
+                                   "constructor doesn't initialize member variable '" << field.getName() << "'");
+                    }
                 }
             }
         }
@@ -1472,6 +1484,7 @@ void Typechecker::ensureInterfaces(TypeDecl& decl) {
             if (!methodDecl) continue;
             if (methodDecl->body) {
                 auto copy = methodDecl->instantiate(genericArgs, {}, decl);
+                copy->copiedFromInterface = interface.getDecl();
                 currentModule->addToSymbolTable(*copy);
                 decl.addMethod(copy);
             }

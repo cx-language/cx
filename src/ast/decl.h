@@ -242,6 +242,9 @@ struct MethodDecl : FunctionDecl {
     MethodDecl* instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::ArrayRef<GenericArg> genericArgsArray, TypeDecl& typeDecl);
     static bool classof(const Decl* d) { return d->isMethodDecl(); }
     TypeDecl* typeDecl;
+    // Interface this method was copied from by ensureInterfaces, null otherwise.
+    // Copies keep their origin locations; implementer-relative diagnostics use this.
+    const TypeDecl* copiedFromInterface = nullptr;
 
 protected:
     MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, AstVector<GenericArg>&& genericArgs, AccessLevel accessLevel, Location location);

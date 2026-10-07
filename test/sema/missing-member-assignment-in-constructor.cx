@@ -8,3 +8,33 @@ struct A {
     // CHECK: [[@LINE+1]]:5: warning: constructor doesn't initialize member variable 'j'
     A() {}
 }
+
+interface O {
+    O(int p) {
+        println(p);
+    }
+
+    void foo();
+}
+
+// Copies of interface constructors warn at the implementer, naming the
+// inherited constructor, since the interface author cannot initialize
+// implementer fields.
+// CHECK: [[@LINE+5]]:5: warning: constructor doesn't initialize member variable 'k'
+// CHECK: [[@LINE+1]]:8: warning: inherited constructor 'O(int)' doesn't initialize member variable 'k'
+struct B : O {
+    int k;
+
+    B() {
+        O.init(1);
+    }
+
+    void foo() {}
+}
+
+// Fields with default values stay silent for inherited copies too.
+struct C : O {
+    string m = "x";
+
+    void foo() {}
+}
