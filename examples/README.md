@@ -51,7 +51,7 @@ applications. Each subdirectory is a `cx build` project (see
   `main.cpp` via `cxlib.hpp`).
 - [`opengl/`](opengl/) — minimal OpenGL triangle using GLFW for window
   management. Needs `pkg-config` and GLFW3 (`apt install pkg-config
-  libglfw3-dev libgl1-mesa-dev`, `brew install pkg-config glfw3`). Build with
+  libglfw3-dev libgl1-mesa-dev`, `brew install pkg-config glfw`). Build with
   `cx build`.
 - [`asteroids/`](asteroids/) — bare-bones Asteroids clone using SDL3.
   See [`asteroids/README.md`](asteroids/README.md) for platform setup.

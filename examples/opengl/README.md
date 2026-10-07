@@ -5,4 +5,4 @@ This creates an `opengl` executable.
 
 On Ubuntu, install the prerequisites with `sudo apt-get install -y pkg-config libglfw3-dev libgl1-mesa-dev`.
 
-On macOS, install the prerequisites with `brew install pkg-config glfw3`.
+On macOS, install the prerequisites with `brew install pkg-config glfw`.
