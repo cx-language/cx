@@ -18,6 +18,165 @@ BasicBlock::BasicBlock(std::string name, cx::Function* parent) : Value{ValueKind
 
 static std::unordered_map<TypeBase*, IRType*> irTypes = {{nullptr, nullptr}};
 
+// Every allocated IR value and type, for bulk freeing below.
+static std::vector<Value*> allIRValues;
+static std::vector<IRType*> allIRTypes;
+
+void* Value::operator new(size_t size) {
+    void* ptr = ::operator new(size);
+    allIRValues.push_back(static_cast<Value*>(ptr));
+    return ptr;
+}
+
+// The failed object is always the most recently registered one: its braced
+// initializer (whose evaluation threw) runs after its own allocation but
+// before any later one.
+void Value::operator delete(void* ptr) noexcept {
+    ASSERT(!allIRValues.empty() && allIRValues.back() == ptr);
+    if (!allIRValues.empty() && allIRValues.back() == ptr) allIRValues.pop_back();
+    ::operator delete(ptr);
+}
+
+void* IRType::operator new(size_t size) {
+    void* ptr = ::operator new(size);
+    allIRTypes.push_back(static_cast<IRType*>(ptr));
+    return ptr;
+}
+
+void IRType::operator delete(void* ptr) noexcept {
+    ASSERT(!allIRTypes.empty() && allIRTypes.back() == ptr);
+    if (!allIRTypes.empty() && allIRTypes.back() == ptr) allIRTypes.pop_back();
+    ::operator delete(ptr);
+}
+
+// IR nodes have no virtual destructors (they must stay aggregates for braced
+// initialization), so deletion dispatches on the kind instead. New node kinds
+// must be added here or their members leak across resetIRState() calls.
+static void deleteIRValue(Value* value) {
+    switch (value->kind) {
+    case ValueKind::AllocaInst:
+        delete static_cast<AllocaInst*>(value);
+        break;
+    case ValueKind::ReturnInst:
+        delete static_cast<ReturnInst*>(value);
+        break;
+    case ValueKind::BranchInst:
+        delete static_cast<BranchInst*>(value);
+        break;
+    case ValueKind::CondBranchInst:
+        delete static_cast<CondBranchInst*>(value);
+        break;
+    case ValueKind::SwitchInst:
+        delete static_cast<SwitchInst*>(value);
+        break;
+    case ValueKind::LoadInst:
+        delete static_cast<LoadInst*>(value);
+        break;
+    case ValueKind::StoreInst:
+        delete static_cast<StoreInst*>(value);
+        break;
+    case ValueKind::InsertInst:
+        delete static_cast<InsertInst*>(value);
+        break;
+    case ValueKind::ExtractInst:
+        delete static_cast<ExtractInst*>(value);
+        break;
+    case ValueKind::CallInst:
+        delete static_cast<CallInst*>(value);
+        break;
+    case ValueKind::BinaryInst:
+        delete static_cast<BinaryInst*>(value);
+        break;
+    case ValueKind::UnaryInst:
+        delete static_cast<UnaryInst*>(value);
+        break;
+    case ValueKind::GEPInst:
+        delete static_cast<GEPInst*>(value);
+        break;
+    case ValueKind::ConstGEPInst:
+        delete static_cast<ConstGEPInst*>(value);
+        break;
+    case ValueKind::CastInst:
+        delete static_cast<CastInst*>(value);
+        break;
+    case ValueKind::UnreachableInst:
+        delete static_cast<UnreachableInst*>(value);
+        break;
+    case ValueKind::ArrayOpInst:
+        delete static_cast<ArrayOpInst*>(value);
+        break;
+    case ValueKind::SizeofInst:
+        delete static_cast<SizeofInst*>(value);
+        break;
+    case ValueKind::CheckedArithInst:
+        delete static_cast<CheckedArithInst*>(value);
+        break;
+    case ValueKind::ArithOverflowInst:
+        delete static_cast<ArithOverflowInst*>(value);
+        break;
+    case ValueKind::SaturatingArithInst:
+        delete static_cast<SaturatingArithInst*>(value);
+        break;
+    case ValueKind::BasicBlock:
+        delete static_cast<BasicBlock*>(value);
+        break;
+    case ValueKind::Function:
+        delete static_cast<Function*>(value);
+        break;
+    case ValueKind::Parameter:
+        delete static_cast<Parameter*>(value);
+        break;
+    case ValueKind::GlobalVariable:
+        delete static_cast<GlobalVariable*>(value);
+        break;
+    case ValueKind::ConstantString:
+        delete static_cast<ConstantString*>(value);
+        break;
+    case ValueKind::ConstantInt:
+        delete static_cast<ConstantInt*>(value);
+        break;
+    case ValueKind::ConstantFP:
+        delete static_cast<ConstantFP*>(value);
+        break;
+    case ValueKind::ConstantBool:
+        delete static_cast<ConstantBool*>(value);
+        break;
+    case ValueKind::ConstantNull:
+        delete static_cast<ConstantNull*>(value);
+        break;
+    case ValueKind::Undefined:
+        delete static_cast<Undefined*>(value);
+        break;
+    default:
+        ABORT("unhandled IR value kind in deleteIRValue");
+    }
+}
+
+static void deleteIRType(IRType* type) {
+    switch (type->kind) {
+    case IRTypeKind::IRBasicType:
+        delete static_cast<IRBasicType*>(type);
+        break;
+    case IRTypeKind::IRPointerType:
+        delete static_cast<IRPointerType*>(type);
+        break;
+    case IRTypeKind::IRFunctionType:
+        delete static_cast<IRFunctionType*>(type);
+        break;
+    case IRTypeKind::IRArrayType:
+        delete static_cast<IRArrayType*>(type);
+        break;
+    case IRTypeKind::IRStructType:
+        delete static_cast<IRStructType*>(type);
+        break;
+    case IRTypeKind::IRUnionType:
+        delete static_cast<IRUnionType*>(type);
+        break;
+    default:
+        ABORT("unhandled IR type kind in deleteIRType");
+    }
+}
+
 IRType* cx::getIRType(Type astType) {
     // Spelling twins are distinct bases sharing one identity; normalize so the
     // type cache below yields a single IR type per structure.
@@ -389,6 +548,21 @@ static bool isConstant(const Value* inst) {
 
 static std::unordered_map<const Value*, std::string> valuesNames;
 static llvm::StringSet usedNames;
+
+void cx::resetIRState() {
+    // Reverse order: each `delete` routes through the tracking operator
+    // delete above, which unregisters the most recent entry.
+    for (auto it = allIRValues.rbegin(); it != allIRValues.rend(); ++it)
+        deleteIRValue(*it);
+    allIRValues.clear();
+    for (auto it = allIRTypes.rbegin(); it != allIRTypes.rend(); ++it)
+        deleteIRType(*it);
+    allIRTypes.clear();
+    irTypes.clear();
+    irTypes.emplace(nullptr, nullptr);
+    valuesNames.clear();
+    usedNames.clear();
+}
 
 static std::string formatName(const Value* inst) {
     std::string str;

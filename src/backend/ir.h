@@ -38,6 +38,13 @@ enum class IRTypeKind {
 struct IRType {
     IRTypeKind kind;
 
+    // Every IR type registers in a global list so resetIRState() can free
+    // them in bulk for repeated in-process compilations (the language server).
+    // operator delete only runs when construction throws (nothing ever
+    // deletes IR piecemeal), unregistering the failed object.
+    static void* operator new(size_t size);
+    static void operator delete(void* ptr) noexcept;
+
     bool isBasicType() { return kind == IRTypeKind::IRBasicType; }
     bool isPointerType() { return kind == IRTypeKind::IRPointerType; }
     bool isFunctionType() { return kind == IRTypeKind::IRFunctionType; }
@@ -128,6 +135,10 @@ struct IRUnionType : IRType {
 };
 
 IRType* getIRType(Type astType);
+/// Frees every IR value and type allocated so far and clears the type cache,
+/// so the next compilation behaves like a fresh process. The caller must have
+/// dropped all IR pointers first (IRModule shells are freed by ~IRGenerator).
+void resetIRState();
 // Bit width of an integer type, 0 for anything else.
 int getIntegerBitWidth(IRType* type);
 // Unsigned cx integer type of the given width (8, 16, 32, or 64).
@@ -173,6 +184,9 @@ struct Value {
     BasicBlock* parent = nullptr;
 
     Value(ValueKind kind) : kind(kind) {}
+    // Like IRType above: every IR value registers for bulk freeing.
+    static void* operator new(size_t size);
+    static void operator delete(void* ptr) noexcept;
     IRType* getType() const;
     std::string getName() const;
     const Expr* getExpr() const;

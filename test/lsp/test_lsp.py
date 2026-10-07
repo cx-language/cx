@@ -116,6 +116,35 @@ void main() {
 }
 """
 
+NULL_SOURCE = """\
+struct S {
+    int*? i;
+}
+void _foo(S* p) {
+    if (p.i != null) {
+        p.i = null;
+        *p.i = 1;
+    }
+}
+void main() {
+}
+"""
+
+NULL_WITH_ERROR_SOURCE = """\
+struct S {
+    int*? i;
+}
+void _foo(S* p) {
+    if (p.i != null) {
+        p.i = null;
+        *p.i = 1;
+    }
+}
+void main() {
+    nosuchidentifier;
+}
+"""
+
 REDEF_SOURCE = """\
 int dup = 1;
 int dup = 2;
@@ -349,6 +378,26 @@ def test_query_modes(cx_lsp, path):
             ("unused declaration 'helper'; prefix with '_' to suppress", 2),
         },
         json.dumps(result["diagnostics"])[:500],
+    )
+
+    # Null-safety warnings (which the compiler emits from IR, after typecheck)
+    # report too.
+    result = run_query(cx_lsp, base_query("check", path, NULL_SOURCE))
+    warnings = {(d["message"], d["severity"]) for d in result["diagnostics"]}
+    check(
+        "query-check-null-warnings",
+        warnings == {("dereferenced pointer may be null; unwrap it with a postfix '!' to silence this warning", 2)},
+        json.dumps(result["diagnostics"])[:500],
+    )
+
+    # Like the compiler, the LSP skips IRGen once errors exist, so a file with
+    # errors reports no null warnings.
+    result = run_query(cx_lsp, base_query("check", path, NULL_WITH_ERROR_SOURCE))
+    messages = [d["message"] for d in result["diagnostics"]]
+    check(
+        "query-check-null-suppressed-by-errors",
+        any("nosuchidentifier" in m for m in messages) and not any("may be null" in m for m in messages),
+        json.dumps(messages)[:500],
     )
 
     # `add` in `add(1, 2)` sits at 0-based line 5, characters 17-19.
