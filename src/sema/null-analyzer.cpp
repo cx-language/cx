@@ -12,6 +12,41 @@ Nullability NullAnalyzer::analyzeNullability(Value* nullableValue, Instruction* 
     return analyzeNullability_recursive(nullableValue, startFrom);
 }
 
+static Value* stripCasts(Value* value) {
+    while (auto* cast = llvm::dyn_cast<CastInst>(value)) {
+        value = cast->value;
+    }
+    return value;
+}
+
+// True when two address values denote the same storage: identical, or loads through the same base
+// (e.g. separate `load t_0` nodes for one spilled parameter).
+static bool valuesAlias(Value* a, Value* b) {
+    a = stripCasts(a);
+    b = stripCasts(b);
+    if (a == b) return true;
+    auto* loadA = llvm::dyn_cast<LoadInst>(a);
+    auto* loadB = llvm::dyn_cast<LoadInst>(b);
+    if (loadA && loadB) return valuesAlias(loadA->value, loadB->value);
+    return false;
+}
+
+static bool callArgMayNull(Value* arg, Value* nullableValue, int gepIndex) {
+    arg = stripCasts(arg);
+    if (valuesAlias(arg, nullableValue)) return true;
+    auto* argGep = llvm::dyn_cast<ConstGEPInst>(arg);
+    auto* valueGep = llvm::dyn_cast<ConstGEPInst>(nullableValue);
+    if (argGep && valueGep && argGep->index == valueGep->index && valuesAlias(argGep->pointer, valueGep->pointer)) return true;
+    if (!argGep || !valuesAlias(argGep->pointer, nullableValue)) return false;
+    if (gepIndex != -1) {
+        // Tracking a struct field: only the same field (or the whole base, handled above) aliases.
+        return argGep->index == gepIndex;
+    }
+    // Tracking a whole optional: a callee receiving its tag may null it; a payload-only
+    // address cannot, since writing the payload leaves the tag unchanged.
+    return argGep->index == IRGenerator::optionalTagFieldIndex;
+}
+
 Nullability NullAnalyzer::analyzeNullability_recursive(Value* nullableValue, Instruction* startFrom, int gepIndex) {
     auto block = NOTNULL(startFrom->parent);
     int startFromIndex = -1;
@@ -41,6 +76,16 @@ Nullability NullAnalyzer::analyzeNullability_recursive(Value* nullableValue, Ins
                 return analyzeNullability_recursive(gep->pointer, gep, gep->index);
             } else if (auto extract = llvm::dyn_cast<ExtractInst>(nullableValue)) {
                 return analyzeNullability_recursive(extract->aggregate, extract);
+            }
+        }
+
+        if (auto* call = llvm::dyn_cast<CallInst>(currentInst)) {
+            // Callees may write globals even without receiving them.
+            if (nullableValue->isGlobal()) return Nullability::DefinitelyNullable;
+            for (Value* arg : call->args) {
+                if (callArgMayNull(arg, nullableValue, gepIndex)) {
+                    return Nullability::DefinitelyNullable;
+                }
             }
         }
 
@@ -107,13 +152,17 @@ Nullability NullAnalyzer::analyzeNullability_recursive(Value* nullableValue, Ins
 }
 
 static bool isTagOf(Value* side, Value* nullableValue, int gepIndex) {
+    // The tag describes the whole optional, so payload tracking (which uses a field index)
+    // still matches tag checks on the whole value.
     if (auto* extract = llvm::dyn_cast<ExtractInst>(side)) {
         return extract->index == IRGenerator::optionalTagFieldIndex
-            && (extract->aggregate == nullableValue || extract->aggregate->loads(nullableValue, gepIndex));
+            && (extract->aggregate == nullableValue || extract->aggregate->loads(nullableValue, -1)
+                || (gepIndex != -1 && extract->aggregate->loads(nullableValue, gepIndex)));
     }
     if (auto* load = llvm::dyn_cast<LoadInst>(side)) {
         auto* gep = llvm::dyn_cast<ConstGEPInst>(load->value);
-        return gep && gep->index == IRGenerator::optionalTagFieldIndex && (gep->pointer == nullableValue || gep->pointer->loads(nullableValue, gepIndex));
+        return gep && gep->index == IRGenerator::optionalTagFieldIndex
+            && (gep->pointer == nullableValue || gep->pointer->loads(nullableValue, -1) || (gepIndex != -1 && gep->pointer->loads(nullableValue, gepIndex)));
     }
     return false;
 }
@@ -331,7 +380,16 @@ void NullAnalyzer::analyze(Value* value) {
                 if (receiverType.isOptionalType()) {
                     // TODO: Store the implicit 'this' receiver to the call expr during typechecking to simplify this code.
                     const Expr* target = callExpr->getReceiver() ? callExpr->getReceiver() : callExpr;
-                    warnForNullability(getExprRangeStart(*target), target->endLocation, analyzeNullability(call->args[0], call), "receiver is null here",
+                    Value* receiver = stripCasts(call->args[0]);
+                    // Value-optionals pass the payload address; analyze the optional itself so tag checks apply.
+                    if (!receiverType.isImplementedAsPointer()) {
+                        if (auto* gep = llvm::dyn_cast<ConstGEPInst>(receiver)) {
+                            if (gep->index != IRGenerator::optionalTagFieldIndex) {
+                                receiver = stripCasts(gep->pointer);
+                            }
+                        }
+                    }
+                    warnForNullability(getExprRangeStart(*target), target->endLocation, analyzeNullability(receiver, call), "receiver is null here",
                                        "receiver may be null; unwrap it with a postfix '!' to silence this warning");
                 }
             }

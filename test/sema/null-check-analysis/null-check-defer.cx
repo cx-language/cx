@@ -1,0 +1,28 @@
+// RUN: %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+struct S {
+    void d() {}
+}
+
+void noWarnWhenProven() {
+    S? r = S();
+    if r == null {
+        return;
+    }
+    defer r.d();
+}
+
+void foo(S?& s) {}
+
+void warnWhenMayNull(string[] args) {
+    S? r = S();
+    if r == null {
+        return;
+    }
+    // CHECK: [[@LINE+1]]:11: warning: value may be null; unwrap it with a postfix '!' to silence this warning
+    defer r.d();
+    if args[0] == "test" {
+        foo(r);
+        return;
+    }
+}
