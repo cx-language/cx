@@ -376,6 +376,11 @@ std::vector<std::string> cx::msvcLinkArgs(llvm::ArrayRef<std::string> librarySea
     return args;
 }
 
+std::string cx::withExecutableExtension(std::string name, bool isWindows) {
+    if (isWindows && llvm::sys::path::extension(name).compare_insensitive(".exe") != 0) name += ".exe";
+    return name;
+}
+
 static void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::OF_None);
@@ -1162,6 +1167,10 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
         } else {
             outputFileName = config.name;
         }
+        // Directory builds always target the host (there is no --target flag).
+#ifdef _WIN32
+        outputFileName = withExecutableExtension(outputFileName, true);
+#endif
         auto sourceFiles = getSourceFiles(targetRootDir, config.rootDirectory);
         // TODO: Add support for library packages.
         int exitStatus = buildModuleFromFiles({

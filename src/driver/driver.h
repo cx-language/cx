@@ -57,5 +57,9 @@ llvm::MemoryBufferRef addFileBufferToModule(llvm::StringRef filePath, Module& ta
 // becomes /LIBPATH:<path>, each bare library name becomes <name>.lib, and
 // values naming a path or file pass through. Appended after -link.
 std::vector<std::string> msvcLinkArgs(llvm::ArrayRef<std::string> librarySearchPaths, llvm::ArrayRef<std::string> libraries);
+// Appends .exe on Windows unless already present: directory builds name the
+// binary after the project, which would otherwise be unrunnable there.
+// Explicit -o names pass through untouched (see output-file-path.cx).
+std::string withExecutableExtension(std::string name, bool isWindows);
 
 } // namespace cx

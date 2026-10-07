@@ -349,8 +349,8 @@ add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --parallel ${CHECK_PARALLEL_JOBS} -LE slow -C $<CONFIG>
     USES_TERMINAL)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
-add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config test_rename test_msvc_link_args test_string_interner
-                     test_mangle test_lexer test_ast_vector)
+add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config test_rename test_msvc_link_args test_output_file_name
+                     test_string_interner test_mangle test_lexer test_ast_vector)
 
 add_executable(test_string_interner test/ast/test-string-interner.cpp)
 target_include_directories(test_string_interner PRIVATE src)
@@ -406,6 +406,12 @@ add_executable(test_msvc_link_args test/driver/test-msvc-link-args.cpp)
 target_include_directories(test_msvc_link_args PRIVATE src)
 target_link_libraries(test_msvc_link_args libcx)
 add_test(NAME driver-msvc-link-args COMMAND test_msvc_link_args)
+
+# Tests for cx::withExecutableExtension (directory-build output names on Windows).
+add_executable(test_output_file_name test/driver/test-output-file-name.cpp)
+target_include_directories(test_output_file_name PRIVATE src)
+target_link_libraries(test_output_file_name libcx)
+add_test(NAME driver-output-file-name COMMAND test_output_file_name)
 
 # Compiler tests, sharded over one CTest test per few files so CTest
 # reports progress as tests complete and the suite runs in parallel. A
