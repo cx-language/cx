@@ -196,6 +196,15 @@ cx cxlib.cx -c -o cxlib.o
 cc main.c cxlib.o -o c-caller
 ```
 
+On Windows, link the object file with `link.exe`, adding the C runtime
+libraries the driver links automatically, plus your own libraries as
+`.lib` files:
+
+```sh {.noRun}
+cx main.cx -c -o main.obj
+link main.obj legacy_stdio_definitions.lib ucrt.lib msvcrt.lib /SUBSYSTEM:CONSOLE /OUT:demo.exe
+```
+
 Signatures crossing the boundary must be C-compatible: plain numbers,
 pointers, and C structs. Generic functions cannot be `extern`.
 Structs cross by value following the platform C ABI, including small
