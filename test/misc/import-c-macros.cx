@@ -52,4 +52,8 @@ void main() {
     assert(sizeof(UEXPR) == 4);
     assert(sizeof(LEXPR) == 8);
     assert(STR_CONCAT == "ab");
+    assert(COMPOUND.r == 1);
+    assert(COMPOUND.g == 2);
+    assert(COMPOUND.b == 3);
+    assert(COMPOUND.a == 4);
 }

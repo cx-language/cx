@@ -1,7 +1,7 @@
 // RUN: %not %cx -typecheck %s --error-limit=0 2>&1 | %FileCheck %s
 
-// Function-like macros, casts, compound literals, and empty macros are not
-// imported; using them is an error, but importing the header succeeds.
+// Function-like macros, casts, and empty macros are not imported; using them
+// is an error, but importing the header succeeds.
 import "inputs/c-macros.h";
 
 void main() {
@@ -9,8 +9,6 @@ void main() {
     print(FUNC_LIKE(1, 2));
     // CHECK: [[@LINE+1]]:11: error: unknown identifier 'CAST'
     print(CAST);
-    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'COMPOUND'
-    print(COMPOUND);
     // CHECK: [[@LINE+1]]:11: error: unknown identifier 'EMPTY'
     print(EMPTY);
     // CHECK: [[@LINE+1]]:11: error: unknown identifier 'DIV_ZERO'

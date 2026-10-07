@@ -236,7 +236,10 @@ std::string cx::mangleFunctionDecl(const FunctionDecl& functionDecl) {
 }
 
 std::string cx::mangleGlobalVar(const VarDecl& varDecl) {
-    if (varDecl.module.isCHeaderImport) return varDecl.getName().str();
+    // Imported constants (macro and enum values) are synthesized, not real C
+    // symbols, so they mangle like normal globals; an unmangled name would
+    // collide with the macro it came from once the header is included.
+    if (varDecl.module.isCHeaderImport && !varDecl.isConst) return varDecl.getName().str();
 
     std::string mangled;
     llvm::raw_string_ostream stream(mangled);

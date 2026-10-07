@@ -135,7 +135,25 @@ void main() {
 }
 ```
 
-Function-like macros, casts, and compound literals are not imported.
+Compound literals of an imported struct are imported as constants when every
+element is constant; the elements may be numbers, characters, earlier scalar
+macros, or nested compound literals. Partial initializers, designators,
+unions, and structs with anonymous members are not imported:
+
+```c
+typedef struct Color { unsigned char r, g, b, a; } Color;
+#define RAYWHITE (Color){ 245, 245, 245, 255 }
+```
+
+```cs {.noCompile}
+import "raylib.h";
+
+void main() {
+    println(RAYWHITE.g); // prints 245
+}
+```
+
+Function-like macros and casts are not imported.
 
 Individual functions can also be declared with `extern`, without importing a header.
 The standard library uses `extern` declarations in `std/system/libc.cx`
