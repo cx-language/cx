@@ -355,7 +355,7 @@ struct TypeDecl : Decl {
     // referenced as `struct Name`, so the C backend emits its own definitions
     // instead of using the header's.
     bool isAnonymousRecord = false;
-    // Interface field/method materialization runs once: the main-module
+    // Interface method materialization runs once: the main-module
     // prepass and lazy use both funnel through ensureInterfaces.
     bool interfacesEnsured = false;
 };

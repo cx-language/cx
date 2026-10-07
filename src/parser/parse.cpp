@@ -2147,6 +2147,11 @@ TypeDecl* Parser::parseTypeDecl(AstVector<GenericParamDecl>* genericParams, Acce
                 }
                 if (isManuallyDestroy && tag != TypeTag::Struct && tag != TypeTag::Union) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
                 rejectMisplacedChecks(disabledChecks, checksLocation);
+                if (tag == TypeTag::Interface) {
+                    REPORT_ERROR(location, "interfaces cannot have fields");
+                    parseFieldDecl(*typeDecl, accessLevel, type, name, location, isManuallyDestroy);
+                    break;
+                }
                 typeDecl->addField(parseFieldDecl(*typeDecl, accessLevel, type, name, location, isManuallyDestroy));
                 break;
             }

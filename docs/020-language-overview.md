@@ -181,7 +181,7 @@ See [Closures](./closures) and [Iterators](./iterators).
 
 ## Interfaces and generics
 
-Interfaces declare required methods (and optionally fields and default implementations),
+Interfaces declare required methods (and optionally default implementations),
 and serve as bounds on generic type parameters, so a mismatch reports which requirement
 failed:
 

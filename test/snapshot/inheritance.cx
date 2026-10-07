@@ -2,12 +2,8 @@
 // TODO: Remove -w
 
 interface O {
-    int p;
-    int r;
-
     O(int p) {
-        this.p = p;
-        this.r = p;
+        println(p);
     }
 
     void foo();
@@ -15,10 +11,12 @@ interface O {
 
 struct A : O {
     bool b;
+    int p;
 
     A(bool b, int p) {
         O.init(p);
         this.b = b;
+        this.p = p;
     }
 
     void foo() {

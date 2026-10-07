@@ -1,8 +1,6 @@
 // RUN: check-snapshots
 
 interface Interface {
-    This* that;
-
     This* foo(This* a);
 
     This* bar() {
@@ -11,6 +9,8 @@ interface Interface {
 }
 
 struct S: Interface {
+    S* that;
+
     S() { that = &this; }
 
     S* foo(S* a) {

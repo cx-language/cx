@@ -1617,13 +1617,9 @@ static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, b
     return true;
 }
 
-static bool hasField(TypeDecl& type, const FieldDecl& field) {
-    return llvm::any_of(type.fields, [&](const FieldDecl& f) { return f.getName() == field.getName() && f.type == field.type; });
-}
-
 bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) {
-    // Search the type's own methods (like hasField searches its fields): instantiation
-    // methods may live in another module's symbol table than the one this lookup searches.
+    // Search the type's own methods: instantiation methods may live in another
+    // module's symbol table than the one this lookup searches.
     auto decls = findDecls(getQualifiedFunctionName(type.getType(), functionDecl.getName(), {}), &type);
 
     for (Decl* decl : decls) {
@@ -1639,15 +1635,6 @@ bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) {
 
 bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) {
     auto thisTypeResolvedInterface = llvm::cast<TypeDecl>(interface.instantiate({{"This", type.getType()}}, {}));
-
-    for (auto& fieldRequirement : thisTypeResolvedInterface->fields) {
-        if (!hasField(type, fieldRequirement)) {
-            if (errorReason) {
-                *errorReason = ("doesn't have field '" + fieldRequirement.getName() + "'").str();
-            }
-            return false;
-        }
-    }
 
     for (auto& requiredMethod : thisTypeResolvedInterface->methods) {
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(requiredMethod)) {

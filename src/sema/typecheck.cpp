@@ -334,7 +334,7 @@ void Typechecker::typecheckModule(Module& module, const CompileOptions& packageO
     // --check-all checks everything eagerly, e.g. for validating dependencies.
     bool checkEagerly = isMainModule || module.isCHeaderImport || options.checkAll;
     if (checkEagerly) {
-        // Typecheck implemented interfaces so that inherited methods and fields are added to the implementing type before they're referenced.
+        // Typecheck implemented interfaces so that inherited methods are added to the implementing type before they're referenced.
         for (auto& sourceFile : module.sourceFiles) {
             for (auto& decl : sourceFile.topLevelDecls) {
                 currentModule = &module;

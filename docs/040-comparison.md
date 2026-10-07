@@ -180,9 +180,8 @@ correctness to demand up front:
   cx implicitly converts `T` to `T?`, so plain values flow into nullable
   positions without wrapping.
 
-- Rust traits and cx interfaces both bound generic parameters, but cx
-  interfaces can also declare fields with defaults, so unrelated types can
-  share state as well as behavior. Rust traits cannot carry state.
+- Rust traits and cx interfaces both bound generic parameters, and both
+  support default method implementations.
 
 - Rust has a powerful macro system (`macro_rules!` and procedural macros).
   cx has no macros, only `#if` conditions set from the command line.
