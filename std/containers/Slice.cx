@@ -51,8 +51,8 @@ struct Slice<Element> {
 
     /// Returns the index of the first element equal to the given value, or null if it's not found.
     int? indexOf(Element& value) {
-        for i in 0..size() {
-            if data[i] == value {
+        for e, i in this {
+            if e == value {
                 return i;
             }
         }
@@ -126,9 +126,9 @@ struct Slice<Element> {
 
     /// Returns the first element satisfying the predicate, or null.
     Element&? find<Pred: bool(Element&)>(Pred predicate) {
-        for i in 0..size() {
-            if predicate(this[i]) {
-                return this[i];
+        for e in this {
+            if predicate(e) {
+                return e;
             }
         }
 
@@ -137,9 +137,9 @@ struct Slice<Element> {
 
     /// Returns the first element satisfying the predicate, or null.
     Element&? find<T: Copyable, Pred: bool(T)>(Pred predicate) {
-        for i in 0..size() {
-            if predicate(this[i]) {
-                return this[i];
+        for e in this {
+            if predicate(e) {
+                return e;
             }
         }
 

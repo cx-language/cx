@@ -146,8 +146,8 @@ struct string: Comparable, Hashable, Printable {
     /// Returns a copy of the string with all characters converted to uppercase (ASCII only).
     StringBuf toUpper() {
         StringBuf result = StringBuf(uninitializedSize = size());
-        for i in 0..size() {
-            result[i] = this[i].toUpper();
+        for c, i in this {
+            result[i] = c.toUpper();
         }
         return result;
     }
@@ -155,8 +155,8 @@ struct string: Comparable, Hashable, Printable {
     /// Returns a copy of the string with all characters converted to lowercase (ASCII only).
     StringBuf toLower() {
         StringBuf result = StringBuf(uninitializedSize = size());
-        for i in 0..size() {
-            result[i] = this[i].toLower();
+        for c, i in this {
+            result[i] = c.toLower();
         }
         return result;
     }
@@ -164,9 +164,9 @@ struct string: Comparable, Hashable, Printable {
     /// Supports using strings with sets and dicts
     uint64 hash() {
         uint64 hashValue = 5381;
-        for index in 0..characters.size() {
+        for c in characters {
             // djb2 wraps on overflow
-            hashValue = (hashValue << 5) +% hashValue +% uint64(this[index]);
+            hashValue = (hashValue << 5) +% hashValue +% uint64(c);
         }
         return hashValue;
     }

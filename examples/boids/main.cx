@@ -88,8 +88,8 @@ float wrapDelta(float d, float max) {
 }
 
 void stepFlock(Flock& flock, Grid& grid, float dt, bool attract, float mouseX, float mouseY) {
-    for i in 0..grid.head.size() {
-        grid.head[i] = -1;
+    for h in grid.head {
+        *h = -1;
     }
     for i in 0..boidCount {
         var cx = clamp(int(flock.x[i] / perception), 0, grid.cellsX - 1);
@@ -318,8 +318,8 @@ int runScreenshot(string path) {
 }
 
 int main(string[] args) {
-    for i in 0..args.size() {
-        if args[i] == "--screenshot" {
+    for arg, i in args {
+        if arg == "--screenshot" {
             if i + 1 >= args.size() {
                 println("usage: --screenshot <path>");
                 return 1;

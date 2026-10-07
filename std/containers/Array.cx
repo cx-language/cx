@@ -13,11 +13,11 @@ struct Array<T, int N> {
     /// Writes the elements to the given stream.
     void print(OutputStream& stream) {
         stream.push('[');
-        for i in 0..N {
+        for e, i in this {
             if i != 0 {
                 stream.append(", ");
             }
-            this[i].print(stream);
+            e.print(stream);
         }
         stream.push(']');
     }
@@ -46,8 +46,8 @@ struct Array<T, int N> {
 
     /// Returns the index of the first element equal to the given value, or null if it's not found.
     int? indexOf(T& value) {
-        for i in 0..N {
-            if this[i] == value {
+        for e, i in this {
+            if e == value {
                 return i;
             }
         }
@@ -66,9 +66,9 @@ struct Array<T, int N> {
 
     /// Returns the first element satisfying the predicate, or null.
     T&? find<Pred: bool(T&)>(Pred predicate) {
-        for i in 0..N {
-            if predicate(this[i]) {
-                return this[i];
+        for e in this {
+            if predicate(e) {
+                return e;
             }
         }
 
@@ -77,9 +77,9 @@ struct Array<T, int N> {
 
     /// Returns the first element satisfying the predicate, or null.
     T&? find<U: Copyable, Pred: bool(U)>(Pred predicate) {
-        for i in 0..N {
-            if predicate(this[i]) {
-                return this[i];
+        for e in this {
+            if predicate(e) {
+                return e;
             }
         }
 
@@ -135,8 +135,8 @@ struct Array<T, int N> {
     /// Returns the dot product of this array and `other`.
     T dot(T[N] other) {
         T sum = 0;
-        for i in 0..N {
-            sum += this[i] * other[i];
+        for e, i in this {
+            sum += e * other[i];
         }
         return sum;
     }

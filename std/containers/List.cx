@@ -171,8 +171,8 @@ struct List<Element> {
 
     /// Removes the first element satisfying the given condition and returns it, or null if none matches.
     Element? removeFirst<Pred: bool(Element&)>(Pred shouldRemove) {
-        for index in 0..size {
-            if shouldRemove(this[index]) {
+        for e, index in this {
+            if shouldRemove(e) {
                 return unsafeRemoveAt(index);
             }
         }
@@ -182,8 +182,8 @@ struct List<Element> {
 
     /// Removes the first element satisfying the given condition and returns it, or null if none matches.
     Element? removeFirst<T: Copyable, Pred: bool(T)>(Pred shouldRemove) {
-        for index in 0..size {
-            if shouldRemove(this[index]) {
+        for e, index in this {
+            if shouldRemove(e) {
                 return unsafeRemoveAt(index);
             }
         }
@@ -241,8 +241,8 @@ struct List<Element> {
 
     /// Returns the index of the first element equal to the given value, or null if it's not found.
     int? indexOf(Element& value) {
-        for i in 0..size {
-            if buffer[i] == value {
+        for e, i in this {
+            if e == value {
                 return i;
             }
         }
@@ -261,9 +261,9 @@ struct List<Element> {
 
     /// Returns the first element satisfying the predicate, or null.
     Element&? find<Pred: bool(Element&)>(Pred predicate) {
-        for i in 0..size() {
-            if predicate(this[i]) {
-                return this[i];
+        for e in this {
+            if predicate(e) {
+                return e;
             }
         }
 
@@ -272,9 +272,9 @@ struct List<Element> {
 
     /// Returns the first element satisfying the predicate, or null.
     Element&? find<T: Copyable, Pred: bool(T)>(Pred predicate) {
-        for i in 0..size() {
-            if predicate(this[i]) {
-                return this[i];
+        for e in this {
+            if predicate(e) {
+                return e;
             }
         }
 

@@ -47,15 +47,15 @@ private void writeUsageArgs(StringBuf& buf, OptionSet& set) {
     if setHasOptions(set) {
         buf.append(" [options]");
     }
-    for i in 0..set.positionals.size() {
+    for p in set.positionals {
         buf.append(" ");
-        if set.positionals[i].required {
+        if p.required {
             buf.append("<");
-            buf.append(set.positionals[i].name);
+            buf.append(p.name);
             buf.append(">");
         } else {
             buf.append("[");
-            buf.append(set.positionals[i].name);
+            buf.append(p.name);
             buf.append("]");
         }
     }
@@ -64,20 +64,20 @@ private void writeUsageArgs(StringBuf& buf, OptionSet& set) {
 // Width of the widest option row, including the auto-generated help row.
 private int optionSectionWidth(OptionSet& set) {
     var width = 10; // "  -h, --help"
-    for i in 0..set.flags.size() {
-        var cell = flagLeftCell(set.flags[i]);
+    for f in set.flags {
+        var cell = flagLeftCell(f);
         if cell.size() > width {
             width = cell.size();
         }
     }
-    for i in 0..set.options.size() {
-        var cell = optionLeftCell(set.options[i]);
+    for o in set.options {
+        var cell = optionLeftCell(o);
         if cell.size() > width {
             width = cell.size();
         }
     }
-    for i in 0..set.intOptions.size() {
-        var cell = intOptionLeftCell(set.intOptions[i]);
+    for o in set.intOptions {
+        var cell = intOptionLeftCell(o);
         if cell.size() > width {
             width = cell.size();
         }
@@ -95,17 +95,17 @@ private void writePaddedRow(StringBuf& buf, string left, string help, int width)
 private void writeOptionsSection(StringBuf& buf, OptionSet& set) {
     buf.append("Options:\n");
     var width = optionSectionWidth(set);
-    for i in 0..set.flags.size() {
-        var cell = flagLeftCell(set.flags[i]);
-        writePaddedRow(buf, cell.substr(0), set.flags[i].help, width);
+    for f in set.flags {
+        var cell = flagLeftCell(f);
+        writePaddedRow(buf, cell.substr(0), f.help, width);
     }
-    for i in 0..set.options.size() {
-        var cell = optionLeftCell(set.options[i]);
-        writePaddedRow(buf, cell.substr(0), set.options[i].help, width);
+    for o in set.options {
+        var cell = optionLeftCell(o);
+        writePaddedRow(buf, cell.substr(0), o.help, width);
     }
-    for i in 0..set.intOptions.size() {
-        var cell = intOptionLeftCell(set.intOptions[i]);
-        writePaddedRow(buf, cell.substr(0), set.intOptions[i].help, width);
+    for o in set.intOptions {
+        var cell = intOptionLeftCell(o);
+        writePaddedRow(buf, cell.substr(0), o.help, width);
     }
     writePaddedRow(buf, "  -h, --help", "Show this help message and exit.", width);
 }
@@ -116,18 +116,18 @@ private void writeArgumentsSection(StringBuf& buf, OptionSet& set) {
     }
     buf.append("\nArguments:\n");
     var width = 0;
-    for i in 0..set.positionals.size() {
-        var w = set.positionals[i].name.size() + 2;
+    for p in set.positionals {
+        var w = p.name.size() + 2;
         if w > width {
             width = w;
         }
     }
-    for i in 0..set.positionals.size() {
-        var left = StringBuf("  ") + set.positionals[i].name;
-        if set.positionals[i].required {
-            writePaddedRow(buf, left.substr(0), set.positionals[i].help, width);
+    for p in set.positionals {
+        var left = StringBuf("  ") + p.name;
+        if p.required {
+            writePaddedRow(buf, left.substr(0), p.help, width);
         } else {
-            var help = StringBuf(set.positionals[i].help) + " (optional)";
+            var help = StringBuf(p.help) + " (optional)";
             writePaddedRow(buf, left.substr(0), help.substr(0), width);
         }
     }
@@ -151,15 +151,15 @@ StringBuf helpText(ArgParser& parser) {
     if parser.commands.size() > 0 {
         buf.append("\nCommands:\n");
         var width = 0;
-        for i in 0..parser.commands.size() {
-            var w = parser.commands[i].name.size() + 2;
+        for c in parser.commands {
+            var w = c.name.size() + 2;
             if w > width {
                 width = w;
             }
         }
-        for i in 0..parser.commands.size() {
-            var left = StringBuf("  ") + parser.commands[i].name;
-            writePaddedRow(buf, left.substr(0), parser.commands[i].help, width);
+        for c in parser.commands {
+            var left = StringBuf("  ") + c.name;
+            writePaddedRow(buf, left.substr(0), c.help, width);
         }
         buf.append("\nRun '");
         buf.append(parser.name);

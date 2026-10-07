@@ -736,18 +736,18 @@ void testStringBufKeys() {
     var m = OrderedMap<StringBuf, int>();
 
     var words = ["delta", "albe", "charlie", "bravo"];
-    for i in 0..words.size() {
+    for w, i in words {
         var word = StringBuf();
-        word.append(words[i]);
+        word.append(w);
         m.insert(word, i);
     }
 
     churnHeap();
 
     assert(m.size() == 4);
-    for i in 0..words.size() {
+    for w, i in words {
         var lookup = StringBuf();
-        lookup.append(words[i]);
+        lookup.append(w);
         assert(m.contains(lookup));
         assert(m[lookup]! == i);
     }

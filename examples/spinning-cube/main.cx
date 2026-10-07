@@ -114,8 +114,7 @@ void render(int width, int height, int angleDegrees, List<uint8>* pixels) {
             pixels.push(toByte(bg.z));
         }
     }
-    for i in 0..tris.size() {
-        var tri = tris[i];
+    for tri in tris {
         var normal = rotateX(rotateY(tri.normal, spin), tilt);
         if normal.z <= 0.0 {
             continue;
@@ -238,8 +237,8 @@ int runSelfTest() {
     var other = List<uint8>();
     render(64, 48, 115, &other);
     var differ = false;
-    for i in 0..pixels.size() {
-        if pixels[i] != other[i] {
+    for p, i in pixels {
+        if p != other[i] {
             differ = true;
         }
     }
@@ -253,8 +252,8 @@ int main(string[] args) {
     var width = 800;
     var height = 600;
     var angle = 25;
-    for i in 0..args.size() {
-        if args[i] == "--self-test" {
+    for arg in args {
+        if arg == "--self-test" {
             return runSelfTest();
         }
     }

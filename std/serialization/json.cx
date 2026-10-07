@@ -158,8 +158,8 @@ private struct JsonParser {
     }
 
     Result<JsonValue, JsonError> parseLiteral(string word, JsonValue value) {
-        for i in 0..word.size() {
-            if pos >= input.size() || input[pos] != word[i] {
+        for c in word {
+            if pos >= input.size() || input[pos] != c {
                 return Err(JsonError.InvalidLiteral(pos));
             }
             pos++;
@@ -448,8 +448,8 @@ private void writeIndent(OutputStream& out, int count) {
 
 private void writeQuoted(OutputStream& out, StringBuf& s) {
     out.push('"');
-    for i in 0..s.size() {
-        int code = byteValue(s[i]);
+    for c in s {
+        int code = byteValue(c);
         if code == 34 {
             out.append("\\\"");
         } else if code == 92 {
@@ -469,7 +469,7 @@ private void writeQuoted(OutputStream& out, StringBuf& s) {
             out.push("0123456789abcdef"[code >> 4]);
             out.push("0123456789abcdef"[code & 15]);
         } else {
-            out.push(s[i]);
+            out.push(c);
         }
     }
     out.push('"');

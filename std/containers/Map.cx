@@ -83,8 +83,8 @@ struct Map<Key: Hashable, Value> {
 
     /// Removes all entries from the map, keeping the allocated buckets.
     void clear() {
-        for i in 0..hashTable.size() {
-            hashTable[i].clear();
+        for b in hashTable {
+            b.clear();
         }
         size = 0;
     }

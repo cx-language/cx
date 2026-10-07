@@ -70,15 +70,15 @@ Hit nearestHit(float[3] origin, float[3] dir, Sphere[3]& spheres) {
     var best = Hit(hit = false, point = [0.0, 0.0, 0.0],
         normal = [0.0, 1.0, 0.0], color = [0.0, 0.0, 0.0], reflectivity = 0.0);
     var bestT = 1e30;
-    for i in 0..spheres.size() {
-        var t = intersectSphere(origin, dir, spheres[i]);
+    for s in spheres {
+        var t = intersectSphere(origin, dir, s);
         if t > 0.0 && t < bestT {
             bestT = t;
             best.hit = true;
             best.point = origin + dir * t;
-            best.normal = (best.point - spheres[i].center).normalized();
-            best.color = spheres[i].color;
-            best.reflectivity = spheres[i].reflectivity;
+            best.normal = (best.point - s.center).normalized();
+            best.color = s.color;
+            best.reflectivity = s.reflectivity;
         }
     }
     var gt = intersectGround(origin, dir);
@@ -95,8 +95,8 @@ Hit nearestHit(float[3] origin, float[3] dir, Sphere[3]& spheres) {
 bool inShadow(float[3] p, float[3] lightDir, float lightDist, Sphere[3]& spheres) {
     // No ground check: the light sits above the plane, so shadow rays always point up.
     var origin = p + lightDir * 1e-4;
-    for i in 0..spheres.size() {
-        var t = intersectSphere(origin, lightDir, spheres[i]);
+    for s in spheres {
+        var t = intersectSphere(origin, lightDir, s);
         if t > 0.0 && t < lightDist {
             return true;
         }
@@ -228,8 +228,8 @@ int main(string[] args) {
     string path = "render.ppm";
     var width = 1920;
     var height = 1080;
-    for i in 0..args.size() {
-        if args[i] == "--self-test" {
+    for arg in args {
+        if arg == "--self-test" {
             return runSelfTest();
         }
     }

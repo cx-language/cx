@@ -253,8 +253,8 @@ void testWorld(World& w) {
         abort("self-test: too few solid blocks");
     }
     var verts = 0;
-    for i in 0..w.chunks.size() {
-        verts += w.chunks[i].mesh.vertexCount;
+    for c in w.chunks {
+        verts += c.mesh.vertexCount;
     }
     println("mesh vertices: ", verts);
     if verts < 1000 {
@@ -524,8 +524,8 @@ void testRender() {
     setMat4(uniforms.mvp, mvp);
     bindBlockTexture(uniforms, blockTex);
     setBlockFog(uniforms, eye);
-    for i in 0..world.chunks.size() {
-        drawMesh(world.chunks[i].mesh);
+    for c in world.chunks {
+        drawMesh(c.mesh);
     }
     checkGlError("self-test draw");
 

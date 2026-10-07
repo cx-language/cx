@@ -142,9 +142,9 @@ struct OptionSet {
     }
 
     string positional(string name) {
-        for i in 0..positionals.size() {
-            if positionals[i].name == name {
-                return positionals[i].value;
+        for p in positionals {
+            if p.name == name {
+                return p.value;
             }
         }
         abort("argparser: unknown positional '<", name, ">'");
@@ -168,9 +168,9 @@ struct OptionSet {
     }
 
     bool positionalIsSet(string name) {
-        for i in 0..positionals.size() {
-            if positionals[i].name == name {
-                return positionals[i].isSet;
+        for p in positionals {
+            if p.name == name {
+                return p.isSet;
             }
         }
         abort("argparser: unknown positional '<", name, ">'");
@@ -180,20 +180,20 @@ struct OptionSet {
 
     // Clears all parse results so the set can be parsed again.
     void reset() {
-        for i in 0..flags.size() {
-            flags[i].isSet = false;
+        for f in flags {
+            f.isSet = false;
         }
-        for i in 0..options.size() {
-            options[i].isSet = false;
-            options[i].value = options[i].defaultValue;
+        for o in options {
+            o.isSet = false;
+            o.value = o.defaultValue;
         }
-        for i in 0..intOptions.size() {
-            intOptions[i].isSet = false;
-            intOptions[i].value = intOptions[i].defaultValue;
+        for o in intOptions {
+            o.isSet = false;
+            o.value = o.defaultValue;
         }
-        for i in 0..positionals.size() {
-            positionals[i].isSet = false;
-            positionals[i].value = "";
+        for p in positionals {
+            p.isSet = false;
+            p.value = "";
         }
         extras.clear();
         errorMessage = StringBuf();
@@ -202,54 +202,54 @@ struct OptionSet {
     }
 
     FlagSpec*? findFlag(string name) {
-        for i in 0..flags.size() {
-            if flags[i].name == name {
-                return &flags[i];
+        for f in flags {
+            if f.name == name {
+                return &f;
             }
         }
         return null;
     }
 
     OptionSpec*? findOption(string name) {
-        for i in 0..options.size() {
-            if options[i].name == name {
-                return &options[i];
+        for o in options {
+            if o.name == name {
+                return &o;
             }
         }
         return null;
     }
 
     IntOptionSpec*? findIntOption(string name) {
-        for i in 0..intOptions.size() {
-            if intOptions[i].name == name {
-                return &intOptions[i];
+        for o in intOptions {
+            if o.name == name {
+                return &o;
             }
         }
         return null;
     }
 
     FlagSpec*? findFlagByShort(char c) {
-        for i in 0..flags.size() {
-            if flags[i].shortName.size() == 1 && flags[i].shortName[0] == c {
-                return &flags[i];
+        for f in flags {
+            if f.shortName.size() == 1 && f.shortName[0] == c {
+                return &f;
             }
         }
         return null;
     }
 
     OptionSpec*? findOptionByShort(char c) {
-        for i in 0..options.size() {
-            if options[i].shortName.size() == 1 && options[i].shortName[0] == c {
-                return &options[i];
+        for o in options {
+            if o.shortName.size() == 1 && o.shortName[0] == c {
+                return &o;
             }
         }
         return null;
     }
 
     IntOptionSpec*? findIntOptionByShort(char c) {
-        for i in 0..intOptions.size() {
-            if intOptions[i].shortName.size() == 1 && intOptions[i].shortName[0] == c {
-                return &intOptions[i];
+        for o in intOptions {
+            if o.shortName.size() == 1 && o.shortName[0] == c {
+                return &o;
             }
         }
         return null;
@@ -379,9 +379,9 @@ struct OptionSet {
     }
 
     bool checkRequired() {
-        for i in 0..positionals.size() {
-            if positionals[i].required && !positionals[i].isSet {
-                errorMessage = StringBuf("missing required argument '<") + positionals[i].name + ">'";
+        for p in positionals {
+            if p.required && !p.isSet {
+                errorMessage = StringBuf("missing required argument '<") + p.name + ">'";
                 return false;
             }
         }
@@ -524,9 +524,9 @@ struct ArgParser {
     }
 
     CommandSpec*? findCommand(string name) {
-        for i in 0..commands.size() {
-            if commands[i].name == name {
-                return &commands[i];
+        for c in commands {
+            if c.name == name {
+                return &c;
             }
         }
         return null;
@@ -599,8 +599,8 @@ struct ArgParser {
     // help. The parser is reset first, so it can be parsed repeatedly.
     bool parse(string[] args) {
         options.reset();
-        for i in 0..commands.size() {
-            commands[i].options.reset();
+        for c in commands {
+            c.options.reset();
         }
         matchedCommandIndex = -1;
         var endOfOptions = false;
@@ -639,8 +639,8 @@ struct ArgParser {
     }
 
     int commandIndex(string name) {
-        for i in 0..commands.size() {
-            if commands[i].name == name {
+        for c, i in commands {
+            if c.name == name {
                 return i;
             }
         }
@@ -651,11 +651,11 @@ struct ArgParser {
         var msg = StringBuf("unknown command '") + name + "'";
         if commands.size() > 0 {
             msg.append(" (expected one of: ");
-            for i in 0..commands.size() {
+            for c, i in commands {
                 if i > 0 {
                     msg.append(", ");
                 }
-                msg.append(commands[i].name);
+                msg.append(c.name);
             }
             msg.append(")");
         }

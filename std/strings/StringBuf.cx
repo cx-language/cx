@@ -144,15 +144,15 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     /// Converts all characters to uppercase in place (ASCII only).
     void toUpper() {
-        for i in 0..size() {
-            characters[i] = characters[i].toUpper();
+        for c in this {
+            *c = c.toUpper();
         }
     }
 
     /// Converts all characters to lowercase in place (ASCII only).
     void toLower() {
-        for i in 0..size() {
-            characters[i] = characters[i].toLower();
+        for c in this {
+            *c = c.toLower();
         }
     }
 

@@ -30,10 +30,10 @@ struct Asteroid {
         size = randomFloat(minSize, maxSize);
         vertices = undefined;
 
-        for i in 0..vertices.size() {
+        for v, i in vertices {
             var offset = 1 + randomFloat(-formVariation, formVariation);
             var angle = float(i) / float(vertices.size()) * pi * 2;
-            vertices[i] = vectorFromAngle(angle) * (offset * size);
+            *v = vectorFromAngle(angle) * (offset * size);
         }
     }
 

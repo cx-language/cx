@@ -204,8 +204,8 @@ int runGame(bool debug) {
         glUseProgram(program);
         setMat4(uniforms.mvp, mvp);
         setBlockFog(uniforms, eye);
-        for i in 0..world.chunks.size() {
-            drawMesh(world.chunks[i].mesh);
+        for c in world.chunks {
+            drawMesh(c.mesh);
         }
 
         glUseProgram(flatProgram);
@@ -257,18 +257,18 @@ int runGame(bool debug) {
 
 int main(string[] args) {
     var debug = false;
-    for i in 0..args.size() {
-        if args[i] == "--self-test" {
+    for arg, i in args {
+        if arg == "--self-test" {
             return runSelfTest();
         }
-        if args[i] == "--screenshot" {
+        if arg == "--screenshot" {
             if i + 1 >= args.size() {
                 println("usage: --screenshot <path>");
                 return 1;
             }
             return runScreenshot(args[i + 1]);
         }
-        if args[i] == "--debug" {
+        if arg == "--debug" {
             debug = true;
         }
     }

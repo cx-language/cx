@@ -42,8 +42,8 @@ int runScreenshot(string path) {
     setMat4(uniforms.mvp, mvp);
     bindBlockTexture(uniforms, blockTex);
     setBlockFog(uniforms, eye);
-    for i in 0..world.chunks.size() {
-        drawMesh(world.chunks[i].mesh);
+    for c in world.chunks {
+        drawMesh(c.mesh);
     }
     checkGlError("screenshot draw");
 

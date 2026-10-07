@@ -274,8 +274,8 @@ int runScreenshot(string path) {
 }
 
 int main(string[] args) {
-    for i in 0..args.size() {
-        if args[i] == "--screenshot" {
+    for arg, i in args {
+        if arg == "--screenshot" {
             if i + 1 >= args.size() {
                 println("usage: --screenshot <path>");
                 return 1;
