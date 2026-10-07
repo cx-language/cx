@@ -1,0 +1,13 @@
+// REQUIRES: msvc-link
+// RUN: %cx %s -l winmm -o %T/msvc-link-flags.exe
+// RUN: %T/msvc-link-flags.exe | %FileCheck %s
+
+// cl.exe takes no -l; the driver must translate it to winmm.lib (winmm is
+// not in link.exe's default set, so this only links when translated).
+// x64/ARM64 only: the cdecl extern resolves undecorated there, while x86
+// would need the stdcall-decorated import.
+extern c_uint timeGetTime();
+
+void main() {
+    println(timeGetTime() >= 0); // CHECK: true
+}

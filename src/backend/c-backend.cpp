@@ -246,7 +246,11 @@ bool isCFileType(const IRStructType* type) {
 void CGenerator::codegenModule(const IRModule& module) {
     stream << "\n";
     for (auto& includedHeader : module.includedHeaders) {
-        stream << "#include \"" << includedHeader << "\"\n";
+        // Headers without include guards break on double inclusion; the header's
+        // own module and its importers all list the same header.
+        if (alreadyIncludedHeaders.insert(includedHeader).second) {
+            stream << "#include \"" << includedHeader << "\"\n";
+        }
     }
     stream << "// Module '" << module.name << "' forward declarations\n";
     for (auto* function : module.functions) {

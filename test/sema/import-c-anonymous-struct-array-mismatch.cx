@@ -1,0 +1,10 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+import "inputs/anonymous-struct-array.h";
+
+void main() {
+    ArrayOfAnonymous a = undefined;
+    OtherArrayOfAnonymous b = undefined;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign 'AnonymousRecord{{[0-9]+}}[2]' to 'AnonymousRecord{{[0-9]+}}[2]'
+    a.elements = b.elements;
+}

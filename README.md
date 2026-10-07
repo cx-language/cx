@@ -74,19 +74,48 @@ cmake --build .
 ### Windows
 
 Download and extract LLVM/Clang 23 pre-built binaries from https://github.com/llvm/llvm-project/releases.
-Then run the following commands:
+
+Run the commands below from an x64 Native Tools Command Prompt for
+Visual Studio (or any prompt with the VS environment loaded): it puts the
+Visual Studio bundled CMake, Ninja, and the MSVC compiler on `PATH`.
+A cmake.org install works too, but not the MSYS2 CMake, which generates
+Unix-style paths that break the build.
 
 ```sh
 mkdir build
 cd build
 cmake .. -DCMAKE_PREFIX_PATH="C:\path\to\llvm" -DCMAKE_GENERATOR_PLATFORM=x64 -Thost=x64
-cmake --build .
+cmake --build . --config Release
 ```
 
-The `cx` and `cx-lsp` binaries end up in the `build` directory.
+LLVM's Windows binaries require zlib and zstd at configure time. CMake uses
+system/vcpkg copies when findable (add their install prefix to
+`CMAKE_PREFIX_PATH`), and otherwise builds them from source automatically,
+so no manual dependency install is needed.
+
+The `cx` and `cx-lsp` binaries end up in `build\Release`
+(`build\Debug` when built without `--config Release`).
 For the fastest clean build of just the compiler, configure with
 `-G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_UNITY_BUILD=ON` and run
 `cmake --build . --target cx`.
+
+### Offline builds
+
+Configuring downloads AsmJit from GitHub (plus zlib and zstd on machines
+without system copies, e.g. Windows). To build without network access,
+check out the pinned commits (see `GIT_TAG` in CMakeLists.txt) and point
+CMake at them:
+
+```sh
+cmake .. -DFETCHCONTENT_SOURCE_DIR_ASMJIT=/path/to/asmjit -DFETCHCONTENT_SOURCE_DIR_ZLIB=/path/to/zlib -DFETCHCONTENT_SOURCE_DIR_ZSTD=/path/to/zstd
+```
+
+On macOS, apply `cmake/asmjit-apple-varargs.patch` to that checkout first;
+CMake applies it automatically only to checkouts it fetches itself.
+
+If your LLVM distribution does not ship FileCheck, configuring downloads
+its source; pass `-DFILECHECK_SOURCE=/path/to/FileCheck.cpp` to build from
+a local copy of the same LLVM version instead.
 
 ### Editor support
 
@@ -118,9 +147,17 @@ cmake --build . --target check
 
 Configure with `-DCMAKE_BUILD_TYPE=Release` for running tests, since the
 unoptimized compiler is several times slower per test invocation.
+With the Visual Studio generator on Windows, `CMAKE_BUILD_TYPE` is ignored;
+build and test the `Release` configuration instead:
+
+```sh
+cmake --build . --config Release --target check
+```
+
 This runs the full suite via CTest: the lit/compiler tests, the example programs (LLVM and C backends),
 the documentation snippets, and the language server end-to-end tests.
-Run a subset from the build directory with e.g. `ctest -R 'docs-snippets'`.
+Run a subset from the build directory with e.g. `ctest -R 'docs-snippets'`
+(use double quotes in `cmd.exe`).
 To run a single compiler test file, invoke `lit` with the flags shown by `ctest -N -V`.
 
 The C++ code style is enforced by ClangFormat:

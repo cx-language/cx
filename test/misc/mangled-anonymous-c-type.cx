@@ -2,9 +2,9 @@
 
 import "inputs/mangled-anonymous-c-type.h";
 
-// Anonymous C types have no name to mangle; a creation-order index tells
-// them apart. The same type spells the same index in all three positions.
-// CHECK: _CX1N4main5identI0[[N:[0-9]+]]_EE0[[N]]_1_0[[N]]_
+// Anonymous C types mangle by their generated name. The same type spells
+// the same name in all three positions.
+// CHECK: _CX1N4main5identIM42inputs_2Fmangled_2Danonymous_2Dc_2Dtype__h16AnonymousRecord0EEM42inputs_2Fmangled_2Danonymous_2Dc_2Dtype__h16AnonymousRecord01_M42inputs_2Fmangled_2Danonymous_2Dc_2Dtype__h16AnonymousRecord0
 
 T ident<T>(T x) { return x; }
 

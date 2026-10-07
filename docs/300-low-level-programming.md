@@ -123,6 +123,38 @@ void main() {
 }
 ```
 
+Numbers, characters, and strings are imported as constants,
+as are simple expressions over numbers and characters
+(float operands compute in double precision):
+
+```cs
+import "stdio.h";
+
+void main() {
+    println(EOF); // prints -1
+}
+```
+
+Compound literals of an imported struct are imported as constants when every
+element is constant; the elements may be numbers, characters, earlier scalar
+macros, or nested compound literals. Partial initializers, designators,
+unions, and structs with anonymous members are not imported:
+
+```c
+typedef struct Color { unsigned char r, g, b, a; } Color;
+#define RAYWHITE (Color){ 245, 245, 245, 255 }
+```
+
+```cs {.noCompile}
+import "raylib.h";
+
+void main() {
+    println(RAYWHITE.g); // prints 245
+}
+```
+
+Function-like macros and casts are not imported.
+
 Individual functions can also be declared with `extern`, without importing a header.
 The standard library uses `extern` declarations in `std/system/libc.cx`
 to give common C functions more precise cx types.
@@ -180,6 +212,15 @@ Compile the cx side to an object file, then link it into the C program:
 ```sh
 cx cxlib.cx -c -o cxlib.o
 cc main.c cxlib.o -o c-caller
+```
+
+On Windows, link the object file with `link.exe`, adding the C runtime
+libraries the driver links automatically, plus your own libraries as
+`.lib` files:
+
+```sh {.noRun}
+cx main.cx -c -o main.obj
+link main.obj legacy_stdio_definitions.lib ucrt.lib msvcrt.lib /SUBSYSTEM:CONSOLE /OUT:demo.exe
 ```
 
 Signatures crossing the boundary must be C-compatible: plain numbers,

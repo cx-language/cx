@@ -24,3 +24,30 @@ const int* p = &x;
 
 // CHECK: [[@LINE+1]]:17: error: cannot take address of constant expression of type 'int'
 const int* q = &*p;
+
+struct Point {
+    int x
+    int y
+}
+
+struct Widget {
+    int x
+    Widget(int x) { this.x = x * 2; }
+}
+
+struct Inner {
+    int x
+    ~Inner() {}
+}
+
+struct Owner {
+    Inner f
+    int y
+}
+
+// CHECK: [[@LINE+1]]:14: error: global variable initializer must be a constant expression
+var widget = Widget(21);
+// CHECK: [[@LINE+1]]:13: error: global variable initializer must be a constant expression
+var owner = Owner(Inner(1), 2);
+// CHECK: [[@LINE+1]]:13: error: global variable initializer must be a constant expression
+var point = Point(x, 2);

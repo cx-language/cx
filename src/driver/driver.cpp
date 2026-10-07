@@ -359,6 +359,28 @@ static bool isLibraryFilePath(llvm::StringRef value) {
         || extension == ".obj";
 }
 
+std::vector<std::string> cx::msvcLinkArgs(llvm::ArrayRef<std::string> librarySearchPaths, llvm::ArrayRef<std::string> libraries) {
+    std::vector<std::string> args;
+    for (const auto& path : librarySearchPaths) {
+        args.push_back("/LIBPATH:" + path);
+    }
+    for (const auto& library : libraries) {
+        // cl.exe takes no -l: a bare name means <name>.lib, while anything
+        // naming a path or file passes through for the linker to diagnose.
+        if (library.find('/') == std::string::npos && library.find('\\') == std::string::npos && llvm::sys::path::extension(library).empty()) {
+            args.push_back(library + ".lib");
+        } else {
+            args.push_back(library);
+        }
+    }
+    return args;
+}
+
+std::string cx::withExecutableExtension(std::string name, bool isWindows) {
+    if (isWindows && llvm::sys::path::extension(name).compare_insensitive(".exe") != 0) name += ".exe";
+    return name;
+}
+
 static void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::OF_None);
@@ -826,15 +848,22 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     // so pass the import search paths to the C compiler as well.
     addFlaggedArgs("-I", options.importSearchPaths);
     addFlaggedArgs("-D", options.defines);
-    addFlaggedArgs("-L", librarySearchPaths);
-    for (const auto& library : libraries) {
-        // A -l value naming an existing library file is passed to the linker as
-        // an input file; -l with a path is otherwise rejected ("library ... not found").
-        if (isLibraryFilePath(library)) {
-            ccArgs.push_back(library.c_str());
-        } else {
-            ccArgs.push_back("-l");
-            ccArgs.push_back(library.c_str());
+    // MSVC takes no -L/-l; its translated form is staged here (ccArgs borrows
+    // from it, so it must outlive the link) and appended after -link below.
+    std::vector<std::string> msvcLinkStorage;
+    if (isMSVC) {
+        msvcLinkStorage = msvcLinkArgs(librarySearchPaths, libraries);
+    } else {
+        addFlaggedArgs("-L", librarySearchPaths);
+        for (const auto& library : libraries) {
+            // A -l value naming an existing library file is passed to the linker as
+            // an input file; -l with a path is otherwise rejected ("library ... not found").
+            if (isLibraryFilePath(library)) {
+                ccArgs.push_back(library.c_str());
+            } else {
+                ccArgs.push_back("-l");
+                ccArgs.push_back(library.c_str());
+            }
         }
     }
     addFlaggedArgs("-F", frameworkSearchPaths);
@@ -857,6 +886,9 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     if (isMSVC) {
         ccArgs.push_back("-link");
+        for (auto& arg : msvcLinkStorage) {
+            ccArgs.push_back(arg.c_str());
+        }
         ccArgs.push_back("-DEBUG");
         // The default 1MB stack overflows on deeply recursive programs that
         // run fine elsewhere (e.g. JSON parsing); reserve 8MB to match the
@@ -1135,6 +1167,10 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
         } else {
             outputFileName = config.name;
         }
+        // Directory builds always target the host (there is no --target flag).
+#ifdef _WIN32
+        outputFileName = withExecutableExtension(outputFileName, true);
+#endif
         auto sourceFiles = getSourceFiles(targetRootDir, config.rootDirectory);
         // TODO: Add support for library packages.
         int exitStatus = buildModuleFromFiles({

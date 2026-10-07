@@ -1,0 +1,30 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+import "inputs/c-compound-literal.h";
+
+void main() {
+    println(RAYWHITE.r) // CHECK:245
+    println(RAYWHITE.g) // CHECK:245
+    println(RAYWHITE.b) // CHECK:245
+    println(RAYWHITE.a) // CHECK:255
+    println(RED.r) // CHECK:230
+    println(WITH_EXPR.r) // CHECK:3
+    println(WITH_EXPR.g) // CHECK:20
+    println(WITH_EXPR.b) // CHECK:25
+    println(TRAILING_COMMA.a) // CHECK:9
+    println(STRUCT_FORM.g) // CHECK:6
+    println(NESTED.color.b) // CHECK:3
+    println(NESTED.x) // CHECK:10
+    println(FWD.a) // CHECK:1
+    println(FWD.b) // CHECK:2
+    println(REUSES_BASE.c.g) // CHECK:20
+    println(REUSES_BASE.n) // CHECK:7
+    println(WITH_CHAR.ch) // CHECK:a
+    println(WITH_CHAR.n) // CHECK:5
+    println(WITH_FLOAT.f) // CHECK:2.5
+    println(WITH_FLOAT.d) // CHECK:3.5
+    println(ANON_TYPEDEF.x) // CHECK:3
+    println(ANON_TYPEDEF.y) // CHECK:4
+}

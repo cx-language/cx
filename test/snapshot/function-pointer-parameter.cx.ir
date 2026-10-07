@@ -25,21 +25,20 @@ void _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)
     int32* a = alloca int32
     store p to p_0
     int32(int32, bool)* p.load = load p_0
-    bool _0 = !bool true
-    int32 _1 = call p.load(int32 42, bool _0)
-    int32 _2 = checkedarith + _1, int32 1
-    bool _3 = overflow _2
-    bool _4 = !_3
-    bool overflow.condition = _4 == bool false
+    int32 _0 = call p.load(int32 42, bool false)
+    int32 _1 = checkedarith + _0, int32 1
+    bool _2 = overflow _1
+    bool _3 = !_2
+    bool overflow.condition = _3 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _5 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at function-pointer-parameter.cx:12:26
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at function-pointer-parameter.cx:12:26
 ")
     unreachable
 
 overflow.success:
-    store _2 to a
+    store _1 to a
     return void
 }
 

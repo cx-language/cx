@@ -112,6 +112,9 @@ struct CompileError : std::exception {
     std::string message; // Empty if this is a silent "dependent error", resulting from a previous, reported error.
     std::vector<Note> notes;
     Location endLocation; // One past the last underlined character. Invalid renders a point instead of a range.
+    // Cyclic references come from the checked declarations, never from overload choice,
+    // so overload probing must rethrow them instead of rejecting the candidate.
+    bool isCyclic = false;
 };
 
 template<typename T> void printColored(const T& text, llvm::raw_ostream::Colors color) {

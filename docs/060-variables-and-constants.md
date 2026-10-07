@@ -17,11 +17,12 @@ const float d = 0.2; // global constant, explicit type
 ```
 
 `const` declares a compile-time constant: the initializer must be a constant
-expression (literals, arithmetic on constants, and references to other
-constants, but not function calls), and the constant cannot be reassigned
-or mutated afterwards. Reading or copying a constant's value always works,
-but no alias to it can be formed: taking its address and binding it to a
-borrow, pointer, or view are all rejected.
+expression (literals, arithmetic on constants, references to other
+constants, and constructor calls of copyable structs with constant
+arguments, but not other function calls), and the constant cannot be
+reassigned or mutated afterwards. Reading or copying a constant's value
+always works, but no alias to it can be formed: taking its address and
+binding it to a borrow, pointer, or view are all rejected.
 
 `const` only appears at the start of a constant declaration; it never
 appears in types. There is no `const T*`: pointers, borrows, and views
@@ -36,13 +37,21 @@ Global variables are initialized before the program starts,
 so their initializers must be constant expressions too.
 
 ```cs
+struct Color {
+    int r
+    int g
+    int b
+}
+
 const threshold = 10;
 int limit = threshold * 2;
 string greeting = "hello";
+const white = Color(255, 255, 255);
 
 void main() {
     println(limit); // prints 20
     println(greeting); // prints hello
+    println(white.g); // prints 255
 }
 ```
 

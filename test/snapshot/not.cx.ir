@@ -1,12 +1,10 @@
 
 int32 main() {
     bool* b = alloca bool
-    bool _0 = !bool false
-    bool _1 = !_0
-    store _1 to b
+    store bool false to b
     bool b.load = load b
-    bool _2 = !b.load
-    store _2 to b
-    void _3 = call _CX1N3std10checkLeaksE4void0_()
+    bool _0 = !b.load
+    store _0 to b
+    void _1 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }

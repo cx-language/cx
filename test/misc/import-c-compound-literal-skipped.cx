@@ -1,0 +1,30 @@
+// RUN: %not %cx -typecheck %s --error-limit=0 2>&1 | %FileCheck %s
+
+// Partial inits, designators, unknown types, scalar forms, out-of-range
+// elements, forward compound references, mutable elements, unions, and structs
+// with anonymous members are not imported; using them is an error, but
+// importing the header succeeds.
+import "inputs/c-compound-literal.h";
+
+void main() {
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'PARTIAL'
+    print(PARTIAL);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'TOO_MANY'
+    print(TOO_MANY);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'DESIGNATED'
+    print(DESIGNATED);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'WRONG_TYPE'
+    print(WRONG_TYPE);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'SCALAR_FORM'
+    print(SCALAR_FORM);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'OUT_OF_RANGE'
+    print(OUT_OF_RANGE);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'FWD_REF'
+    print(FWD_REF);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'USES_MUTABLE'
+    print(USES_MUTABLE);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'UNION_LIT'
+    print(UNION_LIT);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'ANON_MEMBER_LIT'
+    print(ANON_MEMBER_LIT);
+}

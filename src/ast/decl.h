@@ -350,9 +350,10 @@ struct TypeDecl : Decl {
     Module& module;
     const TypeDecl* instantiatedFrom;
     bool packed = false;
-    // Set by the C importer for generated records standing in for anonymous
-    // structs/unions. No header defines them, so the C backend emits its own
-    // definitions instead of using the header's.
+    // Set by the C importer for records without a tag: generated records standing
+    // in for anonymous structs/unions, and typedef-named ones. Neither can be
+    // referenced as `struct Name`, so the C backend emits its own definitions
+    // instead of using the header's.
     bool isAnonymousRecord = false;
     // Interface field/method materialization runs once: the main-module
     // prepass and lazy use both funnel through ensureInterfaces.

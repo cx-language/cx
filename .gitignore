@@ -46,6 +46,25 @@ website/.generated/
 # VSCode
 .vscode
 
+# Visual Studio
+.vs/
+CMakeSettings.json
+*.sln
+*.vcxproj*
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db*
+*.VC.opendb
+*.opensdf
+*.sdf
+ipch/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
 # CLion
 .idea
 cmake-build-*

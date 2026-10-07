@@ -105,6 +105,9 @@ struct Typechecker {
 
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
     void typecheckVarDecl(VarDecl& decl);
+    // True when the expression can initialize a const or global. Shared by the
+    // declaration checker and the C importer (for compound-literal macros).
+    bool isSupportedConstInitializer(const Expr& expr);
     void typecheckFieldDecl(FieldDecl& decl);
     void typecheckTopLevelDecl(Decl& decl);
     void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);
