@@ -17,4 +17,14 @@ std::string readAllStdin();
 /// JSON diagnostics, so the caller can stay alive).
 int runQueryProcess();
 
+/// Handles `--leak-check <file> <count>`: runs <count> "check" analyses of
+/// <file> through one LspSession (each with a unique trailing comment, so
+/// every analysis misses the cache and resets the AST arena), drops the
+/// session cache, then exits. Under LeakSanitizer the exit report must not
+/// grow with <count>: growth means AST nodes own malloc'd memory that
+/// resetAstArena never frees. A failed analysis prints a marker to stdout
+/// (otherwise empty); usage/IO errors go to stderr. Returns 1 on any of
+/// those; analysis diagnostics are ignored.
+int runLeakCheck(const char* filePath, int count);
+
 } // namespace cx::lsp

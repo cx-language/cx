@@ -2788,6 +2788,17 @@ JsonValue handleQuery(const JsonValue& queryJson) {
     return answerFromFrontend(query, frontend);
 }
 
+void LspSession::dropCache() {
+    if (cached) {
+        // Reset first: cached diagnostics hold locations into the file
+        // buffers, so they must be gone before the modules are freed.
+        Module* mainModule = cached->frontend.mainModule;
+        cached.reset();
+        deleteModules(mainModule);
+    }
+    resetCompilerGlobals();
+}
+
 std::optional<JsonValue> LspSession::handle(LspQuery query) {
     try {
         if (query.method == "completion" && needsCompletionPlaceholder(query.content, query.position)) {
@@ -2796,14 +2807,7 @@ std::optional<JsonValue> LspSession::handle(LspQuery query) {
         if (cached && cacheMatches(*cached, query)) {
             return answerFromFrontend(query, cached->frontend);
         }
-        if (cached) {
-            // Reset first: cached diagnostics hold locations into the file
-            // buffers, so they must be gone before the modules are freed.
-            Module* mainModule = cached->frontend.mainModule;
-            cached.reset();
-            deleteModules(mainModule);
-        }
-        resetCompilerGlobals();
+        dropCache();
         FrontendResult frontend = runFrontendOnce(query);
         if (auto entry = buildEntry(query, frontend)) {
             if (profilingEnabled()) llvm::errs() << "[profile] lsp-stored\n";

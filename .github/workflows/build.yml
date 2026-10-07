@@ -343,6 +343,56 @@ jobs:
           name: cx-ubuntu-release
           path: ${{ runner.temp }}/cx-dist
 
+  # LeakSanitizer gate for the AST arena no-malloc contract: an
+  # LSan-instrumented cx-lsp runs repeated LSP analyses with arena resets
+  # and fails on per-reset growth (see test/lsp/check_lsan.py). Linux-only:
+  # Apple Clang lacks -fsanitize=leak and Windows has no LSan. Runs on PRs
+  # like the lit suites: allocator regressions must fail before merge.
+  lsan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12
+
+      - name: Cache apt archives (Ubuntu)
+        uses: actions/cache@v5
+        with:
+          path: |
+            /tmp/apt-archives
+            !/tmp/apt-archives/lock
+            !/tmp/apt-archives/partial
+          key: apt-archives-llvm-23-sdl-glfw
+
+      - name: Redirect apt archives (Ubuntu)
+        run: |
+          mkdir -p /tmp/apt-archives/partial
+          echo 'Dir::Cache::Archives "/tmp/apt-archives";' | sudo tee /etc/apt/apt.conf.d/99-ci-cache
+
+      - name: Download LLVM (Ubuntu)
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 23 all
+
+      - name: Configure CMake (LSan)
+        shell: bash
+        run: >
+          cmake -S . -B build-lsan -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=/usr/lib/llvm-23/bin/clang
+          -DCMAKE_CXX_COMPILER=/usr/lib/llvm-23/bin/clang++
+          -DCMAKE_PREFIX_PATH=/usr/lib/llvm-23 -DCX_SANITIZE_LEAK=ON
+
+      - name: Build cx-lsp (LSan)
+        shell: bash
+        run: cmake --build build-lsan --target cx-lsp --parallel
+
+      - name: LSan arena gate
+        shell: bash
+        run: python3 test/lsp/check_lsan.py --cx-lsp build-lsan/cx-lsp
+
   # The language comparison takes ~11 minutes, longer than the rest of the
   # Ubuntu release leg combined, so it runs here in parallel with the other
   # legs instead of appended to that leg. Main-only like bench-record: the

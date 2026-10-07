@@ -1,6 +1,8 @@
 #include "query.h"
 #include "analyzer.h"
 #include <cstdio>
+#include <fstream>
+#include <sstream>
 #include <string>
 
 namespace cx::lsp {
@@ -38,6 +40,58 @@ int runQueryProcess() {
     std::string output = serializeJson(JsonValue(std::move(envelope)));
     std::fwrite(output.data(), 1, output.size(), stdout);
     return 0;
+}
+
+int runLeakCheck(const char* filePath, int count) {
+// Without instrumentation the comparison is vacuous, so refuse loudly. The
+// body below still compiles everywhere, keeping it free of bitrot.
+#ifdef __has_feature
+#if __has_feature(leak_sanitizer)
+#define CX_LSAN_INSTRUMENTED 1
+#endif
+#endif
+#ifndef CX_LSAN_INSTRUMENTED
+    std::fputs("leak-check: rebuild with -fsanitize=leak (Clang) to measure leaks\n", stdout);
+    return 1;
+#endif
+#undef CX_LSAN_INSTRUMENTED
+    if (!filePath || count < 1) {
+        std::fputs("usage: cx-lsp --leak-check <file> <count>\n", stderr);
+        return 1;
+    }
+    std::ifstream input(filePath);
+    if (!input) {
+        std::fputs("cx-lsp: cannot open leak-check file\n", stderr);
+        return 1;
+    }
+    std::ostringstream content;
+    content << input.rdbuf();
+    std::string base = content.str();
+    LspSession session;
+    bool failed = false;
+    auto runOnce = [&](const std::string& text) {
+        LspQuery query;
+        query.method = "check";
+        query.filePath = filePath;
+        query.content = text;
+        // A failed analysis may leak through untaken cleanup paths; report
+        // on stdout (stderr belongs to the sanitizer, whose exit code would
+        // mask ours) so the gate fails loudly instead of measuring noise.
+        if (!session.handle(std::move(query))) {
+            std::fputs("leak-check: analysis failed\n", stdout);
+            failed = true;
+        }
+    };
+    // Unique trailing comment per iteration: the session cache keys on
+    // content, so every analysis recompiles from reset globals.
+    for (int i = 0; i < count; ++i) {
+        runOnce(base + "\n// leak-check " + std::to_string(i) + "\n");
+    }
+    // Drop everything before exit: with no surviving cached frontend, the
+    // LSan report holds one-time allocations plus whatever the resets
+    // failed to free, independent of retained-analysis size noise.
+    session.dropCache();
+    return failed ? 1 : 0;
 }
 
 } // namespace cx::lsp

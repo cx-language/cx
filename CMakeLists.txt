@@ -61,6 +61,18 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "--system-header-prefix=llvm --system-header-prefix=clang ${CMAKE_CXX_FLAGS}")
 endif()
 
+# Instrumented build for the LSan arena gate (test/lsp/check_lsan.py), which
+# runs cx-lsp --leak-check. Needs a Clang with -fsanitize=leak (LLVM Clang on
+# macOS/Linux); Apple Clang lacks it.
+option(CX_SANITIZE_LEAK "Build with -fsanitize=leak for the LSan arena gate" OFF)
+if(CX_SANITIZE_LEAK)
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        message(FATAL_ERROR "CX_SANITIZE_LEAK needs LLVM Clang with -fsanitize=leak")
+    endif()
+    add_compile_options(-fsanitize=leak)
+    add_link_options(-fsanitize=leak)
+endif()
+
 include(FetchContent)
 
 # LLVM's CMake config includes LLVMExports.cmake, which hard-errors if any of

@@ -33,12 +33,13 @@ inline llvm::StringRef internString(llvm::StringRef value) {
 
 /// Frees all AST nodes and interned strings. Node destructors never run, so
 /// nodes must not own malloc'd memory: dynamic members use AstVector and
-/// interned StringRefs. A malloc'd member would leak silently at reset, so
-/// re-check with LeakSanitizer over repeated LSP analyses when adding node
-/// members. Every pointer returned from this header dangles afterwards; the
-/// caller must have dropped them all (the LSP session drops its cached
-/// modules first). The allocator is reusable right after: the next
-/// compilation interns from scratch, exactly like a fresh process would.
+/// interned StringRefs. A malloc'd member would leak silently at reset; the
+/// LSan CI gate (test/lsp/check_lsan.py over repeated LSP analyses) fails
+/// on per-reset growth, so run it when adding node members. Every pointer
+/// returned from this header dangles afterwards; the caller must have
+/// dropped them all (the LSP session drops its cached modules first). The
+/// allocator is reusable right after: the next compilation interns from
+/// scratch, exactly like a fresh process would.
 inline void resetAstArena() {
     // Destroying the saver only frees its own DenseSet buckets (malloced);
     // the interned bytes live in the allocator slabs freed below.

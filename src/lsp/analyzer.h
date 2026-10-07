@@ -243,6 +243,11 @@ struct LspSession {
     /// throws: any failure comes back as nullopt and the server falls back
     /// (empty result or "analysis failed" diagnostic).
     std::optional<JsonValue> handle(LspQuery query);
+    /// Drops the cached compilation and resets all compiler globals, leaving
+    /// no analysis memory retained. Test-only: `--leak-check` calls this
+    /// before exit so the LSan report covers dropped analyses only, not the
+    /// surviving cached frontend.
+    void dropCache();
 };
 
 /// AST query helpers operating on a single frontend run's module.

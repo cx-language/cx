@@ -629,6 +629,25 @@ def test_query_modes(cx_lsp, path):
     check("query-malformed", proc.returncode == 0 and envelope.get("ok") is False)
 
 
+def test_leak_check_mode(cx_lsp, path):
+    proc = subprocess.run(
+        [cx_lsp, "--leak-check", path, "1"],
+        capture_output=True,
+        timeout=120,
+    )
+    out = proc.stdout.decode()
+    if "rebuild with -fsanitize=leak" in out:
+        check("query-leak-check-refusal", proc.returncode == 1, out[:200])
+    else:
+        # Instrumented binary: check_lsan.py covers measurement; here just
+        # assert the hook runs without failing any analysis (empty stdout).
+        check(
+            "query-leak-check-hook",
+            proc.returncode in (0, 23) and out == "",
+            f"{proc.returncode} {out[:200]}",
+        )
+
+
 def test_generic_symbols(cx_lsp, path):
     # `value` in the generic method body (line 3) resolves to the field (line 1).
     result = run_query(cx_lsp, base_query("definition", path, GENERIC_DEF_SOURCE, (3, 16)))
@@ -2343,6 +2362,7 @@ def main():
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
             groups = [
                 ("query-modes", lambda: test_query_modes(args.cx_lsp, path)),
+                ("leak-check-mode", lambda: test_leak_check_mode(args.cx_lsp, path)),
                 ("recovery", lambda: test_recovery(args.cx_lsp, path)),
                 ("generic-symbols", lambda: test_generic_symbols(args.cx_lsp, path)),
                 ("readonly-tokens", lambda: test_readonly_tokens(args.cx_lsp, path)),

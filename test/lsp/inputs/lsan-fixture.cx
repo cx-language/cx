@@ -1,0 +1,113 @@
+// LSan gate fixture: standalone file (no imports, no siblings) that must
+// analyze with zero diagnostics. Exercises many AST node kinds so that a
+// malloc-owning node member shows up as per-reset growth in the 1-vs-N
+// comparison. Run from a temp copy (see check_lsan.py), never in place.
+
+struct Point {
+    float x;
+    float y;
+}
+
+struct Rect {
+    Point origin;
+    Point size;
+    string label = "rect";
+}
+
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+enum Shape {
+    Circle(float),
+    Named(string),
+}
+
+interface Drawable {
+    Drawable(string name) {
+        println(name);
+    }
+
+    void draw();
+}
+
+struct Sprite : Drawable {
+    Point pos = Point(0.0, 0.0);
+    Color tint = Color.Red;
+
+    Sprite() {}
+
+    void draw() {}
+}
+
+int add(int x, int y) {
+    return x + y;
+}
+
+T maxOf<T: Comparable>(T a, T b) {
+    return a > b ? a : b;
+}
+
+void logAll<T: Printable>(T&... args) {
+    for a in args {
+        println(a);
+    }
+}
+
+string describe(int v) {
+    switch v {
+    case 0:
+        return "zero";
+    case 1:
+    case 2:
+        return "small";
+    default:
+        return "big";
+    }
+    return "unreachable";
+}
+
+int main() {
+    var p = Point(1.0, 2.0);
+    var r = Rect(p, Point(3.0, 4.0));
+    var c = Color.Green;
+    var s = Shape.Circle(2.5);
+    var n = Shape.Named("blob");
+    var points = [Point(0.0, 0.0), Point(1.0, 1.0)];
+    var total = 0;
+    logAll(1, "two", 3.0);
+    var m = maxOf(3, 7);
+    var f = (int x) => x * 2;
+    var doubled = f(21);
+    var mapped = [1, 2, 3].map(k => k * 2);
+    var mappedSum = 0;
+    for x in mapped {
+        mappedSum += x;
+    }
+    var greeting = "hello";
+    var text = greeting + " world";
+    int? maybe = 42;
+    if maybe != null {
+        total += maybe;
+    }
+    var count = 0;
+    while count < 10 {
+        count += 1;
+    }
+    for i in 0..5 {
+        count += i;
+    }
+    var arr = [10, 20, 30];
+    var first = arr[0];
+    var d = describe(2);
+    var sp = Sprite();
+    sp.draw();
+    var via = Sprite("hi");
+    via.draw();
+    var sum = add(first, count);
+    println(total, m, d, text, doubled, mappedSum, sum, r.label);
+    println(c, s, n, points[1].x);
+    return count;
+}
