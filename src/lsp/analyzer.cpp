@@ -1923,7 +1923,6 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
 
     try {
         CompileOptions baseOptions;
-        baseOptions.noUnusedWarnings = true; // unused warnings are noisy during editing
         baseOptions.recoverParseErrors = true;
         baseOptions.defines = buildBaseDefines(query);
         // Platform settings (defines, SDK sysroot/frameworks), matching the
