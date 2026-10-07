@@ -17,6 +17,17 @@ void printFirstAndRest<T: Printable, U: Printable>(T& first, U&... rest) {
     print('\n');
 }
 
+// Fixed generic + concrete (non-generic) pack: instantiations must be keyed by
+// pack arity as well, so calls with different rest counts get distinct bodies.
+void showCount<T: Printable>(T& first, int... rest) {
+    print(first);
+    print("|");
+    for arg in rest {
+        print(arg);
+    }
+    print('\n');
+}
+
 void printIndexed<T: Printable>(T&... args) {
     for arg, i in args {
         print(i);
@@ -31,4 +42,7 @@ void main() {
     printAll(); // CHECK-EMPTY:
     printFirstAndRest("a", 1, 2); // CHECK:a|12
     printIndexed("a", "b", "c"); // CHECK:0a1b2c
+    showCount("a", 1); // CHECK:a|1
+    showCount("a", 1, 2, 3); // CHECK:a|123
+    showCount("b"); // CHECK:b|
 }

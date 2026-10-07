@@ -2775,6 +2775,10 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
             if (it != result.packArgs[j].end()) result.cacheKey.push_back(it->second);
         }
     }
+    // Record the pack arity: concrete packs contribute no generic args, so
+    // without this, calls with the same fixed args but different pack counts
+    // would collide and reuse the first instantiation.
+    result.cacheKey.push_back(GenericArg::fromInt(int64_t(packCount), call.location));
 
     return result;
 }

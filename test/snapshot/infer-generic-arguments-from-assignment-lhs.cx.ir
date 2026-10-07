@@ -308,7 +308,7 @@ overflow.success:
 if.then:
     void _14 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "memory allocation failed", int32 24)
     string __str.load = load __str
-    never _15 = call _CX1N3std5abortIM3std6stringEVEM3std5never1_M3std6string(string __str.load)
+    never _15 = call _CX1N3std5abortIM3std6stringN1_EVEM3std5never1_M3std6string(string __str.load)
     br if.end
 
 if.else:
