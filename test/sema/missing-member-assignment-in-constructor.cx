@@ -50,8 +50,89 @@ struct D {
         y = a;
     }
 
+    // CHECK: [[@LINE+3]]:9: warning: unused result of type 'D'; use 'init(...)' to delegate to another constructor
     // CHECK: [[@LINE+1]]:5: warning: constructor doesn't initialize member variable 'y'
     D() {
         D(1);
     }
+}
+
+// Explicit discard stays silent.
+struct E {
+    int y;
+
+    E(int a) {
+        y = a;
+    }
+
+    E() {
+        _ = E(1);
+        y = 2;
+    }
+}
+
+// Other-type temporaries get the plain message.
+struct F {
+    int y;
+
+    F(int a) {
+        y = a;
+    }
+
+    // CHECK: [[@LINE+3]]:9: warning: unused result of type 'E'
+    // CHECK: [[@LINE+1]]:5: warning: constructor doesn't initialize member variable 'y'
+    F() {
+        E(1);
+    }
+}
+
+// Delegation consumes its object and stays silent.
+struct H {
+    int y;
+
+    H(int a) {
+        y = a;
+    }
+
+    H() {
+        init(1);
+    }
+
+    H(bool b) {
+        this.init(1);
+    }
+}
+
+// Outside a constructor `init(...)` builds a temporary like any call.
+struct Q {
+    int y;
+
+    Q(int a) {
+        y = a;
+    }
+
+    Q() {
+        y = 0;
+    }
+
+    void reset() {
+        // CHECK: [[@LINE+1]]:9: warning: unused result of type 'Q'
+        init(5);
+    }
+}
+
+struct Box<T> {
+    T val;
+
+    Box(T v) {
+        val = v;
+    }
+
+    Box() {
+        init(0);
+    }
+}
+
+void _useBox() {
+    _ = Box<int>();
 }

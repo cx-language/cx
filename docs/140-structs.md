@@ -80,7 +80,9 @@ in field order before the body runs. Use `this.` to refer to fields shadowed
 by parameters.
 A constructor can delegate to another with a top-level `init(...)` call;
 the target performs initialization, so the delegating body needs no
-assignments of its own.
+assignments of its own. A bare `Type(...)` statement instead builds a
+temporary that is immediately discarded, which warns; assign it or bind it
+with `_ =` if that was intended.
 Constructors are never implicit: a single-parameter constructor does not convert
 its argument type, so pass `Wrapper(5)` explicitly instead of a bare `5`:
 
@@ -181,7 +183,7 @@ struct Logger {
 }
 
 void main() {
-    Logger(prefix = "tmp"); // prints "tmp closed" at the end of this statement
+    _ = Logger(prefix = "tmp"); // prints "tmp closed" at the end of this statement
     println("working");
 }
 ```

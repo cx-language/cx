@@ -337,8 +337,21 @@ void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
     // Anchor on the enclosing function so generic stdlib code instantiated from
     // user code stays exempt; currentModule is the instantiation site there.
     Module* module = currentFunction ? currentFunction->getModule() : currentModule;
-    if (!options.warnUnusedResult || module->name == "std") return;
+    if (module->name == "std") return;
     if (!type || type.isVoid() || type.isNeverType()) return;
+    auto* call = llvm::dyn_cast<CallExpr>(&expr);
+    auto* ctor = call ? llvm::dyn_cast_or_null<ConstructorDecl>(call->calleeDecl) : nullptr;
+    // Codegen delegates `init(...)` to `this` only in constructors; anywhere
+    // else it builds a temporary like any other construction call.
+    auto* currentCtor = llvm::dyn_cast<ConstructorDecl>(currentFunction);
+    if (ctor && call->getFunctionName() == "init" && currentCtor) return;
+    if (!options.warnUnusedResult && !ctor) return;
+    // A bare `Type(...)` builds a temporary that dies immediately, in a
+    // constructor almost always a mistyped delegation.
+    if (ctor && currentCtor && currentCtor->getTypeDecl() == ctor->getTypeDecl()) {
+        WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "unused result of type '" << type << "'; use 'init(...)' to delegate to another constructor");
+        return;
+    }
     WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "unused result of type '" << type << "'");
 }
 

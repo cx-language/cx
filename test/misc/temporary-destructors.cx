@@ -76,7 +76,7 @@ void main() {
     println(deaths); // CHECK-NEXT:1
 
     // A bare temporary dies at the end of its statement.
-    C(i = 3);
+    _ = C(i = 3);
     println(deaths); // CHECK-NEXT:2
 
     // Ternary and array-literal elements are moved, not destroyed.
@@ -135,7 +135,7 @@ void main() {
     // Deferred and lambda-body temporaries die in their own scope.
     defer take(Wrap(c = C(i = 14)));
     var f = () => {
-        C(i = 15);
+        _ = C(i = 15);
     };
     f();
     println(deaths); // CHECK-NEXT:14
