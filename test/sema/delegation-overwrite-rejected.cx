@@ -1,0 +1,29 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct C {
+    int i;
+}
+
+// A pre-init store the delegation target overwrites is dead.
+struct Direct {
+    C c;
+    Direct(int x) { c = C(x); }
+    // CHECK: [[@LINE+1]]:18: error: assignment to 'c' has no effect: the delegated init(...) call overwrites it
+    Direct() { c = C(0); init(1); }
+}
+
+// Conditional pre-init stores are dead on every path they run.
+struct Nested {
+    C c;
+    Nested(int x) { c = C(x); }
+    // CHECK: [[@LINE+1]]:31: error: assignment to 'c' has no effect: the delegated init(...) call overwrites it
+    Nested(bool b) { if (b) c = C(0); init(1); }
+}
+
+// Defaulted fields are always dead: the target runs the default.
+struct Defaulted {
+    C c = C(9);
+    Defaulted(int x) { c = C(x); }
+    // CHECK: [[@LINE+1]]:21: error: assignment to 'c' has no effect: the delegated init(...) call overwrites it
+    Defaulted() { c = C(0); init(1); }
+}

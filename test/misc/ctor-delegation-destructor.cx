@@ -1,0 +1,223 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+int deaths = 0;
+
+struct C {
+    int i;
+    ~C() { deaths = deaths + 1; }
+}
+
+// Post-init overwrite of a default-less field destroys the target-built value.
+struct PostInit {
+    C c;
+    PostInit(int x) { c = C(x); }
+    PostInit() { init(1); c = C(2); }
+}
+
+// Same through a delegation chain.
+struct Chain {
+    C c;
+    Chain(int x, int y) { c = C(x + y); }
+    Chain(int x) { init(x, 1); }
+    Chain() { init(1); c = C(2); }
+}
+
+// Deferred stores run after the delegation, whatever their position.
+struct DeferAfter {
+    C c;
+    DeferAfter(int x) { c = C(x); }
+    DeferAfter() { init(1); defer (c = C(9)); }
+}
+
+struct DeferBefore {
+    C c;
+    DeferBefore(int x) { c = C(x); }
+    DeferBefore() { defer (c = C(9)); init(1); }
+}
+
+// A target that may return early leaves the field untouched: no destroy.
+struct EarlyReturn {
+    C c;
+    EarlyReturn(int x) { if (x > 0) return; c = C(x); }
+    EarlyReturn() { init(1); c = C(2); }
+}
+
+// Same for a defer initializing a field the target never builds.
+struct DeferInit {
+    C c;
+    int n;
+    DeferInit(int x) { n = x; c = undefined; }
+    DeferInit() { defer (c = C(9)); init(1); }
+}
+
+// Pre-init stores survive when the target never builds the field...
+struct Survives {
+    C c;
+    int n;
+    Survives(int x) { n = x; c = undefined; }
+    Survives() { c = C(0); init(1); }
+}
+
+// ...when the target assigns conditionally...
+struct CondTarget {
+    C c;
+    CondTarget(int x) { if (x > 0) c = C(x); }
+    CondTarget() { c = C(0); init(-1); }
+}
+
+// ...when a return may skip the delegation...
+struct ReturnSkips {
+    C c;
+    ReturnSkips(int x) { c = C(x); }
+    ReturnSkips(bool b) { c = C(0); if (b) return; init(1); }
+}
+
+// ...when the store sits in a lambda of unknown timing...
+struct LambdaStore {
+    C c;
+    LambdaStore(int x) { c = C(x); }
+    LambdaStore() { var _f = () => c = C(0); init(1); }
+}
+
+// ...and `undefined` stores are never dead.
+struct UndefinedStore {
+    C c;
+    UndefinedStore(int x) { c = C(x); }
+    UndefinedStore() { c = undefined; init(1); }
+}
+
+// ...and when the store is read before the delegation.
+struct ReadBeforeInit {
+    C c;
+    ReadBeforeInit(int x) { c = C(x); }
+    ReadBeforeInit() { c = C(0); println(c.i); init(1); }
+}
+
+// A return before the delegation runs the defers with the field unbuilt.
+struct ReturnDefer {
+    C c;
+    ReturnDefer(int x) { c = C(x); }
+    ReturnDefer(bool b) { defer (c = C(9)); if (b) return; init(1); }
+}
+
+// A defer between two delegations answers to the last target.
+struct DeferBetweenInits {
+    C c;
+    DeferBetweenInits(int x) { c = C(x); }
+    DeferBetweenInits(int x, int y) { c = undefined; }
+    DeferBetweenInits() { init(1); defer (c = C(9)); init(1, 2); }
+}
+
+// A target that undefines a defaulted field leaves nothing to destroy.
+struct UndefKillsDefault {
+    C c = C(7);
+    UndefKillsDefault(int x) { c = undefined; }
+    UndefKillsDefault() { init(1); c = C(2); }
+}
+
+// Same without the default.
+struct UndefKillsField {
+    C c;
+    UndefKillsField(int x) { c = undefined; }
+    UndefKillsField() { init(1); c = C(2); }
+}
+
+void main() {
+    {
+        deaths = 0;
+        PostInit s = PostInit();
+        println(s.c.i); // CHECK:2
+        println(deaths); // CHECK-NEXT:1
+    }
+    {
+        deaths = 0;
+        Chain s = Chain();
+        println(s.c.i); // CHECK:2
+        println(deaths); // CHECK-NEXT:1
+    }
+    {
+        deaths = 0;
+        DeferAfter s = DeferAfter();
+        println(s.c.i); // CHECK:9
+        println(deaths); // CHECK-NEXT:1
+    }
+    {
+        deaths = 0;
+        DeferBefore s = DeferBefore();
+        println(s.c.i); // CHECK:9
+        println(deaths); // CHECK-NEXT:1
+    }
+    {
+        deaths = 0;
+        EarlyReturn s = EarlyReturn();
+        println(s.c.i); // CHECK:2
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        DeferInit s = DeferInit();
+        println(s.c.i); // CHECK:9
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        Survives s = Survives();
+        println(s.c.i); // CHECK:0
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        CondTarget s = CondTarget();
+        println(s.c.i); // CHECK:0
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        ReturnSkips s = ReturnSkips(true);
+        println(s.c.i); // CHECK:0
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        LambdaStore s = LambdaStore();
+        println(s.c.i); // CHECK:1
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        UndefinedStore s = UndefinedStore();
+        println(s.c.i); // CHECK:1
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        ReadBeforeInit s = ReadBeforeInit(); // CHECK:0
+        println(s.c.i); // CHECK-NEXT:1
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        ReturnDefer s = ReturnDefer(true);
+        println(s.c.i); // CHECK:9
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        DeferBetweenInits s = DeferBetweenInits();
+        println(s.c.i); // CHECK:9
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        UndefKillsDefault s = UndefKillsDefault();
+        println(s.c.i); // CHECK:2
+        println(deaths); // CHECK-NEXT:0
+    }
+    {
+        deaths = 0;
+        UndefKillsField s = UndefKillsField();
+        println(s.c.i); // CHECK:2
+        println(deaths); // CHECK-NEXT:0
+    }
+}

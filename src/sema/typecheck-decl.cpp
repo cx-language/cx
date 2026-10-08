@@ -1301,14 +1301,7 @@ static bool isUndefinedDefault(Expr* expr) {
     return expr->isUndefinedLiteralExpr();
 }
 
-// A whole-field `=` assignment found by the scan, with the state needed to
-// decide whether it overwrites a live value (see the injection below).
-struct FieldAssign {
-    FieldDecl* field;
-    BinaryExpr* assign;
-    bool pastInitCall;
-    bool definitelyAssigned;
-};
+using FieldAssign = Typechecker::FieldAssign;
 
 // Scan state for collectFieldReads: referenced fields plus every whole-field
 // assignment in order. Nested and conditional references count as reads since
@@ -1320,12 +1313,18 @@ struct FieldUseScan {
     llvm::SmallPtrSet<FieldDecl*, 16>& reads;
     llvm::SmallVectorImpl<FieldAssign>& assigns;
     llvm::SmallPtrSet<FieldDecl*, 16>& assigned;
-    bool pastInitCall;
+    int initCount;
+    bool inLambda = false;
+    bool inDefer = false;
+    // Collects only reads that can observe a pre-delegation store: assignment
+    // targets are writes, and defer bodies read post-init values.
+    bool preDelegationReads = false;
 
-    void recordAssign(FieldDecl* field, BinaryExpr* assign) { assigns.push_back({field, assign, pastInitCall, assigned.count(field) != 0}); }
+    void recordAssign(FieldDecl* field, BinaryExpr* assign) { assigns.push_back({field, assign, assigned.count(field) != 0, initCount, inLambda, inDefer}); }
 };
 
 static void collectFieldReads(Expr& expr, FieldUseScan& scan);
+static BinaryExpr* directFieldAssign(Stmt& stmt, TypeDecl& typeDecl, FieldDecl** field = nullptr);
 static void markAllFieldsRead(TypeDecl& typeDecl, llvm::SmallPtrSet<FieldDecl*, 16>& reads) {
     for (auto& field : typeDecl.fields)
         reads.insert(&field);
@@ -1340,12 +1339,22 @@ static void collectFieldReads(Stmt& stmt, FieldUseScan& scan) {
             if (decl->initializer) collectFieldReads(*decl->initializer, scan);
         }
         break;
-    case StmtKind::ExprStmt:
-        collectFieldReads(*llvm::cast<ExprStmt>(&stmt)->expr, scan);
+    case StmtKind::ExprStmt: {
+        FieldDecl* directTarget = nullptr;
+        BinaryExpr* direct = scan.preDelegationReads ? directFieldAssign(stmt, scan.typeDecl, &directTarget) : nullptr;
+        if (directTarget) {
+            collectFieldReads(direct->getRHS(), scan);
+        } else {
+            collectFieldReads(*llvm::cast<ExprStmt>(&stmt)->expr, scan);
+        }
         break;
-    case StmtKind::DeferStmt:
+    }
+    case StmtKind::DeferStmt: {
+        if (scan.preDelegationReads) break;
+        llvm::SaveAndRestore setDefer(scan.inDefer, true);
         collectFieldReads(*llvm::cast<DeferStmt>(&stmt)->expr, scan);
         break;
+    }
     case StmtKind::IfStmt: {
         auto* ifStmt = llvm::cast<IfStmt>(&stmt);
         collectFieldReads(*ifStmt->condition, scan);
@@ -1461,6 +1470,7 @@ static void collectFieldReads(Expr& expr, FieldUseScan& scan) {
         break;
     }
     case ExprKind::LambdaExpr: {
+        llvm::SaveAndRestore setLambda(scan.inLambda, true);
         auto* function = llvm::cast<LambdaExpr>(&expr)->functionDecl;
         for (auto& param : function->getParams()) {
             if (param.defaultValue) collectFieldReads(*param.defaultValue, scan);
@@ -1495,6 +1505,97 @@ static void collectFieldReads(Expr& expr, FieldUseScan& scan) {
         if (auto* init = llvm::cast<VarDeclExpr>(&expr)->varDecl->initializer) collectFieldReads(*init, scan);
         break;
     }
+}
+
+// True when a statement may return from the function. Conditional returns
+// count: they still skip later code on some path. Lambda bodies are their own
+// function, and defer bodies run at scope exit without returning.
+static bool containsReturnStmt(Stmt& stmt) {
+    auto containsReturn = [](const AstVector<Stmt*>& body) { return llvm::any_of(body, [](Stmt* s) { return containsReturnStmt(*s); }); };
+    switch (stmt.kind) {
+    case StmtKind::ReturnStmt:
+        return true;
+    case StmtKind::IfStmt: {
+        auto* ifStmt = llvm::cast<IfStmt>(&stmt);
+        return containsReturn(ifStmt->thenBody) || containsReturn(ifStmt->elseBody);
+    }
+    case StmtKind::SwitchStmt: {
+        auto* switchStmt = llvm::cast<SwitchStmt>(&stmt);
+        for (auto& arm : switchStmt->cases)
+            if (containsReturn(arm.stmts)) return true;
+        return containsReturn(switchStmt->defaultStmts);
+    }
+    case StmtKind::WhileStmt:
+        return containsReturn(llvm::cast<WhileStmt>(&stmt)->body);
+    case StmtKind::DoWhileStmt:
+        return containsReturn(llvm::cast<DoWhileStmt>(&stmt)->body);
+    case StmtKind::ForStmt:
+        return containsReturn(llvm::cast<ForStmt>(&stmt)->body);
+    case StmtKind::ForEachStmt:
+        return containsReturn(llvm::cast<ForEachStmt>(&stmt)->body);
+    case StmtKind::CompoundStmt:
+        return containsReturn(llvm::cast<CompoundStmt>(&stmt)->body);
+    default:
+        return false;
+    }
+}
+
+// A top-level direct `field = value` assignment in an expression or defer
+// statement, or null. Assignments are void, so none hide inside other
+// expressions.
+static BinaryExpr* directFieldAssign(Stmt& stmt, TypeDecl& typeDecl, FieldDecl** field) {
+    Expr* expr = nullptr;
+    if (auto* defer = llvm::dyn_cast<DeferStmt>(&stmt)) {
+        expr = defer->expr;
+    } else if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(&stmt)) {
+        expr = exprStmt->expr;
+    }
+    auto* assign = llvm::dyn_cast_or_null<BinaryExpr>(expr);
+    if (!assign || assign->op != Token::Assignment) return nullptr;
+    FieldDecl* target = thisFieldRef(assign->getLHS(), typeDecl);
+    if (field) *field = target;
+    return target ? assign : nullptr;
+}
+
+// Disposition of a field after a delegation target runs: Live holds a value
+// to destroy, Dead is undefined or never built, and Untouched covers
+// conditional paths and unknown bodies, where callers keep their default.
+enum class FieldDisposition { Untouched, Live, Dead };
+
+// Disposition of a field after the delegation target runs: the last
+// unconditional top-level direct assignment wins, or the same through the
+// target's own delegation. The first registered defer wins over the body:
+// defers run last-in-first-out at scope exit. Stops at any return, past
+// which the delegating body resumes with the field untouched. Guards every
+// claim the postProcess drain makes about values the delegating body
+// overwrites or wastes.
+static FieldDisposition targetFieldDisposition(ConstructorDecl& target, FieldDecl* field, llvm::SmallPtrSetImpl<ConstructorDecl*>& visited) {
+    if (!target.body || target.checkState != Decl::CheckState::Checked || !visited.insert(&target).second) return FieldDisposition::Untouched;
+    TypeDecl& typeDecl = *target.getTypeDecl();
+    FieldDisposition disp = FieldDisposition::Untouched;
+    bool sawDefer = false;
+    FieldDisposition deferDisp = FieldDisposition::Untouched;
+    for (auto* stmt : *target.body) {
+        if (containsReturnStmt(*stmt)) break;
+        FieldDecl* assigned = nullptr;
+        if (BinaryExpr* assign = directFieldAssign(*stmt, typeDecl, &assigned); assign && assigned == field) {
+            FieldDisposition d = assign->getRHS().isUndefinedLiteralExpr() ? FieldDisposition::Dead : FieldDisposition::Live;
+            if (stmt->kind == StmtKind::DeferStmt) {
+                if (!sawDefer) {
+                    sawDefer = true;
+                    deferDisp = d;
+                }
+            } else {
+                disp = d;
+            }
+        }
+        if (isDelegatingInitCall(*stmt, typeDecl)) {
+            auto* initCall = llvm::cast<CallExpr>(llvm::cast<ExprStmt>(stmt)->expr);
+            FieldDisposition sub = targetFieldDisposition(*llvm::cast<ConstructorDecl>(initCall->calleeDecl), field, visited);
+            if (sub != FieldDisposition::Untouched) disp = sub;
+        }
+    }
+    return sawDefer ? deferDisp : disp;
 }
 
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
@@ -1622,7 +1723,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             llvm::SmallPtrSet<FieldDecl*, 16> cleanAssigned;
             llvm::SmallPtrSet<FieldDecl*, 16> assignedFields;
             llvm::SmallVector<FieldAssign, 16> fieldAssigns;
-            FieldUseScan scan{typeDecl, readFields, fieldAssigns, assignedFields, false};
+            FieldUseScan scan{typeDecl, readFields, fieldAssigns, assignedFields, 0};
             for (auto& stmt : *decl.body) {
                 auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt);
                 auto* assign = exprStmt ? llvm::dyn_cast<BinaryExpr>(exprStmt->expr) : nullptr;
@@ -1639,21 +1740,33 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                     if (!assign->getRHS().isUndefinedLiteralExpr()) assignedFields.insert(directTarget);
                 } else {
                     collectFieldReads(*stmt, scan);
-                    if (isDelegatingInitCall(*stmt, typeDecl)) scan.pastInitCall = true;
+                    if (isDelegatingInitCall(*stmt, typeDecl)) scan.initCount++;
                 }
             }
             for (auto& fieldAssign : fieldAssigns) {
                 FieldDecl* field = fieldAssign.field;
                 bool hasDefault = field->defaultValue && !isUndefinedDefault(field->defaultValue);
-                // Injected defaults run unconditionally, as does a top-level
-                // direct assignment or the target of a delegating `init(...)`
-                // call, so the field is live at any later assignment. A
-                // delegating target may warn-miss a default-less field, so the
-                // past-init arm keeps the default gate.
+                // Injected defaults and top-level direct assignments run
+                // unconditionally, so the field is live at any later
+                // assignment. Delegation liveness needs the target bodies,
+                // which may check later: checkDelegationLiveness owns it.
                 bool injected = hasDefault && !delegatedInit && cleanAssigned.count(field) == 0;
-                if (injected || fieldAssign.definitelyAssigned || (delegatedInit && fieldAssign.pastInitCall && hasDefault)) {
+                if (injected || fieldAssign.definitelyAssigned) {
                     fieldAssign.assign->lhsIsLive = true;
                 }
+            }
+            // Cross-body liveness needs the delegation targets' bodies, which
+            // may check later: postProcess resolves them (see
+            // checkDelegationLiveness).
+            if (delegatedInit) {
+                DelegationCheck check{llvm::cast<ConstructorDecl>(&decl), std::move(fieldAssigns), {}, 0};
+                for (size_t i = 0; i < decl.body->size(); i++) {
+                    if (!isDelegatingInitCall(*(*decl.body)[i], typeDecl)) continue;
+                    if (check.targets.empty()) check.firstInit = i;
+                    auto* initCall = llvm::cast<CallExpr>(llvm::cast<ExprStmt>((*decl.body)[i])->expr);
+                    check.targets.push_back(llvm::cast<ConstructorDecl>(initCall->calleeDecl));
+                }
+                pendingDelegationChecks.push_back(std::move(check));
             }
             if (!delegatedInit) {
                 std::vector<Stmt*> defaults;
@@ -1721,6 +1834,85 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         throw;
     }
     decl.checkState = Decl::CheckState::Checked;
+}
+
+void Typechecker::checkDelegationLiveness() {
+    std::sort(pendingDelegationChecks.begin(), pendingDelegationChecks.end(),
+              [](const DelegationCheck& a, const DelegationCheck& b) { return a.ctor < b.ctor; });
+    pendingDelegationChecks.erase(std::unique(pendingDelegationChecks.begin(), pendingDelegationChecks.end(),
+                                              [](const DelegationCheck& a, const DelegationCheck& b) { return a.ctor == b.ctor; }),
+                                  pendingDelegationChecks.end());
+    auto returnsFrom = [](Stmt* stmt) { return containsReturnStmt(*stmt); };
+    for (auto& check : pendingDelegationChecks) {
+        ConstructorDecl& ctor = *check.ctor;
+        if (ctor.checkState != Decl::CheckState::Checked || !ctor.body) continue;
+        TypeDecl& typeDecl = *ctor.getTypeDecl();
+        if (check.targets.empty()) continue;
+        // A return before the first delegation runs the defers with the field
+        // unbuilt and lets pre-init stores survive it: both arms sit out.
+        bool blocked = std::any_of(ctor.body->begin(), ctor.body->begin() + check.firstInit, returnsFrom);
+        // Fields read before the delegation observe the pre-init store, so no
+        // dead-store error. Defers read post-init values and sit out; lambda
+        // reads conservatively suppress (their timing is unknown).
+        llvm::SmallPtrSet<FieldDecl*, 16> preInitReads;
+        llvm::SmallPtrSet<FieldDecl*, 16> dummyAssigned;
+        llvm::SmallVector<FieldAssign, 16> dummyAssigns;
+        FieldUseScan readScan{typeDecl, preInitReads, dummyAssigns, dummyAssigned, 0};
+        readScan.preDelegationReads = true;
+        for (size_t i = 0; i < check.firstInit; i++)
+            collectFieldReads(*(*ctor.body)[i], readScan);
+        auto* firstInitCall = llvm::cast<CallExpr>(llvm::cast<ExprStmt>((*ctor.body)[check.firstInit])->expr);
+        for (auto& arg : firstInitCall->args)
+            collectFieldReads(*arg.value, readScan);
+        // Unconditional post-init direct assignments make deferred stores
+        // live; the walk stops at any return, past which none of it runs.
+        llvm::SmallPtrSet<FieldDecl*, 8> directPostInit;
+        for (size_t i = check.firstInit + 1; i < ctor.body->size(); i++) {
+            Stmt& stmt = *(*ctor.body)[i];
+            if (containsReturnStmt(stmt)) break;
+            if (stmt.kind != StmtKind::ExprStmt) continue;
+            FieldDecl* field = nullptr;
+            BinaryExpr* assign = directFieldAssign(stmt, typeDecl, &field);
+            if (assign && field && !assign->getRHS().isUndefinedLiteralExpr()) directPostInit.insert(field);
+        }
+        for (auto& fieldAssign : check.assigns) {
+            FieldDecl* field = fieldAssign.field;
+            BinaryExpr* assign = fieldAssign.assign;
+            if (assign->getRHS().isUndefinedLiteralExpr()) continue;
+            bool hasDefault = field->defaultValue && !isUndefinedDefault(field->defaultValue);
+            // Post-init overwrites of delegation-built values destroy the old
+            // one: default-less fields need a Live target, defaulted ones
+            // anything but Dead (the default ran). Defers run last and are
+            // owned by the third arm instead.
+            if (fieldAssign.initsBefore > 0 && !fieldAssign.inDefer && (size_t)fieldAssign.initsBefore <= check.targets.size()) {
+                llvm::SmallPtrSet<ConstructorDecl*, 4> visited;
+                FieldDisposition disp = targetFieldDisposition(*check.targets[fieldAssign.initsBefore - 1], field, visited);
+                if ((hasDefault && disp != FieldDisposition::Dead) || (!hasDefault && disp == FieldDisposition::Live)) assign->lhsIsLive = true;
+            }
+            if (blocked) continue;
+            // Pre-init stores the delegation overwrites are dead, unless read
+            // first. Defaulted fields are always dead (the target runs the
+            // default or discards the store); default-less ones only when the
+            // target builds a live value. Lambdas and defers sit out.
+            if (fieldAssign.initsBefore == 0 && !fieldAssign.inLambda && !fieldAssign.inDefer && preInitReads.count(field) == 0) {
+                llvm::SmallPtrSet<ConstructorDecl*, 4> visited;
+                FieldDisposition disp = targetFieldDisposition(*check.targets[0], field, visited);
+                if (hasDefault || disp == FieldDisposition::Live) {
+                    REPORT_ERROR_RANGE(assign->location, assign->endLocation,
+                                       "assignment to '" << field->getName() << "' has no effect: the delegated init(...) call overwrites it");
+                }
+            }
+            // Deferred stores run at scope exit, after every delegation, so
+            // the last target decides, plus anything the body built itself.
+            if (fieldAssign.inDefer && !fieldAssign.inLambda) {
+                llvm::SmallPtrSet<ConstructorDecl*, 4> visited;
+                FieldDisposition disp = targetFieldDisposition(*check.targets.back(), field, visited);
+                if ((hasDefault && disp != FieldDisposition::Dead) || (!hasDefault && (directPostInit.count(field) != 0 || disp == FieldDisposition::Live)))
+                    assign->lhsIsLive = true;
+            }
+        }
+    }
+    pendingDelegationChecks.clear();
 }
 
 void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {

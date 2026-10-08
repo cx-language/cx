@@ -315,6 +315,8 @@ void Typechecker::postProcess() {
         }
     }
     pendingConstIteratorArgChecks.clear();
+
+    checkDelegationLiveness();
 }
 
 static void checkUnusedDeclsInModule(const Module& module) {

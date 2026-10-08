@@ -86,6 +86,10 @@ assignments of its own. Calling `init(...)` on another instance instead
 reinitializes that instance in place. A bare `Type(...)` statement instead
 builds a temporary that is immediately discarded, which warns; assign it or
 bind it with `_ =` if that was intended.
+Overwriting a delegation-built field after the `init(...)` call destroys the
+old value first, including from `defer` (which always runs last). Storing to
+a field before the `init(...)` call is an error when the delegation provably
+overwrites it: such stores can never be observed.
 Constructors are never implicit: a single-parameter constructor does not convert
 its argument type, so pass `Wrapper(5)` explicitly instead of a bare `5`:
 

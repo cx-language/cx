@@ -11,6 +11,7 @@
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/FunctionExtras.h>
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/Support/ErrorOr.h>
@@ -261,6 +262,7 @@ struct Typechecker {
     llvm::ErrorOr<const Module&> importModule(SourceFile* importer, llvm::StringRef moduleName);
     void deferTypechecking(Decl* decl);
     void postProcess();
+    void checkDelegationLiveness();
     // Options of the package owning the declaration. Main-module and
     // unresolvable declarations keep the ambient options.
     const CompileOptions& packageOptionsFor(const Decl& decl) const;
@@ -482,6 +484,30 @@ struct Typechecker {
         size_t argNumber;
     };
     std::vector<ConstIteratorArgCheck> pendingConstIteratorArgChecks;
+    // A whole-field `=` assignment found by the constructor scan, with the
+    // state needed to decide whether it overwrites a live value. initsBefore
+    // counts delegating `init(...)` calls ahead of it, splitting the body
+    // into pre/post delegation segments; the flags mark lambdas (unknown
+    // timing) and defers (run at scope exit).
+    struct FieldAssign {
+        FieldDecl* field;
+        BinaryExpr* assign;
+        bool definitelyAssigned;
+        int initsBefore;
+        bool inLambda;
+        bool inDefer;
+    };
+    // Delegating constructors whose cross-body liveness waits for postProcess:
+    // the target body may check later (or never), so pre-init dead stores and
+    // post-init overwrites of target-built values resolve once all bodies are
+    // checked. Non-Checked callers are speculative noise, like above.
+    struct DelegationCheck {
+        ConstructorDecl* ctor;
+        llvm::SmallVector<FieldAssign, 16> assigns;
+        llvm::SmallVector<ConstructorDecl*, 2> targets;
+        size_t firstInit;
+    };
+    std::vector<DelegationCheck> pendingDelegationChecks;
     // Set while checking function signatures (parameters and return type).
     // Types mentioned there materialize no values, so their destructors must
     // not be demand-checked: values are dropped (and their destructors marked)
