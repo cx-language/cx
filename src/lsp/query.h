@@ -22,9 +22,10 @@ int runQueryProcess();
 /// every analysis misses the cache and resets the AST arena), drops the
 /// session cache, then exits. Under LeakSanitizer the exit report must not
 /// grow with <count>: growth means AST nodes own malloc'd memory that
-/// resetAstArena never frees. A failed analysis prints a marker to stdout
-/// (otherwise empty); usage/IO errors go to stderr. Returns 1 on any of
-/// those; analysis diagnostics are ignored.
+/// resetAstArena never frees. Under AddressSanitizer the repeated analyses
+/// and resets run as a memory error check instead. A failed analysis prints
+/// a marker to stdout (otherwise empty); usage/IO errors go to stderr.
+/// Returns 1 on any of those; analysis diagnostics are ignored.
 int runLeakCheck(const char* filePath, int count);
 
 } // namespace cx::lsp

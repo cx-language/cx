@@ -21,8 +21,21 @@ inline llvm::BumpPtrAllocator& astAllocator() {
     return allocator;
 }
 
+// Strings live in their own allocator, whose poisoning-relevant operations
+// (slab allocation and carving) run only inside UniqueStringSaver::save as
+// compiled into libLLVM. BumpPtrAllocator inlines its ASan poisoning per
+// translation unit, and libLLVM is not ASan-instrumented: sharing one
+// allocator would let our copy poison slabs that libLLVM's copy carves
+// without unpoisoning, a false use-after-poison on every instrumented build.
+// (resetAstArena below only destroys and reconstructs this allocator, which
+// merely frees slabs and starts slab-less: both poisoning-neutral.)
+inline llvm::BumpPtrAllocator& stringAllocator() {
+    static llvm::BumpPtrAllocator allocator;
+    return allocator;
+}
+
 inline llvm::UniqueStringSaver& stringSaver() {
-    static auto* saver = new llvm::UniqueStringSaver(astAllocator());
+    static auto* saver = new llvm::UniqueStringSaver(stringAllocator());
     return *saver;
 }
 
@@ -44,9 +57,16 @@ inline void resetAstArena() {
     // Destroying the saver only frees its own DenseSet buckets (malloced);
     // the interned bytes live in the allocator slabs freed below.
     auto* saver = &stringSaver();
-    saver->~UniqueStringSaver();
+    auto* strings = &stringAllocator();
     astAllocator().Reset();
-    new (saver) llvm::UniqueStringSaver(astAllocator());
+    saver->~UniqueStringSaver();
+    // Destroy, not Reset, the string allocator: Reset's slab poisoning is
+    // compiled per-TU, and libLLVM's non-instrumented save would carve the
+    // poisoned slabs without unpoisoning. The node allocator is only touched
+    // by our own translation units, so Reset stays consistent there.
+    strings->llvm::BumpPtrAllocator::~BumpPtrAllocator();
+    new (strings) llvm::BumpPtrAllocator();
+    new (saver) llvm::UniqueStringSaver(*strings);
 }
 
 /// std allocator over the AST arena: allocate() bumps, deallocate() is a

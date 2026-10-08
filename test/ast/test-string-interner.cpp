@@ -25,4 +25,10 @@ int main() {
     cx::VarExpr firstVariable("shared", {});
     cx::VarExpr secondVariable("shared", {});
     assert(firstVariable.identifier.data() == secondVariable.identifier.data());
+
+    // The interner is reusable after a reset.
+    cx::resetAstArena();
+    llvm::StringRef revived = cx::internString("identifier");
+    assert(revived == "identifier");
+    assert(revived.data() == cx::internString("identifier").data());
 }

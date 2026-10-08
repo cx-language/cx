@@ -636,7 +636,7 @@ def test_leak_check_mode(cx_lsp, path):
         timeout=120,
     )
     out = proc.stdout.decode()
-    if "rebuild with -fsanitize=leak" in out:
+    if "rebuild with -fsanitize" in out:
         check("query-leak-check-refusal", proc.returncode == 1, out[:200])
     else:
         # Instrumented binary: check_lsan.py covers measurement; here just

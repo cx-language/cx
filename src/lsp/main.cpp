@@ -15,8 +15,10 @@
 //
 //   cx-lsp --leak-check <file> <count>
 //                     Analyze <file> <count> times through one session and
-//                     exit. Test-only hook for the LeakSanitizer gate over
-//                     repeated arena resets (see test/lsp/check_lsan.py).
+//                     exit. Test-only hook for the sanitizer gates over
+//                     repeated arena resets (LSan growth in
+//                     test/lsp/check_lsan.py, memory errors in
+//                     test/asan/check_asan.py).
 //
 // `cx lsp` forwards to this binary.
 #include "query.h"

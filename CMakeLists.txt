@@ -73,6 +73,18 @@ if(CX_SANITIZE_LEAK)
     add_link_options(-fsanitize=leak)
 endif()
 
+# Instrumented build for the ASan gate (test/asan/check_asan.py), which runs
+# the compiler and repeated LSP analyses under AddressSanitizer. Needs a Clang
+# with -fsanitize=address (LLVM Clang or Apple Clang).
+option(CX_SANITIZE_ADDRESS "Build with -fsanitize=address for the ASan gate" OFF)
+if(CX_SANITIZE_ADDRESS)
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        message(FATAL_ERROR "CX_SANITIZE_ADDRESS needs Clang with -fsanitize=address")
+    endif()
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+endif()
+
 include(FetchContent)
 
 # LLVM's CMake config includes LLVMExports.cmake, which hard-errors if any of

@@ -393,6 +393,56 @@ jobs:
         shell: bash
         run: python3 test/lsp/check_lsan.py --cx-lsp build-lsan/cx-lsp
 
+  # AddressSanitizer gate: an ASan-instrumented cx compiles and runs an
+  # AST-node-heavy fixture (which implicitly imports std), and cx-lsp runs
+  # repeated analyses with arena resets (see test/asan/check_asan.py).
+  # Linux-only like the LSan gate. Runs on PRs like the lit suites: memory
+  # errors must fail before merge.
+  asan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12
+
+      - name: Cache apt archives (Ubuntu)
+        uses: actions/cache@v5
+        with:
+          path: |
+            /tmp/apt-archives
+            !/tmp/apt-archives/lock
+            !/tmp/apt-archives/partial
+          key: apt-archives-llvm-23-sdl-glfw
+
+      - name: Redirect apt archives (Ubuntu)
+        run: |
+          mkdir -p /tmp/apt-archives/partial
+          echo 'Dir::Cache::Archives "/tmp/apt-archives";' | sudo tee /etc/apt/apt.conf.d/99-ci-cache
+
+      - name: Download LLVM (Ubuntu)
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 23 all
+
+      - name: Configure CMake (ASan)
+        shell: bash
+        run: >
+          cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=/usr/lib/llvm-23/bin/clang
+          -DCMAKE_CXX_COMPILER=/usr/lib/llvm-23/bin/clang++
+          -DCMAKE_PREFIX_PATH=/usr/lib/llvm-23 -DCX_SANITIZE_ADDRESS=ON
+
+      - name: Build cx and cx-lsp (ASan)
+        shell: bash
+        run: cmake --build build-asan --target cx cx-lsp --parallel
+
+      - name: ASan gate
+        shell: bash
+        run: python3 test/asan/check_asan.py --cx build-asan/cx --cx-lsp build-asan/cx-lsp
+
   # The language comparison takes ~11 minutes, longer than the rest of the
   # Ubuntu release leg combined, so it runs here in parallel with the other
   # legs instead of appended to that leg. Main-only like bench-record: the

@@ -44,17 +44,19 @@ int runQueryProcess() {
 
 int runLeakCheck(const char* filePath, int count) {
 // Without instrumentation the comparison is vacuous, so refuse loudly. The
-// body below still compiles everywhere, keeping it free of bitrot.
+// body below still compiles everywhere, keeping it free of bitrot. Under
+// AddressSanitizer the repeated analyses and arena resets run as a memory
+// error check instead (see test/asan/check_asan.py).
 #ifdef __has_feature
-#if __has_feature(leak_sanitizer)
-#define CX_LSAN_INSTRUMENTED 1
+#if __has_feature(leak_sanitizer) || __has_feature(address_sanitizer)
+#define CX_SANITIZER_INSTRUMENTED 1
 #endif
 #endif
-#ifndef CX_LSAN_INSTRUMENTED
-    std::fputs("leak-check: rebuild with -fsanitize=leak (Clang) to measure leaks\n", stdout);
+#ifndef CX_SANITIZER_INSTRUMENTED
+    std::fputs("leak-check: rebuild with -fsanitize=address or -fsanitize=leak (Clang)\n", stdout);
     return 1;
 #endif
-#undef CX_LSAN_INSTRUMENTED
+#undef CX_SANITIZER_INSTRUMENTED
     if (!filePath || count < 1) {
         std::fputs("usage: cx-lsp --leak-check <file> <count>\n", stderr);
         return 1;
