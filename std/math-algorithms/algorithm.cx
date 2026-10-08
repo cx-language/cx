@@ -70,9 +70,8 @@ void swap<E>(E& a, E& b) {
     memcpy(&b, &t, sizeof(E));
 }
 
-// TODO: Use Slice instead of List.
-/// Sorts a array. Uses insertion sort if the array is small enough, and quickSort otherwise.
-void sort<E: Comparable>(List<E>& array) {
+/// Sorts an array. Uses insertion sort if the array is small enough, and quickSort otherwise.
+void sort<E: Comparable>(E[] array) {
     if array.size() <= 32 {
         insertionSort(array);
     } else {
@@ -82,8 +81,7 @@ void sort<E: Comparable>(List<E>& array) {
 
 /// Private members
 
-// TODO: Use Slice instead of List.
-private int partition<E: Comparable>(List<E>& arr, int low, int high) {
+private int partition<E: Comparable>(E[] arr, int low, int high) {
     var pivot = &arr[high];
     var i = low - 1;
 
@@ -99,9 +97,8 @@ private int partition<E: Comparable>(List<E>& arr, int low, int high) {
     return i + 1;
 }
 
-// TODO: Use Slice instead of List.
 // Not stable.
-private void quickSort<E: Comparable>(List<E>& arr, int low, int high) {
+private void quickSort<E: Comparable>(E[] arr, int low, int high) {
     if low < high {
         var index = partition(arr, low, high);
 
@@ -114,9 +111,8 @@ private void quickSort<E: Comparable>(List<E>& arr, int low, int high) {
     }
 }
 
-// TODO: Use Slice instead of List.
 // Good for small arrays.
-private void insertionSort<E: Comparable>(List<E>& arr) {
+private void insertionSort<E: Comparable>(E[] arr) {
     var i = 1;
     while i < arr.size() {
         var j = i;

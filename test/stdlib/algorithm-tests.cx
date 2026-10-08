@@ -49,6 +49,15 @@ void testQuickSort() {
 }
 
 @test
+void testSortSlice() {
+    var a = [5, 4, 3, 2, 1];
+    sort(Slice(&a[0], 5));
+    for i in 0..5 {
+        assert(a[i] == i + 1);
+    }
+}
+
+@test
 void testSwapOwningValues() {
     // swap() is bytewise, so swapping owning values must neither double-free
     // nor leak. Heap strings defeat small-string optimization.
