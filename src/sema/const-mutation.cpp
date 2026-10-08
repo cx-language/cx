@@ -359,43 +359,13 @@ bool opaqueCallMayWrite(CallExpr& call, llvm::ArrayRef<Type> paramTypes, const R
     return false;
 }
 
-// Walks a call's receiver and arguments for nested effects. Lambda arguments
-// called with rooted input (rooted receiver or co-argument) bind their
-// alias-capable parameters to root storage while their body walks.
+// Walks a call's receiver and arguments for nested effects. Lambda argument
+// parameters are marked by the prepass (collectDirectLambdaArg), so lambda
+// bodies judge against converged marks here.
 bool walkCallOperands(CallExpr& call, Expr* receiver, RootCtx& ctx, ConstMutationQuery& query) {
-    bool receiverRooted = receiver && aliasesRoots(*receiver, ctx, false);
-    std::vector<char> argRooted(call.args.size());
-    for (size_t i = 0; i < call.args.size(); ++i)
-        argRooted[i] = aliasesRoots(*call.args[i].value, ctx, false);
     if (receiver && exprMayWrite(*receiver, ctx, query)) return true;
-    for (size_t i = 0; i < call.args.size(); ++i) {
-        auto* lambda = llvm::dyn_cast<LambdaExpr>(call.args[i].value);
-        if (!lambda || !lambda->functionDecl || !lambda->functionDecl->body) {
-            if (exprMayWrite(*call.args[i].value, ctx, query)) return true;
-            continue;
-        }
-        bool rootedInput = receiverRooted;
-        for (size_t j = 0; j < call.args.size() && !rootedInput; ++j)
-            rootedInput = j != i && argRooted[j];
-        std::vector<const Decl*> addedStorage;
-        std::vector<const Decl*> addedViews;
-        if (rootedInput) {
-            for (auto& param : lambda->functionDecl->getParams()) {
-                if (!typeMayAliasStorageDeep(param.type)) continue;
-                if (isTransparentAliasType(param.type)) {
-                    if (ctx.storage.insert(&param).second) addedStorage.push_back(&param);
-                } else if (ctx.views.insert(&param).second) {
-                    addedViews.push_back(&param);
-                }
-            }
-        }
-        bool writes = llvm::any_of(*lambda->functionDecl->body, [&](Stmt* stmt) { return stmtMayWrite(*stmt, ctx, query); });
-        for (auto* decl : addedStorage)
-            ctx.storage.erase(decl);
-        for (auto* decl : addedViews)
-            ctx.views.erase(decl);
-        if (writes) return true;
-    }
+    for (auto& arg : call.args)
+        if (exprMayWrite(*arg.value, ctx, query)) return true;
     return false;
 }
 
@@ -529,9 +499,9 @@ bool exprMayWrite(Expr& expr, RootCtx& ctx, ConstMutationQuery& query) {
     case ExprKind::MemberExpr:
         return exprMayWrite(*llvm::cast<MemberExpr>(expr).base, ctx, query);
     case ExprKind::LambdaExpr: {
-        // Direct call arguments are walked with marks by the call itself;
-        // elsewhere the body walks under the current roots (a stored writing
-        // lambda counts even if never invoked).
+        // The body walks under the current roots, which carry the prepass
+        // marks for bound inputs (a stored writing lambda counts even if
+        // never invoked).
         auto* functionDecl = llvm::cast<LambdaExpr>(expr).functionDecl;
         if (!functionDecl || !functionDecl->body) return false;
         return llvm::any_of(*functionDecl->body, [&](Stmt* stmt) { return stmtMayWrite(*stmt, ctx, query); });
@@ -666,6 +636,24 @@ bool markStoreBase(Expr& target, Expr& value, const RootCtx& ctx, llvm::SmallPtr
     return markValueHolder(base->decl, holderType, aliasesRoots(value, ctx, false), views, storage);
 }
 
+// Direct lambda arguments of genuine calls bind only rooted inputs: params
+// mark iff receiver/co-arg rooted. Ctor args and other positions unconditional.
+bool collectDirectLambdaArg(LambdaExpr& lambda, CallExpr& call, const RootCtx& ctx, llvm::SmallPtrSet<const Decl*, 16>& views,
+                            llvm::SmallPtrSet<const Decl*, 16>& storage) {
+    bool changed = false;
+    bool rootedInput = (call.isMethodCall() && aliasesRoots(*call.getReceiver(), ctx, false))
+                    || llvm::any_of(call.args, [&](const NamedValue& coarg) { return coarg.value != &lambda && aliasesRoots(*coarg.value, ctx, false); });
+    if (rootedInput) {
+        for (auto& param : lambda.functionDecl->getParams())
+            if (typeMayAliasStorageDeep(param.type)) changed |= views.insert(&param).second;
+    }
+    if (lambda.functionDecl->body) {
+        for (auto* stmt : *lambda.functionDecl->body)
+            changed |= collectViewRootsInStmt(*stmt, ctx, views, storage);
+    }
+    return changed;
+}
+
 // One prepass round: marks locals (and payload bindings) assigned rooted
 // alias-capable values. Returns whether anything was added.
 bool collectViewRootsInExpr(Expr& expr, const RootCtx& ctx, llvm::SmallPtrSet<const Decl*, 16>& views, llvm::SmallPtrSet<const Decl*, 16>& storage) {
@@ -682,18 +670,27 @@ bool collectViewRootsInExpr(Expr& expr, const RootCtx& ctx, llvm::SmallPtrSet<co
     case ExprKind::UnaryExpr:
     case ExprKind::IndexExpr:
     case ExprKind::IndexAssignmentExpr:
-    case ExprKind::UnwrapExpr:
-        for (auto& arg : llvm::cast<CallExpr>(expr).args)
-            changed |= collectViewRootsInExpr(*arg.value, ctx, views, storage);
+    case ExprKind::UnwrapExpr: {
+        auto& call = llvm::cast<CallExpr>(expr);
+        bool directArgs = expr.kind == ExprKind::CallExpr && !llvm::isa_and_nonnull<ConstructorDecl>(call.calleeDecl);
+        for (auto& arg : call.args) {
+            auto* lambda = directArgs ? llvm::dyn_cast<LambdaExpr>(arg.value) : nullptr;
+            if (lambda && lambda->functionDecl)
+                changed |= collectDirectLambdaArg(*lambda, call, ctx, views, storage);
+            else
+                changed |= collectViewRootsInExpr(*arg.value, ctx, views, storage);
+        }
         if (expr.kind == ExprKind::UnwrapExpr) changed |= collectViewRootsInExpr(*llvm::cast<UnwrapExpr>(expr).getReceiver(), ctx, views, storage);
         if (auto* indexBase = getIndexBase(expr)) changed |= collectViewRootsInExpr(*indexBase, ctx, views, storage);
         break;
+    }
     case ExprKind::MemberExpr:
         changed |= collectViewRootsInExpr(*llvm::cast<MemberExpr>(expr).base, ctx, views, storage);
         break;
     case ExprKind::LambdaExpr: {
         // Lambda borrow parameters count as views: the callee binds them to
-        // the caller's storage, and view marks only widen.
+        // the caller's storage, and view marks only widen. (Direct arguments
+        // of genuine calls take the conditional collectDirectLambdaArg path.)
         auto* functionDecl = llvm::cast<LambdaExpr>(expr).functionDecl;
         if (!functionDecl) break;
         for (auto& param : functionDecl->getParams())

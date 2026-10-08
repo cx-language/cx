@@ -22,10 +22,57 @@ void fill(int* p) {
     *p = 1;
 }
 
+void apply(void(string) f, string s) { f(s); }
+
 struct Box {
     int v = 0;
     void poke() { fill(&this.v); }
     int get() { return this.v; }
+}
+
+struct LambdaLocal {
+    int v = 0;
+    // Writing lambda over the method's own locals: no rooted input binds.
+    int f() {
+        var l = [1, 2, 3];
+        l.map(m => { var w = m; *w = 1; return *w; });
+        return v;
+    }
+    int g() {
+        var t = "local";
+        apply(u => { u.data()[0] = char(88); }, t);
+        return v;
+    }
+}
+
+struct LambdaRootedField {
+    int[] items = [];
+    // Lambda over a rooted field: the parameter binds root storage, and a
+    // local copied from it is tainted the same round.
+    void h() {
+        items.map(m => {
+            var w = m;
+            *w = 1;
+            return *w;
+        });
+    }
+}
+
+struct LambdaRootedCoarg {
+    string name = "";
+    // Rooted co-argument binds the lambda parameter like a rooted receiver.
+    int k() {
+        apply(u => { u.data()[0] = char(88); }, name);
+        return 1;
+    }
+    // Rootedness discovered after the call still binds: the prepass
+    // fixpoint re-evaluates the call once `t` is marked.
+    int q() {
+        var t = "local";
+        apply(u => { u.data()[0] = char(88); }, t);
+        t = name;
+        return 1;
+    }
 }
 
 void direct() {
@@ -74,6 +121,20 @@ void reinit() {
     c.init(Counter(5));
 }
 
+void lambdaOverRootedField() {
+    const o = LambdaRootedField([1, 2, 3]);
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'h' on a constant: it mutates the receiver
+    o.h();
+}
+
+void lambdaOverRootedCoarg() {
+    const o = LambdaRootedCoarg("x");
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'k' on a constant: it mutates the receiver
+    o.k();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'q' on a constant: it mutates the receiver
+    o.q();
+}
+
 void readsPass() {
     const c = Counter(41);
     println(c.read());
@@ -81,6 +142,9 @@ void readsPass() {
     println(c);
     const b = Box();
     println(b.get());
+    const l = LambdaLocal(7);
+    println(l.f());
+    println(l.g());
 }
 
 struct Inner {
