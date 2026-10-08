@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
@@ -109,6 +110,28 @@ struct SymbolTable {
         }
         return nullptr;
     }
+
+    // Hides local scopes so a re-checked default value resolves names as at
+    // its declaration (globals only). Scopes pushed inside the window stay
+    // visible, and lookup additions land in the seed scope, discarded on exit.
+    struct LocalScopeGuard {
+        LocalScopeGuard(SymbolTable& table, Decl* thisDecl) : table(table), saved(table.scopes) {
+            seed.emplace(nullptr, &table);
+            table.scopes.erase(table.scopes.begin() + 1, table.scopes.end() - 1);
+            if (thisDecl) table.add("this", thisDecl);
+        }
+        ~LocalScopeGuard() {
+            seed.reset();
+            table.scopes = std::move(saved);
+        }
+        LocalScopeGuard(const LocalScopeGuard&) = delete;
+        LocalScopeGuard& operator=(const LocalScopeGuard&) = delete;
+
+    private:
+        SymbolTable& table;
+        std::vector<Scope*> saved;
+        std::optional<Scope> seed;
+    };
 
 private:
     friend struct Scope;

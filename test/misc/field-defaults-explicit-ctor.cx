@@ -1,0 +1,726 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Plain {
+    int x = 42;
+    int y = 7;
+
+    Plain() {
+    }
+}
+
+struct Partial {
+    int x = 42;
+    int y = 7;
+
+    Partial(int a) {
+        x = a;
+    }
+}
+
+struct Ordered {
+    int x = 40;
+    int y = 0;
+
+    Ordered() {
+        y = x + 2;
+    }
+}
+
+struct Owned {
+    StringBuf buf = StringBuf("hi");
+
+    Owned() {
+    }
+}
+
+struct Box<T> {
+    T val;
+    int tag = 99;
+
+    Box(T v) {
+        val = v;
+    }
+}
+
+struct Wrap<T> {
+    T val;
+    T zero = 0;
+
+    Wrap(T v) {
+        val = v;
+    }
+}
+
+struct Cond {
+    int x = 10;
+
+    Cond(bool c) {
+        if (c) {
+            x = 1;
+        }
+    }
+}
+
+struct Comp {
+    int x = 10;
+
+    Comp() {
+        x += 5;
+    }
+}
+
+int bumps = 0;
+
+int next() {
+    bumps = bumps + 1;
+    return bumps * 10;
+}
+
+int shadowBase = 100;
+
+int shadowHelper() {
+    return 1;
+}
+
+int drops = 0;
+
+struct SideFX {
+    int x = next();
+
+    SideFX() {
+        x = 7;
+    }
+}
+
+struct Deleg {
+    int x = 42;
+    int y = next();
+
+    Deleg(int a) {
+        x = a;
+    }
+
+    Deleg() {
+        init(1);
+    }
+}
+
+struct Loop {
+    int x = 42;
+    int total = 0;
+
+    Loop() {
+        int i = 0;
+        while (i < 3) {
+            total = total + x;
+            i = i + 1;
+        }
+    }
+}
+
+struct LambdaRead {
+    int x = 42;
+
+    LambdaRead() {
+        var f = () => x + 1;
+        x = f();
+    }
+}
+
+bool is42(int v) {
+    return v == 42;
+}
+
+struct ShortRead {
+    int x = 42;
+    bool saw = false;
+
+    ShortRead(bool c) {
+        saw = c && is42(x);
+        x = 1;
+    }
+}
+
+struct Pos {
+    int px = 3;
+    int py = 4;
+}
+
+struct PartialMember {
+    Pos pos = Pos();
+
+    PartialMember() {
+        pos.px = 30;
+    }
+}
+
+struct Idx {
+    int[3] arr = [1, 2, 3];
+
+    Idx() {
+        arr[0] = 9;
+    }
+}
+
+struct Other {
+    int x = 42;
+
+    int get() {
+        return x;
+    }
+
+    Other(Other o) {
+        o.x = 1;
+    }
+
+    Other() {
+        get();
+        x = 1;
+    }
+}
+
+struct Discard {
+    int x = next();
+
+    Discard() {
+        _ = x;
+        x = 7;
+    }
+}
+
+struct ThisInit {
+    int x = 42;
+    int y = 7;
+
+    ThisInit(int a) {
+        x = a;
+    }
+
+    ThisInit() {
+        this.init(1);
+    }
+}
+
+struct SwitchRead {
+    int x = 42;
+    int y = 0;
+
+    SwitchRead(int c) {
+        switch (c) {
+            case 1:
+                y = x + 1;
+                break;
+            default:
+                y = x + 2;
+                break;
+        }
+        x = 1;
+    }
+}
+
+struct TernRead {
+    int x = 42;
+    int y = 0;
+
+    TernRead(int c) {
+        y = c > 0 ? x : 0;
+        x = 1;
+    }
+}
+
+struct ForInRead {
+    int x = 42;
+    int sum = 0;
+
+    ForInRead() {
+        int[] arr = [1, 2, 3];
+        for n in arr {
+            sum = sum + n + x;
+        }
+        x = 1;
+    }
+}
+
+struct DeferRead {
+    int x = 42;
+    int y = 7;
+
+    DeferRead() {
+        defer (println(y));
+        x = 1;
+    }
+}
+
+struct ShadowField {
+    int x = 42;
+    int y = 0;
+
+    ShadowField() {
+        int x = 5;
+        y = x + 1;
+        x = 9;
+        y = y + x;
+    }
+}
+
+struct ThisEscape {
+    int x = 42;
+    int y = 0;
+
+    ThisEscape() {
+        _ = &this;
+        y = x + 1;
+        x = 1;
+    }
+}
+
+struct CallEscape {
+    int x = 42;
+    int y = 0;
+
+    CallEscape() {
+        y = readEscapee(this) + 1;
+        x = 1;
+    }
+}
+
+int readEscapee(CallEscape& e) {
+    return e.x;
+}
+
+struct ThisAssign {
+    int x = 42;
+    int y = 7;
+
+    ThisAssign(int a) {
+        this.x = a;
+    }
+}
+
+struct AssertRead {
+    int x = 42;
+
+    AssertRead() {
+        assert(x == 42);
+        x = 1;
+    }
+}
+
+struct ClosureThis {
+    int x = 42;
+
+    ClosureThis() {
+        var f = () => this.x + 1;
+        x = f();
+    }
+}
+
+struct SwitchExprRead {
+    int x = 42;
+    int y = 0;
+
+    SwitchExprRead(int c) {
+        y = switch c {
+            case 1: x + 1,
+            default: x + 2,
+        };
+        x = 1;
+    }
+}
+
+struct ShadowParam {
+    int x = shadowBase;
+
+    ShadowParam(int shadowBase) {
+    }
+}
+
+struct ShadowLocal {
+    int x = shadowBase;
+    int y = 0;
+
+    ShadowLocal() {
+        int shadowBase = 5;
+        y = shadowBase;
+    }
+}
+
+struct ShadowCall {
+    int shadowHelper() {
+        return 2;
+    }
+    int x = shadowHelper();
+
+    ShadowCall() {
+    }
+}
+
+struct AutogenShadow {
+    int v = shadowBase;
+}
+
+struct CallResult {
+    int x = 42;
+    int y = 0;
+
+    int get() {
+        return x;
+    }
+
+    CallResult() {
+        y = get();
+        x = 1;
+    }
+}
+
+struct OtherCall {
+    int x = next();
+
+    int get() {
+        return x;
+    }
+
+    OtherCall(OtherCall& o) {
+        o.get();
+        x = 7;
+    }
+
+    OtherCall() {
+    }
+}
+
+struct ReadAfter {
+    int x = next();
+    int y = 0;
+
+    ReadAfter() {
+        x = 1;
+        y = x;
+    }
+}
+
+struct SelfRead {
+    int x = 42;
+
+    SelfRead() {
+        x = x + 1;
+    }
+}
+
+struct ClassicFor {
+    int x = 42;
+    int total = 0;
+
+    ClassicFor() {
+        for (int i = 0; i < 3; i = i + 1) {
+            total = total + x;
+        }
+    }
+}
+
+struct UndefOk {
+    int x = undefined;
+
+    UndefOk() {
+        x = 5;
+    }
+}
+
+struct Drop {
+    int v;
+
+    Drop(int v) {
+        this.v = v;
+    }
+
+    ~Drop() {
+        drops = drops + 1;
+    }
+}
+
+struct Holder {
+    Drop d = Drop(1);
+
+    Holder(bool c) {
+        if (c) {
+            d = Drop(2);
+        }
+    }
+}
+
+struct Clean {
+    Drop d = Drop(1);
+
+    Clean() {
+        d = Drop(3);
+    }
+}
+
+struct DelegHold {
+    Drop d = Drop(1);
+
+    DelegHold(int a) {
+        d = Drop(a);
+    }
+
+    DelegHold() {
+        init(2);
+        d = Drop(3);
+    }
+}
+
+struct DoubleHold {
+    Drop d = Drop(1);
+
+    DoubleHold() {
+        d = Drop(4);
+        d = Drop(5);
+    }
+}
+
+struct UndefHold {
+    Drop d = undefined;
+
+    UndefHold(bool c) {
+        if (c) {
+            d = Drop(9);
+        }
+    }
+}
+
+void sinkDrop(Drop d) {
+}
+
+struct MovedBare {
+    Drop d = Drop(1);
+
+    MovedBare() {
+        d = Drop(10);
+        sinkDrop(d);
+        d = Drop(2);
+    }
+}
+
+struct MovedThis {
+    Drop d = Drop(1);
+
+    MovedThis() {
+        d = Drop(10);
+        sinkDrop(d);
+        this.d = Drop(2);
+    }
+}
+
+struct MovedCond {
+    Drop d = Drop(1);
+
+    MovedCond(bool c) {
+        d = Drop(10);
+        if (c) {
+            sinkDrop(d);
+        }
+        this.d = Drop(2);
+    }
+}
+
+struct NoDefDouble {
+    Drop d;
+
+    NoDefDouble() {
+        d = Drop(4);
+        d = Drop(5);
+    }
+}
+
+void main() {
+    var p = Plain();
+    println(p.x); // CHECK:42
+    println(p.y); // CHECK-NEXT:7
+    var q = Partial(1);
+    println(q.x); // CHECK-NEXT:1
+    println(q.y); // CHECK-NEXT:7
+    var o = Ordered();
+    println(o.y); // CHECK-NEXT:42
+    var w = Owned();
+    println(w.buf); // CHECK-NEXT:hi
+    var g = Box(1.5);
+    println(g.val); // CHECK-NEXT:1.5
+    println(g.tag); // CHECK-NEXT:99
+    var v = Wrap(5);
+    println(v.val); // CHECK-NEXT:5
+    println(v.zero); // CHECK-NEXT:0
+    var h = Cond(true);
+    println(h.x); // CHECK-NEXT:1
+    var i = Cond(false);
+    println(i.x); // CHECK-NEXT:10
+    var c = Comp();
+    println(c.x); // CHECK-NEXT:15
+    var s = SideFX();
+    println(s.x); // CHECK-NEXT:7
+    println(bumps); // CHECK-NEXT:0
+    var d = Deleg();
+    println(d.x); // CHECK-NEXT:1
+    println(d.y); // CHECK-NEXT:10
+    println(bumps); // CHECK-NEXT:1
+    var l = Loop();
+    println(l.total); // CHECK-NEXT:126
+    var f = LambdaRead();
+    println(f.x); // CHECK-NEXT:43
+    var sc = ShortRead(true);
+    println(sc.saw); // CHECK-NEXT:true
+    println(sc.x); // CHECK-NEXT:1
+    var st = ShortRead(false);
+    println(st.saw); // CHECK-NEXT:false
+    println(st.x); // CHECK-NEXT:1
+    var pm = PartialMember();
+    println(pm.pos.px); // CHECK-NEXT:30
+    println(pm.pos.py); // CHECK-NEXT:4
+    var ix = Idx();
+    println(ix.arr); // CHECK-NEXT:[9, 2, 3]
+    var inner = Other();
+    inner.x = 0;
+    var ao = Other(inner);
+    println(ao.x); // CHECK-NEXT:42
+    println(inner.x); // CHECK-NEXT:0
+    var so = Other();
+    println(so.x); // CHECK-NEXT:1
+    var dc = Discard();
+    println(dc.x); // CHECK-NEXT:7
+    println(bumps); // CHECK-NEXT:2
+    var ti = ThisInit();
+    println(ti.x); // CHECK-NEXT:1
+    println(ti.y); // CHECK-NEXT:7
+    var sr = SwitchRead(1);
+    println(sr.y); // CHECK-NEXT:43
+    println(sr.x); // CHECK-NEXT:1
+    var tr = TernRead(1);
+    println(tr.y); // CHECK-NEXT:42
+    println(tr.x); // CHECK-NEXT:1
+    var fr = ForInRead();
+    println(fr.sum); // CHECK-NEXT:132
+    println(fr.x); // CHECK-NEXT:1
+    var dr = DeferRead(); // CHECK-NEXT:7
+    println(dr.x); // CHECK-NEXT:1
+    var sh = ShadowField();
+    println(sh.x); // CHECK-NEXT:42
+    println(sh.y); // CHECK-NEXT:15
+    var te = ThisEscape();
+    println(te.y); // CHECK-NEXT:43
+    println(te.x); // CHECK-NEXT:1
+    var ce = CallEscape();
+    println(ce.y); // CHECK-NEXT:43
+    println(ce.x); // CHECK-NEXT:1
+    var ta = ThisAssign(5);
+    println(ta.x); // CHECK-NEXT:5
+    println(ta.y); // CHECK-NEXT:7
+    var ar = AssertRead();
+    println(ar.x); // CHECK-NEXT:1
+    var ct = ClosureThis();
+    println(ct.x); // CHECK-NEXT:43
+    var sx = SwitchExprRead(1);
+    println(sx.y); // CHECK-NEXT:43
+    println(sx.x); // CHECK-NEXT:1
+    var sd = SwitchExprRead(9);
+    println(sd.y); // CHECK-NEXT:44
+    var sp = ShadowParam(7);
+    println(sp.x); // CHECK-NEXT:100
+    var sl = ShadowLocal();
+    println(sl.x); // CHECK-NEXT:100
+    println(sl.y); // CHECK-NEXT:5
+    var shc = ShadowCall();
+    println(shc.x); // CHECK-NEXT:1
+    {
+        int shadowBase = 5;
+        var ash = AutogenShadow();
+        println(ash.v); // CHECK-NEXT:100
+        println(shadowBase); // CHECK-NEXT:5
+    }
+    var cr = CallResult();
+    println(cr.y); // CHECK-NEXT:42
+    println(cr.x); // CHECK-NEXT:1
+    var oc = OtherCall();
+    println(oc.x); // CHECK-NEXT:30
+    println(bumps); // CHECK-NEXT:3
+    var oc2 = OtherCall(oc);
+    println(oc2.x); // CHECK-NEXT:7
+    println(bumps); // CHECK-NEXT:3
+    var ra = ReadAfter();
+    println(ra.x); // CHECK-NEXT:1
+    println(ra.y); // CHECK-NEXT:1
+    println(bumps); // CHECK-NEXT:3
+    var sr2 = SelfRead();
+    println(sr2.x); // CHECK-NEXT:43
+    var cf = ClassicFor();
+    println(cf.total); // CHECK-NEXT:126
+    var uo = UndefOk();
+    println(uo.x); // CHECK-NEXT:5
+    {
+        var h = Holder(true);
+        println(drops); // CHECK-NEXT:1
+        println(h.d.v); // CHECK-NEXT:2
+    }
+    println(drops); // CHECK-NEXT:2
+    {
+        var cl = Clean();
+        println(drops); // CHECK-NEXT:2
+        println(cl.d.v); // CHECK-NEXT:3
+    }
+    println(drops); // CHECK-NEXT:3
+    {
+        var dh = DelegHold();
+        println(drops); // CHECK-NEXT:4
+        println(dh.d.v); // CHECK-NEXT:3
+    }
+    println(drops); // CHECK-NEXT:5
+    {
+        var db = DoubleHold();
+        println(drops); // CHECK-NEXT:6
+        println(db.d.v); // CHECK-NEXT:5
+    }
+    println(drops); // CHECK-NEXT:7
+    {
+        var uh = UndefHold(true);
+        println(drops); // CHECK-NEXT:7
+        println(uh.d.v); // CHECK-NEXT:9
+    }
+    println(drops); // CHECK-NEXT:8
+    {
+        var hf = Holder(false);
+        println(drops); // CHECK-NEXT:8
+        println(hf.d.v); // CHECK-NEXT:1
+    }
+    println(drops); // CHECK-NEXT:9
+    {
+        var mb = MovedBare();
+        println(drops); // CHECK-NEXT:10
+        println(mb.d.v); // CHECK-NEXT:2
+    }
+    println(drops); // CHECK-NEXT:11
+    {
+        var mt = MovedThis();
+        println(drops); // CHECK-NEXT:12
+        println(mt.d.v); // CHECK-NEXT:2
+    }
+    println(drops); // CHECK-NEXT:13
+    {
+        var ct = MovedCond(true);
+        println(drops); // CHECK-NEXT:14
+        println(ct.d.v); // CHECK-NEXT:2
+    }
+    println(drops); // CHECK-NEXT:15
+    {
+        // Maybe-moved reassignment skips the destructor (leaking the live
+        // value on this path, like any maybe-moved overwrite).
+        var cf2 = MovedCond(false);
+        println(drops); // CHECK-NEXT:15
+        println(cf2.d.v); // CHECK-NEXT:2
+    }
+    println(drops); // CHECK-NEXT:16
+    {
+        var nd = NoDefDouble();
+        println(drops); // CHECK-NEXT:17
+        println(nd.d.v); // CHECK-NEXT:5
+    }
+    println(drops); // CHECK-NEXT:18
+}

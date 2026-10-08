@@ -1,0 +1,61 @@
+// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+
+// Defaults resolve as at their declaration (globals only), even when the
+// struct is first checked lazily from inside a method body.
+
+// Eager order: rejected while checking the struct itself.
+struct ThisFirst {
+    int x = 1;
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'this'
+    int y = this.x;
+}
+
+// Lazy order: the trigger scope's `this` must not leak in.
+struct TriggerSecond {
+    int x = 42;
+    TriggerSecond() {}
+    int run() {
+        var a = ThisSecond();
+        return a.y;
+    }
+}
+struct ThisSecond {
+    int x = 1;
+    // The declaration and the call-site default-argument checks each report.
+    // CHECK: [[@LINE+2]]:13: error: unknown identifier 'this'
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'this'
+    int y = this.x;
+}
+
+// Parameter defaults are first checked at the call site.
+struct ParamThis {
+    int x = 42;
+    ParamThis() {}
+    // CHECK: [[@LINE+1]]:21: error: unknown identifier 'this'
+    int get(int p = this.x) {
+        return p;
+    }
+}
+
+// Fields are not in scope for parameter defaults either.
+struct ParamField {
+    int x = 42;
+    ParamField() {}
+    // CHECK: [[@LINE+1]]:22: error: unknown identifier 'x'
+    int get2(int p = x) {
+        return p;
+    }
+}
+
+void useDefaults() {
+    var b = ParamThis();
+    b.get();
+    var f = ParamField();
+    f.get2();
+}
+
+void main() {
+    var t = TriggerSecond();
+    t.run();
+    useDefaults();
+}

@@ -887,7 +887,7 @@ Value* IRGenerator::emitAssignment(const BinaryExpr& expr) {
     // use-after-free when RHS borrows LHS, e.g. `s = join(string(&s), ...)`.
     auto lvalue = emitLvalueExpr(expr.getLHS());
     auto rvalue = emitExprForPassing(expr.getRHS(), lvalue->getType()->getPointee());
-    destroyAssignmentLHS(expr.getLHS(), lvalue, expr.lhsIsMoved);
+    destroyAssignmentLHS(expr.getLHS(), lvalue, expr.lhsIsMoved, expr.lhsIsLive);
     createStore(rvalue, lvalue);
     return nullptr;
 }

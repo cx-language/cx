@@ -319,6 +319,9 @@ struct Typechecker {
     // nested calls re-throw a silent error instead of propagating null types (see typecheckCallExpr).
     bool overloadProbe = false;
     FunctionDecl* currentFunction;
+    // Non-null while re-checking a default value: member fallbacks stop before
+    // this function, so names resolve as at the default's declaration.
+    FunctionDecl* defaultScopeStop = nullptr;
     Stmt** currentStmt; // Double-pointer so it refers to the correct statement after lowering.
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
@@ -471,6 +474,16 @@ struct Typechecker {
     llvm::SmallPtrSet<const TypeDecl*, 16> infiniteSizeReported;
     CompileOptions options; // Active package's options; switched per module.
     const std::vector<BuildConfig::ResolvedDependency>* dependencies; // Closure, or null without a project.
+};
+
+// Re-checking a default value (field or parameter) resolves names as at its
+// declaration: local scopes hidden, member fallbacks stopped. Declared here
+// so all default-checking sites share it.
+struct DefaultResolveScope {
+    SymbolTable::LocalScopeGuard scopes;
+    llvm::SaveAndRestore<FunctionDecl*> stop;
+
+    explicit DefaultResolveScope(Typechecker& checker, bool seedThis = true);
 };
 
 // Saves move and conditional-move state for one branch. Assignment state is included

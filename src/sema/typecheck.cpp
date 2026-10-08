@@ -536,6 +536,15 @@ void Typechecker::setDeclContext(Decl& decl) {
     // Synthesized declarations carry no file; the caller's file context applies.
 }
 
+DefaultResolveScope::DefaultResolveScope(Typechecker& checker, bool seedThis)
+: scopes(checker.currentModule->symbolTable,
+         [&]() -> Decl* {
+             if (!seedThis) return nullptr;
+             auto found = checker.currentModule->symbolTable.findFirst("this");
+             return found.empty() ? nullptr : found.front();
+         }()),
+  stop(checker.defaultScopeStop, checker.currentFunction) {}
+
 Decl* Typechecker::tryFindDecl(llvm::StringRef name, Location location) {
     ASSERT(!name.empty());
 
@@ -544,7 +553,7 @@ Decl* Typechecker::tryFindDecl(llvm::StringRef name, Location location) {
         return match;
     }
 
-    for (FunctionDecl* function = currentFunction; function; function = function->parentFunction) {
+    for (FunctionDecl* function = currentFunction; function && function != defaultScopeStop; function = function->parentFunction) {
         if (auto* typeDecl = function->getTypeDecl()) {
             for (auto& field : typeDecl->fields) {
                 if (field.getName() == name) {
@@ -594,7 +603,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
     std::vector<Decl*> decls;
 
     if (!receiverTypeDecl) {
-        for (FunctionDecl* function = currentFunction; function; function = function->parentFunction) {
+        for (FunctionDecl* function = currentFunction; function && function != defaultScopeStop; function = function->parentFunction) {
             if (function->getTypeDecl()) {
                 receiverTypeDecl = function->getTypeDecl();
                 break;

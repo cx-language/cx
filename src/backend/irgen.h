@@ -162,7 +162,7 @@ struct IRGenerator {
     Value* emitLoopConditionValue(const Expr& condition);
     void emitBreakStmt(const BreakStmt&);
     void emitContinueStmt(const ContinueStmt&);
-    void destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skipDestructor);
+    void destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skipDestructor, bool lhsIsLive = false);
     void emitCompoundStmt(const CompoundStmt& stmt);
     void emitStmt(const Stmt& stmt);
     void emitStmts(llvm::ArrayRef<Stmt*> stmts);

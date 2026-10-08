@@ -73,8 +73,14 @@ Named arguments can be given in any order and can skip fields with
 default values. Argument expressions always evaluate in the order written.
 
 To customize construction, declare a constructor: a member function
-with the same name as the struct. It must initialize every field,
-using `this.` to refer to fields shadowed by parameters.
+with the same name as the struct. It must initialize every field without
+a default value; fields with defaults are initialized automatically unless
+the constructor plainly assigns them before reading them. Defaults evaluate
+in field order before the body runs. Use `this.` to refer to fields shadowed
+by parameters.
+A constructor can delegate to another with a top-level `init(...)` call;
+the target performs initialization, so the delegating body needs no
+assignments of its own.
 Constructors are never implicit: a single-parameter constructor does not convert
 its argument type, so pass `Wrapper(5)` explicitly instead of a bare `5`:
 

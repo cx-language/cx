@@ -1601,6 +1601,12 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
         // Reassigning a maybe-moved value overwrites without destroying: the old
         // value may already be gone, so destroying it would double-free.
         expr.lhsIsMoved = movedDecls.count(varExpr->decl) || maybeMovedDecls.count(varExpr->decl);
+    } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(lhs); memberExpr && memberExpr->base->isThis()) {
+        // Same for `this.`-qualified fields: only the base is checked below,
+        // never the field's own move state.
+        if (auto* fieldDecl = llvm::dyn_cast_or_null<FieldDecl>(memberExpr->decl)) {
+            expr.lhsIsMoved = movedDecls.count(fieldDecl) || maybeMovedDecls.count(fieldDecl);
+        }
     }
     if (auto* baseVarExpr = getAssignmentBaseVarExpr(*lhs)) {
         if (baseVarExpr->decl->isVarDecl()) {
@@ -4724,7 +4730,15 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             const ParamDecl& param = params[j];
             ASSERT(param.defaultValue);
             Expr* defaultArg = param.defaultValue->instantiate({});
-            if (!defaultArg->hasType()) typecheckExpr(*defaultArg, false, param.type);
+            if (!defaultArg->hasType()) {
+                // Re-resolve names as at the default's declaration. A default
+                // is not a body statement, so its assignments must not mark
+                // the caller's fields initialized.
+                DefaultResolveScope defaultScope(*this, /*seedThis=*/false);
+                llvm::SmallPtrSet<FieldDecl*, 32> ignoredInitialized;
+                llvm::SaveAndRestore swapInitialized(currentInitializedFields, &ignoredInitialized);
+                typecheckExpr(*defaultArg, false, param.type);
+            }
             if (Expr* converted = convert(defaultArg, param.type, true, diagnose)) {
                 defaultArg = converted;
             } else {

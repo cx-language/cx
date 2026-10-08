@@ -314,6 +314,8 @@ struct BinaryExpr : CallExpr {
     BinaryOperator op;
     // True when the LHS was already consumed (moved or deinited) at this assignment; its destructor must not run.
     bool lhsIsMoved = false;
+    // True when the LHS holds a live field default (or delegation-built value) in a constructor; overwriting it destroys the old value.
+    bool lhsIsLive = false;
     // True when the operator is derived from its counterpart (e.g. != from ==) and the result must be negated.
     bool negateResult = false;
     // True when typechecking already warned that a narrowed optional compared against null cannot be null.

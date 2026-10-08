@@ -38,3 +38,20 @@ struct C : O {
 
     void foo() {}
 }
+
+// A bare `Type(...)` constructs a discarded temporary; only `init(...)`
+// delegates. Skipped members of the outer object still warn.
+struct D {
+    int x = 42;
+    int y;
+
+    D(int a) {
+        x = a;
+        y = a;
+    }
+
+    // CHECK: [[@LINE+1]]:5: warning: constructor doesn't initialize member variable 'y'
+    D() {
+        D(1);
+    }
+}

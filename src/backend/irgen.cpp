@@ -332,11 +332,13 @@ Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args, con
     return insertBlock->add(new CallInst{ValueKind::CallInst, function, args, expr, ""});
 }
 
-void IRGenerator::destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skipDestructor) {
+void IRGenerator::destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skipDestructor, bool lhsIsLive) {
     // Assignment into a union never destroys the old value (see Expr::isInsideUnion).
     if (skipDestructor || lhs.isInsideUnion()) return;
 
     // Don't call destructor for LHS when assigning to fields in constructor.
+    // Assignments flagged live overwrite an injected default or a
+    // delegation-built value, so the old value is destroyed.
     if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(currentDecl)) {
         Decl* referencedDecl = nullptr;
 
@@ -347,7 +349,7 @@ void IRGenerator::destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skip
         }
 
         if (auto* fieldDecl = llvm::dyn_cast_or_null<FieldDecl>(referencedDecl)) {
-            if (fieldDecl->getParentDecl() == constructorDecl->getTypeDecl()) {
+            if (fieldDecl->getParentDecl() == constructorDecl->getTypeDecl() && !lhsIsLive) {
                 return;
             }
         }

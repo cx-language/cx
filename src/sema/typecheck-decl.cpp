@@ -1273,6 +1273,227 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
     decl.checkState = Decl::CheckState::SignatureChecked;
 }
 
+// The field referenced by a `this`-object access, or null: bare `x` is implicit
+// `this`, while member accesses on other instances are a different object.
+static FieldDecl* thisFieldRef(Expr& expr, TypeDecl& typeDecl) {
+    auto* field = expr.getFieldDecl();
+    if (!field || field->getParentDecl() != &typeDecl) return nullptr;
+    if (expr.isVarExpr()) return field;
+    if (auto* member = llvm::dyn_cast<MemberExpr>(&expr); member && member->base->isThis()) return field;
+    return nullptr;
+}
+
+// Delegation spells `init(...)` (see emitCallExpr); a bare `Type(...)`
+// constructs a discarded temporary instead.
+static bool isDelegatingInitCall(Stmt& stmt, TypeDecl& typeDecl) {
+    auto* exprStmt = llvm::dyn_cast<ExprStmt>(&stmt);
+    auto* callExpr = exprStmt ? llvm::dyn_cast<CallExpr>(exprStmt->expr) : nullptr;
+    auto* constructorDecl = callExpr ? llvm::dyn_cast_or_null<ConstructorDecl>(callExpr->calleeDecl) : nullptr;
+    return constructorDecl && constructorDecl->getTypeDecl() == &typeDecl && callExpr->getFunctionName() == "init";
+}
+
+static bool isUndefinedDefault(Expr* expr) {
+    while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr))
+        expr = cast->operand;
+    return expr->isUndefinedLiteralExpr();
+}
+
+// A whole-field `=` assignment found by the scan, with the state needed to
+// decide whether it overwrites a live value (see the injection below).
+struct FieldAssign {
+    FieldDecl* field;
+    BinaryExpr* assign;
+    bool pastInitCall;
+    bool definitelyAssigned;
+};
+
+// Scan state for collectFieldReads: referenced fields plus every whole-field
+// assignment in order. Nested and conditional references count as reads since
+// their execution order is unknown; only top-level direct assignments mark a
+// field definitely assigned. A `this` escape (method call, `foo(this)`,
+// `&this`) counts as reading every field.
+struct FieldUseScan {
+    TypeDecl& typeDecl;
+    llvm::SmallPtrSet<FieldDecl*, 16>& reads;
+    llvm::SmallVectorImpl<FieldAssign>& assigns;
+    llvm::SmallPtrSet<FieldDecl*, 16>& assigned;
+    bool pastInitCall;
+
+    void recordAssign(FieldDecl* field, BinaryExpr* assign) { assigns.push_back({field, assign, pastInitCall, assigned.count(field) != 0}); }
+};
+
+static void collectFieldReads(Expr& expr, FieldUseScan& scan);
+static void markAllFieldsRead(TypeDecl& typeDecl, llvm::SmallPtrSet<FieldDecl*, 16>& reads) {
+    for (auto& field : typeDecl.fields)
+        reads.insert(&field);
+}
+static void collectFieldReads(Stmt& stmt, FieldUseScan& scan) {
+    switch (stmt.kind) {
+    case StmtKind::ReturnStmt:
+        if (auto* value = llvm::cast<ReturnStmt>(&stmt)->value) collectFieldReads(*value, scan);
+        break;
+    case StmtKind::VarStmt:
+        for (auto* decl : llvm::cast<VarStmt>(&stmt)->decls) {
+            if (decl->initializer) collectFieldReads(*decl->initializer, scan);
+        }
+        break;
+    case StmtKind::ExprStmt:
+        collectFieldReads(*llvm::cast<ExprStmt>(&stmt)->expr, scan);
+        break;
+    case StmtKind::DeferStmt:
+        collectFieldReads(*llvm::cast<DeferStmt>(&stmt)->expr, scan);
+        break;
+    case StmtKind::IfStmt: {
+        auto* ifStmt = llvm::cast<IfStmt>(&stmt);
+        collectFieldReads(*ifStmt->condition, scan);
+        for (auto* s : ifStmt->thenBody)
+            collectFieldReads(*s, scan);
+        for (auto* s : ifStmt->elseBody)
+            collectFieldReads(*s, scan);
+        break;
+    }
+    case StmtKind::SwitchStmt: {
+        auto* switchStmt = llvm::cast<SwitchStmt>(&stmt);
+        collectFieldReads(*switchStmt->condition, scan);
+        for (auto& arm : switchStmt->cases) {
+            if (arm.value) collectFieldReads(*arm.value, scan);
+            for (auto* s : arm.stmts)
+                collectFieldReads(*s, scan);
+        }
+        for (auto* s : switchStmt->defaultStmts)
+            collectFieldReads(*s, scan);
+        break;
+    }
+    case StmtKind::WhileStmt: {
+        auto* whileStmt = llvm::cast<WhileStmt>(&stmt);
+        collectFieldReads(*whileStmt->condition, scan);
+        for (auto* s : whileStmt->body)
+            collectFieldReads(*s, scan);
+        break;
+    }
+    case StmtKind::DoWhileStmt: {
+        auto* doWhile = llvm::cast<DoWhileStmt>(&stmt);
+        collectFieldReads(*doWhile->condition, scan);
+        for (auto* s : doWhile->body)
+            collectFieldReads(*s, scan);
+        break;
+    }
+    case StmtKind::ForStmt: {
+        auto* forStmt = llvm::cast<ForStmt>(&stmt);
+        // Nullable: `for;;` and lowered `while` loops have no variable.
+        if (forStmt->variable) collectFieldReads(*forStmt->variable, scan);
+        if (forStmt->condition) collectFieldReads(*forStmt->condition, scan);
+        for (auto* inc : forStmt->increments)
+            collectFieldReads(*inc, scan);
+        for (auto* s : forStmt->body)
+            collectFieldReads(*s, scan);
+        break;
+    }
+    case StmtKind::ForEachStmt: {
+        auto* forEach = llvm::cast<ForEachStmt>(&stmt);
+        collectFieldReads(*forEach->range, scan);
+        for (auto* s : forEach->body)
+            collectFieldReads(*s, scan);
+        break;
+    }
+    case StmtKind::BreakStmt:
+    case StmtKind::ContinueStmt:
+        break;
+    case StmtKind::CompoundStmt:
+        for (auto* s : llvm::cast<CompoundStmt>(&stmt)->body)
+            collectFieldReads(*s, scan);
+        break;
+    }
+}
+
+static void collectFieldReads(Expr& expr, FieldUseScan& scan) {
+    if (auto* field = thisFieldRef(expr, scan.typeDecl)) scan.reads.insert(field);
+    if (auto* assign = llvm::dyn_cast<BinaryExpr>(&expr); assign && assign->op == Token::Assignment) {
+        if (auto* target = thisFieldRef(assign->getLHS(), scan.typeDecl)) scan.recordAssign(target, assign);
+    }
+    if (expr.isThis()) markAllFieldsRead(scan.typeDecl, scan.reads);
+    switch (expr.kind) {
+    case ExprKind::VarExpr:
+    case ExprKind::StringLiteralExpr:
+    case ExprKind::CharacterLiteralExpr:
+    case ExprKind::IntLiteralExpr:
+    case ExprKind::FloatLiteralExpr:
+    case ExprKind::BoolLiteralExpr:
+    case ExprKind::NullLiteralExpr:
+    case ExprKind::UndefinedLiteralExpr:
+    case ExprKind::SizeofExpr:
+        break;
+    case ExprKind::ArrayLiteralExpr:
+        for (auto* element : llvm::cast<ArrayLiteralExpr>(&expr)->elements)
+            collectFieldReads(*element, scan);
+        break;
+    case ExprKind::AnonymousStructExpr:
+        for (auto& element : llvm::cast<AnonymousStructExpr>(&expr)->elements)
+            collectFieldReads(*element.value, scan);
+        break;
+    case ExprKind::CallExpr:
+    case ExprKind::UnaryExpr:
+    case ExprKind::BinaryExpr:
+    case ExprKind::IndexExpr:
+    case ExprKind::IndexAssignmentExpr:
+    case ExprKind::UnwrapExpr: {
+        auto* call = llvm::cast<CallExpr>(&expr);
+        // A method call on `this` (explicit or implicit receiver) can read
+        // any field. Constructors make new objects and take no `this` reads.
+        auto* method = llvm::dyn_cast_or_null<MethodDecl>(call->calleeDecl);
+        Expr* receiver = call->getReceiver();
+        if (method && !llvm::isa<ConstructorDecl>(method) && (!receiver || receiver->isThis())) {
+            markAllFieldsRead(scan.typeDecl, scan.reads);
+        }
+        collectFieldReads(*call->callee, scan);
+        for (auto& arg : call->args)
+            collectFieldReads(*arg.value, scan);
+        break;
+    }
+    case ExprKind::MemberExpr: {
+        // Skip a direct `this` base: the member itself is recorded above,
+        // and the base alone reads nothing.
+        auto* base = llvm::cast<MemberExpr>(&expr)->base;
+        if (!base->isThis()) collectFieldReads(*base, scan);
+        break;
+    }
+    case ExprKind::LambdaExpr: {
+        auto* function = llvm::cast<LambdaExpr>(&expr)->functionDecl;
+        for (auto& param : function->getParams()) {
+            if (param.defaultValue) collectFieldReads(*param.defaultValue, scan);
+        }
+        if (function->body) {
+            for (auto* s : *function->body)
+                collectFieldReads(*s, scan);
+        }
+        break;
+    }
+    case ExprKind::IfExpr: {
+        auto* ifExpr = llvm::cast<IfExpr>(&expr);
+        collectFieldReads(*ifExpr->condition, scan);
+        collectFieldReads(*ifExpr->thenExpr, scan);
+        collectFieldReads(*ifExpr->elseExpr, scan);
+        break;
+    }
+    case ExprKind::SwitchExpr: {
+        auto* switchExpr = llvm::cast<SwitchExpr>(&expr);
+        collectFieldReads(*switchExpr->condition, scan);
+        for (auto& arm : switchExpr->arms) {
+            if (arm.value) collectFieldReads(*arm.value, scan);
+            collectFieldReads(*arm.expr, scan);
+        }
+        if (switchExpr->defaultExpr) collectFieldReads(*switchExpr->defaultExpr, scan);
+        break;
+    }
+    case ExprKind::ImplicitCastExpr:
+        collectFieldReads(*llvm::cast<ImplicitCastExpr>(&expr)->operand, scan);
+        break;
+    case ExprKind::VarDeclExpr:
+        if (auto* init = llvm::cast<VarDeclExpr>(&expr)->varDecl->initializer) collectFieldReads(*init, scan);
+        break;
+    }
+}
+
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.checkState == Decl::CheckState::Checked || decl.checkState == Decl::CheckState::CheckingBody) return;
     typecheckFunctionSignature(decl);
@@ -1349,16 +1570,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                     }
                 }
 
-                if (decl.isConstructorDecl()) {
-                    if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
-                        if (auto* callExpr = llvm::dyn_cast<CallExpr>(exprStmt->expr)) {
-                            if (auto* constructorDecl = llvm::dyn_cast_or_null<ConstructorDecl>(callExpr->calleeDecl)) {
-                                if (constructorDecl->getTypeDecl() == receiverTypeDecl) {
-                                    delegatedInit = true;
-                                }
-                            }
-                        }
-                    }
+                if (decl.isConstructorDecl() && receiverTypeDecl && isDelegatingInitCall(*stmt, *receiverTypeDecl)) {
+                    delegatedInit = true;
                 }
             }
 
@@ -1389,6 +1602,75 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             maybeMovedDecls.clear();
             moveLocations.clear();
             condWarnedDecls.clear();
+        }
+
+        if (decl.isConstructorDecl() && decl.body) {
+            // Field defaults run for members the body skips: prepend
+            // `this.field = <default>` in field order, ahead of user code.
+            // Delegating constructors skip this; the target runs the defaults.
+            // A default is skipped only when the body plain-assigns the field
+            // at top level before reading it anywhere: conditional assigns and
+            // (desugared) compound assigns still observe the default.
+            // Assignments overwriting a live default are flagged so codegen
+            // destroys the old value; other constructor assigns still skip the
+            // destructor for the uninitialized field.
+            TypeDecl& typeDecl = *decl.getTypeDecl();
+            llvm::SmallPtrSet<FieldDecl*, 16> readFields;
+            llvm::SmallPtrSet<FieldDecl*, 16> cleanAssigned;
+            llvm::SmallPtrSet<FieldDecl*, 16> assignedFields;
+            llvm::SmallVector<FieldAssign, 16> fieldAssigns;
+            FieldUseScan scan{typeDecl, readFields, fieldAssigns, assignedFields, false};
+            for (auto& stmt : *decl.body) {
+                auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt);
+                auto* assign = exprStmt ? llvm::dyn_cast<BinaryExpr>(exprStmt->expr) : nullptr;
+                FieldDecl* directTarget = nullptr;
+                // thisFieldRef keys off getFieldDecl, set only when sema
+                // resolved the name to a field, so shadowing locals and
+                // lambda params never match here.
+                if (assign && assign->op == Token::Assignment) directTarget = thisFieldRef(assign->getLHS(), typeDecl);
+                if (directTarget) {
+                    collectFieldReads(assign->getRHS(), scan);
+                    if (!readFields.count(directTarget)) cleanAssigned.insert(directTarget);
+                    scan.recordAssign(directTarget, assign);
+                    // Assigning `undefined` leaves the field dead, not live.
+                    if (!assign->getRHS().isUndefinedLiteralExpr()) assignedFields.insert(directTarget);
+                } else {
+                    collectFieldReads(*stmt, scan);
+                    if (isDelegatingInitCall(*stmt, typeDecl)) scan.pastInitCall = true;
+                }
+            }
+            for (auto& fieldAssign : fieldAssigns) {
+                FieldDecl* field = fieldAssign.field;
+                bool hasDefault = field->defaultValue && !isUndefinedDefault(field->defaultValue);
+                // Injected defaults run unconditionally, as does a top-level
+                // direct assignment or the target of a delegating `init(...)`
+                // call, so the field is live at any later assignment. A
+                // delegating target may warn-miss a default-less field, so the
+                // past-init arm keeps the default gate.
+                bool injected = hasDefault && !delegatedInit && cleanAssigned.count(field) == 0;
+                if (injected || fieldAssign.definitelyAssigned || (delegatedInit && fieldAssign.pastInitCall && hasDefault)) {
+                    fieldAssign.assign->lhsIsLive = true;
+                }
+            }
+            if (!delegatedInit) {
+                std::vector<Stmt*> defaults;
+                // Defaults run before the body, so their checking must not see
+                // or leave move state from it (which was already consumed).
+                BranchStateScope branchState(*this, /*saveAssigned=*/false);
+                llvm::SaveAndRestore saveMoveLocations(moveLocations);
+                for (auto& field : typeDecl.fields) {
+                    if (!field.defaultValue || isUndefinedDefault(field.defaultValue) || cleanAssigned.count(&field) != 0) continue;
+                    auto* left = makeAST<MemberExpr>(makeAST<VarExpr>("this", field.getLocation()), field.getName(), field.getLocation());
+                    auto* assign = makeAST<BinaryExpr>(Token::Assignment, left, field.defaultValue->instantiate({}), field.getLocation());
+                    Stmt* stmt = makeAST<ExprStmt>(assign);
+                    // Re-resolve names as at the default's declaration.
+                    DefaultResolveScope defaultScope(*this);
+                    llvm::SaveAndRestore setCurrentStmt(currentStmt, &stmt);
+                    typecheckStmt(stmt);
+                    defaults.push_back(stmt);
+                }
+                decl.body->insert(decl.body->begin(), defaults.begin(), defaults.end());
+            }
         }
 
         if (decl.isConstructorDecl() && !delegatedInit) {
@@ -2061,6 +2343,12 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     }
 
     if (decl.defaultValue) {
+        // Field checks run lazily in whatever scope triggered them; resolve
+        // the default as at its declaration instead. A default is not a body
+        // statement, so its assignments must not mark the trigger's fields.
+        DefaultResolveScope defaultScope(*this, /*seedThis=*/false);
+        llvm::SmallPtrSet<FieldDecl*, 32> ignoredInitialized;
+        llvm::SaveAndRestore swapInitialized(currentInitializedFields, &ignoredInitialized);
         typecheckExpr(*decl.defaultValue, false, decl.type);
         if (Expr* converted = convert(decl.defaultValue, decl.type)) {
             decl.defaultValue = converted;
