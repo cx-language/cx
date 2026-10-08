@@ -64,7 +64,9 @@ Argument expressions always evaluate in the order written.
 
 Parameters can have default values, which may be omitted. Later
 arguments can still be passed by name when an earlier default
-is omitted:
+is omitted. Defaults resolve where they are declared, not where the
+function is called: names in a default refer to what is visible at the
+declaration, and never capture locals at the call site:
 
 ```cs
 void greet(string greeting = "hi", string name = "world") {

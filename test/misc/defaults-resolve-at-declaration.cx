@@ -1,0 +1,17 @@
+// RUN: %cx run %s -Wno-unused | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s -Wno-unused | %FileCheck -match-full-lines -strict-whitespace %s
+
+int q = 10;
+
+struct S {
+    int x = q;
+}
+
+int get(int v = q) { return v; }
+
+void main() {
+    int q = 99;
+    var s = S();
+    println(s.x); // CHECK:10
+    println(get()); // CHECK-NEXT:10
+}
