@@ -470,11 +470,11 @@ struct Typechecker {
         std::string name;
     };
     std::vector<ConstReceiverCheck> pendingConstReceiverChecks;
-    // Lazy passthrough iterators over constants passed as call arguments: like
+    // Const-derived views over constants passed as call arguments: like
     // receiver calls, the verdict waits for postProcess since callee bodies
     // check on demand. Read-only callees (e.g. print) stay legal; only
     // callees that may write through the parameter report.
-    struct ConstIteratorArgCheck {
+    struct ConstViewArgCheck {
         FunctionDecl* callee;
         size_t paramIndex;
         FunctionDecl* caller;
@@ -482,8 +482,9 @@ struct Typechecker {
         Location end;
         std::string name;
         size_t argNumber;
+        bool isIterator;
     };
-    std::vector<ConstIteratorArgCheck> pendingConstIteratorArgChecks;
+    std::vector<ConstViewArgCheck> pendingConstViewArgChecks;
     // A whole-field `=` assignment found by the constructor scan, with the
     // state needed to decide whether it overwrites a live value. initsBefore
     // counts delegating `init(...)` calls ahead of it, splitting the body
@@ -577,6 +578,13 @@ Type borrowOfConstantSubject(Type source, Type target);
 // as mutable. Materialized results (mapped iterators, collected lists) and
 // for-in's own lowering are exempt.
 bool isStoredConstIterator(const Expr& init, Type type);
+// Whether passing the value would launder a constant: a const-derived
+// argument bound to a by-value view parameter (string, slice, or
+// view-holding value), which hands the callee an alias of frozen storage
+// with no const marker of its own. Borrows bind-check instead, pointers
+// cannot be formed over constants, and iterator arguments keep their own
+// predicate and message.
+bool isStoredConstView(const Expr& init, Type type);
 // Whether the expression names frozen constant storage (a const binding or something derived from one).
 // followCalls also sees through method calls, whose results may alias receiver storage.
 bool exprIsConst(const Expr& expr, bool followCalls = false);
@@ -596,7 +604,7 @@ bool isFreshYieldingIterator(Type type);
 // Shared cache for may-write queries: one per postProcess drain, so repeated
 // and overlapping call graphs analyze once. See const-mutation.cpp.
 struct ConstMutationQuery {
-    using Key = std::tuple<FunctionDecl*, bool, bool, std::vector<const Decl*>, std::vector<const Decl*>>;
+    using Key = std::tuple<FunctionDecl*, bool, bool, bool, std::vector<const Decl*>, std::vector<const Decl*>>;
     std::map<Key, bool> cache;
     std::set<Key> inProgress;
 };
@@ -609,6 +617,10 @@ bool methodMayMutateReceiver(FunctionDecl& method, ConstMutationQuery& query);
 // parameter is a view root (a fresh wrapper, never the caller's own storage),
 // so only writes through it count, not the callee mutating its own temp copy.
 bool functionMayWriteThroughParam(FunctionDecl& func, const ParamDecl& param, ConstMutationQuery& query);
+// Whether a constructor may capture its parameter into the product (or
+// beyond): copying constructors return false, so building owned values
+// from constant views stays legal. See const-mutation.cpp.
+bool constructorMayCaptureParam(ConstructorDecl& ctor, const ParamDecl& param, ConstMutationQuery& query);
 // Explains why a type is not Copyable when a use fails because the value was moved.
 std::string copyableHint(Type type);
 // Whether a type satisfies a ': Copyable' generic constraint. Structural, not name-based.

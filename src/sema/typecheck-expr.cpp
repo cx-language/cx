@@ -1629,6 +1629,8 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
 
     if (isStoredConstIterator(*rhs, lhsType)) {
         ERROR_RANGE(getExprRangeStart(*rhs), rhs->endLocation, "cannot store '" << lhsType << "' over a constant (collect with 'toList()' first)");
+    } else if (isStoredConstView(*rhs, lhsType)) {
+        ERROR_RANGE(getExprRangeStart(*rhs), rhs->endLocation, "cannot store '" << lhsType << "' over a constant");
     }
 
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
@@ -3020,23 +3022,40 @@ Type cx::borrowOfConstantSubject(Type source, Type target) {
     return source;
 }
 
-bool cx::isStoredConstIterator(const Expr& init, Type type) {
-    // For-in lowering names its own iterator over a constant range; that
-    // binding is governed by element constness instead.
-    const Expr* unwrapped = &init;
+static bool isTrackedConstArg(const Expr& arg, Type type) {
+    // For-in lowering names its own bindings over a constant range; those
+    // are governed by element constness instead.
+    const Expr* unwrapped = &arg;
     while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(unwrapped))
         unwrapped = cast->operand;
     if (unwrapped->kind == ExprKind::CallExpr && llvm::cast<CallExpr>(unwrapped)->isForInLowering) return false;
-    if (!exprIsConst(init, /*followCalls=*/true)) return false;
-    auto* iterDecl = type.removeOptional().removePointer().getDecl();
-    if (!iterDecl) return false;
     // MappedIterator materializes each output into its own field, so
     // downstream writes cannot reach the source; passthrough iterators
     // (filter, raw iterators) yield source borrows directly.
     // Only the standard library's MappedIterator materializes each output into
     // its own field; a same-named user type still traverses source storage.
-    if (iterDecl->getName() == "MappedIterator" && iterDecl->getModule() == Module::getStdlibModule()) return false;
-    return iterDecl->implementsInterface("Iterator");
+    auto* decl = type.removeOptional().removePointer().getDecl();
+    if (decl && decl->getName() == "MappedIterator" && decl->getModule() == Module::getStdlibModule()) return false;
+    return exprIsConst(arg, /*followCalls=*/true);
+}
+
+bool cx::isStoredConstIterator(const Expr& init, Type type) {
+    if (!isTrackedConstArg(init, type)) return false;
+    auto* iterDecl = type.removeOptional().removePointer().getDecl();
+    return iterDecl && iterDecl->implementsInterface("Iterator");
+}
+
+bool cx::isStoredConstView(const Expr& init, Type type) {
+    if (type.isReferenceType() || type.isBorrowOrOptionalBorrow()) return false;
+    // Pointers name their target explicitly, and forming one over constant
+    // storage is already rejected (address-of, data()), so a const-derived
+    // pointer argument can only come from a stored pointer, which constant
+    // initializers cannot produce.
+    if (type.removeOptional().isPointerOrArrayPointer()) return false;
+    if (!isTrackedConstArg(init, type)) return false;
+    auto* decl = type.removeOptional().removePointer().getDecl();
+    if (decl && decl->implementsInterface("Iterator")) return false;
+    return typeMayAliasStorageDeep(type);
 }
 
 bool cx::satisfiesCopyable(Type type) {
@@ -4835,10 +4854,11 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                 dropNarrowingForAddressArg(*expr.args[i].value, extraType);
                 // Extras have no parameter to analyze; an opaque callee cannot
                 // be proven read-only.
-                if (!overloadProbe && isStoredConstIterator(*expr.args[i].value, extraType)) {
+                bool isIteratorExtra = isStoredConstIterator(*expr.args[i].value, extraType);
+                if (!overloadProbe && (isIteratorExtra || isStoredConstView(*expr.args[i].value, extraType))) {
                     ERROR_WITH_NOTES_RANGE(getExprRangeStart(*expr.args[i].value), expr.args[i].value->endLocation, std::move(declNote),
-                                           "cannot pass '" << extraType << "' over a constant in argument #" << (i + 1) << " to '" << callee
-                                                           << "' (collect with 'toList()' first)");
+                                           "cannot pass '" << extraType << "' over a constant in argument #" << (i + 1) << " to '" << callee << "'"
+                                                           << (isIteratorExtra ? " (collect with 'toList()' first)" : ""));
                 }
                 continue;
             }
@@ -4855,19 +4875,27 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                     paramType.isReferenceType() && refCast && refCast->castKind == ImplicitCastExpr::AutoReference) {
                     if (auto* argVar = llvm::dyn_cast<VarExpr>(refCast->operand); argVar && argVar->decl) taintDeinitPtrTarget(argVar->decl);
                 }
-                if (isStoredConstIterator(*converted, paramType) && !overloadProbe) {
+                bool isIteratorArg = isStoredConstIterator(*converted, paramType);
+                if ((isIteratorArg || isStoredConstView(*converted, paramType)) && !overloadProbe) {
                     // The callee is genuinely mutable; the const only guards this probe path.
                     auto* functionCallee = const_cast<FunctionDecl*>(llvm::dyn_cast_or_null<FunctionDecl>(calleeDecl));
-                    if (functionCallee && !llvm::isa<ConstructorDecl>(functionCallee)) {
+                    auto* ctorCallee = const_cast<ConstructorDecl*>(llvm::dyn_cast_or_null<ConstructorDecl>(calleeDecl));
+                    if (functionCallee && !ctorCallee) {
                         // The verdict waits for postProcess since callee bodies check on demand.
-                        pendingConstIteratorArgChecks.push_back({functionCallee, size_t(paramIndex), currentFunction, getExprRangeStart(*converted),
-                                                                 converted->endLocation, functionCallee->getName().str(), i + 1});
+                        pendingConstViewArgChecks.push_back({functionCallee, size_t(paramIndex), currentFunction, getExprRangeStart(*converted),
+                                                             converted->endLocation, functionCallee->getName().str(), i + 1, isIteratorArg});
+                    } else if (ctorCallee && !isIteratorArg) {
+                        // Copying constructors are legal; only capture reports. Deferred like reads.
+                        pendingConstViewArgChecks.push_back({ctorCallee, size_t(paramIndex), currentFunction, getExprRangeStart(*converted),
+                                                             converted->endLocation, ctorCallee->getTypeDecl()->getName().str(), i + 1, isIteratorArg});
                     } else {
-                        // Constructors store the argument into the product, and opaque
+                        // Storing constructors take iterators into the product, and opaque
                         // callees (function values) cannot be proven read-only.
+                        llvm::StringRef displayName = callee;
+                        if (displayName.empty() && ctorCallee) displayName = ctorCallee->getTypeDecl()->getName();
                         ERROR_WITH_NOTES_RANGE(getExprRangeStart(*converted), converted->endLocation, std::move(declNote),
-                                               "cannot pass '" << paramType << "' over a constant in argument #" << (i + 1) << " to '" << callee
-                                                               << "' (collect with 'toList()' first)");
+                                               "cannot pass '" << paramType << "' over a constant in argument #" << (i + 1) << " to '" << displayName << "'"
+                                                               << (isIteratorArg ? " (collect with 'toList()' first)" : ""));
                     }
                 }
             } else {

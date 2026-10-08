@@ -1,0 +1,167 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct S {
+    string name;
+}
+
+void nuke(string s) { s.data()[0] = char(88); }
+
+void constMemberViewArg() {
+    const s = S("hello");
+    // CHECK: [[@LINE+1]]:10: error: cannot pass 'string' over a constant in argument #1 to 'nuke'
+    nuke(s.name);
+}
+
+void nukeS(S s) { s.name.data()[0] = char(88); }
+
+void constHolderArg() {
+    const s = S("hello");
+    // CHECK: [[@LINE+1]]:11: error: cannot pass 'S' over a constant in argument #1 to 'nukeS'
+    nukeS(s);
+}
+
+struct T {
+    string s;
+    T(string v) { s = v; }
+}
+
+void ctorStoresView() {
+    const n = "hello";
+    // CHECK: [[@LINE+1]]:15: error: cannot pass 'string' over a constant in argument #1 to 'T'
+    var t = T(n);
+}
+
+void reassignStoresView() {
+    const s = S("hello");
+    var s2 = "mutable";
+    // CHECK: [[@LINE+1]]:10: error: cannot store 'string' over a constant
+    s2 = s.name;
+}
+
+void ps(string s) { println(s); }
+
+void readOnlyCalleePasses() {
+    const n = "hello";
+    ps(n);
+    println(n);
+}
+
+struct Printer {
+    string name;
+    void show() { println(name); }
+}
+
+void constMethodPrintsField() {
+    const s = Printer("hello");
+    s.show();
+}
+
+void stringOpsPass() {
+    const n = "hello";
+    println(n.size());
+    println(n == "hello");
+    println("x" + n);
+}
+
+void substrStaysRejected() {
+    const n = "hello";
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'substr' on a constant: it returns 'string', which would alias frozen storage
+    println(n.substr(0));
+}
+
+void copyingCtorPasses() {
+    const n = "hello";
+    var sb = StringBuf(n);
+    println(sb);
+}
+
+struct DelegTarget {
+    string s;
+    DelegTarget(string v) { s = v; }
+    DelegTarget(string v, int tag) { init(v); }
+}
+
+void delegationCaptures() {
+    const n = "hello";
+    // CHECK: [[@LINE+1]]:25: error: cannot pass 'string' over a constant in argument #1 to 'DelegTarget'
+    var d = DelegTarget(n, 0);
+}
+
+struct CopyTarget {
+    StringBuf buf;
+    CopyTarget(string v) { buf = StringBuf(v); }
+    CopyTarget(string v, int tag) { init(v); }
+}
+
+void copyDelegationPasses() {
+    const n = "hello";
+    var c = CopyTarget(n, 0);
+    println(c.buf);
+}
+
+struct Inner {
+    string s;
+    Inner(string v) { s = v; }
+}
+
+struct OuterF {
+    Inner inner = Inner("");
+    OuterF(string v) { inner.init(v); }
+}
+
+void foreignInitCaptures() {
+    const n = "hello";
+    // CHECK: [[@LINE+1]]:20: error: cannot pass 'string' over a constant in argument #1 to 'OuterF'
+    var o = OuterF(n);
+}
+
+void stdObserversPass() {
+    const path = "some/path.txt";
+    println(exists(path));
+    println(readFile(path));
+    println(writeFile(path, "data"));
+    println(fileSize(path));
+    println(getenv(path));
+}
+
+const g = "hello";
+
+string getG() {
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'string' over a constant
+    return g;
+}
+
+extern "C" void sink(int x, ...);
+
+void variadicExtraRejected() {
+    const n = "hello";
+    // CHECK: [[@LINE+1]]:13: error: cannot pass 'string' over a constant in argument #2 to 'sink'
+    sink(0, n);
+}
+
+extern "C" int strcmp(char* a, char* b);
+
+bool strEq(string a, string b) { return strcmp(a.data(), b.data()) == 0; }
+
+void readonlyExternReadsPass() {
+    const n = "hello";
+    println(strEq(n, "hello"));
+}
+
+extern "C" void* memcpy(char* dest, char* src, int n);
+
+void clobber(string s) { memcpy(s.data(), s.data(), 1); }
+
+void memcpyDestFlags() {
+    const n = "hello";
+    // CHECK: [[@LINE+1]]:13: error: cannot pass 'string' over a constant in argument #1 to 'clobber'
+    clobber(n);
+}
+
+void copyOut(string s, char* out) { memcpy(out, s.data(), 1); }
+
+void memcpySrcOnlyPasses() {
+    const n = "hello";
+    var buf = toCString(".....");
+    copyOut(n, buf.data());
+}

@@ -41,6 +41,11 @@ such as printing a filter keep working, with or without collecting.
 A variable initialized from a constant with a view type (such as a string
 or slice member) becomes constant itself: reads keep working but mutating
 calls on it are rejected, like for-loop elements over a constant range.
+Passing such a view to a function that may write through it is rejected
+like a passthrough iterator, and reassigning one over a constant is
+rejected outright, since reassignment cannot mirror constness. The same
+goes for returning one, and for constructing a value that stores it;
+constructors that copy keep working.
 
 `const` only appears at the start of a constant declaration; it never
 appears in types. There is no `const T*`: pointers, borrows, and views

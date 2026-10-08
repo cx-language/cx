@@ -383,6 +383,8 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
         if (isStoredConstIterator(*stmt.value, currentFunction->getReturnType())) {
             ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
                         "cannot return '" << currentFunction->getReturnType() << "' over a constant (collect with 'toList()' first)");
+        } else if (isStoredConstView(*stmt.value, currentFunction->getReturnType())) {
+            ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation, "cannot return '" << currentFunction->getReturnType() << "' over a constant");
         }
     } else {
         diagnoseClosureConversion(returnValueType, currentFunction->getReturnType(), *stmt.value);

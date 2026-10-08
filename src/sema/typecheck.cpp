@@ -292,29 +292,31 @@ void Typechecker::postProcess() {
     }
     pendingConstReceiverChecks.clear();
 
-    // Same for constant-derived iterators passed as arguments; only callees
+    // Same for constant-derived views passed as arguments; only callees
     // that may write through the parameter report, so reads (e.g. print) pass.
-    std::sort(pendingConstIteratorArgChecks.begin(), pendingConstIteratorArgChecks.end(), [](const ConstIteratorArgCheck& a, const ConstIteratorArgCheck& b) {
+    std::sort(pendingConstViewArgChecks.begin(), pendingConstViewArgChecks.end(), [](const ConstViewArgCheck& a, const ConstViewArgCheck& b) {
         if (a.callee != b.callee) return a.callee < b.callee;
         if (a.begin.line != b.begin.line) return a.begin.line < b.begin.line;
         return a.begin.column < b.begin.column;
     });
-    pendingConstIteratorArgChecks.erase(std::unique(pendingConstIteratorArgChecks.begin(), pendingConstIteratorArgChecks.end(),
-                                                    [](const ConstIteratorArgCheck& a, const ConstIteratorArgCheck& b) {
-                                                        return a.callee == b.callee && a.begin.line == b.begin.line && a.begin.column == b.begin.column;
-                                                    }),
-                                        pendingConstIteratorArgChecks.end());
-    for (auto& check : pendingConstIteratorArgChecks) {
+    pendingConstViewArgChecks.erase(std::unique(pendingConstViewArgChecks.begin(), pendingConstViewArgChecks.end(),
+                                                [](const ConstViewArgCheck& a, const ConstViewArgCheck& b) {
+                                                    return a.callee == b.callee && a.begin.line == b.begin.line && a.begin.column == b.begin.column;
+                                                }),
+                                    pendingConstViewArgChecks.end());
+    for (auto& check : pendingConstViewArgChecks) {
         if (check.caller && check.caller->checkState != Decl::CheckState::Checked) continue;
         if (check.callee->checkState != Decl::CheckState::Checked) continue;
         const ParamDecl& param = check.callee->getParams()[check.paramIndex];
-        if (functionMayWriteThroughParam(*check.callee, param, constMutationQuery)) {
+        bool bad = llvm::isa<ConstructorDecl>(check.callee) ? constructorMayCaptureParam(*llvm::cast<ConstructorDecl>(check.callee), param, constMutationQuery)
+                                                            : functionMayWriteThroughParam(*check.callee, param, constMutationQuery);
+        if (bad) {
             REPORT_ERROR_RANGE(check.begin, check.end,
-                               "cannot pass '" << param.type << "' over a constant in argument #" << check.argNumber << " to '" << check.name
-                                               << "' (collect with 'toList()' first)");
+                               "cannot pass '" << param.type << "' over a constant in argument #" << check.argNumber << " to '" << check.name << "'"
+                                               << (check.isIterator ? " (collect with 'toList()' first)" : ""));
         }
     }
-    pendingConstIteratorArgChecks.clear();
+    pendingConstViewArgChecks.clear();
 
     checkDelegationLiveness();
 }

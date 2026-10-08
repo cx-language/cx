@@ -52,7 +52,7 @@ bool stmtMayWrite(Stmt& stmt, RootCtx& ctx, ConstMutationQuery& query);
 bool exprMayWrite(Expr& expr, RootCtx& ctx, ConstMutationQuery& query);
 bool aliasesRoots(const Expr& expr, const RootCtx& ctx, bool storageOnly);
 bool mayWrite(FunctionDecl& func, bool thisRooted, bool countReturns, std::vector<const Decl*> marked, std::vector<const Decl*> markedViews,
-              ConstMutationQuery& query);
+              ConstMutationQuery& query, bool freshThis);
 bool isTransparentAliasType(Type type);
 
 // IndexAssignmentExpr extends IndexExpr but has its own kind, so casting to
@@ -116,6 +116,17 @@ bool storeMayEscape(Expr& lhs, Expr& rhs, const RootCtx& ctx) {
 // elements, and calls of rooted inputs designate storage, while fresh
 // wrappers (iterators) are views, never storage. Dereference, unwrap,
 // and casts preserve the mode into their operand.
+// Whether a call's result is always fresh storage: copies and OS handles
+// never alias their inputs, so they stay unrooted no matter what flows in.
+static bool isFreshResultCall(const CallExpr& call) {
+    auto* func = llvm::dyn_cast_or_null<FunctionDecl>(call.calleeDecl);
+    if (!func) return false;
+    auto name = func->getName();
+    if (name == "toCString") return func->getModule() == Module::getStdlibModule();
+    if (name == "fopen") return func->isExtern() && !func->proto.cppLinkage;
+    return false;
+}
+
 bool bindingDesignatesStorage(const Decl* decl, const RootCtx& ctx, bool storageOnly) {
     if (ctx.storage.contains(decl)) return true;
     if (!ctx.views.contains(decl)) return false;
@@ -143,6 +154,7 @@ bool aliasesRoots(const Expr& expr, const RootCtx& ctx, bool storageOnly) {
         if (current->kind == ExprKind::CallExpr) {
             auto* call = llvm::cast<CallExpr>(current);
             if (!call->hasType() || !typeMayAliasStorageDeep(call->type)) return false;
+            if (isFreshResultCall(*call)) return false;
             if ((!call->isMethodCall() || !aliasesRoots(*call->getReceiver(), ctx, false))
                 && !llvm::any_of(call->args, [&](const NamedValue& arg) { return aliasesRoots(*arg.value, ctx, false); }))
                 return false;
@@ -320,6 +332,20 @@ bool collectArgMarks(CallExpr& call, llvm::ArrayRef<ParamDecl> params, const Roo
 // values, extern declarations): an argument bound through an alias channel
 // may be written.
 bool opaqueCallMayWrite(CallExpr& call, llvm::ArrayRef<Type> paramTypes, const RootCtx& ctx) {
+    // Known-readonly C library functions: they observe their data arguments
+    // but write only OS resources, never root storage. Kept to an explicit
+    // list: near neighbors like sprintf and strcpy do write through theirs.
+    if (auto* func = llvm::dyn_cast_or_null<FunctionDecl>(call.calleeDecl); func && func->isExtern() && !func->proto.cppLinkage) {
+        auto name = func->getName();
+        if (name == "printf" || name == "fwrite" || name == "fputc" || name == "strcmp" || name == "strchr") return false;
+        if (name == "memcpy" && !call.args.empty()) {
+            // Writes only the destination: the source is observed, never written.
+            if (!aliasesRoots(*call.args[0].value, ctx, false)) return false;
+            Type argType = call.args[0].value->hasType() ? call.args[0].value->type : Type();
+            Type paramType = !paramTypes.empty() ? paramTypes[0] : Type();
+            return bindingMayWrite(argType, paramType);
+        }
+    }
     for (size_t i = 0; i < call.args.size(); ++i) {
         if (!aliasesRoots(*call.args[i].value, ctx, false)) continue;
         int paramIndex = call.paramIndexForArg(i);
@@ -409,10 +435,18 @@ bool callMayWrite(CallExpr& call, Expr* receiver, RootCtx& ctx, ConstMutationQue
         if (storageReceiver) return true;
         auto* func = llvm::cast<FunctionDecl>(callee);
         if (!func->body) return walkCallOperands(call, receiver, ctx, query);
+        // Delegating and foreign inits run on existing storage, so the
+        // product's freshness propagates; only genuine constructions start
+        // fresh. Explicit `T.init(...)` constructs like `T(...)`.
+        bool nestedFresh = true;
+        if (call.getFunctionName() == "init") {
+            nestedFresh = ctx.thisIsFresh;
+            if (auto* var = receiver ? llvm::dyn_cast<VarExpr>(receiver) : nullptr; var && llvm::isa_and_nonnull<TypeDecl>(var->decl)) nestedFresh = true;
+        }
         std::vector<const Decl*> marked;
         std::vector<const Decl*> markedViews;
         if (collectArgMarks(call, func->getParams(), ctx, marked, markedViews)) return true;
-        if (mayWrite(*func, false, /*countReturns=*/false, std::move(marked), std::move(markedViews), query)) return true;
+        if (mayWrite(*func, false, /*countReturns=*/false, std::move(marked), std::move(markedViews), query, nestedFresh)) return true;
         return walkCallOperands(call, receiver, ctx, query);
     }
     if (auto* func = llvm::dyn_cast<FunctionDecl>(callee)) {
@@ -428,7 +462,9 @@ bool callMayWrite(CallExpr& call, Expr* receiver, RootCtx& ctx, ConstMutationQue
         std::vector<const Decl*> marked;
         std::vector<const Decl*> markedViews;
         if (collectArgMarks(call, func->getParams(), ctx, marked, markedViews)) return true;
-        if (mayWrite(*func, isMethod && storageReceiver, /*countReturns=*/false, std::move(marked), std::move(markedViews), query)) return true;
+        if (mayWrite(*func, isMethod && storageReceiver, /*countReturns=*/false, std::move(marked), std::move(markedViews), query,
+                     llvm::isa<ConstructorDecl>(*func)))
+            return true;
         return walkCallOperands(call, receiver, ctx, query);
     }
     if (auto* varCallee = llvm::dyn_cast<VariableDecl>(callee)) {
@@ -793,10 +829,10 @@ bool collectViewRootsInStmt(Stmt& stmt, const RootCtx& ctx, llvm::SmallPtrSet<co
 }
 
 bool mayWrite(FunctionDecl& func, bool thisRooted, bool countReturns, std::vector<const Decl*> marked, std::vector<const Decl*> markedViews,
-              ConstMutationQuery& query) {
+              ConstMutationQuery& query, bool freshThis) {
     std::sort(marked.begin(), marked.end());
     std::sort(markedViews.begin(), markedViews.end());
-    ConstMutationQuery::Key key{&func, thisRooted, countReturns, marked, markedViews};
+    ConstMutationQuery::Key key{&func, thisRooted, countReturns, freshThis, marked, markedViews};
     if (auto cached = query.cache.find(key); cached != query.cache.end()) return cached->second;
     // Cycles answer false: the least fixpoint is exact for may-write, since a
     // derivation that never reaches a direct write writes nothing.
@@ -812,7 +848,7 @@ bool mayWrite(FunctionDecl& func, bool thisRooted, bool countReturns, std::vecto
         query.cache[key] = false;
         return false;
     }
-    RootCtx ctx{thisRooted, countReturns, llvm::isa<ConstructorDecl>(&func), storage, views};
+    RootCtx ctx{thisRooted, countReturns, freshThis, storage, views};
     while (llvm::any_of(*func.body, [&](Stmt* stmt) { return collectViewRootsInStmt(*stmt, ctx, views, storage); })) {
     }
     bool writes = llvm::any_of(*func.body, [&](Stmt* stmt) { return stmtMayWrite(*stmt, ctx, query); });
@@ -833,12 +869,20 @@ bool cx::methodMayMutateReceiver(FunctionDecl& method, ConstMutationQuery& query
     // A bodyless method (interface dispatch, extern C++) cannot be proven
     // read-only, so calling it on a constant is rejected.
     if (!method.body) return true;
-    return mayWrite(method, true, /*countReturns=*/false, {}, {}, query);
+    return mayWrite(method, true, /*countReturns=*/false, {}, {}, query, llvm::isa<ConstructorDecl>(&method));
 }
 
 bool cx::functionMayWriteThroughParam(FunctionDecl& func, const ParamDecl& param, ConstMutationQuery& query) {
     // A bodyless callee (interface dispatch, extern C++) cannot be proven
-    // read-only, so passing a constant-derived iterator is rejected.
+    // read-only, so passing a constant-derived view is rejected.
     if (!func.body) return true;
-    return mayWrite(func, false, /*countReturns=*/true, {}, {&param}, query);
+    return mayWrite(func, false, /*countReturns=*/true, {}, {&param}, query, llvm::isa<ConstructorDecl>(&func));
+}
+
+bool cx::constructorMayCaptureParam(ConstructorDecl& ctor, const ParamDecl& param, ConstMutationQuery& query) {
+    // A bodyless constructor cannot be proven to copy, so passing a
+    // constant-derived view is rejected.
+    if (!ctor.body) return true;
+    // The product escapes to the caller, so field stores count as escapes.
+    return mayWrite(ctor, false, /*countReturns=*/false, {}, {&param}, query, /*freshThis=*/false);
 }
