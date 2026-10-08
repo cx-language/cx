@@ -60,16 +60,25 @@ def main():
     parser.add_argument("--cx-lsp", required=True)
     args = parser.parse_args()
 
+    # Steps run with cwd set to the temp dir, so resolve the (possibly
+    # relative) tool paths up front; otherwise the child never starts.
+    cx = pathlib.Path(args.cx).resolve()
+    cx_lsp = pathlib.Path(args.cx_lsp).resolve()
+    for label, path in (("cx", cx), ("cx-lsp", cx_lsp)):
+        if not path.is_file():
+            print(f"error: no such binary for --{label}: {path}", file=sys.stderr)
+            return 1
+
     failures = []
     with tempfile.TemporaryDirectory() as directory:
         fixture = pathlib.Path(directory) / "asan-fixture.cx"
         shutil.copy(FIXTURE, fixture)
         # The marker proves compile+run happened (a no-op driver must not pass).
-        error = run("cx run", [args.cx, "run", fixture], directory, False, "hello world")
+        error = run("cx run", [cx, "run", fixture], directory, False, "hello world")
         if error:
             failures.append(error)
         # Five iterations exercise repeated arena resets; LSan's 64 measures growth.
-        error = run("cx-lsp --leak-check", [args.cx_lsp, "--leak-check", fixture, "5"], directory, True)
+        error = run("cx-lsp --leak-check", [cx_lsp, "--leak-check", fixture, "5"], directory, True)
         if error:
             failures.append(error)
 
