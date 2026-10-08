@@ -254,6 +254,9 @@ struct CallExpr : Expr {
     bool isBuiltinConversion() const { return builtinConversion || Type::isBuiltinScalar(getFunctionName()); }
     bool isBuiltinCast() const { return getFunctionName() == "cast"; }
     bool isMoveInit() const;
+    // Whether an `init` call runs on another instance's storage: an explicit
+    // receiver that is neither `this` nor a type name (qualified parent init).
+    bool isForeignInit() const;
     const Expr* getReceiver() const;
     Expr* getReceiver();
     // The parameter index of an argument, or the argument's position when the

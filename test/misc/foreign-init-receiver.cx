@@ -1,0 +1,53 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct A {
+    int x = 0;
+    A() { x = 99; }
+    A(int v) { x = v; }
+}
+
+struct B {
+    int y = 7;
+    A a;
+    B(A other) {
+        a = other;
+        a.init();
+    }
+}
+
+struct Other {
+    int x = 0;
+    Other() { x = 99; }
+}
+
+struct C {
+    int y = 7;
+    int z = 8;
+    C() { Other.init(); }
+}
+
+struct D {
+    int x = 0;
+    int y = 0;
+    D(int v) {
+        x = v;
+        y = v * 2;
+    }
+    D() { this.init(3); }
+}
+
+void main() {
+    var b = B(A(1));
+    println(b.y); // CHECK:7
+    println(b.a.x); // CHECK-NEXT:99
+    var a = A(5);
+    a.init();
+    println(a.x); // CHECK-NEXT:99
+    var c = C();
+    println(c.y); // CHECK-NEXT:7
+    println(c.z); // CHECK-NEXT:8
+    var d = D();
+    println(d.x); // CHECK-NEXT:3
+    println(d.y); // CHECK-NEXT:6
+}

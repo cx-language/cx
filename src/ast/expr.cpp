@@ -800,6 +800,17 @@ bool CallExpr::isMoveInit() const {
     return false;
 }
 
+bool CallExpr::isForeignInit() const {
+    if (getFunctionName() != "init") return false;
+    const Expr* receiver = getReceiver();
+    if (!receiver) return false;
+    if (auto* var = llvm::dyn_cast<VarExpr>(receiver)) {
+        if (var->identifier == "this") return false;
+        if (llvm::isa_and_nonnull<TypeDecl>(var->decl)) return false;
+    }
+    return true;
+}
+
 const Expr* CallExpr::getReceiver() const {
     if (!isMethodCall()) return nullptr;
     return llvm::cast<MemberExpr>(*callee).base;

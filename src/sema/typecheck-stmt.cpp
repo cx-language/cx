@@ -341,10 +341,11 @@ void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
     if (!type || type.isVoid() || type.isNeverType()) return;
     auto* call = llvm::dyn_cast<CallExpr>(&expr);
     auto* ctor = call ? llvm::dyn_cast_or_null<ConstructorDecl>(call->calleeDecl) : nullptr;
-    // Codegen delegates `init(...)` to `this` only in constructors; anywhere
-    // else it builds a temporary like any other construction call.
+    // `init` on another instance reinitializes it, and in constructors bare,
+    // `this`, or qualified init delegates to `this`; neither builds a
+    // temporary. Only explicit `Type.init(...)` construction falls through.
     auto* currentCtor = llvm::dyn_cast<ConstructorDecl>(currentFunction);
-    if (ctor && call->getFunctionName() == "init" && currentCtor) return;
+    if (ctor && call->getFunctionName() == "init" && (currentCtor || call->isForeignInit())) return;
     if (!options.warnUnusedResult && !ctor) return;
     // A bare `Type(...)` builds a temporary that dies immediately, in a
     // constructor almost always a mistyped delegation.

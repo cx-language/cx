@@ -1289,7 +1289,7 @@ static bool isDelegatingInitCall(Stmt& stmt, TypeDecl& typeDecl) {
     auto* exprStmt = llvm::dyn_cast<ExprStmt>(&stmt);
     auto* callExpr = exprStmt ? llvm::dyn_cast<CallExpr>(exprStmt->expr) : nullptr;
     auto* constructorDecl = callExpr ? llvm::dyn_cast_or_null<ConstructorDecl>(callExpr->calleeDecl) : nullptr;
-    return constructorDecl && constructorDecl->getTypeDecl() == &typeDecl && callExpr->getFunctionName() == "init";
+    return constructorDecl && constructorDecl->getTypeDecl() == &typeDecl && callExpr->getFunctionName() == "init" && !callExpr->isForeignInit();
 }
 
 static bool isUndefinedDefault(Expr* expr) {
