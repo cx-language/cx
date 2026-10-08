@@ -395,102 +395,6 @@ const GL_TEXTURE_WRAP_S = 0x2802;
 const GL_TEXTURE_WRAP_T = 0x2803;
 /// Wrap mode tiling the texture.
 const GL_REPEAT = 0x2901;
-/// Selects which faces get culled.
-extern void glCullFace(GLenum mode);
-/// Selects the winding order treated as front-facing.
-extern void glFrontFace(GLenum mode);
-/// Sets a quality hint for an implementation choice.
-extern void glHint(GLenum target, GLenum mode);
-/// Sets the rasterized line width.
-extern void glLineWidth(GLfloat width);
-/// Sets the rasterized point diameter.
-extern void glPointSize(GLfloat size);
-/// Sets the rasterization mode for polygons.
-extern void glPolygonMode(GLenum face, GLenum mode);
-/// Sets the scissor rectangle.
-extern void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
-/// Sets a float texture parameter.
-extern void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
-/// Sets a texture parameter from a float array.
-extern void glTexParameterfv(GLenum target, GLenum pname, GLfloat[*] params);
-/// Sets an integer texture parameter.
-extern void glTexParameteri(GLenum target, GLenum pname, GLint param);
-/// Sets a texture parameter from an integer array.
-extern void glTexParameteriv(GLenum target, GLenum pname, GLint[*] params);
-/// Uploads a 1D texture image.
-extern void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, void*? pixels);
-/// Uploads a 2D texture image.
-extern void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, void*? pixels);
-/// Selects the buffer drawn into.
-extern void glDrawBuffer(GLenum buf);
-/// Clears the selected buffers.
-extern void glClear(GLbitfield mask);
-/// Sets the color used when clearing.
-extern void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-/// Sets the value used when clearing the stencil buffer.
-extern void glClearStencil(GLint s);
-/// Sets the value used when clearing the depth buffer.
-extern void glClearDepth(GLdouble depth);
-/// Sets the stencil write mask.
-extern void glStencilMask(GLuint mask);
-/// Sets the per-channel color write mask.
-extern void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-/// Sets whether depth writes are enabled.
-extern void glDepthMask(GLboolean flag);
-/// Disables a rendering capability.
-extern void glDisable(GLenum cap);
-/// Enables a rendering capability.
-extern void glEnable(GLenum cap);
-/// Blocks until all commands complete.
-extern void glFinish();
-/// Submits queued commands for execution.
-extern void glFlush();
-/// Sets the source and destination blend factors.
-extern void glBlendFunc(GLenum sfactor, GLenum dfactor);
-/// Sets the logic operation for color writes.
-extern void glLogicOp(GLenum opcode);
-/// Sets the stencil test function and reference.
-extern void glStencilFunc(GLenum func, GLint ref, GLuint mask);
-/// Sets the actions for stencil test outcomes.
-extern void glStencilOp(GLenum fail, GLenum zfail, GLenum zpass);
-/// Sets the depth comparison function.
-extern void glDepthFunc(GLenum func);
-/// Sets a float pixel storage parameter.
-extern void glPixelStoref(GLenum pname, GLfloat param);
-/// Sets an integer pixel storage parameter.
-extern void glPixelStorei(GLenum pname, GLint param);
-/// Selects the buffer read from.
-extern void glReadBuffer(GLenum src);
-/// Reads a rectangle of pixels into memory.
-extern void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void*? pixels);
-/// Queries boolean state values.
-extern void glGetBooleanv(GLenum pname, GLboolean[*] data);
-/// Queries double state values.
-extern void glGetDoublev(GLenum pname, GLdouble[*] data);
-/// Returns and clears the oldest error.
-extern GLenum glGetError();
-/// Queries float state values.
-extern void glGetFloatv(GLenum pname, GLfloat[*] data);
-/// Queries integer state values.
-extern void glGetIntegerv(GLenum pname, GLint[*] data);
-/// Queries a string describing the implementation.
-extern GLubyte*? glGetString(GLenum name);
-/// Downloads a texture image into memory.
-extern void glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void*? pixels);
-/// Queries float texture parameters.
-extern void glGetTexParameterfv(GLenum target, GLenum pname, GLfloat[*] params);
-/// Queries integer texture parameters.
-extern void glGetTexParameteriv(GLenum target, GLenum pname, GLint[*] params);
-/// Queries float parameters of a texture level.
-extern void glGetTexLevelParameterfv(GLenum target, GLint level, GLenum pname, GLfloat* params);
-/// Queries integer parameters of a texture level.
-extern void glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, GLint* params);
-/// Reports whether a capability is enabled.
-extern GLboolean glIsEnabled(GLenum cap);
-/// Sets the mapping from clip depth to window depth.
-extern void glDepthRange(GLdouble n, GLdouble f);
-/// Sets the viewport rectangle.
-extern void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
 // OpenGL 1.1
 /// Enable flag for color logic operations.
@@ -555,34 +459,6 @@ const GL_RGBA12 = 0x805A;
 const GL_RGBA16 = 0x805B;
 /// Enable flag for the vertex array.
 const GL_VERTEX_ARRAY = 0x8074;
-/// Draws primitives from array data.
-extern void glDrawArrays(GLenum mode, GLint first, GLsizei count);
-/// Draws primitives from indexed array data.
-extern void glDrawElements(GLenum mode, GLsizei count, GLenum type, void*? indices);
-/// Queries an array pointer.
-extern void glGetPointerv(GLenum pname, void** params);
-/// Sets the depth offset for polygons.
-extern void glPolygonOffset(GLfloat factor, GLfloat units);
-/// Copies the framebuffer into a 1D texture image.
-extern void glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border);
-/// Copies the framebuffer into a 2D texture image.
-extern void glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
-/// Copies the framebuffer into part of a 1D texture.
-extern void glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
-/// Copies the framebuffer into part of a 2D texture.
-extern void glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-/// Replaces part of a 1D texture image.
-extern void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, void*? pixels);
-/// Replaces part of a 2D texture image.
-extern void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, void*? pixels);
-/// Binds a texture to a target.
-extern void glBindTexture(GLenum target, GLuint texture);
-/// Deletes texture objects.
-extern void glDeleteTextures(GLsizei n, GLuint[*] textures);
-/// Creates texture object names.
-extern void glGenTextures(GLsizei n, GLuint[*] textures);
-/// Reports whether a name is a texture object.
-extern GLboolean glIsTexture(GLuint texture);
 
 // OpenGL 1.2
 /// Packed pixel type with 3-3-2 bits.
@@ -657,14 +533,6 @@ const GL_SMOOTH_LINE_WIDTH_RANGE = 0x0B22;
 const GL_SMOOTH_LINE_WIDTH_GRANULARITY = 0x0B23;
 /// Supported range of aliased line widths.
 const GL_ALIASED_LINE_WIDTH_RANGE = 0x846E;
-/// Draws indexed primitives with a known index range.
-extern void glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, void*? indices);
-/// Uploads a 3D texture image.
-extern void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, void*? pixels);
-/// Replaces part of a 3D texture image.
-extern void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, void*? pixels);
-/// Copies the framebuffer into part of a 3D texture.
-extern void glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
 
 // OpenGL 1.3
 /// Texture unit selector for unit 0.
@@ -785,24 +653,6 @@ const GL_NUM_COMPRESSED_TEXTURE_FORMATS = 0x86A2;
 const GL_COMPRESSED_TEXTURE_FORMATS = 0x86A3;
 /// Wrap mode clamping to the border color.
 const GL_CLAMP_TO_BORDER = 0x812D;
-/// Selects the active texture unit.
-extern void glActiveTexture(GLenum texture);
-/// Sets the multisample coverage value.
-extern void glSampleCoverage(GLfloat value, GLboolean invert);
-/// Uploads a compressed 3D texture image.
-extern void glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, void*? data);
-/// Uploads a compressed 2D texture image.
-extern void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, void*? data);
-/// Uploads a compressed 1D texture image.
-extern void glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, void*? data);
-/// Replaces part of a compressed 3D texture.
-extern void glCompressedTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, void*? data);
-/// Replaces part of a compressed 2D texture.
-extern void glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, void*? data);
-/// Replaces part of a compressed 1D texture.
-extern void glCompressedTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLsizei imageSize, void*? data);
-/// Downloads a compressed texture image.
-extern void glGetCompressedTexImage(GLenum target, GLint level, void*? img);
 
 // OpenGL 1.4
 /// Current destination RGB blend factor.
@@ -859,24 +709,6 @@ const GL_FUNC_SUBTRACT = 0x800A;
 const GL_MIN = 0x8007;
 /// Blend equation taking the maximum.
 const GL_MAX = 0x8008;
-/// Sets separate RGB and alpha blend factors.
-extern void glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha);
-/// Draws several primitive ranges from array data.
-extern void glMultiDrawArrays(GLenum mode, GLint[*] first, GLsizei[*] count, GLsizei drawcount);
-/// Draws several indexed primitive ranges.
-extern void glMultiDrawElements(GLenum mode, GLsizei[*] count, GLenum type, void*?[*] indices, GLsizei drawcount);
-/// Sets a float point parameter.
-extern void glPointParameterf(GLenum pname, GLfloat param);
-/// Sets a point parameter from a float array.
-extern void glPointParameterfv(GLenum pname, GLfloat[*] params);
-/// Sets an integer point parameter.
-extern void glPointParameteri(GLenum pname, GLint param);
-/// Sets a point parameter from an integer array.
-extern void glPointParameteriv(GLenum pname, GLint[*] params);
-/// Sets the constant blend color.
-extern void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-/// Sets the blend equation.
-extern void glBlendEquation(GLenum mode);
 
 // OpenGL 1.5
 /// Byte size of a buffer object.
@@ -935,44 +767,6 @@ const GL_DYNAMIC_COPY = 0x88EA;
 const GL_SAMPLES_PASSED = 0x8914;
 /// Blend factor using the second source alpha.
 const GL_SRC1_ALPHA = 0x8589;
-/// Creates query object names.
-extern void glGenQueries(GLsizei n, GLuint[*] ids);
-/// Deletes query objects.
-extern void glDeleteQueries(GLsizei n, GLuint[*] ids);
-/// Reports whether a name is a query object.
-extern GLboolean glIsQuery(GLuint id);
-/// Starts a query on a target.
-extern void glBeginQuery(GLenum target, GLuint id);
-/// Ends the active query on a target.
-extern void glEndQuery(GLenum target);
-/// Queries integer state of a query target.
-extern void glGetQueryiv(GLenum target, GLenum pname, GLint* params);
-/// Queries integer state of a query object.
-extern void glGetQueryObjectiv(GLuint id, GLenum pname, GLint* params);
-/// Queries unsigned integer state of a query object.
-extern void glGetQueryObjectuiv(GLuint id, GLenum pname, GLuint* params);
-/// Binds a buffer to a target.
-extern void glBindBuffer(GLenum target, GLuint buffer);
-/// Deletes buffer objects.
-extern void glDeleteBuffers(GLsizei n, GLuint[*] buffers);
-/// Creates buffer object names.
-extern void glGenBuffers(GLsizei n, GLuint[*] buffers);
-/// Reports whether a name is a buffer object.
-extern GLboolean glIsBuffer(GLuint buffer);
-/// Allocates and uploads buffer storage.
-extern void glBufferData(GLenum target, GLsizeiptr size, void*? data, GLenum usage);
-/// Replaces part of a buffer.
-extern void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void* data);
-/// Downloads part of a buffer.
-extern void glGetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void* data);
-/// Maps a buffer into client memory.
-extern void*? glMapBuffer(GLenum target, GLenum access);
-/// Unmaps a mapped buffer.
-extern GLboolean glUnmapBuffer(GLenum target);
-/// Queries integer buffer parameters.
-extern void glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params);
-/// Queries the mapped pointer of a buffer.
-extern void glGetBufferPointerv(GLenum target, GLenum pname, void** params);
 
 // OpenGL 2.0
 /// Current RGB blend equation.
@@ -1135,192 +929,6 @@ const GL_STENCIL_BACK_REF = 0x8CA3;
 const GL_STENCIL_BACK_VALUE_MASK = 0x8CA4;
 /// Back-face stencil write mask.
 const GL_STENCIL_BACK_WRITEMASK = 0x8CA5;
-/// Sets separate RGB and alpha blend equations.
-extern void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha);
-/// Selects the buffers drawn into.
-extern void glDrawBuffers(GLsizei n, GLenum[*] bufs);
-/// Sets stencil actions for one face.
-extern void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
-/// Sets the stencil test for one face.
-extern void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
-/// Sets the stencil write mask for one face.
-extern void glStencilMaskSeparate(GLenum face, GLuint mask);
-/// Attaches a shader to a program.
-extern void glAttachShader(GLuint program, GLuint shader);
-/// Binds an attribute index to a name.
-extern void glBindAttribLocation(GLuint program, GLuint index, GLchar* name);
-/// Compiles a shader object.
-extern void glCompileShader(GLuint shader);
-/// Creates a program object.
-extern GLuint glCreateProgram();
-/// Creates a shader object.
-extern GLuint glCreateShader(GLenum type);
-/// Deletes a program object.
-extern void glDeleteProgram(GLuint program);
-/// Deletes a shader object.
-extern void glDeleteShader(GLuint shader);
-/// Detaches a shader from a program.
-extern void glDetachShader(GLuint program, GLuint shader);
-/// Disables a vertex attribute array.
-extern void glDisableVertexAttribArray(GLuint index);
-/// Enables a vertex attribute array.
-extern void glEnableVertexAttribArray(GLuint index);
-/// Queries an active attribute of a program.
-extern void glGetActiveAttrib(GLuint program, GLuint index, GLsizei bufSize, GLsizei*? length, GLint* size, GLenum* type, GLchar* name);
-/// Queries an active uniform of a program.
-extern void glGetActiveUniform(GLuint program, GLuint index, GLsizei bufSize, GLsizei*? length, GLint* size, GLenum* type, GLchar* name);
-/// Lists the shaders attached to a program.
-extern void glGetAttachedShaders(GLuint program, GLsizei maxCount, GLsizei*? count, GLuint[*] shaders);
-/// Queries the index of an attribute.
-extern GLint glGetAttribLocation(GLuint program, GLchar* name);
-/// Queries integer program parameters.
-extern void glGetProgramiv(GLuint program, GLenum pname, GLint* params);
-/// Downloads the info log of a program.
-extern void glGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei*? length, GLchar* infoLog);
-/// Queries integer shader parameters.
-extern void glGetShaderiv(GLuint shader, GLenum pname, GLint* params);
-/// Downloads the info log of a shader.
-extern void glGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei*? length, GLchar* infoLog);
-/// Downloads the source of a shader.
-extern void glGetShaderSource(GLuint shader, GLsizei bufSize, GLsizei*? length, GLchar* source);
-/// Queries the location of a uniform.
-extern GLint glGetUniformLocation(GLuint program, GLchar* name);
-/// Queries float uniform values.
-extern void glGetUniformfv(GLuint program, GLint location, GLfloat[*] params);
-/// Queries integer uniform values.
-extern void glGetUniformiv(GLuint program, GLint location, GLint[*] params);
-/// Queries double vertex attribute state.
-extern void glGetVertexAttribdv(GLuint index, GLenum pname, GLdouble[*] params);
-/// Queries float vertex attribute state.
-extern void glGetVertexAttribfv(GLuint index, GLenum pname, GLfloat[*] params);
-/// Queries integer vertex attribute state.
-extern void glGetVertexAttribiv(GLuint index, GLenum pname, GLint[*] params);
-/// Queries a vertex attribute pointer.
-extern void glGetVertexAttribPointerv(GLuint index, GLenum pname, void** pointer);
-/// Reports whether a name is a program object.
-extern GLboolean glIsProgram(GLuint program);
-/// Reports whether a name is a shader object.
-extern GLboolean glIsShader(GLuint shader);
-/// Links a program object.
-extern void glLinkProgram(GLuint program);
-/// Sets the source of a shader.
-extern void glShaderSource(GLuint shader, GLsizei count, GLchar*[*] string, GLint[*]? length);
-/// Installs a program for rendering.
-extern void glUseProgram(GLuint program);
-/// Sets a one-component float uniform.
-extern void glUniform1f(GLint location, GLfloat v0);
-/// Sets a two-component float uniform.
-extern void glUniform2f(GLint location, GLfloat v0, GLfloat v1);
-/// Sets a three-component float uniform.
-extern void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
-/// Sets a four-component float uniform.
-extern void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
-/// Sets a one-component integer uniform.
-extern void glUniform1i(GLint location, GLint v0);
-/// Sets a two-component integer uniform.
-extern void glUniform2i(GLint location, GLint v0, GLint v1);
-/// Sets a three-component integer uniform.
-extern void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2);
-/// Sets a four-component integer uniform.
-extern void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
-/// Sets a one-component float uniform array.
-extern void glUniform1fv(GLint location, GLsizei count, GLfloat[*] value);
-/// Sets a two-component float uniform array.
-extern void glUniform2fv(GLint location, GLsizei count, GLfloat[*] value);
-/// Sets a three-component float uniform array.
-extern void glUniform3fv(GLint location, GLsizei count, GLfloat[*] value);
-/// Sets a four-component float uniform array.
-extern void glUniform4fv(GLint location, GLsizei count, GLfloat[*] value);
-/// Sets a one-component integer uniform array.
-extern void glUniform1iv(GLint location, GLsizei count, GLint[*] value);
-/// Sets a two-component integer uniform array.
-extern void glUniform2iv(GLint location, GLsizei count, GLint[*] value);
-/// Sets a three-component integer uniform array.
-extern void glUniform3iv(GLint location, GLsizei count, GLint[*] value);
-/// Sets a four-component integer uniform array.
-extern void glUniform4iv(GLint location, GLsizei count, GLint[*] value);
-/// Sets a 2x2 float matrix uniform array.
-extern void glUniformMatrix2fv(GLint location, GLsizei count, GLboolean transpose, GLfloat[*] value);
-/// Sets a 3x3 float matrix uniform array.
-extern void glUniformMatrix3fv(GLint location, GLsizei count, GLboolean transpose, GLfloat[*] value);
-/// Sets a 4x4 float matrix uniform array.
-extern void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, GLfloat[*] value);
-/// Validates a program against current state.
-extern void glValidateProgram(GLuint program);
-/// Sets a one-component double vertex attribute.
-extern void glVertexAttrib1d(GLuint index, GLdouble x);
-/// Sets a one-component double vertex attribute from an array.
-extern void glVertexAttrib1dv(GLuint index, GLdouble[*] v);
-/// Sets a one-component float vertex attribute.
-extern void glVertexAttrib1f(GLuint index, GLfloat x);
-/// Sets a one-component float vertex attribute from an array.
-extern void glVertexAttrib1fv(GLuint index, GLfloat[*] v);
-/// Sets a one-component short vertex attribute.
-extern void glVertexAttrib1s(GLuint index, GLshort x);
-/// Sets a one-component short vertex attribute from an array.
-extern void glVertexAttrib1sv(GLuint index, GLshort[*] v);
-/// Sets a two-component double vertex attribute.
-extern void glVertexAttrib2d(GLuint index, GLdouble x, GLdouble y);
-/// Sets a two-component double vertex attribute from an array.
-extern void glVertexAttrib2dv(GLuint index, GLdouble[*] v);
-/// Sets a two-component float vertex attribute.
-extern void glVertexAttrib2f(GLuint index, GLfloat x, GLfloat y);
-/// Sets a two-component float vertex attribute from an array.
-extern void glVertexAttrib2fv(GLuint index, GLfloat[*] v);
-/// Sets a two-component short vertex attribute.
-extern void glVertexAttrib2s(GLuint index, GLshort x, GLshort y);
-/// Sets a two-component short vertex attribute from an array.
-extern void glVertexAttrib2sv(GLuint index, GLshort[*] v);
-/// Sets a three-component double vertex attribute.
-extern void glVertexAttrib3d(GLuint index, GLdouble x, GLdouble y, GLdouble z);
-/// Sets a three-component double vertex attribute from an array.
-extern void glVertexAttrib3dv(GLuint index, GLdouble[*] v);
-/// Sets a three-component float vertex attribute.
-extern void glVertexAttrib3f(GLuint index, GLfloat x, GLfloat y, GLfloat z);
-/// Sets a three-component float vertex attribute from an array.
-extern void glVertexAttrib3fv(GLuint index, GLfloat[*] v);
-/// Sets a three-component short vertex attribute.
-extern void glVertexAttrib3s(GLuint index, GLshort x, GLshort y, GLshort z);
-/// Sets a three-component short vertex attribute from an array.
-extern void glVertexAttrib3sv(GLuint index, GLshort[*] v);
-/// Sets a normalized four-component byte vertex attribute from an array.
-extern void glVertexAttrib4Nbv(GLuint index, GLbyte[*] v);
-/// Sets a normalized four-component integer vertex attribute from an array.
-extern void glVertexAttrib4Niv(GLuint index, GLint[*] v);
-/// Sets a normalized four-component short vertex attribute from an array.
-extern void glVertexAttrib4Nsv(GLuint index, GLshort[*] v);
-/// Sets a normalized four-component unsigned byte vertex attribute.
-extern void glVertexAttrib4Nub(GLuint index, GLubyte x, GLubyte y, GLubyte z, GLubyte w);
-/// Sets a normalized four-component unsigned byte vertex attribute from an array.
-extern void glVertexAttrib4Nubv(GLuint index, GLubyte[*] v);
-/// Sets a normalized four-component unsigned integer vertex attribute from an array.
-extern void glVertexAttrib4Nuiv(GLuint index, GLuint[*] v);
-/// Sets a normalized four-component unsigned short vertex attribute from an array.
-extern void glVertexAttrib4Nusv(GLuint index, GLushort[*] v);
-/// Sets a four-component byte vertex attribute from an array.
-extern void glVertexAttrib4bv(GLuint index, GLbyte[*] v);
-/// Sets a four-component double vertex attribute.
-extern void glVertexAttrib4d(GLuint index, GLdouble x, GLdouble y, GLdouble z, GLdouble w);
-/// Sets a four-component double vertex attribute from an array.
-extern void glVertexAttrib4dv(GLuint index, GLdouble[*] v);
-/// Sets a four-component float vertex attribute.
-extern void glVertexAttrib4f(GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
-/// Sets a four-component float vertex attribute from an array.
-extern void glVertexAttrib4fv(GLuint index, GLfloat[*] v);
-/// Sets a four-component integer vertex attribute from an array.
-extern void glVertexAttrib4iv(GLuint index, GLint[*] v);
-/// Sets a four-component short vertex attribute.
-extern void glVertexAttrib4s(GLuint index, GLshort x, GLshort y, GLshort z, GLshort w);
-/// Sets a four-component short vertex attribute from an array.
-extern void glVertexAttrib4sv(GLuint index, GLshort[*] v);
-/// Sets a four-component unsigned byte vertex attribute from an array.
-extern void glVertexAttrib4ubv(GLuint index, GLubyte[*] v);
-/// Sets a four-component unsigned integer vertex attribute from an array.
-extern void glVertexAttrib4uiv(GLuint index, GLuint[*] v);
-/// Sets a four-component unsigned short vertex attribute from an array.
-extern void glVertexAttrib4usv(GLuint index, GLushort[*] v);
-/// Sets a float vertex attribute array pointer.
-extern void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, void*? pointer);
 
 // OpenGL 2.1
 /// Buffer target for pixel downloads.
@@ -1355,18 +963,6 @@ const GL_SRGB8_ALPHA8 = 0x8C43;
 const GL_COMPRESSED_SRGB = 0x8C48;
 /// Generic compressed sRGB-alpha internal format.
 const GL_COMPRESSED_SRGB_ALPHA = 0x8C49;
-/// Sets a 2x3 float matrix uniform array.
-extern void glUniformMatrix2x3fv(GLint location, GLsizei count, GLboolean transpose, GLfloat[*] value);
-/// Sets a 3x2 float matrix uniform array.
-extern void glUniformMatrix3x2fv(GLint location, GLsizei count, GLboolean transpose, GLfloat[*] value);
-/// Sets a 2x4 float matrix uniform array.
-extern void glUniformMatrix2x4fv(GLint location, GLsizei count, GLboolean transpose, GLfloat[*] value);
-/// Sets a 4x2 float matrix uniform array.
-extern void glUniformMatrix4x2fv(GLint location, GLsizei count, GLboolean transpose, GLfloat[*] value);
-/// Sets a 3x4 float matrix uniform array.
-extern void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transpose, GLfloat[*] value);
-/// Sets a 4x3 float matrix uniform array.
-extern void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, GLfloat[*] value);
 
 // OpenGL 3.0
 /// Shadow comparison against the texture value.
@@ -1831,174 +1427,6 @@ const GL_RG32I = 0x823B;
 const GL_RG32UI = 0x823C;
 /// Currently bound vertex array object.
 const GL_VERTEX_ARRAY_BINDING = 0x85B5;
-/// Sets the color write mask for one draw buffer.
-extern void glColorMaski(GLuint index, GLboolean r, GLboolean g, GLboolean b, GLboolean a);
-/// Queries indexed boolean state values.
-extern void glGetBooleani_v(GLenum target, GLuint index, GLboolean[*] data);
-/// Queries indexed integer state values.
-extern void glGetIntegeri_v(GLenum target, GLuint index, GLint[*] data);
-/// Enables an indexed capability.
-extern void glEnablei(GLenum target, GLuint index);
-/// Disables an indexed capability.
-extern void glDisablei(GLenum target, GLuint index);
-/// Reports whether an indexed capability is enabled.
-extern GLboolean glIsEnabledi(GLenum target, GLuint index);
-/// Starts transform feedback capture.
-extern void glBeginTransformFeedback(GLenum primitiveMode);
-/// Ends transform feedback capture.
-extern void glEndTransformFeedback();
-/// Binds a buffer range to an indexed target.
-extern void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
-/// Binds a whole buffer to an indexed target.
-extern void glBindBufferBase(GLenum target, GLuint index, GLuint buffer);
-/// Selects varyings captured by transform feedback.
-extern void glTransformFeedbackVaryings(GLuint program, GLsizei count, GLchar*[*] varyings, GLenum bufferMode);
-/// Queries a captured varying of a program.
-extern void glGetTransformFeedbackVarying(GLuint program, GLuint index, GLsizei bufSize, GLsizei*? length, GLsizei* size, GLenum* type, GLchar* name);
-/// Sets the color clamping behavior.
-extern void glClampColor(GLenum target, GLenum clamp);
-/// Starts conditional rendering on a query.
-extern void glBeginConditionalRender(GLuint id, GLenum mode);
-/// Ends conditional rendering.
-extern void glEndConditionalRender();
-/// Sets an integer vertex attribute array pointer.
-extern void glVertexAttribIPointer(GLuint index, GLint size, GLenum type, GLsizei stride, void*? pointer);
-/// Queries integer vertex attribute state.
-extern void glGetVertexAttribIiv(GLuint index, GLenum pname, GLint[*] params);
-/// Queries unsigned integer vertex attribute state.
-extern void glGetVertexAttribIuiv(GLuint index, GLenum pname, GLuint[*] params);
-/// Sets a one-component signed integer vertex attribute.
-extern void glVertexAttribI1i(GLuint index, GLint x);
-/// Sets a two-component signed integer vertex attribute.
-extern void glVertexAttribI2i(GLuint index, GLint x, GLint y);
-/// Sets a three-component signed integer vertex attribute.
-extern void glVertexAttribI3i(GLuint index, GLint x, GLint y, GLint z);
-/// Sets a four-component signed integer vertex attribute.
-extern void glVertexAttribI4i(GLuint index, GLint x, GLint y, GLint z, GLint w);
-/// Sets a one-component unsigned integer vertex attribute.
-extern void glVertexAttribI1ui(GLuint index, GLuint x);
-/// Sets a two-component unsigned integer vertex attribute.
-extern void glVertexAttribI2ui(GLuint index, GLuint x, GLuint y);
-/// Sets a three-component unsigned integer vertex attribute.
-extern void glVertexAttribI3ui(GLuint index, GLuint x, GLuint y, GLuint z);
-/// Sets a four-component unsigned integer vertex attribute.
-extern void glVertexAttribI4ui(GLuint index, GLuint x, GLuint y, GLuint z, GLuint w);
-/// Sets a one-component signed integer vertex attribute from an array.
-extern void glVertexAttribI1iv(GLuint index, GLint[*] v);
-/// Sets a two-component signed integer vertex attribute from an array.
-extern void glVertexAttribI2iv(GLuint index, GLint[*] v);
-/// Sets a three-component signed integer vertex attribute from an array.
-extern void glVertexAttribI3iv(GLuint index, GLint[*] v);
-/// Sets a four-component signed integer vertex attribute from an array.
-extern void glVertexAttribI4iv(GLuint index, GLint[*] v);
-/// Sets a one-component unsigned integer vertex attribute from an array.
-extern void glVertexAttribI1uiv(GLuint index, GLuint[*] v);
-/// Sets a two-component unsigned integer vertex attribute from an array.
-extern void glVertexAttribI2uiv(GLuint index, GLuint[*] v);
-/// Sets a three-component unsigned integer vertex attribute from an array.
-extern void glVertexAttribI3uiv(GLuint index, GLuint[*] v);
-/// Sets a four-component unsigned integer vertex attribute from an array.
-extern void glVertexAttribI4uiv(GLuint index, GLuint[*] v);
-/// Sets a four-component integer vertex attribute from byte values in an array.
-extern void glVertexAttribI4bv(GLuint index, GLbyte[*] v);
-/// Sets a four-component integer vertex attribute from short values in an array.
-extern void glVertexAttribI4sv(GLuint index, GLshort[*] v);
-/// Sets a four-component integer vertex attribute from unsigned byte values in an array.
-extern void glVertexAttribI4ubv(GLuint index, GLubyte[*] v);
-/// Sets a four-component integer vertex attribute from unsigned short values in an array.
-extern void glVertexAttribI4usv(GLuint index, GLushort[*] v);
-/// Queries unsigned integer uniform values.
-extern void glGetUniformuiv(GLuint program, GLint location, GLuint[*] params);
-/// Binds a fragment output to a color number.
-extern void glBindFragDataLocation(GLuint program, GLuint color, GLchar* name);
-/// Queries the color number of a fragment output.
-extern GLint glGetFragDataLocation(GLuint program, GLchar* name);
-/// Sets a one-component unsigned integer uniform.
-extern void glUniform1ui(GLint location, GLuint v0);
-/// Sets a two-component unsigned integer uniform.
-extern void glUniform2ui(GLint location, GLuint v0, GLuint v1);
-/// Sets a three-component unsigned integer uniform.
-extern void glUniform3ui(GLint location, GLuint v0, GLuint v1, GLuint v2);
-/// Sets a four-component unsigned integer uniform.
-extern void glUniform4ui(GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
-/// Sets a one-component unsigned integer uniform array.
-extern void glUniform1uiv(GLint location, GLsizei count, GLuint[*] value);
-/// Sets a two-component unsigned integer uniform array.
-extern void glUniform2uiv(GLint location, GLsizei count, GLuint[*] value);
-/// Sets a three-component unsigned integer uniform array.
-extern void glUniform3uiv(GLint location, GLsizei count, GLuint[*] value);
-/// Sets a four-component unsigned integer uniform array.
-extern void glUniform4uiv(GLint location, GLsizei count, GLuint[*] value);
-/// Sets an integer texture parameter from an array.
-extern void glTexParameterIiv(GLenum target, GLenum pname, GLint[*] params);
-/// Sets an unsigned integer texture parameter from an array.
-extern void glTexParameterIuiv(GLenum target, GLenum pname, GLuint[*] params);
-/// Queries integer texture parameters.
-extern void glGetTexParameterIiv(GLenum target, GLenum pname, GLint[*] params);
-/// Queries unsigned integer texture parameters.
-extern void glGetTexParameterIuiv(GLenum target, GLenum pname, GLuint[*] params);
-/// Clears a buffer with an integer value.
-extern void glClearBufferiv(GLenum buffer, GLint drawbuffer, GLint[*] value);
-/// Clears a buffer with an unsigned integer value.
-extern void glClearBufferuiv(GLenum buffer, GLint drawbuffer, GLuint[*] value);
-/// Clears a buffer with a float value.
-extern void glClearBufferfv(GLenum buffer, GLint drawbuffer, GLfloat[*] value);
-/// Clears depth and stencil with the given values.
-extern void glClearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
-/// Queries an indexed string such as an extension name.
-extern GLubyte*? glGetStringi(GLenum name, GLuint index);
-/// Reports whether a name is a renderbuffer.
-extern GLboolean glIsRenderbuffer(GLuint renderbuffer);
-/// Binds a renderbuffer to a target.
-extern void glBindRenderbuffer(GLenum target, GLuint renderbuffer);
-/// Deletes renderbuffer objects.
-extern void glDeleteRenderbuffers(GLsizei n, GLuint[*] renderbuffers);
-/// Creates renderbuffer object names.
-extern void glGenRenderbuffers(GLsizei n, GLuint[*] renderbuffers);
-/// Allocates renderbuffer storage.
-extern void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
-/// Queries integer renderbuffer parameters.
-extern void glGetRenderbufferParameteriv(GLenum target, GLenum pname, GLint* params);
-/// Reports whether a name is a framebuffer.
-extern GLboolean glIsFramebuffer(GLuint framebuffer);
-/// Binds a framebuffer to a target.
-extern void glBindFramebuffer(GLenum target, GLuint framebuffer);
-/// Deletes framebuffer objects.
-extern void glDeleteFramebuffers(GLsizei n, GLuint[*] framebuffers);
-/// Creates framebuffer object names.
-extern void glGenFramebuffers(GLsizei n, GLuint[*] framebuffers);
-/// Reports the completeness of a framebuffer.
-extern GLenum glCheckFramebufferStatus(GLenum target);
-/// Attaches a 1D texture to a framebuffer.
-extern void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-/// Attaches a 2D texture to a framebuffer.
-extern void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-/// Attaches a 3D texture layer to a framebuffer.
-extern void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset);
-/// Attaches a renderbuffer to a framebuffer.
-extern void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
-/// Queries integer attachment parameters.
-extern void glGetFramebufferAttachmentParameteriv(GLenum target, GLenum attachment, GLenum pname, GLint* params);
-/// Generates mipmap levels for a texture.
-extern void glGenerateMipmap(GLenum target);
-/// Copies pixels between framebuffers.
-extern void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
-/// Allocates multisample renderbuffer storage.
-extern void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
-/// Attaches one texture layer to a framebuffer.
-extern void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer);
-/// Maps a buffer range into client memory.
-extern void*? glMapBufferRange(GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
-/// Flushes written parts of a mapped buffer.
-extern void glFlushMappedBufferRange(GLenum target, GLintptr offset, GLsizeiptr length);
-/// Binds a vertex array object.
-extern void glBindVertexArray(GLuint array);
-/// Deletes vertex array objects.
-extern void glDeleteVertexArrays(GLsizei n, GLuint[*] arrays);
-/// Creates vertex array object names.
-extern void glGenVertexArrays(GLsizei n, GLuint[*] arrays);
-/// Reports whether a name is a vertex array object.
-extern GLboolean glIsVertexArray(GLuint array);
 
 // OpenGL 3.1
 /// Rectangle texture sampler uniform type.
@@ -2123,30 +1551,6 @@ const GL_UNIFORM_BLOCK_REFERENCED_BY_GEOMETRY_SHADER = 0x8A45;
 const GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER = 0x8A46;
 /// Result marking an invalid index.
 const GL_INVALID_INDEX = 0xFFFFFFFF;
-/// Draws instanced primitives from array data.
-extern void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount);
-/// Draws instanced indexed primitives.
-extern void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, void*? indices, GLsizei instancecount);
-/// Attaches a buffer as a texture.
-extern void glTexBuffer(GLenum target, GLenum internalformat, GLuint buffer);
-/// Sets the index restarting primitives.
-extern void glPrimitiveRestartIndex(GLuint index);
-/// Copies data between buffers.
-extern void glCopyBufferSubData(GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);
-/// Queries the indices of named uniforms.
-extern void glGetUniformIndices(GLuint program, GLsizei uniformCount, GLchar*[*] uniformNames, GLuint[*] uniformIndices);
-/// Queries integer properties of active uniforms.
-extern void glGetActiveUniformsiv(GLuint program, GLsizei uniformCount, GLuint[*] uniformIndices, GLenum pname, GLint[*] params);
-/// Queries the name of an active uniform.
-extern void glGetActiveUniformName(GLuint program, GLuint uniformIndex, GLsizei bufSize, GLsizei*? length, GLchar* uniformName);
-/// Queries the index of a uniform block.
-extern GLuint glGetUniformBlockIndex(GLuint program, GLchar* uniformBlockName);
-/// Queries integer properties of a uniform block.
-extern void glGetActiveUniformBlockiv(GLuint program, GLuint uniformBlockIndex, GLenum pname, GLint[*] params);
-/// Queries the name of a uniform block.
-extern void glGetActiveUniformBlockName(GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei*? length, GLchar* uniformBlockName);
-/// Binds a uniform block to a binding point.
-extern void glUniformBlockBinding(GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding);
 
 // OpenGL 3.2
 /// Flag requesting a core profile context.
@@ -2277,44 +1681,6 @@ const GL_MAX_COLOR_TEXTURE_SAMPLES = 0x910E;
 const GL_MAX_DEPTH_TEXTURE_SAMPLES = 0x910F;
 /// Largest supported integer texture sample count.
 const GL_MAX_INTEGER_SAMPLES = 0x9110;
-/// Draws indexed primitives with a base vertex.
-extern void glDrawElementsBaseVertex(GLenum mode, GLsizei count, GLenum type, void*? indices, GLint basevertex);
-/// Draws ranged indexed primitives with a base vertex.
-extern void glDrawRangeElementsBaseVertex(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, void*? indices, GLint basevertex);
-/// Draws instanced indexed primitives with a base vertex.
-extern void glDrawElementsInstancedBaseVertex(GLenum mode, GLsizei count, GLenum type, void*? indices, GLsizei instancecount, GLint basevertex);
-/// Draws several indexed ranges with base vertices.
-extern void glMultiDrawElementsBaseVertex(GLenum mode, GLsizei[*] count, GLenum type, void*?[*] indices, GLsizei drawcount, GLint[*] basevertex);
-/// Selects the provoking vertex convention.
-extern void glProvokingVertex(GLenum mode);
-/// Creates a fence sync object.
-extern GLsync? glFenceSync(GLenum condition, GLbitfield flags);
-/// Reports whether a handle is a sync object.
-extern GLboolean glIsSync(GLsync? sync);
-/// Deletes a sync object.
-extern void glDeleteSync(GLsync? sync);
-/// Blocks the client until a sync object signals.
-extern GLenum glClientWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeout);
-/// Blocks the server until a sync object signals.
-extern void glWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeout);
-/// Queries 64-bit integer state values.
-extern void glGetInteger64v(GLenum pname, GLint64[*] data);
-/// Queries integer sync object parameters.
-extern void glGetSynciv(GLsync sync, GLenum pname, GLsizei count, GLsizei*? length, GLint[*] values);
-/// Queries indexed 64-bit integer state values.
-extern void glGetInteger64i_v(GLenum target, GLuint index, GLint64[*] data);
-/// Queries 64-bit integer buffer parameters.
-extern void glGetBufferParameteri64v(GLenum target, GLenum pname, GLint64* params);
-/// Attaches a whole texture to a framebuffer.
-extern void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
-/// Allocates a 2D multisample texture.
-extern void glTexImage2DMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations);
-/// Allocates a 3D multisample texture.
-extern void glTexImage3DMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations);
-/// Queries float multisample parameters.
-extern void glGetMultisamplefv(GLenum pname, GLuint index, GLfloat[*] val);
-/// Sets the sample mask for one mask word.
-extern void glSampleMaski(GLuint maskNumber, GLbitfield mask);
 
 // OpenGL 3.3
 /// Instance divisor of a vertex attribute array.
@@ -2349,59 +1715,3 @@ const GL_TIME_ELAPSED = 0x88BF;
 const GL_TIMESTAMP = 0x8E28;
 /// Reversed packed signed pixel type with 2-10-10-10 bits.
 const GL_INT_2_10_10_10_REV = 0x8D9F;
-/// Binds a fragment output to a color number and index.
-extern void glBindFragDataLocationIndexed(GLuint program, GLuint colorNumber, GLuint index, GLchar* name);
-/// Queries the index of a fragment output.
-extern GLint glGetFragDataIndex(GLuint program, GLchar* name);
-/// Creates sampler object names.
-extern void glGenSamplers(GLsizei count, GLuint[*] samplers);
-/// Deletes sampler objects.
-extern void glDeleteSamplers(GLsizei count, GLuint[*] samplers);
-/// Reports whether a name is a sampler object.
-extern GLboolean glIsSampler(GLuint sampler);
-/// Binds a sampler to a texture unit.
-extern void glBindSampler(GLuint unit, GLuint sampler);
-/// Sets an integer sampler parameter.
-extern void glSamplerParameteri(GLuint sampler, GLenum pname, GLint param);
-/// Sets a sampler parameter from an integer array.
-extern void glSamplerParameteriv(GLuint sampler, GLenum pname, GLint[*] param);
-/// Sets a float sampler parameter.
-extern void glSamplerParameterf(GLuint sampler, GLenum pname, GLfloat param);
-/// Sets a sampler parameter from a float array.
-extern void glSamplerParameterfv(GLuint sampler, GLenum pname, GLfloat[*] param);
-/// Sets an integer sampler parameter from an array.
-extern void glSamplerParameterIiv(GLuint sampler, GLenum pname, GLint[*] param);
-/// Sets an unsigned integer sampler parameter from an array.
-extern void glSamplerParameterIuiv(GLuint sampler, GLenum pname, GLuint[*] param);
-/// Queries integer sampler parameters.
-extern void glGetSamplerParameteriv(GLuint sampler, GLenum pname, GLint[*] params);
-/// Queries integer sampler parameters.
-extern void glGetSamplerParameterIiv(GLuint sampler, GLenum pname, GLint[*] params);
-/// Queries float sampler parameters.
-extern void glGetSamplerParameterfv(GLuint sampler, GLenum pname, GLfloat[*] params);
-/// Queries unsigned integer sampler parameters.
-extern void glGetSamplerParameterIuiv(GLuint sampler, GLenum pname, GLuint[*] params);
-/// Records a timestamp into a query object.
-extern void glQueryCounter(GLuint id, GLenum target);
-/// Queries 64-bit integer state of a query object.
-extern void glGetQueryObjecti64v(GLuint id, GLenum pname, GLint64* params);
-/// Queries unsigned 64-bit integer state of a query object.
-extern void glGetQueryObjectui64v(GLuint id, GLenum pname, GLuint64* params);
-/// Sets the instancing divisor of an attribute array.
-extern void glVertexAttribDivisor(GLuint index, GLuint divisor);
-/// Sets a one-component vertex attribute from a packed value.
-extern void glVertexAttribP1ui(GLuint index, GLenum type, GLboolean normalized, GLuint value);
-/// Sets a one-component vertex attribute from packed values in an array.
-extern void glVertexAttribP1uiv(GLuint index, GLenum type, GLboolean normalized, GLuint* value);
-/// Sets a two-component vertex attribute from a packed value.
-extern void glVertexAttribP2ui(GLuint index, GLenum type, GLboolean normalized, GLuint value);
-/// Sets a two-component vertex attribute from packed values in an array.
-extern void glVertexAttribP2uiv(GLuint index, GLenum type, GLboolean normalized, GLuint[*] value);
-/// Sets a three-component vertex attribute from a packed value.
-extern void glVertexAttribP3ui(GLuint index, GLenum type, GLboolean normalized, GLuint value);
-/// Sets a three-component vertex attribute from packed values in an array.
-extern void glVertexAttribP3uiv(GLuint index, GLenum type, GLboolean normalized, GLuint[*] value);
-/// Sets a four-component vertex attribute from a packed value.
-extern void glVertexAttribP4ui(GLuint index, GLenum type, GLboolean normalized, GLuint value);
-/// Sets a four-component vertex attribute from packed values in an array.
-extern void glVertexAttribP4uiv(GLuint index, GLenum type, GLboolean normalized, GLuint[*] value);

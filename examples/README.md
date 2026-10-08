@@ -30,7 +30,7 @@ applications. Each subdirectory is a `cx build` project (see
 - [`cleanup.cx`](cleanup.cx) — scope-exit cleanup with `defer` and destructors.
 - [`mandelbrot.cx`](mandelbrot.cx) — Mandelbrot set visualizer with a custom `Complex` type.
 - [`brainfuck.cx`](brainfuck.cx) — Brainfuck interpreter.
-- [`tree.cx`](tree.cx) — recursive directory listing using C APIs (`dirent.h`).
+- [`tree.cx`](tree.cx) — recursive directory listing using C APIs (`dirent.h` on POSIX, `GetFileAttributesA` on Windows).
 
 ## Projects
 
@@ -51,7 +51,8 @@ applications. Each subdirectory is a `cx build` project (see
   `main.cpp` via `cxlib.hpp`).
 - [`opengl/`](opengl/) — minimal OpenGL triangle using GLFW for window
   management. Needs `pkg-config` and GLFW3 (`apt install pkg-config
-  libglfw3-dev libgl1-mesa-dev`, `brew install pkg-config glfw`). Build with
+  libglfw3-dev libgl1-mesa-dev`, `brew install pkg-config glfw`; see
+  [`opengl/README.md`](opengl/README.md) for Windows). Build with
   `cx build`.
 - [`asteroids/`](asteroids/) — bare-bones Asteroids clone using SDL3.
   See [`asteroids/README.md`](asteroids/README.md) for platform setup.
@@ -104,4 +105,10 @@ python3 build_examples.py --cx /path/to/cx
 compiles every single-file program (`cx <file> -Werror`) and every project
 directory (`cx build -Werror`), skipping `inputs/` fixtures. `embedding/` is
 built with `-Wno-unused` since its entry point is called from the C++ host.
-`tree.cx`, `asteroids`, `opengl`, `voxel-game`, `fractal`, and `boids` are skipped on Windows.
+On Windows, `asteroids`, `boids`, `opengl`, `voxel-game`, and `fractal` need
+the SDL3/GLFW import libraries, found via `-L` flags,
+`VCPKG_INSTALLATION_ROOT`, `SDLDIR`, or `LIB`; an example is skipped with a
+note when any of its libraries is missing. The `cxx-interop` caller check
+and its `--backend=c` build are skipped on Windows (`extern "C++"` needs
+the Itanium ABI, and the C backend cannot name MSVC-mangled C++ symbols),
+but the project itself builds.

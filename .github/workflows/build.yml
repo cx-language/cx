@@ -244,6 +244,28 @@ jobs:
           path: /tmp/raylib
           key: raylib-6.0
 
+      # SDL3 and GLFW for the Windows example builds, via vcpkg's dynamic
+      # triplet (SDL3.lib and glfw3dll.lib import libraries, which the
+      # vendor build files link). OpenGL itself needs no package: modern
+      # entry points load at runtime via gl-loader.cx. Release-only, like
+      # the Test step that uses them. Shares the binary-cache directory
+      # with zlib/zstd above; entries carry ABI hashes, so the two keys
+      # coexist safely.
+      - name: Cache vcpkg binaries (Windows SDL/GLFW)
+        if: matrix.os == 'windows-latest' && matrix.build_type != 'Debug'
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/vcpkg-binary-cache
+          key: vcpkg-${{ steps.vcpkg-baseline.outputs.sha }}-sdl3-glfw3-dynamic
+
+      - name: Install SDL3 and GLFW (Windows)
+        if: matrix.os == 'windows-latest' && matrix.build_type != 'Debug'
+        shell: bash
+        env:
+          VCPKG_BINARY_SOURCES: "clear;files,${{ runner.temp }}/vcpkg-binary-cache,readwrite"
+        run: |
+          vcpkg install sdl3:x64-windows glfw3:x64-windows
+
       - name: Test
         if: matrix.build_type != 'Debug'
         working-directory: ${{runner.workspace}}/build
@@ -288,7 +310,8 @@ jobs:
           if [ "$RUNNER_OS" == "macOS" ]; then
             brew install sdl3 glfw raylib
           fi
-          # Tests depending on SDL3, raylib, or GLFW are disabled on Windows CI.
+          # SDL3 and GLFW were installed via vcpkg above on Windows; raylib is
+          # not installed there, so tests depending on it stay disabled.
           # Time only the check invocation, not the SDL/apt setup above it.
           python3 -c "import time; print(time.time())" > "$RUNNER_TEMP/cx_check_start"
           CX_PRINT_STACK_TRACE=true cmake --build . --config ${{ matrix.build_type }} --target check

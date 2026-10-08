@@ -22,6 +22,7 @@ int main() {
     }
 
     glfwMakeContextCurrent(window);
+    loadGL(); // Loads entry points on Windows; no-op elsewhere.
     glfwSetKeyCallback(window, KeyCallback);
 
     glClearColor(0, 0, 0, 1);

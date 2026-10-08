@@ -1,1 +1,8 @@
+#if Windows
+// pkg-config is not available on Windows; link the SDL3 import library
+// directly. Pass its directory with -L (see the example READMEs), e.g.
+// vcpkg's installed/x64-windows/lib or the SDL3 VC development libraries.
+var libraries = ["SDL3"]
+#else
 var pkgConfigDependencies = ["sdl3"]
+#endif

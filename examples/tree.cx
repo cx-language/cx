@@ -1,6 +1,36 @@
 // A recursive directory listing program,
-// demonstrating the usage of C APIs.
+// demonstrating the usage of C APIs: dirent on POSIX,
+// GetFileAttributesA plus the std directory listing on Windows.
 
+#if Windows
+extern c_uint GetFileAttributesA(char* fileName);
+
+const FILE_ATTRIBUTE_DIRECTORY = 16;
+const FILE_ATTRIBUTE_REPARSE_POINT = 1024;
+
+bool isDirectory(string path) {
+    var pathBuf = toCString(path);
+    var attrs = GetFileAttributesA(pathBuf.data());
+    if attrs == c_uint(4294967295) return false; // INVALID_FILE_ATTRIBUTES
+    // Never descend into junctions or symlinks (like the POSIX branch,
+    // which only recurses on DT_DIR); GetFileAttributesA follows them.
+    if attrs & FILE_ATTRIBUTE_REPARSE_POINT != 0 return false;
+    return (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
+}
+
+void listdir(string name, int indent) {
+    var names = listDirectory(name);
+    for i in 0..names.size() {
+        var path = name + '/' + string(&names[i]);
+        print(" ".repeat(indent));
+        println(string(&path));
+
+        if isDirectory(string(path)) {
+            listdir(string(path), indent + 4);
+        }
+    }
+}
+#else
 import "dirent.h";
 
 void listdir(string name, int indent) {
@@ -21,6 +51,7 @@ void listdir(string name, int indent) {
         }
     }
 }
+#endif
 
 void main() {
     listdir(".", 0);

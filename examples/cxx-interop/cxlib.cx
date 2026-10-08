@@ -1,6 +1,10 @@
 // cx functions exported to C++. The `extern "C++"` gives them Itanium-mangled
 // names (see cxlib.hpp), so C++ callers link them like any C++ function.
+// The Itanium ABI is not supported on Windows/MSVC targets, so this
+// direction is unavailable there; calling C++ from cx (see main.cx) works.
 
+#if !Windows
 extern "C++" c_int cx_is_even(c_int n) {
     return n % 2 == 0 ? 1 : 0;
 }
+#endif
