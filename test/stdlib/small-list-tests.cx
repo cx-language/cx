@@ -102,7 +102,7 @@ void testSmallListIteration() {
 void testSmallListFunctionalHelpers() {
     var list = SmallList<int32, 2>([1, 2, 3, 4]);
 
-    assert(list.find(n => n > 2)! == 3 && list.find(n => n > 9) == null);
+    assert(list.find(n => n > 2) == 3 && list.find(n => n > 9) == null);
 
     assert(list.map(n => n * 2).toList() == List([2, 4, 6, 8]));
     assert(list.filter(n => n % 2 == 0).toList() == List([2, 4]));

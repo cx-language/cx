@@ -207,7 +207,7 @@ void testFirstLastContainsIndexOf() {
 void testFindMapFilter() {
     int[5] a = [0, 1, 2, 3, 4];
 
-    assert(a.find(x => x == 2)! == 2); // TODO: '!' shouldn't be required
+    assert(a.find(x => x == 2) == 2);
     assert(a.find(x => x == 9) == null);
     var doubled = a.map(n => n * 2).toList();
     var expectedDoubled = List([0, 2, 4, 6, 8]);

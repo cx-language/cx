@@ -54,8 +54,38 @@ bool operator== <T: Comparable>(T& a, Optional<T*>& b) {
     return *a == *(*b);
 }
 
+/// Returns true if the optional borrow is non-null and borrows a value equal to b.
+bool operator== <T: Comparable>(T&? a, T& b) {
+    // The null check narrows `a` to the payload, so no unwrap is needed.
+    if a == null return false;
+    return a == *b;
+}
+
+/// Returns true if the optional borrow is non-null and borrows a value equal to a.
+bool operator== <T: Comparable>(T& a, T&? b) {
+    // The null check narrows `b` to the payload, so no unwrap is needed.
+    if b == null return false;
+    return *a == b;
+}
+
 /// Prints the given value.
 void print<T: Printable>(Optional<T>& optional) {
     var stream = OutputStream();
     optional.print(stream);
+}
+
+/// Prints the given optional borrow.
+void print<T: Printable>(T&? optional) {
+    var stream = OutputStream();
+    if optional == null {
+        stream.append("null");
+    } else {
+        optional.print(stream);
+    }
+}
+
+/// Prints the given optional borrow followed by a newline.
+void println<T: Printable>(T&? optional) {
+    print(optional);
+    print('\n');
 }

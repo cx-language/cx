@@ -36,7 +36,7 @@ void testFindAllAnyNoneCapturing() {
     var numbers = List([0, 1, 2, 3, 4]);
     int threshold = 2;
 
-    assert(numbers.find(n => n >= threshold)! == 2);
+    assert(numbers.find(n => n >= threshold) == 2);
     assert(numbers.all(n => n >= threshold) == false);
     assert(numbers.any(n => n >= threshold) == true);
     assert(numbers.none(n => n >= threshold) == false);
