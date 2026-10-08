@@ -1,0 +1,14 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// Spelling an iterator type explicitly while the same instantiation is also
+// inferred must not report a redefinition of its methods.
+var g = [1, 2, 3];
+
+FilterIterator<int, ArrayIterator<int>, bool(int&)> makeFilter() {
+    return g.filter(n => *n > 0);
+}
+
+void main() {
+    println(makeFilter().toList()); // CHECK:[1, 2, 3]
+}

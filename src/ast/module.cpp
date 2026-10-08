@@ -67,6 +67,12 @@ void Module::addToSymbolTable(FunctionTemplate& decl) {
 }
 
 void Module::addToSymbolTable(FunctionDecl& decl) {
+    // An instantiation re-added from another module's table re-registers its
+    // methods: the same declaration is already present, not a redefinition.
+    // Distinct collisions still report at their own adds.
+    for (Decl* candidate : symbolTable.findFirst(decl.getQualifiedName())) {
+        if (candidate == &decl) return;
+    }
     if (!rejectMatchingPrototype(symbolTable, decl, decl) && decl.isExtern()) {
         // C has no overloading: same-name externs share one symbol even with different signatures.
         for (Decl* candidate : symbolTable.findFirst(decl.getQualifiedName())) {
