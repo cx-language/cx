@@ -104,8 +104,10 @@
             if (builtinTypes.propertyIsEnumerable(cur)) return "keyword";
             // operator is contextual: a keyword only in overload declarations.
             if (cur == "operator" && stream.match(/^\s*(\[|==|!=|<=|>=|<|>|[+\-*/%])/, false)) return "keyword";
-            // Calls and definitions alike: a word followed by `(`.
-            if (stream.match(/^\s*\(/, false)) return "def";
+            // Calls and definitions alike: a word followed by `(` or a generic
+            // argument list. The list spans anything but statement boundaries,
+            // since bounds hold types like `Output(T&)`.
+            if (stream.match(/^\s*\(/, false) || stream.match(/^\s*<[^;={}]*>\s*\(/, false)) return "def";
             // User type names start with an uppercase letter by convention.
             if (/^[A-Z]/.test(cur)) return "type";
             return "variable";

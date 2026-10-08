@@ -131,6 +131,25 @@ checkTokens("generic return definition", "List<int> get() {", [
     ["List", "type"], ["<", "operator"], ["int", "keyword"], [">", "operator"],
     ["get", "def"], ["(", null], [")", null], ["{", null],
 ]);
+checkTokens("generic definition", "void swap<E>(E& a, E& b) {", [
+    ["void", "keyword"], ["swap", "def"], ["<", "operator"], ["E", "type"], [">", "operator"],
+    ["(", null], ["E", "type"], ["&", "operator"], ["a", "variable"], [",", null],
+    ["E", "type"], ["&", "operator"], ["b", "variable"], [")", null], ["{", null],
+]);
+checkTokens("constrained generic definition", "T& max<T: Comparable>(T& a, T& b) {", [
+    ["T", "type"], ["&", "operator"], ["max", "def"], ["<", "operator"], ["T", "type"],
+    [":", null], ["Comparable", "type"], [">", "operator"], ["(", null], ["T", "type"],
+    ["&", "operator"], ["a", "variable"], [",", null], ["T", "type"], ["&", "operator"],
+    ["b", "variable"], [")", null], ["{", null],
+]);
+checkTokens("generic call", "foo<int>(x);", [
+    ["foo", "def"], ["<", "operator"], ["int", "keyword"], [">", "operator"],
+    ["(", null], ["x", "variable"], [")", null], [";", null],
+]);
+checkTokens("comparison before call stays variable", "a < b(c);", [
+    ["a", "variable"], ["<", "operator"], ["b", "def"], ["(", null], ["c", "variable"],
+    [")", null], [";", null],
+]);
 checkTokens("user type return definition", "Vec2 normalized() {", [
     ["Vec2", "type"], ["normalized", "def"], ["(", null], [")", null], ["{", null],
 ]);
