@@ -115,13 +115,29 @@ void testMinMaxConst() {
 void testMinmax() {
     var a = 7;
     var b = 9;
-    var r = minmax(a, b);
-    assert(r.min == 7);
-    assert(r.max == 9);
-    r = minmax(b, a);
-    assert(r.min == 7);
-    assert(r.max == 9);
-    r = minmax(3, 1);
+    assert(minmax(a, b).min == 7);
+    assert(minmax(a, b).max == 9);
+    assert(minmax(b, a).min == 7);
+    assert(minmax(b, a).max == 9);
+    *minmax(a, b).min = 6;
+    assert(a == 6);
+    var r = minmax(3, 1);
     assert(r.min == 1);
     assert(r.max == 3);
+}
+
+struct ListHolder: Comparable {
+    List<int> items;
+    Ordering compare(ListHolder& other) {
+        return items.size() < other.items.size() ? Ordering.Less : items.size() > other.items.size() ? Ordering.Greater : Ordering.Equal;
+    }
+}
+
+@test
+void testMinmaxRefNoCopy() {
+    // The ref overload needs only Comparable, so non-Copyable types work.
+    var a = ListHolder(List([1, 2]));
+    var b = ListHolder(List([1]));
+    assert(minmax(a, b).min.items.size() == 1);
+    assert(minmax(a, b).max.items.size() == 2);
 }

@@ -42,10 +42,11 @@ T min<T: Copyable + Comparable>(T a, T b) {
     return b;
 }
 
-/// Gives the minimum and maximum of the two elements.
-/// Calls with a `const` argument, or with only temporaries, use the by-value
-/// overload below instead, which copies.
-(T min, T max) minmax<T: Copyable + Comparable>(T& a, T& b) {
+/// Gives references to the minimum and maximum of the two elements.
+/// Like C++ std::minmax, the result borrows the arguments, so it must not
+/// outlive them. Calls with a `const` argument, or with only temporaries, use
+/// the by-value overload below instead, which copies.
+(T& min, T& max) minmax<T: Comparable>(T& a, T& b) {
     if a < b {
         return (min = a, max = b);
     }
