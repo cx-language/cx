@@ -1,41 +1,42 @@
 
-struct { bool, struct { float32 } } _CX1N4main1fET2_1cM3std4bool1dT1_1eM3std7float320_() {
-    struct { float32 }* d = alloca struct { float32 }
-    struct { int32, struct { bool, struct { float32 } } }* a = alloca struct { int32, struct { bool, struct { float32 } } }
-    struct { bool, struct { float32 } }* b = alloca struct { bool, struct { float32 } }
+struct { bool, struct { float32, float32 } } _CX1N4main1fET2_1cM3std4bool1dT2_1eM3std7float321fM3std7float320_() {
+    struct { float32, float32 }* d = alloca struct { float32, float32 }
+    struct { int32, struct { bool, struct { float32, float32 } } }* a = alloca struct { int32, struct { bool, struct { float32, float32 } } }
+    struct { bool, struct { float32, float32 } }* b = alloca struct { bool, struct { float32, float32 } }
     float32* e = alloca float32
-    struct { bool, struct { float32 } }** p = alloca struct { bool, struct { float32 } }*
+    struct { bool, struct { float32, float32 } }** p = alloca struct { bool, struct { float32, float32 } }*
     float32 _0 = -float32 1
-    struct { float32 } _1 = insertvalue struct { float32 } undefined, 0, _0
-    store _1 to d
-    struct { int32, struct { bool, struct { float32 } } } _2 = insertvalue struct { int32, struct { bool, struct { float32 } } } undefined, 0, int32 42
-    struct { bool, struct { float32 } } _3 = insertvalue struct { bool, struct { float32 } } undefined, 0, bool false
-    struct { float32 } d.load = load d
-    struct { bool, struct { float32 } } _4 = insertvalue _3, 1, d.load
-    struct { int32, struct { bool, struct { float32 } } } _5 = insertvalue _2, 1, _4
-    store _5 to a
-    struct { bool, struct { float32 } }* b_0 = getelementptr a, 1
-    struct { bool, struct { float32 } } b.load = load b_0
+    struct { float32, float32 } _1 = insertvalue struct { float32, float32 } undefined, 0, _0
+    struct { float32, float32 } _2 = insertvalue _1, 1, float32 0
+    store _2 to d
+    struct { int32, struct { bool, struct { float32, float32 } } } _3 = insertvalue struct { int32, struct { bool, struct { float32, float32 } } } undefined, 0, int32 42
+    struct { bool, struct { float32, float32 } } _4 = insertvalue struct { bool, struct { float32, float32 } } undefined, 0, bool false
+    struct { float32, float32 } d.load = load d
+    struct { bool, struct { float32, float32 } } _5 = insertvalue _4, 1, d.load
+    struct { int32, struct { bool, struct { float32, float32 } } } _6 = insertvalue _3, 1, _5
+    store _6 to a
+    struct { bool, struct { float32, float32 } }* b_0 = getelementptr a, 1
+    struct { bool, struct { float32, float32 } } b.load = load b_0
     store b.load to b
-    struct { float32 }* d_0 = getelementptr b, 1
+    struct { float32, float32 }* d_0 = getelementptr b, 1
     float32* e_0 = getelementptr d_0, 0
     float32 e.load = load e_0
     store e.load to e
-    struct { bool, struct { float32 } }* b_1 = getelementptr a, 1
+    struct { bool, struct { float32, float32 } }* b_1 = getelementptr a, 1
     store b_1 to p
-    struct { bool, struct { float32 } }* p.load = load p
-    struct { bool, struct { float32 } } p.load.load = load p.load
+    struct { bool, struct { float32, float32 } }* p.load = load p
+    struct { bool, struct { float32, float32 } } p.load.load = load p.load
     store p.load.load to b
-    struct { bool, struct { float32 } }* p.load_0 = load p
-    struct { float32 }* d_1 = getelementptr p.load_0, 1
+    struct { bool, struct { float32, float32 } }* p.load_0 = load p
+    struct { float32, float32 }* d_1 = getelementptr p.load_0, 1
     float32* e_1 = getelementptr d_1, 0
     float32 e.load_0 = load e_1
     store e.load_0 to e
-    struct { float32, float32 } _6 = insertvalue struct { float32, float32 } undefined, 0, float32 1
-    struct { float32, float32 } _7 = insertvalue _6, 1, float32 2
-    float32 x = extractvalue _7, 0
+    struct { float32, float32 } _7 = insertvalue struct { float32, float32 } undefined, 0, float32 1
+    struct { float32, float32 } _8 = insertvalue _7, 1, float32 2
+    float32 x = extractvalue _8, 0
     store x to e
-    struct { bool, struct { float32 } } b.load_0 = load b
+    struct { bool, struct { float32, float32 } } b.load_0 = load b
     return b.load_0
 }
 

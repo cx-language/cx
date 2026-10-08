@@ -9,22 +9,22 @@ struct Logger {
 }
 
 struct Wrapper {
-    (Logger log) t;
+    (Logger log, int tag) t;
 }
 
 void withAnonymousStruct() {
-    var _t = (log = Logger(prefix = "anon"));
+    var _t = (log = Logger(prefix = "anon"), tag = 0);
     println("working anon");
 }
 
 void withWrapper() {
-    var _w = Wrapper(t = (log = Logger(prefix = "wrapped")));
+    var _w = Wrapper(t = (log = Logger(prefix = "wrapped"), tag = 0));
     println("working wrapped");
 }
 
 void withReassignment() {
-    var t = (log = Logger(prefix = "first"));
-    t = (log = Logger(prefix = "second"));
+    var t = (log = Logger(prefix = "first"), tag = 0);
+    t = (log = Logger(prefix = "second"), tag = 0);
     println("end");
 }
 

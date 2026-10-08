@@ -182,7 +182,7 @@ void main() {
     println(deaths); // CHECK-NEXT:22
 
     // Discarded literals destroy their element temporaries.
-    (y = C(i = 29));
+    (y = C(i = 29), z = 0);
     [C(i = 30)];
     println(deaths); // CHECK-NEXT:24
 

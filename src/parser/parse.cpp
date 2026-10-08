@@ -364,6 +364,8 @@ ArrayLiteralExpr* Parser::parseArrayLiteral() {
 /// anonymous-struct-literal-elements ::= anonymous-struct-literal-element | anonymous-struct-literal-elements ',' anonymous-struct-literal-element
 /// anonymous-struct-literal-element ::= (id '=')? expr
 /// paren-expr ::= '(' expr ')'
+/// A lone `(id '=' expr)` parses as a parenthesized assignment, so struct
+/// literals need at least two elements.
 Expr* Parser::parseAnonymousStructLiteralOrParenExpr() {
     ASSERT(currentToken() == Token::LeftParen);
     auto location = getCurrentLocation();
@@ -372,6 +374,20 @@ Expr* Parser::parseAnonymousStructLiteralOrParenExpr() {
     if (elements.size() == 1 && elements[0].name.empty()) {
         elements[0].value->parenthesized = true;
         return elements[0].value;
+    }
+
+    // A single `(name = value)` is an assignment, not a one-element struct.
+    if (elements.size() == 1) {
+        auto& element = elements[0];
+        auto* lhs = makeExpr<VarExpr>(element.name, element.location);
+        lhs->endLocation = getIdentifierEndLocation(element.location, element.name);
+        // Argument parsing discards the `=` location; the identifier end
+        // approximates it for point diagnostics.
+        Location opLocation = lhs->endLocation;
+        auto* assign = makeExpr<BinaryExpr>(Token::Assignment, lhs, element.value, opLocation);
+        assign->callee->endLocation = opLocation.nextColumn();
+        assign->parenthesized = true;
+        return assign;
     }
 
     for (auto& element : elements) {

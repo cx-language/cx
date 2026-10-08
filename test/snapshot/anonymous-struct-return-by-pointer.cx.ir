@@ -1,42 +1,43 @@
 
 int32 main() {
     S* s = alloca S
-    struct { int32 }** f = alloca struct { int32 }*
-    struct { int32 }** g = alloca struct { int32 }*
-    struct { int32 } _0 = insertvalue struct { int32 } undefined, 0, int32 1
-    void _1 = call _CX1N4mainM4main1S4initE4void1_T1_1aM3std5int32(S* s, struct { int32 } _0)
-    struct { int32 }* _2 = call _CX1N4mainM4main1S1fEPT1_1aM3std5int320_(S* s)
-    store _2 to f
-    struct { int32 }* _3 = call _CX1N4mainM4main1S1gEPT1_1aM3std5int320_(S* s)
-    store _3 to g
-    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    struct { int32, int32 }** f = alloca struct { int32, int32 }*
+    struct { int32, int32 }** g = alloca struct { int32, int32 }*
+    struct { int32, int32 } _0 = insertvalue struct { int32, int32 } undefined, 0, int32 1
+    struct { int32, int32 } _1 = insertvalue _0, 1, int32 2
+    void _2 = call _CX1N4mainM4main1S4initE4void1_T2_1aM3std5int321bM3std5int32(S* s, struct { int32, int32 } _1)
+    struct { int32, int32 }* _3 = call _CX1N4mainM4main1S1fEPT2_1aM3std5int321bM3std5int320_(S* s)
+    store _3 to f
+    struct { int32, int32 }* _4 = call _CX1N4mainM4main1S1gEPT2_1aM3std5int321bM3std5int320_(S* s)
+    store _4 to g
+    void _5 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0
 }
 
-void _CX1N4mainM4main1S4initE4void1_T1_1aM3std5int32(S* this, struct { int32 } t) {
+void _CX1N4mainM4main1S4initE4void1_T2_1aM3std5int321bM3std5int32(S* this, struct { int32, int32 } t) {
     S** this_0 = alloca S*
-    struct { int32 }* t_0 = alloca struct { int32 }
+    struct { int32, int32 }* t_0 = alloca struct { int32, int32 }
     store this to this_0
     store t to t_0
     S* this.load = load this_0
-    struct { int32 }* t_1 = getelementptr this.load, 0
-    struct { int32 } t.load = load t_0
+    struct { int32, int32 }* t_1 = getelementptr this.load, 0
+    struct { int32, int32 } t.load = load t_0
     store t.load to t_1
     return void
 }
 
-struct { int32 }* _CX1N4mainM4main1S1fEPT1_1aM3std5int320_(S* this) {
+struct { int32, int32 }* _CX1N4mainM4main1S1fEPT2_1aM3std5int321bM3std5int320_(S* this) {
     S** this_0 = alloca S*
     store this to this_0
     S* this.load = load this_0
-    struct { int32 }* t = getelementptr this.load, 0
+    struct { int32, int32 }* t = getelementptr this.load, 0
     return t
 }
 
-struct { int32 }* _CX1N4mainM4main1S1gEPT1_1aM3std5int320_(S* this) {
+struct { int32, int32 }* _CX1N4mainM4main1S1gEPT2_1aM3std5int321bM3std5int320_(S* this) {
     S** this_0 = alloca S*
     store this to this_0
     S* this.load = load this_0
-    struct { int32 }* t = getelementptr this.load, 0
+    struct { int32, int32 }* t = getelementptr this.load, 0
     return t
 }

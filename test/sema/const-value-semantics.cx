@@ -40,7 +40,7 @@ void arrayLiteralCopiesConst() {
 
 void structLiteralCopiesConst() {
     const c = 5;
-    var s = (x = c);
+    var s = (x = c, y = 0);
     s.x = 6;
 }
 

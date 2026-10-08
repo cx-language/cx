@@ -1,7 +1,7 @@
 // RUN: check-snapshots -Wno-unused
 
-(bool c, (float e) d) f() {
-    var d = (e = -1.0);
+(bool c, (float e, float f) d) f() {
+    var d = (e = -1.0, f = 0.0);
     var a = (a = 42, b = (c = false, d));
     var b = a.b;
     var e = b.d.e;

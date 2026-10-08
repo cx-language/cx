@@ -1,0 +1,24 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+int y = 0;
+
+void helper() {
+    int x = 42;
+    defer (y = x);
+    x = 7;
+}
+
+void main() {
+    helper();
+    println(y); // CHECK:7
+    int z = 1;
+    (z = 5);
+    println(z); // CHECK-NEXT:5
+    int t = 1;
+    (t = 2,);
+    println(t); // CHECK-NEXT:2
+    int n = 1;
+    ((n = 3));
+    println(n); // CHECK-NEXT:3
+}

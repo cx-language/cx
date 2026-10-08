@@ -1,19 +1,19 @@
 // RUN: check-snapshots
 
 struct S {
-    (int a) t;
+    (int a, int b) t;
 
-    (int a)* f() {
+    (int a, int b)* f() {
         return &t;
     }
 
-    (int a)* g() {
+    (int a, int b)* g() {
         return &t;
     }
 }
 
 void main() {
-    var s = S((a = 1));
+    var s = S((a = 1, b = 2));
     var f = s.f();
     var g = s.g();
 }

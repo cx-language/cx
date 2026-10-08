@@ -28,6 +28,8 @@ void main() {
 
 Anonymous structs can be nested, and compared for equality with `==` and `!=`.
 Two anonymous structs are equal if all their fields are equal.
+A struct literal needs at least two elements: a single `(name = value)`
+is a parenthesized assignment, not a one-element struct.
 
 ```cs
 void main() {

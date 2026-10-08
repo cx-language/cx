@@ -36,6 +36,6 @@ void main() {
     int[2][2] m = [[1, 2], [3, 4]];
     println(m[0][1] + m[1][0]); // CHECK-NEXT:5
 
-    var t = (a = [1, 2, 3]);
+    var t = (a = [1, 2, 3], b = 0);
     println(t.a[0] + t.a[2]); // CHECK-NEXT:4
 }
