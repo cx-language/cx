@@ -49,6 +49,29 @@ def parse_summary(stderr):
     return int(match.group(1)), int(match.group(2))
 
 
+def measure(cx_lsp, path, count, reps):
+    """Measure one side of the 1-vs-N comparison.
+
+    LSan marks roots conservatively, so a stray stack root can retain a
+    large object graph in some processes and report far fewer leaks than
+    sister runs of identical analyses. False roots only hide leaks, so the
+    max over `reps` runs approximates the truth; a single sample flakes.
+    Raises RuntimeError when a run itself fails.
+    """
+    samples = []
+    for _ in range(reps):
+        out, err, code = run_leak_check(cx_lsp, path, count)
+        if out:
+            raise RuntimeError(f"--leak-check {count} failed:\n{out}")
+        if code not in (0, 23):  # 23 is LSan's leaks-reported exit code.
+            raise RuntimeError(f"--leak-check {count} exited with code {code}\n{err[-2000:]}")
+        samples.append(parse_summary(err))
+    best = max(samples, key=lambda sample: (sample[1], sample[0]))
+    if len(set(samples)) > 1:
+        print(f"note: {count}-run samples disagree {sorted(set(samples))}; using max")
+    return best
+
+
 def check_fixture_clean(cx_lsp, path):
     """Fail when the fixture itself reports diagnostics.
 
@@ -97,6 +120,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--cx-lsp", required=True, help="LSan-instrumented cx-lsp binary")
     parser.add_argument("--count", type=int, default=64, help="analyses in the N run (default: 64)")
+    parser.add_argument("--reps", type=int, default=3, help="leak-check repetitions per side; the max wins (default: 3)")
     parser.add_argument("--max-growth-bytes", type=int, default=1024, help="allowed N-vs-1 byte growth")
     parser.add_argument("--max-growth-allocs", type=int, default=16, help="allowed N-vs-1 allocation growth")
     args = parser.parse_args()
@@ -118,16 +142,12 @@ def main():
             return 1
 
         results = {}
-        for count in (1, args.count):
-            out, err, code = run_leak_check(cx_lsp, path, count)
-            if out:
-                print(f"--leak-check {count} failed:\n{out}")
-                return 1
-            if code not in (0, 23):  # 23 is LSan's leaks-reported exit code.
-                print(f"--leak-check {count} exited with code {code}")
-                print(err[-2000:])
-                return 1
-            results[count] = parse_summary(err)
+        try:
+            for count in (1, args.count):
+                results[count] = measure(cx_lsp, path, count, args.reps)
+        except RuntimeError as error:
+            print(error)
+            return 1
 
     bytes1, allocs1 = results[1]
     bytesN, allocsN = results[args.count]

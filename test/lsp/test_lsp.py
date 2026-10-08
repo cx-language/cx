@@ -629,6 +629,28 @@ def test_query_modes(cx_lsp, path):
     check("query-malformed", proc.returncode == 0 and envelope.get("ok") is False)
 
 
+def test_query_determinism(cx_lsp, path):
+    # Repeated one-shot queries over identical inputs must answer
+    # identically: same diagnostics, symbols, tokens, and completion order.
+    # (Leak-counter bimodality across processes is a conservative-root
+    # measurement artifact; analysis itself is deterministic.)
+    fixture = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inputs", "lsan-fixture.cx")
+    with open(fixture) as file:
+        content = file.read()
+    probe_line = content.count("\n")
+    content += "void _probe() {\n    var _sp = Sprite();\n    _sp.\n}\n"
+    queries = [
+        base_query("check", path, content),
+        base_query("documentSymbol", path, content),
+        base_query("semanticTokens", path, content),
+        base_query("completion", path, content, (probe_line + 2, 8)),
+    ]
+    for query in queries:
+        first = run_query(cx_lsp, query)
+        same = all(run_query(cx_lsp, query) == first for _ in range(3))
+        check(f"query-determinism-{query['method']}", same)
+
+
 def test_leak_check_mode(cx_lsp, path):
     proc = subprocess.run(
         [cx_lsp, "--leak-check", path, "1"],
@@ -2440,6 +2462,7 @@ def main():
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
             groups = [
                 ("query-modes", lambda: test_query_modes(args.cx_lsp, path)),
+                ("query-determinism", lambda: test_query_determinism(args.cx_lsp, path)),
                 ("leak-check-mode", lambda: test_leak_check_mode(args.cx_lsp, path)),
                 ("recovery", lambda: test_recovery(args.cx_lsp, path)),
                 ("generic-symbols", lambda: test_generic_symbols(args.cx_lsp, path)),
