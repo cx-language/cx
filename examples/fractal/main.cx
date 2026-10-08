@@ -95,6 +95,7 @@ int runExplorer() {
         return 1;
     }
     glfwMakeContextCurrent(window);
+    loadGL(); // Loads entry points on Windows; no-op elsewhere.
     glfwSwapInterval(1);
     glfwSetScrollCallback(window, scrollCallback);
 
@@ -219,6 +220,7 @@ int runScreenshot(string path) {
         return 1;
     }
     glfwMakeContextCurrent(window);
+    loadGL(); // Loads entry points on Windows; no-op elsewhere.
 
     var program = createProgram("assets/fractal.vert", "assets/fractal.frag");
     c_uint vao = undefined;

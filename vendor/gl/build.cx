@@ -2,6 +2,9 @@
 var frameworks = ["OpenGL"]
 #else
 #if Windows
+// opengl32.lib only exports OpenGL 1.1; modern entry points are loaded at
+// runtime by gl-loader.cx (via wglGetProcAddress), so only opengl32 is
+// linked here. No extra -L is needed: it ships with the Windows SDK.
 var libraries = ["opengl32"]
 #else
 var libraries = ["GL"]

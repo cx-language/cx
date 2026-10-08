@@ -20,6 +20,14 @@ On Ubuntu, install the prerequisites with
 On macOS, install the prerequisites with
 `brew install pkg-config glfw`.
 
+On Windows, pkg-config is not used; the build links the GLFW DLL import
+library instead (modern OpenGL entry points load at runtime via
+gl-loader.cx). Install GLFW with vcpkg (`vcpkg install glfw3:x64-windows`),
+then build with `cx build -L%VCPKG_INSTALLATION_ROOT%\installed\x64-windows\lib`.
+This creates a `voxel-game.exe` executable. Alternatively, download the
+Windows binaries from https://www.glfw.org/download.html and pass `-L`
+pointing at their `lib-vc2022` directory (matching your compiler version).
+
 ## Running
 
 Run from this directory so the game finds `assets/`:
@@ -27,6 +35,9 @@ Run from this directory so the game finds `assets/`:
 ```sh
 ./voxel-game
 ```
+
+On Windows, copy `glfw3.dll` from `installed\x64-windows\bin` next to
+`voxel-game.exe` first, then run `voxel-game.exe`.
 
 ## Testing
 

@@ -504,6 +504,7 @@ void testRender() {
         abort("self-test: window failed");
     }
     glfwMakeContextCurrent(window);
+    loadGL(); // Loads entry points on Windows; no-op elsewhere.
 
     var world = makeWorld(2, 2);
     testWorld(world);

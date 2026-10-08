@@ -16,13 +16,14 @@ sudo cmake --install /tmp/SDL/build
 
 On macOS, install the prerequisites with `brew install pkg-config sdl3`.
 
-On Windows, `cx build` needs a `pkg-config` that can find SDL3. Alternatively, build manually:
-1. Download the SDL3 Visual C++ development libraries from https://github.com/libsdl-org/SDL/releases.
-2. Set the environment variable SDLDIR to point to the extracted SDL3 directory.
-3. Install LLVM/Clang from https://releases.llvm.org/download.html. The build uses the LLVM linker.
-4. Compile with `cx -c *.cx -I%SDLDIR%\include` and link with `lld-link output.obj -LIBPATH:%SDLDIR%\lib\x64 SDL3.lib legacy_stdio_definitions.lib ucrt.lib msvcrt.lib -DEBUG`. This should create an `output.exe` file.
-5. Copy SDL3.dll to the same directory as the executable.
-6. Run `output.exe`.
+On Windows, pkg-config is not used; the build links the SDL3 import library
+instead. Install SDL3 with vcpkg (`vcpkg install sdl3:x64-windows`), then run
+`cx build -L%VCPKG_INSTALLATION_ROOT%\installed\x64-windows\lib`. This creates
+an `asteroids.exe` executable. Alternatively, download the SDL3 Visual C++
+development libraries from https://github.com/libsdl-org/SDL/releases, set
+the environment variable SDLDIR to the extracted directory, and run
+`cx build -L%SDLDIR%\lib\x64`. To run the game, copy `SDL3.dll` next to the
+executable first.
 
 __Controls:__ arrow keys to move, space to shoot, esc to quit.
 

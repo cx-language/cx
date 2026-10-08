@@ -1,1 +1,8 @@
+#if Windows
+// pkg-config is not available on Windows; link the GLFW DLL import library
+// directly. Pass its directory with -L (see the example READMEs), e.g.
+// vcpkg's installed/x64-windows/lib or the GLFW Windows binaries.
+var libraries = ["glfw3dll"]
+#else
 var pkgConfigDependencies = ["glfw3"]
+#endif
