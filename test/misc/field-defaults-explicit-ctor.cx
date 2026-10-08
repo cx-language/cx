@@ -242,16 +242,6 @@ struct ForInRead {
     }
 }
 
-struct DeferRead {
-    int x = 42;
-    int y = 7;
-
-    DeferRead() {
-        defer (println(y));
-        x = 1;
-    }
-}
-
 struct ShadowField {
     int x = 42;
     int y = 0;
@@ -600,8 +590,6 @@ void main() {
     var fr = ForInRead();
     println(fr.sum); // CHECK-NEXT:132
     println(fr.x); // CHECK-NEXT:1
-    var dr = DeferRead(); // CHECK-NEXT:7
-    println(dr.x); // CHECK-NEXT:1
     var sh = ShadowField();
     println(sh.x); // CHECK-NEXT:42
     println(sh.y); // CHECK-NEXT:15

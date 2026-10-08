@@ -487,15 +487,14 @@ struct Typechecker {
     // A whole-field `=` assignment found by the constructor scan, with the
     // state needed to decide whether it overwrites a live value. initsBefore
     // counts delegating `init(...)` calls ahead of it, splitting the body
-    // into pre/post delegation segments; the flags mark lambdas (unknown
-    // timing) and defers (run at scope exit).
+    // into pre/post delegation segments; the flag marks lambdas (unknown
+    // timing).
     struct FieldAssign {
         FieldDecl* field;
         BinaryExpr* assign;
         bool definitelyAssigned;
         int initsBefore;
         bool inLambda;
-        bool inDefer;
     };
     // Delegating constructors whose cross-body liveness waits for postProcess:
     // the target body may check later (or never), so pre-init dead stores and

@@ -1425,10 +1425,13 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
             break;
         }
         case StmtKind::DeferStmt: {
+            auto* deferStmt = llvm::cast<DeferStmt>(stmt);
+            if (llvm::isa<ConstructorDecl>(currentFunction))
+                ERROR_RANGE(deferStmt->location, getIdentifierEndLocation(deferStmt->location, "defer"), "'defer' is not allowed in constructors");
             // Deferred expressions run at scope exit, when narrowings established here may no longer hold.
             llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
             llvm::SaveAndRestore saveAssignedDecls(definitelyAssignedDecls);
-            auto& expr = *llvm::cast<DeferStmt>(stmt)->expr;
+            auto& expr = *deferStmt->expr;
             warnIfUnusedResult(expr, typecheckExpr(expr));
             break;
         }

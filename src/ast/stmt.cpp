@@ -57,7 +57,7 @@ Stmt* Stmt::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
     }
     case StmtKind::DeferStmt: {
         auto* deferStmt = llvm::cast<DeferStmt>(this);
-        return makeAST<DeferStmt>(deferStmt->expr->instantiate(genericArgs));
+        return makeAST<DeferStmt>(deferStmt->expr->instantiate(genericArgs), deferStmt->location);
     }
     case StmtKind::IfStmt: {
         auto* ifStmt = llvm::cast<IfStmt>(this);

@@ -1,0 +1,26 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct TopLevel {
+    int x;
+    // CHECK: [[@LINE+1]]:18: error: 'defer' is not allowed in constructors
+    TopLevel() { defer println("no"); x = 1; }
+}
+
+struct Nested {
+    int x;
+    Nested(bool b) {
+        x = 1;
+        if (b) {
+            // CHECK: [[@LINE+1]]:13: error: 'defer' is not allowed in constructors
+            defer println("no");
+        }
+    }
+}
+
+struct LambdaOk {
+    int x;
+    LambdaOk() {
+        x = 1;
+        var _f = () => { defer println("lambda scope is fine"); };
+    }
+}

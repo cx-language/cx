@@ -210,6 +210,7 @@ void main() {
 `defer` defers the execution of a statement to the exits of the current scope.
 This is useful for example when we need to perform some cleanup before returning.
 This avoids the mistake of forgetting to add necessary cleanup calls when we add a new return statement.
+`defer` is not allowed in constructors.
 
 ```cs
 int main() {

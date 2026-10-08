@@ -23,32 +23,11 @@ struct Chain {
     Chain() { init(1); c = C(2); }
 }
 
-// Deferred stores run after the delegation, whatever their position.
-struct DeferAfter {
-    C c;
-    DeferAfter(int x) { c = C(x); }
-    DeferAfter() { init(1); defer (c = C(9)); }
-}
-
-struct DeferBefore {
-    C c;
-    DeferBefore(int x) { c = C(x); }
-    DeferBefore() { defer (c = C(9)); init(1); }
-}
-
 // A target that may return early leaves the field untouched: no destroy.
 struct EarlyReturn {
     C c;
     EarlyReturn(int x) { if (x > 0) return; c = C(x); }
     EarlyReturn() { init(1); c = C(2); }
-}
-
-// Same for a defer initializing a field the target never builds.
-struct DeferInit {
-    C c;
-    int n;
-    DeferInit(int x) { n = x; c = undefined; }
-    DeferInit() { defer (c = C(9)); init(1); }
 }
 
 // Pre-init stores survive when the target never builds the field...
@@ -94,21 +73,6 @@ struct ReadBeforeInit {
     ReadBeforeInit() { c = C(0); println(c.i); init(1); }
 }
 
-// A return before the delegation runs the defers with the field unbuilt.
-struct ReturnDefer {
-    C c;
-    ReturnDefer(int x) { c = C(x); }
-    ReturnDefer(bool b) { defer (c = C(9)); if (b) return; init(1); }
-}
-
-// A defer between two delegations answers to the last target.
-struct DeferBetweenInits {
-    C c;
-    DeferBetweenInits(int x) { c = C(x); }
-    DeferBetweenInits(int x, int y) { c = undefined; }
-    DeferBetweenInits() { init(1); defer (c = C(9)); init(1, 2); }
-}
-
 // A target that undefines a defaulted field leaves nothing to destroy.
 struct UndefKillsDefault {
     C c = C(7);
@@ -138,26 +102,8 @@ void main() {
     }
     {
         deaths = 0;
-        DeferAfter s = DeferAfter();
-        println(s.c.i); // CHECK:9
-        println(deaths); // CHECK-NEXT:1
-    }
-    {
-        deaths = 0;
-        DeferBefore s = DeferBefore();
-        println(s.c.i); // CHECK:9
-        println(deaths); // CHECK-NEXT:1
-    }
-    {
-        deaths = 0;
         EarlyReturn s = EarlyReturn();
         println(s.c.i); // CHECK:2
-        println(deaths); // CHECK-NEXT:0
-    }
-    {
-        deaths = 0;
-        DeferInit s = DeferInit();
-        println(s.c.i); // CHECK:9
         println(deaths); // CHECK-NEXT:0
     }
     {
@@ -194,18 +140,6 @@ void main() {
         deaths = 0;
         ReadBeforeInit s = ReadBeforeInit(); // CHECK:0
         println(s.c.i); // CHECK-NEXT:1
-        println(deaths); // CHECK-NEXT:0
-    }
-    {
-        deaths = 0;
-        ReturnDefer s = ReturnDefer(true);
-        println(s.c.i); // CHECK:9
-        println(deaths); // CHECK-NEXT:0
-    }
-    {
-        deaths = 0;
-        DeferBetweenInits s = DeferBetweenInits();
-        println(s.c.i); // CHECK:9
         println(deaths); // CHECK-NEXT:0
     }
     {

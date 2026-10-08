@@ -81,10 +81,11 @@ struct ExprStmt : Stmt {
 };
 
 struct DeferStmt : Stmt {
-    DeferStmt(Expr* expr) : Stmt(StmtKind::DeferStmt), expr(expr) {}
+    DeferStmt(Expr* expr, Location location) : Stmt(StmtKind::DeferStmt), expr(expr), location(location) {}
     static bool classof(const Stmt* s) { return s->kind == StmtKind::DeferStmt; }
 
     Expr* expr;
+    Location location;
 };
 
 struct IfStmt : Stmt {

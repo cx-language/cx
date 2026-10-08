@@ -1310,8 +1310,9 @@ AstVector<Stmt*> Parser::parseBlockOrStmt(Decl* parent) {
 /// defer-stmt ::= 'defer' expr ('\n' | ';')
 DeferStmt* Parser::parseDeferStmt() {
     ASSERT(currentToken() == Token::Defer);
+    auto location = getCurrentLocation();
     consumeToken();
-    auto stmt = makeAST<DeferStmt>(parseExpr());
+    auto stmt = makeAST<DeferStmt>(parseExpr(), location);
     parseStmtTerminator();
     return stmt;
 }
