@@ -68,7 +68,7 @@ allocation for the closure:
 void main() {
     var numbers = List([0, 1, 2, 3, 4]);
     int threshold = 2;
-    println(numbers.filter(n => n >= threshold).toList()); // prints [2, 3, 4]
+    println(numbers.filter(n => n >= threshold)); // prints [2, 3, 4]
 }
 ```
 
@@ -83,7 +83,7 @@ such a result to a variable first to work with it mutably:
 ```cs
 void main() {
     const arr = [1, 2, 3];
-    println(arr.map(n => *n + 1).toList()); // prints [2, 3, 4]
+    println(arr.map(n => *n + 1)); // prints [2, 3, 4]
     // arr.map(n => { *n = 99; return *n; }); // error: cannot assign to constant
 }
 ```

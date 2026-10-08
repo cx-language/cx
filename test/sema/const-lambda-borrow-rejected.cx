@@ -58,10 +58,10 @@ void writeAfterToList() {
 void main() {
     // Reading through borrow parameters on constants keeps working.
     const arr = [1, 2, 3];
-    println(arr.map(n => *n + 1).toList());
-    println(arr.filter(n => *n > 1).toList());
-    println(arr.map(n => *n + 1).filter(n => *n > 2).toList());
-    println(T.DATA.map(n => *n + 1).toList());
+    println(arr.map(n => *n + 1));
+    println(arr.filter(n => *n > 1));
+    println(arr.map(n => *n + 1).filter(n => *n > 2));
+    println(T.DATA.map(n => *n + 1));
     // Writing through borrow parameters on mutable receivers keeps working
     // (warned, not rejected).
     var mut = [1, 2, 3];

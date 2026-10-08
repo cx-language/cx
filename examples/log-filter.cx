@@ -11,5 +11,5 @@ void main() {
         LogEntry(level = "INFO", message = "request handled"),
         LogEntry(level = "ERROR", message = "connection reset")
     ]);
-    println(logs.filter(e => e.level == "ERROR").map(e => e.message).toList());
+    println(logs.filter(e => e.level == "ERROR").map(e => e.message));
 }

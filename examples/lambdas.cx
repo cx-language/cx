@@ -11,9 +11,8 @@ void main() {
         Block(offset = 64, size = 128, isFree = true),
         Block(offset = 192, size = 32, isFree = true)
     ]);
-    var spare = blocks.filter(b => b.isFree).toList();
-    var sizes = spare.map(b => b.size).toList();
-    println(sizes.sum(), " bytes free");
+    var freeBytes = blocks.filter(b => b.isFree).map(b => b.size).sum();
+    println(freeBytes, " bytes free");
     int threshold = 100;
     // Stored lambdas capture locals by copy.
     var isBig = (Block b) => b.isFree && b.size >= threshold;

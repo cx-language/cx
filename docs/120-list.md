@@ -65,6 +65,7 @@ function pointers or lambda expressions.
 They are lazy: they return iterators that compute elements on demand,
 so chained operations only traverse the list once.
 Collect the results into a list with `toList()`.
+To just print the results, pass the iterator to `println` directly.
 
 ```cs
 bool isEven(int n) {
