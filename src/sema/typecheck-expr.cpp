@@ -3581,6 +3581,14 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr, Type targetType) {
         sourceType = sourceType.getPointee();
     }
 
+    // Only scalars (and integer-like enums) convert; anything else would
+    // reach codegen as an invalid bitcast. Optionals are enum-backed, so
+    // they need an explicit exclusion: unwrap first.
+    if (sourceType.isOptionalType()
+        || (!sourceType.isInteger() && !sourceType.isFloatingPoint() && !sourceType.isChar() && !sourceType.isBool() && !sourceType.isEnumType())) {
+        ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot convert '" << sourceType << "' to '" << targetType << "'");
+    }
+
     // A conversion written against a type parameter (e.g. `T(0)`) is only redundant for some
     // instantiations, so it never warns; only warn for conversions spelled with a concrete type.
     auto* calleeVar = llvm::dyn_cast<VarExpr>(expr.callee);

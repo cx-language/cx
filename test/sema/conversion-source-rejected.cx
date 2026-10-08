@@ -1,0 +1,34 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+void stringToInt() {
+    // CHECK: [[@LINE+1]]:13: error: cannot convert 'string' to 'int'
+    var i = int("hi");
+}
+
+void intToString() {
+    // CHECK: [[@LINE+1]]:13: error: no matching constructor 'string(int)'
+    var s = string(42);
+}
+
+void pointerToInt() {
+    int x = 42;
+    int* p = &x;
+    // CHECK: [[@LINE+1]]:13: error: cannot convert 'int*' to 'int'
+    var i = int(p);
+}
+
+void optionalToInt() {
+    int? o = 5;
+    // CHECK: [[@LINE+1]]:13: error: cannot convert 'int?' to 'int'
+    var i = int(o);
+}
+
+enum Color { Red, Green, Blue }
+
+void scalarConversionsPass() {
+    println(int(3.14));
+    println(float(7));
+    println(int('a'));
+    println(Color.Green);
+    println(int(Color.Blue));
+}
