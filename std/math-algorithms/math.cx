@@ -23,103 +23,103 @@ const float e = 2.71828182845904523536;
 // Trigonometric functions.
 
 /// Returns the sine of x.
-extern c_double sin(c_double x);
+extern double sin(double x);
 /// Returns the sine of x.
 float sin(float x) { return sinf(x); }
 
 /// Returns the cosine of x.
-extern c_double cos(c_double x);
+extern double cos(double x);
 /// Returns the cosine of x.
 float cos(float x) { return cosf(x); }
 
 /// Returns the tangent of x.
-extern c_double tan(c_double x);
+extern double tan(double x);
 /// Returns the tangent of x.
 float tan(float x) { return tanf(x); }
 
 /// Returns the arc sine of x.
-extern c_double asin(c_double x);
+extern double asin(double x);
 /// Returns the arc sine of x.
 float asin(float x) { return asinf(x); }
 
 /// Returns the arc cosine of x.
-extern c_double acos(c_double x);
+extern double acos(double x);
 /// Returns the arc cosine of x.
 float acos(float x) { return acosf(x); }
 
 /// Returns the arc tangent of x.
-extern c_double atan(c_double x);
+extern double atan(double x);
 /// Returns the arc tangent of x.
 float atan(float x) { return atanf(x); }
 
 /// Returns the arc tangent of y/x.
-extern c_double atan2(c_double y, c_double x);
+extern double atan2(double y, double x);
 /// Returns the arc tangent of y/x.
 float atan2(float y, float x) { return atan2f(y, x); }
 
 // Hyperbolic functions.
 
 /// Returns the hyperbolic sine of x.
-extern c_double sinh(c_double x);
+extern double sinh(double x);
 /// Returns the hyperbolic sine of x.
 float sinh(float x) { return sinhf(x); }
 
 /// Returns the hyperbolic cosine of x.
-extern c_double cosh(c_double x);
+extern double cosh(double x);
 /// Returns the hyperbolic cosine of x.
 float cosh(float x) { return coshf(x); }
 
 /// Returns the hyperbolic tangent of x.
-extern c_double tanh(c_double x);
+extern double tanh(double x);
 /// Returns the hyperbolic tangent of x.
 float tanh(float x) { return tanhf(x); }
 
 // Exponential and logarithmic functions.
 
 /// Returns e raised to the power x.
-extern c_double exp(c_double x);
+extern double exp(double x);
 /// Returns e raised to the power x.
 float exp(float x) { return expf(x); }
 
 /// Returns 2 raised to the power x.
-extern c_double exp2(c_double x);
+extern double exp2(double x);
 /// Returns 2 raised to the power x.
 float exp2(float x) { return exp2f(x); }
 
 /// Returns the natural logarithm of x.
-extern c_double log(c_double x);
+extern double log(double x);
 /// Returns the natural logarithm of x.
 float log(float x) { return logf(x); }
 
 /// Returns the base-2 logarithm of x.
-extern c_double log2(c_double x);
+extern double log2(double x);
 /// Returns the base-2 logarithm of x.
 float log2(float x) { return log2f(x); }
 
 /// Returns the base-10 logarithm of x.
-extern c_double log10(c_double x);
+extern double log10(double x);
 /// Returns the base-10 logarithm of x.
 float log10(float x) { return log10f(x); }
 
 // Power and root functions.
 
 /// Returns x raised to the power y.
-extern c_double pow(c_double x, c_double y);
+extern double pow(double x, double y);
 /// Returns x raised to the power y.
 float pow(float x, float y) { return powf(x, y); }
 
 /// Returns the square root of x.
-extern c_double sqrt(c_double x);
+extern double sqrt(double x);
 /// Returns the square root of x.
 float sqrt(float x) { return sqrtf(x); }
 
 /// Returns the cube root of x.
-extern c_double cbrt(c_double x);
+extern double cbrt(double x);
 /// Returns the cube root of x.
 float cbrt(float x) { return cbrtf(x); }
 
 /// Returns the square root of the sum of the squares of x and y.
-extern c_double hypot(c_double x, c_double y);
+extern double hypot(double x, double y);
 #if Windows
 /// Returns the square root of the sum of the squares of x and y.
 float hypot(float x, float y) { return _hypotf(x, y); }
@@ -131,27 +131,27 @@ float hypot(float x, float y) { return hypotf(x, y); }
 // Rounding and remainder functions.
 
 /// Rounds x up to an integer.
-extern c_double ceil(c_double x);
+extern double ceil(double x);
 /// Rounds x up to an integer.
 float ceil(float x) { return ceilf(x); }
 
 /// Rounds x down to an integer.
-extern c_double floor(c_double x);
+extern double floor(double x);
 /// Rounds x down to an integer.
 float floor(float x) { return floorf(x); }
 
 /// Rounds x toward zero to an integer.
-extern c_double trunc(c_double x);
+extern double trunc(double x);
 /// Rounds x toward zero to an integer.
 float trunc(float x) { return truncf(x); }
 
 /// Rounds x to the nearest integer.
-extern c_double round(c_double x);
+extern double round(double x);
 /// Rounds x to the nearest integer.
 float round(float x) { return roundf(x); }
 
 /// Returns the remainder of x/y.
-extern c_double fmod(c_double x, c_double y);
+extern double fmod(double x, double y);
 /// Returns the remainder of x/y.
 float fmod(float x, float y) { return fmodf(x, y); }
 

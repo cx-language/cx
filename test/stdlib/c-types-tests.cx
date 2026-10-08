@@ -79,7 +79,7 @@ void testFloats() {
 
 @test
 void testExternCalls() {
-    // The public math functions are C externs with c_double signatures.
+    // The public math functions take and return double; c_double converts implicitly.
     c_double r = sqrt(4.0);
     assert(r == 2.0);
     float64 s = sin(0.0);
