@@ -39,6 +39,10 @@ int runQueryProcess() {
     }
     std::string output = serializeJson(JsonValue(std::move(envelope)));
     std::fwrite(output.data(), 1, output.size(), stdout);
+    // Flush explicitly: the sanitizer exit path reports leaks without
+    // flushing stdio buffers, so the envelope above would otherwise be lost
+    // (the LSan gate reads it from this process's stdout).
+    std::fflush(stdout);
     return 0;
 }
 
@@ -93,6 +97,9 @@ int runLeakCheck(const char* filePath, int count) {
     // LSan report holds one-time allocations plus whatever the resets
     // failed to free, independent of retained-analysis size noise.
     session.dropCache();
+    // Flush explicitly, as in runQueryProcess above: the failure marker is
+    // printed to stdout, which the sanitizer exit path does not flush.
+    std::fflush(stdout);
     return failed ? 1 : 0;
 }
 
