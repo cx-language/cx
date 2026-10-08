@@ -1,0 +1,38 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+interface Box {
+    int value();
+}
+
+struct Holder {
+    int v = 0;
+    Box? getBox(Box? b) { return b; }
+}
+
+void plainInterface() {
+    const h = Holder();
+    Box? b = null;
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'getBox' on a constant: it returns 'Box?', which would alias frozen storage
+    var r = h.getBox(b);
+}
+
+// An interface extending Iterator still boxes an unknown implementation, so
+// the inline-lambda exemption (which binds borrows inside concrete
+// passthrough iterators) does not apply.
+interface FancyIter: Iterator<int> {
+    bool hasValue();
+    int value();
+    void increment();
+}
+
+struct IterHolder {
+    int v = 0;
+    FancyIter? get(FancyIter? it, bool(int&) pred) { return it; }
+}
+
+void iteratorInterface() {
+    const h = IterHolder();
+    FancyIter? it = null;
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'get' on a constant: it returns 'FancyIter?', which would alias frozen storage
+    var r = h.get(it, n => *n > 0);
+}

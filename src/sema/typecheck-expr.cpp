@@ -121,7 +121,7 @@ bool cx::typeMayAliasStorage(Type type) {
 bool cx::isFreshYieldingIterator(Type type) {
     if (!type) return false;
     auto* iterDecl = type.removeOptional().removePointer().getDecl();
-    if (!iterDecl || !iterDecl->implementsInterface("Iterator")) return false;
+    if (!iterDecl || iterDecl->isInterface() || !iterDecl->implementsInterface("Iterator")) return false;
     // Standard library only: same-module code can reach private fields, so a
     // user type with buffer-aliasing fields cannot prove its yields fresh.
     if (iterDecl->getModule() != Module::getStdlibModule()) return false;
@@ -4512,9 +4512,12 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             && !receiverType.removeOptional().isArrayPointer()) {
             Type declaredReturn = functionDecl->getFunctionType()->returnType;
             // A borrow, pointer, or view return aliases no matter the
-            // arguments; only iterator returns admit the lambda exemption.
-            if (Type strippedReturn = declaredReturn.removeOptional();
-                strippedReturn.isPointerOrArrayPointer() || strippedReturn.isSlice() || strippedReturn.isReferenceType()) {
+            // arguments; only iterator returns admit the lambda exemption. An
+            // interface boxes an unknown implementation, so it aliases too,
+            // and no lambda can bind borrows inside it.
+            auto* returnDecl = declaredReturn.removeOptional().removePointer().getDecl();
+            if (Type strippedReturn = declaredReturn.removeOptional(); strippedReturn.isPointerOrArrayPointer() || strippedReturn.isSlice()
+                                                                       || strippedReturn.isReferenceType() || (returnDecl && returnDecl->isInterface())) {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
                             "cannot call '" << expr.getFunctionName() << "' on a constant: it returns '" << declaredReturn
                                             << "', which would alias frozen storage");
