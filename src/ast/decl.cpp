@@ -372,6 +372,10 @@ bool TypeDecl::hasInterface(const TypeDecl& interface) const {
     return llvm::any_of(interfaces, [&](Type type) { return type.getDecl() == &interface; });
 }
 
+bool TypeDecl::implementsInterface(llvm::StringRef name) const {
+    return llvm::any_of(interfaces, [&](Type type) { return type.getName() == name; });
+}
+
 // In-progress isCopyable queries. Infinite-size types are already an error, but checking
 // continues after it, so field cycles must still terminate: re-entry answers non-copyable.
 static thread_local std::vector<const TypeDecl*> copyableQueries;

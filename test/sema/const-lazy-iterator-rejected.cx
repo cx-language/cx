@@ -1,0 +1,280 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+int evil(int& n) {
+    return *n;
+}
+
+bool allGood(int& n) {
+    return *n > 0;
+}
+
+void takesBorrow(int& x) {
+}
+
+void nuke(FilterIterator<int, ArrayIterator<int>, bool(int&)> it) {
+    for x in it {
+        *x = 0;
+    }
+}
+
+T ident<T>(T it) {
+    return it;
+}
+
+struct Evens: Iterator<int&> {
+    ArrayIterator<int> source;
+    Evens(ArrayIterator<int> source) { this.source = source; }
+    bool hasValue() { return this.source.hasValue(); }
+    int& value() { return this.source.value(); }
+    void increment() { this.source.increment(); }
+}
+
+struct Box {
+    int v = 0;
+    Evens evens(bool(int&) pred) {
+        var tmp = [1, 2, 3];
+        return Evens(tmp.iterator());
+    }
+}
+
+Evens makeEvens() {
+    const b = Box();
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'Evens' over a constant (collect with 'toList()' first)
+    return b.evens(n => *n > 0);
+}
+
+int& returnElement(int& fallback) {
+    const arr = [1, 2, 3];
+    for x in arr {
+        // CHECK: [[@LINE+1]]:16: error: cannot bind 'int&' to constant 'int' in return value
+        return x;
+    }
+    return fallback;
+}
+
+struct Wrapper {
+    int* p;
+}
+
+struct PtrBox {
+    int v = 0;
+    Wrapper get() { return Wrapper(&this.v); }
+}
+
+struct MappedIterator: Iterator<int&> {
+    ArrayIterator<int> source;
+    MappedIterator(ArrayIterator<int> source) { this.source = source; }
+    bool hasValue() { return this.source.hasValue(); }
+    int& value() { return this.source.value(); }
+    void increment() { this.source.increment(); }
+}
+
+struct FakeBox {
+    int[3] data = [1, 2, 3];
+    MappedIterator evens(bool(int&) pred) {
+        return MappedIterator(this.data.iterator());
+    }
+}
+
+void fill<T>(T it, T* out) {
+    *out = it;
+}
+
+extern void sink(int x, ...);
+
+void readSize(FilterIterator<int, ArrayIterator<int>, bool(int&)> it) {
+    var l = it.toList();
+    println(l.size());
+}
+
+T ident2<T>(T it) {
+    return it;
+}
+
+void readTwice(FilterIterator<int, ArrayIterator<int>, bool(int&)> it) {
+    var tmp = ident2(it);
+    for x in tmp {
+        println(*x);
+    }
+}
+
+void fillOnly(FilterIterator<int, ArrayIterator<int>, bool(int&)> it) {
+    var l = it.toList();
+    l[0] = 99;
+}
+
+void namedIterator() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:14: error: cannot call 'iterator' on a constant: it returns 'ArrayIterator<int>', which would alias frozen storage
+    var it = arr.iterator();
+}
+
+void namedCallback() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'map' on a constant with a non-lambda callback: pass an inline lambda so its borrows bind constant
+    var m = arr.map(evil);
+}
+
+void namedFilterCallback() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'filter' on a constant with a non-lambda callback: pass an inline lambda so its borrows bind constant
+    var f = arr.filter(allGood);
+}
+
+void namedFilterStored() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:13: error: cannot store 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant (collect with 'toList()' first)
+    var f = arr.filter(n => *n > 0);
+}
+
+void namedFilterAssigned() {
+    const arr = [1, 2, 3];
+    var mut = [4, 5, 6];
+    var f = mut.filter(n => *n > 0);
+    // CHECK: [[@LINE+1]]:9: error: cannot store 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant (collect with 'toList()' first)
+    f = arr.filter(n => *n > 0);
+}
+
+void passedToOpaqueCallee() {
+    const arr = [1, 2, 3];
+    var f = nuke;
+    // CHECK: [[@LINE+1]]:7: error: cannot pass 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant in argument #1 to 'f' (collect with 'toList()' first)
+    f(arr.filter(n => *n > 0));
+}
+
+void constructedChain() {
+    const b = Box();
+    var mut = [4, 5];
+    // CHECK: [[@LINE+1]]:75: error: cannot pass 'Evens' over a constant in argument #2 to 'ChainIterator' (collect with 'toList()' first)
+    var c = ChainIterator<int, ArrayIterator<int>, Evens>(mut.iterator(), b.evens(n => *n > 0));
+}
+
+void chainedValueCall() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'value' on a constant: it returns 'int&', which would alias frozen storage
+    var b = arr.filter(n => *n > 0).value();
+}
+
+void chainedNamedCallback() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'map' on a constant with a non-lambda callback: pass an inline lambda so its borrows bind constant
+    var m = arr.filter(n => *n > 0).map(evil);
+}
+
+void structPointerReturned() {
+    const b = PtrBox(41);
+    // CHECK: [[@LINE+1]]:13: error: cannot call 'get' on a constant: it returns 'Wrapper', which would alias frozen storage
+    var w = b.get();
+}
+
+void fakeMappedStored() {
+    const b = FakeBox();
+    // CHECK: [[@LINE+1]]:13: error: cannot store 'MappedIterator' over a constant (collect with 'toList()' first)
+    var m = b.evens(n => *n > 0);
+}
+
+void variadicExtra() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:13: error: cannot pass 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant in argument #2 to 'sink' (collect with 'toList()' first)
+    sink(0, arr.filter(n => *n > 0));
+}
+
+void elementDeclaredBorrow() {
+    const arr = [1, 2, 3];
+    for x in arr {
+        // CHECK: [[@LINE+1]]:18: error: cannot bind 'int&' to constant 'int'
+        int& r = x;
+    }
+}
+
+void elementBorrowPassed() {
+    const arr = [1, 2, 3];
+    for x in arr {
+        // CHECK: [[@LINE+1]]:21: error: cannot bind 'int&' to constant 'int' in argument #1 to 'takesBorrow'
+        takesBorrow(x);
+    }
+}
+
+void elementIncrement() {
+    const arr = [1, 2, 3];
+    for x in arr {
+        // CHECK: [[@LINE+1]]:10: error: cannot increment constant of type 'int'
+        (*x)++;
+    }
+}
+
+void elementCompoundAssign() {
+    const arr = [1, 2, 3];
+    for x in arr {
+        // CHECK: [[@LINE+1]]:9: error: cannot assign to constant expression of type 'int'
+        *x += 1;
+    }
+}
+
+void elementCaptured() {
+    const arr = [1, 2, 3];
+    for x in arr {
+        // CHECK: [[@LINE+1]]:17: error: cannot bind 'int&' to constant 'int'
+        var y = x;
+    }
+}
+
+void inlineLambdasPass() {
+    const arr = [1, 2, 3];
+    var m = arr.map(n => *n + 1);
+    var l = arr.map(n => *n + 1).toList();
+    println(l);
+    for x in arr.filter(n => *n > 0) {
+        println(*x);
+    }
+    for x in arr.map(n => *n + 1).toList() {
+        *x = 0;
+    }
+    for x in arr.filter(n => *n > 0).toList() {
+        *x = 0;
+    }
+    println(arr.filter(n => *n > 0));
+    const s = "hello";
+    println(s.bytes().toList());
+    for b in s.bytes() {
+        b = 5;
+    }
+    readSize(arr.filter(n => *n > 0));
+    readTwice(arr.filter(n => *n > 0));
+    fillOnly(arr.filter(n => *n > 0));
+}
+
+void mutableChainsPass() {
+    var mut = [1, 2, 3];
+    nuke(mut.filter(n => *n > 0));
+    var b = mut.filter(n => *n > 0).value();
+    *b = 99;
+    var p = &mut.filter(n => *n > 0).value();
+    *p = 99;
+    for x in mut {
+        var y = x;
+        *y = 99;
+    }
+    println(mut);
+}
+
+// Deferred to postProcess like mutating-method calls, so these report last.
+void passedToMutatingCall() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:10: error: cannot pass 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant in argument #1 to 'nuke' (collect with 'toList()' first)
+    nuke(arr.filter(n => *n > 0));
+}
+
+void passedToIdentity() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:19: error: cannot pass 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant in argument #1 to 'ident' (collect with 'toList()' first)
+    var x = ident(arr.filter(n => *n > 0));
+}
+
+void passedToOutPointer() {
+    const arr = [1, 2, 3];
+    var mut = [4, 5, 6];
+    var slot = mut.filter(n => *n > 0);
+    // CHECK: [[@LINE+1]]:10: error: cannot pass 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant in argument #1 to 'fill' (collect with 'toList()' first)
+    fill(arr.filter(n => *n > 0), &slot);
+}

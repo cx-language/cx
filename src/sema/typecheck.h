@@ -1,8 +1,11 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <optional>
+#include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseMap.h>
@@ -15,6 +18,7 @@
 #pragma warning(pop)
 #include "../ast/decl.h"
 #include "../ast/expr.h"
+#include "../ast/module.h"
 #include "../ast/stmt.h"
 #include "../build/config.h"
 #include "../driver/driver.h"
@@ -451,6 +455,33 @@ struct Typechecker {
     DeclSet definitelyAssignedDecls;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
+    // Method calls on constant receivers that passed the call-site checks:
+    // postProcess reports the ones whose callee may mutate its receiver (see
+    // const-mutation.cpp). Deferred because callee bodies check on demand.
+    // The caller guards against speculative re-checks: discarded bodies never
+    // reach Checked, and the drain skips them.
+    struct ConstReceiverCheck {
+        FunctionDecl* callee;
+        FunctionDecl* caller;
+        Location begin;
+        Location end;
+        std::string name;
+    };
+    std::vector<ConstReceiverCheck> pendingConstReceiverChecks;
+    // Lazy passthrough iterators over constants passed as call arguments: like
+    // receiver calls, the verdict waits for postProcess since callee bodies
+    // check on demand. Read-only callees (e.g. print) stay legal; only
+    // callees that may write through the parameter report.
+    struct ConstIteratorArgCheck {
+        FunctionDecl* callee;
+        size_t paramIndex;
+        FunctionDecl* caller;
+        Location begin;
+        Location end;
+        std::string name;
+        size_t argNumber;
+    };
+    std::vector<ConstIteratorArgCheck> pendingConstIteratorArgChecks;
     // Set while checking function signatures (parameters and return type).
     // Types mentioned there materialize no values, so their destructors must
     // not be demand-checked: values are dropped (and their destructors marked)
@@ -513,9 +544,46 @@ void diagnoseClosureConversion(Type source, Type target, const Expr& expr);
 std::string narrowingHint(Type source, Type target);
 // Whether the types alone would bind and only the source being a constant blocks forming the borrow.
 bool isBorrowOfConstant(const Expr& expr, Type source, Type target);
+// The type named after "to constant" in that diagnostic: the pointee when an
+// already-formed borrow is propagated, else the source itself.
+Type borrowOfConstantSubject(Type source, Type target);
+// Whether storing the value would launder a constant: a lazy passthrough
+// iterator derived from constant storage, which later reads would traverse
+// as mutable. Materialized results (mapped iterators, collected lists) and
+// for-in's own lowering are exempt.
+bool isStoredConstIterator(const Expr& init, Type type);
 // Whether the expression names frozen constant storage (a const binding or something derived from one).
 // followCalls also sees through method calls, whose results may alias receiver storage.
 bool exprIsConst(const Expr& expr, bool followCalls = false);
+// Whether a value of this type may alias other storage: a borrow, pointer, or
+// view, or a wrapper implementing Iterator (whose traversal borrows). Plain
+// structs and scalars own or copy their contents, so they cannot alias.
+bool typeMayAliasStorage(Type type);
+// Whether a value of this type may alias other storage, looking through
+// struct fields, fixed-array elements, and enum payloads. An owned List
+// counts only when its elements do; an interface counts as unknown.
+bool typeMayAliasStorageDeep(Type type);
+// Whether the type is a standard-library iterator whose yields are always
+// fresh copies: it implements Iterator, and every nullary value() declares a
+// non-borrow, non-view return (e.g. ByteIterator's uint8). Borrow-yielding
+// iterators (filters, maps) may designate source storage.
+bool isFreshYieldingIterator(Type type);
+// Shared cache for may-write queries: one per postProcess drain, so repeated
+// and overlapping call graphs analyze once. See const-mutation.cpp.
+struct ConstMutationQuery {
+    using Key = std::tuple<FunctionDecl*, bool, bool, std::vector<const Decl*>, std::vector<const Decl*>>;
+    std::map<Key, bool> cache;
+    std::set<Key> inProgress;
+};
+// Whether a method may mutate its receiver: its body (transitively) writes
+// through `this`, hands `this`-derived values to mutable channels, or calls
+// methods that do. Read-only methods return false, so calls on constants to
+// them stay legal. See const-mutation.cpp.
+bool methodMayMutateReceiver(FunctionDecl& method, ConstMutationQuery& query);
+// Whether a callee may write through one of its parameters or return it: the
+// parameter is a view root (a fresh wrapper, never the caller's own storage),
+// so only writes through it count, not the callee mutating its own temp copy.
+bool functionMayWriteThroughParam(FunctionDecl& func, const ParamDecl& param, ConstMutationQuery& query);
 // Explains why a type is not Copyable when a use fails because the value was moved.
 std::string copyableHint(Type type);
 // Whether a type satisfies a ': Copyable' generic constraint. Structural, not name-based.

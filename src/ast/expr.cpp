@@ -632,6 +632,7 @@ Expr* Expr::instantiateImpl(const llvm::StringMap<GenericArg>& genericArgs) cons
         auto callGenericArgs = mapAst(callExpr->genericArgs, [&](GenericArg arg) { return arg.resolve(genericArgs); });
         auto* newExpr = makeAST<CallExpr>(callee, std::move(args), std::move(callGenericArgs), callExpr->location);
         newExpr->endLocation = callExpr->endLocation;
+        newExpr->isForInLowering = callExpr->isForInLowering;
         return newExpr;
     }
     case ExprKind::SizeofExpr: {

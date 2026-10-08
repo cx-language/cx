@@ -231,7 +231,7 @@ static void collectAssignedNames(const Expr* condition, llvm::ArrayRef<Stmt*> bo
 static bool isIteratorType(Type type) {
     if (!type) return false;
     auto* typeDecl = type.removeOptional().removePointer().getDecl();
-    return typeDecl && llvm::any_of(typeDecl->interfaces, [](Type interface) { return interface.getName() == "Iterator"; });
+    return typeDecl && typeDecl->implementsInterface("Iterator");
 }
 
 void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
@@ -379,14 +379,18 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
 
     if (auto converted = convert(stmt.value, currentFunction->getReturnType())) {
         stmt.value = converted;
+        if (isStoredConstIterator(*stmt.value, currentFunction->getReturnType())) {
+            ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
+                        "cannot return '" << currentFunction->getReturnType() << "' over a constant (collect with 'toList()' first)");
+        }
     } else {
         diagnoseClosureConversion(returnValueType, currentFunction->getReturnType(), *stmt.value);
         Type displayReturn = currentFunction->getReturnType();
         if (isBorrowOfConstant(*stmt.value, returnValueType, currentFunction->getReturnType())) {
             // Binding a borrow is not a type mismatch; say what actually failed.
             ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
-                        "cannot bind '" << displayReturn << "' to constant '" << returnValueType << "' in return value"
-                                        << narrowingHint(returnValueType, displayReturn)
+                        "cannot bind '" << displayReturn << "' to constant '" << borrowOfConstantSubject(returnValueType, currentFunction->getReturnType())
+                                        << "' in return value" << narrowingHint(returnValueType, displayReturn)
                                         << ambiguousConversionHint(stmt.value, returnValueType, currentFunction->getReturnType()));
         } else {
             ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
@@ -1453,7 +1457,9 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
             }
             auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isForStmt(); });
             // The lowered ForStmt installs the loop-entry move snapshot.
-            stmt = forEachStmt->lower(nestLevel, exprIsConst(*forEachStmt->range));
+            // Call chains count: elements of `arr.filter(...)` alias frozen
+            // storage, while materializing calls such as toList() start fresh.
+            stmt = forEachStmt->lower(nestLevel, exprIsConst(*forEachStmt->range, /*followCalls=*/true));
             typecheckStmt(stmt);
             break;
         }

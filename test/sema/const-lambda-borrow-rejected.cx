@@ -47,11 +47,10 @@ void writeWithExplicitGenericArgs() {
 
 void writeAfterToList() {
     const arr = [1, 2, 3];
-    // Conservative overreach, locked in: toList() copies into fresh storage,
-    // so this write would be safe, but calls cannot tell aliasing results
-    // from fresh ones, so the chain still counts as constant-derived.
-    // Bind toList() to a variable first to write through it.
-    // CHECK: [[@LINE+1]]:42: error: cannot assign to constant expression of type 'int'
+    // toList() copies into fresh storage, so this write is safe: calls that
+    // cannot alias stop the constant-derived chain. Warned like any borrow
+    // parameter write, not rejected.
+    // CHECK: [[@LINE+1]]:42: warning: writing to reference parameter 'm' of type 'int&' hides the mutation from the call site; take 'int*' instead
     arr.map(n => *n).toList().map(m => { *m = 99; return *m; }).toList();
 }
 

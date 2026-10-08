@@ -319,6 +319,7 @@ struct TypeDecl : Decl {
     llvm::StringRef getName() const override { return name; }
     std::string getQualifiedName() const;
     bool hasInterface(const TypeDecl& interface) const;
+    bool implementsInterface(llvm::StringRef name) const;
     bool isCopyable() const;
     Location getLocation() const override { return location; }
     void addField(FieldDecl&& field);

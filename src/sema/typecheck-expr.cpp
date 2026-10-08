@@ -104,11 +104,40 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
 // writes to it are forbidden. Const comes only from bindings: VarDecl::isConst
 // (or a const lambda parameter) at the root (through member, index, unwrap,
 // and dereference chains) or a static constant named by the member itself.
-// followCalls additionally sees through method calls, whose results may alias
-// receiver storage; only callers that accept that over-approximation
-// (fresh-returning calls like toList() taint too) pass true. Generic inference
-// also calls this mid-typecheck, so untyped subexpressions (e.g.
-// static-member bases) read as non-const.
+// followCalls additionally sees through method calls whose results may alias
+// receiver storage; calls returning values that cannot alias (e.g. toList())
+// materialize fresh storage and stop the walk, as do fresh-yielding
+// iterators (e.g. bytes()). Generic inference also calls this mid-typecheck,
+// so untyped subexpressions (e.g. static-member bases) read as non-const,
+// and untyped calls keep following.
+bool cx::typeMayAliasStorage(Type type) {
+    if (!type) return false;
+    Type stripped = type.removeOptional();
+    if (stripped.isPointerOrArrayPointer() || stripped.isSlice() || stripped.isReferenceType()) return true;
+    auto* returnDecl = stripped.removePointer().getDecl();
+    return returnDecl && returnDecl->implementsInterface("Iterator");
+}
+
+bool cx::isFreshYieldingIterator(Type type) {
+    if (!type) return false;
+    auto* iterDecl = type.removeOptional().removePointer().getDecl();
+    if (!iterDecl || !iterDecl->implementsInterface("Iterator")) return false;
+    // Standard library only: same-module code can reach private fields, so a
+    // user type with buffer-aliasing fields cannot prove its yields fresh.
+    if (iterDecl->getModule() != Module::getStdlibModule()) return false;
+    bool found = false;
+    for (Decl* method : iterDecl->methods) {
+        auto* func = llvm::dyn_cast<FunctionDecl>(method);
+        if (!func || func->getName() != "value" || !func->getParams().empty()) continue;
+        found = true;
+        Type ret = func->getReturnType().removeOptional();
+        if (ret.isReferenceType() || ret.isPointerOrArrayPointer() || ret.isSlice()) return false;
+        if (ret.isInteger() || ret.isFloatingPoint() || ret.isChar() || ret.isBool()) continue;
+        if (!ret.removePointer().getDecl() || typeMayAliasStorageDeep(ret)) return false;
+    }
+    return found;
+}
+
 bool cx::exprIsConst(const Expr& expr, bool followCalls) {
     const Expr* current = &expr;
     while (true) {
@@ -123,6 +152,7 @@ bool cx::exprIsConst(const Expr& expr, bool followCalls) {
             if (!followCalls) return false;
             auto* call = llvm::cast<CallExpr>(current);
             if (!call->isMethodCall()) return false;
+            if (call->hasType() && (!typeMayAliasStorageDeep(call->type) || isFreshYieldingIterator(call->type))) return false;
             current = call->getReceiver();
             continue;
         }
@@ -730,7 +760,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     case Token::And: // Address-of operation
         // A borrow designates an object with an address, so `&` also accepts expressions
         // of borrow type (e.g. `&list.first()`), not just lvalues.
-        if (exprIsConst(expr.getOperand())) {
+        if (exprIsConst(expr.getOperand(), /*followCalls=*/true)) {
             if (auto* varOperand = llvm::dyn_cast<VarExpr>(&expr.getOperand())) {
                 ERROR_RANGE(getExprRangeStart(expr.getOperand()), expr.getOperand().endLocation,
                             "cannot take address of constant '" << varOperand->identifier << "'");
@@ -760,7 +790,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
         operandType = operandType.removePointer();
 
-        if (exprIsConst(expr.getOperand())) {
+        if (exprIsConst(expr.getOperand(), /*followCalls=*/true)) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot increment constant of type '" << operandType << "'");
         }
 
@@ -785,7 +815,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
         operandType = operandType.removePointer();
 
-        if (exprIsConst(expr.getOperand())) {
+        if (exprIsConst(expr.getOperand(), /*followCalls=*/true)) {
             ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot decrement constant of type '" << operandType << "'");
         }
 
@@ -1571,7 +1601,7 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
         }
     }
 
-    if (exprIsConst(*lhs)) {
+    if (exprIsConst(*lhs, /*followCalls=*/true)) {
         switch (lhs->kind) {
         case ExprKind::VarExpr: {
             auto identifier = llvm::cast<VarExpr>(lhs)->identifier;
@@ -1595,6 +1625,10 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
             ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign " << action << " type '" << displayType << "'");
         }
         }
+    }
+
+    if (isStoredConstIterator(*rhs, lhsType)) {
+        ERROR_RANGE(getExprRangeStart(*rhs), rhs->endLocation, "cannot store '" << lhsType << "' over a constant (collect with 'toList()' first)");
     }
 
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
@@ -2000,6 +2034,12 @@ static bool arraySizesMatch(Type source, Type target) {
 static bool allowsConstSource(const Expr* expr) {
     return !expr || !exprIsConst(*expr);
 }
+// True unless a borrow-typed expression designates constant storage, directly
+// or through a lazy call chain (e.g. `arr.filter(...).value()`): propagating
+// such a borrow would alias frozen storage mutably.
+static bool allowsConstBorrowSource(const Expr* expr) {
+    return !expr || !exprIsConst(*expr, /*followCalls=*/true);
+}
 static bool isReinterpretible(Type source, Type target) {
     if (source.isArrayType() && target.isArrayType()) {
         if (source.isFixedArray() != target.isFixedArray()) return false;
@@ -2130,7 +2170,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && target.isPointerType() && source.isReferenceType() == target.isReferenceType()
-        && (isReinterpretible(source.getPointee(), target.getPointee()) || target.getPointee().isVoid())) {
+        && (isReinterpretible(source.getPointee(), target.getPointee()) || target.getPointee().isVoid())
+        && (!target.isReferenceType() || allowsConstBorrowSource(expr))) {
         return source;
     }
 
@@ -2160,7 +2201,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     // The wrapped check below probes with a null expression, so the source's
     // constness wouldn't be seen: block a fixed array's decay to a mutable view here.
-    if (source.isOptionalType() && target.isOptionalType() && (!source.getWrappedType().isConcreteArray() || allowsConstSource(expr))) {
+    if (source.isOptionalType() && target.isOptionalType() && (!source.getWrappedType().isConcreteArray() || allowsConstSource(expr))
+        && (!target.getWrappedType().isReferenceType() || allowsConstBorrowSource(expr))) {
         // Only a no-op when the wrapped conversion needs no cast; nesting changes (e.g. `int?` to `int??`)
         // fall through to the wrap rule below.
         std::optional<ImplicitCastExpr::Kind> wrappedCastKind;
@@ -2965,7 +3007,36 @@ std::string cx::narrowingHint(Type source, Type target) {
 bool cx::isBorrowOfConstant(const Expr& expr, Type source, Type target) {
     // The types alone would bind; only the source being a constant blocks it.
     Type unwrapped = target.removeOptional();
-    return unwrapped.isReferenceType() && source == unwrapped.getPointee() && exprIsConst(expr);
+    if (!unwrapped.isReferenceType()) return false;
+    // An already-formed borrow derived from a constant through a lazy call
+    // chain (e.g. `arr.filter(...).value()`) aliases frozen storage.
+    if (source.removeOptional() == unwrapped) return exprIsConst(expr, /*followCalls=*/true);
+    return source == unwrapped.getPointee() && exprIsConst(expr);
+}
+
+Type cx::borrowOfConstantSubject(Type source, Type target) {
+    Type unwrapped = target.removeOptional();
+    if (unwrapped.isReferenceType() && source.removeOptional() == unwrapped) return unwrapped.getPointee();
+    return source;
+}
+
+bool cx::isStoredConstIterator(const Expr& init, Type type) {
+    // For-in lowering names its own iterator over a constant range; that
+    // binding is governed by element constness instead.
+    const Expr* unwrapped = &init;
+    while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(unwrapped))
+        unwrapped = cast->operand;
+    if (unwrapped->kind == ExprKind::CallExpr && llvm::cast<CallExpr>(unwrapped)->isForInLowering) return false;
+    if (!exprIsConst(init, /*followCalls=*/true)) return false;
+    auto* iterDecl = type.removeOptional().removePointer().getDecl();
+    if (!iterDecl) return false;
+    // MappedIterator materializes each output into its own field, so
+    // downstream writes cannot reach the source; passthrough iterators
+    // (filter, raw iterators) yield source borrows directly.
+    // Only the standard library's MappedIterator materializes each output into
+    // its own field; a same-named user type still traverses source storage.
+    if (iterDecl->getName() == "MappedIterator" && iterDecl->getModule() == Module::getStdlibModule()) return false;
+    return iterDecl->implementsInterface("Iterator");
 }
 
 bool cx::satisfiesCopyable(Type type) {
@@ -4350,6 +4421,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             typecheckExpr(*expr.args[0].value);
 
             if (expr.isMoveInit()) {
+                // Reinitializing a constant would replace frozen storage; bare
+                // `init(...)` is constructor delegation on fresh storage.
+                if (expr.isMethodCall() && exprIsConst(*expr.getReceiver())) {
+                    ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "cannot call 'init' on a constant: it mutates the receiver");
+                }
                 // Placement initialization moves out of raw container storage, which has
                 // no owner to double-destroy, so borrow/dereference moves stay allowed here.
                 llvm::SaveAndRestore saveInMoveInit(inMoveInit, true);
@@ -4416,17 +4492,56 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         // A borrow, pointer, or view into a const receiver would alias frozen
-        // storage mutably, so calls returning one are rejected. Concrete wrapper
-        // returns (e.g. iterators) have no channel to check and still launder.
-        // Slice and array-pointer receivers are exempt: a constant view only
-        // ever shares temporary backing, never a constant's own storage.
+        // storage mutably, so calls returning one are rejected, as are calls
+        // returning structs that hold them. Passthrough iterator returns alias
+        // too; they stay legal only with an inline lambda argument, whose
+        // borrows bind constant. Fresh-yielding iterators (e.g. bytes) copy
+        // each element out, so they need no lambda. Slice and array-pointer
+        // receivers are exempt: a constant view only ever shares temporary
+        // backing, never a constant's own storage.
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
-            functionDecl && exprIsConst(*expr.getReceiver()) && !receiverType.removeOptional().isSlice() && !receiverType.removeOptional().isArrayPointer()) {
+            functionDecl && !expr.isForInLowering && exprIsConst(*expr.getReceiver(), /*followCalls=*/true) && !receiverType.removeOptional().isSlice()
+            && !receiverType.removeOptional().isArrayPointer()) {
             Type declaredReturn = functionDecl->getFunctionType()->returnType;
-            if (Type stripped = declaredReturn.removeOptional(); stripped.isPointerOrArrayPointer() || stripped.isSlice() || stripped.isReferenceType()) {
+            // A borrow, pointer, or view return aliases no matter the
+            // arguments; only iterator returns admit the lambda exemption.
+            if (Type strippedReturn = declaredReturn.removeOptional();
+                strippedReturn.isPointerOrArrayPointer() || strippedReturn.isSlice() || strippedReturn.isReferenceType()) {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
                             "cannot call '" << expr.getFunctionName() << "' on a constant: it returns '" << declaredReturn
                                             << "', which would alias frozen storage");
+            }
+            bool returnsIterator = typeMayAliasStorage(declaredReturn);
+            if (!returnsIterator && typeMayAliasStorageDeep(declaredReturn)) {
+                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                            "cannot call '" << expr.getFunctionName() << "' on a constant: it returns '" << declaredReturn
+                                            << "', which would alias frozen storage");
+            }
+            auto unwrapArg = [](const NamedValue& arg) {
+                const Expr* value = arg.value;
+                while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(value))
+                    value = cast->operand;
+                return value;
+            };
+            bool hasInlineLambda = llvm::any_of(expr.args, [&](const NamedValue& arg) { return llvm::isa<LambdaExpr>(unwrapArg(arg)); });
+            if (returnsIterator && !isFreshYieldingIterator(declaredReturn) && !hasInlineLambda) {
+                bool hasCallableArg = llvm::any_of(expr.args, [&](const NamedValue& arg) {
+                    const Expr* value = unwrapArg(arg);
+                    return value->hasType() && value->type.isFunctionType();
+                });
+                if (hasCallableArg) {
+                    ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                                "cannot call '" << expr.getFunctionName()
+                                                << "' on a constant with a non-lambda callback: pass an inline lambda so its borrows bind constant");
+                }
+                ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                            "cannot call '" << expr.getFunctionName() << "' on a constant: it returns '" << declaredReturn
+                                            << "', which would alias frozen storage");
+            }
+            // Calls returning no alias may still mutate the receiver; the
+            // verdict waits for postProcess since callee bodies check on demand.
+            if (!overloadProbe) {
+                pendingConstReceiverChecks.push_back({functionDecl, currentFunction, getExprRangeStart(expr), expr.endLocation, expr.getFunctionName().str()});
             }
         }
 
@@ -4671,8 +4786,9 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         if (isBorrowOfConstant(*arg.value, arg.value->type, param.type)) {
             // Binding a borrow is not a type mismatch; say what actually failed.
             ERROR_WITH_NOTES_RANGE(getExprRangeStart(*arg.value), arg.value->endLocation, std::move(declNote),
-                                   "cannot bind '" << param.type << "' to constant '" << arg.value->type << "' in argument #" << (argIndex + 1) << " to '"
-                                                   << callee << "'" << narrowingHint(arg.value->type, param.type)
+                                   "cannot bind '" << param.type << "' to constant '" << borrowOfConstantSubject(arg.value->type, param.type)
+                                                   << "' in argument #" << (argIndex + 1) << " to '" << callee << "'"
+                                                   << narrowingHint(arg.value->type, param.type)
                                                    << ambiguousConversionHint(arg.value, arg.value->type, param.type));
         } else {
             ERROR_WITH_NOTES_RANGE(getExprRangeStart(*arg.value), arg.value->endLocation, std::move(declNote),
@@ -4706,6 +4822,13 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                 else if (isExternCallee)
                     validateCVariadicExtra(extraType, *expr.args[i].value);
                 dropNarrowingForAddressArg(*expr.args[i].value, extraType);
+                // Extras have no parameter to analyze; an opaque callee cannot
+                // be proven read-only.
+                if (!overloadProbe && isStoredConstIterator(*expr.args[i].value, extraType)) {
+                    ERROR_WITH_NOTES_RANGE(getExprRangeStart(*expr.args[i].value), expr.args[i].value->endLocation, std::move(declNote),
+                                           "cannot pass '" << extraType << "' over a constant in argument #" << (i + 1) << " to '" << callee
+                                                           << "' (collect with 'toList()' first)");
+                }
                 continue;
             }
             // Committing can still fail when probing succeeded (e.g. a user conversion whose
@@ -4720,6 +4843,21 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                 if (auto* refCast = llvm::dyn_cast<ImplicitCastExpr>(converted);
                     paramType.isReferenceType() && refCast && refCast->castKind == ImplicitCastExpr::AutoReference) {
                     if (auto* argVar = llvm::dyn_cast<VarExpr>(refCast->operand); argVar && argVar->decl) taintDeinitPtrTarget(argVar->decl);
+                }
+                if (isStoredConstIterator(*converted, paramType) && !overloadProbe) {
+                    // The callee is genuinely mutable; the const only guards this probe path.
+                    auto* functionCallee = const_cast<FunctionDecl*>(llvm::dyn_cast_or_null<FunctionDecl>(calleeDecl));
+                    if (functionCallee && !llvm::isa<ConstructorDecl>(functionCallee)) {
+                        // The verdict waits for postProcess since callee bodies check on demand.
+                        pendingConstIteratorArgChecks.push_back({functionCallee, size_t(paramIndex), currentFunction, getExprRangeStart(*converted),
+                                                                 converted->endLocation, functionCallee->getName().str(), i + 1});
+                    } else {
+                        // Constructors store the argument into the product, and opaque
+                        // callees (function values) cannot be proven read-only.
+                        ERROR_WITH_NOTES_RANGE(getExprRangeStart(*converted), converted->endLocation, std::move(declNote),
+                                               "cannot pass '" << paramType << "' over a constant in argument #" << (i + 1) << " to '" << callee
+                                                               << "' (collect with 'toList()' first)");
+                    }
                 }
             } else {
                 reportInvalidType(i);

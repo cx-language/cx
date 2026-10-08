@@ -2246,7 +2246,8 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
             if (isBorrowOfConstant(*decl.initializer, initializerType, declaredType)) {
                 // Initializing a borrow binds it; "assign" misdescribes what failed.
                 ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
-                            "cannot bind '" << declaredType << "' to constant '" << initializerType << "'" << narrowingHint(initializerType, declaredType)
+                            "cannot bind '" << declaredType << "' to constant '" << borrowOfConstantSubject(initializerType, declaredType) << "'"
+                                            << narrowingHint(initializerType, declaredType)
                                             << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
             } else {
                 ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
@@ -2285,6 +2286,28 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     } else if (decl.type.storesBorrow() && !(decl.isForLoopElement && decl.type.isReferenceType()) && !explicitLocalBorrow && !inferredBorrow) {
         ERROR(decl.getLocation(),
               "reference type '" << decl.type << "' may only appear as a function parameter, return type, local variable, or interface argument");
+    }
+
+    if (isStoredConstIterator(*decl.initializer, decl.type)) {
+        ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
+                    "cannot store '" << decl.type << "' over a constant (collect with 'toList()' first)");
+    }
+
+    // Inference copies the type without converting, so an inferred borrow of
+    // constant storage (e.g. `arr.filter(...).value()`) needs its own check;
+    // declared borrows fail conversion above. For-loop elements mirror
+    // constness instead, so reads over constants stay legal.
+    if (!declaredType && decl.type.isBorrowOrOptionalBorrow() && !decl.isForLoopElement && exprIsConst(*decl.initializer, /*followCalls=*/true)) {
+        ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
+                    "cannot bind '" << decl.type << "' to constant '" << borrowOfConstantSubject(decl.type, decl.type) << "'");
+    }
+
+    // A view-typed local initialized from constant storage mirrors constness
+    // like for-loop elements do: reads stay legal, mutating calls reject.
+    if (!decl.isConst && !decl.isGlobal() && !decl.isForLoopElement && !decl.isImplicitlyBound && decl.initializer && typeMayAliasStorageDeep(decl.type)
+        && exprIsConst(*decl.initializer, /*followCalls=*/true)) {
+        decl.isConst = true;
+        decl.isImplicitlyBound = true;
     }
 
     if (!isArrayBorrow(decl.initializer->type, decl.type)) {

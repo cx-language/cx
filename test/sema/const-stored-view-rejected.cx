@@ -1,0 +1,22 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct S {
+    string name;
+    int count;
+}
+
+void storedViewWrite() {
+    const s = S("hello", 42);
+    var t = s.name;
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'data' on a constant: it returns 'char[*]', which would alias frozen storage
+    t.data()[0] = 'X';
+}
+
+void storedViewStaysReadable() {
+    const s = S("hello", 42);
+    var t = s.name;
+    println(t);
+    var u = s.count;
+    u = 7;
+    println(u);
+}

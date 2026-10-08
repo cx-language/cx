@@ -1,0 +1,116 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct Counter {
+    int count = 0;
+    void bump() { this.count = this.count + 1; }
+    void bumpBare() { count = count + 1; }
+    void bumpTwice() { this.bump(); this.bump(); }
+    void reset() { this.count = 0; }
+    void tick() { this.count++; }
+    void add(int n) { this.count += n; }
+    void badRecurse() {
+        this.count = this.count - 1;
+        if (this.count > 0) {
+            this.badRecurse();
+        }
+    }
+    int read() { return this.count; }
+    int compute() { return this.read() + 1; }
+}
+
+void fill(int* p) {
+    *p = 1;
+}
+
+struct Box {
+    int v = 0;
+    void poke() { fill(&this.v); }
+    int get() { return this.v; }
+}
+
+void direct() {
+    const c = Counter();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'bump' on a constant: it mutates the receiver
+    c.bump();
+}
+
+void bareField() {
+    const c = Counter();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'bumpBare' on a constant: it mutates the receiver
+    c.bumpBare();
+}
+
+void transitive() {
+    const c = Counter();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'bumpTwice' on a constant: it mutates the receiver
+    c.bumpTwice();
+}
+
+void compoundAndInc() {
+    const c = Counter();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'reset' on a constant: it mutates the receiver
+    c.reset();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'tick' on a constant: it mutates the receiver
+    c.tick();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'add' on a constant: it mutates the receiver
+    c.add(2);
+}
+
+void recursive() {
+    const c = Counter();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'badRecurse' on a constant: it mutates the receiver
+    c.badRecurse();
+}
+
+void borrowEscape() {
+    const b = Box();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'poke' on a constant: it mutates the receiver
+    b.poke();
+}
+
+void reinit() {
+    const c = Counter();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'init' on a constant: it mutates the receiver
+    c.init(Counter(5));
+}
+
+void readsPass() {
+    const c = Counter(41);
+    println(c.read());
+    println(c.compute());
+    println(c);
+    const b = Box();
+    println(b.get());
+}
+
+struct Inner {
+    int v = 0;
+    void bump() { v++; }
+}
+
+void shake(Inner& i) { i.bump(); }
+
+struct Outer {
+    Inner inner;
+    void g() { shake(inner); }
+}
+
+void borrowParamPropagates() {
+    const o = Outer(Inner(0));
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'g' on a constant: it mutates the receiver
+    o.g();
+}
+
+struct LitBox {
+    int[3] data = [1, 2, 3];
+    void g() {
+        var w = [&data[0]];
+        *(w[0]) = 99;
+    }
+}
+
+void literalSmuggle() {
+    const o = LitBox();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'g' on a constant: it mutates the receiver
+    o.g();
+}

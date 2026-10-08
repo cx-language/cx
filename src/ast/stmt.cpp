@@ -150,19 +150,28 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
     Expr* iteratorValue;
     Type rangeBaseType = range->type.removePointer();
     auto* rangeTypeDecl = rangeBaseType.getDecl();
-    bool isIterator = rangeTypeDecl && llvm::any_of(rangeTypeDecl->interfaces, [](Type interface) { return interface.getName() == "Iterator"; });
+    bool isIterator = rangeTypeDecl && rangeTypeDecl->implementsInterface("Iterator");
 
     if (isIterator) {
         iteratorValue = range;
+        // A call range reused directly still feeds the lowering, so the
+        // const-iterator storage check exempts it like the synthesized call.
+        // Lowering only runs for cleanly checked ranges, so rechecks agree.
+        if (range->kind == ExprKind::CallExpr) llvm::cast<CallExpr>(range)->isForInLowering = true;
     } else {
         auto iteratorMemberExpr = makeAST<MemberExpr>(range, "iterator", location);
         iteratorMemberExpr->endLocation = range->endLocation;
-        iteratorValue = makeAST<CallExpr>(iteratorMemberExpr, AstVector<NamedValue>(), AstVector<GenericArg>(), location);
-        iteratorValue->endLocation = range->endLocation;
+        auto iteratorCall = makeAST<CallExpr>(iteratorMemberExpr, AstVector<NamedValue>(), AstVector<GenericArg>(), location);
+        iteratorCall->endLocation = range->endLocation;
+        iteratorCall->isForInLowering = true;
+        iteratorValue = iteratorCall;
     }
 
     auto iteratorVarDecl =
         makeAST<VarDecl>(Type(nullptr, location), iteratorVariableName, iteratorValue, variable->parent, AccessLevel::None, *variable->getModule(), location);
+    // A synthesized temp, not user storage: exempt from const-view mirroring
+    // so increment() keeps working over constant ranges.
+    iteratorVarDecl->isImplicitlyBound = true;
     auto iteratorVarStmt = makeAST<VarStmt>(AstVector<VarDecl*>{iteratorVarDecl});
 
     std::string indexCounterName;

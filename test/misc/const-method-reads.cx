@@ -1,0 +1,35 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Counter {
+    int count = 0;
+    int read() { return this.count; }
+    int compute() { return this.read() + 1; }
+    int sum() {
+        var total = 0;
+        for x in this.arr() {
+            total = total + *x;
+        }
+        return total;
+    }
+    int[3] arr() { return [this.count, this.count + 1, this.count + 2]; }
+}
+
+void main() {
+    const c = Counter(41);
+    println(c.read()); // CHECK:41
+    println(c.compute()); // CHECK-NEXT:42
+    println(c.sum()); // CHECK-NEXT:126
+    const arr = [1, 2, 3];
+    println(arr.size()); // CHECK-NEXT:3
+    var total = 0;
+    for x in arr {
+        total = total + *x;
+    }
+    println(total); // CHECK-NEXT:6
+    println(arr.map(n => *n * 2).toList()); // CHECK-NEXT:{{\[}}2, 4, 6{{\]}}
+    const s = "hello";
+    println(s.size()); // CHECK-NEXT:5
+    println(s.contains('e')); // CHECK-NEXT:true
+    println(s); // CHECK-NEXT:hello
+}

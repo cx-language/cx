@@ -279,6 +279,10 @@ struct CallExpr : Expr {
     Type receiverType;
     Decl* calleeDecl;
     bool builtinConversion = false;
+    // True for the `range.iterator()` call synthesized by for-in lowering: not
+    // user code, so const-receiver checks (which would reject the aliasing
+    // iterator) do not apply. Element constness still flows from the range.
+    bool isForInLowering = false;
     // Maps each arg to its parameter index, or -1 for variadic extras. Filled by typechecking.
     // Args stay in written order so they evaluate in argument order; backends reorder via this mapping.
     AstVector<int> argParamIndices;

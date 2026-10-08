@@ -24,6 +24,24 @@ reassigned or mutated afterwards. Reading or copying a constant's value
 always works, but no alias to it can be formed: taking its address and
 binding it to a borrow, pointer, or view are all rejected.
 
+The same rule applies to method calls. Calling a method that may mutate its
+receiver (the compiler infers this from the method body, transitively) on a
+constant is rejected, as is reinitializing a constant with `init`. Read-only
+methods keep working, including `size`, element reads, printing, and
+iteration. Lazily evaluated calls (`map`, `filter`, `iterator`) are rejected
+on constants unless given an inline lambda, whose borrows bind constant.
+Storing a lazily evaluated passthrough iterator (such as a filter) over a
+constant in a variable is rejected too, since later uses would traverse it
+as mutable; `map` results are exempt because each output is materialized
+into the iterator itself. The same goes for passing such an iterator to a
+function that may write through it or return it, and for returning one.
+Binding a borrow produced anywhere along a lazy chain over a constant is
+rejected as well. Use `toList` to collect a fresh, mutable copy first; reads
+such as printing a filter keep working, with or without collecting.
+A variable initialized from a constant with a view type (such as a string
+or slice member) becomes constant itself: reads keep working but mutating
+calls on it are rejected, like for-loop elements over a constant range.
+
 `const` only appears at the start of a constant declaration; it never
 appears in types. There is no `const T*`: pointers, borrows, and views
 are always mutable, and `const`-qualified C types import as their mutable

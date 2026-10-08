@@ -1,4 +1,5 @@
 #include "typecheck.h"
+#include <algorithm>
 #include <memory>
 #include <system_error>
 #pragma warning(push, 0)
@@ -267,6 +268,53 @@ void Typechecker::postProcess() {
             }
         }
     }
+
+    // All reachable bodies are checked now; report const-receiver calls to
+    // mutating methods. Re-checks record the same call twice, so deduplicate;
+    // calls from discarded bodies (never Checked) are speculative noise.
+    std::sort(pendingConstReceiverChecks.begin(), pendingConstReceiverChecks.end(), [](const ConstReceiverCheck& a, const ConstReceiverCheck& b) {
+        if (a.callee != b.callee) return a.callee < b.callee;
+        if (a.begin.line != b.begin.line) return a.begin.line < b.begin.line;
+        return a.begin.column < b.begin.column;
+    });
+    pendingConstReceiverChecks.erase(std::unique(pendingConstReceiverChecks.begin(), pendingConstReceiverChecks.end(),
+                                                 [](const ConstReceiverCheck& a, const ConstReceiverCheck& b) {
+                                                     return a.callee == b.callee && a.begin.line == b.begin.line && a.begin.column == b.begin.column;
+                                                 }),
+                                     pendingConstReceiverChecks.end());
+    ConstMutationQuery constMutationQuery;
+    for (auto& check : pendingConstReceiverChecks) {
+        if (check.caller && check.caller->checkState != Decl::CheckState::Checked) continue;
+        if (check.callee->checkState != Decl::CheckState::Checked) continue;
+        if (methodMayMutateReceiver(*check.callee, constMutationQuery)) {
+            REPORT_ERROR_RANGE(check.begin, check.end, "cannot call '" << check.name << "' on a constant: it mutates the receiver");
+        }
+    }
+    pendingConstReceiverChecks.clear();
+
+    // Same for constant-derived iterators passed as arguments; only callees
+    // that may write through the parameter report, so reads (e.g. print) pass.
+    std::sort(pendingConstIteratorArgChecks.begin(), pendingConstIteratorArgChecks.end(), [](const ConstIteratorArgCheck& a, const ConstIteratorArgCheck& b) {
+        if (a.callee != b.callee) return a.callee < b.callee;
+        if (a.begin.line != b.begin.line) return a.begin.line < b.begin.line;
+        return a.begin.column < b.begin.column;
+    });
+    pendingConstIteratorArgChecks.erase(std::unique(pendingConstIteratorArgChecks.begin(), pendingConstIteratorArgChecks.end(),
+                                                    [](const ConstIteratorArgCheck& a, const ConstIteratorArgCheck& b) {
+                                                        return a.callee == b.callee && a.begin.line == b.begin.line && a.begin.column == b.begin.column;
+                                                    }),
+                                        pendingConstIteratorArgChecks.end());
+    for (auto& check : pendingConstIteratorArgChecks) {
+        if (check.caller && check.caller->checkState != Decl::CheckState::Checked) continue;
+        if (check.callee->checkState != Decl::CheckState::Checked) continue;
+        const ParamDecl& param = check.callee->getParams()[check.paramIndex];
+        if (functionMayWriteThroughParam(*check.callee, param, constMutationQuery)) {
+            REPORT_ERROR_RANGE(check.begin, check.end,
+                               "cannot pass '" << param.type << "' over a constant in argument #" << check.argNumber << " to '" << check.name
+                                               << "' (collect with 'toList()' first)");
+        }
+    }
+    pendingConstIteratorArgChecks.clear();
 }
 
 static void checkUnusedDeclsInModule(const Module& module) {

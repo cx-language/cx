@@ -37,6 +37,22 @@ void addressConstElement() {
     }
 }
 
+void writeFilteredConstElement() {
+    const arr = [1, 2, 3];
+    for x in arr.filter(n => *n > 0) {
+        // CHECK: [[@LINE+1]]:9: error: cannot assign to constant expression of type 'int'
+        *x = 9;
+    }
+}
+
+void writeMappedConstElement() {
+    const arr = [1, 2, 3];
+    for x in arr.map(n => *n + 1) {
+        // CHECK: [[@LINE+1]]:9: error: cannot assign to constant expression of type 'int'
+        *x = 9;
+    }
+}
+
 void main() {
     const arr = [1, 2, 3];
     for x in arr {
