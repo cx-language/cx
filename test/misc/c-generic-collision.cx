@@ -1,0 +1,15 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+import "inputs/c-box-collision.h";
+
+int use(Box<int> b) { return *b.get(); }
+
+void main() {
+    var b = Box(value = 1);
+    println(use(b)); // CHECK:1
+    var n = Box(value = Box(value = 2));
+    println(*n.get().get()); // CHECK-NEXT:2
+    var c = Box(y = 5);
+    println(c.y); // CHECK-NEXT:5
+}

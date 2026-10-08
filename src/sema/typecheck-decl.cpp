@@ -36,7 +36,8 @@ static bool allowsBorrowArgs(Decl* decl) {
 }
 
 // Finds the type template to instantiate for a generic type name. A same-named function
-// doesn't prevent using the type in type position.
+// doesn't prevent using the type in type position; neither does a same-named
+// concrete type (e.g. an imported C struct), since arity disambiguates.
 static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*> decls) {
     decls.erase(std::remove_if(decls.begin(), decls.end(), [](Decl* d) { return !d->isTypeTemplate() && !d->isTypeDecl(); }), decls.end());
 
@@ -44,7 +45,9 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
         ERROR_RANGE(type.location, type.endLocation, "'" << type << "' is not a type");
     }
 
-    if (!decls[0]->isTypeTemplate()) {
+    decls.erase(std::remove_if(decls.begin(), decls.end(), [](Decl* d) { return !d->isTypeTemplate(); }), decls.end());
+
+    if (decls.empty()) {
         ERROR_RANGE(type.location, type.endLocation, "too many generic arguments to '" << type.getName() << "', expected 0");
     }
 

@@ -111,7 +111,9 @@ Imported functions are called like ordinary cx functions.
 An imported struct, union, or enum shares its name with any cx type of the
 same spelling, so defining both is a redefinition error; use the imported
 type from all files instead of defining a second one. An empty struct or union
-is exempt as an opaque placeholder for the imported type.
+is exempt as an opaque placeholder for the imported type. A generic cx type
+is a different spelling, so it coexists with a same-named import: argument
+count picks the template when arguments are present.
 Memory allocation functions work the same way:
 
 ```cs
