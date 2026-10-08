@@ -71,7 +71,16 @@ def check_fixture_clean(cx_lsp, path):
         stderr=subprocess.PIPE,
         timeout=600,
     )
-    envelope = json.loads(proc.stdout.decode())
+    try:
+        envelope = json.loads(proc.stdout.decode())
+    except json.JSONDecodeError:
+        # --query always prints one JSON envelope, so unparseable stdout
+        # means the binary crashed or failed to start; surface its output
+        # instead of a bare traceback.
+        print(f"fixture query produced no JSON (exit code {proc.returncode})")
+        print(f"--- stdout ---\n{proc.stdout.decode(errors='replace')[-2000:]}")
+        print(f"--- stderr ---\n{proc.stderr.decode(errors='replace')[-4000:]}")
+        return False
     if not envelope.get("ok"):
         print(f"fixture query failed: {envelope.get('error')}")
         return False
