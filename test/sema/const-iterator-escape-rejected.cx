@@ -1,0 +1,47 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct Cache {
+    FilterIterator<int, ArrayIterator<int>, bool(int&)>? saved = null;
+    void store(FilterIterator<int, ArrayIterator<int>, bool(int&)> it) {
+        saved = it;
+    }
+}
+
+void storedIntoField() {
+    const arr = [1, 2, 3];
+    var c = Cache();
+    // CHECK: [[@LINE+1]]:13: error: cannot pass 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant in argument #1 to 'store' (collect with 'toList()' first)
+    c.store(arr.filter(n => *n > 0));
+}
+
+FilterIterator<int, ArrayIterator<int>, bool(int&)>? dropped = null;
+
+void stash(FilterIterator<int, ArrayIterator<int>, bool(int&)> it) {
+    dropped = it;
+}
+
+void storedIntoGlobal() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:11: error: cannot pass 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant in argument #1 to 'stash' (collect with 'toList()' first)
+    stash(arr.filter(n => *n > 0));
+}
+
+FilterIterator<int, ArrayIterator<int>, bool(int&)> passthru(FilterIterator<int, ArrayIterator<int>, bool(int&)> it) {
+    return it;
+}
+
+void returnedFromCallee() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:22: error: cannot pass 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant in argument #1 to 'passthru' (collect with 'toList()' first)
+    var r = passthru(arr.filter(n => *n > 0));
+}
+
+void middle(FilterIterator<int, ArrayIterator<int>, bool(int&)> it) {
+    stash(it);
+}
+
+void escapedTransitively() {
+    const arr = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:12: error: cannot pass 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' over a constant in argument #1 to 'middle' (collect with 'toList()' first)
+    middle(arr.filter(n => *n > 0));
+}
