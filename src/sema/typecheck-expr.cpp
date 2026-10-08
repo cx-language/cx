@@ -502,6 +502,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
             llvm::SaveAndRestore saveModule(currentModule);
             llvm::SaveAndRestore saveFile(currentSourceFile);
             setDeclContext(*varDecl);
+            llvm::SaveAndRestore saveOptions(options, packageOptionsFor(*varDecl));
             typecheckVarDecl(*varDecl);
         }
         if (!useIsWriteOnly) checkNotMoved(*decl, expr);
@@ -1829,6 +1830,128 @@ static int getFloatBitWidth(Type type) {
     return 32; // float, float32, and c_float
 }
 
+static const llvm::fltSemantics& floatSemantics(Type type) {
+    if (type.isFloat80()) return llvm::APFloat::x87DoubleExtended();
+    return getFloatBitWidth(type) == 64 ? llvm::APFloat::IEEEdouble() : llvm::APFloat::IEEEsingle();
+}
+
+static void roundToSemantics(llvm::APFloat& value, const llvm::fltSemantics& semantics) {
+    bool ignored = false;
+    value.convert(semantics, llvm::APFloat::rmNearestTiesToEven, &ignored);
+}
+
+// Converts an integer to a float value, reporting the conversion status:
+// sparse values like powers of two stay exact far beyond 2^mantissa.
+static llvm::APFloat convertIntToFloat(const llvm::APSInt& value, Type floatType, llvm::APFloat::opStatus* status = nullptr) {
+    llvm::APFloat converted(floatSemantics(floatType));
+    auto result = converted.convertFromAPInt(value, value.isSigned(), llvm::APFloat::rmNearestTiesToEven);
+    if (status) *status = result;
+    return converted;
+}
+
+// Evaluates a constant float expression, keeping the wider-than-type double
+// value of literals (that type/value mismatch is what the conversion check
+// polices). Anything not folded here returns nullopt and warns nothing.
+// The caller gates on isConstant(), which proves the tree acyclic
+// (FoldingQuery); this recursion itself is unguarded.
+static std::optional<llvm::APFloat> getConstantFloatValue(const Expr& expr) {
+    switch (expr.kind) {
+    case ExprKind::FloatLiteralExpr:
+        return llvm::cast<FloatLiteralExpr>(&expr)->value;
+    case ExprKind::VarExpr: {
+        auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(&expr)->decl);
+        if (!varDecl || !varDecl->isConst || !varDecl->initializer || !varDecl->type.isFloatingPoint()) return std::nullopt;
+        // The binding already rounded to its type; uses see that value, so
+        // the binding site stays the one place that reports its narrowing.
+        if (auto value = getConstantFloatValue(*varDecl->initializer)) {
+            roundToSemantics(*value, floatSemantics(varDecl->type));
+            return value;
+        }
+        if (varDecl->initializer->isFoldableIntConstant()) {
+            return convertIntToFloat(varDecl->initializer->getConstantIntegerValue(), varDecl->type);
+        }
+        return std::nullopt;
+    }
+    case ExprKind::UnaryExpr: {
+        auto* unary = llvm::cast<UnaryExpr>(&expr);
+        auto operand = getConstantFloatValue(unary->getOperand());
+        if (!operand) return std::nullopt;
+        if (unary->op == Token::Plus) return operand;
+        if (unary->op == Token::Minus) return -*operand;
+        return std::nullopt;
+    }
+    case ExprKind::BinaryExpr: {
+        auto* binary = llvm::cast<BinaryExpr>(&expr);
+        auto lhs = getConstantFloatValue(binary->getLHS());
+        auto rhs = getConstantFloatValue(binary->getRHS());
+        if (!lhs || !rhs) return std::nullopt;
+        // Fold in the value domain (literals carry doubles); the caller
+        // rounds to the target. Bail on invalid operations; infinities flow
+        // through and convert exactly (silently) like any infinite source.
+        auto& semantics = expr.type.isFloat80() ? llvm::APFloat::x87DoubleExtended() : llvm::APFloat::IEEEdouble();
+        roundToSemantics(*lhs, semantics);
+        roundToSemantics(*rhs, semantics);
+        llvm::APFloat::opStatus status;
+        switch (binary->op) {
+        case Token::Plus:
+            status = lhs->add(*rhs, llvm::APFloat::rmNearestTiesToEven);
+            break;
+        case Token::Minus:
+            status = lhs->subtract(*rhs, llvm::APFloat::rmNearestTiesToEven);
+            break;
+        case Token::Star:
+            status = lhs->multiply(*rhs, llvm::APFloat::rmNearestTiesToEven);
+            break;
+        case Token::Slash:
+            if (rhs->isZero()) return std::nullopt;
+            status = lhs->divide(*rhs, llvm::APFloat::rmNearestTiesToEven);
+            break;
+        default:
+            return std::nullopt;
+        }
+        if (status & (llvm::APFloat::opInvalidOp | llvm::APFloat::opDivByZero)) return std::nullopt;
+        return lhs;
+    }
+    case ExprKind::ImplicitCastExpr: {
+        auto* cast = llvm::cast<ImplicitCastExpr>(&expr);
+        if (cast->castKind == ImplicitCastExpr::UserConversion || !expr.type.isFloatingPoint()) return std::nullopt;
+        auto operand = getConstantFloatValue(*cast->operand);
+        if (!operand) return std::nullopt;
+        // The cast already rounded to its type; fold the rounded value.
+        roundToSemantics(*operand, floatSemantics(expr.type));
+        return operand;
+    }
+    case ExprKind::IfExpr: {
+        auto* ifExpr = llvm::cast<IfExpr>(&expr);
+        if (!ifExpr->condition->isFoldableBoolConstant()) return std::nullopt;
+        return getConstantFloatValue(ifExpr->condition->getConstantBoolValue() ? *ifExpr->thenExpr : *ifExpr->elseExpr);
+    }
+    default:
+        return std::nullopt;
+    }
+}
+
+bool Typechecker::shouldWarnConversion() const {
+    // Like unused warnings, conversions in std itself stay silent.
+    return options.warnConversion && !inExplicitCast && !(currentModule && currentModule->name == "std");
+}
+
+void Typechecker::checkLossyFloatConversion(const Expr& expr, Type target) const {
+    // Gated on isConstant(): besides filtering, it proves the tree acyclic
+    // (FoldingQuery), which the unguarded recursion below needs.
+    if (!shouldWarnConversion() || !expr.isConstant()) return;
+    if (auto value = getConstantFloatValue(expr)) {
+        llvm::APFloat rounded = *value;
+        bool losesPrecision = false;
+        auto status = rounded.convert(floatSemantics(target), llvm::APFloat::rmNearestTiesToEven, &losesPrecision);
+        if (status & llvm::APFloat::opOverflow) {
+            WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "implicit conversion of " << *value << " to '" << target << "' overflows");
+        } else if (losesPrecision) {
+            WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "implicit conversion of " << *value << " to '" << target << "' loses precision");
+        }
+    }
+}
+
 // True when every value of the source numeric type is exactly representable in the target.
 static bool isSafeNumericWidening(Type source, Type target) {
     auto width = [](Type type) { return type.isChar() ? 8 : type.getIntegerBitWidth(); };
@@ -1966,6 +2089,11 @@ FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Typ
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
                                           std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange, bool allowOperatorBorrow,
                                           bool allowUserConversion, bool* usesUserConversion) const {
+    // Warn-only and first: float literals carry double values under a float32
+    // type, so same-type float32 conversions narrow invisibly below.
+    if (expr && diagnoseOutOfRange && expr->type.isFloatingPoint() && target.isFloatingPoint()) {
+        checkLossyFloatConversion(*expr, target);
+    }
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName()) {
         if (source.getGenericArgs() == target.getGenericArgs()) return source;
         // Fixed arrays are values: same size and element type is enough to copy.
@@ -2086,13 +2214,22 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             if (adjustedTarget.isChar() && expr->type.isChar()) return adjustedTarget;
 
             if (adjustedTarget.isFloatingPoint()) {
-                // TODO: Check that the integer value is losslessly convertible to the target type?
+                if (shouldWarnConversion() && diagnoseOutOfRange) {
+                    llvm::APFloat::opStatus status;
+                    convertIntToFloat(value, adjustedTarget, &status);
+                    if (status & llvm::APFloat::opOverflow) {
+                        WARN_RANGE(getExprRangeStart(*expr), expr->endLocation,
+                                   "implicit conversion of " << value << " to '" << adjustedTarget << "' overflows");
+                    } else if (status & llvm::APFloat::opInexact) {
+                        WARN_RANGE(getExprRangeStart(*expr), expr->endLocation,
+                                   "implicit conversion of " << value << " to '" << adjustedTarget << "' loses precision");
+                    }
+                }
                 return adjustedTarget;
             }
         }
 
         if (expr->type.isFloatingPoint() && expr->isConstant() && target.isFloatingPoint()) {
-            // TODO: Check that the floating-point value is losslessly convertible to the target type?
             return target;
         }
 
@@ -3650,8 +3787,9 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         // back on the second pass. BinaryExpr resolution ignores expectedType, so the
         // first result is final. Re-validation still runs: re-typechecking clobbers the
         // in-place conversions the first pass applied (e.g. a widened literal re-derives
-        // its natural type), so the arguments must be converted again.
-        validateAndConvertArguments(expr, *expr.calleeDecl);
+        // its natural type), so the arguments must be converted again. It runs
+        // silent: the first pass already diagnosed everything (errors throw).
+        validateAndConvertArguments(expr, *expr.calleeDecl, "", /*diagnose=*/false);
         return expr.calleeDecl;
     }
 
@@ -4092,6 +4230,8 @@ std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm:
 }
 
 Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
+    // Explicitness never propagates into nested calls: each call re-derives it.
+    llvm::SaveAndRestore clearInExplicitCast(inExplicitCast, false);
     if (!expr.callsNamedFunction()) {
         ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "anonymous function calls not implemented yet");
     }
@@ -4470,12 +4610,12 @@ std::optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDec
     return Match{calleeDecl, result.didConvertArguments, result.didUnwrapOptional, result.didWrapOptional, result.userConversionCount};
 }
 
-void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName) {
+void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, bool diagnose) {
     if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(&calleeDecl)) {
-        validateAndConvertArguments(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, functionDecl);
+        validateAndConvertArguments(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, functionDecl, diagnose);
     } else {
         auto paramDecls = getVariableCalleeParams(llvm::cast<VariableDecl>(calleeDecl));
-        validateAndConvertArguments(expr, paramDecls, false, functionName, &calleeDecl);
+        validateAndConvertArguments(expr, paramDecls, false, functionName, &calleeDecl, diagnose);
     }
 }
 
@@ -4489,8 +4629,8 @@ static Type variadicPromotionType(Type from) {
     return Type();
 }
 
-void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee,
-                                              const Decl* calleeDecl) {
+void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, const Decl* calleeDecl,
+                                              bool diagnose) {
     bool allowOperatorBorrow = isOperatorCall(expr);
     auto result = getArgumentValidationResult(expr, params, isVariadic);
 
@@ -4521,7 +4661,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
         // Validation probed without diagnosing; re-run once so an out-of-range literal still
         // reports the range instead of a generic mismatch. This either throws or returns null,
         // since probing already failed, so discarding the result is safe.
-        (void)convert(arg.value, param.type, true, true, allowOperatorBorrow);
+        (void)convert(arg.value, param.type, true, diagnose, allowOperatorBorrow);
         if (isBorrowOfConstant(*arg.value, arg.value->type, param.type)) {
             // Binding a borrow is not a type mismatch; say what actually failed.
             ERROR_WITH_NOTES_RANGE(getExprRangeStart(*arg.value), arg.value->endLocation, std::move(declNote),
@@ -4551,7 +4691,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             if (paramIndex == -1) {
                 if (isExternCallee) {
                     if (Type to = variadicPromotionType(expr.args[i].value->type)) {
-                        if (Expr* promoted = convert(expr.args[i].value, to, true, true, allowOperatorBorrow)) expr.args[i].value = promoted;
+                        if (Expr* promoted = convert(expr.args[i].value, to, true, diagnose, allowOperatorBorrow)) expr.args[i].value = promoted;
                     }
                 }
                 Type extraType = expr.args[i].value->type;
@@ -4564,7 +4704,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             }
             // Committing can still fail when probing succeeded (e.g. a user conversion whose
             // operand no longer converts); report it as a mismatch rather than storing null.
-            if (Expr* converted = convert(expr.args[i].value, params[size_t(paramIndex)].type, true, true, allowOperatorBorrow)) {
+            if (Expr* converted = convert(expr.args[i].value, params[size_t(paramIndex)].type, true, diagnose, allowOperatorBorrow)) {
                 expr.args[i].value = converted;
                 dropNarrowingForAddressArg(*converted, params[size_t(paramIndex)].type);
                 // Passing a tracked pointer by mutable borrow exposes it for
@@ -4585,7 +4725,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             ASSERT(param.defaultValue);
             Expr* defaultArg = param.defaultValue->instantiate({});
             if (!defaultArg->hasType()) typecheckExpr(*defaultArg, false, param.type);
-            if (Expr* converted = convert(defaultArg, param.type, true)) {
+            if (Expr* converted = convert(defaultArg, param.type, true, diagnose)) {
                 defaultArg = converted;
             } else {
                 ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
@@ -4685,6 +4825,7 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
     typecheckType(targetType, AccessLevel::None, /*recheckGenericArgs=*/true, /*allowReference=*/true);
     ParamDecl param(sourceType, "", false, expr.location);
 
+    llvm::SaveAndRestore saveInExplicitCast(inExplicitCast, true);
     validateAndConvertArguments(expr, param, false, expr.getFunctionName());
 
     bool valid = isValidCast(sourceType, targetType);

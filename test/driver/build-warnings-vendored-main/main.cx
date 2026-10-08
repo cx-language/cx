@@ -1,0 +1,20 @@
+// RUN: cd %S && %cx run 2>&1 | %FileCheck %s --check-prefix=CHECK
+// RUN: cd %S && %cx run -Wconversion 2>&1 | %FileCheck %s --check-prefix=CLI
+
+// The main project enables conversion warnings, the dependency disables
+// them: each setting stays in its own package.
+// CHECK-NOT: 16777217
+// CHECK: main.cx:{{.*}}warning: implicit conversion of 33554433 to 'float32' loses precision
+// CHECK-NOT: 16777217
+
+// An explicit command-line flag wins over the dependency's setting.
+// CLI: main.cx:{{.*}}warning: implicit conversion of 33554433 to 'float32' loses precision
+// CLI: dep.cx:{{.*}}warning: implicit conversion of 16777217 to 'float32' loses precision
+
+import dep;
+
+void main() {
+    float32 f = 33554433;
+    println(f);
+    greetDep();
+}

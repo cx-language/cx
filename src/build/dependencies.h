@@ -20,7 +20,7 @@ namespace cx {
 // baseOptions carries invocation-global flags (no project settings); each record
 // composes them with its package's settings. Must run before parsing anything,
 // since defines select #if branches.
-void resolveDependencyClosure(BuildConfig& config, const CompileOptions& baseOptions, bool fetchMissing);
+void resolveDependencyClosure(BuildConfig& config, const CompileOptions& baseOptions, bool fetchMissing, unsigned explicitWarnings = 0);
 // Splits `pkg-config --cflags --libs` output into package-scoped compile parts
 // and link parts.
 struct PkgConfigSplit {

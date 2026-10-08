@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
@@ -51,6 +52,25 @@ struct BuildConfig {
     std::vector<std::string> libraries;
     std::vector<std::string> frameworks;
     std::vector<std::string> pkgConfigDependencies;
+    std::vector<std::string> warnings;
 };
+
+// A warning tunable through the build.cx `warnings` setting. Names match the
+// -W flag suffixes: "conversion", "unused", "unused-result", "undef".
+enum class WarningKind { Conversion, Unused, UnusedResult, Undef };
+
+// Bit marking a warning as set on the command line (see applyWarningSettings).
+constexpr unsigned warningBit(WarningKind kind) {
+    return 1u << static_cast<unsigned>(kind);
+}
+
+// Splits a `warnings` entry into its kind and enablement (a "no-" prefix
+// disables). Aborts on unknown names.
+std::pair<WarningKind, bool> parseWarningSetting(llvm::StringRef entry);
+
+// Applies a build.cx `warnings` list to options, in order (later entries win).
+// Entries whose warningBit is set in explicitWarnings are skipped: an explicit
+// command-line flag always wins over the setting.
+void applyWarningSettings(CompileOptions& options, llvm::ArrayRef<std::string> warnings, unsigned explicitWarnings = 0);
 
 } // namespace cx

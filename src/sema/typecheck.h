@@ -204,6 +204,10 @@ struct Typechecker {
     Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false,
                                  std::optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr, bool diagnoseOutOfRange = true,
                                  bool allowOperatorBorrow = false, bool allowUserConversion = true, bool* usesUserConversion = nullptr) const;
+    /// Warns when a constant float expression loses precision converting to target (-Wconversion).
+    void checkLossyFloatConversion(const Expr& expr, Type target) const;
+    // Conversion warnings are enabled, outside an explicit cast, and outside std itself.
+    bool shouldWarnConversion() const;
     /// Finds the user-declared conversion from source to target: an implicit constructor on the target
     /// or an implicit parameterless member on the source. Pure except for range diagnostics (like the
     /// surrounding probe); null when none applies or several do. viableCount (when given) receives
@@ -231,9 +235,9 @@ struct Typechecker {
                                                                 llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     ArgumentValidation getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic);
     std::optional<Match> matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params = {});
-    void validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "");
+    void validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", bool diagnose = true);
     void validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee = "",
-                                     const Decl* calleeDecl = nullptr);
+                                     const Decl* calleeDecl = nullptr, bool diagnose = true);
     TypeDecl* getTypeDecl(const BasicType& type);
     // Instantiates and registers the generic types nested in field position
     // (transitively), so memberless queries (copyability, destruction) resolve
@@ -253,6 +257,9 @@ struct Typechecker {
     llvm::ErrorOr<const Module&> importModule(SourceFile* importer, llvm::StringRef moduleName);
     void deferTypechecking(Decl* decl);
     void postProcess();
+    // Options of the package owning the declaration. Main-module and
+    // unresolvable declarations keep the ambient options.
+    const CompileOptions& packageOptionsFor(const Decl& decl) const;
 
     // Marks an expression consumed by a move. Always flags the tree (IRGen skips
     // temporary-destructor registration for flagged constructor calls); only records
@@ -433,6 +440,9 @@ struct Typechecker {
     // (directly or through a call chain): lambdas there receive
     // constant-derived borrows, so their borrow parameters bind const.
     bool callOnConstReceiver = false;
+    // True while checking explicit cast<T> arguments: the cast documents the
+    // conversion, so -Wconversion stays silent there.
+    bool inExplicitCast = false;
     std::vector<VarDecl*> localVarDecls;
     NarrowMap narrowedTypes;
     DeclSet definitelyAssignedDecls;

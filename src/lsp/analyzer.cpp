@@ -2032,6 +2032,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             for (auto& define : projectConfig.defines) {
                 options.defines.push_back(define);
             }
+            applyWarningSettings(options, projectConfig.warnings);
             // The project root's vendor/ holds importable packages. The file's
             // own directory contributes its vendor/ above; a multitarget file
             // under src/foo needs both (see driver.cpp addConfigBuildFlags).

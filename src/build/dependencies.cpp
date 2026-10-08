@@ -73,7 +73,7 @@ std::string cx::absolutizeLibraryPath(llvm::StringRef rootDirectory, const std::
     return absolutizePackagePath(rootDirectory, library);
 }
 
-void cx::resolveDependencyClosure(BuildConfig& config, const CompileOptions& baseOptions, bool fetchMissing) {
+void cx::resolveDependencyClosure(BuildConfig& config, const CompileOptions& baseOptions, bool fetchMissing, unsigned explicitWarnings) {
     struct WorkItem {
         bool isVendored = false;
         BuildConfig::Dependency dependency; // Set for git dependencies.
@@ -147,6 +147,7 @@ void cx::resolveDependencyClosure(BuildConfig& config, const CompileOptions& bas
         for (auto& path : depConfig.headerSearchPaths) {
             record.options.importSearchPaths.push_back(absolutizePackagePath(root, path));
         }
+        applyWarningSettings(record.options, depConfig.warnings, explicitWarnings);
         record.pkgConfigDependencies = depConfig.pkgConfigDependencies;
         for (auto& path : depConfig.librarySearchPaths) {
             record.librarySearchPaths.push_back(absolutizePackagePath(root, path));

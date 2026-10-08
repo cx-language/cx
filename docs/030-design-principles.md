@@ -67,9 +67,9 @@ cx does not guarantee memory or thread safety at compile time the way Rust does;
 cx does not enforce a naming convention, coding style, or programming paradigm:
 imperative, generic, data-oriented, functional, and object-oriented code are all
 supported. Warnings can be tuned to each project's needs, for example enabling
-`--Wunused-result` or disabling unused-entity warnings with `--Wno-unused`. Options for
-turning safe implicit conversions into warnings or errors are planned (see
-[Casting](./casting#planned-features)).
+`--Wunused-result` or disabling unused-entity warnings with `--Wno-unused`. Safe
+implicit conversions turn into warnings or errors with `-Wconversion` and
+`-Werror` (see [Casting](./casting)).
 
 ## Familiarity
 

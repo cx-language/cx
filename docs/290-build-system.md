@@ -36,6 +36,7 @@ Supported settings:
 - `frameworks`: macOS frameworks to link, as if passed with `-framework`.
 - `pkgConfigDependencies`: system libraries resolved via `pkg-config --cflags --libs`.
 - `dependencies`: cx libraries to fetch from Git, as `(package = "...", url = "...", version = "...")` entries (see below).
+- `warnings`: warnings to enable or disable for this project, as `-W` flag names: `["conversion", "no-unused"]`. Supported names are `conversion`, `unused`, `unused-result`, and `undef`; a `no-` prefix disables. Later entries win. An explicit command-line flag always wins over this setting. Each dependency's own `warnings` apply to that dependency.
 
 Each setting can be declared only once,
 but `#if` conditions select settings per platform or configuration:

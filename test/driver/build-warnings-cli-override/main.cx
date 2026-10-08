@@ -1,0 +1,8 @@
+// RUN: cd %S && %cx run -Wconversion 2>&1 | %FileCheck %s
+
+// CHECK: warning: implicit conversion of 16777217 to 'float32' loses precision
+
+void main() {
+    float32 f = 16777217;
+    println(f);
+}

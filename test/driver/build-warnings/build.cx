@@ -1,0 +1,4 @@
+// RUN: true
+
+var name = "build-warnings"
+var warnings = ["conversion", "no-unused"]

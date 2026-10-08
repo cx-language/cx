@@ -218,6 +218,14 @@ void Typechecker::markReferenced(Decl* decl) {
     }
 }
 
+const CompileOptions& Typechecker::packageOptionsFor(const Decl& decl) const {
+    Module* module = decl.getModule();
+    if (!dependencies || !module || module == mainModule) return options;
+    auto result = resolveDependency(*dependencies, module->name);
+    if (result.ambiguous || !result.dependency) return options;
+    return result.dependency->options;
+}
+
 void Typechecker::postProcess() {
     llvm::SaveAndRestore setPostProcessing(isPostProcessing, true);
 
@@ -228,6 +236,13 @@ void Typechecker::postProcess() {
         // declaration must not abort checking (or diagnostics) of the rest of the queue.
         for (auto* decl : currentDeclsToTypecheck) {
             try {
+                // Deferred declarations check under their home package's
+                // options, so a dependency's settings apply to its bodies
+                // even though they check on first use from another module.
+                // Main-module declarations already run under those options.
+                const CompileOptions& homeOptions = packageOptionsFor(*decl);
+                std::optional<llvm::SaveAndRestore<CompileOptions>> restoreOptions;
+                if (&homeOptions != &options) restoreOptions.emplace(options, homeOptions);
                 switch (decl->kind) {
                 case DeclKind::FunctionDecl:
                 case DeclKind::MethodDecl:

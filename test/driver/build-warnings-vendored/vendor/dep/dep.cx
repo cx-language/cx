@@ -1,0 +1,6 @@
+// RUN: true
+
+void greetDep() {
+    float32 f = 16777217;
+    println(f);
+}

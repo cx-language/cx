@@ -1,0 +1,4 @@
+// RUN: true
+
+var name = "build-warnings-conflict"
+var warnings = ["conversion", "no-conversion"]

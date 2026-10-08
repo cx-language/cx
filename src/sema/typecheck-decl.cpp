@@ -1981,6 +1981,12 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         }
 
         decl.type = NOTNULL(initializerType);
+        // Inference copies the type without converting, so a lossy float
+        // literal would narrow silently here. Uses of the binding evaluate
+        // in its type, so this is the one place that reports it.
+        if (decl.type.isFloatingPoint()) {
+            checkLossyFloatConversion(*decl.initializer, decl.type);
+        }
     }
 
     // An inferred local borrow aliases the referent in place: `var x = list[0]` deduces

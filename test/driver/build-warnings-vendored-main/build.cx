@@ -1,0 +1,4 @@
+// RUN: true
+
+var name = "build-warnings-vendored-main"
+var warnings = ["conversion"]

@@ -73,8 +73,5 @@ Structs can also declare their own implicit conversions with `implicit`
 constructors and member functions (see [Structs](structs)).
 Those apply everywhere a value flows into an expected type,
 such as arguments, return values, and initializers.
-
-## Planned features
-
-- Compiler options for the safe implicit conversions between builtin types (such as
-  `int` to `int64`), so projects can turn them into warnings or errors.
+Projects tune the builtin conversions with warning options such as
+`-Wconversion` (see [Build system](./build-system)).

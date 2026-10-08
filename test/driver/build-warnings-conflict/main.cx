@@ -1,0 +1,11 @@
+// RUN: cd %S && %cx run 2>&1 | %FileCheck %s
+
+// Later entries win.
+// CHECK-NOT: warning
+// CHECK: 16777216
+// CHECK-NOT: warning
+
+void main() {
+    float32 f = 16777217;
+    println(f);
+}

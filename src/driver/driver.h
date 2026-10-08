@@ -29,6 +29,7 @@ struct CompileOptions {
     bool checkAll = false;
     bool warnUndefinedMacros = false;
     bool warnUnusedResult = false;
+    bool warnConversion = false;
     bool noLeakCheck = false;
     bool dwarfDebugInfo = false;
     std::vector<std::string> importSearchPaths = {};

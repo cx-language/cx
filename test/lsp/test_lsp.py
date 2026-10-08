@@ -963,6 +963,26 @@ def test_build_file_modes(cx_lsp):
             json.dumps(result["diagnostics"])[:500],
         )
 
+    # The project's `warnings` setting applies to editor diagnostics, like in
+    # `cx build`.
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "wproj")
+        os.makedirs(root)
+        with open(os.path.join(root, "build.cx"), "w") as file:
+            file.write('var name = "wproj"\nvar warnings = ["conversion"]\n')
+        main_path = os.path.join(root, "main.cx")
+        main_content = "void main() {\n    float32 f = 16777217;\n    println(f);\n}\n"
+        with open(main_path, "w") as file:
+            file.write(main_content)
+
+        result = run_query(cx_lsp, base_query("check", main_path, main_content))
+        messages = [d["message"] for d in result["diagnostics"]]
+        check(
+            "query-project-warnings",
+            any("loses precision" in m for m in messages),
+            json.dumps(messages)[:500],
+        )
+
 
 def test_fetched_dependency(cx_lsp):
     # Dependencies resolve from ~/.cx with their build file applied: the import

@@ -1,0 +1,15 @@
+// RUN: cd %S && %cx run 2>&1 | %FileCheck %s
+
+// The dependency enables conversion warnings for itself; the main project
+// leaves them off, so only the dependency's conversion warns.
+// CHECK-NOT: 33554433
+// CHECK: dep.cx:{{.*}}warning: implicit conversion of 16777217 to 'float32' loses precision
+// CHECK-NOT: 33554433
+
+import dep;
+
+void main() {
+    float32 f = 33554433;
+    println(f);
+    greetDep();
+}

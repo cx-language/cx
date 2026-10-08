@@ -90,6 +90,7 @@ BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> d
     libraries = getStringList("libraries", findConfigKey(symbols, "libraries"));
     frameworks = getStringList("frameworks", findConfigKey(symbols, "frameworks"));
     pkgConfigDependencies = getStringList("pkgConfigDependencies", findConfigKey(symbols, "pkgConfigDependencies"));
+    warnings = getStringList("warnings", findConfigKey(symbols, "warnings"));
 
     if (auto* dependencies = findConfigKey(symbols, "dependencies")) {
         auto* var = llvm::dyn_cast<VarDecl>(dependencies);
@@ -106,6 +107,37 @@ BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> d
             auto* url = getRequiredString(anonymousStruct, "url");
             auto* version = getRequiredString(anonymousStruct, "version");
             declaredDependencies.push_back(Dependency(std::string(package->value), std::string(url->value), std::string(version->value)));
+        }
+    }
+}
+
+std::pair<WarningKind, bool> cx::parseWarningSetting(llvm::StringRef entry) {
+    bool enable = !entry.starts_with("no-");
+    llvm::StringRef name = enable ? entry : entry.drop_front(3);
+    if (name == "conversion") return {WarningKind::Conversion, enable};
+    if (name == "unused") return {WarningKind::Unused, enable};
+    if (name == "unused-result") return {WarningKind::UnusedResult, enable};
+    if (name == "undef") return {WarningKind::Undef, enable};
+    ABORT("unknown warning '" << entry << "' in build file (expected 'conversion', 'unused', 'unused-result', or 'undef', optionally prefixed with 'no-')");
+}
+
+void cx::applyWarningSettings(CompileOptions& options, llvm::ArrayRef<std::string> warnings, unsigned explicitWarnings) {
+    for (auto& entry : warnings) {
+        auto [kind, enable] = parseWarningSetting(entry);
+        if (explicitWarnings & warningBit(kind)) continue;
+        switch (kind) {
+        case WarningKind::Conversion:
+            options.warnConversion = enable;
+            break;
+        case WarningKind::Unused:
+            options.noUnusedWarnings = !enable;
+            break;
+        case WarningKind::UnusedResult:
+            options.warnUnusedResult = enable;
+            break;
+        case WarningKind::Undef:
+            options.warnUndefinedMacros = enable;
+            break;
         }
     }
 }

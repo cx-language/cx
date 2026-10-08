@@ -115,6 +115,8 @@ cl::opt<bool> warnUndefinedMacros("Wundef", cl::desc("Warn about undefined macro
                                   cl::cat(diagnosticCategory));
 cl::opt<bool> warnUnusedResult("Wunused-result", cl::desc("Warn about unused expression results"), cl::sub(cl::SubCommand::getAll()),
                                cl::cat(diagnosticCategory));
+cl::opt<bool> warnConversion("Wconversion", cl::desc("Warn about implicit conversions that lose precision"), cl::sub(cl::SubCommand::getAll()),
+                             cl::cat(diagnosticCategory));
 cl::opt<bool> checkAll("check-all", cl::desc("Typecheck all code in imported modules, not just used code"), cl::sub(cl::SubCommand::getAll()),
                        cl::cat(diagnosticCategory));
 cl::opt<int> errorLimit("error-limit", cl::desc("Limit the number of reported errors (10 by default, 0 removes limit)"), cl::init(10),
@@ -480,9 +482,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         addPredefinedImportSearchPaths(buildParams.filePaths);
     }
 
-    CompileOptions options = {buildMode,   noUnusedWarnings, checkAll,          warnUndefinedMacros,  warnUnusedResult,
-                              noLeakCheck, dwarfDebugInfo,   importSearchPaths, frameworkSearchPaths, defines,
-                              cflags};
+    CompileOptions options = {buildMode,   noUnusedWarnings, checkAll,          warnUndefinedMacros,  warnUnusedResult, warnConversion,
+                              noLeakCheck, dwarfDebugInfo,   importSearchPaths, frameworkSearchPaths, defines,          cflags};
     auto remainingPrintOpts = std::popcount(printOpts.getBits());
     bool printSectionDividers = remainingPrintOpts > 1;
 
@@ -1063,6 +1064,24 @@ static void addConfigBuildFlags(const BuildConfig& config) {
     for (auto& framework : config.frameworks) {
         frameworks.push_back(framework);
     }
+    // Explicit command-line flags win over the project's `warnings` setting.
+    for (auto& entry : config.warnings) {
+        auto [kind, enable] = parseWarningSetting(entry);
+        switch (kind) {
+        case WarningKind::Conversion:
+            if (warnConversion.getNumOccurrences() == 0) warnConversion = enable;
+            break;
+        case WarningKind::Unused:
+            if (noUnusedWarnings.getNumOccurrences() == 0) noUnusedWarnings = !enable;
+            break;
+        case WarningKind::UnusedResult:
+            if (warnUnusedResult.getNumOccurrences() == 0) warnUnusedResult = enable;
+            break;
+        case WarningKind::Undef:
+            if (warnUndefinedMacros.getNumOccurrences() == 0) warnUndefinedMacros = enable;
+            break;
+        }
+    }
     addPkgConfigFlags(config.pkgConfigDependencies);
 }
 
@@ -1087,6 +1106,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
     baseOptions.checkAll = checkAll;
     baseOptions.warnUndefinedMacros = warnUndefinedMacros;
     baseOptions.warnUnusedResult = warnUnusedResult;
+    baseOptions.warnConversion = warnConversion;
     baseOptions.noLeakCheck = noLeakCheck;
     baseOptions.dwarfDebugInfo = dwarfDebugInfo;
     baseOptions.importSearchPaths = importSearchPaths;
@@ -1095,7 +1115,14 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
     baseOptions.cflags = cflags;
     appendSystemImportSearchPaths(baseOptions.importSearchPaths);
 
-    resolveDependencyClosure(config, baseOptions, /*fetchMissing=*/true);
+    // Warnings set on the command line stay set in dependencies: an explicit
+    // flag always wins over a dependency's own `warnings` setting.
+    unsigned explicitWarnings = 0;
+    if (warnConversion.getNumOccurrences() > 0) explicitWarnings |= warningBit(WarningKind::Conversion);
+    if (noUnusedWarnings.getNumOccurrences() > 0) explicitWarnings |= warningBit(WarningKind::Unused);
+    if (warnUnusedResult.getNumOccurrences() > 0) explicitWarnings |= warningBit(WarningKind::UnusedResult);
+    if (warnUndefinedMacros.getNumOccurrences() > 0) explicitWarnings |= warningBit(WarningKind::Undef);
+    resolveDependencyClosure(config, baseOptions, /*fetchMissing=*/true, explicitWarnings);
 
     // Route each dependency's pkg-config output and union its link
     // contributions. Defines, search paths, and cflags stay package-scoped in

@@ -110,6 +110,33 @@ void testSearchPaths() {
     check(config.libraries.size() == 1 && config.libraries[0] == "mylib", "libraries are parsed");
 }
 
+void testWarnings() {
+    auto project = writeTestProject("var warnings = [\"conversion\", \"no-unused\"]\n");
+    cx::BuildConfig config{std::string(project)};
+
+    check(config.warnings.size() == 2 && config.warnings[0] == "conversion" && config.warnings[1] == "no-unused", "warnings are parsed");
+    auto [conversionKind, conversionEnable] = cx::parseWarningSetting("conversion");
+    check(conversionKind == cx::WarningKind::Conversion && conversionEnable, "plain entries enable");
+    auto [unusedKind, unusedEnable] = cx::parseWarningSetting("no-unused");
+    check(unusedKind == cx::WarningKind::Unused && !unusedEnable, "'no-' entries disable");
+
+    cx::CompileOptions options;
+    cx::applyWarningSettings(options, {"conversion", "no-conversion"});
+    check(!options.warnConversion, "later entries win");
+    cx::applyWarningSettings(options, {"no-unused", "unused-result"});
+    check(options.noUnusedWarnings && options.warnUnusedResult, "entries apply in order");
+    options.warnConversion = true;
+    cx::applyWarningSettings(options, {"no-conversion"}, cx::warningBit(cx::WarningKind::Conversion));
+    check(options.warnConversion, "explicit command-line flags win over the setting");
+}
+
+void testWarningsUnknown() {
+    // Unknown names are rejected with an actionable error. The abort below is
+    // the expected outcome; CTest matches its message.
+    cx::parseWarningSetting("misspelled");
+    check(false, "unknown warning is rejected");
+}
+
 void testMissingBuildFile() {
     llvm::SmallString<128> dir;
     checkNoError(llvm::sys::fs::createUniqueDirectory("cx-build-config-test", dir), "create temp project directory");
@@ -260,7 +287,7 @@ void testResolveDependency() {
 int main(int argc, const char** argv) {
     if (argc != 2) {
         std::cerr << "usage: test_build_config <git-urls|missing-url|duplicate-key|missing-build-file|search-paths|\n"
-                     "closure-transitive|closure-cycle|closure-vendored|closure-missing-skipped|resolve-dependency>\n";
+                     "closure-transitive|closure-cycle|closure-vendored|closure-missing-skipped|resolve-dependency|warnings|warnings-unknown>\n";
         return 2;
     }
 
@@ -285,6 +312,10 @@ int main(int argc, const char** argv) {
         testClosureMissingSkipped();
     } else if (testCase == "resolve-dependency") {
         testResolveDependency();
+    } else if (testCase == "warnings") {
+        testWarnings();
+    } else if (testCase == "warnings-unknown") {
+        testWarningsUnknown();
     } else {
         std::cerr << "unknown test case '" << testCase << "'\n";
         return 2;

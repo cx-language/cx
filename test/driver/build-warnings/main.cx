@@ -1,0 +1,11 @@
+// RUN: cd %S && %cx run 2>&1 | %FileCheck %s
+
+// CHECK-NOT: unused variable
+// CHECK: warning: implicit conversion of 16777217 to 'float32' loses precision
+// CHECK-NOT: unused variable
+
+void main() {
+    int unusedVar = 1;
+    float32 f = 16777217;
+    println(f);
+}

@@ -1,0 +1,139 @@
+// RUN: %cx -typecheck -Wconversion %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+// RUN: %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck --allow-empty --check-prefix=OFF %s
+
+// OFF-NOT: loses precision
+// OFF-NOT: overflows
+
+struct S {
+    int x;
+}
+
+bool operator==(S a, float32 b) {
+    return true;
+}
+
+void intToFloat() {
+    // CHECK: [[@LINE+1]]:17: warning: implicit conversion of 16777217 to 'float32' loses precision
+    float32 f = 16777217;
+    // CHECK: [[@LINE+1]]:19: warning: implicit conversion of -16777217 to 'float32' loses precision
+    float32 neg = -16777217;
+    // CHECK: [[@LINE+1]]:19: warning: implicit conversion of 9223372036854775807 to 'float32' loses precision
+    float32 big = 9223372036854775807;
+    // CHECK: [[@LINE+1]]:20: warning: implicit conversion of 9223372036854775807 to 'float64' loses precision
+    float64 huge = 9223372036854775807;
+    println(f);
+    println(neg);
+    println(big);
+    println(huge);
+}
+
+void exactIntsStaySilent() {
+    float32 a = 16777216;
+    float32 b = 0;
+    float32 c = -16777216;
+    float64 d = 9007199254740992;
+    float32 p2 = 1073741824;
+    float64 p3 = 1152921504606846976;
+    println(a);
+    println(b);
+    println(c);
+    println(d);
+    println(p2);
+    println(p3);
+}
+
+void floatLiteral() {
+    // CHECK: [[@LINE+1]]:17: warning: implicit conversion of 1.1234567890123457 to 'float32' loses precision
+    float32 g = 1.12345678901234567890;
+    // CHECK: [[@LINE+1]]:18: warning: implicit conversion of -3.14159265358979 to 'float32' loses precision
+    float32 ng = -3.14159265358979;
+    println(g);
+    println(ng);
+}
+
+void exactFloatsStaySilent() {
+    float32 a = 1.5;
+    float64 b = 1.12345678901234567890;
+    println(a);
+    println(b);
+}
+
+void compoundLiteral() {
+    // CHECK: [[@LINE+1]]:17: warning: implicit conversion of 0.37448559633744855 to 'float32' loses precision
+    float32 d = 1.12345678901234567890 / 3.0;
+    // CHECK: [[@LINE+1]]:17: warning: implicit conversion of 0.33333333333333331 to 'float32' loses precision
+    float32 t = 1.0 / 3.0;
+    println(d);
+    println(t);
+}
+
+void overflowWarns() {
+    // CHECK: [[@LINE+1]]:18: warning: implicit conversion of 1.0000000000000001E+300 to 'float32' overflows
+    float32 ov = 1e300;
+    println(ov);
+}
+
+void inferredBinding() {
+    // CHECK: [[@LINE+1]]:16: warning: implicit conversion of 3.14159265358979 to 'float' loses precision
+    const pi = 3.14159265358979;
+    float32 p = pi;
+    float64 h = pi;
+    println(p);
+    println(h);
+}
+
+void constFolding() {
+    const n = 16777217;
+    const float64 dbl = 0.123456789012345;
+    // CHECK: [[@LINE+1]]:17: warning: implicit conversion of 16777217 to 'float32' loses precision
+    float32 b = n;
+    // CHECK: [[@LINE+1]]:17: warning: implicit conversion of 0.123456789012345 to 'float32' loses precision
+    float32 c = dbl;
+    println(b);
+    println(c);
+}
+
+void explicitStaysSilent() {
+    float32 f = float32(16777217);
+    float64 g = float64(9223372036854775807);
+    println(f);
+    println(g);
+}
+
+void redundantCastWarnsOnce() {
+    // Only the redundant cast itself warns, not the same-type conversion under it.
+    // CHECK: [[@LINE+2]]:18: warning: redundant cast to same type 'float32'
+    // OFF: warning: redundant cast to same type 'float32'
+    float32 rc = cast<float32>(3.14159265358979);
+    println(rc);
+}
+
+void callArgument() {
+    // CHECK: [[@LINE+1]]:17: warning: implicit conversion of 16777217 to 'float32' loses precision
+    takeFloat32(16777217);
+}
+
+void operatorWarnsOnce() {
+    // Operators re-validate arguments on a second pass; the warning must not duplicate.
+    // CHECK-COUNT-1: warning: implicit conversion of 33554433 to 'float32' loses precision
+    println(S(x = 1) == 33554433);
+}
+
+void takeFloat32(float32 x) {
+    println(x);
+}
+
+void main() {
+    intToFloat();
+    exactIntsStaySilent();
+    floatLiteral();
+    exactFloatsStaySilent();
+    compoundLiteral();
+    overflowWarns();
+    inferredBinding();
+    constFolding();
+    explicitStaysSilent();
+    redundantCastWarnsOnce();
+    callArgument();
+    operatorWarnsOnce();
+}
