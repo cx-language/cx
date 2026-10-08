@@ -435,7 +435,7 @@ LspQuery buildPositionalQuery(ServerState& state, const std::string& method, con
     return query;
 }
 
-std::vector<ServerDiagnostic> checkDocument(ServerState& state, const OpenDocument& doc) {
+std::vector<ServerDiagnostic> checkDocument(ServerState& state, const OpenDocument& doc, std::vector<std::string>& coveredFiles) {
     LspQuery query = buildLspQuery(state, "check", doc);
     auto result = state.session.handle(std::move(query));
     std::vector<ServerDiagnostic> diagnostics;
@@ -466,6 +466,11 @@ std::vector<ServerDiagnostic> checkDocument(ServerState& state, const OpenDocume
             diagnostics.push_back(std::move(diagnostic));
         }
     }
+    if (auto* files = findJsonArray(*result, "files")) {
+        for (auto& file : *files) {
+            if (auto filePath = file.getAsString()) coveredFiles.emplace_back(*filePath);
+        }
+    }
     return diagnostics;
 }
 
@@ -473,12 +478,13 @@ void publishDiagnosticsFor(ServerState& state, const std::string& path) {
     auto it = state.openDocs.find(path);
     if (it == state.openDocs.end()) return;
     const OpenDocument& doc = it->second;
-    std::vector<ServerDiagnostic> all = checkDocument(state, doc);
+    std::vector<std::string> coveredFiles;
+    std::vector<ServerDiagnostic> all = checkDocument(state, doc, coveredFiles);
 
     // Merge into the per-file cache: the checked file is always refreshed
-    // (cleared when clean); other files mentioned in this result are updated;
-    // files not mentioned keep their previous diagnostics instead of being
-    // wiped by an unrelated file's check.
+    // (cleared when clean) and other mentioned files are updated. Files
+    // outside this check keep theirs instead of being wiped by an
+    // unrelated file's check; covered-but-clean siblings clear below.
     llvm::StringMap<std::vector<ServerDiagnostic>> byFile;
     for (auto& diagnostic : all)
         byFile[diagnostic.filePath].push_back(diagnostic);
@@ -510,11 +516,23 @@ void publishDiagnosticsFor(ServerState& state, const std::string& path) {
 
     // Notify the checked file plus every other open file whose diagnostics
     // changed in this result; untouched files keep what was last published.
+    // Covered-but-clean files republish empty so reverts clear siblings.
     publish(path, doc);
     for (auto& entry : byFile) {
         if (entry.getKey() == llvm::StringRef(path)) continue;
         auto open = state.openDocs.find(entry.getKey());
         if (open != state.openDocs.end()) publish(open->second.path, open->second);
+    }
+    for (auto& file : coveredFiles) {
+        if (file == path || byFile.count(file)) continue;
+        auto open = state.openDocs.find(file);
+        if (open == state.openDocs.end()) continue;
+        // Only republish when cached diagnostics actually clear; files
+        // already clean keep what was last published (usually nothing).
+        auto cached = state.diagCache.find(file);
+        if (cached == state.diagCache.end() || cached->second.empty()) continue;
+        cached->second = {};
+        publish(open->second.path, open->second);
     }
 }
 

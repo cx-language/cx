@@ -1856,6 +1856,114 @@ def stop_session(session, tag):
     check(f"{tag}-exit-code", code == 0, f"exit code {code}")
 
 
+def test_server_sibling_revert(command):
+    # Breaking a sibling use from b.cx publishes the error on a.cx; reverting
+    # b.cx must clear a.cx again instead of leaving the stale diagnostic.
+    with tempfile.TemporaryDirectory() as directory:
+        root = os.path.join(directory, "proj")
+        os.makedirs(root)
+        with open(os.path.join(root, "build.cx"), "w") as file:
+            file.write('var name = "sibproj"\n')
+        a_path = os.path.join(root, "a.cx")
+        b_path = os.path.join(root, "b.cx")
+        a_content = "int use() {\n    return helper();\n}\n\nvoid main() {\n    println(use());\n}\n"
+        b_good = "int helper() {\n    return 1;\n}\n"
+        b_bad = "int helper(int x) {\n    return x;\n}\n"
+        with open(a_path, "w") as file:
+            file.write(a_content)
+        with open(b_path, "w") as file:
+            file.write(b_good)
+        a_uri = "file://" + a_path
+        b_uri = "file://" + b_path
+
+        session = start_session(command)
+
+        def open_doc(uri, text):
+            session.send(
+                {
+                    "jsonrpc": "2.0",
+                    "method": "textDocument/didOpen",
+                    "params": {"textDocument": {"uri": uri, "languageId": "cx", "version": 1, "text": text}},
+                }
+            )
+
+        def read_publish():
+            notification = session.read()
+            assert notification["method"] == "textDocument/publishDiagnostics", json.dumps(notification)[:300]
+            return notification["params"]["uri"], notification["params"]["diagnostics"]
+
+        hover_id = [50]
+
+        def read_publish_or_timeout(uri, tag, diags_ok):
+            # A notification for uri must follow; ask for hover right after
+            # so a missing one surfaces as the wrong message instead of
+            # hanging the read.
+            hover_id[0] += 1
+            session.send(
+                {
+                    "jsonrpc": "2.0",
+                    "id": hover_id[0],
+                    "method": "textDocument/hover",
+                    "params": {"textDocument": {"uri": b_uri}, "position": {"line": 0, "character": 5}},
+                }
+            )
+            message = session.read()
+            got = (
+                message.get("method") == "textDocument/publishDiagnostics"
+                and message["params"]["uri"] == uri
+                and diags_ok(message["params"]["diagnostics"])
+            )
+            check(tag, got, json.dumps(message)[:300])
+            if message.get("method") == "textDocument/publishDiagnostics":
+                session.read()  # hover response
+
+        open_doc(a_uri, a_content)
+        uri, diags = read_publish()
+        check("server-sibling-open-a-clean", uri == a_uri and diags == [], f"{uri} {json.dumps(diags)[:200]}")
+        open_doc(b_uri, b_good)
+        uri, diags = read_publish()
+        check("server-sibling-open-b-clean", uri == b_uri and diags == [], f"{uri} {json.dumps(diags)[:200]}")
+        # Already-clean siblings republish nothing.
+        hover_id[0] += 1
+        session.send(
+            {
+                "jsonrpc": "2.0",
+                "id": hover_id[0],
+                "method": "textDocument/hover",
+                "params": {"textDocument": {"uri": b_uri}, "position": {"line": 0, "character": 5}},
+            }
+        )
+        message = session.read()
+        check("server-sibling-open-no-redundant-publish", "result" in message, json.dumps(message)[:200])
+
+        version = [1]
+
+        def change_b(text):
+            version[0] += 1
+            session.send(
+                {
+                    "jsonrpc": "2.0",
+                    "method": "textDocument/didChange",
+                    "params": {"textDocument": {"uri": b_uri, "version": version[0]}, "contentChanges": [{"text": text}]},
+                }
+            )
+
+        change_b(b_bad)
+        uri, diags = read_publish()
+        check("server-sibling-break-b-clean", uri == b_uri and diags == [], f"{uri} {json.dumps(diags)[:200]}")
+        read_publish_or_timeout(
+            a_uri,
+            "server-sibling-break-publishes-a",
+            lambda diags: any("helper" in d.get("message", "") for d in diags),
+        )
+
+        change_b(b_good)
+        uri, diags = read_publish()
+        check("server-sibling-revert-b-clean", uri == b_uri and diags == [], f"{uri} {json.dumps(diags)[:200]}")
+        read_publish_or_timeout(a_uri, "server-sibling-revert-clears-a", lambda diags: diags == [])
+        stop_session(session, "server-sibling")
+
+
 def test_server_cache_broken_build_file(command):
     # A malformed build file must not kill the server: the query fails
     # gracefully and the session recovers once the file is fixed.
@@ -2028,13 +2136,20 @@ def test_server_cache_import_open(command):
                 "params": {"textDocument": {"uri": foo_uri, "version": 3}, "contentChanges": [{"text": foo_v1}]},
             }
         )
-        # Reverting restores a clean analysis, which publishes once (for
-        # foo itself; no other file is mentioned).
+        # Reverting restores a clean analysis: foo publishes clean, and
+        # main (same package, covered by the check) republishes clean too
+        # instead of keeping its stale unresolved-identifier error.
         foo_notification = session.read()
         check(
             "server-cache-import-open-reverted",
             foo_notification["params"]["diagnostics"] == [] and foo_notification["params"]["uri"] == foo_uri,
             json.dumps(foo_notification["params"]["diagnostics"])[:300],
+        )
+        main_notification = session.read()
+        check(
+            "server-cache-import-open-reverted-clears-main",
+            main_notification["params"]["diagnostics"] == [] and main_notification["params"]["uri"] == main_uri,
+            json.dumps(main_notification["params"]["diagnostics"])[:300],
         )
 
         with open(foo_path, "w") as file:
@@ -2475,6 +2590,7 @@ def main():
                 ("server", lambda: test_server([args.cx_lsp], path, "server")),
                 ("server-cache", lambda: test_server_cache([args.cx_lsp])),
                 ("server-cache-invalidations", lambda: test_server_cache_invalidations([args.cx_lsp])),
+                ("server-sibling-revert", lambda: test_server_sibling_revert([args.cx_lsp])),
                 ("cx-lsp-subcommand", lambda: test_server([args.cx, "lsp"], path, "cx-lsp-subcommand")),
                 ("server-nosnippet", lambda: test_server_no_snippets([args.cx_lsp], "server-nosnippet")),
                 ("cx-lsp-subcommand-nosnippet", lambda: test_server_no_snippets([args.cx, "lsp"], "cx-lsp-subcommand-nosnippet")),

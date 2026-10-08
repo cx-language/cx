@@ -2632,6 +2632,22 @@ JsonValue diagnosticsToJson(const std::vector<LspDiagnostic>& diagnostics) {
     return JsonValue(std::move(items));
 }
 
+/// The main module's sources: everything this check analyzed with open
+/// buffers overlaid. Imports are deliberately excluded: they compile from
+/// disk, so a covered-but-unmentioned import may still be dirty in the
+/// editor and clearing it would wipe real diagnostics. The server clears
+/// cached diagnostics for covered files the result does not mention, so
+/// siblings cannot keep stale errors after a revert elsewhere.
+std::vector<std::string> coveredFilesIn(Module* mainModule) {
+    std::vector<std::string> files;
+    if (!mainModule) return files;
+    for (auto& sourceFile : mainModule->sourceFiles)
+        files.push_back(sourceFile.filePath);
+    llvm::sort(files);
+    files.erase(llvm::unique(files), files.end());
+    return files;
+}
+
 /// Answers one method from an already-compiled frontend: the session calls
 /// it on cache hits, handleQuery on every one-shot run. Diagnostics in other
 /// files re-read their lines from disk, so this does disk I/O per call.
@@ -2642,6 +2658,10 @@ JsonValue answerFromFrontend(const LspQuery& query, const FrontendResult& fronte
     result["diagnostics"] = diagnosticsToJson(diagnostics);
 
     if (query.method == "check") {
+        JsonArray files;
+        for (auto& file : coveredFilesIn(frontend.mainModule))
+            files.push_back(JsonValue(file));
+        result["files"] = std::move(files);
         return JsonValue(std::move(result));
     } else if (query.method == "hover") {
         std::string text = hoverAt(frontend.mainModule, query.filePath, query.position);
