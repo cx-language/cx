@@ -1,0 +1,49 @@
+global _CX1G4main1gE = G<int32> _0
+global _CX1G4main1hE = G<int32> _1
+
+int32 main() {
+    void _0 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 1)
+    void _1 = call _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 2)
+    int32* x = getelementptr _CX1G4main1hE, 0
+    void _2 = call _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(int32* x)
+    int32* y = getelementptr _CX1G4main1hE, 1
+    void _3 = call _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(int32* y)
+    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    return int32 0
+}
+
+void _CX1N3std7printlnIM3std5int32EE4void1_M3std5int32(int32 value) {
+    int32* value_0 = alloca int32
+    store value to value_0
+    void _0 = call _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value_0)
+    void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
+    return void
+}
+
+void _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(int32* value) {
+    int32** value_0 = alloca int32*
+    store value to value_0
+    int32* value.load = load value_0
+    void _0 = call _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value.load)
+    void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
+    return void
+}
+
+void _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value) {
+    int32** value_0 = alloca int32*
+    OutputStream* stream = alloca OutputStream
+    store value to value_0
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    int32* value.load = load value_0
+    void _1 = call _CX1N3stdM3std5int325printE4void1_RM3std12OutputStream(int32* value.load, OutputStream* stream)
+    return void
+}
+
+void _CX1N3std5printIM3std4charEE4void1_M3std4char(char value) {
+    char* value_0 = alloca char
+    OutputStream* stream = alloca OutputStream
+    store value to value_0
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    void _1 = call _CX1N3stdM3std4char5printE4void1_RM3std12OutputStream(char* value_0, OutputStream* stream)
+    return void
+}

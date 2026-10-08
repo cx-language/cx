@@ -1,0 +1,16 @@
+// RUN: check-snapshots -Wno-unused
+
+struct G<T> {
+    T x;
+    T y;
+}
+
+const g = G<int>(1, 2);
+var h = G<int>(3, 4);
+
+void main() {
+    println(g.x);
+    println(g.y);
+    println(h.x);
+    println(h.y);
+}
