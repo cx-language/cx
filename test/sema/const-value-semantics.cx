@@ -102,3 +102,67 @@ void sliceCallDecays() {
     int[3] m = [1, 2, 3];
     takesSlice(m);
 }
+
+// Storing a const-derived iterator into a callee-owned slot only replaces
+// the slot: by-value holders and locals never designate caller storage.
+struct IterCache {
+    FilterIterator<int, ArrayIterator<int>, bool(int&)>? saved = null;
+}
+
+void fillCopy(FilterIterator<int, ArrayIterator<int>, bool(int&)> it, IterCache c) {
+    c.saved = it;
+}
+
+void byValueHolderStore() {
+    const arr = [1, 2, 3];
+    fillCopy(arr.filter(n => *n > 0), IterCache());
+}
+
+struct SlotBox {
+    int[3] data = [1, 2, 3];
+    void reshuffle() {
+        var w = [&data[0]];
+        w[0] = &data[1];
+    }
+}
+
+void localArraySlotStore() {
+    const o = SlotBox();
+    o.reshuffle();
+}
+
+struct OptBox {
+    int v = 0;
+    void bump() { v++; }
+}
+
+struct OptHolder {
+    int[3] data = [1, 2, 3];
+    void adjust() {
+        OptBox? o = OptBox(1);
+        o!.v = 99;
+        o!.bump();
+    }
+}
+
+void optionalHolderUnwrapStore() {
+    const o = OptHolder();
+    o.adjust();
+}
+
+struct SelfBox {
+    int* p;
+}
+
+struct SelfHolder {
+    int[3] data = [1, 2, 3];
+    void relink() {
+        var b = SelfBox(&data[0]);
+        b.p = b.p;
+    }
+}
+
+void transparentMemberSelfStore() {
+    const o = SelfHolder();
+    o.relink();
+}

@@ -112,8 +112,18 @@ bool storeMayEscape(Expr& lhs, Expr& rhs, const RootCtx& ctx) {
 // Whether the expression may designate root storage: chains over member,
 // index, unwrap, dereference, address-of, and cast projections, plus calls
 // whose alias-capable result derives from a rooted receiver or argument.
-// storageOnly restricts to storage roots: transparent borrows keep the input
-// kind, while fresh wrappers (iterators) are views, never storage.
+// storageOnly restricts to storage roots: transparent-typed members,
+// elements, and calls of rooted inputs designate storage, while fresh
+// wrappers (iterators) are views, never storage. Dereference, unwrap,
+// and casts preserve the mode into their operand.
+bool bindingDesignatesStorage(const Decl* decl, const RootCtx& ctx, bool storageOnly) {
+    if (ctx.storage.contains(decl)) return true;
+    if (!ctx.views.contains(decl)) return false;
+    if (!storageOnly) return true;
+    auto* var = llvm::dyn_cast<VariableDecl>(decl);
+    return var && var->type && isTransparentAliasType(var->type);
+}
+
 bool aliasesRoots(const Expr& expr, const RootCtx& ctx, bool storageOnly) {
     const Expr* current = &expr;
     while (true) {
@@ -122,32 +132,32 @@ bool aliasesRoots(const Expr& expr, const RootCtx& ctx, bool storageOnly) {
             if (!varExpr->decl) return false;
             // A bare field names the receiver's own storage.
             if (ctx.thisRooted && llvm::isa<FieldDecl>(varExpr->decl)) return true;
-            if (ctx.storage.contains(varExpr->decl)) return true;
-            return !storageOnly && ctx.views.contains(varExpr->decl);
+            return bindingDesignatesStorage(varExpr->decl, ctx, storageOnly);
         }
         if (auto* varDeclExpr = llvm::dyn_cast<VarDeclExpr>(current)) {
             if (!varDeclExpr->varDecl) return false;
-            if (ctx.storage.contains(varDeclExpr->varDecl)) return true;
-            return !storageOnly && ctx.views.contains(varDeclExpr->varDecl);
+            return bindingDesignatesStorage(varDeclExpr->varDecl, ctx, storageOnly);
         }
         // Explicit kind check: CallExpr::classof also matches Unary, Binary,
         // Index, and Unwrap expressions, which are handled on their own.
         if (current->kind == ExprKind::CallExpr) {
             auto* call = llvm::cast<CallExpr>(current);
             if (!call->hasType() || !typeMayAliasStorageDeep(call->type)) return false;
-            auto inputAliases = [&](bool storOnly) {
-                if (call->isMethodCall() && aliasesRoots(*call->getReceiver(), ctx, storOnly)) return true;
-                return llvm::any_of(call->args, [&](const NamedValue& arg) { return aliasesRoots(*arg.value, ctx, storOnly); });
-            };
-            if (!inputAliases(false)) return false;
-            if (isTransparentAliasType(call->type)) return storageOnly ? inputAliases(true) : true;
+            if ((!call->isMethodCall() || !aliasesRoots(*call->getReceiver(), ctx, false))
+                && !llvm::any_of(call->args, [&](const NamedValue& arg) { return aliasesRoots(*arg.value, ctx, false); }))
+                return false;
+            if (isTransparentAliasType(call->type)) return true;
             return !storageOnly;
         }
         if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(current)) {
+            // A transparent-typed member of a rooted base designates storage.
+            if (storageOnly && memberExpr->hasType() && isTransparentAliasType(memberExpr->type)) return aliasesRoots(*memberExpr->base, ctx, false);
             current = memberExpr->base;
             continue;
         }
         if (const Expr* indexBase = getIndexBase(*current)) {
+            // A transparent-typed element of a rooted base designates storage.
+            if (storageOnly && current->hasType() && isTransparentAliasType(current->type)) return aliasesRoots(*indexBase, ctx, false);
             current = indexBase;
             continue;
         }
@@ -156,12 +166,11 @@ bool aliasesRoots(const Expr& expr, const RootCtx& ctx, bool storageOnly) {
             continue;
         }
         if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(current)) {
-            // Dereference stays transparent; address-of is a fresh view.
             if (unaryExpr->op == Token::Star) {
                 current = &unaryExpr->getOperand();
                 continue;
             }
-            if (unaryExpr->op == Token::And) return !storageOnly && aliasesRoots(unaryExpr->getOperand(), ctx, false);
+            if (unaryExpr->op == Token::And) return aliasesRoots(unaryExpr->getOperand(), ctx, storageOnly);
             return false;
         }
         if (auto* castExpr = llvm::dyn_cast<ImplicitCastExpr>(current)) {
@@ -260,14 +269,19 @@ bool bindingIsStorage(Type paramType) {
 
 // Whether writing to an assignment or increment target may write root
 // storage. Storing into a bare binding only replaces the callee-owned slot,
-// except for a field of a rooted receiver; projections (member, index,
-// dereference) write through to whatever the base designates.
+// except for a field of a rooted receiver; other targets designate storage
+// only through transparent chains into storage roots (a field of a fresh
+// wrapper is itself callee-owned).
 bool writeTargetMayWrite(const Expr& target, const RootCtx& ctx) {
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(&target)) {
         return ctx.thisRooted && varExpr->decl && llvm::isa<FieldDecl>(varExpr->decl);
     }
     if (llvm::isa<VarDeclExpr>(&target)) return false;
-    return aliasesRoots(target, ctx, false);
+    // Slot question: peel the outermost member; the slot is caller storage
+    // iff the base designates it. A transparent-typed outermost member
+    // still names a slot of the base, not the referent.
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&target)) return aliasesRoots(*memberExpr->base, ctx, true);
+    return aliasesRoots(target, ctx, true);
 }
 
 // Parameters of a call through a function-typed value (local, parameter, or
@@ -466,7 +480,9 @@ bool exprMayWrite(Expr& expr, RootCtx& ctx, ConstMutationQuery& query) {
         // The callee is always a `[]=` overload (a missing one is a check
         // error); its body decides, with the value already an argument.
         if (indexAssign.calleeDecl) return callMayWrite(indexAssign, indexAssign.getBase(), ctx, query);
-        if (aliasesRoots(*indexAssign.getBase(), ctx, false)) return true;
+        // The base designates storage only through transparent chains (a
+        // local array holding roots is itself callee-owned).
+        if (aliasesRoots(*indexAssign.getBase(), ctx, true)) return true;
         return exprMayWrite(*indexAssign.getBase(), ctx, query) || exprMayWrite(*indexAssign.getIndex(), ctx, query)
             || exprMayWrite(*indexAssign.getValue(), ctx, query);
     }
@@ -592,23 +608,37 @@ bool markValueHolder(const Decl* holder, Type valueType, bool rooted, llvm::Smal
     return views.insert(holder).second;
 }
 
+// Re-marks the base of a store holding a rooted alias-capable value:
+// projection stores taint the whole local by its holder type, so a later
+// projection through a transparent member or element still flags while
+// the slot store itself does not. Escaping targets are flagged by
+// storeMayEscape instead. Returns whether anything was added.
+bool markStoreBase(Expr& target, Expr& value, const RootCtx& ctx, llvm::SmallPtrSet<const Decl*, 16>& views, llvm::SmallPtrSet<const Decl*, 16>& storage) {
+    auto* base = assignedBaseVar(target);
+    if (!base || base->identifier == "this" || !base->decl) return false;
+    bool markable = false;
+    Type holderType;
+    if (auto* var = llvm::dyn_cast<VarDecl>(base->decl)) {
+        markable = !var->isGlobal();
+        holderType = var->type;
+    }
+    if (auto* param = llvm::dyn_cast<ParamDecl>(base->decl)) {
+        markable = !param->type.isBorrowOrOptionalBorrow();
+        holderType = param->type;
+    }
+    if (!markable) return false;
+    return markValueHolder(base->decl, holderType, aliasesRoots(value, ctx, false), views, storage);
+}
+
 // One prepass round: marks locals (and payload bindings) assigned rooted
 // alias-capable values. Returns whether anything was added.
 bool collectViewRootsInExpr(Expr& expr, const RootCtx& ctx, llvm::SmallPtrSet<const Decl*, 16>& views, llvm::SmallPtrSet<const Decl*, 16>& storage) {
     bool changed = false;
     if (auto* binary = llvm::dyn_cast<BinaryExpr>(&expr)) {
-        // Reassignments re-mark their base (projection stores taint the whole
-        // local); escaping targets are flagged by storeMayEscape instead.
-        if (isAssignmentOperator(binary->op.kind)) {
-            if (auto* base = assignedBaseVar(binary->getLHS()); base && base->identifier != "this" && base->decl) {
-                bool markable = false;
-                if (auto* var = llvm::dyn_cast<VarDecl>(base->decl)) markable = !var->isGlobal();
-                if (auto* param = llvm::dyn_cast<ParamDecl>(base->decl)) markable = !param->type.isBorrowOrOptionalBorrow();
-                if (markable) {
-                    changed |= markValueHolder(base->decl, binary->getRHS().type, aliasesRoots(binary->getRHS(), ctx, false), views, storage);
-                }
-            }
-        }
+        if (isAssignmentOperator(binary->op.kind)) changed |= markStoreBase(binary->getLHS(), binary->getRHS(), ctx, views, storage);
+    }
+    if (auto* indexAssign = llvm::dyn_cast<IndexAssignmentExpr>(&expr)) {
+        changed |= markStoreBase(*indexAssign->getBase(), *indexAssign->getValue(), ctx, views, storage);
     }
     switch (expr.kind) {
     case ExprKind::CallExpr:

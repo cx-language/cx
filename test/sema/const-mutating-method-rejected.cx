@@ -114,3 +114,100 @@ void literalSmuggle() {
     // CHECK: [[@LINE+1]]:5: error: cannot call 'g' on a constant: it mutates the receiver
     o.g();
 }
+
+struct SliceMemberBox {
+    int[*] p;
+}
+
+struct SliceMemberHolder {
+    int[3] data = [1, 2, 3];
+    void g() {
+        var b = SliceMemberBox(data.data());
+        b.p[1] = 99;
+    }
+}
+
+void transparentSliceMemberIndex() {
+    const o = SliceMemberHolder();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'g' on a constant: it mutates the receiver
+    o.g();
+}
+
+struct InnerBox {
+    Inner* p;
+}
+
+struct InnerHolder {
+    Inner inner = Inner(0);
+    void g() {
+        var b = InnerBox(&inner);
+        b.p.v = 99;
+    }
+}
+
+void transparentPtrMemberChain() {
+    const o = InnerHolder();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'g' on a constant: it mutates the receiver
+    o.g();
+}
+
+struct AddrofHolder {
+    int[3] data = [1, 2, 3];
+    void g() {
+        (&data)[1] = 99;
+    }
+}
+
+void addrofIndex() {
+    const o = AddrofHolder();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'g' on a constant: it mutates the receiver
+    o.g();
+}
+
+struct NestedIdxHolder {
+    int[3] data = [1, 2, 3];
+    void g() {
+        var w = [data.data()];
+        w[0][1] = 99;
+    }
+}
+
+void nestedIndexThroughLocal() {
+    const o = NestedIdxHolder();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'g' on a constant: it mutates the receiver
+    o.g();
+}
+
+struct ReassignIdxHolder {
+    int[3] data = [1, 2, 3];
+    void g() {
+        var z = [0, 0, 0];
+        var w = [z.data()];
+        w[0] = data.data();
+        w[0][1] = 99;
+    }
+}
+
+void reassignIndexThroughLocal() {
+    const o = ReassignIdxHolder();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'g' on a constant: it mutates the receiver
+    o.g();
+}
+
+struct FieldBox {
+    int*? p = null;
+}
+
+struct FieldSlotHolder {
+    FieldBox b = FieldBox();
+    void g() {
+        int q = 1;
+        b.p = &q;
+    }
+}
+
+void rootedFieldTransparentSlot() {
+    const o = FieldSlotHolder();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'g' on a constant: it mutates the receiver
+    o.g();
+}
