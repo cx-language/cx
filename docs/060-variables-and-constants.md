@@ -53,6 +53,8 @@ empty slice globals work as usual.
 
 Global variables are initialized before the program starts,
 so their initializers must be constant expressions too.
+A global always needs an initializer; without one it is an error, since
+no storage would be emitted for it.
 
 ```cs
 struct Color {

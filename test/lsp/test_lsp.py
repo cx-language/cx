@@ -1796,7 +1796,7 @@ def test_server_cache(command):
         # Warnings report on every check, not just the first per process.
         warn_path = os.path.join(directory, "warn.cx")
         warn_uri = "file://" + warn_path
-        warn_content = "int g;\nvoid main() {\n}\n"
+        warn_content = "void main() {\n    var x = 1;\n}\n"
         with open(warn_path, "w") as file:
             file.write(warn_content)
         session.send(
@@ -1807,7 +1807,7 @@ def test_server_cache(command):
             }
         )
         notification = session.read()
-        first_warn = [d for d in notification["params"]["diagnostics"] if d["message"] == "missing initializer"]
+        first_warn = [d for d in notification["params"]["diagnostics"] if d["message"] == "unused variable 'x'; prefix with '_' to suppress"]
         session.send(
             {
                 "jsonrpc": "2.0",
@@ -1819,7 +1819,7 @@ def test_server_cache(command):
             }
         )
         notification = session.read()
-        second_warn = [d for d in notification["params"]["diagnostics"] if d["message"] == "missing initializer"]
+        second_warn = [d for d in notification["params"]["diagnostics"] if d["message"] == "unused variable 'x'; prefix with '_' to suppress"]
         check(
             "server-cache-warning-repeats",
             len(first_warn) == 1 and len(second_warn) == 1,

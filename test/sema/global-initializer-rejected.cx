@@ -1,0 +1,12 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:5: error: global 'g' must have an initializer
+int g;
+
+// CHECK: [[@LINE+1]]:11: error: global 'buf' must have an initializer
+StringBuf buf;
+
+// 'extern' does not exempt: user externs mangle per-module and merge with
+// nothing, so they cannot resolve either.
+// CHECK: [[@LINE+1]]:12: error: global 'ext' must have an initializer
+extern int ext;

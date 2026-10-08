@@ -2415,7 +2415,9 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
                         "reference variable '" << decl.getName() << "' must be initialized (borrows cannot be rebound)");
         }
         if (decl.isGlobal()) {
-            WARN_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "missing initializer");
+            // No storage is emitted without an initializer (the backends
+            // treat it as an extern reference), so this never links.
+            ERROR_RANGE(decl.getLocation(), getIdentifierEndLocation(decl), "global '" << decl.getName() << "' must have an initializer");
         }
         return;
     }
