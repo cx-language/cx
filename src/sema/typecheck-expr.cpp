@@ -3847,6 +3847,31 @@ static std::vector<ParamDecl> getVariableCalleeParams(const VariableDecl& callee
     return llvm::cast<FunctionType>(calleeDecl.type.typeBase)->getParamDecls(calleeDecl.getLocation());
 }
 
+// True when the argument at argIndex mapped to no parameter under the match:
+// a variadic extra, which matching skips, so its errors are genuine rather
+// than expected-type-dependent. Anything without a computable mapping
+// conservatively counts as mapped to preserve the ambiguity report.
+static bool isUnmappedArg(const CallExpr& expr, const Match& match, size_t argIndex) {
+    llvm::ArrayRef<ParamDecl> params;
+    bool isVariadic = false;
+    std::vector<ParamDecl> variableParams;
+    if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(match.decl)) {
+        params = functionDecl->getParams();
+        isVariadic = functionDecl->isVariadic();
+    } else if (auto* variableDecl = llvm::dyn_cast<VariableDecl>(match.decl)) {
+        if (!variableDecl->type.isFunctionType() && !variableDecl->type.isClosureType()) return false;
+        variableParams = getVariableCalleeParams(*variableDecl);
+        params = variableParams;
+    } else {
+        return false;
+    }
+    std::vector<int> argToParam, paramToArg;
+    // Probed matches mapped successfully; only unprobed destructor matches can
+    // fail here (destructors take no arguments). Either way, treat as mapped.
+    if (computeArgParamMapping(expr.args, params, isVariadic, argToParam, paramToArg)) return false;
+    return argToParam[argIndex] == -1;
+}
+
 // True for operators with fallback resolution: == and != retry with swapped operands,
 // and !=, >, >=, and <= derive from == and <. A single non-matching overload must not
 // fail hard for these; it falls through to the fallbacks below like a non-match.
@@ -4207,16 +4232,22 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     auto calleeWithGenericArgs = getDisplayTypeName(callee, expr.genericArgs);
 
     if (matches.size() > 1) {
+        size_t failedArgIndex = 0;
         try {
-            for (auto& arg : expr.args) {
-                if (!arg.value->hasType()) {
-                    typecheckExpr(*arg.value);
+            for (size_t i = 0; i < expr.args.size(); ++i) {
+                failedArgIndex = i;
+                if (!expr.args[i].value->hasType()) {
+                    typecheckExpr(*expr.args[i].value);
                 }
             }
         } catch (const CompileError& error) {
             if (error.isCyclic) throw;
-            // Args like `[]` need expected types to infer. Multiple applicable overloads
-            // means the call is ambiguous; report that instead of the inference error.
+            // An argument no candidate mapped (a variadic extra, which matching
+            // skips) carries a genuine error, so report it instead of the
+            // ambiguity. A mapped argument failed only for lack of an expected
+            // type (e.g. `[]` or a bare enum case): the probing candidates all
+            // accepted it, so the call is ambiguous as before.
+            if (llvm::all_of(matches, [&](const Match& match) { return isUnmappedArg(expr, match, failedArgIndex); })) throw;
             if (overloadProbe) return nullptr;
             ERROR_WITH_NOTES_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation,
                                    getCandidateNotes(map(matches, [](auto& match) { return match.decl; }), expr),
