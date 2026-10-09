@@ -18,8 +18,9 @@ const float d = 0.2; // global constant, explicit type
 
 `const` declares a compile-time constant: the initializer must be a constant
 expression (literals, arithmetic on constants, references to other
-constants, and constructor calls of copyable structs with constant
-arguments, but not other function calls), and the constant cannot be
+constants, integer-to-pointer casts of integer constants, and constructor
+calls of copyable structs with constant arguments, but not other function
+calls), and the constant cannot be
 reassigned or mutated afterwards. Reading or copying a constant's value
 always works, but no alias to it can be formed: taking its address and
 binding it to a borrow, pointer, or view are all rejected.

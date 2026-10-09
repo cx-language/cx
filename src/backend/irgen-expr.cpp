@@ -1481,10 +1481,21 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
 }
 
 Value* IRGenerator::emitBuiltinCast(const CallExpr& expr) {
-    auto* value = emitExpr(*expr.args.front().value);
-    auto* targetType = getIRType(expr.genericArgs.front().getType());
-    if (value->getType()->equals(targetType)) return value;
-    return createCast(value, targetType);
+    // Integer-to-pointer casts of constants fold to a constant address, which
+    // global initializers require (they admit no instructions). Matches the
+    // const-initializer rule, so every accepted cast folds here.
+    const Expr* operand = expr.args.front().value;
+    Type targetType = expr.genericArgs.front().getType();
+    if (targetType.isImplementedAsPointer() && operand->isFoldableIntConstant()) {
+        // Cast validation already rejected non-integer sources; only an
+        // integer-typed operand can be foldable here.
+        ASSERT(operand->type.isInteger());
+        return createConstantIntToPtr(targetType, operand->getConstantIntegerValue());
+    }
+    auto* value = emitExpr(*operand);
+    auto* targetIRType = getIRType(targetType);
+    if (value->getType()->equals(targetIRType)) return value;
+    return createCast(value, targetIRType);
 }
 
 Value* IRGenerator::emitSizeofExpr(const SizeofExpr& expr) {

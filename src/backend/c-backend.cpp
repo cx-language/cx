@@ -184,6 +184,7 @@ template<typename Fn> void forEachOperand(const Instruction* inst, Fn&& fn) {
     case ValueKind::ConstantFP:
     case ValueKind::ConstantBool:
     case ValueKind::ConstantNull:
+    case ValueKind::ConstantIntToPtr:
     case ValueKind::Undefined:
         break;
     }
@@ -1131,6 +1132,8 @@ void CGenerator::codegenGlobalInitializer(const Value* value) {
         return codegenConstantString(llvm::cast<ConstantString>(value));
     case ValueKind::ConstantNull:
         return codegenConstantNull(llvm::cast<ConstantNull>(value));
+    case ValueKind::ConstantIntToPtr:
+        return codegenConstantIntToPtr(llvm::cast<ConstantIntToPtr>(value));
     case ValueKind::Function:
         stream << getCFunctionName(llvm::cast<Function>(value));
         return;
@@ -1264,6 +1267,20 @@ void CGenerator::codegenConstantNull(const ConstantNull*) {
     stream << "NULL";
 }
 
+void CGenerator::codegenConstantIntToPtr(const ConstantIntToPtr* inst) {
+    stream << "((";
+    codegenTypeExpression(stream, inst->type, true);
+    stream << ")";
+    // Print through a pointer-sized integer so the literal keeps its value; the
+    // sign matches the value so negatives (e.g. -1) spell naturally. The host
+    // pointer width is the target width (native host, or wasm32 under Emscripten).
+    int width = static_cast<int>(sizeof(void*) * 8);
+    Type intType = inst->value.isNegative() ? (width == 64 ? Type::getInt64() : Type::getInt32())
+                                            : (width == 64 ? Type::getUInt64() : Type::getUInt32());
+    codegenAPSInt(getIRType(intType), inst->value);
+    stream << ")";
+}
+
 void CGenerator::codegenUndefined(const Undefined*) {
     llvm_unreachable("undefined instructions should be handled in parent instruction");
 }
@@ -1392,6 +1409,8 @@ void CGenerator::codegenInstImpl(const Value* value) {
         return codegenConstantBool(llvm::cast<ConstantBool>(value));
     case ValueKind::ConstantNull:
         return codegenConstantNull(llvm::cast<ConstantNull>(value));
+    case ValueKind::ConstantIntToPtr:
+        return codegenConstantIntToPtr(llvm::cast<ConstantIntToPtr>(value));
     case ValueKind::Undefined:
         return codegenUndefined(llvm::cast<Undefined>(value));
     }

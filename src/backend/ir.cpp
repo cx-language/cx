@@ -144,6 +144,9 @@ static void deleteIRValue(Value* value) {
     case ValueKind::ConstantNull:
         delete static_cast<ConstantNull*>(value);
         break;
+    case ValueKind::ConstantIntToPtr:
+        delete static_cast<ConstantIntToPtr*>(value);
+        break;
     case ValueKind::Undefined:
         delete static_cast<Undefined*>(value);
         break;
@@ -444,6 +447,8 @@ IRType* Value::getType() const {
         return getIRType(Type::getBool());
     case ValueKind::ConstantNull:
         return llvm::cast<ConstantNull>(this)->type;
+    case ValueKind::ConstantIntToPtr:
+        return llvm::cast<ConstantIntToPtr>(this)->type;
     case ValueKind::Undefined:
         return llvm::cast<Undefined>(this)->type;
     }
@@ -540,6 +545,11 @@ std::string Value::getName() const {
         return llvm::cast<ConstantBool>(this)->value ? "true" : "false";
     case ValueKind::ConstantNull:
         return "null";
+    case ValueKind::ConstantIntToPtr: {
+        llvm::SmallString<128> buffer;
+        llvm::cast<ConstantIntToPtr>(this)->value.toString(buffer, 10);
+        return "inttoptr(" + std::string(buffer) + ")";
+    }
     case ValueKind::Undefined:
         return "undefined";
     }
@@ -559,7 +569,8 @@ Value* Value::getBranchArgument() const {
 
 static bool isConstant(const Value* inst) {
     return inst->kind == ValueKind::ConstantInt || inst->kind == ValueKind::ConstantFP || inst->kind == ValueKind::ConstantString
-        || inst->kind == ValueKind::Undefined || inst->kind == ValueKind::ConstantNull || inst->kind == ValueKind::ConstantBool;
+        || inst->kind == ValueKind::Undefined || inst->kind == ValueKind::ConstantNull || inst->kind == ValueKind::ConstantBool
+        || inst->kind == ValueKind::ConstantIntToPtr;
 }
 
 static std::unordered_map<const Value*, std::string> valuesNames;
@@ -807,6 +818,8 @@ void Value::print(llvm::raw_ostream& stream) const {
         llvm_unreachable("unhandled ConstantBool");
     case ValueKind::ConstantNull:
         llvm_unreachable("unhandled ConstantNull");
+    case ValueKind::ConstantIntToPtr:
+        llvm_unreachable("unhandled ConstantIntToPtr");
     case ValueKind::Undefined:
         llvm_unreachable("unhandled Undefined");
     }

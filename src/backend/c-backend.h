@@ -53,6 +53,7 @@ struct CGenerator {
     void codegenConstantFP(const ConstantFP* inst);
     void codegenConstantBool(const ConstantBool* inst);
     void codegenConstantNull(const ConstantNull* inst);
+    void codegenConstantIntToPtr(const ConstantIntToPtr* inst);
     void codegenUndefined(const Undefined* inst);
     void codegenInst(const Value* value);
     void codegenInstImpl(const Value* value);

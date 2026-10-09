@@ -237,6 +237,10 @@ struct IRGenerator {
         return new ConstantNull{ValueKind::ConstantNull, type};
     }
     Value* createConstantNull(Type type) { return createConstantNull(getIRType(type)); }
+    Value* createConstantIntToPtr(Type type, llvm::APSInt value) {
+        ASSERT(getIRType(type)->isPointerType());
+        return new ConstantIntToPtr{ValueKind::ConstantIntToPtr, getIRType(type), std::move(value)};
+    }
     Value* createUndefined(IRType* type) { return new Undefined{ValueKind::Undefined, type}; }
     Value* createUndefined(Type type) { return createUndefined(getIRType(type)); }
     Value* createBinaryOp(BinaryOperator op, Value* left, Value* right, const Expr* expr, const llvm::Twine& name = "") {

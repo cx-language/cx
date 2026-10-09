@@ -41,6 +41,13 @@ struct S {
     const MAX = n;
 }
 
+// Integer-to-pointer casts need a constant operand to initialize a const.
+const void*? okNull = cast<void*?>(0);
+// CHECK: [[@LINE+1]]:17: error: const 'badCast' initializer must be a constant expression
+const badCast = cast<void*?>(n);
+// CHECK: [[@LINE+1]]:20: error: const 'badPtrCast' initializer must be a constant expression
+const badPtrCast = cast<void*?>(okNull);
+
 void main() {
     // CHECK: [[@LINE+1]]:15: error: const 'm' initializer must be a constant expression
     const m = n;

@@ -1220,6 +1220,17 @@ llvm::Value* LLVMGenerator::codegenCast(const CastInst* inst) {
         if (sourceType->isUnsignedInteger() || sourceType->isChar()) return builder.CreateUIToFP(value, getLLVMType(type));
     }
 
+    if (type->isPointerType() && (sourceType->isInteger() || sourceType->isChar() || sourceType->isBool())) {
+        // Integer-to-pointer casts preserve the value like integer widenings:
+        // signed sources sign-extend, anything else zero-extends. (Plain
+        // `inttoptr` would zero-extend unconditionally, disagreeing with the
+        // constant fold and the C backend for negative narrow operands.)
+        unsigned pointerWidth = getHostDataLayout().getPointerSizeInBits();
+        auto* wideInt = llvm::IntegerType::get(ctx, pointerWidth);
+        llvm::Value* extended = sourceType->isSignedInteger() ? builder.CreateSExtOrTrunc(value, wideInt) : builder.CreateZExtOrTrunc(value, wideInt);
+        return builder.CreateIntToPtr(extended, getLLVMType(type), inst->name);
+    }
+
     return builder.CreateBitOrPointerCast(value, getLLVMType(type), inst->name);
 }
 
@@ -1282,6 +1293,13 @@ llvm::Value* LLVMGenerator::codegenConstantBool(const ConstantBool* inst) {
 
 llvm::Value* LLVMGenerator::codegenConstantNull(const ConstantNull* inst) {
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(getLLVMType(inst->type)));
+}
+
+llvm::Value* LLVMGenerator::codegenConstantIntToPtr(const ConstantIntToPtr* inst) {
+    auto* destType = llvm::cast<llvm::PointerType>(getLLVMType(inst->type));
+    unsigned pointerWidth = getHostDataLayout().getPointerSizeInBits();
+    auto* intValue = llvm::ConstantInt::get(llvm::IntegerType::get(ctx, pointerWidth), inst->value.extOrTrunc(pointerWidth));
+    return llvm::ConstantExpr::getIntToPtr(intValue, destType);
 }
 
 llvm::Value* LLVMGenerator::codegenUndefined(const Undefined* inst) {
@@ -1365,6 +1383,8 @@ llvm::Value* LLVMGenerator::codegenInst(const Value* value) {
         return codegenConstantBool(llvm::cast<ConstantBool>(value));
     case ValueKind::ConstantNull:
         return codegenConstantNull(llvm::cast<ConstantNull>(value));
+    case ValueKind::ConstantIntToPtr:
+        return codegenConstantIntToPtr(llvm::cast<ConstantIntToPtr>(value));
     case ValueKind::Undefined:
         return codegenUndefined(llvm::cast<Undefined>(value));
     }

@@ -62,6 +62,17 @@ void main() {
 }
 ```
 
+An integer-to-pointer cast of a constant is itself constant, so it can
+initialize a `const` or global:
+
+```cs
+const void*? invalid = cast<void*?>(-1);
+
+void main() {
+    println(invalid == invalid); // prints true
+}
+```
+
 Casts that don't make sense are rejected at compile time, for example `cast<int**>(false)`.
 Conversions that are always safe need no syntax at all:
 integer literals convert to the expected numeric type automatically,

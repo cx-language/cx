@@ -181,6 +181,7 @@ enum class ValueKind {
     ConstantFP,
     ConstantBool,
     ConstantNull,
+    ConstantIntToPtr,
     Undefined,
 };
 
@@ -476,6 +477,13 @@ struct ConstantNull : Value {
     IRType* type;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::ConstantNull; }
+};
+
+struct ConstantIntToPtr : Value {
+    IRType* type;
+    llvm::APSInt value;
+
+    static bool classof(const Value* v) { return v->kind == ValueKind::ConstantIntToPtr; }
 };
 
 struct Undefined : Value {

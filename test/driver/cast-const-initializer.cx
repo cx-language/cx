@@ -1,0 +1,43 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx --print-c -Werror %s 2>&1 | %FileCheck %s --check-prefix=C
+
+// Explicit integer-to-pointer casts in constant initializers (plain cx, no imports).
+// Mirrors the const-cast support used for C pointer-cast macro imports.
+
+// CHECK:nullptr
+// CHECK:null
+// CHECK:-1
+// CHECK:raw-1
+// CHECK:neg-parity
+// CHECK:global-1
+// CHECK:done
+
+// The C backend folds the nonzero consts to address constants, including the
+// mutable global below (a real global initializer, not an inlined use).
+// C: = ((void*)-1);
+// C: = (int32_t) ((void*)-1);
+// C: = (int32_t) ((void*)-1);
+
+const void*? nullVoid = cast<void*?>(0);
+const int*? nullInt = cast<int*?>(0);
+const void*? invalid = cast<void*?>(-1);
+const void* rawInvalid = cast<void*>(-1);
+const int negOne = -1;
+const void*? foldedNeg = cast<void*?>(negOne);
+void* gInvalid = cast<void*>(-1);
+
+int main() {
+    void*? p = nullVoid;
+    println(p == null ? "nullptr" : "FAIL");
+    int*? q = nullInt;
+    println(q == null ? "null" : "FAIL");
+    println(cast<int>(invalid) == -1 ? "-1" : "FAIL");
+    println(cast<int>(rawInvalid) == -1 ? "raw-1" : "FAIL");
+    // A folded negative narrow address must equal the same runtime cast.
+    var y = -1;
+    void*? runtimeNeg = cast<void*?>(y);
+    println(cast<int64>(foldedNeg) == cast<int64>(runtimeNeg) ? "neg-parity" : "FAIL");
+    println(cast<int>(gInvalid) == -1 ? "global-1" : "FAIL");
+    println("done");
+    return 0;
+}

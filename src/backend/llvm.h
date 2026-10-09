@@ -49,6 +49,7 @@ struct LLVMGenerator {
     llvm::Value* codegenConstantFP(const ConstantFP* inst);
     llvm::Value* codegenConstantBool(const ConstantBool* inst);
     llvm::Value* codegenConstantNull(const ConstantNull* inst);
+    llvm::Value* codegenConstantIntToPtr(const ConstantIntToPtr* inst);
     llvm::Value* codegenUndefined(const Undefined* inst);
     llvm::Value* getValue(const Value* value);
     llvm::Value* codegenInst(const Value* value);
