@@ -4530,8 +4530,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         // An explicit deinit consumes the value like a move, suppressing the scope-exit destructor call.
         // Unlike other moves this applies even to trivial receivers: the base may still
         // hold destruction to skip. Borrowed bases keep the old ungated leniency.
-        auto consumeDeinitBase = [&](Expr* receiver) {
-            if (consumeTrackedDeinitTarget(receiver)) return;
+        // Forget shares the consumption; only the destruction itself differs.
+        auto consumeBase = [&](Expr* receiver, llvm::StringRef verb) {
+            if (consumeTrackedDeinitTarget(receiver, verb)) return;
             // Deinit inside a union is a raw destroy (see Expr::isInsideUnion).
             if (receiver->isInsideUnion()) return;
             Expr* base = receiver;
@@ -4585,8 +4586,12 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             return Type::getInt32();
         }
 
-        if (receiverType.removeOptional().removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
-            consumeDeinitBase(expr.getReceiver());
+        if (receiverType.removeOptional().removePointer().isBuiltinType() && (expr.getFunctionName() == "deinit" || expr.getFunctionName() == "forget")) {
+            if (expr.getFunctionName() == "forget") {
+                validateAndConvertArguments(expr, {}, false, expr.getFunctionName());
+                validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
+            }
+            consumeBase(expr.getReceiver(), expr.getFunctionName());
             return Type::getVoid();
         }
 
@@ -4624,7 +4629,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             }
         }
 
-        if (decls.empty() && strippedReceiverType.isFixedArray() && expr.getFunctionName() != "deinit") {
+        if (decls.empty() && strippedReceiverType.isFixedArray() && expr.getFunctionName() != "deinit" && expr.getFunctionName() != "forget") {
             ERROR_RANGE(getExprRangeStart(*expr.getReceiver()), expr.getReceiver()->endLocation,
                         "type '" << receiverType.removePointer() << "' has no member function '" << expr.getFunctionName() << "'");
         }
@@ -4641,11 +4646,21 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
 
         if (decls.empty() && expr.getFunctionName() == "deinit") {
-            consumeDeinitBase(expr.getReceiver());
+            consumeBase(expr.getReceiver(), expr.getFunctionName());
             // Arrays and anonymous structs declare no destructor, so IRGen
             // destroys owning elements structurally; mark their destructors
             // like implicit destruction.
             if (strippedReceiverType.isFixedArray() || strippedReceiverType.isAnonymousStructType()) markDestructorFor(strippedReceiverType);
+            return Type::getVoid();
+        }
+
+        // Forget ends the value's lifetime without destroying it, for bytes
+        // already moved elsewhere by hand. Like deinit it consumes the value;
+        // unlike deinit no destructor runs, here or at scope exit.
+        if (decls.empty() && expr.getFunctionName() == "forget") {
+            validateAndConvertArguments(expr, {}, false, expr.getFunctionName());
+            validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
+            consumeBase(expr.getReceiver(), expr.getFunctionName());
             return Type::getVoid();
         }
 
@@ -4749,7 +4764,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         // For projections only a base with destruction to skip is consumed: destroying an
         // element through a pointer (`buffer[0].deinit()`) must not consume the pointer.
         if (llvm::isa<DestructorDecl>(decl)) {
-            consumeDeinitBase(expr.getReceiver());
+            consumeBase(expr.getReceiver(), expr.getFunctionName());
         }
     } else {
         auto callee = expr.getFunctionName();
@@ -6302,7 +6317,7 @@ void Typechecker::taintDeinitPtrTarget(Decl* ptrDecl) {
     if (auto it = deinitPtrTargets.find(ptrDecl); it != deinitPtrTargets.end()) it->second = nullptr;
 }
 
-bool Typechecker::consumeTrackedDeinitTarget(Expr* receiver) {
+bool Typechecker::consumeTrackedDeinitTarget(Expr* receiver, llvm::StringRef verb) {
     // Peel projections (`p[0]`, `(*p).field`, ...) down to the dereference
     // chain; the projection applies to the resolved target exactly like the
     // direct form (`arr[0].deinit()` consumes `arr`).
@@ -6351,12 +6366,13 @@ bool Typechecker::consumeTrackedDeinitTarget(Expr* receiver) {
         auto it = deinitPtrTargets.find(target);
         if (it == deinitPtrTargets.end()) return false;
         if (!it->second) {
-            ERROR(receiver->location, "cannot deinit through pointer '" << baseVar->decl->getName() << "' with untracked target; deinit the value directly");
+            ERROR(receiver->location,
+                  "cannot " << verb << " through pointer '" << baseVar->decl->getName() << "' with untracked target; " << verb << " the value directly");
         }
         target = it->second;
         Type hopType = llvm::cast<VariableDecl>(target)->type;
         if (hopType && hopType.isReferenceType() && hopType.getPointee().needsDestruction()) {
-            ERROR_RANGE(getExprRangeStart(*receiver), receiver->endLocation, "cannot deinit through pointer to borrow '" << target->getName() << "'");
+            ERROR_RANGE(getExprRangeStart(*receiver), receiver->endLocation, "cannot " << verb << " through pointer to borrow '" << target->getName() << "'");
         }
     }
     auto* targetVar = llvm::cast<VariableDecl>(target);

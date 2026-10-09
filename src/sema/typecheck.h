@@ -455,7 +455,7 @@ struct Typechecker {
     // pointer, like a direct deinit of the target. Returns false (leaving the
     // receiver to the lenient untracked path) when no tracked dereference is
     // crossed; tainted pointers are an error.
-    bool consumeTrackedDeinitTarget(Expr* receiver);
+    bool consumeTrackedDeinitTarget(Expr* receiver, llvm::StringRef verb);
     // True while checking a placement-`init` argument, which moves out of raw
     // container storage with no owner, so borrow/dereference moves are allowed.
     bool inMoveInit = false;

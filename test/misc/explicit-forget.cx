@@ -1,0 +1,23 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Loud {
+    int id;
+    ~Loud() {
+        println("dtor ", id);
+    }
+}
+
+void main() {
+    var a = Loud(1);
+    println(a.id); // CHECK:1
+    var b = Loud(2);
+    // Forget suppresses destruction, here and at scope exit.
+    b.forget();
+    println("mid"); // CHECK-NEXT:mid
+    var arr = [Loud(3), Loud(4)];
+    arr.forget();
+    println("end"); // CHECK-NEXT:end
+    // Only `a` still destroys, when main returns.
+    // CHECK-NEXT:dtor 1
+}
