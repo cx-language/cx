@@ -54,7 +54,7 @@ void main() {
 
 void constArrayDoesNotConvertToSlice() {
     const a = [5, 4, 3, 2, 1];
-    // CHECK: [[@LINE+1]]:10: error: invalid argument #1 type 'int[5]' to 'sort', expected 'Slice<int>'
+    // CHECK: [[@LINE+1]]:10: error: invalid argument #1 type 'int[5]' to 'sort', expected 'int[]'
     sort(a);
 }
 

@@ -1,10 +1,10 @@
 
 int32 main() {
-    Optional<Slice<int8>>* a = alloca Optional<Slice<int8>>
-    Optional<Slice<int8>>* enum = alloca Optional<Slice<int8>>
+    Optional<int8[]>* a = alloca Optional<int8[]>
+    Optional<int8[]>* enum = alloca Optional<int8[]>
     int32* tag = getelementptr enum, 0
     store int32 0 to tag
-    Optional<Slice<int8>> enum.load = load enum
+    Optional<int8[]> enum.load = load enum
     store enum.load to a
     void _0 = call _CX1N3std10checkLeaksE4void0_()
     return int32 0

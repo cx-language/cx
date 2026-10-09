@@ -813,6 +813,12 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
             break;
         }
 
+        if (isSlice()) {
+            getElementType().printTo(stream, canonical);
+            stream << "[]";
+            break;
+        }
+
         stream << getName();
 
         auto genericArgs = llvm::cast<BasicType>(typeBase)->genericArgs;
