@@ -73,9 +73,9 @@ void main() {
     assert(plusOne(41) == 42);
     assert(strLen("hello") == 5);
 
-    // Stored pointers reborrow as borrows.
+    // Stored pointers are dereferenced explicitly to borrow the pointee.
     int* p = &x;
-    assert(plusOne(p) == 3);
+    assert(plusOne(*p) == 3);
     bump(p);
     assert(x == 3);
 
@@ -115,15 +115,10 @@ void main() {
     assert(p == p);
     assert(p != r);
 
-    // Nullable borrows accept lvalues, temporaries, null, and (nullable) pointers.
+    // Nullable borrows accept lvalues, temporaries, and null.
     assert(getOrNegOne(x) == 4);
     assert(getOrNegOne(7) == 7);
     assert(getOrNegOne(null) == -1);
-    assert(getOrNegOne(p) == 4);
-    int*? q2 = &x;
-    assert(getOrNegOne(q2) == 4);
-    int*? n = null;
-    assert(getOrNegOne(n) == -1);
 
     // Nullable borrows work as locals, inferred or explicit; writes alias.
     var ib = maybeBorrow(true, x);

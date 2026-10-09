@@ -1,4 +1,4 @@
-// RUN: %not %cx -typecheck %s -Wno-unused 2>&1 | %FileCheck %s
+// RUN: %not %cx -typecheck -error-limit 0 %s -Wno-unused 2>&1 | %FileCheck %s
 
 void f(int* p, int* q, int[*] s, int[*] t, int x) {
     // CHECK: [[@LINE+1]]:9: error: invalid operands 'int*' and 'int' to '+'; pointer arithmetic is not supported; dereference with '*' to operate on the pointed-to value
@@ -32,5 +32,15 @@ void g(int* p, int* q, int[*] s, int[*] t, int*? o) {
     _ = s == t;
     _ = s < t;
     _ = -*p + *q;
+}
+
+void optionalPointerVsValue(int*? o, int x) {
+    // Optional pointers compare against null and other pointers only;
+    // dereference explicitly to compare the pointee.
+    // CHECK: [[@LINE+1]]:11: error: no matching operator '==' with arguments 'int*?' and 'int'
+    _ = o == x;
+    // CHECK: [[@LINE+1]]:11: error: no matching operator '==' with arguments 'int' and 'int*?'
+    _ = x == o;
+    _ = o != null && *o == x;
 }
 

@@ -216,7 +216,7 @@ StringBuf join(string a, string b) {
 StringBuf joinAll(string[] parts) {
     var result = StringBuf();
     for part in parts {
-        result = join(string(&result), part);
+        result = join(string(result), part);
     }
     return result;
 }
@@ -225,7 +225,7 @@ StringBuf joinAll(string[] parts) {
 StringBuf joinAll(List<string>& parts) {
     var result = StringBuf();
     for part in parts {
-        result = join(string(&result), part);
+        result = join(string(result), part);
     }
     return result;
 }
@@ -307,8 +307,8 @@ StringBuf normalize(string path) {
 StringBuf relativePath(string from, string to) {
     var nfrom = normalize(from);
     var nto = normalize(to);
-    var sfrom = string(&nfrom);
-    var sto = string(&nto);
+    var sfrom = string(nfrom);
+    var sto = string(nto);
     var dfrom = splitDrive(sfrom);
     var dto = splitDrive(sto);
     var fromRooted = dfrom.rest.size() > 0 && isSeparator(dfrom.rest[0]);

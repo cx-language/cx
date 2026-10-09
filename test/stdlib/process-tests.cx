@@ -18,12 +18,12 @@ void testRunStatus() {
     var r3 = run("exit 3");
     assert(r3.status == 3);
     var silent = run("exit 0");
-    assert(string(&silent.output) == "");
+    assert(string(silent.output) == "");
 }
 
 @test
 void testRunOutput() {
     var result = run("echo hello");
     assert(result.status == 0);
-    assert(string(&result.output).contains("hello"));
+    assert(string(result.output).contains("hello"));
 }

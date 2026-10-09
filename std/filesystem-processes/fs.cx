@@ -199,7 +199,7 @@ private List<StringBuf> readDirectoryListing(StringBuf command, bool stripCarria
                 current.pop();
             }
             if !current.empty() {
-                result.push(StringBuf(string(&current)));
+                result.push(StringBuf(string(current)));
             }
             current = StringBuf();
             if c < 0 break;

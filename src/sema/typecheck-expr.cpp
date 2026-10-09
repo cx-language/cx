@@ -393,9 +393,8 @@ void Typechecker::dropNarrowingForAddressArg(const Expr& arg, Type paramType) {
             if (auto* var = llvm::dyn_cast<VarExpr>(cast->operand); var && var->decl) dropUnlessPayloadWrite(var->decl);
             return;
         }
-        // Reborrow, wrapping, and narrowed-address unwraps all forward the address.
-        if (cast->castKind != ImplicitCastExpr::Reborrow && cast->castKind != ImplicitCastExpr::OptionalWrap
-            && cast->castKind != ImplicitCastExpr::OptionalUnwrapPointer) {
+        // Wrapping and narrowed-address unwraps forward the address.
+        if (cast->castKind != ImplicitCastExpr::OptionalWrap && cast->castKind != ImplicitCastExpr::OptionalUnwrapPointer) {
             return;
         }
         exposed = cast->operand;
@@ -2332,21 +2331,6 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    // Reborrow a pointer as a borrow of its pointee. The address passes through unchanged;
-    // this only reinterprets the static type, so borrows keep working where pointers flow.
-    if (target.isReferenceType() && source.isPointerType() && !source.isReferenceType() && source.getPointee() == target.getPointee()) {
-        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::Reborrow;
-        return target;
-    }
-
-    // Reborrow an optional pointer as an optional borrow. Like Reborrow, the address passes
-    // through unchanged with null staying null; this only reinterprets the static type.
-    if (target.isOptionalType() && target.getWrappedType().isReferenceType() && source.isOptionalType() && source.getWrappedType().isPointerType()
-        && !source.getWrappedType().isReferenceType() && source.getWrappedType().getPointee() == target.getWrappedType().getPointee()) {
-        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::Reborrow;
-        return target;
-    }
-
     // Borrows read through implicitly; raw pointers require explicit '*'. Copying out of a
     // borrow is implicit, moving out requires explicit '*' so moves stay visible.
     if (source.isReferenceType() && expr && !expr->isReferenceExpr() && target.isImplicitlyCopyable() && source.getPointee() == target) {
@@ -3766,7 +3750,7 @@ static const Match* findUniqueBorrowPackMatch(llvm::ArrayRef<Match> matches) {
 // winner. Only borrow casts qualify: other casts produce new values.
 static const Expr* withoutBorrowCasts(const Expr* expr) {
     while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
-        if (cast->castKind != ImplicitCastExpr::AutoReference && cast->castKind != ImplicitCastExpr::Reborrow) break;
+        if (cast->castKind != ImplicitCastExpr::AutoReference) break;
         expr = cast->operand;
     }
     return expr;
@@ -3778,8 +3762,6 @@ static const Expr* withoutBorrowCasts(const Expr* expr) {
 // mutable arguments once by-value overloads exist). Rvalues bind to references
 // only through temporaries, so they don't count: the rules below give those
 // (and consts, which never bind to references) to the by-value overload.
-// Reborrowed pointers don't count either: reinterpreting char* as char& is a
-// conversion, so it must not beat an exact by-value match.
 static const Match* findMatchWithMostRefBinds(llvm::ArrayRef<Match> matches, const CallExpr& call) {
     const Match* result = nullptr;
     auto bestCount = -1;
@@ -3788,12 +3770,7 @@ static const Match* findMatchWithMostRefBinds(llvm::ArrayRef<Match> matches, con
         for (size_t i = 0; i < call.args.size(); ++i) {
             Type paramType = params[size_t(argToParam[i])].type;
             const Expr* arg = withoutBorrowCasts(call.args[i].value);
-            // Mirror the Reborrow conversion rule: only a pointer reinterpreted
-            // as a borrow of its pointee is excluded, not a direct borrow of a
-            // pointer variable (int* to int*& still counts).
-            bool isReborrow =
-                paramType.isReferenceType() && arg->type.isPointerType() && !arg->type.isReferenceType() && arg->type.getPointee() == paramType.getPointee();
-            if (paramType.isReferenceType() && arg->isLvalue() && !isReborrow) ++count;
+            if (paramType.isReferenceType() && arg->isLvalue()) ++count;
         }
         if (count > bestCount) {
             bestCount = count;
@@ -6281,7 +6258,7 @@ void Typechecker::setMoved(Expr* expr, bool isMoved, bool trackVars) {
 
     if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(expr)) {
         // Ownership transfers through value casts. Borrow casts (AutoReference,
-        // AutoDereference, Reborrow) and conversions (already marked where the
+        // AutoDereference) and conversions (already marked where the
         // conversion was built; IRGen reads the flag off the cast itself) stop here.
         if (isMoved && (cast->castKind == ImplicitCastExpr::OptionalWrap || cast->castKind == ImplicitCastExpr::OptionalUnwrap) && consumes(cast->operand)) {
             errorIfIllegalPlaceMove(cast->operand);

@@ -1735,8 +1735,6 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
         return emitPlainExpr(*expr.operand);
     case ImplicitCastExpr::AutoDereference:
         return createLoad(emitPlainExpr(*expr.operand));
-    case ImplicitCastExpr::Reborrow:
-        return emitExpr(*expr.operand);
     case ImplicitCastExpr::NumericWiden:
         return createCastIfNeeded(emitExpr(*expr.operand), expr.type);
     case ImplicitCastExpr::UserConversion:

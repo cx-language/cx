@@ -21,9 +21,9 @@ bool isDirectory(string path) {
 void listdir(string name, int indent) {
     var names = listDirectory(name);
     for i in 0..names.size() {
-        var path = name + '/' + string(&names[i]);
+        var path = name + '/' + string(names[i]);
         print(" ".repeat(indent));
-        println(string(&path));
+        println(string(path));
 
         if isDirectory(string(path)) {
             listdir(string(path), indent + 4);
@@ -44,7 +44,7 @@ void listdir(string name, int indent) {
 
         var path = name + '/' + entry.d_name;
         print(" ".repeat(indent));
-        println(string(&path));
+        println(string(path));
 
         if entry.d_type == DT_DIR {
             listdir(string(path), indent + 4);

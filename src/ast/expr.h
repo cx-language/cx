@@ -441,7 +441,6 @@ struct ImplicitCastExpr : Expr {
         OptionalUnwrapPointer,
         AutoReference,
         AutoDereference,
-        Reborrow,
         NumericWiden,
         UserConversion,
     };

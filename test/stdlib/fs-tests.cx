@@ -17,8 +17,8 @@ void testCreateListRenameRemove() {
 
     var names = listDirectory("cx_fs_test_dir");
     assert(names.size() == 2);
-    assert(string(&names[0]) == "a.txt");
-    assert(string(&names[1]) == "b.txt");
+    assert(string(names[0]) == "a.txt");
+    assert(string(names[1]) == "b.txt");
 
     assert(rename("cx_fs_test_dir/a.txt", "cx_fs_test_dir/c.txt"));
     assert(!exists("cx_fs_test_dir/a.txt"));

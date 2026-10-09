@@ -312,30 +312,30 @@ void rebuildAround(World& w, int x, int y, int z) {
     var cz = z / chunkD;
     var c = worldChunk(w, cx, cz);
     if c != null {
-        buildChunkMesh(w, c);
+        buildChunkMesh(w, *c);
     }
     if x % chunkW == 0 {
         var n = worldChunk(w, cx - 1, cz);
         if n != null {
-            buildChunkMesh(w, n);
+            buildChunkMesh(w, *n);
         }
     }
     if x % chunkW == chunkW - 1 {
         var n = worldChunk(w, cx + 1, cz);
         if n != null {
-            buildChunkMesh(w, n);
+            buildChunkMesh(w, *n);
         }
     }
     if z % chunkD == 0 {
         var n = worldChunk(w, cx, cz - 1);
         if n != null {
-            buildChunkMesh(w, n);
+            buildChunkMesh(w, *n);
         }
     }
     if z % chunkD == chunkD - 1 {
         var n = worldChunk(w, cx, cz + 1);
         if n != null {
-            buildChunkMesh(w, n);
+            buildChunkMesh(w, *n);
         }
     }
 }

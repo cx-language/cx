@@ -118,7 +118,7 @@ int main(string[] argv) {
     if parser.helpRequested() {
         var helpCmd = parser.matchedCommand();
         if helpCmd {
-            println(commandHelpText(parser, helpCmd));
+            println(commandHelpText(parser, *helpCmd));
         } else {
             println(helpText(parser));
         }
@@ -138,14 +138,14 @@ int main(string[] argv) {
     var cmd = parser.matchedCommand();
     if cmd {
         if cmd.name == "add" {
-            return runAdd(cmd, tasks, parser.option("db"), parser.flag("verbose"));
+            return runAdd(*cmd, tasks, parser.option("db"), parser.flag("verbose"));
         }
         if cmd.name == "list" {
-            runList(cmd, tasks);
+            runList(*cmd, tasks);
             return 0;
         }
         if cmd.name == "done" {
-            return runDone(cmd, tasks, parser.option("db"));
+            return runDone(*cmd, tasks, parser.option("db"));
         }
     }
     return 1;

@@ -3,7 +3,7 @@
 void main() {
     var list = List<int>();
     list.push(10);
-    var slice = Slice(&list);
+    var slice = Slice(list);
     println(slice[4]);
 }
 

@@ -21,7 +21,7 @@ struct MappedIterator<Output, Input, It, Transform>: Iterator<Output&>, Printabl
     /// Returns the next transformed element.
     Output& value() {
         current = transform(*source.value());
-        return &current!;
+        return current!;
     }
 
     /// Advances to the next element.

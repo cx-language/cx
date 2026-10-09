@@ -54,14 +54,6 @@ void invalidatedByCall() {
     takePayload(&t);
 }
 
-void invalidatedByReborrow() {
-    S? s = S(1);
-    if s == null { return; }
-    borrowOptional(&s);
-    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'S?*' to 'takePayload', expected 'S*'
-    takePayload(&s);
-}
-
 void invalidatedByWrap() {
     S? s = S(1);
     if s == null { return; }

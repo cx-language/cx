@@ -57,7 +57,8 @@ borrowed: they are compile-time values with no address, so bind them to a
 local first if a borrow is needed. Computed values derived from constants
 (e.g. `c + 1`) are temporaries and borrow normally, as do const operands
 of operator overloads.
-Passing a stored `T*` where a `T&` is expected reborrows it.
+Passing a stored `T*` where a `T&` is expected is an error; dereference it
+explicitly (`*p`) to borrow the pointee.
 Inside the function, member access and operators use the borrowed value directly; `*` moves a value out explicitly.
 Mutating fields or elements through a borrowed parameter is fine, but reassigning the
 whole value (`*p = v`) warns: take `T*` instead, so the `&` at the call site shows
@@ -85,7 +86,7 @@ void main() {
 ```
 
 A borrow can be nullable, written `T&?`, for parameters that may or may not receive a value.
-It accepts everything a `T&` accepts, plus `null` and nullable pointers.
+It accepts everything a `T&` accepts, plus `null`.
 Inside the function, test the parameter before dereferencing it.
 Nullable borrows also work as local variable types, both inferred
 (`var count = counts[key];` deduces `int&?`) and explicit (`int&? r = ...`).

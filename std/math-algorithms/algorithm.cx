@@ -21,6 +21,14 @@ T max<T: Copyable + Comparable>(T a, T b) {
     return b;
 }
 
+/// Gives the greater of the two pointers, comparing memory addresses.
+T* max<T>(T* a, T* b) {
+    if a >= b {
+        return a;
+    }
+    return b;
+}
+
 /// Gives a reference to the minimum of the two elements.
 /// Like C++ std::min, the result borrows one of the arguments, so it must not
 /// outlive them. Calls with a `const` argument, or with only temporaries, use
@@ -42,6 +50,14 @@ T min<T: Copyable + Comparable>(T a, T b) {
     return b;
 }
 
+/// Gives the lesser of the two pointers, comparing memory addresses.
+T* min<T>(T* a, T* b) {
+    if a < b {
+        return a;
+    }
+    return b;
+}
+
 /// Gives references to the minimum and maximum of the two elements.
 /// Like C++ std::minmax, the result borrows the arguments, so it must not
 /// outlive them. Calls with a `const` argument, or with only temporaries, use
@@ -56,6 +72,14 @@ T min<T: Copyable + Comparable>(T a, T b) {
 /// Gives the minimum and maximum of the two elements, copying `Copyable`
 /// arguments. Unlike the by-reference overload, this accepts `const`s.
 (T min, T max) minmax<T: Copyable + Comparable>(T a, T b) {
+    if a < b {
+        return (min = a, max = b);
+    }
+    return (min = b, max = a);
+}
+
+/// Gives the lesser and greater of the two pointers, comparing memory addresses.
+(T* min, T* max) minmax<T>(T* a, T* b) {
     if a < b {
         return (min = a, max = b);
     }

@@ -77,7 +77,8 @@ void testMax() {
     assert(max(a, b) == 9);
     int* pa = &a;
     int* pb = &b;
-    assert(max(pa, pb) == 9);
+    // Pointer arguments compare addresses, not pointees.
+    assert(max(pa, pb) == (pa >= pb ? pa : pb));
     *max(a, b) = 10;
     assert(b == 10);
     int m = max(a, b);
@@ -91,7 +92,8 @@ void testMin() {
     assert(min(a, b) == 7);
     int* pa = &a;
     int* pb = &b;
-    assert(min(pa, pb) == 7);
+    // Pointer arguments compare addresses, not pointees.
+    assert(min(pa, pb) == (pa < pb ? pa : pb));
     *min(a, b) = 6;
     assert(a == 6);
     int m = min(a, b);
@@ -124,6 +126,11 @@ void testMinmax() {
     var r = minmax(3, 1);
     assert(r.min == 1);
     assert(r.max == 3);
+    // Pointer arguments compare addresses, not pointees.
+    int* pa = &a;
+    int* pb = &b;
+    assert(minmax(pa, pb).min == (pa < pb ? pa : pb));
+    assert(minmax(pa, pb).max == (pa < pb ? pb : pa));
 }
 
 struct ListHolder: Comparable {
