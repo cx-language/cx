@@ -646,8 +646,10 @@ Type Typechecker::typecheckNullLiteralExpr(NullLiteralExpr&, Type expectedType) 
     }
 }
 
-static Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&, Type expectedType) {
-    ASSERT(expectedType && !expectedType.containsUnresolvedPlaceholder());
+static Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr& expr, Type expectedType) {
+    if (!expectedType || expectedType.containsUnresolvedPlaceholder()) {
+        ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "couldn't infer type of 'undefined', add a type annotation");
+    }
     return expectedType;
 }
 
