@@ -5,7 +5,9 @@
 import "inputs/c-macros.h";
 
 void main() {
-    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'FUNC_LIKE'
+    // CHECK: [[@LINE+3]]:11: error: unknown identifier 'FUNC_LIKE'
+    // CHECK: {{.*}}c-macros.h:48:9: note: 'FUNC_LIKE' is a function-like macro, which is not imported
+    // CHECK-NEXT: #define FUNC_LIKE(a, b) ((a) + (b))
     print(FUNC_LIKE(1, 2));
     // CHECK: [[@LINE+1]]:11: error: unknown identifier 'CAST'
     print(CAST);
@@ -39,4 +41,9 @@ void main() {
     print(PAREN_STR);
     // CHECK: [[@LINE+1]]:11: error: unknown identifier 'BARE_BUILTIN'
     print(BARE_BUILTIN);
+    // Type position gets the hint too.
+    // CHECK: [[@LINE+3]]:5: error: unknown type 'FUNC_LIKE'
+    // CHECK: {{.*}}c-macros.h:48:9: note: 'FUNC_LIKE' is a function-like macro, which is not imported
+    // CHECK-NEXT: #define FUNC_LIKE(a, b) ((a) + (b))
+    FUNC_LIKE v = 1;
 }

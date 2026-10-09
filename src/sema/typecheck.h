@@ -231,6 +231,8 @@ struct Typechecker {
     Decl* findDecl(llvm::StringRef name, Location location, Location endLocation = {});
     /// findDecl that returns null on unknown identifier instead of reporting it. Still throws on ambiguous reference.
     Decl* tryFindDecl(llvm::StringRef name, Location location);
+    /// Hint note when an unknown identifier is a skipped function-like C macro.
+    std::optional<Note> getSkippedMacroNote(llvm::StringRef name) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false);
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType, bool allowCommutativeRetry = true);

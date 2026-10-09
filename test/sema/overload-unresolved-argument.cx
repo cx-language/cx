@@ -14,10 +14,14 @@ void take(Optional<string> x) { }
 
 void main() {
     // CHECK-NOT: ambiguous reference
-    // CHECK: [[@LINE+1]]:10: error: unknown identifier 'ONE_ARG'
+    // CHECK: [[@LINE+3]]:10: error: unknown identifier 'ONE_ARG'
+    // CHECK: {{.*}}c-printf.h:3:9: note: 'ONE_ARG' is a function-like macro, which is not imported
+    // CHECK-NEXT: #define ONE_ARG(x) ((x) + 1)
     pick(ONE_ARG);
     // CHECK-NOT: ambiguous reference
-    // CHECK: [[@LINE+1]]:17: error: unknown identifier 'ONE_ARG'
+    // CHECK: [[@LINE+3]]:17: error: unknown identifier 'ONE_ARG'
+    // CHECK: {{.*}}c-printf.h:3:9: note: 'ONE_ARG' is a function-like macro, which is not imported
+    // CHECK-NEXT: #define ONE_ARG(x) ((x) + 1)
     printf("a", ONE_ARG(12.3));
     // CHECK-NOT: ambiguous reference
     // A mapped argument that only needs an expected type (here the bare
@@ -30,4 +34,8 @@ void main() {
     // CHECK-NEXT: void take(Optional<string> x) { }
     // CHECK-NOT: note
     take(None);
+    // An #undef'd macro leaves no hint behind.
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'TEMP_MACRO'
+    print(TEMP_MACRO);
+    // CHECK-NOT: 'TEMP_MACRO' is a function-like macro
 }

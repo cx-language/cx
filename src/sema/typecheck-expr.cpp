@@ -4283,6 +4283,9 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation,
                         "'" << expr.receiverType << "' doesn't provide an operator" << expr.getFunctionName());
         }
+        if (auto note = getSkippedMacroNote(callee)) {
+            ERROR_WITH_NOTES_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, {*note}, "unknown identifier '" << callee << "'");
+        }
         ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "unknown identifier '" << callee << "'");
     }
 

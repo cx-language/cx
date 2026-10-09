@@ -976,8 +976,19 @@ struct MacroImporter final : clang::PPCallbacks {
 
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) override {
         auto* info = macro->getMacroInfo();
-        if (info->isFunctionLike()) return;
         llvm::StringRef macroName = name.getIdentifierInfo()->getName();
+        if (info->isFunctionLike()) {
+            // Not imported, but recorded so unknown identifiers matching one
+            // get a hint note instead of a bare 'unknown identifier'. Macros
+            // from pseudo-files (e.g. -D defines) carry no location.
+            Location location;
+            auto presumed = compilerInstance.getSourceManager().getPresumedLoc(info->getDefinitionLoc());
+            if (!presumed.isInvalid() && !llvm::StringRef(presumed.getFilename()).starts_with("<")) {
+                location = cToCxConverter.toCx(info->getDefinitionLoc());
+            }
+            module.addSkippedFunctionLikeMacro(macroName, location);
+            return;
+        }
         llvm::ArrayRef<clang::Token> tokens = info->tokens();
         if (tokens.size() == 1) {
             auto& token = tokens[0];
@@ -1013,6 +1024,10 @@ struct MacroImporter final : clang::PPCallbacks {
         // Anything else imports only if it evaluates to a number. Failures skip
         // silently: most multi-token macros aren't constants (`#define BEGIN {`).
         if (auto value = evaluateMacroExpression(tokens)) importEvaluatedConstant(macroName, *value);
+    }
+
+    void MacroUndefined(const clang::Token& name, const clang::MacroDefinition&, const clang::MacroDirective*) override {
+        module.removeSkippedFunctionLikeMacro(name.getIdentifierInfo()->getName());
     }
 
     // Imports stashed compound literals as constructor calls. Unknown types,
