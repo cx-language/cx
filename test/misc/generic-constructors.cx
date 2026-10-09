@@ -1,0 +1,68 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+struct Counter {
+    int total;
+
+    Counter() {
+        total = 0;
+    }
+
+    Counter<int N>(int[N] values) {
+        total = N;
+        for v in values {
+            total += v;
+        }
+    }
+}
+
+struct Wrap<T> {
+    T value;
+
+    Wrap<T2: Printable>(T2 other) {
+        value = T(other);
+    }
+}
+
+struct Single {
+    StringBuf s;
+
+    Single<T: Printable>(T v) {
+        s = v.toString();
+    }
+}
+
+struct Fixed {
+    StringBuf s;
+
+    Fixed<T: Printable>() {
+        s = T(0).toString();
+    }
+}
+
+struct PairCheck<A, B> {
+    A first;
+
+    PairCheck<U>(U other) {
+        first = A(other);
+    }
+}
+
+void main() {
+    var a = Counter();
+    println(a.total); // CHECK:0
+    var b = Counter([1, 2, 3]);
+    println(b.total); // CHECK:9
+    var c = Counter([10]);
+    println(c.total); // CHECK:11
+    var d = Wrap<float>(5);
+    println(d.value); // CHECK:5
+    Wrap<float> e = Wrap(42);
+    println(e.value); // CHECK:42
+    var f = Single(7);
+    println(f.s); // CHECK:7
+    var g = Fixed<int>();
+    println(g.s); // CHECK:0
+    var h = PairCheck<int, string>(5);
+    println(h.first); // CHECK:5
+}

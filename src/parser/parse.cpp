@@ -1886,17 +1886,52 @@ FunctionDecl* Parser::parseExternFunctionDecl(AccessLevel accessLevel, Type type
     return decl;
 }
 
-/// constructor-decl ::= id param-list '{' stmt* '}'
-ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit) {
+/// constructor-decl ::= id generic-param-list? param-list '{' stmt* '}'
+Decl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit) {
     ASSERT(currentToken() == Token::Identifier);
     auto location = consumeToken().location;
+    bool isGeneric = currentToken() == Token::Less;
+    if (isGeneric && isImplicit)
+        ERROR_RANGE(location, getIdentifierEndLocation(location, receiverTypeDecl.getName()), "implicit conversions cannot be generic");
+    // Generic parameters stay symbolic in the signature, like function templates.
+    llvm::SaveAndRestore inScope(inBinderScope, inBinderScope || isGeneric);
+    AstVector<GenericParamDecl> genericParams;
+    if (isGeneric) parseGenericParamList(genericParams);
     auto params = parseParamList(nullptr);
     if (isImplicit && (params.size() != 1 || params[0].isPack))
         ERROR_RANGE(location, getIdentifierEndLocation(location, receiverTypeDecl.getName()), "implicit constructors must take exactly one parameter");
     auto decl = makeAST<ConstructorDecl>(receiverTypeDecl, std::move(params), accessLevel, location);
     decl->isImplicit = isImplicit;
+    if (isGeneric) {
+        auto* functionTemplate = makeAST<FunctionTemplate>(std::move(genericParams), decl, accessLevel);
+        decl->body = parseBlock(functionTemplate);
+        return functionTemplate;
+    }
     decl->body = parseBlock(decl);
     return decl;
+}
+
+bool Parser::genericParamListFollowedByParen() {
+    ASSERT(currentToken() == Token::Identifier && lookAhead(1) == Token::Less);
+    int depth = 0;
+    for (int offset = 1;; ++offset) {
+        switch (lookAhead(offset)) {
+        case Token::Less:
+            ++depth;
+            break;
+        case Token::Greater:
+            if (--depth == 0) return lookAhead(offset + 1) == Token::LeftParen;
+            break;
+        case Token::RightShift: // Closes two levels, mirroring the '>>' split in parseNonEmptyTypeList.
+            depth -= 2;
+            if (depth <= 0) return lookAhead(offset + 1) == Token::LeftParen;
+            break;
+        case Token::None:
+            return false;
+        default:
+            break;
+        }
+    }
 }
 
 /// destructor-decl ::= '~' id param-list '{' stmt* '}'
@@ -2095,7 +2130,11 @@ TypeDecl* Parser::parseTypeDecl(AstVector<GenericParamDecl>* genericParams, Acce
             break;
         }
         case Token::Identifier:
-            if (lookAhead(1) == Token::LeftParen && currentToken().getString() == typeName.getString()) {
+            // A '<' after the type name starts a generic constructor only when
+            // its matching '>' is followed by '('; otherwise it's a field of
+            // generic type, e.g. `List<int> items;`.
+            if ((lookAhead(1) == Token::LeftParen || (lookAhead(1) == Token::Less && genericParamListFollowedByParen()))
+                && currentToken().getString() == typeName.getString()) {
                 if (isManuallyDestroy) errorMisplacedManuallyDestroy(manuallyDestroyLocation);
                 if (tag == TypeTag::Union) ERROR_CURRENT_TOKEN("unions cannot declare constructors; declare a value and assign its members");
                 auto* constructorDecl = parseConstructorDecl(*typeDecl, accessLevel, isImplicit);

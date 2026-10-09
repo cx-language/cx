@@ -1,0 +1,97 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct Counter {
+    int total;
+
+    Counter() {
+        total = 0;
+    }
+
+    Counter<int N>(int[N] values) {
+        total = N;
+    }
+}
+
+struct Wrap {
+    int x;
+
+    Wrap<T>(T v) {
+        x = 0;
+    }
+}
+
+struct Constrained {
+    int x;
+
+    Constrained<T: Copyable>(T v) {
+        x = 0;
+    }
+}
+
+// A field of the struct's own generic type still parses next to a generic ctor.
+struct Self<T> {
+    Self<int> child;
+    int tag;
+
+    Self(int t) {
+        tag = t;
+        child = Self(0);
+    }
+
+    Self<int N>(int[N] values) {
+        tag = N;
+        child = Self(0);
+    }
+}
+
+struct Variadic {
+    int x;
+
+    Variadic<T>(T... args) {
+        x = 0;
+    }
+}
+
+struct Fixed {
+    StringBuf s;
+
+    Fixed<T: Printable>() {
+        s = T(0).toString();
+    }
+}
+
+void zeroArgsCannotInfer() {
+    // CHECK: error: can't infer generic parameters, please specify them explicitly
+    var s = Wrap();
+}
+
+void noMatchListsTemplateCandidate() {
+    // Only the template takes one argument, so Counter() is not listed.
+    // CHECK: error: no matching constructor 'Counter(string)'
+    // CHECK: note: candidate function:
+    var c = Counter("hi");
+}
+
+void constraintViolation() {
+    // CHECK: error: type 'StringBuf' doesn't implement interface 'Copyable' for generic parameter 'T' of 'Constrained'
+    var w = Constrained(StringBuf("hi"));
+}
+
+void selfGenericFieldParses() {
+    // T appears in neither constructor, so inference still fails.
+    // CHECK: error: no matching constructor 'Self(int[2])'
+    // CHECK: note: candidate function:
+    // CHECK: note: candidate function:
+    var s = Self([1, 2]);
+}
+
+void variadicRejected() {
+    // CHECK: error: generic constructors cannot be variadic
+    var v = Variadic(1, 2);
+}
+
+void explicitArityMismatch() {
+    // CHECK: error: too many generic arguments to 'Fixed', expected 1
+    // CHECK: error: no matching constructor 'Fixed<int, string>()'
+    var f = Fixed<int, string>();
+}

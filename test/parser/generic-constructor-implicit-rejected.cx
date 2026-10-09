@@ -1,0 +1,9 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+struct Wrap {
+    int x;
+    // CHECK: [[@LINE+1]]:14: error: implicit conversions cannot be generic
+    implicit Wrap<T>(T v) {
+        x = 0;
+    }
+}

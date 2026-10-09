@@ -1,17 +1,25 @@
-// RUN: %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s --allow-empty
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
 
-// List.from-slice copies each element, so owning element types are rejected
-// instead of aliasing the temporary's storage (use-after-free). Push owning
-// values one at a time instead.
+// The array constructor moves elements out, so an owning array is consumed
+// while Copyable arrays (and all literals) keep working.
 
-void pushConstructedOwningListWorks() {
-    // No error: push moves each owning value in.
-    var a = List<StringBuf>();
-    a.push(StringBuf("pear"));
+void owningArrayIsConsumed() {
+    var a = [StringBuf("x")];
+    var l = List(a);
+    // CHECK: error: use of moved value 'a' (type 'StringBuf[1]' is not Copyable because it holds 'List<char>', which has a destructor)
+    println(a.size());
 }
 
-void listLiteralOfOwningValuesIsRejected() {
-    // TODO: Fix non-copyable element append() and construction from array.
-    // COM: error: invalid argument #1 type 'StringBuf&' to 'push', expected 'StringBuf'
-    // var a = List([StringBuf("pear"), StringBuf("apple")]);
+void owningSmallListArrayIsConsumed() {
+    var a = [StringBuf("x")];
+    var l = SmallList<StringBuf, 4>(a);
+    // CHECK: error: use of moved value 'a' (type 'StringBuf[1]' is not Copyable because it holds 'List<char>', which has a destructor)
+    println(a.size());
+}
+
+void copyableArraySurvives() {
+    // No error: Copyable arrays are copied, not moved.
+    var b = [1, 2];
+    var l = List(b);
+    println(b.size());
 }

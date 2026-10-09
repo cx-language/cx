@@ -226,6 +226,12 @@ void main() {
 }
 ```
 
+The dual of `.deinit()` is `.forget()`: it also consumes the value, but
+runs no destructor at all, neither now nor at scope exit. It is for bytes
+already moved elsewhere by hand, such as elements copied out of a temporary
+array into a container. Forgetting a live value leaks it; like `.deinit()`,
+the value cannot be used afterwards.
+
 ### Manual destruction
 
 Fields are destroyed automatically when the destructor finishes. Marking a

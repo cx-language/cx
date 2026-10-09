@@ -149,6 +149,35 @@ Only non-negative integer literals (and references to other integer
 parameters) are accepted as integer arguments. Integer parameters can be used
 as compile-time values, including as an array size.
 
+## Generic constructors
+
+Constructors can declare their own type and integer parameters, inferred
+from the call arguments like any other generic call. On non-generic types
+they can also be given explicitly (`Fixed<int>()`); on generic types explicit
+arguments bind the type's parameters instead:
+
+```cs
+struct Counter {
+    int total;
+
+    Counter() {
+        total = 0;
+    }
+
+    Counter<int N>(int[N] values) {
+        total = N;
+        for v in values {
+            total += v;
+        }
+    }
+}
+
+void main() {
+    var c = Counter([1, 2, 3]);
+    println(c.total); // prints 9
+}
+```
+
 ## Generic interfaces
 
 Interfaces can also take type parameters.

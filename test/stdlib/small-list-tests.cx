@@ -56,6 +56,19 @@ void testSmallListConstructors() {
 }
 
 @test
+void testSmallListInitFromOwningLiteral() {
+    destroyedCount = 0;
+    if true {
+        var inline = SmallList<Droppable, 4>([Droppable(), Droppable()]);
+        assert(inline.size() == 2);
+        var spilled = SmallList<Droppable, 1>([Droppable(), Droppable()]);
+        assert(spilled.size() == 2);
+        assert(destroyedCount == 0);
+    }
+    assert(destroyedCount == 4);
+}
+
+@test
 void testSmallListRemoveAndClear() {
     var list = SmallList<int32, 4>([1, 2, 3, 4]);
     assert(list.removeFirst() == 1);

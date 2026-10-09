@@ -1,0 +1,32 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+struct S {
+    int x;
+    ~S() {}
+}
+
+void useAfterForgetIsRejected() {
+    var s = S(1);
+    s.forget();
+    // CHECK: error: use of moved value 's' (type 'S' has a destructor, so its values cannot be copied)
+    println(s.x);
+}
+
+void doubleForgetIsRejected() {
+    var s = S(1);
+    s.forget();
+    // CHECK: error: use of moved value 's' (type 'S' has a destructor, so its values cannot be copied)
+    s.forget();
+}
+
+void forgetTakesNoArguments() {
+    var s = S(1);
+    // CHECK: error: too many arguments to 'forget', expected 0
+    s.forget(1);
+}
+
+void forgetTakesNoGenericArguments() {
+    var s = S(1);
+    // CHECK: error: too many generic arguments to 'forget', expected 0
+    s.forget<int>();
+}

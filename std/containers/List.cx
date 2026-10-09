@@ -33,11 +33,15 @@ struct List<Element> {
         }
     }
 
-    /// Initializes a list containing copies of the elements of the given array.
-    /// The element type must be Copyable; push owning values one at a time.
-    List(Element[] elements) {
-        init(capacity = elements.size());
-        append(elements);
+    /// Initializes a list by moving the elements out of the given array.
+    /// The array is consumed; pass a copy to keep it.
+    List<int N>(Element[N] elements) {
+        init(capacity = N);
+        if N != 0 {
+            memcpy(buffer, elements.data(), c_size_t(sizeof(Element) * N));
+        }
+        size = N;
+        elements.forget();
     }
 
     /// Initializes the list to contain the given number of uninitialized elements.
@@ -137,16 +141,6 @@ struct List<Element> {
         buffer[size].init(element);
         size++;
         return buffer[size - 1];
-    }
-
-    /// Adds all elements from the given array to the end of the list.
-    /// Copies each element, so the element type must be Copyable.
-    // TODO: this function should only be available if Element is Copyable.
-    void append(Element[] elements) {
-        assert(uint64(size) + uint64(elements.size()) <= uint64(int.max), "List size overflow");
-        reserve(size + elements.size());
-        memcpy(&buffer[size], elements.data(), c_size_t(sizeof(Element) * elements.size()));
-        size += elements.size();
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
