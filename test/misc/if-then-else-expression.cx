@@ -15,4 +15,33 @@ void main() {
 
     if (true) then println("p") else println("q"); // CHECK-NEXT:p
     println(if true then 1 else 2); // CHECK-NEXT:1
+
+    int a = 10;
+    int b = 20;
+    int& r = if true then a else b;
+    println(r); // CHECK-NEXT:10
+    *r = 11;
+    println(a); // CHECK-NEXT:11
+
+    int& r2 = if false then a else b;
+    println(r2); // CHECK-NEXT:20
+    *r2 = 21;
+    println(b); // CHECK-NEXT:21
+
+    int& t = true ? a : b;
+    println(t); // CHECK-NEXT:11
+
+    int& d = if true then a else abort("unreachable");
+    println(d); // CHECK-NEXT:11
+
+    int v = if false then a else b;
+    println(v); // CHECK-NEXT:21
+
+    int& sel = if true then r else b;
+    println(sel); // CHECK-NEXT:11
+    *sel = 12;
+    println(a); // CHECK-NEXT:12
+
+    int& nest = if true then (if false then a else b) else a;
+    println(nest); // CHECK-NEXT:21
 }

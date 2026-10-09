@@ -1593,10 +1593,15 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
     bool thenDiverges = expr.thenExpr->type.isNeverType();
     bool elseDiverges = expr.elseExpr->type.isNeverType();
 
+    // A reference-typed join binds the selected arm's address (like C++ 'c ? x : y'),
+    // so arms emit as pointers for passing instead of loaded values.
+    IRType* joinType = expr.type.isReferenceType() ? getIRType(expr.type) : nullptr;
+    auto emitArm = [&](const Expr& arm) { return joinType ? emitExprForPassing(arm, joinType) : emitExpr(arm); };
+
     setInsertPoint(thenBlock);
     createStore(createConstantBool(true), thenGuard);
     tempGuard = thenGuard;
-    auto* thenValue = emitExpr(*expr.thenExpr);
+    auto* thenValue = emitArm(*expr.thenExpr);
     // Void branches produce no value to join; like void calls, the result is only usable in discard positions.
     bool isVoid = !thenValue || thenValue->getType()->isVoid();
     if (thenDiverges) {
@@ -1608,7 +1613,7 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
     setInsertPoint(elseBlock);
     createStore(createConstantBool(true), elseGuard);
     tempGuard = elseGuard;
-    auto* elseValue = emitExpr(*expr.elseExpr);
+    auto* elseValue = emitArm(*expr.elseExpr);
     bool elseIsVoid = !elseValue || elseValue->getType()->isVoid();
     if (elseDiverges) {
         createUnreachable();
