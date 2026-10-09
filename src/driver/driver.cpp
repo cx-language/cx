@@ -852,6 +852,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     // MSVC takes no -L/-l; its translated form is staged here (ccArgs borrows
     // from it, so it must outlive the link) and appended after -link below.
     std::vector<std::string> msvcLinkStorage;
+    // Same for the bundled-tools -B flag below.
+    std::string bundledToolsFlag;
     if (isMSVC) {
         msvcLinkStorage = msvcLinkArgs(librarySearchPaths, libraries);
     } else {
@@ -904,8 +906,6 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         // 8MB stack reservation as the MSVC link above.
         // Prebuilt installs bundle lld-link next to cx.exe: prefer it, since the
         // build-time LLVM tools directory below doesn't exist on user machines.
-        // (ccArgs borrows from it, so it must outlive the link.)
-        std::string bundledToolsFlag;
         std::string rootDir = getCxRootDir();
         if (!rootDir.empty() && llvm::sys::fs::exists(rootDir + "/lld-link.exe")) {
             bundledToolsFlag = "-B" + rootDir;
