@@ -37,7 +37,7 @@ jobs:
     env:
       STAGE_DIR: stage/cx-${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up LLVM 23 and link dependencies
         uses: ./.github/actions/setup-llvm
@@ -52,8 +52,10 @@ jobs:
           extra_args=()
           if [ "$RUNNER_OS" = "Linux" ]; then
             # Static libstdc++/libgcc: the archive must run on older distros
-            # than the build runner.
+            # than the build runner. Static LLVM/Clang: apt.llvm.org builds
+            # the LLVM dylib, which would otherwise link shared.
             extra_args+=("-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++ -static-libgcc")
+            extra_args+=("-DCX_STATIC_LLVM=ON")
           fi
           if [ "$RUNNER_OS" = "Windows" ]; then
             # Static CRT so users need no Visual C++ redistributable. The
@@ -101,7 +103,12 @@ jobs:
               [ -f "$f" ] || continue
               otool -L "$f" | tail -n +2 | awk '{print $1}' | while read -r dep; do
                 case "$dep" in
-                  /opt/homebrew/* | /usr/local/*) cp -n "$dep" "$lib/" ;;
+                  # Copied once: cx and cx-lsp share dependencies, and -n
+                  # would exit 1 on the second copy. A real cp failure must
+                  # still fail the release, so guard with a test instead.
+                  /opt/homebrew/* | /usr/local/*)
+                    [ -e "$lib/${dep##*/}" ] || cp "$dep" "$lib/"
+                    ;;
                 esac
               done
             done
@@ -137,10 +144,10 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then
-            deps=$(dumpbin /dependents "$STAGE_DIR/cx.exe")
+            deps=$(dumpbin /dependents "$STAGE_DIR/cx.exe" "$STAGE_DIR/cx-lsp.exe")
             echo "$deps"
             if echo "$deps" | grep -Ei 'vcruntime|msvcp|msvcr'; then
-              echo "ERROR: cx needs the Visual C++ redistributable (/MT did not apply)"
+              echo "ERROR: binaries need the Visual C++ redistributable (/MT did not apply)"
               exit 1
             fi
           elif [ "$RUNNER_OS" = "macOS" ]; then
@@ -154,9 +161,9 @@ jobs:
               exit 1
             fi
           else
-            ldd "$STAGE_DIR/cx"
-            if ldd "$STAGE_DIR/cx" | grep -Ei 'llvm|clang|libstdc\+\+|libgcc'; then
-              echo "ERROR: cx links LLVM, libstdc++, or libgcc dynamically"
+            ldd "$STAGE_DIR/cx" "$STAGE_DIR/cx-lsp"
+            if ldd "$STAGE_DIR/cx" "$STAGE_DIR/cx-lsp" | grep -Ei 'llvm|clang|libstdc\+\+|libgcc'; then
+              echo "ERROR: binaries link LLVM, libstdc++, or libgcc dynamically"
               exit 1
             fi
           fi
@@ -186,7 +193,7 @@ jobs:
           fi
 
       - name: Upload archive artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: binaries-${{ matrix.platform }}
           path: cx-${{ matrix.platform }}.*
@@ -198,7 +205,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: binaries-*
           merge-multiple: true
