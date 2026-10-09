@@ -55,7 +55,7 @@ void print<T: Printable, int N>(SmallList<T, N>& list) {
 }
 
 /// Joins the array elements into a string with the given separator.
-StringBuf join<T: Printable>(Slice<T> array, string separator) {
+StringBuf join<T: Printable>(T[] array, string separator) {
     var result = StringBuf();
 
     for elem, index in array {
@@ -74,7 +74,7 @@ StringBuf join<T: Printable>(List<T>& list, string separator) {
 }
 
 /// Prints the given value.
-void print<T: Printable>(Slice<T> array) {
+void print<T: Printable>(T[] array) {
     var stream = OutputStream();
     array.print(stream);
 }

@@ -166,7 +166,7 @@ struct Slice<Element> {
 }
 
 /// Returns true if both arrays have equal elements.
-bool operator==<T>(Slice<T> a, Slice<T> b) {
+bool operator==<T>(T[] a, T[] b) {
     if a.size() != b.size() {
         return false;
     }
