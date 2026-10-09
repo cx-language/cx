@@ -379,11 +379,16 @@ struct OptionSet {
     }
 
     bool checkRequired() {
+        string missing = "";
         for p in positionals {
             if p.required && !p.isSet {
-                errorMessage = StringBuf("missing required argument '<") + p.name + ">'";
-                return false;
+                missing = p.name;
+                break;
             }
+        }
+        if missing != "" {
+            errorMessage = StringBuf("missing required argument '<") + missing + ">'";
+            return false;
         }
         return true;
     }

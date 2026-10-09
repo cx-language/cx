@@ -1,0 +1,133 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+void sink<T>(T v) {
+}
+
+void moveWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:10: error: cannot move 'list' while view 'r' borrowed from it is still in use
+    sink(list);
+    println(r);
+}
+
+void mutatingCallWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'r' borrowed from it is still in use (it mutates the receiver)
+    list.push(4);
+    println(r);
+}
+
+void assignWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to 'list' while view 'r' borrowed from it is still in use
+    list = List([4, 5, 6]);
+    println(r);
+}
+
+void deinitWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot move 'list' while view 'r' borrowed from it is still in use
+    list.deinit();
+    println(r);
+}
+
+void pushInLoop() {
+    var list = List([1, 2, 3]);
+    for e in list {
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'push' on 'list' while the loop over it is still iterating (it mutates the receiver)
+        list.push(4);
+    }
+}
+
+void viewOfTemporary() {
+    // CHECK: [[@LINE+1]]:15: error: cannot initialize view 's' from a temporary (temporaries are destroyed at the end of the statement)
+    int[] s = List([1, 2, 3]);
+    println(s);
+}
+
+StringBuf& ident(StringBuf& b) {
+    return b;
+}
+
+void viewOfArgTemporary() {
+    // CHECK: [[@LINE+1]]:20: error: cannot initialize view 'r' from a temporary (temporaries are destroyed at the end of the statement)
+    StringBuf& r = ident(StringBuf("x"));
+    println(r.size());
+}
+
+void readWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    println(list.size());
+    println(r);
+}
+
+void mutateAfterLastUse() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    println(r);
+    list.push(4);
+}
+
+void elementWriteWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    list[1] = 99;
+    println(r);
+}
+
+void mutatingCallThroughAlias() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'alias' borrowed from it is still in use (it mutates the receiver)
+    alias.push(4);
+    println(r);
+}
+
+void mutateBorrowParam(List<int>& list) {
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'r' borrowed from it is still in use (it mutates the receiver)
+    list.push(4);
+    println(r);
+}
+
+void rebindEndsBorrow() {
+    var list = List([1, 2, 3]);
+    var other = List([4, 5, 6]);
+    int[] s = list;
+    s = other;
+    list.push(4);
+    println(s);
+}
+
+void rebindToTemp() {
+    var other = List([4, 5, 6]);
+    int[] s = other;
+    // CHECK: [[@LINE+1]]:9: error: cannot bind view 's' to a temporary (temporaries are destroyed at the end of the statement)
+    s = List([1, 2, 3]);
+    println(s);
+}
+
+void mutateAfterInnerScope(bool c) {
+    var list = List([1, 2, 3]);
+    if c {
+        int& r = list[0];
+        println(r);
+    }
+    list.push(4);
+}
+
+void plainLoop() {
+    var list = List([1, 2, 3]);
+    for e in list {
+        println(e);
+    }
+}
+
+void main() {
+}

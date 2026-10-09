@@ -7,10 +7,10 @@ struct S {
 }
 
 // Borrows may be returned, e.g. element accessors return borrows into the container.
-// Returning a borrow of a local still warns since the local won't exist after the call.
+// Returning a borrow of a local is rejected since the local won't exist after the call.
 int& returnsBorrow() {
     var x = 1;
-    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable (local variables will not exist after the function returns)
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'int&' derived from local variable 'x' (local variables will not exist after the function returns)
     return x;
 }
 

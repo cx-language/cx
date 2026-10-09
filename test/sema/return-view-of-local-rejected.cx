@@ -1,0 +1,116 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+int& borrowOfLocal() {
+    var x = 1;
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'int&' derived from local variable 'x' (local variables will not exist after the function returns)
+    return x;
+}
+
+int& borrowOfLocalElement() {
+    var list = List([1, 2, 3]);
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'int&' derived from local variable 'list' (local variables will not exist after the function returns)
+    return list[0];
+}
+
+int& borrowOfNamedLocalBorrow() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'int&' derived from local variable 'list' (local variables will not exist after the function returns)
+    return r;
+}
+
+int& borrowOfOwnedParam(List<int> list) {
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'int&' derived from by-value parameter 'list' (it is destroyed when the function returns)
+    return list[0];
+}
+
+int& borrowOfTemporary() {
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'int&' derived from a temporary (temporaries are destroyed at the end of the statement)
+    return List([1, 2, 3])[0];
+}
+
+int[] sliceOfLocal() {
+    var list = List([1, 2, 3]);
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'int[]' derived from local variable 'list' (local variables will not exist after the function returns)
+    return list;
+}
+
+string viewOfLocalBuffer() {
+    var buf = StringBuf("hi");
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'string' derived from local variable 'buf' (local variables will not exist after the function returns)
+    return buf.substr(0..1);
+}
+
+FilterIterator<int, ArrayIterator<int>, bool(int&)> iteratorOfLocal() {
+    var list = List([1, 2, 3]);
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'FilterIterator<int, ArrayIterator<int>, bool(int&)>' derived from local variable 'list' (local variables will not exist after the function returns)
+    return list.filter(n => *n > 1);
+}
+
+int& branchOfLocal(bool c) {
+    var x = 1;
+    var y = 2;
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'int&' derived from local variable 'x' (local variables will not exist after the function returns)
+    return if c then x else y;
+}
+
+int& switchOfLocal(int n) {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    int& s = list[1];
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'int&' derived from local variable 'list' (local variables will not exist after the function returns)
+    return switch n {
+        case 0: r,
+        default: s,
+    };
+}
+
+struct LocalEvens: Iterator<int&> {
+    ArrayIterator<int> source;
+    LocalEvens(ArrayIterator<int> source) { this.source = source; }
+    bool hasValue() { return this.source.hasValue(); }
+    int& value() { return this.source.value(); }
+    void increment() { this.source.increment(); }
+}
+
+LocalEvens structIteratorOfLocal() {
+    var tmp = [1, 2, 3];
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'LocalEvens' derived from local variable 'tmp' (local variables will not exist after the function returns)
+    return LocalEvens(tmp.iterator());
+}
+
+int& borrowParamPassthrough(List<int>& list) {
+    return list[0];
+}
+
+int& branchOfBorrows(bool c, int& a, int& b) {
+    return if c then a else b;
+}
+
+int& branchWithAbort(bool c, int& a) {
+    return if c then a else abort("nope");
+}
+
+int& borrowOfBorrowParamElement(List<int>& list) {
+    int& r = list[0];
+    return r;
+}
+
+string viewParamPassthrough(string s) {
+    return s.substr(0..1);
+}
+
+string literalOk() {
+    return "hi";
+}
+
+struct Holder {
+    List<int> items;
+
+    int& element() {
+        return items[0];
+    }
+}
+
+void main() {
+}

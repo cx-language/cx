@@ -31,9 +31,9 @@ struct Evens: Iterator<int&> {
 
 struct Box {
     int v = 0;
+    int[3] items = [1, 2, 3];
     Evens evens(bool(int&) pred) {
-        var tmp = [1, 2, 3];
-        return Evens(tmp.iterator());
+        return Evens(items.iterator());
     }
 }
 

@@ -97,11 +97,13 @@ Chunk makeChunk(int cx, int cz) {
 }
 
 void plantTrees(World& w) {
-    for c in w.chunks {
+    for ci in 0..w.chunks.size() {
+        var ccx = w.chunks[ci].cx;
+        var ccz = w.chunks[ci].cz;
         for x in 0..chunkW {
             for z in 0..chunkD {
-                var gx = c.cx * chunkW + x;
-                var gz = c.cz * chunkD + z;
+                var gx = ccx * chunkW + x;
+                var gz = ccz * chunkD + z;
                 if hash01(gx * 3 + 5, gz * 3 + 11) > 0.0015 {
                     continue;
                 }

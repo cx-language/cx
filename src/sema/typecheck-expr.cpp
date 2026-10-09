@@ -511,6 +511,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expe
     checkHasAccess(*decl, expr.location, AccessLevel::None);
     markReferenced(decl);
     expr.decl = decl;
+    recordViewUse(decl, expr.location);
 
     if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
         maybeCaptureVariable(*variableDecl);
@@ -1672,6 +1673,19 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
         }
     }
 
+    // Rebinding a view ends its old borrow; whole-value and owning-field
+    // reassignments invalidate views of the base (element writes are safe).
+    if (lhsVar && lhsVar->decl) {
+        if (auto* viewDecl = llvm::dyn_cast<VarDecl>(lhsVar->decl); viewDecl && !viewDecl->isGlobal() && isSafeViewType(viewDecl->type)) {
+            rebindViewLocal(*viewDecl, *rhs, rhs->endLocation);
+        } else {
+            recordRootMutation(lhsVar->decl, getExprRangeStart(*lhs), /*isMove=*/false);
+        }
+    } else if (auto* memberLhs = llvm::dyn_cast<MemberExpr>(lhs)) {
+        if (auto* fieldDecl = memberLhs->getFieldDecl(); fieldDecl && fieldDecl->type.needsDestruction()) {
+            if (auto* baseVarExpr = getAssignmentBaseVarExpr(*lhs)) recordRootMutation(baseVarExpr->decl, getExprRangeStart(*lhs), /*isMove=*/false);
+        }
+    }
     if (lhsVar && lhsVar->decl) {
         reseatDeinitPtrTarget(lhsVar->decl);
     } else if (auto* unaryLhs = llvm::dyn_cast<UnaryExpr>(lhs); unaryLhs && unaryLhs->op == Token::Star) {
@@ -4559,6 +4573,31 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             }
         }
 
+        // A mutating call invalidates views of the receiver; the verdict waits
+        // for postProcess since callee bodies check on demand. Destructors
+        // consume through the move machinery instead, and reinitializing
+        // `init` counts as an assignment. Element writes through a container
+        // never reallocate, so they stay legal (Map insertion may grow the
+        // table, and user-defined operators may do anything).
+        auto isSafeElementWrite = [&]() {
+            if (expr.getFunctionName() != "[]=") return false;
+            auto* methodCallee = llvm::dyn_cast<FunctionDecl>(decl);
+            auto* typeDecl = methodCallee ? methodCallee->getTypeDecl() : nullptr;
+            if (!typeDecl || !typeDecl->getModule() || typeDecl->getModule()->name != "std") return false;
+            auto name = typeDecl->getName();
+            return name == "List" || name == "Slice" || name == "SmallList" || name == "Array" || name == "StringBuf";
+        };
+        if (!overloadProbe && currentFunction && !llvm::isa<DestructorDecl>(decl) && !isSafeElementWrite()) {
+            if (llvm::isa<ConstructorDecl>(decl)) {
+                ViewRoot receiverRoot = traceViewRoot(expr.getReceiver(), /*followViews=*/true, /*followVars=*/false);
+                for (Decl* rootDecl : receiverRoot.decls)
+                    recordRootMutation(rootDecl, getExprRangeStart(expr), /*isMove=*/false);
+            } else if (auto* methodCallee = llvm::dyn_cast<FunctionDecl>(decl)) {
+                recordViewCallCandidate(methodCallee, /*param=*/nullptr, *expr.getReceiver(), getExprRangeStart(expr), expr.endLocation,
+                                        expr.getFunctionName());
+            }
+        }
+
         // For projections only a base with destruction to skip is consumed: destroying an
         // element through a pointer (`buffer[0].deinit()`) must not consume the pointer.
         if (llvm::isa<DestructorDecl>(decl)) {
@@ -4885,6 +4924,16 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                         ERROR_WITH_NOTES_RANGE(getExprRangeStart(*converted), converted->endLocation, std::move(declNote),
                                                "cannot pass '" << paramType << "' over a constant in argument #" << (i + 1) << " to '" << displayName << "'"
                                                                << (isIteratorArg ? " (collect with 'toList()' first)" : ""));
+                    }
+                }
+                // Passing an owner to a borrow parameter exposes it to mutation;
+                // the verdict waits for postProcess. By-value view parameters
+                // only allow element writes, which never invalidate.
+                if (!overloadProbe && currentFunction && paramType.removeOptional().isReferenceType()) {
+                    if (auto* functionCallee = const_cast<FunctionDecl*>(llvm::dyn_cast_or_null<FunctionDecl>(calleeDecl));
+                        functionCallee && !llvm::isa<ConstructorDecl>(functionCallee) && !llvm::isa<DestructorDecl>(functionCallee)) {
+                        recordViewCallCandidate(functionCallee, &params[size_t(paramIndex)], *converted, getExprRangeStart(*converted), converted->endLocation,
+                                                functionCallee->getName());
                     }
                 }
             } else {
@@ -6036,6 +6085,7 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location,
 
 void Typechecker::markMoved(Decl* decl, Location location) {
     movedDecls.insert(decl);
+    recordRootMutation(decl, location, /*isMove=*/true);
     moveLocations[decl] = location;
     maybeMovedDecls.erase(decl);
 }

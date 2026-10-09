@@ -1609,6 +1609,13 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         llvm::SaveAndRestore saveLoopEntryLocalCount(loopEntryLocalCount, std::optional<size_t>());
         llvm::SaveAndRestore saveAssignTarget(assignTarget, static_cast<Decl*>(nullptr));
         llvm::SaveAndRestore saveInReturnValue(inReturnValue, false);
+        // View-freeze windows span lambdas (captured uses extend them), so
+        // lambdas share the enclosing state and only non-lambdas own it.
+        if (!decl.isLambda()) {
+            viewFreezeRecords.clear();
+            viewRootMutations.clear();
+            viewCallCandidates.clear();
+        }
 
         TypeDecl* receiverTypeDecl = decl.getTypeDecl();
         // Methods reached by name (e.g. interface copies in the module table)
@@ -1684,6 +1691,12 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             maybeMovedDecls.clear();
             moveLocations.clear();
             condWarnedDecls.clear();
+            if (!decl.isLambda()) {
+                checkViewFreezes();
+                viewFreezeRecords.clear();
+                viewRootMutations.clear();
+                viewCallCandidates.clear();
+            }
         }
 
         if (decl.isConstructorDecl() && decl.body) {
@@ -1809,6 +1822,11 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         }
     } catch (const CompileError&) {
         decl.checkState = Decl::CheckState::Checked;
+        if (!decl.isLambda()) {
+            viewFreezeRecords.clear();
+            viewRootMutations.clear();
+            viewCallCandidates.clear();
+        }
         throw;
     }
     decl.checkState = Decl::CheckState::Checked;
@@ -2499,6 +2517,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     // their destructors mark here. Globals never scope-exit-destroy.
     if (!decl.isGlobal()) markDestructorFor(decl.type);
     bindDeinitPtrTarget(decl);
+    recordViewLocal(decl);
 }
 
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {

@@ -318,6 +318,8 @@ void Typechecker::postProcess() {
     }
     pendingConstViewArgChecks.clear();
 
+    checkViewFreezeCalls(constMutationQuery);
+
     checkDelegationLiveness();
 }
 

@@ -234,66 +234,300 @@ static bool isIteratorType(Type type) {
     return typeDecl && typeDecl->implementsInterface("Iterator");
 }
 
-void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
-    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(returnValue)) {
-        if (unaryExpr->op == Token::And) {
-            returnValue = &unaryExpr->getOperand();
+bool cx::isSafeViewType(Type type) {
+    if (!type) return false;
+    Type inner = type.removeOptional();
+    if (inner.isReferenceType() || inner.isSlice() || inner.isString()) return true;
+    auto* typeDecl = inner.removePointer().getDecl();
+    return typeDecl && !typeDecl->isInterface() && typeDecl->implementsInterface("Iterator") && !isFreshYieldingIterator(type);
+}
+
+static ViewRoot traceViewRootImpl(const Expr* expr, bool followViews, bool followVars, llvm::SmallPtrSet<const Decl*, 8>& seenBorrows);
+
+// Raw and array pointers (but not borrows): the unsafe hatch, whose targets
+// are unknowable.
+static bool isUnsafePointerType(Type type) {
+    if (!type) return false;
+    Type inner = type.removeOptional();
+    return (inner.isPointerType() && !inner.isReferenceType()) || inner.isArrayPointer();
+}
+
+// Mirrors IRGen's cannotBorrowReceiver: calls returning these types evaluate
+// their receiver as a statement temporary instead of extending it to scope
+// end, so views of such a temporary dangle.
+static bool viewReturnCannotBorrow(Type type) {
+    if (!type) return true;
+    if (type.isBuiltinType() && !type.isPointerType()) return true;
+    if (type.isOptionalType()) return viewReturnCannotBorrow(type.getWrappedType());
+    if (type.isFixedArray()) return viewReturnCannotBorrow(type.getElementType());
+    if (type.isAnonymousStructType()) {
+        return llvm::all_of(type.getAnonymousStructElements(), [](auto& element) { return viewReturnCannotBorrow(element.type); });
+    }
+    return false;
+}
+
+// Arguments that may carry the call's storage: view-typed values, or values
+// bound to a borrow/view parameter (e.g. `id(x)` returns a borrow of `x`).
+static void collectViewArgs(const CallExpr& callExpr, llvm::SmallVectorImpl<const Expr*>& out) {
+    auto* callee = llvm::dyn_cast_or_null<FunctionDecl>(callExpr.calleeDecl);
+    for (size_t i = 0; i < callExpr.args.size(); i++) {
+        Expr* arg = callExpr.args[i].value;
+        // Diverging arguments (e.g. `abort()`) produce no value and stay out.
+        if (!arg || !arg->type || arg->type.isNeverType()) continue;
+        if (isSafeViewType(arg->type)) {
+            out.push_back(arg);
+            continue;
         }
+        // An explicit address designates its operand's storage (e.g. the
+        // `&list` in `Slice(&list)`), even though its own type is a pointer.
+        if (auto* unaryArg = llvm::dyn_cast<UnaryExpr>(arg); unaryArg && unaryArg->op == Token::And) {
+            out.push_back(arg);
+            continue;
+        }
+        if (!callee) continue;
+        int paramIndex = callExpr.paramIndexForArg(i);
+        auto params = callee->getParams();
+        if (paramIndex >= 0 && size_t(paramIndex) < params.size() && isSafeViewType(params[paramIndex].type)) out.push_back(arg);
+    }
+}
+
+ViewRoot cx::traceViewRoot(const Expr* expr, bool followViews, bool followVars) {
+    llvm::SmallPtrSet<const Decl*, 8> seenBorrows;
+    return traceViewRootImpl(expr, followViews, followVars, seenBorrows);
+}
+
+static ViewRoot traceViewRootImpl(const Expr* expr, bool followViews, bool followVars, llvm::SmallPtrSet<const Decl*, 8>& seenBorrows) {
+    if (!expr) {
+        ViewRoot root;
+        root.tainted = true;
+        return root;
     }
 
-    Type localVariableType;
-    const Expr* operand = returnValue;
+    ViewRoot root;
+    const Expr* operand = expr;
 
     // Borrow-returning projections borrow their base (e.g. `r.unwrap()` borrows
     // `r`); trace through calls, member access, named borrows, and casts to the
     // root referent. A direct `return callee()` needs no tracing: the callee's
     // own return was already checked, so only traced roots are reported below.
     // Note: operators are CallExprs too; only method calls have receivers.
-    bool traced = false;
-    bool tainted = false;
-    Type projectedType;
-    llvm::SmallPtrSet<const Decl*, 8> seenBorrows;
-    while (!tainted) {
+    while (!root.tainted) {
         while (auto* implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(operand)) {
             operand = implicitCastExpr->operand;
         }
         const Expr* next = nullptr;
-        if (auto* callExpr = llvm::dyn_cast<CallExpr>(operand)) {
-            next = callExpr->getReceiver();
-            // A call on a type name (e.g. `Result.Ok(...)`) constructs a temporary;
-            // don't descend into the type itself.
-            if (auto* base = llvm::dyn_cast_or_null<VarExpr>(next)) {
-                if (!base->decl) next = nullptr;
+        // Extra candidates for calls that may designate an argument's storage
+        // (e.g. `split(path).dir` designates `path`): view-carrying arguments
+        // are traced too, and every root is kept. Bare method calls also keep
+        // an implicit `this` root. Receiver stays the primary path.
+        llvm::SmallVector<const Expr*, 4> argCandidates;
+        const CallExpr* argCall = nullptr;
+        // Unary, binary, unwrap, and index-assignment expressions subclass
+        // CallExpr, but trace by kind: only calls and indexing descend.
+        if (operand->kind == ExprKind::UnaryExpr) {
+            if (auto* unaryExpr = llvm::cast<UnaryExpr>(operand); followViews && unaryExpr->op == Token::And) {
+                // An explicit address designates its operand's storage.
+                next = &unaryExpr->getOperand();
+            } else if (followViews && unaryExpr->op == Token::Star) {
+                // Dereferencing a borrow reborrows the same storage, while
+                // dereferencing a raw pointer refers anywhere (unknowable).
+                Type target = unaryExpr->getOperand().type;
+                if (!target || !target.removeOptional().isReferenceType()) {
+                    root.tainted = true;
+                    break;
+                }
+                next = &unaryExpr->getOperand();
             }
-            if (next && isIteratorType(next->type)) {
-                tainted = true;
-                break;
+        } else if (operand->kind == ExprKind::UnwrapExpr) {
+            if (followViews) {
+                // Unwrap results borrow the operand, whose temporaries extend.
+                root.extended = true;
+                next = llvm::cast<UnwrapExpr>(operand)->getReceiver();
+            }
+        } else if (operand->kind == ExprKind::BinaryExpr || operand->kind == ExprKind::IndexAssignmentExpr) {
+            // Fresh values: the terminal check below reports a temporary.
+        } else if (auto* ifExpr = llvm::dyn_cast<IfExpr>(operand)) {
+            // Either live branch may produce the value, so every one stays a
+            // candidate; the merge below keeps all of their roots. Diverging
+            // branches (e.g. `abort()`) produce no value and stay out.
+            if (followViews) {
+                for (Expr* branch : {ifExpr->thenExpr, ifExpr->elseExpr}) {
+                    if (branch && branch->type && !branch->type.isNeverType()) argCandidates.push_back(branch);
+                }
+            }
+        } else if (auto* switchExpr = llvm::dyn_cast<SwitchExpr>(operand)) {
+            // Same for every live arm. Payload bindings (e.g. `case Ok value`)
+            // resolve to their own declaration rather than the condition's
+            // storage, so borrows through them stay silent (a hole).
+            if (followViews) {
+                for (auto& arm : switchExpr->arms) {
+                    if (arm.expr && arm.expr->type && !arm.expr->type.isNeverType()) argCandidates.push_back(arm.expr);
+                }
+                if (switchExpr->defaultExpr && switchExpr->defaultExpr->type && !switchExpr->defaultExpr->type.isNeverType()) {
+                    argCandidates.push_back(switchExpr->defaultExpr);
+                }
+            }
+        } else if (auto* callExpr = llvm::dyn_cast<CallExpr>(operand)) {
+            // A call returning a fresh owned value is new storage: projections
+            // above it designate the temporary, not the receiver. Indexing
+            // always designates the base's storage even though its type reads
+            // as a value (typecheckIndexExpr strips the borrow).
+            if (followViews && !llvm::isa<IndexExpr>(operand) && callExpr->type && !isSafeViewType(callExpr->type) && !isUnsafePointerType(callExpr->type)) {
+                // Members of the product may still be views of an argument
+                // (e.g. `split(path).dir`), so view-carrying arguments stay
+                // candidates once a projection above selected a member;
+                // anything else designates the temporary (e.g. viewing a
+                // copying conversion like `StringBuf(v)`).
+                if (root.traced) collectViewArgs(*callExpr, argCandidates);
+                if (argCandidates.empty()) break;
+                argCall = callExpr;
+            } else {
+                next = callExpr->getReceiver();
+                // A call on a type name (e.g. `Result.Ok(...)`) constructs a temporary;
+                // don't descend into the type itself.
+                if (auto* base = llvm::dyn_cast_or_null<VarExpr>(next)) {
+                    if (!base->decl) next = nullptr;
+                }
+                if (next && isIteratorType(next->type)) {
+                    root.tainted = true;
+                    break;
+                }
+                if (next) {
+                    // The receiver temporary lives until scope end when the
+                    // declared return type may borrow it (IRGen extends those).
+                    Type declaredReturn = callExpr->type;
+                    if (auto* calleeDecl = llvm::dyn_cast_or_null<FunctionDecl>(callExpr->calleeDecl)) declaredReturn = calleeDecl->getReturnType();
+                    root.extended = !viewReturnCannotBorrow(declaredReturn);
+                }
+                if (followViews && !next) {
+                    collectViewArgs(*callExpr, argCandidates);
+                    argCall = callExpr;
+                }
             }
         } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(operand)) {
             next = memberExpr->base;
         } else if (auto* varExpr = llvm::dyn_cast<VarExpr>(operand)) {
             // Unresolved names (e.g. the `Outcome` in `Outcome.Ok`) have no declaration to follow.
             if (auto* varDecl = varExpr->decl ? llvm::dyn_cast<VarDecl>(varExpr->decl) : nullptr) {
-                if (varDecl->type.isReferenceType() && varDecl->initializer && seenBorrows.insert(varDecl).second) next = varDecl->initializer;
+                // Borrow aliases designate the referent's storage, so all modes
+                // follow them; other views stop here unless following deeply
+                // (a method call affects the handle object, not the storage a
+                // view of it designates).
+                bool follow = varDecl->type.isReferenceType() || (followViews && followVars && isSafeViewType(varDecl->type));
+                if (follow && varDecl->initializer && seenBorrows.insert(varDecl).second) next = varDecl->initializer;
             }
         }
+        bool implicitThisCall = argCall && argCall->calleeDecl && argCall->calleeDecl->kind == DeclKind::MethodDecl;
+        if (!next && (!argCandidates.empty() || implicitThisCall)) {
+            ViewRoot merged;
+            bool sawTemp = false;
+            bool sawOwningTemp = false;
+            merged.extended = true;
+            for (const Expr* candidate : argCandidates) {
+                ViewRoot traced = traceViewRootImpl(candidate, followViews, followVars, seenBorrows);
+                for (Decl* decl : traced.decls) {
+                    if (!llvm::is_contained(merged.decls, decl)) merged.decls.push_back(decl);
+                }
+                merged.immortal |= traced.immortal;
+                merged.tainted |= traced.tainted;
+                merged.temporary |= traced.temporary;
+                merged.implicitThis |= traced.implicitThis;
+                // Only owning temporaries can dangle; the merged value may
+                // designate any of them, so all must be extended to be safe.
+                if (traced.temporary) {
+                    if (!sawTemp) merged.tempType = traced.tempType;
+                    sawTemp = true;
+                    if (!traced.tempType || traced.tempType.needsDestruction()) {
+                        if (!sawOwningTemp) merged.tempType = traced.tempType;
+                        sawOwningTemp = true;
+                        merged.extended &= traced.extended;
+                    }
+                }
+            }
+            if (!sawOwningTemp) merged.extended = false;
+            // A bare method call implicitly receives `this`, so its result may
+            // designate the caller's storage even with no explicit receiver.
+            if (implicitThisCall) merged.implicitThis = true;
+            if (!root.traced) root.projectedType = operand->type;
+            merged.traced = true;
+            if (root.traced && root.projectedType) merged.projectedType = root.projectedType;
+            return merged;
+        }
         if (!next) break;
-        if (!traced) projectedType = operand->type;
+        if (!root.traced) root.projectedType = operand->type;
         operand = next;
-        traced = true;
+        root.traced = true;
         // A raw pointer's target is unknown (it may point anywhere), so a borrow
         // traced through one cannot be attributed to a local; stay silent.
-        if (operand->type && operand->type.removeOptional().isPointerType() && !operand->type.removeOptional().isReferenceType()) tainted = true;
+        if (!followViews && operand->type && operand->type.removeOptional().isPointerType() && !operand->type.removeOptional().isReferenceType()) {
+            root.tainted = true;
+        }
     }
 
-    if (tainted) return;
+    if (root.tainted) return root;
 
-    if (auto varExpr = llvm::dyn_cast<VarExpr>(operand)) {
-        if (varExpr->isThis() || !varExpr->decl) return;
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(operand)) {
+        if (!varExpr->decl) {
+            root.tainted = true;
+        } else if (followViews && isUnsafePointerType(varExpr->type)) {
+            // Raw pointers are the unsafe hatch: values reached through them
+            // cannot be attributed to any storage.
+            root.tainted = true;
+        } else {
+            root.decls.push_back(varExpr->decl);
+        }
+        return root;
+    }
+    if (operand->isStringLiteralExpr()) {
+        root.immortal = true;
+        return root;
+    }
+    switch (operand->kind) {
+    case ExprKind::CallExpr:
+    case ExprKind::IndexExpr:
+    case ExprKind::IndexAssignmentExpr:
+    case ExprKind::BinaryExpr:
+    case ExprKind::UnwrapExpr:
+    case ExprKind::ArrayLiteralExpr:
+        root.temporary = true;
+        root.tempType = operand->type;
+        break;
+    case ExprKind::UnaryExpr:
+        if (llvm::cast<UnaryExpr>(operand)->op == Token::Star) {
+            root.derefTerminal = true;
+        } else {
+            root.temporary = true;
+            root.tempType = operand->type;
+        }
+        break;
+    default:
+        root.tainted = true;
+        break;
+    }
+    return root;
+}
 
-        switch (varExpr->decl->kind) {
+void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
+    // Borrow returns are diagnosed by checkReturnBorrowedView instead.
+    if (currentFunction->getReturnType().removeOptional().isReferenceType()) return;
+    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(returnValue)) {
+        if (unaryExpr->op == Token::And) {
+            returnValue = &unaryExpr->getOperand();
+        }
+    }
+
+    ViewRoot root = traceViewRoot(returnValue);
+    if (root.tainted) return;
+
+    Type localVariableType;
+    // The legacy pointer path never merges argument roots, so at most one
+    // declaration comes back.
+    if (!root.decls.empty()) {
+        Decl* decl = root.decls.front();
+        switch (decl->kind) {
         case DeclKind::VarDecl: {
-            auto* varDecl = llvm::cast<VarDecl>(varExpr->decl);
+            auto* varDecl = llvm::cast<VarDecl>(decl);
+            if (varDecl->getName() == "this") return;
             // The address of a borrow is the referent's address, not the variable slot.
             if (varDecl->parent && varDecl->parent->isFunctionDecl() && !varDecl->type.isReferenceType()) {
                 localVariableType = varDecl->type;
@@ -301,7 +535,7 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
             break;
         }
         case DeclKind::ParamDecl: {
-            auto paramType = llvm::cast<ParamDecl>(varExpr->decl)->type;
+            auto paramType = llvm::cast<ParamDecl>(decl)->type;
             // The address of a borrow is the caller's address, not the parameter slot.
             if (!paramType.isReferenceType()) localVariableType = paramType;
             break;
@@ -313,7 +547,7 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     }
 
     // Through projections the referent has the projection's type, not the root's.
-    Type referentType = (traced && projectedType) ? projectedType : localVariableType;
+    Type referentType = (root.traced && root.projectedType) ? root.projectedType : localVariableType;
     if (localVariableType && currentFunction->getReturnType().removeOptional().isPointerType()
         && currentFunction->getReturnType().removeOptional().getPointee() == referentType.removeReference()) {
         WARN_RANGE(getExprRangeStart(*returnValue), returnValue->endLocation,
@@ -324,13 +558,283 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     // the statement ends. Dereferences refer through to the target instead of
     // a temporary, and borrow-typed results reborrow the referent (whose own
     // return was already checked), so neither warns here.
-    bool isDeref = false;
-    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(operand)) isDeref = unaryExpr->op == Token::Star;
-    if (!localVariableType && traced && llvm::isa<CallExpr>(operand) && !isDeref && operand->type && !operand->type.removeOptional().isPointerType()
-        && currentFunction->getReturnType().removeOptional().isPointerType()) {
+    if (!localVariableType && root.traced && root.temporary && !root.derefTerminal && currentFunction->getReturnType().removeOptional().isPointerType()) {
         WARN_RANGE(getExprRangeStart(*returnValue), returnValue->endLocation,
                    "returning pointer to temporary (temporaries are destroyed at the end of the statement)");
     }
+}
+
+void Typechecker::checkReturnBorrowedView(const Expr* returnValue) const {
+    Type returnType = currentFunction->getReturnType().removeOptional();
+    bool direct = returnType.isReferenceType() || returnType.isSlice() || returnType.isString();
+    if (!direct && !isSafeViewType(returnType)) return;
+
+    ViewRoot root = traceViewRoot(returnValue, /*followViews=*/true);
+
+    // Borrow and view parameters (and `this`) designate caller storage, which
+    // outlives the call; fields are `this`-rooted the same way. Only owned
+    // locals, by-value owned parameters, and temporaries dangle here.
+    // (For-loop elements have no initializer to follow, so they stay silent.)
+    auto isOwnedLocal = [](Decl* decl) {
+        auto* varDecl = llvm::dyn_cast<VarDecl>(decl);
+        return varDecl && varDecl->getName() != "this" && !varDecl->isGlobal() && varDecl->parent && varDecl->parent->isFunctionDecl()
+            && !varDecl->type.removeOptional().isReferenceType() && !isSafeViewType(varDecl->type) && !isUnsafePointerType(varDecl->type);
+    };
+    auto isOwnedParam = [](Decl* decl) {
+        auto* paramDecl = llvm::dyn_cast<ParamDecl>(decl);
+        if (!paramDecl || paramDecl->type.removeOptional().isReferenceType() || isSafeViewType(paramDecl->type) || isUnsafePointerType(paramDecl->type)) {
+            return false;
+        }
+        // A by-value parameter that owns no storage only carries views that
+        // designate caller-side storage, which outlives the call; only
+        // parameters that own their buffer (or are the buffer) dangle here.
+        Type type = paramDecl->type.removeOptional();
+        if (type.needsDestruction()) return true;
+        auto* typeDecl = type.getDecl();
+        bool carrier = (typeDecl && (typeDecl->isStruct() || typeDecl->isUnion() || llvm::isa<EnumDecl>(typeDecl))) || type.isAnonymousStructType();
+        return !carrier;
+    };
+    // Lambdas capture outer values by copy or move, so views of those
+    // captures designate closure storage, not the outer variable. (Borrows
+    // capture by address instead; escaping lambdas over those stay a hole.)
+    auto isOuterCapture = [this](Decl* decl) {
+        if (!currentFunction->isLambda()) return false;
+        auto* var = llvm::dyn_cast<VariableDecl>(decl);
+        return var && var->parent && var->parent != currentFunction;
+    };
+    for (Decl* decl : root.decls) {
+        if (!isOwnedLocal(decl) || isOuterCapture(decl)) continue;
+        ERROR_RANGE(getExprRangeStart(*returnValue), returnValue->endLocation,
+                    "cannot return '" << currentFunction->getReturnType() << "' derived from local variable '" << decl->getName()
+                                      << "' (local variables will not exist after the function returns)");
+    }
+    for (Decl* decl : root.decls) {
+        if (!isOwnedParam(decl) || isOuterCapture(decl)) continue;
+        ERROR_RANGE(getExprRangeStart(*returnValue), returnValue->endLocation,
+                    "cannot return '" << currentFunction->getReturnType() << "' derived from by-value parameter '" << decl->getName()
+                                      << "' (it is destroyed when the function returns)");
+    }
+    if (root.tainted || root.immortal) return;
+
+    // A direct `return callee()` needs no tracing: the callee's own return was
+    // already checked. Anything else designating a temporary dangles.
+    bool literal = returnValue->isArrayLiteralExpr() || returnValue->isAnonymousStructExpr();
+    if (root.temporary && (root.traced || (direct && literal))) {
+        ERROR_RANGE(getExprRangeStart(*returnValue), returnValue->endLocation,
+                    "cannot return '" << currentFunction->getReturnType()
+                                      << "' derived from a temporary (temporaries are destroyed at the end of the statement)");
+    }
+}
+
+bool cx::isFreezableViewRoot(Decl* decl) {
+    if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(decl)) {
+        if (varDecl->isGlobal() || !varDecl->parent || !varDecl->parent->isFunctionDecl()) return false;
+        Type type = varDecl->type.removeOptional();
+        if (varDecl->getName() == "this") return type.getPointee().needsDestruction();
+        if (type.isReferenceType() || isSafeViewType(type)) return false;
+        return type.needsDestruction();
+    }
+    if (auto* paramDecl = llvm::dyn_cast_or_null<ParamDecl>(decl)) {
+        Type type = paramDecl->type.removeOptional();
+        if (type.isReferenceType()) return type.getPointee().needsDestruction();
+        if (isSafeViewType(type)) return false;
+        return type.needsDestruction();
+    }
+    return false;
+}
+
+Decl* Typechecker::normalizeViewRoot(Decl* decl) {
+    if (!decl || decl->kind != DeclKind::FieldDecl || !currentFunction) return decl;
+    return tryFindDecl("this", currentFunction->getLocation());
+}
+
+static void collectFreezeRoots(Typechecker& checker, ViewRoot& root, Location viewLoc, llvm::SmallVectorImpl<Decl*>& roots) {
+    for (Decl* decl : root.decls) {
+        Decl* normalized = checker.normalizeViewRoot(decl);
+        if (normalized && isFreezableViewRoot(normalized) && !llvm::is_contained(roots, normalized)) roots.push_back(normalized);
+    }
+    if (root.implicitThis) {
+        Decl* thisDecl = checker.tryFindDecl("this", viewLoc);
+        if (thisDecl && isFreezableViewRoot(thisDecl) && !llvm::is_contained(roots, thisDecl)) roots.push_back(thisDecl);
+    }
+}
+
+// Whether a temporary root dangles for a local view: scope-extended
+// receiver temporaries and trivial ones (function-lived allocas) are fine,
+// and a direct same-typed or moved product transfers into the variable.
+static bool viewTempDangles(const Expr* init, const ViewRoot& root, Type viewType) {
+    if (!root.temporary || root.extended) return false;
+    if (root.tempType && !root.tempType.needsDestruction()) return false;
+    if (!root.traced) {
+        const Expr* peeled = init;
+        while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(peeled))
+            peeled = cast->operand;
+        if (peeled->isMovedFrom) return false;
+        if (peeled->type && viewType && peeled->type.removeOptional() == viewType.removeOptional()) return false;
+    }
+    return true;
+}
+
+void Typechecker::recordViewLocal(VarDecl& decl) {
+    if (decl.isGlobal() || decl.isForLoopElement || !decl.initializer) return;
+    if (!isSafeViewType(decl.type)) return;
+    ViewRoot root = traceViewRoot(decl.initializer, /*followViews=*/true);
+    if (root.tainted) return;
+    if (viewTempDangles(decl.initializer, root, decl.type)) {
+        ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
+                    "cannot initialize view '" << decl.getName() << "' from a temporary (temporaries are destroyed at the end of the statement)");
+    }
+    // The view comes alive after its initializer, so the creating call never
+    // counts as a mutation of its own root.
+    ViewFreezeRecord record{&decl, {}, decl.initializer->endLocation, decl.initializer->endLocation};
+    collectFreezeRoots(*this, root, decl.getLocation(), record.roots);
+    if (!record.roots.empty()) viewFreezeRecords.push_back(std::move(record));
+}
+
+void Typechecker::checkLoopBodyFreezes(Expr& range, size_t mutationStart, size_t candidateStart) {
+    ViewRoot root = traceViewRoot(&range, /*followViews=*/true);
+    if (root.tainted) return;
+    llvm::SmallVector<Decl*, 2> roots;
+    collectFreezeRoots(*this, root, range.location, roots);
+    if (roots.empty()) return;
+    for (size_t i = mutationStart; i < viewRootMutations.size(); i++) {
+        auto& mutation = viewRootMutations[i];
+        if (!llvm::is_contained(roots, mutation.root)) continue;
+        if (mutation.isMove) {
+            REPORT_ERROR_RANGE(mutation.loc, mutation.loc, "cannot move '" << mutation.root->getName() << "' while the loop over it is still iterating");
+        } else {
+            REPORT_ERROR_RANGE(mutation.loc, mutation.loc, "cannot assign to '" << mutation.root->getName() << "' while the loop over it is still iterating");
+        }
+    }
+    for (size_t i = candidateStart; i < viewCallCandidates.size(); i++) {
+        auto& candidate = viewCallCandidates[i];
+        if (!llvm::is_contained(roots, candidate.root)) continue;
+        pendingViewFreezeCallChecks.push_back({candidate.callee, candidate.param, currentFunction, candidate.root, "the loop",
+                                               /*isLoop=*/true, candidate.begin, candidate.end, candidate.name});
+    }
+}
+
+void Typechecker::recordViewUse(Decl* decl, Location loc) {
+    for (auto& record : viewFreezeRecords) {
+        if (record.view == decl) record.lastUse = loc;
+    }
+}
+
+void Typechecker::recordRootMutation(Decl* root, Location loc, bool isMove) {
+    // Moves in a return statement exit the function, so no later use can
+    // observe them (deferred expressions stay a hole).
+    if (isMove && inReturnValue) return;
+    Decl* normalized = normalizeViewRoot(root);
+    // Mutating through a borrow alias mutates the referent's storage.
+    if (auto* varDecl = llvm::dyn_cast<VarDecl>(normalized);
+        varDecl && varDecl->type.removeOptional().isReferenceType() && varDecl->getName() != "this" && varDecl->initializer) {
+        ViewRoot target = traceViewRoot(varDecl->initializer, /*followViews=*/true);
+        for (Decl* decl : target.decls)
+            recordRootMutation(decl, loc, isMove);
+        if (target.implicitThis) {
+            if (Decl* thisDecl = tryFindDecl("this", loc)) recordRootMutation(thisDecl, loc, isMove);
+        }
+        return;
+    }
+    if (!isFreezableViewRoot(normalized)) return;
+    viewRootMutations.push_back({normalized, loc, isMove});
+}
+
+void Typechecker::rebindViewLocal(VarDecl& view, Expr& rhs, Location loc) {
+    llvm::erase_if(viewFreezeRecords, [&](auto& record) { return record.view == &view; });
+    if (!isSafeViewType(view.type)) return;
+    ViewRoot root = traceViewRoot(&rhs, /*followViews=*/true);
+    if (root.tainted) return;
+    if (viewTempDangles(&rhs, root, view.type)) {
+        ERROR_RANGE(getExprRangeStart(rhs), rhs.endLocation,
+                    "cannot bind view '" << view.getName() << "' to a temporary (temporaries are destroyed at the end of the statement)");
+    }
+    ViewFreezeRecord record{&view, {}, loc, loc};
+    collectFreezeRoots(*this, root, loc, record.roots);
+    if (!record.roots.empty()) viewFreezeRecords.push_back(std::move(record));
+}
+
+void Typechecker::recordViewCallCandidate(FunctionDecl* callee, const ParamDecl* param, Expr& rootExpr, Location begin, Location end, llvm::StringRef name) {
+    if (!callee || !currentFunction) return;
+    ViewRoot root = traceViewRoot(&rootExpr, /*followViews=*/true, /*followVars=*/false);
+    for (Decl* decl : root.decls) {
+        Decl* normalized = normalizeViewRoot(decl);
+        if (isFreezableViewRoot(normalized)) viewCallCandidates.push_back({callee, param, normalized, begin, end, name.str()});
+    }
+    if (root.implicitThis) {
+        if (Decl* thisDecl = tryFindDecl("this", begin)) {
+            if (isFreezableViewRoot(thisDecl)) viewCallCandidates.push_back({callee, param, thisDecl, begin, end, name.str()});
+        }
+    }
+}
+
+static bool viewLocBefore(Location a, Location b) {
+    return a.line < b.line || (a.line == b.line && a.column < b.column);
+}
+
+void Typechecker::checkViewFreezes() {
+    for (auto& record : viewFreezeRecords) {
+        for (auto& mutation : viewRootMutations) {
+            if (!llvm::is_contained(record.roots, mutation.root)) continue;
+            if (!viewLocBefore(record.viewLoc, mutation.loc) || viewLocBefore(record.lastUse, mutation.loc)) continue;
+            if (mutation.isMove) {
+                REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
+                                   "cannot move '" << mutation.root->getName() << "' while view '" << record.view->getName()
+                                                   << "' borrowed from it is still in use");
+            } else {
+                REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
+                                   "cannot assign to '" << mutation.root->getName() << "' while view '" << record.view->getName()
+                                                        << "' borrowed from it is still in use");
+            }
+        }
+        for (auto& candidate : viewCallCandidates) {
+            if (!llvm::is_contained(record.roots, candidate.root)) continue;
+            if (!viewLocBefore(record.viewLoc, candidate.begin) || viewLocBefore(record.lastUse, candidate.begin)) continue;
+            pendingViewFreezeCallChecks.push_back({candidate.callee, candidate.param, currentFunction, candidate.root, record.view->getName().str(),
+                                                   /*isLoop=*/false, candidate.begin, candidate.end, candidate.name});
+        }
+    }
+}
+
+void Typechecker::checkViewFreezeCalls(ConstMutationQuery& query) {
+    std::sort(pendingViewFreezeCallChecks.begin(), pendingViewFreezeCallChecks.end(), [](const ViewFreezeCallCheck& a, const ViewFreezeCallCheck& b) {
+        if (a.callee != b.callee) return a.callee < b.callee;
+        if (a.begin.line != b.begin.line) return a.begin.line < b.begin.line;
+        return a.begin.column < b.begin.column;
+    });
+    pendingViewFreezeCallChecks.erase(std::unique(pendingViewFreezeCallChecks.begin(), pendingViewFreezeCallChecks.end(),
+                                                  [](const ViewFreezeCallCheck& a, const ViewFreezeCallCheck& b) {
+                                                      return a.callee == b.callee && a.begin.line == b.begin.line && a.begin.column == b.begin.column;
+                                                  }),
+                                      pendingViewFreezeCallChecks.end());
+    for (auto& check : pendingViewFreezeCallChecks) {
+        if (check.caller && check.caller->checkState != Decl::CheckState::Checked) continue;
+        if (check.callee->checkState != Decl::CheckState::Checked) continue;
+        bool mutates = check.param ? functionMayWriteThroughParam(*check.callee, *check.param, query) : methodMayMutateReceiver(*check.callee, query);
+        if (!mutates) continue;
+        if (check.param) {
+            if (check.isLoop) {
+                REPORT_ERROR_RANGE(check.begin, check.end,
+                                   "cannot pass '" << check.root->getName() << "' to '" << check.name
+                                                   << "' while the loop over it is still iterating (it may write through the argument)");
+            } else {
+                REPORT_ERROR_RANGE(check.begin, check.end,
+                                   "cannot pass '" << check.root->getName() << "' to '" << check.name << "' while view '" << check.viewName
+                                                   << "' borrowed from it is still in use (it may write through the argument)");
+            }
+        } else {
+            if (check.isLoop) {
+                REPORT_ERROR_RANGE(check.begin, check.end,
+                                   "cannot call '" << check.name << "' on '" << check.root->getName()
+                                                   << "' while the loop over it is still iterating (it mutates the receiver)");
+            } else {
+                REPORT_ERROR_RANGE(check.begin, check.end,
+                                   "cannot call '" << check.name << "' on '" << check.root->getName() << "' while view '" << check.viewName
+                                                   << "' borrowed from it is still in use (it mutates the receiver)");
+            }
+        }
+    }
+    pendingViewFreezeCallChecks.clear();
 }
 
 void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
@@ -409,6 +913,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     }
 
     checkReturnPointerToLocal(stmt.value);
+    checkReturnBorrowedView(stmt.value);
     // Returning a borrow transfers no ownership, so reborrows never track moves.
     bool trackVars = (!stmt.value || !stmt.value->type || !stmt.value->type.removeReference().isImplicitlyCopyable())
                   && !currentFunction->getReturnType().removeOptional().isReferenceType();
@@ -1463,15 +1968,19 @@ bool Typechecker::typecheckStmt(Stmt*& stmt) {
             break;
         case StmtKind::ForEachStmt: {
             auto* forEachStmt = llvm::cast<ForEachStmt>(stmt);
-            if (!tryDesugarEnumIteration(*forEachStmt)) {
+            bool checkLoop = !tryDesugarEnumIteration(*forEachStmt);
+            if (checkLoop) {
                 typecheckExpr(*forEachStmt->range);
             }
             auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isForStmt(); });
             // The lowered ForStmt installs the loop-entry move snapshot.
             // Call chains count: elements of `arr.filter(...)` alias frozen
             // storage, while materializing calls such as toList() start fresh.
+            size_t mutationStart = viewRootMutations.size();
+            size_t candidateStart = viewCallCandidates.size();
             stmt = forEachStmt->lower(nestLevel, exprIsConst(*forEachStmt->range, /*followCalls=*/true));
             typecheckStmt(stmt);
+            if (checkLoop) checkLoopBodyFreezes(*forEachStmt->range, mutationStart, candidateStart);
             break;
         }
         case StmtKind::BreakStmt:

@@ -85,6 +85,25 @@ void main() {
 }
 ```
 
+Borrows are memory-safe by default: the compiler rejects code where a borrow could
+dangle, with no lifetime annotations. A function cannot return a borrow, slice,
+string, or iterator derived from a local variable, a by-value parameter, or a
+temporary; only borrows of parameters, `this`, and globals may escape. While a view
+is alive (from its declaration to its last use), its owner is frozen: reassigning,
+moving, destroying, or mutating it is an error, as is mutating a collection while
+iterating it. Writing an element in place (`list[i] = v`) stays legal. Raw pointers
+are exempt from all of this: they are the explicit unsafe hatch for when the checker
+is wrong or in the way.
+
+```cs
+void main() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    println(r); // last use of r ends the borrow
+    list.push(4); // fine: no view of list is alive anymore
+}
+```
+
 A borrow can be nullable, written `T&?`, for parameters that may or may not receive a value.
 It accepts everything a `T&` accepts, plus `null`.
 Inside the function, test the parameter before dereferencing it.

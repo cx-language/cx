@@ -80,7 +80,8 @@ project. See [Modules and imports](./modules).
 
 ### Is cx memory-safe?
 
-Safe by default in the common cases, but without compile-time guarantees like Rust's.
+References, slices, strings, and iterators are checked at compile time, but raw
+pointers are unchecked and there are no Rust-style lifetime annotations or guarantees.
 See [Safety by default](./design-principles#safety-by-default) and [cx vs
 Rust](./comparison#cx-vs-rust).
 
