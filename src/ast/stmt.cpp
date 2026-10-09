@@ -172,6 +172,7 @@ Stmt* ForEachStmt::lower(int nestLevel, bool rangeIsConst) {
     // A synthesized temp, not user storage: exempt from const-view mirroring
     // so increment() keeps working over constant ranges.
     iteratorVarDecl->isImplicitlyBound = true;
+    iteratorVarDecl->isForLoopIterator = true;
     auto iteratorVarStmt = makeAST<VarStmt>(AstVector<VarDecl*>{iteratorVarDecl});
 
     std::string indexCounterName;

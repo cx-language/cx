@@ -122,10 +122,11 @@ generics with bounds, a standard build tool), but make opposite choices about ho
 correctness to demand up front:
 
 - Compile-time memory safety is useful for certain types of projects,
-  but it comes at a cost in language complexity (e.g. lifetime annotations)
+  but Rust's full guarantees come at a cost in language complexity (e.g. lifetime annotations)
   and productivity (e.g. having to spend extra development time to satisfy the borrow checker).
-  This is not desirable in all projects, and for them cx might be more appropriate.
-  cx's long-term goal for ensuring memory safety is to support proven runtime verification tools such as AddressSanitizer.
+  cx instead checks references and views with cheap function-local rules and no annotations,
+  leaving raw pointers as the unchecked escape hatch.
+  For the bugs those rules cannot catch, cx's long-term goal is to support proven runtime verification tools such as AddressSanitizer.
   These tools could be built in to the compiler to make it easy to enable them e.g. for debug builds.
 
   Memory safety violations caught by AddressSanitizer are probably also easier to understand than the sometimes very cryptic

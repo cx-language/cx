@@ -1,0 +1,510 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+void sink<T>(T v) {
+}
+
+struct WipeBox {
+    int x;
+}
+
+void moveWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:10: error: cannot move 'list' while view 'r' borrowed from it is still in use
+    sink(list);
+    println(r);
+}
+
+void mutatingCallWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'r' borrowed from it is still in use (it mutates the receiver)
+    list.push(4);
+    println(r);
+}
+
+void assignWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to 'list' while view 'r' borrowed from it is still in use
+    list = List([4, 5, 6]);
+    println(r);
+}
+
+void deinitWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot move 'list' while view 'r' borrowed from it is still in use
+    list.deinit();
+    println(r);
+}
+
+void pushInLoop() {
+    var list = List([1, 2, 3]);
+    for e in list {
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'push' on 'list' while the loop over it is still iterating (it mutates the receiver)
+        list.push(4);
+    }
+}
+
+void viewOfTemporary() {
+    // CHECK: [[@LINE+1]]:15: error: cannot initialize view 's' from a temporary (temporaries are destroyed at the end of the statement)
+    int[] s = List([1, 2, 3]);
+    println(s);
+}
+
+StringBuf& ident(StringBuf& b) {
+    return b;
+}
+
+void viewOfArgTemporary() {
+    // CHECK: [[@LINE+1]]:20: error: cannot initialize view 'r' from a temporary (temporaries are destroyed at the end of the statement)
+    StringBuf& r = ident(StringBuf("x"));
+    println(r.size());
+}
+
+void readWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    println(list.size());
+    println(r);
+}
+
+void mutateAfterLastUse() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    println(r);
+    list.push(4);
+}
+
+void elementWriteWhileBorrowed() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    list[1] = 99;
+    println(r);
+}
+
+void mutatingCallThroughAlias() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'r' borrowed from it is still in use (it mutates the receiver)
+    alias.push(4);
+    println(r);
+}
+
+void mutateBorrowParam(List<int>& list) {
+    int& r = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'r' borrowed from it is still in use (it mutates the receiver)
+    list.push(4);
+    println(r);
+}
+
+void rebindEndsBorrow() {
+    var list = List([1, 2, 3]);
+    var other = List([4, 5, 6]);
+    int[] s = list;
+    s = other;
+    list.push(4);
+    println(s);
+}
+
+void rebindToTemp() {
+    var other = List([4, 5, 6]);
+    int[] s = other;
+    // CHECK: [[@LINE+1]]:9: error: cannot bind view 's' to a temporary (temporaries are destroyed at the end of the statement)
+    s = List([1, 2, 3]);
+    println(s);
+}
+
+void rebindDrainsCallCheck() {
+    var a = List([1, 2, 3]);
+    var b = List([7]);
+    int[] s = a;
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'a' while view 's' borrowed from it is still in use (it mutates the receiver)
+    a.push(9);
+    println(s);
+    s = b;
+    println(s);
+}
+
+void rebindDrainsAssignCheck() {
+    var a = List([1, 2, 3]);
+    var b = List([7]);
+    int[] s = a;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to 'a' while view 's' borrowed from it is still in use
+    a = List([9]);
+    println(s);
+    s = b;
+    println(s);
+}
+
+void rebindWithoutUsePasses() {
+    var a = List([1, 2, 3]);
+    var b = List([7]);
+    int[] s = a;
+    a.push(9);
+    s = b;
+    println(s);
+}
+
+void mutateAfterInnerScope(bool c) {
+    var list = List([1, 2, 3]);
+    if c {
+        int& r = list[0];
+        println(r);
+    }
+    list.push(4);
+}
+
+void nestedCheckKeepsFreeze() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    println(WipeBox(1));
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'r' borrowed from it is still in use (it mutates the receiver)
+    list.push(4);
+    println(r);
+}
+
+void pushOne(List<int>& l) {
+    l.push(1);
+}
+
+void mutateThroughOwnBorrow() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    alias.push(4);
+    println(alias);
+}
+
+void passOwnBorrowToMutatingCallee() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    pushOne(alias);
+    println(alias);
+}
+
+void mutateOriginalWithAliasAlive() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    list.push(4);
+    println(alias);
+}
+
+void assignOriginalWithAliasAlive() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    list = List([9]);
+    println(alias);
+}
+
+void moveOriginalWithAliasAlive() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    // CHECK: [[@LINE+1]]:10: error: cannot move 'list' while view 'alias' borrowed from it is still in use
+    sink(list);
+    println(alias);
+}
+
+void chainedAliasSurvivesCall() {
+    var list = List([1, 2, 3]);
+    List<int>& a = list;
+    List<int>& b = a;
+    list.push(4);
+    println(b);
+}
+
+struct AliasHolder {
+    List<int> items;
+
+    void fieldAliasSurvivesCall() {
+        List<int>& it = this.items;
+        this.items.push(4);
+        println(it);
+    }
+}
+
+struct FieldHolder {
+    List<int> items;
+    List<string> positionals;
+    string errorMessage;
+    int count;
+
+    void disjointFieldsPass() {
+        for p in positionals {
+            errorMessage = "x";
+            println(p);
+        }
+    }
+
+    void sameFieldAssignRejected() {
+        for e in items {
+            // CHECK: [[@LINE+1]]:13: error: cannot assign to 'items' while the loop over it is still iterating
+            items = List([9]);
+            println(e);
+        }
+    }
+
+    void qualifiedSameFieldAssignRejected() {
+        int[] s = this.items;
+        // CHECK: [[@LINE+1]]:9: error: cannot assign to 'items' while view 's' borrowed from it is still in use
+        this.items = List([9]);
+        println(s);
+    }
+
+    void aliasSeesQualifiedWrite() {
+        FieldHolder& o = this;
+        int[] s = o.items;
+        // CHECK: [[@LINE+1]]:9: error: cannot assign to 'items' while view 's' borrowed from it is still in use
+        this.items = List([9]);
+        println(s);
+    }
+
+    void sameFieldCallRejected() {
+        int& r = items[0];
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'push' on 'items' while view 'r' borrowed from it is still in use (it mutates the receiver)
+        items.push(4);
+        println(r);
+    }
+
+    void scalarFieldAssignPasses() {
+        int& r = count;
+        count = 5;
+        println(r);
+    }
+
+    void qualifiedDisjointFieldsPass() {
+        int[] s = this.items;
+        this.positionals = List(["x"]);
+        println(s);
+    }
+
+    void crossObjectFieldWritePasses(FieldHolder& other) {
+        int[] s = this.items;
+        other.items = List([9]);
+        println(s);
+    }
+
+    void wholeObjectCallStillRejected() {
+        int& r = items[0];
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'clearItems' on 'this' while view 'r' borrowed from it is still in use (it mutates the receiver)
+        this.clearItems();
+        println(r);
+    }
+
+    void clearItems() {
+        items = List([9]);
+    }
+}
+
+struct NestedInner {
+    List<int> vals;
+}
+
+struct NestedOuter {
+    NestedInner mid;
+    List<int> other;
+}
+
+void nestedMemberAssignRejected() {
+    var o = NestedOuter(NestedInner(List([1])), List([2]));
+    int[] s = o.mid.vals;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to 'mid' while view 's' borrowed from it is still in use
+    o.mid = NestedInner(List([3]));
+    println(s);
+}
+
+void siblingMemberAssignPasses() {
+    var o = NestedOuter(NestedInner(List([1])), List([2]));
+    int[] s = o.mid.vals;
+    o.other = List([3]);
+    println(s);
+}
+
+void wholeObjectAssignRejectsFieldView() {
+    var o1 = FieldHolder(List([1]), List(["a"]), "e", 0);
+    int[] s = o1.items;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to 'o1' while view 's' borrowed from it is still in use
+    o1 = FieldHolder(List([9]), List(["b"]), "f", 1);
+    println(s);
+}
+
+void unwrapAssignRejectsView() {
+    List<int>? opt = List([1, 2, 3]);
+    List<int>& r = opt!;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to 'opt' while view 'r' borrowed from it is still in use
+    opt! = List([9]);
+    println(r);
+}
+
+void derefAssignRejectsOtherView() {
+    var list = List([1, 2, 3]);
+    List<int>& b = list;
+    int& e = list[0];
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to 'list' while view 'e' borrowed from it is still in use
+    *b = List([9]);
+    println(e);
+}
+
+void selfDerefWritePasses(bool c) {
+    var l1 = List([1]);
+    var l2 = List([2]);
+    List<int>& b = if c then l1 else l2;
+    *b = List([9]);
+    println(b);
+}
+
+void scalarDerefWritePasses() {
+    var a = List([1, 2, 3]);
+    int[] s = a;
+    int& f = a[0];
+    *f = 99;
+    println(s);
+    println(f);
+}
+
+void deinitThroughBorrowRejected() {
+    var list = List([1, 2, 3]);
+    List<int>& a = list;
+    // CHECK: [[@LINE+1]]:5: error: cannot move 'list' while view 'a' borrowed from it is still in use
+    a.deinit();
+    println(a);
+}
+
+void deinitDiamondReportsOnce(bool c) {
+    var list = List([1, 2, 3]);
+    List<int>& b1 = list;
+    List<int>& b2 = list;
+    List<int>& a = if c then b1 else b2;
+    // CHECK: [[@LINE+1]]:5: error: cannot move 'list' while view 'a' borrowed from it is still in use
+    a.deinit();
+    println(a);
+}
+
+void deinitWithoutUsePasses() {
+    var list = List([1, 2, 3]);
+    List<int>& a = list;
+    a.deinit();
+    println("done");
+}
+
+void deinitSink(List<int>& b) {
+    b.deinit();
+}
+
+void deinitParamCrossFunctionRejected() {
+    var list = List([1, 2, 3]);
+    int[] s = list;
+    // CHECK: [[@LINE+1]]:16: error: cannot pass 'list' to 'deinitSink' while view 's' borrowed from it is still in use (it may write through the argument)
+    deinitSink(list);
+    println(s);
+}
+
+void mutateInDeadBranch(List<int>& list, bool something) {
+    var cell = list.last();
+    if something {
+        list.pop();
+    } else {
+        println(cell);
+    }
+}
+
+void mutateInNestedDeadBranch(List<int>& list, bool a, bool b) {
+    var cell = list.last();
+    if a {
+        if b {
+            list.pop();
+        }
+    } else {
+        println(cell);
+    }
+}
+
+void mutateInDeadSwitchArm(List<int>& list, int n) {
+    var cell = list.last();
+    switch n {
+        case 0:
+            list.pop();
+        default:
+            println(cell);
+    }
+}
+
+void mutateInLiveBranch(List<int>& list, bool something) {
+    var cell = list.last();
+    if something {
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'pop' on 'list' while view 'cell' borrowed from it is still in use (it mutates the receiver)
+        list.pop();
+        println(cell);
+    }
+}
+
+void mutateBeforeBranchUse(List<int>& list, bool something) {
+    var cell = list.last();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'pop' on 'list' while view 'cell' borrowed from it is still in use (it mutates the receiver)
+    list.pop();
+    if something {
+        println(cell);
+    }
+}
+
+void loopCarriedStillRejected(List<int>& list) {
+    var cell = list.last();
+    for i in 0..10 {
+        if i > 5 {
+            // CHECK: [[@LINE+1]]:13: error: cannot call 'pop' on 'list' while view 'cell' borrowed from it is still in use (it mutates the receiver)
+            list.pop();
+        } else {
+            println(cell);
+        }
+    }
+}
+
+void mutateInDeadBranchInLoop(List<int>& list) {
+    while list.size() > 0 {
+        var cell = list.last();
+        if list.size() > 1 {
+            _ = list.pop();
+        } else {
+            println(cell);
+        }
+    }
+}
+
+void loopCarriedUseBeforeMutation(List<int>& list) {
+    var cell = list.last();
+    while list.size() > 5 {
+        println(cell);
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'pop' on 'list' while view 'cell' borrowed from it is still in use (it mutates the receiver)
+        list.pop();
+    }
+}
+
+void mutateAfterLastUseInLoop(List<int>& list) {
+    while list.size() > 0 {
+        var cell = list.last();
+        println(cell);
+        _ = list.pop();
+    }
+}
+
+void sequentialLoopsDontSpan(List<int>& list) {
+    var cell = list.last();
+    println(cell);
+    while list.size() > 5 {
+        _ = list.pop();
+    }
+    while list.size() > 3 {
+        _ = list.pop();
+    }
+}
+
+void plainLoop() {
+    var list = List([1, 2, 3]);
+    for e in list {
+        println(e);
+    }
+}
+
+void main() {
+}

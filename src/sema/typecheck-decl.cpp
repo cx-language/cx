@@ -1609,6 +1609,26 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         llvm::SaveAndRestore saveLoopEntryLocalCount(loopEntryLocalCount, std::optional<size_t>());
         llvm::SaveAndRestore saveAssignTarget(assignTarget, static_cast<Decl*>(nullptr));
         llvm::SaveAndRestore saveInReturnValue(inReturnValue, false);
+        // View-freeze windows span lambdas (captured uses extend them), so
+        // lambdas share the enclosing state. Non-lambdas get fresh state that
+        // restores on exit: nested on-demand checks (e.g. instantiations) must
+        // not clobber the enclosing function's in-progress records.
+        std::optional<llvm::SaveAndRestore<std::vector<ViewFreezeRecord>>> saveViewFreezeRecords;
+        std::optional<llvm::SaveAndRestore<std::vector<RootMutation>>> saveViewRootMutations;
+        std::optional<llvm::SaveAndRestore<std::vector<ViewCallCandidate>>> saveViewCallCandidates;
+        std::optional<llvm::SaveAndRestore<std::vector<ViewBranchRegion>>> saveViewBranchRegions;
+        std::optional<llvm::SaveAndRestore<int>> saveCurrentViewRegion;
+        std::optional<llvm::SaveAndRestore<std::vector<int>>> saveViewLoopParents;
+        std::optional<llvm::SaveAndRestore<int>> saveCurrentViewLoop;
+        if (!decl.isLambda()) {
+            saveViewFreezeRecords.emplace(viewFreezeRecords, std::vector<ViewFreezeRecord>());
+            saveViewRootMutations.emplace(viewRootMutations, std::vector<RootMutation>());
+            saveViewCallCandidates.emplace(viewCallCandidates, std::vector<ViewCallCandidate>());
+            saveViewBranchRegions.emplace(viewBranchRegions, std::vector<ViewBranchRegion>());
+            saveCurrentViewRegion.emplace(currentViewRegion, -1);
+            saveViewLoopParents.emplace(viewLoopParents, std::vector<int>());
+            saveCurrentViewLoop.emplace(currentViewLoop, -1);
+        }
 
         TypeDecl* receiverTypeDecl = decl.getTypeDecl();
         // Methods reached by name (e.g. interface copies in the module table)
@@ -1684,6 +1704,9 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             maybeMovedDecls.clear();
             moveLocations.clear();
             condWarnedDecls.clear();
+            if (!decl.isLambda()) {
+                checkViewFreezes();
+            }
         }
 
         if (decl.isConstructorDecl() && decl.body) {
@@ -2499,6 +2522,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     // their destructors mark here. Globals never scope-exit-destroy.
     if (!decl.isGlobal()) markDestructorFor(decl.type);
     bindDeinitPtrTarget(decl);
+    recordViewLocal(decl);
 }
 
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {

@@ -66,6 +66,7 @@ struct Match {
     int userConversionCount = 0;
 };
 
+struct ConstMutationQuery;
 struct VariadicGenericArgs {
     llvm::StringMap<GenericArg> fixedArgs;
     std::vector<llvm::StringMap<GenericArg>> packArgs;
@@ -99,6 +100,18 @@ struct ComparisonTemps {
     VarDecl* rhsTemp = nullptr;
     Expr* lhsBase;
     Expr* rhsBase;
+};
+
+// One storage a value may designate: a base object plus the member path
+// from the base outward (empty for the whole object). Same-base roots
+// overlap when the mutation path is a prefix of the view path, so a whole
+// reassignment conflicts with every view into the object while disjoint
+// members stay independent. A null base is the caller's `this`, resolved
+// where `this` is in scope (bare method calls, bare field references).
+struct ViewMemberRoot {
+    Decl* base = nullptr;
+    llvm::SmallVector<Decl*, 2> path;
+    bool operator==(const ViewMemberRoot& other) const { return base == other.base && path == other.path; }
 };
 
 struct Typechecker {
@@ -256,6 +269,7 @@ struct Typechecker {
     VarDecl* getStaticConst(const Expr& expr);
     EnumCase* instantiateEnumCase(TypeTemplate& typeTemplate, llvm::StringRef caseName, const MemberExpr& memberExpr, CallExpr* call, Type expectedType);
     void checkReturnPointerToLocal(const Expr* returnValue) const;
+    void checkReturnBorrowedView(const Expr* returnValue) const;
     void warnIfUnusedResult(const Expr& expr, Type type) const;
     void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);
     bool inSameModule(const Decl& decl, Location location) const;
@@ -487,6 +501,112 @@ struct Typechecker {
         bool isIterator;
     };
     std::vector<ConstViewArgCheck> pendingConstViewArgChecks;
+    // A use of a view: a mutation conflicts with the view only when a use
+    // follows it on some path. The region pinpoints which conditional arms
+    // enclose the use; uses in a sibling arm of the mutation never follow it
+    // within one pass. The loop is the innermost enclosing loop, or -1.
+    struct ViewUse {
+        Location loc;
+        int region;
+        int loop;
+    };
+    // A local holding a borrow or view: the storages it designates stay
+    // frozen (no reassignment, move, destruction, or mutating call) from its
+    // declaration until a use follows. Owners that own no storage need no
+    // freezing, so only freezable roots are recorded (see below).
+    struct ViewFreezeRecord {
+        VarDecl* view;
+        llvm::SmallVector<ViewMemberRoot, 2> roots;
+        Location viewLoc;
+        llvm::SmallVector<ViewUse, 4> uses;
+        // The view aliases its owner's object (rather than viewing into it):
+        // interior mutation leaves the borrowed slot in place, so only moves
+        // and destructions conflict.
+        bool objectAlias = false;
+        // Innermost loop enclosing the declaration, or -1.
+        int loop = -1;
+    };
+    std::vector<ViewFreezeRecord> viewFreezeRecords;
+    // Reassignments, moves, and destructions of freezable roots, resolved
+    // against view uses when the function body is done.
+    struct RootMutation {
+        ViewMemberRoot root;
+        Location loc;
+        bool isMove;
+        int region;
+        int loop;
+        // The named borrow the write goes through, if any: writing through a
+        // view cannot invalidate the view itself.
+        VarDecl* throughView = nullptr;
+    };
+    std::vector<RootMutation> viewRootMutations;
+    // Method calls and borrow-argument passes on freezable roots: the
+    // mutating verdict waits for postProcess since callee bodies check on
+    // demand. Calls a view use follows queue a ViewFreezeCallCheck then.
+    struct ViewCallCandidate {
+        FunctionDecl* callee;
+        const ParamDecl* param;
+        ViewMemberRoot root;
+        // The named view the call goes through (receiver or argument), if any:
+        // mutating through a view cannot invalidate the view itself.
+        VarDecl* receiverView = nullptr;
+        Location begin;
+        Location end;
+        std::string name;
+        int region;
+        int loop;
+    };
+    std::vector<ViewCallCandidate> viewCallCandidates;
+    // One if/switch arm on the path from the function body to a use or
+    // mutation site. Arms with the same cond but different arms never execute
+    // together, so a use there never follows a mutation here. Region -1 is
+    // the function body itself.
+    struct ViewBranchRegion {
+        int cond;
+        int arm;
+        int parent;
+        int depth;
+    };
+    std::vector<ViewBranchRegion> viewBranchRegions;
+    int currentViewRegion = -1;
+    int viewBranchCondCounter = 0;
+    // Loop-nesting forest: the parent of each loop id, with -1 for top-level
+    // loops. currentViewLoop is the innermost enclosing loop, or -1.
+    std::vector<int> viewLoopParents;
+    int currentViewLoop = -1;
+    void pushViewBranchArm(int cond, int arm);
+    void popViewBranchArm();
+    int newViewBranchCond();
+    int newViewLoop();
+    bool viewUseFollows(const ViewFreezeRecord& record, Location loc, int region, int loop) const;
+    void recordViewLocal(VarDecl& decl);
+    // Checks body-recorded mutations and calls (everything past the snapshots)
+    // against the range roots: a for loop freezes its range for the whole
+    // loop, since the lowered iterator temp carries the loop-line location
+    // everywhere and its own window would collapse.
+    void checkLoopBodyFreezes(Expr& range, size_t mutationStart, size_t candidateStart);
+    void recordViewUse(Decl* decl, Location loc);
+    void recordRootMutation(ViewMemberRoot root, Location loc, bool isMove, VarDecl* throughView = nullptr);
+    void rebindViewLocal(VarDecl& view, Expr& lhs, Expr& rhs);
+    void recordViewCallCandidate(FunctionDecl* callee, const ParamDecl* param, Expr& rootExpr, Location begin, Location end, llvm::StringRef name);
+    // Checks one record against recorded mutations and calls. drainEnd bounds
+    // the window for rebinds (the old binding ends there); null checks the
+    // whole function at the end.
+    void checkViewRecord(const ViewFreezeRecord& record, const Location* drainEnd);
+    void checkViewFreezes();
+    struct ViewFreezeCallCheck {
+        FunctionDecl* callee;
+        const ParamDecl* param;
+        FunctionDecl* caller;
+        ViewMemberRoot root;
+        std::string viewName;
+        bool isLoop;
+        Location begin;
+        Location end;
+        std::string name;
+    };
+    std::vector<ViewFreezeCallCheck> pendingViewFreezeCallChecks;
+    void checkViewFreezeCalls(ConstMutationQuery& query);
     // A whole-field `=` assignment found by the constructor scan, with the
     // state needed to decide whether it overwrites a live value. initsBefore
     // counts delegating `init(...)` calls ahead of it, splitting the body
@@ -603,6 +723,47 @@ bool typeMayAliasStorageDeep(Type type);
 // non-borrow, non-view return (e.g. ByteIterator's uint8). Borrow-yielding
 // iterators (filters, maps) may designate source storage.
 bool isFreshYieldingIterator(Type type);
+// Whether a value of this type is a safe-handle view: a borrow, slice,
+// string, or borrow-yielding iterator. Raw pointers are excluded: they are
+// the explicit unsafe escape hatch.
+bool isSafeViewType(Type type);
+// Storage root an alias-capable value derives from, traced through
+// borrow-returning projections (calls, member access, named borrows/views,
+// casts) to the underlying declaration. Literals and globals are immortal;
+// values through raw pointers or unknown shapes are tainted (unknowable).
+struct ViewRoot {
+    // Every storage the value may designate (e.g. both sides of a
+    // `chain(a, b)`): freezing covers all of them, and returning errors on
+    // the first owned local or parameter among them.
+    llvm::SmallVector<ViewMemberRoot, 2> decls;
+    bool immortal = false;
+    bool tainted = false;
+    bool temporary = false;
+    bool traced = false;
+    // The temporary lives until scope end: it sits in receiver position of
+    // a call whose return type may borrow it (mirroring IRGen's
+    // emittingReceiver), so locals may view it but returns still dangle.
+    bool extended = false;
+    // The terminal is a dereference: it refers through to the target instead
+    // of a temporary.
+    bool derefTerminal = false;
+    Type tempType;
+    Type projectedType;
+};
+// followViews also follows named view-typed locals to their initializers,
+// descends through unwraps and borrow dereferences, and stops at calls
+// returning fresh owned values (projections below those designate the
+// temporary, not the receiver). The pointer path keeps the legacy tracing.
+// followVars=false stops at named variables instead of following their
+// initializers: for mutation sites, which affect the named object itself
+// rather than the storage a view of it designates.
+ViewRoot traceViewRoot(const Expr* expr, bool followViews = false, bool followVars = true);
+// Whether the declaration is storage a view freezes: an owned local,
+// parameter, or field whose reassignment, move, destruction, or mutation may
+// invalidate views designating it. Carriers that own nothing (scalars,
+// views, view-holding structs) need no freezing, since reassigning or
+// destroying them leaves the designated storage untouched.
+bool isFreezableViewRoot(Decl* decl);
 // Shared cache for may-write queries: one per postProcess drain, so repeated
 // and overlapping call graphs analyze once. See const-mutation.cpp.
 struct ConstMutationQuery {

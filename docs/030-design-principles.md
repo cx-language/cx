@@ -59,8 +59,12 @@ Checks can be disabled individually or globally where measured performance requi
 Built-in sanitizers such as AddressSanitizer are planned for catching the memory bugs these
 checks don't (see [Build system](./build-system#planned-features)).
 
-cx does not guarantee memory or thread safety at compile time the way Rust does; see
-[Non-goals](#non-goals).
+References and views (`T&`, `T[]`, `string`, iterators) are checked at compile time
+without lifetime annotations: a borrow of a local or temporary cannot escape its
+function, and an owner cannot be reassigned, moved, or mutated while a view of it
+is alive (see [Pointers](./pointers#borrowed-parameters)). Raw pointers (`T*`) are
+the explicit unsafe hatch and are not checked. cx still does not guarantee memory
+or thread safety the way Rust does; see [Non-goals](#non-goals).
 
 ## Freedom of style
 
@@ -109,9 +113,11 @@ themselves across many languages and aims to implement them as well as possible.
 
 cx explicitly does not aim for:
 
-- **Guaranteed compile-time memory safety at the cost of iteration speed and programmer
-  productivity.** cx prefers a simpler language and faster iteration, catching memory bugs
-  with debug-mode checks and tooling such as AddressSanitizer instead (see [cx vs
+- **Rust-style compile-time guarantees at the cost of iteration speed and programmer
+  productivity.** cx checks references and views with cheap function-local rules and no
+  lifetime annotations, keeping the language simple and builds fast; it does not aim for
+  Rust's full static guarantees. The remaining memory bugs are caught with debug-mode
+  checks and tooling such as AddressSanitizer instead (see [cx vs
   Rust](./comparison#cx-vs-rust)).
 - **A managed runtime or mandatory garbage collector.** There is no hidden runtime (aside
   from the optional safety checks in debug builds) and you only pay for what you use: the

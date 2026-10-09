@@ -58,13 +58,13 @@ int* f9(int& a) {
 
 StringBuf& f10() {
     var r = Result.Ok<StringBuf, string>(value = StringBuf("hi"));
-    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'StringBuf&' derived from local variable 'r' (local variables will not exist after the function returns)
     return r.unwrap();
 }
 
 StringBuf& f11() {
     StringBuf& b = Result.Ok<StringBuf, string>(value = StringBuf("hi")).unwrap();
-    // CHECK: [[@LINE+1]]:12: warning: returning pointer to temporary
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'StringBuf&' derived from a temporary (temporaries are destroyed at the end of the statement)
     return b;
 }
 
@@ -74,7 +74,7 @@ struct WrapBox {
 
 StringBuf& f12() {
     var w = WrapBox(s = StringBuf("hi"));
-    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
+    // CHECK: [[@LINE+1]]:12: error: cannot return 'StringBuf&' derived from local variable 'w' (local variables will not exist after the function returns)
     return w.s;
 }
 
