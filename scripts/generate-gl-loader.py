@@ -150,7 +150,7 @@ def emit_extern_file(externs):
 def main():
     # Reads use universal newlines (tolerating CRLF checkouts); writes pin
     # newline="\n" to keep the output LF on every platform.
-    with open(GL_CX) as file:
+    with open(GL_CX, encoding="utf-8") as file:
         gl_lines = file.read().split("\n")
     if any(EXTERN_RE.match(line) for line in gl_lines):
         # One-time split: move the externs out of gl.cx. The remaining
@@ -169,16 +169,16 @@ def main():
                     cursor -= 1
         stripped = [line for index, line in enumerate(gl_lines) if index not in removed]
         stripped_gl = re.sub(r"\n{3,}", "\n\n", "\n".join(stripped))
-        with open(GL_CX, "w", newline="\n") as file:
+        with open(GL_CX, "w", newline="\n", encoding="utf-8") as file:
             file.write(stripped_gl)
-        with open(GL_EXTERN_CX, "w", newline="\n") as file:
+        with open(GL_EXTERN_CX, "w", newline="\n", encoding="utf-8") as file:
             file.write(emit_extern_file(externs))
         print(f"split {len(externs)} externs out of gl.cx into gl-extern.cx")
     else:
-        with open(GL_EXTERN_CX) as file:
+        with open(GL_EXTERN_CX, encoding="utf-8") as file:
             externs = parse_externs(file.read().split("\n"))
         assert externs, "no externs found in gl-extern.cx"
-    with open(GL_LOADER_CX, "w", newline="\n") as file:
+    with open(GL_LOADER_CX, "w", newline="\n", encoding="utf-8") as file:
         file.write(emit_loader(externs))
     print(f"wrote {GL_LOADER_CX} ({len(externs)} functions)")
 

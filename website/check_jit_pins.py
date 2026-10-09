@@ -28,7 +28,7 @@ def windows_externs():
     for path in sorted(ROOT.glob("std/**/*.cx")):
         active = [True]
         cond = []
-        for lineno, line in enumerate(path.read_text().splitlines(), 1):
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.strip()
             m = re.match(r"#if\s+(!)?(\w+)", stripped)
             if m:
@@ -64,7 +64,7 @@ def windows_externs():
 
 
 def pinned_names():
-    src = (ROOT / "src/driver/jit.cpp").read_text()
+    src = (ROOT / "src/driver/jit.cpp").read_text(encoding="utf-8")
     return set(re.findall(r"^\s*PIN\(([A-Za-z_][A-Za-z0-9_]*),", src, re.MULTILINE))
 
 

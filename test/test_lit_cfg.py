@@ -31,7 +31,7 @@ def load_lit_cfg(path_env):
     sys.modules["lit.formats"] = fake_lit.formats
     try:
         with patch.dict(os.environ, {"PATH": path_env}):
-            exec(compile(LIT_CFG.read_text(), str(LIT_CFG), "exec"), {
+            exec(compile(LIT_CFG.read_text(encoding="utf-8"), str(LIT_CFG), "exec"), {
                 "__file__": str(LIT_CFG),
                 "config": config,
                 "lit_config": lit_config,
@@ -53,10 +53,10 @@ class LitCfgTest(unittest.TestCase):
         # treat the libraries as missing instead of crashing.
         with tempfile.TemporaryDirectory() as tmp:
             if os.name == "nt":
-                Path(tmp, "pkg-config.bat").write_text("@exit 1\n")
+                Path(tmp, "pkg-config.bat").write_text("@exit 1\n", encoding="utf-8")
             else:
                 stub = Path(tmp, "pkg-config")
-                stub.write_text("#!/nonexistent-interpreter\n")
+                stub.write_text("#!/nonexistent-interpreter\n", encoding="utf-8")
                 stub.chmod(0o755)
             config = load_lit_cfg(tmp)
         self.assertNotIn("sdl3", config.available_features)
@@ -66,7 +66,7 @@ class LitCfgTest(unittest.TestCase):
     def test_working_pkg_config_enables_present_libraries(self):
         with tempfile.TemporaryDirectory() as tmp:
             stub = Path(tmp, "pkg-config")
-            stub.write_text('#!/bin/sh\n[ "$2" = sdl3 ]\n')
+            stub.write_text('#!/bin/sh\n[ "$2" = sdl3 ]\n', encoding="utf-8")
             stub.chmod(0o755)
             config = load_lit_cfg(tmp)
         self.assertIn("sdl3", config.available_features)

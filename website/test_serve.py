@@ -29,9 +29,9 @@ class SnapshotTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "index.html"
-            target.write_text("a")
+            target.write_text("a", encoding="utf-8")
             before = snapshot([target])
-            target.write_text("bb")
+            target.write_text("bb", encoding="utf-8")
             later = before[str(target)] + 1_000_000
             os.utime(target, ns=(later, later))
             self.assertNotEqual(snapshot([target]), before)
@@ -41,7 +41,7 @@ class SnapshotTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "index.html"
-            target.write_text("a")
+            target.write_text("a", encoding="utf-8")
             self.assertEqual(snapshot([target]), snapshot([target]))
 
 
@@ -59,10 +59,10 @@ class CollectFilesTest(unittest.TestCase):
             (site / ".generated").mkdir()
             (site / "__pycache__").mkdir()
             page = site / "index.html"
-            page.write_text("x")
-            (site / "build" / "index.html").write_text("x")
-            (site / ".generated" / "toc.html").write_text("x")
-            (site / "__pycache__" / "serve.pyc").write_text("x")
+            page.write_text("x", encoding="utf-8")
+            (site / "build" / "index.html").write_text("x", encoding="utf-8")
+            (site / ".generated" / "toc.html").write_text("x", encoding="utf-8")
+            (site / "__pycache__" / "serve.pyc").write_text("x", encoding="utf-8")
             found = collect_files(site)
             self.assertIn(page, found)
             self.assertEqual(len(found), 1)

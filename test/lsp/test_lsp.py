@@ -635,7 +635,7 @@ def test_query_determinism(cx_lsp, path):
     # (Leak-counter bimodality across processes is a conservative-root
     # measurement artifact; analysis itself is deterministic.)
     fixture = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inputs", "lsan-fixture.cx")
-    with open(fixture) as file:
+    with open(fixture, encoding="utf-8") as file:
         content = file.read()
     probe_line = content.count("\n")
     content += "void _probe() {\n    var _sp = Sprite();\n    _sp.\n}\n"
@@ -860,7 +860,7 @@ def test_package_dedup(cx_lsp):
         package = os.path.join(directory, "std")
         os.mkdir(package)
         # Uses `void` so the shadowing package needs no std declarations.
-        with open(os.path.join(package, "defs.cx"), "w") as file:
+        with open(os.path.join(package, "defs.cx"), "w", encoding="utf-8") as file:
             file.write("void answer() {\n}\n")
         use_path = os.path.join(package, "use.cx")
 
@@ -870,7 +870,7 @@ def test_package_dedup(cx_lsp):
             return query
 
         content = "void _doubled() {\n    answer();\n}\n"
-        with open(use_path, "w") as file:
+        with open(use_path, "w", encoding="utf-8") as file:
             file.write(content)
 
         result = run_query(cx_lsp, package_query("check", content))
@@ -896,7 +896,7 @@ def test_package_dedup(cx_lsp):
         # An explicit self-import must resolve to the package itself and
         # terminate instead of duplicating or recursing.
         self_content = 'import "std";\n' + content
-        with open(use_path, "w") as file:
+        with open(use_path, "w", encoding="utf-8") as file:
             file.write(self_content)
         result = run_query(cx_lsp, package_query("check", self_content))
         check(
@@ -914,13 +914,13 @@ def test_build_file_modes(cx_lsp):
         root = os.path.join(directory, "proj")
         subdir = os.path.join(root, "sub")
         os.makedirs(subdir)
-        with open(os.path.join(root, "build.cx"), "w") as file:
+        with open(os.path.join(root, "build.cx"), "w", encoding="utf-8") as file:
             file.write('var name = "testproj"\n')
-        with open(os.path.join(root, "a.cx"), "w") as file:
+        with open(os.path.join(root, "a.cx"), "w", encoding="utf-8") as file:
             file.write("int answer() {\n    return 42;\n}\n")
         nested_path = os.path.join(subdir, "b.cx")
         nested_content = "int _doubled() {\n    return answer() * 2;\n}\n"
-        with open(nested_path, "w") as file:
+        with open(nested_path, "w", encoding="utf-8") as file:
             file.write(nested_content)
 
         result = run_query(cx_lsp, base_query("check", nested_path, nested_content))
@@ -934,11 +934,11 @@ def test_build_file_modes(cx_lsp):
         check("query-build-file-hover", "int answer()" in result.get("hover", ""), result.get("hover", "")[:200])
 
     with tempfile.TemporaryDirectory() as directory:
-        with open(os.path.join(directory, "c.cx"), "w") as file:
+        with open(os.path.join(directory, "c.cx"), "w", encoding="utf-8") as file:
             file.write("int answer() {\n    return 42;\n}\n")
         lone_path = os.path.join(directory, "d.cx")
         lone_content = "int doubled() {\n    return answer() * 2;\n}\n"
-        with open(lone_path, "w") as file:
+        with open(lone_path, "w", encoding="utf-8") as file:
             file.write(lone_content)
 
         result = run_query(cx_lsp, base_query("check", lone_path, lone_content))
@@ -958,17 +958,17 @@ def test_build_file_modes(cx_lsp):
         subdir = os.path.join(root, "sub")
         os.makedirs(vendordir)
         os.makedirs(subdir)
-        with open(os.path.join(root, "build.cx"), "w") as file:
+        with open(os.path.join(root, "build.cx"), "w", encoding="utf-8") as file:
             file.write('var name = "vproj"\n')
-        with open(os.path.join(vendordir, "greet.cx"), "w") as file:
+        with open(os.path.join(vendordir, "greet.cx"), "w", encoding="utf-8") as file:
             file.write('void greet() {\n    println("hi");\n}\n\nvoid unusedHelper() {\n}\n')
         main_path = os.path.join(root, "main.cx")
         main_content = "import greet;\n\nvoid main() {\n    greet();\n    other();\n}\n"
-        with open(main_path, "w") as file:
+        with open(main_path, "w", encoding="utf-8") as file:
             file.write(main_content)
         nested_path = os.path.join(subdir, "build.cx")
         nested_content = "import greet;\n\nvoid other() {\n    greet();\n}\n"
-        with open(nested_path, "w") as file:
+        with open(nested_path, "w", encoding="utf-8") as file:
             file.write(nested_content)
 
         result = run_query(cx_lsp, base_query("check", main_path, main_content))
@@ -990,11 +990,11 @@ def test_build_file_modes(cx_lsp):
     with tempfile.TemporaryDirectory() as directory:
         root = os.path.join(directory, "wproj")
         os.makedirs(root)
-        with open(os.path.join(root, "build.cx"), "w") as file:
+        with open(os.path.join(root, "build.cx"), "w", encoding="utf-8") as file:
             file.write('var name = "wproj"\nvar warnings = ["conversion"]\n')
         main_path = os.path.join(root, "main.cx")
         main_content = "void main() {\n    float32 f = 16777217;\n    println(f);\n}\n"
-        with open(main_path, "w") as file:
+        with open(main_path, "w", encoding="utf-8") as file:
             file.write(main_content)
 
         result = run_query(cx_lsp, base_query("check", main_path, main_content))
@@ -1013,9 +1013,9 @@ def test_fetched_dependency(cx_lsp):
     with tempfile.TemporaryDirectory() as home:
         depdir = os.path.join(home, ".cx", "dependencies", "shapes@v1")
         os.makedirs(depdir)
-        with open(os.path.join(depdir, "build.cx"), "w") as file:
+        with open(os.path.join(depdir, "build.cx"), "w", encoding="utf-8") as file:
             file.write('var defines = ["SHAPES_ROUND"]\n')
-        with open(os.path.join(depdir, "shape.cx"), "w") as file:
+        with open(os.path.join(depdir, "shape.cx"), "w", encoding="utf-8") as file:
             file.write(
                 "#if SHAPES_ROUND\n"
                 "void describe() {\n"
@@ -1030,11 +1030,11 @@ def test_fetched_dependency(cx_lsp):
         with tempfile.TemporaryDirectory() as directory:
             root = os.path.join(directory, "proj")
             os.makedirs(root)
-            with open(os.path.join(root, "build.cx"), "w") as file:
+            with open(os.path.join(root, "build.cx"), "w", encoding="utf-8") as file:
                 file.write('var dependencies = [(package = "shapes", url = "https://example.com/shapes.git", version = "v1")]\n')
             main_path = os.path.join(root, "main.cx")
             main_content = "import shapes;\n\nvoid main() {\n    describe();\n}\n"
-            with open(main_path, "w") as file:
+            with open(main_path, "w", encoding="utf-8") as file:
                 file.write(main_content)
 
             old_home = os.environ.get("HOME")
@@ -1063,11 +1063,11 @@ def test_pkg_config_headers(cx_lsp):
         root = os.path.join(directory, "proj")
         includedir = os.path.join(root, "include")
         os.makedirs(os.path.join(includedir, "mypkg"))
-        with open(os.path.join(includedir, "mypkg", "widget.h"), "w") as file:
+        with open(os.path.join(includedir, "mypkg", "widget.h"), "w", encoding="utf-8") as file:
             file.write("int widgetValue();\n")
         pcdir = os.path.join(root, "pc")
         os.makedirs(pcdir)
-        with open(os.path.join(pcdir, "mypkg.pc"), "w") as file:
+        with open(os.path.join(pcdir, "mypkg.pc"), "w", encoding="utf-8") as file:
             file.write(
                 "prefix="
                 + root.replace(os.sep, "/")
@@ -1081,11 +1081,11 @@ def test_pkg_config_headers(cx_lsp):
         build_path = os.path.join(root, "build.cx")
         main_path = os.path.join(root, "main.cx")
         main_content = 'import "mypkg/widget.h";\nvoid main() {\n    println(widgetValue());\n}\n'
-        with open(main_path, "w") as file:
+        with open(main_path, "w", encoding="utf-8") as file:
             file.write(main_content)
 
         # A failing pkg-config query degrades to unresolved headers, not a crash.
-        with open(build_path, "w") as file:
+        with open(build_path, "w", encoding="utf-8") as file:
             file.write('var name = "pkgtest"\nvar pkgConfigDependencies = ["definitely-not-a-real-package"]\n')
         result = run_query(cx_lsp, base_query("check", main_path, main_content))
         messages = [d["message"] for d in result["diagnostics"]]
@@ -1099,7 +1099,7 @@ def test_pkg_config_headers(cx_lsp):
             print("SKIP query-pkg-config-headers (no pkg-config on Windows CI)")
             return
 
-        with open(build_path, "w") as file:
+        with open(build_path, "w", encoding="utf-8") as file:
             file.write('var name = "pkgtest"\nvar pkgConfigDependencies = ["mypkg"]\n')
         old_path = os.environ.get("PKG_CONFIG_PATH")
         os.environ["PKG_CONFIG_PATH"] = pcdir + (os.pathsep + old_path if old_path else "")
@@ -1132,12 +1132,12 @@ def test_platform_c_headers(cx_lsp):
         return
 
     with tempfile.TemporaryDirectory() as root:
-        with open(os.path.join(root, "build.cx"), "w") as file:
+        with open(os.path.join(root, "build.cx"), "w", encoding="utf-8") as file:
             # GL_GLEXT_PROTOTYPES makes Linux GL headers emit function prototypes (macOS gl3.h declares them unconditionally).
             file.write('var name = "gltest"\nvar pkgConfigDependencies = ["glfw3"]\nvar defines = ["GLFW_INCLUDE_GLCOREARB", "GL_GLEXT_PROTOTYPES"]\n')
         main_path = os.path.join(root, "main.cx")
         main_content = 'import "GLFW/glfw3.h";\nvoid main() {\n    GLFWwindow*? window = null;\n    var shader = glCreateShader(0);\n    println(shader);\n    println(window == null);\n}\n'
-        with open(main_path, "w") as file:
+        with open(main_path, "w", encoding="utf-8") as file:
             file.write(main_content)
         result = run_query(cx_lsp, base_query("check", main_path, main_content))
         check(
@@ -1154,7 +1154,7 @@ def test_platform_c_headers(cx_lsp):
                 f"#if {platform}\nint platformCode = 1;\n#else\nint platformCode = nosuchidentifier;\n#endif\n"
                 "void main() {\n    println(platformCode);\n}\n"
             )
-            with open(main_path, "w") as file:
+            with open(main_path, "w", encoding="utf-8") as file:
                 file.write(main_content)
             result = run_query(cx_lsp, base_query("check", main_path, main_content))
             messages = [d["message"] for d in result["diagnostics"]]
@@ -1585,9 +1585,9 @@ def test_server_cache(command):
         build_path = os.path.join(root, "build.cx")
         main_path = os.path.join(root, "main.cx")
         helper_path = os.path.join(root, "helper.cx")
-        with open(build_path, "w") as file:
+        with open(build_path, "w", encoding="utf-8") as file:
             file.write('var name = "cacheproj"\n')
-        with open(helper_path, "w") as file:
+        with open(helper_path, "w", encoding="utf-8") as file:
             file.write("int answer() {\n    return 42;\n}\n")
         main_content = (
             "int _doubled() {\n"
@@ -1599,7 +1599,7 @@ def test_server_cache(command):
             "int featured = 2;\n"
             "#endif\n"
         )
-        with open(main_path, "w") as file:
+        with open(main_path, "w", encoding="utf-8") as file:
             file.write(main_content)
 
         session = start_session(command)
@@ -1693,7 +1693,7 @@ def test_server_cache(command):
 
         # A sibling changed on disk (not open in the editor) invalidates too:
         # renaming the callee breaks the open file without touching it.
-        with open(helper_path, "w") as file:
+        with open(helper_path, "w", encoding="utf-8") as file:
             file.write("int answer2() {\n    return 42;\n}\n")
         diags = touch("sibling-disk-dirty", main_content, False)
         check(
@@ -1701,13 +1701,13 @@ def test_server_cache(command):
             any("unknown identifier 'answer'" in d["message"] for d in diags),
             json.dumps(diags)[:300],
         )
-        with open(helper_path, "w") as file:
+        with open(helper_path, "w", encoding="utf-8") as file:
             file.write("int answer() {\n    return 42;\n}\n")
         touch("sibling-disk-clean", main_content, True)
 
         # A newly added sibling becomes visible without editing the open file.
         extra_path = os.path.join(root, "extra.cx")
-        with open(extra_path, "w") as file:
+        with open(extra_path, "w", encoding="utf-8") as file:
             file.write("int tripled() {\n    return 3;\n}\n")
         touch("new-sibling-clean", main_content, True)
         session.send(
@@ -1734,7 +1734,7 @@ def test_server_cache(command):
         check("server-cache-removed-sibling", "tripled" not in labels, json.dumps(labels)[:300])
 
         # A build-file change (new define) applies without editing the open file.
-        with open(build_path, "w") as file:
+        with open(build_path, "w", encoding="utf-8") as file:
             file.write('var name = "cacheproj"\nvar defines = ["CACHE_FEATURE"]\n')
         touch("build-file-clean", main_content, True)
         session.send(
@@ -1797,7 +1797,7 @@ def test_server_cache(command):
         warn_path = os.path.join(directory, "warn.cx")
         warn_uri = "file://" + warn_path
         warn_content = "void main() {\n    var x = 1;\n}\n"
-        with open(warn_path, "w") as file:
+        with open(warn_path, "w", encoding="utf-8") as file:
             file.write(warn_content)
         session.send(
             {
@@ -1862,16 +1862,16 @@ def test_server_sibling_revert(command):
     with tempfile.TemporaryDirectory() as directory:
         root = os.path.join(directory, "proj")
         os.makedirs(root)
-        with open(os.path.join(root, "build.cx"), "w") as file:
+        with open(os.path.join(root, "build.cx"), "w", encoding="utf-8") as file:
             file.write('var name = "sibproj"\n')
         a_path = os.path.join(root, "a.cx")
         b_path = os.path.join(root, "b.cx")
         a_content = "int use() {\n    return helper();\n}\n\nvoid main() {\n    println(use());\n}\n"
         b_good = "int helper() {\n    return 1;\n}\n"
         b_bad = "int helper(int x) {\n    return x;\n}\n"
-        with open(a_path, "w") as file:
+        with open(a_path, "w", encoding="utf-8") as file:
             file.write(a_content)
-        with open(b_path, "w") as file:
+        with open(b_path, "w", encoding="utf-8") as file:
             file.write(b_good)
         a_uri = "file://" + a_path
         b_uri = "file://" + b_path
@@ -1972,10 +1972,10 @@ def test_server_cache_broken_build_file(command):
         os.makedirs(root)
         build_path = os.path.join(root, "build.cx")
         main_path = os.path.join(root, "main.cx")
-        with open(build_path, "w") as file:
+        with open(build_path, "w", encoding="utf-8") as file:
             file.write('var name = "brokenproj"\n')
         main_content = "int add(int x, int y) {\n    return x + y;\n}\n\nvoid main() {\n    int result = add(1, 2); println(result);\n}\n"
-        with open(main_path, "w") as file:
+        with open(main_path, "w", encoding="utf-8") as file:
             file.write(main_content)
         main_uri = "file://" + main_path
 
@@ -1994,7 +1994,7 @@ def test_server_cache_broken_build_file(command):
             json.dumps(notification["params"]["diagnostics"])[:300],
         )
 
-        with open(build_path, "w") as file:
+        with open(build_path, "w", encoding="utf-8") as file:
             file.write('var name = "brokenproj"\nvar defines = "notalist"\n')
         session.send(
             {
@@ -2020,7 +2020,7 @@ def test_server_cache_broken_build_file(command):
         result = session.read()["result"]
         check("server-cache-broken-build-null-def", result is None, json.dumps(result)[:200])
 
-        with open(build_path, "w") as file:
+        with open(build_path, "w", encoding="utf-8") as file:
             file.write('var name = "brokenproj"\n')
         session.send(
             {
@@ -2059,25 +2059,25 @@ def test_server_cache_import_open(command):
         root = os.path.join(directory, "proj")
         vendordir = os.path.join(root, "vendor", "foo")
         os.makedirs(vendordir)
-        with open(os.path.join(root, "build.cx"), "w") as file:
+        with open(os.path.join(root, "build.cx"), "w", encoding="utf-8") as file:
             file.write('var name = "importproj"\n')
         foo_path = os.path.join(vendordir, "foo.cx")
         foo_v1 = "int _fooVal() {\n    return _fooHelper() + 1;\n}\n"
-        with open(foo_path, "w") as file:
+        with open(foo_path, "w", encoding="utf-8") as file:
             file.write(foo_v1)
         # A second package file plus a nested one: both join the open file's
         # analysis (cross-file package references keep resolving), and the
         # nested file registers the same package.
-        with open(os.path.join(vendordir, "other.cx"), "w") as file:
+        with open(os.path.join(vendordir, "other.cx"), "w", encoding="utf-8") as file:
             file.write("int _fooHelper() {\n    return 1;\n}\n")
         nested_path = os.path.join(vendordir, "sub", "nested.cx")
         os.makedirs(os.path.join(vendordir, "sub"))
         nested_content = "int _nestedVal() {\n    return 3;\n}\n"
-        with open(nested_path, "w") as file:
+        with open(nested_path, "w", encoding="utf-8") as file:
             file.write(nested_content)
         main_path = os.path.join(root, "main.cx")
         main_content = "import foo;\n\nint _doubled() {\n    return _fooVal() * 2 + _nestedVal();\n}\n"
-        with open(main_path, "w") as file:
+        with open(main_path, "w", encoding="utf-8") as file:
             file.write(main_content)
         main_uri = "file://" + main_path
         foo_uri = "file://" + foo_path
@@ -2152,7 +2152,7 @@ def test_server_cache_import_open(command):
             json.dumps(main_notification["params"]["diagnostics"])[:300],
         )
 
-        with open(foo_path, "w") as file:
+        with open(foo_path, "w", encoding="utf-8") as file:
             file.write(foo_v2)
         session.send(
             {
@@ -2169,7 +2169,7 @@ def test_server_cache_import_open(command):
             json.dumps(diags)[:300],
         )
 
-        with open(foo_path, "w") as file:
+        with open(foo_path, "w", encoding="utf-8") as file:
             file.write(foo_v1)
         session.send(
             {
@@ -2211,17 +2211,17 @@ def test_server_cache_dep_build_file(command):
         root = os.path.join(directory, "proj")
         vendordir = os.path.join(root, "vendor", "foo")
         os.makedirs(vendordir)
-        with open(os.path.join(root, "build.cx"), "w") as file:
+        with open(os.path.join(root, "build.cx"), "w", encoding="utf-8") as file:
             file.write('var name = "depproj"\n')
         dep_build_path = os.path.join(vendordir, "build.cx")
-        with open(dep_build_path, "w") as file:
+        with open(dep_build_path, "w", encoding="utf-8") as file:
             file.write('var name = "foo"\n')
         foo_path = os.path.join(vendordir, "foo.cx")
-        with open(foo_path, "w") as file:
+        with open(foo_path, "w", encoding="utf-8") as file:
             file.write("#if FOO_FLAG\nint answer() {\n    return 42;\n}\n#else\nint placeholder = 0;\n#endif\n")
         main_path = os.path.join(root, "main.cx")
         main_content = "import foo;\n\nint _doubled() {\n    return answer() * 2;\n}\n"
-        with open(main_path, "w") as file:
+        with open(main_path, "w", encoding="utf-8") as file:
             file.write(main_content)
         main_uri = "file://" + main_path
 
@@ -2241,7 +2241,7 @@ def test_server_cache_dep_build_file(command):
             json.dumps(diags)[:300],
         )
 
-        with open(dep_build_path, "w") as file:
+        with open(dep_build_path, "w", encoding="utf-8") as file:
             file.write('var name = "foo"\nvar defines = ["FOO_FLAG"]\n')
         session.send(
             {
@@ -2267,17 +2267,17 @@ def test_server_cache_malformed_dep_build(command):
         root = os.path.join(directory, "proj")
         pkgdir = os.path.join(root, "vendor", "shapes")
         os.makedirs(pkgdir)
-        with open(os.path.join(root, "build.cx"), "w") as file:
+        with open(os.path.join(root, "build.cx"), "w", encoding="utf-8") as file:
             file.write('var name = "failproj"\n')
         dep_build_path = os.path.join(pkgdir, "build.cx")
-        with open(dep_build_path, "w") as file:
+        with open(dep_build_path, "w", encoding="utf-8") as file:
             file.write('var name = "shapes"\nvar defines = "notalist"\n')
         shapes_path = os.path.join(pkgdir, "shapes.cx")
-        with open(shapes_path, "w") as file:
+        with open(shapes_path, "w", encoding="utf-8") as file:
             file.write('void describe() {\n    println("round");\n}\n')
         main_path = os.path.join(root, "main.cx")
         main_content = "import shapes;\n\nvoid main() {\n    describe();\n}\n"
-        with open(main_path, "w") as file:
+        with open(main_path, "w", encoding="utf-8") as file:
             file.write(main_content)
         main_uri = "file://" + main_path
 
@@ -2310,7 +2310,7 @@ def test_server_cache_malformed_dep_build(command):
 
         check("server-cache-malformed-dep-build-null-def", definition(10) is None, "definition unexpectedly found")
 
-        with open(dep_build_path, "w") as file:
+        with open(dep_build_path, "w", encoding="utf-8") as file:
             file.write('var name = "shapes"\n')
         session.send(
             {
@@ -2469,7 +2469,7 @@ def test_server_documentation(command, label):
     content = DOC_DECLS + "void main() {\n    int result = add(1, 2);\n    Point p = Point(0, 0);\n    p.\n}\n"
     with tempfile.TemporaryDirectory() as directory:
         path = os.path.join(directory, "main.cx")
-        with open(path, "w") as file:
+        with open(path, "w", encoding="utf-8") as file:
             file.write(content)
         session = start_session(command)
         uri = "file://" + path
@@ -2518,7 +2518,7 @@ def test_server_documentation(command, label):
 def test_server_no_snippets(command, label):
     with tempfile.TemporaryDirectory() as directory:
         path = os.path.join(directory, "main.cx")
-        with open(path, "w") as file:
+        with open(path, "w", encoding="utf-8") as file:
             file.write(GOOD_SOURCE)
         session = start_session(command)
         uri = "file://" + path
@@ -2564,7 +2564,7 @@ def main():
 
     with tempfile.TemporaryDirectory() as directory:
         path = os.path.join(directory, "main.cx")
-        with open(path, "w") as file:
+        with open(path, "w", encoding="utf-8") as file:
             file.write(GOOD_SOURCE)
         # Every group drives its own compiler/server subprocesses. The
         # --query groups share only the read-only main.cx above (each query

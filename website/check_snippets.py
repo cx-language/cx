@@ -41,7 +41,7 @@ def check_snippet(path, index, code, reference_only):
     # Each snippet compiles in a private temp directory, so snippets are
     # independent and can run in parallel worker threads.
     with tempfile.TemporaryDirectory(prefix="cx-snippet-") as directory:
-        with open(os.path.join(directory, "main.cx"), "w") as file:
+        with open(os.path.join(directory, "main.cx"), "w", encoding="utf-8") as file:
             file.write(code)
 
         if reference_only:
@@ -51,7 +51,7 @@ def check_snippet(path, index, code, reference_only):
             # runners may lack, while -c skips the link and pkg-config query.
             output = "main.obj" if platform.system() == "Windows" else "main.o"
             compile = subprocess.run([args.cx, "main.cx", "-c", "-o", output, "-Werror"] + cx_args,
-                                     capture_output=True, text=True, timeout=180, cwd=directory)
+                                     capture_output=True, text=True, encoding="utf-8", timeout=180, cwd=directory)
             if compile.returncode != 0 or not os.path.exists(os.path.join(directory, output)):
                 with failures_lock:
                     failures.append(name)
@@ -70,7 +70,7 @@ def check_snippet(path, index, code, reference_only):
         # The driver falls back to link-and-exec when JIT is ineligible.
         try:
             run = subprocess.run([args.cx, "run", "main.cx", "-Werror"] + cx_args,
-                                 capture_output=True, text=True, timeout=120, cwd=directory)
+                                 capture_output=True, text=True, encoding="utf-8", timeout=120, cwd=directory)
         except subprocess.TimeoutExpired:
             with failures_lock:
                 failures.append(name)
@@ -90,7 +90,7 @@ def check_snippet(path, index, code, reference_only):
 def check_snippet_link(directory, name):
     output = "main" + (".exe" if platform.system() == "Windows" else "")
     compile = subprocess.run([args.cx, "main.cx", "-o", output, "-Werror"] + cx_args,
-                             capture_output=True, text=True, timeout=180, cwd=directory)
+                             capture_output=True, text=True, encoding="utf-8", timeout=180, cwd=directory)
     if compile.returncode != 0 or not os.path.exists(os.path.join(directory, output)):
         with failures_lock:
             failures.append(name)
@@ -102,7 +102,7 @@ def check_snippet_link(directory, name):
     try:
         # Absolute path: on Windows the executable resolves against the
         # parent's directory, not cwd, so ./output is not found.
-        run = subprocess.run([os.path.join(directory, output)], capture_output=True, text=True, timeout=30, cwd=directory)
+        run = subprocess.run([os.path.join(directory, output)], capture_output=True, text=True, encoding="utf-8", timeout=30, cwd=directory)
     except subprocess.TimeoutExpired:
         with failures_lock:
             failures.append(name)
@@ -124,7 +124,7 @@ for filename in sorted(os.listdir(docs_dir)):
     if not filename.endswith(".md"):
         continue
 
-    with open(os.path.join(docs_dir, filename)) as file:
+    with open(os.path.join(docs_dir, filename), encoding="utf-8") as file:
         blocks = re.findall(r"^```cs( \{\.(?:noRun|noCompile|noWindows)\})?\n(.*?)^```", file.read(), re.M | re.S)
         for index, (marker, code) in enumerate(blocks):
             if marker == " {.noCompile}":

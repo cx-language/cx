@@ -171,7 +171,7 @@ def parse_file(path):
             return
         functions.setdefault(name, Group(name)).add(signature, doc_lines, path.name, lineno)
 
-    for lineno, line in enumerate(path.read_text().splitlines(), start=1):
+    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         stripped = line.strip()
         if stripped.startswith("///"):
             doc.append(stripped[3:].removeprefix(" ").rstrip())
@@ -230,7 +230,7 @@ def parse_std(std_dir):
         if not types and not functions and not constants:
             continue
         conditional = any(
-            strip_line_comment(line).strip().startswith("#if") for line in path.read_text().splitlines()
+            strip_line_comment(line).strip().startswith("#if") for line in path.read_text(encoding="utf-8").splitlines()
         )
         pages.append((path.relative_to(std_dir).as_posix(), types, functions, constants, conditional))
     return pages
@@ -531,10 +531,10 @@ def write_api_toc(output_dir, pages):
     # The guide sidebar script (active link, sticky height, scroll restore)
     # only depends on the .side-nav and .site-footer classes, so reuse it
     # verbatim instead of maintaining a second copy.
-    guide = (ROOT / "website" / "toc.html").read_text()
+    guide = (ROOT / "website" / "toc.html").read_text(encoding="utf-8")
     if "<script>" in guide:
         toc += "\n<script>" + guide.split("<script>", 1)[1]
-    (output_dir / "api-toc.html").write_text(toc)
+    (output_dir / "api-toc.html").write_text(toc, encoding="utf-8")
 
 
 def main(argv=None):
@@ -546,18 +546,18 @@ def main(argv=None):
     pages = parse_std(pathlib.Path(args.std_dir))
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "std.md").write_text(render_root_index("API reference", pages))
+    (output_dir / "std.md").write_text(render_root_index("API reference", pages), encoding="utf-8")
     by_path = {page[0]: page for page in pages}
     for label, folder in STD_CATEGORIES:
         members = [by_path[path] for path in category_members(by_path, folder)]
         if members:
             category_path = output_dir / f"{category_page(label)}.md"
             category_path.parent.mkdir(parents=True, exist_ok=True)
-            category_path.write_text(render_category_page(label, members))
+            category_path.write_text(render_category_page(label, members), encoding="utf-8")
     for relpath, types, functions, constants, conditional in pages:
         page_path = output_dir / f"{page_name(relpath)}.md"
         page_path.parent.mkdir(parents=True, exist_ok=True)
-        page_path.write_text(render_file_page(relpath, types, functions, constants, conditional))
+        page_path.write_text(render_file_page(relpath, types, functions, constants, conditional), encoding="utf-8")
     write_api_toc(output_dir, pages)
     print(f"Wrote {len(pages)} stdlib pages to {output_dir}.")
     return 0

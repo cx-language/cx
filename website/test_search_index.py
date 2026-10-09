@@ -93,10 +93,10 @@ class BuildIndexTest(unittest.TestCase):
             generated = Path(directory, "generated")
             docs.mkdir()
             (generated / "std").mkdir(parents=True)
-            (docs / "b.md").write_text("# Bee\n\ntext\n")
-            (docs / "a.md").write_text("# Ay\n\ntext\n")
-            (generated / "std.md").write_text("# Ref\n\ntext\n")
-            (generated / "std" / "Array.md").write_text("# Array\n\ntext\n")
+            (docs / "b.md").write_text("# Bee\n\ntext\n", encoding="utf-8")
+            (docs / "a.md").write_text("# Ay\n\ntext\n", encoding="utf-8")
+            (generated / "std.md").write_text("# Ref\n\ntext\n", encoding="utf-8")
+            (generated / "std" / "Array.md").write_text("# Array\n\ntext\n", encoding="utf-8")
             entries = build_index(docs, generated)
             self.assertEqual(
                 [(entry["id"], entry["title"]) for entry in entries],
@@ -107,10 +107,10 @@ class BuildIndexTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             docs = Path(directory, "docs")
             docs.mkdir()
-            (docs / "a.md").write_text("# Ay\n\ntext\n")
+            (docs / "a.md").write_text("# Ay\n\ntext\n", encoding="utf-8")
             output = Path(directory, "out", "search-index.js")
             self.assertEqual(main(["--docs-dir", str(docs), "--generated-dir", str(docs), "--output", str(output)]), 0)
-            content = output.read_text()
+            content = output.read_text(encoding="utf-8")
             self.assertTrue(content.startswith("var CxSearchIndex = "))
             # Same file counted twice (docs + generated point at it); entries parse.
             entries = json.loads(content.removeprefix("var CxSearchIndex = ").removesuffix(";\n"))

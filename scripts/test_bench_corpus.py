@@ -69,7 +69,7 @@ class SlocTest(unittest.TestCase):
         )
         with tmp:
             (root / "src" / "untracked.cpp").parent.mkdir(exist_ok=True)
-            (root / "src" / "untracked.cpp").write_text("untracked\n")
+            (root / "src" / "untracked.cpp").write_text("untracked\n", encoding="utf-8")
             counts = bench_corpus.sloc_metrics(str(root))
         self.assertEqual(counts["examples"], 0)
         self.assertEqual(counts["tests"], 0)

@@ -82,7 +82,7 @@ const int answer = 42;
 def parse_fixture(source=FIXTURE):
     directory = tempfile.TemporaryDirectory()
     path = Path(directory.name, "fixture.cx")
-    path.write_text(source)
+    path.write_text(source, encoding="utf-8")
     return directory, parse_file(path)
 
 
@@ -311,8 +311,8 @@ class StructConstTest(unittest.TestCase):
 class ConditionalTest(unittest.TestCase):
     def test_if_marked_conditional(self):
         with tempfile.TemporaryDirectory() as std_dir:
-            Path(std_dir, "cond.cx").write_text("#if Windows\nvoid f() {}\n#endif\n")
-            Path(std_dir, "plain.cx").write_text("void g() {}\n")
+            Path(std_dir, "cond.cx").write_text("#if Windows\nvoid f() {}\n#endif\n", encoding="utf-8")
+            Path(std_dir, "plain.cx").write_text("void g() {}\n", encoding="utf-8")
             pages = {relpath: conditional for relpath, *_ , conditional in parse_std(Path(std_dir))}
         self.assertTrue(pages["cond.cx"])
         self.assertFalse(pages["plain.cx"])
@@ -417,8 +417,8 @@ class RootIndexTest(unittest.TestCase):
 class EmptyFileTest(unittest.TestCase):
     def test_files_without_public_declarations_skipped(self):
         with tempfile.TemporaryDirectory() as std_dir:
-            Path(std_dir, "impl.cx").write_text("private void helper() {}\nprivate struct Detail {}\n")
-            Path(std_dir, "api.cx").write_text("void f() {}\n")
+            Path(std_dir, "impl.cx").write_text("private void helper() {}\nprivate struct Detail {}\n", encoding="utf-8")
+            Path(std_dir, "api.cx").write_text("void f() {}\n", encoding="utf-8")
             pages = parse_std(Path(std_dir))
         self.assertEqual([relpath for relpath, *_ in pages], ["api.cx"])
 
@@ -427,7 +427,8 @@ class FileOrderTest(unittest.TestCase):
     def test_functions_and_constants_in_file_order(self):
         with tempfile.TemporaryDirectory() as std_dir:
             Path(std_dir, "order.cx").write_text(
-                "void zebra() {}\nvoid apple() {}\nconst int zed = 1;\nconst int aardvark = 2;\n"
+                "void zebra() {}\nvoid apple() {}\nconst int zed = 1;\nconst int aardvark = 2;\n",
+                encoding="utf-8",
             )
             relpath, types, functions, constants, _ = parse_std(Path(std_dir))[0]
             markdown = render_file_page(relpath, types, functions, constants, False)
@@ -582,15 +583,15 @@ class StdlibTest(unittest.TestCase):
 class StagingTest(unittest.TestCase):
     def test_main_writes_index_pages_and_toc(self):
         with tempfile.TemporaryDirectory() as std_dir, tempfile.TemporaryDirectory() as output_dir:
-            Path(std_dir, "fixture.cx").write_text(FIXTURE)
+            Path(std_dir, "fixture.cx").write_text(FIXTURE, encoding="utf-8")
             Path(std_dir, "primitive-types").mkdir()
-            Path(std_dir, "primitive-types", "bool.cx").write_text("struct bool {\n    bool value;\n}\n")
+            Path(std_dir, "primitive-types", "bool.cx").write_text("struct bool {\n    bool value;\n}\n", encoding="utf-8")
             self.assertEqual(main(["--std-dir", std_dir, "--output-dir", output_dir]), 0)
             out = Path(output_dir)
-            index = (out / "std.md").read_text()
-            page = (out / "std/fixture.md").read_text()
-            category = (out / "std/primitive-types.md").read_text()
-            toc = (out / "api-toc.html").read_text()
+            index = (out / "std.md").read_text(encoding="utf-8")
+            page = (out / "std/fixture.md").read_text(encoding="utf-8")
+            category = (out / "std/primitive-types.md").read_text(encoding="utf-8")
+            toc = (out / "api-toc.html").read_text(encoding="utf-8")
         self.assertIn("# API reference", index)
         self.assertIn("Auto-generated from", index)
         self.assertIn("## [Primitive types](./std/primitive-types)", index)

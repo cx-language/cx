@@ -71,7 +71,7 @@ def resolve_sha(explicit):
     if os.environ.get("GITHUB_SHA"):
         return os.environ["GITHUB_SHA"]
     result = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=False
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", check=False
     )
     return result.stdout.strip() or "unknown"
 
@@ -121,7 +121,7 @@ def main():
             compile_cmd = [args.cx, src, "-o", binary, "--release", "-Werror"]
             times = []
             for _ in range(args.compile_runs):
-                elapsed, result = run_timed(compile_cmd, capture_output=True, text=True)
+                elapsed, result = run_timed(compile_cmd, capture_output=True, text=True, encoding="utf-8")
                 if result.returncode != 0:
                     print(f"failed to compile {src}:\n{result.stderr}")
                     sys.exit(1)
@@ -156,7 +156,7 @@ def main():
             "sloc": sloc_metrics(ROOT),
         },
     }
-    with open(args.output, "w") as file:
+    with open(args.output, "w", encoding="utf-8") as file:
         json.dump(record, file)
         file.write("\n")
     print(f"wrote {args.output}")
