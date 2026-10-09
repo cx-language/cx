@@ -659,6 +659,35 @@ static void collectFreezeRoots(Typechecker& checker, ViewRoot& root, Location vi
     }
 }
 
+// Whether a borrow-typed view aliases its owner's object: the initializer must
+// reach the owner through bare names and field steps only, with no indexing,
+// calls, or value-producing conversions. Anything else views into the owner.
+static bool initIsObjectAlias(const Expr* init) {
+    const Expr* operand = init;
+    llvm::SmallPtrSet<const Decl*, 8> seen;
+    while (operand) {
+        while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(operand)) {
+            if (cast->castKind != ImplicitCastExpr::AutoReference && cast->castKind != ImplicitCastExpr::OptionalWrap) return false;
+            operand = cast->operand;
+        }
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(operand)) {
+            auto* varDecl = llvm::dyn_cast<VarDecl>(varExpr->decl);
+            if (varDecl && varDecl->type.removeOptional().isReferenceType() && varDecl->initializer && seen.insert(varDecl).second) {
+                operand = varDecl->initializer;
+                continue;
+            }
+            return varExpr->decl != nullptr;
+        }
+        if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(operand)) {
+            if (!memberExpr->getFieldDecl()) return false;
+            operand = memberExpr->base;
+            continue;
+        }
+        return false;
+    }
+    return false;
+}
+
 // Whether a temporary root dangles for a local view: scope-extended
 // receiver temporaries and trivial ones (function-lived allocas) are fine,
 // and a direct same-typed or moved product transfers into the variable.
@@ -687,6 +716,7 @@ void Typechecker::recordViewLocal(VarDecl& decl) {
     // The view comes alive after its initializer, so the creating call never
     // counts as a mutation of its own root.
     ViewFreezeRecord record{&decl, {}, decl.initializer->endLocation, decl.initializer->endLocation};
+    record.objectAlias = decl.type.removeOptional().isReferenceType() && initIsObjectAlias(decl.initializer);
     collectFreezeRoots(*this, root, decl.getLocation(), record.roots);
     if (!record.roots.empty()) viewFreezeRecords.push_back(std::move(record));
 }
@@ -750,6 +780,7 @@ void Typechecker::rebindViewLocal(VarDecl& view, Expr& rhs, Location loc) {
                     "cannot bind view '" << view.getName() << "' to a temporary (temporaries are destroyed at the end of the statement)");
     }
     ViewFreezeRecord record{&view, {}, loc, loc};
+    record.objectAlias = view.type.removeOptional().isReferenceType() && initIsObjectAlias(&rhs);
     collectFreezeRoots(*this, root, loc, record.roots);
     if (!record.roots.empty()) viewFreezeRecords.push_back(std::move(record));
 }
@@ -778,6 +809,7 @@ void Typechecker::checkViewFreezes() {
     for (auto& record : viewFreezeRecords) {
         for (auto& mutation : viewRootMutations) {
             if (!llvm::is_contained(record.roots, mutation.root)) continue;
+            if (record.objectAlias && !mutation.isMove) continue;
             if (!viewLocBefore(record.viewLoc, mutation.loc) || viewLocBefore(record.lastUse, mutation.loc)) continue;
             if (mutation.isMove) {
                 REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
@@ -791,6 +823,7 @@ void Typechecker::checkViewFreezes() {
         }
         for (auto& candidate : viewCallCandidates) {
             if (!llvm::is_contained(record.roots, candidate.root)) continue;
+            if (record.objectAlias) continue;
             if (candidate.receiverView && candidate.receiverView == record.view) continue;
             if (!viewLocBefore(record.viewLoc, candidate.begin) || viewLocBefore(record.lastUse, candidate.begin)) continue;
             pendingViewFreezeCallChecks.push_back({candidate.callee, candidate.param, currentFunction, candidate.root, record.view->getName().str(),

@@ -498,6 +498,10 @@ struct Typechecker {
         llvm::SmallVector<Decl*, 2> roots;
         Location viewLoc;
         Location lastUse;
+        // The view aliases its owner's object (rather than viewing into it):
+        // interior mutation leaves the borrowed slot in place, so only moves
+        // and destructions conflict.
+        bool objectAlias = false;
     };
     std::vector<ViewFreezeRecord> viewFreezeRecords;
     // Reassignments, moves, and destructions of freezable roots, resolved

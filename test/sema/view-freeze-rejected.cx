@@ -153,6 +153,46 @@ void passOwnBorrowToMutatingCallee() {
     println(alias);
 }
 
+void mutateOriginalWithAliasAlive() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    list.push(4);
+    println(alias);
+}
+
+void assignOriginalWithAliasAlive() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    list = List([9]);
+    println(alias);
+}
+
+void moveOriginalWithAliasAlive() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    // CHECK: [[@LINE+1]]:10: error: cannot move 'list' while view 'alias' borrowed from it is still in use
+    sink(list);
+    println(alias);
+}
+
+void chainedAliasSurvivesCall() {
+    var list = List([1, 2, 3]);
+    List<int>& a = list;
+    List<int>& b = a;
+    list.push(4);
+    println(b);
+}
+
+struct AliasHolder {
+    List<int> items;
+
+    void fieldAliasSurvivesCall() {
+        List<int>& it = this.items;
+        this.items.push(4);
+        println(it);
+    }
+}
+
 void plainLoop() {
     var list = List([1, 2, 3]);
     for e in list {
