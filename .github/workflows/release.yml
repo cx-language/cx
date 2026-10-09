@@ -144,7 +144,9 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then
-            deps=$(dumpbin /dependents "$STAGE_DIR/cx.exe" "$STAGE_DIR/cx-lsp.exe")
+            # Dash, not slash: git-bash would rewrite /dependents to a
+            # Windows path (C:\Program Files\Git\dependents).
+            deps=$(dumpbin -dependents "$STAGE_DIR/cx.exe" "$STAGE_DIR/cx-lsp.exe")
             echo "$deps"
             if echo "$deps" | grep -Ei 'vcruntime|msvcp|msvcr'; then
               echo "ERROR: binaries need the Visual C++ redistributable (/MT did not apply)"

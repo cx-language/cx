@@ -299,7 +299,11 @@ endif()
 add_executable(cx-lsp src/lsp/main.cpp)
 target_link_libraries(cx-lsp libcx)
 
-llvm_map_components_to_libnames(CX_LLVM_COMPONENT_LIBS core native linker orcjit passes support)
+# plugins is only referenced by the Clang archives (PassPlugin::Load in
+# clangFrontend): non-dylib builds pull it through the Clang link interfaces,
+# so it must be named here for the dylib-edge rewrite below to reproduce that
+# closure on dylib-building distributions.
+llvm_map_components_to_libnames(CX_LLVM_COMPONENT_LIBS core native linker orcjit passes support plugins)
 if(LLVM_LINK_LLVM_DYLIB AND NOT CX_STATIC_LLVM)
     set(LLVM_LIBS LLVM)
 else()
