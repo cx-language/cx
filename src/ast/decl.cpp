@@ -446,6 +446,20 @@ std::vector<ConstructorDecl*> TypeDecl::getConstructors() const {
     return constructors;
 }
 
+std::vector<FunctionTemplate*> TypeDecl::getConstructorTemplates() const {
+    std::vector<FunctionTemplate*> templates;
+
+    for (auto& decl : methods) {
+        if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
+            if (llvm::isa<ConstructorDecl>(functionTemplate->functionDecl)) {
+                templates.push_back(functionTemplate);
+            }
+        }
+    }
+
+    return templates;
+}
+
 DestructorDecl* TypeDecl::getDestructor() const {
     for (auto& decl : methods) {
         if (auto* destructorDecl = llvm::dyn_cast<DestructorDecl>(decl)) {

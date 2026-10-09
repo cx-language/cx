@@ -3963,6 +3963,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     std::vector<Match> templateMatches;
     llvm::ArrayRef<Decl*> candidates = decls;
     std::vector<ConstructorDecl*> constructorDecls;
+    std::vector<Decl*> ctorCandidates;
     bool isConstructorCall = false;
 
     // A sole candidate is checked and returned. Several candidates are only recorded;
@@ -3984,6 +3985,42 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         validateAndConvertArguments(expr, *functionDecl, callee);
         if (instantiated) deferTypechecking(functionDecl);
         return functionDecl;
+    };
+
+    // Infers a constructor template's own parameters from the call arguments
+    // and instantiates it. Unlike the constructed type's parameters, they
+    // never come from the expected type, so inference uses the arguments alone.
+    auto instantiateConstructorTemplate = [&](FunctionTemplate* functionTemplate, bool returnOnError) -> FunctionDecl* {
+        if (functionTemplate->functionDecl->hasPack()) {
+            if (returnOnError) return nullptr;
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "generic constructors cannot be variadic");
+        }
+        auto genericArgs = getGenericArgsForCall(functionTemplate->genericParams, expr, functionTemplate->functionDecl, returnOnError, Type());
+        if (genericArgs.empty()) return nullptr; // Couldn't infer generic arguments.
+        return functionTemplate->instantiate(genericArgs);
+    };
+
+    // Probes a type's constructor templates, recording matches. With a single
+    // constructor the instantiation is checked and returned directly.
+    // Explicit call arguments bind the template's parameters, like functions.
+    auto matchConstructorTemplates = [&](TypeDecl* typeDecl, std::vector<Match>& into, bool single) -> FunctionDecl* {
+        for (auto* templateDecl : typeDecl->getConstructorTemplates()) {
+            if (!expr.genericArgs.empty()
+                && (expr.genericArgs.size() != templateDecl->genericParams.size() || !genericArgsMatch(templateDecl->genericParams, expr.genericArgs))) {
+                if (single) validateGenericArgs(templateDecl->genericParams, expr.genericArgs, expr.getFunctionName(), expr.location);
+                continue;
+            }
+            auto* functionDecl = instantiateConstructorTemplate(templateDecl, !single);
+            if (!functionDecl) continue;
+            if (single) {
+                ensureSignature(*functionDecl);
+                validateAndConvertArguments(expr, *functionDecl, callee);
+                deferTypechecking(functionDecl);
+                return functionDecl;
+            }
+            if (auto match = matchArguments(expr, functionDecl)) into.push_back(*match);
+        }
+        return nullptr;
     };
 
     for (Decl* decl : decls) {
@@ -4052,7 +4089,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             auto* typeDecl = llvm::cast<TypeDecl>(decl);
             isConstructorCall = true;
             constructorDecls = typeDecl->getConstructors();
-            if (constructorDecls.empty()) {
+            auto constructorTemplates = typeDecl->getConstructorTemplates();
+            if (constructorDecls.empty() && constructorTemplates.empty()) {
                 // Interfaces and unions have no constructors, so calling one is always an error.
                 if (typeDecl->isInterface()) {
                     ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "cannot construct interface '" << typeDecl->getName() << "'");
@@ -4060,7 +4098,12 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 ERROR_RANGE(getExprRangeStart(*expr.callee), expr.callee->endLocation, "type '" << typeDecl->getName() << "' has no constructors");
             }
             if (decls.size() == 1) {
-                candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
+                ctorCandidates.clear();
+                for (auto* constructorDecl : constructorDecls)
+                    ctorCandidates.push_back(constructorDecl);
+                for (auto* templateDecl : constructorTemplates)
+                    ctorCandidates.push_back(templateDecl);
+                candidates = ctorCandidates;
             }
 
             // With explicit generic arguments and competing same-named declarations, let the other declarations
@@ -4068,44 +4111,68 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             if (!expr.genericArgs.empty() && decls.size() != 1) {
                 continue;
             }
-            validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
 
-            for (auto* constructorDecl : constructorDecls) {
-                if (decls.size() == 1 && constructorDecls.size() == 1) {
-                    validateAndConvertArguments(expr, *constructorDecl, callee);
-                    return constructorDecl;
-                }
-                if (auto match = matchArguments(expr, constructorDecl)) {
-                    matches.push_back(*match);
+            bool singleCtor = decls.size() == 1 && constructorDecls.size() + constructorTemplates.size() == 1;
+            // Explicit arguments bind a constructor template's parameters;
+            // concrete constructors take none.
+            if (expr.genericArgs.empty() || constructorTemplates.empty()) {
+                validateGenericArgs({}, expr.genericArgs, expr.getFunctionName(), expr.location);
+                for (auto* constructorDecl : constructorDecls) {
+                    if (singleCtor) {
+                        validateAndConvertArguments(expr, *constructorDecl, callee);
+                        return constructorDecl;
+                    }
+                    if (auto match = matchArguments(expr, constructorDecl)) {
+                        matches.push_back(*match);
+                    }
                 }
             }
+            if (auto* chosen = matchConstructorTemplates(typeDecl, matches, singleCtor)) return chosen;
             break;
         }
         case DeclKind::TypeTemplate: {
             auto* typeTemplate = llvm::cast<TypeTemplate>(decl);
             isConstructorCall = true;
             constructorDecls = typeTemplate->typeDecl->getConstructors();
+            auto constructorTemplates = typeTemplate->typeDecl->getConstructorTemplates();
+            bool singleCtor = decls.size() == 1 && constructorDecls.size() + constructorTemplates.size() == 1;
             if (decls.size() == 1) {
-                candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
+                ctorCandidates.clear();
+                for (auto* constructorDecl : constructorDecls)
+                    ctorCandidates.push_back(constructorDecl);
+                for (auto* templateDecl : constructorTemplates)
+                    ctorCandidates.push_back(templateDecl);
+                candidates = ctorCandidates;
             }
 
             // With explicit generic arguments and a single candidate, report argument problems once here;
             // overload probing below stays silent so retries don't duplicate the error.
-            if (!expr.genericArgs.empty() && decls.size() == 1 && constructorDecls.size() == 1
+            if (!expr.genericArgs.empty() && singleCtor
                 && !validateGenericArgs(typeTemplate->genericParams, expr.genericArgs, expr.getFunctionName(), expr.location)) {
                 throw CompileError::dependentError();
             }
 
             std::vector<llvm::StringMap<GenericArg>> genericArgSets;
-
-            for (auto* constructorDecl : constructorDecls) {
-                auto genericArgs =
-                    getGenericArgsForCall(typeTemplate->genericParams, expr, constructorDecl, decls.size() != 1 || constructorDecls.size() != 1, expectedType);
-                if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
+            // A template constructor's own parameters infer alongside the
+            // type's in the second phase below; here only the type's matter.
+            auto collectTypeArgs = [&](FunctionDecl* constructorDecl) {
+                auto genericArgs = getGenericArgsForCall(typeTemplate->genericParams, expr, constructorDecl, !singleCtor, expectedType);
+                if (genericArgs.empty()) return; // Couldn't infer generic arguments.
                 if (llvm::find_if(genericArgSets, [&](auto& set) { return equals(set, genericArgs); }) == genericArgSets.end()) {
                     genericArgSets.push_back(genericArgs);
                 }
+            };
+
+            for (auto* constructorDecl : constructorDecls) {
+                collectTypeArgs(constructorDecl);
             }
+            for (auto* templateDecl : constructorTemplates) {
+                collectTypeArgs(templateDecl->functionDecl);
+            }
+
+            // Explicit arguments bound the type's parameters above; the
+            // constructor's own parameters always infer from the arguments.
+            llvm::SaveAndRestore savedExplicitArgs(expr.genericArgs, AstVector<GenericArg>{});
 
             for (auto& genericArgs : genericArgSets) {
                 TypeDecl* typeDecl = nullptr;
@@ -4125,7 +4192,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
 
                 for (auto* constructorDecl : typeDecl->getConstructors()) {
-                    if (decls.size() == 1 && constructorDecls.size() == 1) {
+                    if (singleCtor) {
                         validateAndConvertArguments(expr, *constructorDecl, callee);
                         return constructorDecl;
                     }
@@ -4133,6 +4200,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                         templateMatches.push_back(*match);
                     }
                 }
+                if (auto* chosen = matchConstructorTemplates(typeDecl, templateMatches, singleCtor)) return chosen;
             }
             break;
         }

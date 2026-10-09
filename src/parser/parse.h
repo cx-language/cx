@@ -179,7 +179,10 @@ private:
     void parseOptionalFunctionBody(FunctionDecl& decl, bool requireBody);
     FunctionTemplate* parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location);
     FunctionDecl* parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool cppLinkage = false);
-    ConstructorDecl* parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit = false);
+    Decl* parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel, bool isImplicit = false);
+    // True when the '<' after the current identifier closes with a '>' that is
+    // immediately followed by '(', i.e. `Name<...>(...)`.
+    bool genericParamListFollowedByParen();
     DestructorDecl* parseDestructorDecl(TypeDecl& receiverTypeDecl);
     FieldDecl parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location, bool isManuallyDestroy);
     void parsePrivateSpecifier(AccessLevel& accessLevel);
