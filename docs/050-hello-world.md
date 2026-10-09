@@ -15,6 +15,9 @@ Prebuilt binaries cover Linux (x64), macOS (Apple Silicon), and Windows (x64).
 The Windows archive and manual downloads for all platforms are on the
 [releases page](https://github.com/cx-language/cx/releases); each archive also
 contains the [`cx-lsp` language server](./lsp) and the standard library.
+Native compilation needs a C toolchain as well: `cc` on `PATH` on Linux/macOS,
+or Visual Studio Build Tools installed on Windows (`cx run` JIT-compiles and
+needs nothing).
 
 To build from source instead (required on Intel Macs and other platforms
 without a prebuilt binary), you need a C++20 compiler, [CMake](https://cmake.org)
