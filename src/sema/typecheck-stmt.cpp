@@ -842,7 +842,20 @@ void Typechecker::recordRootMutation(Decl* root, Location loc, bool isMove) {
     viewRootMutations.push_back({root, loc, isMove, currentViewRegion, viewLoopDepth});
 }
 
-void Typechecker::rebindViewLocal(VarDecl& view, Expr& rhs, Location loc) {
+void Typechecker::rebindViewLocal(VarDecl& view, Expr& lhs, Expr& rhs) {
+    Location loc = rhs.endLocation;
+    // The old binding's window ends here: drain its checks before erasing, so
+    // a later rebind cannot launder mutations its uses already observed. The
+    // rebind target itself is overwritten, not read, so its check-time "use"
+    // does not keep the old binding alive; erase exactly one (compound
+    // assignment re-checks the same node as a genuine read of the right side).
+    Location lhsStart = getExprRangeStart(lhs);
+    for (auto& record : viewFreezeRecords) {
+        if (record.view != &view) continue;
+        auto it = llvm::find_if(record.uses, [&](auto& use) { return use.loc.line == lhsStart.line && use.loc.column == lhsStart.column; });
+        if (it != record.uses.end()) record.uses.erase(it);
+        checkViewRecord(record, &loc);
+    }
     llvm::erase_if(viewFreezeRecords, [&](auto& record) { return record.view == &view; });
     if (!isSafeViewType(view.type)) return;
     ViewRoot root = traceViewRoot(&rhs, /*followViews=*/true);
@@ -874,35 +887,41 @@ void Typechecker::recordViewCallCandidate(FunctionDecl* callee, const ParamDecl*
     }
 }
 
+void Typechecker::checkViewRecord(const ViewFreezeRecord& record, const Location* drainEnd) {
+    auto overlapsRecord = [&](Decl* mutationRoot) {
+        return llvm::any_of(record.roots, [&](Decl* viewRoot) { return viewRootsOverlap(viewRoot, mutationRoot); });
+    };
+    for (auto& mutation : viewRootMutations) {
+        if (!overlapsRecord(mutation.root)) continue;
+        if (record.objectAlias && !mutation.isMove) continue;
+        if (!viewLocBefore(record.viewLoc, mutation.loc)) continue;
+        if (drainEnd && !viewLocBefore(mutation.loc, *drainEnd)) continue;
+        if (!viewUseFollows(record, mutation.loc, mutation.region, mutation.loopDepth)) continue;
+        if (mutation.isMove) {
+            REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
+                               "cannot move '" << mutation.root->getName() << "' while view '" << record.view->getName()
+                                               << "' borrowed from it is still in use");
+        } else {
+            REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
+                               "cannot assign to '" << mutation.root->getName() << "' while view '" << record.view->getName()
+                                                    << "' borrowed from it is still in use");
+        }
+    }
+    for (auto& candidate : viewCallCandidates) {
+        if (!overlapsRecord(candidate.root)) continue;
+        if (record.objectAlias) continue;
+        if (candidate.receiverView && candidate.receiverView == record.view) continue;
+        if (!viewLocBefore(record.viewLoc, candidate.begin)) continue;
+        if (drainEnd && !viewLocBefore(candidate.begin, *drainEnd)) continue;
+        if (!viewUseFollows(record, candidate.begin, candidate.region, candidate.loopDepth)) continue;
+        pendingViewFreezeCallChecks.push_back({candidate.callee, candidate.param, currentFunction, candidate.root, record.view->getName().str(),
+                                               /*isLoop=*/false, candidate.begin, candidate.end, candidate.name});
+    }
+}
+
 void Typechecker::checkViewFreezes() {
     for (auto& record : viewFreezeRecords) {
-        auto overlapsRecord = [&](Decl* mutationRoot) {
-            return llvm::any_of(record.roots, [&](Decl* viewRoot) { return viewRootsOverlap(viewRoot, mutationRoot); });
-        };
-        for (auto& mutation : viewRootMutations) {
-            if (!overlapsRecord(mutation.root)) continue;
-            if (record.objectAlias && !mutation.isMove) continue;
-            if (!viewLocBefore(record.viewLoc, mutation.loc)) continue;
-            if (!viewUseFollows(record, mutation.loc, mutation.region, mutation.loopDepth)) continue;
-            if (mutation.isMove) {
-                REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
-                                   "cannot move '" << mutation.root->getName() << "' while view '" << record.view->getName()
-                                                   << "' borrowed from it is still in use");
-            } else {
-                REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
-                                   "cannot assign to '" << mutation.root->getName() << "' while view '" << record.view->getName()
-                                                        << "' borrowed from it is still in use");
-            }
-        }
-        for (auto& candidate : viewCallCandidates) {
-            if (!overlapsRecord(candidate.root)) continue;
-            if (record.objectAlias) continue;
-            if (candidate.receiverView && candidate.receiverView == record.view) continue;
-            if (!viewLocBefore(record.viewLoc, candidate.begin)) continue;
-            if (!viewUseFollows(record, candidate.begin, candidate.region, candidate.loopDepth)) continue;
-            pendingViewFreezeCallChecks.push_back({candidate.callee, candidate.param, currentFunction, candidate.root, record.view->getName().str(),
-                                                   /*isLoop=*/false, candidate.begin, candidate.end, candidate.name});
-        }
+        checkViewRecord(record, /*drainEnd=*/nullptr);
     }
 }
 

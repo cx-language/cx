@@ -117,6 +117,37 @@ void rebindToTemp() {
     println(s);
 }
 
+void rebindDrainsCallCheck() {
+    var a = List([1, 2, 3]);
+    var b = List([7]);
+    int[] s = a;
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'a' while view 's' borrowed from it is still in use (it mutates the receiver)
+    a.push(9);
+    println(s);
+    s = b;
+    println(s);
+}
+
+void rebindDrainsAssignCheck() {
+    var a = List([1, 2, 3]);
+    var b = List([7]);
+    int[] s = a;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign to 'a' while view 's' borrowed from it is still in use
+    a = List([9]);
+    println(s);
+    s = b;
+    println(s);
+}
+
+void rebindWithoutUsePasses() {
+    var a = List([1, 2, 3]);
+    var b = List([7]);
+    int[] s = a;
+    a.push(9);
+    s = b;
+    println(s);
+}
+
 void mutateAfterInnerScope(bool c) {
     var list = List([1, 2, 3]);
     if c {

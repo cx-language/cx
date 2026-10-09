@@ -565,8 +565,12 @@ struct Typechecker {
     void checkLoopBodyFreezes(Expr& range, size_t mutationStart, size_t candidateStart);
     void recordViewUse(Decl* decl, Location loc);
     void recordRootMutation(Decl* root, Location loc, bool isMove);
-    void rebindViewLocal(VarDecl& view, Expr& rhs, Location loc);
+    void rebindViewLocal(VarDecl& view, Expr& lhs, Expr& rhs);
     void recordViewCallCandidate(FunctionDecl* callee, const ParamDecl* param, Expr& rootExpr, Location begin, Location end, llvm::StringRef name);
+    // Checks one record against recorded mutations and calls. drainEnd bounds
+    // the window for rebinds (the old binding ends there); null checks the
+    // whole function at the end.
+    void checkViewRecord(const ViewFreezeRecord& record, const Location* drainEnd);
     void checkViewFreezes();
     struct ViewFreezeCallCheck {
         FunctionDecl* callee;

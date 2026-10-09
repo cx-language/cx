@@ -1677,7 +1677,7 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
     // reassignments invalidate views of the base (element writes are safe).
     if (lhsVar && lhsVar->decl) {
         if (auto* viewDecl = llvm::dyn_cast<VarDecl>(lhsVar->decl); viewDecl && !viewDecl->isGlobal() && isSafeViewType(viewDecl->type)) {
-            rebindViewLocal(*viewDecl, *rhs, rhs->endLocation);
+            rebindViewLocal(*viewDecl, *lhs, *rhs);
         } else {
             recordRootMutation(lhsVar->decl, getExprRangeStart(*lhs), /*isMove=*/false);
         }
