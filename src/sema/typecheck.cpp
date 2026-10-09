@@ -648,6 +648,17 @@ static void appendUnique(std::vector<Decl*>& target, llvm::ArrayRef<Decl*> sourc
     }
 }
 
+// A qualified lookup that never contains ".<name>" cannot match the member.
+static bool qualifiedLookupMayMatch(llvm::StringRef lookup, llvm::StringRef memberName) {
+    size_t pos = 0;
+    while (true) {
+        pos = lookup.find(memberName, pos);
+        if (pos == llvm::StringRef::npos) return false;
+        if (pos > 0 && lookup[pos - 1] == '.') return true;
+        ++pos;
+    }
+}
+
 std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl, bool inAllImportedModules) {
     // Anonymous C-imported types have empty names and never resolve; callers
     // like findTypeAlias forward them during field checking.
@@ -681,11 +692,12 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
                 // Unqualified for implicit-receiver lookup, qualified for explicit member access.
                 // The qualified match matters when the instantiation's methods were registered in a
                 // different module's symbol table than the one this lookup searches.
-                if (functionDecl->getName() == name || (matchQualified && functionDecl->getQualifiedName() == name)) {
+                if (functionDecl->getName() == name
+                    || (matchQualified && qualifiedLookupMayMatch(name, functionDecl->getName()) && functionDecl->getQualifiedName() == name)) {
                     decls.emplace_back(decl);
                 }
             } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
-                if (matchQualified && functionTemplate->getQualifiedName() == name) {
+                if (matchQualified && qualifiedLookupMayMatch(name, functionTemplate->getName()) && functionTemplate->getQualifiedName() == name) {
                     decls.emplace_back(decl);
                 }
             }
@@ -693,7 +705,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
 
         for (auto& field : receiverTypeDecl->fields) {
             // Unqualified for implicit-receiver lookup, qualified for explicit member access.
-            if (field.getName() == name || (matchQualified && field.getQualifiedName() == name)) {
+            if (field.getName() == name || (matchQualified && qualifiedLookupMayMatch(name, field.getName()) && field.getQualifiedName() == name)) {
                 decls.emplace_back(&field);
             }
         }
