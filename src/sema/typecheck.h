@@ -515,6 +515,9 @@ struct Typechecker {
         FunctionDecl* callee;
         const ParamDecl* param;
         Decl* root;
+        // The named view the call goes through (receiver or argument), if any:
+        // mutating through a view cannot invalidate the view itself.
+        VarDecl* receiverView = nullptr;
         Location begin;
         Location end;
         std::string name;

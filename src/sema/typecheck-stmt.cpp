@@ -757,13 +757,15 @@ void Typechecker::rebindViewLocal(VarDecl& view, Expr& rhs, Location loc) {
 void Typechecker::recordViewCallCandidate(FunctionDecl* callee, const ParamDecl* param, Expr& rootExpr, Location begin, Location end, llvm::StringRef name) {
     if (!callee || !currentFunction) return;
     ViewRoot root = traceViewRoot(&rootExpr, /*followViews=*/true, /*followVars=*/false);
+    VarDecl* receiverView = nullptr;
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(&rootExpr)) receiverView = llvm::dyn_cast<VarDecl>(varExpr->decl);
     for (Decl* decl : root.decls) {
         Decl* normalized = normalizeViewRoot(decl);
-        if (isFreezableViewRoot(normalized)) viewCallCandidates.push_back({callee, param, normalized, begin, end, name.str()});
+        if (isFreezableViewRoot(normalized)) viewCallCandidates.push_back({callee, param, normalized, receiverView, begin, end, name.str()});
     }
     if (root.implicitThis) {
         if (Decl* thisDecl = tryFindDecl("this", begin)) {
-            if (isFreezableViewRoot(thisDecl)) viewCallCandidates.push_back({callee, param, thisDecl, begin, end, name.str()});
+            if (isFreezableViewRoot(thisDecl)) viewCallCandidates.push_back({callee, param, thisDecl, receiverView, begin, end, name.str()});
         }
     }
 }
@@ -789,6 +791,7 @@ void Typechecker::checkViewFreezes() {
         }
         for (auto& candidate : viewCallCandidates) {
             if (!llvm::is_contained(record.roots, candidate.root)) continue;
+            if (candidate.receiverView && candidate.receiverView == record.view) continue;
             if (!viewLocBefore(record.viewLoc, candidate.begin) || viewLocBefore(record.lastUse, candidate.begin)) continue;
             pendingViewFreezeCallChecks.push_back({candidate.callee, candidate.param, currentFunction, candidate.root, record.view->getName().str(),
                                                    /*isLoop=*/false, candidate.begin, candidate.end, candidate.name});

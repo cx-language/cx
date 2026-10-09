@@ -88,7 +88,7 @@ void mutatingCallThroughAlias() {
     var list = List([1, 2, 3]);
     List<int>& alias = list;
     int& r = list[0];
-    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'alias' borrowed from it is still in use (it mutates the receiver)
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'r' borrowed from it is still in use (it mutates the receiver)
     alias.push(4);
     println(r);
 }
@@ -133,6 +133,24 @@ void nestedCheckKeepsFreeze() {
     // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'r' borrowed from it is still in use (it mutates the receiver)
     list.push(4);
     println(r);
+}
+
+void pushOne(List<int>& l) {
+    l.push(1);
+}
+
+void mutateThroughOwnBorrow() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    alias.push(4);
+    println(alias);
+}
+
+void passOwnBorrowToMutatingCallee() {
+    var list = List([1, 2, 3]);
+    List<int>& alias = list;
+    pushOne(alias);
+    println(alias);
 }
 
 void plainLoop() {
