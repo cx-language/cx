@@ -503,11 +503,12 @@ struct Typechecker {
     std::vector<ConstViewArgCheck> pendingConstViewArgChecks;
     // A use of a view: a mutation conflicts with the view only when a use
     // follows it on some path. The region pinpoints which conditional arms
-    // enclose the use; uses in a sibling arm of the mutation never follow it.
+    // enclose the use; uses in a sibling arm of the mutation never follow it
+    // within one pass. The loop is the innermost enclosing loop, or -1.
     struct ViewUse {
         Location loc;
         int region;
-        int loopDepth;
+        int loop;
     };
     // A local holding a borrow or view: the storages it designates stay
     // frozen (no reassignment, move, destruction, or mutating call) from its
@@ -522,6 +523,8 @@ struct Typechecker {
         // interior mutation leaves the borrowed slot in place, so only moves
         // and destructions conflict.
         bool objectAlias = false;
+        // Innermost loop enclosing the declaration, or -1.
+        int loop = -1;
     };
     std::vector<ViewFreezeRecord> viewFreezeRecords;
     // Reassignments, moves, and destructions of freezable roots, resolved
@@ -531,7 +534,7 @@ struct Typechecker {
         Location loc;
         bool isMove;
         int region;
-        int loopDepth;
+        int loop;
         // The named borrow the write goes through, if any: writing through a
         // view cannot invalidate the view itself.
         VarDecl* throughView = nullptr;
@@ -551,7 +554,7 @@ struct Typechecker {
         Location end;
         std::string name;
         int region;
-        int loopDepth;
+        int loop;
     };
     std::vector<ViewCallCandidate> viewCallCandidates;
     // One if/switch arm on the path from the function body to a use or
@@ -567,11 +570,15 @@ struct Typechecker {
     std::vector<ViewBranchRegion> viewBranchRegions;
     int currentViewRegion = -1;
     int viewBranchCondCounter = 0;
-    int viewLoopDepth = 0;
+    // Loop-nesting forest: the parent of each loop id, with -1 for top-level
+    // loops. currentViewLoop is the innermost enclosing loop, or -1.
+    std::vector<int> viewLoopParents;
+    int currentViewLoop = -1;
     void pushViewBranchArm(int cond, int arm);
     void popViewBranchArm();
     int newViewBranchCond();
-    bool viewUseFollows(const ViewFreezeRecord& record, Location loc, int region, int loopDepth) const;
+    int newViewLoop();
+    bool viewUseFollows(const ViewFreezeRecord& record, Location loc, int region, int loop) const;
     void recordViewLocal(VarDecl& decl);
     // Checks body-recorded mutations and calls (everything past the snapshots)
     // against the range roots: a for loop freezes its range for the whole

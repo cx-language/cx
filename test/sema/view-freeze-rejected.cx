@@ -460,6 +460,45 @@ void loopCarriedStillRejected(List<int>& list) {
     }
 }
 
+void mutateInDeadBranchInLoop(List<int>& list) {
+    while list.size() > 0 {
+        var cell = list.last();
+        if list.size() > 1 {
+            _ = list.pop();
+        } else {
+            println(cell);
+        }
+    }
+}
+
+void loopCarriedUseBeforeMutation(List<int>& list) {
+    var cell = list.last();
+    while list.size() > 5 {
+        println(cell);
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'pop' on 'list' while view 'cell' borrowed from it is still in use (it mutates the receiver)
+        list.pop();
+    }
+}
+
+void mutateAfterLastUseInLoop(List<int>& list) {
+    while list.size() > 0 {
+        var cell = list.last();
+        println(cell);
+        _ = list.pop();
+    }
+}
+
+void sequentialLoopsDontSpan(List<int>& list) {
+    var cell = list.last();
+    println(cell);
+    while list.size() > 5 {
+        _ = list.pop();
+    }
+    while list.size() > 3 {
+        _ = list.pop();
+    }
+}
+
 void plainLoop() {
     var list = List([1, 2, 3]);
     for e in list {

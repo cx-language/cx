@@ -727,6 +727,14 @@ int Typechecker::newViewBranchCond() {
     return viewBranchCondCounter++;
 }
 
+// Registers a loop for view-freeze tracking and returns its id. Callers hold
+// it in a SaveAndRestore: ids stay in the forest after exit, only the
+// current loop restores.
+int Typechecker::newViewLoop() {
+    viewLoopParents.push_back(currentViewLoop);
+    return int(viewLoopParents.size()) - 1;
+}
+
 // Whether two region paths may execute in sequence: they always may, except
 // when they diverge into different arms of one if or switch.
 static bool viewRegionsCompatible(const std::vector<Typechecker::ViewBranchRegion>& nodes, int a, int b) {
@@ -751,12 +759,25 @@ static bool viewRegionsCompatible(const std::vector<Typechecker::ViewBranchRegio
     return edgeA.cond != edgeB.cond || edgeA.arm == edgeB.arm;
 }
 
-bool Typechecker::viewUseFollows(const ViewFreezeRecord& record, Location loc, int region, int loopDepth) const {
+// Whether a loop encloses both sites but not the view declaration: iterations
+// may order the sites either way while one borrow stays live, so the use
+// follows regardless of textual order or arms. A borrow created inside the
+// loop is fresh each iteration and needs no such bypass.
+static bool viewLoopSpans(const std::vector<int>& parents, int declLoop, int a, int b) {
+    auto encloses = [&](int loop, int site) {
+        for (int l = site; l >= 0; l = parents[size_t(l)])
+            if (l == loop) return true;
+        return false;
+    };
+    for (int l = a; l >= 0; l = parents[size_t(l)])
+        if (encloses(l, b) && !encloses(l, declLoop)) return true;
+    return false;
+}
+
+bool Typechecker::viewUseFollows(const ViewFreezeRecord& record, Location loc, int region, int loop) const {
     for (auto& use : record.uses) {
+        if (viewLoopSpans(viewLoopParents, record.loop, loop, use.loop)) return true;
         if (!viewLocBefore(loc, use.loc)) continue;
-        // Across loop iterations any textual order may execute, so loops keep
-        // the textual rule; sibling arms outside loops never follow each other.
-        if (loopDepth > 0 || use.loopDepth > 0) return true;
         if (viewRegionsCompatible(viewBranchRegions, region, use.region)) return true;
     }
     return false;
@@ -828,7 +849,7 @@ static bool viewTempDangles(const Expr* init, const ViewRoot& root, Type viewTyp
 }
 
 void Typechecker::recordViewLocal(VarDecl& decl) {
-    if (decl.isGlobal() || decl.isForLoopElement || !decl.initializer) return;
+    if (decl.isGlobal() || decl.isForLoopElement || decl.isForLoopIterator || !decl.initializer) return;
     if (!isSafeViewType(decl.type)) return;
     ViewRoot root = traceViewRoot(decl.initializer, /*followViews=*/true);
     if (root.tainted) return;
@@ -838,7 +859,7 @@ void Typechecker::recordViewLocal(VarDecl& decl) {
     }
     // The view comes alive after its initializer, so the creating call never
     // counts as a mutation of its own root.
-    ViewFreezeRecord record{&decl, {}, decl.initializer->endLocation, {}, false};
+    ViewFreezeRecord record{&decl, {}, decl.initializer->endLocation, {}, false, currentViewLoop};
     record.objectAlias = decl.type.removeOptional().isReferenceType() && initIsObjectAlias(decl.initializer);
     collectFreezeRoots(*this, root, decl.getLocation(), record.roots);
     if (!record.roots.empty()) viewFreezeRecords.push_back(std::move(record));
@@ -874,7 +895,7 @@ void Typechecker::checkLoopBodyFreezes(Expr& range, size_t mutationStart, size_t
 
 void Typechecker::recordViewUse(Decl* decl, Location loc) {
     for (auto& record : viewFreezeRecords) {
-        if (record.view == decl) record.uses.push_back({loc, currentViewRegion, viewLoopDepth});
+        if (record.view == decl) record.uses.push_back({loc, currentViewRegion, currentViewLoop});
     }
 }
 
@@ -904,7 +925,7 @@ void Typechecker::recordRootMutation(ViewMemberRoot root, Location loc, bool isM
     for (auto& existing : viewRootMutations) {
         if (existing.isMove == isMove && existing.loc.line == loc.line && existing.loc.column == loc.column && existing.root == root) return;
     }
-    viewRootMutations.push_back({std::move(root), loc, isMove, currentViewRegion, viewLoopDepth, throughView});
+    viewRootMutations.push_back({std::move(root), loc, isMove, currentViewRegion, currentViewLoop, throughView});
 }
 
 void Typechecker::rebindViewLocal(VarDecl& view, Expr& lhs, Expr& rhs) {
@@ -929,7 +950,7 @@ void Typechecker::rebindViewLocal(VarDecl& view, Expr& lhs, Expr& rhs) {
         ERROR_RANGE(getExprRangeStart(rhs), rhs.endLocation,
                     "cannot bind view '" << view.getName() << "' to a temporary (temporaries are destroyed at the end of the statement)");
     }
-    ViewFreezeRecord record{&view, {}, loc, {}, false};
+    ViewFreezeRecord record{&view, {}, loc, {}, false, currentViewLoop};
     record.objectAlias = view.type.removeOptional().isReferenceType() && initIsObjectAlias(&rhs);
     collectFreezeRoots(*this, root, loc, record.roots);
     if (!record.roots.empty()) viewFreezeRecords.push_back(std::move(record));
@@ -946,7 +967,7 @@ void Typechecker::recordViewCallCandidate(FunctionDecl* callee, const ParamDecl*
         ViewMemberRoot memberRoot;
         memberRoot.base = base;
         memberRoot.path.append(entry.path.begin(), entry.path.end());
-        viewCallCandidates.push_back({callee, param, std::move(memberRoot), receiverView, begin, end, name.str(), currentViewRegion, viewLoopDepth});
+        viewCallCandidates.push_back({callee, param, std::move(memberRoot), receiverView, begin, end, name.str(), currentViewRegion, currentViewLoop});
     }
 }
 
@@ -960,7 +981,7 @@ void Typechecker::checkViewRecord(const ViewFreezeRecord& record, const Location
         if (mutation.throughView && mutation.throughView == record.view) continue;
         if (!viewLocBefore(record.viewLoc, mutation.loc)) continue;
         if (drainEnd && !viewLocBefore(mutation.loc, *drainEnd)) continue;
-        if (!viewUseFollows(record, mutation.loc, mutation.region, mutation.loopDepth)) continue;
+        if (!viewUseFollows(record, mutation.loc, mutation.region, mutation.loop)) continue;
         if (mutation.isMove) {
             REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
                                "cannot move '" << viewRootDisplayName(mutation.root) << "' while view '" << record.view->getName()
@@ -977,7 +998,7 @@ void Typechecker::checkViewRecord(const ViewFreezeRecord& record, const Location
         if (candidate.receiverView && candidate.receiverView == record.view) continue;
         if (!viewLocBefore(record.viewLoc, candidate.begin)) continue;
         if (drainEnd && !viewLocBefore(candidate.begin, *drainEnd)) continue;
-        if (!viewUseFollows(record, candidate.begin, candidate.region, candidate.loopDepth)) continue;
+        if (!viewUseFollows(record, candidate.begin, candidate.region, candidate.loop)) continue;
         pendingViewFreezeCallChecks.push_back({candidate.callee, candidate.param, currentFunction, candidate.root, record.view->getName().str(),
                                                /*isLoop=*/false, candidate.begin, candidate.end, candidate.name});
     }
@@ -2045,9 +2066,9 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
         collectAssignedNames(*increment, assignedNames);
     NarrowMap outerNarrowings = narrowedTypes;
     dropNarrowingsForNames(assignedNames);
-    // The condition, body, and increments repeat, so view uses and mutations
-    // there keep the textual rule instead of the branch-region one.
-    llvm::SaveAndRestore saveViewLoopDepth(viewLoopDepth, viewLoopDepth + 1);
+    // The condition, body, and increments repeat, so a loop outside the
+    // view declaration may order their uses and mutations either way.
+    llvm::SaveAndRestore saveViewLoop(currentViewLoop, newViewLoop());
 
     if (forStmt.condition) {
         typecheckExpr(*forStmt.condition);
@@ -2085,7 +2106,7 @@ void Typechecker::typecheckDoWhileStmt(DoWhileStmt& doWhileStmt) {
     dropNarrowingsForNames(assignedNames);
 
     llvm::SaveAndRestore saveLoopEntryLocalCount(loopEntryLocalCount, std::optional<size_t>(localVarDecls.size()));
-    llvm::SaveAndRestore saveViewLoopDepth(viewLoopDepth, viewLoopDepth + 1);
+    llvm::SaveAndRestore saveViewLoop(currentViewLoop, newViewLoop());
 
     // The body runs before the first check, so unlike while loops its assignments hold after.
     currentControlStmts.push_back(&doWhileStmt);

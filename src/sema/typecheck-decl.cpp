@@ -1618,14 +1618,16 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         std::optional<llvm::SaveAndRestore<std::vector<ViewCallCandidate>>> saveViewCallCandidates;
         std::optional<llvm::SaveAndRestore<std::vector<ViewBranchRegion>>> saveViewBranchRegions;
         std::optional<llvm::SaveAndRestore<int>> saveCurrentViewRegion;
-        std::optional<llvm::SaveAndRestore<int>> saveViewLoopDepth;
+        std::optional<llvm::SaveAndRestore<std::vector<int>>> saveViewLoopParents;
+        std::optional<llvm::SaveAndRestore<int>> saveCurrentViewLoop;
         if (!decl.isLambda()) {
             saveViewFreezeRecords.emplace(viewFreezeRecords, std::vector<ViewFreezeRecord>());
             saveViewRootMutations.emplace(viewRootMutations, std::vector<RootMutation>());
             saveViewCallCandidates.emplace(viewCallCandidates, std::vector<ViewCallCandidate>());
             saveViewBranchRegions.emplace(viewBranchRegions, std::vector<ViewBranchRegion>());
             saveCurrentViewRegion.emplace(currentViewRegion, -1);
-            saveViewLoopDepth.emplace(viewLoopDepth, 0);
+            saveViewLoopParents.emplace(viewLoopParents, std::vector<int>());
+            saveCurrentViewLoop.emplace(currentViewLoop, -1);
         }
 
         TypeDecl* receiverTypeDecl = decl.getTypeDecl();

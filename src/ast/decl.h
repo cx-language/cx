@@ -453,6 +453,10 @@ struct VarDecl : VariableDecl, Movable {
     // True for lowered for-loop element variables yielding a borrow: the variable aliases
     // the element instead of copying it out, so reference types are preserved, not dereferenced.
     bool isForLoopElement = false;
+    // True for the lowered for-loop iterator temp: its locations all collapse
+    // to the loop line, so it gets no view-freeze record of its own; the loop
+    // over its range is frozen separately for the whole loop.
+    bool isForLoopIterator = false;
     // True for bindings established implicitly by the compiler (switch-case and `is`
     // payload bindings, comparison temporaries): codegen binds them to their values,
     // so a borrow-typed binding needs no initializer.
