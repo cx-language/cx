@@ -489,15 +489,23 @@ struct Typechecker {
         bool isIterator;
     };
     std::vector<ConstViewArgCheck> pendingConstViewArgChecks;
+    // A use of a view: a mutation conflicts with the view only when a use
+    // follows it on some path. The region pinpoints which conditional arms
+    // enclose the use; uses in a sibling arm of the mutation never follow it.
+    struct ViewUse {
+        Location loc;
+        int region;
+        int loopDepth;
+    };
     // A local holding a borrow or view: the storages it designates stay
     // frozen (no reassignment, move, destruction, or mutating call) from its
-    // declaration until its last use. Owners that own no storage need no
+    // declaration until a use follows. Owners that own no storage need no
     // freezing, so only freezable roots are recorded (see below).
     struct ViewFreezeRecord {
         VarDecl* view;
         llvm::SmallVector<Decl*, 2> roots;
         Location viewLoc;
-        Location lastUse;
+        llvm::SmallVector<ViewUse, 4> uses;
         // The view aliases its owner's object (rather than viewing into it):
         // interior mutation leaves the borrowed slot in place, so only moves
         // and destructions conflict.
@@ -505,16 +513,18 @@ struct Typechecker {
     };
     std::vector<ViewFreezeRecord> viewFreezeRecords;
     // Reassignments, moves, and destructions of freezable roots, resolved
-    // against view windows when the function body is done.
+    // against view uses when the function body is done.
     struct RootMutation {
         Decl* root;
         Location loc;
         bool isMove;
+        int region;
+        int loopDepth;
     };
     std::vector<RootMutation> viewRootMutations;
     // Method calls and borrow-argument passes on freezable roots: the
     // mutating verdict waits for postProcess since callee bodies check on
-    // demand. Calls inside a view window queue a ViewFreezeCallCheck then.
+    // demand. Calls a view use follows queue a ViewFreezeCallCheck then.
     struct ViewCallCandidate {
         FunctionDecl* callee;
         const ParamDecl* param;
@@ -525,8 +535,28 @@ struct Typechecker {
         Location begin;
         Location end;
         std::string name;
+        int region;
+        int loopDepth;
     };
     std::vector<ViewCallCandidate> viewCallCandidates;
+    // One if/switch arm on the path from the function body to a use or
+    // mutation site. Arms with the same cond but different arms never execute
+    // together, so a use there never follows a mutation here. Region -1 is
+    // the function body itself.
+    struct ViewBranchRegion {
+        int cond;
+        int arm;
+        int parent;
+        int depth;
+    };
+    std::vector<ViewBranchRegion> viewBranchRegions;
+    int currentViewRegion = -1;
+    int viewBranchCondCounter = 0;
+    int viewLoopDepth = 0;
+    void pushViewBranchArm(int cond, int arm);
+    void popViewBranchArm();
+    int newViewBranchCond();
+    bool viewUseFollows(const ViewFreezeRecord& record, Location loc, int region, int loopDepth) const;
     void recordViewLocal(VarDecl& decl);
     // Checks body-recorded mutations and calls (everything past the snapshots)
     // against the range roots: a for loop freezes its range for the whole

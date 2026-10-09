@@ -239,6 +239,66 @@ struct FieldHolder {
     }
 }
 
+void mutateInDeadBranch(List<int>& list, bool something) {
+    var cell = list.last();
+    if something {
+        list.pop();
+    } else {
+        println(cell);
+    }
+}
+
+void mutateInNestedDeadBranch(List<int>& list, bool a, bool b) {
+    var cell = list.last();
+    if a {
+        if b {
+            list.pop();
+        }
+    } else {
+        println(cell);
+    }
+}
+
+void mutateInDeadSwitchArm(List<int>& list, int n) {
+    var cell = list.last();
+    switch n {
+        case 0:
+            list.pop();
+        default:
+            println(cell);
+    }
+}
+
+void mutateInLiveBranch(List<int>& list, bool something) {
+    var cell = list.last();
+    if something {
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'pop' on 'list' while view 'cell' borrowed from it is still in use (it mutates the receiver)
+        list.pop();
+        println(cell);
+    }
+}
+
+void mutateBeforeBranchUse(List<int>& list, bool something) {
+    var cell = list.last();
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'pop' on 'list' while view 'cell' borrowed from it is still in use (it mutates the receiver)
+    list.pop();
+    if something {
+        println(cell);
+    }
+}
+
+void loopCarriedStillRejected(List<int>& list) {
+    var cell = list.last();
+    for i in 0..10 {
+        if i > 5 {
+            // CHECK: [[@LINE+1]]:13: error: cannot call 'pop' on 'list' while view 'cell' borrowed from it is still in use (it mutates the receiver)
+            list.pop();
+        } else {
+            println(cell);
+        }
+    }
+}
+
 void plainLoop() {
     var list = List([1, 2, 3]);
     for e in list {

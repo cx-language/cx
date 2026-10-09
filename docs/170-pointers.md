@@ -89,9 +89,10 @@ Borrows are memory-safe by default: the compiler rejects code where a borrow cou
 dangle, with no lifetime annotations. A function cannot return a borrow, slice,
 string, or iterator derived from a local variable, a by-value parameter, or a
 temporary; only borrows of parameters, `this`, and globals may escape. While a view
-is alive (from its declaration to its last use), its owner is frozen: reassigning,
-moving, destroying, or mutating it is an error, as is mutating a collection while
-iterating it. Within a method, freezing is per-field: assigning one field while a
+is alive (from its declaration until no use of it follows on some path), its owner
+is frozen: reassigning, moving, destroying, or mutating it is an error, as is
+mutating a collection while iterating it. A mutation on a path where the view is
+never used afterwards is fine. Within a method, freezing is per-field: assigning one field while a
 view of another is alive is fine. Writing an element in place (`list[i] = v`) stays
 legal. A borrow of the owner itself (`List<int>& a = list`) only conflicts with
 moves and destruction: interior mutation leaves the borrowed slot in place. Raw
