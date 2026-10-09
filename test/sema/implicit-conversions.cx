@@ -52,3 +52,9 @@ void main() {
     Tiny t = 1000;
 }
 
+void constArrayDoesNotConvertToSlice() {
+    const a = [5, 4, 3, 2, 1];
+    // CHECK: [[@LINE+1]]:10: error: invalid argument #1 type 'int[5]' to 'sort', expected 'Slice<int>'
+    sort(a);
+}
+

@@ -62,10 +62,8 @@ ArrayIterator<int32> _CX1N3stdM3std5ArrayIM3std5int32N3_E8iteratorEM3std13ArrayI
     ArrayIterator<int32>* _0 = alloca ArrayIterator<int32>
     store this to this_0
     int32[3]* this.load = load this_0
-    int32* _1 = getelementptr this.load, 0
-    Slice<int32> _2 = insertvalue Slice<int32> undefined, 0, _1
-    Slice<int32> _3 = insertvalue _2, 1, int32 3
-    void _4 = call _CX1N3stdM3std13ArrayIteratorIM3std5int32E4initE4void1_M3std5SliceIM3std5int32E(ArrayIterator<int32>* _0, Slice<int32> _3)
+    Slice<int32> _1 = call _CX1N3stdM3std5ArrayIM3std5int32N3_E7toSliceEM3std5SliceIM3std5int32E0_(int32[3]* this.load)
+    void _2 = call _CX1N3stdM3std13ArrayIteratorIM3std5int32E4initE4void1_M3std5SliceIM3std5int32E(ArrayIterator<int32>* _0, Slice<int32> _1)
     ArrayIterator<int32> .load = load _0
     return .load
 }
@@ -117,10 +115,8 @@ ArrayIterator<int32> _CX1N3stdM3std5ArrayIM3std5int32N2_E8iteratorEM3std13ArrayI
     ArrayIterator<int32>* _0 = alloca ArrayIterator<int32>
     store this to this_0
     int32[2]* this.load = load this_0
-    int32* _1 = getelementptr this.load, 0
-    Slice<int32> _2 = insertvalue Slice<int32> undefined, 0, _1
-    Slice<int32> _3 = insertvalue _2, 1, int32 2
-    void _4 = call _CX1N3stdM3std13ArrayIteratorIM3std5int32E4initE4void1_M3std5SliceIM3std5int32E(ArrayIterator<int32>* _0, Slice<int32> _3)
+    Slice<int32> _1 = call _CX1N3stdM3std5ArrayIM3std5int32N2_E7toSliceEM3std5SliceIM3std5int32E0_(int32[2]* this.load)
+    void _2 = call _CX1N3stdM3std13ArrayIteratorIM3std5int32E4initE4void1_M3std5SliceIM3std5int32E(ArrayIterator<int32>* _0, Slice<int32> _1)
     ArrayIterator<int32> .load = load _0
     return .load
 }
@@ -143,6 +139,19 @@ void _CX1N3stdM3std13ArrayIteratorIM3std5int32E4initE4void1_M3std5SliceIM3std5in
     return void
 }
 
+Slice<int32> _CX1N3stdM3std5ArrayIM3std5int32N3_E7toSliceEM3std5SliceIM3std5int32E0_(int32[3]* this) {
+    int32[3]** this_0 = alloca int32[3]*
+    Slice<int32>* _0 = alloca Slice<int32>
+    store this to this_0
+    int32[3]* this.load = load this_0
+    int32* _1 = call _CX1N3stdM3std5ArrayIM3std5int32N3_E4dataEAM3std5int320_(int32[3]* this.load)
+    int32[3]* this.load_0 = load this_0
+    int32 _2 = call _CX1N3stdM3std5ArrayIM3std5int32N3_E4sizeEM3std5int320_(int32[3]* this.load_0)
+    void _3 = call _CX1N3stdM3std5SliceIM3std5int32E4initE4void2_PM3std5int32M3std5int32(Slice<int32>* _0, int32* _1, int32 _2)
+    Slice<int32> .load = load _0
+    return .load
+}
+
 void _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value) {
     int32** value_0 = alloca int32*
     OutputStream* stream = alloca OutputStream
@@ -162,6 +171,19 @@ void _CX1N3std5printIM3std4charEE4void1_M3std4char(char value) {
     return void
 }
 
+Slice<int32> _CX1N3stdM3std5ArrayIM3std5int32N2_E7toSliceEM3std5SliceIM3std5int32E0_(int32[2]* this) {
+    int32[2]** this_0 = alloca int32[2]*
+    Slice<int32>* _0 = alloca Slice<int32>
+    store this to this_0
+    int32[2]* this.load = load this_0
+    int32* _1 = call _CX1N3stdM3std5ArrayIM3std5int32N2_E4dataEAM3std5int320_(int32[2]* this.load)
+    int32[2]* this.load_0 = load this_0
+    int32 _2 = call _CX1N3stdM3std5ArrayIM3std5int32N2_E4sizeEM3std5int320_(int32[2]* this.load_0)
+    void _3 = call _CX1N3stdM3std5SliceIM3std5int32E4initE4void2_PM3std5int32M3std5int32(Slice<int32>* _0, int32* _1, int32 _2)
+    Slice<int32> .load = load _0
+    return .load
+}
+
 int32* _CX1N3stdM3std5SliceIM3std5int32E4dataEAM3std5int320_(Slice<int32>* this) {
     Slice<int32>** this_0 = alloca Slice<int32>*
     store this to this_0
@@ -178,4 +200,50 @@ int32 _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* this) {
     int32* size = getelementptr this.load, 1
     int32 size.load = load size
     return size.load
+}
+
+void _CX1N3stdM3std5SliceIM3std5int32E4initE4void2_PM3std5int32M3std5int32(Slice<int32>* this, int32* data, int32 size) {
+    Slice<int32>** this_0 = alloca Slice<int32>*
+    int32** data_0 = alloca int32*
+    int32* size_0 = alloca int32
+    store this to this_0
+    store data to data_0
+    store size to size_0
+    Slice<int32>* this.load = load this_0
+    int32** data_1 = getelementptr this.load, 0
+    int32* data.load = load data_0
+    store data.load to data_1
+    Slice<int32>* this.load_0 = load this_0
+    int32* size_1 = getelementptr this.load_0, 1
+    int32 size.load = load size_0
+    store size.load to size_1
+    return void
+}
+
+int32* _CX1N3stdM3std5ArrayIM3std5int32N3_E4dataEAM3std5int320_(int32[3]* this) {
+    int32[3]** this_0 = alloca int32[3]*
+    store this to this_0
+    int32[3]* this.load = load this_0
+    int32* _0 = cast this.load to int32*
+    return _0
+}
+
+int32 _CX1N3stdM3std5ArrayIM3std5int32N3_E4sizeEM3std5int320_(int32[3]* this) {
+    int32[3]** this_0 = alloca int32[3]*
+    store this to this_0
+    return int32 3
+}
+
+int32* _CX1N3stdM3std5ArrayIM3std5int32N2_E4dataEAM3std5int320_(int32[2]* this) {
+    int32[2]** this_0 = alloca int32[2]*
+    store this to this_0
+    int32[2]* this.load = load this_0
+    int32* _0 = cast this.load to int32*
+    return _0
+}
+
+int32 _CX1N3stdM3std5ArrayIM3std5int32N2_E4sizeEM3std5int320_(int32[2]* this) {
+    int32[2]** this_0 = alloca int32[2]*
+    store this to this_0
+    return int32 2
 }
