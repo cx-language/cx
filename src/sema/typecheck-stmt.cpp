@@ -296,6 +296,10 @@ ViewRoot cx::traceViewRoot(const Expr* expr, bool followViews, bool followVars) 
     return traceViewRootImpl(expr, followViews, followVars, seenBorrows);
 }
 
+static void pushViewMemberRoot(llvm::SmallVectorImpl<ViewMemberRoot>& roots, ViewMemberRoot entry) {
+    if (!llvm::is_contained(roots, entry)) roots.push_back(std::move(entry));
+}
+
 static ViewRoot traceViewRootImpl(const Expr* expr, bool followViews, bool followVars, llvm::SmallPtrSet<const Decl*, 8>& seenBorrows) {
     if (!expr) {
         ViewRoot root;
@@ -305,6 +309,12 @@ static ViewRoot traceViewRootImpl(const Expr* expr, bool followViews, bool follo
 
     ViewRoot root;
     const Expr* operand = expr;
+    // Member projections above the current point, base-outward. Descent is
+    // outside-in, so each step prepends (chains are tiny). Unknown
+    // projections clear it, dropping to the whole base; borrow-alias
+    // following keeps it, since the path designates the same members
+    // through the referent.
+    llvm::SmallVector<Decl*, 4> memberPath;
 
     // Borrow-returning projections borrow their base (e.g. `r.unwrap()` borrows
     // `r`); trace through calls, member access, named borrows, and casts to the
@@ -405,16 +415,14 @@ static ViewRoot traceViewRootImpl(const Expr* expr, bool followViews, bool follo
                 }
             }
         } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(operand)) {
-            // A field of `this` roots at the field itself (matching bare field
-            // references), so disjoint fields freeze independently; member
-            // paths through other bases stay whole-decl roots.
-            auto* baseVar = llvm::dyn_cast<VarExpr>(memberExpr->base);
-            auto* fieldDecl = memberExpr->getFieldDecl();
-            if (fieldDecl && baseVar && baseVar->decl && baseVar->decl->getName() == "this") {
-                if (!root.traced) root.projectedType = operand->type;
-                root.decls.push_back(fieldDecl);
-                root.traced = true;
-                return root;
+            // A field projection qualifies the base, so disjoint members of
+            // one object freeze independently. Anything else (methods,
+            // swizzles) may designate unknown storage, so the outer path is
+            // dropped and the base stays whole.
+            if (auto* fieldDecl = memberExpr->getFieldDecl()) {
+                memberPath.insert(memberPath.begin(), fieldDecl);
+            } else {
+                memberPath.clear();
             }
             next = memberExpr->base;
         } else if (auto* varExpr = llvm::dyn_cast<VarExpr>(operand)) {
@@ -434,15 +442,23 @@ static ViewRoot traceViewRootImpl(const Expr* expr, bool followViews, bool follo
             bool sawTemp = false;
             bool sawOwningTemp = false;
             merged.extended = true;
+            // Projections above the merged value qualify every candidate's
+            // storage (e.g. `split(path).dir` is `dir` of `path`).
+            auto qualify = [&](ViewMemberRoot entry) {
+                entry.path.append(memberPath.begin(), memberPath.end());
+                pushViewMemberRoot(merged.decls, std::move(entry));
+            };
             for (const Expr* candidate : argCandidates) {
                 ViewRoot traced = traceViewRootImpl(candidate, followViews, followVars, seenBorrows);
-                for (Decl* decl : traced.decls) {
-                    if (!llvm::is_contained(merged.decls, decl)) merged.decls.push_back(decl);
+                for (auto& sub : traced.decls) {
+                    ViewMemberRoot entry;
+                    entry.base = sub.base;
+                    entry.path.append(sub.path.begin(), sub.path.end());
+                    qualify(std::move(entry));
                 }
                 merged.immortal |= traced.immortal;
                 merged.tainted |= traced.tainted;
                 merged.temporary |= traced.temporary;
-                merged.implicitThis |= traced.implicitThis;
                 // Only owning temporaries can dangle; the merged value may
                 // designate any of them, so all must be extended to be safe.
                 if (traced.temporary) {
@@ -458,7 +474,7 @@ static ViewRoot traceViewRootImpl(const Expr* expr, bool followViews, bool follo
             if (!sawOwningTemp) merged.extended = false;
             // A bare method call implicitly receives `this`, so its result may
             // designate the caller's storage even with no explicit receiver.
-            if (implicitThisCall) merged.implicitThis = true;
+            if (implicitThisCall) qualify(ViewMemberRoot{});
             if (!root.traced) root.projectedType = operand->type;
             merged.traced = true;
             if (root.traced && root.projectedType) merged.projectedType = root.projectedType;
@@ -484,8 +500,18 @@ static ViewRoot traceViewRootImpl(const Expr* expr, bool followViews, bool follo
             // Raw pointers are the unsafe hatch: values reached through them
             // cannot be attributed to any storage.
             root.tainted = true;
+        } else if (llvm::isa<FieldDecl>(varExpr->decl)) {
+            // A bare field reference roots at the caller's `this` (null
+            // base), resolved where `this` is in scope.
+            ViewMemberRoot entry;
+            entry.path.push_back(varExpr->decl);
+            entry.path.append(memberPath.begin(), memberPath.end());
+            root.decls.push_back(std::move(entry));
         } else {
-            root.decls.push_back(varExpr->decl);
+            ViewMemberRoot entry;
+            entry.base = varExpr->decl;
+            entry.path.append(memberPath.begin(), memberPath.end());
+            root.decls.push_back(std::move(entry));
         }
         return root;
     }
@@ -534,26 +560,32 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     // The legacy pointer path never merges argument roots, so at most one
     // declaration comes back.
     if (!root.decls.empty()) {
-        Decl* decl = root.decls.front();
-        switch (decl->kind) {
-        case DeclKind::VarDecl: {
-            auto* varDecl = llvm::cast<VarDecl>(decl);
-            if (varDecl->getName() == "this") return;
-            // The address of a borrow is the referent's address, not the variable slot.
-            if (varDecl->parent && varDecl->parent->isFunctionDecl() && !varDecl->type.isReferenceType()) {
-                localVariableType = varDecl->type;
+        auto& front = root.decls.front();
+        // A null base is the caller's `this` (bare calls/fields), and member
+        // paths through `this` behave like fields before: caller storage,
+        // which never warns here but still reaches the temporary check below.
+        if (front.base && (front.base->getName() != "this" || front.path.empty())) {
+            Decl* decl = front.base;
+            switch (decl->kind) {
+            case DeclKind::VarDecl: {
+                auto* varDecl = llvm::cast<VarDecl>(decl);
+                if (varDecl->getName() == "this") return;
+                // The address of a borrow is the referent's address, not the variable slot.
+                if (varDecl->parent && varDecl->parent->isFunctionDecl() && !varDecl->type.isReferenceType()) {
+                    localVariableType = varDecl->type;
+                }
+                break;
             }
-            break;
-        }
-        case DeclKind::ParamDecl: {
-            auto paramType = llvm::cast<ParamDecl>(decl)->type;
-            // The address of a borrow is the caller's address, not the parameter slot.
-            if (!paramType.isReferenceType()) localVariableType = paramType;
-            break;
-        }
+            case DeclKind::ParamDecl: {
+                auto paramType = llvm::cast<ParamDecl>(decl)->type;
+                // The address of a borrow is the caller's address, not the parameter slot.
+                if (!paramType.isReferenceType()) localVariableType = paramType;
+                break;
+            }
 
-        default:
-            break;
+            default:
+                break;
+            }
         }
     }
 
@@ -613,14 +645,16 @@ void Typechecker::checkReturnBorrowedView(const Expr* returnValue) const {
         auto* var = llvm::dyn_cast<VariableDecl>(decl);
         return var && var->parent && var->parent != currentFunction;
     };
-    for (Decl* decl : root.decls) {
-        if (!isOwnedLocal(decl) || isOuterCapture(decl)) continue;
+    for (auto& entry : root.decls) {
+        Decl* decl = entry.base;
+        if (!decl || !isOwnedLocal(decl) || isOuterCapture(decl)) continue;
         ERROR_RANGE(getExprRangeStart(*returnValue), returnValue->endLocation,
                     "cannot return '" << currentFunction->getReturnType() << "' derived from local variable '" << decl->getName()
                                       << "' (local variables will not exist after the function returns)");
     }
-    for (Decl* decl : root.decls) {
-        if (!isOwnedParam(decl) || isOuterCapture(decl)) continue;
+    for (auto& entry : root.decls) {
+        Decl* decl = entry.base;
+        if (!decl || !isOwnedParam(decl) || isOuterCapture(decl)) continue;
         ERROR_RANGE(getExprRangeStart(*returnValue), returnValue->endLocation,
                     "cannot return '" << currentFunction->getReturnType() << "' derived from by-value parameter '" << decl->getName()
                                       << "' (it is destroyed when the function returns)");
@@ -662,13 +696,21 @@ static bool viewLocBefore(Location a, Location b) {
 }
 
 // Whether a frozen view root and a mutation root designate overlapping
-// storage: identical roots always overlap, and a whole-object (`this`)
-// mutation overlaps any field view. The reverse does not hold: a field write
-// preserves borrows of the whole object.
-static bool viewRootsOverlap(Decl* viewRoot, Decl* mutationRoot) {
-    if (viewRoot == mutationRoot) return true;
-    auto* varDecl = llvm::dyn_cast<VarDecl>(mutationRoot);
-    return llvm::isa<FieldDecl>(viewRoot) && varDecl && varDecl->getName() == "this";
+// storage: same base, with the mutation path a prefix of the view path. A
+// whole-object mutation (empty path) overlaps every view into the object.
+// The reverse does not hold: a member write preserves borrows of the whole
+// object and of disjoint members.
+static bool viewRootsOverlap(const ViewMemberRoot& viewRoot, const ViewMemberRoot& mutationRoot) {
+    if (viewRoot.base != mutationRoot.base) return false;
+    if (mutationRoot.path.size() > viewRoot.path.size()) return false;
+    return std::equal(mutationRoot.path.begin(), mutationRoot.path.end(), viewRoot.path.begin());
+}
+
+// The name diagnostics show for a root: the outermost member, or the base.
+// Stored roots always have a base (null bases resolve to `this` or drop).
+static llvm::StringRef viewRootDisplayName(const ViewMemberRoot& root) {
+    if (!root.path.empty()) return root.path.back()->getName();
+    return root.base->getName();
 }
 
 void Typechecker::pushViewBranchArm(int cond, int arm) {
@@ -720,13 +762,23 @@ bool Typechecker::viewUseFollows(const ViewFreezeRecord& record, Location loc, i
     return false;
 }
 
-static void collectFreezeRoots(Typechecker& checker, ViewRoot& root, Location viewLoc, llvm::SmallVectorImpl<Decl*>& roots) {
-    for (Decl* decl : root.decls) {
-        if (decl && isFreezableViewRoot(decl) && !llvm::is_contained(roots, decl)) roots.push_back(decl);
-    }
-    if (root.implicitThis) {
-        Decl* thisDecl = checker.tryFindDecl("this", viewLoc);
-        if (thisDecl && isFreezableViewRoot(thisDecl) && !llvm::is_contained(roots, thisDecl)) roots.push_back(thisDecl);
+static void collectFreezeRoots(Typechecker& checker, ViewRoot& root, Location viewLoc, llvm::SmallVectorImpl<ViewMemberRoot>& roots) {
+    for (auto& entry : root.decls) {
+        Decl* base = entry.base ? entry.base : checker.tryFindDecl("this", viewLoc);
+        if (!base || !isFreezableViewRoot(base)) continue;
+        // A view into a nested member also designates every enclosing
+        // member object, so writes to those conflict too.
+        for (size_t len = entry.path.size(); len > 0; len--) {
+            ViewMemberRoot prefix;
+            prefix.base = base;
+            prefix.path.append(entry.path.begin(), entry.path.begin() + len);
+            pushViewMemberRoot(roots, std::move(prefix));
+        }
+        if (entry.path.empty()) {
+            ViewMemberRoot whole;
+            whole.base = base;
+            pushViewMemberRoot(roots, std::move(whole));
+        }
     }
 }
 
@@ -795,17 +847,21 @@ void Typechecker::recordViewLocal(VarDecl& decl) {
 void Typechecker::checkLoopBodyFreezes(Expr& range, size_t mutationStart, size_t candidateStart) {
     ViewRoot root = traceViewRoot(&range, /*followViews=*/true);
     if (root.tainted) return;
-    llvm::SmallVector<Decl*, 2> roots;
+    llvm::SmallVector<ViewMemberRoot, 2> roots;
     collectFreezeRoots(*this, root, range.location, roots);
     if (roots.empty()) return;
-    auto overlapsRoots = [&](Decl* mutationRoot) { return llvm::any_of(roots, [&](Decl* viewRoot) { return viewRootsOverlap(viewRoot, mutationRoot); }); };
+    auto overlapsRoots = [&](const ViewMemberRoot& mutationRoot) {
+        return llvm::any_of(roots, [&](const ViewMemberRoot& viewRoot) { return viewRootsOverlap(viewRoot, mutationRoot); });
+    };
     for (size_t i = mutationStart; i < viewRootMutations.size(); i++) {
         auto& mutation = viewRootMutations[i];
         if (!overlapsRoots(mutation.root)) continue;
         if (mutation.isMove) {
-            REPORT_ERROR_RANGE(mutation.loc, mutation.loc, "cannot move '" << mutation.root->getName() << "' while the loop over it is still iterating");
+            REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
+                               "cannot move '" << viewRootDisplayName(mutation.root) << "' while the loop over it is still iterating");
         } else {
-            REPORT_ERROR_RANGE(mutation.loc, mutation.loc, "cannot assign to '" << mutation.root->getName() << "' while the loop over it is still iterating");
+            REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
+                               "cannot assign to '" << viewRootDisplayName(mutation.root) << "' while the loop over it is still iterating");
         }
     }
     for (size_t i = candidateStart; i < viewCallCandidates.size(); i++) {
@@ -822,24 +878,33 @@ void Typechecker::recordViewUse(Decl* decl, Location loc) {
     }
 }
 
-void Typechecker::recordRootMutation(Decl* root, Location loc, bool isMove) {
+void Typechecker::recordRootMutation(ViewMemberRoot root, Location loc, bool isMove, VarDecl* throughView) {
     // Moves in a return statement exit the function, so no later use can
     // observe them (deferred expressions stay a hole).
     if (isMove && inReturnValue) return;
-    if (!root) return;
-    // Mutating through a borrow alias mutates the referent's storage.
-    if (auto* varDecl = llvm::dyn_cast<VarDecl>(root);
+    // Mutating through a borrow alias mutates the referent's storage; the
+    // member path carries over to each resolved base.
+    if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(root.base);
         varDecl && varDecl->type.removeOptional().isReferenceType() && varDecl->getName() != "this" && varDecl->initializer) {
         ViewRoot target = traceViewRoot(varDecl->initializer, /*followViews=*/true);
-        for (Decl* decl : target.decls)
-            recordRootMutation(decl, loc, isMove);
-        if (target.implicitThis) {
-            if (Decl* thisDecl = tryFindDecl("this", loc)) recordRootMutation(thisDecl, loc, isMove);
+        for (auto& sub : target.decls) {
+            ViewMemberRoot resolved;
+            resolved.base = sub.base;
+            resolved.path.append(sub.path.begin(), sub.path.end());
+            resolved.path.append(root.path.begin(), root.path.end());
+            recordRootMutation(std::move(resolved), loc, isMove, throughView);
         }
         return;
     }
-    if (!isFreezableViewRoot(root)) return;
-    viewRootMutations.push_back({root, loc, isMove, currentViewRegion, viewLoopDepth});
+    Decl* base = root.base ? root.base : tryFindDecl("this", loc);
+    if (!base || !isFreezableViewRoot(base)) return;
+    root.base = base;
+    // One mutation may resolve the same storage twice (e.g. both arms of a
+    // borrow alias), but must report once.
+    for (auto& existing : viewRootMutations) {
+        if (existing.isMove == isMove && existing.loc.line == loc.line && existing.loc.column == loc.column && existing.root == root) return;
+    }
+    viewRootMutations.push_back({std::move(root), loc, isMove, currentViewRegion, viewLoopDepth, throughView});
 }
 
 void Typechecker::rebindViewLocal(VarDecl& view, Expr& lhs, Expr& rhs) {
@@ -875,35 +940,34 @@ void Typechecker::recordViewCallCandidate(FunctionDecl* callee, const ParamDecl*
     ViewRoot root = traceViewRoot(&rootExpr, /*followViews=*/true, /*followVars=*/false);
     VarDecl* receiverView = nullptr;
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(&rootExpr)) receiverView = llvm::dyn_cast<VarDecl>(varExpr->decl);
-    for (Decl* decl : root.decls) {
-        if (decl && isFreezableViewRoot(decl))
-            viewCallCandidates.push_back({callee, param, decl, receiverView, begin, end, name.str(), currentViewRegion, viewLoopDepth});
-    }
-    if (root.implicitThis) {
-        if (Decl* thisDecl = tryFindDecl("this", begin)) {
-            if (isFreezableViewRoot(thisDecl))
-                viewCallCandidates.push_back({callee, param, thisDecl, receiverView, begin, end, name.str(), currentViewRegion, viewLoopDepth});
-        }
+    for (auto& entry : root.decls) {
+        Decl* base = entry.base ? entry.base : tryFindDecl("this", begin);
+        if (!base || !isFreezableViewRoot(base)) continue;
+        ViewMemberRoot memberRoot;
+        memberRoot.base = base;
+        memberRoot.path.append(entry.path.begin(), entry.path.end());
+        viewCallCandidates.push_back({callee, param, std::move(memberRoot), receiverView, begin, end, name.str(), currentViewRegion, viewLoopDepth});
     }
 }
 
 void Typechecker::checkViewRecord(const ViewFreezeRecord& record, const Location* drainEnd) {
-    auto overlapsRecord = [&](Decl* mutationRoot) {
-        return llvm::any_of(record.roots, [&](Decl* viewRoot) { return viewRootsOverlap(viewRoot, mutationRoot); });
+    auto overlapsRecord = [&](const ViewMemberRoot& mutationRoot) {
+        return llvm::any_of(record.roots, [&](const ViewMemberRoot& viewRoot) { return viewRootsOverlap(viewRoot, mutationRoot); });
     };
     for (auto& mutation : viewRootMutations) {
         if (!overlapsRecord(mutation.root)) continue;
         if (record.objectAlias && !mutation.isMove) continue;
+        if (mutation.throughView && mutation.throughView == record.view) continue;
         if (!viewLocBefore(record.viewLoc, mutation.loc)) continue;
         if (drainEnd && !viewLocBefore(mutation.loc, *drainEnd)) continue;
         if (!viewUseFollows(record, mutation.loc, mutation.region, mutation.loopDepth)) continue;
         if (mutation.isMove) {
             REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
-                               "cannot move '" << mutation.root->getName() << "' while view '" << record.view->getName()
+                               "cannot move '" << viewRootDisplayName(mutation.root) << "' while view '" << record.view->getName()
                                                << "' borrowed from it is still in use");
         } else {
             REPORT_ERROR_RANGE(mutation.loc, mutation.loc,
-                               "cannot assign to '" << mutation.root->getName() << "' while view '" << record.view->getName()
+                               "cannot assign to '" << viewRootDisplayName(mutation.root) << "' while view '" << record.view->getName()
                                                     << "' borrowed from it is still in use");
         }
     }
@@ -946,21 +1010,21 @@ void Typechecker::checkViewFreezeCalls(ConstMutationQuery& query) {
         if (check.param) {
             if (check.isLoop) {
                 REPORT_ERROR_RANGE(check.begin, check.end,
-                                   "cannot pass '" << check.root->getName() << "' to '" << check.name
+                                   "cannot pass '" << viewRootDisplayName(check.root) << "' to '" << check.name
                                                    << "' while the loop over it is still iterating (it may write through the argument)");
             } else {
                 REPORT_ERROR_RANGE(check.begin, check.end,
-                                   "cannot pass '" << check.root->getName() << "' to '" << check.name << "' while view '" << check.viewName
+                                   "cannot pass '" << viewRootDisplayName(check.root) << "' to '" << check.name << "' while view '" << check.viewName
                                                    << "' borrowed from it is still in use (it may write through the argument)");
             }
         } else {
             if (check.isLoop) {
                 REPORT_ERROR_RANGE(check.begin, check.end,
-                                   "cannot call '" << check.name << "' on '" << check.root->getName()
+                                   "cannot call '" << check.name << "' on '" << viewRootDisplayName(check.root)
                                                    << "' while the loop over it is still iterating (it mutates the receiver)");
             } else {
                 REPORT_ERROR_RANGE(check.begin, check.end,
-                                   "cannot call '" << check.name << "' on '" << check.root->getName() << "' while view '" << check.viewName
+                                   "cannot call '" << check.name << "' on '" << viewRootDisplayName(check.root) << "' while view '" << check.viewName
                                                    << "' borrowed from it is still in use (it mutates the receiver)");
             }
         }

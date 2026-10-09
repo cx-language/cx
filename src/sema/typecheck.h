@@ -102,6 +102,18 @@ struct ComparisonTemps {
     Expr* rhsBase;
 };
 
+// One storage a value may designate: a base object plus the member path
+// from the base outward (empty for the whole object). Same-base roots
+// overlap when the mutation path is a prefix of the view path, so a whole
+// reassignment conflicts with every view into the object while disjoint
+// members stay independent. A null base is the caller's `this`, resolved
+// where `this` is in scope (bare method calls, bare field references).
+struct ViewMemberRoot {
+    Decl* base = nullptr;
+    llvm::SmallVector<Decl*, 2> path;
+    bool operator==(const ViewMemberRoot& other) const { return base == other.base && path == other.path; }
+};
+
 struct Typechecker {
     Typechecker(const CompileOptions& options, const std::vector<BuildConfig::ResolvedDependency>* dependencies = nullptr)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
@@ -503,7 +515,7 @@ struct Typechecker {
     // freezing, so only freezable roots are recorded (see below).
     struct ViewFreezeRecord {
         VarDecl* view;
-        llvm::SmallVector<Decl*, 2> roots;
+        llvm::SmallVector<ViewMemberRoot, 2> roots;
         Location viewLoc;
         llvm::SmallVector<ViewUse, 4> uses;
         // The view aliases its owner's object (rather than viewing into it):
@@ -515,11 +527,14 @@ struct Typechecker {
     // Reassignments, moves, and destructions of freezable roots, resolved
     // against view uses when the function body is done.
     struct RootMutation {
-        Decl* root;
+        ViewMemberRoot root;
         Location loc;
         bool isMove;
         int region;
         int loopDepth;
+        // The named borrow the write goes through, if any: writing through a
+        // view cannot invalidate the view itself.
+        VarDecl* throughView = nullptr;
     };
     std::vector<RootMutation> viewRootMutations;
     // Method calls and borrow-argument passes on freezable roots: the
@@ -528,7 +543,7 @@ struct Typechecker {
     struct ViewCallCandidate {
         FunctionDecl* callee;
         const ParamDecl* param;
-        Decl* root;
+        ViewMemberRoot root;
         // The named view the call goes through (receiver or argument), if any:
         // mutating through a view cannot invalidate the view itself.
         VarDecl* receiverView = nullptr;
@@ -564,7 +579,7 @@ struct Typechecker {
     // everywhere and its own window would collapse.
     void checkLoopBodyFreezes(Expr& range, size_t mutationStart, size_t candidateStart);
     void recordViewUse(Decl* decl, Location loc);
-    void recordRootMutation(Decl* root, Location loc, bool isMove);
+    void recordRootMutation(ViewMemberRoot root, Location loc, bool isMove, VarDecl* throughView = nullptr);
     void rebindViewLocal(VarDecl& view, Expr& lhs, Expr& rhs);
     void recordViewCallCandidate(FunctionDecl* callee, const ParamDecl* param, Expr& rootExpr, Location begin, Location end, llvm::StringRef name);
     // Checks one record against recorded mutations and calls. drainEnd bounds
@@ -576,7 +591,7 @@ struct Typechecker {
         FunctionDecl* callee;
         const ParamDecl* param;
         FunctionDecl* caller;
-        Decl* root;
+        ViewMemberRoot root;
         std::string viewName;
         bool isLoop;
         Location begin;
@@ -710,10 +725,10 @@ bool isSafeViewType(Type type);
 // casts) to the underlying declaration. Literals and globals are immortal;
 // values through raw pointers or unknown shapes are tainted (unknowable).
 struct ViewRoot {
-    // Every declaration the value may designate (e.g. both sides of a
+    // Every storage the value may designate (e.g. both sides of a
     // `chain(a, b)`): freezing covers all of them, and returning errors on
     // the first owned local or parameter among them.
-    llvm::SmallVector<Decl*, 2> decls;
+    llvm::SmallVector<ViewMemberRoot, 2> decls;
     bool immortal = false;
     bool tainted = false;
     bool temporary = false;
@@ -726,9 +741,6 @@ struct ViewRoot {
     // of a temporary.
     bool derefTerminal = false;
     Type tempType;
-    // A bare method call with no explicit receiver: the value may designate
-    // the caller's `this`. Callers resolve it where `this` is in scope.
-    bool implicitThis = false;
     Type projectedType;
 };
 // followViews also follows named view-typed locals to their initializers,

@@ -100,6 +100,27 @@ static VarExpr* getAssignmentBaseVarExpr(Expr& lhs) {
     }
 }
 
+// The named borrow an assignment writes through (`*p`, `o!`, `b.field`),
+// if any: writing through a view cannot invalidate the view itself.
+static VarDecl* getWriteThroughView(Expr& lhs) {
+    Expr* current = &lhs;
+    while (true) {
+        if (auto* unary = llvm::dyn_cast<UnaryExpr>(current); unary && unary->op == Token::Star) {
+            current = &unary->getOperand();
+            continue;
+        }
+        if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(current)) {
+            current = cast->operand;
+            continue;
+        }
+        break;
+    }
+    auto* base = getAssignmentBaseVarExpr(*current);
+    auto* varDecl = base ? llvm::dyn_cast<VarDecl>(base->decl) : nullptr;
+    if (!varDecl || !varDecl->type.removeOptional().isReferenceType()) return nullptr;
+    return varDecl;
+}
+
 // True when the expression designates a compile-time constant's storage, so
 // writes to it are forbidden. Const comes only from bindings: VarDecl::isConst
 // (or a const lambda parameter) at the root (through member, index, unwrap,
@@ -1673,17 +1694,33 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
         }
     }
 
-    // Rebinding a view ends its old borrow; whole-value and owning-field
-    // reassignments invalidate views of the base (element writes are safe).
-    if (lhsVar && lhsVar->decl) {
+    // Rebinding a view ends its old borrow; other assignments invalidate
+    // views of the written storage (element writes are safe). Member writes
+    // only conflict with views of the same member path; scalar members free
+    // nothing, so they invalidate nothing.
+    bool bareWhole = lhsVar && lhsVar->decl && !llvm::isa<FieldDecl>(lhsVar->decl);
+    if (bareWhole) {
         if (auto* viewDecl = llvm::dyn_cast<VarDecl>(lhsVar->decl); viewDecl && !viewDecl->isGlobal() && isSafeViewType(viewDecl->type)) {
             rebindViewLocal(*viewDecl, *lhs, *rhs);
         } else {
-            recordRootMutation(lhsVar->decl, getExprRangeStart(*lhs), /*isMove=*/false);
+            ViewMemberRoot root;
+            root.base = lhsVar->decl;
+            recordRootMutation(std::move(root), getExprRangeStart(*lhs), /*isMove=*/false);
         }
-    } else if (auto* memberLhs = llvm::dyn_cast<MemberExpr>(lhs)) {
-        if (auto* fieldDecl = memberLhs->getFieldDecl(); fieldDecl && fieldDecl->type.needsDestruction()) {
-            if (auto* baseVarExpr = getAssignmentBaseVarExpr(*lhs)) recordRootMutation(baseVarExpr->decl, getExprRangeStart(*lhs), /*isMove=*/false);
+    } else if (!llvm::isa<IndexExpr>(lhs) && !llvm::isa<IndexAssignmentExpr>(lhs)) {
+        ViewRoot target = traceViewRoot(lhs, /*followViews=*/true, /*followVars=*/false);
+        if (!target.tainted) {
+            VarDecl* throughView = getWriteThroughView(*lhs);
+            for (auto& entry : target.decls) {
+                if (!entry.path.empty()) {
+                    if (!llvm::cast<FieldDecl>(entry.path.back())->type.needsDestruction()) continue;
+                } else if (!lhsType.needsDestruction()) {
+                    // A whole-object write through dereference or unwrap frees
+                    // only when the written slot owns storage.
+                    continue;
+                }
+                recordRootMutation(entry, getExprRangeStart(*lhs), /*isMove=*/false, throughView);
+            }
         }
     }
     if (lhsVar && lhsVar->decl) {
@@ -4590,8 +4627,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         if (!overloadProbe && currentFunction && !llvm::isa<DestructorDecl>(decl) && !isSafeElementWrite()) {
             if (llvm::isa<ConstructorDecl>(decl)) {
                 ViewRoot receiverRoot = traceViewRoot(expr.getReceiver(), /*followViews=*/true, /*followVars=*/false);
-                for (Decl* rootDecl : receiverRoot.decls)
-                    recordRootMutation(rootDecl, getExprRangeStart(expr), /*isMove=*/false);
+                for (auto& entry : receiverRoot.decls)
+                    recordRootMutation(entry, getExprRangeStart(expr), /*isMove=*/false);
             } else if (auto* methodCallee = llvm::dyn_cast<FunctionDecl>(decl)) {
                 recordViewCallCandidate(methodCallee, /*param=*/nullptr, *expr.getReceiver(), getExprRangeStart(expr), expr.endLocation,
                                         expr.getFunctionName());
@@ -6085,7 +6122,9 @@ void Typechecker::propagateMove(Expr* source, bool trackVars, Location location,
 
 void Typechecker::markMoved(Decl* decl, Location location) {
     movedDecls.insert(decl);
-    recordRootMutation(decl, location, /*isMove=*/true);
+    ViewMemberRoot root;
+    root.base = decl;
+    recordRootMutation(std::move(root), location, /*isMove=*/true);
     moveLocations[decl] = location;
     maybeMovedDecls.erase(decl);
 }
