@@ -91,11 +91,12 @@ string, or iterator derived from a local variable, a by-value parameter, or a
 temporary; only borrows of parameters, `this`, and globals may escape. While a view
 is alive (from its declaration to its last use), its owner is frozen: reassigning,
 moving, destroying, or mutating it is an error, as is mutating a collection while
-iterating it. Writing an element in place (`list[i] = v`) stays legal. A borrow of
-the owner itself (`List<int>& a = list`) only conflicts with moves and destruction:
-interior mutation leaves the borrowed slot in place. Raw pointers
-are exempt from all of this: they are the explicit unsafe hatch for when the checker
-is wrong or in the way.
+iterating it. Within a method, freezing is per-field: assigning one field while a
+view of another is alive is fine. Writing an element in place (`list[i] = v`) stays
+legal. A borrow of the owner itself (`List<int>& a = list`) only conflicts with
+moves and destruction: interior mutation leaves the borrowed slot in place. Raw
+pointers are exempt from all of this: they are the explicit unsafe hatch for when
+the checker is wrong or in the way.
 
 ```cs
 void main() {

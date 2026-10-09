@@ -193,6 +193,52 @@ struct AliasHolder {
     }
 }
 
+struct FieldHolder {
+    List<int> items;
+    List<string> positionals;
+    string errorMessage;
+    int count;
+
+    void disjointFieldsPass() {
+        for p in positionals {
+            errorMessage = "x";
+            println(p);
+        }
+    }
+
+    void sameFieldAssignRejected() {
+        for e in items {
+            // CHECK: [[@LINE+1]]:13: error: cannot assign to 'items' while the loop over it is still iterating
+            items = List([9]);
+            println(e);
+        }
+    }
+
+    void sameFieldCallRejected() {
+        int& r = items[0];
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'push' on 'items' while view 'r' borrowed from it is still in use (it mutates the receiver)
+        items.push(4);
+        println(r);
+    }
+
+    void scalarFieldAssignPasses() {
+        int& r = count;
+        count = 5;
+        println(r);
+    }
+
+    void wholeObjectCallStillRejected() {
+        int& r = items[0];
+        // CHECK: [[@LINE+1]]:9: error: cannot call 'clearItems' on 'this' while view 'r' borrowed from it is still in use (it mutates the receiver)
+        this.clearItems();
+        println(r);
+    }
+
+    void clearItems() {
+        items = List([9]);
+    }
+}
+
 void plainLoop() {
     var list = List([1, 2, 3]);
     for e in list {

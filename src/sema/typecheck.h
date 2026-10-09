@@ -537,9 +537,6 @@ struct Typechecker {
     void recordRootMutation(Decl* root, Location loc, bool isMove);
     void rebindViewLocal(VarDecl& view, Expr& rhs, Location loc);
     void recordViewCallCandidate(FunctionDecl* callee, const ParamDecl* param, Expr& rootExpr, Location begin, Location end, llvm::StringRef name);
-    // Resolves a field root to the `this` it belongs to; other declarations
-    // pass through. Null when `this` is not in scope.
-    Decl* normalizeViewRoot(Decl* decl);
     void checkViewFreezes();
     struct ViewFreezeCallCheck {
         FunctionDecl* callee;
@@ -708,8 +705,8 @@ struct ViewRoot {
 // initializers: for mutation sites, which affect the named object itself
 // rather than the storage a view of it designates.
 ViewRoot traceViewRoot(const Expr* expr, bool followViews = false, bool followVars = true);
-// Whether the declaration is storage a view freezes: an owned local or
-// parameter whose reassignment, move, destruction, or mutation may
+// Whether the declaration is storage a view freezes: an owned local,
+// parameter, or field whose reassignment, move, destruction, or mutation may
 // invalidate views designating it. Carriers that own nothing (scalars,
 // views, view-holding structs) need no freezing, since reassigning or
 // destroying them leaves the designated storage untouched.

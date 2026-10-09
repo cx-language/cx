@@ -405,6 +405,17 @@ static ViewRoot traceViewRootImpl(const Expr* expr, bool followViews, bool follo
                 }
             }
         } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(operand)) {
+            // A field of `this` roots at the field itself (matching bare field
+            // references), so disjoint fields freeze independently; member
+            // paths through other bases stay whole-decl roots.
+            auto* baseVar = llvm::dyn_cast<VarExpr>(memberExpr->base);
+            auto* fieldDecl = memberExpr->getFieldDecl();
+            if (fieldDecl && baseVar && baseVar->decl && baseVar->decl->getName() == "this") {
+                if (!root.traced) root.projectedType = operand->type;
+                root.decls.push_back(fieldDecl);
+                root.traced = true;
+                return root;
+            }
             next = memberExpr->base;
         } else if (auto* varExpr = llvm::dyn_cast<VarExpr>(operand)) {
             // Unresolved names (e.g. the `Outcome` in `Outcome.Ok`) have no declaration to follow.
@@ -640,18 +651,25 @@ bool cx::isFreezableViewRoot(Decl* decl) {
         if (isSafeViewType(type)) return false;
         return type.needsDestruction();
     }
+    if (auto* fieldDecl = llvm::dyn_cast_or_null<FieldDecl>(decl)) {
+        return fieldDecl->type.removeOptional().needsDestruction();
+    }
     return false;
 }
 
-Decl* Typechecker::normalizeViewRoot(Decl* decl) {
-    if (!decl || decl->kind != DeclKind::FieldDecl || !currentFunction) return decl;
-    return tryFindDecl("this", currentFunction->getLocation());
+// Whether a frozen view root and a mutation root designate overlapping
+// storage: identical roots always overlap, and a whole-object (`this`)
+// mutation overlaps any field view. The reverse does not hold: a field write
+// preserves borrows of the whole object.
+static bool viewRootsOverlap(Decl* viewRoot, Decl* mutationRoot) {
+    if (viewRoot == mutationRoot) return true;
+    auto* varDecl = llvm::dyn_cast<VarDecl>(mutationRoot);
+    return llvm::isa<FieldDecl>(viewRoot) && varDecl && varDecl->getName() == "this";
 }
 
 static void collectFreezeRoots(Typechecker& checker, ViewRoot& root, Location viewLoc, llvm::SmallVectorImpl<Decl*>& roots) {
     for (Decl* decl : root.decls) {
-        Decl* normalized = checker.normalizeViewRoot(decl);
-        if (normalized && isFreezableViewRoot(normalized) && !llvm::is_contained(roots, normalized)) roots.push_back(normalized);
+        if (decl && isFreezableViewRoot(decl) && !llvm::is_contained(roots, decl)) roots.push_back(decl);
     }
     if (root.implicitThis) {
         Decl* thisDecl = checker.tryFindDecl("this", viewLoc);
@@ -727,9 +745,10 @@ void Typechecker::checkLoopBodyFreezes(Expr& range, size_t mutationStart, size_t
     llvm::SmallVector<Decl*, 2> roots;
     collectFreezeRoots(*this, root, range.location, roots);
     if (roots.empty()) return;
+    auto overlapsRoots = [&](Decl* mutationRoot) { return llvm::any_of(roots, [&](Decl* viewRoot) { return viewRootsOverlap(viewRoot, mutationRoot); }); };
     for (size_t i = mutationStart; i < viewRootMutations.size(); i++) {
         auto& mutation = viewRootMutations[i];
-        if (!llvm::is_contained(roots, mutation.root)) continue;
+        if (!overlapsRoots(mutation.root)) continue;
         if (mutation.isMove) {
             REPORT_ERROR_RANGE(mutation.loc, mutation.loc, "cannot move '" << mutation.root->getName() << "' while the loop over it is still iterating");
         } else {
@@ -738,7 +757,7 @@ void Typechecker::checkLoopBodyFreezes(Expr& range, size_t mutationStart, size_t
     }
     for (size_t i = candidateStart; i < viewCallCandidates.size(); i++) {
         auto& candidate = viewCallCandidates[i];
-        if (!llvm::is_contained(roots, candidate.root)) continue;
+        if (!overlapsRoots(candidate.root)) continue;
         pendingViewFreezeCallChecks.push_back({candidate.callee, candidate.param, currentFunction, candidate.root, "the loop",
                                                /*isLoop=*/true, candidate.begin, candidate.end, candidate.name});
     }
@@ -754,9 +773,9 @@ void Typechecker::recordRootMutation(Decl* root, Location loc, bool isMove) {
     // Moves in a return statement exit the function, so no later use can
     // observe them (deferred expressions stay a hole).
     if (isMove && inReturnValue) return;
-    Decl* normalized = normalizeViewRoot(root);
+    if (!root) return;
     // Mutating through a borrow alias mutates the referent's storage.
-    if (auto* varDecl = llvm::dyn_cast<VarDecl>(normalized);
+    if (auto* varDecl = llvm::dyn_cast<VarDecl>(root);
         varDecl && varDecl->type.removeOptional().isReferenceType() && varDecl->getName() != "this" && varDecl->initializer) {
         ViewRoot target = traceViewRoot(varDecl->initializer, /*followViews=*/true);
         for (Decl* decl : target.decls)
@@ -766,8 +785,8 @@ void Typechecker::recordRootMutation(Decl* root, Location loc, bool isMove) {
         }
         return;
     }
-    if (!isFreezableViewRoot(normalized)) return;
-    viewRootMutations.push_back({normalized, loc, isMove});
+    if (!isFreezableViewRoot(root)) return;
+    viewRootMutations.push_back({root, loc, isMove});
 }
 
 void Typechecker::rebindViewLocal(VarDecl& view, Expr& rhs, Location loc) {
@@ -791,8 +810,7 @@ void Typechecker::recordViewCallCandidate(FunctionDecl* callee, const ParamDecl*
     VarDecl* receiverView = nullptr;
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(&rootExpr)) receiverView = llvm::dyn_cast<VarDecl>(varExpr->decl);
     for (Decl* decl : root.decls) {
-        Decl* normalized = normalizeViewRoot(decl);
-        if (isFreezableViewRoot(normalized)) viewCallCandidates.push_back({callee, param, normalized, receiverView, begin, end, name.str()});
+        if (decl && isFreezableViewRoot(decl)) viewCallCandidates.push_back({callee, param, decl, receiverView, begin, end, name.str()});
     }
     if (root.implicitThis) {
         if (Decl* thisDecl = tryFindDecl("this", begin)) {
@@ -807,8 +825,11 @@ static bool viewLocBefore(Location a, Location b) {
 
 void Typechecker::checkViewFreezes() {
     for (auto& record : viewFreezeRecords) {
+        auto overlapsRecord = [&](Decl* mutationRoot) {
+            return llvm::any_of(record.roots, [&](Decl* viewRoot) { return viewRootsOverlap(viewRoot, mutationRoot); });
+        };
         for (auto& mutation : viewRootMutations) {
-            if (!llvm::is_contained(record.roots, mutation.root)) continue;
+            if (!overlapsRecord(mutation.root)) continue;
             if (record.objectAlias && !mutation.isMove) continue;
             if (!viewLocBefore(record.viewLoc, mutation.loc) || viewLocBefore(record.lastUse, mutation.loc)) continue;
             if (mutation.isMove) {
@@ -822,7 +843,7 @@ void Typechecker::checkViewFreezes() {
             }
         }
         for (auto& candidate : viewCallCandidates) {
-            if (!llvm::is_contained(record.roots, candidate.root)) continue;
+            if (!overlapsRecord(candidate.root)) continue;
             if (record.objectAlias) continue;
             if (candidate.receiverView && candidate.receiverView == record.view) continue;
             if (!viewLocBefore(record.viewLoc, candidate.begin) || viewLocBefore(record.lastUse, candidate.begin)) continue;
@@ -833,10 +854,12 @@ void Typechecker::checkViewFreezes() {
 }
 
 void Typechecker::checkViewFreezeCalls(ConstMutationQuery& query) {
+    // Source order, so diagnostics read top-down; the callee tiebreak keeps
+    // duplicate reports of one call adjacent for the dedup below.
     std::sort(pendingViewFreezeCallChecks.begin(), pendingViewFreezeCallChecks.end(), [](const ViewFreezeCallCheck& a, const ViewFreezeCallCheck& b) {
-        if (a.callee != b.callee) return a.callee < b.callee;
         if (a.begin.line != b.begin.line) return a.begin.line < b.begin.line;
-        return a.begin.column < b.begin.column;
+        if (a.begin.column != b.begin.column) return a.begin.column < b.begin.column;
+        return a.callee < b.callee;
     });
     pendingViewFreezeCallChecks.erase(std::unique(pendingViewFreezeCallChecks.begin(), pendingViewFreezeCallChecks.end(),
                                                   [](const ViewFreezeCallCheck& a, const ViewFreezeCallCheck& b) {
