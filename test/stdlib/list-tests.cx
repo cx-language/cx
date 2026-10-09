@@ -58,6 +58,21 @@ void testInitFromArrayVariable() {
 }
 
 @test
+void testInitFromOwningLiteral() {
+    destroyed = 0;
+    if (true) {
+        var buffers = List([StringBuf("a"), StringBuf("b")]);
+        assert(buffers.size() == 2);
+        assert(buffers[0][0] == 'a');
+        var moved = List([CountedDrop(1), CountedDrop(2), CountedDrop(3)]);
+        assert(moved.size() == 3);
+        assert(destroyed == 0);
+    }
+    assert(destroyed == 3);
+    destroyed = 0;
+}
+
+@test
 void testNestedPush() {
     var a = List<int[]>();
     a.push([]);
@@ -376,6 +391,16 @@ var destroyed = 0;
 
 struct DestructionTester {
     ~DestructionTester() {
+        destroyed++;
+    }
+}
+
+// Non-empty so list iteration reaches the elements (empty structs have
+// size zero, making begin and end pointers equal).
+struct CountedDrop {
+    int x;
+
+    ~CountedDrop() {
         destroyed++;
     }
 }

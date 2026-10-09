@@ -675,10 +675,20 @@ static Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr& expr, Type expec
 }
 
 static Type emptyArrayLiteralType(Type expectedType) {
-    if (expectedType && !expectedType.containsUnresolvedPlaceholder()) {
+    if (expectedType) {
         Type unwrapped = expectedType.removeOptional();
-        if ((unwrapped.isArrayType() || unwrapped.isSlice()) && !unwrapped.hasSizeofArraySize()) {
-            return expectedType;
+        if (!unwrapped.containsUnresolvedPlaceholder()) {
+            if ((unwrapped.isArrayType() || unwrapped.isSlice()) && !unwrapped.hasSizeofArraySize()) {
+                return expectedType;
+            }
+        } else if (unwrapped.isArrayType() && !unwrapped.hasSizeofArraySize()) {
+            // An empty literal has size zero; bind it when only the size is
+            // still generic, e.g. `SmallList<int, 2>([])` infers N = 0.
+            Type element = unwrapped.getElementType();
+            if (element && !element.containsUnresolvedPlaceholder()) {
+                Type array = BasicType::getArray(element, 0);
+                return expectedType.isOptionalType() ? OptionalType::get(array) : array;
+            }
         }
     }
     return Type();

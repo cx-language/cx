@@ -58,6 +58,10 @@ void main() {
 }
 ```
 
+A list can also be built from an array: `List` moves the elements out,
+so an owning array passed by name is consumed. Copyable arrays are copied
+and stay usable.
+
 ## Map, filter
 
 We can use the functional `map` and `filter` operations on lists, with

@@ -179,7 +179,7 @@ if.end:
     return void
 
 overflow.fail:
-    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at List.cx:148:64
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at List.cx:150:64
 ")
     unreachable
 

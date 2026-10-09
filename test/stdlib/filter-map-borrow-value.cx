@@ -45,12 +45,7 @@ void testBorrowValueOrBorrow() {
     assert(numbers.all(isEvenRef) == false);
     assert(numbers.all(n => n >= 0) == true);
 
-    // Built with push(): List(Element[]) memcpys from the source array, which
-    // aliases owning elements instead of moving them.
-    var buffers = List<StringBuf>();
-    buffers.push(StringBuf("a"));
-    buffers.push(StringBuf("bb"));
-    buffers.push(StringBuf("ccc"));
+    var buffers = List([StringBuf("a"), StringBuf("bb"), StringBuf("ccc")]);
     // toList() copies elements, so it cannot collect borrowed owning values;
     // count through the iterator instead.
     var longCount = 0;

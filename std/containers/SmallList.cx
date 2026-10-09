@@ -34,15 +34,17 @@ struct SmallList<Element, int N> {
         }
     }
 
-    /// Initializes a list containing the elements of the given array.
-    /// Copies each element, so the element type must be Copyable.
-    /// Push owning values one at a time instead.
-    SmallList(Element[] elements) {
+    /// Initializes a list by moving the elements out of the given array.
+    /// The array is consumed; pass a copy to keep it.
+    // M, not N: a constructor parameter shadowing the type's N misbehaves.
+    SmallList<int M>(Element[M] elements) {
         init();
-        reserve(elements.size());
-        for element in elements {
-            push(element);
+        reserve(M);
+        if M != 0 {
+            memcpy(data(), elements.data(), c_size_t(sizeof(Element) * M));
         }
+        size = M;
+        elements.forget();
     }
 
     /// Frees the elements and backing storage.
